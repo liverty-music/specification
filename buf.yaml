@@ -1,7 +1,9 @@
 version: v2
 modules:
-  - path: proto/scaffold
-    name: buf.build/pannpers/scaffold
+  - path: proto/entity
+    name: buf.build/liverty-music/entity
+  - path: proto/rpc
+    name: buf.build/liverty-music/rpc
 deps:
   - buf.build/googleapis/googleapis
   - buf.build/bufbuild/protovalidate

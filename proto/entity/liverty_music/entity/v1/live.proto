@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+
+// Live represents a music live event.
+message Live {
+  // Live ID is required
+  LiveId id = 1 [(buf.validate.field).required = true];
+  // Live title is required
+  LiveTitle title = 2 [(buf.validate.field).required = true];
+}
+
+// Live ID
+message LiveId {
+  // Live ID must be a valid UUID format
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// Live title
+message LiveTitle {
+  // Live title must be between 1 and 200 characters
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}

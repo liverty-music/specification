@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-package pannpers.api.v1;
+package liverty_music.rpc.v1;
 
 import "buf/validate/validate.proto";
-import "pannpers/entity/v1/user.proto";
+import "liverty_music/entity/v1/user.proto";
 
-option go_package = "gen/go/pannpers/api/v1;rpc";
+option go_package = "gen/go/liverty_music/rpc/v1;rpc";
 
 // User service provides operations for managing users
 service UserService {

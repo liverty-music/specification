@@ -15,4 +15,4 @@ syntax = "proto3";
 // Usage:
 // These entity definitions are imported by API service definitions and used throughout
 // the application for type-safe data handling and automatic validation.
-package pannpers.entity.v1;
+package liverty_music.entity.v1;

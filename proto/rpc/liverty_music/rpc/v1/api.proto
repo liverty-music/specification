@@ -19,4 +19,4 @@ syntax = "proto3";
 //
 // All request/response messages use custom types rather than google.protobuf.Empty
 // to maintain API evolution compatibility and enable proper validation.
-package pannpers.api.v1;
+package liverty_music.rpc.v1;

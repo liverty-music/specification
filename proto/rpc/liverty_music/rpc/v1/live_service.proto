@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package liverty_music.rpc.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/live.proto";
+import "liverty_music/entity/v1/user.proto";
+
+// Live service provides operations for managing lives
+service LiveService {
+  // GetLive retrieves a live by ID
+  rpc GetLive(GetLiveRequest) returns (GetLiveResponse);
+
+  // CreateLive creates a new live
+  rpc CreateLive(CreateLiveRequest) returns (CreateLiveResponse);
+}
+
+// GetLiveRequest is the request message for GetLive
+message GetLiveRequest {
+  // The unique identifier of the live to retrieve (required)
+  entity.v1.LiveId live_id = 1 [(buf.validate.field).required = true];
+}
+
+// GetLiveResponse is the response message for GetLive
+message GetLiveResponse {
+  // The live resource (required)
+  entity.v1.Live live = 1 [(buf.validate.field).required = true];
+}
+
+// CreateLiveRequest is the request message for CreateLive
+message CreateLiveRequest {
+  // The title of the live to create (required and must be valid)
+  entity.v1.LiveTitle title = 1 [(buf.validate.field).required = true];
+
+  // The ID of the user creating the live (required and must be valid)
+  entity.v1.UserId author_id = 2 [(buf.validate.field).required = true];
+}
+
+// CreateLiveResponse is the response message for CreateLive
+message CreateLiveResponse {
+  // The created live resource (required)
+  entity.v1.Live live = 1 [(buf.validate.field).required = true];
+}
