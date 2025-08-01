@@ -30,16 +30,16 @@ buf --version          # Verify buf is available
 
 ## Architecture Overview
 
-This is a Protocol Buffers scaffold repository that uses Buf Schema Registry (BSR) for remote code generation from protobuf definitions. The architecture follows a clear separation between entity definitions and API service definitions.
+This is a Protocol Buffers schema repository that uses Buf Schema Registry (BSR) for remote code generation from protobuf definitions. The architecture follows a clear separation between entity definitions and RPC service definitions.
 
 ### Key Structure
-- **Entity Layer**: Core business entities defined in `pannpers/entity/v1/` (e.g., Post, User)
-- **API Layer**: Service definitions in `pannpers/api/v1/` that use entity types
-- **Generated Code**: Available from BSR at `buf.build/pannpers/scaffold` (no local generation)
+- **Entity Layer**: Core business entities defined in `liverty_music/entity/v1/` (e.g., User, Live)
+- **RPC Layer**: Service definitions in `liverty_music/rpc/v1/` that use entity types
+- **Generated Code**: Available from BSR at `buf.build/liverty-music/entity` and `buf.build/liverty-music/rpc` (no local generation)
 
 ### BSR Code Generation Flow
 The repository uses Buf Schema Registry (BSR) with remote code generation:
-- **Push to BSR**: `buf push` uploads schemas to `buf.build/pannpers/scaffold`
+- **Push to BSR**: `buf push` uploads schemas to `buf.build/liverty-music/entity` and `buf.build/liverty-music/rpc`
 - **Remote Generation**: BSR generates code using plugins defined in `buf.gen.yaml`
 - **Consumer Access**: Generated code available via Go modules and npm packages
 - **Plugins Used**:
@@ -50,8 +50,8 @@ The repository uses Buf Schema Registry (BSR) with remote code generation:
   - `buf.build/bufbuild/validate-go` - Go validation code generation
 
 ### Proto Package Structure
-- `pannpers.entity.v1` - Core entities (Post, User, value objects)
-- `pannpers.api.v1` - Service definitions that reference entities
+- `liverty_music.entity.v1` - Core entities (User, Live, value objects)
+- `liverty_music.rpc.v1` - Service definitions that reference entities
 - Uses proper import paths and Go package declarations
 
 ### Automated Workflow
@@ -84,15 +84,18 @@ Consumers can access generated code from BSR:
 
 **Go:**
 ```bash
-go get buf.build/gen/go/pannpers/scaffold/protocolbuffers/go
-go get buf.build/gen/go/pannpers/scaffold/connectrpc/go
-go get buf.build/gen/go/pannpers/scaffold/bufbuild/validate-go
+go get buf.build/gen/go/liverty-music/entity/protocolbuffers/go
+go get buf.build/gen/go/liverty-music/entity/bufbuild/validate-go
+go get buf.build/gen/go/liverty-music/rpc/protocolbuffers/go
+go get buf.build/gen/go/liverty-music/rpc/connectrpc/go
+go get buf.build/gen/go/liverty-music/rpc/bufbuild/validate-go
 ```
 
 **TypeScript:**
 ```bash
-npm install @buf/pannpers_scaffold.bufbuild_es
-npm install @buf/pannpers_scaffold.bufbuild_connect-es
+npm install @buf/liverty-music_entity.bufbuild_es
+npm install @buf/liverty-music_rpc.bufbuild_es
+npm install @buf/liverty-music_rpc.bufbuild_connect-es
 ```
 
 ## Protobuf Design Guidelines
@@ -108,11 +111,11 @@ When designing entities and RPC interfaces, follow these established standards:
 - [Google AIP General Guidelines](https://google.aip.dev/general)
 
 ### Naming Conventions (Buf Style Guide)
-- **Packages**: Use `lower_snake_case` with version suffix (e.g., `pannpers.entity.v1`)
+- **Packages**: Use `lower_snake_case` with version suffix (e.g., `liverty_music.entity.v1`)
 - **Messages**: Use `PascalCase` for message names
 - **Fields**: Use `lower_snake_case` for field names
-- **Services**: Use `PascalCase` with `Service` suffix (e.g., `PostService`)
-- **RPCs**: Use `PascalCase` with VerbNoun pattern (e.g., `GetPost`, `CreatePost`)
+- **Services**: Use `PascalCase` with `Service` suffix (e.g., `UserService`)
+- **RPCs**: Use `PascalCase` with VerbNoun pattern (e.g., `GetUser`, `CreateUser`)
 - **Enums**: Names in `PascalCase`, values in `UPPER_SNAKE_CASE`
 - **Zero values**: Should end with `_UNSPECIFIED`
 
@@ -134,13 +137,13 @@ When designing entities and RPC interfaces, follow these established standards:
 - **Field Masks**: Use for partial updates in `Update` operations
 - **Pagination**: Implement for `List` operations using `page_size` and `page_token`
 - **Type Safety**: Use user-defined types instead of primitive types for parameters
-  - **Entity IDs**: Use `UserId`, `PostId` types instead of raw `string`
-  - **Domain Values**: Use `PostTitle`, `UserName` types instead of raw `string`
+  - **Entity IDs**: Use `UserId`, `LiveId` types instead of raw `string`
+  - **Domain Values**: Use `LiveTitle`, `UserName` types instead of raw `string`
   - **Consistency**: Ensure API parameters match entity field types exactly
   - **Validation**: User-defined types carry their validation rules automatically
 
 ### Entity Design Patterns
-- **Value Objects**: Create dedicated message types for domain concepts (e.g., `PostId`, `PostTitle`)
+- **Value Objects**: Create dedicated message types for domain concepts (e.g., `UserId`, `LiveId`)
 - **Composition**: Reference other entities by ID, not nested objects
 - **Versioning**: Plan for schema evolution with proper field numbering
 - **Documentation**: Over-document with complete sentences using `//` comments
@@ -155,7 +158,7 @@ Follow [Buf Documentation Guidelines](https://buf.build/docs/bsr/documentation) 
   ```protobuf
   // Package user provides definitions for user entities and related value objects.
   // This package contains core user data structures used across the application.
-  package pannpers.entity.v1;
+  package liverty_music.entity.v1;
   ```
 
 #### Message and Field Documentation
@@ -254,7 +257,7 @@ Follow [Buf Documentation Guidelines](https://buf.build/docs/bsr/documentation) 
 ### RPC Parameter Type Design
 - **Never use primitive types** for domain concepts in RPC interfaces
 - **Entity References**: Use `UserId user_id = 1` instead of `string user_id = 1`
-- **Domain Values**: Use `PostTitle title = 1` instead of `string title = 1`
+- **Domain Values**: Use `LiveTitle title = 1` instead of `string title = 1`
 - **Benefits of user-defined types**:
   - **Type Safety**: Prevents mixing different ID types
   - **Validation**: Automatic validation rule inheritance from value objects
@@ -282,7 +285,7 @@ Follow [Buf Documentation Guidelines](https://buf.build/docs/bsr/documentation) 
 
 ## Development Workflow Notes
 
-1. Proto files should be modified directly in the `proto/scaffold/` directory
+1. Proto files should be modified in the `proto/entity/` and `proto/rpc/` directories
 2. Generated code is available from BSR, not stored locally
 3. Breaking changes are checked against the main branch
 4. All protobuf files are automatically formatted and linted on commit
@@ -295,10 +298,10 @@ Follow [Buf Documentation Guidelines](https://buf.build/docs/bsr/documentation) 
 To enable automatic BSR publishing on releases, configure the following secret:
 - **`BUF_TOKEN`**: BSR authentication token for pushing schemas
   - Generate at: https://buf.build/settings/user (User API Tokens)
-  - Required permissions: `repository:write` for `buf.build/pannpers/scaffold`
+  - Required permissions: `repository:write` for `buf.build/liverty-music/entity` and `buf.build/liverty-music/rpc`
 
 ### Release Process
 1. Create a GitHub release with semantic version tag (e.g., `v1.0.0`)
 2. GitHub Actions automatically runs `buf push --label 1.0.0` to BSR
 3. BSR generates code with the release label for consumer access
-4. Consumers can reference specific versions: `@buf/pannpers_scaffold.bufbuild_es@1.0.0`
+4. Consumers can reference specific versions: `@buf/liverty-music_entity.bufbuild_es@1.0.0`
