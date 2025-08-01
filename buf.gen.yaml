@@ -1,0 +1,36 @@
+# https://buf.build/docs/configuration/v2/buf-gen-yaml/
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: buf.build/gen/go/pannpers/scaffold
+  # Don't modify any file option or field option for protovalidate. Without
+  # this, generated Go will fail to compile.
+  disable:
+    - file_option: go_package
+      module: buf.build/bufbuild/protovalidate
+# 'clean', when set to true, deletes the directories, zip files, and/or jar files specified in the
+# `out` field for all plugins before running code generation.
+clean: true
+# managed:
+#   enabled: true
+# 'plugins' is a list of plugin configurations used for buf generate.
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: gen/go
+    opt: paths=source_relative
+  - remote: buf.build/connectrpc/go
+    out: gen/go
+    opt: paths=source_relative
+  - remote: buf.build/bufbuild/validate-go
+    out: gen/go
+    opt: paths=source_relative
+  - remote: buf.build/bufbuild/es
+    out: gen/typescript
+    opt: target=ts
+  - remote: buf.build/bufbuild/connect-es
+    out: gen/typescript
+    opt: target=ts
+inputs:
+  - directory: proto

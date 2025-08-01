@@ -1,0 +1,61 @@
+name: '🐛 Bug Report'
+description: 'Create a report to help us improve the project'
+title: 'Bug: [Short description of the bug]'
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please provide as much detail as possible.
+  - type: textarea
+    id: description
+    attributes:
+      label: 'Bug Description'
+      description: 'A clear and concise description of what the bug is.'
+      placeholder: 'e.g., GitHub release fails to push to BSR, or BSR generated code has compilation issues.'
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: 'Steps to Reproduce'
+      description: 'Steps to reproduce the behavior. Be as specific as possible.'
+      placeholder: |
+        1. Create a GitHub release with version tag (e.g., v1.0.0)
+        2. Check GitHub Actions logs for BSR push status
+        3. Check BSR at buf.build/pannpers/scaffold for the new version
+        4. Install generated code: npm install @buf/pannpers_scaffold.bufbuild_es@1.0.0
+        5. Observe the compilation error in TypeScript/Go code
+    validations:
+      required: true
+  - type: textarea
+    id: expected-vs-actual
+    attributes:
+      label: 'Expected vs Actual Behavior'
+      description: 'What did you expect to happen vs what actually happened?'
+      placeholder: |
+        **Expected:** GitHub release should trigger automatic BSR push and generate code without errors
+        **Actual:** GitHub Actions fails with "BSR authentication error" or generated code has compilation issues
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: 'Environment'
+      description: 'In which environment did you encounter the bug?'
+      options:
+        - Local (macOS)
+        - Local (Windows)
+        - Local (Linux/WSL)
+        - GitHub Actions (CI)
+        - BSR (buf.build)
+        - mise environment
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 'Logs / Screenshots'
+      description: 'If applicable, add logs, stack traces, or screenshots to help explain your problem.'
+      render: shell

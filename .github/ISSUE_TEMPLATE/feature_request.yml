@@ -1,0 +1,46 @@
+name: '✨ New Proto Definition'
+description: 'Request new protobuf message types or services'
+title: 'Add: [Short description of the proto definition]'
+labels: ['proto-definition']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Request new protobuf definitions for this scaffold repository.
+  - type: textarea
+    id: description
+    attributes:
+      label: 'What proto definitions do you need?'
+      description: 'Describe the message types, services, or enums you want to add.'
+      placeholder: |
+        I need common pagination message types (PageRequest, PageResponse) in proto/common/pagination.proto
+        to standardize paginated API responses across services.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-proto
+    attributes:
+      label: 'Proposed Proto Definition'
+      description: 'If you have a draft of the proto definition, include it here.'
+      render: protobuf
+      placeholder: |
+        syntax = "proto3";
+
+        message PageRequest {
+          int32 page = 1;
+          int32 page_size = 2;
+        }
+
+        message PageResponse {
+          int32 total_count = 1;
+          int32 page = 2;
+          int32 page_size = 3;
+        }
+  - type: textarea
+    id: location
+    attributes:
+      label: 'Proposed Location'
+      description: 'Where should these definitions be placed?'
+      placeholder: 'proto/common/pagination.proto'
+    validations:
+      required: true

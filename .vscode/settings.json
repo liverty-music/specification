@@ -1,0 +1,13 @@
+{
+  "debug.javascript.defaultRuntimeExecutable": {
+    "pwa-node": "/Users/yoshimasa.hamada/.local/share/mise/shims/node"
+  },
+  "shellcheck.executablePath": "/Users/yoshimasa.hamada/.local/share/mise/shims/shellcheck",
+  "buf.binaryPath": "/Users/yoshimasa.hamada/.local/share/mise/installs/buf/1.54.0/buf/bin/buf",
+  "go.goroot": "/Users/yoshimasa.hamada/.local/share/mise/installs/go/1.24.4",
+  "go.alternateTools": {
+    "go": "/Users/yoshimasa.hamada/.local/share/mise/shims/go",
+    "dlv": "/Users/yoshimasa.hamada/.local/share/mise/shims/dlv",
+    "gopls": "/Users/yoshimasa.hamada/.local/share/mise/shims/gopls"
+  }
+}

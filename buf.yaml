@@ -1,0 +1,16 @@
+version: v2
+modules:
+  - path: proto/scaffold
+    name: buf.build/pannpers/scaffold
+deps:
+  - buf.build/googleapis/googleapis
+  - buf.build/bufbuild/protovalidate
+lint:
+  use:
+    - STANDARD
+    - COMMENTS
+  except:
+    - PACKAGE_SAME_GO_PACKAGE
+breaking:
+  use:
+    - FILE

@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package pannpers.entity.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "gen/go/pannpers/entity/v1";
+
+// User entity
+message User {
+  // User ID is required
+  UserId id = 1 [(buf.validate.field).required = true];
+  // User name is required
+  UserName name = 2 [(buf.validate.field).required = true];
+  // User email is required
+  UserEmail email = 3 [(buf.validate.field).required = true];
+}
+
+// User ID
+message UserId {
+  // User ID must be a non-empty string with valid UUID format
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// User name
+message UserName {
+  // User name must be between 1 and 100 characters
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 100
+  }];
+}
+
+// User email
+message UserEmail {
+  // User email must be a valid email format
+  string value = 1 [(buf.validate.field).string.email = true];
+}

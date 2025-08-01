@@ -1,0 +1,38 @@
+name: '🔧 Enhancement'
+description: 'Propose improvements for tooling, documentation, CI/CD, or workflow'
+title: 'Improve: [Short description of the enhancement]'
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggest improvements to make the protobuf workflow better!
+  - type: textarea
+    id: improvement-and-motivation
+    attributes:
+      label: 'Improvement and Motivation'
+      description: 'Describe the area you want to improve and explain why this change is valuable.'
+      placeholder: |
+        **Area of Improvement:**
+        The BSR push workflow could be optimized with better caching or validation steps.
+
+        **Motivation / Benefit:**
+        Optimizing the BSR integration will improve development velocity, reduce CI times, and provide better developer experience.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: 'Proposed Solution / Implementation Ideas'
+      description: 'Outline your proposed solution or ideas on how to implement the improvement.'
+      placeholder: |
+        - **For BSR Integration:** Add conditional buf push to only run when .proto files have changed
+        - **For Documentation:** Add examples of consuming generated code from BSR in a docs/ directory
+        - **For CI:** Cache buf tools and optimize BSR validation steps in GitHub Actions
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 'Additional Context'
+      description: 'Add any other context, such as links to relevant documentation or screenshots.'

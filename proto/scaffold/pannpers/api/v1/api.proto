@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+// Package api provides gRPC service definitions for the Pannpers application API.
+//
+// This package contains service interfaces that implement standard CRUD operations
+// for managing business entities (User, Post) through type-safe, validated RPC calls.
+// All services follow Google API Improvement Proposals (AIP) for consistent design.
+//
+// Key features:
+// - Resource-oriented design with standard methods (Get, Create, Update, Delete, List)
+// - Type-safe parameters using entity value objects instead of primitive types
+// - Comprehensive input validation using protovalidate constraints
+// - Consistent error handling and status codes following gRPC conventions
+// - Connect RPC compatibility for modern web and mobile applications
+//
+// Services:
+// - UserService: User account management and profile operations
+// - PostService: Content creation, retrieval, and management operations
+//
+// All request/response messages use custom types rather than google.protobuf.Empty
+// to maintain API evolution compatibility and enable proper validation.
+package pannpers.api.v1;

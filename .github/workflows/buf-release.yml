@@ -1,0 +1,25 @@
+name: Buf BSR Push on Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  buf-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup buf CLI
+        uses: bufbuild/buf-action@v1
+        with:
+          token: ${{ secrets.BUF_TOKEN }}
+          setup_only: true
+
+      - name: Push to BSR with release label
+        run: buf push --error-format github-actions --create --git-metadata --label "${{ github.event.release.tag_name }}"

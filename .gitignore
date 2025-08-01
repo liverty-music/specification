@@ -1,0 +1,11 @@
+ # Mise local configuration
+ .mise/
+
+ # Generated code
+ /gen/
+
+ # macOS specific
+ .DS_Store
+
+# Claude settings
+.claude/settings.local.json
