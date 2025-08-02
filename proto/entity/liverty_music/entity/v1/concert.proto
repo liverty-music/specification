@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/artist.proto";
+
+// Concert represents a music concert event where artists perform for fans.
+// Concert represents a live music performance that passionate music fans want to discover and attend.
+// This is the central entity in Liverty Music's notification system, connecting artists with their dedicated followers
+// who attend 10+ concerts yearly and need timely alerts about performances, ticket sales, and event updates.
+message Concert {
+  // Concert identifier that uniquely distinguishes this performance from all other concerts in the system.
+  // Used by fans to reference specific shows when managing their notifications and attendance plans.
+  ConcertId id = 1 [(buf.validate.field).required = true];
+  // Concert title as it appears on tickets and promotional materials.
+  // This is how fans will recognize and search for the specific performance they want to attend.
+  ConcertTitle title = 2 [(buf.validate.field).required = true];
+  // Exact date and time when the concert begins, including timezone information.
+  // Critical for fans to plan attendance and for the notification system to send timely alerts.
+  google.protobuf.Timestamp start_time = 3 [(buf.validate.field).required = true];
+  // Scheduled end time of the concert, helping fans plan their evening and understand
+  // the full concert experience duration, particularly useful for festivals or multi-act shows.
+  optional google.protobuf.Timestamp end_time = 4;
+  // Concert venue where fans will gather to experience the live performance.
+  // Essential for fans to plan travel, accommodation, and logistics for concert attendance.
+  VenueId venue_id = 5 [(buf.validate.field).required = true];
+  // Main artist that fans are following and want to see perform live.
+  // This drives the core notification logic when followed artists announce new concerts.
+  ArtistId artist_id = 6 [(buf.validate.field).required = true];
+  // Supporting artists who will also perform at this concert.
+  // Fans may discover new artists to follow or receive notifications for artists they already follow.
+  repeated ArtistId supporting_artist_ids = 7;
+  // Current state of ticket availability and sales phase.
+  // Determines which notifications fans receive about ticket opportunities and sale deadlines.
+  TicketSaleStatus ticket_sale_status = 8 [(buf.validate.field).required = true];
+  // Ticket pricing details that help fans budget for concert attendance.
+  // Enables price-based notifications and helps users make informed purchasing decisions.
+  optional TicketPrice ticket_price = 9;
+  // Additional concert information that enriches the fan experience.
+  // Includes special performance details, set list hints, or unique aspects that make this show special.
+  optional ConcertDescription description = 10;
+  // Official website URL where fans can find authoritative concert information and purchase tickets.
+  // Provides a trusted source for the latest updates about the performance and ticketing details.
+  optional ConcertUrl official_url = 11;
+}
+
+// Concert identifier that ensures each live music performance can be uniquely referenced.
+// This unique identifier allows fans to bookmark specific concerts and enables precise notification delivery.
+message ConcertId {
+  // Unique identifier value that distinguishes this concert from all others in the platform.
+  // Uses UUID format to ensure global uniqueness across all venues and time periods.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// Concert title as displayed on tickets and promotional materials
+message ConcertTitle {
+  // Concert title must be between 1 and 200 characters
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
+// Venue ID identifies where the concert takes place
+message VenueId {
+  // Venue ID must be a valid UUID format
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// Concert description provides additional details about the performance
+message ConcertDescription {
+  // Concert description must be between 1 and 2000 characters
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 2000
+  }];
+}
+
+// Concert URL links to the official website for tickets and information
+message ConcertUrl {
+  // Concert URL must be a valid URI format
+  string value = 1 [(buf.validate.field).string.uri = true];
+}
+
+// Ticket price information helps fans budget for concert attendance
+message TicketPrice {
+  // Price amount in smallest currency unit (e.g., cents for USD, yen for JPY)
+  int64 amount = 1 [(buf.validate.field).int64.gte = 0];
+  // ISO 4217 currency code (e.g., "USD", "JPY", "EUR")
+  string currency_code = 2 [(buf.validate.field).string = {
+    len: 3
+    pattern: "^[A-Z]{3}$"
+  }];
+}
+
+// Ticket sale status enumeration for concert availability
+enum TicketSaleStatus {
+  // Ticket sale status is unspecified
+  TICKET_SALE_STATUS_UNSPECIFIED = 0;
+  // Tickets are not yet available for sale
+  TICKET_SALE_STATUS_NOT_AVAILABLE = 1;
+  // Tickets are currently on sale
+  TICKET_SALE_STATUS_ON_SALE = 2;
+  // Tickets are sold out
+  TICKET_SALE_STATUS_SOLD_OUT = 3;
+  // Ticket sales have ended
+  TICKET_SALE_STATUS_SALE_ENDED = 4;
+  // Concert has been cancelled
+  TICKET_SALE_STATUS_CANCELLED = 5;
+}
