@@ -147,7 +147,7 @@ When designing entities and RPC interfaces, follow these established standards:
 - **Composition**: Reference other entities by ID, not nested objects
 - **Versioning**: Plan for schema evolution with proper field numbering
 - **Documentation**: Over-document with complete sentences using `//` comments
-- **Design Foundation**: Always reference `docs/product-design.md` when designing entities and writing documentation comments to ensure alignment with Liverty Music's core concept of personalized concert notifications for passionate music fans
+- **Design Foundation**: Always reference `docs/product-design.md` when designing entities and writing documentation comments and also creating issue tickets to ensure alignment with Liverty Music's core concept of personalized concert notifications for passionate music fans
 
 ### Documentation Standards (Buf BSR Documentation)
 Follow [Buf Documentation Guidelines](https://buf.build/docs/bsr/documentation) for comprehensive protobuf documentation:

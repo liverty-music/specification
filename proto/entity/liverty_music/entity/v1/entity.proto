@@ -1,14 +1,14 @@
 syntax = "proto3";
 
-// Package entity provides core business entity definitions and value objects for the Pannpers application.
+// Package entity provides core business entity definitions for the Liverty Music application.
 //
 // This package contains fundamental data structures that represent the primary business entities
-// (User, Post) and their associated value objects (UserId, UserName, UserEmail, PostId, PostTitle).
+// (User, Live, Concert, Artist) and their associated types for identification and validation.
 // These entities serve as the foundation for all API operations and data persistence layers.
 //
 // Key characteristics:
 // - All entities use UUID-based identifiers for uniqueness and scalability
-// - Value objects encapsulate domain validation rules using protovalidate
+// - Domain types encapsulate validation rules using protovalidate
 // - Entities reference other entities by ID rather than nesting to maintain loose coupling
 // - All fields include comprehensive validation constraints for data integrity
 //
