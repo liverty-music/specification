@@ -10,10 +10,9 @@ managed:
 # 'clean', when set to true, deletes the directories, zip files, and/or jar files specified in the
 # `out` field for all plugins before running code generation.
 clean: true
-# managed:
-#   enabled: true
 # 'plugins' is a list of plugin configurations used for buf generate.
 plugins:
+  # Go plugins
   - remote: buf.build/protocolbuffers/go
     out: gen/go
     opt: paths=source_relative
@@ -23,6 +22,8 @@ plugins:
   - remote: buf.build/bufbuild/validate-go
     out: gen/go
     opt: paths=source_relative
+
+  # TypeScript plugins
   - remote: buf.build/bufbuild/es
     out: gen/typescript
     opt: target=ts

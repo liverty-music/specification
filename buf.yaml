@@ -1,9 +1,7 @@
 version: v2
 modules:
-  - path: proto/entity
-    name: buf.build/liverty-music/entity
-  - path: proto/rpc
-    name: buf.build/liverty-music/rpc
+  - path: proto
+    name: buf.build/liverty-music/schema
 deps:
   - buf.build/googleapis/googleapis
   - buf.build/bufbuild/protovalidate
