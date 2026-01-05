@@ -1,43 +1,8 @@
-# CLAUDE.md
+# Protocol Buffers Guide
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This guide provides detailed reference material for working with Protocol Buffers and the Buf Schema Registry (BSR) in this repository.
 
-## Essential Commands
-
-### Development Setup
-```bash
-mise install          # Install dependencies (buf, pre-commit)
-pre-commit install     # Install commit hooks
-pre-commit install --hook-type pre-push  # Install push hooks
-```
-
-### Code Generation (BSR)
-```bash
-buf push               # Push schema to BSR which generates code remotely
-```
-
-### Validation and Formatting
-```bash
-buf lint               # Lint Protocol Buffers files
-buf format -w          # Format protobuf files in place
-buf breaking --against '.git#branch=main'  # Check for breaking changes
-```
-
-### Verification
-```bash
-buf --version          # Verify buf is available
-```
-
-## Architecture Overview
-
-This is a Protocol Buffers schema repository that uses Buf Schema Registry (BSR) for remote code generation from protobuf definitions. The architecture follows a clear separation between entity definitions and RPC service definitions.
-
-### Key Structure
-- **Entity Layer**: Core business entities defined in `liverty_music/entity/v1/` (e.g., User, Live)
-- **RPC Layer**: Service definitions in `liverty_music/rpc/v1/` that use entity types
-- **Generated Code**: Available from BSR at `buf.build/liverty-music/entity` and `buf.build/liverty-music/rpc` (no local generation)
-
-### BSR Code Generation Flow
+## BSR Code Generation Flow
 The repository uses Buf Schema Registry (BSR) with remote code generation:
 - **Push to BSR**: `buf push` uploads schemas to `buf.build/liverty-music/entity` and `buf.build/liverty-music/rpc`
 - **Remote Generation**: BSR generates code using plugins defined in `buf.gen.yaml`
@@ -49,19 +14,14 @@ The repository uses Buf Schema Registry (BSR) with remote code generation:
   - `buf.build/bufbuild/connect-es` - Connect RPC TypeScript bindings
   - `buf.build/bufbuild/validate-go` - Go validation code generation
 
-### Proto Package Structure
-- `liverty_music.entity.v1` - Core entities (User, Live, value objects)
-- `liverty_music.rpc.v1` - Service definitions that reference entities
-- Uses proper import paths and Go package declarations
-
-### Automated Workflow
+## Automated Workflow
 The repository uses multiple automation layers for quality control and deployment:
 
-#### Pre-commit Hooks
+### Pre-commit Hooks
 - **Commit hooks**: buf lint, format, breaking change detection, prettier
 - **Push hooks**: Push schemas to BSR for remote code generation
 
-#### GitHub Actions
+### GitHub Actions
 - **PR Workflow** (`.github/workflows/buf-pr-checks.yml`): Runs on all PR events including label changes
   - Buf lint validation
   - Format checking with `buf format --diff --exit-code`
@@ -71,15 +31,7 @@ The repository uses multiple automation layers for quality control and deploymen
   - Automatic `buf push` with release tag as BSR label
   - Requires `BUF_TOKEN` secret for BSR authentication
 
-### Key Files
-- `buf.yaml` - Buf v2 configuration with googleapis dependencies
-- `buf.gen.yaml` - Code generation plugin configuration for BSR
-- `.pre-commit-config.yaml` - Hook definitions for quality gates
-- `.mise/config.toml` - Tool version management
-- `.github/workflows/buf-pr-checks.yml` - GitHub Actions for PR validation
-- `.github/workflows/buf-release.yml` - GitHub Actions for release automation
-
-### Using Generated Code
+## Using Generated Code
 Consumers can access generated code from BSR:
 
 **Go:**
@@ -184,18 +136,22 @@ Follow [Buf Documentation Guidelines](https://buf.build/docs/bsr/documentation) 
 #### Service Documentation
 - **Service Overview**: Document the service's purpose and capabilities
 - **RPC Methods**: Explain each method's functionality, parameters, and return values
-- **Error Conditions**: Document expected error scenarios and status codes
+- **Error Conditions**: List expected errors using `Possible errors:` followed by a bulleted list of status codes and descriptions
 - **Examples**:
   ```protobuf
   // UserService provides operations for managing user accounts.
   // This service handles user creation, retrieval, and basic profile management.
   service UserService {
     // GetUser retrieves a single user by their unique identifier.
-    // Returns NOT_FOUND if the user does not exist.
+    //
+    // Possible errors:
+    // - NOT_FOUND: The user does not exist.
     rpc GetUser(GetUserRequest) returns (GetUserResponse);
 
     // CreateUser creates a new user account with the provided information.
-    // Returns ALREADY_EXISTS if a user with the same email already exists.
+    //
+    // Possible errors:
+    // - ALREADY_EXISTS: A user with the same email already exists.
     rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   }
   ```
@@ -284,25 +240,4 @@ Follow [Buf Documentation Guidelines](https://buf.build/docs/bsr/documentation) 
 - Use `optional` fields for new additions to existing messages
 - Follow semantic versioning for major breaking changes
 
-## Development Workflow Notes
 
-1. Proto files should be modified in the `proto/entity/` and `proto/rpc/` directories
-2. Generated code is available from BSR, not stored locally
-3. Breaking changes are checked against the main branch
-4. All protobuf files are automatically formatted and linted on commit
-5. Schemas are pushed to BSR automatically on push for remote code generation
-6. Consumers access generated code via Go modules and npm packages from BSR
-
-## CI/CD Setup Requirements
-
-### GitHub Repository Secrets
-To enable automatic BSR publishing on releases, configure the following secret:
-- **`BUF_TOKEN`**: BSR authentication token for pushing schemas
-  - Generate at: https://buf.build/settings/user (User API Tokens)
-  - Required permissions: `repository:write` for `buf.build/liverty-music/entity` and `buf.build/liverty-music/rpc`
-
-### Release Process
-1. Create a GitHub release with semantic version tag (e.g., `v1.0.0`)
-2. GitHub Actions automatically runs `buf push --label 1.0.0` to BSR
-3. BSR generates code with the release label for consumer access
-4. Consumers can reference specific versions: `@buf/liverty-music_entity.bufbuild_es@1.0.0`
