@@ -55,3 +55,12 @@ buf breaking --against '.git#branch=main'  # Check for breaking changes
 2.  **Resource Handling**: Follow Google AIP patterns (Get, List, Create, Update, Delete).
 3.  **Documentation**: rigorous commenting required.
 
+
+## Project Structure (Poly-repo)
+This project adopts a poly-repo structure.
+- **Specification**: `https://github.com/liverty-music/specification`
+    - Manages SDD documentation via OpenSpec and orchestration.
+- **Backend**: `https://github.com/liverty-music/backend`
+    - Go backend application.
+- **Cloud Provisioning**: `https://github.com/liverty-music/cloud-provisioning`
+    - Infrastructure configuration management (GCP, GitHub, etc.).
