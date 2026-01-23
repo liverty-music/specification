@@ -4,33 +4,36 @@ package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
 
-// User entity
+// User represents a registered person on the Liverty Music platform.
+// Users are notified of upcoming concerts based on their following and favorite artists.
 message User {
-  // User ID is required
+  // The unique identifier for the user.
   UserId id = 1 [(buf.validate.field).required = true];
-  // User name is required
+
+  // The personal name or pseudonym the user chooses to display.
   UserName name = 2 [(buf.validate.field).required = true];
-  // User email is required
+
+  // The primary email address used for account identity and notifications.
   UserEmail email = 3 [(buf.validate.field).required = true];
 }
 
-// User ID
+// UserId is a globally unique identifier for a platform user.
 message UserId {
-  // User ID must be a non-empty string with valid UUID format
+  // A UUID string representing the user's unique identity.
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
-// User name
+// UserName represents the chosen display name of a user.
 message UserName {
-  // User name must be between 1 and 100 characters
+  // The name string, restricted to between 1 and 100 characters.
   string value = 1 [(buf.validate.field).string = {
     min_len: 1
     max_len: 100
   }];
 }
 
-// User email
+// UserEmail represents a validated email address for communications.
 message UserEmail {
-  // User email must be a valid email format
+  // The email address string, validated against standard email formats.
   string value = 1 [(buf.validate.field).string.email = true];
 }
