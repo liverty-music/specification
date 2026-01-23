@@ -4,136 +4,66 @@ package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
 
-// Artist represents a musical performer or band that creates live music experiences for fans.
-// This is the central entity that passionate music fans follow to stay informed about concerts,
-// enabling personalized notifications for users who attend 10+ concerts yearly and want timely alerts.
+// Artist represents a musical performer or band.
+// This is a central entity that fans follow to stay informed about upcoming
+// concerts and official releases.
 message Artist {
-  // Artist identifier that uniquely distinguishes each musical performer in the platform.
-  // Used by passionate music fans to follow their favorite artists and receive concert notifications.
+  // The unique identifier for the artist.
   ArtistId id = 1 [(buf.validate.field).required = true];
-  // Artist name as it appears on concert posters, tickets, and promotional materials.
-  // This is how fans recognize and search for their favorite musical performers.
+
+  // The professional name of the artist or ensemble.
   ArtistName name = 2 [(buf.validate.field).required = true];
-  // Artist background information that helps fans learn about the performer.
-  // Includes musical style, career highlights, and details that enhance the fan experience.
-  optional ArtistDescription description = 3;
-  // Musical genres that categorize the artist's style and sound.
-  // Helps fans discover new artists with similar musical preferences and enables genre-based filtering.
-  repeated MusicGenre genres = 4;
-  // Official artist website where fans can find authoritative information about upcoming tours and releases.
-  // Provides a trusted source for the latest artist news, tour dates, and official merchandise.
-  optional ArtistUrl official_url = 5;
-  // Social media platforms where fans can follow the artist for real-time updates and engagement.
-  // Enables fans to stay connected with their favorite artists across multiple channels and discover tour announcements.
-  repeated SocialMediaLink social_media_links = 6;
+
+  // A collection of official media channels such as websites and social media profiles.
+  repeated Media media = 3;
 }
 
-// Artist identifier that ensures each musical performer can be uniquely referenced across the platform.
-// This unique identifier enables fans to consistently follow specific artists and receive targeted notifications.
+// ArtistId is a globally unique identifier for an artist.
 message ArtistId {
-  // Unique identifier value that distinguishes this artist from all others in the music catalog.
-  // Uses UUID format to ensure global uniqueness across all musical performers and time periods.
+  // A UUID string mapping to the artist's unique identity.
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
-// Artist name as displayed to fans and on promotional materials
+// ArtistName represents the public display name of an artist.
 message ArtistName {
-  // Artist name must be between 1 and 100 characters
-  string value = 1 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 100
-  }];
+  // The name string, required to be at least one character.
+  string value = 1 [(buf.validate.field).string.min_len = 1];
 }
 
-// Artist description provides background information about the performer
-message ArtistDescription {
-  // Artist description must be between 1 and 1000 characters
-  string value = 1 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 1000
-  }];
+// Media represents an artist's official online presence.
+// This includes links to official websites or social media platforms used for
+// broadcasting concert news and engaging with fans.
+message Media {
+  // The unique identifier for this media record.
+  MediaId id = 1 [(buf.validate.field).required = true];
+
+  // The platform type, such as official website or social media service.
+  Type type = 2 [(buf.validate.field).required = true];
+
+  // The fully qualified URL to the media resource.
+  MediaUrl url = 3 [(buf.validate.field).required = true];
+
+  // Type of media channel supported by the platform.
+  enum Type {
+    // Unspecified media type.
+    TYPE_UNSPECIFIED = 0;
+    // Official artist website.
+    TYPE_WEB = 1;
+    // Twitter (now X) account.
+    TYPE_TWITTER = 2;
+    // Instagram account.
+    TYPE_INSTAGRAM = 3;
+  }
 }
 
-// Artist URL links to the official website for news and tour dates
-message ArtistUrl {
-  // Artist URL must be a valid URI format
+// MediaId is a unique identifier for a media link.
+message MediaId {
+  // A UUID string representing the unique identity of the media record.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// MediaUrl represents a verified web address for an artist's media channel.
+message MediaUrl {
+  // The URI value of the media channel.
   string value = 1 [(buf.validate.field).string.uri = true];
-}
-
-// Social media link for tracking artist information across platforms
-message SocialMediaLink {
-  // Type of social media platform
-  SocialMediaPlatform platform = 1 [(buf.validate.field).required = true];
-  // URL to the artist's profile on the platform
-  SocialMediaUrl url = 2 [(buf.validate.field).required = true];
-}
-
-// Social media URL links to the artist's profile on the platform
-message SocialMediaUrl {
-  // Social media URL must be a valid URI format
-  string value = 1 [(buf.validate.field).string.uri = true];
-}
-
-// Music genre classification for artists
-enum MusicGenre {
-  // Music genre is unspecified
-  MUSIC_GENRE_UNSPECIFIED = 0;
-  // Rock music genre
-  MUSIC_GENRE_ROCK = 1;
-  // Pop music genre
-  MUSIC_GENRE_POP = 2;
-  // Hip hop and rap music genre
-  MUSIC_GENRE_HIP_HOP = 3;
-  // Jazz music genre
-  MUSIC_GENRE_JAZZ = 4;
-  // Classical music genre
-  MUSIC_GENRE_CLASSICAL = 5;
-  // Electronic and dance music genre
-  MUSIC_GENRE_ELECTRONIC = 6;
-  // Country music genre
-  MUSIC_GENRE_COUNTRY = 7;
-  // R&B and soul music genre
-  MUSIC_GENRE_RNB = 8;
-  // Folk music genre
-  MUSIC_GENRE_FOLK = 9;
-  // Reggae music genre
-  MUSIC_GENRE_REGGAE = 10;
-  // Blues music genre
-  MUSIC_GENRE_BLUES = 11;
-  // Punk music genre
-  MUSIC_GENRE_PUNK = 12;
-  // Metal music genre
-  MUSIC_GENRE_METAL = 13;
-  // Alternative music genre
-  MUSIC_GENRE_ALTERNATIVE = 14;
-  // Indie music genre
-  MUSIC_GENRE_INDIE = 15;
-  // J-Pop (Japanese pop) music genre
-  MUSIC_GENRE_J_POP = 16;
-  // J-Rock (Japanese rock) music genre
-  MUSIC_GENRE_J_ROCK = 17;
-}
-
-// Social media platform enumeration for artist links
-enum SocialMediaPlatform {
-  // Social media platform is unspecified
-  SOCIAL_MEDIA_PLATFORM_UNSPECIFIED = 0;
-  // Twitter/X platform
-  SOCIAL_MEDIA_PLATFORM_TWITTER = 1;
-  // Instagram platform
-  SOCIAL_MEDIA_PLATFORM_INSTAGRAM = 2;
-  // Facebook platform
-  SOCIAL_MEDIA_PLATFORM_FACEBOOK = 3;
-  // YouTube platform
-  SOCIAL_MEDIA_PLATFORM_YOUTUBE = 4;
-  // TikTok platform
-  SOCIAL_MEDIA_PLATFORM_TIKTOK = 5;
-  // Spotify platform
-  SOCIAL_MEDIA_PLATFORM_SPOTIFY = 6;
-  // Apple Music platform
-  SOCIAL_MEDIA_PLATFORM_APPLE_MUSIC = 7;
-  // SoundCloud platform
-  SOCIAL_MEDIA_PLATFORM_SOUNDCLOUD = 8;
-  // Bandcamp platform
-  SOCIAL_MEDIA_PLATFORM_BANDCAMP = 9;
 }

@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package liverty_music.rpc.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/concert.proto";
+
+// ConcertService provides operations for managing the catalog of musical concerts
+// and artist information. It acts as the primary data source for upcoming
+// live music events.
+service ConcertService {
+  // List retrieves a collection of concert events, filtered by the performing artist.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The request is missing a required field or contains invalid data.
+  // - NOT_FOUND: No concerts were found for the specified artist.
+  rpc List(ListRequest) returns (ListResponse);
+
+  // ListArtists provides a complete registry of all artists currently in the catalog.
+  //
+  // Possible errors:
+  // - INTERNAL: An unexpected server-side error occurred.
+  rpc ListArtists(ListArtistsRequest) returns (ListArtistsResponse);
+
+  // CreateArtist registers a new musical performer or band in the system.
+  //
+  // Possible errors:
+  // - ALREADY_EXISTS: An artist with the specified name is already registered.
+  // - INVALID_ARGUMENT: The provided artist name or media list is invalid.
+  rpc CreateArtist(CreateArtistRequest) returns (CreateArtistResponse);
+
+  // CreateArtistMedia associates a new official media channel or social profile with an artist.
+  //
+  // Possible errors:
+  // - NOT_FOUND: The specified artist ID does not exist in the system.
+  // - INVALID_ARGUMENT: The media URL or type is malformed.
+  rpc CreateArtistMedia(CreateArtistMediaRequest) returns (CreateArtistMediaResponse);
+
+  // DeleteArtistMedia removes an existing media channel association from an artist.
+  //
+  // Possible errors:
+  // - NOT_FOUND: The specified media identifier does not exist.
+  rpc DeleteArtistMedia(DeleteArtistMediaRequest) returns (DeleteArtistMediaResponse);
+}
+
+// ListRequest is the request for retrieving concerts associated with a specific artist.
+message ListRequest {
+  // Required. The unique identifier of the artist whose concerts are to be listed.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+}
+
+// ListResponse contains the collection of concerts matching the ListRequest.
+message ListResponse {
+  // The collection of concert events found.
+  repeated entity.v1.Concert concerts = 1;
+}
+
+// ListArtistsRequest is the request for retrieving all registered artists.
+message ListArtistsRequest {}
+
+// ListArtistsResponse contains the collection of all artists in the system.
+message ListArtistsResponse {
+  // The collection of all artist entities.
+  repeated entity.v1.Artist artists = 1;
+}
+
+// CreateArtistRequest provides the necessary details to register a new artist.
+message CreateArtistRequest {
+  // Required. The professional name of the artist to be registered.
+  entity.v1.ArtistName name = 1 [(buf.validate.field).required = true];
+
+  // Optional. Initial media channels to be associated with this artist.
+  repeated entity.v1.Media media = 2;
+}
+
+// CreateArtistResponse returns the artist record as successfully created.
+message CreateArtistResponse {
+  // The newly created artist entity, including its assigned identifier.
+  entity.v1.Artist artist = 1;
+}
+
+// CreateArtistMediaRequest specifies the media details to be added to an artist record.
+message CreateArtistMediaRequest {
+  // Required. The unique identifier of the artist.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The platform type of the new media association.
+  entity.v1.Media.Type type = 2 [(buf.validate.field).required = true];
+
+  // Required. The verified URL for the new media channel.
+  entity.v1.MediaUrl url = 3 [(buf.validate.field).required = true];
+}
+
+// CreateArtistMediaResponse is the response following a successful media creation.
+message CreateArtistMediaResponse {}
+
+// DeleteArtistMediaRequest specifies the unique identifier of the media link to be removed.
+message DeleteArtistMediaRequest {
+  // Required. The unique identifier of the media record to delete.
+  entity.v1.MediaId media_id = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteArtistMediaResponse is the response following a successful media deletion.
+message DeleteArtistMediaResponse {}
