@@ -3,8 +3,8 @@ syntax = "proto3";
 package liverty_music.rpc.v1;
 
 import "buf/validate/validate.proto";
-import "liverty_music/entity/v1/concert.proto";
 import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/concert.proto";
 
 // ConcertService provides operations for managing the catalog of musical concerts
 // and artist information. It acts as the primary data source for upcoming
@@ -103,4 +103,3 @@ message DeleteArtistMediaRequest {
 
 // DeleteArtistMediaResponse is the response following a successful media deletion.
 message DeleteArtistMediaResponse {}
-
