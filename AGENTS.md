@@ -50,6 +50,13 @@ buf format -w          # Format protobuf files in place
 buf breaking --against '.git#branch=main'  # Check for breaking changes
 ```
 
+#### Handling Intentional Breaking Changes
+
+If a breaking change is intentional (e.g., initial API definition or major version update):
+
+1.  Create the Pull Request.
+2.  Add the `buf skip breaking` label to the PR to bypass the breaking change check.
+
 ## Architecture Overview
 
 - **Entity Layer**: Core business entities in `liverty_music/entity/v1/`
