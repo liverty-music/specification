@@ -5,7 +5,6 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/type/date.proto";
 import "google/type/timeofday.proto";
-
 import "liverty_music/entity/v1/artist.proto";
 import "liverty_music/entity/v1/venue.proto";
 
@@ -46,4 +45,3 @@ message ConcertTitle {
   // The title text, required to be at least one character in length.
   string value = 1 [(buf.validate.field).string.min_len = 1];
 }
-
