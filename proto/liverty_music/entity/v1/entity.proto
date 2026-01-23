@@ -1,18 +1,15 @@
 syntax = "proto3";
 
-// Package entity provides core business entity definitions for the Liverty Music application.
+package liverty_music.entity.v1;
+
+// Package liverty_music.entity.v1 provides core business entity definitions for the Liverty Music application.
 //
 // This package contains fundamental data structures that represent the primary business entities
-// (User, Live, Concert, Artist) and their associated types for identification and validation.
+// (User, Concert, Artist, Venue) and their associated types for identification and validation.
 // These entities serve as the foundation for all API operations and data persistence layers.
 //
 // Key characteristics:
 // - All entities use UUID-based identifiers for uniqueness and scalability
-// - Domain types encapsulate validation rules using protovalidate
-// - Entities reference other entities by ID rather than nesting to maintain loose coupling
+// - Domain-specific types encapsulate validation rules using protovalidate
+// - Entities reference other entities by identifier to maintain loose coupling
 // - All fields include comprehensive validation constraints for data integrity
-//
-// Usage:
-// These entity definitions are imported by API service definitions and used throughout
-// the application for type-safe data handling and automatic validation.
-package liverty_music.entity.v1;

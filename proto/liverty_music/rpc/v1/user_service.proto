@@ -5,37 +5,43 @@ package liverty_music.rpc.v1;
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/user.proto";
 
-option go_package = "gen/go/liverty_music/rpc/v1;rpc";
-
-// User service provides operations for managing users
+// UserService provides operations for managing user accounts and profiles.
 service UserService {
-  // GetUser retrieves a user by ID
+  // GetUser retrieves the profile information for a specific user.
+  //
+  // Possible errors:
+  // - NOT_FOUND: No user was found with the specified identifier.
+  // - INVALID_ARGUMENT: The provided user identifier is malformed.
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
 
-  // CreateUser creates a new user
+  // CreateUser registers a new user profile in the system.
+  //
+  // Possible errors:
+  // - ALREADY_EXISTS: A user with the same unique identifier or email already exists.
+  // - INVALID_ARGUMENT: The provided user data is missing required fields or is malformed.
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
 }
 
-// GetUserRequest is the request message for GetUser
+// GetUserRequest is the request for retrieving a user's profile information.
 message GetUserRequest {
-  // The unique identifier of the user to retrieve (required)
+  // Required. The unique identifier of the user to be retrieved.
   entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
 }
 
-// GetUserResponse is the response message for GetUser
+// GetUserResponse contains the profile information of the requested user.
 message GetUserResponse {
-  // The user resource (required)
+  // The user entity representing the requested profile.
   entity.v1.User user = 1 [(buf.validate.field).required = true];
 }
 
-// CreateUserRequest is the request message for CreateUser
+// CreateUserRequest provides the necessary details to register a new user profile.
 message CreateUserRequest {
-  // The user resource to create (required and must be valid)
+  // Required. The user profile data to be created.
   entity.v1.User user = 1 [(buf.validate.field).required = true];
 }
 
-// CreateUserResponse is the response message for CreateUser
+// CreateUserResponse returns the user profile as successfully created.
 message CreateUserResponse {
-  // The created user resource (required)
+  // The newly created user entity, including its assigned identifier.
   entity.v1.User user = 1 [(buf.validate.field).required = true];
 }
