@@ -31,7 +31,4 @@ jobs:
           # Compare against the pull request's base branch in Git.
           # This is more robust than comparing against the BSR, as it avoids
           # issues with synchronization delays between the main branch and the BSR.
-          #
-          # If the 'breaking-change-allowed' label is present, we skip the breaking change check
-          # by not providing a 'breaking_against' reference.
-          breaking_against: "${{ !contains(github.event.pull_request.labels.*.name, 'breaking-change-allowed') && format('https://github.com/{0}.git#branch={1}', github.repository, github.base_ref) || '' }}"
+          breaking_against: "https://github.com/${{ github.repository }}.git#branch=${{ github.base_ref }}"
