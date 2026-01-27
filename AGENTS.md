@@ -28,10 +28,9 @@ This is a Protocol Buffers schema repository using Buf Schema Registry (BSR).
 
 Before writing any code or configuration, you MUST:
 
-1.  **Check `docs/`**: Run `list_dir docs` to see currently available guides.
-2.  **Read Relevant Guides**:
-    - **Protobuf/gRPC**: If touching `.proto` files, YOU MUST read `docs/protobuf-guide.md`.
-    - **Domain/Features**: If implementing business logic or entities, YOU MUST read `docs/product-design.md`.
+1.  **Read Relevant Skills**:
+    - **Protobuf/gRPC**: If touching `.proto` files, read the skills in `.agent/skills/`.
+    - **Domain/Features**: If implementing business logic or entities, read `docs/product-design.md`.
 
 ## Essential Commands
 
@@ -67,13 +66,13 @@ If a breaking change is intentional (e.g., initial API definition or major versi
 
 - `buf.yaml`: Buf v2 configuration
 - `buf.gen.yaml`: BSR code generation plugins
-- `docs/protobuf-guide.md`: **Detailed Protobuf & BSR Guide** (READ THIS for details)
+- `.agent/skills/`: Protobuf skills (best practices, workflow)
 - `docs/product-design.md`: Product domain concepts
 
 ## Core Design Rules
 
 > [!IMPORTANT]
-> See `docs/protobuf-guide.md` for full guidelines.
+> See skills in `.agent/skills/` for full guidelines.
 
 1.  **No Primitives for Domain Types**: Use `UserId` (message), not `string`.
 2.  **Resource Handling**: Follow Google AIP patterns (Get, List, Create, Update, Delete).

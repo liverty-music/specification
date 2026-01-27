@@ -3,7 +3,6 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
-import "google/type/latlng.proto";
 
 // Venue represents a physical location where concert events are hosted.
 // It contains geographical and descriptive information to help fans find the event.
@@ -13,9 +12,6 @@ message Venue {
 
   // The official name of the venue.
   VenueName name = 2 [(buf.validate.field).required = true];
-
-  // The geographical location of the venue.
-  VenueLocation location = 3;
 }
 
 // VenueId is a globally unique identifier for a concert venue.
@@ -28,10 +24,4 @@ message VenueId {
 message VenueName {
   // The name string, required to be at least one character.
   string value = 1 [(buf.validate.field).string.min_len = 1];
-}
-
-// VenueLocation represents the geographical coordinates of a venue.
-message VenueLocation {
-  // The latitude and longitude coordinates.
-  google.type.LatLng value = 1 [(buf.validate.field).required = true];
 }
