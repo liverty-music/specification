@@ -1,0 +1,7 @@
+- [ ] Create `src/components/gcp/database.ts` defining `CloudSqlInstance` component.
+- [ ] Configure Private Service Connect (PSC) settings.
+- [ ] Configure Cloud SQL instance (Enterprise, HA, PG18).
+- [ ] Define default database `liverty-music`.
+- [ ] Configure IAM authentication policies.
+- [ ] Export instance Connection Name and PSC Address.
+- [ ] Integrate component into `src/index.ts`.
