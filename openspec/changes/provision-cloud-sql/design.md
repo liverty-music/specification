@@ -1,43 +1,78 @@
-# Design: Cloud SQL Provisioning
+# Design: GCP Infrastructure Refactoring
 
 ## Architecture
 
-We will provision a **Cloud SQL for PostgreSQL** instance with the following specification, adhering to 2026 best practices:
+We have refactored the infrastructure to improve modularity, centralize network configuration, and standardize identity management using Workload Identity.
 
-- **Edition**: Enterprise (Standard edition, sufficient for early stage).
-- **Version**: PostgreSQL 18 (Latest stable).
-- **High Availability**: Enabled (Regional).
-- **Tier**: `db-f1-micro` (Shared CPU, 0.6 GB RAM).
-- **Storage**: 10 GB SSD (Minimum).
-- **Protection**: Deletion protection enabled.
+### Infrastructure Diagram
 
-### Why Enterprise instead of Enterprise Plus?
+```mermaid
+graph TD
+    subgraph "Gcp (Orchestrator)"
+        Constants["NetworkConfig (CIDRs/IPs)"]
 
-Enterprise Plus is designed for high-performance workloads but requires larger minimum machine types. **Enterprise** edition allows for shared-core instances like `db-f1-micro`, which significantly reduces the starting cost while still providing production-grade reliability and the PostgreSQL 18 feature set.
+        subgraph "NetworkComponent"
+            VPC["VPC (global-vpc)"]
+            DNS["PSC DNS (psc.internal)"]
+            NAT["Cloud NAT / Router"]
+        end
 
-## Networking
+        subgraph "KubernetesComponent"
+            Subnet["GKE Subnet (Primary + Secondary)"]
+            Cluster["GKE Autopilot (Cost Mgmt + Spot Support)"]
+        end
 
-We will use **Private Service Connect (PSC)** for secure, private connectivity from the application (Cloud Run / GKE) to the database.
+        subgraph "Identity"
+            GSA["GSA (backend-app)"]
+            WI["Workload Identity (ns:backend)"]
+        end
 
-- **Why**: PSC avoids the complexity and CIDR overlap issues of VPC Native Peering.
-- **Config**: A Service Attachment is created on the Cloud SQL side, and the application VPC connects via a PSC Endpoint.
+        subgraph "PostgresComponent"
+            SQL["Cloud SQL (PostgreSQL 18)"]
+            PSC["PSC Endpoint"]
+            Record["A Record (postgres.osaka.psc.internal)"]
+        end
 
-## Security
+        Constants -.-> Identity
+        Identity --> WI
+        Identity --> SQL
 
-- **Authentication**: IAM Database Authentication is MANDATORY.
-- **Encryption**: Customer verification of Google-managed keys is sufficient (CMEK not required for this phase).
-- **Public IP**: Disabled.
+        Constants -.-> NetworkComponent
+        Constants -.-> KubernetesComponent
+        Constants -.-> PostgresComponent
 
-## Operations
+        VPC --> Subnet
+        Subnet --> Cluster
+        PSC --> Record
+        DNS --> Record
+    end
+```
 
-- **Backups**: Automated daily backups (start 03:00 JST), retention 30 days.
-- **Maintenance**: Scheduled window (Sunday 04:00 JST).
-- **Observability**: Query Insights enabled with standard query string limits.
+## 1. Network Design
 
-## Infrastructure as Code via Pulumi
+- **VPC**: `global-vpc` (Custom mode, Global routing).
+- **Region**: `asia-northeast2` (Osaka).
+- **Subnet**: Specialized subnets for GKE and PSC endpoints.
+- **CIDR Management**: Centralized in the `Gcp` orchestrator.
+  - Nodes: `10.10.0.0/20`
+  - Pods: `10.20.0.0/16`
+  - Services: `10.30.0.0/20`
+- **Private DNS**: Shared zone `psc.internal` for Private Service Connect services.
 
-New component: `src/components/gcp/database.ts`
+## 2. Cloud SQL Design (PostgreSQL 18)
 
-- Resource: `gcp.sql.DatabaseInstance`
-- Resource: `gcp.sql.Database` (default `liverty-music`)
-- Resource: `gcp.sql.User` (IAM service account mapping)
+- **Connectivity**: **Private Service Connect (PSC)**.
+- **DNS**: `postgres.osaka.psc.internal` points to the PSC Endpoint IP.
+- **Identity**: IAM Database Authentication enabled.
+- **Cost**: `db-f1-micro` tier for development; HA and PITR disabled in `dev` to reduce costs.
+
+## 3. GKE Design (Autopilot)
+
+- **Mode**: Fully managed Autopilot.
+- **Identity**: **Workload Identity** enabled. GKE Pods in the `backend` namespace impersonate the `backend-app` GCP Service Account.
+- **Cost Management**: GKE Cost Management enabled. Support for Spot VMs via Pod-level `nodeSelector`.
+
+## 4. Identity Management
+
+- **Orchestrator Level**: GSA creation and WI binding are managed in the `Gcp` class.
+- **Role Assignment**: `roles/cloudsql.instanceUser` granted to the backend Service Account.

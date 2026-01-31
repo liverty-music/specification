@@ -6,7 +6,8 @@ The backend application requires a reliable, scalable, and secure relational dat
 
 ## Goal
 
-Provision a production-ready PostgreSQL database using Google Cloud SQL Enterprise Plus.
+Provision a production-ready PostgreSQL database on Google Cloud SQL, and create the necessary Custom VPC and GKE Cluster infrastructure.
+Enterprise Plus.
 
 ## Non-Goals
 
