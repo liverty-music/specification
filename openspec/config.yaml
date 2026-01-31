@@ -1,20 +1,28 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Tech Stack:
+    - Serialization: Protocol Buffers (proto3)
+    - Schema Registry: Buf (BSR, Lint, Format, Breaking)
+    - RPC: Connect (Go, TypeScript)
+    - Languages: Go (Backend), TypeScript (Frontend)
+    - Validation: Protovalidate
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Domain:
+    - Liverty Music: Personalized concert notification platform
+    - User: Music fan
+    - Concert: Music event
+    - Artist: Performer
+
+  Architecture:
+    - Layered Design: `entity` (core types), `rpc` (services)
+    - API Style: Resource-Oriented (Google AIP), Type-safe IDs
+
+  Constraints:
+    - Remote Gen: Code generated via BSR, do not commit `gen/`
+    - Versioning: Strict semantic versioning for breaking changes
+
+rules:
+  specs:
+    - Documentation: All messages/services must have purpose comments
+    - Style: PascalCase messages, lower_snake_case fields (Buf Style)
