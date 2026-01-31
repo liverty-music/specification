@@ -1,7 +1,10 @@
-- [ ] Create `src/components/gcp/database.ts` defining `CloudSqlInstance` component.
-- [ ] Configure Private Service Connect (PSC) settings.
-- [ ] Configure Cloud SQL instance (Enterprise, HA, PG18).
-- [ ] Define default database `liverty-music`.
-- [ ] Configure IAM authentication policies.
-- [ ] Export instance Connection Name and PSC Address.
-- [ ] Integrate component into `src/index.ts`.
+- [x] Create `Network` component (VPC, Subnets, NAT, PSC)
+- [x] Create `GkeCluster` component (VPC-native, Autopilot)
+- [x] Create `PostgresComponent` (PostgreSQL 18, PSC)
+- [x] Configure Private Service Connect (PSC)
+- [x] Configure GKE VPC-native settings
+- [x] Configure Cloud SQL instance (Enterprise, HA, PG18).
+- [x] Define default database `backend-app`.
+- [x] Configure IAM authentication and Workload Identity.
+- [x] Export instance Connection Name and PSC Address.
+- [x] Integrate components into `Gcp` orchestrator.
