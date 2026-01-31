@@ -1,8 +1,11 @@
 # live-events Specification
 
 ## Purpose
-TBD - created by archiving change define-live-catalog-api. Update Purpose after archive.
+
+The `live-events` capability defines the core domain entities—Artists, Venues, and Concerts—and the standard interfaces for managing them. It establishes the single source of truth for concert metadata, enabling consistent data representation and access across the platform's crawler, backend services, and frontend applications.
+
 ## Requirements
+
 ### Requirement: Concert Schedue Data Model
 
 The system MUST define standard data structures for core concert entities to ensure consistency across services.
@@ -55,4 +58,3 @@ The system MUST provide access to the collected schedule of concerts.
 
 - **WHEN** `ListConcerts` is called for a valid artist ID
 - **THEN** the system MUST return a chronologically sorted list of future concerts for that artist.
-
