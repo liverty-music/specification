@@ -3,6 +3,7 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 
 // User represents a registered person on the Liverty Music platform.
@@ -18,10 +19,10 @@ message User {
   UserEmail email = 3 [(buf.validate.field).required = true];
 
   // The time when the user was created.
-  google.protobuf.Timestamp create_time = 4;
+  google.protobuf.Timestamp create_time = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The time when the user was last updated.
-  google.protobuf.Timestamp update_time = 5;
+  google.protobuf.Timestamp update_time = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // UserId is a globally unique identifier for a platform user.

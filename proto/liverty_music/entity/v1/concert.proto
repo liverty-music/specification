@@ -3,6 +3,7 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "google/type/date.proto";
 import "google/type/timeofday.proto";
@@ -38,10 +39,10 @@ message Concert {
   string source_url = 8 [(buf.validate.field).string.uri = true];
 
   // The time when the concert was created.
-  google.protobuf.Timestamp create_time = 9;
+  google.protobuf.Timestamp create_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The time when the concert was last updated.
-  google.protobuf.Timestamp update_time = 10;
+  google.protobuf.Timestamp update_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // ConcertId is a globally unique identifier for a concert.
