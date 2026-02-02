@@ -3,6 +3,7 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
 
 // User represents a registered person on the Liverty Music platform.
 // Users are notified of upcoming concerts based on their following and favorite artists.
@@ -15,6 +16,12 @@ message User {
 
   // The primary email address used for account identity and notifications.
   UserEmail email = 3 [(buf.validate.field).required = true];
+
+  // The time when the user was created.
+  google.protobuf.Timestamp create_time = 4;
+
+  // The time when the user was last updated.
+  google.protobuf.Timestamp update_time = 5;
 }
 
 // UserId is a globally unique identifier for a platform user.

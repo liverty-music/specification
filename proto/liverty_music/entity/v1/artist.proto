@@ -3,6 +3,7 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
 
 // Artist represents a musical performer or band.
 // This is a central entity that fans follow to stay informed about upcoming
@@ -16,6 +17,12 @@ message Artist {
 
   // A collection of official media channels such as websites and social media profiles.
   repeated Media media = 3;
+
+  // The time when the artist was created.
+  google.protobuf.Timestamp create_time = 4;
+
+  // The time when the artist was last updated.
+  google.protobuf.Timestamp update_time = 5;
 }
 
 // ArtistId is a globally unique identifier for an artist.
