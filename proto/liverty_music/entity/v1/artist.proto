@@ -3,6 +3,7 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 
 // Artist represents a musical performer or band.
@@ -19,10 +20,10 @@ message Artist {
   repeated Media media = 3;
 
   // The time when the artist was created.
-  google.protobuf.Timestamp create_time = 4;
+  google.protobuf.Timestamp create_time = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The time when the artist was last updated.
-  google.protobuf.Timestamp update_time = 5;
+  google.protobuf.Timestamp update_time = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // ArtistId is a globally unique identifier for an artist.
