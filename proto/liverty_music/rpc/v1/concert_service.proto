@@ -42,6 +42,15 @@ service ConcertService {
   // Possible errors:
   // - NOT_FOUND: The specified media identifier does not exist.
   rpc DeleteArtistMedia(DeleteArtistMediaRequest) returns (DeleteArtistMediaResponse);
+
+  // SearchNewConcerts triggers a discovery process to find new concerts for an artist.
+  // It scrapes external sources and persists any newly found concerts.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The artist ID is missing or invalid.
+  // - NOT_FOUND: The specified artist does not exist.
+  // - INTERNAL: An error occurred during the discovery or persistence process.
+  rpc SearchNewConcerts(SearchNewConcertsRequest) returns (SearchNewConcertsResponse);
 }
 
 // ListRequest is the request for retrieving concerts associated with a specific artist.
@@ -103,3 +112,15 @@ message DeleteArtistMediaRequest {
 
 // DeleteArtistMediaResponse is the response following a successful media deletion.
 message DeleteArtistMediaResponse {}
+
+// SearchNewConcertsRequest specifies the artist for whom to search for new concerts.
+message SearchNewConcertsRequest {
+  // Required. The unique identifier of the artist.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+}
+
+// SearchNewConcertsResponse contains the collection of newly discovered concerts.
+message SearchNewConcertsResponse {
+  // The collection of newly discovered concert events.
+  repeated entity.v1.Concert concerts = 1;
+}
