@@ -38,7 +38,7 @@ Manage the local and CI development lifecycle for Protocol Buffers within the Li
 
 - Do NOT bypass `pre-commit` hooks.
 - Do NOT use global `buf` installation; use `mise` version.
-- Do NOT run `buf generate` for production code (only for local verification).
+- Do NOT run `buf generate` EVER. Local generation is strictly forbidden to ensure consistency with BSR.
 
 ## Example
 
