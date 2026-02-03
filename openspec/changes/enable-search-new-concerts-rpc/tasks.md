@@ -13,4 +13,4 @@
 
 ## 3. Verification
 
-- [/] 3.1 Run backend tests using `go test ./internal/adapter/rpc/...`. (Awaiting remote type generation)
+- [x] 3.1 Run backend tests using `go test ./internal/adapter/rpc/...`.
