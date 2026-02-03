@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD
+To define the interface and behavior for discovering new concerts for artists, enabling the system to keep its concert catalog up-to-date.
 
 ## Requirements
 
@@ -12,11 +12,13 @@ The system SHALL provide an interface to trigger the discovery of new concerts f
 
 #### Scenario: Successful Search
 
-- **WHEN** `SearchNewConcerts` is called with a valid `artist_id`
+- **GIVEN** a valid `artist_id` is provided
+- **WHEN** a user calls the `SearchNewConcerts` RPC
 - **THEN** the system MUST execute the concert discovery process
-- **AND** return a list of newly discovered concerts that were not previously in the system.
+- **AND** return a list of newly discovered concerts.
 
 #### Scenario: Missing Artist ID
 
-- **WHEN** `SearchNewConcerts` is called without an `artist_id`
+- **GIVEN** an `artist_id` is not provided
+- **WHEN** a user calls the `SearchNewConcerts` RPC
 - **THEN** the system MUST return an `INVALID_ARGUMENT` error.
