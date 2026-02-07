@@ -3,8 +3,6 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
-import "google/api/field_behavior.proto";
-import "google/protobuf/timestamp.proto";
 
 // Venue represents a physical location where concert events are hosted.
 // It contains geographical and descriptive information to help fans find the event.
@@ -14,12 +12,6 @@ message Venue {
 
   // The official name or title of the music venue.
   VenueName name = 2 [(buf.validate.field).required = true];
-
-  // The time when the venue was created.
-  google.protobuf.Timestamp create_time = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
-
-  // The time when the venue was last updated.
-  google.protobuf.Timestamp update_time = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // VenueId is a globally unique identifier for a concert venue.

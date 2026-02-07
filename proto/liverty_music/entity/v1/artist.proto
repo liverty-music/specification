@@ -3,8 +3,6 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
-import "google/api/field_behavior.proto";
-import "google/protobuf/timestamp.proto";
 
 // Artist represents a musical performer or band.
 // This is a central entity that fans follow to stay informed about upcoming
@@ -16,14 +14,8 @@ message Artist {
   // The professional name of the artist or ensemble.
   ArtistName name = 2 [(buf.validate.field).required = true];
 
-  // A collection of official media channels such as websites and social media profiles.
-  repeated Media media = 3;
-
-  // The time when the artist was created.
-  google.protobuf.Timestamp create_time = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
-
-  // The time when the artist was last updated.
-  google.protobuf.Timestamp update_time = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // Required. The unique identifier for the artist in MusicBrainz.
+  Mbid mbid = 3 [(buf.validate.field).required = true];
 }
 
 // ArtistId is a globally unique identifier for an artist.
@@ -38,40 +30,32 @@ message ArtistName {
   string value = 1 [(buf.validate.field).string.min_len = 1];
 }
 
-// Media represents an artist's official online presence.
-// This includes links to official websites or social media platforms used for
-// broadcasting concert news and engaging with fans.
-message Media {
-  // The unique identifier for this media record.
-  MediaId id = 1 [(buf.validate.field).required = true];
-
-  // The platform type, such as official website or social media service.
-  Type type = 2 [(buf.validate.field).required = true];
-
-  // The fully qualified URL to the media resource.
-  MediaUrl url = 3 [(buf.validate.field).required = true];
-
-  // Type of media channel supported by the platform.
-  enum Type {
-    // Unspecified media type.
-    TYPE_UNSPECIFIED = 0;
-    // Official artist website.
-    TYPE_WEB = 1;
-    // Twitter (now X) account.
-    TYPE_TWITTER = 2;
-    // Instagram account.
-    TYPE_INSTAGRAM = 3;
-  }
-}
-
-// MediaId is a unique identifier for a media link.
-message MediaId {
-  // A UUID string representing the unique identity of the media record.
+// Mbid is a globally unique identifier for an artist in MusicBrainz.
+message Mbid {
+  // A UUID string mapping to the artist's MusicBrainz identity.
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
-// MediaUrl represents a verified web address for an artist's media channel.
-message MediaUrl {
-  // The URI value of the media channel.
+// OfficialSite represents an artist's official online presence.
+message OfficialSite {
+  // The unique identifier for this official site record.
+  OfficialSiteId id = 1 [(buf.validate.field).required = true];
+
+  // The fully qualified URL to the official site resource.
+  OfficialSiteUrl url = 2 [(buf.validate.field).required = true];
+
+  // The unique identifier of the artist associated with this site.
+  ArtistId artist_id = 3 [(buf.validate.field).required = true];
+}
+
+// OfficialSiteId is a unique identifier for an official site link.
+message OfficialSiteId {
+  // A UUID string representing the unique identity of the official site record.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// OfficialSiteUrl represents a verified web address for an artist's official site.
+message OfficialSiteUrl {
+  // The URI value of the official site.
   string value = 1 [(buf.validate.field).string.uri = true];
 }

@@ -12,32 +12,17 @@ message User {
   // The unique identifier for the user.
   UserId id = 1 [(buf.validate.field).required = true];
 
-  // The personal name or pseudonym the user chooses to display.
-  UserName name = 2 [(buf.validate.field).required = true];
-
   // The primary email address used for account identity and notifications.
-  UserEmail email = 3 [(buf.validate.field).required = true];
+  UserEmail email = 2 [(buf.validate.field).required = true];
 
   // The time when the user was created.
-  google.protobuf.Timestamp create_time = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
-
-  // The time when the user was last updated.
-  google.protobuf.Timestamp update_time = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp create_time = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // UserId is a globally unique identifier for a platform user.
 message UserId {
   // A UUID string representing the user's unique identity.
   string value = 1 [(buf.validate.field).string.uuid = true];
-}
-
-// UserName represents the chosen display name of a user.
-message UserName {
-  // The name string, restricted to between 1 and 100 characters.
-  string value = 1 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 100
-  }];
 }
 
 // UserEmail represents a validated email address for communications.
