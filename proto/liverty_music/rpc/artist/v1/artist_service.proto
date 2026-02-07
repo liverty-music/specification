@@ -1,0 +1,194 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.v1 provides gRPC service definitions for artist management.
+//
+// This package includes the ArtistService which handles artist discovery,
+// lifecycle management, and user relationship tracking (following).
+package liverty_music.rpc.artist.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/artist.proto";
+
+// ArtistService provides operations for discovering and managing musical performers.
+// It acts as a gateway for artist metadata and handles integration with external
+// recommendation engines like Last.fm.
+service ArtistService {
+  // List retrieves a collection of all registered artists in the database.
+  // This is primarily used for administrative views and full catalog lookups.
+  //
+  // Possible errors:
+  // - INTERNAL: An unexpected database error occurred.
+  rpc List(ListRequest) returns (ListResponse);
+
+  // Create registers a new musical performer or band in the system.
+  //
+  // Possible errors:
+  // - ALREADY_EXISTS: An artist with the specified name is already registered.
+  // - INVALID_ARGUMENT: The provided artist name or media list is invalid.
+  rpc Create(CreateRequest) returns (CreateResponse);
+
+  // Search performs an incremental search for artists by name.
+  // It searches both the local database and external discovery sources to provide
+  // a comprehensive list of matches.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The search query is missing or too short.
+  rpc Search(SearchRequest) returns (SearchResponse);
+
+  // CreateMedia associates a new official media channel with an artist.
+  //
+  // Possible errors:
+  // - NOT_FOUND: The specified artist ID does not exist.
+  // - INVALID_ARGUMENT: The media URL or type is malformed.
+  rpc CreateMedia(CreateMediaRequest) returns (CreateMediaResponse);
+
+  // DeleteMedia removes an existing media channel association.
+  //
+  // Possible errors:
+  // - NOT_FOUND: The specified media identifier does not exist.
+  rpc DeleteMedia(DeleteMediaRequest) returns (DeleteMediaResponse);
+
+  // Follow establishes a follow relationship between the current user and an artist.
+  // This personalization allows the system to notify users about concerts.
+  //
+  // Possible errors:
+  // - NOT_FOUND: The specified artist ID does not exist.
+  // - INTERNAL: An error occurred while persisting the relationship.
+  rpc Follow(FollowRequest) returns (FollowResponse);
+
+  // Unfollow removes an existing follow relationship.
+  //
+  // Possible errors:
+  // - NOT_FOUND: The user was not following the specified artist.
+  rpc Unfollow(UnfollowRequest) returns (UnfollowResponse);
+
+  // ListFollowed retrieves the list of artists currently followed by the authenticated user.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The user identity could not be verified.
+  rpc ListFollowed(ListFollowedRequest) returns (ListFollowedResponse);
+
+  // ListSimilar retrieves artists similar to a specified artist using recommendation engines.
+  //
+  // Possible errors:
+  // - NOT_FOUND: The specified seed artist could not be found or has no recommendations.
+  rpc ListSimilar(ListSimilarRequest) returns (ListSimilarResponse);
+
+  // ListTop retrieves globally or regionally popular artists.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The specified country code is invalid.
+  rpc ListTop(ListTopRequest) returns (ListTopResponse);
+}
+
+// ListRequest is the request for retrieving all registered artists.
+message ListRequest {}
+
+// ListResponse contains the collection of all registered artists.
+message ListResponse {
+  // The collection of artist entities retrieved from the database.
+  repeated entity.v1.Artist artists = 1;
+}
+
+// CreateRequest provides the necessary details to register a new artist.
+message CreateRequest {
+  // Required. The professional name of the artist to be registered.
+  entity.v1.ArtistName name = 1 [(buf.validate.field).required = true];
+
+  // Optional. Initial media channels to be associated with this artist upon creation.
+  repeated entity.v1.Media media = 2;
+}
+
+// CreateResponse returns the artist record as successfully created.
+message CreateResponse {
+  // The newly created artist entity, including its assigned identifier.
+  entity.v1.Artist artist = 1;
+}
+
+// SearchRequest specifies the name query for finding artists.
+message SearchRequest {
+  // Required. The name query string to match against artist records.
+  string query = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+// SearchResponse contains the results of an artist search.
+message SearchResponse {
+  // The collection of matching artist entities from internal and external sources.
+  repeated entity.v1.Artist artists = 1;
+}
+
+// CreateMediaRequest specifies the media details to be added to an artist record.
+message CreateMediaRequest {
+  // Required. The unique identifier of the artist to associate with the media.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The platform type of the new media association (e.g., TWITTER).
+  entity.v1.Media.Type type = 2 [(buf.validate.field).required = true];
+
+  // Required. The verified URL for the new media channel.
+  entity.v1.MediaUrl url = 3 [(buf.validate.field).required = true];
+}
+
+// CreateMediaResponse is returned upon successful media association.
+message CreateMediaResponse {}
+
+// DeleteMediaRequest specifies the unique identifier of the media link to be removed.
+message DeleteMediaRequest {
+  // Required. The unique identifier of the media record to delete.
+  entity.v1.MediaId media_id = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteMediaResponse is returned upon successful media removal.
+message DeleteMediaResponse {}
+
+// FollowRequest specifies the artist the current user wishes to follow.
+message FollowRequest {
+  // Required. The unique identifier of the artist to follow.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+}
+
+// FollowResponse is returned upon successfully establishing the follow relationship.
+message FollowResponse {}
+
+// UnfollowRequest specifies the artist the current user wishes to unfollow.
+message UnfollowRequest {
+  // Required. The unique identifier of the artist to unfollow.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+}
+
+// UnfollowResponse is returned upon successfully removing the follow relationship.
+message UnfollowResponse {}
+
+// ListFollowedRequest is the request for listing the current user's followed artists.
+message ListFollowedRequest {}
+
+// ListFollowedResponse contains the collection of artists followed by the user.
+message ListFollowedResponse {
+  // The collection of artist entities followed by the authenticated user.
+  repeated entity.v1.Artist artists = 1;
+}
+
+// ListSimilarRequest specifies the seed artist for discovery.
+message ListSimilarRequest {
+  // Required. The unique identifier of the artist used as a seed for recommendations.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+}
+
+// ListSimilarResponse contains recommendations based on a seed artist.
+message ListSimilarResponse {
+  // The collection of similar artist entities recommended by the system.
+  repeated entity.v1.Artist artists = 1;
+}
+
+// ListTopRequest specifies the parameters for retrieving popular artists.
+message ListTopRequest {
+  // Optional. ISO 3166-1 country name (e.g., "Japan").
+  // If empty, the system returns a global chart.
+  string country = 1;
+}
+
+// ListTopResponse contains the chart of popular artists.
+message ListTopResponse {
+  // The collection of top artist entities based on popularity charts.
+  repeated entity.v1.Artist artists = 1;
+}

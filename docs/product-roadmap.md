@@ -3,6 +3,19 @@
 本ドキュメントは、チケット転売防止システムの詳細な開発ロードマップを定義する。
 `ticket-management-system-draft.md` で定義された包括的アーキテクチャを、確実に動作可能な小さなマイルストーンに分解し、開発リスクを最小化する。
 
+## Table of Contents
+
+- [Roadmap Overview](#roadmap-overview)
+- [Phase 1: MVP - Purchase Flow (KYC-less)](#phase-1-mvp---purchase-flow-kyc-less)
+- [Phase 1.5: Entry Flow (ZK Proof)](#phase-15-entry-flow-zk-proof)
+- [Phase 2: Mock KYC (VC Stub)](#phase-2-mock-kyc-vc-stub)
+- [Phase 2.5: Real KYC (OID4VCI Integration)](#phase-25-real-kyc-oid4vci-integration)
+- [Phase 3: Authorized Resale (Marketplace)](#phase-3-authorized-resale-marketplace)
+- [Phase 4: Production & PWA Optimization](#phase-4-production--pwa-optimization)
+- [Phase 4+ (Post-Launch): Advanced Features](#phase-4-post-launch-advanced-features)
+- [Appendix A: Systems Component Impact Per Phase](#appendix-a-systems-component-impact-per-phase)
+- [Appendix B: Database Schema (Reference)](#appendix-b-database-schema-reference)
+
 > [!IMPORTANT]
 > **MVP の定義**: 本ロードマップにおける MVP (Phase 1) は、「KYC なしでチケット購入・SBT発行までのフロー」が動作する状態を指す。ZKP 入場は Phase 1.5 に分割し、MVP のスコープを意図的に縮小している。
 
