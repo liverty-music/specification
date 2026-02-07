@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-// Package liverty_music.rpc.v1 provides gRPC service definitions for the Liverty Music application API.
-package liverty_music.rpc.v1;
+// Package liverty_music.rpc.v1.concert.v1 provides gRPC service definitions for concert management.
+package liverty_music.rpc.v1.concert.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/artist.proto";
@@ -15,7 +15,7 @@ service ConcertService {
   // Possible errors:
   // - INVALID_ARGUMENT: The request is missing a required field or contains invalid data.
   // - NOT_FOUND: No concerts were found for the specified artist.
-  rpc List(ConcertServiceListRequest) returns (ConcertServiceListResponse);
+  rpc List(ListRequest) returns (ListResponse);
 
   // SearchNewConcerts triggers a discovery process to find new concerts for an artist.
   // It scrapes external sources and persists any newly found concerts.
@@ -27,14 +27,14 @@ service ConcertService {
   rpc SearchNewConcerts(SearchNewConcertsRequest) returns (SearchNewConcertsResponse);
 }
 
-// ConcertServiceListRequest is the request for retrieving concerts associated with a specific artist.
-message ConcertServiceListRequest {
+// ListRequest is the request for retrieving concerts associated with a specific artist.
+message ListRequest {
   // Required. The unique identifier of the artist whose concerts are to be listed.
   entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
 }
 
-// ConcertServiceListResponse contains the collection of concerts matching the ConcertServiceListRequest.
-message ConcertServiceListResponse {
+// ListResponse contains the collection of concerts matching the ListRequest.
+message ListResponse {
   // The collection of concert events found.
   repeated entity.v1.Concert concerts = 1;
 }
