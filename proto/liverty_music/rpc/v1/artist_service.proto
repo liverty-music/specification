@@ -182,7 +182,7 @@ message ListSimilarResponse {
 
 // ListTopRequest specifies the parameters for retrieving popular artists.
 message ListTopRequest {
-  // Optional. ISO 3166-1 country name (e.g., "japan").
+  // Optional. ISO 3166-1 country name (e.g., "Japan").
   // If empty, the system returns a global chart.
   string country = 1;
 }

@@ -10,12 +10,12 @@ import "liverty_music/entity/v1/concert.proto";
 // ConcertService provides operations for managing the catalog of musical concerts.
 // It acts as the primary data source for upcoming live music events.
 service ConcertService {
-  // ListConcerts retrieves a collection of concert events, filtered by the performing artist.
+  // List retrieves a collection of concert events, filtered by the performing artist.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The request is missing a required field or contains invalid data.
   // - NOT_FOUND: No concerts were found for the specified artist.
-  rpc ListConcerts(ListConcertsRequest) returns (ListConcertsResponse);
+  rpc List(ListConcertsRequest) returns (ListConcertsResponse);
 
   // SearchNewConcerts triggers a discovery process to find new concerts for an artist.
   // It scrapes external sources and persists any newly found concerts.
