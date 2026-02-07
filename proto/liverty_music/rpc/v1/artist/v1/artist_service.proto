@@ -4,7 +4,7 @@ syntax = "proto3";
 //
 // This package includes the ArtistService which handles artist discovery,
 // lifecycle management, and user relationship tracking (following).
-package liverty_music.rpc.v1;
+package liverty_music.rpc.v1.artist.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/artist.proto";
