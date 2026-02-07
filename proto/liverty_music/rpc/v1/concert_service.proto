@@ -15,7 +15,7 @@ service ConcertService {
   // Possible errors:
   // - INVALID_ARGUMENT: The request is missing a required field or contains invalid data.
   // - NOT_FOUND: No concerts were found for the specified artist.
-  rpc List(ListConcertsRequest) returns (ListConcertsResponse);
+  rpc List(ConcertServiceListRequest) returns (ConcertServiceListResponse);
 
   // SearchNewConcerts triggers a discovery process to find new concerts for an artist.
   // It scrapes external sources and persists any newly found concerts.
@@ -27,14 +27,14 @@ service ConcertService {
   rpc SearchNewConcerts(SearchNewConcertsRequest) returns (SearchNewConcertsResponse);
 }
 
-// ListConcertsRequest is the request for retrieving concerts associated with a specific artist.
-message ListConcertsRequest {
+// ConcertServiceListRequest is the request for retrieving concerts associated with a specific artist.
+message ConcertServiceListRequest {
   // Required. The unique identifier of the artist whose concerts are to be listed.
   entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
 }
 
-// ListConcertsResponse contains the collection of concerts matching the ListConcertsRequest.
-message ListConcertsResponse {
+// ConcertServiceListResponse contains the collection of concerts matching the ConcertServiceListRequest.
+message ConcertServiceListResponse {
   // The collection of concert events found.
   repeated entity.v1.Concert concerts = 1;
 }
