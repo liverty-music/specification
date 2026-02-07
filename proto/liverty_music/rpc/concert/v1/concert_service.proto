@@ -1,7 +1,6 @@
 syntax = "proto3";
 
-// Package liverty_music.rpc.v1.concert.v1 provides gRPC service definitions for concert management.
-package liverty_music.rpc.v1.concert.v1;
+package liverty_music.rpc.concert.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/artist.proto";
