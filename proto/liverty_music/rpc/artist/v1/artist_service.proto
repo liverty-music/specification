@@ -35,18 +35,18 @@ service ArtistService {
   // - INVALID_ARGUMENT: The search query is missing or too short.
   rpc Search(SearchRequest) returns (SearchResponse);
 
-  // CreateMedia associates a new official media channel with an artist.
+  // CreateOfficialSite associates a new official website or social media channel with an artist.
   //
   // Possible errors:
   // - NOT_FOUND: The specified artist ID does not exist.
-  // - INVALID_ARGUMENT: The media URL or type is malformed.
-  rpc CreateMedia(CreateMediaRequest) returns (CreateMediaResponse);
+  // - INVALID_ARGUMENT: The URL or platform type is malformed.
+  rpc CreateOfficialSite(CreateOfficialSiteRequest) returns (CreateOfficialSiteResponse);
 
-  // DeleteMedia removes an existing media channel association.
+  // DeleteOfficialSite removes an existing official site association.
   //
   // Possible errors:
-  // - NOT_FOUND: The specified media identifier does not exist.
-  rpc DeleteMedia(DeleteMediaRequest) returns (DeleteMediaResponse);
+  // - NOT_FOUND: The specified official site identifier does not exist.
+  rpc DeleteOfficialSite(DeleteOfficialSiteRequest) returns (DeleteOfficialSiteResponse);
 
   // Follow establishes a follow relationship between the current user and an artist.
   // This personalization allows the system to notify users about concerts.
@@ -95,8 +95,8 @@ message CreateRequest {
   // Required. The professional name of the artist to be registered.
   entity.v1.ArtistName name = 1 [(buf.validate.field).required = true];
 
-  // Optional. Initial media channels to be associated with this artist upon creation.
-  repeated entity.v1.Media media = 2;
+  // Required. The unique identifier for the artist in MusicBrainz.
+  entity.v1.Mbid mbid = 2 [(buf.validate.field).required = true];
 }
 
 // CreateResponse returns the artist record as successfully created.
@@ -117,29 +117,26 @@ message SearchResponse {
   repeated entity.v1.Artist artists = 1;
 }
 
-// CreateMediaRequest specifies the media details to be added to an artist record.
-message CreateMediaRequest {
-  // Required. The unique identifier of the artist to associate with the media.
+// CreateOfficialSiteRequest specifies the site details to be added to an artist record.
+message CreateOfficialSiteRequest {
+  // Required. The unique identifier of the artist to associate with the official site.
   entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
 
-  // Required. The platform type of the new media association (e.g., TWITTER).
-  entity.v1.Media.Type type = 2 [(buf.validate.field).required = true];
-
-  // Required. The verified URL for the new media channel.
-  entity.v1.MediaUrl url = 3 [(buf.validate.field).required = true];
+  // Required. The verified URL for the new official site channel.
+  entity.v1.OfficialSiteUrl url = 2 [(buf.validate.field).required = true];
 }
 
-// CreateMediaResponse is returned upon successful media association.
-message CreateMediaResponse {}
+// CreateOfficialSiteResponse is returned upon successful site association.
+message CreateOfficialSiteResponse {}
 
-// DeleteMediaRequest specifies the unique identifier of the media link to be removed.
-message DeleteMediaRequest {
-  // Required. The unique identifier of the media record to delete.
-  entity.v1.MediaId media_id = 1 [(buf.validate.field).required = true];
+// DeleteOfficialSiteRequest specifies the unique identifier of the site link to be removed.
+message DeleteOfficialSiteRequest {
+  // Required. The unique identifier of the official site record to delete.
+  entity.v1.OfficialSiteId official_site_id = 1 [(buf.validate.field).required = true];
 }
 
-// DeleteMediaResponse is returned upon successful media removal.
-message DeleteMediaResponse {}
+// DeleteOfficialSiteResponse is returned upon successful site removal.
+message DeleteOfficialSiteResponse {}
 
 // FollowRequest specifies the artist the current user wishes to follow.
 message FollowRequest {
