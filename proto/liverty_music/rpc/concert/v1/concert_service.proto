@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package liverty_music.rpc.concert.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/concert.proto";
+
+// ConcertService provides operations for managing the catalog of musical concerts.
+// It acts as the primary data source for upcoming live music events.
+service ConcertService {
+  // List retrieves a collection of concert events, filtered by the performing artist.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The request is missing a required field or contains invalid data.
+  // - NOT_FOUND: No concerts were found for the specified artist.
+  rpc List(ListRequest) returns (ListResponse);
+
+  // SearchNewConcerts triggers a discovery process to find new concerts for an artist.
+  // It scrapes external sources and persists any newly found concerts.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The artist ID is missing or invalid.
+  // - NOT_FOUND: The specified artist does not exist.
+  // - INTERNAL: An error occurred during the discovery or persistence process.
+  rpc SearchNewConcerts(SearchNewConcertsRequest) returns (SearchNewConcertsResponse);
+}
+
+// ListRequest is the request for retrieving concerts associated with a specific artist.
+message ListRequest {
+  // Required. The unique identifier of the artist whose concerts are to be listed.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+}
+
+// ListResponse contains the collection of concerts matching the ListRequest.
+message ListResponse {
+  // The collection of concert events found.
+  repeated entity.v1.Concert concerts = 1;
+}
+
+// SearchNewConcertsRequest specifies the artist for whom to search for new concerts.
+message SearchNewConcertsRequest {
+  // Required. The unique identifier of the artist.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+}
+
+// SearchNewConcertsResponse contains the collection of newly discovered concerts.
+message SearchNewConcertsResponse {
+  // The collection of newly discovered concert events.
+  repeated entity.v1.Concert concerts = 1;
+}
