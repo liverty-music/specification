@@ -15,5 +15,6 @@ syntax = "proto3";
 //
 // Services:
 // - UserService: User account management and profile operations
-// - ConcertService: Live music event and artist management operations
+// - ArtistService: Discovery and management of musical performers
+// - ConcertService: Live music event management operations
 package liverty_music.rpc.v1;
