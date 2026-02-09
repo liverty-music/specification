@@ -1,0 +1,69 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What This Repository Is
+
+Protocol Buffers schema repository for **Liverty Music** — a personalized concert notification platform. Defines entity and RPC interfaces using Buf, with remote code generation via Buf Schema Registry (BSR). No application code lives here; this repo is the single source of truth for API contracts consumed by the Go backend and TypeScript frontend.
+
+## Essential Commands
+
+```bash
+mise install                              # Install toolchain (buf, pre-commit)
+pre-commit install                        # Install commit hooks
+pre-commit install --hook-type pre-push   # Install push hooks
+
+buf lint                                  # Lint proto files (STANDARD + COMMENTS rules)
+buf format -w                             # Auto-format proto files
+buf breaking --against '.git#branch=main' # Check for breaking changes
+```
+
+Pre-commit hooks run `buf lint`, `buf format -w`, and `buf breaking` automatically on commit. If a breaking change is intentional, add the `buf skip breaking` label to the PR.
+
+## Architecture
+
+### Layered Proto Structure
+
+```
+proto/liverty_music/
+├── entity/v1/    # Core business entities — the domain model
+│   ├── entity.proto   # Package-level doc (no messages)
+│   ├── user.proto     # User, UserId, UserEmail
+│   ├── artist.proto   # Artist, ArtistId, OfficialSite, Mbid
+│   ├── concert.proto  # Concert, ConcertId, ConcertTitle
+│   └── venue.proto    # Venue, VenueId, VenueName
+└── rpc/          # Service definitions — one service per subdirectory
+    ├── user/v1/user_service.proto       # UserService (Get, Create)
+    ├── artist/v1/artist_service.proto   # ArtistService (CRUD, Search, Follow, Similar, Top)
+    └── concert/v1/concert_service.proto # ConcertService (List, SearchNewConcerts)
+```
+
+- **Entity layer** (`entity/v1/`): Pure data types. No service logic. Every domain concept gets a wrapper message (e.g., `UserId` wraps `string` with UUID validation) — never use raw primitives for domain types.
+- **RPC layer** (`rpc/*/v1/`): Service definitions that import entity types. Follow Google AIP resource-oriented patterns.
+
+### Key Design Conventions
+
+- **Type-safe IDs**: All identifiers are wrapper messages (`UserId`, `ArtistId`, etc.) with `protovalidate` constraints, not bare `string` fields.
+- **Validation**: Uses `buf.validate` (protovalidate) for field-level constraints. All required fields are annotated.
+- **Dependencies**: `buf.build/googleapis/googleapis` (field_behavior, common types) and `buf.build/bufbuild/protovalidate`.
+- **Buf config**: `buf.yaml` enables `STANDARD` + `COMMENTS` lint rules (except `PACKAGE_SAME_GO_PACKAGE`); breaking change detection uses `FILE` strategy.
+
+### Code Generation
+
+Generated code is hosted on BSR at `buf.build/liverty-music/schema` — **never commit a `gen/` directory**. Schemas are pushed to BSR only via GitHub Actions on release (not locally). Consumers install generated packages via `go get` or `npm install` from BSR.
+
+## OpenSpec Workflow
+
+This repo uses OpenSpec for structured specification changes. Changes live in `openspec/changes/` and follow an artifact workflow (proposal → design → specs → tasks). Use `/opsx:new` to start a new change and `/opsx:continue` to progress through artifacts. See `.claude/skills/` for full skill documentation.
+
+## Poly-repo Context
+
+- **This repo** (`specification`): Proto schemas, OpenSpec specs, product design docs
+- **Backend** (`liverty-music/backend`): Go application
+- **Cloud Provisioning** (`liverty-music/cloud-provisioning`): GCP infrastructure
+
+## Pre-implementation Checklist
+
+Before modifying `.proto` files, read:
+1. `docs/product-design.md` — domain concepts and product vision
+2. `AGENTS.md` — project rules and core design constraints
