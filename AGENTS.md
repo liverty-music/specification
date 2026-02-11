@@ -1,69 +1,95 @@
+# AI Agent Rules - Liverty Music Specification
 
-# Development Context
+**CRITICAL: Before ANY action (create file, run command, write code), check Workspace Structure below to determine the correct repository.**
 
-This is a Protocol Buffers schema repository using Buf Schema Registry (BSR).
+## Workspace Structure and Responsibilities
 
-## ⚠️ Mandatory Pre-implementation Checklist
+```
+liverty-music/
+├── specification/
+│   ├── openspec/changes/ ← Ongoing changes (proposals, designs, specs, tasks)
+│   ├── openspec/specs/   ← The latest capability specs
+│   └── proto/            ← Protobuf entity / RPC schema (no `buf generate`, use BSR)
+├── backend/               ← Go implementation (Connect-RPC services)
+├── frontend/              ← Aurelia 2 PWA implementation
+└── cloud-provisioning/
+    ├── src/               ← Pulumi code (GCP, Cloudflare, GitHub resources)
+    └── k8s/               ← Kubernetes manifests (Kustomize base/overlays)
+```
 
-Before writing any code or configuration, you MUST:
+## Decision Process (Required Before Action)
 
-1.  **Read Relevant Skills**:
-    - **Protobuf/gRPC**: If touching `.proto` files, read the skills in `.agent/skills/`.
-    - **Domain/Features**: If implementing business logic or entities, read `docs/product-design.md`.
+**For every file creation, code generation, or command execution:**
+
+1. **Identify the artifact type** (OpenSpec change? Protobuf? Go code? Pulumi? K8s manifest?)
+2. **Check Workspace Structure** above to find the correct repository
+3. **Verify you're in the correct directory** before proceeding
+4. **If uncertain, ask** - never guess the repository location
+
+---
+
+## What This Repository Is
+
+Protocol Buffers schema repository for **Liverty Music** — a personalized concert notification platform. Defines entity and RPC interfaces using Buf, with remote code generation via Buf Schema Registry (BSR). No application code lives here; this repo is the single source of truth for API contracts consumed by the Go backend and TypeScript frontend.
 
 ## Essential Commands
 
-### Development Setup
-
 ```bash
-mise install          # Install dependencies (buf, pre-commit)
-pre-commit install     # Install commit hooks
+mise install                              # Install toolchain (buf, pre-commit)
+pre-commit install                        # Install commit hooks
+pre-commit install --hook-type pre-push   # Install push hooks
+
+buf lint                                  # Lint proto files (STANDARD + COMMENTS rules)
+buf format -w                             # Auto-format proto files
+buf breaking --against '.git#branch=main' # Check for breaking changes
 ```
 
-### Validation
+Pre-commit hooks run `buf lint`, `buf format -w`, and `buf breaking` automatically on commit. If a breaking change is intentional, add the `buf skip breaking` label to the PR.
 
-```bash
-buf lint               # Lint Protocol Buffers files
-buf format -w          # Format protobuf files in place
-buf breaking --against '.git#branch=main'  # Check for breaking changes
+## Architecture
+
+### Layered Proto Structure
+
+```
+proto/liverty_music/
+├── entity/v1/    # Core business entities — the domain model
+│   ├── entity.proto   # Package-level doc (no messages)
+│   ├── user.proto     # User, UserId, UserEmail
+│   ├── artist.proto   # Artist, ArtistId, OfficialSite, Mbid
+│   ├── concert.proto  # Concert, ConcertId, ConcertTitle
+│   └── venue.proto    # Venue, VenueId, VenueName
+└── rpc/          # Service definitions — one service per subdirectory
+    ├── user/v1/user_service.proto       # UserService (Get, Create)
+    ├── artist/v1/artist_service.proto   # ArtistService (CRUD, Search, Follow, Similar, Top)
+    └── concert/v1/concert_service.proto # ConcertService (List, SearchNewConcerts)
 ```
 
-#### Handling Intentional Breaking Changes
+- **Entity layer** (`entity/v1/`): Pure data types. No service logic. Every domain concept gets a wrapper message (e.g., `UserId` wraps `string` with UUID validation) — never use raw primitives for domain types.
+- **RPC layer** (`rpc/*/v1/`): Service definitions that import entity types. Follow Google AIP resource-oriented patterns.
 
-If a breaking change is intentional (e.g., initial API definition or major version update):
+### Key Design Conventions
 
-1.  Create the Pull Request.
-2.  Add the `buf skip breaking` label to the PR to bypass the breaking change check.
+- **Type-safe IDs**: All identifiers are wrapper messages (`UserId`, `ArtistId`, etc.) with `protovalidate` constraints, not bare `string` fields.
+- **Validation**: Uses `buf.validate` (protovalidate) for field-level constraints. All required fields are annotated.
+- **Dependencies**: `buf.build/googleapis/googleapis` (field_behavior, common types) and `buf.build/bufbuild/protovalidate`.
+- **Buf config**: `buf.yaml` enables `STANDARD` + `COMMENTS` lint rules (except `PACKAGE_SAME_GO_PACKAGE`); breaking change detection uses `FILE` strategy.
 
-## Architecture Overview
+### Code Generation
 
-- **Entity Layer**: Core business entities in `liverty_music/entity/v1/`
-- **RPC Layer**: Service definitions in `liverty_music/rpc/v1/` using entity types
-- **Generated Code**: Remote generation via BSR. No local generation.
+Generated code is hosted on BSR at `buf.build/liverty-music/schema` — **never commit a `gen/` directory**. Schemas are pushed to BSR only via GitHub Actions on release (not locally). Consumers install generated packages via `go get` or `npm install` from BSR.
 
-## Key Files
+## OpenSpec Workflow
 
-- `buf.yaml`: Buf v2 configuration
-- `buf.gen.yaml`: BSR code generation plugins
-- `.agent/skills/`: Protobuf skills (best practices, workflow)
-- `docs/product-design.md`: Product domain concepts
+This repo uses OpenSpec for structured specification changes. Changes live in `openspec/changes/` and follow an artifact workflow (proposal → design → specs → tasks). Use `/opsx:new` to start a new change and `/opsx:continue` to progress through artifacts. See `.claude/skills/` for full skill documentation.
 
-## Core Design Rules
+## Poly-repo Context
 
-> [!IMPORTANT]
-> See skills in `.agent/skills/` for full guidelines.
+- **This repo** (`specification`): Proto schemas, OpenSpec specs, product design docs
+- **Backend** (`liverty-music/backend`): Go application
+- **Cloud Provisioning** (`liverty-music/cloud-provisioning`): GCP infrastructure
 
-1.  **No Primitives for Domain Types**: Use `UserId` (message), not `string`.
-2.  **Resource Handling**: Follow Google AIP patterns (Get, List, Create, Update, Delete).
-3.  **Documentation**: rigorous commenting required.
+## Pre-implementation Checklist
 
-## Project Structure (Poly-repo)
-
-This project adopts a poly-repo structure.
-
-- **Specification**: `https://github.com/liverty-music/specification`
-  - Manages SDD documentation via OpenSpec and orchestration.
-- **Backend**: `https://github.com/liverty-music/backend`
-  - Go backend application.
-- **Cloud Provisioning**: `https://github.com/liverty-music/cloud-provisioning`
-  - Infrastructure configuration management (GCP, GitHub, etc.).
+Before modifying `.proto` files, read:
+1. `docs/product-design.md` — domain concepts and product vision
+2. This file — project rules and core design constraints

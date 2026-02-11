@@ -1,26 +1,24 @@
-## 1. API Definitions (Protobuf)
+## 1. Domain Entities & Database
 
-- [ ] 1.1 New definitions for `ArtistService`: `SearchArtists`, `FollowArtist`, `ListSimilarArtists`, etc.
-- [ ] 1.2 Definition of `GetOnboardingSuggestions` messages and RPC.
-- [ ] 1.3 Cleanup of existing `Artist` message and addition of MBID validation.
-- [ ] 1.4 Pass compatibility checks with `buf lint` and `buf breaking`.
+- [x] 1.1 Create `followed_artists` table (migration)
+- [x] 1.2 Update `entity.Artist` to include common fields for different providers
+- [x] 1.3 Implementation of `ArtistRepository` with follow/unfollow support
 
-## 2. Backend Implementation (Core Logic)
+## 2. Service Refactoring (`ArtistService`)
 
-- [ ] 2.1 Implementation of YouTube Data API client (Subscriptions/Liked Videos retrieval).
-- [ ] 2.2 Gemini API prompt engineering: Noise removal and artist extraction.
-- [ ] 2.3 Artist normalization logic: Extracted name -> MBID resolution.
-- [ ] 2.4 Implementation of similar artist retrieval via Last.fm API.
-- [ ] 2.5 Persisting user follow state (including DB schema changes).
+- [x] 2.1 Implementation of `ArtistService` handler in `internal/adapter/rpc`
+- [x] 2.2 Relocation of artist-related methods from `ConcertService`
+- [x] 2.3 Dependency injection updates in the main stack
 
-## 3. Frontend Implementation (UX/UI)
+## 3. External API Integration
 
-- [ ] 3.1 Implementation of Google Login and YouTube scope request.
-- [ ] 3.2 Onboarding loading animation: Visualization of analysis progress.
-- [ ] 3.3 Interactive follow UI: Chain-like suggestions and drill-down.
-- [ ] 3.4 Redirect logic to dashboard after initial follow completion.
+- [x] 3.1 Last.fm API client implementation details (Throttler integration)
+- [x] 3.2 Result normalization: Mapping Last.fm results to internal `Artist` entity
+- [x] 3.3 Caching strategy for search and similar results
 
-## 4. Verification & Sync
+## 4. Onboarding UI (Aurelia 2)
 
-- [ ] 4.1 End-to-end testing in development environment (YouTube Login -> Follow -> Live Info display).
-- [ ] 4.2 Sync delta specs across repositories (`/opsx-sync`).
+- [x] 4.1 Component for "Popular Artists" (initial view)
+- [x] 4.2 Incremental search with debounce logic
+- [x] 4.3 Chain-follow interaction and state management
+- [x] 4.4 Visual feedback for follow/unfollow actions
