@@ -52,41 +52,28 @@ Configure hybrid DNS architecture: Cloudflare DNS for production (`liverty-music
   - Input: `subdomain` (e.g., "dev"), `nameservers` (Cloud DNS nameservers from GCP)
   - Output: NS record pointing `dev.liverty-music.app` to Google nameservers
 
-- [ ] 0.7 Configure Pulumi ESC (cloud-provisioning/dev environment)
+- [x] 0.7 Configure Pulumi ESC (cloud-provisioning/dev environment)
   - Access: Pulumi ESC web console or CLI (already configured)
-  - Verify: ESC environment includes:
-    ```yaml
-    values:
-      cloudflare:
-        apiToken: "<CLOUDFLARE_API_TOKEN>"
-        zoneId: "<CLOUDFLARE_ZONE_ID>"
-      gcp:
-        domains:
-          publicDomain: "dev.liverty-music.app"
-    ```
-  - Note: Cloudflare credentials already set by user
+  - Verify: ESC environment includes `cloudflare:apiToken` and `cloudflare:zoneId`
+  - Note: Verified by user
 
-- [ ] 0.8 Update main Pulumi stack to integrate Cloudflare + Cloud DNS
-  - File: `src/index.ts` or main stack file
-  - Add: Cloudflare provider initialization
-  - Add: Pass Cloud DNS nameservers to Cloudflare DNS component
-  - Add: Create NS record for subdomain delegation
-  - Verify: TypeScript compilation succeeds
+- [x] 0.8 Update main Pulumi stack to integrate Cloudflare + Cloud DNS
+  - File: `src/gcp/components/network.ts`
+  - Update: Added Cloudflare provider and NS record creation
+  - Update: Integrated Phase 1 (Certs, IP) into `NetworkComponent`
+  - Verify: `npm run build` succeeds
 
-- [ ] 0.9 Run Pulumi up to provision DNS infrastructure
+- [x] 0.9 Run Pulumi up to provision DNS infrastructure
   - Command: `cd cloud-provisioning && pulumi stack select dev && pulumi up`
   - Review: Plan shows:
     - Cloud DNS zone creation for `dev.liverty-music.app`
     - Cloudflare NS record creation for subdomain delegation
-  - Confirm: Approve the plan
-  - Output: Verify Cloud DNS nameservers and Cloudflare NS record creation
+  - Status: Completed by user
 
-- [ ] 0.10 Verify subdomain delegation
-  - Command: `dig NS dev.liverty-music.app`
-  - Expected: Response shows Google nameservers (ns-XXXXX.googledomains.com)
-  - Retry: If not showing Google nameservers, wait 5-10 minutes and retry
-  - Alternative: `nslookup -type=NS dev.liverty-music.app`
-  - Proceed: Only continue to Phase 1 after subdomain delegation propagates
+- [x] 0.10 Verify subdomain delegation
+  - Command: `node -e 'require("dns").resolveNs("dev.liverty-music.app", (err, addr) => console.log(addr))'`
+  - Result: Correctly points to Google nameservers (ns-cloud-aX.googledomains.com)
+  - Status: Verified
 
 ---
 

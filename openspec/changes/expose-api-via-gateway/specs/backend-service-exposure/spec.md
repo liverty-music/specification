@@ -4,7 +4,7 @@
 The backend Service SHALL be discoverable by external load balancers (Gateway) via explicit cross-namespace references.
 
 #### Scenario: Service referenced by Gateway
-- **WHEN** HTTPRoute in gateway namespace specifies backendRef to music-api Service in backend namespace
+- **WHEN** HTTPRoute in gateway namespace specifies backendRef to server Service in backend namespace
 - **THEN** Service is resolved and traffic routed to its endpoints
 
 #### Scenario: Service remains internal
@@ -22,7 +22,7 @@ The backend Service SHALL advertise HTTP/2 clear text support via appProtocol fi
 The backend Service SHALL be health-checked by external load balancer using gRPC health protocol.
 
 #### Scenario: Health probe reaches pod
-- **WHEN** HealthCheckPolicy targets music-api Service with gRPC type
+- **WHEN** HealthCheckPolicy targets server Service with gRPC type
 - **THEN** load balancer periodically calls grpc.health.v1.Health.Check on port 8080
 
 #### Scenario: Pod readiness propagated
