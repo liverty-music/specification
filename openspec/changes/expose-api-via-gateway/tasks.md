@@ -36,17 +36,17 @@ Configure hybrid DNS architecture: Cloudflare DNS for production (`liverty-music
   - Export: `publicZoneNameservers` output for reference
   - Verify: `npm run typecheck` passes
 
-- [ ] 0.4 Add Cloudflare provider integration
+- [x] 0.4 Add Cloudflare provider integration
   - File: `cloud-provisioning/package.json`
   - Command: `npm install @pulumi/cloudflare`
   - Verify: `package.json` includes `@pulumi/cloudflare` dependency
 
-- [ ] 0.5 Create Cloudflare configuration interface
+- [x] 0.5 Create Cloudflare configuration interface
   - File: `src/cloudflare/config.ts` (already exists)
   - Verify: `CloudflareConfig` interface includes `apiToken` and `zoneId` fields
   - Note: This file was created in previous tasks
 
-- [ ] 0.6 Create Cloudflare DNS component for subdomain delegation
+- [x] 0.6 Create Cloudflare DNS component for subdomain delegation
   - File: `src/cloudflare/components/dns-subdomain-delegation.ts` (new file)
   - Implement: Component that creates NS record for dev subdomain delegation
   - Input: `subdomain` (e.g., "dev"), `nameservers` (Cloud DNS nameservers from GCP)
@@ -133,28 +133,28 @@ These steps provision TLS certificate infrastructure. Run once; results are reus
 
 Implement CORS middleware and environment configuration.
 
-- [ ] 2.1 Add connectrpc.com/cors dependency to go.mod
+- [x] 2.1 Add connectrpc.com/cors dependency to go.mod
   - File: `backend/go.mod`
   - Command: `go get connectrpc.com/cors`
   - Verify: `grep connectrpc.com/cors go.mod` shows latest version
 
-- [ ] 2.2 Create CORS middleware file
+- [x] 2.2 Create CORS middleware file
   - File: `backend/internal/infrastructure/server/cors.go`
   - Implement: `NewCORSMiddleware()` function using `connectrpc.com/cors`
   - Include: `AllowedOrigins` from env var, `connectcors.AllowedMethods()`, `connectcors.AllowedHeaders()`, `connectcors.ExposedHeaders()`
   - Add: `Authorization` to allowed headers for future authentication
 
-- [ ] 2.3 Integrate CORS middleware into Connect server
+- [x] 2.3 Integrate CORS middleware into Connect server
   - File: `backend/internal/infrastructure/server/connect.go`
   - Update: `NewConnectServer()` to wrap mux with CORS middleware
   - Example: `handler := corsMiddleware(mux)`
 
-- [ ] 2.4 Add CORS_ALLOWED_ORIGINS to config
+- [x] 2.4 Add CORS_ALLOWED_ORIGINS to config
   - File: `backend/pkg/config/config.go`
   - Add field: `CORSAllowedOrigins string` to `Config` struct
   - Update: Kustomize ConfigMap generator to populate from env
 
-- [ ] 2.5 Add CORS validation at startup
+- [x] 2.5 Add CORS validation at startup
   - File: `backend/cmd/server/main.go` or `internal/bootstrap/bootstrap.go`
   - Log warning if `CORS_ALLOWED_ORIGINS` not set or empty
   - Example: Log "⚠️  CORS not configured, browser requests will fail"
@@ -172,19 +172,19 @@ Create k8s resources following Kustomize structure.
 
 ### 3A. Cluster-Level Resources
 
-- [ ] 4.1 Update cluster/namespaces.yaml
+- [x] 4.1 Update cluster/namespaces.yaml
   - File: `k8s/cluster/namespaces.yaml`
   - Add: `gateway` namespace definition (copy from backend ns, rename)
   - Verify: `kubectl apply -f k8s/cluster/namespaces.yaml --dry-run=client -o yaml`
 
 ### 3B. Gateway Namespace Resources
 
-- [ ] 3.2 Create gateway namespace directory structure
+- [x] 3.2 Create gateway namespace directory structure
   - Directories:
     - `k8s/namespaces/gateway/base/`
     - `k8s/namespaces/gateway/overlays/dev/`
 
-- [ ] 3.3 Create Gateway resource
+- [x] 3.3 Create Gateway resource
   - File: `k8s/namespaces/gateway/base/gateway.yaml`
   - Include:
     - `spec.gatewayClassName: gke-l7-global-external-managed`
@@ -193,35 +193,35 @@ Create k8s resources following Kustomize structure.
     - HTTP listener (port 80)
     - `allowedRoutes.namespaces.from: All`
 
-- [ ] 3.4 Create HTTPRoute for API
+- [x] 3.4 Create HTTPRoute for API
   - File: `k8s/namespaces/gateway/base/httproute-api.yaml`
   - Include:
     - `spec.parentRefs`: Gateway external-gateway
     - `spec.hostnames`: ["api.liverty-music.app"]
-    - `spec.rules.backendRefs`: name: music-api, namespace: backend, port: 8080
+    - `spec.rules.backendRefs`: name: server, namespace: backend, port: 8080
     - Path matching: `/` (prefix)
 
-- [ ] 3.5 Create HTTPRoute for HTTP→HTTPS redirect
+- [x] 3.5 Create HTTPRoute for HTTP→HTTPS redirect
   - File: `k8s/namespaces/gateway/base/httproute-redirect.yaml`
   - Include:
     - Parent: HTTP listener (port 80)
     - Filter: RequestRedirect to HTTPS with status 301
 
-- [ ] 3.6 Create GCPGatewayPolicy
+- [x] 3.6 Create GCPGatewayPolicy
   - File: `k8s/namespaces/gateway/base/gateway-policy.yaml`
   - Include:
     - `spec.default.allowGlobalAccess: true`
     - Target: external-gateway
     - (Optional: `sslPolicy` if custom SSL policy created)
 
-- [ ] 3.7 Create base kustomization for gateway
+- [x] 3.7 Create base kustomization for gateway
   - File: `k8s/namespaces/gateway/base/kustomization.yaml`
   - Include:
     - Resources: gateway.yaml, httproute-api.yaml, httproute-redirect.yaml, gateway-policy.yaml
     - Namespace: gateway
     - Labels: app: gateway-ingress
 
-- [ ] 3.8 Create dev overlay for gateway
+- [x] 3.8 Create dev overlay for gateway
   - File: `k8s/namespaces/gateway/overlays/dev/kustomization.yaml`
   - Include:
     - Bases: ../../base
@@ -230,39 +230,39 @@ Create k8s resources following Kustomize structure.
 
 ### 3C. Backend Namespace Policies
 
-- [ ] 3.9 Create HealthCheckPolicy for backend Service
+- [x] 3.9 Create HealthCheckPolicy for backend Service
   - File: `k8s/namespaces/backend/base/policies/healthcheck-policy.yaml`
   - Include:
     - `spec.default.config.type: GRPC`
     - `spec.default.config.grpcHealthCheck.port: 8080`
     - `spec.default.checkIntervalSec: 15`, `timeoutSec: 5`
-    - Target: Service music-api in backend namespace
+    - Target: Service server in backend namespace
 
-- [ ] 3.10 Create GCPBackendPolicy for backend Service
+- [x] 3.10 Create GCPBackendPolicy for backend Service
   - File: `k8s/namespaces/backend/base/policies/backend-policy.yaml`
   - Include:
     - `spec.default.timeoutSec: 30`
     - `spec.default.connectionDraining.drainingTimeoutSec: 60`
     - `spec.default.logging.enabled: true`, `sampleRate: 1000000`
-    - Target: Service music-api in backend namespace
+    - Target: Service server in backend namespace
 
-- [ ] 3.11 Create kustomization for backend policies
+- [x] 3.11 Create kustomization for backend policies
   - File: `k8s/namespaces/backend/base/policies/kustomization.yaml`
   - Resources: healthcheck-policy.yaml, backend-policy.yaml
   - Namespace: backend
 
-- [ ] 3.12 Update backend base kustomization
+- [x] 3.12 Update backend base kustomization
   - File: `k8s/namespaces/backend/base/kustomization.yaml`
   - Update resources to include: `policies/kustomization.yaml`
 
-- [ ] 3.13 Verify backend Service has appProtocol
+- [x] 3.13 Verify backend Service has appProtocol
   - File: `k8s/namespaces/backend/base/backend-app/service.yaml`
   - Ensure: `ports[0].appProtocol: kubernetes.io/h2c`
   - Verify: `kubectl apply -f k8s/namespaces/backend/base/backend-app/service.yaml --dry-run=client`
 
 ### 3D. Backend Dev Overlay
 
-- [ ] 3.14 Update backend dev overlay with cost optimization
+- [x] 3.14 Update backend dev overlay with cost optimization
   - File: `k8s/namespaces/backend/overlays/dev/kustomization.yaml`
   - Add patch for Deployment:
     - `spec.replicas: 1`
@@ -275,23 +275,23 @@ Create k8s resources following Kustomize structure.
 
 Create GitOps Application resources for automated deployment.
 
-- [ ] 4.1 Create cluster ArgoCD Application
-  - File: `k8s/argocd-apps/dev/cluster-app.yaml`
+- [x] 4.1 Create cluster ArgoCD Application
+  - File: `k8s/argocd-apps/dev/cluster-app.yaml` (Confirmed as `cluster.yaml`)
   - Include:
     - `source.path: k8s/cluster`
-    - `destination.namespace: kube-system` (or argocd)
+    - `destination.namespace: kube-system` (Note: Uses `argocd` ns for management)
     - `syncPolicy.automated.prune: true`
 
-- [ ] 4.2 Create gateway ArgoCD Application
-  - File: `k8s/argocd-apps/dev/gateway-app.yaml`
+- [x] 4.2 Create gateway ArgoCD Application
+  - File: `k8s/argocd-apps/dev/gateway-app.yaml` (Confirmed as `gateway.yaml`)
   - Include:
     - `source.path: k8s/namespaces/gateway/overlays/dev`
     - `destination.namespace: gateway`
     - `syncPolicy.automated.selfHeal: true`
     - `syncPolicy.syncOptions: [CreateNamespace=true]`
 
-- [ ] 4.3 Create/update backend ArgoCD Application
-  - File: `k8s/argocd-apps/dev/backend-app.yaml` (create if doesn't exist)
+- [x] 4.3 Create/update backend ArgoCD Application
+  - File: `k8s/argocd-apps/dev/backend-app.yaml` (Confirmed as `backend.yaml`)
   - Include:
     - `source.path: k8s/namespaces/backend/overlays/dev`
     - `destination.namespace: backend`
@@ -321,7 +321,7 @@ Deploy infrastructure step-by-step using ArgoCD for safety.
 - [ ] 5.3 Apply backend-app to create updated Service and Policies
   - Command: `argocd app create backend --repo <repo-url> --path k8s/namespaces/backend/overlays/dev --dest-namespace backend --project default` (or update)
   - Command: `argocd app sync backend --wait`
-  - Verify: `kubectl get service music-api -n backend`, `kubectl get healthcheckpolicy -n backend`
+  - Verify: `kubectl get service server -n backend`, `kubectl get healthcheckpolicy -n backend`
 
 - [ ] 5.4 Verify Gateway provisioning
   - Command: `kubectl get gateway -n gateway -o wide`
