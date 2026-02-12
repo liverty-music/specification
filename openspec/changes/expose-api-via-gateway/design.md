@@ -29,6 +29,7 @@ The backend service (Connect-RPC, port 8080) is deployed on GKE but lacks extern
 - Multi-region deployment (future consideration)
 - gRPC-Web transcoding (Connect protocol handles browsers natively)
 - Custom authentication/authorization at LB level (app-level concern)
+- HTTP to HTTPS redirection (not required for API-only endpoint)
 - Cost optimization beyond dev environment (e.g., AlloyDB, reserved capacity)
 - Production hardening (Cloud Armor, advanced monitoring setup)
 
@@ -83,7 +84,7 @@ metadata:
 # gateway/base/httproute-api.yaml
 spec:
   backendRefs:
-  - name: music-api
+  - name: route
     namespace: backend      ← Explicit cross-namespace reference
     port: 8080
 ```

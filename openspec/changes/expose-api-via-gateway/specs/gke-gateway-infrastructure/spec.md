@@ -16,7 +16,7 @@ The system SHALL provide HTTPRoute resources that route traffic from the Gateway
 
 #### Scenario: API requests routed correctly
 - **WHEN** a request matches hostname `api.liverty-music.app` and path `/`
-- **THEN** the request is forwarded to `backend/music-api:8080` Service
+- **THEN** the request is forwarded to `backend/server:8080` Service
 
 #### Scenario: Path prefix matching
 - **WHEN** a request to `api.liverty-music.app/liverty_music.rpc.*/` arrives
