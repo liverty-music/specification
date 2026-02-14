@@ -9,3 +9,5 @@
 
 # Claude settings
 .claude/settings.local.json
+
+tmp/
