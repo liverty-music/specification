@@ -35,10 +35,13 @@ To provide a chain-like discovery experience utilizing the Last.fm API, we will 
 **Endpoints Used**:
 - **Search (Incremental Search)**:
   - Method: `artist.search`
+  - URL: `http://ws.audioscrobbler.com/2.0/?method=artist.search&artist={artist_name}&api_key={api_key}&format=json`
 - **Similar Artists (Chain-like Follow Feature)**:
   - Method: `artist.getSimilar`
+  - URL: `http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist={artist_name}&api_key={api_key}&format=json`
 - **Top Artists (Initial Display - Popular Artists in Japan)**:
   - Method: `geo.getTopArtists`
+  - URL: `http://ws.audioscrobbler.com/2.0/?method=geo.gettopartists&country=japan&api_key={api_key}&format=json`
 
 ### 4. UI Transition Management
 **Decision**:
