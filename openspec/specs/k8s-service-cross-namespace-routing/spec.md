@@ -1,14 +1,14 @@
 ## ADDED Requirements
 
 ### Requirement: Backend Service Accessibility from External Gateway
-The system SHALL make the `music-api` Service (backend namespace) accessible to HTTPRoute resources in the `gateway` namespace.
+The system SHALL make the `server` Service (backend namespace) accessible to HTTPRoute resources in the `gateway` namespace.
 
 #### Scenario: Service discovered by Gateway
-- **WHEN** HTTPRoute references Service music-api with namespace: backend
+- **WHEN** HTTPRoute references Service server with namespace: backend
 - **THEN** load balancer resolves the Service and routes traffic to its endpoints
 
 #### Scenario: Service IP stable
-- **WHEN** music-api Service is in ClusterIP mode
+- **WHEN** server Service is in ClusterIP mode
 - **THEN** load balancer can reach backend pods via stable cluster IP
 
 ### Requirement: Service Protocol Configuration for HTTP/2
