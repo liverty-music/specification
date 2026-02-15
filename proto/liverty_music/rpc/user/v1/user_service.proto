@@ -36,8 +36,11 @@ message GetResponse {
 
 // CreateRequest provides the necessary details to register a new user profile.
 message CreateRequest {
-  // Required. The user profile data to be created.
-  entity.v1.User user = 1 [(buf.validate.field).required = true];
+  // Required. The identity provider's user identifier (Zitadel sub claim).
+  entity.v1.UserExternalId external_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The user's email address for account identity.
+  entity.v1.UserEmail email = 2 [(buf.validate.field).required = true];
 }
 
 // CreateResponse returns the user profile as successfully created.
