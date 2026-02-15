@@ -1,4 +1,18 @@
-## ADDED Requirements
+# Artist Discovery DNA Orb UI
+
+## Purpose
+
+This capability defines the Artist Discovery UI for the Liverty Music MVP onboarding flow, featuring a gamified "DNA Extraction" metaphor. Users interact with physics-based artist bubbles that are absorbed into a visual "Music DNA Orb" inventory, creating an engaging way to collect music preferences and build personalized recommendations.
+
+**Key Aspects:**
+- Interactive canvas-based UI with physics-simulated artist bubbles
+- DNA Orb visual metaphor that evolves as users follow artists
+- Backend integration via ArtistService RPCs for artist data and recommendations
+- Performance-optimized for 60fps on mobile devices
+
+---
+
+## Requirements
 
 ### Requirement: DNA Extraction UI Concept
 The system SHALL provide a gamified artist discovery interface using a "DNA Extraction" metaphor with an interactive orb (glass sphere) UI that collects user preferences.
@@ -49,11 +63,11 @@ The system SHALL provide instant feedback about available live events using dyna
 ---
 
 ### Requirement: Similar Artist Chain Reaction
-The system SHALL generate new artist recommendations dynamically using Last.fm's similar artist API.
+The system SHALL generate new artist recommendations dynamically using the backend ArtistService.ListSimilar RPC.
 
 #### Scenario: Similar artist bubble spawning
 - **WHEN** a user taps an artist bubble
-- **THEN** the system SHALL call Last.fm's `artist.getSimilar` API with the selected artist
+- **THEN** the system SHALL call the backend `ArtistService.ListSimilar` RPC with the selected artist's ID
 - **AND** new bubbles representing similar artists SHALL spawn from the original bubble's position
 - **AND** the new bubbles SHALL appear with a "pop" emergence animation
 - **AND** the new bubbles SHALL integrate into the physics-based layout
@@ -78,7 +92,7 @@ The system SHALL implement smooth, natural bubble movement using physics simulat
 - **WHEN** artist bubbles are displayed
 - **THEN** the system SHALL use a physics engine (e.g., Matter.js, D3.js force simulation)
 - **AND** bubbles SHALL float, bounce, and interact naturally
-- **AND** performance SHALL be optimized for mobile devices using React.memo or Canvas/WebGL rendering
+- **AND** performance SHALL be optimized for mobile devices using component optimization or Canvas/WebGL rendering
 
 ---
 
@@ -87,11 +101,11 @@ The system SHALL implement smooth, natural bubble movement using physics simulat
 This specification defines the Artist Discovery UI for Liverty Music MVP, featuring:
 - **UI Metaphor**: "DNA Extraction" - collecting user music preferences as genetic material
 - **Core Component**: Music DNA Orb (glass sphere) that visually accumulates user taste
-- **Data Source**: Last.fm API (`geo.getTopArtists`, `artist.getSimilar`)
+- **Data Source**: Backend `ArtistService` RPCs (`ListTop`, `ListSimilar`) via Connect-RPC
 - **Animation Requirements**: Physics-based bubbles, absorption effects, particle systems
 - **Performance Target**: Smooth 60fps on mobile devices
 
 ## Reference Documentation
 
 For detailed visual design, animation specs, and UI behavior, see:
-- `../docs/onboarding-ux.md` (Japanese detailed specification - Step 2)
+- `../../changes/archive/2026-02-15-frontend-artist-discovery-ui/docs/onboarding-ux.md` (Japanese detailed specification - Step 2)
