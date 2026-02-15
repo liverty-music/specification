@@ -29,6 +29,11 @@ Manage the local and CI development lifecycle for Protocol Buffers within the Li
     - **PR Workflow** (`.github/workflows/buf-pr-checks.yml`):
       - Runs on all PR events including label changes.
       - Validates: lint, format (`--diff --exit-code`), breaking changes, dry-run generation.
+      - **Skip Breaking Changes**: Add `buf skip breaking` label to PR to bypass breaking change detection.
+        - Used for intentional breaking changes (e.g., security fixes, MVP iterations).
+        - Label must exist in repository (create with `gh label create "buf skip breaking"`).
+        - Workflow automatically responds to `labeled`/`unlabeled` events.
+        - Reference: https://buf.build/docs/bsr/ci-cd/github-actions/#skip-breaking-change-detection-using-labels
     - **Release Workflow** (`.github/workflows/buf-release.yml`):
       - Triggers on GitHub releases.
       - Automatic `buf push` with release tag as BSR label.

@@ -6,6 +6,25 @@ import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 
+// UserId is a globally unique identifier for a platform user.
+message UserId {
+  // A UUID string representing the user's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// UserExternalId is the identity provider's unique identifier for a user.
+// This maps to the Zitadel `sub` claim and links the external identity to the local user record.
+message UserExternalId {
+  // A UUID string representing the identity provider's user identifier.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// UserEmail represents a validated email address for communications.
+message UserEmail {
+  // The email address string, validated against standard email formats.
+  string value = 1 [(buf.validate.field).string.email = true];
+}
+
 // User represents a registered person on the Liverty Music platform.
 // Users are notified of upcoming concerts based on their following and favorite artists.
 message User {
@@ -17,16 +36,8 @@ message User {
 
   // The time when the user was created.
   google.protobuf.Timestamp create_time = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
-}
 
-// UserId is a globally unique identifier for a platform user.
-message UserId {
-  // A UUID string representing the user's unique identity.
-  string value = 1 [(buf.validate.field).string.uuid = true];
-}
-
-// UserEmail represents a validated email address for communications.
-message UserEmail {
-  // The email address string, validated against standard email formats.
-  string value = 1 [(buf.validate.field).string.email = true];
+  // The identity provider's user identifier (Zitadel sub claim).
+  // Used to link the external identity to the local user record.
+  UserExternalId external_id = 4 [(buf.validate.field).required = true];
 }

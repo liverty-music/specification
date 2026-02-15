@@ -35,9 +35,11 @@ message GetResponse {
 }
 
 // CreateRequest provides the necessary details to register a new user profile.
+// The external_id (Zitadel sub claim) is extracted from the authenticated JWT context
+// by the backend and MUST NOT be provided by the client.
 message CreateRequest {
-  // Required. The user profile data to be created.
-  entity.v1.User user = 1 [(buf.validate.field).required = true];
+  // Required. The user's email address for account identity.
+  entity.v1.UserEmail email = 1 [(buf.validate.field).required = true];
 }
 
 // CreateResponse returns the user profile as successfully created.
