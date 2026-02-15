@@ -51,7 +51,7 @@ The system SHALL serve static HTML, JavaScript, and CSS assets efficiently using
 #### Scenario: Root path serves index.html
 - **WHEN** a user requests `https://dev.liverty-music.app/`
 - **THEN** Caddy SHALL respond with `index.html` from the `/srv` directory
-- **THEN** the response SHALL include appropriate cache headers for HTML files
+- **THEN** the response SHALL include cache headers that prevent long-term caching (e.g., `Cache-Control: no-cache` or short `max-age`) to ensure users always receive the latest HTML
 
 #### Scenario: Asset files are served with long-term caching
 - **WHEN** a user requests a versioned asset file (e.g., `/assets/main.abc123.js`)
