@@ -19,8 +19,8 @@ The onboarding flow has 4 steps: Landing Page → Artist Discovery → **Loading
 ## Decisions
 
 ### 1. Data Aggregation Strategy
-**Decision**: Use `Promise.allSettled()` to fire `SearchNewConcerts` for all followed artists in parallel, wrapped in a global `AbortController` with 10-second timeout.
-**Rationale**: `allSettled` ensures partial failures don't block the entire flow. Artists whose searches fail or timeout are simply excluded from the initial Dashboard render — the data can be fetched later.
+**Decision**: Use `Promise.allSettled()` to fire `SearchNewConcerts` for all followed artists in parallel, wrapped in a global `AbortController` with 10-second timeout. If the initial `ListFollowedArtists` call fails, the system SHALL attempt a single retry before gracefully navigating to the Dashboard.
+**Rationale**: `allSettled` ensures partial failures don't block the entire flow. Artists whose searches fail or timeout are simply excluded from the initial Dashboard render — the data can be fetched later. The retry logic for `ListFollowedArtists` prevents the loading screen from becoming stuck if the initial artist list retrieval fails.
 
 ```
 ┌──────────────────────────────────────────────────────┐

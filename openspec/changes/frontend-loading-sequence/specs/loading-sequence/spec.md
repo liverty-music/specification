@@ -43,6 +43,12 @@ The system SHALL trigger `SearchNewConcerts` for each followed artist in paralle
 - **THEN** the system SHALL proceed with successfully retrieved data
 - **AND** the system SHALL NOT block navigation due to individual artist failures
 
+#### Scenario: Initial artist list retrieval failure
+- **WHEN** the loading sequence starts
+- **AND** the `ListFollowedArtists` RPC fails after retries
+- **THEN** the system SHALL navigate to the Dashboard
+- **AND** the system SHALL NOT display an infinite loading state
+
 ### Requirement: Global Timeout
 The system SHALL enforce a 10-second global timeout on data aggregation to prevent infinite loading states.
 

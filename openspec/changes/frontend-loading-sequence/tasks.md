@@ -7,8 +7,8 @@
 ## 2. Data Aggregation Orchestration
 
 - [ ] 2.1 Call `ListFollowedArtists` on component activation to retrieve followed artist list
-- [ ] 2.2 Implement parallel `SearchNewConcerts` calls using `Promise.allSettled()` with batching (groups of 5)
-- [ ] 2.3 Add `AbortController` with 10-second global timeout
+- [ ] 2.2 Implement parallel `SearchNewConcerts` calls using `Promise.allSettled()` with sequential batching (groups of 5 processed sequentially to prevent backend overload)
+- [ ] 2.3 Add `AbortController` with 10-second global timeout and retry logic for `ListFollowedArtists` (single retry, then fallback to Dashboard)
 - [ ] 2.4 Implement minimum 3-second display duration using `Promise.all([aggregation, delay(3000)])`
 
 ## 3. Navigation & Route Guards
