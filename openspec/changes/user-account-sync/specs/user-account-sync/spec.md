@@ -7,8 +7,9 @@ The system SHALL create a local user record in the application database when a u
 #### Scenario: Successful signup provisioning
 
 - **WHEN** a user completes registration via Zitadel and the frontend receives the OIDC callback with `state.isRegistration === true`
-- **THEN** the frontend SHALL call the `Create` RPC with the user's `external_id` (Zitadel `sub`), `email`, and `name` from the JWT claims
-- **AND** the backend SHALL create a new user record with `external_id` set to the Zitadel `sub`
+- **THEN** the frontend SHALL call the `Create` RPC with the user's `email` parameter only
+- **AND** the backend SHALL extract `external_id` (from JWT `sub` claim) and `name` (from JWT `name` claim)
+- **AND** the backend SHALL create a new user record with `external_id`, `email`, and `name` persisted
 - **AND** the backend SHALL return the created user
 
 #### Scenario: Duplicate provisioning attempt
@@ -49,8 +50,8 @@ The existing `Create` RPC SHALL accept `email` as a top-level parameter in the r
 #### Scenario: Create user with external identity
 
 - **WHEN** `Create` is called with `email` by an authenticated user
-- **THEN** the system SHALL extract `external_id` from the JWT `sub` claim
-- **AND** create a new user record with both `email` and `external_id` persisted
+- **THEN** the system SHALL extract `external_id` from the JWT `sub` claim and `name` from the JWT `name` claim
+- **AND** create a new user record with `email`, `external_id`, and `name` persisted
 
 #### Scenario: Missing required fields
 
