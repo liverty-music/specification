@@ -42,18 +42,19 @@ The `User` protobuf entity SHALL include an `external_id` field to represent the
 - **THEN** it SHALL include the `external_id` field as a UUID string
 - **AND** the field SHALL be validated as a UUID format via protovalidate
 
-### Requirement: Create RPC with External ID and Email
+### Requirement: Create RPC with Email Parameter
 
-The existing `Create` RPC SHALL accept `external_id` and `email` as part of the `User` entity in the request.
+The existing `Create` RPC SHALL accept `email` as a top-level parameter in the request. The `external_id` (Zitadel `sub` claim) SHALL be extracted from the authenticated JWT context by the backend.
 
 #### Scenario: Create user with external identity
 
-- **WHEN** `Create` is called with a `User` containing `external_id` and `email`
-- **THEN** the system SHALL create a new user record with both fields persisted
+- **WHEN** `Create` is called with `email` by an authenticated user
+- **THEN** the system SHALL extract `external_id` from the JWT `sub` claim
+- **AND** create a new user record with both `email` and `external_id` persisted
 
 #### Scenario: Missing required fields
 
-- **WHEN** `Create` is called without `external_id` or `email`
+- **WHEN** `Create` is called without `email`
 - **THEN** the system SHALL return `connect.CodeInvalidArgument`
 
 #### Scenario: Authentication required

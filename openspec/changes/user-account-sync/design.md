@@ -47,7 +47,7 @@ Current state:
 
 ### Decision 3: Use existing `Get` and `Create` RPCs (no new RPC)
 
-**Choice**: Extend the existing `Create` RPC to accept `external_id` and `email` as parameters. The frontend calls `Create` on signup. Idempotency is handled via the database UNIQUE constraint on `external_id` — if the user already exists, `Create` returns `ALREADY_EXISTS`.
+**Choice**: Extend the existing `Create` RPC to accept `email` as a parameter. The `external_id` (Zitadel `sub` claim) is extracted from the authenticated JWT context by the backend, not provided by the client. The frontend calls `Create` on signup. Idempotency is handled via the database UNIQUE constraint on `external_id` — if the user already exists, `Create` returns `ALREADY_EXISTS`.
 
 **Alternatives considered**:
 - **New `GetOrCreate` RPC**: Single idempotent call. However, this introduces a non-standard RPC pattern and mixes read/write semantics. The existing `Get`/`Create` separation is cleaner and follows resource-oriented API design (Google AIP).
@@ -64,7 +64,7 @@ Current state:
 
 **[Risk] User signs up but closes browser before callback completes** → The user exists in Zitadel but not in the local DB. On next login, the frontend won't call `Create` because `state.isRegistration` is only set during `register()`. Mitigation: Accept this gap for MVP. Future mitigation: add backend interceptor fallback or Zitadel Actions v2 Webhook.
 
-**[Risk] `state` parameter is client-controlled and not tamper-proof** → A malicious client could call `Create` with arbitrary data. Mitigation: The `Create` RPC must validate the JWT and use the authenticated `sub` claim as the source of truth for `external_id`, not client-provided data.
+**[Risk] `state` parameter is client-controlled and not tamper-proof** → A malicious client could call `Create` with arbitrary `email` data. Mitigation: The `Create` RPC extracts `external_id` from the authenticated JWT `sub` claim (not from client request), preventing identity tampering. Email validation is performed by protovalidate.
 
 **[Risk] Duplicate `Create` calls** → Network retry or double-click could cause a second `Create` for the same `external_id`. Mitigation: Database UNIQUE constraint on `external_id` ensures the second call returns `ALREADY_EXISTS`. The frontend handles this gracefully.
 
