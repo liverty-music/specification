@@ -49,11 +49,11 @@ The system SHALL provide instant feedback about available live events using dyna
 ---
 
 ### Requirement: Similar Artist Chain Reaction
-The system SHALL generate new artist recommendations dynamically using Last.fm's similar artist API.
+The system SHALL generate new artist recommendations dynamically using the backend ArtistService.ListSimilar RPC.
 
 #### Scenario: Similar artist bubble spawning
 - **WHEN** a user taps an artist bubble
-- **THEN** the system SHALL call Last.fm's `artist.getSimilar` API with the selected artist
+- **THEN** the system SHALL call the backend `ArtistService.ListSimilar` RPC with the selected artist's ID
 - **AND** new bubbles representing similar artists SHALL spawn from the original bubble's position
 - **AND** the new bubbles SHALL appear with a "pop" emergence animation
 - **AND** the new bubbles SHALL integrate into the physics-based layout
@@ -87,7 +87,7 @@ The system SHALL implement smooth, natural bubble movement using physics simulat
 This specification defines the Artist Discovery UI for Liverty Music MVP, featuring:
 - **UI Metaphor**: "DNA Extraction" - collecting user music preferences as genetic material
 - **Core Component**: Music DNA Orb (glass sphere) that visually accumulates user taste
-- **Data Source**: Last.fm API (`geo.getTopArtists`, `artist.getSimilar`)
+- **Data Source**: Backend `ArtistService` RPCs (`ListTop`, `ListSimilar`) via Connect-RPC
 - **Animation Requirements**: Physics-based bubbles, absorption effects, particle systems
 - **Performance Target**: Smooth 60fps on mobile devices
 
