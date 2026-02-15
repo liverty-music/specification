@@ -1,19 +1,20 @@
 ## 1. Database Schema
 
-- [ ] 1.1 Create migration to add `external_id UUID UNIQUE NOT NULL` column to `users` table
-- [ ] 1.2 Update `schema.sql` to reflect the new column
+- [x] 1.1 Create migration to add `external_id UUID UNIQUE NOT NULL` column to `users` table
+- [x] 1.2 Update `schema.sql` to reflect the new column
 
 ## 2. Protobuf Definitions
 
-- [ ] 2.1 Add `external_id` field (UUID-validated) to `User` entity in `liverty_music/entity/v1/user.proto`
-- [ ] 2.2 Add protovalidate UUID constraint for `external_id` field
-- [ ] 2.3 Run `buf lint` and `buf format` to verify protobuf changes
+- [x] 2.1 Add `external_id` field (UUID-validated) to `User` entity in `liverty_music/entity/v1/user.proto`
+- [x] 2.2 Add protovalidate UUID constraint for `external_id` field
+- [x] 2.3 Run `buf lint` and `buf format` to verify protobuf changes
+- [x] 2.4 Add `name` field to `User` entity for display name from identity provider
 
 ## 3. Backend Implementation
 
-- [ ] 3.1 Update `User` entity struct in `internal/entity/user.go` to include `ExternalID` field
-- [ ] 3.2 Implement `GetByExternalID` method in `UserRepository` interface and `user_repo.go`
-- [ ] 3.3 Update `Create` method in `user_repo.go` to persist `external_id`
+- [x] 3.1 Update `User` entity struct in `internal/entity/user.go` to include `ExternalID` and `Name` fields
+- [x] 3.2 Implement `GetByExternalID` method in `UserRepository` interface and `user_repo.go`
+- [x] 3.3 Update `Create` method in `user_repo.go` to persist `external_id` and `name`
 - [ ] 3.4 Update `Create` RPC handler in `user_handler.go` to require JWT authentication and map `external_id`
 - [ ] 3.5 Write unit tests for repository and handler changes
 
