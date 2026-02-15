@@ -16,7 +16,7 @@
 - [x] 3.2 Implement `GetByExternalID` method in `UserRepository` interface and `user_repo.go`
 - [x] 3.3 Update `Create` method in `user_repo.go` to persist `external_id` and `name`
 - [x] 3.4 Update `Create` RPC handler in `user_handler.go` to require JWT authentication and map `external_id`
-- [ ] 3.5 Write unit tests for repository and handler changes
+- [x] 3.5 Write unit tests for repository and handler changes
 
 ## 4. Frontend Implementation
 
