@@ -14,5 +14,3 @@ lint:
 breaking:
   use:
     - FILE
-  ignore:
-    - proto/liverty_music/rpc/user/v1/user_service.proto
