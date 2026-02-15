@@ -21,7 +21,7 @@
 
 - [ ] 4.1 Update `AuthService.register()` to pass `state: { isRegistration: true }` in `signinRedirect`
 - [ ] 4.2 Update `AuthCallback.loading()` to detect `state.isRegistration` after callback
-- [ ] 4.3 Call backend `Create` RPC in callback when `isRegistration` is true, using `sub`, `email`, and `name` from token profile
+- [ ] 4.3 Call backend `Create` RPC in callback when `isRegistration` is true, passing `email` only (backend extracts `external_id` from JWT `sub` claim and `name` from JWT `name` claim)
 - [ ] 4.4 Handle `ALREADY_EXISTS` response gracefully (treat as success)
 - [ ] 4.5 Handle other `Create` failures gracefully — log error but complete auth flow
 

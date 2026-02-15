@@ -28,7 +28,7 @@ The system SHALL provide a mechanism for users to authenticate via the Zitadel H
 - **WHEN** the user is redirected back to `/auth/callback` after successful registration
 - **AND** `state.isRegistration` is `true`
 - **THEN** the system exchanges the authorization code for ID/Access tokens
-- **AND** calls the backend `Create` RPC with the user's `external_id` (from `sub` claim), `email`, and `name` from the token claims
+- **AND** calls the backend `Create` RPC with the user's `email` parameter (backend extracts `external_id` and `name` from JWT)
 - **AND** updates the application state to "Authenticated"
 - **AND** redirects the user to the home page
 

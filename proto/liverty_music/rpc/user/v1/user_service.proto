@@ -35,7 +35,7 @@ message GetResponse {
 }
 
 // CreateRequest provides the necessary details to register a new user profile.
-// The external_id (Zitadel sub claim) is extracted from the authenticated JWT context
+// The external_id (Zitadel sub claim) and name are extracted from the authenticated JWT context
 // by the backend and MUST NOT be provided by the client.
 message CreateRequest {
   // Required. The user's email address for account identity.

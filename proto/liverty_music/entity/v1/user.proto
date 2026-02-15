@@ -40,4 +40,7 @@ message User {
   // The identity provider's user identifier (Zitadel sub claim).
   // Used to link the external identity to the local user record.
   UserExternalId external_id = 4 [(buf.validate.field).required = true];
+
+  // The user's display name, synced from the identity provider.
+  string name = 5;
 }
