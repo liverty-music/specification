@@ -92,7 +92,7 @@ The system SHALL implement smooth, natural bubble movement using physics simulat
 - **WHEN** artist bubbles are displayed
 - **THEN** the system SHALL use a physics engine (e.g., Matter.js, D3.js force simulation)
 - **AND** bubbles SHALL float, bounce, and interact naturally
-- **AND** performance SHALL be optimized for mobile devices using React.memo or Canvas/WebGL rendering
+- **AND** performance SHALL be optimized for mobile devices using component optimization or Canvas/WebGL rendering
 
 ---
 
@@ -108,4 +108,4 @@ This specification defines the Artist Discovery UI for Liverty Music MVP, featur
 ## Reference Documentation
 
 For detailed visual design, animation specs, and UI behavior, see:
-- `../docs/onboarding-ux.md` (Japanese detailed specification - Step 2)
+- `../../changes/archive/2026-02-15-frontend-artist-discovery-ui/docs/onboarding-ux.md` (Japanese detailed specification - Step 2)
