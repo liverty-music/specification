@@ -12,7 +12,7 @@ The system SHALL provide a mechanism for users to authenticate via the Zitadel H
 
 #### Scenario: Initiate Login
 
-- **WHEN** user clicks the "Sign In" or "Sign Up" button
+- **WHEN** user clicks the "Sign Up" or "Sign In" button on the landing page
 - **THEN** the system redirects the user to the configured Zitadel Issuer URL
 - **AND** the request includes the correct Client ID and PKCE challenge
 
@@ -22,12 +22,14 @@ The system SHALL provide a mechanism for users to authenticate via the Zitadel H
 - **THEN** the system SHALL pass `state: { isRegistration: true }` in the OIDC redirect request
 - **AND** the system SHALL use `prompt: 'create'` to show the Zitadel registration form
 
-#### Scenario: Handle Login Callback
+#### Scenario: Handle Login Callback with Onboarding Routing
 
 - **WHEN** the user is redirected back to `/auth/callback` after successful authentication
 - **THEN** the system exchanges the authorization code for ID/Access tokens
 - **AND** updates the application state to "Authenticated"
-- **AND** redirects the user to the home page (or strict post-login route)
+- **AND** the system SHALL check if the user has ≥1 followed artist via `ListFollowedArtists` RPC
+- **AND** if the user has no followed artists, the system SHALL redirect to the Artist Discovery page (`/onboarding/discover`)
+- **AND** if the user has ≥1 followed artist, the system SHALL redirect to the Dashboard (`/dashboard`)
 
 #### Scenario: Handle Registration Callback
 
