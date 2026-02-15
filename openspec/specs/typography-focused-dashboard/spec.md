@@ -12,7 +12,7 @@ The system SHALL implement a typography-focused dashboard design that avoids art
 #### Scenario: Dynamic color generation from artist names
 - **WHEN** displaying live event cards
 - **THEN** the system SHALL generate a unique theme color for each artist based on their name string
-- **AND** the color SHALL be derived using a deterministic algorithm (e.g., HSL color space conversion)
+- **AND** the color SHALL be derived using a deterministic algorithm mapped to the HSL color space
 - **AND** the color SHALL be used as the card background or accent color
 - **AND** this SHALL provide visual variety without requiring image assets
 
@@ -28,7 +28,7 @@ The system SHALL display live events in a three-column timeline layout organized
 - **AND** the X-axis SHALL represent distance from the user's registered region
 
 #### Scenario: Lane 1 - My City (Main Lane)
-- **WHEN** displaying Lane 1 (45-50% screen width)
+- **WHEN** displaying Lane 1 (50% screen width)
 - **THEN** the system SHALL show events in the user's registered prefecture
 - **AND** the system SHALL use mega-typography style cards
 - **AND** cards SHALL feature the artist name in extra-bold, large font as the primary element
@@ -46,6 +46,7 @@ The system SHALL display live events in a three-column timeline layout organized
 - **THEN** the system SHALL show all other nationwide events
 - **AND** cards SHALL be text-only list format
 - **AND** cards SHALL display artist name + major city name (e.g., "Osaka")
+- **AND** the system SHALL handle long text (e.g., via truncation or wrapping) to maintain layout integrity
 
 ---
 
