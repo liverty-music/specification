@@ -1,10 +1,4 @@
-# Capability: Concert Search
-
-## Purpose
-
-To define the interface and behavior for discovering new concerts for artists, enabling the system to keep its concert catalog up-to-date.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Search Concerts by Artist
 
