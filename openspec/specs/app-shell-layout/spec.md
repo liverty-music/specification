@@ -18,6 +18,7 @@ The system SHALL display proper brand identity elements across the application.
 - **WHEN** the application is loaded
 - **THEN** the system SHALL display a brand favicon in the browser tab
 - **AND** the system SHALL provide apple-touch-icon for iOS home screen
+- **AND** the system SHALL provide a web app manifest with themed icons (including maskable versions) for Android and other PWA-compliant platforms
 
 ---
 
