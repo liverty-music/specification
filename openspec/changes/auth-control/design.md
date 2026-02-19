@@ -32,15 +32,17 @@ The system uses Zitadel as the OIDC provider with JWT tokens validated against J
 
 **Implementation:**
 
+> **Note**: Code snippets in this design document are simplified pseudocode for illustration. Actual implementation may use different error handling patterns (e.g., `fmt.Errorf` instead of `authn.Errorf`). See the backend implementation in PR #65 for exact code.
+
 ```go
 authMiddleware := authn.NewMiddleware(func(ctx context.Context, req *http.Request) (any, error) {
     token, ok := authn.BearerToken(req)
     if !ok {
-        return nil, authn.Errorf("missing bearer token")
+        return nil, fmt.Errorf("missing bearer token")
     }
     claims, err := jwtValidator.ValidateToken(ctx, token)
     if err != nil {
-        return nil, authn.Errorf("invalid token: %w", err)
+        return nil, fmt.Errorf("invalid token: %w", err)
     }
     return claims, nil
 })
