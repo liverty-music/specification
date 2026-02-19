@@ -93,3 +93,4 @@ Existing per-component `canLoad` guards for authentication checks SHALL be remov
 - **WHEN** the `LoadingSequence` component is loaded
 - **THEN** the component SHALL NOT contain its own `canLoad` authentication check
 - **AND** authentication SHALL be enforced by the global `AuthHook` via route metadata
+
