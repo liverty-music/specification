@@ -52,5 +52,6 @@ The system SHALL load and apply a display font for headings with appropriate fal
 #### Scenario: Font preloading
 - **WHEN** the application loads
 - **THEN** the system SHALL preconnect to the font provider domains (fonts.googleapis.com and fonts.gstatic.com) in the HTML head
+- **AND** the preconnect to `fonts.gstatic.com` SHALL include the `crossorigin` attribute
 - **AND** the system SHALL load the display font with `font-display: swap` to prevent invisible text during load
 - **AND** the system SHALL use `system-ui` as the immediate fallback until the display font is ready

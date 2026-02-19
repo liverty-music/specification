@@ -66,7 +66,7 @@ The system SHALL prioritize typography and dynamic colors over images in all eve
 #### Scenario: Card entrance animation
 - **WHEN** event cards scroll into the viewport
 - **THEN** the system SHALL apply a subtle entrance animation (fade-in or slide-up) as cards become visible
-- **AND** cards in the same date group SHALL stagger their entrance slightly for visual rhythm
+- **AND** cards in the same date group SHALL stagger their entrance (e.g., 50-100ms delay per card) for visual rhythm
 
 ---
 

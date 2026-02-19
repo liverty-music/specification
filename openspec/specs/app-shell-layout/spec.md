@@ -12,7 +12,7 @@ The system SHALL display proper brand identity elements across the application.
 #### Scenario: Page title displays service name
 - **WHEN** any page is loaded
 - **THEN** the HTML `<title>` SHALL include "Liverty Music" (e.g., "Liverty Music" or "Liverty Music - [Page Name]")
-- **AND** the system SHALL NOT display scaffold names like "Aurelia"
+- **AND** the system SHALL NOT display default scaffold or template names (e.g., "Aurelia", "Vite", "React App")
 
 #### Scenario: Favicon and PWA icons
 - **WHEN** the application is loaded
