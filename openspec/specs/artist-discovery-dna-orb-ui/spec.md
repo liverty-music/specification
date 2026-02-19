@@ -15,13 +15,33 @@ This capability defines the Artist Discovery UI for the Liverty Music MVP onboar
 ## Requirements
 
 ### Requirement: DNA Extraction UI Concept
-The system SHALL provide a gamified artist discovery interface using a "DNA Extraction" metaphor with an interactive orb (glass sphere) UI that collects user preferences.
+The system SHALL provide a gamified artist discovery interface using a "DNA Extraction" metaphor with an interactive orb (glass sphere) UI that collects user preferences, with visual differentiation per artist and onboarding guidance.
 
 #### Scenario: Initial bubble display with DNA Orb
 - **WHEN** a user reaches the Artist Discovery step after authentication
 - **THEN** the system SHALL display approximately 30 artist bubbles in the center area using physics-based animation
 - **AND** the system SHALL display a "Music DNA Orb" (glass sphere UI) at the bottom of the screen
 - **AND** the orb SHALL serve as a visual inventory for collected artists
+
+#### Scenario: Per-artist bubble color differentiation
+- **WHEN** artist bubbles are rendered
+- **THEN** each bubble SHALL have a unique gradient color derived from the artist's name using a deterministic HSL-based algorithm
+- **AND** the colors SHALL provide visual variety across the bubble field (not uniform purple)
+
+#### Scenario: Onboarding guidance overlay
+- **WHEN** the Artist Discovery screen is displayed for the first time
+- **THEN** the system SHALL display a brief instructional overlay or tooltip explaining the interaction: "Tap bubbles to follow artists"
+- **AND** the overlay SHALL dismiss after the user taps their first bubble or after 5 seconds
+
+#### Scenario: Orb label text
+- **WHEN** the DNA Orb is displayed
+- **THEN** the system SHALL display a label near the orb indicating its purpose (e.g., "Music DNA" or the current follow count)
+- **AND** the label SHALL update dynamically as artists are followed
+
+#### Scenario: Background visual depth
+- **WHEN** the Artist Discovery screen is displayed
+- **THEN** the background SHALL include subtle visual elements (e.g., particle field, starfield, or animated gradient) to create depth
+- **AND** these elements SHALL NOT compete with the foreground bubbles and orb for attention
 
 ---
 

@@ -33,11 +33,12 @@ The system SHALL collect the user's primary residential area using a Just-in-Tim
 - **THEN** the system SHALL display the Dashboard with a blurred background
 - **AND** the system SHALL present a bottom sheet overlay with the message "To find live events near you, tell us your main area"
 - **AND** the system SHALL provide a prefecture dropdown selector or quick-select buttons for major cities
+- **AND** the bottom sheet SHALL use the design system's dark surface palette and sheet radius token
 
 #### Scenario: Magic moment after region selection
 - **WHEN** the user selects their region in the bottom sheet
 - **THEN** the system SHALL immediately close the bottom sheet
-- **AND** the system SHALL unblur the Dashboard background
+- **AND** the system SHALL unblur the Dashboard background with a smooth transition animation
 - **AND** the system SHALL dynamically populate the Live Highway UI with region-relevant events
 - **AND** this SHALL create a "magic moment" where personalized content appears instantly
 
@@ -83,6 +84,7 @@ The system SHALL provide an engaging loading experience during data aggregation 
 - **AND** the system SHALL enforce a minimum 3-second display duration even if data loading completes earlier
 - **AND** the system SHALL call `SearchNewConcerts` for each followed artist in parallel
 - **AND** the system SHALL use a 10-second global timeout via `AbortController`
+- **AND** the system SHALL display a visual progress indicator advancing through the phases
 
 #### Scenario: Loading timeout handling
 - **WHEN** data loading exceeds 10 seconds
