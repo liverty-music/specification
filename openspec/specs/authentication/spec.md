@@ -43,34 +43,47 @@ The system SHALL extract the user ID from validated tokens and propagate it thro
 
 ### Requirement: Authenticated Endpoint Protection
 
-The system SHALL require authentication for user-specific operations (Follow/Unfollow/ListFollowed).
+The system SHALL enforce authentication for all RPC endpoints by default using `connectrpc/authn-go` HTTP middleware with default-deny semantics. Unauthenticated requests SHALL be rejected at the HTTP layer before reaching the Connect interceptor chain.
 
-**Rationale**: User-specific operations must be scoped to the authenticated user to prevent unauthorized access to other users' data.
+**Rationale**: Default-deny is safer than opt-in protection. The `authn-go` middleware operates at the HTTP layer, rejecting invalid requests before they consume interceptor resources. This eliminates the risk of unprotected endpoints caused by missing handler-level checks.
 
-#### Scenario: Follow Artist Without Token
+#### Scenario: Request without Authorization header
 
-- **WHEN** a request to follow an artist does not include an Authorization header
-- **THEN** the system returns `connect.CodeUnauthenticated`
-- **AND** does not execute the follow operation
+- **WHEN** a request to any RPC endpoint does not include an Authorization header
+- **THEN** the system SHALL reject the request with `connect.CodeUnauthenticated`
+- **AND** the request SHALL NOT reach the Connect interceptor chain or RPC handler
 
-#### Scenario: Follow Artist With Valid Token
+#### Scenario: Request with valid Authorization header
 
-- **WHEN** a request to follow an artist includes a valid JWT token
-- **THEN** the system validates the token
-- **AND** extracts the user ID from the token
-- **AND** executes the follow operation scoped to that user ID
+- **WHEN** a request includes a valid `Authorization: Bearer <token>` header
+- **THEN** the `authn-go` middleware SHALL validate the token via the existing JWT validator
+- **AND** extract claims (sub, email, name) from the token
+- **AND** make the claims available to downstream handlers via `authn.GetInfo(ctx)`
+- **AND** a bridge interceptor SHALL convert claims into the existing `auth.WithClaims(ctx)` format
+- **AND** the request SHALL proceed to the Connect interceptor chain and RPC handler
+
+#### Scenario: Request with invalid Authorization header
+
+- **WHEN** a request includes an invalid, expired, or malformed JWT token
+- **THEN** the system SHALL reject the request with `connect.CodeUnauthenticated`
+- **AND** the request SHALL NOT reach the Connect interceptor chain or RPC handler
 
 ### Requirement: Public Endpoint Access
 
-The system SHALL allow public access to Search/ListTop/ListSimilar operations without authentication.
+The system SHALL allow public access to the gRPC health check endpoint without authentication by serving it on a separate HTTP mux outside the `authn-go` middleware boundary.
 
-**Rationale**: Discovery and browsing features should be accessible to all users, including unauthenticated visitors, to encourage platform adoption.
+**Rationale**: Kubernetes liveness/readiness probes must reach the health endpoint without providing authentication credentials. Separating the health check mux from the protected mux keeps the default-deny semantics clean.
 
-#### Scenario: Search Without Token
+#### Scenario: Health check without token
 
-- **WHEN** a request to search for artists does not include an Authorization header
-- **THEN** the system processes the request successfully
-- **AND** returns search results without requiring authentication
+- **WHEN** a Kubernetes probe sends a health check request without an Authorization header
+- **THEN** the system SHALL process the request successfully
+- **AND** return the health status without requiring authentication
+
+#### Scenario: RPC endpoint without token
+
+- **WHEN** a request to any non-health RPC endpoint (e.g., ArtistService/Search) does not include an Authorization header
+- **THEN** the system SHALL reject the request with `connect.CodeUnauthenticated`
 
 ### Non-Functional Requirements
 
@@ -122,7 +135,8 @@ The system SHALL return `connect.CodeUnauthenticated` for failed authentication 
 ### Components
 
 - **JWT Validator**: Validates tokens using `github.com/lestrrat-go/jwx/v2`
-- **Auth Interceptor**: Connect-RPC middleware for token extraction and validation
+- **authn-go Middleware**: `connectrpc/authn-go` HTTP middleware for default-deny authentication at the HTTP layer
+- **Claims Bridge Interceptor**: Connect-RPC interceptor that converts `authn.GetInfo(ctx)` to `auth.WithClaims(ctx)` for backward compatibility
 - **Context Utilities**: Type-safe user ID propagation through request context
 
 ### Configuration
@@ -135,33 +149,41 @@ JWT_JWKS_REFRESH_INTERVAL: 15m
 ### Flow
 
 ```
-┌─────────────┐      ┌──────────────────┐      ┌─────────────┐
-│   Client    │─────▶│ Auth Interceptor │─────▶│   Handler   │
-│ (w/ Bearer) │      │  (JWT Validator) │      │ (uses ctx)  │
-└─────────────┘      └──────────────────┘      └─────────────┘
-                              │
-                              ▼
-                     ┌─────────────────┐
-                     │ ZITADEL JWKS    │
-                     │ (Public Keys)   │
-                     └─────────────────┘
+                     ┌────────────────┐
+                     │  Public Mux    │
+                     │ (health check) │
+                     └────────────────┘
+                              ▲
+┌─────────────┐      ┌───────┴────────┐      ┌──────────────────┐      ┌─────────────┐
+│   Client    │─────▶│   Root Mux     │─────▶│ authn Middleware  │─────▶│   Handler   │
+│ (w/ Bearer) │      │ (path routing) │      │ (JWT Validator)   │      │ (uses ctx)  │
+└─────────────┘      └────────────────┘      └──────────────────┘      └─────────────┘
+                                                      │
+                                                      ▼
+                                             ┌─────────────────┐
+                                             │ ZITADEL JWKS    │
+                                             │ (Public Keys)   │
+                                             └─────────────────┘
 ```
 
-1. Request arrives with `Authorization: Bearer <token>` header
-2. Interceptor extracts token from header
-3. Validator fetches JWKS from ZITADEL (cached with refresh)
-4. Token validated against public keys, claims verified
-5. User ID extracted from `sub` claim
-6. Context populated with authenticated user ID
+1. Request arrives at root mux
+2. Health check requests are routed to public mux (no auth required)
+3. All other requests are routed through `authn-go` middleware
+4. Middleware extracts bearer token and validates via JWT Validator
+5. Token validated against JWKS public keys, claims extracted
+6. Claims set via `authn.SetInfo(ctx)`, bridge interceptor converts to `auth.WithClaims(ctx)`
 7. Handler accesses user ID from context for scoped operations
 
 ## Dependencies
 
 - `github.com/lestrrat-go/jwx/v2` - JWT validation and JWKS handling
+- `connectrpc.com/authn` - HTTP-level authentication middleware for Connect-RPC
 - ZITADEL JWKS endpoint (HTTPS required in production)
 
 ## Testing
 
-- Unit tests for validator, interceptor, and context utilities
+- Unit tests for AuthFunc (valid token, missing token, invalid token, malformed bearer)
+- Unit tests for claims bridge interceptor (claims propagation, nil info, wrong type)
+- Unit tests for JWT validator and context utilities
 - Integration tests with mock JWKS endpoint
-- Manual testing with real ZITADEL tokens
+- E2E testing with Playwright MCP storageState (see e2e-auth-testing capability)
