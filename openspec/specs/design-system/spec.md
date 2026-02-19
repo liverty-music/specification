@@ -12,9 +12,15 @@ The system SHALL define a centralized set of design tokens using Tailwind CSS v4
 #### Scenario: Color tokens defined
 - **WHEN** the design system is initialized
 - **THEN** the system SHALL define the following color token groups via CSS custom properties:
-  - `--color-brand-*`: primary (indigo-500), secondary (violet-500), accent (cyan-400)
-  - `--color-surface-*`: background layers (gray-950, gray-900, gray-800)
-  - `--color-text-*`: primary (white), secondary (gray-300), muted (gray-500)
+  - `--color-brand-primary`: indigo-500
+  - `--color-brand-secondary`: violet-500
+  - `--color-brand-accent`: cyan-400
+  - `--color-surface-background`: gray-950
+  - `--color-surface-layer-1`: gray-900
+  - `--color-surface-layer-2`: gray-800
+  - `--color-text-primary`: white
+  - `--color-text-secondary`: gray-300
+  - `--color-text-muted`: gray-500
 - **AND** all components SHALL reference these tokens instead of hardcoded color values
 
 #### Scenario: Typography tokens defined
