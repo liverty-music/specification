@@ -46,6 +46,12 @@ The system SHALL animate transitions between routes to provide visual continuity
 - **AND** the incoming page SHALL fade in with a subtle upward slide (opacity 0->1, translateY 20px->0)
 - **AND** the total transition duration SHALL be 250-350ms with ease-out timing
 
+#### Scenario: Backward navigation transition
+- **WHEN** the user navigates back (browser back or in-app back action)
+- **THEN** the outgoing page SHALL fade out with a subtle downward slide (opacity 1->0, translateY 0->20px)
+- **AND** the incoming page SHALL fade in (opacity 0->1)
+- **AND** the total transition duration SHALL match the forward transition (250-350ms with ease-out timing)
+
 #### Scenario: Reduced motion preference
 - **WHEN** the user has `prefers-reduced-motion: reduce` enabled in their OS/browser settings
 - **THEN** the system SHALL skip all page transition animations

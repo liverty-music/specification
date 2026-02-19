@@ -28,7 +28,7 @@ The system SHALL define a centralized set of design tokens using Tailwind CSS v4
 - **THEN** the system SHALL define font family tokens:
   - `--font-display`: display/heading font (e.g., Outfit) for hero copy, card headlines, section titles
   - `--font-body`: body text font (system-ui, sans-serif) for paragraphs, labels, metadata
-- **AND** the system SHALL define a type scale with sizes for mega (4xl+), heading (2xl-3xl), body (base-lg), caption (xs-sm)
+- **AND** the system SHALL define a type scale with sizes for mega (4xl or larger), heading (2xl-3xl), body (base-lg), caption (xs-sm)
 
 #### Scenario: Spacing and shape tokens defined
 - **WHEN** the design system is initialized
@@ -59,5 +59,5 @@ The system SHALL load and apply a display font for headings with appropriate fal
 - **WHEN** the application loads
 - **THEN** the system SHALL preconnect to the font provider domains (fonts.googleapis.com and fonts.gstatic.com) in the HTML head
 - **AND** the preconnect to `fonts.gstatic.com` SHALL include the `crossorigin` attribute
-- **AND** the system SHALL load the display font with `font-display: swap` to prevent invisible text during load
+- **AND** the system SHALL load the display font with `font-display: swap` and include necessary weights (e.g., Bold 700, Extra-Bold 800) to prevent layout shifts or faux-bolding during load
 - **AND** the system SHALL use `system-ui` as the immediate fallback until the display font is ready
