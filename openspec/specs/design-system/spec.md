@@ -30,7 +30,7 @@ The system SHALL define a centralized set of design tokens using Tailwind CSS v4
   - `--font-body`: body text font (system-ui, sans-serif) for paragraphs, labels, metadata
 - **AND** the system SHALL define a type scale with sizes for mega (4xl or larger), heading (2xl-3xl), body (base-lg), caption (xs-sm)
 
-#### Scenario: Spacing and shape tokens defined
+#### Scenario: Shape tokens defined
 - **WHEN** the design system is initialized
 - **THEN** the system SHALL define radius tokens: `--radius-card` (1rem), `--radius-button` (0.75rem), `--radius-sheet` (1.5rem)
 - **AND** the system SHALL define shadow tokens: `--shadow-card-glow`, `--shadow-sheet`, `--shadow-button`
