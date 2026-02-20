@@ -24,6 +24,6 @@
 ## Impact
 
 - **Backend Go**: `entity/venue.go`, `infrastructure/database/rdb/venue_repo.go`, `infrastructure/music/musicbrainz/client.go` (new `place` endpoint), new `infrastructure/maps/` Google Maps client, new `usecase/venue_enrichment_uc.go`, `cmd/job/` (new enrichment job step)
-- **Database**: New migration — `ALTER TYPE` or `CREATE TYPE venue_enrichment_status`, `ALTER TABLE venues ADD COLUMN mbid TEXT, google_place_id TEXT, enrichment_status venue_enrichment_status`
-- **Proto / API**: `venue.proto` — add `mbid`, `google_place_id`, `enrichment_status` fields
+- **Database**: New migration — `CREATE TYPE venue_enrichment_status`, `ALTER TABLE venues ADD COLUMN mbid TEXT, google_place_id TEXT, enrichment_status venue_enrichment_status`
+- **Proto / API**: No changes — `mbid`, `google_place_id`, `enrichment_status` are internal fields only and are not exposed via the public API
 - **Tests**: `venue_repo_test.go`, new `venue_enrichment_uc_test.go`, MusicBrainz place client tests

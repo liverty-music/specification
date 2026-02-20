@@ -51,8 +51,3 @@
 ## 8. Concert Service — Venue Creation Update
 
 - [ ] 8.1 Update `concert_uc.go` venue creation to confirm `enrichment_status` is not explicitly set (relies on DB default `'pending'`)
-
-## 9. Proto & Mapper
-
-- [ ] 9.1 Add `string mbid = 3`, `string google_place_id = 4`, `string enrichment_status = 5` fields to `Venue` message in `proto/liverty_music/entity/v1/venue.proto`
-- [ ] 9.2 Update `VenueToProto()` mapper in `internal/adapter/rpc/mapper/concert.go` to map new fields
