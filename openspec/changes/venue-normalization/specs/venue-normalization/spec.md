@@ -30,6 +30,15 @@ The system SHALL provide an async enrichment pipeline that resolves raw venue na
 - **AND** `venues.name` SHALL remain unchanged
 - **AND** the venue SHALL NOT be retried in subsequent job runs
 
+#### Scenario: Ambiguous results (multiple matches)
+
+- **WHEN** the enrichment job processes a venue with `enrichment_status = 'pending'`
+- **AND** MusicBrainz or Google Maps returns more than one candidate match
+- **THEN** the venue SHALL NOT be updated with any external identifier
+- **AND** `venues.name` SHALL remain unchanged
+- **AND** `enrichment_status` SHALL be set to `'failed'`
+- **AND** the ambiguity SHALL be logged for future manual review
+
 #### Scenario: admin_area used as search hint
 
 - **WHEN** the enrichment job queries MusicBrainz or Google Maps for a venue
