@@ -14,9 +14,11 @@ message Venue {
   VenueName name = 2 [(buf.validate.field).required = true];
 
   // The administrative area (prefecture, state, province) where the venue is located.
-  // Populated only when determinable with confidence from the source data.
-  // Absent if the area could not be determined.
-  optional string admin_area = 3;
+  // Populated only when the area is explicitly stated in the source data or unambiguously
+  // inferable from the venue name (e.g., "Zepp Nagoya" → "愛知県").
+  // Absent when the area cannot be determined with confidence — an incorrect value is
+  // strictly worse than an absent one.
+  optional string admin_area = 3 [(buf.validate.field).string.max_len = 100];
 }
 
 // VenueId is a globally unique identifier for a concert venue.
