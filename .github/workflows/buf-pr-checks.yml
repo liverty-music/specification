@@ -23,7 +23,7 @@ jobs:
               - "proto/**"
               - "buf.yaml"
               - "buf.gen.yaml"
-              - ".github/workflows/buf-pr-checks.yml"
+              - ".github/workflows/**"
 
   buf-checks:
     needs: changes
@@ -52,3 +52,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "No relevant changes, skipping Buf PR checks"
+
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [changes, buf-checks, buf-checks-skip]
+    if: always()
+    steps:
+      - uses: re-actors/alls-green@release/v1
+        with:
+          allowed-skips: buf-checks, buf-checks-skip
+          jobs: ${{ toJSON(needs) }}
