@@ -1,6 +1,8 @@
 name: Buf PR Checks
 
 on:
+  push:
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
 
@@ -27,7 +29,7 @@ jobs:
 
   buf-checks:
     needs: changes
-    if: needs.changes.outputs.src == 'true'
+    if: needs.changes.outputs.src == 'true' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -48,7 +50,7 @@ jobs:
 
   buf-checks-skip:
     needs: changes
-    if: needs.changes.outputs.src == 'false'
+    if: needs.changes.outputs.src == 'false' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - run: echo "No relevant changes, skipping Buf PR checks"
