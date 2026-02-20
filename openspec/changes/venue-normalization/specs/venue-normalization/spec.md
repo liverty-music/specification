@@ -9,6 +9,7 @@ The system SHALL provide an async enrichment pipeline that resolves raw venue na
 - **WHEN** the enrichment job processes a venue with `enrichment_status = 'pending'`
 - **AND** MusicBrainz place search returns a match
 - **THEN** the venue record SHALL be updated with the MusicBrainz MBID
+- **AND** `venues.raw_name` SHALL be set to the current `venues.name` (if `raw_name` is NULL) to preserve the original scraper-provided name
 - **AND** `venues.name` SHALL be overwritten with the canonical name from MusicBrainz
 - **AND** `enrichment_status` SHALL be set to `'enriched'`
 
@@ -18,6 +19,7 @@ The system SHALL provide an async enrichment pipeline that resolves raw venue na
 - **AND** MusicBrainz place search returns no match
 - **AND** Google Maps Text Search returns a match
 - **THEN** the venue record SHALL be updated with the Google Maps place_id
+- **AND** `venues.raw_name` SHALL be set to the current `venues.name` (if `raw_name` is NULL) to preserve the original scraper-provided name
 - **AND** `venues.name` SHALL be overwritten with the canonical name from Google Maps
 - **AND** `enrichment_status` SHALL be set to `'enriched'`
 
@@ -54,7 +56,8 @@ The system SHALL detect and merge duplicate venue records that resolve to the sa
 - **WHEN** the enrichment job resolves a venue to an external ID (MBID or place_id)
 - **AND** another venue record already has the same external ID
 - **THEN** the two records SHALL be merged within a single atomic transaction
-- **AND** all `events.venue_id` references to the duplicate SHALL be updated to point to the canonical venue
+- **AND** events in the duplicate venue that share the same `(artist_id, local_event_date)` as events already in the canonical venue SHALL be deleted to prevent duplicate event rows
+- **AND** all remaining `events.venue_id` references to the duplicate SHALL be updated to point to the canonical venue
 - **AND** the duplicate venue record SHALL be deleted
 - **AND** `admin_area` on the canonical record SHALL be set to `COALESCE(canonical.admin_area, duplicate.admin_area)`
 - **AND** `mbid` on the canonical record SHALL be set to `COALESCE(canonical.mbid, duplicate.mbid)`
@@ -99,3 +102,14 @@ The venue enrichment job SHALL run as a post-step of the existing concert-discov
 - **WHEN** the venue enrichment step encounters an error for an individual venue
 - **THEN** the job SHALL log the error and continue processing the remaining pending venues
 - **AND** the overall job SHALL still exit with status code 0
+
+### Requirement: Venue Deduplication During Discovery
+
+The concert discovery phase SHALL use `raw_name` as a fallback lookup when finding existing venue records to prevent re-creating venues that have been renamed by the enrichment pipeline.
+
+#### Scenario: Enriched venue found by raw_name
+
+- **WHEN** the concert discovery step attempts to find a venue by its scraped name
+- **AND** no venue record matches on `venues.name`
+- **AND** a venue record matches on `venues.raw_name`
+- **THEN** the existing venue record SHALL be used (no new record created)

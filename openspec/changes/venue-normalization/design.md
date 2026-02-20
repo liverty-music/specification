@@ -17,7 +17,7 @@ This change introduces an async enrichment pipeline that resolves raw venue name
 - Exposing `mbid` / `google_place_id` in the public API (future change)
 - Rate-limit management for external APIs (noted as TODO — existing MusicBrainz throttler reused as-is)
 - Migrating job trigger to event-driven architecture (future follow-up)
-- Enriching venues that were created before this change is deployed (no backfill; status defaults to `pending` for all existing rows)
+- Running a dedicated backfill migration script — existing rows receive `enrichment_status = 'pending'` via the column default and will be processed organically on the next scheduled job run
 
 ## Decisions
 
@@ -55,6 +55,14 @@ Venue enrichment runs as a post-step in the existing `concert-discovery` job bin
 
 When calling MusicBrainz or Google Maps, the job includes `venues.admin_area` (set by PR #45) in the search query if non-NULL. This improves match accuracy for venues with common names (e.g., "Zepp Nagoya" in "愛知県" vs other "Zepp" venues).
 
+### D6: `raw_name` column to preserve original scraper-provided venue name
+
+When the enrichment pipeline overwrites `venues.name` with the canonical name (e.g., "Nippon Budokan"), the original scraper-provided name (e.g., "日本武道館") must be preserved for deduplication. Without this, the next scrape providing the same raw name would fail `GetByName` and create a new duplicate — leading to an infinite create-merge cycle. The `raw_name` column stores the original name before the first enrichment overwrite, and `GetByName` falls back to matching on `raw_name` when no `name` match is found.
+
+**Alternatives considered:**
+- Alias table (`venue_aliases`): More flexible for venues with many alternate names, but adds complexity (new table, new queries) beyond what's needed now. Can be added later if a single `raw_name` proves insufficient.
+- Skip name overwrite: Loses the benefit of canonical naming. The whole point of enrichment is normalizing venue names.
+
 ## Risks / Trade-offs
 
 - **MusicBrainz coverage gaps** → Smaller Japanese live houses may not be registered. Mitigated by Google Maps fallback. Remaining `failed` venues are acceptable and visible.
@@ -71,10 +79,14 @@ When calling MusicBrainz or Google Maps, the job includes `venues.admin_area` (s
    ALTER TABLE venues
      ADD COLUMN mbid TEXT,
      ADD COLUMN google_place_id TEXT,
-     ADD COLUMN enrichment_status venue_enrichment_status NOT NULL DEFAULT 'pending';
+     ADD COLUMN enrichment_status venue_enrichment_status NOT NULL DEFAULT 'pending',
+     ADD COLUMN raw_name TEXT;
+   UPDATE venues SET raw_name = name;
+   CREATE UNIQUE INDEX idx_venues_mbid ON venues (mbid) WHERE mbid IS NOT NULL;
+   CREATE UNIQUE INDEX idx_venues_google_place_id ON venues (google_place_id) WHERE google_place_id IS NOT NULL;
    ```
 3. Enrichment runs automatically on the next concert-discovery CronJob execution
-4. Rollback: drop the three columns and the enum type (no data loss beyond new fields)
+4. Rollback: drop the columns, indexes, and the enum type (no data loss beyond new fields)
 
 ## Open Questions
 

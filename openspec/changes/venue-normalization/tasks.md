@@ -1,15 +1,15 @@
 ## 1. Database Migration
 
 - [ ] 1.1 Create `venue_enrichment_status` ENUM type (`pending`, `enriched`, `failed`) in a new migration file
-- [ ] 1.2 Add `mbid TEXT`, `google_place_id TEXT`, `enrichment_status venue_enrichment_status NOT NULL DEFAULT 'pending'` columns to `venues` table
+- [ ] 1.2 Add `mbid TEXT`, `google_place_id TEXT`, `enrichment_status venue_enrichment_status NOT NULL DEFAULT 'pending'`, `raw_name TEXT` columns to `venues` table (backfill `raw_name` from existing `name`: `UPDATE venues SET raw_name = name`)
 - [ ] 1.3 Add unique partial indexes: `CREATE UNIQUE INDEX ON venues (mbid) WHERE mbid IS NOT NULL` and `CREATE UNIQUE INDEX ON venues (google_place_id) WHERE google_place_id IS NOT NULL`
 - [ ] 1.4 Update `schema.sql` to reflect the new columns, enum type, and indexes
 
 ## 2. Entity Layer
 
-- [ ] 2.1 Add `MBID string`, `GooglePlaceID string`, `EnrichmentStatus string` fields to `Venue` in `internal/entity/venue.go`
+- [ ] 2.1 Add `MBID string`, `GooglePlaceID string`, `EnrichmentStatus string`, `RawName string` fields to `Venue` in `internal/entity/venue.go`
 - [ ] 2.2 Add `VenueEnrichmentStatus` typed constants (`Pending`, `Enriched`, `Failed`) in `internal/entity/venue.go`
-- [ ] 2.3 Create `VenueEnrichmentRepository` interface in `internal/entity/venue.go` with `ListPending(ctx) ([]*Venue, error)` and `UpdateEnriched(ctx, venue) error` and `MarkFailed(ctx, id) error`
+- [ ] 2.3 Create `VenueEnrichmentRepository` interface in `internal/entity/venue.go` with `ListPending(ctx) ([]*Venue, error)`, `UpdateEnriched(ctx, venue) error`, `MarkFailed(ctx, id) error`, and `MergeVenues(ctx, canonicalID, duplicateID string, adminArea *string) error`
 
 ## 3. MusicBrainz Client — Place Endpoint
 
@@ -27,11 +27,11 @@
 
 ## 5. Repository Layer
 
-- [ ] 5.1 Update `insertVenueQuery` in `venue_repo.go` to include `enrichment_status`, always binding `entity.Venue.EnrichmentStatus` (repository layer owns the default `entity.EnrichmentStatusPending`; usecase leaves the field at its zero-value)
-- [ ] 5.2 Update `getVenueQuery` and `getVenueByNameQuery` to SELECT `mbid`, `google_place_id`, `enrichment_status`
+- [ ] 5.1 Update `insertVenueQuery` in `venue_repo.go` to include `enrichment_status` and `raw_name`; if `Venue.EnrichmentStatus` is zero-value (`""`), the repository SHALL substitute `entity.EnrichmentStatusPending` before binding to avoid inserting an invalid ENUM value
+- [ ] 5.2 Update `getVenueQuery` and `getVenueByNameQuery` to SELECT `mbid`, `google_place_id`, `enrichment_status`, `raw_name`; update `GetByName` to also match on `raw_name` so enriched venues (renamed to canonical name) can still be found by the original scraper-provided name
 - [ ] 5.3 Update `Create()`, `Get()`, `GetByName()` Scan/Exec calls to include new fields
 - [ ] 5.4 Implement `ListPending(ctx)` query: `SELECT … FROM venues WHERE enrichment_status = 'pending'`
-- [ ] 5.5 Implement `UpdateEnriched(ctx, venue)` query: UPDATE `name`, `mbid` or `google_place_id`, set `enrichment_status = 'enriched'`
+- [ ] 5.5 Implement `UpdateEnriched(ctx, venue)` query: copy current `name` to `raw_name` (if `raw_name` is NULL), UPDATE `name` to canonical, set `mbid` or `google_place_id`, set `enrichment_status = 'enriched'`
 - [ ] 5.6 Implement `MarkFailed(ctx, id)` query: UPDATE `enrichment_status = 'failed'`
 - [ ] 5.7 Implement `MergeVenues(ctx, canonicalID, duplicateID, adminArea)` — atomic transaction: UPDATE events, UPDATE canonical venue, DELETE duplicate
 - [ ] 5.8 Update `venue_repo_test.go` to cover all new fields and methods
@@ -51,4 +51,4 @@
 
 ## 8. Concert Service — Venue Creation Update
 
-- [ ] 8.1 Confirm `concert_uc.go` does NOT set `EnrichmentStatus` on the `Venue` entity before calling `Create()` — the repository layer SHALL always INSERT `enrichment_status` using the Go constant `entity.EnrichmentStatusPending`, not relying on the DB default, to keep the entity and DB in sync
+- [ ] 8.1 Update `concert_uc.go` venue creation to set `EnrichmentStatus = entity.EnrichmentStatusPending` and `RawName = name` explicitly on the `Venue` entity before calling `Create()` — the repository layer's zero-value guard is a safety net, not the primary path
