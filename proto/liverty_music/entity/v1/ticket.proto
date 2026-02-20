@@ -54,7 +54,7 @@ message Ticket {
 
   // tx_hash is the blockchain transaction hash recorded when this ticket was minted.
   // It provides an immutable audit trail back to the on-chain minting event.
-  string tx_hash = 5;
+  string tx_hash = 5 [(buf.validate.field).string.pattern = "^0x[0-9a-fA-F]{64}$"];
 
   // mint_time is the timestamp at which this ticket was minted on the blockchain.
   // This field is set by the server when the minting transaction is confirmed.

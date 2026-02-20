@@ -42,7 +42,7 @@ message Event {
   // It is only set for events that use zero-knowledge proof entry verification. The root is
   // published on-chain and allows entry validators to verify membership without querying
   // a central database, preserving fan privacy.
-  optional bytes merkle_root = 7;
+  optional bytes merkle_root = 7 [(buf.validate.field).bytes.len = 32];
 
   // create_time is the timestamp at which this event record was first created on the platform.
   // This field is set automatically by the server and cannot be supplied by clients.

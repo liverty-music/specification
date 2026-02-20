@@ -74,17 +74,17 @@ message GetMerklePathRequest {
 message GetMerklePathResponse {
   // merkle_root is the root hash of the Merkle tree for this event's ticket holders.
   // It matches the value published on-chain and is used as a public input to the proof.
-  bytes merkle_root = 1;
+  bytes merkle_root = 1 [(buf.validate.field).bytes.len = 32];
 
   // path_elements contains the sibling hashes along the Merkle path from the fan's leaf
   // up to the root. These are the values needed to recompute each level of the tree.
-  repeated bytes path_elements = 2;
+  repeated bytes path_elements = 2 [(buf.validate.field).repeated.items.bytes.len = 32];
 
   // path_indices indicates the position (left or right sibling) of each element in path_elements.
   // A value of 0 means the sibling is on the left; a value of 1 means it is on the right.
-  repeated uint32 path_indices = 3;
+  repeated uint32 path_indices = 3 [(buf.validate.field).repeated.items.uint32.lte = 1];
 
   // leaf is the hash of the fan's ticket data at the bottom of the Merkle tree.
   // It serves as the starting point for the Merkle path verification computation.
-  bytes leaf = 4;
+  bytes leaf = 4 [(buf.validate.field).bytes.len = 32];
 }
