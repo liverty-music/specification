@@ -33,11 +33,11 @@
 
 ## 4. Smart Contract
 
-- [ ] 4.1 Author `TicketSBT` contract implementing ERC-721 + ERC-5192 (non-transferable)
-- [ ] 4.2 Implement `MINTER_ROLE` access control; `mint(address recipient, uint256 tokenId)` callable only by backend service key
-- [ ] 4.3 Implement transfer lock: `transferFrom` and `safeTransferFrom` revert with "SBT: Ticket transfer is prohibited"
-- [ ] 4.4 Emit `Locked(tokenId)` event on mint (ERC-5192 compliance)
-- [ ] 4.5 Write Foundry tests: transfer revert, locked event emission, authorized mint, unauthorized mint revert
+- [x] 4.1 Author `TicketSBT` contract implementing ERC-721 + ERC-5192 (non-transferable)
+- [x] 4.2 Implement `MINTER_ROLE` access control; `mint(address recipient, uint256 tokenId)` callable only by backend service key
+- [x] 4.3 Implement transfer lock: `transferFrom` and `safeTransferFrom` revert with "SBT: Ticket transfer is prohibited"
+- [x] 4.4 Emit `Locked(tokenId)` event on mint (ERC-5192 compliance)
+- [x] 4.5 Write Foundry tests: transfer revert, locked event emission, authorized mint, unauthorized mint revert
 - [ ] 4.6 Deploy `TicketSBT` to Base Sepolia; record contract address in Secret Manager
 - [ ] 4.7 Grant `MINTER_ROLE` to backend service account EOA address
 
@@ -49,18 +49,18 @@
 - [x] 5.2 Define `entry/v1/entry.proto` in BSR: `EntryService` with `VerifyEntry` RPC (accepts proof JSON + event ID) and `GetMerklePath` RPC
 - [x] 5.3 Add Protovalidate constraints to all request messages
 - [x] 5.4 Run `buf lint` and `buf breaking` against baseline; push to BSR
-- [ ] 5.5 Bump generated Go module version in backend `go.mod` (`buf.build/gen/go/liverty-music/schema`)
-- [ ] 5.6 Bump generated TS module version in frontend `package.json` (`@buf/liverty-music_schema`)
+- [x] 5.5 Bump generated Go module version in backend `go.mod` (`buf.build/gen/go/liverty-music/schema`)
+- [x] 5.6 Bump generated TS module version in frontend `package.json` (`@buf/liverty-music_schema`)
 
 ## 6. Go Backend — Zitadel Passkey Configuration
 
 > Authentication uses existing Zitadel OIDC flow. No self-hosted WebAuthn RP for MVP. Zitadel's hosted login UI handles Passkey registration/authentication.
 
 - [ ] 6.1 Configure Zitadel Passkey settings via v2 API: enable Passkey authenticator for the application
-- [ ] 6.2 Implement Safe address prediction: `CREATE2(salt = keccak256(users.id))` using `SafeProxyFactory` formula (`go-ethereum/crypto`)
+- [x] 6.2 Implement Safe address prediction: `CREATE2(salt = keccak256(users.id))` using `SafeProxyFactory` formula (`go-ethereum/crypto`)
 - [ ] 6.3 Add Safe address computation on user creation (or lazy computation on first ticket mint)
-- [ ] 6.4 Ensure JWT validation (`jwx`) has configurable `accepted_issuers` list (preparation for Option C migration)
-- [ ] 6.5 Write unit tests for Safe address determinism (same `users.id` always produces same address)
+- [x] 6.4 Ensure JWT validation (`jwx`) has configurable `accepted_issuers` list (preparation for Option C migration)
+- [x] 6.5 Write unit tests for Safe address determinism (same `users.id` always produces same address)
 
 ## 7. Go Backend — Ticket Minting (ERC-5192)
 
