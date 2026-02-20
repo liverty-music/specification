@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/user.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// TicketId uniquely identifies a single ticket issued on the Liverty Music platform.
+// It wraps a UUID string to provide type safety and prevent accidental misuse of raw identifiers.
+message TicketId {
+  // value is the UUID that uniquely identifies this ticket across the platform.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// EventId uniquely identifies a music event (concert, live session, etc.) on the platform.
+// Events represent scheduled performances at a venue, and this identifier links tickets
+// and entry records back to the specific event they belong to.
+message EventId {
+  // value is the UUID that uniquely identifies this event across the platform.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// TokenId represents the on-chain token identifier for a soulbound ticket (ERC-5192).
+// Each token ID corresponds to a unique NFT minted on the blockchain, and values must
+// be positive integers because zero is not a valid token ID in ERC-5192 contracts.
+message TokenId {
+  // value is the positive integer that identifies the on-chain soulbound token.
+  uint64 value = 1 [(buf.validate.field).uint64.gt = 0];
+}
+
+// Ticket represents a soulbound digital ticket (ERC-5192) issued to a fan for a specific event.
+// Unlike traditional tickets, soulbound tickets are permanently bound to the holder's wallet
+// and cannot be transferred or resold, ensuring authentic fan experiences and preventing scalping.
+// Each ticket records its blockchain provenance through the token ID and transaction hash.
+message Ticket {
+  // id is the unique identifier for this ticket within the Liverty Music platform.
+  TicketId id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // event_id identifies the event for which this ticket grants admission.
+  EventId event_id = 2;
+
+  // user_id identifies the fan who holds this ticket. Because tickets are soulbound,
+  // this association is permanent and cannot be changed after minting.
+  UserId user_id = 3;
+
+  // token_id is the on-chain token identifier assigned by the ERC-5192 smart contract
+  // at the time of minting. This links the platform record to the blockchain asset.
+  TokenId token_id = 4;
+
+  // tx_hash is the blockchain transaction hash recorded when this ticket was minted.
+  // It provides an immutable audit trail back to the on-chain minting event.
+  string tx_hash = 5;
+
+  // mint_time is the timestamp at which this ticket was minted on the blockchain.
+  // This field is set by the server when the minting transaction is confirmed.
+  google.protobuf.Timestamp mint_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

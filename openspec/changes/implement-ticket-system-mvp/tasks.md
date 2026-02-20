@@ -2,9 +2,9 @@
 
 > GKE Autopilot (`cluster-osaka`) and Cloud SQL PostgreSQL 18 (`postgres-osaka`) already exist. No new compute/database provisioning needed.
 
-- [ ] 1.1 Add Secret Manager secret for TicketSBT contract deployer private key (`cloud-provisioning`)
-- [ ] 1.2 Add Secret Manager secret for Base Sepolia RPC endpoint URL (`cloud-provisioning`)
-- [ ] 1.3 Add Secret Manager secret for Bundler (Pimlico/Alchemy) API key (`cloud-provisioning`)
+- [x] 1.1 Add Secret Manager secret for TicketSBT contract deployer private key (`cloud-provisioning`)
+- [x] 1.2 Add Secret Manager secret for Base Sepolia RPC endpoint URL (`cloud-provisioning`)
+- [x] 1.3 Add Secret Manager secret for Bundler (Pimlico/Alchemy) API key (`cloud-provisioning`)
 - [ ] 1.4 Configure Zitadel: enable Passkey authentication for the existing project
 - [ ] 1.5 Run `pulumi preview` and get approval; apply Secret Manager changes to dev
 
@@ -12,11 +12,11 @@
 
 > Existing tables: `users` (with `external_id`), `events` (with `venue_id`, `title`, `local_event_date`), `concerts`, `artists`, `venues`. Migrations must be backward-compatible.
 
-- [ ] 2.1 Write ALTER migration: `users` ADD `safe_address TEXT` (predicted Safe address derived from `users.id`)
-- [ ] 2.2 Write ALTER migration: `events` ADD `merkle_root BYTEA` (nullable; NULL for non-ticket events)
-- [ ] 2.3 Write CREATE migration: `tickets` table (id UUID PK, event_id FK → events, user_id FK → users, token_id BIGINT, tx_hash TEXT, minted_at TIMESTAMPTZ)
-- [ ] 2.4 Write CREATE migration: `merkle_tree` table (event_id FK → events, depth INT, index INT, hash BYTEA; composite PK on event_id + depth + index)
-- [ ] 2.5 Write CREATE migration: `nullifiers` table (event_id FK → events, nullifier_hash BYTEA, used_at TIMESTAMPTZ; UNIQUE index on event_id + nullifier_hash)
+- [x] 2.1 Write ALTER migration: `users` ADD `safe_address TEXT` (predicted Safe address derived from `users.id`)
+- [x] 2.2 Write ALTER migration: `events` ADD `merkle_root BYTEA` (nullable; NULL for non-ticket events)
+- [x] 2.3 Write CREATE migration: `tickets` table (id UUID PK, event_id FK → events, user_id FK → users, token_id BIGINT, tx_hash TEXT, minted_at TIMESTAMPTZ)
+- [x] 2.4 Write CREATE migration: `merkle_tree` table (event_id FK → events, depth INT, index INT, hash BYTEA; composite PK on event_id + depth + index)
+- [x] 2.5 Write CREATE migration: `nullifiers` table (event_id FK → events, nullifier_hash BYTEA, used_at TIMESTAMPTZ; UNIQUE index on event_id + nullifier_hash)
 - [ ] 2.6 Verify all migrations run cleanly on local PostgreSQL; write rollback (DOWN) migrations
 - [ ] 2.7 Verify ALTER migrations are backward-compatible (existing queries on `users`/`events` unaffected)
 
@@ -45,10 +45,10 @@
 
 > Proto files are managed in BSR (`liverty-music/schema`). Generated Go/TS code is imported via dependency, not generated locally. No proto files live in the backend repo.
 
-- [ ] 5.1 Define `ticket/v1/ticket.proto` in BSR: `TicketService` with `MintTicket`, `GetTicket`, `ListTicketsForUser` RPCs
-- [ ] 5.2 Define `entry/v1/entry.proto` in BSR: `EntryService` with `VerifyEntry` RPC (accepts proof JSON + event ID) and `GetMerklePath` RPC
-- [ ] 5.3 Add Protovalidate constraints to all request messages
-- [ ] 5.4 Run `buf lint` and `buf breaking` against baseline; push to BSR
+- [x] 5.1 Define `ticket/v1/ticket.proto` in BSR: `TicketService` with `MintTicket`, `GetTicket`, `ListTicketsForUser` RPCs
+- [x] 5.2 Define `entry/v1/entry.proto` in BSR: `EntryService` with `VerifyEntry` RPC (accepts proof JSON + event ID) and `GetMerklePath` RPC
+- [x] 5.3 Add Protovalidate constraints to all request messages
+- [x] 5.4 Run `buf lint` and `buf breaking` against baseline; push to BSR
 - [ ] 5.5 Bump generated Go module version in backend `go.mod` (`buf.build/gen/go/liverty-music/schema`)
 - [ ] 5.6 Bump generated TS module version in frontend `package.json` (`@buf/liverty-music_schema`)
 

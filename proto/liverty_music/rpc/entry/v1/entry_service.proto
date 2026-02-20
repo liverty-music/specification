@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.entry.v1 defines the RPC interface for zero-knowledge proof
+// based event entry verification on the Liverty Music platform.
+package liverty_music.rpc.entry.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/ticket.proto";
+import "liverty_music/entity/v1/user.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/entry/v1;entryv1";
+
+// EntryService provides zero-knowledge proof based entry verification for ticketed events
+// on the Liverty Music platform. It allows venue staff to confirm a fan's right to enter
+// without revealing their identity, and enables fans to retrieve the Merkle path data
+// required to generate their own entry proofs client-side.
+service EntryService {
+  // VerifyEntry checks whether a fan is authorized to enter an event by verifying their
+  // zero-knowledge proof (Groth16 via snarkjs) against the event's published Merkle root.
+  // This method does not require knowing the fan's identity — the proof itself demonstrates
+  // membership in the set of ticket holders without revealing who they are.
+  rpc VerifyEntry(VerifyEntryRequest) returns (VerifyEntryResponse);
+
+  // GetMerklePath retrieves the Merkle inclusion proof data for a specific fan at a specific event.
+  // Fans use this data to generate a zero-knowledge proof on their device, which they then
+  // present at venue entry. The path elements and indices together with the leaf value are
+  // sufficient to construct and verify the proof without any further server interaction.
+  rpc GetMerklePath(GetMerklePathRequest) returns (GetMerklePathResponse);
+}
+
+// VerifyEntryRequest carries the zero-knowledge proof submitted by a fan seeking entry to an event.
+message VerifyEntryRequest {
+  // event_id identifies the event at which entry is being requested.
+  // This field is required.
+  liverty_music.entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+
+  // proof_json is the Groth16 zero-knowledge proof serialized as a JSON string,
+  // in the format produced by the snarkjs library. The proof demonstrates that the
+  // fan holds a valid ticket without revealing their identity.
+  // This field is required and must not be empty.
+  string proof_json = 2 [(buf.validate.field).string.min_len = 1];
+
+  // public_signals_json is the JSON array of public signals associated with the proof,
+  // also in snarkjs format. These signals are verified alongside the proof to confirm
+  // that the claimed Merkle root matches the one published for the event.
+  // This field is required and must not be empty.
+  string public_signals_json = 3 [(buf.validate.field).string.min_len = 1];
+}
+
+// VerifyEntryResponse communicates the outcome of the zero-knowledge proof verification.
+message VerifyEntryResponse {
+  // verified indicates whether the submitted proof was successfully verified.
+  // A value of true means the fan is authorized to enter the event.
+  bool verified = 1;
+
+  // message provides a human-readable description of the verification result,
+  // suitable for display to venue staff or the fan themselves.
+  string message = 2;
+}
+
+// GetMerklePathRequest identifies the fan and event for which Merkle path data is needed.
+message GetMerklePathRequest {
+  // event_id identifies the event for which the Merkle path is requested.
+  // This field is required.
+  liverty_music.entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+
+  // user_id identifies the fan whose Merkle path should be returned.
+  // This field is required.
+  liverty_music.entity.v1.UserId user_id = 2 [(buf.validate.field).required = true];
+}
+
+// GetMerklePathResponse contains all the data a fan needs to construct a zero-knowledge
+// entry proof on their own device.
+message GetMerklePathResponse {
+  // merkle_root is the root hash of the Merkle tree for this event's ticket holders.
+  // It matches the value published on-chain and is used as a public input to the proof.
+  bytes merkle_root = 1;
+
+  // path_elements contains the sibling hashes along the Merkle path from the fan's leaf
+  // up to the root. These are the values needed to recompute each level of the tree.
+  repeated bytes path_elements = 2;
+
+  // path_indices indicates the position (left or right sibling) of each element in path_elements.
+  // A value of 0 means the sibling is on the left; a value of 1 means it is on the right.
+  repeated uint32 path_indices = 3;
+
+  // leaf is the hash of the fan's ticket data at the bottom of the Merkle tree.
+  // It serves as the starting point for the Merkle path verification computation.
+  bytes leaf = 4;
+}
