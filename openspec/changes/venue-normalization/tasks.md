@@ -2,7 +2,7 @@
 
 - [ ] 1.1 Create `venue_enrichment_status` ENUM type (`pending`, `enriched`, `failed`) in a new migration file
 - [ ] 1.2 Add `mbid TEXT`, `google_place_id TEXT`, `enrichment_status venue_enrichment_status NOT NULL DEFAULT 'pending'`, `raw_name TEXT` columns to `venues` table (backfill `raw_name` from existing `name`: `UPDATE venues SET raw_name = name`)
-- [ ] 1.3 Add unique partial indexes: `CREATE UNIQUE INDEX ON venues (mbid) WHERE mbid IS NOT NULL` and `CREATE UNIQUE INDEX ON venues (google_place_id) WHERE google_place_id IS NOT NULL`
+- [ ] 1.3 Add unique partial indexes: `CREATE UNIQUE INDEX ON venues (mbid) WHERE mbid IS NOT NULL` and `CREATE UNIQUE INDEX ON venues (google_place_id) WHERE google_place_id IS NOT NULL`; add non-unique index: `CREATE INDEX idx_venues_raw_name ON venues (raw_name)`
 - [ ] 1.4 Update `schema.sql` to reflect the new columns, enum type, and indexes
 
 ## 2. Entity Layer
