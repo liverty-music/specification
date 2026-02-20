@@ -9,7 +9,7 @@
 
 - [ ] 2.1 Add `MBID string`, `GooglePlaceID string`, `EnrichmentStatus string`, `RawName string` fields to `Venue` in `internal/entity/venue.go`
 - [ ] 2.2 Add `VenueEnrichmentStatus` typed constants (`Pending`, `Enriched`, `Failed`) in `internal/entity/venue.go`
-- [ ] 2.3 Create `VenueEnrichmentRepository` interface in `internal/entity/venue.go` with `ListPending(ctx) ([]*Venue, error)`, `UpdateEnriched(ctx, venue) error`, `MarkFailed(ctx, id) error`, and `MergeVenues(ctx, canonicalID, duplicateID string, adminArea *string) error`
+- [ ] 2.3 Create `VenueEnrichmentRepository` interface in `internal/entity/venue.go` with `ListPending(ctx) ([]*Venue, error)`, `UpdateEnriched(ctx, venue) error`, `MarkFailed(ctx, id) error`, and `MergeVenues(ctx, canonicalID, duplicateID string) error`
 
 ## 3. MusicBrainz Client — Place Endpoint
 
@@ -33,7 +33,7 @@
 - [ ] 5.4 Implement `ListPending(ctx)` query: `SELECT … FROM venues WHERE enrichment_status = 'pending'`
 - [ ] 5.5 Implement `UpdateEnriched(ctx, venue)` query: copy current `name` to `raw_name` (if `raw_name` is NULL), UPDATE `name` to canonical, set `mbid` or `google_place_id`, set `enrichment_status = 'enriched'`
 - [ ] 5.6 Implement `MarkFailed(ctx, id)` query: UPDATE `enrichment_status = 'failed'`
-- [ ] 5.7 Implement `MergeVenues(ctx, canonicalID, duplicateID, adminArea)` — atomic transaction: UPDATE events, UPDATE canonical venue, DELETE duplicate
+- [ ] 5.7 Implement `MergeVenues(ctx, canonicalID, duplicateID string)` — atomic transaction: 1) DELETE events in the duplicate venue that share `(artist_id, local_event_date)` with the canonical venue; 2) UPDATE remaining `events.venue_id` to `canonicalID`; 3) UPDATE canonical venue fields using `COALESCE` for `admin_area`, `mbid`, `google_place_id`; 4) DELETE duplicate venue
 - [ ] 5.8 Update `venue_repo_test.go` to cover all new fields and methods
 
 ## 6. Venue Enrichment Use Case
