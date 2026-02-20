@@ -40,7 +40,10 @@ message VerifyEntryRequest {
   // This field is required and must not be empty.
   string proof_json = 2 [
     (buf.validate.field).required = true,
-    (buf.validate.field).string = {min_len: 1, max_len: 16384}
+    (buf.validate.field).string = {
+      min_len: 1
+      max_len: 16384
+    }
   ];
 
   // public_signals_json is the JSON array of public signals associated with the proof,
@@ -49,7 +52,10 @@ message VerifyEntryRequest {
   // This field is required and must not be empty.
   string public_signals_json = 3 [
     (buf.validate.field).required = true,
-    (buf.validate.field).string = {min_len: 1, max_len: 16384}
+    (buf.validate.field).string = {
+      min_len: 1
+      max_len: 16384
+    }
   ];
 }
 

@@ -24,7 +24,10 @@ message Event {
   VenueId venue_id = 2 [(buf.validate.field).required = true];
 
   // title is the human-readable name of the event, such as the concert name or tour stop.
-  string title = 3 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  string title = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
 
   // local_event_date is the calendar date of the event in the venue's local timezone.
   // This date is displayed to fans when browsing or purchasing tickets.
