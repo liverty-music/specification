@@ -2,7 +2,8 @@
 
 - [ ] 1.1 Create `venue_enrichment_status` ENUM type (`pending`, `enriched`, `failed`) in a new migration file
 - [ ] 1.2 Add `mbid TEXT`, `google_place_id TEXT`, `enrichment_status venue_enrichment_status NOT NULL DEFAULT 'pending'` columns to `venues` table
-- [ ] 1.3 Update `schema.sql` to reflect the new columns and enum type
+- [ ] 1.3 Add unique partial indexes: `CREATE UNIQUE INDEX ON venues (mbid) WHERE mbid IS NOT NULL` and `CREATE UNIQUE INDEX ON venues (google_place_id) WHERE google_place_id IS NOT NULL`
+- [ ] 1.4 Update `schema.sql` to reflect the new columns, enum type, and indexes
 
 ## 2. Entity Layer
 
@@ -26,7 +27,7 @@
 
 ## 5. Repository Layer
 
-- [ ] 5.1 Update `insertVenueQuery` in `venue_repo.go` to include `enrichment_status` (defaults to `pending`)
+- [ ] 5.1 Update `insertVenueQuery` in `venue_repo.go` to include `enrichment_status`, always binding `entity.Venue.EnrichmentStatus` (repository layer owns the default `entity.EnrichmentStatusPending`; usecase leaves the field at its zero-value)
 - [ ] 5.2 Update `getVenueQuery` and `getVenueByNameQuery` to SELECT `mbid`, `google_place_id`, `enrichment_status`
 - [ ] 5.3 Update `Create()`, `Get()`, `GetByName()` Scan/Exec calls to include new fields
 - [ ] 5.4 Implement `ListPending(ctx)` query: `SELECT … FROM venues WHERE enrichment_status = 'pending'`
@@ -40,7 +41,7 @@
 - [ ] 6.1 Create `internal/usecase/venue_enrichment_uc.go` with `VenueEnrichmentUseCase` interface and `venueEnrichmentUseCase` struct
 - [ ] 6.2 Implement `EnrichPendingVenues(ctx)`: iterate `ListPending`, call MB then Maps, merge duplicates or update, mark failed on both miss
 - [ ] 6.3 Implement duplicate detection: after resolving external ID, query for existing venue with same MBID/place_id; if found, call `MergeVenues`
-- [ ] 6.4 Write unit tests in `venue_enrichment_uc_test.go` covering: MB hit, Maps fallback hit, both miss, duplicate merge, admin_area COALESCE
+- [ ] 6.4 Write unit tests in `venue_enrichment_uc_test.go` covering: MB hit, Maps fallback hit, both miss, ambiguous results (multiple matches → failed), duplicate merge (admin_area / mbid / google_place_id COALESCE)
 
 ## 7. Concert Discovery Job Integration
 
@@ -50,4 +51,4 @@
 
 ## 8. Concert Service — Venue Creation Update
 
-- [ ] 8.1 Update `concert_uc.go` venue creation to confirm `enrichment_status` is not explicitly set (relies on DB default `'pending'`)
+- [ ] 8.1 Confirm `concert_uc.go` does NOT set `EnrichmentStatus` on the `Venue` entity before calling `Create()` — the repository layer SHALL always INSERT `enrichment_status` using the Go constant `entity.EnrichmentStatusPending`, not relying on the DB default, to keep the entity and DB in sync

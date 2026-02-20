@@ -57,6 +57,8 @@ The system SHALL detect and merge duplicate venue records that resolve to the sa
 - **AND** all `events.venue_id` references to the duplicate SHALL be updated to point to the canonical venue
 - **AND** the duplicate venue record SHALL be deleted
 - **AND** `admin_area` on the canonical record SHALL be set to `COALESCE(canonical.admin_area, duplicate.admin_area)`
+- **AND** `mbid` on the canonical record SHALL be set to `COALESCE(canonical.mbid, duplicate.mbid)`
+- **AND** `google_place_id` on the canonical record SHALL be set to `COALESCE(canonical.google_place_id, duplicate.google_place_id)`
 
 #### Scenario: Canonical venue selection on merge
 
