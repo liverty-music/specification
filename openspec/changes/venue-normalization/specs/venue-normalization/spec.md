@@ -56,7 +56,7 @@ The system SHALL detect and merge duplicate venue records that resolve to the sa
 - **WHEN** the enrichment job resolves a venue to an external ID (MBID or place_id)
 - **AND** another venue record already has the same external ID
 - **THEN** the two records SHALL be merged within a single atomic transaction
-- **AND** events in the duplicate venue that share the same `(artist_id, local_event_date)` as events already in the canonical venue SHALL be deleted to prevent duplicate event rows
+- **AND** events in the duplicate venue that share the same `(artist_id, local_event_date, start_at)` (using NULL-safe equality for `start_at`) as events already in the canonical venue SHALL be deleted to prevent duplicate event rows
 - **AND** all remaining `events.venue_id` references to the duplicate SHALL be updated to point to the canonical venue
 - **AND** the duplicate venue record SHALL be deleted
 - **AND** `admin_area` on the canonical record SHALL be set to `COALESCE(canonical.admin_area, duplicate.admin_area)`

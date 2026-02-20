@@ -33,7 +33,7 @@
 - [ ] 5.4 Implement `ListPending(ctx)` query: `SELECT … FROM venues WHERE enrichment_status = 'pending'`
 - [ ] 5.5 Implement `UpdateEnriched(ctx, venue)` query: copy current `name` to `raw_name` (if `raw_name` is NULL), UPDATE `name` to canonical, set `mbid` or `google_place_id`, set `enrichment_status = 'enriched'`
 - [ ] 5.6 Implement `MarkFailed(ctx, id)` query: UPDATE `enrichment_status = 'failed'`
-- [ ] 5.7 Implement `MergeVenues(ctx, canonicalID, duplicateID string)` — atomic transaction: 1) DELETE events in the duplicate venue that share `(artist_id, local_event_date)` with the canonical venue; 2) UPDATE remaining `events.venue_id` to `canonicalID`; 3) UPDATE canonical venue fields using `COALESCE` for `admin_area`, `mbid`, `google_place_id`; 4) DELETE duplicate venue
+- [ ] 5.7 Implement `MergeVenues(ctx, canonicalID, duplicateID string)` — atomic transaction: 1) DELETE events in the duplicate venue that share `(artist_id, local_event_date, start_at)` (NULL-safe equality via `IS NOT DISTINCT FROM`) with the canonical venue; 2) UPDATE remaining `events.venue_id` to `canonicalID`; 3) UPDATE canonical venue fields using `COALESCE` for `admin_area`, `mbid`, `google_place_id`; 4) DELETE duplicate venue
 - [ ] 5.8 Update `venue_repo_test.go` to cover all new fields and methods
 
 ## 6. Venue Enrichment Use Case
