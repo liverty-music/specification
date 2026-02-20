@@ -18,7 +18,7 @@ message Venue {
   // inferable from the venue name (e.g., "Zepp Nagoya" → "愛知県").
   // Absent when the area cannot be determined with confidence — an incorrect value is
   // strictly worse than an absent one.
-  optional string admin_area = 3 [(buf.validate.field).string.max_len = 100];
+  AdminArea admin_area = 3;
 }
 
 // VenueId is a globally unique identifier for a concert venue.
@@ -31,4 +31,15 @@ message VenueId {
 message VenueName {
   // The name string, required to be at least one character.
   string value = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+// AdminArea represents the administrative division where a venue is located
+// (e.g., prefecture, state, province).
+// Present only when the area is determinable with confidence from the source data.
+message AdminArea {
+  // The area name, required to be at least one character when present.
+  string value = 1 [
+    (buf.validate.field).string.min_len = 1,
+    (buf.validate.field).string.max_len = 100
+  ];
 }
