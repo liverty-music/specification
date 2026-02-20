@@ -12,6 +12,11 @@ message Venue {
 
   // The official name or title of the music venue.
   VenueName name = 2 [(buf.validate.field).required = true];
+
+  // The administrative area (prefecture, state, province) where the venue is located.
+  // Populated only when determinable with confidence from the source data.
+  // Absent if the area could not be determined.
+  optional string admin_area = 3;
 }
 
 // VenueId is a globally unique identifier for a concert venue.
