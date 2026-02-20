@@ -38,8 +38,8 @@
 - [x] 4.3 Implement transfer lock: `transferFrom` and `safeTransferFrom` revert with "SBT: Ticket transfer is prohibited"
 - [x] 4.4 Emit `Locked(tokenId)` event on mint (ERC-5192 compliance)
 - [x] 4.5 Write Foundry tests: transfer revert, locked event emission, authorized mint, unauthorized mint revert
-- [ ] 4.6 Deploy `TicketSBT` to Base Sepolia; record contract address in Secret Manager
-- [ ] 4.7 Grant `MINTER_ROLE` to backend service account EOA address
+- [x] 4.6 Deploy `TicketSBT` to Base Sepolia; record contract address in Secret Manager
+- [x] 4.7 Grant `MINTER_ROLE` to backend service account EOA address
 
 ## 5. Protobuf / BSR
 
