@@ -21,14 +21,14 @@ message Event {
   EventId id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // venue_id identifies the physical location where this event will take place.
-  VenueId venue_id = 2;
+  VenueId venue_id = 2 [(buf.validate.field).required = true];
 
   // title is the human-readable name of the event, such as the concert name or tour stop.
-  string title = 3 [(buf.validate.field).string.min_len = 1];
+  string title = 3 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
 
   // local_event_date is the calendar date of the event in the venue's local timezone.
   // This date is displayed to fans when browsing or purchasing tickets.
-  google.type.Date local_event_date = 4;
+  google.type.Date local_event_date = 4 [(buf.validate.field).required = true];
 
   // start_at is the exact timestamp when the performance is scheduled to begin.
   // This field is optional and may be omitted for events where the start time is not yet confirmed.

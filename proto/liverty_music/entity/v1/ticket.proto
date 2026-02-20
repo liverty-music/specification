@@ -42,15 +42,15 @@ message Ticket {
   TicketId id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // event_id identifies the event for which this ticket grants admission.
-  EventId event_id = 2;
+  EventId event_id = 2 [(buf.validate.field).required = true];
 
   // user_id identifies the fan who holds this ticket. Because tickets are soulbound,
   // this association is permanent and cannot be changed after minting.
-  UserId user_id = 3;
+  UserId user_id = 3 [(buf.validate.field).required = true];
 
   // token_id is the on-chain token identifier assigned by the ERC-5192 smart contract
   // at the time of minting. This links the platform record to the blockchain asset.
-  TokenId token_id = 4;
+  TokenId token_id = 4 [(buf.validate.field).required = true];
 
   // tx_hash is the blockchain transaction hash recorded when this ticket was minted.
   // It provides an immutable audit trail back to the on-chain minting event.

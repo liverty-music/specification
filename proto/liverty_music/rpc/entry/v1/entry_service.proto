@@ -38,13 +38,19 @@ message VerifyEntryRequest {
   // in the format produced by the snarkjs library. The proof demonstrates that the
   // fan holds a valid ticket without revealing their identity.
   // This field is required and must not be empty.
-  string proof_json = 2 [(buf.validate.field).string.min_len = 1];
+  string proof_json = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string = {min_len: 1, max_len: 16384}
+  ];
 
   // public_signals_json is the JSON array of public signals associated with the proof,
   // also in snarkjs format. These signals are verified alongside the proof to confirm
   // that the claimed Merkle root matches the one published for the event.
   // This field is required and must not be empty.
-  string public_signals_json = 3 [(buf.validate.field).string.min_len = 1];
+  string public_signals_json = 3 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string = {min_len: 1, max_len: 16384}
+  ];
 }
 
 // VerifyEntryResponse communicates the outcome of the zero-knowledge proof verification.
@@ -78,11 +84,17 @@ message GetMerklePathResponse {
 
   // path_elements contains the sibling hashes along the Merkle path from the fan's leaf
   // up to the root. These are the values needed to recompute each level of the tree.
-  repeated bytes path_elements = 2 [(buf.validate.field).repeated.items.bytes.len = 32];
+  repeated bytes path_elements = 2 [
+    (buf.validate.field).repeated.max_items = 20,
+    (buf.validate.field).repeated.items.bytes.len = 32
+  ];
 
   // path_indices indicates the position (left or right sibling) of each element in path_elements.
   // A value of 0 means the sibling is on the left; a value of 1 means it is on the right.
-  repeated uint32 path_indices = 3 [(buf.validate.field).repeated.items.uint32.lte = 1];
+  repeated uint32 path_indices = 3 [
+    (buf.validate.field).repeated.max_items = 20,
+    (buf.validate.field).repeated.items.uint32.lte = 1
+  ];
 
   // leaf is the hash of the fan's ticket data at the bottom of the Merkle tree.
   // It serves as the starting point for the Merkle path verification computation.
