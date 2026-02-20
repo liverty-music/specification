@@ -3,18 +3,31 @@ name: Buf PR Checks
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
-    paths:
-      - "proto/**"
-      - "buf.yaml"
-      - "buf.gen.yaml"
-      - ".github/workflows/buf-pr-checks.yml"
 
 permissions:
   contents: read
   pull-requests: write
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.filter.outputs.src }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            src:
+              - "proto/**"
+              - "buf.yaml"
+              - "buf.gen.yaml"
+              - ".github/workflows/buf-pr-checks.yml"
+
   buf-checks:
+    needs: changes
+    if: needs.changes.outputs.src == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,3 +45,10 @@ jobs:
           # This is more robust than comparing against the BSR, as it avoids
           # issues with synchronization delays between the main branch and the BSR.
           breaking_against: "https://github.com/${{ github.repository }}.git#branch=${{ github.base_ref }}"
+
+  buf-checks-skip:
+    needs: changes
+    if: needs.changes.outputs.src == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "No relevant changes, skipping Buf PR checks"
