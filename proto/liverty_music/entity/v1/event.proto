@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "google/type/date.proto";
+import "liverty_music/entity/v1/ticket.proto";
+import "liverty_music/entity/v1/venue.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// Event represents a scheduled music performance at a venue, such as a concert or live session.
+// Events are the central business object connecting artists, venues, and fans. When an event
+// is configured for ticketing, it holds a Merkle root that enables zero-knowledge proof
+// entry verification without revealing individual attendee identities.
+message Event {
+  // id is the unique identifier for this event within the Liverty Music platform.
+  EventId id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // venue_id identifies the physical location where this event will take place.
+  VenueId venue_id = 2 [(buf.validate.field).required = true];
+
+  // title is the human-readable name of the event, such as the concert name or tour stop.
+  string title = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+
+  // local_event_date is the calendar date of the event in the venue's local timezone.
+  // This date is displayed to fans when browsing or purchasing tickets.
+  google.type.Date local_event_date = 4 [(buf.validate.field).required = true];
+
+  // start_at is the exact timestamp when the performance is scheduled to begin.
+  // This field is optional and may be omitted for events where the start time is not yet confirmed.
+  optional google.protobuf.Timestamp start_at = 5;
+
+  // open_at is the timestamp when venue doors open for fan entry.
+  // This field is optional and may be omitted when door times have not been announced.
+  optional google.protobuf.Timestamp open_at = 6;
+
+  // merkle_root is the root hash of the Merkle tree built from all ticket holders for this event.
+  // It is only set for events that use zero-knowledge proof entry verification. The root is
+  // published on-chain and allows entry validators to verify membership without querying
+  // a central database, preserving fan privacy.
+  optional bytes merkle_root = 7 [(buf.validate.field).bytes.len = 32];
+
+  // create_time is the timestamp at which this event record was first created on the platform.
+  // This field is set automatically by the server and cannot be supplied by clients.
+  google.protobuf.Timestamp create_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // update_time is the timestamp at which this event record was most recently modified.
+  // This field is updated automatically by the server on every write operation.
+  google.protobuf.Timestamp update_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
