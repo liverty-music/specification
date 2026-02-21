@@ -64,12 +64,12 @@
 
 ## 7. Go Backend — Ticket Minting (ERC-5192)
 
-- [ ] 7.1 Generate Go bindings for `TicketSBT` ABI using `abigen`
-- [ ] 7.2 Implement `MintTicket` handler: sign and send mint transaction from backend service EOA via `go-ethereum/ethclient`
-- [ ] 7.3 Make mint idempotent: check `tickets` table and on-chain `ownerOf` before submitting transaction
-- [ ] 7.4 Add retry logic with exponential backoff for Base Sepolia RPC calls
-- [ ] 7.5 Store minted token ID and tx hash in `tickets` table on success
-- [ ] 7.6 Implement `GetTicket` and `ListTicketsForUser` handlers (query `tickets` table joined with `events`)
+- [x] 7.1 Generate Go bindings for `TicketSBT` ABI using `abigen`
+- [x] 7.2 Implement `MintTicket` handler: sign and send mint transaction from backend service EOA via `go-ethereum/ethclient`
+- [x] 7.3 Make mint idempotent: check `tickets` table and on-chain `ownerOf` before submitting transaction
+- [x] 7.4 Add retry logic with exponential backoff for Base Sepolia RPC calls
+- [x] 7.5 Store minted token ID and tx hash in `tickets` table on success
+- [x] 7.6 Implement `GetTicket` and `ListTicketsForUser` handlers (query `tickets` table joined with `events`)
 
 ## 8. Go Backend — ZKP Verification
 
