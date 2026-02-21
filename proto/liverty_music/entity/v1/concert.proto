@@ -38,7 +38,7 @@ message Concert {
 
   // The resolved venue where the concert is hosted.
   // Populated by the server on every response; includes name and admin_area when available.
-  Venue venue = 9;
+  Venue venue = 9 [(buf.validate.field).required = true];
 
   // The raw venue name as scraped from the source.
   // Preserves the original text separately from the normalised Venue.name.

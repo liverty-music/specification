@@ -28,15 +28,15 @@ message LocalDate {
 // StartTime represents the timestamp when a performance is scheduled to begin.
 // Stored as a full timestamp; time-of-day extraction is the responsibility of the consumer.
 message StartTime {
-  // The start timestamp. Optional — may be absent when not yet confirmed.
-  google.protobuf.Timestamp value = 1;
+  // The start timestamp. Must be present when the message itself is set.
+  google.protobuf.Timestamp value = 1 [(buf.validate.field).required = true];
 }
 
 // OpenTime represents the timestamp when venue doors open for entry.
 // Stored as a full timestamp; time-of-day extraction is the responsibility of the consumer.
 message OpenTime {
-  // The open timestamp. Optional — may be absent when door times have not been announced.
-  google.protobuf.Timestamp value = 1;
+  // The open timestamp. Must be present when the message itself is set.
+  google.protobuf.Timestamp value = 1 [(buf.validate.field).required = true];
 }
 
 // Title represents the human-readable name of a concert or event.
@@ -50,14 +50,21 @@ message Title {
 
 // SourceUrl represents the official source URL where concert information was found.
 message SourceUrl {
-  // The URI value pointing to the official source. Must be a valid URI when present.
-  string value = 1 [(buf.validate.field).string.uri = true];
+  // The URI value pointing to the official source. Must be a valid URI between 1 and 2048 characters.
+  string value = 1 [(buf.validate.field).string = {
+    uri: true
+    min_len: 1
+    max_len: 2048
+  }];
 }
 
 // ListedVenueName represents the raw venue name as scraped from the source.
 // This preserves the original text separately from the normalized Venue.name,
 // which may have been corrected or standardised.
 message ListedVenueName {
-  // The raw scraped venue name string.
-  string value = 1 [(buf.validate.field).string.min_len = 1];
+  // The raw scraped venue name string. Must be between 1 and 255 characters.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
 }
