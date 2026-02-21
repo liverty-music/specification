@@ -10,4 +10,5 @@
 # Claude settings
 .claude/settings.local.json
 
-tmp/
+tmp/*
+!tmp/.gitkeep
