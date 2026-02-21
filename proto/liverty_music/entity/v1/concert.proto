@@ -3,9 +3,8 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
-import "google/type/date.proto";
-import "google/type/timeofday.proto";
 import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/venue.proto";
 
 // Concert represents a specific music live event.
@@ -19,32 +18,35 @@ message Concert {
   ArtistId artist_id = 2 [(buf.validate.field).required = true];
 
   // The unique identifier of the venue where the concert is hosted.
+  // Retained for backward compatibility; prefer the embedded `venue` field.
   VenueId venue_id = 3 [(buf.validate.field).required = true];
 
-  // The scheduled date of the concert event.
-  google.type.Date date = 4 [(buf.validate.field).required = true];
+  // The scheduled calendar date of the concert event in the venue's local timezone.
+  LocalDate local_date = 4 [(buf.validate.field).required = true];
 
   // The scheduled time when the performance starts.
-  google.type.TimeOfDay start_time = 5 [(buf.validate.field).required = true];
+  StartTime start_time = 5 [(buf.validate.field).required = true];
 
   // The time when the venue doors open to the audience.
-  google.type.TimeOfDay open_time = 6;
+  OpenTime open_time = 6;
 
   // The official title or name of the concert tour or event.
-  ConcertTitle title = 7 [(buf.validate.field).required = true];
+  Title title = 7 [(buf.validate.field).required = true];
 
   // The official source URL for the concert information.
-  string source_url = 8 [(buf.validate.field).string.uri = true];
+  SourceUrl source_url = 8;
+
+  // The resolved venue where the concert is hosted.
+  // Populated by the server on every response; includes name and admin_area when available.
+  Venue venue = 9;
+
+  // The raw venue name as scraped from the source.
+  // Preserves the original text separately from the normalised Venue.name.
+  ListedVenueName listed_venue_name = 10;
 }
 
 // ConcertId is a globally unique identifier for a concert.
 message ConcertId {
   // A UUID string representing the unique identity of the concert.
   string value = 1 [(buf.validate.field).string.uuid = true];
-}
-
-// ConcertTitle represents the official name of a concert or tour.
-message ConcertTitle {
-  // The title text, required to be at least one character in length.
-  string value = 1 [(buf.validate.field).string.min_len = 1];
 }

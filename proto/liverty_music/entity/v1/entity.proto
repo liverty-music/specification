@@ -2,6 +2,10 @@ syntax = "proto3";
 
 package liverty_music.entity.v1;
 
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "google/type/date.proto";
+
 // Package liverty_music.entity.v1 provides core business entity definitions for the Liverty Music application.
 //
 // This package contains fundamental data structures that represent the primary business entities
@@ -13,3 +17,47 @@ package liverty_music.entity.v1;
 // - Domain-specific types encapsulate validation rules using protovalidate
 // - Entities reference other entities by identifier to maintain loose coupling
 // - All fields include comprehensive validation constraints for data integrity
+
+// LocalDate represents a calendar date local to the venue's timezone.
+// Used consistently across Concert and Event entities to avoid timezone ambiguity.
+message LocalDate {
+  // The calendar date value. Must be a valid calendar date.
+  google.type.Date value = 1 [(buf.validate.field).required = true];
+}
+
+// StartTime represents the timestamp when a performance is scheduled to begin.
+// Stored as a full timestamp; time-of-day extraction is the responsibility of the consumer.
+message StartTime {
+  // The start timestamp. Optional — may be absent when not yet confirmed.
+  google.protobuf.Timestamp value = 1;
+}
+
+// OpenTime represents the timestamp when venue doors open for entry.
+// Stored as a full timestamp; time-of-day extraction is the responsibility of the consumer.
+message OpenTime {
+  // The open timestamp. Optional — may be absent when door times have not been announced.
+  google.protobuf.Timestamp value = 1;
+}
+
+// Title represents the human-readable name of a concert or event.
+message Title {
+  // The title string. Must be between 1 and 255 characters.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+}
+
+// SourceUrl represents the official source URL where concert information was found.
+message SourceUrl {
+  // The URI value pointing to the official source. Must be a valid URI when present.
+  string value = 1 [(buf.validate.field).string.uri = true];
+}
+
+// ListedVenueName represents the raw venue name as scraped from the source.
+// This preserves the original text separately from the normalized Venue.name,
+// which may have been corrected or standardised.
+message ListedVenueName {
+  // The raw scraped venue name string.
+  string value = 1 [(buf.validate.field).string.min_len = 1];
+}
