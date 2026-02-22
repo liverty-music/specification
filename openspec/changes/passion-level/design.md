@@ -94,16 +94,27 @@ message SetPassionLevelRequest {
 message SetPassionLevelResponse {}
 ```
 
-The passion level is returned as part of the followed artist data in `ListFollowed`. The `FollowedArtist` response message is extended as follows:
+The passion level is returned as part of the followed artist data in `ListFollowed`. This requires introducing a new `FollowedArtist` wrapper message in `rpc/artist/v1/artist_service.proto` and updating `ListFollowedResponse` to use it instead of the raw `entity.v1.Artist`:
 
 ```protobuf
+// FollowedArtist represents an artist with user-specific follow metadata.
+// This is an RPC-layer message (not an entity) because passion_level is
+// per-user context, not an intrinsic property of the Artist entity.
 message FollowedArtist {
-  // ... existing fields ...
+  // The artist entity.
+  entity.v1.Artist artist = 1;
 
   // The user's passion level for this artist.
-  entity.v1.PassionLevel passion_level = 4;
+  entity.v1.PassionLevel passion_level = 2;
+}
+
+message ListFollowedResponse {
+  // Changed from: repeated entity.v1.Artist artists = 1;
+  repeated FollowedArtist artists = 1;
 }
 ```
+
+> **Note**: This is a breaking change to `ListFollowedResponse`. It must be coordinated with the frontend consumer.
 
 ## Decisions
 

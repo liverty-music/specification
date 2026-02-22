@@ -67,6 +67,22 @@ Search mode: Keyboard up, list results, bubbles hidden
 Back to Bubble UI mode
 ```
 
+## API Dependencies
+
+Genre filtering requires extending the existing `ListTopRequest` protobuf:
+
+```protobuf
+message ListTopRequest {
+  // ... existing fields ...
+
+  // Optional. Filter top artists by genre/tag (e.g., "rock", "pop", "anime").
+  // When empty, returns top artists across all genres.
+  string tag = 2;
+}
+```
+
+> **Note**: This schema change must be added to the specification repo and released via BSR before the Discover page can implement genre chips.
+
 ## Decisions
 
 | Decision | Choice | Rationale |

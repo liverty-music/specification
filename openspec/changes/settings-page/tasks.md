@@ -8,5 +8,6 @@
 - [ ] Implement Push Notifications toggle switch
 - [ ] Add About section with links to Terms of Service, Privacy Policy, OSS Licenses
 - [ ] Implement Sign Out button (red text, bottom position) with existing auth flow integration
-- [ ] Store area and notification preferences in localStorage
+- [ ] Implement backend user preference API for area persistence (required by passion-level notifications)
+- [ ] Store notification preferences in localStorage (or backend if preference API supports it)
 - [ ] Replace Settings stub page from bottom-navigation-shell with full implementation
