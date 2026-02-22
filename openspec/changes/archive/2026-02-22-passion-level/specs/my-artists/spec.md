@@ -1,14 +1,8 @@
 # Capability: My Artists
 
-## Purpose
-
-Display and manage the user's followed artists, providing list and grid views with passion level controls.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Artist List Row
-
-Each artist row in the My Artists list view SHALL display the artist's name, color accent, and passion level indicator.
 
 #### Scenario: Passion level indicator displayed
 
@@ -28,6 +22,8 @@ Each artist row in the My Artists list view SHALL display the artist's name, col
 - **WHEN** the user selects a level
 - **THEN** the UI SHALL update optimistically and call SetPassionLevel RPC
 - **AND** if the RPC fails, the UI SHALL roll back to the previous level
+
+## ADDED Requirements
 
 ### Requirement: View Toggle (List / Grid)
 
