@@ -63,10 +63,20 @@ service ArtistService {
   rpc Unfollow(UnfollowRequest) returns (UnfollowResponse);
 
   // ListFollowed retrieves the list of artists currently followed by the authenticated user.
+  // Each entry includes the user's passion level preference for the artist.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The user identity could not be verified.
   rpc ListFollowed(ListFollowedRequest) returns (ListFollowedResponse);
+
+  // SetPassionLevel updates the user's enthusiasm tier for a followed artist.
+  // The passion level affects how the artist's events are displayed on the
+  // Dashboard and whether push notifications are sent.
+  //
+  // Possible errors:
+  // - NOT_FOUND: The user is not following the specified artist.
+  // - INVALID_ARGUMENT: The passion level value is invalid or unspecified.
+  rpc SetPassionLevel(SetPassionLevelRequest) returns (SetPassionLevelResponse);
 
   // ListSimilar retrieves artists similar to a specified artist using recommendation engines.
   //
@@ -159,11 +169,41 @@ message UnfollowResponse {}
 // ListFollowedRequest is the request for listing the current user's followed artists.
 message ListFollowedRequest {}
 
-// ListFollowedResponse contains the collection of artists followed by the user.
+// ListFollowedResponse contains the collection of artists followed by the user,
+// enriched with per-user passion level metadata.
 message ListFollowedResponse {
-  // The collection of artist entities followed by the authenticated user.
-  repeated entity.v1.Artist artists = 1;
+  // The collection of followed artists with their passion level preferences.
+  repeated FollowedArtist artists = 1;
 }
+
+// FollowedArtist represents an artist with user-specific follow metadata.
+// This is an RPC-layer message (not an entity) because passion_level is
+// per-user context, not an intrinsic property of the Artist entity.
+message FollowedArtist {
+  // The artist entity.
+  entity.v1.Artist artist = 1 [(buf.validate.field).required = true];
+
+  // The user's passion level for this artist.
+  entity.v1.PassionLevel passion_level = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum.defined_only = true
+  ];
+}
+
+// SetPassionLevelRequest provides the artist ID and the new passion level to set.
+message SetPassionLevelRequest {
+  // Required. The unique identifier of the artist.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The new passion level tier.
+  entity.v1.PassionLevel passion_level = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum.defined_only = true
+  ];
+}
+
+// SetPassionLevelResponse is returned upon a successful passion level update.
+message SetPassionLevelResponse {}
 
 // ListSimilarRequest specifies the seed artist for discovery.
 message ListSimilarRequest {
