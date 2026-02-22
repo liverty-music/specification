@@ -9,6 +9,10 @@ followed_artists table (existing)
 ```
 
 ```protobuf
+// Package: liverty_music.entity.v1
+// PassionLevel is defined in the entity package alongside Artist,
+// and referenced as entity.v1.PassionLevel in RPC definitions.
+
 // PassionLevel represents the user's enthusiasm tier for a followed artist.
 // It determines dashboard visibility and notification behavior.
 enum PassionLevel {
@@ -80,14 +84,26 @@ message SetPassionLevelRequest {
   entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
 
   // Required. The new passion level tier.
-  PassionLevel passion_level = 2 [(buf.validate.field).required = true];
+  entity.v1.PassionLevel passion_level = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum.defined_only = true
+  ];
 }
 
 // SetPassionLevelResponse is returned upon a successful update.
 message SetPassionLevelResponse {}
 ```
 
-The passion level is returned as part of the followed artist data in `ListFollowed`.
+The passion level is returned as part of the followed artist data in `ListFollowed`. The `FollowedArtist` response message is extended as follows:
+
+```protobuf
+message FollowedArtist {
+  // ... existing fields ...
+
+  // The user's passion level for this artist.
+  entity.v1.PassionLevel passion_level = 4;
+}
+```
 
 ## Decisions
 
