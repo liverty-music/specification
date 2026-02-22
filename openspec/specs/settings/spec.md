@@ -29,9 +29,9 @@ The system SHALL allow users to control push notification delivery.
 
 #### Scenario: Toggling notifications
 - **WHEN** a user toggles the Push Notifications switch
-- **THEN** the system SHALL subscribe or unsubscribe the device's push subscription via the backend `PushNotificationService` RPC
-- **AND** when OFF, the system SHALL call `Unsubscribe` to remove the device's push subscription so no notifications are delivered
-- **AND** when ON, the system SHALL call `Subscribe` to register the device's push subscription for notifications based on followed artists and their passion levels
+- **THEN** the system SHALL subscribe or unsubscribe the user's push subscriptions via the backend `PushNotificationService` RPC
+- **AND** when OFF, the system SHALL call `Unsubscribe` to remove all of the user's push subscriptions so no notifications are delivered to any device
+- **AND** when ON, the system SHALL call `Subscribe` to register the current device's push subscription for notifications based on followed artists and their passion levels
 
 ---
 
