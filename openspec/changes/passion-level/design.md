@@ -47,6 +47,28 @@ enum PassionLevel {
 └─────────────────────────────────┘
 ```
 
+## My Artists Page — View Toggle (List / Grid)
+
+```
+List View (default):             Grid (Festival) View:
+┌─────────────────────────┐     ┌─────────────────────────┐
+│ 🎸 My Artists    [≡ ⊞]  │     │ 🎸 My Artists    [≡ ⊞]  │
+├─────────────────────────┤     ├─────────────────────────┤
+│                         │     │ ┌───────────┬─────┐     │
+│ ■ RADWIMPS     [🔥🔥 ▼] │     │ │           │ONE  │     │
+│ ■ ONE OK ROCK  [🔥  ▼]  │     │ │ RADWIMPS  │OK   │     │
+│ ■ Aimer        [👀  ▼]  │     │ │   🔥🔥     │ROCK │     │
+│                         │     │ │           │ 🔥  │     │
+│                         │     │ ├─────┬─────┴─────┤     │
+│                         │     │ │Aimer│           │     │
+│                         │     │ │ 👀  │           │     │
+│                         │     │ └─────┴───────────┘     │
+└─────────────────────────┘     └─────────────────────────┘
+                                  ↑ Must Go tiles are larger
+                                  ↑ Dynamic color backgrounds
+                                  ↑ Long-press for context menu
+```
+
 ## Dashboard — Visual Mutation UI
 
 When a Must Go (🔥🔥) artist's event appears in Lane 2 or Lane 3:
@@ -128,7 +150,16 @@ message ListFollowedResponse {
 | Mutation scope | Lane 2 + Lane 3 only | Lane 1 cards are already prominent |
 | Selector UI | Inline dropdown per row | Quick toggle without leaving the list |
 
+## Deployment Strategy
+
+The `ListFollowedResponse` schema change (`repeated Artist` → `repeated FollowedArtist`) is a breaking change. Frontend and backend MUST be deployed together:
+
+1. Deploy backend with new proto (serves `FollowedArtist` with passion_level)
+2. Deploy frontend that consumes `FollowedArtist` wrapper
+3. Both deployments must happen in the same release window
+
 ## Risks
 
 - **Dashboard complexity**: Mutation UI adds conditional rendering logic to an already complex 3-lane layout. Needs careful CSS to avoid breaking lane alignment.
 - **Backend migration**: Adding `passion_level` column to `followed_artists` requires a database migration.
+- **Breaking API change**: `ListFollowedResponse` schema change requires coordinated frontend/backend deployment.

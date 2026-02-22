@@ -28,21 +28,6 @@ The system SHALL support three passion level tiers for each followed artist.
 
 ---
 
-### Requirement: Passion Level Selector
-The system SHALL provide a per-artist passion level selector on the My Artists page.
-
-#### Scenario: Displaying current passion level
-- **WHEN** the My Artists list is displayed
-- **THEN** each artist row SHALL show the current passion level icon (🔥🔥, 🔥, or 👀)
-
-#### Scenario: Changing passion level
-- **WHEN** a user taps the passion level indicator on an artist row
-- **THEN** the system SHALL display a dropdown or bottom sheet with the three options
-- **AND** selecting an option SHALL update the passion level immediately (optimistic update)
-- **AND** the system SHALL call the backend API to persist the change
-
----
-
 ### Requirement: Backend Persistence
 The system SHALL persist passion level as part of the artist-following relationship.
 
@@ -50,6 +35,10 @@ The system SHALL persist passion level as part of the artist-following relations
 - **WHEN** a `SetPassionLevel` RPC is called with a valid artist ID and passion level
 - **THEN** the system SHALL update the `passion_level` column in the `followed_artists` table
 - **AND** the response SHALL confirm the update
+
+#### Scenario: Setting passion level for unfollowed artist
+- **WHEN** a `SetPassionLevel` RPC is called for an artist the user does not follow
+- **THEN** the system SHALL return a NOT_FOUND error
 
 #### Scenario: Retrieving passion level
 - **WHEN** `ListFollowed` is called
