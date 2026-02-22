@@ -14,6 +14,8 @@ The system SHALL provide a gRPC service to manage concerts and artists.
 
 - **WHEN** `List` is called with a valid `artist_id`
 - **THEN** it returns a list of concerts associated with that artist
+- **AND** each concert SHALL include a resolved `Venue` object with `name` and `admin_area` if available
+- **AND** each concert SHALL include `listed_venue_name` with the raw scraped venue name
 - **AND** returns an empty list if no concerts are found (not an error)
 
 #### Scenario: List All Artists
@@ -96,6 +98,22 @@ The system SHALL automatically persist any new concerts discovered via the searc
 
 - **WHEN** `Create` is called with a single concert argument
 - **THEN** it SHALL behave identically to the previous single-insert implementation
+
+### Requirement: Venue Resolution in Concert List
+
+The `ConcertRepository.ListByArtist` implementation SHALL JOIN the `venues` table so that every returned `Concert` carries a populated `Venue` with `name` and `admin_area`.
+
+#### Scenario: Venue JOIN in list query
+
+- **WHEN** `ListByArtist` is called
+- **THEN** the SQL query SHALL JOIN `events` and `venues` tables
+- **AND** `venue.name` and `venue.admin_area` SHALL be scanned into the returned entities
+
+#### Scenario: Concert mapper includes Venue
+
+- **WHEN** a `Concert` entity is mapped to proto
+- **THEN** `ConcertToProto` SHALL populate the `venue` field using `VenueToProto`
+- **AND** SHALL populate `listed_venue_name` from `Concert.Event.ListedVenueName`
 
 ### Requirement: Concert-Event Association
 
