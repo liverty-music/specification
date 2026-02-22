@@ -7,7 +7,7 @@ Provides user access to account management, system preferences, and legal inform
 ## Requirements
 
 ### Requirement: My Area Preference
-The system SHALL allow users to change their registered area (prefecture) which determines the Live Highway Dashboard's geographical context.
+The system SHALL allow users to change their local area preference (prefecture) which determines the Live Highway Dashboard's geographical context. The preference is stored locally on the device and is not synchronized across devices.
 
 #### Scenario: Opening area selector
 - **WHEN** a user taps the "My Area" row in Settings
@@ -17,7 +17,7 @@ The system SHALL allow users to change their registered area (prefecture) which 
 
 #### Scenario: Changing area
 - **WHEN** a user selects a prefecture in Step 2
-- **THEN** the system SHALL update the user's registered area
+- **THEN** the system SHALL update the user's local area preference
 - **AND** the bottom sheet SHALL close
 - **AND** the Settings row SHALL reflect the new area
 - **AND** the Dashboard SHALL use the new area for Live Highway lane calculations on next load
@@ -29,9 +29,9 @@ The system SHALL allow users to control push notification delivery.
 
 #### Scenario: Toggling notifications
 - **WHEN** a user toggles the Push Notifications switch
-- **THEN** the system SHALL update the notification preference
-- **AND** when OFF, the system SHALL NOT send any push notifications
-- **AND** when ON, the system SHALL send notifications based on followed artists and their passion levels
+- **THEN** the system SHALL subscribe or unsubscribe the device's push subscription via the backend `PushNotificationService` RPC
+- **AND** when OFF, the system SHALL call `Unsubscribe` to remove the device's push subscription so no notifications are delivered
+- **AND** when ON, the system SHALL call `Subscribe` to register the device's push subscription for notifications based on followed artists and their passion levels
 
 ---
 
