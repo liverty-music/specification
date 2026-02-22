@@ -25,7 +25,7 @@ The system SHALL display a landing page with a compelling value proposition and 
 - **AND** the CTA button SHALL fade in after the sub-heading (staggered by 200ms)
 
 ### Requirement: Passkey Authentication CTA
-The system SHALL provide "Sign Up" and "Sign In" buttons with visually prominent, branded styling that triggers Passkey authentication via Zitadel.
+The system SHALL provide "Sign Up" and "Sign In" buttons with visually prominent, branded styling that triggers Passkey authentication via Zitadel. Authentication callback errors SHALL be handled with user-visible feedback.
 
 #### Scenario: New user initiates sign-up
 - **WHEN** an unauthenticated user clicks the "Sign Up" button
@@ -35,6 +35,18 @@ The system SHALL provide "Sign Up" and "Sign In" buttons with visually prominent
 #### Scenario: Returning user initiates sign-in
 - **WHEN** an unauthenticated user clicks the "Sign In" button
 - **THEN** the system SHALL initiate the Zitadel OIDC flow for Passkey authentication
+
+#### Scenario: Auth callback processing fails
+- **WHEN** the OIDC callback processing fails (token exchange error, network failure)
+- **THEN** the system SHALL display the error message on the auth callback page
+- **AND** the system SHALL provide a "Return to Home" link
+- **AND** the system SHALL NOT leave the user on a blank callback page
+
+#### Scenario: Post-auth redirect fails
+- **WHEN** authentication succeeds but the subsequent redirect (to dashboard or onboarding) fails
+- **THEN** the system SHALL catch the navigation error
+- **AND** the system SHALL display an error toast with a manual navigation option
+- **AND** the system SHALL NOT leave the user stuck on the callback page
 
 #### Scenario: CTA button visual styling
 - **WHEN** the landing page is displayed
@@ -48,13 +60,19 @@ The system SHALL provide "Sign Up" and "Sign In" buttons with visually prominent
 - **AND** Passkey SHALL be the sole authentication method
 
 ### Requirement: Authenticated User Redirect
-The system SHALL redirect already-authenticated users away from the landing page.
+The system SHALL redirect already-authenticated users away from the landing page. Redirect failures SHALL be handled gracefully.
 
 #### Scenario: Authenticated user visits landing page
 - **WHEN** an authenticated user navigates to `/`
-- **THEN** the system SHALL check whether the user has completed onboarding (has ≥1 followed artist)
+- **THEN** the system SHALL check whether the user has completed onboarding (has >= 1 followed artist)
 - **AND** if onboarding is incomplete, the system SHALL redirect to the Artist Discovery page
 - **AND** if onboarding is complete, the system SHALL redirect to the Dashboard
+
+#### Scenario: Redirect target check fails
+- **WHEN** the onboarding status check fails due to a network or API error
+- **THEN** the system SHALL display the landing page with an error toast: "Could not determine account status. Please try signing in again."
+- **AND** the system SHALL NOT crash to a white screen
+- **AND** the system SHALL allow the user to manually navigate via the Sign In button
 
 ### Requirement: Mobile-First Layout
 The system SHALL render the landing page with a mobile-first responsive design.
