@@ -15,8 +15,8 @@ message UserId {
 // UserExternalId is the identity provider's unique identifier for a user.
 // This maps to the Zitadel `sub` claim and links the external identity to the local user record.
 message UserExternalId {
-  // A UUID string representing the identity provider's user identifier.
-  string value = 1 [(buf.validate.field).string.uuid = true];
+  // The identity provider's user identifier (e.g., Zitadel snowflake ID).
+  string value = 1 [(buf.validate.field).string.min_len = 1];
 }
 
 // UserEmail represents a validated email address for communications.
