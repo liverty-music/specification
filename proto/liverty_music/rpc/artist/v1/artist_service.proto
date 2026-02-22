@@ -182,6 +182,10 @@ message ListTopRequest {
   // Optional. ISO 3166-1 country name (e.g., "Japan").
   // If empty, the system returns a global chart.
   string country = 1;
+
+  // Optional. Filter top artists by genre or tag (e.g., "rock", "pop", "anime").
+  // When empty, returns top artists across all genres.
+  string tag = 2 [(buf.validate.field).string.max_len = 50];
 }
 
 // ListTopResponse contains the chart of popular artists.
