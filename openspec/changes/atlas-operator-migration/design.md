@@ -45,8 +45,8 @@ Current state:
 
 **Flow**:
 1. Pulumi config → `gcp.sql.User` password → Secret Manager
-2. ESO → K8s Secret `atlas-db-credentials`
-3. AtlasMigration CRD → `urlFrom.secretKeyRef` → connects as postgres
+2. ESO → K8s Secret `atlas-db-credentials` in `atlas-operator` namespace
+3. AtlasMigration CRD → `passwordFrom.secretKeyRef` + individual credential fields (`scheme`, `host`, `port`, `user`, `database`, `parameters`) → connects as postgres
 
 ### Decision 3: Migration files in backend repo with ArgoCD multi-source
 
@@ -59,10 +59,11 @@ Current state:
 backend/
   k8s/atlas/
     base/
-      kustomization.yaml      # configMapGenerator + AtlasMigration
-      atlas-migration.yaml    # AtlasMigration CRD
+      kustomization.yaml      # configMapGenerator (disableNameSuffixHash) + AtlasMigration
+      atlas-migration.yaml    # AtlasMigration CRD (sync-wave: "1")
+      migrations/             # Versioned SQL files + atlas.sum
     overlays/dev/
-      kustomization.yaml      # patches DB URL secret name
+      kustomization.yaml      # patches host to Cloud SQL PSC endpoint
 ```
 
 ### Decision 4: Clean start — rewrite migrations without goose headers
@@ -91,6 +92,15 @@ backend/
 - **[Trade-off] Migration files in 2 ArgoCD sources** → Atlas Operator Helm in cloud-provisioning, AtlasMigration CRD in backend. Clear separation of concerns (infra vs app).
 - **[Trade-off] goose removal is irreversible** → No data exists, clean start. If Atlas Operator is removed later, a new migration tool can be adopted without data loss.
 
+## Implementation Notes
+
+Lessons learned during deployment (for future reference):
+
+- **Kustomize `configMapGenerator`**: Appends a hash suffix to ConfigMap names by default. CRD fields like `configMapRef.name` are NOT auto-rewritten by Kustomize (only native K8s refs like `volumes`, `envFrom`). Use `generatorOptions.disableNameSuffixHash: true`.
+- **Cloud SQL SSL**: Cloud SQL enforces SSL even via PSC. The AtlasMigration `sslmode` parameter must be `require`, not `disable`.
+- **Atlas Operator `search_path`**: The CRD `parameters` map is passed as URL query params. Comma-separated values (e.g., `search_path=app,public`) are treated as a single literal schema name. Use only `search_path=app`.
+- **ArgoCD sync waves**: ConfigMap (default wave 0) must be created before AtlasMigration (wave 1). Using wave `-1` for AtlasMigration causes "ConfigMap not found" errors.
+
 ## Open Questions
 
-None — approach validated through exploration of PSC connectivity constraints, Atlas Operator documentation, and existing ESO/ArgoCD patterns.
+None — approach validated and successfully deployed.

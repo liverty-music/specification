@@ -2,14 +2,14 @@
 
 ### Requirement: ArgoCD SHALL sync Atlas migration resources from backend repo
 
-The system SHALL include an ArgoCD Application that tracks the backend repository's `k8s/atlas/` directory for migration CRDs and ConfigMaps. This Application SHALL sync to the `backend` namespace.
+The system SHALL include an ArgoCD Application that tracks the backend repository's `k8s/atlas/` directory for migration CRDs and ConfigMaps. This Application SHALL sync to the `atlas-operator` namespace.
 
 #### Scenario: Migration ArgoCD Application
 
 - **WHEN** ArgoCD reconciles the backend-migrations Application
 - **THEN** it SHALL fetch manifests from `liverty-music/backend` repository
 - **AND** the target path SHALL be `k8s/atlas/overlays/<env>`
-- **AND** resources SHALL be deployed to the `backend` namespace
+- **AND** resources SHALL be deployed to the `atlas-operator` namespace
 
 ### Requirement: Migration sync wave SHALL precede application deployment
 
