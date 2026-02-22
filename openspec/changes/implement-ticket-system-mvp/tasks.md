@@ -17,8 +17,8 @@
 - [x] 2.3 Write CREATE migration: `tickets` table (id UUID PK, event_id FK → events, user_id FK → users, token_id BIGINT, tx_hash TEXT, minted_at TIMESTAMPTZ)
 - [x] 2.4 Write CREATE migration: `merkle_tree` table (event_id FK → events, depth INT, index INT, hash BYTEA; composite PK on event_id + depth + index)
 - [x] 2.5 Write CREATE migration: `nullifiers` table (event_id FK → events, nullifier_hash BYTEA, used_at TIMESTAMPTZ; UNIQUE index on event_id + nullifier_hash)
-- [ ] 2.6 Verify all migrations run cleanly on local PostgreSQL; write rollback (DOWN) migrations
-- [ ] 2.7 Verify ALTER migrations are backward-compatible (existing queries on `users`/`events` unaffected)
+- [x] 2.6 Verify all migrations run cleanly on local PostgreSQL; write rollback (DOWN) migrations
+- [x] 2.7 Verify ALTER migrations are backward-compatible (existing queries on `users`/`events` unaffected)
 
 ## 3. ZK Circuit
 
@@ -79,8 +79,8 @@
 - [x] 8.4 Implement `GetMerklePath` handler: return Merkle path for a given user + event from `merkle_tree` table
 - [x] 8.5 On successful verification: atomically insert `nullifiers` row (unique constraint = double-entry guard)
 - [x] 8.6 Return structured error on duplicate nullifier (event-specific "already checked in" response)
-- [ ] 8.7 Write integration test: round-trip a known circom-generated proof through circom2gnark -> gnark Verify
-- [ ] 8.8 Write integration test: duplicate nullifier returns correct error
+- [x] 8.7 Write integration test: round-trip a known circom-generated proof through circom2gnark -> gnark Verify
+- [x] 8.8 Write integration test: duplicate nullifier returns correct error
 
 ## 9. Go Backend — Merkle Tree Management
 
@@ -126,7 +126,7 @@
 
 > Backend and frontend already have CD pipelines. Add CI checks for new components.
 
-- [ ] 14.1 Add GitHub Actions workflow: `buf lint` + `buf breaking` on proto changes (BSR repo)
+- [x] 14.1 Add GitHub Actions workflow: `buf lint` + `buf breaking` on proto changes (BSR repo)
 - [x] 14.2 Verify existing Go backend CI (`go test ./...` + `golangci-lint`) covers new handlers
 - [x] 14.3 Verify existing frontend CI (`npm run build`) covers PWA manifest validation
 - [ ] 14.4 Add integration test job: spin up local Bundler (Rundler) + Anvil fork of Base Sepolia; run UserOperation ABI encoding tests
