@@ -1,10 +1,4 @@
-# database Specification
-
-## Purpose
-
-The `database` capability defines the requirements for reliable, scalable, and secure relational storage. It ensures that critical domain data for users, artists, and concerts is persisted in highly available Cloud SQL instances with appropriate encryption and data integrity guarantees.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Schema migrations MUST be applied before serving traffic
 
@@ -18,16 +12,7 @@ The system SHALL ensure that the database schema is up to date before the applic
 - **AND** the backend Deployment SHALL be synced after migrations succeed (higher sync wave)
 - **AND** the application SHALL NOT execute any migration logic at startup
 
-### Requirement: The system MUST provide persistent relational storage
-
-The system SHALL provide a durable, consistent store for relational data.
-
-#### Scenario: Production Deployment
-
-Given the backend service is deployed to production
-When it attempts to persist user data
-Then the data SHALL be stored in a highly available Cloud SQL instance
-And the data SHALL be encrypted at rest
+## ADDED Requirements
 
 ### Requirement: Application data SHALL reside in a dedicated schema
 
