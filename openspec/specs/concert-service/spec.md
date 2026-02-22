@@ -81,7 +81,8 @@ The system SHALL automatically persist any new concerts discovered via the searc
 #### Scenario: Persist Venues
 
 - **WHEN** a discovered concert has a venue that does not exist in the database
-- **THEN** a new venue is created dynamically based on the name provided by the source
+- **THEN** a new venue is created dynamically based on the listed venue name provided by the source
+- **AND** the new venue SHALL have `enrichment_status` set to `'pending'`
 - **AND** the new concert is associated with this new venue
 
 #### Scenario: Bulk insert uses unnest
