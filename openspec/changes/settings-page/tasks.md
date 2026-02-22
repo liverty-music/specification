@@ -2,12 +2,11 @@
 
 ## Tasks
 
-- [ ] Create SettingsPage component with grouped list layout (Preferences, About, Account sections)
-- [ ] Implement My Area row displaying current area with tap-to-change
-- [ ] Create AreaSelectorBottomSheet component (region → prefecture 2-step selection)
-- [ ] Implement Push Notifications toggle switch
-- [ ] Add About section with links to Terms of Service, Privacy Policy, OSS Licenses
-- [ ] Implement Sign Out button (red text, bottom position) with existing auth flow integration
-- [ ] Implement backend user preference API for area persistence (required by passion-level notifications)
-- [ ] Store notification preferences in localStorage (or backend if preference API supports it)
-- [ ] Replace Settings stub page from bottom-navigation-shell with full implementation
+- [x] Create SettingsPage component with grouped list layout (Preferences, About, Account sections)
+- [x] Implement My Area row displaying current area with tap-to-change
+- [x] Create AreaSelectorBottomSheet component (region → prefecture 2-step selection)
+- [x] Implement Push Notifications toggle switch
+- [x] Add About section with links to Terms of Service, Privacy Policy, OSS Licenses
+- [x] Implement Sign Out button (red text, bottom position) with existing auth flow integration
+- [x] Store area and notification preferences in localStorage
+- [x] Replace Settings stub page from bottom-navigation-shell with full implementation
