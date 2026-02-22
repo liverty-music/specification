@@ -9,6 +9,8 @@ followed_artists table (existing)
 ```
 
 ```protobuf
+// PassionLevel represents the user's enthusiasm tier for a followed artist.
+// It determines dashboard visibility and notification behavior.
 enum PassionLevel {
   PASSION_LEVEL_UNSPECIFIED = 0;
   PASSION_LEVEL_MUST_GO = 1;      // 🔥🔥 Travel anywhere
@@ -68,13 +70,21 @@ Normal Lane 2/3 card:        Mutated card (Must Go):
 
 ## API Design
 
-```
+```protobuf
+// SetPassionLevel updates the user's preference for an artist's notification tier.
 rpc SetPassionLevel(SetPassionLevelRequest) returns (SetPassionLevelResponse);
 
+// SetPassionLevelRequest provides the artist ID and the new passion level to be set.
 message SetPassionLevelRequest {
-  ArtistId artist_id = 1;
-  PassionLevel passion_level = 2;
+  // Required. The unique identifier of the artist.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The new passion level tier.
+  PassionLevel passion_level = 2 [(buf.validate.field).required = true];
 }
+
+// SetPassionLevelResponse is returned upon a successful update.
+message SetPassionLevelResponse {}
 ```
 
 The passion level is returned as part of the followed artist data in `ListFollowed`.
