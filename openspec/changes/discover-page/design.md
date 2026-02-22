@@ -77,7 +77,7 @@ message ListTopRequest {
 
   // Optional. Filter top artists by genre/tag (e.g., "rock", "pop", "anime").
   // When empty, returns top artists across all genres.
-  string tag = 2;
+  string tag = 2 [(buf.validate.field).string.max_len = 50];
 }
 ```
 

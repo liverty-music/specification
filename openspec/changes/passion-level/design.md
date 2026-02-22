@@ -102,10 +102,13 @@ The passion level is returned as part of the followed artist data in `ListFollow
 // per-user context, not an intrinsic property of the Artist entity.
 message FollowedArtist {
   // The artist entity.
-  entity.v1.Artist artist = 1;
+  entity.v1.Artist artist = 1 [(buf.validate.field).required = true];
 
   // The user's passion level for this artist.
-  entity.v1.PassionLevel passion_level = 2;
+  entity.v1.PassionLevel passion_level = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum.defined_only = true
+  ];
 }
 
 message ListFollowedResponse {
