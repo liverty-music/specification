@@ -27,23 +27,23 @@ The application SHALL use standard `pgx` connection when running locally.
 - **WHEN** `ENVIRONMENT` is `local`
 - **THEN** application uses standard TCP connection
 - **AND** Uses `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_PASSWORD` (if provided)
+- **AND** DSN SHALL include `search_path` set to the value of `DATABASE_SCHEMA` (default: `public`)
 
-### Requirement: The system MUST provide a standard sql.DB connection for migrations
+### Requirement: Database schema SHALL be configurable via environment variable
 
-The `rdb` package SHALL expose a function to create a short-lived `*sql.DB` connection using the same `cloudsqlconn.Dialer` configuration as the main `pgxpool.Pool`. This connection SHALL be used exclusively by the migration runner and closed after migrations complete.
+The application SHALL read the `DATABASE_SCHEMA` environment variable to set the PostgreSQL `search_path` in its DSN. The default value SHALL be `public` for local development compatibility.
 
-#### Scenario: Non-local environment migration connection
+#### Scenario: Cloud environment with dedicated schema
 
-- **WHEN** the migration runner needs a database connection in a non-local environment
-- **THEN** a `*sql.DB` SHALL be created using `pgx/v5/stdlib` with `cloudsqlconn.Dialer`
-- **AND** the connection SHALL use IAM authentication and PSC
-- **AND** the connection SHALL be closed after migrations complete
+- **WHEN** `DATABASE_SCHEMA` is set to `app`
+- **THEN** the DSN SHALL include `search_path=app`
+- **AND** all queries SHALL target the `app` schema
 
-#### Scenario: Local environment migration connection
+#### Scenario: Local environment with default schema
 
-- **WHEN** the migration runner needs a database connection in a local environment
-- **THEN** a `*sql.DB` SHALL be created using standard TCP connection via DSN
-- **AND** no `cloudsqlconn.Dialer` SHALL be initialized
+- **WHEN** `DATABASE_SCHEMA` is not set
+- **THEN** the DSN SHALL default to `search_path=public`
+- **AND** local development works without schema configuration
 
 ### Requirement: Configuration Validation
 
