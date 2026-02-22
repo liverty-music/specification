@@ -8,7 +8,7 @@ The `user-account-sync` capability handles provisioning local user records when 
 
 ### Requirement: User Account Provisioning on Signup
 
-The system SHALL create a local user record in the application database when a user completes registration via Zitadel, linking the Zitadel identity (`sub` claim) to the local record via an `external_id` field (UUID type).
+The system SHALL create a local user record in the application database when a user completes registration via Zitadel, linking the Zitadel identity (`sub` claim) to the local record via an `external_id` field (TEXT type).
 
 #### Scenario: Successful signup provisioning
 
@@ -26,12 +26,12 @@ The system SHALL create a local user record in the application database when a u
 
 ### Requirement: External Identity Mapping
 
-The system SHALL maintain a unique mapping between Zitadel identity (`sub` claim) and the local user record using a UUID-typed `external_id` column.
+The system SHALL maintain a unique mapping between Zitadel identity (`sub` claim) and the local user record using a TEXT-typed `external_id` column. The column accepts any string format to accommodate identity provider ID schemes (e.g., Zitadel snowflake IDs, UUIDs).
 
 #### Scenario: Store external identity
 
 - **WHEN** a new user record is created via `Create`
-- **THEN** the `external_id` column SHALL be set to the Zitadel `sub` claim value (UUID)
+- **THEN** the `external_id` column SHALL be set to the Zitadel `sub` claim value as a plain string
 - **AND** the `external_id` column SHALL have a UNIQUE constraint
 
 #### Scenario: Lookup by external identity
@@ -46,8 +46,8 @@ The `User` protobuf entity SHALL include an `external_id` field to represent the
 #### Scenario: External ID in User entity
 
 - **WHEN** a `User` entity is serialized
-- **THEN** it SHALL include the `external_id` field as a UUID string
-- **AND** the field SHALL be validated as a UUID format via protovalidate
+- **THEN** it SHALL include the `external_id` field as a non-empty string
+- **AND** the field SHALL be validated as a non-empty string via protovalidate (not UUID format)
 
 ### Requirement: Create RPC with Email Parameter
 
