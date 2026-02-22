@@ -21,20 +21,20 @@
 - [x] Update `ListFollowed` handler to return `FollowedArtist` wrapper
 
 ### Frontend — My Artists
-- [ ] Update `FollowedArtist` interface to include `passionLevel` field
-- [ ] Update `ListFollowed` consumer to handle `FollowedArtist` wrapper response
-- [ ] Add passion level indicator (🔥🔥/🔥/👀) to each artist row
-- [ ] Create passion level selector dropdown/bottom sheet
-- [ ] Integrate `SetPassionLevel` RPC on selection change (optimistic update)
+- [x] Update `FollowedArtist` interface to include `passionLevel` field
+- [x] Update `ListFollowed` consumer to handle `FollowedArtist` wrapper response
+- [x] Add passion level indicator (🔥🔥/🔥/👀) to each artist row
+- [x] Create passion level selector dropdown/bottom sheet
+- [x] Integrate `SetPassionLevel` RPC on selection change (optimistic update)
 
 ### Frontend — My Artists Grid (Festival) View
-- [ ] Add view toggle control (List / Grid) to the My Artists page header
-- [ ] Create Grid (Festival) View component with poster-style tiles
-- [ ] Size tiles based on passion level (Must Go tiles are larger)
-- [ ] Implement long-press context menu for passion level and unfollow in Grid View
+- [x] Add view toggle control (List / Grid) to the My Artists page header
+- [x] Create Grid (Festival) View component with poster-style tiles
+- [x] Size tiles based on passion level (Must Go tiles are larger)
+- [x] Implement long-press context menu for passion level and unfollow in Grid View
 
 ### Frontend — Dashboard Mutation UI
-- [ ] Add logic to detect Must Go artists in Lane 2/3 event data
-- [ ] Create MutationCard component (expanded size, vivid color, badge)
-- [ ] Integrate Mutation cards into Lane 2 and Lane 3 rendering
-- [ ] Ensure layout handles multiple mutated cards on the same date without overflow
+- [x] Add logic to detect Must Go artists in Lane 2/3 event data
+- [x] Create MutationCard component (expanded size, vivid color, badge)
+- [x] Integrate Mutation cards into Lane 2 and Lane 3 rendering
+- [x] Ensure layout handles multiple mutated cards on the same date without overflow
