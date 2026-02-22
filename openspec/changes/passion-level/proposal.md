@@ -24,24 +24,26 @@ On the **Dashboard (Live Highway)**, introduce **Visual Mutation UI**: when a "M
 - Per-artist passion level selector on My Artists page
 - Dashboard Mutation UI for Must Go artists in Lane 2/3
 - Backend API for setting/getting passion level per followed artist
+- Grid/Festival view toggle on My Artists page (フェス風ポスター表示)
 
 ### Out of Scope
 
 - Push notification filtering by passion level (can be a follow-up)
-- Grid/Festival view on My Artists page (post-MVP)
 
 ## Impact
 
 - New spec: `passion-level`
 - Modified spec: `typography-focused-dashboard` (Mutation UI addition)
-- Modified spec: `artist-following` (passion level field on follow relationship)
-- New backend API endpoint or field extension
+- Modified spec: `artist-following` (passion level field on follow relationship, ListFollowed response enrichment)
+- Modified spec: `my-artists` (passion level indicator and selector UI)
+- New backend API endpoint (`SetPassionLevel` RPC)
+- Breaking change: `ListFollowedResponse` schema (`Artist` → `FollowedArtist`)
 
 ## Dependencies
 
-- `my-artists-list` (passion level selector is added to the artist list rows)
-- `bottom-navigation-shell` (Dashboard and My Artists tabs must exist)
+- `my-artists` (passion level selector is added to the artist list rows)
+- `artist-following` (follow relationship must exist to attach passion level)
 
 ## Blocked By
 
-- `my-artists-list`
+- `my-artists` (page must exist before adding passion selector)

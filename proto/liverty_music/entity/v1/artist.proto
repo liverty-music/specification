@@ -59,3 +59,22 @@ message OfficialSiteUrl {
   // The URI value of the official site.
   string value = 1 [(buf.validate.field).string.uri = true];
 }
+
+// PassionLevel represents the user's enthusiasm tier for a followed artist.
+// It determines dashboard visibility and notification behavior.
+enum PassionLevel {
+  // Default value; must not be used in API requests.
+  PASSION_LEVEL_UNSPECIFIED = 0;
+
+  // The user will travel anywhere for this artist's concerts.
+  // Events in Lane 2 and Lane 3 render with Visual Mutation UI.
+  PASSION_LEVEL_MUST_GO = 1;
+
+  // The user is interested in local events only. This is the default tier
+  // assigned when a user first follows an artist.
+  PASSION_LEVEL_LOCAL_ONLY = 2;
+
+  // The user wants to see events on the Dashboard but does not want
+  // push notifications for this artist.
+  PASSION_LEVEL_KEEP_AN_EYE = 3;
+}
