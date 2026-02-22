@@ -64,8 +64,4 @@
 | My Area UI | Bottom sheet with 2-step selection | Reuses onboarding mental model |
 | Sign Out position | Bottom of page, red text | Convention for destructive actions |
 | Legal pages | External links (static pages) | No in-app rendering needed for MVP |
-| Area persistence | Backend (user preference API) | Required for passion-level notification logic (Local Only tier needs server-side area) |
-
-## Risks
-
-- **Backend dependency**: My Area persistence requires a backend user preferences API or extending the existing user profile. This adds backend scope to what is primarily a frontend change.
+| Area persistence | localStorage | Frontend-only display filter; venues already store `admin_area` server-side, so backend persistence is unnecessary |
