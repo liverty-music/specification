@@ -1,55 +1,62 @@
-# My Artists
+# Capability: My Artists
 
 ## Purpose
 
-Provides users with a view of all followed artists and the ability to manage (unfollow) them. This is the primary artist management screen, accessible via the My Artists tab in the Bottom Navigation Bar.
+Display and manage the user's followed artists, providing list and grid views with passion level controls.
 
 ## Requirements
 
-### Requirement: Followed Artists List
-The system SHALL display a list of all artists the user currently follows.
+### Requirement: Artist List Row
 
-#### Scenario: List population
-- **WHEN** the My Artists page is opened
-- **THEN** the system SHALL call `ArtistService.ListFollowed` to retrieve the user's followed artists
-- **AND** the system SHALL display each artist as a row in a vertical list
-- **AND** each row SHALL show the artist name with a color accent derived from the artist name (same algorithm as Dashboard cards)
+Each artist row in the My Artists list view SHALL display the artist's name, color accent, and passion level indicator.
 
-#### Scenario: Empty state
-- **WHEN** the user has no followed artists
-- **THEN** the system SHALL display a friendly empty state message (e.g., "No artists followed yet")
-- **AND** the system SHALL provide a call-to-action linking to the Discover tab
+#### Scenario: Passion level indicator displayed
 
-#### Scenario: Artist count
-- **WHEN** the list contains followed artists
-- **THEN** the page header SHALL display the total count of followed artists
+- **GIVEN** the My Artists list view
+- **WHEN** an artist row is rendered
+- **THEN** a passion level icon SHALL appear next to the artist name
 
----
+#### Scenario: Tapping passion icon opens selector
 
-### Requirement: Unfollow with Undo
-The system SHALL allow users to unfollow artists with a frictionless, recoverable interaction.
+- **GIVEN** an artist row with a passion level icon
+- **WHEN** the user taps the icon
+- **THEN** a bottom sheet SHALL appear with all three passion level options
 
-#### Scenario: Swipe to unfollow
-- **WHEN** a user swipes left on an artist row
-- **THEN** the system SHALL reveal an unfollow (delete) action zone
-- **AND** completing the swipe SHALL remove the artist from the visible list immediately (optimistic removal)
+#### Scenario: Selecting a passion level
 
-#### Scenario: Long-press to unfollow (alternative)
-- **WHEN** a user long-presses on an artist row
-- **THEN** the system SHALL reveal an unfollow action button or menu
+- **GIVEN** the passion level bottom sheet is open
+- **WHEN** the user selects a level
+- **THEN** the UI SHALL update optimistically and call SetPassionLevel RPC
+- **AND** if the RPC fails, the UI SHALL roll back to the previous level
 
-#### Scenario: Undo toast
-- **WHEN** an artist is unfollowed
-- **THEN** the system SHALL display a toast notification at the bottom of the screen
-- **AND** the toast SHALL show "[Artist Name] unfollowed" with an "Undo" action button
-- **AND** the toast SHALL auto-dismiss after 5 seconds
-- **AND** the system SHALL NOT show a confirmation dialog before unfollowing
+### Requirement: View Toggle (List / Grid)
 
-#### Scenario: Undo action
-- **WHEN** a user taps "Undo" on the toast before it dismisses
-- **THEN** the system SHALL re-add the artist to the list in its original position
-- **AND** the system SHALL cancel the pending unfollow RPC call
+The My Artists page SHALL offer a view toggle between List view (default) and Grid (Festival) view.
 
-#### Scenario: Unfollow committed
-- **WHEN** the undo toast dismisses without user interaction (5 seconds elapsed)
-- **THEN** the system SHALL call `ArtistService.Unfollow` with the artist's ID to persist the removal
+#### Scenario: Toggling view mode
+
+- **GIVEN** the My Artists page header
+- **WHEN** the user taps the view toggle button
+- **THEN** the page SHALL switch between List and Grid view
+
+### Requirement: Grid (Festival) View
+
+The Grid view SHALL display followed artists as poster-style tiles in a responsive grid layout.
+
+#### Scenario: Must Go tiles are larger
+
+- **GIVEN** the Grid view is active
+- **WHEN** an artist has passion level Must Go
+- **THEN** their tile SHALL span 2 columns and 2 rows
+
+#### Scenario: Non-Must-Go tiles are standard size
+
+- **GIVEN** the Grid view is active
+- **WHEN** an artist has passion level Local Only or Keep an Eye
+- **THEN** their tile SHALL span 1 column and 1 row
+
+#### Scenario: Long-press opens context menu
+
+- **GIVEN** the Grid view is active
+- **WHEN** the user long-presses a tile
+- **THEN** a context menu SHALL appear with passion level options and an unfollow action
