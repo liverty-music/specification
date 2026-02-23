@@ -5,7 +5,7 @@ This capability defines the complete user onboarding experience for Liverty Musi
 ## Requirements
 
 ### Requirement: Landing Page with Authentication
-The system SHALL provide a landing page that communicates the service value proposition and enables user authentication via Zitadel (Passkey authentication), with post-authentication routing based on onboarding completion status.
+The system SHALL provide a landing page that communicates the service value proposition and enables user authentication via Zitadel (Passkey authentication), with post-authentication routing based on sign-up detection.
 
 #### Scenario: First-time user visits landing page
 - **WHEN** a user accesses the application for the first time
@@ -17,10 +17,20 @@ The system SHALL provide a landing page that communicates the service value prop
 #### Scenario: User initiates Passkey authentication via Zitadel
 - **WHEN** a user clicks the "Sign Up" or "Sign In" button
 - **THEN** the system SHALL redirect the user to Zitadel OIDC flow for Passkey authentication
-- **AND** upon successful authentication, Zitadel SHALL create or retrieve the user account
-- **AND** the system SHALL check onboarding completion status
-- **AND** if incomplete, the system SHALL redirect to the Artist Discovery step
-- **AND** if complete, the system SHALL redirect to the Dashboard
+- **AND** upon successful authentication, the system SHALL check the OIDC state for the `isSignUp` flag
+- **AND** if `isSignUp` is `true`, the system SHALL provision the user in the backend and redirect to the Artist Discovery step
+- **AND** if `isSignUp` is `false` or absent, the system SHALL redirect to the Dashboard
+
+#### Scenario: Authenticated user returns to landing page
+- **WHEN** an authenticated user navigates to `/` or `/welcome`
+- **THEN** the system SHALL redirect the user to `/dashboard`
+- **AND** the system SHALL NOT check followed artist count for routing decisions
+
+#### Scenario: User who unfollowed all artists signs in
+- **WHEN** an existing user who has unfollowed all artists signs in
+- **THEN** the system SHALL redirect the user to `/dashboard`
+- **AND** the system SHALL NOT redirect the user to the Artist Discovery step
+- **AND** the dashboard SHALL display its normal state (with region overlay if region is not configured)
 
 ---
 
