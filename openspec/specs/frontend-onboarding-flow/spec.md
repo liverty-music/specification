@@ -22,6 +22,13 @@ The system SHALL provide a landing page that communicates the service value prop
 - **AND** if incomplete, the system SHALL redirect to the Artist Discovery step
 - **AND** if complete, the system SHALL redirect to the Dashboard
 
+#### Scenario: User provisioning fails during signup
+
+- **WHEN** the `UserService.Create` RPC returns an error other than `AlreadyExists` during signup
+- **THEN** the system SHALL NOT continue the authentication flow
+- **AND** the system SHALL display an error message to the user indicating that signup failed
+- **AND** the system SHALL allow the user to retry by navigating back to the signup flow
+
 ---
 
 ### Requirement: Just-in-Time Region Configuration
