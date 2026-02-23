@@ -16,6 +16,13 @@ service ConcertService {
   // - NOT_FOUND: No concerts were found for the specified artist.
   rpc List(ListRequest) returns (ListResponse);
 
+  // ListByFollower retrieves all concerts for artists followed by the authenticated user.
+  // The caller's identity is determined from the authentication context.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The user identity could not be verified.
+  rpc ListByFollower(ListByFollowerRequest) returns (ListByFollowerResponse);
+
   // SearchNewConcerts triggers a discovery process to find new concerts for an artist.
   // It scrapes external sources and persists any newly found concerts.
   //
@@ -35,6 +42,17 @@ message ListRequest {
 // ListResponse contains the collection of concerts matching the ListRequest.
 message ListResponse {
   // The collection of concert events found.
+  repeated entity.v1.Concert concerts = 1;
+}
+
+// ListByFollowerRequest is the request for retrieving concerts for all artists
+// followed by the authenticated user. No fields are required; the user identity
+// is determined from the authentication context.
+message ListByFollowerRequest {}
+
+// ListByFollowerResponse contains the concerts for all artists followed by the caller.
+message ListByFollowerResponse {
+  // The collection of concert events, ordered by date ascending.
   repeated entity.v1.Concert concerts = 1;
 }
 
