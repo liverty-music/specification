@@ -1,10 +1,4 @@
-# Settings
-
-## Purpose
-
-Provides user access to account management, system preferences, and legal information. The Settings page is a grouped list UI accessible via the Bottom Navigation Bar's Settings tab.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: My Area Preference
 The system SHALL allow users to change their local area preference (prefecture) which determines the Live Highway Dashboard's geographical context. The preference is stored locally on the device and is not synchronized across devices.
@@ -36,35 +30,3 @@ The system SHALL allow users to change their local area preference (prefecture) 
 - **AND** the dialog SHALL close
 - **AND** the Settings row SHALL reflect the new area
 - **AND** the Dashboard SHALL use the new area for Live Highway lane calculations on next load
-
----
-
-### Requirement: Push Notification Toggle
-The system SHALL allow users to control push notification delivery.
-
-#### Scenario: Toggling notifications
-- **WHEN** a user toggles the Push Notifications switch
-- **THEN** the system SHALL subscribe or unsubscribe the user's push subscriptions via the backend `PushNotificationService` RPC
-- **AND** when OFF, the system SHALL call `Unsubscribe` to remove all of the user's push subscriptions so no notifications are delivered to any device
-- **AND** when ON, the system SHALL call `Subscribe` to register the current device's push subscription for notifications based on followed artists and their passion levels
-
----
-
-### Requirement: About Section
-The system SHALL provide access to legal and licensing information.
-
-#### Scenario: Legal links
-- **WHEN** the About section is displayed
-- **THEN** the system SHALL show links to Terms of Service, Privacy Policy, and OSS Licenses
-- **AND** tapping a link SHALL open the corresponding page (external or in-app webview)
-
----
-
-### Requirement: Sign Out
-The system SHALL allow users to sign out of their account.
-
-#### Scenario: Sign out action
-- **WHEN** a user taps the "Sign Out" button
-- **THEN** the system SHALL clear the user's authentication session
-- **AND** the system SHALL navigate to the Landing Page
-- **AND** the Sign Out button SHALL be visually distinct (e.g., red text) and positioned at the bottom of the settings list
