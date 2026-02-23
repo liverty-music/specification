@@ -5,8 +5,8 @@
 - [x] 1.1 Add Secret Manager secret for TicketSBT contract deployer private key (`cloud-provisioning`)
 - [x] 1.2 Add Secret Manager secret for Base Sepolia RPC endpoint URL (`cloud-provisioning`)
 - [x] 1.3 Add Secret Manager secret for Bundler (Pimlico/Alchemy) API key (`cloud-provisioning`)
-- [ ] 1.4 Configure Zitadel: enable Passkey authentication for the existing project
-- [ ] 1.5 Run `pulumi preview` and get approval; apply Secret Manager changes to dev
+- [x] 1.4 Configure Zitadel: enable Passkey authentication for the existing project
+- [x] 1.5 Run `pulumi preview` and get approval; apply Secret Manager changes to dev
 
 ## 2. Database Schema (ALTER + CREATE migrations)
 
@@ -56,7 +56,7 @@
 
 > Authentication uses existing Zitadel OIDC flow. No self-hosted WebAuthn RP for MVP. Zitadel's hosted login UI handles Passkey registration/authentication.
 
-- [ ] 6.1 Configure Zitadel Passkey settings via v2 API: enable Passkey authenticator for the application
+- [x] 6.1 Configure Zitadel Passkey settings via v2 API: enable Passkey authenticator for the application
 - [x] 6.2 Implement Safe address prediction: `CREATE2(salt = keccak256(users.id))` using `SafeProxyFactory` formula (`go-ethereum/crypto`)
 - [x] 6.3 Add Safe address computation on user creation (or lazy computation on first ticket mint)
 - [x] 6.4 Ensure JWT validation (`jwx`) has configurable `accepted_issuers` list (preparation for Option C migration)
@@ -105,7 +105,7 @@
 - [ ] 11.1 Verify existing `oidc-client-ts` OIDC flow supports Passkey login via Zitadel hosted UI (no code change expected)
 - [ ] 11.2 Test Passkey registration through Zitadel hosted UI on desktop and mobile browsers
 - [ ] 11.3 Test Passkey authentication through Zitadel hosted UI on desktop and mobile browsers
-- [ ] 11.4 Document supported browsers and minimum OS versions for Passkey (iOS 16.4+, Android 9+)
+- [x] 11.4 Document supported browsers and minimum OS versions for Passkey (iOS 16.4+, Android 9+)
 
 ## 12. Frontend — ZKP Entry Code Generation
 

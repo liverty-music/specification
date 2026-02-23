@@ -6,7 +6,6 @@ package liverty_music.rpc.ticket.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/ticket.proto";
-import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/ticket/v1;ticketv1";
 
@@ -29,16 +28,15 @@ service TicketService {
   rpc ListTickets(ListTicketsRequest) returns (ListTicketsResponse);
 }
 
-// MintTicketRequest carries the information needed to issue a new soulbound ticket
-// to a fan for a specific event.
+// MintTicketRequest carries the information needed to issue a new soulbound ticket.
+// The recipient fan is identified from the authenticated user's JWT claims,
+// not from a request field, to prevent unauthorized minting on behalf of others.
 message MintTicketRequest {
   // event_id identifies the event for which the ticket should be minted.
-  // This field is required.
   liverty_music.entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
 
-  // user_id identifies the fan who will receive and permanently hold this ticket.
-  // This field is required.
-  liverty_music.entity.v1.UserId user_id = 2 [(buf.validate.field).required = true];
+  reserved 2;
+  reserved "user_id";
 }
 
 // MintTicketResponse contains the newly minted ticket returned after a successful minting operation.
@@ -61,11 +59,11 @@ message GetTicketResponse {
   liverty_music.entity.v1.Ticket ticket = 1;
 }
 
-// ListTicketsRequest specifies the fan whose tickets should be returned.
+// ListTicketsRequest requests the ticket collection of the authenticated fan.
+// The user is identified from JWT claims to prevent listing other users' tickets.
 message ListTicketsRequest {
-  // user_id identifies the fan whose ticket collection should be listed.
-  // This field is required.
-  liverty_music.entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+  reserved 1;
+  reserved "user_id";
 }
 
 // ListTicketsResponse contains all tickets held by the requested fan.
