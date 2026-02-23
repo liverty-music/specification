@@ -6,7 +6,6 @@ package liverty_music.rpc.entry.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/ticket.proto";
-import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/entry/v1;entryv1";
 
@@ -67,18 +66,17 @@ message VerifyEntryResponse {
 
   // message provides a human-readable description of the verification result,
   // suitable for display to venue staff or the fan themselves.
-  string message = 2;
+  string message = 2 [(buf.validate.field).string.max_len = 256];
 }
 
-// GetMerklePathRequest identifies the fan and event for which Merkle path data is needed.
+// GetMerklePathRequest identifies the event for which Merkle path data is needed.
+// The fan is identified from JWT claims to prevent querying other users' paths.
 message GetMerklePathRequest {
   // event_id identifies the event for which the Merkle path is requested.
-  // This field is required.
   liverty_music.entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
 
-  // user_id identifies the fan whose Merkle path should be returned.
-  // This field is required.
-  liverty_music.entity.v1.UserId user_id = 2 [(buf.validate.field).required = true];
+  reserved 2;
+  reserved "user_id";
 }
 
 // GetMerklePathResponse contains all the data a fan needs to construct a zero-knowledge
