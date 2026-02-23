@@ -68,6 +68,12 @@ The system SHALL enforce authentication for all RPC endpoints by default using `
 - **THEN** the system SHALL reject the request with `connect.CodeUnauthenticated`
 - **AND** the request SHALL NOT reach the Connect interceptor chain or RPC handler
 
+#### Scenario: Claims bridge interceptor position in chain
+
+- **WHEN** the Connect interceptor chain processes a request
+- **THEN** the `ClaimsBridgeInterceptor` SHALL run after the panic recovery interceptor and before the validation interceptor
+- **AND** the `ClaimsBridgeInterceptor` SHALL have access to OTel trace context in its `ctx` argument
+
 ### Requirement: Public Endpoint Access
 
 The system SHALL allow public access to the gRPC health check endpoint without authentication by serving it on a separate HTTP mux outside the `authn-go` middleware boundary.
