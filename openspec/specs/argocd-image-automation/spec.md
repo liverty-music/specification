@@ -1,5 +1,3 @@
-## ADDED Requirements
-
 ### Requirement: Image Updater monitors container registry
 The system SHALL continuously monitor Google Artifact Registry (GAR) for new container images tagged with `latest` at a 30-second polling interval.
 
@@ -44,10 +42,10 @@ The system SHALL NOT automatically update production environment deployments.
 - **THEN** developer MUST manually update prod overlay kustomization with new version tag
 - **THEN** production deployment SHALL only occur after manual kustomization commit
 
-#### Scenario: Prod Application has no Image Updater annotations
-- **WHEN** inspecting prod backend ArgoCD Application
-- **THEN** Application SHALL NOT have Image Updater annotations
-- **THEN** Image Updater SHALL ignore prod Application entirely
+#### Scenario: Prod overlay has no ImageUpdater CR
+- **WHEN** inspecting prod argocd overlay
+- **THEN** overlay SHALL NOT contain an ImageUpdater CR
+- **THEN** Image Updater SHALL ignore prod Applications entirely
 
 ### Requirement: Image pull policy enforcement
 The system SHALL configure proper image pull policies for dev deployments.

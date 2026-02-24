@@ -76,23 +76,43 @@
 
 ### Decision 3: Environment Isolation (dev auto, prod manual)
 
-**Choice:** Separate ArgoCD Application annotations per environment
+**Choice:** ImageUpdater CRD in dev overlay only (v1.1.0 CRD-based architecture)
 
 **Rationale:**
-- Dev ArgoCD Application gets Image Updater annotations → automated
-- Prod ArgoCD Application has **no** annotations → manual only
-- Same base manifests, different automation behavior
+- v1.1.0 uses `ImageUpdater` Custom Resource instead of Application annotations
+- Dev argocd overlay includes an `ImageUpdater` CR targeting backend/frontend Applications → automated
+- Prod has **no** `ImageUpdater` CR → manual only
+- Same base manifests, different automation behavior via overlay-scoped CRs
 - Clear separation of automation policy per environment
 
 **Structure:**
 ```
-k8s/namespaces/backend/
-├── base/                    # Shared config
+k8s/namespaces/argocd/
+├── base/                    # Shared: ArgoCD + Image Updater Helm charts
 ├── overlays/
 │   ├── dev/
-│   │   └── kustomization.yaml  # latest tag, Image Updater enabled
+│   │   ├── kustomization.yaml
+│   │   └── image-updater.yaml  # ImageUpdater CR targeting dev apps
 │   └── prod/
-│       └── kustomization.yaml  # v1.2.3 tag, no Image Updater
+│       └── kustomization.yaml  # No ImageUpdater CR
+```
+
+**ImageUpdater CR example:**
+```yaml
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: dev-apps
+spec:
+  writeBackConfig:
+    method: argocd
+  applicationRefs:
+  - namePattern: backend
+    images:
+    - alias: server
+      imageName: asia-northeast2-docker.pkg.dev/liverty-music-dev/backend/server
+      commonUpdateSettings:
+        updateStrategy: latest
 ```
 
 ### Decision 4: Polling Interval
@@ -161,7 +181,7 @@ spec:
 ### Risk 4: Prod Manual Process Skipped by Accident
 **Risk:** Developer might forget to manually update prod after release
 **Mitigation:**
-- Prod Application has **no** Image Updater annotations (can't auto-update)
+- Prod overlay has **no** ImageUpdater CR (can't auto-update)
 - GitHub Release checklist includes "update cloud-provisioning prod overlay"
 - ArgoCD will show Out-of-Sync if prod manifest not updated
 
@@ -181,19 +201,36 @@ spec:
 
 ### Phase 2: Dev Environment Configuration (Day 1)
 
-1. **Add annotations to dev ArgoCD Applications (backend, frontend)**
+1. **Create ImageUpdater CR in dev overlay**
    ```yaml
-   annotations:
-     argocd-image-updater.argoproj.io/image-list: server=asia-northeast2-docker.pkg.dev/liverty-music-dev/backend/server
-     argocd-image-updater.argoproj.io/server.update-strategy: latest
-     # write-back-method defaults to "argocd" (no Git writes)
+   # k8s/namespaces/argocd/overlays/dev/image-updater.yaml
+   apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+   kind: ImageUpdater
+   metadata:
+     name: dev-apps
+   spec:
+     writeBackConfig:
+       method: argocd
+     applicationRefs:
+     - namePattern: backend
+       images:
+       - alias: server
+         imageName: asia-northeast2-docker.pkg.dev/liverty-music-dev/backend/server
+         commonUpdateSettings:
+           updateStrategy: latest
+     - namePattern: frontend
+       images:
+       - alias: web-app
+         imageName: asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app
+         commonUpdateSettings:
+           updateStrategy: latest
    ```
 
 2. **Update deployment.yaml imagePullPolicy**
    - Set `imagePullPolicy: Always` in backend and frontend deployments
 
 3. **Commit and push**
-   - ArgoCD syncs new Application config and Image Updater deployment
+   - ArgoCD syncs new ImageUpdater CR and Image Updater deployment
    - Image Updater starts monitoring GAR
 
 4. **Test automated update**
@@ -219,9 +256,9 @@ spec:
 ### Rollback Strategy
 
 **If Image Updater causes issues:**
-1. **Immediate**: Remove annotations from Application → stops auto-updates
-2. **Temporary**: Pause Image Updater: `kubectl scale deployment argocd-image-updater --replicas=0 -n argocd`
-3. **Full rollback**: Delete Image Updater deployment, revert Application annotations
+1. **Immediate**: Delete the `ImageUpdater` CR → stops auto-updates for targeted apps
+2. **Temporary**: Pause Image Updater: `kubectl scale deployment argocd-image-updater-controller --replicas=0 -n argocd`
+3. **Full rollback**: Remove Image Updater Helm chart and `ImageUpdater` CR from overlays
 
 **If bad image deployed to dev:**
 1. ArgoCD UI → App History → Rollback to previous sync
@@ -231,4 +268,4 @@ spec:
 
 1. **Notification preferences**: Should Image Updater failures send Slack alerts? (Nice-to-have, defer to monitoring setup)
 2. **Digest retention**: How long to keep old image digests in GAR? (Defer to GAR cleanup policy, not blocking)
-3. **Future multi-service**: If more services added (concert-discovery, web-app), apply same annotation pattern per Application
+3. **Future multi-service**: If more services added (concert-discovery, web-app), add entries to `applicationRefs` in the ImageUpdater CR
