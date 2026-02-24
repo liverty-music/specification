@@ -20,63 +20,68 @@
 
 **Goals:**
 - Automate dev environment deployments without manual kustomization updates
-- Maintain GitOps principles (Git as source of truth)
+- Keep commit history clean and meaningful (zero automated commits)
 - Preserve manual control for production deployments
-- Keep commit history clean and meaningful
 - Use digest-based tracking for image immutability
+- Keep the solution entirely in-cluster (no external kubectl access needed)
 
 **Non-Goals:**
 - Automating production deployments (requires manual approval)
 - Changing existing ArgoCD setup significantly
 - Implementing progressive delivery (canary/blue-green) at this stage
 - Multi-environment orchestration beyond dev/prod
+- Strict GitOps compliance for dev environment (acceptable trade-off for clean history)
 
 ## Decisions
 
-### Decision 1: ArgoCD Image Updater vs. Alternatives
+### Decision 1: ArgoCD Image Updater with `argocd` Write-Back Method
 
-**Choice:** ArgoCD Image Updater
+**Choice:** ArgoCD Image Updater using the `argocd` write-back method (Application parameter overrides, no Git commits)
 
 **Rationale:**
-- **Native integration**: Official ArgoCD Labs project, designed for ArgoCD ecosystem
-- **Digest tracking**: Uses image digests, not just tags, ensuring immutability
-- **Git write-back**: Maintains GitOps by committing updates to cloud-provisioning repo
-- **Proven solution**: Well-documented, active community ([argocd-image-updater docs](https://argocd-image-updater.readthedocs.io/))
+- **Zero commit spam**: The `argocd` write-back method updates ArgoCD Application parameter overrides directly, without committing to Git
+- **Native ArgoCD integration**: Official ArgoCD Labs project, operates through ArgoCD's own API
+- **No drift conflict**: ArgoCD treats parameter overrides as legitimate desired-state changes
+- **No external access needed**: Runs entirely in-cluster, no GitHub Actions kubectl permissions required
+- **Digest tracking**: Detects image digest changes behind the `latest` tag
+
+**How it works:**
+1. Image Updater polls GAR for digest changes on `latest` tag
+2. When a new digest is detected, it calls the ArgoCD API
+3. ArgoCD Application's `.spec.source.kustomize.images` is updated via parameter override
+4. ArgoCD detects the Application spec change and syncs automatically
+5. New pods are created with the updated image
 
 **Alternatives Considered:**
-- **Flux CD**: Has built-in image automation, but would require introducing new tooling alongside ArgoCD
-- **kubectl rollout restart**: Simpler but breaks GitOps (doesn't update Git), creates Out-of-Sync state
-- **Kyverno**: Runtime mutation approach, but lacks visibility (no Git record of what's deployed)
+- **ArgoCD Image Updater (git write-back)**: GitOps compliant but creates commit spam (one commit per image update), contradicting the primary goal of clean commit history
+- **Flux CD Image Automation**: Built-in image automation but always writes to Git. Also introduces a second GitOps tool alongside ArgoCD
+- **kubectl rollout restart (GitHub Actions)**: Zero commits but requires granting GKE access to the CI service account, expanding the external attack surface
+- **Keel**: Patches Deployments directly, causing fatal ArgoCD drift conflicts (selfHeal reverts changes)
+- **Kargo**: Supports `argocd-update` without Git, but is a heavy platform (own API server, controller, UI, CRDs) -- overkill for this use case
+- **Kyverno**: Runtime mutation lacks visibility and breaks GitOps principles
 
-**Trade-off:** Adds one component (Image Updater) but preserves GitOps and ArgoCD-centric workflow.
+**Trade-off:** Dev environment is not strictly GitOps (deployed state is not recorded in Git). This is acceptable because:
+- Dev environment can tolerate temporary inconsistency
+- Image Updater re-applies overrides within 30s if Application is recreated
+- Production will use Git-backed deployment (manual updates)
 
-### Decision 2: Update Strategy (digest vs. latest tag)
+### Decision 2: Update Strategy
 
 **Choice:** Use `latest` tag strategy with digest verification
 
 **Rationale:**
 - ArgoCD Image Updater tracks the **digest** behind the tag, not just the tag name
 - Prevents cache issues where same tag points to different images
-- Automatic commit shows digest change in Git history
-- Balances simplicity (latest tag in manifest) with immutability (digest in comments)
-
-**Implementation:**
-```yaml
-images:
-- name: server
-  newTag: latest  # Human-readable
-  # Updater adds: {"$imagepolicy": "flux-system:backend-policy:tag"}
-  # Git commit will show digest: sha256:abc123...
-```
+- Balances simplicity (latest tag in manifest) with immutability (digest tracking)
 
 ### Decision 3: Environment Isolation (dev auto, prod manual)
 
-**Choice:** Separate kustomization overlays with different Image Updater annotations
+**Choice:** Separate ArgoCD Application annotations per environment
 
 **Rationale:**
 - Dev ArgoCD Application gets Image Updater annotations → automated
 - Prod ArgoCD Application has **no** annotations → manual only
-- Same base manifests, different overlay behavior
+- Same base manifests, different automation behavior
 - Clear separation of automation policy per environment
 
 **Structure:**
@@ -90,24 +95,20 @@ k8s/namespaces/backend/
 │       └── kustomization.yaml  # v1.2.3 tag, no Image Updater
 ```
 
-### Decision 4: Git Write-Back Method
+### Decision 4: Polling Interval
 
-**Choice:** Direct commit to main branch (no PR)
+**Choice:** 30-second polling interval
 
 **Rationale:**
-- Solo developer, no review bottleneck
-- Automated commits are auditable via commit message format
-- ArgoCD auto-sync immediately deploys after commit
-- PRs would delay deployment unnecessarily
+- Faster detection of new images (default is 2 minutes)
+- GAR API quota is well within limits (3 images × 2 calls/min = ~8,640 calls/day)
+- No additional cost (GAR API calls are within standard project quota)
+- Combined with CI build time (~2-3 min), total deploy latency is ~3-3.5 minutes
 
-**Commit Message Format:**
+**Configuration:**
 ```
-build: auto-update backend image to sha256:abc123...
-
-Image Updater detected new digest for asia-northeast2-docker.pkg.dev/.../backend/server:latest
+--interval 30s
 ```
-
-**Alternative Considered:** Create PRs for review → Rejected due to solo dev workflow, adds friction
 
 ### Decision 5: imagePullPolicy Configuration
 
@@ -133,19 +134,21 @@ spec:
 
 ## Risks / Trade-offs
 
-### Risk 1: Image Updater Commit Noise
-**Risk:** Automated commits every deployment could still clutter history
+### Risk 1: Application Recreation Loses Parameter Overrides
+**Risk:** If the ArgoCD Application resource is recreated (e.g., root-app sync, disaster recovery), the image parameter overrides are lost and pods temporarily revert to the image specified in Git.
 **Mitigation:**
-- Use meaningful commit message template with digest info
-- Prefix with `build:` for easy filtering (`git log --invert-grep --grep="^build:"`)
-- Consider periodic squash if needed (manual, infrequent)
+- Image Updater re-detects the latest digest within 30 seconds and re-applies the override
+- Downtime is minimal (30s polling + ArgoCD sync time)
+- This only affects dev environment; prod uses Git-based image tags
+- Application recreation is rare (manual root-app sync, ArgoCD upgrade)
 
-### Risk 2: Registry Polling Overhead
-**Risk:** Image Updater polls GAR every 1-2 minutes, potential rate limits
+### Risk 2: No Git Audit Trail for Dev Deployments
+**Risk:** Since nothing is committed to Git, there is no Git history of which image version was deployed to dev and when.
 **Mitigation:**
-- Default 2-minute interval is conservative (GAR rate limits are high)
-- Can increase interval if needed (`interval: 5m0s`)
-- Monitoring via Image Updater logs
+- Image Updater logs record all update operations
+- ArgoCD Application history shows sync events with image details
+- `kubectl describe pod` shows current image digest
+- For dev environment, operational observability is sufficient; formal audit trail is not required
 
 ### Risk 3: Deployment Failures Not Caught Early
 **Risk:** Auto-deployment might push broken images to dev
@@ -162,27 +165,15 @@ spec:
 - GitHub Release checklist includes "update cloud-provisioning prod overlay"
 - ArgoCD will show Out-of-Sync if prod manifest not updated
 
-### Risk 5: Git Write-Back Credentials Management
-**Risk:** Image Updater needs Git write access, credential exposure
-**Mitigation:**
-- Use ArgoCD's existing repo credentials (already has write access)
-- RBAC limits Image Updater to specific namespace
-- Regularly rotate credentials as per security policy
-
 ## Migration Plan
 
 ### Phase 1: Installation (Day 1)
 
 1. **Install ArgoCD Image Updater**
-   ```bash
-   kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/stable/manifests/install.yaml
-   ```
+   - Add Kustomize manifests to `k8s/namespaces/argocd/` for GitOps-managed installation
+   - Configure `--interval 30s` flag
 
-2. **Configure Git write-back**
-   - Image Updater uses ArgoCD's existing repo secret
-   - Verify write permissions: `kubectl get secret -n argocd argocd-repo-server-tls`
-
-3. **Verify installation**
+2. **Verify installation**
    ```bash
    kubectl get pods -n argocd | grep image-updater
    kubectl logs -n argocd -l app.kubernetes.io/name=argocd-image-updater
@@ -190,28 +181,27 @@ spec:
 
 ### Phase 2: Dev Environment Configuration (Day 1)
 
-1. **Add annotations to dev backend ArgoCD Application**
+1. **Add annotations to dev ArgoCD Applications (backend, frontend)**
    ```yaml
    annotations:
      argocd-image-updater.argoproj.io/image-list: server=asia-northeast2-docker.pkg.dev/liverty-music-dev/backend/server
      argocd-image-updater.argoproj.io/server.update-strategy: latest
-     argocd-image-updater.argoproj.io/write-back-method: git
-     argocd-image-updater.argoproj.io/git-branch: main
+     # write-back-method defaults to "argocd" (no Git writes)
    ```
 
 2. **Update deployment.yaml imagePullPolicy**
-   - Set `imagePullPolicy: Always` in backend deployment
+   - Set `imagePullPolicy: Always` in backend and frontend deployments
 
 3. **Commit and push**
-   - ArgoCD syncs new Application config
+   - ArgoCD syncs new Application config and Image Updater deployment
    - Image Updater starts monitoring GAR
 
 4. **Test automated update**
    - Merge a PR to backend main
    - GitHub Actions builds and pushes image
-   - Wait 2-5 minutes for Image Updater to detect
-   - Verify commit in cloud-provisioning repo
-   - Verify ArgoCD syncs and deploys new pod
+   - Wait ~30s-1min for Image Updater to detect
+   - Verify ArgoCD Application shows updated image in parameter overrides
+   - Verify new pod is running with updated digest
 
 ### Phase 3: Production Workflow (Day 2)
 
@@ -229,17 +219,16 @@ spec:
 ### Rollback Strategy
 
 **If Image Updater causes issues:**
-1. **Immediate**: Remove annotations from backend Application → stops auto-updates
+1. **Immediate**: Remove annotations from Application → stops auto-updates
 2. **Temporary**: Pause Image Updater: `kubectl scale deployment argocd-image-updater --replicas=0 -n argocd`
 3. **Full rollback**: Delete Image Updater deployment, revert Application annotations
-4. **Fallback**: Use `kubectl rollout restart` manually (breaks GitOps but unblocks deployments)
 
 **If bad image deployed to dev:**
 1. ArgoCD UI → App History → Rollback to previous sync
-2. Or: `git revert <bad-commit>` in cloud-provisioning → ArgoCD re-syncs
+2. Or: manually set image override via `argocd app set` to a known-good digest
 
 ## Open Questions
 
 1. **Notification preferences**: Should Image Updater failures send Slack alerts? (Nice-to-have, defer to monitoring setup)
 2. **Digest retention**: How long to keep old image digests in GAR? (Defer to GAR cleanup policy, not blocking)
-3. **Future multi-service**: If more services added, apply same pattern or centralize? (Cross that bridge when we get there)
+3. **Future multi-service**: If more services added (concert-discovery, web-app), apply same annotation pattern per Application
