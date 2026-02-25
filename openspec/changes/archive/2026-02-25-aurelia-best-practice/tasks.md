@@ -70,7 +70,7 @@
 - [x] 11.2 Add transition duration/easing tokens (`--transition-route-duration`, `--transition-route-easing`) to `@theme`
 - [x] 11.3 Gate existing `@keyframes page-enter` animation behind `@supports not (view-transition-name: x)`
 - [x] 11.4 Ensure `prefers-reduced-motion: reduce` suppresses view transitions
-- [x] 11.5 Integrate View Transitions with Aurelia router (trigger `document.startViewTransition()` on navigation-start)
+- [x] 11.5 CSS-only View Transitions integration (JS `startViewTransition()` removed — Aurelia router's async DOM swap cannot be wrapped in the callback without deeper pipeline integration)
 
 ## 12. CSS Platform — :has() Selectors and Logical Properties
 
