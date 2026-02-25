@@ -30,8 +30,8 @@
 
 - [ ] 6.1 Enable Actions v2 feature flag on Zitadel Cloud instance
 - [ ] 6.2 Create Zitadel Target (Webhook type) pointing to backend `/webhooks/zitadel` endpoint
-- [ ] 6.3 Create Zitadel Execution binding `user.human.added` event to the target
-- [ ] 6.4 Store the returned signing key in GCP Secret Manager
+- [ ] 6.3 Store the returned signing key in GCP Secret Manager and wait for ESO sync to K8s
+- [ ] 6.4 Create Zitadel Execution binding `user.human.added` event to the target (must be after signing key is deployed)
 
 ## 7. Testing
 

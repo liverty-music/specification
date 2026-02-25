@@ -84,11 +84,12 @@ Add `UpsertFromWebhook(ctx, params)` to the user use case layer. This is distinc
 
 1. Deploy backend with new webhook endpoint (no traffic yet)
 2. Enable Actions v2 feature flag on Zitadel Cloud instance
-3. Create Zitadel Target (Webhook type) pointing to the backend webhook URL
-4. Create Zitadel Execution binding `user.human.added` event to the target
-5. Store the Target signing key in GCP Secret Manager
-6. Test with a new user registration — verify both Create RPC and webhook fire, and user record is enriched
-7. Rollback: Delete the Zitadel Execution to stop webhook delivery. No backend changes needed.
+3. Create Zitadel Target (Webhook type) pointing to the backend webhook URL — note the returned signing key
+4. Store the Target signing key in GCP Secret Manager
+5. Wait for External Secrets Operator to sync the key to K8s, then restart/refresh the backend
+6. Create Zitadel Execution binding `user.human.added` event to the target (webhook delivery starts here)
+7. Test with a new user registration — verify both Create RPC and webhook fire, and user record is enriched
+8. Rollback: Delete the Zitadel Execution to stop webhook delivery. No backend changes needed.
 
 ## Open Questions
 
