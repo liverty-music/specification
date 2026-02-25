@@ -1,0 +1,91 @@
+## 1. Template Optimization — Key Binding
+
+- [ ] 1.1 Add `key.bind` to all 3 `repeat.for` loops in `live-highway.html` (main, left, right lanes)
+- [ ] 1.2 Add `key.bind` to artist list `repeat.for` in `my-artists-page.html`
+- [ ] 1.3 Add `key.bind` to city buttons `repeat.for` in `area-selector-sheet.html`
+- [ ] 1.4 Add `key.bind` to navigation tabs `repeat.for` in `bottom-nav-bar.html`
+- [ ] 1.5 Add `key.bind` to date groups `repeat.for` in `dashboard.html`
+- [ ] 1.6 Add `key.bind` to any remaining `repeat.for` loops across all templates
+
+## 2. Template Optimization — Conditional Rendering
+
+- [ ] 2.1 Replace chained `if.bind` icon selection in `bottom-nav-bar.html` with `switch.bind`
+- [ ] 2.2 Replace `if.bind="showNav"` on `bottom-nav-bar` in `my-app.html` with `show.bind="showNav"`
+- [ ] 2.3 Audit all `if.bind` usages and convert frequently-toggled elements to `show.bind`
+
+## 3. Template Optimization — Class Binding Syntax
+
+- [ ] 3.1 Replace string interpolation class toggling in `bottom-nav-bar.html` with `.class` binding
+- [ ] 3.2 Replace string interpolation class toggling in `event-card.html` with `.class` binding
+- [ ] 3.3 Replace string interpolation class toggling in `toast-notification.html` with `.class` binding
+- [ ] 3.4 Audit and migrate remaining string interpolation class toggles across all templates
+
+## 4. Template Optimization — Binding Behaviors
+
+- [ ] 4.1 Add `& debounce:300` to search input binding in `my-artists-page.html`
+- [ ] 4.2 Add `& debounce:300` to search input binding in `area-selector-sheet.html`
+- [ ] 4.3 Add `& throttle:16` to `touchmove` event binding in `my-artists-page.html`
+- [ ] 4.4 Audit other continuous event handlers and add throttle where appropriate
+
+## 5. Value Converter — Date Formatting
+
+- [ ] 5.1 Create `DateValueConverter` in `src/value-converters/date.ts` supporting `'short'`, `'long'`, `'relative'` formats
+- [ ] 5.2 Register the date value converter globally in `main.ts`
+- [ ] 5.3 Replace inline date formatting in `event-card.html` and `event-detail-sheet.html` with `| date` pipe
+- [ ] 5.4 Write unit tests for `DateValueConverter` covering all format variants and edge cases
+
+## 6. Route Title Configuration
+
+- [ ] 6.1 Add `title` property to all route definitions in `my-app.ts`
+- [ ] 6.2 Verify document title updates correctly on navigation for each route
+
+## 7. Reactivity — @watch Adoption
+
+- [ ] 7.1 Add `@watch` to `Dashboard` for reactive region change observation (replace manual reload pattern)
+- [ ] 7.2 Identify and convert other manual event subscriptions to `@watch` where applicable
+- [ ] 7.3 Verify watch handlers do not create circular update cascades
+
+## 8. Reactivity — @computed Adoption
+
+- [ ] 8.1 Add `@computed` to `MyApp.showNav` getter with explicit router dependency
+- [ ] 8.2 Audit other getters used in templates and add `@computed` where beneficial
+- [ ] 8.3 Verify computed properties cache correctly and only re-evaluate on dependency changes
+
+## 9. Reactivity — batch() Adoption
+
+- [ ] 9.1 Wrap multi-property mutations in `ArtistDiscoveryService` with `batch()`
+- [ ] 9.2 Audit other service methods that update multiple template-bound properties and wrap with `batch()`
+- [ ] 9.3 Verify optimistic UI updates (follow/unfollow) are NOT wrapped in `batch()`
+
+## 10. CSS Platform — Container Queries
+
+- [ ] 10.1 Add `container-type: inline-size` to highway lane elements in `live-highway.html` or its CSS
+- [ ] 10.2 Create `@container` rules for `event-card` responsive layout based on lane width
+- [ ] 10.3 Add `@supports (container-type: inline-size)` fallback for unsupported browsers
+- [ ] 10.4 Add container query breakpoint tokens (`--container-sm`, `--container-md`, `--container-lg`) to `@theme` in `my-app.css`
+
+## 11. CSS Platform — View Transitions API
+
+- [ ] 11.1 Add `::view-transition-old(root)` and `::view-transition-new(root)` styles to `my-app.css`
+- [ ] 11.2 Add transition duration/easing tokens (`--transition-route-duration`, `--transition-route-easing`) to `@theme`
+- [ ] 11.3 Gate existing `@keyframes page-enter` animation behind `@supports not (view-transition-name: x)`
+- [ ] 11.4 Ensure `prefers-reduced-motion: reduce` suppresses view transitions
+- [ ] 11.5 Integrate View Transitions with Aurelia router (trigger transition on navigation events)
+
+## 12. CSS Platform — :has() Selectors and Logical Properties
+
+- [ ] 12.1 Replace JS-based active state class toggling in `bottom-nav-bar` with `:has()` selector where feasible
+- [ ] 12.2 Identify form validation styling opportunities for `:has(:invalid)` patterns
+- [ ] 12.3 Migrate new/modified CSS rules to use CSS Logical Properties (`margin-inline`, `padding-block`, etc.)
+
+## 13. Design System Token Updates
+
+- [ ] 13.1 Add container query breakpoint tokens to `@theme` in `my-app.css`
+- [ ] 13.2 Add view transition duration and easing tokens to `@theme` in `my-app.css`
+
+## 14. Verification
+
+- [ ] 14.1 Run `biome check` and fix any lint/format issues
+- [ ] 14.2 Run `stylelint` and fix any CSS issues
+- [ ] 14.3 Run `vitest` and verify all existing tests pass
+- [ ] 14.4 Manual visual regression check on key pages (Dashboard, My Artists, Artist Discovery)
