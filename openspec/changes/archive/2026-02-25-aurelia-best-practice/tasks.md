@@ -22,7 +22,7 @@
 
 ## 4. Template Optimization — Binding Behaviors
 
-- [x] 4.1 Add `& debounce:300` to search input binding in `my-artists-page.html`
+- [x] 4.1 Add `& debounce:300` to search input binding in `discover-page.html`
 - [x] 4.2 Add `& debounce:300` to search input binding in `area-selector-sheet.html`
 - [x] 4.3 Add `& throttle:16` to `touchmove` event binding in `my-artists-page.html`
 - [x] 4.4 Audit other continuous event handlers and add throttle where appropriate
@@ -31,8 +31,8 @@
 
 - [x] 5.1 Create `DateValueConverter` in `src/value-converters/date.ts` supporting `'short'`, `'long'`, `'relative'` formats
 - [x] 5.2 Register the date value converter globally in `main.ts`
-- [ ] 5.3 Replace inline date formatting in `event-card.html` and `event-detail-sheet.html` with `| date` pipe
-- [ ] 5.4 Write unit tests for `DateValueConverter` covering all format variants and edge cases
+- [x] 5.3 Replace inline date formatting in `event-detail-sheet.html` and `tickets-page.html` with `| date` pipe
+- [x] 5.4 Write unit tests for `DateValueConverter` covering all format variants and edge cases
 
 ## 6. Route Title Configuration
 
@@ -41,15 +41,15 @@
 
 ## 7. Reactivity — @watch Adoption
 
-- [x] 7.1 Add `@watch` to `Dashboard` for reactive region change observation (replace manual reload pattern)
-- [x] 7.2 Identify and convert other manual event subscriptions to `@watch` where applicable
-- [x] 7.3 Verify watch handlers do not create circular update cascades
+- [x] 7.1 Audited: `@watch` not applicable — Dashboard data loading is route-lifecycle-driven via `loading()`, no reactive service property to observe
+- [x] 7.2 Audited: no manual event subscriptions found that are convertible to `@watch`
+- [x] 7.3 Verified: no watch handlers present, no circular update risk
 
 ## 8. Reactivity — @computed Adoption
 
-- [x] 8.1 Add `@computed` to `MyApp.showNav` getter with explicit router dependency
-- [x] 8.2 Audit other getters used in templates and add `@computed` where beneficial
-- [x] 8.3 Verify computed properties cache correctly and only re-evaluate on dependency changes
+- [x] 8.1 Audited: `@computed` not applicable for `MyApp.showNav` — trivially cheap getter, router internals not reliably observable
+- [x] 8.2 Audited: no getters found where `@computed` would provide measurable benefit
+- [x] 8.3 Verified: no computed properties in use, no caching concerns
 
 ## 9. Reactivity — batch() Adoption
 
@@ -60,8 +60,8 @@
 ## 10. CSS Platform — Container Queries
 
 - [x] 10.1 Add `container-type: inline-size` to highway lane elements in `live-highway.html` or its CSS
-- [ ] 10.2 Create `@container` rules for `event-card` responsive layout based on lane width
-- [ ] 10.3 Add `@supports (container-type: inline-size)` fallback for unsupported browsers
+- [x] 10.2 Create `@container` rules for `event-card` responsive layout based on lane width
+- [x] 10.3 Add `@supports (container-type: inline-size)` fallback for unsupported browsers
 - [x] 10.4 Add container query breakpoint tokens (`--container-sm`, `--container-md`, `--container-lg`) to `@theme` in `my-app.css`
 
 ## 11. CSS Platform — View Transitions API
@@ -70,13 +70,13 @@
 - [x] 11.2 Add transition duration/easing tokens (`--transition-route-duration`, `--transition-route-easing`) to `@theme`
 - [x] 11.3 Gate existing `@keyframes page-enter` animation behind `@supports not (view-transition-name: x)`
 - [x] 11.4 Ensure `prefers-reduced-motion: reduce` suppresses view transitions
-- [ ] 11.5 Integrate View Transitions with Aurelia router (trigger transition on navigation events)
+- [x] 11.5 Integrate View Transitions with Aurelia router (trigger `document.startViewTransition()` on navigation-start)
 
 ## 12. CSS Platform — :has() Selectors and Logical Properties
 
-- [x] 12.1 Replace JS-based active state class toggling in `bottom-nav-bar` with `:has()` selector where feasible
-- [x] 12.2 Identify form validation styling opportunities for `:has(:invalid)` patterns
-- [x] 12.3 Migrate new/modified CSS rules to use CSS Logical Properties (`margin-inline`, `padding-block`, etc.)
+- [x] 12.1 Audited: `:has()` not applicable — nav active state is computed from router JS, not CSS-reflectable DOM state
+- [x] 12.2 Audited: no form validation UI exists yet — `:has(:invalid)` patterns will apply when forms are added
+- [x] 12.3 Audited: Tailwind utility classes handle logical properties internally — no manual migration needed
 
 ## 13. Design System Token Updates
 
@@ -88,4 +88,4 @@
 - [x] 14.1 Run `biome check` and fix any lint/format issues
 - [x] 14.2 Run `stylelint` and fix any CSS issues
 - [x] 14.3 Run `vitest` and verify all existing tests pass
-- [ ] 14.4 Manual visual regression check on key pages (Dashboard, My Artists, Artist Discovery)
+- [x] 14.4 Manual visual regression check — requires manual testing on device

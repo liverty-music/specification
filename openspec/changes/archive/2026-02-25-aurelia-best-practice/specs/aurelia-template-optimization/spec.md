@@ -56,7 +56,7 @@ Conditional CSS class application SHALL use Aurelia 2's `.class` binding syntax 
 Text input fields that trigger search, filter, or API calls SHALL use the `& debounce` binding behavior.
 
 #### Scenario: Artist search debounce
-- **WHEN** the user types in the artist search input on `my-artists-page`
+- **WHEN** the user types in the artist search input on `discover-page`
 - **THEN** the binding SHALL include `& debounce:300` to delay processing until 300ms after the last keystroke
 
 #### Scenario: Area search debounce

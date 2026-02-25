@@ -35,6 +35,21 @@ The system SHALL define a centralized set of design tokens using Tailwind CSS v4
 - **THEN** the system SHALL define radius tokens: `--radius-card` (1rem), `--radius-button` (0.75rem), `--radius-sheet` (1.5rem)
 - **AND** the system SHALL define shadow tokens: `--shadow-card-glow`, `--shadow-sheet`, `--shadow-button`
 
+#### Scenario: Container query breakpoint tokens defined
+- **WHEN** the design system is initialized
+- **THEN** the system SHALL define container query breakpoint tokens for component-level responsive design:
+  - `--container-sm`: 320px
+  - `--container-md`: 480px
+  - `--container-lg`: 640px
+- **AND** components using Container Queries SHALL reference these tokens for consistent breakpoints
+
+#### Scenario: View transition tokens defined
+- **WHEN** the design system is initialized
+- **THEN** the system SHALL define view transition duration and easing tokens:
+  - `--transition-route-duration`: 200ms
+  - `--transition-route-easing`: ease-out
+- **AND** route transitions SHALL reference these tokens instead of hardcoded values
+
 ---
 
 ### Requirement: Dark Theme as Default
@@ -61,3 +76,28 @@ The system SHALL load and apply a display font for headings with appropriate fal
 - **AND** the preconnect to `fonts.gstatic.com` SHALL include the `crossorigin` attribute
 - **AND** the system SHALL load the display font with `font-display: swap` and include necessary weights (e.g., Bold 700, Extra-Bold 800) to prevent layout shifts or faux-bolding during load
 - **AND** the system SHALL use `system-ui` as the immediate fallback until the display font is ready
+
+---
+
+### Requirement: View Transitions as route animation system
+The design system SHALL provide View Transition styles as the primary route animation mechanism, replacing CSS keyframe animations on `au-viewport > *`.
+
+#### Scenario: View transition styles defined
+- **WHEN** the design system CSS is loaded
+- **THEN** the global stylesheet SHALL define `::view-transition-old(root)` and `::view-transition-new(root)` pseudo-element styles
+- **AND** the transition duration and easing SHALL use the design system tokens (`--transition-route-duration`, `--transition-route-easing`)
+
+#### Scenario: Keyframe fallback preserved
+- **WHEN** the browser does not support View Transitions
+- **THEN** the existing `@keyframes page-enter` animation on `au-viewport > *` SHALL remain as a fallback
+- **AND** the fallback SHALL be gated behind `@supports not (view-transition-name: x)`
+
+---
+
+### Requirement: Container Query infrastructure
+The design system SHALL provide base styles for declaring container contexts.
+
+#### Scenario: Container type utility
+- **WHEN** a component needs to use Container Queries for responsive child layout
+- **THEN** the component's wrapper element SHALL declare `container-type: inline-size`
+- **AND** child elements SHALL use `@container` rules referencing the design system breakpoint tokens
