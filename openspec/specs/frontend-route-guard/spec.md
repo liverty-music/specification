@@ -53,9 +53,7 @@ The system SHALL use a default-deny approach: all routes require authentication 
 
 ### Requirement: Protected Route Definitions
 
-The following routes SHALL be protected (no `data` annotation needed, default-deny):
-- `/dashboard` (Dashboard)
-- `/my-artists` (My Artists)
+All routes not listed below SHALL be protected by default (no `data` annotation needed, default-deny).
 
 The following routes SHALL be marked public with `data: { auth: false }`:
 - `/` and `/welcome` (Landing Page)

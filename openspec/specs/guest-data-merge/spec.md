@@ -14,11 +14,6 @@ The system SHALL store guest session data in LocalStorage under namespaced keys 
 - **WHEN** a guest user selects a region during Step 3 (Dashboard)
 - **THEN** the system SHALL store the selected region value in LocalStorage under `liverty:guest:region`
 
-#### Scenario: Passion level stored locally
-
-- **WHEN** a guest user changes a Passion Level during Step 5 (My Artists)
-- **THEN** the system SHALL update the passion level for the corresponding artist in `liverty:guest:followedArtists`
-
 ### Requirement: Data Merge on Authentication
 
 The system SHALL sync all locally stored guest data to the backend via existing RPCs immediately after successful Passkey authentication at Step 6.
@@ -28,7 +23,6 @@ The system SHALL sync all locally stored guest data to the backend via existing 
 - **WHEN** Passkey authentication completes successfully
 - **THEN** the system SHALL call `UserService.Create` with the user's email
 - **AND** the system SHALL call `ArtistService.Follow` for each artist in `liverty:guest:followedArtists`
-- **AND** the system SHALL call `ArtistService.SetPassionLevel` for each artist with a non-default passion level
 - **AND** upon successful completion of all calls, the system SHALL clear all `liverty:guest:*` keys from LocalStorage
 
 #### Scenario: User already exists during merge
