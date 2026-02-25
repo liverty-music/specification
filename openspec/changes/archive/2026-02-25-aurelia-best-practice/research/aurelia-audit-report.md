@@ -217,8 +217,8 @@ get showNav(): boolean {
   // ... complex logic
 }
 
-// With @computed (explicit deps, cached)
-@computed('router.currentRoute')
+// With @computed (automatic dependency tracking, cached)
+@computed
 get showNav(): boolean { ... }
 ```
 
@@ -420,8 +420,22 @@ formatDate(date: Date): string {
 // Create a reusable value converter:
 @valueConverter('date')
 export class DateValueConverter {
-  toView(value: string | Date, format = 'medium'): string {
-    return new Intl.DateTimeFormat('ja-JP', { dateStyle: format }).format(new Date(value))
+  toView(value: string | Date, format: 'short' | 'long' | 'relative' = 'short'): string {
+    const date = value instanceof Date ? value : new Date(value)
+    if (format === 'relative') {
+      const diff = date.getTime() - Date.now()
+      const rtf = new Intl.RelativeTimeFormat('ja-JP', { numeric: 'auto' })
+      const days = Math.round(diff / 86_400_000)
+      if (Math.abs(days) > 0) return rtf.format(days, 'day')
+      const hours = Math.round(diff / 3_600_000)
+      if (Math.abs(hours) > 0) return rtf.format(hours, 'hour')
+      return rtf.format(Math.round(diff / 60_000), 'minute')
+    }
+    const options: Intl.DateTimeFormatOptions =
+      format === 'long'
+        ? { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' }
+        : { month: 'numeric', day: 'numeric' }
+    return new Intl.DateTimeFormat('ja-JP', options).format(date)
   }
 }
 

@@ -61,7 +61,7 @@ class="${isActive(tab.path) ? 'text-brand-accent font-semibold' : 'text-text-mut
 
 **Choice:** Use `@watch` when a component needs to react to service state changes. Use `@computed` for getters that derive from multiple properties and are referenced in templates.
 
-**Rationale:** Currently, components either poll services or rely on `promise.bind` for initial load only. `@watch` makes reactive dependencies explicit and eliminates manual event wiring. `@computed` with explicit deps (Beta 27) prevents unnecessary re-evaluation.
+**Rationale:** Currently, components either poll services or rely on `promise.bind` for initial load only. `@watch` makes reactive dependencies explicit and eliminates manual event wiring. `@computed` (parameterless in Aurelia 2, automatic dependency tracking) prevents unnecessary re-evaluation.
 
 **Where NOT to apply:** Simple property access in templates (Aurelia's binding engine already handles this efficiently).
 

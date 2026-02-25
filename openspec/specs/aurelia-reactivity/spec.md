@@ -22,10 +22,10 @@ Components and services SHALL use the `@watch` decorator to observe cross-proper
 ### Requirement: Computed property caching
 Expensive getter computations referenced in templates SHALL use the `@computed` decorator to avoid unnecessary re-evaluation.
 
-#### Scenario: Computed getter with explicit dependencies
+#### Scenario: Computed getter with automatic dependency tracking
 - **WHEN** a getter derives its value from multiple observable properties
-- **THEN** the getter SHALL be decorated with `@computed` listing its dependency property names
-- **AND** the getter SHALL only re-evaluate when one of the listed dependencies changes
+- **THEN** the getter SHALL be decorated with `@computed` to enable automatic dependency tracking
+- **AND** the getter SHALL only re-evaluate when one of the accessed dependencies changes
 
 #### Scenario: Simple getters remain undecorated
 - **WHEN** a getter performs a trivial computation (e.g., string concatenation, boolean check)
