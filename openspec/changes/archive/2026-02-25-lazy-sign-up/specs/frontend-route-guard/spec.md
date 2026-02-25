@@ -53,7 +53,9 @@ The system SHALL use a default-deny approach: all routes require authentication 
 
 ### Requirement: Protected Route Definitions
 
-All routes not listed below SHALL be protected by default (no `data` annotation needed, default-deny).
+The following routes SHALL be protected (no `data` annotation needed, default-deny):
+- `/dashboard` (Dashboard)
+- `/my-artists` (My Artists)
 
 The following routes SHALL be marked public with `data: { auth: false }`:
 - `/` and `/welcome` (Landing Page)
@@ -61,10 +63,10 @@ The following routes SHALL be marked public with `data: { auth: false }`:
 - `/auth/callback` (OIDC Callback)
 
 The following routes SHALL be marked as tutorial-accessible with `data: { auth: false, tutorialStep: N }`:
-- `/onboarding/discover` (Artist Discovery) --- `tutorialStep: 1`
-- `/onboarding/loading` (Loading Sequence) --- `tutorialStep: 2`
-- `/dashboard` with tutorial mode --- `tutorialStep: 3` (accessible without auth during tutorial)
-- `/my-artists` with tutorial mode --- `tutorialStep: 5` (accessible without auth during tutorial)
+- `/onboarding/discover` (Artist Discovery) — `tutorialStep: 1`
+- `/onboarding/loading` (Loading Sequence) — `tutorialStep: 2`
+- `/dashboard` with tutorial mode — `tutorialStep: 3` (accessible without auth during tutorial)
+- `/my-artists` with tutorial mode — `tutorialStep: 5` (accessible without auth during tutorial)
 
 #### Scenario: Unauthenticated user at Step 3 navigates to /dashboard
 
