@@ -58,16 +58,18 @@ Conditional CSS class application SHALL use Aurelia 2's `.class` binding syntax 
 - **WHEN** two class groups are toggled by opposite conditions (active vs inactive)
 - **THEN** the template SHALL use two `.class` bindings: one for the active classes and one for the inactive classes with a negated condition
 
-### Requirement: Debounce binding behavior on search inputs
-Text input fields that trigger search, filter, or API calls SHALL use the `& debounce` binding behavior.
+### Requirement: Debounce on search inputs
+Text input fields that trigger search, filter, or API calls SHALL debounce the expensive operation to avoid excessive processing.
 
-#### Scenario: Artist search debounce
-- **WHEN** the user types in the artist search input on `discover-page`
+#### Scenario: Search with immediate UI feedback
+- **WHEN** the user types in a search input that requires instant visual response (e.g., entering search mode, pausing animations)
+- **THEN** the UI state change SHALL occur without debounce delay
+- **AND** the expensive operation (API call) SHALL be debounced by at least 300ms
+- **AND** the two concerns (immediate UI feedback vs debounced API call) SHALL NOT be delayed by the same mechanism
+
+#### Scenario: Search without immediate UI side effects
+- **WHEN** a search input does not require immediate UI side effects (e.g., `area-selector-sheet`)
 - **THEN** the binding SHALL include `& debounce:300` to delay processing until 300ms after the last keystroke
-
-#### Scenario: Area search debounce
-- **WHEN** the user types in the city search input on `area-selector-sheet`
-- **THEN** the binding SHALL include `& debounce:300`
 
 ### Requirement: Throttle binding behavior on continuous event handlers
 Event handlers for continuous user interactions (touch move, scroll, resize) SHALL use the `& throttle` binding behavior.
