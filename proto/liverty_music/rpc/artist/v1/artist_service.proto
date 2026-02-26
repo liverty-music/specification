@@ -209,6 +209,13 @@ message SetPassionLevelResponse {}
 message ListSimilarRequest {
   // Required. The unique identifier of the artist used as a seed for recommendations.
   entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+
+  // Optional. Maximum number of similar artists to return.
+  // When 0 or omitted, the server applies its default limit.
+  int32 limit = 2 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 100
+  }];
 }
 
 // ListSimilarResponse contains recommendations based on a seed artist.
@@ -226,6 +233,13 @@ message ListTopRequest {
   // Optional. Filter top artists by genre or tag (e.g., "rock", "pop", "anime").
   // When empty, returns top artists across all genres.
   string tag = 2 [(buf.validate.field).string.max_len = 50];
+
+  // Optional. Maximum number of top artists to return.
+  // When 0 or omitted, the server applies its default limit.
+  int32 limit = 3 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 100
+  }];
 }
 
 // ListTopResponse contains the chart of popular artists.
