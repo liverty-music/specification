@@ -212,7 +212,10 @@ message ListSimilarRequest {
 
   // Optional. Maximum number of similar artists to return.
   // When 0 or omitted, the server applies its default limit.
-  int32 limit = 2 [(buf.validate.field).int32 = {gte: 0, lte: 100}];
+  int32 limit = 2 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 100
+  }];
 }
 
 // ListSimilarResponse contains recommendations based on a seed artist.
@@ -233,7 +236,10 @@ message ListTopRequest {
 
   // Optional. Maximum number of top artists to return.
   // When 0 or omitted, the server applies its default limit.
-  int32 limit = 3 [(buf.validate.field).int32 = {gte: 0, lte: 100}];
+  int32 limit = 3 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 100
+  }];
 }
 
 // ListTopResponse contains the chart of popular artists.
