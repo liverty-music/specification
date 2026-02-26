@@ -84,6 +84,7 @@ The system SHALL automatically persist any new concerts discovered via the searc
 
 - **WHEN** a discovered concert has a venue that does not exist in the database
 - **THEN** a new venue is created dynamically based on the listed venue name provided by the source
+- **AND** if an `admin_area` was extracted for the concert, it SHALL be stored on the venue record
 - **AND** the new venue SHALL have `enrichment_status` set to `'pending'`
 - **AND** the new concert is associated with this new venue
 
@@ -123,3 +124,59 @@ Every Concert entity SHALL be securely linked to a distinct generic Event entity
 - **WHEN** a Concert is persisted or retrieved
 - **THEN** it MUST include all fields defined in the `Event` entity (Title, Date, Venue, etc.)
 - **AND** data consistency between the Concert specific fields (ArtistID) and Event generic fields MUST be maintained
+
+### Requirement: Listed Venue Name Preservation
+
+The system SHALL preserve the raw venue name as found on the artist's official site on the Event record, separate from the normalized `Venue.Name`. This ensures the original source text is available for future normalization workflows (e.g., matching against Google Maps or MusicBrainz).
+
+#### Scenario: Listed venue name stored on event creation
+
+- **WHEN** a new concert event is persisted
+- **THEN** the `listed_venue_name` field on the event SHALL contain the exact venue name string returned by the Gemini extraction
+
+#### Scenario: Listed venue name is non-empty for discovered concerts
+
+- **WHEN** Gemini returns a non-empty venue string for a concert
+- **THEN** `listed_venue_name` on the persisted event SHALL be that string
+
+### Requirement: Venue AdminArea Persistence
+
+The system SHALL store the administrative area extracted by Gemini on the Venue record when available.
+
+#### Scenario: AdminArea stored on new venue creation
+
+- **WHEN** a new venue is created and the scraped concert includes a non-empty `admin_area`
+- **THEN** the venue record SHALL have `admin_area` set to that value
+
+#### Scenario: AdminArea is NULL when not extracted
+
+- **WHEN** a new venue is created and the scraped concert has no `admin_area` (empty or absent)
+- **THEN** the venue record SHALL have `admin_area` set to `NULL`
+
+### Requirement: List Concerts by Follower
+
+The system SHALL provide an RPC to retrieve all concerts for artists followed by the authenticated user in a single request.
+
+#### Scenario: Authenticated user with followed artists
+
+- **WHEN** `ListByFollower` is called by an authenticated user who follows one or more artists
+- **THEN** it SHALL return all concerts associated with those followed artists
+- **AND** each concert SHALL include a resolved `Venue` object with `name` and `admin_area` if available
+- **AND** each concert SHALL include `listed_venue_name` with the raw scraped venue name
+- **AND** concerts SHALL be ordered by `local_event_date` ascending
+
+#### Scenario: Authenticated user with no followed artists
+
+- **WHEN** `ListByFollower` is called by an authenticated user who follows no artists
+- **THEN** it SHALL return an empty list without error
+
+#### Scenario: Unauthenticated caller
+
+- **WHEN** `ListByFollower` is called without valid authentication
+- **THEN** it SHALL return an `UNAUTHENTICATED` error
+
+#### Scenario: Single SQL query execution
+
+- **WHEN** `ListByFollower` is called
+- **THEN** the backend SHALL execute a single SQL query joining `concerts`, `events`, `venues`, and `followed_artists` tables
+- **AND** the query SHALL filter by the authenticated user's internal ID
