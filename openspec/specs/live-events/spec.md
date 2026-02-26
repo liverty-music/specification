@@ -69,6 +69,12 @@ The system MUST provide access to the collected schedule of concerts.
 - **WHEN** `ListConcerts` is called for a valid artist ID
 - **THEN** the system MUST return a chronologically sorted list of future concerts for that artist.
 
+#### Scenario: List Concerts by Follower
+
+- **WHEN** `ListByFollower` is called by an authenticated user
+- **THEN** the system MUST return a chronologically sorted list of concerts for all artists followed by that user
+- **AND** the result SHALL be retrieved in a single RPC call
+
 ### Requirement: Proto Value Object Consistency
 
 All primitive scalar fields on `Concert` and `Event` proto messages SHALL use VO wrapper messages to carry validation constraints and semantic meaning, matching the Go entity layer conventions.
