@@ -23,13 +23,15 @@ service ConcertService {
   // - UNAUTHENTICATED: The user identity could not be verified.
   rpc ListByFollower(ListByFollowerRequest) returns (ListByFollowerResponse);
 
-  // SearchNewConcerts triggers a discovery process to find new concerts for an artist.
-  // It scrapes external sources and persists any newly found concerts.
+  // SearchNewConcerts triggers an asynchronous discovery process for new concerts.
+  // It scrapes external sources and publishes a concert.discovered.v1 event for
+  // downstream consumers. The response is empty; concert persistence happens
+  // asynchronously via event-driven consumers.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The artist ID is missing or invalid.
   // - NOT_FOUND: The specified artist does not exist.
-  // - INTERNAL: An error occurred during the discovery or persistence process.
+  // - INTERNAL: An error occurred during the discovery process.
   rpc SearchNewConcerts(SearchNewConcertsRequest) returns (SearchNewConcertsResponse);
 }
 
@@ -62,8 +64,7 @@ message SearchNewConcertsRequest {
   entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
 }
 
-// SearchNewConcertsResponse contains the collection of newly discovered concerts.
-message SearchNewConcertsResponse {
-  // The collection of newly discovered concert events.
-  repeated entity.v1.Concert concerts = 1;
-}
+// SearchNewConcertsResponse is intentionally empty. Concert persistence happens
+// asynchronously via event-driven consumers after the discovery process publishes
+// a concert.discovered.v1 event.
+message SearchNewConcertsResponse {}
