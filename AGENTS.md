@@ -76,7 +76,9 @@ proto/liverty_music/
 
 ### Code Generation
 
-Generated code is hosted on BSR at `buf.build/liverty-music/schema` — **never commit a `gen/` directory**. Schemas are pushed to BSR only via GitHub Actions on release (not locally). Consumers install generated packages via `go get` or `npm install` from BSR.
+Generated code is hosted on BSR at `buf.build/liverty-music/schema` — **never commit a `gen/` directory**.
+
+**CRITICAL: NEVER run `buf push` locally.** BSR push is performed exclusively by GitHub Actions on release publish (`buf-release.yml`). To publish proto changes to BSR, create a GitHub Release after merging to main. Consumers install generated packages via `go get` or `npm install` from BSR.
 
 ## OpenSpec Workflow
 
