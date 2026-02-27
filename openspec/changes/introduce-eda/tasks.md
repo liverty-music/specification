@@ -4,7 +4,7 @@
 - [x] 1.2 Create `k8s/namespaces/nats/base/` with Helm chart kustomization and values (3-node HA, JetStream, `premium-rwo` PVC)
 - [x] 1.3 Create `k8s/namespaces/nats/overlays/dev/` with dev-specific overrides
 - [x] 1.4 Create ArgoCD Application `k8s/argocd-apps/dev/nats.yaml`
-- [ ] 1.5 Deploy and verify NATS cluster is running (`kubectl get pods -n nats`)
+- [x] 1.5 Deploy and verify NATS cluster is running (`kubectl get pods -n nats`)
 
 ## 2. Infrastructure: KEDA
 
@@ -12,7 +12,7 @@
 - [x] 2.2 Create `k8s/namespaces/keda/base/` with Helm chart kustomization and values
 - [x] 2.3 Create `k8s/namespaces/keda/overlays/dev/` with dev-specific overrides
 - [x] 2.4 Create ArgoCD Application `k8s/argocd-apps/dev/keda.yaml`
-- [ ] 2.5 Deploy and verify KEDA controller is running (`kubectl get pods -n keda`)
+- [x] 2.5 Deploy and verify KEDA controller is running (`kubectl get pods -n keda`)
 
 ## 3. Backend: Watermill Messaging Foundation
 
@@ -76,5 +76,5 @@
 
 - [ ] 9.1 Verify: CronJob runs → `SearchNewConcerts` publishes `concert.discovered.v1` → concerts created → notifications sent → venues enriched
 - [ ] 9.2 Verify: KEDA scales consumer pods based on NATS JetStream lag
-- [ ] 9.3 Verify: GoChannel adapter works for local development (all handlers receive events with FanOut)
+- [x] 9.3 Verify: GoChannel adapter works for local development (all handlers receive events with FanOut)
 - [ ] 9.4 Monitor NATS JetStream metrics (pending messages, ack rates) in production
