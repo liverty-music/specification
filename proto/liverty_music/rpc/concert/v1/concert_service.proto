@@ -67,4 +67,7 @@ message SearchNewConcertsRequest {
 // SearchNewConcertsResponse is intentionally empty. Concert persistence happens
 // asynchronously via event-driven consumers after the discovery process publishes
 // a concert.discovered.v1 event.
-message SearchNewConcertsResponse {}
+message SearchNewConcertsResponse {
+  reserved 1;
+  reserved "concerts";
+}
