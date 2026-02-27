@@ -114,7 +114,7 @@ Events in this change:
 
 **[GoChannel divergence from NATS]** → GoChannel does not replicate JetStream ack/nack/retry semantics. Mitigation: CI runs integration tests with a NATS container. Unit tests verify handler logic independent of transport.
 
-**[NATS cluster failure]** → If all 3 NATS nodes are down, publishers fail. Mitigation: CronJob logs publish errors and continues its loop for remaining artists. The search log is already updated, so concerts won't be re-searched, but they also won't be persisted until NATS recovers and events are retried.
+**[NATS cluster failure]** → If all 3 NATS nodes are down, `publisher.Publish()` fails and the event never enters JetStream — NATS cannot redeliver what was never published. Mitigation: CronJob logs publish errors and continues its loop for remaining artists. Because the search log is written before publishing (publish-after-commit), the failed artist is marked as searched and won't be re-searched until the 24-hour search log TTL expires. Recovery path: after the TTL expires, the next CronJob run re-discovers and re-publishes the concerts.
 
 **[Consumer backpressure]** → If consumers fall behind, NATS JetStream buffers messages (7-day retention). KEDA scales consumer pods based on lag. Risk is disk exhaustion on NATS PVCs. Mitigation: Monitor `jetstream_consumer_num_pending` metric, set alerts.
 
