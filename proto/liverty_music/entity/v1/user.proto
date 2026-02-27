@@ -49,23 +49,61 @@ message User {
   Home home = 6;
 }
 
-// Home represents the user's home area as an ISO 3166-2 subdivision code.
+// Home represents the user's home area as a structured geographic location,
+// expressed through a hierarchy of internationally standardized codes.
 //
-// This is the geographic area where the user regularly attends live events
-// without considering it a trip (遠征). In Japan this corresponds to a
-// prefecture (e.g., "JP-13" for Tokyo); in the US it would be a state
-// (e.g., "US-CA" for California).
+// A user's home area is the geographic region where they regularly attend
+// live events without considering it a trip (遠征). This concept anchors the
+// dashboard lane classification system:
+//   - "Home" lane:   the event's venue falls within the user's home area.
+//   - "Nearby" lane: the event has a known area, but it differs from the user's home.
+//   - "Away" lane:   the event has no known area, or the user has no home set.
 //
-// The value drives dashboard lane classification:
-//   - "Home" lane:   event venue's admin_area matches the user's home code.
-//   - "Nearby" lane: event has an admin_area but it differs from the user's home.
-//   - "Away" lane:   event has no admin_area or the user has no home set.
+// Lane assignment granularity:
+//   - When level_2 is set, lane comparison uses level_2 (finer granularity).
+//   - When level_2 is absent, lane comparison uses level_1 (coarser granularity).
+//
+// Code system contract:
+//   - level_1 is always an ISO 3166-2 subdivision code, worldwide, without exception.
+//   - level_2 uses a country-specific standard determined by country_code:
+//       "JP" -> future use (not yet defined; Phase 1 always omits level_2)
+//       "US" -> FIPS county code (e.g., "06037" for Los Angeles County)
+//       "DE" -> AGS (Amtlicher Gemeindeschluessel, e.g., "09162" for Munich)
+//     Additional country mappings will be documented here as they are introduced.
+//
+// Phase 1 note: The initial release supports Japan only. All Japanese home areas
+// are expressed as a country_code of "JP" and a level_1 prefecture code (e.g.,
+// "JP-13" for Tokyo). The level_2 field will always be absent in Phase 1.
+//
+// Redundancy rationale: country_code can be derived from the level_1 prefix, but
+// is stored as a dedicated field to enable efficient country-level queries and to
+// make the country unambiguous at a glance without parsing the subdivision code.
 message Home {
-  // An ISO 3166-2 subdivision code (e.g., "JP-13", "US-CA").
-  // Must be between 4 and 6 characters: two-letter country prefix, hyphen,
-  // and one-to-three character subdivision code.
-  string value = 1 [
+  // The ISO 3166-1 alpha-2 country code identifying the user's home country
+  // (e.g., "JP" for Japan, "US" for the United States, "DE" for Germany).
+  // Always required. Exactly two uppercase Latin letters.
+  string country_code = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.pattern = "^[A-Z]{2}$"
+  ];
+
+  // The ISO 3166-2 subdivision code identifying the user's home region at the
+  // first-order administrative division level — prefecture in Japan, state in
+  // the US, Land in Germany, and so on (e.g., "JP-13", "US-NY", "DE-BY").
+  // Always required. Format: two-letter country code, hyphen, one-to-three
+  // character subdivision identifier (total length 4-6 characters).
+  string level_1 = 2 [
+    (buf.validate.field).required = true,
     (buf.validate.field).string.min_len = 4,
     (buf.validate.field).string.max_len = 6
+  ];
+
+  // An optional finer-grained area code within the level_1 subdivision.
+  // The code system is determined by country_code (see message-level comment).
+  // Absent when the user's home is defined at level_1 granularity only.
+  // Phase 1 (Japan-only) always omits this field.
+  optional string level_2 = 3 [
+    (buf.validate.field).string.min_len = 1,
+    (buf.validate.field).string.max_len = 20
   ];
 }
