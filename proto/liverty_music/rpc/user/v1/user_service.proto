@@ -16,10 +16,30 @@ service UserService {
 
   // Create registers a new user profile in the system.
   //
+  // The home field may be provided when the user has already selected their
+  // home area during the onboarding flow (before account creation). Supplying
+  // it here persists the home area atomically with the user record, avoiding a
+  // separate UpdateHome call immediately after sign-up.
+  //
   // Possible errors:
   // - ALREADY_EXISTS: A user with the same unique identifier or email already exists.
   // - INVALID_ARGUMENT: The provided user data is missing required fields or is malformed.
   rpc Create(CreateRequest) returns (CreateResponse);
+
+  // UpdateHome sets or changes the authenticated user's home area.
+  //
+  // The home area determines how the dashboard classifies live events into
+  // "Home", "Nearby", and "Away" lanes. Users typically set this during
+  // onboarding and may update it later from settings.
+  //
+  // The user ID is extracted from the authenticated JWT context — clients
+  // do not provide it in the request.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The provided home value contains an unrecognized or malformed code.
+  // - NOT_FOUND: No user record exists for the authenticated identity.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc UpdateHome(UpdateHomeRequest) returns (UpdateHomeResponse);
 }
 
 // GetRequest is the request for retrieving a user's profile information.
@@ -40,10 +60,30 @@ message GetResponse {
 message CreateRequest {
   // Required. The user's email address for account identity.
   entity.v1.UserEmail email = 1 [(buf.validate.field).required = true];
+
+  // Optional. The user's home area, when it has already been selected during
+  // the onboarding flow before account creation. Providing this field here
+  // persists the home area atomically with the user record. When absent, the
+  // home area remains unset and can be configured later via UpdateHome.
+  entity.v1.Home home = 2;
 }
 
 // CreateResponse returns the user profile as successfully created.
 message CreateResponse {
   // The newly created user entity, including its assigned identifier.
+  entity.v1.User user = 1 [(buf.validate.field).required = true];
+}
+
+// UpdateHomeRequest provides the new home area for the authenticated user.
+// The user identity is extracted from the JWT context by the backend.
+message UpdateHomeRequest {
+  // Required. The structured home area representing the user's geographic base
+  // for live event attendance. See entity.v1.Home for the full code system contract.
+  entity.v1.Home home = 1 [(buf.validate.field).required = true];
+}
+
+// UpdateHomeResponse returns the updated user profile after the home area change.
+message UpdateHomeResponse {
+  // The updated user entity with the new home area applied.
   entity.v1.User user = 1 [(buf.validate.field).required = true];
 }
