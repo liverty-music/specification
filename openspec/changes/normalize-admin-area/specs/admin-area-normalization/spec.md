@@ -25,6 +25,23 @@ The system SHALL provide a normalization function that converts free-text admini
 - **WHEN** the normalization function receives an empty string or whitespace-only string
 - **THEN** it SHALL return nil
 
+### Requirement: Country Code Extraction
+
+The system SHALL provide a function that extracts the ISO 3166-1 alpha-2 country code from an ISO 3166-2 subdivision code.
+
+#### Scenario: Extract country code from subdivision
+
+- **WHEN** the function receives a valid ISO 3166-2 code (e.g., `JP-13`, `US-NY`)
+- **THEN** it SHALL return the two-letter country prefix (e.g., `JP`, `US`)
+
+#### Scenario: Construct structured Home from normalization result
+
+- **WHEN** a free-text admin_area is successfully normalized to an ISO 3166-2 code
+- **THEN** the system SHALL be able to derive a `Home` structure with:
+  - `country_code` extracted from the ISO 3166-2 prefix
+  - `level_1` set to the full ISO 3166-2 code
+  - `level_2` absent (normalization only resolves to level_1 in Phase 1)
+
 ### Requirement: Normalization in Concert Discovery Pipeline
 
 The concert discovery pipeline SHALL normalize Gemini's free-text `admin_area` output to an ISO 3166-2 code before persisting venue data.

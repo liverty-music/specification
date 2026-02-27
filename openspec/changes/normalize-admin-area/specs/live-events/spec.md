@@ -34,17 +34,24 @@ The system MUST define standard data structures for core concert entities to ens
 
 ### Requirement: Dashboard Lane Classification
 
-The dashboard SHALL classify live events into three lanes based on the geographic relationship between the event's venue and the user's home area.
+The dashboard SHALL classify live events into three lanes based on the geographic relationship between the event's venue and the user's home area, using level-aware granularity.
 
-#### Scenario: Home lane assignment
+#### Scenario: Home lane assignment (level_1 comparison)
 
-- **WHEN** a live event's `venue.admin_area` equals the user's `home` value (ISO 3166-2 code comparison)
+- **WHEN** the user's home has only `level_1` set (no `level_2`)
+- **AND** a live event's `venue.admin_area` equals the user's `home.level_1` (ISO 3166-2 code comparison)
+- **THEN** the event SHALL be assigned to the `home` lane
+
+#### Scenario: Home lane assignment (level_2 comparison)
+
+- **WHEN** the user's home has `level_2` set
+- **AND** a live event's venue has a matching finer-grained area code equal to the user's `home.level_2`
 - **THEN** the event SHALL be assigned to the `home` lane
 
 #### Scenario: Nearby lane assignment
 
 - **WHEN** a live event's `venue.admin_area` is set (non-null)
-- **AND** it does not equal the user's `home` value
+- **AND** it does not match the user's home at the applicable comparison level
 - **THEN** the event SHALL be assigned to the `nearby` lane
 
 #### Scenario: Away lane assignment
@@ -57,6 +64,12 @@ The dashboard SHALL classify live events into three lanes based on the geographi
 - **WHEN** the user has not set a home area
 - **AND** a live event has a non-null `venue.admin_area`
 - **THEN** the event SHALL be assigned to the `nearby` lane
+
+#### Scenario: Phase 1 lane comparison (Japan-only)
+
+- **WHEN** the user's home has `country_code = "JP"` and `level_2` is absent
+- **THEN** lane comparison SHALL use `level_1` (ISO 3166-2 prefecture code) exclusively
+- **AND** this is the only comparison mode active in Phase 1
 
 ### Requirement: ISO 3166-2 Display Conversion
 
@@ -71,4 +84,4 @@ The frontend SHALL convert ISO 3166-2 codes to human-readable names for display,
 
 - **WHEN** the region setup sheet presents area options to the user
 - **THEN** the options SHALL display localized names
-- **AND** the selected value sent to the backend SHALL be the ISO 3166-2 code
+- **AND** the selected value sent to the backend SHALL be structured as a `Home` message with `country_code` and `level_1`
