@@ -51,7 +51,7 @@ The system SHALL allow users to control push notification delivery.
 ---
 
 ### Requirement: About Section
-The system SHALL provide access to legal and licensing information, and display the current language setting.
+The system SHALL provide access to legal and licensing information.
 
 #### Scenario: Legal links
 - **WHEN** the About section is displayed
