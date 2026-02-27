@@ -88,6 +88,40 @@ This repo uses OpenSpec for structured specification changes. Changes live in `o
 - **Backend** (`liverty-music/backend`): Go application
 - **Cloud Provisioning** (`liverty-music/cloud-provisioning`): GCP infrastructure
 
+## Forbidden Operations
+
+These commands are **CI-only**. NEVER execute them locally, and NEVER suggest the user run them manually either.
+
+| Command | CI Trigger | Workflow File |
+|---------|------------|---------------|
+| `buf push` | GitHub Release published | `.github/workflows/buf-release.yml` |
+| `buf generate` | Not used — BSR handles remote generation | N/A |
+
+If the user requests BSR publishing or code generation:
+1. **REFUSE** local execution
+2. **Explain**: BSR push happens automatically when a GitHub Release is published
+3. **Guide**: "Create a PR → merge → create Release → CI pushes to BSR"
+
+## Release Process
+
+```
+1. Create PR to main     → buf-pr-checks.yml validates (lint, breaking changes)
+2. Merge PR to main
+3. Create GitHub Release  → tag: vX.Y.Z
+4. buf-release.yml runs   → buf push --label <tag> to BSR
+5. BSR publishes generated code for downstream consumers
+6. Backend/frontend update deps to consume new types
+```
+
+**Cross-repo dependency order** (strict):
+```
+specification PR merge → Release → BSR gen
+    ├── backend can now build with new proto types
+    └── frontend can now build with new proto types
+```
+
+Backend and frontend PRs may be created as **drafts** before BSR gen completes, but they will not build until the new types are published.
+
 ## Pre-implementation Checklist
 
 Before modifying `.proto` files, read:
