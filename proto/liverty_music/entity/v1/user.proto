@@ -40,4 +40,32 @@ message User {
 
   // The user's display name, synced from the identity provider.
   string name = 5;
+
+  // The user's home area — the geographic region where the user regularly attends
+  // live events without considering it a trip (遠征).
+  // Used as the baseline for dashboard lane assignment: events in the home area
+  // appear in the "Home" lane, nearby areas in "Nearby", and everything else in "Away".
+  // Absent until the user explicitly selects their area during onboarding or in settings.
+  Home home = 6;
+}
+
+// Home represents the user's home area as an ISO 3166-2 subdivision code.
+//
+// This is the geographic area where the user regularly attends live events
+// without considering it a trip (遠征). In Japan this corresponds to a
+// prefecture (e.g., "JP-13" for Tokyo); in the US it would be a state
+// (e.g., "US-CA" for California).
+//
+// The value drives dashboard lane classification:
+//   - "Home" lane:   event venue's admin_area matches the user's home code.
+//   - "Nearby" lane: event has an admin_area but it differs from the user's home.
+//   - "Away" lane:   event has no admin_area or the user has no home set.
+message Home {
+  // An ISO 3166-2 subdivision code (e.g., "JP-13", "US-CA").
+  // Must be between 4 and 6 characters: two-letter country prefix, hyphen,
+  // and one-to-three character subdivision code.
+  string value = 1 [
+    (buf.validate.field).string.min_len = 4,
+    (buf.validate.field).string.max_len = 6
+  ];
 }

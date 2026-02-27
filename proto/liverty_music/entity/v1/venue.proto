@@ -13,11 +13,11 @@ message Venue {
   // The official name or title of the music venue.
   VenueName name = 2 [(buf.validate.field).required = true];
 
-  // The administrative area (prefecture, state, province) where the venue is located.
-  // Populated only when the area is explicitly stated in the source data or unambiguously
-  // inferable from the venue name (e.g., "Zepp Nagoya" → "愛知県").
-  // Absent when the area cannot be determined with confidence — an incorrect value is
-  // strictly worse than an absent one.
+  // The administrative area (prefecture, state, province) where the venue is located,
+  // expressed as an ISO 3166-2 subdivision code (e.g., "JP-13" for Tokyo, "JP-40" for Fukuoka).
+  // Populated only when the area is determinable with confidence from the source data.
+  // Absent when the area cannot be determined — an incorrect value is strictly worse
+  // than an absent one.
   AdminArea admin_area = 3;
 }
 
@@ -34,12 +34,17 @@ message VenueName {
 }
 
 // AdminArea represents the administrative division where a venue is located
-// (e.g., prefecture, state, province).
+// as an ISO 3166-2 subdivision code (e.g., "JP-13" for Tokyo, "US-CA" for California).
+//
+// The code consists of a two-letter country prefix, a hyphen, and a one-to-three
+// character subdivision identifier. The backend normalizes free-text area names
+// (e.g., "東京都", "Tokyo") into this code before persistence.
+//
 // Present only when the area is determinable with confidence from the source data.
 message AdminArea {
-  // The area name, required to be at least one character when present.
+  // The ISO 3166-2 subdivision code, between 4 and 6 characters.
   string value = 1 [
-    (buf.validate.field).string.min_len = 1,
-    (buf.validate.field).string.max_len = 100
+    (buf.validate.field).string.min_len = 4,
+    (buf.validate.field).string.max_len = 6
   ];
 }
