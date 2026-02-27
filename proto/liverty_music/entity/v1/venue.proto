@@ -42,9 +42,6 @@ message VenueName {
 //
 // Present only when the area is determinable with confidence from the source data.
 message AdminArea {
-  // The ISO 3166-2 subdivision code, between 4 and 6 characters.
-  string value = 1 [
-    (buf.validate.field).string.min_len = 4,
-    (buf.validate.field).string.max_len = 6
-  ];
+  // The ISO 3166-2 subdivision code (e.g., "JP-13", "US-NY").
+  string value = 1 [(buf.validate.field).string.pattern = "^[A-Z]{2}-[A-Z0-9]{1,3}$"];
 }
