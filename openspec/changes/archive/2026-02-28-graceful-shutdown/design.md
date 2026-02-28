@@ -40,7 +40,7 @@ Key dependencies in the shutdown path: `pgxpool` (database), `cloudsqlconn.Diale
 - Integration point for `sync.WaitGroup` (background goroutine drain happens in the `drain` phase)
 - Aggregated error collection via `errors.Join`
 
-The manager is lightweight — it wraps `[]io.Closer` into phase groups, not a framework. Each phase is a named slice of `io.Closer`, executed sequentially within the phase and sequentially across phases.
+The manager is lightweight — it wraps `[]io.Closer` into phase groups, not a framework. Each phase is a named slice of `io.Closer`, executed concurrently within the phase and sequentially across phases.
 
 ```
 type ShutdownManager struct {
