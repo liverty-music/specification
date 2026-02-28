@@ -64,4 +64,4 @@ The application's internal `SHUTDOWN_TIMEOUT` MUST be less than `terminationGrac
 
 #### Scenario: Consumer timeout budget
 - **WHEN** the consumer deployment has `terminationGracePeriodSeconds: 90` and `preStop: sleep 5`
-- **THEN** `SHUTDOWN_TIMEOUT` SHALL be at most 60s (90 - 5 - 25 buffer)
+- **THEN** `SHUTDOWN_TIMEOUT` SHALL be at most 60s (90 - 5 - 25 buffer, where the 25s buffer accounts for Watermill Router drain overhead which requires more headroom than HTTP server draining)

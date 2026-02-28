@@ -141,4 +141,4 @@ logger.Info(ctx, "shutdown signal received",
 
 **[Risk] Go 1.26 upgrade may introduce subtle behavior changes** → The Green Tea GC is now default, and crypto packages ignore the `rand` parameter. Neither affects this application. Run full test suite after upgrade.
 
-**[Risk] Watermill `Router.Close()` may hang if a handler is stuck** → `CloseTimeout` (default 30s) provides a safety net. The consumer's `terminationGracePeriodSeconds: 90` gives enough buffer.
+**[Risk] Watermill `Router.Close()` may hang if a handler is stuck** → The implementation explicitly sets `CloseTimeout: 30s` as a safety net (Watermill's default is `0`, which means wait indefinitely). The consumer's `terminationGracePeriodSeconds: 90` gives enough buffer.
