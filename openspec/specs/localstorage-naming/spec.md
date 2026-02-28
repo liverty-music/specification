@@ -19,12 +19,14 @@ All localStorage key constants MUST be defined in a single `src/constants/storag
 - **THEN** it MUST use a constant from `StorageKeys`, not a hardcoded string literal
 
 ### Requirement: Domain term alignment
-Keys storing geographic administrative area data MUST use the term `adminArea` (matching Proto `admin_area` / `Venue.admin_area`), not `region`.
+Keys storing geographic preference data MUST use the term `home` (matching Proto `User.home`), not `adminArea` or `region`. The authenticated user's home is persisted server-side via `User.home` and `UserService.UpdateHome` RPC; no localStorage key is used for authenticated users.
 
-#### Scenario: User admin area storage
-- **WHEN** the authenticated user's geographic preference is stored
-- **THEN** the key MUST be `user.adminArea`
-
-#### Scenario: Guest admin area storage
+#### Scenario: Guest home storage
 - **WHEN** the anonymous user's geographic preference is stored
-- **THEN** the key MUST be `guest.adminArea`
+- **THEN** the key MUST be `guest.home`
+
+#### Scenario: Legacy key migration
+- **WHEN** the application initializes after the domain term change
+- **THEN** the legacy `guest.adminArea` and `user.adminArea` keys SHALL be removed
+- **AND** the old `guest.adminArea` value SHALL NOT be copied to `guest.home` because legacy values were free-text Japanese strings (e.g. "東京") incompatible with the new ISO 3166-2 code format
+- **AND** users must re-select their home area

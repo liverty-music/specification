@@ -50,8 +50,9 @@ The system SHALL provide an async enrichment pipeline that resolves raw venue na
 #### Scenario: admin_area used as search hint
 
 - **WHEN** the enrichment job queries MusicBrainz or Google Maps for a venue
-- **AND** the venue has a non-NULL `admin_area`
-- **THEN** the `admin_area` value SHALL be included in the search query to improve match accuracy
+- **AND** the venue has a non-NULL `admin_area` (ISO 3166-2 code)
+- **THEN** the system SHALL convert the ISO 3166-2 code to a locale-appropriate text name before including it in the search query
+- **AND** the text name SHALL be in the language most likely to yield accurate results for the target service (e.g., Japanese for MusicBrainz JP venues, English for Google Maps)
 
 ### Requirement: Venue Duplicate Merge
 
