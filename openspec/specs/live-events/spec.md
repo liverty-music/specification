@@ -181,3 +181,26 @@ The frontend SHALL convert ISO 3166-2 codes to human-readable names for display,
 - **WHEN** the region setup sheet presents area options to the user
 - **THEN** the options SHALL display localized names
 - **AND** the selected value sent to the backend SHALL be structured as a `Home` message with `country_code` and `level_1`
+
+### Requirement: Live Event Availability Check
+
+The system SHALL provide a mechanism to check whether an artist has upcoming live events by querying the `ConcertService/List` RPC. This replaces the previous hash-based mock implementation.
+
+#### Scenario: Artist has upcoming events
+
+- **WHEN** `checkLiveEvents` is called with an artist ID
+- **AND** `ConcertService/List` returns one or more concerts for that artist
+- **THEN** the system SHALL return `true`
+
+#### Scenario: Artist has no upcoming events
+
+- **WHEN** `checkLiveEvents` is called with an artist ID
+- **AND** `ConcertService/List` returns an empty list
+- **THEN** the system SHALL return `false`
+
+#### Scenario: Concert list call fails
+
+- **WHEN** `checkLiveEvents` is called with an artist ID
+- **AND** the `ConcertService/List` RPC call fails
+- **THEN** the system SHALL return `false`
+- **AND** the system SHALL log the error

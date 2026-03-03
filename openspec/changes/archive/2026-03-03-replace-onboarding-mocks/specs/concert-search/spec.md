@@ -1,10 +1,4 @@
-# Capability: Concert Search
-
-## Purpose
-
-To define the interface and behavior for discovering new concerts for artists, enabling the system to keep its concert catalog up-to-date.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Search Concerts by Artist
 
@@ -46,23 +40,3 @@ System must provide a way to search for future concerts of a specific artist usi
 - **WHEN** `SearchNewConcerts` is called without a bearer token
 - **THEN** the system SHALL process the request normally (public procedure)
 - **AND** the search log cache SHALL prevent abuse by skipping external API calls for recently searched artists
-
-### Requirement: Venue Administrative Area Extraction
-
-The Gemini extraction pipeline SHALL attempt to identify the administrative area (都道府県 / state / province) of each venue. Accuracy is prioritized over coverage — an incorrect value is strictly forbidden.
-
-#### Scenario: AdminArea explicitly stated in source
-
-- **WHEN** the source page or venue name explicitly includes the prefecture or state
-- **THEN** the extracted `admin_area` SHALL contain that value (e.g., `"大阪府"`, `"California"`)
-
-#### Scenario: AdminArea unambiguously inferable from venue name
-
-- **WHEN** the venue name unambiguously implies a known administrative area (e.g., "Zepp Nagoya" → "愛知県", "札幌ドーム" → "北海道")
-- **THEN** the extracted `admin_area` SHALL contain the inferred value
-
-#### Scenario: AdminArea uncertain or ambiguous
-
-- **WHEN** the administrative area cannot be determined with confidence from the source text
-- **THEN** `admin_area` SHALL be omitted (empty string / `NULL`)
-- **AND** the system SHALL NOT guess or infer from partial information
