@@ -8,7 +8,7 @@ To define the interface and behavior for discovering new concerts for artists, e
 
 ### Requirement: Search Concerts by Artist
 
-System must provide a way to search for future concerts of a specific artist using generative AI grounding. The system SHALL check the search log before calling the external API and skip the call if a recent search exists. The extracted concert data SHALL include the venue's administrative area (`admin_area`) when it can be determined with confidence.
+System must provide a way to search for future concerts of a specific artist using generative AI grounding. The system SHALL check the search log before calling the external API and skip the call if a recent search exists. The extracted concert data SHALL include the venue's administrative area (`admin_area`) when it can be determined with confidence. The `SearchNewConcerts` RPC SHALL be accessible without authentication to support guest onboarding flows.
 
 #### Scenario: Successful Search
 
@@ -40,6 +40,12 @@ System must provide a way to search for future concerts of a specific artist usi
 
 - **WHEN** an `artist_id` is not provided
 - **THEN** the system MUST return an `INVALID_ARGUMENT` error
+
+#### Scenario: Unauthenticated access
+
+- **WHEN** `SearchNewConcerts` is called without a bearer token
+- **THEN** the system SHALL process the request normally (public procedure)
+- **AND** the search log cache SHALL prevent abuse by skipping external API calls for recently searched artists
 
 ### Requirement: Venue Administrative Area Extraction
 
