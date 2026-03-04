@@ -25,6 +25,7 @@ jobs:
               - "proto/**"
               - "buf.yaml"
               - "buf.gen.yaml"
+              - "Makefile"
               - ".github/workflows/**"
 
   buf-checks:
@@ -35,18 +36,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Fetch full history for breaking change detection
           fetch-depth: 0
 
-      - name: Buf lint, format, breaking, and generate check
+      - name: Setup buf CLI
         uses: bufbuild/buf-action@v1
         with:
           token: ${{ secrets.BUF_TOKEN }}
-          push: false
-          # Compare against the pull request's base branch in Git.
-          # This is more robust than comparing against the BSR, as it avoids
-          # issues with synchronization delays between the main branch and the BSR.
-          breaking_against: "https://github.com/${{ github.repository }}.git#branch=${{ github.base_ref }}"
+          setup_only: true
+
+      - name: Run make lint
+        run: make lint
 
   buf-checks-skip:
     needs: changes

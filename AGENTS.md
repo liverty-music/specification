@@ -1,50 +1,64 @@
-# AI Agent Rules - Liverty Music Specification
+<poly-repo-workspace>
+  <description>
+    Liverty Music poly-repo workspace managed as git worktrees.
+    Each repo's AGENTS.md contains detailed coding conventions.
+    Read the target repo's AGENTS.md before making changes.
+  </description>
 
-**CRITICAL: Before ANY action (create file, run command, write code), check Workspace Structure below to determine the correct repository.**
+  <structure>
+    liverty-music/
+    ├── specification/
+    │   ├── openspec/changes/ ← Ongoing changes (proposals, designs, specs, tasks)
+    │   ├── openspec/specs/   ← The latest capability specs
+    │   └── proto/            ← Protobuf entity / RPC schema
+    ├── backend/               ← Go implementation (Connect-RPC services)
+    ├── frontend/              ← Aurelia 2 PWA
+    └── cloud-provisioning/
+        ├── src/               ← Pulumi code (GCP, Cloudflare, GitHub resources)
+        └── k8s/               ← Kubernetes manifests (Kustomize base/overlays)
+  </structure>
 
-## Workspace Structure and Responsibilities
+  <dependency-order>
+    specification PR merge → GitHub Release → BSR gen completes
+    ├── backend can now build with new proto types
+    └── frontend can now build with new proto types
 
-```
-liverty-music/
-├── specification/
-│   ├── openspec/changes/ ← Ongoing changes (proposals, designs, specs, tasks)
-│   ├── openspec/specs/   ← The latest capability specs
-│   └── proto/            ← Protobuf entity / RPC schema (no `buf generate`, use BSR)
-├── backend/               ← Go implementation (Connect-RPC services)
-├── frontend/              ← Aurelia 2 PWA implementation
-└── cloud-provisioning/
-    ├── src/               ← Pulumi code (GCP, Cloudflare, GitHub resources)
-    └── k8s/               ← Kubernetes manifests (Kustomize base/overlays)
-```
+    Backend/frontend PRs may be created as drafts before BSR gen,
+    but CI will fail until new types are published.
+  </dependency-order>
 
-## Decision Process (Required Before Action)
+  <release-process>
+    1. Create PR to specification/main → buf-pr-checks.yml validates
+    2. Merge PR to main
+    3. Create GitHub Release (tag: vX.Y.Z) → buf-release.yml pushes to BSR
+    4. BSR publishes generated code for downstream consumers
+    5. Backend/frontend update deps to consume new types
+  </release-process>
 
-**For every file creation, code generation, or command execution:**
+  <constraints>
+    <forbidden repo="specification">buf push — CI-only via buf-release.yml on Release publish</forbidden>
+    <forbidden repo="specification">buf generate — BSR handles remote generation</forbidden>
+    <forbidden repo="backend">Local protobuf code generation — use BSR remote gen via go get</forbidden>
+  </constraints>
+</poly-repo-workspace>
 
-1. **Identify the artifact type** (OpenSpec change? Protobuf? Go code? Pulumi? K8s manifest?)
-2. **Check Workspace Structure** above to find the correct repository
-3. **Verify you're in the correct directory** before proceeding
-4. **If uncertain, ask** - never guess the repository location
+<poly-repo-context repo="specification">
+  <responsibilities>Protocol Buffers schema repository. Defines entity and RPC interfaces
+  using Buf. Single source of truth for API contracts consumed by backend and frontend.
+  Also hosts OpenSpec structured specification changes.</responsibilities>
+  <essential-commands>
+    buf lint                                  # Lint proto files
+    buf format -w                             # Auto-format proto files
+    buf breaking --against '.git#branch=main' # Check breaking changes
+  </essential-commands>
+</poly-repo-context>
 
----
+<agent-rules>
 
-## What This Repository Is
+## Pre-commit Hooks
 
-Protocol Buffers schema repository for **Liverty Music** — a personalized concert notification platform. Defines entity and RPC interfaces using Buf, with remote code generation via Buf Schema Registry (BSR). No application code lives here; this repo is the single source of truth for API contracts consumed by the Go backend and TypeScript frontend.
-
-## Essential Commands
-
-```bash
-mise install                              # Install toolchain (buf, pre-commit)
-pre-commit install                        # Install commit hooks
-pre-commit install --hook-type pre-push   # Install push hooks
-
-buf lint                                  # Lint proto files (STANDARD + COMMENTS rules)
-buf format -w                             # Auto-format proto files
-buf breaking --against '.git#branch=main' # Check for breaking changes
-```
-
-Pre-commit hooks run `buf lint`, `buf format -w`, and `buf breaking` automatically on commit. If a breaking change is intentional, add the `buf skip breaking` label to the PR.
+Pre-commit hooks run `buf lint`, `buf format -w`, and `buf breaking` automatically on commit.
+If a breaking change is intentional, add the `buf skip breaking` label to the PR.
 
 ## Architecture
 
@@ -76,56 +90,16 @@ proto/liverty_music/
 
 ### Code Generation
 
-Generated code is hosted on BSR at `buf.build/liverty-music/schema` — **never commit a `gen/` directory**.
-
-**CRITICAL: NEVER run `buf push` locally.** BSR push is performed exclusively by GitHub Actions on release publish (`buf-release.yml`). To publish proto changes to BSR, create a GitHub Release after merging to main. Consumers install generated packages via `go get` or `npm install` from BSR.
+Generated code is hosted on BSR at `buf.build/liverty-music/schema`. Do not commit a `gen/` directory. Consumers install generated packages via `go get` or `npm install` from BSR.
 
 ## OpenSpec Workflow
 
-This repo uses OpenSpec for structured specification changes. Changes live in `openspec/changes/` and follow an artifact workflow (proposal → design → specs → tasks). Use `/opsx:new` to start a new change and `/opsx:continue` to progress through artifacts. See `.claude/skills/` for full skill documentation.
-
-## Poly-repo Context
-
-- **This repo** (`specification`): Proto schemas, OpenSpec specs, product design docs
-- **Backend** (`liverty-music/backend`): Go application
-- **Cloud Provisioning** (`liverty-music/cloud-provisioning`): GCP infrastructure
-
-## Forbidden Operations
-
-These commands are **CI-only**. NEVER execute them locally, and NEVER suggest the user run them manually either.
-
-| Command | CI Trigger | Workflow File |
-|---------|------------|---------------|
-| `buf push` | GitHub Release published | `.github/workflows/buf-release.yml` |
-| `buf generate` | Not used — BSR handles remote generation | N/A |
-
-If the user requests BSR publishing or code generation:
-1. **REFUSE** local execution
-2. **Explain**: BSR push happens automatically when a GitHub Release is published
-3. **Guide**: "Create a PR → merge → create Release → CI pushes to BSR"
-
-## Release Process
-
-```
-1. Create PR to main     → buf-pr-checks.yml validates (lint, breaking changes)
-2. Merge PR to main
-3. Create GitHub Release  → tag: vX.Y.Z
-4. buf-release.yml runs   → buf push --label <tag> to BSR
-5. BSR publishes generated code for downstream consumers
-6. Backend/frontend update deps to consume new types
-```
-
-**Cross-repo dependency order** (strict):
-```
-specification PR merge → Release → BSR gen
-    ├── backend can now build with new proto types
-    └── frontend can now build with new proto types
-```
-
-Backend and frontend PRs may be created as **drafts** before BSR gen completes, but they will not build until the new types are published.
+This repo uses OpenSpec for structured specification changes. Changes live in `openspec/changes/` and follow an artifact workflow (proposal → design → specs → tasks). Use `/opsx:new` to start a new change and `/opsx:continue` to progress through artifacts.
 
 ## Pre-implementation Checklist
 
 Before modifying `.proto` files, read:
 1. `docs/product-design.md` — domain concepts and product vision
 2. This file — project rules and core design constraints
+
+</agent-rules>
