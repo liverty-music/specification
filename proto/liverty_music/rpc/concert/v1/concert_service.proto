@@ -33,12 +33,12 @@ service ConcertService {
   // - NOT_FOUND: The specified artist does not exist.
   rpc SearchNewConcerts(SearchNewConcertsRequest) returns (SearchNewConcertsResponse);
 
-  // GetSearchStatus returns the current search status for one or more artists.
+  // ListSearchStatuses returns the current search status for one or more artists.
   // Use this to poll for completion after calling SearchNewConcerts.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The artist IDs list is empty or contains invalid IDs.
-  rpc GetSearchStatus(GetSearchStatusRequest) returns (GetSearchStatusResponse);
+  rpc ListSearchStatuses(ListSearchStatusesRequest) returns (ListSearchStatusesResponse);
 }
 
 // ListRequest is the request for retrieving concerts associated with a specific artist.
@@ -78,14 +78,14 @@ message SearchNewConcertsResponse {
   reserved "concerts";
 }
 
-// GetSearchStatusRequest specifies the artists whose search status is queried.
-message GetSearchStatusRequest {
+// ListSearchStatusesRequest specifies the artists whose search status is queried.
+message ListSearchStatusesRequest {
   // Required. The artist identifiers to query search status for.
   repeated entity.v1.ArtistId artist_ids = 1 [(buf.validate.field).required = true];
 }
 
-// GetSearchStatusResponse contains the search status for each requested artist.
-message GetSearchStatusResponse {
+// ListSearchStatusesResponse contains the search status for each requested artist.
+message ListSearchStatusesResponse {
   // The search status for each requested artist.
   repeated ArtistSearchStatus statuses = 1;
 }
