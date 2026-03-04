@@ -24,15 +24,21 @@ service ConcertService {
   rpc ListByFollower(ListByFollowerRequest) returns (ListByFollowerResponse);
 
   // SearchNewConcerts triggers an asynchronous discovery process for new concerts.
-  // It scrapes external sources and publishes a concert.discovered.v1 event for
-  // downstream consumers. The response is empty; concert persistence happens
-  // asynchronously via event-driven consumers.
+  // It enqueues a background search job and returns immediately. The actual search
+  // runs asynchronously with a 120-second timeout and publishes a
+  // concert.discovered.v1 event for downstream consumers.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The artist ID is missing or invalid.
   // - NOT_FOUND: The specified artist does not exist.
-  // - INTERNAL: An error occurred during the discovery process.
   rpc SearchNewConcerts(SearchNewConcertsRequest) returns (SearchNewConcertsResponse);
+
+  // ListSearchStatuses returns the current search status for one or more artists.
+  // Use this to poll for completion after calling SearchNewConcerts.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The artist IDs list is empty or contains invalid IDs.
+  rpc ListSearchStatuses(ListSearchStatusesRequest) returns (ListSearchStatusesResponse);
 }
 
 // ListRequest is the request for retrieving concerts associated with a specific artist.
@@ -70,4 +76,40 @@ message SearchNewConcertsRequest {
 message SearchNewConcertsResponse {
   reserved 1;
   reserved "concerts";
+}
+
+// ListSearchStatusesRequest specifies the artists whose search status is queried.
+message ListSearchStatusesRequest {
+  // Required. The artist identifiers to query search status for.
+  repeated entity.v1.ArtistId artist_ids = 1 [(buf.validate.field).repeated.min_items = 1];
+}
+
+// ListSearchStatusesResponse contains the search status for each requested artist.
+message ListSearchStatusesResponse {
+  // The search status for each requested artist.
+  repeated ArtistSearchStatus statuses = 1;
+}
+
+// ArtistSearchStatus represents the current search status for a single artist.
+message ArtistSearchStatus {
+  // The artist identifier.
+  entity.v1.ArtistId artist_id = 1;
+
+  // The current search status.
+  SearchStatus status = 2;
+}
+
+// SearchStatus indicates the state of a concert search job for an artist.
+enum SearchStatus {
+  // Default value. No search log exists for this artist.
+  SEARCH_STATUS_UNSPECIFIED = 0;
+
+  // A search is currently in progress.
+  SEARCH_STATUS_PENDING = 1;
+
+  // The search completed successfully.
+  SEARCH_STATUS_COMPLETED = 2;
+
+  // The search failed after all retries.
+  SEARCH_STATUS_FAILED = 3;
 }
