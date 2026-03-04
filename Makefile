@@ -4,7 +4,7 @@
 lint:
 	buf lint
 	buf format -d --exit-code
-	buf breaking --against '.git#branch=main'
+	buf breaking --against '.git#branch=origin/main'
 
 ## fix: auto-fix formatting
 fix:
