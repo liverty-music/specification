@@ -143,7 +143,9 @@ The `fix-area-dialog-overlap` change previously established the `<dialog>` + `@s
 - Call `showPopover()` when the coach mark activates, `hidePopover()` when dismissed
 - Remove `z-index: 9999` from `.coach-mark-overlay` in `coach-mark.css`
 - Top Layer promotion ensures the overlay paints above everything including the nav bar popover (later insertion order)
-- Click-through on spotlight area is preserved — `popover` does not trap focus or block pointer events
+- The overlay canvas is a full-viewport element; `pointer-events: none` SHALL be applied to it so it does not intercept clicks
+- `pointer-events: auto` is re-enabled on dismiss/next buttons within the overlay
+- Click-through to the spotlighted element is handled by `elementFromPoint()` delegation: the overlay listens for clicks, temporarily hides itself, calls `document.elementFromPoint(x, y)` to find the underlying element, and forwards the event
 
 **Tooltip positioning (CSS Anchor Positioning)**:
 - Target element gets `anchor-name: --coach-target` (set dynamically via `style.anchorName`)
@@ -164,25 +166,29 @@ The `fix-area-dialog-overlap` change previously established the `<dialog>` + `@s
 
 ### Decision 7: Top Layer architecture — stacking by insertion order
 
-**Choice**: Document the intended Top Layer insertion order as the architectural contract replacing z-index.
+**Choice**: Document the intended Top Layer insertion order and the enforcement mechanism replacing z-index.
+
+The Top Layer is a strict last-in-on-top stack. Order depends entirely on JS call sequence, not element type. The intended visual layering is:
 
 ```
 Top Layer Stack (last = on top):
 ─────────────────────────────────
-  coach-mark popover     ← showPopover() on tutorial activation
-  toast-notification     ← showPopover() per toast
-  <dialog> modals        ← showModal() on user action
-  bottom-nav-bar         ← showPopover() on app startup
+  coach-mark popover     ← highest priority
+  toast-notification     ← must appear above dialogs
+  <dialog> modals        ← above nav bar
+  bottom-nav-bar         ← base layer
 ─────────────────────────────────
   Normal stacking context (isolation: isolate per component)
 ```
 
-- Bottom-nav is the first popover shown (app startup) — sits at the bottom of the Top Layer
-- Dialogs are shown on user interaction — paint above nav
-- Toasts are shown on events — paint above dialogs
-- Coach-mark is shown during tutorials — paints above everything
+**Enforcement mechanism** (required because Top Layer order is insertion-order, not declarative):
 
-If ordering conflicts arise, the fix is adjusting `showPopover()` / `showModal()` call timing, not adding z-index.
+- **Bottom-nav**: `showPopover()` called once at app startup. Always at the bottom of the Top Layer.
+- **Dialogs**: `showModal()` called on user action. Inserted after nav, so they paint above it.
+- **Toasts**: When a toast fires while a dialog is open, the toast is already below the dialog in the stack. The toast service SHALL call `hidePopover()` + `showPopover()` to re-insert itself at the top of the Top Layer stack, ensuring it paints above any open dialog.
+- **Coach-mark**: `showPopover()` called on tutorial activation. During tutorials, no dialogs or toasts are expected. If a toast fires during a tutorial, the coach-mark SHALL also re-insert itself (`hidePopover()` + `showPopover()`) to maintain top position.
+
+If ordering conflicts arise, the fix is re-insertion (`hidePopover()` + `showPopover()`) to move the element to the top of the stack, not adding z-index.
 
 ## Risks / Trade-offs
 

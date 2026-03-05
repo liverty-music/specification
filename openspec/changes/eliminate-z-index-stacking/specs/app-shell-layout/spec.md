@@ -1,16 +1,25 @@
-### Requirement: Retained z-index exceptions
+### Requirement: Persistent elements use Popover API for Top Layer promotion
 
-The application SHALL retain z-index on specific elements where the native `<dialog>` Top Layer is not an appropriate replacement. Each retained z-index usage SHALL have documented rationale.
+The application SHALL use `popover="manual"` to promote persistent non-modal elements to the Top Layer, replacing z-index-based stacking. Zero z-index declarations SHALL remain in the codebase.
 
-#### Scenario: Bottom navigation bar retains z-30
-- **WHEN** the bottom navigation bar renders
-- **THEN** it SHALL use `z-30` to sit above scrolling page content
-- **AND** this is retained because the nav bar is a persistent fixed element with no `<dialog>` equivalent
-- **AND** Top Layer dialogs (via `showModal()`) naturally paint above the nav bar without z-index conflicts
-- **AND** `::backdrop` pseudo-elements dim the nav bar correctly when a dialog is open
+#### Scenario: Bottom navigation bar uses popover for Top Layer promotion
+- **WHEN** the bottom navigation bar component attaches
+- **THEN** it SHALL use `popover="manual"` attribute and call `showPopover()` on attached
+- **AND** the `z-30` Tailwind class SHALL be removed
+- **AND** the nav bar SHALL paint above all non-Top-Layer content without z-index
+- **AND** Top Layer dialogs (via `showModal()`) SHALL naturally paint above the nav bar due to later insertion order
 
-#### Scenario: Coach mark retains z-9999
-- **WHEN** an onboarding coach mark is active
-- **THEN** it SHALL use `z-9999` to paint above all non-Top-Layer elements including the nav bar
-- **AND** this is retained because the coach mark is a non-modal spotlight overlay that must allow click-through on the highlighted element
-- **AND** `<dialog>` is not suitable because it would trap focus and block click-through interaction on the spotlight area
+#### Scenario: Toast notification uses popover for Top Layer promotion
+- **WHEN** a toast notification is displayed
+- **THEN** it SHALL use `popover="manual"` attribute and call `showPopover()` when shown
+- **AND** the `z-50` Tailwind class SHALL be removed
+- **AND** `pointer-events: none` SHALL remain on the container with `pointer-events: auto` on individual toast items
+- **AND** toast SHALL call `hidePopover()` + `showPopover()` to re-insert at the top of the Top Layer stack when a dialog is already open
+
+#### Scenario: Coach mark uses popover for Top Layer promotion
+- **WHEN** an onboarding coach mark is activated
+- **THEN** it SHALL use `popover="manual"` attribute and call `showPopover()` on activation
+- **AND** `z-index: 9999` SHALL be removed from `coach-mark.css`
+- **AND** `pointer-events: none` SHALL be applied to the overlay canvas with `pointer-events: auto` on dismiss/next buttons
+- **AND** click-through to the spotlighted element SHALL be handled by forwarding pointer events from the transparent canvas region via `elementFromPoint()` delegation
+- **AND** the tooltip SHALL use CSS Anchor Positioning (`position-anchor`, `position-area`) instead of `getBoundingClientRect()` JS calculations
