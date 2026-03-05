@@ -22,17 +22,17 @@ Cloud Monitoring currently has log-based alert policies for backend workloads (s
 
 Atlas Operator logs migration errors at `DEBUG` level with event type `Warning`. The log entries contain identifiable strings: `TransientErr` and `BackoffLimitExceeded`.
 
-**Verified (2026-03-05)**: Despite using controller-runtime with zap, Atlas Operator writes to stderr as plain text. Cloud Logging stores these as `textPayload`, not `jsonPayload`. GKE maps all stderr output to `severity="ERROR"` regardless of the application log level. The `reason` field (`TransientErr`, `BackoffLimitExceeded`) appears as a JSON string within the `textPayload`.
+**Verified (2026-03-05)**: Atlas Operator uses controller-runtime with zap. By default it uses the console encoder (plain text to `textPayload`). After enabling `--zap-encoder=json` via Kustomize patch (cloud-provisioning PR #130), logs arrive as `jsonPayload` with structured fields including `reason`, `msg`, `logger`, `level`, and `type`.
 
-Filter (verified against actual Cloud Logging entries):
+Filter (verified against actual Cloud Logging entries with JSON encoder enabled):
 ```
 resource.type="k8s_container"
 resource.labels.namespace_name="atlas-operator"
 resource.labels.container_name="manager"
-textPayload=~"\"reason\": \"(TransientErr|BackoffLimitExceeded)\""
+jsonPayload.reason=~"TransientErr|BackoffLimitExceeded"
 ```
 
-**Alternative considered**: Filtering on `jsonPayload`. Rejected because Atlas Operator logs arrive as `textPayload` in Cloud Logging (stderr plain text), so a `jsonPayload` filter would silently never match.
+**Alternative considered**: Filtering on `textPayload`. Initially used when Atlas Operator logged in plain text (default console encoder). After enabling JSON structured logging, logs arrive as `jsonPayload`, so `textPayload` filters no longer match. Using `jsonPayload.reason` provides precise field-level matching.
 
 **Alternative considered**: Filtering on `severity="ERROR"` alone. Rejected because ALL Atlas Operator logs have severity ERROR (GKE maps stderr → ERROR), which would alert on every normal log line.
 
