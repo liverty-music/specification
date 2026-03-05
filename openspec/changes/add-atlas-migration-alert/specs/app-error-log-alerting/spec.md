@@ -10,7 +10,7 @@ The Alert Policy SHALL filter logs by:
 - `resource.labels.container_name = "manager"`
 - `textPayload` matching `TransientErr` or `BackoffLimitExceeded`
 
-#### Scenario: Atlas migration fails with non-linear error
+#### Scenario: Atlas migration fails with a transient error
 
 - **WHEN** Atlas Operator logs a `TransientErr` event for a migration failure
 - **THEN** the Alert Policy SHALL detect the log entry and open an Incident

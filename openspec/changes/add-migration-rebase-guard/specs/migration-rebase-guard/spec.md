@@ -28,7 +28,8 @@ When invoked with `--fix`, the script SHALL automatically rebase out-of-order mi
 #### Scenario: Auto-fix renames and updates kustomization
 
 - **WHEN** `--fix` is passed and out-of-order files are detected
-- **THEN** the script SHALL run `atlas migrate rebase <version> --env local` for each out-of-order file
+- **THEN** the script SHALL run `atlas migrate rebase <version> --env local` where `<version>` is the version prefix of the out-of-order file (e.g., `20260227000000`)
+- **AND** the script SHALL re-scan for remaining out-of-order files after each rebase invocation (since rebase renames files and rewrites `atlas.sum`)
 - **AND** the script SHALL update `kustomization.yaml` to reference the new filenames
 - **AND** `atlas.sum` SHALL be recalculated by the rebase command
 
@@ -39,10 +40,16 @@ When invoked with `--fix`, the script SHALL automatically rebase out-of-order mi
 
 ### Requirement: The system MUST integrate with Claude Code hooks
 
-A Claude Code hook SHALL invoke the migration drift check with `--fix` after `git rebase` operations in the backend repository.
+A Claude Code hook SHALL invoke the migration drift check with `--fix` after successful `git rebase origin` operations in the backend repository. The hook SHALL NOT fire on `git rebase --abort`, `git rebase --continue`, or interactive rebases.
 
 #### Scenario: Developer rebases branch onto main via Claude Code
 
-- **WHEN** a `git rebase origin/main` command completes in the backend repo
+- **WHEN** a `git rebase origin/main` command completes successfully in the backend repo
 - **THEN** the hook SHALL run `scripts/check-migration-drift.sh --fix`
 - **AND** any out-of-order migrations SHALL be automatically rebased
+
+#### Scenario: Rebase fails with merge conflicts
+
+- **WHEN** a `git rebase origin/main` command fails due to merge conflicts
+- **THEN** the script SHALL detect the incomplete rebase state (`.git/rebase-merge` or `.git/rebase-apply`)
+- **AND** the script SHALL exit early without modifying migration files

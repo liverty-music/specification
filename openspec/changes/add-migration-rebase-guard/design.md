@@ -39,22 +39,26 @@ The existing `scripts/check-migration-drift.sh` handles kustomization sync, sche
 
 ### 3. Auto-fix with `atlas migrate rebase`
 
-**Decision**: When `--fix` is passed and out-of-order files are detected, run `atlas migrate rebase <version>` for each offending file, then update `kustomization.yaml`.
+**Decision**: When `--fix` is passed and out-of-order files are detected, run `atlas migrate rebase <version> --env local` where `<version>` is the version prefix of each out-of-order migration file (e.g., `20260227000000` from `20260227000000_add_feature.sql`). Because `atlas migrate rebase` renames the file and rewrites `atlas.sum`, previously collected identifiers become stale after each invocation. The loop must re-scan for out-of-order files after each rebase.
 
 **Flow**:
 1. Detect out-of-order files
-2. Run `atlas migrate rebase <version> --env local` for each
-3. The rebase renames the file and updates `atlas.sum`
+2. Take the first out-of-order file and extract its version prefix
+3. Run `atlas migrate rebase <version> --env local` (this renames the file and updates `atlas.sum`)
 4. Update `kustomization.yaml`: replace old filename with new filename in the `configMapGenerator.files` list
+5. Re-scan for remaining out-of-order files; repeat from step 2 until none remain
 
 ### 4. Hook integration
 
-**Decision**: Add a Claude Code hook in `backend/.claude/settings.json` (PostToolUse on Bash when command matches `git rebase`) that runs `scripts/check-migration-drift.sh --fix`.
+**Decision**: Add a Claude Code hook in `backend/.claude/settings.json` (PostToolUse on Bash when command matches `git rebase origin`) that runs `scripts/check-migration-drift.sh --fix`.
 
-**Rationale**: This catches the most common scenario (rebasing onto main before push) automatically. The hook only fires when migrations exist on the branch.
+**Pattern**: The hook pattern is narrowed to `git rebase origin` to avoid firing on `git rebase --abort`, `git rebase --continue`, or interactive rebases. The script also checks for mid-rebase state (`.git/rebase-merge` or `.git/rebase-apply` directory) and exits early if the rebase did not complete successfully.
+
+**Rationale**: This catches the most common scenario (rebasing onto main before push) automatically. The hook only fires when migrations exist on the branch. Running `--fix` during a failed or aborted rebase could corrupt `atlas.sum` and migration files, so the guard is essential.
 
 ## Risks / Trade-offs
 
 - **[Risk] `atlas migrate rebase` changes file content hash** → This is expected. The `atlas.sum` is recalculated, and CI's `atlas migrate validate` will verify integrity.
-- **[Risk] Hook runs on every `git rebase`, even non-migration branches** → The script exits quickly (Check 4 is skipped) when no new migration files are detected. Negligible overhead.
+- **[Risk] Hook runs on every `git rebase origin`, even non-migration branches** → The script exits quickly (Check 4 is skipped) when no new migration files are detected. Negligible overhead.
+- **[Risk] Hook fires after a failed rebase** → The script checks for `.git/rebase-merge` or `.git/rebase-apply` directories and exits early if the rebase is incomplete. This prevents corrupting migration files during conflict resolution.
 - **[Risk] `origin/main` not fetched** → The script should `git fetch origin main` before comparison, or document that the hook assumes a recent fetch. Decision: require the caller to fetch first (the rebase hook already implies `git fetch`).

@@ -20,7 +20,7 @@ Cloud Monitoring currently has log-based alert policies for backend workloads (s
 
 **Decision**: Filter on atlas-operator container logs containing error keywords rather than Kubernetes events.
 
-Atlas Operator logs migration errors at `DEBUG` level with event type `Warning`. The log entries contain identifiable strings: `TransientErr`, `BackoffLimitExceeded`, and `Error:`.
+Atlas Operator logs migration errors at `DEBUG` level with event type `Warning`. The log entries contain identifiable strings: `TransientErr` and `BackoffLimitExceeded`.
 
 Filter:
 ```
@@ -31,6 +31,8 @@ textPayload=~"TransientErr|BackoffLimitExceeded"
 ```
 
 **Alternative considered**: Filtering on `severity="ERROR"`. Rejected because Atlas Operator logs these events as DEBUG with event type Warning, not as ERROR severity.
+
+**Alternative considered**: Including `Error:` as a filter keyword. Rejected because `Error:` is too generic and appears in non-failure log lines (e.g., error field labels in structured debug output), which would cause false-positive alerts.
 
 ### 2. Alert policy structure
 
