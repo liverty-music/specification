@@ -1,6 +1,6 @@
 ## Purpose
 
-This capability defines the loading sequence experience displayed during data aggregation for new users who have completed artist discovery in the onboarding flow. The loading sequence provides an engaging, multi-phase animated experience that maintains user engagement during the 3-10 second processing time required to search for live event data across followed artists.
+This capability defines the loading sequence experience displayed during data aggregation for authenticated users who need post-follow concert data aggregation. The loading sequence provides an engaging, multi-phase animated experience that maintains user engagement during the 3-10 second processing time required to search for live event data across followed artists. This route is NOT used during the onboarding tutorial flow.
 
 ## Requirements
 
@@ -39,22 +39,8 @@ The system SHALL display a multi-phase animated loading sequence with visual ric
 
 ---
 
-### Requirement: Minimum Display Duration
-The system SHALL enforce a minimum 3-second display time for the loading sequence regardless of data loading speed.
-
-#### Scenario: Fast data load
-- **WHEN** all data aggregation completes in under 3 seconds
-- **THEN** the system SHALL continue displaying the loading animation until 3 seconds have elapsed
-- **AND** the system SHALL then navigate to the Dashboard
-
-#### Scenario: Normal data load
-- **WHEN** data aggregation completes after 3 or more seconds
-- **THEN** the system SHALL navigate to the Dashboard immediately upon completion
-
----
-
 ### Requirement: Data Aggregation Orchestration
-The system SHALL trigger `SearchNewConcerts` for each followed artist in parallel during the loading sequence.
+The system SHALL only be used for authenticated users who need `loadingService.aggregateData()` after following artists. It SHALL NOT be entered during the onboarding tutorial flow. The system SHALL trigger `SearchNewConcerts` for each followed artist in parallel during the loading sequence.
 
 #### Scenario: Successful aggregation for all artists
 - **WHEN** the loading sequence starts
@@ -89,6 +75,10 @@ The system SHALL enforce a 10-second global timeout on data aggregation to preve
 ### Requirement: Navigation Guard
 The system SHALL prevent direct access to the loading sequence route.
 
+#### Scenario: Onboarding user reaches loading-sequence
+- **WHEN** an onboarding user navigates to `/onboarding/loading`
+- **THEN** the system SHALL redirect to the Dashboard (`/dashboard`)
+
 #### Scenario: Direct URL access while unauthenticated
 - **WHEN** an unauthenticated user navigates directly to `/onboarding/loading`
 - **THEN** the system SHALL redirect to the Landing Page (`/`)
@@ -110,3 +100,8 @@ The loading sequence SHALL maintain visual continuity with the preceding Artist 
 - **WHEN** the user transitions from Artist Discovery to the Loading Sequence
 - **THEN** the background gradient SHALL match the Artist Discovery screen's dark gradient
 - **AND** the transition SHALL not introduce a jarring visual break
+
+---
+
+### Requirement: CSS Stacking via Isolation
+All z-index declarations in `loading-sequence.css` SHALL be removed. The root wrapper element SHALL use `isolation: isolate` to create an explicit stacking context. Within this boundary, elements stack by DOM source order (later siblings paint above earlier ones) without z-index.
