@@ -21,8 +21,10 @@ The loading sequence SHALL only be used for authenticated users who need `loadin
 
 > **Delta:** Previously, the loading sequence served two purposes: (1) a timed display during onboarding, and (2) data aggregation for authenticated users. Purpose (1) is removed. The component retains only the authenticated aggregation path.
 
-### Requirement: CSS z-index removal
+### Requirement: CSS z-index removal via `isolation: isolate`
 
-All z-index declarations in `loading-sequence.css` SHALL be removed. Since the component uses Shadow DOM, stacking context is scoped to the shadow root. Element stacking SHALL rely on `position: relative` and DOM source order.
+All z-index declarations in `loading-sequence.css` SHALL be removed. The root wrapper element SHALL use `isolation: isolate` to create an explicit stacking context. Within this boundary, elements stack by DOM source order (later siblings paint above earlier ones) without z-index.
 
-> **Delta:** Six z-index declarations are removed from the following selectors: `.container::before` (was z-index: 0), `.pulsing-orb` (was z-index: 1), `.message-container` (was z-index: 1), `.step-dots` (was z-index: 1), `.step-label` (was z-index: 1), `.progress-label` (was z-index: 1).
+This follows the project-wide z-index elimination strategy (see `eliminate-z-index-stacking` change) which uses `isolation: isolate` for component-internal stacking.
+
+> **Delta:** Six z-index declarations are removed from the following selectors: `.container::before` (was z-index: 0), `.pulsing-orb` (was z-index: 1), `.message-container` (was z-index: 1), `.step-dots` (was z-index: 1), `.step-label` (was z-index: 1), `.progress-label` (was z-index: 1). `isolation: isolate` is added to the root wrapper.

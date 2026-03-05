@@ -4,7 +4,7 @@ The PWA install banner, notification prompt, and sign-up modal all lack entrance
 
 ## What Changes
 
-- Add `fade-slide-up` entrance and `fade-slide-down` exit animations to `notification-prompt` and `pwa-install-prompt` components, matching the design system's spring easing
+- Add `fade-slide-up` entrance and `fade-slide-down` exit animations to `notification-prompt` and `pwa-install-prompt` components with 600ms ease-out timing
 - Enhance the sign-up modal (Step 6) with a scale+fade entrance animation and a subtle background glow, matching the visual polish of the Discover HUD
 - Localize all PWA install banner text via i18n keys (`pwa.title`, `pwa.description`, `pwa.install`, `pwa.notNow`)
 - Replace the Step 5 Passion Level explanation's 3-second `setTimeout` with immediate visual feedback (e.g., brief highlight on the changed passion level) followed by the explanation modal after 800ms
