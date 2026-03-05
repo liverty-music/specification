@@ -32,10 +32,10 @@ The existing `scripts/check-migration-drift.sh` handles kustomization sync, sche
 
 **Algorithm**:
 1. `git diff --name-only --diff-filter=A origin/main -- k8s/atlas/base/migrations/*.sql` to find added files
-2. Extract the latest timestamp from `origin/main`'s `atlas.sum` (last entry's version prefix)
-3. If any added file's timestamp ≤ main's latest → out-of-order detected
+2. List migration filenames on `origin/main` and take the lexicographic maximum version prefix as the latest timestamp
+3. If any added file's timestamp < main's latest → out-of-order detected
 
-**Alternative considered**: Parsing `atlas.sum` directly. Rejected because `atlas.sum` on the branch already includes the new files, making comparison harder.
+**Alternative considered**: Extracting the latest version from `atlas.sum` (last entry). Rejected because `atlas.sum` uses insertion order, not sorted order — after a prior `atlas migrate rebase` that merged to main, the last entry may not be the highest version.
 
 ### 3. Auto-fix with `atlas migrate rebase`
 

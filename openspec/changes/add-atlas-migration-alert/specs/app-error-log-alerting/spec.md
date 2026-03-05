@@ -8,7 +8,7 @@ The Alert Policy SHALL filter logs by:
 - `resource.type = "k8s_container"`
 - `resource.labels.namespace_name = "atlas-operator"`
 - `resource.labels.container_name = "manager"`
-- `textPayload` matching `TransientErr` or `BackoffLimitExceeded`
+- `jsonPayload` field matching `TransientErr` or `BackoffLimitExceeded` (exact field name to be verified against actual Cloud Logging entries during implementation)
 
 #### Scenario: Atlas migration fails with a transient error
 
@@ -20,6 +20,7 @@ The Alert Policy SHALL filter logs by:
 
 - **WHEN** Atlas Operator logs a `BackoffLimitExceeded` event
 - **THEN** the Alert Policy SHALL detect the log entry and open an Incident
+- **AND** a Slack notification SHALL be sent to the configured channel
 
 #### Scenario: Atlas migration succeeds
 

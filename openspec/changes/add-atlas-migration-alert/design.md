@@ -22,15 +22,19 @@ Cloud Monitoring currently has log-based alert policies for backend workloads (s
 
 Atlas Operator logs migration errors at `DEBUG` level with event type `Warning`. The log entries contain identifiable strings: `TransientErr` and `BackoffLimitExceeded`.
 
-Filter:
+**Important**: Atlas Operator uses controller-runtime with zap for structured JSON logging. In Cloud Logging, structured JSON logs arrive as `jsonPayload`, not `textPayload`. The exact payload field (`jsonPayload.msg`, `jsonPayload.error`, or another field) must be verified against actual Cloud Logging entries during implementation. The filter below is a placeholder that must be updated based on the verified log structure.
+
+Filter (placeholder — verify payload field during implementation):
 ```
 resource.type="k8s_container"
 resource.labels.namespace_name="atlas-operator"
 resource.labels.container_name="manager"
-textPayload=~"TransientErr|BackoffLimitExceeded"
+jsonPayload.msg=~"TransientErr|BackoffLimitExceeded"
 ```
 
 **Alternative considered**: Filtering on `severity="ERROR"`. Rejected because Atlas Operator logs these events as DEBUG with event type Warning, not as ERROR severity.
+
+**Alternative considered**: Using `textPayload` filter. Rejected because Atlas Operator emits structured JSON logs via zap, which Cloud Logging stores as `jsonPayload`. A `textPayload` filter would silently never match.
 
 **Alternative considered**: Including `Error:` as a filter keyword. Rejected because `Error:` is too generic and appears in non-failure log lines (e.g., error field labels in structured debug output), which would cause false-positive alerts.
 

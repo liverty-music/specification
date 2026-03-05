@@ -1,7 +1,8 @@
 ## 1. Add Atlas Migration Alert Policy
 
+- [ ] 1.0 Verify Atlas Operator log structure in Cloud Logging: determine whether logs use `textPayload` or `jsonPayload`, and identify the exact field containing `TransientErr`/`BackoffLimitExceeded` keywords
 - [ ] 1.1 Add `gcp.monitoring.AlertPolicy` for Atlas Operator migration failures in `monitoring.ts`
-- [ ] 1.2 Use log filter: `resource.type="k8s_container"`, `namespace_name="atlas-operator"`, `container_name="manager"`, `textPayload=~"TransientErr|BackoffLimitExceeded"`
+- [ ] 1.2 Use log filter: `resource.type="k8s_container"`, `namespace_name="atlas-operator"`, `container_name="manager"`, and the verified `jsonPayload` field matching `TransientErr|BackoffLimitExceeded`
 - [ ] 1.3 Use same notification channels, rate limit (12h), and auto-close (1h) as existing workload alerts
 - [ ] 1.4 Add documentation/triage steps specific to Atlas migration failures
 

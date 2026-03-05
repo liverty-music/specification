@@ -2,7 +2,7 @@
 
 ### Requirement: The system MUST detect out-of-order migration timestamps
 
-The migration drift check script SHALL compare timestamps of newly added migration files against the latest migration version on `origin/main`. A file is out-of-order if its timestamp is less than or equal to the latest version on main.
+The migration drift check script SHALL compare timestamps of newly added migration files against the latest migration version on `origin/main`. The latest version SHALL be determined by taking the lexicographic maximum of migration filenames on `origin/main` (not from `atlas.sum`, which uses insertion order). A file is out-of-order if its timestamp is strictly less than the latest version on main.
 
 #### Scenario: Branch adds migration with older timestamp than main's latest
 
