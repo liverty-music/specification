@@ -41,7 +41,7 @@ The system SHALL collect the user's home area during the Dashboard reveal step o
 - **WHEN** the user arrives at the Dashboard during the tutorial (Step 3)
 - **AND** the user has not yet configured their home area
 - **THEN** the system SHALL display the Dashboard with a blurred background
-- **AND** the system SHALL present the `user-home-selector` BottomSheet overlay
+- **AND** the system SHALL present the `user-home-selector` BottomSheet overlay as a native `<dialog>` element via `showModal()`, promoted to the browser's Top Layer (no z-index stacking)
 - **AND** the selector SHALL display Step 1 with quick-select major city buttons (Tokyo, Osaka, Nagoya, Fukuoka, Sapporo, Sendai) and region buttons (Hokkaido, Tohoku, Kanto, Chubu, Kinki, Chugoku, Shikoku, Kyushu)
 - **AND** the BottomSheet SHALL use the design system's dark surface palette and sheet radius token
 
