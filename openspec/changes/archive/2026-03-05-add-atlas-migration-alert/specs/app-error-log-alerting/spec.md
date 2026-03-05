@@ -8,7 +8,7 @@ The Alert Policy SHALL filter logs by:
 - `resource.type = "k8s_container"`
 - `resource.labels.namespace_name = "atlas-operator"`
 - `resource.labels.container_name = "manager"`
-- `jsonPayload` field matching `TransientErr` or `BackoffLimitExceeded` (exact field name to be verified against actual Cloud Logging entries during implementation)
+- `jsonPayload.reason` matching `TransientErr` or `BackoffLimitExceeded`
 
 #### Scenario: Atlas migration fails with a transient error
 
