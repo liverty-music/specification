@@ -66,11 +66,11 @@ The atlas-ci workflow SHALL verify that all new migration files have timestamps 
 
 #### Scenario: PR with out-of-order migration file
 
-- **WHEN** a PR adds a migration file with a timestamp earlier than the latest on `main`
+- **WHEN** a PR adds a migration file with a timestamp earlier than the latest on `origin/main`
 - **THEN** the atlas-ci job SHALL fail with a descriptive error message
 - **AND** the error message SHALL suggest running `scripts/check-migration-drift.sh --fix`
 
 #### Scenario: PR with correctly ordered migration file
 
-- **WHEN** a PR adds a migration file with a timestamp later than the latest on `main`
+- **WHEN** a PR adds a migration file with a timestamp later than the latest on `origin/main`
 - **THEN** the atlas-ci job SHALL pass the ordering check

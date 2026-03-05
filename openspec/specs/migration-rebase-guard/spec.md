@@ -46,16 +46,17 @@ When invoked with `--fix`, the script SHALL automatically rebase out-of-order mi
 
 ### Requirement: The system MUST integrate with Claude Code hooks
 
-A Claude Code hook SHALL invoke the migration drift check with `--fix` after successful `git rebase origin` operations in the backend repository. The hook SHALL NOT fire on `git rebase --abort`, `git rebase --continue`, or interactive rebases.
+A Claude Code `PostToolUse` hook SHALL invoke the migration drift check with `--fix` after `git rebase origin/main` operations in the backend repository. The hook uses substring matching on `git rebase origin`, so it also fires on other `origin/*` rebases (harmless since the script always checks against `origin/main`). The `PostToolUse` hook fires unconditionally regardless of the command's exit code. The hook SHALL NOT fire on `git rebase --abort`, `git rebase --continue`, or interactive rebases.
 
 #### Scenario: Developer rebases branch onto main via Claude Code
 
-- **WHEN** a `git rebase origin/main` command completes successfully in the backend repo
+- **WHEN** a `git rebase origin/main` command completes in the backend repo
 - **THEN** the hook SHALL run `scripts/check-migration-drift.sh --fix`
 - **AND** any out-of-order migrations SHALL be automatically rebased
 
 #### Scenario: Rebase fails with merge conflicts
 
 - **WHEN** a `git rebase origin/main` command fails due to merge conflicts
-- **THEN** the script SHALL detect the incomplete rebase state (`.git/rebase-merge` or `.git/rebase-apply`)
+- **THEN** the `PostToolUse` hook fires unconditionally, invoking the script
+- **AND** the script SHALL detect the incomplete rebase state (`.git/rebase-merge` or `.git/rebase-apply`)
 - **AND** the script SHALL exit early without modifying migration files
