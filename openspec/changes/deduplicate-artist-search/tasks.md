@@ -4,14 +4,14 @@ All tasks target the `backend` repository.
 
 ### 1. Add `ListByMBIDs` to `ArtistRepository`
 
-- [ ] Add `ListByMBIDs(ctx context.Context, mbids []string) ([]*Artist, error)` to `ArtistRepository` interface in `internal/entity/artist.go`
-- [ ] Implement in `internal/infrastructure/database/rdb/artist_repo.go` using `unnest + WITH ORDINALITY` pattern
+- [ ] Add `ListByMBIDs(ctx context.Context, mbids []string) ([]*Artist, error)` to `ArtistRepository` interface in `entity/artist.go`
+- [ ] Implement in `infrastructure/database/rdb/artist_repo.go` using `unnest + WITH ORDINALITY` pattern
 - [ ] Add unit test in `artist_repo_test.go`
 - [ ] Regenerate mocks (`mockery`)
 
 ### 2. Extract `persistArtists` helper in UseCase
 
-- [ ] Add private method `persistArtists(ctx, []*entity.Artist) ([]*entity.Artist, error)` to `artistUseCase` in `internal/usecase/artist_uc.go`
+- [ ] Add private method `persistArtists(ctx, []*entity.Artist) ([]*entity.Artist, error)` to `artistUseCase` in `usecase/artist_uc.go`
 - [ ] Implement: ListByMBIDs → determine missing → Create missing → merge preserving input order
 - [ ] Add unit tests for the helper (all existing, all new, mixed, empty input)
 

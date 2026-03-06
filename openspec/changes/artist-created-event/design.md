@@ -109,6 +109,8 @@ type ArtistNameConsumer struct {
 }
 
 func (h *ArtistNameConsumer) Handle(msg *message.Message) error {
+    ctx := context.Background()
+
     var data messaging.ArtistCreatedData
     if err := messaging.ParseCloudEventData(msg, &data); err != nil {
         return fmt.Errorf("parse artist.created event: %w", err)
