@@ -50,6 +50,10 @@ The system SHALL configure backend deployments to send traces to the in-cluster 
 - **WHEN** the backend consumer deployment starts in a cluster with the OTel Collector deployed
 - **THEN** the `TELEMETRY_OTLP_ENDPOINT` environment variable SHALL be set to the same Collector endpoint as the server
 
+#### Scenario: Backend concert-discovery CronJob sends traces to OTel Collector
+- **WHEN** the concert-discovery CronJob runs in a cluster with the OTel Collector deployed
+- **THEN** the `TELEMETRY_OTLP_ENDPOINT` environment variable SHALL be set to the same Collector endpoint as the server
+
 ---
 
 ### Requirement: Cost-Optimized Resource Configuration
