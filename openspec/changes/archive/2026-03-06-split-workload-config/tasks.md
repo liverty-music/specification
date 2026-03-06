@@ -37,4 +37,4 @@
 
 ## 6. Verify in cluster
 
-- [ ] 6.1 Create a manual Job from CronJob and verify it starts successfully without `OIDC_ISSUER_URL`
+- [x] 6.1 Create a manual Job from CronJob and verify it starts successfully without `OIDC_ISSUER_URL`
