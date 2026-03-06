@@ -42,6 +42,7 @@
 - [x] Apply the animation to the inner modal content panel (`.bg-surface-raised` div).
 - [x] Add a `::before` pseudo-element on the modal content panel with a radial gradient glow using `--color-brand-primary` at low opacity (~15%).
 - [x] Ensure the animation is covered by the `prefers-reduced-motion` media query.
+- [x] Suppress the `::before` radial glow pseudo-element under `prefers-reduced-motion: reduce` (e.g., `display: none`), since it is a static decoration not covered by `animation: none`.
 
 ### 5. Fix Step 5 passion explanation timing
 
