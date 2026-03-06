@@ -53,7 +53,7 @@ my-app.html layout:
 
 ### Decision 3: `required` bindable on `user-home-selector`
 
-**Choice:** Add `@bindable required = false` to `UserHomeSelector`. When `true`, `handleBackdropClick` and `handleCancel` become no-ops.
+**Choice:** Add `@bindable required = false` to `UserHomeSelector`. When `true`, `handleBackdropClick` becomes a no-op (returns early). `handleCancel` always calls `preventDefault()` to suppress the browser's native ESC-to-close behavior on `<dialog>`; it only calls `close()` when `required` is `false`.
 
 **Rationale:** The component is reused in both onboarding (mandatory) and settings (optional). A bindable cleanly separates the two contexts without forking the component. Dashboard passes `required.bind="isOnboarding"`.
 

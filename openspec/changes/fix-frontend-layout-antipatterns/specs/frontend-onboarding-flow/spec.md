@@ -8,7 +8,7 @@ The system SHALL collect the user's home area during the Dashboard reveal step o
 - **AND** the user has not yet configured their home area
 - **THEN** the system SHALL display the Dashboard with a blurred background
 - **AND** the system SHALL present the `user-home-selector` BottomSheet overlay as a native `<dialog>` element via `showModal()`
-- **AND** the system SHALL pass `required="true"` to the selector component
+- **AND** the system SHALL pass `required.bind="isOnboarding"` to the selector component
 
 #### Scenario: Home selector cannot be dismissed during onboarding
 - **WHEN** the home selector is displayed during onboarding (Step 3) with `required="true"`
