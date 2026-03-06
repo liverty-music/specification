@@ -16,7 +16,7 @@ System must provide a way to search for future concerts of a specific artist usi
 - **AND** no search log exists or the last search was more than 24 hours ago
 - **THEN** the system MUST call the external search API
 - **AND** return a list of upcoming concerts found on the web
-- **AND** each concert includes title, listed venue name, date, start time, and optionally `admin_area`
+- **AND** each concert includes title, listed venue name, date, and optionally start time and `admin_area`
 - **AND** results exclude concerts that are already stored in the database
 
 #### Scenario: Skip search when recently searched
