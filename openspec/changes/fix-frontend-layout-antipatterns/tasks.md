@@ -16,7 +16,7 @@
 
 - [ ] 3.1 Migrate `settings-page.html`: `ml-8` to `ms-8`, `left-0.5` to `start-0.5`
 - [ ] 3.2 Migrate `my-artists-page.html`: `ml-4` to `ms-4`, `right-0` to `end-0`, `left-4` to `start-4`, `right-4` to `end-4`
-- [ ] 3.3 Migrate `toast-notification.html`: `left-0 right-0` to `inset-x-0` (or `start-0 end-0`)
+- [ ] 3.3 Migrate `toast-notification.html`: `left-0 right-0` to `start-0 end-0`
 - [ ] 3.4 Migrate `event-card.html`: `right-2` to `end-2`, `right-1.5` to `end-1.5`
 
 ## 4. Dynamic Viewport Height

@@ -1,6 +1,6 @@
 ## Context
 
-The app shell (`my-app.html`) currently wraps `<main>` and `<bottom-nav-bar>` in a `min-h-screen` div. The bottom nav uses `position: fixed; bottom: 0` via Tailwind's `fixed inset-x-0 bottom-0` classes, and additionally uses the Popover API (`popover="manual"` + `showPopover()`) to promote itself to the browser's top layer. This causes the nav to render at the top of the viewport because the UA stylesheet for popover elements applies `inset: 0; margin: auto`, overriding the intended `bottom: 0` positioning.
+The app shell (`my-app.html`) currently wraps `<main>` and `<bottom-nav-bar>` in a `min-h-screen` div. The bottom nav uses `position: fixed; bottom: 0` via Tailwind's `fixed inset-x-0 bottom-0` classes, and additionally uses the Popover API (`popover="manual"` + `showPopover()`) to promote itself to the browser's top layer. This causes the nav to render centered in the viewport (rather than at the bottom) because the UA stylesheet for popover elements applies `position: fixed; inset: 0; width: fit-content; height: fit-content; margin: auto`, overriding the intended `bottom: 0` positioning.
 
 Each page (dashboard, etc.) compensates for the fixed nav by manually applying `h-screen pb-14`. The `user-home-selector` dialog can be dismissed by backdrop click or ESC during onboarding, even though home area selection is mandatory at Step 3. Additionally, several Tailwind physical directional classes and two `100vh` declarations remain despite the modern-css-platform spec.
 

@@ -1,6 +1,6 @@
 ## Why
 
-The app shell layout uses `position: fixed` + Popover API hacks to position the bottom navigation bar, causing the nav to render at the top of the viewport instead of the bottom due to UA stylesheet conflicts with the top layer. Additionally, the onboarding home selector can be dismissed by tapping outside the dialog during a mandatory step, and several CSS anti-patterns (physical properties, `100vh`) remain throughout the codebase despite the modern-css-platform spec requiring logical properties and dynamic viewport units.
+The app shell layout uses `position: fixed` + Popover API hacks to position the bottom navigation bar, causing the nav to render centered in the viewport instead of at the bottom due to UA stylesheet conflicts with the top layer. Additionally, the onboarding home selector can be dismissed by tapping outside the dialog during a mandatory step, and several CSS anti-patterns (physical properties, `100vh`) remain throughout the codebase despite the modern-css-platform spec requiring logical properties and dynamic viewport units.
 
 ## What Changes
 
