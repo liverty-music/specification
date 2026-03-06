@@ -12,7 +12,7 @@
 
 - [x] 2.1 Replace `Load()` with generic `Load[T ServerConfig | JobConfig | ConsumerConfig]()` function
 - [x] 2.2 Create `BaseConfig.Validate()` with shared checks (environment, DB port, log level/format)
-- [x] 2.3 Create `ServerConfig.Validate()` calling base + JWT issuer, CORS (non-local), server port, NATS URL (non-local)
+- [x] 2.3 Create `ServerConfig.Validate()` calling base + JWT issuer, CORS (non-local), server port
 - [x] 2.4 Create `JobConfig.Validate()` calling base + NATS URL (non-local)
 - [x] 2.5 Create `ConsumerConfig.Validate()` calling base + NATS URL (non-local)
 
