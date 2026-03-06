@@ -130,7 +130,7 @@ The PWA install prompt SHALL be eligible starting from the second session after 
 
 - **WHEN** the user is on the first session after onboarding completion
 - **AND** the `beforeinstallprompt` event has fired
-- **THEN** the system SHALL NOT display the PWA install prompt (notification prompt has priority)
+- **THEN** the system SHALL NOT display the PWA install prompt, regardless of notification prompt dismissal state
 
 #### Scenario: Second session after completion
 
