@@ -93,13 +93,13 @@ The system SHALL prevent direct access to the loading sequence route.
 
 ---
 
-### Requirement: Visual Continuity from Discovery
-The loading sequence SHALL maintain visual continuity with the preceding Artist Discovery screen.
+### Requirement: Visual Continuity
+The loading sequence SHALL maintain a dark-themed visual presentation consistent with the application's immersive screens.
 
 #### Scenario: Consistent visual theme
-- **WHEN** the user transitions from Artist Discovery to the Loading Sequence
-- **THEN** the background gradient SHALL match the Artist Discovery screen's dark gradient
-- **AND** the transition SHALL not introduce a jarring visual break
+- **WHEN** the loading sequence is displayed
+- **THEN** the background SHALL use a dark gradient consistent with the application's immersive screen aesthetic
+- **AND** the transition into the loading sequence SHALL not introduce a jarring visual break
 
 ---
 
