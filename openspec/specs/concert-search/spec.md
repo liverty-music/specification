@@ -91,3 +91,14 @@ The system SHALL retry transient failures from the external search API using exp
 - **AND** the API returns a non-transient error (400 Bad Request, 401 Unauthorized)
 - **THEN** the system MUST NOT retry the call
 - **AND** return the error immediately
+
+#### Scenario: Response truncated by token limit
+
+- **WHEN** the external search API returns a response with `FinishReason = MAX_TOKENS`
+- **THEN** the system MUST return an error without attempting to parse the partial JSON
+- **AND** log the truncation with token usage details
+
+#### Scenario: Literal "null" string in optional time fields
+
+- **WHEN** the external search API returns the literal string `"null"` for `start_time` or `open_time` (due to the schema type not supporting JSON null)
+- **THEN** the system MUST treat the value as absent (nil) rather than a parse error
