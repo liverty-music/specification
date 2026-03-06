@@ -72,9 +72,23 @@
 - [x] 8.2 Add NATS Publisher to `App` closers in `internal/di/app.go`
 - [x] 8.3 Add `NATS_URL` to API server config validation (optional in local, required in prod)
 
-## 9. End-to-End Verification
+## 9. Fix: NATS JetStream Stream Naming
 
-- [ ] 9.1 Verify: CronJob runs → `SearchNewConcerts` publishes `concert.discovered.v1` → concerts created → notifications sent → venues enriched
-- [ ] 9.2 Verify: KEDA scales consumer pods based on NATS JetStream lag
-- [x] 9.3 Verify: GoChannel adapter works for local development (all handlers receive events with FanOut)
-- [ ] 9.4 Monitor NATS JetStream metrics (pending messages, ack rates) in production
+Per updated spec, switch from single `LIVERTY_MUSIC` stream with dot-separated topics to per-aggregate streams (`CONCERT`, `VENUE`) with `<STREAM>.<event>` subjects.
+
+- [x] 9.1 Rename event type constants: `liverty-music.concert.discovered.v1` → `CONCERT.discovered`, etc.
+- [x] 9.2 Remove `ce_type` from CloudEvents metadata (subject name is the event type)
+- [x] 9.3 Set `AutoProvision: false` in publisher and subscriber JetStream config
+- [x] 9.4 Create `EnsureStreams` to pre-create `CONCERT` and `VENUE` streams on startup
+- [x] 9.5 Update consumer handler subscriptions to use new subject names
+- [x] 9.6 Update poison queue topic name
+- [x] 9.7 Remove `NATS_STREAM_NAME` from config (no longer a single stream)
+- [x] 9.8 Update unit tests for new subject names
+- [x] 9.9 Run `make check` to verify all tests pass
+
+## 10. End-to-End Verification
+
+- [x] 10.1 Verify: CronJob runs → publishes `CONCERT.discovered` → concerts created → notifications sent → venues enriched
+- [x] 10.2 Verify: KEDA scales consumer pods based on NATS JetStream lag
+- [x] 10.3 Verify: GoChannel adapter works for local development (all handlers receive events with FanOut)
+- [x] 10.4 Monitor NATS JetStream metrics (pending messages, ack rates) in dev environment
