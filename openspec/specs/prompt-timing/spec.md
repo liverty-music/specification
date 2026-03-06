@@ -84,19 +84,21 @@ The system SHALL display at most one permission prompt (PWA install or push noti
 
 The notification prompt SHALL have higher priority than the PWA install prompt. When both prompts are eligible in the same session, the notification prompt SHALL be displayed.
 
-#### Scenario: Both prompts eligible on first post-completion session
+#### Scenario: Both prompts eligible (second or later post-completion session)
 
 - **WHEN** the user has completed onboarding
 - **AND** notification permission is not yet granted
 - **AND** the notification prompt has not been dismissed
 - **AND** the PWA install prompt is also eligible
+- **AND** the user is on the second or later session after onboarding completion
 - **THEN** the system SHALL display the notification prompt
 - **AND** the system SHALL NOT display the PWA install prompt
 
-#### Scenario: Notification prompt already dismissed
+#### Scenario: Notification prompt already dismissed (second or later session)
 
 - **WHEN** the user has previously dismissed the notification prompt
 - **AND** the PWA install prompt is eligible
+- **AND** the user is on the second or later session after onboarding completion
 - **THEN** the system SHALL display the PWA install prompt
 
 ---
@@ -130,7 +132,7 @@ The PWA install prompt SHALL be eligible starting from the second session after 
 
 - **WHEN** the user is on the first session after onboarding completion
 - **AND** the `beforeinstallprompt` event has fired
-- **THEN** the system SHALL NOT display the PWA install prompt (notification prompt has priority)
+- **THEN** the system SHALL NOT display the PWA install prompt, regardless of notification prompt dismissal state
 
 #### Scenario: Second session after completion
 
