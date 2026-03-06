@@ -62,7 +62,6 @@ The following routes SHALL be marked public with `data: { auth: false }`:
 
 The following routes SHALL be marked as tutorial-accessible with `data: { auth: false, tutorialStep: N }`:
 - `/onboarding/discover` (Artist Discovery) --- `tutorialStep: 1`
-- `/onboarding/loading` (Loading Sequence) --- `tutorialStep: 2`
 - `/dashboard` with tutorial mode --- `tutorialStep: 3` (accessible without auth during tutorial)
 - `/my-artists` with tutorial mode --- `tutorialStep: 5` (accessible without auth during tutorial)
 

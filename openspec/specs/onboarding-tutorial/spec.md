@@ -38,7 +38,8 @@ The system SHALL enforce a strict linear progression through tutorial steps. Use
 - **WHEN** a user is at Step 1 (Artist Discovery / Bubble UI)
 - **AND** the user has followed 3 or more artists via bubble taps
 - **THEN** the system SHALL activate and highlight the [Generate Dashboard] CTA button at the bottom of the screen
-- **AND** when the user taps the CTA, the system SHALL advance `onboardingStep` to 2
+- **AND** when the user taps the CTA, the system SHALL advance `onboardingStep` to 3 (DASHBOARD), skipping Step 2 (LOADING)
+- **AND** the system SHALL navigate directly to the Dashboard (`/dashboard`)
 
 #### Scenario: Step 1 - Progress bar display
 
@@ -47,12 +48,12 @@ The system SHALL enforce a strict linear progression through tutorial steps. Use
 - **AND** the progress bar target SHALL be 3 artists
 - **AND** the user MAY continue following more artists after reaching 3
 
-#### Scenario: Step 2 - Loading sequence
+#### Scenario: Step 2 - Loading sequence (deprecated for onboarding)
 
-- **WHEN** a user is at Step 2 (Loading)
-- **THEN** the system SHALL display the loading animation
-- **AND** upon completion, advance `onboardingStep` to 3
-- **AND** navigate to the Dashboard
+- **WHEN** a user is at Step 2 (LOADING)
+- **THEN** this step is no longer entered during the onboarding flow
+- **AND** the `OnboardingStep.LOADING` enum value (2) SHALL be retained for backward compatibility with existing localStorage state
+- **AND** if a user has `onboardingStep=2` in localStorage from a prior session, the route guard SHALL redirect them to the Dashboard (`/dashboard`)
 
 #### Scenario: Step 3 - Dashboard reveal with region selection
 
