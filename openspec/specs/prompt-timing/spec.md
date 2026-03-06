@@ -90,6 +90,7 @@ The notification prompt SHALL have higher priority than the PWA install prompt. 
 - **AND** notification permission is not yet granted
 - **AND** the notification prompt has not been dismissed
 - **AND** the PWA install prompt is also eligible
+- **AND** the user is on the second or later session after onboarding completion
 - **THEN** the system SHALL display the notification prompt
 - **AND** the system SHALL NOT display the PWA install prompt
 
