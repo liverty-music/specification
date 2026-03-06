@@ -8,9 +8,9 @@ The application SHALL use the Cloud SQL Go Connector for database connectivity w
 
 - **WHEN** `ENVIRONMENT` is `development`, `staging`, or `production`
 - **AND** `DATABASE_INSTANCE_CONNECTION_NAME` is provided
-- **THEN** application initializes `cloudsqlconn.Dialer`
+- **THEN** application initializes `cloudsqlconn.Dialer` with PSC enabled
 - **AND** `pgx` uses this dialer to connect
-- **AND** connection uses IAM Auth and Private IP
+- **AND** connection uses IAM Auth and Private Service Connect
 - **AND** the DSN SHALL include `search_path` set to the configured `DATABASE_SCHEMA`
 
 ### Requirement: Standard Connection for Local
@@ -26,16 +26,16 @@ The application SHALL use standard `pgx` connection when running locally.
 
 ### Requirement: The system MUST support configurable database schema
 
-The application SHALL accept a `DATABASE_SCHEMA` environment variable to control which PostgreSQL schema is used. The default value SHALL be `public` for backward compatibility.
+The application SHALL accept a `DATABASE_SCHEMA` environment variable to control which PostgreSQL schema is used. The default value SHALL be `app`.
 
 #### Scenario: Schema specified via environment variable
 
-- **WHEN** `DATABASE_SCHEMA` is set to `liverty_music`
-- **THEN** the DSN `search_path` parameter SHALL be set to `liverty_music`
-- **AND** all unqualified table references SHALL resolve to the `liverty_music` schema
+- **WHEN** `DATABASE_SCHEMA` is set to `app`
+- **THEN** the DSN `search_path` parameter SHALL be set to `app,public`
+- **AND** all unqualified table references SHALL resolve to the `app` schema
 
 #### Scenario: Schema not specified
 
 - **WHEN** `DATABASE_SCHEMA` is not set
-- **THEN** the DSN `search_path` parameter SHALL default to `public`
+- **THEN** the DSN `search_path` parameter SHALL default to `app,public`
 - **AND** existing behavior SHALL be preserved
