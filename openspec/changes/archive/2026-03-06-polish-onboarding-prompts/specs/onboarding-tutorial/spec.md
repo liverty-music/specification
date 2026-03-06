@@ -29,4 +29,4 @@ The sign-up modal (Step 6) SHALL animate on entrance to match the visual polish 
 
 - **WHEN** the user has `prefers-reduced-motion: reduce` enabled
 - **THEN** the sign-up modal entrance animation SHALL be skipped
-- **AND** the modal SHALL appear instantly without the radial glow animation
+- **AND** the modal SHALL appear instantly, with both the entrance animation and the `::before` radial gradient glow suppressed (`display: none`; the glow is a static pseudo-element not covered by `animation: none`)
