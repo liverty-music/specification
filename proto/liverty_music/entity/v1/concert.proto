@@ -25,7 +25,8 @@ message Concert {
   LocalDate local_date = 4 [(buf.validate.field).required = true];
 
   // The scheduled time when the performance starts.
-  StartTime start_time = 5 [(buf.validate.field).required = true];
+  // This field is optional and may be omitted for concerts where the start time is not yet confirmed.
+  StartTime start_time = 5;
 
   // The time when the venue doors open to the audience.
   OpenTime open_time = 6;

@@ -16,7 +16,7 @@ System must provide a way to search for future concerts of a specific artist usi
 - **AND** no search log exists or the last search was more than 24 hours ago
 - **THEN** the system MUST call the external search API
 - **AND** return a list of upcoming concerts found on the web
-- **AND** each concert includes title, listed venue name, date, start time, and optionally `admin_area`
+- **AND** each concert includes title, listed venue name, date, and optionally start time and `admin_area`
 - **AND** results exclude concerts that are already stored in the database
 
 #### Scenario: Skip search when recently searched
@@ -91,3 +91,14 @@ The system SHALL retry transient failures from the external search API using exp
 - **AND** the API returns a non-transient error (400 Bad Request, 401 Unauthorized)
 - **THEN** the system MUST NOT retry the call
 - **AND** return the error immediately
+
+#### Scenario: Response truncated by token limit
+
+- **WHEN** the external search API returns a response with `FinishReason = MAX_TOKENS`
+- **THEN** the system MUST return an error without attempting to parse the partial JSON
+- **AND** log the truncation with token usage details
+
+#### Scenario: Literal "null" string in optional time fields
+
+- **WHEN** the external search API returns the literal string `"null"` for `start_time` or `open_time` (due to the schema type not supporting JSON null)
+- **THEN** the system MUST treat the value as absent (nil) rather than a parse error
