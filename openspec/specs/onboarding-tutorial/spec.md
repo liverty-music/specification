@@ -53,7 +53,7 @@ The system SHALL enforce a strict linear progression through tutorial steps. Use
 - **WHEN** a user is at Step 2 (LOADING)
 - **THEN** this step is no longer entered during the onboarding flow
 - **AND** the `OnboardingStep.LOADING` enum value (2) SHALL be retained for backward compatibility with existing localStorage state
-- **AND** if a user has `onboardingStep=2` in localStorage from a prior session, the route guard SHALL redirect them appropriately (to discover if no followed artists, or to dashboard otherwise)
+- **AND** if a user has `onboardingStep=2` in localStorage from a prior session, the route guard SHALL redirect them to the Dashboard (`/dashboard`)
 
 #### Scenario: Step 3 - Dashboard reveal with region selection
 
