@@ -97,10 +97,7 @@ The system SHALL enforce a strict linear progression through tutorial steps. Use
 
 #### Scenario: Step 5 - Passion Level changed
 
-- **WHEN** a user is at Step 5
-- **AND** the user changes the Passion Level of the highlighted artist
-- **THEN** the system SHALL display a brief explanation of the notification control system (e.g., "Must Go: notified for all events nationwide. Local Only: events in your area only.")
-- **AND** the system SHALL advance `onboardingStep` to 6
+See "Requirement: Step 5 Passion Level Explanation Timing" below for the updated behaviour of this scenario.
 
 #### Scenario: Step 6 - SignUp modal display
 
@@ -199,7 +196,7 @@ The Step 5 passion explanation SHALL provide immediate visual feedback on tap an
 - **WHEN** a user is at Step 5
 - **AND** the user changes the Passion Level of the highlighted artist
 - **THEN** the passion button SHALL immediately show a brief highlight/pulse animation (scale 1 -> 1.1 -> 1, ~300ms) as visual confirmation that the selection registered
-- **AND** the system SHALL display the notification explanation after an 800ms delay (not 3000ms)
+- **AND** the system SHALL display the passion explanation after an 800ms delay (not 3000ms)
 - **AND** the system SHALL advance `onboardingStep` to 6
 
 ---
