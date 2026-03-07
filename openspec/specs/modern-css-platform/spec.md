@@ -20,17 +20,13 @@ Components that render in variable-width containers SHALL use CSS Container Quer
 - **AND** the `@supports (container-type: inline-size)` feature query SHALL gate container-specific rules
 
 ### Requirement: View Transitions API for route animations
-Route change animations SHALL use the View Transitions API to run transitions off the main thread.
+Route change animations SHALL use the View Transitions API (Baseline 2024) to run transitions off the main thread. No CSS keyframe fallback is required for non-supporting browsers.
 
 #### Scenario: Forward navigation transition
 - **WHEN** the user navigates forward to a new route
-- **THEN** the old view SHALL fade out and the new view SHALL fade in using View Transitions
+- **THEN** the old view SHALL fade out and the new view SHALL fade in using `::view-transition-old(root)` and `::view-transition-new(root)` pseudo-elements
 - **AND** the transition SHALL NOT block the main thread
-
-#### Scenario: Graceful degradation
-- **WHEN** the browser does not support the View Transitions API
-- **THEN** the route change SHALL fall back to the existing CSS keyframe animation on `au-viewport > *`
-- **AND** `@supports (view-transition-name: x)` SHALL gate View Transition styles
+- **AND** View Transition styles SHALL NOT be gated behind `@supports` feature queries
 
 #### Scenario: Reduced motion preference
 - **WHEN** the user has `prefers-reduced-motion: reduce` enabled
