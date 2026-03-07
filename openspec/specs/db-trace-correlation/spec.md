@@ -36,7 +36,7 @@ The system SHALL inject a `traceparent` comment in sqlcommenter format into ever
 - **WHEN** a query is executed through the pool wrapper with an active OTel span in the context
 - **THEN** the SQL sent to PostgreSQL SHALL be prepended with a comment in the format `/*traceparent='00-{trace_id}-{span_id}-{flags}'*/`
 - **AND** the trace_id SHALL be the 32-character hex trace ID from the current span context
-- **AND** the span_id SHALL be the 16-character hex span ID from the current span context
+- **AND** the span_id SHALL be the 16-character hex span ID of the DB query span created by the wrapper (not the caller's incoming span)
 - **AND** the flags SHALL be the 2-character hex trace flags from the current span context
 
 #### Scenario: No comment injection when no active span
@@ -56,7 +56,8 @@ The system SHALL wrap the `*pgxpool.Pool` with a `TracedPool` that is transparen
 
 #### Scenario: Pool wrapper supports Begin for transactions
 - **WHEN** a repository calls `Begin` to start a transaction
-- **THEN** the wrapper SHALL return a traced transaction that applies span creation and comment injection to queries executed within the transaction
+- **THEN** an OTel span SHALL be created for the `Begin` call itself
+- **AND** the wrapper SHALL return a traced transaction that applies span creation and comment injection to queries executed within the transaction
 
 ---
 
