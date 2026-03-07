@@ -10,4 +10,4 @@ Given the backend service is deployed to production
 When it attempts to persist user data
 Then the data SHALL be stored in a highly available Cloud SQL instance
 And the data SHALL be encrypted at rest
-And the data SHALL reside in a dedicated `liverty_music` schema, not the default `public` schema
+And the data SHALL reside in a dedicated `app` schema, not the default `public` schema
