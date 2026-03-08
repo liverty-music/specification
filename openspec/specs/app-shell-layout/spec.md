@@ -31,7 +31,7 @@ The system SHALL conditionally show or hide the navigation bar based on the curr
 - **AND** the `<main>` element SHALL use `overflow: hidden` to prevent scrolling at the main level
 - **AND** the `<au-viewport>` element SHALL occupy the `1fr` track within `<main>`, providing a definite height to route components
 - **AND** the `<au-viewport>` element SHALL use `overflow-y: auto` as the scrolling container for route content
-- **AND** route components SHALL use `height: 100%` to inherit the viewport's height (not `100dvh` or `100vh`)
+- **AND** route components SHALL use `min-height: 100%` to fill the viewport's height (not `100dvh` or `100vh`)
 - **AND** the `<bottom-nav-bar>` element SHALL occupy the `min-content` row as a normal flow child
 - **AND** the navigation bar SHALL NOT use `position: fixed`, `position: absolute`, or the Popover API (`popover` attribute / `showPopover()`)
 
