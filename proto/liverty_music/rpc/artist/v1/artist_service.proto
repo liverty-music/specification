@@ -63,20 +63,19 @@ service ArtistService {
   rpc Unfollow(UnfollowRequest) returns (UnfollowResponse);
 
   // ListFollowed retrieves the list of artists currently followed by the authenticated user.
-  // Each entry includes the user's passion level preference for the artist.
+  // Each entry includes the user's hype preference for the artist.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The user identity could not be verified.
   rpc ListFollowed(ListFollowedRequest) returns (ListFollowedResponse);
 
-  // SetPassionLevel updates the user's enthusiasm tier for a followed artist.
-  // The passion level affects how the artist's events are displayed on the
-  // Dashboard and whether push notifications are sent.
+  // SetHype updates the user's enthusiasm tier for a followed artist.
+  // The hype level controls push notification scope and dashboard rendering.
   //
   // Possible errors:
   // - NOT_FOUND: The user is not following the specified artist.
-  // - INVALID_ARGUMENT: The passion level value is invalid or unspecified.
-  rpc SetPassionLevel(SetPassionLevelRequest) returns (SetPassionLevelResponse);
+  // - INVALID_ARGUMENT: The hype value is invalid or unspecified.
+  rpc SetHype(SetHypeRequest) returns (SetHypeResponse);
 
   // ListSimilar retrieves artists similar to a specified artist using recommendation engines.
   //
@@ -170,40 +169,40 @@ message UnfollowResponse {}
 message ListFollowedRequest {}
 
 // ListFollowedResponse contains the collection of artists followed by the user,
-// enriched with per-user passion level metadata.
+// enriched with per-user hype metadata.
 message ListFollowedResponse {
-  // The collection of followed artists with their passion level preferences.
+  // The collection of followed artists with their hype preferences.
   repeated FollowedArtist artists = 1;
 }
 
 // FollowedArtist represents an artist with user-specific follow metadata.
-// This is an RPC-layer message (not an entity) because passion_level is
+// This is an RPC-layer message (not an entity) because hype is
 // per-user context, not an intrinsic property of the Artist entity.
 message FollowedArtist {
   // The artist entity.
   entity.v1.Artist artist = 1 [(buf.validate.field).required = true];
 
-  // The user's passion level for this artist.
-  entity.v1.PassionLevel passion_level = 2 [
+  // The user's hype level for this artist.
+  entity.v1.HypeType hype = 2 [
     (buf.validate.field).required = true,
     (buf.validate.field).enum.defined_only = true
   ];
 }
 
-// SetPassionLevelRequest provides the artist ID and the new passion level to set.
-message SetPassionLevelRequest {
+// SetHypeRequest provides the artist ID and the new hype level to set.
+message SetHypeRequest {
   // Required. The unique identifier of the artist.
   entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
 
-  // Required. The new passion level tier.
-  entity.v1.PassionLevel passion_level = 2 [
+  // Required. The new hype tier.
+  entity.v1.HypeType hype = 2 [
     (buf.validate.field).required = true,
     (buf.validate.field).enum.defined_only = true
   ];
 }
 
-// SetPassionLevelResponse is returned upon a successful passion level update.
-message SetPassionLevelResponse {}
+// SetHypeResponse is returned upon a successful hype level update.
+message SetHypeResponse {}
 
 // ListSimilarRequest specifies the seed artist for discovery.
 message ListSimilarRequest {
