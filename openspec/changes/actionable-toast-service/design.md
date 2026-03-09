@@ -50,20 +50,20 @@ This matches Material Design snackbar behavior and Google's UX guidelines for un
 ### D4: Return a dismiss handle
 
 ```typescript
-// Publishing returns a handle
-const handle = ea.publish(new Toast('Artist unfollowed', 'info', {
+// Handle is obtained from the Toast event object, not from publish()
+const toast = new Toast('Artist unfollowed', 'info', {
   duration: 5000,
   action: { label: 'Undo', callback: () => this.undo() },
-}))
+})
+this.ea.publish(toast)
+this.undoHandle = toast.handle  // set by ToastNotification subscriber
 
 interface ToastHandle {
   dismiss(): void
 }
 ```
 
-The `ToastNotification` element returns a `ToastHandle` when processing the event, allowing callers to programmatically dismiss the toast (e.g., if the undo window expires due to a navigation event). This replaces the custom `undoTimer` / `clearTimeout` logic in MyArtistsPage.
-
-Note: Aurelia's `IEventAggregator.publish()` is fire-and-forget (returns `void`). The handle must be obtained through an alternative pattern — e.g., a `toastHandle` property on the `Toast` event that is set by the `ToastNotification` subscriber before returning, or a separate `IToastHandle` service.
+Aurelia's `IEventAggregator.publish()` is fire-and-forget (returns `void`). The `Toast` event class exposes a `handle: ToastHandle | null` property that is populated by the `ToastNotification` subscriber when it processes the event. Callers read `toast.handle` after publishing to obtain programmatic dismiss control (e.g., dismissing on navigation).
 
 ### D5: No hover-pause for v1
 
