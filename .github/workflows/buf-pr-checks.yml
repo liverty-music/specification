@@ -44,8 +44,15 @@ jobs:
           token: ${{ secrets.BUF_TOKEN }}
           setup_only: true
 
-      - name: Run make lint
-        run: make lint
+      - name: Run buf lint
+        run: buf lint
+
+      - name: Check buf format
+        run: buf format -d --exit-code
+
+      - name: Check breaking changes
+        if: "!contains(github.event.pull_request.labels.*.name, 'buf skip breaking')"
+        run: buf breaking --against '.git#branch=origin/main'
 
   buf-checks-skip:
     needs: changes
