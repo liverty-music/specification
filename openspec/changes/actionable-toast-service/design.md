@@ -1,17 +1,29 @@
 ## Design Decisions
 
-### D1: Extend existing service, don't create a new one
+### D1: Extend existing Toast event class, don't create a new one
 
-The `IToastService` already handles top-layer rendering, stacking, auto-dismiss, and severity styling. Adding an action button is a natural extension, not a separate concern. A second toast system would create confusion about which to use.
+The `ToastNotification` custom element already handles top-layer rendering, stacking, auto-dismiss, and severity styling via `IEventAggregator` pub/sub. Adding an action button is a natural extension of the `Toast` event class, not a separate concern. A second toast system would create confusion about which to use.
 
 ### D2: API shape — optional options object
 
 ```typescript
-// Current signature
-show(message: string, severity?: ToastSeverity, durationMs?: number): void
+// Current Toast event class
+class Toast {
+  constructor(
+    public message: string,
+    public severity: ToastSeverity = 'info',
+    public durationMs: number = 2500,
+  ) {}
+}
 
-// New signature
-show(message: string, severity?: ToastSeverity, options?: ToastOptions): void
+// New Toast event class
+class Toast {
+  constructor(
+    public message: string,
+    public severity: ToastSeverity = 'info',
+    public options?: ToastOptions,
+  ) {}
+}
 
 interface ToastOptions {
   duration?: number        // ms, default 2500
@@ -22,7 +34,7 @@ interface ToastOptions {
 }
 ```
 
-The third parameter changes from `durationMs: number` to `options?: ToastOptions`. This is a breaking change to the internal API, but all existing callers either omit the third parameter or pass a number — these need to be updated to `{ duration: N }`.
+The third constructor parameter changes from `durationMs: number` to `options?: ToastOptions`. All existing `ea.publish(new Toast(msg, severity, durationMs))` callers need to be updated to `ea.publish(new Toast(msg, severity, { duration: durationMs }))`.
 
 Alternative considered: overloaded signatures. Rejected because a single options object is clearer and more extensible.
 
@@ -38,14 +50,20 @@ This matches Material Design snackbar behavior and Google's UX guidelines for un
 ### D4: Return a dismiss handle
 
 ```typescript
-show(message: string, severity?: ToastSeverity, options?: ToastOptions): ToastHandle
+// Publishing returns a handle
+const handle = ea.publish(new Toast('Artist unfollowed', 'info', {
+  duration: 5000,
+  action: { label: 'Undo', callback: () => this.undo() },
+}))
 
 interface ToastHandle {
   dismiss(): void
 }
 ```
 
-The caller can programmatically dismiss the toast (e.g., if the undo window expires due to a navigation event). This replaces the custom `undoTimer` / `clearTimeout` logic in MyArtistsPage.
+The `ToastNotification` element returns a `ToastHandle` when processing the event, allowing callers to programmatically dismiss the toast (e.g., if the undo window expires due to a navigation event). This replaces the custom `undoTimer` / `clearTimeout` logic in MyArtistsPage.
+
+Note: Aurelia's `IEventAggregator.publish()` is fire-and-forget (returns `void`). The handle must be obtained through an alternative pattern — e.g., a `toastHandle` property on the `Toast` event that is set by the `ToastNotification` subscriber before returning, or a separate `IToastHandle` service.
 
 ### D5: No hover-pause for v1
 
@@ -72,7 +90,7 @@ private clearUndoTimer() { ... }
 ### After
 
 ```typescript
-// 2 state properties
+// 3 state properties
 private undoArtist: FollowedArtist | null = null
 private undoIndex = -1
 private undoHandle: ToastHandle | null = null
@@ -81,7 +99,7 @@ private undoHandle: ToastHandle | null = null
 private unfollowArtist(artist) {
   // ... optimistic removal ...
   this.undoHandle?.dismiss()
-  this.undoHandle = this.toastService.show(
+  const toast = new Toast(
     this.i18n.tr('myArtists.unfollowed', { name: artist.name }),
     'info',
     {
@@ -89,6 +107,8 @@ private unfollowArtist(artist) {
       action: { label: this.i18n.tr('myArtists.undo'), callback: () => this.undo() },
     },
   )
+  this.ea.publish(toast)
+  this.undoHandle = toast.handle
 }
 
 public undo() {
