@@ -21,3 +21,7 @@
 
 - [x] 4.1 Run `make check` (lint + full test suite)
 - [x] 4.2 Apply migration locally and verify duplicate cleanup reduces row count
+
+## 5. Dev DB Cleanup
+
+- [x] 5.1 Delete all concert-related data from dev DB (TRUNCATE concerts, events, search_logs CASCADE) to remove duplicated rows and allow clean re-discovery
