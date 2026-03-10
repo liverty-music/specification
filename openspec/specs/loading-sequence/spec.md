@@ -55,9 +55,17 @@ The system SHALL only be used for authenticated users who need `loadingService.a
 
 #### Scenario: Initial artist list retrieval failure
 - **WHEN** the loading sequence starts
-- **AND** the `ListFollowedArtists` RPC fails after retries
+- **AND** the `ListFollowedArtists` RPC fails with a retriable error after retries
 - **THEN** the system SHALL navigate to the Dashboard
 - **AND** the system SHALL NOT display an infinite loading state
+
+#### Scenario: Artist list retrieval canceled by abort signal
+- **WHEN** the loading sequence starts
+- **AND** the `ListFollowedArtists` RPC is in-flight
+- **AND** the global timeout fires and aborts the request via AbortSignal
+- **THEN** the system SHALL immediately propagate the cancellation error without retrying
+- **AND** the system SHALL NOT increment the retry counter
+- **AND** the system SHALL NOT emit retry log messages
 
 ---
 
@@ -66,7 +74,7 @@ The system SHALL enforce a 10-second global timeout on data aggregation to preve
 
 #### Scenario: Timeout fires
 - **WHEN** 10 seconds have elapsed and data aggregation has not completed
-- **THEN** the system SHALL abort all remaining search requests
+- **THEN** the system SHALL abort all remaining in-flight requests (including `ListFollowedArtists` retries and `SearchNewConcerts` calls)
 - **AND** the system SHALL navigate to the Dashboard with only the successfully retrieved data
 - **AND** the system SHALL NOT display an error message
 
