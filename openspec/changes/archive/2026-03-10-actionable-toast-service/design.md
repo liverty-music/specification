@@ -31,6 +31,7 @@ interface ToastOptions {
     label: string          // button text (e.g. "Undo")
     callback: () => void   // invoked on tap
   }
+  onDismiss?: () => void   // called when toast is dismissed (auto or programmatic)
 }
 ```
 
@@ -69,6 +70,10 @@ Aurelia's `IEventAggregator.publish()` is fire-and-forget (returns `void`). The 
 
 Pausing auto-dismiss on hover/focus adds complexity (touch vs mouse, focus trap interaction with dialogs). For the undo use case, a 5-second duration is sufficient. This can be added later if needed.
 
+### D6: onDismiss callback for deferred side effects
+
+The undo pattern requires committing the unfollow RPC only after the undo window closes (toast dismissed). Since `ToastHandle.dismiss()` and auto-dismiss both end the toast's lifecycle, `onDismiss` fires in both cases — giving the caller a single hook to commit the pending operation. If the user taps "Undo" before dismiss, the callback clears `undoArtist`, so `onDismiss` becomes a no-op.
+
 ## MyArtistsPage Simplification
 
 ### Before
@@ -105,16 +110,16 @@ private unfollowArtist(artist) {
     {
       duration: 5000,
       action: { label: this.i18n.tr('myArtists.undo'), callback: () => this.undo() },
+      onDismiss: () => { /* commit unfollow RPC if not undone */ },
     },
   )
   this.ea.publish(toast)
   this.undoHandle = toast.handle
 }
 
-public undo() {
+private undo() {
   if (!this.undoArtist) return
-  this.undoHandle?.dismiss()
-  // ... re-insert at original position ...
+  // ... re-insert at original position, clear undoArtist ...
 }
 ```
 
