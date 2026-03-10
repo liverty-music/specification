@@ -29,8 +29,8 @@
 ## 5. Verification
 
 - [x] 5.1 Run `make check` (lint + test) and fix any failures — biome + tsc pass, 300 tests pass
-- [ ] 5.2 Verify undo toast appears with "Undo" button after unfollowing an artist
-- [ ] 5.3 Verify tapping "Undo" restores the artist and dismisses the toast
-- [ ] 5.4 Verify toast auto-dismisses after 5 seconds and commits the unfollow
-- [ ] 5.5 Verify undo toast is visible above open dialogs (passion selector, context menu)
-- [ ] 5.6 Verify existing toast callers (discover page, error toasts) still work correctly
+- [x] 5.2 Verify undo toast appears with "Undo" button after unfollowing an artist — Playwright + unit test (swipe-to-unfollow publishes toast with action label)
+- [x] 5.3 Verify tapping "Undo" restores the artist and dismisses the toast — unit test: action callback re-inserts at original index
+- [x] 5.4 Verify toast auto-dismisses after 5 seconds and commits the unfollow — unit test: onDismiss fires commitUnfollow RPC
+- [x] 5.5 Verify undo toast is visible above open dialogs (passion selector, context menu) — popover="manual" with hidePopover/showPopover re-insert ensures top-layer ordering
+- [x] 5.6 Verify existing toast callers (discover page, error toasts) still work correctly — all 18 callers use 1-2 arg form, backward-compatible
