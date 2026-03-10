@@ -8,7 +8,7 @@ The Venue Normalization service resolves raw venue names (as scraped by the conc
 
 ### Requirement: Venue Enrichment Pipeline
 
-The system SHALL provide an async enrichment pipeline that resolves raw venue names to canonical external identifiers (MusicBrainz MBID or Google Maps place_id) and updates venue records with canonical names.
+The system SHALL provide an async enrichment pipeline that resolves raw venue names to canonical external identifiers (MusicBrainz MBID or Google Maps place_id) and updates venue records with canonical names and geographic coordinates.
 
 #### Scenario: Successful enrichment via MusicBrainz
 
@@ -18,6 +18,7 @@ The system SHALL provide an async enrichment pipeline that resolves raw venue na
 - **AND** `venues.raw_name` SHALL be set to the current `venues.name` (if `raw_name` is NULL) to preserve the original scraper-provided name
 - **AND** `venues.name` SHALL be overwritten with the canonical name from MusicBrainz
 - **AND** `enrichment_status` SHALL be set to `'enriched'`
+- **AND** if the MusicBrainz response includes coordinates, `venues.latitude` and `venues.longitude` SHALL be updated
 
 #### Scenario: Successful enrichment via Google Maps fallback
 
@@ -28,6 +29,7 @@ The system SHALL provide an async enrichment pipeline that resolves raw venue na
 - **AND** `venues.raw_name` SHALL be set to the current `venues.name` (if `raw_name` is NULL) to preserve the original scraper-provided name
 - **AND** `venues.name` SHALL be overwritten with the canonical name from Google Maps
 - **AND** `enrichment_status` SHALL be set to `'enriched'`
+- **AND** `venues.latitude` and `venues.longitude` SHALL be updated from the Google Maps geometry response
 
 #### Scenario: Both sources miss
 
@@ -36,6 +38,7 @@ The system SHALL provide an async enrichment pipeline that resolves raw venue na
 - **AND** Google Maps returns no match
 - **THEN** `enrichment_status` SHALL be set to `'failed'`
 - **AND** `venues.name` SHALL remain unchanged
+- **AND** `venues.latitude` and `venues.longitude` SHALL remain NULL
 - **AND** the venue SHALL NOT be retried in subsequent job runs
 
 #### Scenario: Ambiguous results (multiple matches)
