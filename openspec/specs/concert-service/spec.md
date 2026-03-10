@@ -254,13 +254,6 @@ A one-time database migration SHALL remove duplicate event rows created by the b
 - **AND** all other duplicates SHALL be deleted
 - **AND** corresponding `concerts` rows for deleted events SHALL be cascade-deleted
 
-#### Scenario: Dedup preserves richer start_at
-
-- **WHEN** the migration runs
-- **AND** duplicate events exist where some have `start_at = NULL` and others have a non-NULL `start_at`
-- **THEN** the retained event SHALL be the one with the non-NULL `start_at` (prefer richer data)
-- **AND** if multiple non-NULL values exist, the earliest-inserted one SHALL be retained
-
 #### Scenario: Migration is idempotent
 
 - **WHEN** the migration is run on a database with no duplicates
