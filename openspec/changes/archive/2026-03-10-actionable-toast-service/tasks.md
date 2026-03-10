@@ -21,7 +21,7 @@
 - [x] 4.1 Remove `undoVisible`, `undoTimer`, `clearUndoTimer()` from `my-artists-page.ts`
 - [x] 4.2 Add `undoHandle: ToastHandle | null` property
 - [x] 4.3 Rewrite `unfollowArtist()` to use `ea.publish(new Toast(...))` with action
-- [x] 4.4 Update `undo()` to call `undoHandle.dismiss()`
+- [x] 4.4 Remove `undoHandle.dismiss()` from `undo()` — dismissal is now handled automatically by the toast action infrastructure (see D6)
 - [x] 4.5 Remove `commitPendingUnfollow()` and `clearUndoTimer()` — timer management is handled by toast auto-dismiss
 - [x] 4.6 Remove undo toast `<div>` from `my-artists-page.html`
 - [x] 4.7 Remove the `popover="manual"` undo toast added by Change A (if already merged)

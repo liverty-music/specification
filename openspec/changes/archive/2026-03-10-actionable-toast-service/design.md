@@ -66,13 +66,13 @@ interface ToastHandle {
 
 Aurelia's `IEventAggregator.publish()` is fire-and-forget (returns `void`). The `Toast` event class exposes a `handle: ToastHandle | null` property that is populated by the `ToastNotification` subscriber when it processes the event. Callers read `toast.handle` after publishing to obtain programmatic dismiss control (e.g., dismissing on navigation).
 
-### D6: onDismiss callback for deferred side effects
-
-The undo pattern requires committing the unfollow RPC only after the undo window closes (toast dismissed). Since `ToastHandle.dismiss()` and auto-dismiss both end the toast's lifecycle, `onDismiss` fires in both cases — giving the caller a single hook to commit the pending operation. If the user taps "Undo" before dismiss, the callback clears `undoArtist`, so `onDismiss` becomes a no-op.
-
 ### D5: No hover-pause for v1
 
 Pausing auto-dismiss on hover/focus adds complexity (touch vs mouse, focus trap interaction with dialogs). For the undo use case, a 5-second duration is sufficient. This can be added later if needed.
+
+### D6: onDismiss callback for deferred side effects
+
+The undo pattern requires committing the unfollow RPC only after the undo window closes (toast dismissed). Since `ToastHandle.dismiss()` and auto-dismiss both end the toast's lifecycle, `onDismiss` fires in both cases — giving the caller a single hook to commit the pending operation. If the user taps "Undo" before dismiss, the callback clears `undoArtist`, so `onDismiss` becomes a no-op.
 
 ## MyArtistsPage Simplification
 
