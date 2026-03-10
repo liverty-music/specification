@@ -74,7 +74,7 @@ The system SHALL enforce a 10-second global timeout on data aggregation to preve
 
 #### Scenario: Timeout fires
 - **WHEN** 10 seconds have elapsed and data aggregation has not completed
-- **THEN** the system SHALL abort all remaining search requests
+- **THEN** the system SHALL abort all remaining in-flight requests (including `ListFollowedArtists` retries and `SearchNewConcerts` calls)
 - **AND** the system SHALL navigate to the Dashboard with only the successfully retrieved data
 - **AND** the system SHALL NOT display an error message
 
