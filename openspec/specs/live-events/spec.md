@@ -72,7 +72,10 @@ The system MUST provide access to the collected schedule of concerts.
 #### Scenario: List Concerts by Follower
 
 - **WHEN** `ListByFollower` is called by an authenticated user
-- **THEN** the system MUST return a chronologically sorted list of concerts for all artists followed by that user
+- **THEN** the system MUST return concerts for all artists followed by that user, grouped by date and classified into home/nearby/away lanes
+- **AND** each group SHALL contain a calendar date and three concert lists (home, nearby, away)
+- **AND** groups SHALL be ordered by date ascending
+- **AND** lane classification SHALL be performed by the backend using the proximity classification model
 - **AND** the result SHALL be retrieved in a single RPC call
 
 ### Requirement: Proto Value Object Consistency
@@ -130,42 +133,28 @@ The Go domain entity `event.Event.LocalEventDate` SHALL be renamed to `LocalDate
 
 ### Requirement: Dashboard Lane Classification
 
-The dashboard SHALL classify live events into three lanes based on the geographic relationship between the event's venue and the user's home area, using level-aware granularity.
+The backend SHALL classify live events into three lanes based on the proximity classification model, replacing the previous frontend-only classification.
 
-#### Scenario: Home lane assignment (level_1 comparison)
+#### Scenario: Home lane assignment
 
-- **WHEN** the user's home has only `level_1` set (no `level_2`)
-- **AND** a live event's `venue.admin_area` equals the user's `home.level_1` (ISO 3166-2 code comparison)
-- **THEN** the event SHALL be assigned to the `home` lane
-
-#### Scenario: Home lane assignment (level_2 comparison)
-
-- **WHEN** the user's home has `level_2` set
-- **AND** a live event's venue has a matching finer-grained area code equal to the user's `home.level_2`
-- **THEN** the event SHALL be assigned to the `home` lane
+- **WHEN** a concert's venue `admin_area` matches the user's `home.level_1`
+- **THEN** the concert SHALL be placed in the `home` list of its date group
 
 #### Scenario: Nearby lane assignment
 
-- **WHEN** a live event's `venue.admin_area` is set (non-null)
-- **AND** it does not match the user's home at the applicable comparison level
-- **THEN** the event SHALL be assigned to the `nearby` lane
+- **WHEN** a concert's venue has coordinates within 200km of the user's home centroid
+- **AND** the venue `admin_area` does not match the user's `home.level_1`
+- **THEN** the concert SHALL be placed in the `nearby` list of its date group
 
 #### Scenario: Away lane assignment
 
-- **WHEN** a live event's `venue.admin_area` is not set (null/absent)
-- **THEN** the event SHALL be assigned to the `away` lane
+- **WHEN** a concert's venue is beyond 200km, has no coordinates, or the user has no home set
+- **THEN** the concert SHALL be placed in the `away` list of its date group
 
 #### Scenario: User has no home set
 
 - **WHEN** the user has not set a home area
-- **AND** a live event has a non-null `venue.admin_area`
-- **THEN** the event SHALL be assigned to the `nearby` lane
-
-#### Scenario: Phase 1 lane comparison (Japan-only)
-
-- **WHEN** the user's home has `country_code = "JP"` and `level_2` is absent
-- **THEN** lane comparison SHALL use `level_1` (ISO 3166-2 prefecture code) exclusively
-- **AND** this is the only comparison mode active in Phase 1
+- **THEN** all concerts SHALL be placed in the `away` list of their respective date groups
 
 ### Requirement: ISO 3166-2 Display Conversion
 
