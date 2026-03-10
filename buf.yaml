@@ -15,4 +15,5 @@ breaking:
   use:
     - FILE
   ignore:
+    - proto/liverty_music/entity/v1/artist.proto
     - proto/liverty_music/rpc/artist/v1/artist_service.proto
