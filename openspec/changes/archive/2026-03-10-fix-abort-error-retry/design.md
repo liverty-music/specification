@@ -50,5 +50,5 @@ Use `err instanceof Error && err.name === 'AbortError'` consistent with existing
 
 ## Risks / Trade-offs
 
-- **[Risk] `delay()` may not set `err.name = 'AbortError'`** → Verify the `delay()` implementation. If it throws a plain `Error('Aborted')` without setting `.name`, the guard won't catch it, and the retry loop will still execute (same as current behavior, not worse). Mitigation: check and fix `delay()` if needed to set `.name = 'AbortError'`.
+- ~~**[Risk] `delay()` may not set `err.name = 'AbortError'`**~~ **[Resolved — tasks 1.1/1.2]** Verified and updated `delay()` to set `.name = 'AbortError'` explicitly on both abort paths.
 - **[Risk] Future error types for cancellation** → If a new transport layer introduces a different cancellation error type, this guard would miss it. Mitigation: low risk; the Connect-RPC ecosystem is stable and the two types cover all known paths.
