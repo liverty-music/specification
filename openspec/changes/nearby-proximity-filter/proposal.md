@@ -26,7 +26,7 @@ Additionally, the current dashboard lane classification ("home / nearby / away")
 
 ## Impact
 
-- **specification**: `ListByFollowerResponse` restructured (breaking change); `Venue` entity gains optional `latitude`/`longitude` fields
+- **specification**: `ListByFollowerResponse` restructured (breaking change); venue coordinates are backend-internal (DB + Go struct only, not exposed in proto)
 - **backend**: New proximity classifier in `internal/geo`; venue entity and DB schema gain lat/lng; enrichment pipeline updated to extract coordinates; `ListByFollower` usecase performs date+lane grouping; `NotifyNewConcerts` uses proximity for NEARBY filtering
 - **frontend**: Dashboard service simplified — removes `assignLane()` and `fetchUserHome()`, consumes pre-classified `DateLaneGroup[]` directly; hype selector shows 4 options
 - **data**: Requires centroid coordinates for 47 Japanese prefectures (static Go map, sourced from Geospatial Information Authority of Japan)

@@ -20,6 +20,7 @@ The system SHALL classify the geographic relationship between a user's home area
 #### Scenario: AWAY classification for distant venues
 
 - **WHEN** the venue has latitude and longitude coordinates
+- **AND** the venue's `admin_area` does **not** match the user's `home.level_1`
 - **AND** the Haversine distance between the home centroid and the venue coordinates exceeds 200km
 - **THEN** the venue SHALL be classified as AWAY
 

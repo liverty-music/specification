@@ -75,7 +75,7 @@ message ListByFollowerResponse {
 // three geographic proximity lanes relative to the authenticated user's home area.
 message DateLaneGroup {
   // The calendar date for this group.
-  entity.v1.LocalDate date = 1;
+  entity.v1.LocalDate date = 1 [(buf.validate.field).required = true];
 
   // Concerts at venues within the user's home area (admin_area matches home.level_1).
   repeated entity.v1.Concert home = 2;
