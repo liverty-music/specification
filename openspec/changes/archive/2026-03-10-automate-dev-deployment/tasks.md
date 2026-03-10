@@ -39,15 +39,15 @@
 
 - [x] 7.1 Deploy changes to dev cluster (pulumi up or ArgoCD sync)
 - [x] 7.2 Verify Image Updater pod is running and healthy in argocd namespace
-- [ ] 7.3 Check Image Updater logs for successful registry scan
-- [ ] 7.4 Trigger a backend image build by merging a PR to main
-- [ ] 7.5 Verify Image Updater detects new digest within ~30 seconds
-- [ ] 7.6 Verify ArgoCD Application shows updated kustomize image override
-- [ ] 7.7 Verify new backend pod is running with updated image digest
-- [ ] 7.8 Verify no commits were created in cloud-provisioning repo
+- [x] 7.3 Check Image Updater logs for successful registry scan
+- [x] 7.4 Trigger a backend image build by merging a PR to main
+- [x] 7.5 Verify Image Updater detects new digest within ~30 seconds
+- [x] 7.6 Verify ArgoCD Application shows updated kustomize image override
+- [x] 7.7 Verify new backend pod is running with updated image digest
+- [x] 7.8 Verify no commits were created in cloud-provisioning repo
 
 ## 8. Rollback Testing
 
-- [ ] 8.1 Use ArgoCD UI to rollback dev application to previous sync
-- [ ] 8.2 Verify rollback deploys previous image
-- [ ] 8.3 Verify Image Updater re-applies latest digest on next polling cycle
+- [x] 8.1 Use ArgoCD UI to rollback dev application to previous sync
+- [x] 8.2 Verify rollback deploys previous image
+- [x] 8.3 Verify Image Updater re-applies latest digest on next polling cycle
