@@ -18,7 +18,7 @@ The layout assertion suite SHALL verify that the app shell Grid layout correctly
 - **THEN** `au-viewport` height SHALL equal the `my-app` height (no nav row)
 
 ### Requirement: Discover page layout containment
-The layout assertion suite SHALL verify that the discover page's flex layout correctly sizes the bubble area and Canvas element within the viewport bounds.
+The layout assertion suite SHALL verify that the discover page's grid layout correctly sizes the bubble area and Canvas element within the viewport bounds.
 
 #### Scenario: Discover layout fills viewport
 - **WHEN** the discover page is loaded at 390×844 viewport

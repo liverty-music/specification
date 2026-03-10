@@ -39,5 +39,5 @@ Then replace the custom undo toast in MyArtistsPage with a single `ea.publish(ne
   - `src/components/toast-notification/toast-notification.html` — Add conditional action button rendering in toast template
   - `src/routes/my-artists/my-artists-page.html` — Remove inline undo toast div
   - `src/routes/my-artists/my-artists-page.ts` — Replace `undoVisible` / `undoArtist` / undo timer logic with `ea.publish(new Toast(...))` call; simplify undo state
-- **No breaking API changes** — `Toast` constructor gains an optional parameter; existing callers are unaffected
+- **Breaking API change** — `Toast` constructor's third parameter changes from `durationMs: number` to `options?: ToastOptions`; existing callers passing a bare number must be updated (see task 3.1)
 - **Depends on**: `fix-shell-layout-popover-banners` (Change A) should be merged first since it fixes the undo toast's popover layering as an interim measure. This change then replaces that interim fix with the proper unified approach.
