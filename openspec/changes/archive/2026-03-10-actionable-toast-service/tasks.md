@@ -1,6 +1,6 @@
 ## 1. Extend Toast Event Class
 
-- [x] 1.1 Define `ToastOptions` interface (`duration?: number`, `action?: { label: string, callback: () => void }`) and `ToastHandle` interface (`dismiss(): void`) in `toast.ts`
+- [x] 1.1 Define `ToastOptions` interface (`duration?: number`, `action?: { label: string, callback: () => void }`, `onDismiss?: () => void`) and `ToastHandle` interface (`dismiss(): void`) in `toast.ts`
 - [x] 1.2 Change `Toast` constructor from `(message, severity?, durationMs?)` to `(message, severity?, options?)` and add a `handle: ToastHandle | null` property
 - [x] 1.3 Update `ToastNotification` element to read `action` from the `Toast` event and populate `toast.handle` on subscribe
 - [x] 1.4 Implement `ToastHandle.dismiss()` — triggers fade-out and cancels auto-dismiss timer
