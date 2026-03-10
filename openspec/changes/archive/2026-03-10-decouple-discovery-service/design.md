@@ -58,10 +58,8 @@ This makes pool logic testable without DI, and the pool lifetime matches the pag
 @bindable showFollowedIndicator: boolean  // existing
 
 // Outputs (canvas → parent via DOM events)
-'artist-selected'              — existing
-'need-more-bubbles'            — new: { artistId, artistName, position }
-'similar-artists-unavailable'  — existing
-'similar-artists-error'        — existing
+'artist-selected'              — { artist, position }
+'need-more-bubbles'            — { artistId, artistName, position }
 ```
 
 The `handleInteraction()` method in `dna-orb-canvas` will emit `need-more-bubbles` instead of calling `discoveryService.getSimilarArtists()` directly. The page handles fetching and passes new bubbles back via the `artists` bindable (or a dedicated `addBubbles()` method on the canvas ref).

@@ -1,0 +1,8 @@
+- [x] 1. Move `listTop()`, `listSimilar()`, `search()` from `ArtistDiscoveryService` to `ArtistServiceClient`; remove duplicate `artistClient` from discovery service
+- [x] 2. Extract `BubblePool` class (plain, non-DI) with dedup, eviction, and pool management logic from `ArtistDiscoveryService`
+- [x] 3. Refactor `dna-orb-canvas`: remove `IArtistDiscoveryService` injection; add `@bindable artists`, `@bindable orbIntensity`; emit `need-more-bubbles` event instead of calling service
+- [x] 4. Update `DiscoverPage` to own `BubblePool`, coordinate between `ArtistServiceClient` and `dna-orb-canvas` via bindables and event handlers
+- [x] 5. Move `ArtistBubble` type from `artist-discovery-service.ts` to `artist-service-client.ts`; delete `artist-discovery-service.ts`; update all imports (src + test)
+- [x] 6. Add comprehensive tests for affected components and services:
+  - [x] 6a. `DiscoverPage`: onArtistSelected (follow + event flow), onNeedMoreBubbles (similar fetch, eviction, spawn, fallback to top artists), followArtist rollback on RPC failure, loadInitialArtists with existing followed artists (seed similar), visibility change pause/resume, onboarding followedCount delegation
+  - [x] 6b. `dna-orb-canvas`: bindable contract (artistsChanged triggers physics), DOM event dispatch (artist-selected, need-more-bubbles), pause/resume lifecycle, reloadBubbles, spawnBubblesAt/fadeOutBubbles public API
