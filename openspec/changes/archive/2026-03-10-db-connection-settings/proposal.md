@@ -10,7 +10,7 @@ Ref: https://github.com/liverty-music/backend/issues/173
 - Fix `ConnMaxLifetime` bug: value is defined in config but never applied to pgxpool; change default from 300s to 1800s (30min)
 - Add `MaxConnIdleTime` setting (default: 600s / 10min) to release idle connections beyond MinConns promptly
 - Add `HealthCheckPeriod` setting (default: 60s / 1min, matching pgxpool default) for explicit intent
-- Add dev overlay environment variables (`DATABASE_MAX_OPEN_CONNS=5`, `DATABASE_MAX_IDLE_CONNS=2`) to fit `db-f1-micro` connection budget
+- Add dev overlay environment variables (`DATABASE_MAX_OPEN_CONNS=5`, `DATABASE_MAX_IDLE_CONNS=1`) to fit `db-f1-micro` connection budget
 - Add inline comments explaining the rationale for each connection pool setting value
 - Add `ConnMaxLifetime` to the connection-established log output
 
