@@ -11,10 +11,11 @@ The onboarding guidance HUD (progress dots, guidance message, CTA button) SHALL 
 - **THEN** the onboarding HUD SHALL NOT be rendered
 - **AND** no CTA button SHALL be shown (bottom navigation provides transitions)
 
-#### Scenario: CTA button visibility during onboarding
-- **WHEN** `OnboardingService.isOnboarding` is `true` and `followedCount >= 3`
-- **THEN** the CTA button "ダッシュボードを生成する" SHALL be visible
-- **AND** tapping it SHALL navigate to `onboarding/loading`
+#### Scenario: CTA button removed during onboarding
+- **REMOVED**: The "ダッシュボードを生成する" CTA button is removed from the discover page. The CTA is replaced by a coach mark spotlight on the nav-bar Dashboard icon (defined in `onboarding-tutorial` Step 1 completion).
+
+**Reason**: The nav-bar Dashboard icon spotlight teaches users about navigation while serving as the CTA. A separate button is redundant.
+**Migration**: Remove the `complete-button-wrapper` and `complete-button` elements from `discover-page.html`. CTA behavior is handled by the coach mark component targeting `[data-nav-dashboard]`.
 
 ### Requirement: Followed count reflects localStorage state
 The `LocalArtistClient.followedCount` property SHALL be an `@observable` that is updated whenever `follow()`, `unfollow()`, or `clearAll()` is called, so that Aurelia bindings re-evaluate immediately.
@@ -59,7 +60,8 @@ The system SHALL display contextual progress messages that change as the user fo
 #### Scenario: After following 3 or more artists
 - **WHEN** followedCount reaches 3 (TUTORIAL_FOLLOW_TARGET)
 - **THEN** the guidance area SHALL display "準備完了！"
-- **AND** the complete button SHALL become visible and visually highlighted
+- **AND** the system SHALL NOT display a separate CTA button
+- **AND** the progress bar SHALL switch to showing concert search completion status
 
 ### Requirement: Orb pulse on follow
 The central Music DNA orb SHALL pulse each time an artist is followed, providing visual feedback that the selection was registered.
@@ -77,17 +79,38 @@ The search bar and genre filter chips SHALL be visible and functional during onb
 - **THEN** search results SHALL appear and the user SHALL be able to follow artists from the results
 - **AND** the follow operation SHALL use the same unified flow (localStorage during onboarding)
 
-### Requirement: Complete button is tappable on all devices
-The complete button ("ダッシュボードを生成する") SHALL be tappable on both desktop and mobile devices. The canvas element SHALL NOT intercept pointer events in the button's area.
+### Requirement: Complete button is tappable on all devices (REMOVED)
 
-#### Scenario: Mobile tap on complete button
-- **WHEN** user taps the complete button on a mobile device
-- **THEN** the `onViewSchedule()` handler SHALL fire
-- **AND** the user SHALL be navigated to the loading sequence
+**Reason**: The CTA button has been removed. Dashboard transition is now triggered via the coach mark spotlight on the nav-bar Dashboard icon (see `onboarding-tutorial` Step 1 completion).
+**Migration**: Remove `complete-button-wrapper` and `complete-button` elements and related event handlers.
 
-#### Scenario: Desktop click on complete button
-- **WHEN** user clicks the complete button on desktop
-- **THEN** the `onViewSchedule()` handler SHALL fire
+### Requirement: Concert Search Progress Bar
+
+The system SHALL display a progress bar on the discover page that tracks concert search completion for followed artists, replacing the numeric counter after 3 artists are followed.
+
+#### Scenario: Progress bar appears after 3 follows
+
+- **WHEN** `followedCount >= 3` during onboarding
+- **THEN** the progress bar SHALL display below the guidance message
+- **AND** the progress bar fill width SHALL represent `completedSearchCount / followedCount * 100%`
+- **AND** the progress bar SHALL use a continuous fill animation (not discrete steps)
+
+#### Scenario: Concert search completes for an artist
+
+- **WHEN** a `SearchNewConcerts` call completes (success or timeout) for a followed artist
+- **THEN** the progress bar fill SHALL update to reflect the new completion ratio
+- **AND** the update SHALL animate smoothly (300ms transition)
+
+#### Scenario: All searches complete
+
+- **WHEN** all followed artists (minimum 3) have completed concert searches
+- **THEN** the system SHALL activate the nav-bar Dashboard icon coach mark (per `onboarding-tutorial` Step 1 completion)
+
+#### Scenario: Search timeout
+
+- **WHEN** a concert search for an artist exceeds 15 seconds
+- **THEN** the system SHALL treat the search as completed for progress bar purposes
+- **AND** the system SHALL NOT block CTA activation due to the timeout
 
 ### Requirement: No z-index stacking in discovery page CSS
 The discovery page SHALL NOT use `z-index` for visual stacking. All layer ordering SHALL be achieved through DOM source order.
