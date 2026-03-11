@@ -74,6 +74,8 @@ message ListByFollowerResponse {
 // ProximityGroup contains concerts for a single calendar date, classified into
 // three geographic proximity buckets relative to the authenticated user's home area.
 message ProximityGroup {
+  reserved "away";
+
   // The calendar date for this group.
   entity.v1.LocalDate date = 1 [(buf.validate.field).required = true];
 

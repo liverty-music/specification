@@ -119,4 +119,5 @@ message Home {
   optional Coordinates centroid = 4;
 
   reserved 5;
+  reserved "centroid_latitude", "centroid_longitude";
 }
