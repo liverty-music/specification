@@ -9,7 +9,7 @@ option go_package = "github.com/liverty-music/specification/gen/go/liverty_music
 
 // HypeType represents the user's enthusiasm tier for a followed artist.
 // It controls push notification scope and dashboard rendering behavior.
-// Values are ordered by ascending enthusiasm: WATCH (lowest) to ANYWHERE (highest).
+// Values are ordered by ascending enthusiasm: WATCH (lowest) to AWAY (highest).
 enum HypeType {
   // Default value; must not be used in API requests.
   HYPE_TYPE_UNSPECIFIED = 0;
@@ -23,7 +23,7 @@ enum HypeType {
   HYPE_TYPE_NEARBY = 3;
   // Push notifications for all concerts nationwide. This is the default tier
   // assigned when a user first follows an artist. Die-hard fan level.
-  HYPE_TYPE_ANYWHERE = 4;
+  HYPE_TYPE_AWAY = 4;
 }
 
 // FollowedArtist represents an artist together with the fan's personal follow
