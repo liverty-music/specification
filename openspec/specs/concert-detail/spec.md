@@ -8,13 +8,15 @@ The Concert Detail capability provides users with a rich detail view for a selec
 
 ### Requirement: Concert Detail View
 
-The system SHALL provide a detail view for a selected concert that surfaces full event information and entry points for ticket purchase.
+The system SHALL provide a detail view for a selected concert using a popover-based sheet (not a modal dialog), ensuring compatibility with coach mark overlays in the top layer.
 
 #### Scenario: Open detail from dashboard
 
 - **WHEN** a user taps a concert card on the dashboard
 - **THEN** the system SHALL open a bottom sheet displaying the concert detail
-- **AND** the URL SHALL update to `/concerts/:id` without triggering full page navigation
+- **AND** the sheet SHALL use `popover="manual"` with `showPopover()` (not `<dialog>.showModal()`)
+- **AND** the sheet element SHALL have `role="dialog"` and `aria-modal="true"` for accessibility
+- **AND** the URL SHALL update to `/concerts/:id` via `history.pushState` without triggering full page navigation
 
 #### Scenario: Display venue information
 
@@ -31,10 +33,17 @@ The system SHALL provide a detail view for a selected concert that surfaces full
 - **WHEN** the concert detail view is open and `source_url` is present
 - **THEN** it SHALL render a "View Official Info" button linking to `source_url` in a new tab
 
-#### Scenario: Dismiss sheet
+#### Scenario: Dismiss sheet (non-onboarding)
 
-- **WHEN** the user swipes down or taps the backdrop
-- **THEN** the sheet SHALL close and the URL SHALL revert to the dashboard URL
+- **WHEN** the user swipes down or taps outside the sheet
+- **AND** the user is NOT in onboarding Step 4
+- **THEN** the sheet SHALL call `hidePopover()` and the URL SHALL revert to the dashboard URL
+
+#### Scenario: Sheet non-dismissible during onboarding Step 4
+
+- **WHEN** the user is at onboarding Step 4
+- **THEN** the sheet SHALL NOT be dismissible (no swipe-down, no outside tap)
+- **AND** the coach mark overlay SHALL appear above the sheet in the top layer, targeting `[data-nav-my-artists]`
 
 ### Requirement: Dashboard Lane Assignment
 

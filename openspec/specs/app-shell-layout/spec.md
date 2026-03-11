@@ -21,7 +21,7 @@ The system SHALL display proper brand identity elements across the application.
 ---
 
 ### Requirement: Conditional Navigation Display
-The system SHALL conditionally show or hide the navigation bar based on the current route context. The navigation bar SHALL be an in-flow grid child of the app shell, not a fixed-position or top-layer element.
+The system SHALL conditionally show or hide the navigation bar based on the current route context. The navigation bar SHALL be visible on all pages except the Landing Page and auth callback.
 
 #### Scenario: App shell uses CSS Grid layout with height propagation
 - **WHEN** the application shell renders
@@ -31,16 +31,21 @@ The system SHALL conditionally show or hide the navigation bar based on the curr
 - **AND** the `<main>` element SHALL use `overflow: hidden` to prevent scrolling at the main level
 - **AND** the `<au-viewport>` element SHALL occupy the `1fr` track within `<main>`, providing a definite height to route components
 - **AND** the `<au-viewport>` element SHALL use `overflow-y: auto` as the scrolling container for route content
-- **AND** route components SHALL use `min-height: 100%` to fill the viewport's height (not `100dvh` or `100vh`)
 - **AND** the `<bottom-nav-bar>` element SHALL occupy the `min-content` row as a normal flow child
 - **AND** the navigation bar SHALL NOT use `position: fixed`, `position: absolute`, or the Popover API (`popover` attribute / `showPopover()`)
 
-#### Scenario: Navigation hidden during onboarding
-- **WHEN** the user is on the Landing Page, Artist Discovery, or Loading Sequence routes
+#### Scenario: Navigation hidden on Landing Page and auth callback only
+- **WHEN** the user is on the Landing Page or Auth Callback route
 - **THEN** the system SHALL NOT display the bottom navigation bar
 - **AND** the `1fr` row SHALL expand to fill the full `100dvh` height
 
-#### Scenario: Navigation shown on dashboard
+#### Scenario: Navigation shown during onboarding (discover, dashboard, my-artists)
+- **WHEN** the user is on the Artist Discovery, Dashboard, or My Artists route during onboarding
+- **THEN** the system SHALL display the bottom navigation bar
+- **AND** navigation SHALL be restricted by the existing route guards (`AuthHook.canLoad()`)
+- **AND** the system SHALL NOT apply additional click prevention on the navigation bar
+
+#### Scenario: Navigation shown on post-onboarding routes
 - **WHEN** the user is on the Dashboard or post-onboarding routes
 - **THEN** the system SHALL display the bottom navigation bar in the `min-content` grid row
 - **AND** the navigation bar SHALL include tab icons and labels for Home, Discover, My Artists, Tickets, and Settings
@@ -50,6 +55,11 @@ The system SHALL conditionally show or hide the navigation bar based on the curr
 - **THEN** the area setup dialog SHALL render via `<dialog>` `showModal()` in the browser's Top Layer
 - **AND** the bottom navigation bar SHALL remain in its normal grid position beneath the Top Layer
 - **AND** the `::backdrop` pseudo-element SHALL visually dim the entire page including the navigation bar
+
+#### Scenario: Dashboard icon data attribute for coach mark targeting
+- **WHEN** the bottom navigation bar renders
+- **THEN** the Dashboard tab link SHALL include a `data-nav-dashboard` attribute
+- **AND** the My Artists tab link SHALL include a `data-nav-my-artists` attribute (existing)
 
 #### Scenario: Pages do not compensate for navigation bar height
 - **WHEN** any route component renders inside the `<au-viewport>` element
