@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// Proximity represents the geographic closeness between a user's home area
+// and a concert venue. It is a computed value derived from the user's Home
+// and the venue's coordinates or administrative area.
+//
+// This enum mirrors the scoping tiers in HypeType:
+//   - HypeType defines what the user *wants* to hear about.
+//   - Proximity defines what a concert *actually is* relative to the user.
+enum Proximity {
+  // Default value; must not be used in API requests.
+  PROXIMITY_UNSPECIFIED = 0;
+  // The venue is within the user's home administrative area
+  // (ISO 3166-2 subdivision match with home.level_1).
+  PROXIMITY_HOME = 1;
+  // The venue is within 200km of the user's home area centroid
+  // but outside the home administrative area.
+  PROXIMITY_NEARBY = 2;
+  // The venue is beyond 200km from the user's home area centroid,
+  // has unknown location, or the user has no home set.
+  PROXIMITY_AWAY = 3;
+}

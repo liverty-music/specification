@@ -3,6 +3,7 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/coordinates.proto";
 
 // UserId is a globally unique identifier for a platform user.
 message UserId {
@@ -43,8 +44,8 @@ message User {
 
   // The user's home area — the geographic region where the user regularly attends
   // live events without considering it a trip (遠征).
-  // Used as the baseline for dashboard lane assignment: events in the home area
-  // appear in the "Home" lane, nearby areas in "Nearby", and everything else in "Away".
+  // Used as the baseline for proximity classification: events in the home area
+  // are classified as HOME, nearby areas as NEARBY, and everything else as AWAY.
   // Absent until the user explicitly selects their area during onboarding or in settings.
   Home home = 6;
 }
@@ -54,14 +55,18 @@ message User {
 //
 // A user's home area is the geographic region where they regularly attend
 // live events without considering it a trip (遠征). This concept anchors the
-// dashboard lane classification system:
-//   - "Home" lane:   the event's venue falls within the user's home area.
-//   - "Nearby" lane: the event has a known area, but it differs from the user's home.
-//   - "Away" lane:   the event has no known area, or the user has no home set.
+// proximity classification system (see Proximity enum):
+//   - HOME:   the event's venue falls within the user's home area.
+//   - NEARBY: the event is within 200km of the user's home centroid.
+//   - AWAY:   the event is beyond 200km, has no known area, or the user has no home set.
 //
-// Lane assignment granularity:
-//   - When level_2 is set, lane comparison uses level_2 (finer granularity).
-//   - When level_2 is absent, lane comparison uses level_1 (coarser granularity).
+// Proximity assignment granularity:
+//   - When level_2 is set, admin_area comparison uses level_2 (finer granularity).
+//   - When level_2 is absent, admin_area comparison uses level_1 (coarser granularity).
+//
+// The centroid (a Coordinates value) is resolved automatically at write time
+// from the level_1 (or level_2) code. It serves as the reference point for
+// NEARBY distance calculations.
 //
 // Code system contract:
 //   - level_1 is always an ISO 3166-2 subdivision code, worldwide, without exception.
@@ -105,4 +110,14 @@ message Home {
     (buf.validate.field).string.min_len = 1,
     (buf.validate.field).string.max_len = 20
   ];
+
+  // The approximate geographic centroid of this home area.
+  // Populated automatically at write time by resolving the level_1 (or level_2)
+  // code to its centroid coordinates. Used as the reference point for proximity
+  // calculations (e.g., Concert.ProximityTo). Absent when the centroid cannot
+  // be resolved (unsupported country).
+  optional Coordinates centroid = 4;
+
+  reserved 5;
+  reserved "centroid_latitude", "centroid_longitude";
 }

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+// Coordinates represents a WGS 84 geographic point as a latitude/longitude pair.
+// Used wherever the domain model requires a geographic location — for example,
+// the centroid of a user's home area or the position of a concert venue.
+message Coordinates {
+  // The WGS 84 latitude in decimal degrees (range: -90 to +90).
+  double latitude = 1;
+
+  // The WGS 84 longitude in decimal degrees (range: -180 to +180).
+  double longitude = 2;
+}
