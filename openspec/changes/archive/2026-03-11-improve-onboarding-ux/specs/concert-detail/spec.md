@@ -9,7 +9,7 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 - **WHEN** a user taps a concert card on the dashboard
 - **THEN** the system SHALL open a bottom sheet displaying the concert detail
 - **AND** the sheet SHALL use `popover="manual"` with `showPopover()` (not `<dialog>.showModal()`)
-- **AND** the sheet element SHALL have `role="dialog"` and `aria-modal="true"` for accessibility
+- **AND** the sheet element SHALL be a `<dialog popover="manual">` providing native dialog semantics (implicit `role="dialog"`)
 - **AND** the URL SHALL update to `/concerts/:id` via `history.pushState` without triggering full page navigation
 
 #### Scenario: Display venue information
@@ -36,5 +36,5 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 #### Scenario: Sheet non-dismissible during onboarding Step 4
 
 - **WHEN** the user is at onboarding Step 4
-- **THEN** the sheet SHALL NOT be dismissible (no swipe-down, no outside tap)
+- **THEN** the sheet SHALL NOT be dismissible (no swipe-down, no outside tap, no escape key)
 - **AND** the coach mark overlay SHALL appear above the sheet in the top layer, targeting `[data-nav-my-artists]`
