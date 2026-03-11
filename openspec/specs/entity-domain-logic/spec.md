@@ -69,7 +69,7 @@ The `Hype` type SHALL provide a `ShouldNotify(home *Home, venueAreas map[string]
 
 Decision rules (evaluated in order):
 1. `HypeWatch` → false (never notify).
-2. `HypeHome` → true only if `home` is non-nil AND `home.Level1` exists in `venueAreas`.
+2. `HypeHome` → true only if `home` is non-nil AND `home.Level1` is non-empty AND `home.Level1` exists in `venueAreas`.
 3. `HypeNearby` → true only if any concert has `ProximityHome` or `ProximityNearby` relative to `home`.
 4. `HypeAway` → true (always notify).
 5. Any other value → false.
@@ -282,7 +282,7 @@ The entity package SHALL provide `NewOfficialSite(artistID, url string) *Officia
 
 ### Requirement: Venue constructor from scraped data
 
-The entity package SHALL provide `NewVenueFromScraped(name string) *Venue` that creates a Venue with auto-generated UUIDv7 ID, EnrichmentStatus=pending, and RawName=name.
+The entity package SHALL provide `NewVenueFromScraped(name string) *Venue` that creates a Venue with auto-generated UUIDv7 ID, Name=name, EnrichmentStatus=pending, and RawName=name.
 
 #### Scenario: Constructor sets defaults
 
