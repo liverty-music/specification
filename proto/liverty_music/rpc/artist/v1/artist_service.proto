@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-// Package liverty_music.rpc.v1 provides gRPC service definitions for artist management.
+// Package liverty_music.rpc.artist.v1 provides gRPC service definitions for artist management.
 //
 // This package includes the ArtistService which handles artist discovery,
-// lifecycle management, and user relationship tracking (following).
+// lifecycle management, and integration with external recommendation engines.
 package liverty_music.rpc.artist.v1;
 
 import "buf/validate/validate.proto";
@@ -47,35 +47,6 @@ service ArtistService {
   // Possible errors:
   // - NOT_FOUND: The specified official site identifier does not exist.
   rpc DeleteOfficialSite(DeleteOfficialSiteRequest) returns (DeleteOfficialSiteResponse);
-
-  // Follow establishes a follow relationship between the current user and an artist.
-  // This personalization allows the system to notify users about concerts.
-  //
-  // Possible errors:
-  // - NOT_FOUND: The specified artist ID does not exist.
-  // - INTERNAL: An error occurred while persisting the relationship.
-  rpc Follow(FollowRequest) returns (FollowResponse);
-
-  // Unfollow removes an existing follow relationship.
-  //
-  // Possible errors:
-  // - NOT_FOUND: The user was not following the specified artist.
-  rpc Unfollow(UnfollowRequest) returns (UnfollowResponse);
-
-  // ListFollowed retrieves the list of artists currently followed by the authenticated user.
-  // Each entry includes the user's hype preference for the artist.
-  //
-  // Possible errors:
-  // - UNAUTHENTICATED: The user identity could not be verified.
-  rpc ListFollowed(ListFollowedRequest) returns (ListFollowedResponse);
-
-  // SetHype updates the user's enthusiasm tier for a followed artist.
-  // The hype level controls push notification scope and dashboard rendering.
-  //
-  // Possible errors:
-  // - NOT_FOUND: The user is not following the specified artist.
-  // - INVALID_ARGUMENT: The hype value is invalid or unspecified.
-  rpc SetHype(SetHypeRequest) returns (SetHypeResponse);
 
   // ListSimilar retrieves artists similar to a specified artist using recommendation engines.
   //
@@ -146,67 +117,6 @@ message DeleteOfficialSiteRequest {
 
 // DeleteOfficialSiteResponse is returned upon successful site removal.
 message DeleteOfficialSiteResponse {}
-
-// FollowRequest specifies the artist the current user wishes to follow.
-message FollowRequest {
-  // Required. The unique identifier of the artist to follow.
-  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
-}
-
-// FollowResponse is returned upon successfully establishing the follow relationship.
-message FollowResponse {}
-
-// UnfollowRequest specifies the artist the current user wishes to unfollow.
-message UnfollowRequest {
-  // Required. The unique identifier of the artist to unfollow.
-  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
-}
-
-// UnfollowResponse is returned upon successfully removing the follow relationship.
-message UnfollowResponse {}
-
-// ListFollowedRequest is the request for listing the current user's followed artists.
-message ListFollowedRequest {}
-
-// ListFollowedResponse contains the collection of artists followed by the user,
-// enriched with per-user hype metadata.
-message ListFollowedResponse {
-  // The collection of followed artists with their hype preferences.
-  repeated FollowedArtist artists = 1;
-}
-
-// FollowedArtist represents an artist with user-specific follow metadata.
-// This is an RPC-layer message (not an entity) because hype is
-// per-user context, not an intrinsic property of the Artist entity.
-message FollowedArtist {
-  // The artist entity.
-  entity.v1.Artist artist = 1 [(buf.validate.field).required = true];
-
-  // The user's hype level for this artist.
-  entity.v1.HypeType hype = 2 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).enum.defined_only = true
-  ];
-}
-
-// SetHypeRequest provides the artist ID and the new hype level to set.
-message SetHypeRequest {
-  // Required. The unique identifier of the artist.
-  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
-
-  // Required. The new hype tier.
-  // HYPE_TYPE_NEARBY (3) is rejected — not user-selectable in Phase 1.
-  entity.v1.HypeType hype = 2 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).enum = {
-      defined_only: true
-      not_in: [3]
-    }
-  ];
-}
-
-// SetHypeResponse is returned upon a successful hype level update.
-message SetHypeResponse {}
 
 // ListSimilarRequest specifies the seed artist for discovery.
 message ListSimilarRequest {
