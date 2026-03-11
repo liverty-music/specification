@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Display upcoming concerts in a three-lane layout (Main, Region, Other) with typography-focused card design and visual mutations for high-priority artists.
+Display upcoming concerts in a three-lane layout (HOME STAGE, NEAR STAGE, AWAY STAGE) with typography-focused card design and visual mutations for high-priority artists.
 
 ## Requirements
 

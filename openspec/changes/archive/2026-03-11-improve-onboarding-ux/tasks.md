@@ -13,7 +13,7 @@
 
 ## 3. Event Detail Sheet — Popover Conversion
 
-- [x] 3.1 Replace `<dialog>` with `<div popover="manual">` in `event-detail-sheet.html`; add `role="dialog"` and `aria-modal="true"`
+- [x] 3.1 Replace `<dialog>` with `<dialog popover="manual">` in `event-detail-sheet.html`; native `<dialog>` provides `role="dialog"` and `aria-modal` semantics implicitly
 - [x] 3.2 Replace `showModal()` / `close()` calls with `showPopover()` / `hidePopover()` in `event-detail-sheet.ts`
 - [x] 3.3 Remove `cancel.trigger="$event.preventDefault()"` handler (not applicable to popovers)
 - [x] 3.4 Retain `history.pushState` / `popstate` URL management and swipe-to-dismiss gesture
