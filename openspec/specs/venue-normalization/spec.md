@@ -18,7 +18,7 @@ The system SHALL provide an async enrichment pipeline that resolves raw venue na
 - **AND** `venues.raw_name` SHALL be set to the current `venues.name` (if `raw_name` is NULL) to preserve the original scraper-provided name
 - **AND** `venues.name` SHALL be overwritten with the canonical name from MusicBrainz
 - **AND** `enrichment_status` SHALL be set to `'enriched'`
-- **AND** if the MusicBrainz response includes coordinates, `venues.latitude` and `venues.longitude` SHALL be updated
+- **AND** the venue's `Coordinates` SHALL be set to the value returned by the PlaceSearcher (non-nil when the response includes coordinates, nil otherwise)
 
 #### Scenario: Successful enrichment via Google Maps fallback
 
@@ -29,7 +29,7 @@ The system SHALL provide an async enrichment pipeline that resolves raw venue na
 - **AND** `venues.raw_name` SHALL be set to the current `venues.name` (if `raw_name` is NULL) to preserve the original scraper-provided name
 - **AND** `venues.name` SHALL be overwritten with the canonical name from Google Maps
 - **AND** `enrichment_status` SHALL be set to `'enriched'`
-- **AND** `venues.latitude` and `venues.longitude` SHALL be updated from the Google Maps geometry response
+- **AND** the venue's `Coordinates` SHALL be updated from the Google Maps geometry response
 
 #### Scenario: Both sources miss
 
@@ -38,7 +38,7 @@ The system SHALL provide an async enrichment pipeline that resolves raw venue na
 - **AND** Google Maps returns no match
 - **THEN** `enrichment_status` SHALL be set to `'failed'`
 - **AND** `venues.name` SHALL remain unchanged
-- **AND** `venues.latitude` and `venues.longitude` SHALL remain NULL
+- **AND** the venue's `Coordinates` SHALL remain nil
 - **AND** the venue SHALL NOT be retried in subsequent job runs
 
 #### Scenario: Ambiguous results (multiple matches)
