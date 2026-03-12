@@ -38,7 +38,7 @@
 /* Arrowhead fades in after line finishes */
 .arrow-head {
   opacity: 0;
-  animation: fade-in-head 0.3s ease-out 0.5s forwards;
+  animation: fade-in-head 0.3s ease-out 0.6s forwards;
 }
 
 @keyframes draw-line {
