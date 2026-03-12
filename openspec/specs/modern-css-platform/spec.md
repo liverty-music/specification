@@ -142,7 +142,7 @@ Components that need to scroll an element into view before performing an action 
 #### Scenario: Target already in viewport
 - **WHEN** the target element is already fully visible in the viewport
 - **THEN** `scrollIntoView` SHALL be called (it is a no-op when element is visible)
-- **AND** the failsafe timeout SHALL resolve immediately
+- **AND** the failsafe timeout SHALL still apply (no `scrollend` fires, so the timeout resolves after its full duration, ≤ 1000ms)
 - **AND** no `getBoundingClientRect()` or `isInViewport()` helper SHALL gate the scroll call
 
 ### Requirement: `data-state` attribute for CSS animation state
