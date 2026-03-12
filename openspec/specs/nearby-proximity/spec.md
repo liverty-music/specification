@@ -2,13 +2,13 @@
 
 ## Purpose
 
-The `nearby-proximity` capability defines the geographic proximity classification model used to categorize concert venues relative to a user's home area. It provides the Haversine-based distance calculation, home area centroid lookup, and venue coordinate storage required by the dashboard lane classification system.
+The `nearby-proximity` capability defines the home area centroid lookup and resolution logic required by the proximity classification system. The proximity classification model itself (including the `Proximity` enum, `Concert.ProximityTo` method, and Haversine calculation) lives in the `proximity-model` capability.
 
 ## Requirements
 
 ### Requirement: Proximity Classification Model
 
-The system SHALL classify the geographic relationship between a user's home area and a concert venue into one of three proximity levels: HOME, NEARBY, or AWAY. Classification SHALL be performed by the `Concert.ProximityTo(home)` entity method using centroid coordinates stored on the `Home` entity as a `*Coordinates` value.
+The system SHALL classify the geographic relationship between a user's home area and a concert venue into one of three proximity levels: HOME, NEARBY, or AWAY. Classification SHALL be performed by the `Concert.ProximityTo(home)` entity method using centroid coordinates stored on the `Home` entity.
 
 #### Scenario: HOME classification by admin_area match
 
@@ -18,21 +18,20 @@ The system SHALL classify the geographic relationship between a user's home area
 #### Scenario: NEARBY classification by Haversine distance
 
 - **WHEN** the venue's `admin_area` does not match the user's `home.Level1`
-- **AND** the venue has coordinates (`Venue.Coordinates` is non-nil)
-- **AND** the user's home has a centroid (`Home.Centroid` is non-nil)
-- **AND** the Haversine distance between `Home.Centroid` and `Venue.Coordinates` is less than or equal to 200km
+- **AND** the venue has latitude and longitude coordinates
+- **AND** the Haversine distance between the home centroid (`home.Latitude`, `home.Longitude`) and the venue coordinates is less than or equal to 200km
 - **THEN** the venue SHALL be classified as NEARBY
 
 #### Scenario: AWAY classification for distant venues
 
-- **WHEN** the venue has coordinates (`Venue.Coordinates` is non-nil)
+- **WHEN** the venue has latitude and longitude coordinates
 - **AND** the venue's `admin_area` does **not** match the user's `home.Level1`
-- **AND** the Haversine distance between `Home.Centroid` and `Venue.Coordinates` exceeds 200km
+- **AND** the Haversine distance between the home centroid and the venue coordinates exceeds 200km
 - **THEN** the venue SHALL be classified as AWAY
 
 #### Scenario: AWAY classification for venues without coordinates
 
-- **WHEN** the venue does not have coordinates (`Venue.Coordinates` is nil)
+- **WHEN** the venue does not have latitude or longitude coordinates
 - **AND** the venue's `admin_area` does not match the user's `home.Level1`
 - **THEN** the venue SHALL be classified as AWAY
 
@@ -43,7 +42,7 @@ The system SHALL classify the geographic relationship between a user's home area
 
 ### Requirement: Home Area Centroid Lookup
 
-The system SHALL resolve geographic centroid coordinates for the user's home area at write time (when `UpdateHome` or `Create` is called) and store them on the `homes` table. The centroid lookup is an infrastructure implementation detail — the entity and usecase layers access centroids via `Home.Centroid`.
+The system SHALL resolve geographic centroid coordinates for the user's home area at write time (when `UpdateHome` or `Create` is called) and store them on the `homes` table. The centroid lookup is an infrastructure implementation detail — the entity and usecase layers access centroids via `Home.Latitude` and `Home.Longitude` fields.
 
 #### Scenario: Centroid resolved at home write time
 
@@ -60,8 +59,7 @@ The system SHALL resolve geographic centroid coordinates for the user's home are
 
 - **WHEN** a home area is set with an unsupported country's ISO 3166-2 code
 - **THEN** the centroid columns SHALL be set to NULL
-- **AND** `Home.Centroid` SHALL be nil
-- **AND** `Concert.ProximityTo()` SHALL treat nil centroids as AWAY (no NEARBY classification possible)
+- **AND** `Concert.ProximityTo()` SHALL treat missing centroids as AWAY (no NEARBY classification possible)
 
 #### Scenario: Existing rows backfilled
 
@@ -84,26 +82,3 @@ The infrastructure centroid resolution logic SHALL be independently testable and
 - **THEN** it SHALL return `ok = false`
 - **AND** the caller SHALL treat the coordinates as absent
 
-### Requirement: Haversine Distance Calculation
-
-The system SHALL compute great-circle distance between two geographic points using the Haversine formula.
-
-#### Scenario: Distance calculation accuracy
-
-- **WHEN** the system calculates distance between Tokyo centroid (35.6895, 139.6917) and a venue at Saitama Super Arena (35.8950, 139.6314)
-- **THEN** the result SHALL be approximately 23km (within 1km tolerance)
-
-### Requirement: Venue Coordinate Storage
-
-The system SHALL store latitude and longitude for venue records in the database, populated during the venue enrichment pipeline.
-
-#### Scenario: Coordinates populated after enrichment
-
-- **WHEN** a venue is successfully enriched via MusicBrainz or Google Places
-- **AND** the external service response includes coordinates
-- **THEN** the venue record SHALL be updated with latitude and longitude values
-
-#### Scenario: Coordinates absent for unenriched venues
-
-- **WHEN** a venue has `enrichment_status` of `pending` or `failed`
-- **THEN** the venue's latitude and longitude SHALL be NULL
