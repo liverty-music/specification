@@ -22,7 +22,7 @@
 - [x] 4.1 Set `pulumiConfig.blockchain.deployerPrivateKey` in `liverty-music/dev` ESC (value from existing `smartContract.deployerEoa.privateKey`)
 - [x] 4.2 Set `pulumiConfig.blockchain.rpcUrl` in `liverty-music/dev` ESC (Alchemy Base Sepolia endpoint)
 - [x] 4.3 Set `pulumiConfig.blockchain.bundlerApiKey` in `liverty-music/dev` ESC (value from existing `smartContract.bundlerApiKey`)
-- [ ] 4.4 Remove old `smartContract.*` keys from ESC (manual: `esc env rm liverty-music/dev pulumiConfig.smartContract`)
+- [x] 4.4 Remove old `smartContract.*` keys from ESC (manual: `esc env rm liverty-music/dev pulumiConfig.smartContract`)
 
 ## 5. Documentation
 
@@ -33,6 +33,6 @@
 - [x] 6.1 Run `pulumi preview` to verify Secret Manager resources will be created with correct names
 - [x] 6.2 Get user approval and run `pulumi up`
 - [x] 6.3 Confirm secrets exist in Secret Manager: `gcloud secrets list --project=liverty-music-dev`
-- [ ] 6.4 Confirm ExternalSecret `server-backend-secrets` status is `Ready: True` (pending: ArgoCD sync after code merge)
-- [ ] 6.5 Confirm ArgoCD `backend` Application health transitions from `Degraded` (pending: ArgoCD sync after code merge)
-- [ ] 6.6 Check server pod logs for blockchain config initialization (pending: ArgoCD sync after code merge)
+- [x] 6.4 Confirm ExternalSecret `server-backend-secrets` status is `Ready: True` (pending: ArgoCD sync after code merge)
+- [x] 6.5 Confirm ArgoCD `backend` Application health transitions from `Degraded` (pending: ArgoCD sync after code merge)
+- [x] 6.6 Check server pod logs for blockchain config initialization (pending: ArgoCD sync after code merge)
