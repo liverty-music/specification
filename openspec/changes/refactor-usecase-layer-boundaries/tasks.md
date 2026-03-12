@@ -76,7 +76,7 @@
 
 ## 11. Frontend (frontend repo)
 
-- [x] 11.1 Update BSR packages to v0.23.0 (v1-compatible): `@buf/liverty-music_schema.bufbuild_es@1.10.0-20260312065554-983c096e26c3.1`
-- [ ] 11.2 Update `DateLaneGroup` → `ProximityGroup` imports (field name `away` unchanged)
-- [ ] 11.3 Update dashboard concert grouping to use new type/field names
-- [ ] 11.4 Run `make check` to verify lint + tests pass
+- [x] 11.1 Update BSR packages to v0.24.0 (v1-compatible): `@buf/liverty-music_schema.bufbuild_es@1.10.0-20260312074833-163690671e3f.1`
+- [x] 11.2 Update `DateLaneGroup` → `ProximityGroup` imports (field name `away` unchanged)
+- [x] 11.3 Update dashboard concert grouping to use new type/field names
+- [x] 11.4 Run `make check` to verify lint + tests pass
