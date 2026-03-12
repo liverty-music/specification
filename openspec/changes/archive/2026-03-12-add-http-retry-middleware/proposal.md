@@ -8,7 +8,7 @@ External API clients (Last.fm, MusicBrainz, Google Maps, Gemini) handle rate lim
 - The RoundTripper retries on transient HTTP status codes (429, 503, 504) and respects `Retry-After` headers
 - Wire retry-enabled `http.Client` instances into Last.fm, MusicBrainz, and Google Maps clients via DI
 - Replace Gemini's hand-rolled retry loop with `cenkalti/backoff/v5` `Retry()` (SDK client, not HTTP-based — cannot use RoundTripper)
-- Adopt "throttle outside, retry inside" pattern: throttle gates the request attempt, retry with backoff happens outside the throttle slot so backoff wait doesn't block other callers
+- Adopt "retry outside throttle" pattern (Pattern A): retry with backoff wraps the throttle call so backoff wait doesn't block other callers' throttle slots
 
 ## Capabilities
 

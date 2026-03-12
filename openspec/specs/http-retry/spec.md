@@ -42,7 +42,7 @@ The system SHALL respect context cancellation during retry backoff waits, stoppi
 - **THEN** the system SHALL stop retrying and return the context error
 
 ### Requirement: Request body replay for retried POST requests
-The system SHALL correctly replay the request body for POST/PUT requests across retry attempts.
+The system SHALL correctly replay the request body for POST requests across retry attempts.
 
 #### Scenario: POST request retried after 503
 - **WHEN** a POST request to an external API receives 503 and is retried
