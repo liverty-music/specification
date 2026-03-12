@@ -36,7 +36,7 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 #### Scenario: Dismiss sheet via light dismiss (non-onboarding)
 
 - **WHEN** the user is NOT in onboarding Step 4
-- **AND** the user clicks outside the sheet, presses Escape, or triggers a platform close action (e.g., Android back button)
+- **AND** the user clicks outside the sheet or presses Escape
 - **THEN** the sheet SHALL be dismissed via the Popover API's native light dismiss behavior
 - **AND** the URL SHALL revert to the dashboard URL via `history.replaceState`
 
