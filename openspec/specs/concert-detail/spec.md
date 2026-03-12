@@ -14,9 +14,15 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 
 - **WHEN** a user taps a concert card on the dashboard
 - **THEN** the system SHALL open a bottom sheet displaying the concert detail
-- **AND** the sheet SHALL use `popover="manual"` with `showPopover()` (not `<dialog>.showModal()`)
-- **AND** the sheet element SHALL be a `<dialog popover="manual">` providing native dialog semantics (implicit `role="dialog"`)
+- **AND** the sheet SHALL use `popover="auto"` with `showPopover()` by default
+- **AND** the sheet element SHALL be a `<dialog>` providing native dialog semantics (implicit `role="dialog"`)
 - **AND** the URL SHALL update to `/concerts/:id` via `history.pushState` without triggering full page navigation
+
+#### Scenario: Open detail during onboarding Step 4
+
+- **WHEN** a user taps a concert card during onboarding Step 3 (advancing to Step 4)
+- **THEN** the sheet SHALL use `popover="manual"` with `showPopover()` (non-dismissible per onboarding spec)
+- **AND** the popover attribute SHALL be set to `"manual"` before calling `showPopover()`
 
 #### Scenario: Display venue information
 
@@ -33,11 +39,25 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 - **WHEN** the concert detail view is open and `source_url` is present
 - **THEN** it SHALL render a "View Official Info" button linking to `source_url` in a new tab
 
-#### Scenario: Dismiss sheet (non-onboarding)
+#### Scenario: Dismiss sheet via light dismiss (non-onboarding)
 
-- **WHEN** the user swipes down or taps outside the sheet
-- **AND** the user is NOT in onboarding Step 4
+- **WHEN** the user is NOT in onboarding Step 4
+- **AND** the user clicks outside the sheet, presses Escape, or triggers a platform close action (e.g., Android back button)
+- **THEN** the sheet SHALL be dismissed via the Popover API's native light dismiss behavior
+- **AND** the URL SHALL revert to the dashboard URL via `history.replaceState`
+
+#### Scenario: Dismiss sheet via swipe down (non-onboarding)
+
+- **WHEN** the user is NOT in onboarding Step 4
+- **AND** the user swipes down on the sheet content beyond the dismiss threshold
 - **THEN** the sheet SHALL call `hidePopover()` and the URL SHALL revert to the dashboard URL
+
+#### Scenario: Dismiss sheet via browser back button
+
+- **WHEN** the detail sheet is open
+- **AND** the user presses the browser back button (triggering a `popstate` event)
+- **THEN** the sheet SHALL close via `hidePopover()`
+- **AND** the sheet SHALL NOT call `history.replaceState` (the browser has already navigated back)
 
 #### Scenario: Sheet non-dismissible during onboarding Step 4
 

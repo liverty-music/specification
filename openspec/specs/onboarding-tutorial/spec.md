@@ -77,7 +77,7 @@ The system SHALL enforce a strict linear progression through tutorial steps. Use
 - **WHEN** a user is at Step 3
 - **AND** the user taps the spotlighted concert card
 - **THEN** the system SHALL advance `onboardingStep` to 4
-- **AND** open the concert detail sheet (popover)
+- **AND** open the concert detail sheet (popover with `popover="manual"`)
 
 #### Scenario: Step 4 - Detail sheet with My Artists tab guidance
 
@@ -85,6 +85,7 @@ The system SHALL enforce a strict linear progression through tutorial steps. Use
 - **THEN** the system SHALL NOT allow the detail sheet to be dismissed (no swipe-down, no backdrop tap)
 - **AND** the system SHALL highlight the [My Artists] tab in the bottom navigation bar
 - **AND** the system SHALL display a coach mark tooltip: "アーティスト一覧も見てみよう！"
+- **AND** the coach mark popover SHALL re-enter the top layer AFTER the detail sheet popover has been shown, ensuring the coach mark renders above the detail sheet per LIFO stacking rules
 
 #### Scenario: Step 4 - My Artists tab tap
 
@@ -161,6 +162,12 @@ The system SHALL provide a reusable coach mark overlay component that highlights
 - **WHEN** the user has `prefers-reduced-motion: reduce` enabled
 - **THEN** the spotlight pulse animation SHALL be disabled
 - **AND** the static ring border SHALL remain visible
+
+#### Scenario: Bring to front for top-layer re-ordering
+
+- **WHEN** the coach mark needs to appear above another popover already in the top layer (e.g., the concert detail sheet at Step 4)
+- **THEN** the coach mark SHALL call `hidePopover()` followed by `showPopover()` on its overlay element to re-enter the top layer at the LIFO top position
+- **AND** the re-show SHALL be batched within a single animation frame to avoid visual flicker
 
 ### Requirement: Authentication Overrides Tutorial
 
