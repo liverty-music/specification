@@ -66,7 +66,7 @@ message ListByFollowerResponse {
   reserved "concerts";
 
   // Concert groups ordered by date ascending. Each group contains concerts
-  // for a single date, classified into home/nearby/distant buckets based on
+  // for a single date, classified into home/nearby/away buckets based on
   // the geographic proximity between the user's home area and each venue.
   repeated ProximityGroup groups = 2;
 }
@@ -74,7 +74,7 @@ message ListByFollowerResponse {
 // ProximityGroup contains concerts for a single calendar date, classified into
 // three geographic proximity buckets relative to the authenticated user's home area.
 message ProximityGroup {
-  reserved "away";
+  reserved "distant";
 
   // The calendar date for this group.
   entity.v1.LocalDate date = 1 [(buf.validate.field).required = true];
@@ -86,7 +86,7 @@ message ProximityGroup {
   repeated entity.v1.Concert nearby = 3;
 
   // Concerts at venues beyond 200km, with unknown location, or when the user has no home set.
-  repeated entity.v1.Concert distant = 4;
+  repeated entity.v1.Concert away = 4;
 }
 
 // SearchNewConcertsRequest specifies the artist for whom to search for new concerts.

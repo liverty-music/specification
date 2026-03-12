@@ -42,9 +42,9 @@ This change is cross-repo: proto schema changes in specification must be release
 
 ### 3. `ProximityGroup` replaces `DateLaneGroup`
 
-**Decision**: Rename `DateLaneGroup` to `ProximityGroup` in `concert_service.proto`. Rename field `away` to `distant`.
+**Decision**: Rename `DateLaneGroup` to `ProximityGroup` in `concert_service.proto`. Keep field name `away` (consistent with `PROXIMITY_AWAY` enum value).
 
-**Why**: "Lane" is a UI presentation concept. "Proximity" is the domain concept. The field rename `away` → `distant` aligns with the `PROXIMITY_AWAY` enum value while being semantically accurate for the "beyond threshold" case.
+**Why**: "Lane" is a UI presentation concept. "Proximity" is the domain concept. The field name `away` is retained because it matches the `PROXIMITY_AWAY` enum value — consistency between enum and field names is more important than avoiding reuse of the old message's field name.
 
 **Breaking change handling**: This is a breaking proto change. The specification PR will use the `buf skip breaking` label.
 
