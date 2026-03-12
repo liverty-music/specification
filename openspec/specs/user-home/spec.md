@@ -30,7 +30,7 @@ The system SHALL support a structured `home` field on the User entity representi
 #### Scenario: Home field in Go entity
 
 - **WHEN** the Go `entity.Home` struct is defined
-- **THEN** it SHALL include `ID string`, `CountryCode string`, `Level1 string`, `Level2 *string`, `Latitude float64`, and `Longitude float64` fields
+- **THEN** it SHALL include `ID string`, `CountryCode string`, `Level1 string`, `Level2 *string`, and `Centroid *Coordinates` fields
 - **AND** the `entity.User` struct SHALL include a `Home *Home` field
 - **AND** a nil `Home` SHALL mean the user has not set their home area
 

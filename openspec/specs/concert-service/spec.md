@@ -161,7 +161,7 @@ The system SHALL provide an RPC to retrieve all concerts for artists followed by
 
 - **WHEN** `ListByFollower` is called by an authenticated user who follows one or more artists
 - **THEN** it SHALL return concerts grouped by date using `ProximityGroup` messages
-- **AND** each `ProximityGroup` SHALL contain concerts classified into `home`, `nearby`, and `distant` fields based on `Concert.ProximityTo(user.Home)`
+- **AND** each `ProximityGroup` SHALL contain concerts classified into `home`, `nearby`, and `away` fields based on `Concert.ProximityTo(user.Home)`
 - **AND** each concert SHALL include a resolved `Venue` object with `name` and `admin_area` if available
 - **AND** each concert SHALL include `listed_venue_name` with the raw scraped venue name
 - **AND** groups SHALL be ordered by date ascending
@@ -182,7 +182,7 @@ The system SHALL provide an RPC to retrieve all concerts for artists followed by
 - **THEN** it SHALL contain a required `date` field of type `entity.v1.LocalDate`
 - **AND** a `repeated entity.v1.Concert home` field for home-proximity concerts
 - **AND** a `repeated entity.v1.Concert nearby` field for nearby-proximity concerts
-- **AND** a `repeated entity.v1.Concert distant` field for away-proximity concerts
+- **AND** a `repeated entity.v1.Concert away` field for away-proximity concerts
 
 #### Scenario: Single SQL query execution
 
