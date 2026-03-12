@@ -2,7 +2,7 @@
 
 - [x] 1.1 Create `entity/v1/proximity.proto` with `Proximity` enum (UNSPECIFIED, HOME, NEARBY, AWAY)
 - [x] 1.2 Add `optional double centroid_latitude` and `optional double centroid_longitude` fields to `Home` message in `user.proto`
-- [x] 1.3 Rename `DateLaneGroup` to `ProximityGroup` in `concert_service.proto`, rename field `away` to `distant`
+- [x] 1.3 Rename `DateLaneGroup` to `ProximityGroup` in `concert_service.proto` (keep field name `away` — consistent with `PROXIMITY_AWAY` enum)
 - [x] 1.4 Run `buf lint` and `buf format -w`, verify breaking changes are expected
 
 ## 2. Database Migration (backend repo)
@@ -76,5 +76,7 @@
 
 ## 11. Frontend (frontend repo)
 
-- [ ] 11.1 Update generated types import (`DateLaneGroup` → `ProximityGroup`, field `away` → `distant`) — **blocked on spec release to BSR**
-- [ ] 11.2 Update dashboard concert grouping to use new type/field names — **blocked on spec release to BSR**
+- [x] 11.1 Update BSR packages to v0.23.0 (v1-compatible): `@buf/liverty-music_schema.bufbuild_es@1.10.0-20260312065554-983c096e26c3.1`
+- [ ] 11.2 Update `DateLaneGroup` → `ProximityGroup` imports (field name `away` unchanged)
+- [ ] 11.3 Update dashboard concert grouping to use new type/field names
+- [ ] 11.4 Run `make check` to verify lint + tests pass
