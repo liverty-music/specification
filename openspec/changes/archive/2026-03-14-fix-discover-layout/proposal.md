@@ -6,7 +6,7 @@ The Discover page layout is structurally broken: the `dna-orb-canvas` (position:
 
 - Fix the CSS containing block chain so the canvas is scoped to `.bubble-area`, not the entire page
 - Convert `.bubble-area` to a proper container query context (`container-type: size`) for both-axis responsiveness
-- Replace the starfield `::before` pseudo-element from `position: absolute` to CSS Grid single-cell stacking (eliminating the need for `position: relative` on `.discover-layout`)
+- ~~Replace the starfield `::before` pseudo-element from `position: absolute` to CSS Grid single-cell stacking (eliminating the need for `position: relative` on `.discover-layout`)~~ (reverted — grid stacking broke CSS Grid auto-placement)
 - Migrate browse/search mode toggling from CSS class (`.hidden`) to `data-state` attribute, following CUBE CSS exception patterns
 - Reposition `.orb-label` using container-relative units (`cqb`) instead of a fixed `10rem` magic number
 
