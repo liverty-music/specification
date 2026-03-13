@@ -7,11 +7,14 @@ import "liverty_music/entity/v1/user.proto";
 
 // UserService provides operations for managing user accounts and profiles.
 service UserService {
-  // Get retrieves the profile information for a specific user.
+  // Get retrieves the profile of the authenticated user.
+  //
+  // The user identity is extracted from the JWT context by the backend —
+  // clients do not provide it in the request.
   //
   // Possible errors:
-  // - NOT_FOUND: No user was found with the specified identifier.
-  // - INVALID_ARGUMENT: The provided user identifier is malformed.
+  // - NOT_FOUND: No user record exists for the authenticated identity.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Get(GetRequest) returns (GetResponse);
 
   // Create registers a new user profile in the system.
@@ -42,11 +45,9 @@ service UserService {
   rpc UpdateHome(UpdateHomeRequest) returns (UpdateHomeResponse);
 }
 
-// GetRequest is the request for retrieving a user's profile information.
-message GetRequest {
-  // Required. The unique identifier of the user to be retrieved.
-  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
-}
+// GetRequest is the request for retrieving the authenticated user's profile.
+// The user identity is resolved from the JWT context — no fields are required.
+message GetRequest {}
 
 // GetResponse contains the profile information of the requested user.
 message GetResponse {
