@@ -30,17 +30,10 @@
 - [ ] 5.1 Evaluate whether a `state-attr` custom attribute is warranted based on the number of remaining data-* bindings after steps 1-4
 - [ ] 5.2 If warranted, create `src/custom-attributes/state-attr.ts` with unit tests
 
-## 6. CSS updates for new data-* selectors
+## 6. Verification
 
-- [ ] 6.1 Update `discover-page.css`: add `[data-search-mode]` selectors to replace `.hidden` class rules
-- [ ] 6.2 Update `my-artists-page.css`: add `[data-pulsing]` selector to replace `.animate-hype-pulse` class rule
-- [ ] 6.3 Update `celebration-overlay.css`: adjust selectors for always-in-DOM element with `data-state`
-- [ ] 6.4 Update component CSS files to use `var(--_offset)` patterns instead of expecting inline transforms
-
-## 7. Verification
-
-- [ ] 7.1 Run `make check` — zero stylelint errors, zero biome errors
-- [ ] 7.2 Run `make test` — all unit tests pass
-- [ ] 7.3 Grep for remaining `setTimeout` calls that duplicate CSS durations — zero matches
-- [ ] 7.4 Grep for remaining `class="${.*?}"` ternary patterns for visual state — zero matches
-- [ ] 7.5 Grep for remaining inline `style="transform:` or `style="background:` patterns — zero matches
+- [ ] 6.1 Run `make check` — zero stylelint errors, zero biome errors
+- [ ] 6.2 Run `make test` — all unit tests pass
+- [ ] 6.3 Grep for remaining `setTimeout` calls that duplicate CSS durations — zero matches
+- [ ] 6.4 Grep for remaining `class="${.*?}"` ternary patterns for visual state — zero matches
+- [ ] 6.5 Grep for remaining inline `style="transform:` or `style="background:` patterns — zero matches
