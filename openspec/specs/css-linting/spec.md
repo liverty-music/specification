@@ -90,20 +90,44 @@ The linter SHALL enforce a consistent property declaration order grouped by func
 - **THEN** properties SHALL be ordered in the following group sequence: Interaction, Positioning, Layout, Box Model, Typography, Appearance, Transition/Animation
 - **AND** `stylelint --fix` SHALL automatically reorder properties
 
-### Requirement: Stylelint compatible with Tailwind CSS v4
-The linter SHALL not flag valid Tailwind v4 directives or modern CSS at-rules as errors.
+### Requirement: Stylelint compatible with modern CSS at-rules
+The linter SHALL not flag valid modern CSS at-rules as errors.
 
-#### Scenario: Tailwind at-rules accepted
-- **WHEN** a CSS file contains `@theme`, `@layer`, or `@apply` directives
+#### Scenario: Standard CSS at-rules accepted
+- **WHEN** a CSS file contains `@layer`, `@scope`, or `@property` at-rules
 - **THEN** Stylelint SHALL not report unknown at-rule errors
 
 #### Scenario: Modern CSS at-rules accepted
 - **WHEN** a CSS file contains `@container`, `@starting-style`, or `@property` at-rules
 - **THEN** Stylelint SHALL not report unknown at-rule errors
 
-#### Scenario: Tailwind theme function accepted
-- **WHEN** a CSS file uses the `theme()` function
-- **THEN** Stylelint SHALL not report unknown function errors
+### Requirement: Stylelint enforces stacking context management
+The linter SHALL disallow `z-index` via the `property-disallowed-list` rule. Components SHALL resolve stacking requirements through proper DOM structure — elements that need different stacking order SHALL NOT be placed as sticky siblings within the same scroll container. The `isolation: isolate` property MAY be used to scope stacking contexts where needed, but it does not substitute for correct DOM structure.
+
+#### Scenario: No stylelint-disable for z-index
+- **WHEN** stylelint runs against all CSS files
+- **THEN** zero `stylelint-disable` comments for the `property-disallowed-list` rule SHALL exist
+- **AND** all stacking requirements SHALL be resolved via proper DOM structure (e.g., moving fixed headers outside scroll containers)
+
+#### Scenario: No magic numbers for sticky offsets
+- **WHEN** a CSS file contains `position: sticky` with a non-zero `inset-block-start` value
+- **THEN** the value SHALL reference a design token custom property
+- **AND** hardcoded pixel values (e.g., `41px`) SHALL NOT be used
+
+### Requirement: Stylelint enforces accessibility media queries
+The linter SHALL not flag accessibility-related media features as errors.
+
+#### Scenario: prefers-contrast allowed
+- **WHEN** a CSS file contains `@media (prefers-contrast: more)` or `@media (prefers-contrast: less)`
+- **THEN** Stylelint SHALL not report any errors
+
+#### Scenario: forced-colors allowed
+- **WHEN** a CSS file contains `@media (forced-colors: active)`
+- **THEN** Stylelint SHALL not report any errors
+
+#### Scenario: prefers-reduced-motion allowed
+- **WHEN** a CSS file contains `@media (prefers-reduced-motion: reduce)`
+- **THEN** Stylelint SHALL not report any errors
 
 ### Requirement: Stylelint integrated into CI pipeline
 The linter SHALL run as part of the standard CI lint check.
