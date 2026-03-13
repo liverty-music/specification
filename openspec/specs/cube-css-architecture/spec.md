@@ -97,12 +97,12 @@ The `compositions.css` file SHALL provide reusable layout classes that control s
 
 #### Scenario: Stack composition
 - **WHEN** elements need vertical stacking with consistent spacing via flexbox
-- **THEN** the `.stack` class SHALL provide `display: flex; flex-direction: column; gap: var(--space-m)`
+- **THEN** the `.stack` class SHALL provide `display: flex; flex-direction: column; gap: var(--stack-gap, var(--space-m))`
 - **AND** the gap SHALL be customizable via `--stack-gap` custom property
 
 #### Scenario: Cluster composition
 - **WHEN** elements need horizontal inline grouping with wrapping
-- **THEN** the `.cluster` class SHALL provide `display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-s)`
+- **THEN** the `.cluster` class SHALL provide `display: flex; flex-wrap: wrap; align-items: center; gap: var(--cluster-gap, var(--space-s))`
 - **AND** the gap SHALL be customizable via `--cluster-gap` custom property
 
 #### Scenario: Center composition
@@ -120,7 +120,7 @@ The `compositions.css` file SHALL provide reusable layout classes that control s
 
 ---
 
-### Requirement: Utility layer for single-purpose overrides
+### Requirement: Utility layer for single-purpose helpers
 The `utilities.css` file SHALL provide single-purpose utility classes that each control exactly one CSS property or concern.
 
 #### Scenario: Animation keyframes and utility classes
