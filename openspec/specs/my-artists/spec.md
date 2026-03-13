@@ -47,16 +47,16 @@ The My Artists page SHALL offer a view toggle between List view (default) and Gr
 
 The Grid view SHALL display followed artists as poster-style tiles in a responsive grid layout.
 
-#### Scenario: Must Go tiles are larger
+#### Scenario: Away tiles are larger
 
 - **GIVEN** the Grid view is active
-- **WHEN** an artist has passion level Must Go
+- **WHEN** an artist has hype level Away (HYPE_TYPE_AWAY)
 - **THEN** their tile SHALL span 2 columns and 2 rows
 
-#### Scenario: Non-Must-Go tiles are standard size
+#### Scenario: Non-Away tiles are standard size
 
 - **GIVEN** the Grid view is active
-- **WHEN** an artist has passion level Local Only or Keep an Eye
+- **WHEN** an artist has hype level Watch, Home, or Nearby
 - **THEN** their tile SHALL span 1 column and 1 row
 
 #### Scenario: Long-press opens context menu

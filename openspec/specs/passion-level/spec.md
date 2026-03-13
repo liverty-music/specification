@@ -45,62 +45,62 @@ The system SHALL prevent unauthenticated users from changing hype levels. Hype s
 - **THEN** the system SHALL call `SetHype` RPC and persist the change on the backend
 - **AND** the UI SHALL update optimistically
 
-### Requirement: Passion Level Persistence
+### Requirement: Hype Level Persistence
 
-The system SHALL persist each user's passion level per followed artist in the backend database, enabling cross-device synchronization.
+The system SHALL persist each user's hype level per followed artist in the backend database, enabling cross-device synchronization.
 
-#### Scenario: Passion level survives session restart
+#### Scenario: Hype level survives session restart
 
-- **GIVEN** a user sets an artist to Must Go
+- **GIVEN** a user sets an artist to Away (どこでも！)
 - **WHEN** the user closes and reopens the app
-- **THEN** the artist SHALL still display as Must Go
+- **THEN** the artist SHALL still display as Away (どこでも！)
 
-### Requirement: SetPassionLevel API
+### Requirement: SetHype API
 
-The system SHALL provide a SetPassionLevel RPC endpoint that accepts an artist ID and a passion level, updating the user's preference for that artist.
+The system SHALL provide a SetHype RPC endpoint that accepts an artist ID and a hype level, updating the user's preference for that artist.
 
 #### Scenario: Successful update
 
 - **GIVEN** an authenticated user who follows an artist
-- **WHEN** the user calls SetPassionLevel with a valid artist ID and passion level
-- **THEN** the system SHALL update the passion level and return success
+- **WHEN** the user calls SetHype with a valid artist ID and hype level
+- **THEN** the system SHALL update the hype level and return success
 
 #### Scenario: Unauthenticated request
 
 - **GIVEN** an unauthenticated request
-- **WHEN** the user calls SetPassionLevel
+- **WHEN** the user calls SetHype
 - **THEN** the system SHALL return an Unauthenticated error
 
 #### Scenario: Invalid artist ID
 
 - **GIVEN** an authenticated user
-- **WHEN** the user calls SetPassionLevel without an artist ID
+- **WHEN** the user calls SetHype without an artist ID
 - **THEN** the system SHALL return an InvalidArgument error
 
-### Requirement: PassionLevel in ListFollowed Response
+### Requirement: HypeLevel in ListFollowed Response
 
-The system SHALL include the user's passion level for each artist in the ListFollowed response, using a FollowedArtist wrapper that contains both the artist entity and the passion level.
+The system SHALL include the user's hype level for each artist in the ListFollowed response, using a FollowedArtist wrapper that contains both the artist entity and the hype level.
 
-#### Scenario: ListFollowed returns passion levels
+#### Scenario: ListFollowed returns hype levels
 
-- **GIVEN** a user follows three artists with different passion levels
+- **GIVEN** a user follows three artists with different hype levels
 - **WHEN** the user calls ListFollowed
-- **THEN** each artist in the response SHALL include its corresponding passion level
+- **THEN** each artist in the response SHALL include its corresponding hype level
 
 ### Requirement: Hype Visual Indicators on Dashboard Cards
 
 The system SHALL visually indicate hype (passion) levels on dashboard event cards using border gradient, glow effects, and neon text-shadow, without consuming additional card space.
 
-#### Scenario: WATCH (Keep an Eye) card styling
+#### Scenario: WATCH card styling
 
-- **WHEN** an event card is rendered for an artist with Keep an Eye hype level
+- **WHEN** an event card is rendered for an artist with Watch hype level
 - **THEN** the card SHALL have a `1px solid` border at `white/10` opacity
 - **AND** the card SHALL NOT have glow or text-shadow effects
 - **AND** no emoji badge SHALL be displayed
 
-#### Scenario: HOME (Local Only) card styling
+#### Scenario: HOME card styling
 
-- **WHEN** an event card is rendered for an artist with Local Only hype level
+- **WHEN** an event card is rendered for an artist with Home hype level
 - **THEN** the card SHALL have a `1px solid` border using the artist's color at 40% opacity
 - **AND** the card SHALL have a subtle `box-shadow: 0 0 8px` glow using the artist's color at 30% opacity
 - **AND** the artist name SHALL have a subtle `text-shadow: 0 0 4px` using the artist's color at 30% opacity
@@ -115,9 +115,9 @@ The system SHALL visually indicate hype (passion) levels on dashboard event card
 - **AND** the glow SHALL animate with a gentle pulse (2-second cycle)
 - **AND** no emoji badge SHALL be displayed
 
-#### Scenario: AWAY (Must Go) card styling
+#### Scenario: AWAY card styling
 
-- **WHEN** an event card is rendered for an artist with Must Go (Away) hype level
+- **WHEN** an event card is rendered for an artist with Away hype level
 - **THEN** the card SHALL have a `2px` animated gradient border (conic-gradient rotation)
 - **AND** the card SHALL have a layered glow: `box-shadow: 0 0 24px` at 60% opacity and `0 0 48px` at 20% opacity
 - **AND** the artist name SHALL have a strong neon `text-shadow: 0 0 12px` and `0 0 24px` at 40% opacity

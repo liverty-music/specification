@@ -6,7 +6,7 @@ Defines the linear onboarding tutorial flow that guides new users through artist
 ## Requirements
 ### Requirement: Onboarding Step State Management
 
-The system SHALL maintain an `onboardingStep` numeric value in LocalStorage under the key `liverty:onboardingStep` to track the user's progress through the linear tutorial. Valid values are 0-6 (in-progress) and 7 (COMPLETED).
+The system SHALL maintain an `onboardingStep` numeric value in LocalStorage under the key `liverty:onboardingStep` to track the user's progress through the linear tutorial. Valid values are 0-5 (in-progress), 6 (legacy: immediately migrated to 7), and 7 (COMPLETED).
 
 #### Scenario: Initial state for new visitor
 
@@ -223,20 +223,20 @@ The system SHALL treat `isAuthenticated = true` as an unconditional override of 
 
 ---
 
-### Requirement: No Permission Prompts During Onboarding Steps 1-6
+### Requirement: No Permission Prompts During Onboarding Steps 1-5
 
-The system SHALL suppress all permission prompts (PWA install banner, push notification opt-in) while the user is progressing through onboarding Steps 1-6. Permission prompts are deferred until after Step 7 (COMPLETED).
+The system SHALL suppress all permission prompts (PWA install banner, push notification opt-in) while the user is progressing through onboarding Steps 1-5. Permission prompts are deferred until after Step 7 (COMPLETED).
 
 #### Scenario: PWA install suppressed during tutorial
 
-- **WHEN** the user is at any onboarding step between 1 and 6
+- **WHEN** the user is at any onboarding step between 1 and 5
 - **AND** the browser fires the `beforeinstallprompt` event
 - **THEN** the system SHALL capture the event for later use
 - **BUT** the system SHALL NOT display the PWA install banner
 
 #### Scenario: Notification prompt suppressed during tutorial
 
-- **WHEN** the user is at any onboarding step between 1 and 6
+- **WHEN** the user is at any onboarding step between 1 and 5
 - **THEN** the system SHALL NOT render or evaluate the notification prompt component
 
 #### Scenario: Prompts become eligible after completion
