@@ -65,7 +65,8 @@ The system SHALL collect the user's home area during the Dashboard reveal step o
 - **THEN** the system SHALL store the selected code in localStorage under `guest.home`
 - **AND** the system SHALL immediately close the BottomSheet
 - **AND** the system SHALL unblur the Dashboard background with a smooth transition animation
-- **AND** the system SHALL dynamically populate the Live Highway UI with home-area-relevant events
+- **AND** the system SHALL reload concert data from the backend so lane classification reflects the selected home area
+- **AND** the system SHALL dynamically populate the Live Highway UI with the reloaded, home-area-classified events
 
 ### Requirement: Interactive Artist Discovery (Bubble Network UI)
 
