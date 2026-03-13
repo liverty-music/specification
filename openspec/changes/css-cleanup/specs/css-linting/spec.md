@@ -7,12 +7,12 @@
 ## ADDED Requirements
 
 ### Requirement: Stylelint enforces stacking context management
-The linter SHALL disallow `z-index` without escape hatches. Components SHALL manage stacking via `isolation: isolate` on parent containers instead of arbitrary z-index values.
+The linter SHALL disallow `z-index` via the `property-disallowed-list` rule. Components SHALL resolve stacking requirements through proper DOM structure — elements that need different stacking order SHALL NOT be placed as sticky siblings within the same scroll container.
 
 #### Scenario: No stylelint-disable for z-index
 - **WHEN** stylelint runs against all CSS files
 - **THEN** zero `stylelint-disable` comments for the `property-disallowed-list` rule SHALL exist
-- **AND** all stacking requirements SHALL be resolved via `isolation: isolate` or natural stacking contexts
+- **AND** all stacking requirements SHALL be resolved via proper DOM structure (e.g., moving fixed headers outside scroll containers)
 
 ### Requirement: Stylelint enforces accessibility media queries
 The linter SHALL not flag accessibility-related media features as errors.

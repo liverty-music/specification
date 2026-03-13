@@ -9,7 +9,7 @@ The `improve-css-design` change migrated from TailwindCSS to CUBE CSS architectu
 
 **Goals:**
 - Eliminate all `stylelint-disable` comments by fixing the underlying issues
-- Replace `z-index` with proper stacking context management (`isolation: isolate`)
+- Eliminate `z-index` via DOM restructuring (move sticky header outside scroll container)
 - Remove obsolete Tailwind references from specs and lint config
 - Consolidate duplicate `@keyframes` into `utilities.css`
 - Add `prefers-contrast` / `forced-colors` accessibility support
@@ -21,11 +21,11 @@ The `improve-css-design` change migrated from TailwindCSS to CUBE CSS architectu
 
 ## Decisions
 
-### Decision 1: Replace z-index with `isolation: isolate`
+### Decision 1: Eliminate z-index via DOM restructuring
 
-The `z-index: 10` in `.stage-header` (sticky header) is used to stack above scrolling content. Since `position: sticky` already creates a stacking context, and the header only needs to stack above its siblings within the same parent, `isolation: isolate` on the parent container achieves the same result without an arbitrary z-index value.
+The `z-index: 10` in `.stage-header` existed because it was a `position: sticky` sibling of `.date-separator` elements inside the same scroll container. The correct fix is to move `.stage-header` outside the scroll container entirely — it is a static column label that should not participate in the scroll area's stacking context. This eliminates the z-index, the `isolation: isolate` hack, and the hardcoded `inset-block-start: 41px` magic number on `.date-separator` (see `fix-highway-layout` change for implementation).
 
-**Alternative**: Create a z-index token scale (e.g., `--z-sticky: 10`). Rejected because CUBE CSS philosophy prefers eliminating z-index entirely via proper stacking contexts.
+**Alternative considered**: `isolation: isolate` on the parent. Rejected because `isolation: isolate` only scopes children's z-index from leaking outward — it does not control sibling stacking order within the container. `position: sticky` alone (without a non-auto z-index) does not create a stacking context, so siblings with implicit stacking contexts (e.g., via `backdrop-filter`) will still paint over the header.
 
 ### Decision 2: Remove Tailwind at-rule allowances
 
@@ -37,5 +37,4 @@ Any `@keyframes` definition that appears in both a component CSS file and `utili
 
 ## Risks / Trade-offs
 
-- [Risk] Removing `z-index` from `live-highway.css` could break the sticky header stacking in edge cases → Test with the live-highway component to verify the sticky header renders above scrolling content
 - [Risk] Removing `@theme` from `ignoreAtRules` could break if any CSS file still references it → Grep codebase for `@theme` usage before removing
