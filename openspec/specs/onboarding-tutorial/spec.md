@@ -28,7 +28,7 @@ The system SHALL maintain an `onboardingStep` numeric value in LocalStorage unde
 
 ### Requirement: Linear Step Progression
 
-The system SHALL enforce a strict linear progression through tutorial steps. Users SHALL NOT be able to skip steps or navigate freely during the tutorial.
+The system SHALL enforce a strict linear progression through tutorial steps. Users SHALL NOT be able to skip steps or navigate freely during the tutorial. Step 5 is the final interactive step; Step 6 (forced signup modal) is removed.
 
 #### Scenario: Step 0 - Landing Page entry
 
@@ -94,36 +94,70 @@ The system SHALL enforce a strict linear progression through tutorial steps. Use
 - **THEN** the system SHALL advance `onboardingStep` to 5
 - **AND** navigate to the My Artists screen
 
-#### Scenario: Step 5 - Passion Level guidance
+#### Scenario: Step 5 - Hype Header Coachmark
 
 - **WHEN** a user is at Step 5 (My Artists)
-- **THEN** the system SHALL highlight the Passion Level toggle of the first artist in the list
-- **AND** the system SHALL display a coach mark tooltip: "好きなレベルを設定してみよう！"
+- **THEN** the system SHALL display the sticky hype header legend with `[data-hype-header]` attribute
+- **AND** the system SHALL spotlight the sticky header using the coach mark overlay
+- **AND** the coach mark message SHALL read: "絶対に見逃したくないアーティストの熱量を上げておこう"
 
-#### Scenario: Step 5 - Passion Level changed
+#### Scenario: Step 5 - Coachmark dismissal completes onboarding
 
-See "Requirement: Step 5 Passion Level Explanation Timing" below for the updated behaviour of this scenario.
+- **WHEN** a user is at Step 5
+- **AND** the user taps the coach mark overlay to dismiss it
+- **THEN** the system SHALL advance `onboardingStep` to 7 (COMPLETED)
+- **AND** the system SHALL remove all tutorial UI restrictions (coach marks, spotlight, interaction locks)
+- **AND** the user SHALL have full unrestricted access to the My Artists page
 
-#### Scenario: Step 6 - SignUp modal display
+#### Scenario: Step 5 - Unauthenticated slider tap triggers notification dialog
 
-- **WHEN** a user is at Step 6
-- **THEN** the system SHALL display the Passkey authentication modal
-- **AND** the modal SHALL NOT be dismissible (no close button, no backdrop tap, no escape key)
-- **AND** the modal message SHALL read: "All set! Create an account to save your preferences and never miss a live show."
+- **WHEN** a user is at Step 5 or has completed onboarding (Step >= 7)
+- **AND** the user is unauthenticated
+- **AND** the user taps a hype slider dot
+- **THEN** the system SHALL display the notification dialog (single page)
+- **AND** the dialog SHALL display hype tier → notification scope mapping:
+  - 👀 通知なし
+  - 🔥 地元のライブを通知
+  - 🔥🔥 近くのライブも通知
+  - 🔥🔥🔥 全国のライブを通知
+- **AND** the dialog SHALL display: "通知を受け取るにはアカウント登録が必要です"
+- **AND** the dialog SHALL present two buttons: [アカウント作成] (primary) and [あとで] (ghost)
 
-#### Scenario: Step 6 - Passkey authentication success
+#### Scenario: Notification dialog - アカウント作成
 
-- **WHEN** a user is at Step 6
-- **AND** the user completes Passkey authentication successfully
-- **THEN** the system SHALL trigger the guest data merge process
-- **AND** upon merge completion, set `onboardingStep` to 7 (COMPLETED)
-- **AND** remove all tutorial UI restrictions (coach marks, spotlight, interaction locks)
-- **AND** navigate to the Dashboard with full unrestricted access
+- **WHEN** the user taps [アカウント作成] in the notification dialog
+- **THEN** the system SHALL initiate the Zitadel OIDC Passkey authentication flow
+- **AND** upon successful authentication, the system SHALL trigger the guest data merge process
+- **AND** after merge, hype sliders SHALL become interactive
 
-#### Scenario: Step 6 - Page reload
+#### Scenario: Notification dialog - あとで
 
-- **WHEN** a user reloads the page with `onboardingStep = 6`
-- **THEN** the system SHALL re-display the non-dismissible SignUp modal immediately
+- **WHEN** the user taps [あとで] in the notification dialog
+- **THEN** the dialog SHALL close
+- **AND** the hype slider SHALL remain at the current position (WATCH for all artists)
+- **AND** the inline signup banner SHALL become visible on My Artists and Dashboard pages
+
+#### Scenario: Notification dialog shown once per session
+
+- **WHEN** the user has dismissed the notification dialog with "あとで"
+- **AND** the user taps another slider dot in the same session
+- **THEN** the notification dialog SHALL NOT be shown again
+- **AND** the slider SHALL NOT move (still unauthenticated)
+
+#### Scenario: Step 6 - SignUp modal display (REMOVED)
+
+**Reason**: The non-dismissible signup modal is replaced by the optional notification dialog (triggered by slider tap) and persistent inline signup banners. Users are no longer forced to sign up to complete onboarding.
+**Migration**: Remove the Step 6 signup modal component. Remove the non-dismissible dialog logic. Signup prompts are handled by the notification dialog and `signup-prompt-banner` component. The `OnboardingStep` enum value 6 SHALL be retained for backward compatibility — if a user has `onboardingStep=6` in localStorage from a prior session, the route guard SHALL advance them to Step 7 (COMPLETED).
+
+#### Scenario: Step 6 - Passkey authentication success (REMOVED)
+
+**Reason**: Authentication success handling moves from Step 6 modal to the notification dialog's [アカウント作成] flow. Guest data merge is triggered from the notification dialog instead.
+**Migration**: Move guest data merge trigger to the notification dialog's authentication success callback. The merge logic itself is unchanged.
+
+#### Scenario: Step 6 - Page reload (REMOVED)
+
+**Reason**: Step 6 no longer exists as a distinct step.
+**Migration**: If `onboardingStep=6` is found in localStorage on page load, advance to Step 7 (COMPLETED).
 
 ### Requirement: Coach Mark Overlay System
 
@@ -207,40 +241,21 @@ The system SHALL suppress all permission prompts (PWA install banner, push notif
 
 #### Scenario: Prompts become eligible after completion
 
-- **WHEN** the user completes Step 6 and transitions to Step 7 (COMPLETED)
+- **WHEN** the user completes Step 5 and transitions to Step 7 (COMPLETED)
 - **THEN** permission prompts SHALL become eligible according to the prompt-timing capability rules
 - **AND** the onboarding tutorial SHALL NOT block prompt display after this point
 
 ---
 
-### Requirement: Step 5 Passion Level Explanation Timing
+### Requirement: Step 5 Passion Level Explanation Timing (REMOVED)
 
-The Step 5 passion explanation SHALL provide immediate visual feedback on tap and appear after a shorter delay, replacing the current 3-second silent wait.
-
-#### Scenario: Step 5 - Passion Level changed (MODIFIED)
-
-- **WHEN** a user is at Step 5
-- **AND** the user changes the Passion Level of the highlighted artist
-- **THEN** the passion button SHALL immediately show a brief highlight/pulse animation (scale 1 -> 1.1 -> 1, ~300ms) as visual confirmation that the selection registered
-- **AND** the system SHALL display the passion explanation after an 800ms delay (not 3000ms)
-- **AND** the system SHALL advance `onboardingStep` to 6
+**Reason**: Replaced by the notification dialog triggered on unauthenticated slider tap. The previous flow (change passion level → 800ms delay → explanation dialog → advance to Step 6) is removed. Onboarding now completes at Step 5 coachmark dismissal.
+**Migration**: Remove the passion explanation dialog component. Remove the 800ms delay timer. Step 5 → Step 6 transition is removed; Step 5 coachmark dismissal advances directly to Step 7 (COMPLETED).
 
 ---
 
-### Requirement: Sign-up Modal Entrance Animation
+### Requirement: Sign-up Modal Entrance Animation (REMOVED)
 
-The sign-up modal (Step 6) SHALL animate on entrance to match the visual polish of the onboarding flow.
-
-#### Scenario: Sign-up modal entrance
-
-- **WHEN** the sign-up modal becomes visible (Step 6 activation or page reload at Step 6)
-- **THEN** the modal content panel SHALL animate in with a scale + fade effect (scale 0.95 -> 1, opacity 0 -> 1)
-- **AND** the animation duration SHALL be 400ms with cubic-bezier spring easing
-- **AND** a subtle radial gradient glow SHALL appear behind the modal content using the brand-primary color at low opacity
-
-#### Scenario: Reduced motion preference
-
-- **WHEN** the user has `prefers-reduced-motion: reduce` enabled
-- **THEN** the sign-up modal entrance animation SHALL be skipped
-- **AND** the modal SHALL appear instantly, with both the entrance animation and the `::before` radial gradient glow suppressed (`display: none`; the glow is a static pseudo-element not covered by `animation: none`)
+**Reason**: The sign-up modal (Step 6) is removed entirely.
+**Migration**: Remove sign-up modal entrance animation CSS. The notification dialog uses standard dialog entrance animation.
 

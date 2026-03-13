@@ -1,8 +1,8 @@
-## MODIFIED Requirements
+## Requirements
 
 ### Requirement: Landing Page with Authentication
 
-The system SHALL provide a landing page that communicates the service value proposition and provides entry points for both new users (tutorial) and returning users (direct login). Authentication is no longer required at the landing page; new users enter a guest tutorial flow.
+The system SHALL provide a landing page that communicates the service value proposition and provides entry points for both new users (tutorial) and returning users (direct login). Authentication is no longer required at the landing page; new users enter a guest tutorial flow. The tutorial completes at Step 5 (My Artists) with signup prompted via notification dialog and inline banners.
 
 #### Scenario: First-time user visits landing page
 
@@ -108,3 +108,8 @@ The system SHALL provide an engaging, gamified interface for users to discover a
 - **THEN** concert data MAY already be available from the fire-and-forget `SearchNewConcerts` calls triggered during artist follows in Discovery
 - **AND** the Dashboard SHALL display its own loading skeleton / promise states for any data still pending
 - **AND** the system SHALL NOT rely on a loading screen to mask data fetching
+
+### Requirement: Step 6 - SignUp modal display (REMOVED)
+
+**Reason**: The forced signup modal at Step 6 is removed. Onboarding completes at Step 5 (coachmark dismissal). Signup is prompted via optional notification dialog and persistent inline banners on My Artists and Dashboard pages.
+**Migration**: Remove Step 6 modal rendering from the onboarding flow. If `onboardingStep=6` is found in localStorage, advance to 7 (COMPLETED). Signup CTA is now in the notification dialog and `signup-prompt-banner` component.
