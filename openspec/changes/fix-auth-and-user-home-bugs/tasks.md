@@ -31,7 +31,7 @@
 
 ## 6. Cross-Repo Release
 
-- [ ] 6.1 Create specification PR, merge, and create GitHub Release (triggers BSR publish)
+- [x] 6.1 Create specification PR (#214), merge, and create GitHub Release (triggers BSR publish)
 - [ ] 6.2 After BSR gen completes, update backend `go.sum` with new proto types
-- [ ] 6.3 Create backend PR with migration + code changes
-- [ ] 6.4 Create frontend PR with auth fixes
+- [x] 6.3 Create backend PR (#201, draft) with migration + code changes
+- [x] 6.4 Create frontend PR (#163) with auth fixes
