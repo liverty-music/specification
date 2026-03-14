@@ -76,13 +76,9 @@ message SetHypeRequest {
   entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
 
   // Required. The new hype tier.
-  // HYPE_TYPE_NEARBY (3) is rejected — not user-selectable in Phase 1.
   entity.v1.HypeType hype = 2 [
     (buf.validate.field).required = true,
-    (buf.validate.field).enum = {
-      defined_only: true
-      not_in: [3]
-    }
+    (buf.validate.field).enum = {defined_only: true}
   ];
 }
 

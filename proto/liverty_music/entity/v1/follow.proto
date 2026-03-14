@@ -18,11 +18,10 @@ enum HypeType {
   // Push notifications only for concerts in the user's home area
   // (ISO 3166-2 subdivision match). This is a moderate engagement tier.
   HYPE_TYPE_HOME = 2;
-  // Push notifications for concerts within physical proximity of the user's
-  // home area. Reserved for Phase 2; not exposed in the UI selector.
+  // Push notifications for concerts within physical proximity (≈200 km) of the
+  // user's home area. A strong engagement tier between Home and Away.
   HYPE_TYPE_NEARBY = 3;
-  // Push notifications for all concerts nationwide. This is the default tier
-  // assigned when a user first follows an artist. Die-hard fan level.
+  // Push notifications for all concerts nationwide. Die-hard fan level.
   HYPE_TYPE_AWAY = 4;
 }
 
