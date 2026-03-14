@@ -1,3 +1,19 @@
+## REMOVED Requirements
+
+### Requirement: Persistent guidance until first interaction
+**Reason**: Replaced by one-time popover guide (`onboarding-popover-guide` capability). The persistent HUD created a "forced task" feel and occupied grid space that reduced the bubble area.
+**Migration**: Remove `.onboarding-hud` and `.hud-message` elements from `discover-page.html`. Remove associated CSS styles. Replace with popover element per `onboarding-popover-guide` spec.
+
+### Requirement: Staged progress messages
+**Reason**: Replaced by accumulating orb visual effects (`artist-discovery-dna-orb-ui` capability). The numeric countdown is replaced by visual feedback — the orb becomes more vibrant with each follow, providing implicit progress.
+**Migration**: Remove `guidanceMessage` computed property and related i18n keys (`discovery.guidanceStart`, `discovery.guidanceRemaining`, `discovery.guidanceLast`, `discovery.guidanceReady`, `discovery.guidanceNoConcerts`). The `followedCount` property is retained for the coach-mark activation threshold.
+
+### Requirement: Concert Search Progress Bar
+**Reason**: The progress bar was tightly coupled to the HUD. Concert search completion continues to be tracked internally for coach-mark activation (`showDashboardCoachMark` computed), but no longer has a visible progress bar UI.
+**Migration**: Remove progress bar markup and CSS from `discover-page.html`/`.css`. The `completedSearchCount` and `allSearchesComplete` properties in `discover-page.ts` are retained as they gate the dashboard spotlight activation.
+
+## MODIFIED Requirements
+
 ### Requirement: Onboarding guidance rendered within unified DiscoverPage
 The onboarding guidance SHALL be rendered as a Popover API element within `DiscoverPage` at `/discover`, instead of as an inline grid row.
 
