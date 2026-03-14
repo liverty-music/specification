@@ -22,7 +22,7 @@ Systematic pass through all 28 HTML templates to:
 
 ## Scope
 
-- **In scope**: HTML template changes only. No CSS or TypeScript modifications.
+- **In scope**: HTML template changes only. One CSS selector update in `my-app.css` (`main` → `.app-viewport`) was required to avoid invalid nested `<main>` landmarks after route pages adopted their own `<main>`. No TypeScript modifications.
 - **Out of scope**: DOM flattening (separate change), component extraction (separate change)
 
 ## Affected Files
@@ -34,4 +34,4 @@ All 28 `.html` files under `src/`, with primary focus on:
 
 ## Risk
 
-Low. HTML-only changes with no visual impact. All existing CSS selectors remain valid since bracket notation does not affect selector matching.
+Low. Primarily HTML-only changes with no visual impact. One CSS selector update (`my-app.css`) is mechanical with zero visual change. Bracket notation does not affect selector matching.
