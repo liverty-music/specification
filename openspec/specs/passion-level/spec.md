@@ -14,8 +14,10 @@ The system SHALL support four hype level tiers for each followed artist, with em
 |------|-------------|-------|----------------|----------------|-------------------|
 | Watch | HYPE_TYPE_WATCH | 👀 | チェック | Just checking | None |
 | Home | HYPE_TYPE_HOME | 🔥 | 地元 | Local shows | Home area only |
-| Nearby | HYPE_TYPE_NEARBY | 🔥🔥 | 近くも | Nearby too | Within 200km (Phase 2) |
+| Nearby | HYPE_TYPE_NEARBY | 🔥🔥 | 近くも | Nearby too | Within 200km |
 | Away | HYPE_TYPE_AWAY | 🔥🔥🔥 | どこでも！ | Anywhere! | All concerts |
+
+All four tiers SHALL be selectable by authenticated users via the SetHype RPC. No tier SHALL be rejected by server-side validation.
 
 #### Scenario: Default hype level on follow
 
@@ -27,6 +29,11 @@ The system SHALL support four hype level tiers for each followed artist, with em
 
 - **WHEN** hype level labels are displayed in the UI (slider header, dialogs, settings)
 - **THEN** the system SHALL use emotion-based labels (チェック/地元/近くも/どこでも！) instead of proximity-based labels (Watch/Home/NearBy/Away)
+
+#### Scenario: SetHype accepts all four tiers
+
+- **WHEN** an authenticated user calls SetHype with any of the four defined hype tiers (WATCH, HOME, NEARBY, AWAY)
+- **THEN** the system SHALL accept the request and persist the hype level
 
 ### Requirement: Hype Changes Require Authentication
 
@@ -57,7 +64,7 @@ The system SHALL persist each user's hype level per followed artist in the backe
 
 ### Requirement: SetHype API
 
-The system SHALL provide a SetHype RPC endpoint that accepts an artist ID and a hype level, updating the user's preference for that artist.
+The system SHALL provide a SetHype RPC endpoint that accepts an artist ID and a hype level, updating the user's preference for that artist. The endpoint SHALL accept all four defined HypeType values (WATCH, HOME, NEARBY, AWAY).
 
 #### Scenario: Successful update
 
