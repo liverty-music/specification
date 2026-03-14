@@ -91,14 +91,14 @@ The linter SHALL enforce a consistent property declaration order grouped by func
 - **AND** `stylelint --fix` SHALL automatically reorder properties
 
 ### Requirement: Stylelint compatible with modern CSS at-rules
-The linter SHALL not flag valid modern CSS at-rules as errors.
+The linter SHALL not flag valid modern CSS at-rules or CUBE CSS plugin rules as errors.
 
 #### Scenario: Standard CSS at-rules accepted
 - **WHEN** a CSS file contains `@layer`, `@scope`, or `@property` at-rules
 - **THEN** Stylelint SHALL not report unknown at-rule errors
 
 #### Scenario: Modern CSS at-rules accepted
-- **WHEN** a CSS file contains `@container`, `@starting-style`, or `@property` at-rules
+- **WHEN** a CSS file contains `@container`, `@starting-style`, `@property`, or `@scope` at-rules
 - **THEN** Stylelint SHALL not report unknown at-rule errors
 
 ### Requirement: Stylelint enforces stacking context management
@@ -128,6 +128,11 @@ The linter SHALL not flag accessibility-related media features as errors.
 #### Scenario: prefers-reduced-motion allowed
 - **WHEN** a CSS file contains `@media (prefers-reduced-motion: reduce)`
 - **THEN** Stylelint SHALL not report any errors
+
+#### Scenario: CUBE CSS plugin rules configured
+- **WHEN** `stylelint.config.js` is loaded
+- **THEN** the `stylelint-plugin-cube-css` plugin SHALL be registered
+- **AND** all 14 `cube/*` rules SHALL be configured
 
 ### Requirement: Stylelint integrated into CI pipeline
 The linter SHALL run as part of the standard CI lint check.
