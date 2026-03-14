@@ -15,8 +15,8 @@ Key patterns:
 
 1. Remove single-purpose wrapper divs where the parent can absorb the styling
 2. Replace overlay divs with CSS `::before` / `::after` pseudo-elements
-3. Consolidate coach-mark blocker structure to a single element with CSS `clip-path` or mask
-4. Replace `<div class="settings-divider">` with semantic `<hr>`
+3. ~~Consolidate coach-mark blocker structure~~ — skipped: anchor-positioned masks require separate elements; dual arrows use `@container anchored` for CSS-only direction toggle
+4. ~~Replace `<div class="settings-divider">` with semantic `<hr>`~~ — already uses `<hr>` elements
 5. Flatten `.state-center` > `.state-content` to a single container
 
 ## Scope
