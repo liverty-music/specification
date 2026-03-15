@@ -72,7 +72,8 @@ The system SHALL provide satisfying visual feedback when users select artists by
 
 #### Scenario: Effective swirl combines base and transient
 - **WHEN** the orb animation loop runs
-- **THEN** the particle speed multiplier SHALL be `1 + (baseIntensity + swirlIntensity) * 2`
+- **THEN** `baseIntensity` SHALL be computed as `1 - 1 / (1 + followCount * 0.5)` (diminishing returns curve)
+- **AND** the particle speed multiplier SHALL be `1 + (baseIntensity + swirlIntensity) * 2`
 - **AND** `swirlIntensity` SHALL decay over ~1000ms as before
 - **AND** `baseIntensity` SHALL NOT decay within the same page session
 
