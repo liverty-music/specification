@@ -45,6 +45,8 @@ Scroll-linked visual effects (progress indicators, parallax, shadow-on-scroll) S
 - **THEN** the element SHALL display in its default (non-animated) state
 - **AND** `@supports (animation-timeline: scroll())` SHALL gate scroll-driven animation rules
 
+## MODIFIED Requirements
+
 ### Requirement: @starting-style for all entry animations
 Elements inserted into the DOM dynamically SHALL use `@starting-style` for entry animations instead of `requestAnimationFrame` or two-step class toggling.
 
@@ -65,8 +67,6 @@ Parent elements SHALL use `:has()` pseudo-class to style themselves based on chi
 - **WHEN** a navigation list contains a child with `[data-active]` or `[aria-current]`
 - **THEN** the parent navigation item SHALL style itself via `:has([data-active])` or `:has([aria-current])` selector
 - **AND** no JavaScript SHALL set a class or attribute on the parent element for this purpose
-
-## MODIFIED Requirements
 
 ### Requirement: Container Queries for component-level responsive design
 Components that render in variable-width containers SHALL use CSS Container Queries instead of viewport-based media queries for layout adaptation. All responsive components SHALL be audited and converted.
