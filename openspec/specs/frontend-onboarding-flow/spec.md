@@ -100,14 +100,11 @@ The system SHALL provide an engaging, gamified interface for users to discover a
 - **AND** the user taps the [Generate Dashboard] CTA
 - **THEN** the system SHALL set `onboardingStep` to 3 (DASHBOARD)
 - **AND** the system SHALL navigate to `/dashboard`
-- **AND** the system SHALL NOT navigate to `/onboarding/loading`
-
 #### Scenario: Concert data availability at Dashboard
 
 - **WHEN** the user arrives at the Dashboard after completing Artist Discovery
 - **THEN** concert data MAY already be available from the fire-and-forget `SearchNewConcerts` calls triggered during artist follows in Discovery
 - **AND** the Dashboard SHALL display its own loading skeleton / promise states for any data still pending
-- **AND** the system SHALL NOT rely on a loading screen to mask data fetching
 
 ### Requirement: Step 6 - SignUp modal display (REMOVED)
 

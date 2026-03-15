@@ -119,7 +119,7 @@ The notification prompt SHALL be rendered at the app shell level (`my-app.html`)
 
 #### Scenario: Notification prompt hidden during onboarding routes
 
-- **WHEN** the user is on a fullscreen route (Landing Page, Loading Sequence, Auth Callback)
+- **WHEN** the user is on a fullscreen route (Landing Page, Auth Callback)
 - **OR** the user is not authenticated
 - **OR** onboarding is not completed
 - **THEN** the system SHALL NOT render the `<notification-prompt>` component

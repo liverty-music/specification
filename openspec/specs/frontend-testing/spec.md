@@ -53,24 +53,7 @@ The `DashboardService.loadDashboardEvents` method SHALL fetch followed artists, 
 - **WHEN** concert fetching fails for one artist but succeeds for another
 - **THEN** the service SHALL return events from the successful artist (using `Promise.allSettled` resilience)
 
-### Requirement: Loading sequence service orchestrates data aggregation
-The `LoadingSequenceService.aggregateData` method SHALL fetch followed artists (with retry), search concerts in batches, and enforce timeout and minimum display constraints.
 
-#### Scenario: Successful aggregation
-- **WHEN** `aggregateData` is called and all RPC calls succeed
-- **THEN** it SHALL complete after at least MINIMUM_DISPLAY_MS (3000ms)
-
-#### Scenario: Artist fetch retry on failure
-- **WHEN** the first call to list followed artists fails
-- **THEN** the service SHALL retry once before giving up
-
-#### Scenario: Concert search batching
-- **WHEN** the user follows more than BATCH_SIZE (5) artists
-- **THEN** concert searches SHALL be executed in batches of BATCH_SIZE
-
-#### Scenario: Global timeout
-- **WHEN** data aggregation exceeds GLOBAL_TIMEOUT_MS (10000ms)
-- **THEN** the operation SHALL abort via AbortSignal
 
 ### Requirement: Onboarding service routes based on completion status
 The `OnboardingService` SHALL check whether the user has completed onboarding and redirect to the appropriate route.
@@ -147,7 +130,7 @@ The `AuthStatus` component SHALL delegate sign-in, sign-up, and sign-out actions
 The `MyApp.showNav` getter SHALL return `false` for fullscreen routes and `true` for other routes.
 
 #### Scenario: Fullscreen route
-- **WHEN** the active route path is `welcome`, `onboarding/discover`, `onboarding/loading`, or `auth/callback`
+- **WHEN** the active route path is `welcome`, `onboarding/discover`, or `auth/callback`
 - **THEN** `showNav` SHALL return `false`
 
 #### Scenario: Non-fullscreen route
@@ -275,40 +258,6 @@ The `authInterceptor` within `createTransport` SHALL inject a Bearer token into 
 #### Scenario: No authenticated user
 - **WHEN** `getUserManager().getUser()` returns `null`
 - **THEN** the interceptor SHALL NOT add an Authorization header
-
-### Requirement: Loading sequence route guards based on onboarding status
-The `LoadingSequence.canLoad` method SHALL check onboarding completion and redirect accordingly.
-
-#### Scenario: User has locally followed artists
-- **WHEN** `canLoad` is called and the local `followedArtists` array is non-empty
-- **THEN** it SHALL return `true` (allow navigation)
-
-#### Scenario: No local artists but backend has followed artists
-- **WHEN** local `followedArtists` is empty but `listFollowedFromBackend` returns artists
-- **THEN** it SHALL redirect to `/` (dashboard)
-
-#### Scenario: No followed artists anywhere
-- **WHEN** both local and backend artist lists are empty
-- **THEN** it SHALL redirect to `/artist-discovery`
-
-#### Scenario: Backend check fails
-- **WHEN** `listFollowedFromBackend` throws an error
-- **THEN** it SHALL redirect to `/artist-discovery` as a safe fallback
-
-### Requirement: Loading sequence animates phases during data aggregation
-The `LoadingSequence` route SHALL display a multi-phase progress animation while `LoadingSequenceService.aggregateData` runs.
-
-#### Scenario: Complete aggregation navigates to dashboard
-- **WHEN** `aggregateData` returns status `complete`
-- **THEN** the route SHALL navigate to `/dashboard`
-
-#### Scenario: Partial aggregation navigates to dashboard
-- **WHEN** `aggregateData` returns status `partial`
-- **THEN** the route SHALL navigate to `/dashboard`
-
-#### Scenario: Failed aggregation captures error and navigates
-- **WHEN** `aggregateData` returns status `failed`
-- **THEN** the route SHALL capture the error via `ErrorBoundaryService` and navigate to `/dashboard`
 
 ### Requirement: Concert service forwards RPC calls with AbortSignal
 The `ConcertService` SHALL forward concert listing and search requests to the backend gRPC service with AbortSignal support.

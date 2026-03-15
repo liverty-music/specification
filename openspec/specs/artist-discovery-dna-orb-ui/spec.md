@@ -137,7 +137,7 @@ The system SHALL use the DNA Orb as the primary navigation element to proceed to
 - **WHEN** the user has followed one or more artists
 - **THEN** the system SHALL display a tappable button on or near the DNA Orb
 - **AND** the button SHALL show the text: "[View Live Schedule (X artists)]" where X is the follow count
-- **AND** when tapped, the system SHALL proceed to the Loading Sequence step
+- **AND** when tapped, the system SHALL proceed to the Dashboard
 
 ---
 
