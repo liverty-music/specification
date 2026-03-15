@@ -33,11 +33,6 @@ The system SHALL provide a gamified artist discovery interface using a "DNA Extr
 - **THEN** the system SHALL display a popover guide explaining the interaction (per `onboarding-popover-guide` capability)
 - **AND** the popover SHALL dismiss via light-dismiss or explicit close
 
-#### Scenario: Orb label text
-- **WHEN** the DNA Orb is displayed
-- **THEN** the system SHALL display a label near the orb indicating its purpose (e.g., "Music DNA" or the current follow count)
-- **AND** the label SHALL update dynamically as artists are followed
-
 #### Scenario: Background visual depth
 - **WHEN** the Artist Discovery screen is displayed
 - **THEN** the background SHALL include subtle visual elements (e.g., particle field, starfield, or animated gradient) to create depth
@@ -46,48 +41,39 @@ The system SHALL provide a gamified artist discovery interface using a "DNA Extr
 ---
 
 ### Requirement: Bubble Absorption Animation
-The system SHALL provide satisfying visual feedback when users select artists by animating bubbles into the DNA Orb, with accumulating visual intensity.
+The system SHALL provide satisfying visual feedback when users select artists by animating bubbles into the DNA Orb, with accumulating visual intensity and comet trail effects.
 
 #### Scenario: Artist selection with absorption effect
 - **WHEN** a user taps an artist bubble
 - **THEN** the bubble SHALL shrink and trace a path toward the DNA Orb at the bottom
 - **AND** the bubble SHALL be absorbed into the orb with a dissolve effect
-- **AND** the orb's internal effects (swirling light, particles) SHALL intensify
-- **AND** the orb's color SHALL incorporate the absorbed bubble's hue (from the existing `artistHue` computation)
+- **AND** if comet trail is enabled by the current stage level, the bubble SHALL leave a colored trail along its path
+- **AND** on absorption completion, the orb SHALL trigger a shockwave ring (if enabled by stage level)
+- **AND** the orb's color SHALL incorporate the absorbed bubble's hue
 
 #### Scenario: Color injection uses bubble's existing hue
 - **WHEN** a bubble is absorbed into the orb
 - **THEN** `OrbRenderer.injectColor` SHALL be called with the same hue used to render that bubble's gradient
 - **AND** 10-15 particles SHALL be replaced with the injected hue (with +/- 20 degree random variance)
 - **AND** `swirlIntensity` SHALL spike to 1.0 for a transient visual burst
+- **AND** the hue SHALL be appended to the color palette for use by orbital particles and light rays
 
-#### Scenario: Orb visual evolution with accumulating baseIntensity
+#### Scenario: Orb visual evolution with stage-level escalation
 - **WHEN** the user follows more artists
-- **THEN** `OrbRenderer.baseIntensity` SHALL increase per follow using the formula: `baseIntensity = 1 - 1 / (1 + followCount * 0.5)`
-- **AND** the effective intensity for glow, particle count, and swirl speed SHALL be computed as `intensity + baseIntensity`
-- **AND** `swirlIntensity` spike decay SHALL apply on top of the elevated base, making each successive follow's swirl more dramatic
+- **THEN** the orb's visual presentation SHALL be determined by `getStageParams(followCount)` from `stage-effects.ts`
+- **AND** the orb radius, orbital count, light ray count, breathing amplitude, and ground glow SHALL all be driven by the returned `StageParams`
+- **AND** each follow SHALL produce a visibly distinct escalation in effects
 
 #### Scenario: First follow has maximum visual impact
 - **WHEN** the user follows their first artist (followCount goes from 0 to 1)
-- **THEN** `baseIntensity` SHALL jump from 0.00 to 0.33 (the largest single-follow delta)
-- **AND** the visible particle count SHALL increase noticeably (from ~10% to ~40% of max)
-- **AND** the orb glow radius SHALL expand visibly
-
-#### Scenario: Diminishing returns on later follows
-- **WHEN** the user follows their 5th artist
-- **THEN** `baseIntensity` SHALL be approximately 0.71
-- **AND** the delta from the 4th follow SHALL be approximately +0.05
-- **AND** the orb SHALL still show a transient `swirlIntensity` spike and color injection, even though the base level change is small
-
-#### Scenario: baseIntensity resets on page navigation
-- **WHEN** the user navigates away from the discover page and returns
-- **THEN** `baseIntensity` SHALL reset to 0
-- **AND** `followCount` for intensity purposes SHALL reset to 0
-- **AND** the orb SHALL start from its default visual state
+- **THEN** the orb radius SHALL increase from 60 to 68
+- **AND** the breathing pulse SHALL begin
+- **AND** the visible particle count SHALL increase noticeably
 
 #### Scenario: Effective swirl combines base and transient
 - **WHEN** the orb animation loop runs
-- **THEN** the particle speed multiplier SHALL be `1 + (baseIntensity + swirlIntensity) * 2`
+- **THEN** `baseIntensity` SHALL be computed as `1 - 1 / (1 + followCount * 0.5)` (diminishing returns curve)
+- **AND** the particle speed multiplier SHALL be `1 + (baseIntensity + swirlIntensity) * 2`
 - **AND** `swirlIntensity` SHALL decay over ~1000ms as before
 - **AND** `baseIntensity` SHALL NOT decay within the same page session
 
