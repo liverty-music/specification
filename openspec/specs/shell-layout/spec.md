@@ -16,7 +16,7 @@ All overlay custom elements (`pwa-install-prompt`, `notification-prompt`, `toast
 - **WHEN** the user scrolls the live-highway event list downward
 - **THEN** the stage header (HOME STAGE / NEAR STAGE / AWAY STAGE) SHALL remain fixed above the scrollable content
 - **AND** the stage header SHALL be a `<header>` element inside the `live-highway` CE, outside the scrollable `.highway-scroll` area
-- **AND** the `live-highway` CE SHALL use CSS Grid (`grid-template-rows: auto 1fr`) to separate the fixed header from the scrollable content
+- **AND** the `live-highway` CE SHALL contain a `.highway-layout` child element using CSS Grid (`grid-template-rows: auto 1fr`) to separate the fixed header from the scrollable content
 - **AND** the `live-highway` CE SHALL declare its own `:scope { display: block; block-size: 100%; min-block-size: 0; }` to inherit height from the route component
 
 #### Scenario: Overlay elements remain functional
