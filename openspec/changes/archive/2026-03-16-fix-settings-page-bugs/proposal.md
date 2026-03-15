@@ -1,6 +1,5 @@
 # Fix Settings Page Bugs
 
-**Status:** proposed
 **Repos:** frontend
 **Type:** bugfix
 
