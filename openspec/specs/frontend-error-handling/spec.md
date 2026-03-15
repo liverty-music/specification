@@ -61,6 +61,12 @@ The system SHALL display an error banner in the root component (`my-app`) when `
 - **AND** the banner SHALL provide a "Dismiss" button
 - **AND** the banner SHALL provide a "Reload Page" button
 
+#### Scenario: Error banner buttons are interactive
+- **WHEN** the error banner dialog is displayed via `showModal()`
+- **THEN** all buttons within the dialog SHALL respond to click and tap events
+- **AND** the dialog element SHALL override the inherited `pointer-events: none` from the parent `<error-banner>` custom element with `pointer-events: auto`
+- **AND** the `::backdrop` pseudo-element SHALL NOT block pointer events from reaching the dialog content
+
 #### Scenario: Copy Error Details generates Markdown report
 - **WHEN** the user clicks "Copy Error Details"
 - **THEN** the system SHALL copy a Markdown-formatted error report to the clipboard
