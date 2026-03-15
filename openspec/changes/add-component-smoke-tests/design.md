@@ -61,13 +61,13 @@ The `bottom-nav-bar` component has had an invalid `<template switch.bind>` since
 
 **Why**: Public routes don't require auth state setup. Catches runtime errors (including template compilation) in a real browser. Authenticated routes are out of scope — they need auth storage state which is a separate concern.
 
-### D6: `bottom-nav-bar` fix — use `<span>` as switch host
+### D6: `svg-icon` fix — use `<span>` as switch host
 
-**Decision**: Replace `<template switch.bind="tab.icon">` with `<span switch.bind="tab.icon">`.
+**Decision**: Replace `<template switch.bind="name">` with `<span switch.bind="name" class="icon-switch">` in `svg-icon.html`. The original AUR0703 bug was in `bottom-nav-bar.html`, but commit 779e579 moved it to `svg-icon.html` by extracting inline SVGs into the `<svg-icon>` component.
 
-**Why**: `<span>` is inline, doesn't break the `<a>` element's content model (unlike `<div>` which is block-level inside `<a>` in flow content). The `<span>` acts as an invisible wrapper — add `display: contents` in CSS so it doesn't affect layout.
+**Why**: `<span>` is inline, doesn't affect the component's content model. Add `display: contents` in CSS so the wrapper is invisible to layout.
 
-**Alternative considered**: `<div>` — valid in Aurelia but semantically wrong inside `<a>` with inline content.
+**Alternative considered**: `<div>` — valid in Aurelia but semantically heavier than needed for an inline icon component.
 
 ## Risks / Trade-offs
 

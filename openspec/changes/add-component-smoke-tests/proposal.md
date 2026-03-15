@@ -7,7 +7,7 @@ A critical AUR0703 template compilation error (`switch` on surrogate `<template>
 - Add a Vitest smoke test suite that mounts every Aurelia 2 custom element via `@aurelia/testing`, verifying template compilation succeeds without error.
 - Add a Playwright E2E smoke test that navigates to each public route and asserts zero console errors.
 - Fix the two bugs discovered during investigation:
-  - `bottom-nav-bar.html`: Replace `<template switch.bind>` (invalid surrogate + template controller) with a valid host element.
+  - `svg-icon.html`: Replace `<template switch.bind>` (invalid surrogate + template controller) with `<span switch.bind>` + `display: contents`. The AUR0703 bug moved here from `bottom-nav-bar.html` via commit 779e579.
   - `error-banner.css`: Add `pointer-events: auto` to `.error-dialog` to override the inherited `pointer-events: none` from `my-app.css`.
 
 ## Capabilities
@@ -24,6 +24,6 @@ A critical AUR0703 template compilation error (`switch` on surrogate `<template>
 
 - **frontend/test/**: New smoke test files using `@aurelia/testing` and `createFixture`.
 - **frontend/e2e/**: New console-error smoke spec.
-- **frontend/src/components/bottom-nav-bar/**: Template fix (`<template>` → valid element for `switch.bind`).
+- **frontend/src/components/svg-icon/**: Template fix (`<template switch.bind>` → `<span switch.bind>` + `display: contents`) — AUR0703 bug moved here by commit 779e579.
 - **frontend/src/components/error-banner/**: CSS fix for dialog pointer-events.
 - **CI**: Smoke tests run as part of existing `make test` / `make test:e2e` pipelines — no new CI jobs needed.
