@@ -66,6 +66,11 @@ The system SHALL enforce a strict linear progression through tutorial steps. Use
 - **AND** the progress bar target SHALL require 3 or more artists with completed (or timed-out) concert searches
 - **AND** the user MAY continue following more artists after reaching 3
 
+#### Scenario: Step 2 - Loading sequence (REMOVED)
+
+**Reason**: The loading-sequence route is deleted. The Discover page handles concert data fetching inline via fire-and-forget `SearchNewConcerts` calls and a concert data gate before showing the Dashboard CTA.
+**Migration**: `OnboardingStep.LOADING` (enum value 2) is retained for localStorage backward compatibility — the route mapping is updated to point to `dashboard`, so users with `onboardingStep=2` in localStorage from a prior session land on Dashboard.
+
 #### Scenario: Step 3 - Dashboard reveal with celebration and lane introduction
 
 - **WHEN** a user is at Step 3 (Dashboard)
