@@ -221,7 +221,7 @@ The system SHALL provide a `<toast-notification>` custom element that displays t
 #### Scenario: Reduced motion preference
 - **WHEN** `prefers-reduced-motion: reduce` is active
 - **THEN** the toast SHALL still be dismissed and removed correctly
-- **AND** the browser's `allow-discrete` transition SHALL handle the `display: none` change without animation
+- **AND** a `@media (prefers-reduced-motion: reduce)` CSS rule SHALL set `transition-duration: 0s` on `.toast-item` to suppress animation
 
 #### Scenario: CSS entry animation
 - **WHEN** a toast popover is opened via `showPopover()`
