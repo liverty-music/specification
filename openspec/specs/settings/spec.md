@@ -37,6 +37,12 @@ The system SHALL allow users to change their home area preference (prefecture) w
 - **AND** the Settings row SHALL reflect the new home area
 - **AND** the Dashboard SHALL use the new home area for Live Highway lane calculations on next load
 
+#### Scenario: My Home Area displays from backend User entity
+- **WHEN** the Settings page loads for an authenticated user
+- **THEN** the My Home Area row SHALL display the home area from `UserService.current.home`
+- **AND** SHALL NOT read from localStorage for home area display
+- **AND** if `UserService.current.home` is absent, the row SHALL display the localized "Not set" text
+
 ---
 
 ### Requirement: Push Notification Toggle
