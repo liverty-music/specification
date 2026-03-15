@@ -1,6 +1,6 @@
 # Festival Orb Effects
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Stage-level escalation system
 The system SHALL calculate visual effect parameters from the follow count using a stage-level model, where each follow advances the stage by one level. The calculation SHALL be implemented as a pure function in `stage-effects.ts`, separate from rendering logic.
