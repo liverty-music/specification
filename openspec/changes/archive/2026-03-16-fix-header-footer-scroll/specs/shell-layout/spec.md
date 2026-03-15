@@ -1,9 +1,5 @@
-# shell-layout Specification
+## MODIFIED Requirements
 
-## Purpose
-
-Defines the PWA shell layout structure for `app-shell`, ensuring overlay custom elements are excluded from CSS Grid flow so that `bottom-nav-bar` stays pinned at the viewport bottom and `position: sticky` headers work correctly within scroll containers.
-## Requirements
 ### Requirement: Overlay elements excluded from grid flow
 All overlay custom elements (`pwa-install-prompt`, `notification-prompt`, `toast-notification`, `error-banner`, `coach-mark`) SHALL be removed from normal document flow so they do not create implicit CSS Grid rows in the `app-shell` shell layout.
 
@@ -16,10 +12,9 @@ All overlay custom elements (`pwa-install-prompt`, `notification-prompt`, `toast
 - **WHEN** the user scrolls the live-highway event list downward
 - **THEN** the stage header (HOME STAGE / NEAR STAGE / AWAY STAGE) SHALL remain fixed above the scrollable content
 - **AND** the stage header SHALL be a `<header>` element inside the `live-highway` CE, outside the scrollable `.highway-scroll` area
-- **AND** the `live-highway` CE SHALL contain a `.highway-layout` child element using CSS Grid (`grid-template-rows: auto 1fr`) to separate the fixed header from the scrollable content
+- **AND** the `live-highway` CE SHALL use CSS Grid (`grid-template-rows: auto 1fr`) to separate the fixed header from the scrollable content
 - **AND** the `live-highway` CE SHALL declare its own `:scope { display: block; block-size: 100%; min-block-size: 0; }` to inherit height from the route component
 
 #### Scenario: Overlay elements remain functional
 - **WHEN** an overlay element activates (e.g., toast notification, coach-mark spotlight)
 - **THEN** the overlay SHALL render correctly via the browser top-layer API, unaffected by the flow removal
-
