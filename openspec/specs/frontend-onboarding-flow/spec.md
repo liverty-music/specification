@@ -1,76 +1,8 @@
-## Requirements
-
-### Requirement: Landing Page with Authentication
-
-The system SHALL provide a landing page that communicates the service value proposition and provides entry points for both new users (tutorial) and returning users (direct login). Authentication is no longer required at the landing page; new users enter a guest tutorial flow. The tutorial completes at Step 5 (My Artists) with signup prompted via notification dialog and inline banners.
-
-#### Scenario: First-time user visits landing page
-
-- **WHEN** a user accesses the application for the first time
-- **THEN** the system SHALL display a hero message communicating the core value ("大好きなあのバンドのライブ、もう二度と見逃さない。")
-- **AND** the system SHALL display a sub-message ("あなたの推しアーティストを登録するだけで、全国のライブ日程を自動収集。")
-- **AND** the system SHALL provide a primary [Get Started] CTA button that enters the tutorial flow without authentication
-- **AND** the system SHALL provide a secondary [Login] text link for returning users
-- **AND** the system SHALL NOT provide "Sign Up" or "Sign In" buttons that trigger immediate authentication
-
-#### Scenario: User taps Get Started
-
-- **WHEN** a user taps the [Get Started] button
-- **THEN** the system SHALL set `onboardingStep` to 1 in LocalStorage
-- **AND** the system SHALL navigate to the Artist Discovery page (`/onboarding/discover`)
-- **AND** the system SHALL NOT require authentication
-
-#### Scenario: User taps Login
-
-- **WHEN** a user taps the [Login] link
-- **THEN** the system SHALL initiate the Zitadel OIDC flow for Passkey authentication
-- **AND** upon successful authentication, the system SHALL redirect to the Dashboard with full unrestricted access
-
-#### Scenario: User provisioning fails during login callback
-
-- **WHEN** the OIDC callback processing fails
-- **THEN** the system SHALL display an error message on the callback page
-- **AND** the system SHALL provide a "Return to Home" link
-
-### Requirement: Just-in-Time Region Configuration
-
-The system SHALL collect the user's home area during the Dashboard reveal step of the tutorial (Step 3), presenting the home area selector as a BottomSheet overlay before displaying personalized content. The selector SHALL use the same 2-step region-to-prefecture flow used throughout the application.
-
-#### Scenario: Home area setup overlay on Dashboard reveal (Step 3)
-
-- **WHEN** the user arrives at the Dashboard during the tutorial (Step 3)
-- **AND** the user has not yet configured their home area
-- **THEN** the system SHALL display the Dashboard with a blurred background
-- **AND** the system SHALL present the `user-home-selector` BottomSheet overlay as a native `<dialog>` element via `showModal()`, promoted to the browser's Top Layer (no z-index stacking)
-- **AND** the selector SHALL display Step 1 with quick-select major city buttons (Tokyo, Osaka, Nagoya, Fukuoka, Sapporo, Sendai) and region buttons (Hokkaido, Tohoku, Kanto, Chubu, Kinki, Chugoku, Shikoku, Kyushu)
-- **AND** the BottomSheet SHALL use the design system's dark surface palette and sheet radius token
-
-#### Scenario: Quick-select city in onboarding
-
-- **WHEN** the user taps a quick-select city button in Step 1
-- **THEN** the system SHALL immediately confirm the selection with the city's prefecture code (e.g., Tokyo -> JP-13)
-- **AND** the system SHALL NOT display Step 2
-
-#### Scenario: Region-to-prefecture selection in onboarding
-
-- **WHEN** the user taps a region button in Step 1
-- **THEN** the system SHALL transition to Step 2 showing prefectures within the selected region
-- **AND** Step 2 SHALL include a back button to return to Step 1
-- **WHEN** the user taps a prefecture in Step 2
-- **THEN** the system SHALL confirm the selection with the prefecture's ISO 3166-2 code
-
-#### Scenario: Magic moment after home area selection
-
-- **WHEN** the user selects their home area (via quick-select or region-to-prefecture)
-- **THEN** the system SHALL store the selected code in localStorage under `guest.home`
-- **AND** the system SHALL immediately close the BottomSheet
-- **AND** the system SHALL unblur the Dashboard background with a smooth transition animation
-- **AND** the system SHALL reload concert data from the backend so lane classification reflects the selected home area
-- **AND** the system SHALL dynamically populate the Live Highway UI with the reloaded, home-area-classified events
+## MODIFIED Requirements
 
 ### Requirement: Interactive Artist Discovery (Bubble Network UI)
 
-The system SHALL provide an engaging, gamified interface for users to discover and follow artists using Last.fm API data. During the tutorial, followed artists are stored locally (not via backend RPC). Additionally, the system SHALL trigger a background concert search for each followed artist to pre-populate concert data for the Dashboard.
+The system SHALL provide an engaging, gamified interface for users to discover and follow artists using Last.fm API data. During the tutorial, followed artists are stored locally (not via backend RPC). Additionally, the system SHALL trigger a background concert search for each followed artist to pre-populate concert data for the Dashboard. The DNA orb SHALL visually evolve as artists are followed, incorporating each artist's color into its particle system.
 
 #### Scenario: Initial artist bubble display
 
@@ -86,27 +18,64 @@ The system SHALL provide an engaging, gamified interface for users to discover a
 - **AND** the system SHALL NOT call any backend RPC for the follow operation itself
 - **AND** the system SHALL call `ConcertService/SearchNewConcerts` fire-and-forget in the background
 - **AND** errors from `SearchNewConcerts` SHALL be logged to console and NOT affect the follow operation or UI
-
-#### Scenario: Progress bar reaches target
-
-- **WHEN** the user has followed 3 or more artists
-- **THEN** the system SHALL display the progress bar at 100%
-- **AND** the system SHALL activate and highlight the [Generate Dashboard] CTA button
+- **AND** upon absorption completion, the bubble's hue SHALL be injected into the orb's particle system with a swirl animation
 
 #### Scenario: Discover to Dashboard transition
 
 - **WHEN** a user is at Step 1 (Artist Discovery)
 - **AND** the user has followed >= 3 artists
-- **AND** the user taps the [Generate Dashboard] CTA
-- **THEN** the system SHALL set `onboardingStep` to 3 (DASHBOARD)
+- **AND** concert search results have been received for all followed artists (or timed out)
+- **THEN** the system SHALL activate a coach mark spotlight on the Dashboard icon in the bottom navigation bar
+- **AND** the system SHALL display the coach mark message: "タイムテーブルを見てみよう！"
+- **AND** when the user taps the Dashboard icon through the spotlight, the system SHALL advance `onboardingStep` to 3 (DASHBOARD)
 - **AND** the system SHALL navigate to `/dashboard`
+
 #### Scenario: Concert data availability at Dashboard
 
 - **WHEN** the user arrives at the Dashboard after completing Artist Discovery
 - **THEN** concert data MAY already be available from the fire-and-forget `SearchNewConcerts` calls triggered during artist follows in Discovery
 - **AND** the Dashboard SHALL display its own loading skeleton / promise states for any data still pending
+- **AND** the system SHALL NOT rely on a loading screen to mask data fetching
 
-### Requirement: Step 6 - SignUp modal display (REMOVED)
+## REMOVED Requirements
 
-**Reason**: The forced signup modal at Step 6 is removed. Onboarding completes at Step 5 (coachmark dismissal). Signup is prompted via optional notification dialog and persistent inline banners on My Artists and Dashboard pages.
-**Migration**: Remove Step 6 modal rendering from the onboarding flow. If `onboardingStep=6` is found in localStorage, advance to 7 (COMPLETED). Signup CTA is now in the notification dialog and `signup-prompt-banner` component.
+### Requirement: Progress bar reaches target
+
+**Reason**: The progress bar tracked concert search completion which contradicted the guidance message tracking follow count. Replaced by DNA orb color evolution as visual feedback for follow progress.
+
+**Migration**: Remove `search-progress-bar` HTML/CSS from discover-page template. Remove `searchProgress` getter from DiscoverPage. The `completedSearchCount` tracking remains for the `showDashboardCoachMark` condition.
+
+### Requirement: Step 1 - Progress bar display
+
+**Reason**: Same as above. The progress bar is removed and replaced by DNA orb visual feedback.
+
+**Migration**: Remove the progress bar UI. The concert search tracking logic remains internally for gating the coach mark appearance.
+
+## Test Cases
+
+### Unit Tests (Vitest — discover-page.spec.ts)
+
+#### TC-OF-01: Progress bar elements are absent from template
+
+- **Given** the discover-page component is rendered
+- **Then** no `.search-progress-bar` or `.search-progress-fill` elements SHALL exist in the DOM
+
+#### TC-OF-02: searchProgress getter is removed
+
+- **Given** the DiscoverPage class
+- **Then** no `searchProgress` property or getter SHALL exist
+- **And** `completedSearchCount` SHALL still be available (used by `showDashboardCoachMark`)
+
+#### TC-OF-03: showDashboardCoachMark gates on follow count and search completion
+
+- **Given** `onboardingStep = 1`
+- **When** `followedArtists.length >= 3` AND `completedSearchCount >= followedArtists.length`
+- **Then** `showDashboardCoachMark` SHALL be `true`
+
+### Unit Tests (Vitest — toast-notification.spec.ts)
+
+#### TC-OF-04: Toast popover container has transparent background
+
+- **Given** the toast-notification component uses `popover="manual"`
+- **Then** the popover container SHALL have CSS class `toast-popover`
+- **And** the CSS rule `[popover].toast-popover` SHALL set `background: transparent`, `border: none`, `padding: 0`, `margin: 0`
