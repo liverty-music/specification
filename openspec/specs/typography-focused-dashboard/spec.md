@@ -20,12 +20,12 @@ The system SHALL display live events in a three-column equal-width timeline layo
 - **THEN** the system SHALL display an empty state message (distinct from the error state)
 - **AND** the empty state SHALL NOT be confused with a loading failure
 
-#### Scenario: Dashboard displays stale data on refresh failure
+#### Scenario: Dashboard silently displays cached data on refresh failure
 - **WHEN** the dashboard has previously loaded data successfully
 - **AND** a subsequent data refresh fails
-- **THEN** the system SHALL continue displaying the previously loaded data
-- **AND** the system SHALL display a warning banner: "Data may be outdated. Refresh failed."
-- **AND** the banner SHALL include a "Retry" button
+- **THEN** the system SHALL continue displaying the previously loaded data silently
+- **AND** the system SHALL NOT display any warning banner or stale data indicator
+- **AND** the error SHALL be logged for observability but not surfaced to the user
 
 #### Scenario: Equal-width three-lane grid
 - **WHEN** the dashboard renders the event grid
