@@ -1,11 +1,7 @@
-# shell-layout Specification
+## MODIFIED Requirements
 
-## Purpose
-
-Defines the PWA shell layout structure for `app-shell`, ensuring overlay custom elements are excluded from CSS Grid flow so that `bottom-nav-bar` stays pinned at the viewport bottom and `position: sticky` headers work correctly within scroll containers.
-## Requirements
 ### Requirement: Overlay elements excluded from grid flow
-All overlay custom elements (`pwa-install-prompt`, `notification-prompt`, `toast-notification`, `error-banner`, `coach-mark`) SHALL be removed from normal document flow so they do not create implicit CSS Grid rows in the `app-shell` shell layout.
+All overlay custom elements (`pwa-install-prompt`, `notification-prompt`, `toast-notification`, `error-banner`, `coach-mark`) SHALL be removed from normal document flow so they do not create implicit CSS Grid rows in the app-shell layout.
 
 #### Scenario: Bottom nav stays at viewport bottom
 - **WHEN** the dashboard page has enough events to require scrolling
@@ -22,4 +18,3 @@ All overlay custom elements (`pwa-install-prompt`, `notification-prompt`, `toast
 #### Scenario: Overlay elements remain functional
 - **WHEN** an overlay element activates (e.g., toast notification, coach-mark spotlight)
 - **THEN** the overlay SHALL render correctly via the browser top-layer API, unaffected by the flow removal
-
