@@ -68,7 +68,7 @@ The coach mark overlay container SHALL use `popover="manual"` to render on the b
 
 ### Requirement: Continuous Spotlight Persistence
 
-The spotlight SHALL remain continuously active from the moment it first appears (Step 1, Dashboard icon) until the sign-up modal is displayed (Step 6). The popover SHALL NOT be closed and reopened between steps; instead, the target SHALL be updated via anchor-name reassignment while the overlay remains open. This provides uninterrupted visual guidance throughout the entire onboarding tutorial.
+The spotlight SHALL remain continuously active from the moment it first appears (Step 1, Dashboard icon) until the sign-up modal is displayed (Step 6). The popover SHALL NOT be closed and reopened between steps; instead, the target SHALL be updated via anchor-name reassignment while the overlay remains open. This provides uninterrupted visual guidance throughout the entire onboarding tutorial. **Exception**: the Step 1→3 transition (Discovery → Dashboard) SHALL deactivate and reactivate the spotlight — the popover must be cleared before navigation so that Dashboard overlays (celebration, region selector) render above the top layer without being blocked by click-blockers (see `onboarding-tutorial`, "Step 1 - Spotlight deactivation before navigation").
 
 #### Scenario: Spotlight activates at Step 1 and persists through Step 5
 

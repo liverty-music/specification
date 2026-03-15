@@ -86,6 +86,7 @@ The system SHALL enforce a strict linear progression through tutorial steps. Use
 - **AND** the user taps the Dashboard coach mark
 - **THEN** the system SHALL deactivate the spotlight (`deactivateSpotlight()`) before navigating to `/dashboard`
 - **AND** this ensures the popover top layer is cleared so that Dashboard overlays (celebration, region selector) are not blocked by click-blockers
+- **AND** the Dashboard SHALL reactivate the spotlight during the lane introduction sequence (see Step 3 scenario below)
 
 #### Scenario: Step 3 - Dashboard reveal with celebration and lane introduction
 
@@ -130,7 +131,13 @@ The system SHALL enforce a strict linear progression through tutorial steps. Use
 
 #### Scenario: Step 5 - Passion Level changed
 
-See "Requirement: Step 5 Passion Level Explanation Timing" for the updated behaviour of this scenario.
+- **WHEN** a user is at Step 5
+- **AND** the user changes the Passion Level of any artist
+- **THEN** the system SHALL apply the change as a visual demo only (no server persistence)
+- **AND** the system SHALL display a pulse animation on the artist card (300ms)
+- **AND** the system SHALL deactivate the spotlight (`deactivateSpotlight()`)
+- **AND** the system SHALL advance `onboardingStep` to 7 (COMPLETED)
+- **AND** the system SHALL navigate to the landing page
 
 #### Scenario: Step 5 to Step 6 - Spotlight deactivation
 
