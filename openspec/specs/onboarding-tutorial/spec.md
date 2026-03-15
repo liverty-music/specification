@@ -42,10 +42,21 @@ The system SHALL enforce a strict linear progression through tutorial steps. Use
 - **WHEN** a user is at Step 1 (Artist Discovery / Bubble UI)
 - **AND** the user has followed 3 or more artists via bubble taps
 - **AND** concert search results have been received for all followed artists (or timed out after 15 seconds per artist)
+- **AND** `ConcertService/List` returns at least 1 date group for the followed artists
 - **THEN** the system SHALL activate a coach mark spotlight on the Dashboard icon in the bottom navigation bar (target: `[data-nav-dashboard]`)
 - **AND** the coach mark SHALL display the message: "タイムテーブルを見てみよう！"
 - **AND** when the user taps the Dashboard icon, the system SHALL advance `onboardingStep` to 3 (DASHBOARD), skipping Step 2 (LOADING)
 - **AND** the system SHALL navigate to the Dashboard (`/dashboard`)
+
+#### Scenario: Step 1 - Concert searches complete with no results
+
+- **WHEN** a user is at Step 1 (Artist Discovery / Bubble UI)
+- **AND** the user has followed 3 or more artists
+- **AND** concert search results have been received for all followed artists (or timed out)
+- **AND** `ConcertService/List` returns 0 date groups
+- **THEN** the system SHALL NOT activate the Dashboard coach mark
+- **AND** the system SHALL update the guidance HUD message to: "No upcoming events found yet — try following more artists!"
+- **AND** the system SHALL re-evaluate the concert data gate each time a new artist is followed and their concert search completes
 
 #### Scenario: Step 1 - Progress bar display
 
@@ -72,12 +83,21 @@ The system SHALL enforce a strict linear progression through tutorial steps. Use
 - **AND** the system SHALL apply a spotlight overlay highlighting only the first concert card
 - **AND** the system SHALL display a coach mark tooltip: "タップして詳細を見てみよう！"
 
+#### Scenario: Step 3 - Dashboard with no concert data (fallback)
+
+- **WHEN** a user is at Step 3 (Dashboard)
+- **AND** `ConcertService/List` returns 0 date groups (e.g., user reached Dashboard via direct nav tap bypassing the concert data gate)
+- **THEN** the system SHALL skip the lane introduction sequence entirely
+- **AND** the system SHALL advance `onboardingStep` to 4 (DETAIL)
+- **AND** the system SHALL activate the spotlight on the [My Artists] tab in the bottom navigation bar
+- **AND** the system SHALL display a coach mark tooltip: "アーティスト一覧も見てみよう！"
+
 #### Scenario: Step 3 - Concert card tap
 
 - **WHEN** a user is at Step 3
 - **AND** the user taps the spotlighted concert card
 - **THEN** the system SHALL advance `onboardingStep` to 4
-- **AND** open the concert detail sheet (popover with `popover="manual"`)
+- **AND** open the concert detail sheet (popover)
 
 #### Scenario: Step 4 - Detail sheet with My Artists tab guidance
 
@@ -189,7 +209,8 @@ The system SHALL provide a reusable coach mark overlay component that highlights
 
 - **WHEN** the target element for a coach mark is not present in the DOM
 - **THEN** the system SHALL retry finding the element with exponential backoff (up to 5 seconds)
-- **AND** if still not found, the system SHALL display an error message and allow the user to retry the step
+- **AND** if still not found, the system SHALL fully deactivate the coach mark overlay: close the popover, release scroll lock, clear anchor-name assignments, and log an error
+- **AND** no click-blockers, spotlight elements, or scroll locks SHALL remain in the DOM after deactivation
 
 #### Scenario: Reduced motion preference
 

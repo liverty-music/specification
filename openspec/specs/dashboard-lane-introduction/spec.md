@@ -14,8 +14,18 @@ The system SHALL introduce each dashboard lane by sequentially spotlighting the 
 
 - **WHEN** the celebration overlay has faded
 - **AND** the region selection (if needed) has completed
+- **AND** `ConcertService/List` has returned 1 or more date groups
 - **THEN** the system SHALL begin the lane introduction sequence
 - **AND** scrolling SHALL be disabled during the entire sequence
+
+#### Scenario: Lane introduction skipped when no concert data
+
+- **WHEN** the celebration overlay has faded
+- **AND** the region selection (if needed) has completed
+- **AND** `ConcertService/List` has returned 0 date groups
+- **THEN** the system SHALL NOT begin the lane introduction sequence
+- **AND** the system SHALL log a warning: "No concert data available, skipping lane intro"
+- **AND** the system SHALL skip directly to Step 4 behavior (My Artists tab spotlight)
 
 #### Scenario: HOME STAGE header spotlight
 
@@ -59,3 +69,9 @@ The lane introduction sequence SHALL be managed locally within the dashboard com
 - **WHEN** the user reloads the page during the lane introduction sequence
 - **THEN** the system SHALL restart the lane introduction from the beginning (HOME STAGE)
 - **AND** the celebration overlay SHALL NOT replay (it uses a separate one-time flag)
+
+#### Scenario: Data loading awaited before lane intro decision
+
+- **WHEN** `startLaneIntro()` is called
+- **THEN** the system SHALL await the `dataPromise` (ConcertService/List response) before deciding whether to run or skip the lane intro
+- **AND** if the data fetch fails, the system SHALL proceed with whatever data is available (possibly empty, triggering the skip path)

@@ -119,18 +119,24 @@ The frontend SHALL store the user's home area server-side via RPC, replacing loc
 - **THEN** the frontend SHALL call `UserService.UpdateHome` with the new structured home
 - **AND** SHALL NOT write to localStorage for the home area
 
-#### Scenario: Dashboard reads home from User entity
+#### Scenario: Dashboard reads home from hydrated User entity
 
 - **WHEN** the dashboard loads for an authenticated user
-- **THEN** the dashboard SHALL call `UserService.Get` to obtain the user's home status
-- **AND** the `needsRegion` flag SHALL be determined by the presence of `user.home` in the response
-- **AND** the dashboard SHALL NOT read from localStorage to determine `needsRegion`
+- **THEN** the lane assignment logic SHALL read the user's home area from `UserService.current.home` (the hydrated in-memory User entity)
+- **AND** SHALL NOT call `UserService.Get` independently
+- **AND** SHALL NOT read from localStorage
+
+#### Scenario: Settings reads home from hydrated User entity
+
+- **WHEN** the settings page loads for an authenticated user
+- **THEN** the My Home Area display SHALL read from `UserService.current.home` (the hydrated in-memory User entity)
+- **AND** SHALL NOT read from localStorage
 
 #### Scenario: Guest fallback to localStorage
 
 - **WHEN** a guest (unauthenticated) user selects their home area
 - **THEN** the frontend SHALL store the selection in localStorage under `guest.home`
-- **AND** the dashboard SHALL read from localStorage for the `needsRegion` determination
+- **AND** the dashboard and settings SHALL read from localStorage for home area display
 
 #### Scenario: Dashboard reloads data after authenticated home change
 
