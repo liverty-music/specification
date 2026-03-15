@@ -66,7 +66,7 @@
 
 ## 7. Integration Verification
 
-- [ ] 7.1 Manual E2E test: full onboarding flow verifying continuous spotlight from Step 1 through Step 6
+- [x] 7.1 Manual E2E test: full onboarding flow verifying continuous spotlight from Step 1 through Step 6
     - Step 0→1: Tap [Get Started] → navigate to Discover (no spotlight yet)
     - Step 1: Follow 3 artists → verify orb color changes on each absorption → spotlight activates on Home icon (`--spotlight-radius: 50%`) → tooltip "タイムテーブルを見てみよう！" in handwritten font → tap Home icon → **spotlight slides** to Dashboard
     - Step 3 (lane intro): Spotlight slides HOME STAGE → NEAR STAGE → AWAY STAGE → first concert card (verify smooth View Transition animation between each) → tooltip "タップして詳細を見てみよう！" → tap card → detail sheet opens → **spotlight slides** to My Artists tab
@@ -74,6 +74,6 @@
     - Step 5: Verify spotlight already on Passion Level toggle (no blink) → tooltip "好きなレベルを設定してみよう！" → change passion level → explanation popup after 800ms
     - Step 6: Spotlight fades out → sign-up modal appears (non-dismissible) → verify cleanup: no `anchor-name` on any element, no scroll lock on `au-viewport`, no orphaned click-blockers, popover hidden
     - **Key verification**: The popover was opened ONCE at Step 1 and never closed until Step 6
-- [ ] 7.2 Manual test: during onboarding, tap Tickets/Settings nav items → verify silent redirect, no toast
-- [ ] 7.3 Manual test: verify toast notifications display without white corner gap
+- [x] 7.2 Manual test: during onboarding, tap Tickets/Settings nav items → verify silent redirect, no toast
+- [x] 7.3 Manual test: verify toast notifications display without white corner gap
 - [x] 7.4 Run `make check` in frontend repo — all lint and tests pass
