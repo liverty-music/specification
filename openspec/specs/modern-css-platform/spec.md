@@ -2,12 +2,12 @@
 
 ## Purpose
 
-Defines the modern CSS platform standards for the Liverty Music frontend, leveraging 2026 Web Platform Baseline features including Container Queries, View Transitions API, `:has()` selectors, CSS Logical Properties, `@layer` cascade management, `@scope` component isolation, Anchored Container Queries, `@starting-style`, `transitionend`-based cleanup, `overscroll-behavior`, and `scrollIntoView` + `scrollend` patterns for responsive, performant, and internationalization-ready styling.
+Defines the modern CSS platform standards for the Liverty Music frontend, leveraging 2026 Web Platform Baseline features including Container Queries, View Transitions API, `:has()` selectors, CSS Logical Properties, `@layer` cascade management, `@scope` component isolation, Anchored Container Queries, `@starting-style`, `transitionend`-based cleanup, `overscroll-behavior`, `scrollIntoView` + `scrollend` patterns, CSS scroll snap for dismiss gestures, and Scroll-driven Animations for responsive, performant, and internationalization-ready styling.
 
 ## Requirements
 
 ### Requirement: Container Queries for component-level responsive design
-Components that render in variable-width containers SHALL use CSS Container Queries instead of viewport-based media queries for layout adaptation.
+Components that render in variable-width containers SHALL use CSS Container Queries instead of viewport-based media queries for layout adaptation. All responsive components SHALL be audited and converted.
 
 #### Scenario: Event card adapts to lane width
 - **WHEN** an `event-card` renders inside a `live-highway` lane
@@ -18,6 +18,11 @@ Components that render in variable-width containers SHALL use CSS Container Quer
 - **WHEN** a browser does not support Container Queries
 - **THEN** the component SHALL fall back to a reasonable default layout
 - **AND** the `@supports (container-type: inline-size)` feature query SHALL gate container-specific rules
+
+#### Scenario: All responsive components use Container Queries
+- **WHEN** any component has layout that adapts to available space
+- **THEN** the component SHALL use `@container` queries, not `@media (min-width: ...)` or `@media (max-width: ...)`
+- **AND** stylelint SHALL enforce this via `media-feature-name-disallowed-list`
 
 ### Requirement: View Transitions API for route animations
 Route change animations SHALL use the View Transitions API (Baseline 2024) to run transitions off the main thread. No CSS keyframe fallback is required for non-supporting browsers.
@@ -196,7 +201,7 @@ No form of `style` attribute SHALL appear in HTML templates. Dynamic values are 
 
 #### Scenario: Dynamic values via custom attributes
 - **WHEN** a component needs to pass a dynamic value to CSS
-- **THEN** the template SHALL use a custom attribute (e.g., `swipe-offset.bind="value"`)
+- **THEN** the template SHALL use a custom attribute (e.g., `artist-color.bind="name"`)
 - **AND** the custom attribute SHALL internally set a CSS custom property via `element.style.setProperty()`
 - **AND** the template SHALL NOT contain `style=`, `style.*.bind`, or any form of `style` attribute
 
@@ -244,3 +249,48 @@ TypeScript SHALL NOT use `setTimeout` with hardcoded durations that mirror CSS t
 - **WHEN** a popover element has an exit animation and needs to call `hidePopover()` after completion
 - **THEN** the component SHALL listen for `animationend` on the popover element
 - **AND** `hidePopover()` SHALL be called in the event handler, not in a `setTimeout` callback
+
+### Requirement: CSS scroll snap for bottom sheet dismiss gestures
+Bottom sheets that support swipe-to-dismiss SHALL use CSS scroll snap instead of JavaScript touch event handlers.
+
+#### Scenario: User swipes down to dismiss the event detail sheet
+- **WHEN** a bottom sheet is open and the user swipes downward
+- **THEN** the sheet container SHALL use `scroll-snap-type: y mandatory` with two snap points (content and dismiss zone)
+- **AND** the browser's native scroll mechanics SHALL handle the drag gesture, snap-back, and momentum
+- **AND** a `scrollend` event handler SHALL detect when the dismiss zone is reached and call `close()`
+- **AND** no JavaScript `touchstart`/`touchmove`/`touchend` handlers SHALL be used for drag tracking
+
+#### Scenario: User swipes partially and releases
+- **WHEN** the user swipes down less than the dismiss threshold and releases
+- **THEN** CSS scroll snap SHALL automatically snap the sheet back to the content position
+- **AND** no JavaScript animation or `requestAnimationFrame` SHALL be used for the snap-back
+
+#### Scenario: Non-dismissable mode (onboarding)
+- **WHEN** the sheet is in non-dismissable mode (`popover="manual"`)
+- **THEN** the scroll snap dismiss zone SHALL be hidden or disabled
+- **AND** the user SHALL NOT be able to dismiss the sheet by swiping
+
+### Requirement: No JS-to-CSS variable bridge custom attributes
+Custom attributes that solely set a CSS custom property from a JavaScript value SHALL NOT exist. These are unnecessary abstraction layers.
+
+#### Scenario: Removing bridge custom attributes
+- **WHEN** a custom attribute exists only to call `element.style.setProperty('--_name', value)`
+- **THEN** the underlying JS pattern SHALL be replaced with a CSS-native approach (e.g., scroll snap)
+- **AND** the custom attribute SHALL be deleted
+
+#### Scenario: Custom attributes with computation are valid
+- **WHEN** a custom attribute performs computation (e.g., hashing a string to derive a color value)
+- **THEN** the custom attribute SHALL be retained as it provides genuine logic encapsulation
+
+### Requirement: Scroll-driven Animations for scroll-linked effects
+Scroll-linked visual effects (progress indicators, parallax, shadow-on-scroll) SHALL use CSS Scroll-driven Animations instead of JavaScript scroll event listeners.
+
+#### Scenario: Scroll progress indicator
+- **WHEN** a scrollable container needs a visual progress indicator
+- **THEN** the indicator element SHALL use `animation-timeline: scroll()` with a `@keyframes` rule
+- **AND** no JavaScript `scroll` event listener SHALL be used for this purpose
+
+#### Scenario: Graceful degradation for unsupported browsers
+- **WHEN** a browser does not support `animation-timeline: scroll()`
+- **THEN** the element SHALL display in its default (non-animated) state
+- **AND** `@supports (animation-timeline: scroll())` SHALL gate scroll-driven animation rules
