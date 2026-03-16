@@ -1,6 +1,6 @@
 ## Context
 
-The dashboard currently tracks an `isStale` flag that is set when `loadDashboardEvents()` fails but cached `dateGroups` exist. This drives a warning banner in the template and splits the catch block into two code paths (full error vs stale). Removing this simplifies the ViewModel, template, and styles.
+The dashboard currently tracks an `isStale` flag that is set when `loadData()` fails but cached `dateGroups` exist. This drives a warning banner in the template and splits the catch block into two code paths (full error vs stale). Removing this simplifies the ViewModel, template, and styles.
 
 ## Goals / Non-Goals
 
@@ -17,7 +17,7 @@ The dashboard currently tracks an `isStale` flag that is set when `loadDashboard
 
 ### Silent fallback on reload failure
 
-When `loadDashboardEvents()` fails and `dateGroups.length > 0`, the catch block will simply log the error and suppress the throw. The template catch branch only needs the `inline-error` path (for empty cache). The stale `<live-highway>` branch inside catch is removed because the `<live-highway>` in the `then` branch already rendered the cached data.
+When `loadData()` fails and `dateGroups.length > 0`, the catch block will simply log the error and suppress the throw. The template catch branch only needs the `inline-error` path (for empty cache). The stale `<live-highway>` branch inside catch is removed because the `<live-highway>` in the `then` branch already rendered the cached data.
 
 **Alternative considered:** Replace banner with a subtle toast notification. Rejected — even a toast implies something is wrong when the displayed data is still valid.
 
