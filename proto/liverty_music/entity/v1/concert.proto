@@ -35,7 +35,7 @@ message Concert {
   Title title = 7 [(buf.validate.field).required = true];
 
   // The official source URL for the concert information.
-  SourceUrl source_url = 8;
+  Url source_url = 8;
 
   // The resolved venue where the concert is hosted.
   // Populated by the server on every response; includes name and admin_area when available.

@@ -8,6 +8,7 @@ package liverty_music.rpc.artist.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/entity.proto";
 
 // ArtistService provides operations for discovering and managing musical performers.
 // It acts as a gateway for artist metadata and handles integration with external
@@ -103,7 +104,7 @@ message CreateOfficialSiteRequest {
   entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
 
   // Required. The verified URL for the new official site channel.
-  entity.v1.OfficialSiteUrl url = 2 [(buf.validate.field).required = true];
+  entity.v1.Url url = 2 [(buf.validate.field).required = true];
 }
 
 // CreateOfficialSiteResponse is returned upon successful site association.
