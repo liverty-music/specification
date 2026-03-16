@@ -58,6 +58,18 @@ message SourceUrl {
   }];
 }
 
+// FanartImageUrl represents a URL pointing to an artist image hosted on fanart.tv.
+// Used within the Fanart message to provide community-curated artist visuals
+// such as thumbnails, logos, backgrounds, and banners.
+message FanartImageUrl {
+  // The URI value pointing to the fanart.tv hosted image. Must be a valid URI.
+  string value = 1 [(buf.validate.field).string = {
+    uri: true
+    min_len: 1
+    max_len: 2048
+  }];
+}
+
 // ListedVenueName represents the raw venue name as scraped from the source.
 // This preserves the original text separately from the normalized Venue.name,
 // which may have been corrected or standardised.
