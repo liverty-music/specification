@@ -64,11 +64,26 @@ type FanartImage struct {
 
 **Why**: JSONB ↔ Go struct の変換が `json.Unmarshal` 一発で済む。fanart.tv の新しい画像タイプが追加された場合も struct にフィールドを足すだけ。
 
-### 3. Proto: Fanart メッセージで best image を返す
+### 3. Proto: 汎用 `Url` メッセージと Fanart
 
-Proto では各画像タイプに対して best image（likes 最大）の URL を 1 つだけ返す。
+`SourceUrl`, `FanartImageUrl`, `OfficialSiteUrl` の 3 つの URL ラッパーを汎用 `Url` メッセージに統合する。
 
 ```protobuf
+// entity.proto
+message Url {
+    string value = 1 [(buf.validate.field).string = {
+        uri: true
+        min_len: 1
+        max_len: 2048
+    }];
+}
+// SourceUrl, FanartImageUrl, OfficialSiteUrl は削除
+```
+
+Fanart メッセージでは統合後の `Url` を使用。各画像タイプに対して best image（likes 最大）の URL を 1 つだけ返す。
+
+```protobuf
+// artist.proto
 message Fanart {
     optional Url artist_thumb = 1;
     optional Url artist_background = 2;
@@ -77,13 +92,23 @@ message Fanart {
     optional Url music_banner = 5;
 }
 
-message Artist {
+message OfficialSite {
     ...
-    optional Fanart fanart = 4;
+    Url url = 2;  // OfficialSiteUrl → Url
 }
 ```
 
-**Why**: フロントエンドに全候補リストを返す必要はない。best image 選択はバックエンドの責務。ロゴのフォールバック（`hd_music_logo ?? music_logo`）はフロントエンド側で行う。
+```protobuf
+// concert.proto
+message Concert {
+    ...
+    optional Url source_url = N;  // SourceUrl → Url
+}
+```
+
+**Why**: 3 つの URL ラッパーはバリデーションが実質同一（URI + min/max）。フィールド名がドメインコンテキストを持つため、型名に冗長なドメイン情報は不要。`LocalDate` や `StartTime` と同様の汎用値型として統一する。ソース破壊変更だがワイヤ互換。`buf skip breaking` ラベルで対応。
+
+**Why (best image)**: フロントエンドに全候補リストを返す必要はない。best image 選択はバックエンドの責務。ロゴのフォールバック（`hd_music_logo ?? music_logo`）はフロントエンド側で行う。
 
 ### 4. 取得タイミング: Event Consumer + CronJob のハイブリッド
 
