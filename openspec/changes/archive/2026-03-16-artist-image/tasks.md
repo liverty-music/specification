@@ -7,11 +7,11 @@
 
 ## 1b. Proto: URL type consolidation (specification repo)
 
-- [ ] 1b.1 Replace `SourceUrl`, `FanartImageUrl`, `OfficialSiteUrl` with generic `Url` message in `entity/v1/entity.proto`
-- [ ] 1b.2 Update `artist.proto`: `Fanart` fields to use `Url`, `OfficialSite.url` to use `Url`, remove `OfficialSiteUrl` message
-- [ ] 1b.3 Update `concert.proto`: `source_url` field to use `Url`, remove `SourceUrl` import if separate
-- [ ] 1b.4 Run `buf lint` and `buf format -w` to validate
-- [ ] 1b.5 PR with `buf skip breaking` label
+- [x] 1b.1 Replace `SourceUrl`, `FanartImageUrl`, `OfficialSiteUrl` with generic `Url` message in `entity/v1/entity.proto`
+- [x] 1b.2 Update `artist.proto`: `Fanart` fields to use `Url`, `OfficialSite.url` to use `Url`, remove `OfficialSiteUrl` message
+- [x] 1b.3 Update `concert.proto`: `source_url` field to use `Url`, remove `SourceUrl` import if separate
+- [x] 1b.4 Run `buf lint` and `buf format -w` to validate
+- [x] 1b.5 PR with `buf skip breaking` label
 
 ## 2. Database Migration (backend repo)
 
@@ -69,8 +69,8 @@
 
 ## 10b. Backend: URL type rename (backend repo, after 1b release)
 
-- [ ] 10b.1 Update `go get` to pull new BSR-generated types with `Url` instead of `SourceUrl`/`OfficialSiteUrl`/`FanartImageUrl`
-- [ ] 10b.2 Update RPC mappers: `entityv1.SourceUrl` → `entityv1.Url`, `entityv1.OfficialSiteUrl` → `entityv1.Url`, `entityv1.FanartImageUrl` → `entityv1.Url`
+- [x] 10b.1 Update `go get` to pull new BSR-generated types with `Url` instead of `SourceUrl`/`OfficialSiteUrl`/`FanartImageUrl`
+- [x] 10b.2 Update RPC mappers: `entityv1.SourceUrl` → `entityv1.Url`, `entityv1.OfficialSiteUrl` → `entityv1.Url`, `entityv1.FanartImageUrl` → `entityv1.Url`
 
 ## 11. Tests (backend repo)
 
@@ -78,4 +78,4 @@
 - [x] 11.2 Unit test fanart.tv client with httptest server
 - [x] 11.3 Integration test `UpdateFanart` and `ListStaleOrMissingFanart` repository methods
 - [x] 11.4 Unit test `ArtistImageConsumer` handler
-- [ ] 11.5 Unit test proto mapper with fanart data (blocked: requires BSR-generated types)
+- [x] 11.5 Unit test proto mapper with fanart data
