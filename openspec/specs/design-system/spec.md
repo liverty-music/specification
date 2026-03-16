@@ -12,29 +12,56 @@ The system SHALL define a centralized set of design tokens using plain CSS custo
 #### Scenario: Color tokens defined
 - **WHEN** the design system is initialized
 - **THEN** the system SHALL define the following color token groups via CSS custom properties in `tokens.css`:
-  - `--color-brand-primary`: oklch(58.5% 0.233 277deg)
-  - `--color-brand-secondary`: oklch(54.1% 0.281 293deg)
-  - `--color-brand-accent`: oklch(78.9% 0.154 211deg)
-  - `--color-surface-base`: oklch(14.5% 0.014 286deg)
-  - `--color-surface-raised`: oklch(17.8% 0.014 286deg)
-  - `--color-surface-overlay`: oklch(21% 0.014 286deg)
+  - `--color-brand-primary`: oklch(65% 0.28 350deg) (hot pink)
+  - `--color-brand-secondary`: oklch(62% 0.25 255deg) (electric blue)
+  - `--color-brand-accent`: oklch(82% 0.22 140deg) (lime green)
+  - `--color-surface-base`: oklch(18% 0.04 275deg) (deep navy)
+  - `--color-surface-raised`: oklch(22% 0.04 275deg)
+  - `--color-surface-overlay`: oklch(26% 0.04 275deg)
   - `--color-text-primary`: oklch(98.5% 0 0deg)
-  - `--color-text-secondary`: oklch(78.8% 0.013 286deg)
-  - `--color-text-muted`: oklch(55.6% 0.014 286deg)
+  - `--color-text-secondary`: oklch(82% 0.02 275deg) (warm-tinted light gray)
+  - `--color-text-muted`: oklch(60% 0.03 275deg) (warm-tinted dim gray)
 - **AND** all components SHALL reference these tokens instead of hardcoded color values
 - **AND** tokens SHALL be defined on `:root` using standard CSS custom property syntax, not Tailwind's `@theme` directive
+
+#### Scenario: Stage color tokens defined
+- **WHEN** the design system is initialized
+- **THEN** the system SHALL define per-stage identity color tokens:
+  - `--color-stage-home`: oklch(72% 0.2 55deg) (orange)
+  - `--color-stage-near`: oklch(75% 0.18 195deg) (cyan)
+  - `--color-stage-away`: oklch(68% 0.25 330deg) (magenta)
+- **AND** components needing stage-aware styling SHALL reference these tokens
+- **AND** stage colors SHALL be applied via `data-stage` attribute selectors in the block layer (CUBE CSS exception pattern), not in the composition layer
 
 #### Scenario: Typography tokens defined
 - **WHEN** the design system is initialized
 - **THEN** the system SHALL define font family tokens:
-  - `--font-display`: "Outfit", system-ui, sans-serif for hero copy, card headlines, section titles
-  - `--font-body`: system-ui, -apple-system, sans-serif for paragraphs, labels, metadata
+  - `--font-display`: "Righteous", "Outfit", system-ui, sans-serif for hero copy, card headlines, section titles
+  - `--font-body`: "Poppins", system-ui, -apple-system, sans-serif for paragraphs, labels, metadata
 - **AND** the system SHALL define a type scale with sizes for mega (4xl or larger), heading (2xl-3xl), body (base-lg), caption (xs-sm)
+
+#### Scenario: Righteous font-weight constraint
+- **WHEN** `--font-display` resolves to Righteous
+- **THEN** components SHALL use `font-weight: normal` (400) or omit weight entirely for Righteous-rendered text
+- **AND** components SHALL NOT specify `font-weight: 700` or higher when using `--font-display`, as Righteous provides only weight 400 and higher values trigger faux-bold rendering
+
+#### Scenario: Border color tokens defined
+- **WHEN** the design system is initialized
+- **THEN** the system SHALL define border color tokens:
+  - `--color-border-subtle`: oklch(98.5% 0 0deg / 12%)
+  - `--color-border-muted`: oklch(98.5% 0 0deg / 22%)
+
+#### Scenario: Shadow tokens reference brand color via relative color syntax
+- **WHEN** the design system is initialized
+- **THEN** the system SHALL define shadow tokens using relative color syntax referencing `--color-brand-primary`:
+  - `--shadow-card-glow`: 0 4px 24px -4px oklch(from var(--color-brand-primary) l c h / 20%)
+  - `--shadow-button`: 0 4px 16px -2px oklch(from var(--color-brand-primary) l c h / 30%)
+- **AND** the `--shadow-sheet` and `--shadow-soft` tokens SHALL remain unchanged
+- **AND** shadow tokens SHALL NOT contain hardcoded oklch values; they SHALL always derive from brand color tokens
 
 #### Scenario: Shape tokens defined
 - **WHEN** the design system is initialized
 - **THEN** the system SHALL define radius tokens: `--radius-card` (1rem), `--radius-button` (0.75rem), `--radius-sheet` (1.5rem)
-- **AND** the system SHALL define shadow tokens: `--shadow-card-glow`, `--shadow-sheet`, `--shadow-button`
 
 #### Scenario: Spacing scale tokens defined
 - **WHEN** the design system is initialized
@@ -58,30 +85,16 @@ The system SHALL define a centralized set of design tokens using plain CSS custo
 
 ---
 
-### Requirement: Dark Theme as Default
-The system SHALL apply a dark-first visual theme consistently across all screens and components.
-
-#### Scenario: Dark background applied globally
-- **WHEN** any screen is rendered
-- **THEN** the body background SHALL use a dark gradient or solid dark color from the surface token palette
-- **AND** primary text SHALL be white or light gray (meeting WCAG AA contrast ratio against the dark background)
-
-#### Scenario: Dark theme consistency across onboarding
-- **WHEN** the user navigates from Landing Page -> Artist Discovery -> Loading -> Dashboard
-- **THEN** all screens SHALL use the same dark surface palette
-- **AND** there SHALL be no jarring light-to-dark or dark-to-light transitions between screens
-
----
-
 ### Requirement: Display Font Loading
-The system SHALL load and apply a display font for headings with appropriate fallback and performance optimization.
+The system SHALL load and apply display and body fonts with appropriate fallback and performance optimization.
 
 #### Scenario: Font preloading
 - **WHEN** the application loads
 - **THEN** the system SHALL preconnect to the font provider domains (fonts.googleapis.com and fonts.gstatic.com) in the HTML head
 - **AND** the preconnect to `fonts.gstatic.com` SHALL include the `crossorigin` attribute
-- **AND** the system SHALL load the display font with `font-display: swap` and include necessary weights (e.g., Bold 700, Extra-Bold 800) to prevent layout shifts or faux-bolding during load
-- **AND** the system SHALL use `system-ui` as the immediate fallback until the display font is ready
+- **AND** the system SHALL load Righteous (weight 400) and Poppins (weights 300, 400, 500, 600, 700) with `font-display: swap`
+- **AND** the existing Outfit font `<link>` SHALL be retained as a fallback for `--font-display`
+- **AND** the system SHALL use Outfit as the second fallback for `--font-display` and system-ui as the fallback for `--font-body`
 
 ---
 
