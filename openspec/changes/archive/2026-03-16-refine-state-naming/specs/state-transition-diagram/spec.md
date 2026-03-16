@@ -11,8 +11,8 @@ The system SHALL document the onboarding state transitions as a mermaid statecha
   - `lp` → `discovery` via Get Started
   - `discovery` → `dashboard` via Generate Dashboard or Dashboard nav tap (spotlight shortcut)
   - `dashboard` → `detail` via card tapped
-  - `detail` → `my_artists` via My Artists tab
-  - `my_artists` → `completed` via hype level set
+  - `detail` → `my-artists` via My Artists tab
+  - `my-artists` → `completed` via hype level set
 
 #### Scenario: Spotlight sub-state transitions
 

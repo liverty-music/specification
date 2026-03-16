@@ -16,7 +16,7 @@ when the user sets a hype level on the My Artists screen.
 | `discovery` | Artist discovery screen                  |
 | `dashboard` | Dashboard with lane intro sequence       |
 | `detail`    | Concert detail view (card tapped)        |
-| `my_artists`| User's followed-artists list             |
+| `my-artists`| User's followed-artists list             |
 | `completed` | Onboarding finished (terminal state)     |
 
 ### 1.3 Transitions
@@ -27,8 +27,8 @@ when the user sets a hype level on the My Artists screen.
 | Generate Dashboard CTA   | `discovery`   | `dashboard`   | discovery-route                |
 | Dashboard nav tap ¹      | `discovery`   | `dashboard`   | auth-hook (spotlight shortcut) |
 | Onboarding card tapped   | `dashboard`   | `detail`      | dashboard-route                |
-| My Artists tab tapped     | `detail`      | `my_artists`  | dashboard-route                |
-| Hype level set           | `my_artists`  | `completed`   | my-artists-route               |
+| My Artists tab tapped     | `detail`      | `my-artists`  | dashboard-route                |
+| Hype level set           | `my-artists`  | `completed`   | my-artists-route               |
 
 ¹ Special case: user taps Dashboard in bottom-nav while the discovery spotlight is active.
 
@@ -52,6 +52,7 @@ stateDiagram-v2
     discovery --> dashboard : Generate Dashboard
     discovery --> dashboard : Dashboard nav tap (spotlight shortcut)
     dashboard --> detail : Card tapped
+    state "my-artists" as my_artists
     detail --> my_artists : My Artists tab
     my_artists --> completed : Hype level set
 
