@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Display upcoming concerts in a three-lane layout (HOME STAGE, NEAR STAGE, AWAY STAGE) with typography-focused card design and visual mutations for high-priority artists.
+Display upcoming concerts in a three-lane equal-width layout (HOME STAGE, NEAR STAGE, AWAY STAGE) with typography-focused card design, with card visual prominence driven by the hype-lane match model (see `passion-level` capability).
 
 ## Requirements
 
