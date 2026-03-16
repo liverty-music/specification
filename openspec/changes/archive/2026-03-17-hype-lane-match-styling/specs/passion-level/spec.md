@@ -1,98 +1,4 @@
-# Capability: Passion Level
-
-## Purpose
-
-Allow users to express different levels of enthusiasm for followed artists, influencing how prominently their events appear on the Dashboard and whether push notifications are sent.
-
-## Requirements
-
-### Requirement: Passion Level Tiers
-
-The system SHALL support four hype level tiers for each followed artist, with emotion-based UI labels:
-
-| Tier | Proto Value | Emoji | UI Label (ja) | UI Label (en) | Notification Scope |
-|------|-------------|-------|----------------|----------------|-------------------|
-| Watch | HYPE_TYPE_WATCH | 👀 | チェック | Just checking | None |
-| Home | HYPE_TYPE_HOME | 🔥 | 地元 | Local shows | Home area only |
-| Nearby | HYPE_TYPE_NEARBY | 🔥🔥 | 近くも | Nearby too | Within 200km |
-| Away | HYPE_TYPE_AWAY | 🔥🔥🔥 | どこでも！ | Anywhere! | All concerts |
-
-All four tiers SHALL be selectable by authenticated users via the SetHype RPC. No tier SHALL be rejected by server-side validation.
-
-#### Scenario: Default hype level on follow
-
-- **WHEN** a user follows a new artist
-- **AND** the follow relationship is created
-- **THEN** the hype level SHALL default to Watch (HYPE_TYPE_WATCH)
-
-#### Scenario: UI labels use emotion-based phrasing
-
-- **WHEN** hype level labels are displayed in the UI (slider header, dialogs, settings)
-- **THEN** the system SHALL use emotion-based labels (チェック/地元/近くも/どこでも！) instead of proximity-based labels (Watch/Home/NearBy/Away)
-
-#### Scenario: SetHype accepts all four tiers
-
-- **WHEN** an authenticated user calls SetHype with any of the four defined hype tiers (WATCH, HOME, NEARBY, AWAY)
-- **THEN** the system SHALL accept the request and persist the hype level
-
-### Requirement: Hype Changes Require Authentication
-
-The system SHALL prevent unauthenticated users from changing hype levels. Hype state SHALL NOT be persisted in localStorage.
-
-#### Scenario: Unauthenticated user attempts hype change
-
-- **WHEN** an unauthenticated user attempts to change a hype level (via slider tap or any UI control)
-- **THEN** the system SHALL NOT update the hype level
-- **AND** the system SHALL trigger a signup prompt flow
-- **AND** no hype value SHALL be written to localStorage
-
-#### Scenario: Authenticated user changes hype
-
-- **WHEN** an authenticated user changes a hype level
-- **THEN** the system SHALL call `SetHype` RPC and persist the change on the backend
-- **AND** the UI SHALL update optimistically
-
-### Requirement: Hype Level Persistence
-
-The system SHALL persist each user's hype level per followed artist in the backend database, enabling cross-device synchronization.
-
-#### Scenario: Hype level survives session restart
-
-- **GIVEN** a user sets an artist to Away (どこでも！)
-- **WHEN** the user closes and reopens the app
-- **THEN** the artist SHALL still display as Away (どこでも！)
-
-### Requirement: SetHype API
-
-The system SHALL provide a SetHype RPC endpoint that accepts an artist ID and a hype level, updating the user's preference for that artist. The endpoint SHALL accept all four defined HypeType values (WATCH, HOME, NEARBY, AWAY).
-
-#### Scenario: Successful update
-
-- **GIVEN** an authenticated user who follows an artist
-- **WHEN** the user calls SetHype with a valid artist ID and hype level
-- **THEN** the system SHALL update the hype level and return success
-
-#### Scenario: Unauthenticated request
-
-- **GIVEN** an unauthenticated request
-- **WHEN** the user calls SetHype
-- **THEN** the system SHALL return an Unauthenticated error
-
-#### Scenario: Invalid artist ID
-
-- **GIVEN** an authenticated user
-- **WHEN** the user calls SetHype without an artist ID
-- **THEN** the system SHALL return an InvalidArgument error
-
-### Requirement: HypeLevel in ListFollowed Response
-
-The system SHALL include the user's hype level for each artist in the ListFollowed response, using a FollowedArtist wrapper that contains both the artist entity and the hype level.
-
-#### Scenario: ListFollowed returns hype levels
-
-- **GIVEN** a user follows three artists with different hype levels
-- **WHEN** the user calls ListFollowed
-- **THEN** each artist in the response SHALL include its corresponding hype level
+## MODIFIED Requirements
 
 ### Requirement: Hype Visual Indicators on Dashboard Cards
 
@@ -192,7 +98,7 @@ The match truth table:
 #### Scenario: Reduced motion preference
 
 - **WHEN** the user has `prefers-reduced-motion: reduce` enabled
-- **THEN** the spotlight beam cone animation SHALL be disabled
+- **THEN** the spotlight sweep animation SHALL be disabled
 - **AND** the color drift animation SHALL be disabled
 - **AND** static matched effects SHALL remain fully visible (radial-gradient background at center position, border, dual glow, neon logo/text glow)
 - **AND** unmatched styling SHALL be unaffected (already static)
@@ -203,23 +109,20 @@ The match truth table:
 - **THEN** the `--hue-drift` value SHALL remain at its initial value of 0
 - **AND** all other matched effects (spotlight, glow, border, saturation) SHALL render normally with the static artist-color
 
-### Requirement: WATCH card styling (REMOVED)
+## REMOVED Requirements
 
-Replaced by hype-lane match model. Watch-level styling is now handled by the unmatched treatment (`data-matched` absent).
+### Requirement: WATCH card styling
+**Reason**: Replaced by hype-lane match model. Watch-level styling is now handled by the unmatched treatment.
+**Migration**: Remove `[data-hype="watch"]` CSS selector. Watch artists use `:not([data-matched])` styling.
 
-### Requirement: HOME card styling (REMOVED)
+### Requirement: HOME card styling
+**Reason**: Replaced by hype-lane match model. Per-tier visual escalation is removed.
+**Migration**: Remove `[data-hype="home"]` CSS selector. Home artists use matched/unmatched styling based on lane.
 
-Replaced by hype-lane match model. Per-tier visual escalation is removed. Home artists use matched/unmatched styling based on lane.
+### Requirement: NEARBY hype card styling
+**Reason**: Replaced by hype-lane match model. Per-tier visual escalation is removed.
+**Migration**: Remove `[data-hype="nearby"]` CSS selector. Nearby artists use matched/unmatched styling based on lane.
 
-### Requirement: NEARBY hype card styling (REMOVED)
-
-Replaced by hype-lane match model. Per-tier visual escalation is removed. Nearby artists use matched/unmatched styling based on lane.
-
-### Requirement: AWAY card styling (REMOVED)
-
-Replaced by hype-lane match model. Per-tier visual escalation is removed. Away artists use matched/unmatched styling based on lane.
-
-### Requirement: Emoji badge hype indicators on event cards (REMOVED)
-
-**Reason**: Emoji badges overlap artist names in narrow lanes and consume card space. Replaced by zero-space border/glow/neon system.
-**Migration**: Remove emoji badge elements from event card templates. Remove `HYPE_META` icon references from event card rendering. Hype visualization is now handled entirely via CSS classes based on hype level.
+### Requirement: AWAY card styling
+**Reason**: Replaced by hype-lane match model. Per-tier visual escalation is removed.
+**Migration**: Remove `[data-hype="away"]` CSS selector. Away artists use matched/unmatched styling based on lane.
