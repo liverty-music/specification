@@ -5,6 +5,14 @@
 - [x] 1.3 Add `optional Fanart fanart` field to `Artist` message
 - [x] 1.4 Run `buf lint` and `buf format -w` to validate
 
+## 1b. Proto: URL type consolidation (specification repo)
+
+- [ ] 1b.1 Replace `SourceUrl`, `FanartImageUrl`, `OfficialSiteUrl` with generic `Url` message in `entity/v1/entity.proto`
+- [ ] 1b.2 Update `artist.proto`: `Fanart` fields to use `Url`, `OfficialSite.url` to use `Url`, remove `OfficialSiteUrl` message
+- [ ] 1b.3 Update `concert.proto`: `source_url` field to use `Url`, remove `SourceUrl` import if separate
+- [ ] 1b.4 Run `buf lint` and `buf format -w` to validate
+- [ ] 1b.5 PR with `buf skip breaking` label
+
 ## 2. Database Migration (backend repo)
 
 - [x] 2.1 Add `fanart JSONB` and `fanart_synced_at TIMESTAMPTZ` columns to `artists` table in `schema.sql`
@@ -58,6 +66,11 @@
 - [x] 10.1 Create `artist-image-sync` CronJob manifest (template from concert-discovery)
 - [x] 10.2 Add `FANARTTV_API_KEY` to ExternalSecret / Secret configuration
 - [x] 10.3 Mount API key env var in both consumer Deployment and CronJob
+
+## 10b. Backend: URL type rename (backend repo, after 1b release)
+
+- [ ] 10b.1 Update `go get` to pull new BSR-generated types with `Url` instead of `SourceUrl`/`OfficialSiteUrl`/`FanartImageUrl`
+- [ ] 10b.2 Update RPC mappers: `entityv1.SourceUrl` → `entityv1.Url`, `entityv1.OfficialSiteUrl` → `entityv1.Url`, `entityv1.FanartImageUrl` → `entityv1.Url`
 
 ## 11. Tests (backend repo)
 

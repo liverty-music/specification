@@ -48,21 +48,10 @@ message Title {
   }];
 }
 
-// SourceUrl represents the official source URL where concert information was found.
-message SourceUrl {
-  // The URI value pointing to the official source. Must be a valid URI between 1 and 2048 characters.
-  string value = 1 [(buf.validate.field).string = {
-    uri: true
-    min_len: 1
-    max_len: 2048
-  }];
-}
-
-// FanartImageUrl represents a URL pointing to an artist image hosted on fanart.tv.
-// Used within the Fanart message to provide community-curated artist visuals
-// such as thumbnails, logos, backgrounds, and banners.
-message FanartImageUrl {
-  // The URI value pointing to the fanart.tv hosted image. Must be a valid URI.
+// Url represents a validated web address.
+// Used for any URI field across entities (source links, image URLs, official sites).
+message Url {
+  // The URI value. Must be a valid URI between 1 and 2048 characters.
   string value = 1 [(buf.validate.field).string = {
     uri: true
     min_len: 1

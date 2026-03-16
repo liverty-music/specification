@@ -47,7 +47,7 @@ message OfficialSite {
   OfficialSiteId id = 1 [(buf.validate.field).required = true];
 
   // The fully qualified URL to the official site resource.
-  OfficialSiteUrl url = 2 [(buf.validate.field).required = true];
+  Url url = 2 [(buf.validate.field).required = true];
 
   // The unique identifier of the artist associated with this site.
   ArtistId artist_id = 3 [(buf.validate.field).required = true];
@@ -59,29 +59,23 @@ message OfficialSiteId {
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
-// OfficialSiteUrl represents a verified web address for an artist's official site.
-message OfficialSiteUrl {
-  // The URI value of the official site.
-  string value = 1 [(buf.validate.field).string.uri = true];
-}
-
 // Fanart holds community-curated artist images sourced from fanart.tv.
 // Each field carries the best image URL (highest community votes) for that image type.
 // All fields are optional because fanart.tv coverage varies by artist.
 message Fanart {
   // A square portrait or photo of the artist (1000x1000).
-  optional FanartImageUrl artist_thumb = 1;
+  optional Url artist_thumb = 1;
 
   // A high-resolution backdrop image (1920x1080).
-  optional FanartImageUrl artist_background = 2;
+  optional Url artist_background = 2;
 
   // A high-definition transparent logo of the artist name (800x310).
-  optional FanartImageUrl hd_music_logo = 3;
+  optional Url hd_music_logo = 3;
 
   // A standard-definition transparent logo of the artist name (400x155).
   // Used as a fallback when hd_music_logo is unavailable.
-  optional FanartImageUrl music_logo = 4;
+  optional Url music_logo = 4;
 
   // A wide banner image for the artist (1000x185).
-  optional FanartImageUrl music_banner = 5;
+  optional Url music_banner = 5;
 }
