@@ -21,7 +21,7 @@
 - [x] 3.7 Add spotlight sweep `::before` pseudo-element on `[data-matched]`: radial-gradient, `mix-blend-mode: screen`, `animation: spotlight-sweep 6s ease-in-out infinite`
 - [x] 3.8 Add `@keyframes spotlight-sweep` (translateX -60% → 60%)
 - [x] 3.9 Add color drift animation on `[data-matched]`: `animation: color-drift 8s ease-in-out infinite`, `--artist-color` references `calc(var(--artist-hue) + var(--hue-drift))`
-- [x] 3.10 Add `@keyframes color-drift` (--hue-drift: 0 → 20 → -20 → 0)
+- [x] 3.10 Add `@keyframes color-drift` (--hue-drift: 0 → 30 → -30 → 0)
 
 ## 4. Card Styling — Unmatched (CSS)
 
