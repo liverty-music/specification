@@ -1,31 +1,31 @@
 ## Context
 
-Artist エンティティには画像情報がなく、フロントエンドでは名前ハッシュの HSL カラーのみで識別している。fanart.tv はコミュニティ駆動のアーティスト画像データベースで、MusicBrainz ID (MBID) をキーにアーティスト画像（thumb, background, logo, banner）を無料 API で提供している。
+The Artist entity has no image information; the frontend identifies artists only by name-hash HSL colors. fanart.tv is a community-driven artist image database that provides artist images (thumb, background, logo, banner) via a free API keyed by MusicBrainz ID (MBID).
 
-既存の backend には以下の基盤がある:
-- `ARTIST.created` イベント（Watermill + NATS JetStream）
-- Last.fm / MusicBrainz クライアント（throttle + retry パターン）
-- concert-discovery CronJob（circuit breaker パターン）
-- ArtistNameConsumer（イベント駆動の非同期処理パターン）
+The existing backend provides the following building blocks:
+- `ARTIST.created` event (Watermill + NATS JetStream)
+- Last.fm / MusicBrainz clients (throttle + retry pattern)
+- concert-discovery CronJob (circuit breaker pattern)
+- ArtistNameConsumer (event-driven async processing pattern)
 
 ## Goals / Non-Goals
 
 **Goals:**
-- fanart.tv API から MBID ベースでアーティスト画像データを取得し DB に保存する
-- `ARTIST.created` イベントで即時取得（onboarding 時の dashboard ロゴ表示）
-- 定期 CronJob で画像データの更新とバックフィルを実施
-- Proto の Artist メッセージに Fanart を含め、RPC で best image を返却する
+- Fetch artist image data from fanart.tv API by MBID and persist it in the database
+- Fetch immediately on `ARTIST.created` events (for dashboard logo display during onboarding)
+- Refresh and backfill image data via a periodic CronJob
+- Include Fanart in the proto Artist message and return the best image per type via RPC
 
 **Non-Goals:**
-- フロントエンド側の画像表示実装（別 change）
-- 画像ファイルのダウンロード・自前ホスティング（fanart.tv URL を直接使用）
-- fanart.tv 以外の画像ソースへの抽象化
+- Frontend image display implementation (separate change)
+- Downloading and self-hosting image files (use fanart.tv URLs directly)
+- Abstracting over image sources beyond fanart.tv
 
 ## Decisions
 
-### 1. DB ストレージ: JSONB 単一カラム
+### 1. DB Storage: Single JSONB column
 
-fanart.tv API レスポンスを `fanart` JSONB カラムにそのまま保存する。
+Store the fanart.tv API response in a `fanart` JSONB column as-is.
 
 ```sql
 ALTER TABLE artists
@@ -33,15 +33,15 @@ ALTER TABLE artists
     ADD COLUMN fanart_synced_at TIMESTAMPTZ;
 ```
 
-**Why**: fanart.tv のレスポンスは「外部キャッシュ」の性質。正規化テーブルに分解すると定期更新時の diff/upsert が複雑になる。JSONB なら丸ごと上書きで済む。画像選択ロジック（likes 最大）は Go 側で処理する。
+**Why**: The fanart.tv response acts as an external cache. Normalizing into separate tables would make periodic update diff/upsert logic complex. JSONB allows full overwrite on refresh. Image selection logic (highest likes) is handled in Go.
 
 **Alternatives considered**:
-- `artist_images` 正規化テーブル: 1 アーティストで 10+ 行になりうる。定期更新時の diff が複雑。画像タイプ追加のたびにスキーマ対応が必要。
-- 画像タイプ別カラム (`thumb_url`, `logo_url`): best image 選択が DB 側に固定される。全候補データが失われる。
+- `artist_images` normalized table: Could yield 10+ rows per artist. Diff logic on periodic refresh is complex. Every new image type requires schema changes.
+- Per-type columns (`thumb_url`, `logo_url`): Locks best-image selection to the DB layer. Full candidate data is lost.
 
-### 2. Entity 設計: fanart.tv 構造をそのままドメインに出す
+### 2. Entity Design: Mirror the fanart.tv structure directly
 
-fanart.tv を抽象化せず、ビジネスロジックの一部として扱う。Entity のフィールド構成は fanart.tv レスポンスと同一にする。
+Treat fanart.tv as a first-class business concept rather than abstracting it. The entity field structure matches the fanart.tv API response exactly.
 
 ```go
 type Fanart struct {
@@ -60,13 +60,13 @@ type FanartImage struct {
 }
 ```
 
-`Artist` struct に `Fanart *Fanart` と `FanartSyncTime *time.Time` を追加。
+Add `Fanart *Fanart` and `FanartSyncTime *time.Time` to the `Artist` struct.
 
-**Why**: JSONB ↔ Go struct の変換が `json.Unmarshal` 一発で済む。fanart.tv の新しい画像タイプが追加された場合も struct にフィールドを足すだけ。
+**Why**: JSONB-to-Go conversion is a single `json.Unmarshal` call. When fanart.tv adds new image types, only a new struct field is needed.
 
-### 3. Proto: 汎用 `Url` メッセージと Fanart
+### 3. Proto: Generic `Url` message and Fanart
 
-`SourceUrl`, `FanartImageUrl`, `OfficialSiteUrl` の 3 つの URL ラッパーを汎用 `Url` メッセージに統合する。
+Consolidate `SourceUrl`, `FanartImageUrl`, and `OfficialSiteUrl` — three near-identical URL wrappers — into a single generic `Url` message.
 
 ```protobuf
 // entity.proto
@@ -77,10 +77,10 @@ message Url {
         max_len: 2048
     }];
 }
-// SourceUrl, FanartImageUrl, OfficialSiteUrl は削除
+// SourceUrl, FanartImageUrl, OfficialSiteUrl are removed
 ```
 
-Fanart メッセージでは統合後の `Url` を使用。各画像タイプに対して best image（likes 最大）の URL を 1 つだけ返す。
+The Fanart message uses the consolidated `Url` type. Each field carries the best image (highest likes) URL for that image type.
 
 ```protobuf
 // artist.proto
@@ -94,7 +94,7 @@ message Fanart {
 
 message OfficialSite {
     ...
-    Url url = 2;  // OfficialSiteUrl → Url
+    Url url = 2;  // was OfficialSiteUrl
 }
 ```
 
@@ -102,61 +102,62 @@ message OfficialSite {
 // concert.proto
 message Concert {
     ...
-    optional Url source_url = N;  // SourceUrl → Url
+    Url source_url = 8;  // was SourceUrl
 }
 ```
 
-**Why**: 3 つの URL ラッパーはバリデーションが実質同一（URI + min/max）。フィールド名がドメインコンテキストを持つため、型名に冗長なドメイン情報は不要。`LocalDate` や `StartTime` と同様の汎用値型として統一する。ソース破壊変更だがワイヤ互換。`buf skip breaking` ラベルで対応。
+**Why**: All three URL wrappers have identical validation (URI + min/max). Field names carry the domain context, making type-level domain information redundant. Unifies them as a generic value type like `LocalDate` or `StartTime`. Source-breaking but wire-compatible; handled with the `buf skip breaking` label.
 
-**Why (best image)**: フロントエンドに全候補リストを返す必要はない。best image 選択はバックエンドの責務。ロゴのフォールバック（`hd_music_logo ?? music_logo`）はフロントエンド側で行う。
+**Why (best image)**: The frontend does not need the full candidate list. Best-image selection is a backend responsibility. Logo fallback (`hd_music_logo ?? music_logo`) is handled on the frontend side.
 
-### 4. 取得タイミング: Event Consumer + CronJob のハイブリッド
+### 4. Fetch Timing: Event Consumer + CronJob hybrid
 
-| 仕組み | トリガー | 目的 |
-|--------|---------|------|
-| `ArtistImageConsumer` | `ARTIST.created` イベント | 即時取得（onboarding dashboard） |
-| `artist-image-sync` CronJob | 日次スケジュール | 定期更新 + バックフィル |
+| Mechanism | Trigger | Purpose |
+|-----------|---------|---------|
+| `ArtistImageConsumer` | `ARTIST.created` event | Immediate fetch (onboarding dashboard) |
+| `artist-image-sync` CronJob | Daily schedule | Periodic refresh + backfill |
 
-両者は同じ `ArtistImageSyncUseCase` と fanart.tv クライアントを共有する。
+Both share the same `ArtistImageSyncUseCase` and fanart.tv client.
 
-**Why**: onboarding フローで Artist フォロー直後に dashboard でロゴを表示する必要がある。CronJob だけでは最大 24h の遅延が発生する。
+**Why**: The onboarding flow requires a logo to be available on the dashboard shortly after an artist is followed. A CronJob alone would introduce up to 24h delay.
 
-### 5. fanart.tv クライアント: 既存パターン踏襲
+### 5. fanart.tv Client: Follow existing patterns
 
-Last.fm クライアントと同じアーキテクチャで実装。
+Implemented with the same architecture as the Last.fm client.
 
 - `infrastructure/music/fanarttv/client.go`
-- `throttle.Throttler` でレートリミット制御
-- `backoff.Retry` でリトライ（exponential backoff, max 4 tries）
-- `httpx.IsRetryableStatus` で 429/503/504 をリトライ対象に
-- API key は環境変数 `FANARTTV_API_KEY` から取得
-- `entity.ArtistImageResolver` インターフェースを実装
+- `throttle.Throttler` for rate-limit control
+- `backoff.Retry` for retries (exponential backoff, max 4 attempts)
+- `httpx.IsRetryableStatus` for 429/503/504 retry targeting
+- API key sourced from `FANARTTV_API_KEY` environment variable
+- Implements `entity.ArtistImageResolver` interface
 
-### 6. Best Image 選択: likes 最大
+### 6. Best Image Selection: Highest likes
 
 ```go
 func BestByLikes(images []FanartImage) string {
-    // likes が最大の画像 URL を返す。空スライスなら空文字列。
+    // Returns the URL of the image with the highest likes count.
+    // Returns empty string for an empty slice.
 }
 ```
 
-Entity のメソッドとして定義し、mapper 層から呼び出す。
+Defined as an entity-layer function and called from the mapper layer.
 
-### 7. CronJob 設計: concert-discovery と同パターン
+### 7. CronJob Design: Follow concert-discovery pattern
 
 - `cmd/job/artist-image-sync/main.go`
-- `di.InitializeImageSyncJobApp()` で DI 構成
-- `fanart IS NULL OR fanart_synced_at < now() - 7d` で対象選択（NULL 優先）
-- Circuit breaker: 3 連続失敗で停止
-- Exit 0（K8s リトライ防止）
-- K8s CronJob マニフェスト（concert-discovery をテンプレートに）
+- DI via `di.InitializeImageSyncJobApp()`
+- Target selection: `fanart IS NULL OR fanart_synced_at < now() - 7d` (NULL prioritized)
+- Circuit breaker: stop after 3 consecutive failures
+- Exit 0 (prevent K8s restart)
+- K8s CronJob manifest (templated from concert-discovery)
 
 ## Risks / Trade-offs
 
-**[fanart.tv にアーティスト画像がない]** → Artist.Fanart が空のまま。フロントエンドは既存の HSL カラーにフォールバック（現状維持）。特にインディーズ/ローカルアーティストでカバー率が低い可能性あり。
+**[No fanart.tv data for an artist]** — Artist.Fanart remains empty. The frontend falls back to the existing HSL color (no regression). Coverage may be low for indie/local artists.
 
-**[fanart.tv API ダウン]** → Retry + circuit breaker で制御。画像なしでもサービスの主機能（コンサート通知）には影響しない。
+**[fanart.tv API downtime]** — Controlled by retry + circuit breaker. Image absence does not affect the core service function (concert notifications).
 
-**[fanart.tv ToS 変更・サービス終了]** → JSONB カラムのデータは残る。別ソースへの移行時は `ArtistImageResolver` インターフェース実装を差し替えるだけ。
+**[fanart.tv ToS change or shutdown]** — Existing JSONB data is preserved. Migration to another source requires only replacing the `ArtistImageResolver` implementation.
 
-**[JSONB カラムサイズ]** → 1 アーティストあたり数 KB 程度（画像 URL のリスト）。数万アーティスト規模でも問題なし。
+**[JSONB column size]** — Approximately a few KB per artist (list of image URLs). No concern at tens-of-thousands scale.

@@ -1,31 +1,31 @@
 ## Why
 
-Artist のカード表示（my-artists ページ、dashboard コンサートカード）やロゴ表示（dashboard）に画像がない。現在は名前ハッシュによる HSL カラーのみで視覚的識別を行っているが、ファンが直感的にアーティストを認識できる画像・ロゴが必要。fanart.tv API が MusicBrainz ID ベースでアーティスト画像を提供しており、既存の MBID 資産を活用できる。
+Artist cards (my-artists page, dashboard concert cards) and logo displays (dashboard) have no images. The frontend currently uses name-hash HSL colors as the only visual identifier, but fans need recognizable artist images and logos for intuitive identification. The fanart.tv API provides community-curated artist images keyed by MusicBrainz ID, leveraging our existing MBID data.
 
 ## What Changes
 
-- Artist エンティティに fanart.tv から取得した画像データ（Fanart）を追加
-- fanart.tv API クライアントを backend に実装（既存の Last.fm / MusicBrainz クライアントと同パターン）
-- `ARTIST.created` イベントで非同期に画像を即時取得（onboarding 時の dashboard ロゴ表示に必要）
-- 定期 CronJob (`artist-image-sync`) で画像データの更新とバックフィルを実施
-- Proto の Artist メッセージに Fanart メッセージを追加し、mapper で best image（likes 最大）を選択して返却
-- DB の artists テーブルに `fanart` (JSONB) と `fanart_synced_at` (TIMESTAMPTZ) カラムを追加
-- Proto の `SourceUrl`, `FanartImageUrl`, `OfficialSiteUrl` を汎用 `Url` メッセージに統合
+- Add fanart.tv image data (Fanart) to the Artist entity
+- Implement a fanart.tv API client in the backend (following the existing Last.fm / MusicBrainz client pattern)
+- Fetch images asynchronously on `ARTIST.created` events (needed for dashboard logo display during onboarding)
+- Run a periodic CronJob (`artist-image-sync`) for image refresh and backfill
+- Add a Fanart message to the proto Artist message; the mapper selects the best image (highest likes) per type
+- Add `fanart` (JSONB) and `fanart_synced_at` (TIMESTAMPTZ) columns to the artists table
+- Consolidate `SourceUrl`, `FanartImageUrl`, and `OfficialSiteUrl` into a generic `Url` message
 
 ## Capabilities
 
 ### New Capabilities
 
-- `artist-image`: fanart.tv からアーティスト画像（thumb, background, logo, banner）を取得・保存・配信する仕組み
+- `artist-image`: Fetch, store, and serve artist images (thumb, background, logo, banner) from fanart.tv
 
 ### Modified Capabilities
 
-- `artist-service-infrastructure`: Artist エンティティへの Fanart フィールド追加、ArtistRepository への UpdateFanart 操作追加
+- `artist-service-infrastructure`: Add Fanart field to Artist entity and UpdateFanart operation to ArtistRepository
 
 ## Impact
 
-- **Proto**: `liverty_music.entity.v1.Artist` に `Fanart` メッセージ追加 + `SourceUrl`/`FanartImageUrl`/`OfficialSiteUrl` → `Url` 統合（ソース破壊・ワイヤ互換変更、`buf skip breaking` ラベル必要）
-- **Backend**: entity, usecase, adapter/event, adapter/rpc/mapper, infrastructure/music/fanarttv, infrastructure/database/rdb, cmd/job, di 各レイヤーに変更
-- **DB**: artists テーブルへのカラム追加マイグレーション
-- **K8s**: artist-image-sync CronJob マニフェスト追加、FANARTTV_API_KEY の Secret/ConfigMap 管理
-- **Frontend**: スコープ外（別 change で対応）
+- **Proto**: Add `Fanart` message to `liverty_music.entity.v1.Artist` + consolidate `SourceUrl`/`FanartImageUrl`/`OfficialSiteUrl` into `Url` (source-breaking, wire-compatible; requires `buf skip breaking` label)
+- **Backend**: Changes across entity, usecase, adapter/event, adapter/rpc/mapper, infrastructure/music/fanarttv, infrastructure/database/rdb, cmd/job, and di layers
+- **DB**: Column addition migration on artists table
+- **K8s**: Add artist-image-sync CronJob manifests and FANARTTV_API_KEY Secret/ConfigMap management
+- **Frontend**: Out of scope (separate change)
