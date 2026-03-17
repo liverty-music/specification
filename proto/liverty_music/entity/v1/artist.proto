@@ -91,8 +91,9 @@ message Fanart {
 // background color that ensures the logo remains visually distinguishable.
 message LogoColorProfile {
   // The dominant hue angle in the OKLCH color space (0–360 degrees).
-  // Meaningful only when `is_chromatic` is true; ignored for achromatic logos.
-  float dominant_hue = 1 [(buf.validate.field).float = {
+  // Present only for chromatic logos (`is_chromatic` is true).
+  // Omitted for achromatic logos where hue is meaningless.
+  optional float dominant_hue = 1 [(buf.validate.field).float = {
     gte: 0
     lte: 360
   }];
