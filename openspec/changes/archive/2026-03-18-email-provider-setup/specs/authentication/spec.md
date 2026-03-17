@@ -13,6 +13,7 @@ The system SHALL validate JWT tokens from ZITADEL using the JWKS endpoint.
 - **AND** verifies the issuer matches the configured ZITADEL instance
 - **AND** verifies the token has not expired
 - **AND** extracts the user ID from the `sub` claim
+- **AND** extracts the `email_verified` claim from the token's private claims
 
 #### Scenario: Invalid Token
 

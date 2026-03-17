@@ -18,6 +18,9 @@ The infrastructure SHALL provision a `zitadel.SmtpConfig` Pulumi resource that c
 - **WHEN** the Pulumi prod stack is applied
 - **THEN** a `zitadel.SmtpConfig` resource is created with host `smtp.postmarkapp.com:587`
 - **AND** `senderAddress` is `noreply@mail.liverty-music.app`
+- **AND** `senderName` is `Liverty Music`
+- **AND** `tls` is `true`
+- **AND** both `user` and `password` are set to the Postmark Server API Token read from ESC config key `postmark.serverApiToken`
 
 ### Requirement: Mail subdomain DNS records for DKIM authentication
 
