@@ -6,8 +6,8 @@ Artist logos (clearLOGO from fanart.tv) displayed on event cards have poor visib
 
 - The fanart sync pipeline (CronJob + event consumer) will analyze each artist's best logo image to extract dominant color properties (hue, lightness, chromaticity).
 - Analysis results will be stored alongside existing fanart data in the `fanart` JSONB column.
-- The proto `Fanart` message will be extended with a `LogoAnalysis` message containing the extracted color metadata.
-- The frontend will use `LogoAnalysis` to compute an optimal card background color that maximizes logo visibility while preserving color variety across the app.
+- The proto `Fanart` message will be extended with a `LogoColorProfile` message containing the extracted color metadata.
+- The frontend will use `LogoColorProfile` to compute an optimal card background color that maximizes logo visibility while preserving color variety across the app.
 
 ## Capabilities
 
@@ -15,11 +15,11 @@ Artist logos (clearLOGO from fanart.tv) displayed on event cards have poor visib
 - `logo-color-analysis`: Automatic extraction of logo dominant color properties and optimal background color derivation for artist event cards.
 
 ### Modified Capabilities
-- `artist-image`: The Fanart entity, proto message, and sync pipeline gain a `LogoAnalysis` sub-entity populated during image sync.
+- `artist-image`: The Fanart entity, proto message, and sync pipeline gain a `LogoColorProfile` sub-entity populated during image sync.
 
 ## Impact
 
-- **specification**: `Fanart` proto message extended with `LogoAnalysis` sub-message.
-- **backend**: Fanart entity gains `LogoAnalysis` field. Sync job and event consumer updated to download logo PNG and run color extraction. Mapper updated to include analysis in proto response.
-- **frontend**: `color-generator.ts` and `artist-color` custom attribute updated to prefer `LogoAnalysis` data over name-hash hue. CSS custom properties may include `--artist-bg-lightness`.
+- **specification**: `Fanart` proto message extended with `LogoColorProfile` sub-message.
+- **backend**: Fanart entity gains `LogoColorProfile` field. Sync job and event consumer updated to download logo PNG and run color extraction. Mapper updated to include analysis in proto response.
+- **frontend**: `color-generator.ts` and `artist-color` custom attribute updated to prefer `LogoColorProfile` data over name-hash hue. CSS custom properties may include `--artist-bg-lightness`.
 - **dependencies**: No new external dependencies. Go `image/png` + `image/color` standard library suffice for pixel analysis. OKLCH conversion uses fixed matrix math (no library needed).

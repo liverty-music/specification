@@ -56,13 +56,13 @@ Logos are classified into three types based on pixel analysis:
 
 ### Decision 4: Store analysis inside existing `fanart` JSONB
 
-**Choice:** Add a `logoAnalysis` key to the existing `fanart` JSONB column rather than a separate column.
+**Choice:** Add a `logoColorProfile` key to the existing `fanart` JSONB column rather than a separate column.
 
 ```json
 {
   "artistthumb": [...],
   "hdmusiclogo": [...],
-  "logoAnalysis": {
+  "logoColorProfile": {
     "dominantHue": 210,
     "dominantLightness": 0.15,
     "isChromatic": true
@@ -72,34 +72,34 @@ Logos are classified into three types based on pixel analysis:
 
 **Why?** The analysis is derived from and tightly coupled to the logo data. It should be refreshed whenever fanart data is refreshed. Keeping it in the same JSONB ensures atomicity and avoids schema migration for a new column.
 
-### Decision 5: Proto extension — `LogoAnalysis` message inside `Fanart`
+### Decision 5: Proto extension — `LogoColorProfile` message inside `Fanart`
 
 ```protobuf
 message Fanart {
   // ... existing fields ...
-  optional LogoAnalysis logo_analysis = 6;
+  optional LogoColorProfile logo_color_profile = 6;
 }
 
-message LogoAnalysis {
+message LogoColorProfile {
   float dominant_hue = 1;        // 0-360, OKLCH hue angle
   float dominant_lightness = 2;  // 0-1, OKLCH lightness
   bool is_chromatic = 3;         // true if logo has significant color
 }
 ```
 
-**Why inside Fanart?** LogoAnalysis is meaningless without fanart data — it's derived from the logo image. Placing it as a peer field on `Artist` would create a confusing ownership model.
+**Why inside Fanart?** LogoColorProfile is meaningless without fanart data — it's derived from the logo image. Placing it as a peer field on `Artist` would create a confusing ownership model.
 
 ### Decision 6: Frontend fallback chain
 
 ```
-if (artist.fanart?.logoAnalysis) {
+if (artist.fanart?.logoColorProfile) {
   // Use analysis-driven hue + lightness
-  if (logoAnalysis.isChromatic) {
-    hue = logoAnalysis.dominantHue  // logo's own hue family
+  if (logoColorProfile.isChromatic) {
+    hue = logoColorProfile.dominantHue  // logo's own hue family
   } else {
     hue = hash(artistName)          // preserve variety
   }
-  bgLightness = derived from logoAnalysis.dominantLightness
+  bgLightness = derived from logoColorProfile.dominantLightness
 } else if (artist.fanart) {
   // Has fanart but no analysis (transition period)
   hue = hash(artistName)
@@ -109,7 +109,22 @@ if (artist.fanart?.logoAnalysis) {
 }
 ```
 
-Fully backward-compatible. The `artist-color` custom attribute gains an optional `logoAnalysis` input. When absent, behavior is identical to current.
+Fully backward-compatible. The `artist-color` custom attribute gains an optional `logoColorProfile` input. When absent, behavior is identical to current.
+
+### Decision 7: Analyzed image must be the same image returned in proto
+
+**Choice:** The color analysis target is always the same image that the proto mapper selects via `BestByLikes` — HDMusicLogo first, falling back to MusicLogo. The analysis and the proto response must never reference different images.
+
+**Why?** If a different image were analyzed, the derived background color would not match the logo the user actually sees. The selection logic (`BestByLikes` with HDMusicLogo → MusicLogo fallback) is shared between the mapper and the analysis pipeline.
+
+### Decision 8: Decouple fanart API call from image analysis
+
+**Choice:** The color analysis function (`AnalyzeLogo`) is a pure function in the entity layer that accepts an `image.Image` and returns a `*LogoColorProfile`. It has no knowledge of HTTP, fanart.tv, or any I/O. The usecase layer orchestrates: select best logo URL → HTTP download → PNG decode → call `AnalyzeLogo`.
+
+**Why?** This separation ensures:
+- `AnalyzeLogo` is testable with synthetic images (no HTTP mocking needed)
+- The usecase layer can be tested by injecting a mock HTTP client that returns fixed PNG bytes
+- The analysis algorithm can evolve independently from the sync pipeline
 
 ## Risks / Trade-offs
 
