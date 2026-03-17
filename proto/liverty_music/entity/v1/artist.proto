@@ -92,12 +92,18 @@ message Fanart {
 message LogoColorProfile {
   // The dominant hue angle in the OKLCH color space (0–360 degrees).
   // Meaningful only when `is_chromatic` is true; ignored for achromatic logos.
-  float dominant_hue = 1;
+  float dominant_hue = 1 [(buf.validate.field).float = {
+    gte: 0
+    lte: 360
+  }];
 
   // The mean perceptual lightness of non-transparent pixels (0–1, OKLCH L).
   // Determines whether the logo is light or dark, which informs background
   // lightness adjustment.
-  float dominant_lightness = 2;
+  float dominant_lightness = 2 [(buf.validate.field).float = {
+    gte: 0
+    lte: 1
+  }];
 
   // Whether the logo contains significant color (> 30% of non-transparent
   // pixels have OKLCH chroma > 0.04). When false, the logo is essentially
