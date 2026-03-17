@@ -39,7 +39,7 @@ The fanart sync pipeline (CronJob and ARTIST.created consumer) SHALL perform log
 
 #### Scenario: Artist has HDMusicLogo
 - **WHEN** fanart data is fetched and HDMusicLogo contains images
-- **THEN** the sync pipeline SHALL download the best HDMusicLogo image (by likes), run color analysis, and store the result in the `logoAnalysis` field of the fanart JSONB
+- **THEN** the sync pipeline SHALL download the best HDMusicLogo image (by likes), run color analysis, and store the result in the `logoColorProfile` field of the fanart JSONB
 
 #### Scenario: Artist has only MusicLogo
 - **WHEN** fanart data is fetched and HDMusicLogo is empty but MusicLogo contains images
@@ -47,25 +47,25 @@ The fanart sync pipeline (CronJob and ARTIST.created consumer) SHALL perform log
 
 #### Scenario: Artist has no logo images
 - **WHEN** fanart data is fetched but neither HDMusicLogo nor MusicLogo contain images
-- **THEN** the sync pipeline SHALL store fanart data without a `logoAnalysis` field
+- **THEN** the sync pipeline SHALL store fanart data without a `logoColorProfile` field
 
 #### Scenario: Logo image download fails
 - **WHEN** the logo image HTTP request fails or returns non-200
-- **THEN** the sync pipeline SHALL log a warning and store fanart data without a `logoAnalysis` field (non-fatal)
+- **THEN** the sync pipeline SHALL log a warning and store fanart data without a `logoColorProfile` field (non-fatal)
 
-### Requirement: LogoAnalysis Proto Message
-The system SHALL define a `LogoAnalysis` protobuf message within `liverty_music.entity.v1` containing `dominant_hue` (float, 0-360), `dominant_lightness` (float, 0-1), and `is_chromatic` (bool). The `Fanart` message SHALL include an `optional LogoAnalysis logo_analysis` field.
+### Requirement: LogoColorProfile Proto Message
+The system SHALL define a `LogoColorProfile` protobuf message within `liverty_music.entity.v1` containing `dominant_hue` (float, 0-360), `dominant_lightness` (float, 0-1), and `is_chromatic` (bool). The `Fanart` message SHALL include an `optional LogoColorProfile logo_color_profile` field.
 
 #### Scenario: Artist with logo analysis data
 - **WHEN** an Artist with logo analysis is serialized to proto
-- **THEN** the `fanart.logo_analysis` field SHALL contain a `LogoAnalysis` message with the extracted values
+- **THEN** the `fanart.logo_color_profile` field SHALL contain a `LogoColorProfile` message with the extracted values
 
 #### Scenario: Artist without logo analysis data
 - **WHEN** an Artist without logo analysis is serialized to proto
-- **THEN** the `fanart.logo_analysis` field SHALL be absent (optional not set)
+- **THEN** the `fanart.logo_color_profile` field SHALL be absent (optional not set)
 
 ### Requirement: Frontend Background Color Derivation
-The frontend SHALL use `LogoAnalysis` data to determine the card background `--artist-hue` custom property. For chromatic logos (`isChromatic = true`), the hue SHALL be set to `dominantHue` (logo's own hue family). For achromatic logos, the hue SHALL fall back to the existing name-hash algorithm. When no `LogoAnalysis` is available, the existing name-hash algorithm SHALL be used unchanged.
+The frontend SHALL use `LogoColorProfile` data to determine the card background `--artist-hue` custom property. For chromatic logos (`isChromatic = true`), the hue SHALL be set to `dominantHue` (logo's own hue family). For achromatic logos, the hue SHALL fall back to the existing name-hash algorithm. When no `LogoColorProfile` is available, the existing name-hash algorithm SHALL be used unchanged.
 
 #### Scenario: Chromatic logo card background
 - **WHEN** an event card renders for an artist with `isChromatic = true` and `dominantHue = 0` (red)
@@ -80,5 +80,5 @@ The frontend SHALL use `LogoAnalysis` data to determine the card background `--a
 - **THEN** `--artist-hue` SHALL be set to the name-hash value and background lightness SHALL be raised to ensure the dark logo is visible
 
 #### Scenario: No logo analysis available
-- **WHEN** an event card renders for an artist without `LogoAnalysis`
+- **WHEN** an event card renders for an artist without `LogoColorProfile`
 - **THEN** `--artist-hue` SHALL be computed from the artist name hash (existing behavior)
