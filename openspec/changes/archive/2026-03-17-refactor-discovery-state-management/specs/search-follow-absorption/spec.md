@@ -1,10 +1,4 @@
-# Search Follow Absorption
-
-## Purpose
-
-Defines the behavior when a user follows an artist from the search results, including the transition back to bubble view, absorption animation, and error handling.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Search result follow triggers bubble view transition and absorption animation
 When a user follows an artist from the search results, the system SHALL transition back to the bubble view, wait for the canvas to be visible, and play the orb absorption animation, providing the same visual feedback as a direct bubble tap.

@@ -1,3 +1,5 @@
+## MODIFIED Requirements
+
 ### Requirement: Canvas replenishes bubbles when similar artists are exhausted
 When a user follows an artist and the similar-artist API returns no new (unseen) artists, the system SHALL automatically fetch replacement bubbles from the top-artist pool to keep the canvas populated. Replenishment SHALL be coordinated through BubbleManager.
 
