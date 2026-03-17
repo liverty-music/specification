@@ -78,4 +78,29 @@ message Fanart {
 
   // A wide banner image for the artist (1000x185).
   optional Url music_banner = 5;
+
+  // Dominant color properties extracted from the best logo image.
+  // Used by the frontend to derive a card background color that
+  // maximizes contrast with the logo.
+  // Absent when no logo image is available or analysis has not been performed.
+  optional LogoColorProfile logo_color_profile = 6;
+}
+
+// LogoColorProfile summarizes the dominant color characteristics of an artist's
+// logo image. The frontend uses these values to compute an optimal card
+// background color that ensures the logo remains visually distinguishable.
+message LogoColorProfile {
+  // The dominant hue angle in the OKLCH color space (0–360 degrees).
+  // Meaningful only when `is_chromatic` is true; ignored for achromatic logos.
+  float dominant_hue = 1;
+
+  // The mean perceptual lightness of non-transparent pixels (0–1, OKLCH L).
+  // Determines whether the logo is light or dark, which informs background
+  // lightness adjustment.
+  float dominant_lightness = 2;
+
+  // Whether the logo contains significant color (> 30% of non-transparent
+  // pixels have OKLCH chroma > 0.04). When false, the logo is essentially
+  // grayscale and the frontend falls back to the artist-name hash for hue.
+  bool is_chromatic = 3;
 }
