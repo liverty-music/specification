@@ -17,6 +17,7 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 - **AND** the sheet SHALL use `popover="auto"` with `showPopover()` by default
 - **AND** the sheet element SHALL be a `<dialog>` providing native dialog semantics (implicit `role="dialog"`)
 - **AND** the URL SHALL update to `/concerts/:id` via `history.pushState` without triggering full page navigation
+- **AND** the sheet SHALL be anchored flush to the bottom edge of the viewport
 
 #### Scenario: Open detail during onboarding Step 4
 
@@ -49,7 +50,7 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 #### Scenario: Dismiss sheet via swipe down (non-onboarding)
 
 - **WHEN** the user is NOT in onboarding Step 4
-- **AND** the user swipes down on the sheet content beyond the dismiss threshold
+- **AND** the user swipes down on any part of the sheet surface beyond the dismiss threshold
 - **THEN** the sheet SHALL call `hidePopover()` and the URL SHALL revert to the dashboard URL
 
 #### Scenario: Dismiss sheet via browser back button
