@@ -3,11 +3,11 @@
 - [x] 0.1 Add `LogoColorProfile` message to `artist.proto` with `dominant_hue` (float), `dominant_lightness` (float), `is_chromatic` (bool)
 - [x] 0.2 Add `optional LogoColorProfile logo_color_profile = 6` field to the `Fanart` message
 - [x] 0.3 Run `buf lint` and `buf format -w`
-- [ ] 0.4 Create specification PR, merge, create release → BSR publishes
+- [x] 0.4 Create specification PR (#276), merge, create release → BSR publishes
 
 ## 1. Backend: Color Extraction (Entity Layer — Pure Functions)
 
-- [ ] 1.1 Add `LogoColorProfile` struct to `entity/fanart.go` with `DominantHue float64`, `DominantLightness float64`, `IsChromatic bool` and JSON tags
+- [ ] 1.1 Add `LogoColorProfile` struct to `entity/fanart.go` with `DominantHue *float64` (pointer for optional presence), `DominantLightness float64`, `IsChromatic bool` and JSON tags
 - [ ] 1.2 Add `LogoColorProfile *LogoColorProfile` field to `Fanart` struct with `json:"logoColorProfile,omitempty"` tag
 - [ ] 1.3 Implement `oklch.go` in `entity/` with sRGB→LinearRGB→OKLab→OKLCH conversion (pure math, no external deps)
 - [ ] 1.4 Unit test `oklch.go`: pure white → L≈1.0 C≈0.0, pure red → L≈0.63 C>0.2 H≈29°, pure black → L≈0.0 C≈0.0
@@ -32,7 +32,7 @@
 ## 4. Frontend: Background Color Derivation
 
 - [ ] 4.1 Update `follow-service-client.ts`: map `artist.fanart.logoColorProfile` fields to `FollowedArtistInfo` (`dominantHue?`, `dominantLightness?`, `isChromatic?`)
-- [ ] 4.2 Update `color-generator.ts`: add `artistHueFromColorProfile(profile, artistName)` that returns profile-driven hue for chromatic logos, name-hash for achromatic
+- [ ] 4.2 Update `color-generator.ts`: add `artistHueFromColorProfile(profile, artistName)` that returns `dominantHue` when present (chromatic), name-hash when absent (achromatic)
 - [ ] 4.3 Update `artist-color` custom attribute to accept optional `LogoColorProfile` data and set `--artist-hue` and `--artist-bg-lightness` custom properties
 - [ ] 4.4 Update CSS to use `--artist-bg-lightness` for unmatched card backgrounds when available
 - [ ] 4.5 Propagate LogoColorProfile through `dashboard-service.ts` → `LiveEvent` → `event-card`

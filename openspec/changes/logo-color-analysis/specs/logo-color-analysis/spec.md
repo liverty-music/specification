@@ -54,7 +54,7 @@ The fanart sync pipeline (CronJob and ARTIST.created consumer) SHALL perform log
 - **THEN** the sync pipeline SHALL log a warning and store fanart data without a `logoColorProfile` field (non-fatal)
 
 ### Requirement: LogoColorProfile Proto Message
-The system SHALL define a `LogoColorProfile` protobuf message within `liverty_music.entity.v1` containing `dominant_hue` (float, 0-360), `dominant_lightness` (float, 0-1), and `is_chromatic` (bool). The `Fanart` message SHALL include an `optional LogoColorProfile logo_color_profile` field.
+The system SHALL define a `LogoColorProfile` protobuf message within `liverty_music.entity.v1` containing `dominant_hue` (optional float, 0-360, present only for chromatic logos), `dominant_lightness` (float, 0-1), and `is_chromatic` (bool). The `Fanart` message SHALL include an `optional LogoColorProfile logo_color_profile` field.
 
 #### Scenario: Artist with logo analysis data
 - **WHEN** an Artist with logo analysis is serialized to proto
@@ -65,18 +65,18 @@ The system SHALL define a `LogoColorProfile` protobuf message within `liverty_mu
 - **THEN** the `fanart.logo_color_profile` field SHALL be absent (optional not set)
 
 ### Requirement: Frontend Background Color Derivation
-The frontend SHALL use `LogoColorProfile` data to determine the card background `--artist-hue` custom property. For chromatic logos (`isChromatic = true`), the hue SHALL be set to `dominantHue` (logo's own hue family). For achromatic logos, the hue SHALL fall back to the existing name-hash algorithm. When no `LogoColorProfile` is available, the existing name-hash algorithm SHALL be used unchanged.
+The frontend SHALL use `LogoColorProfile` data to determine the card background `--artist-hue` custom property. When `dominantHue` is present (chromatic logos), the hue SHALL be set to that value (logo's own hue family). When `dominantHue` is absent (achromatic logos), the hue SHALL fall back to the existing name-hash algorithm. When no `LogoColorProfile` is available, the existing name-hash algorithm SHALL be used unchanged.
 
 #### Scenario: Chromatic logo card background
-- **WHEN** an event card renders for an artist with `isChromatic = true` and `dominantHue = 0` (red)
+- **WHEN** an event card renders for an artist with `dominantHue` present and set to `0` (red)
 - **THEN** `--artist-hue` SHALL be set to `0` (same hue family as the logo, with low-chroma background per CSS)
 
 #### Scenario: Achromatic light logo card background
-- **WHEN** an event card renders for an artist with `isChromatic = false` and `dominantLightness = 0.85`
+- **WHEN** an event card renders for an artist with `dominantHue` absent and `dominantLightness = 0.85`
 - **THEN** `--artist-hue` SHALL be set to the name-hash value and background lightness SHALL remain dark (logo is light, background is dark for contrast)
 
 #### Scenario: Achromatic dark logo card background
-- **WHEN** an event card renders for an artist with `isChromatic = false` and `dominantLightness = 0.15`
+- **WHEN** an event card renders for an artist with `dominantHue` absent and `dominantLightness = 0.15`
 - **THEN** `--artist-hue` SHALL be set to the name-hash value and background lightness SHALL be raised to ensure the dark logo is visible
 
 #### Scenario: No logo analysis available
