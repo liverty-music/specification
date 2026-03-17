@@ -11,7 +11,7 @@ Content containers SHALL use the most specific semantic HTML element available (
 Loading/status indicators SHALL use `<output role="status">` instead of `<div role="status">`.
 
 #### Scenario: Dialog elements for overlays
-- **WHEN** a component renders an overlay (popover, modal, prompt, tooltip)
+- **WHEN** a component renders an overlay (popover, modal, prompt)
 - **THEN** the overlay root element MUST be a `<dialog>` element
 
 #### Scenario: Footer for action groups

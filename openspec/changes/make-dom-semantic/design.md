@@ -51,7 +51,7 @@ dialog/card 内のボタングループは `<footer>` とする。
 | `<div class="search-results">` | `<section>` | 独立したコンテンツ領域 |
 | `<div class="genre-chips">` | `<fieldset>` | フィルタ用の選択肢グループ |
 | `<div class="selector-section">` | `<section>` | 独立したコンテンツ領域 |
-| `<div class="selector-grid">` | `<ul>` | 選択可能なアイテムのリスト |
+| `<div class="selector-grid">` | `<div>` (変更なし) | CSS Grid レイアウトコンテナ。子要素の `<button>` がセマンティクスを担う |
 | `<div role="status" aria-busy>` | `<output role="status">` | 動的に更新されるステータス |
 | `<div class="ticket-row">` | `<article>` | 独立した意味を持つコンテンツ |
 | `<div class="artist-identity">` | `<header>` | アイテムのヘッダー情報 |
