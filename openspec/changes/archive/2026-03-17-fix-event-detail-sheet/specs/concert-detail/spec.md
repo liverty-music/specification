@@ -1,10 +1,4 @@
-# concert-detail Specification
-
-## Purpose
-
-The Concert Detail capability provides users with a rich detail view for a selected concert, including venue information, time, and entry points for ticket purchase. It also defines the logic for assigning concerts to dashboard lanes based on the user's stored region preference.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Concert Detail View
 
@@ -65,22 +59,3 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 - **WHEN** the user is at onboarding Step 4
 - **THEN** the sheet SHALL NOT be dismissible (no swipe-down, no outside tap, no escape key)
 - **AND** the coach mark overlay SHALL appear above the sheet in the top layer, targeting `[data-nav-my-artists]`
-
-### Requirement: Dashboard Lane Assignment
-
-The system SHALL assign concerts to one of three lanes — My City, My Region, Others — based on the concert's `venue.admin_area` relative to the user's stored region preference.
-
-#### Scenario: Concert in user's city/prefecture
-
-- **WHEN** a concert's `venue.admin_area` matches the user's stored region exactly
-- **THEN** the concert SHALL be placed in the `main` (My City) lane
-
-#### Scenario: Concert in a different prefecture
-
-- **WHEN** a concert's `venue.admin_area` does not match the user's stored region
-- **THEN** the concert SHALL be placed in the `other` lane
-
-#### Scenario: Venue admin area not available
-
-- **WHEN** a concert has no `venue.admin_area`
-- **THEN** the concert SHALL be placed in the `other` lane
