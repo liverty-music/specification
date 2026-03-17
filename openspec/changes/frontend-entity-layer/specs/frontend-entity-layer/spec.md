@@ -19,7 +19,7 @@ The `src/entities/artist.ts` file SHALL export an `Artist` interface with fields
 - **THEN** the resulting `Artist` entity SHALL have `fanart` as `undefined`
 
 ### Requirement: FollowedArtist entity
-The `src/entities/follow.ts` file SHALL export a `FollowedArtist` interface containing an `Artist` reference and a `Hype` value. The `Hype` type SHALL be a string union aligned with Go's `Hype` constants: `'watch'`, `'home'`, `'nearby'`, `'away'`.
+The `src/entities/follow.ts` file SHALL export a `FollowedArtist` interface with flattened artist fields (`id`, `name`) and a `Hype` value. The `Hype` type SHALL be a string union aligned with Go's `Hype` constants: `'watch'`, `'home'`, `'nearby'`, `'away'`. Optional fanart URLs (`logoUrl`, `backgroundUrl`) SHALL be included for UI consumption.
 
 #### Scenario: FollowedArtist from ListFollowed RPC
 - **WHEN** the follow service client receives a ListFollowed response
