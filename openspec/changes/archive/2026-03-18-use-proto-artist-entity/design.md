@@ -48,7 +48,7 @@ interface PhysicsBubble {
 
 **Alternative considered:** Keep `ArtistBubble` but populate fanart fields → still creates a parallel type that drifts from proto, same class of bug will recur.
 
-### Decision 2: Serialize proto Artist to localStorage via `toJsonString`/`fromJsonString`
+### Decision 2: Serialize proto Artist to localStorage via `toJsonString`/`fromJson`
 
 Proto-ES classes support `toJsonString()` and `fromJson()`. Use these for localStorage persistence in the guest state middleware.
 
