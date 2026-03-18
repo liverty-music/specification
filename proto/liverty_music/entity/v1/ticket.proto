@@ -6,6 +6,7 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
@@ -14,14 +15,6 @@ option go_package = "github.com/liverty-music/specification/gen/go/liverty_music
 // It wraps a UUID string to provide type safety and prevent accidental misuse of raw identifiers.
 message TicketId {
   // value is the UUID that uniquely identifies this ticket across the platform.
-  string value = 1 [(buf.validate.field).string.uuid = true];
-}
-
-// EventId uniquely identifies a music event (concert, live session, etc.) on the platform.
-// Events represent scheduled performances at a venue, and this identifier links tickets
-// and entry records back to the specific event they belong to.
-message EventId {
-  // value is the UUID that uniquely identifies this event across the platform.
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 

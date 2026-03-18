@@ -6,10 +6,17 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/entity.proto";
-import "liverty_music/entity/v1/ticket.proto";
 import "liverty_music/entity/v1/venue.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// EventId uniquely identifies a music event (concert, live session, etc.) on the platform.
+// Events represent scheduled performances at a venue, and this identifier links tickets
+// and entry records back to the specific event they belong to.
+message EventId {
+  // value is the UUID that uniquely identifies this event across the platform.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
 
 // Event represents a scheduled music performance at a venue, such as a concert or live session.
 // Events are the central business object connecting artists, venues, and fans. When an event

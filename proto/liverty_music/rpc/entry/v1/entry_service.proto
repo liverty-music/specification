@@ -5,7 +5,7 @@ syntax = "proto3";
 package liverty_music.rpc.entry.v1;
 
 import "buf/validate/validate.proto";
-import "liverty_music/entity/v1/ticket.proto";
+import "liverty_music/entity/v1/event.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/entry/v1;entryv1";
 
