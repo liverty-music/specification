@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/ticket.proto";
+import "liverty_music/entity/v1/user.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// TicketJourneyStatus represents where a fan stands in the ticket acquisition process
+// for a specific event. The statuses model the typical flow of purchasing concert tickets
+// in the Japanese live music market, where lottery-based sales (抽選販売) are the dominant
+// distribution method.
+//
+// The system does not enforce a specific transition order — fans may set any status at
+// any time to match their real-world situation. The typical progression is:
+//
+//	TRACKING → APPLIED → UNPAID → PAID    (lottery route)
+//	TRACKING → UNPAID → PAID              (immediate purchase)
+//	APPLIED → LOST                        (lottery failure)
+//	UNPAID → LOST                         (payment deadline expired)
+//	LOST → TRACKING                       (retry with next round)
+enum TicketJourneyStatus {
+  // Default value; must not be used in API requests.
+  TICKET_JOURNEY_STATUS_UNSPECIFIED = 0;
+
+  // The fan is monitoring this event for ticket sales information.
+  // This is the initial status when a fan begins tracking an event.
+  TICKET_JOURNEY_STATUS_TRACKING = 1;
+
+  // The fan has applied for a ticket lottery (抽選申込済).
+  // Skipped when tickets are available for immediate purchase.
+  TICKET_JOURNEY_STATUS_APPLIED = 2;
+
+  // The fan lost a ticket lottery (落選) or missed the payment deadline (入金期限切れ).
+  // From here, the fan may return to TRACKING to try again in a subsequent round.
+  TICKET_JOURNEY_STATUS_LOST = 3;
+
+  // The fan has won a lottery or purchased a ticket and is awaiting payment (入金待ち).
+  TICKET_JOURNEY_STATUS_UNPAID = 4;
+
+  // The fan has completed payment and secured the ticket (チケット確保).
+  TICKET_JOURNEY_STATUS_PAID = 5;
+}
+
+// TicketJourney represents a fan's personal ticket acquisition status for a specific event.
+// It captures where the fan stands in the process of obtaining a ticket — from initial
+// interest through lottery application to payment completion.
+//
+// Each fan may have at most one journey per event. The journey is entirely user-managed:
+// the system does not automate transitions or verify the fan's actual ticket status.
+message TicketJourney {
+  // user_id identifies the fan who owns this journey.
+  UserId user_id = 1 [(buf.validate.field).required = true];
+
+  // event_id identifies the event this journey tracks.
+  // References events (not concerts) to support future non-music event types.
+  EventId event_id = 2 [(buf.validate.field).required = true];
+
+  // status is the fan's current position in the ticket acquisition process.
+  TicketJourneyStatus status = 3 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum.defined_only = true
+  ];
+}
