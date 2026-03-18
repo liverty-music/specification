@@ -1,3 +1,5 @@
+## MODIFIED Requirements
+
 ### Requirement: Artist entity
 The frontend SHALL use the BSR-generated proto `Artist` class from `@buf/liverty-music_schema.bufbuild_es/liverty_music/entity/v1/artist_pb.js` as the canonical artist representation across all layers (services, state, components). Custom interfaces (`ArtistBubble`, `GuestFollow`) that duplicate Artist fields SHALL be removed. The `src/entities/artist.ts` file SHALL re-export the proto `Artist` type and provide helper functions for common field access patterns (e.g., best logo URL extraction).
 
@@ -46,6 +48,8 @@ Proto `Artist` objects SHALL flow through service clients, state, and into compo
 - **WHEN** `DashboardService` builds `DateGroup[]`
 - **THEN** each `Concert` SHALL contain the proto `Artist` from the follow data, with no intermediate extraction of fanart fields
 
+## ADDED Requirements
+
 ### Requirement: Guest state stores proto Artist
 The guest state (`AppState.guest.follows`) SHALL store proto `Artist` objects instead of `{ artistId, name }` tuples. The persistence middleware SHALL serialize `Artist` objects using proto-ES `toJsonString()` and deserialize using `fromJson()` to ensure all fields (including nested `Fanart` and `LogoColorProfile`) survive localStorage round-trips.
 
@@ -61,13 +65,8 @@ The guest state (`AppState.guest.follows`) SHALL store proto `Artist` objects in
 - **WHEN** `GuestDataMergeService.merge()` processes guest follows after login
 - **THEN** it SHALL read `artist.id?.value` from the stored proto `Artist` objects
 
-### Requirement: Grid view removal
-The My Artists route SHALL display artists in list view only. The grid toggle button, grid layout, context menu dialog, and all grid-specific interaction handlers SHALL be removed.
+## REMOVED Requirements
 
-#### Scenario: My Artists page loads
-- **WHEN** a user navigates to My Artists
-- **THEN** artists are displayed in list view with no toggle button to switch views
-
-#### Scenario: No grid-related CSS
-- **WHEN** the My Artists stylesheet is loaded
-- **THEN** it SHALL NOT contain `.artist-grid`, `.grid-tile`, or related grid layout rules
+### Requirement: Entity directory structure
+**Reason**: With proto `Artist` used directly, the `src/entities/artist.ts` file becomes a re-export + helpers module rather than a parallel type definition. The naming alignment with Go entity files is no longer applicable since the canonical types come from BSR-generated code.
+**Migration**: Import `Artist` from `@buf/liverty-music_schema.bufbuild_es/...artist_pb.js` or from the re-export in `src/entities/artist.ts`.
