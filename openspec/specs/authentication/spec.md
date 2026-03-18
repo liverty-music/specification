@@ -96,7 +96,7 @@ The system SHALL allow public access to the gRPC health check endpoint without a
 
 The system SHALL inject the `email_verified` claim into JWT access tokens via a Zitadel Action at the `PRE_ACCESS_TOKEN_CREATION` trigger, alongside the existing `email` claim.
 
-**Rationale**: Zitadel does not include `email_verified` in access tokens by default. The backend requires this claim to enforce email verification at the API layer.
+**Rationale**: Zitadel does not include `email_verified` in access tokens by default. The claim is preserved for future per-feature enforcement even though no current feature requires it.
 
 #### Scenario: Human user with verified email
 
@@ -113,54 +113,6 @@ The system SHALL inject the `email_verified` claim into JWT access tokens via a 
 - **WHEN** a machine user requests an access token
 - **THEN** the Zitadel Action SHALL skip `email_verified` injection (no `human` field present)
 - **AND** the token SHALL be issued without the `email_verified` claim
-
-### Requirement: Backend Email Verification Enforcement
-
-The system SHALL reject authenticated requests where the access token's `email_verified` claim is not `true`, returning `connect.CodeUnauthenticated`.
-
-**Rationale**: Defense-in-depth. Even though Zitadel's Hosted Login enforces email verification when SMTP is configured, the backend SHALL independently verify the claim to guard against API-created users or misconfigured identity providers.
-
-#### Scenario: Request with verified email
-
-- **WHEN** an authenticated request includes a valid JWT with `email_verified: true`
-- **THEN** the system SHALL allow the request to proceed to the RPC handler
-- **AND** the `EmailVerified` field SHALL be available in `Claims`
-
-#### Scenario: Request with unverified email
-
-- **WHEN** an authenticated request includes a valid JWT with `email_verified: false`
-- **THEN** the system SHALL reject the request with `connect.CodeUnauthenticated`
-- **AND** the error message SHALL indicate that email verification is required
-
-#### Scenario: Request with missing email_verified claim
-
-- **WHEN** an authenticated request includes a valid JWT without the `email_verified` claim
-- **THEN** the system SHALL reject the request with `connect.CodeUnauthenticated`
-- **AND** the error message SHALL indicate that email verification is required
-
-#### Scenario: Machine user token without email_verified
-
-- **WHEN** an authenticated request uses a machine user token (no `email_verified` claim, no `email` claim)
-- **THEN** the system SHALL allow the request if it passes existing validation
-- **AND** the `email_verified` check SHALL be skipped for tokens without an `email` claim
-
-### Requirement: Frontend Email Verification Check
-
-The system SHALL verify the user's `email_verified` status during the OIDC callback and display an error if the email is not verified.
-
-**Rationale**: Immediate user feedback. Rather than letting the user reach the dashboard and fail on every API call, the frontend SHALL catch unverified emails at the earliest opportunity and guide the user.
-
-#### Scenario: Callback with verified email
-
-- **WHEN** the OIDC callback processes a token where `email_verified` is `true` in the ID token profile
-- **THEN** the system SHALL proceed with normal flow (provisioning, merge, redirect to dashboard)
-
-#### Scenario: Callback with unverified email
-
-- **WHEN** the OIDC callback processes a token where `email_verified` is `false` or missing in the ID token profile
-- **THEN** the system SHALL NOT proceed to user provisioning or guest data merge
-- **AND** the system SHALL display an error message instructing the user to verify their email
-- **AND** the system SHALL provide a way to return to the login flow
 
 ### Non-Functional Requirements
 
@@ -214,7 +166,6 @@ The system SHALL return `connect.CodeUnauthenticated` for failed authentication 
 - **JWT Validator**: Validates tokens using `github.com/lestrrat-go/jwx/v2`
 - **authn-go Middleware**: `connectrpc/authn-go` HTTP middleware for default-deny authentication at the HTTP layer
 - **Claims Bridge Interceptor**: Connect-RPC interceptor that converts `authn.GetInfo(ctx)` to `auth.WithClaims(ctx)` for backward compatibility
-- **Email Verification Interceptor**: Connect-RPC interceptor that enforces `email_verified` claim for human users, skipping machine users and public endpoints
 - **Context Utilities**: Type-safe user ID propagation through request context
 
 ### Configuration

@@ -1,3 +1,5 @@
+## MODIFIED Requirements
+
 ### Requirement: Sign Up / Sign In
 
 The system SHALL provide Passkey authentication via Zitadel. For new users, authentication is triggered at the end of the onboarding tutorial (Step 6) via a non-dismissible modal. For returning users, authentication is available via a [Login] link on the landing page.
