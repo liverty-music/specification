@@ -108,9 +108,9 @@ message TicketEmail {
 
   // lottery_result indicates whether the user won or lost the lottery.
   // Present only for LOTTERY_RESULT emails.
-  optional LotteryResult lottery_result = 11;
+  optional LotteryResult lottery_result = 11 [(buf.validate.field).enum.defined_only = true];
 
   // payment_status indicates whether payment has been completed.
   // Present only for LOTTERY_RESULT emails where the user won.
-  optional PaymentStatus payment_status = 12;
+  optional PaymentStatus payment_status = 12 [(buf.validate.field).enum.defined_only = true];
 }
