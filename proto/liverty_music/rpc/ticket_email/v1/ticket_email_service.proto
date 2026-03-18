@@ -89,10 +89,10 @@ message UpdateTicketEmailRequest {
   optional string application_url = 5;
 
   // Corrected lottery result. If set, overrides the parsed value.
-  optional liverty_music.entity.v1.LotteryResult lottery_result = 6;
+  optional liverty_music.entity.v1.LotteryResult lottery_result = 6 [(buf.validate.field).enum.defined_only = true];
 
   // Corrected payment status. If set, overrides the parsed value.
-  optional liverty_music.entity.v1.PaymentStatus payment_status = 7;
+  optional liverty_music.entity.v1.PaymentStatus payment_status = 7 [(buf.validate.field).enum.defined_only = true];
 }
 
 // UpdateTicketEmailResponse contains the updated ticket email record.
