@@ -9,11 +9,11 @@ The system SHALL analyze artist logo images (clearLOGO PNGs) to extract dominant
 
 #### Scenario: Achromatic light logo (e.g., white text)
 - **WHEN** a logo image has 30% or fewer chromatic pixels and a mean lightness > 0.6
-- **THEN** the analysis SHALL return `isChromatic = false`, `dominantHue = 0` (unused), and `dominantLightness` reflecting the high lightness value
+- **THEN** the analysis SHALL return `isChromatic = false`, `dominantHue` absent (not set), and `dominantLightness` reflecting the high lightness value
 
 #### Scenario: Achromatic dark logo (e.g., black text)
 - **WHEN** a logo image has 30% or fewer chromatic pixels and a mean lightness ≤ 0.6
-- **THEN** the analysis SHALL return `isChromatic = false`, `dominantHue = 0` (unused), and `dominantLightness` reflecting the low lightness value
+- **THEN** the analysis SHALL return `isChromatic = false`, `dominantHue` absent (not set), and `dominantLightness` reflecting the low lightness value
 
 #### Scenario: Fully transparent image
 - **WHEN** a logo image has no non-transparent pixels (alpha >= 10)
