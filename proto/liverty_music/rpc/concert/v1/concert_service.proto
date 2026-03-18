@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/artist.proto";
 import "liverty_music/entity/v1/concert.proto";
 import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/user.proto";
 
 // ConcertService provides operations for managing the catalog of musical concerts.
 // It acts as the primary data source for upcoming live music events.
@@ -23,6 +24,15 @@ service ConcertService {
   // Possible errors:
   // - UNAUTHENTICATED: The user identity could not be verified.
   rpc ListByFollower(ListByFollowerRequest) returns (ListByFollowerResponse);
+
+  // ListWithProximity retrieves concerts for the specified artists, grouped by date
+  // and classified by geographic proximity to the caller's home area.
+  // Authentication is not required; the caller provides artist IDs and home explicitly.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The request is missing required fields, contains invalid data,
+  //   or exceeds the maximum number of artist IDs (50).
+  rpc ListWithProximity(ListWithProximityRequest) returns (ListWithProximityResponse);
 
   // SearchNewConcerts triggers an asynchronous discovery process for new concerts.
   // It enqueues a background search job and returns immediately. The actual search
@@ -87,6 +97,29 @@ message ProximityGroup {
 
   // Concerts at venues beyond 200km, with unknown location, or when the user has no home set.
   repeated entity.v1.Concert away = 4;
+}
+
+// ListWithProximityRequest specifies the artists and home area for proximity-grouped
+// concert retrieval. Used during onboarding when the caller is not yet authenticated.
+message ListWithProximityRequest {
+  // Required. The artists whose concerts are to be listed.
+  // Maximum 50 artist IDs per request.
+  repeated entity.v1.ArtistId artist_ids = 1 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.max_items = 50
+  ];
+
+  // Required. The caller's home area, used for proximity classification.
+  entity.v1.Home home = 2 [(buf.validate.field).required = true];
+}
+
+// ListWithProximityResponse contains concerts for the specified artists,
+// grouped by date and classified by geographic proximity.
+message ListWithProximityResponse {
+  // Concert groups ordered by date ascending. Each group contains concerts
+  // for a single date, classified into home/nearby/away buckets based on
+  // the geographic proximity between the provided home area and each venue.
+  repeated ProximityGroup groups = 1;
 }
 
 // SearchNewConcertsRequest specifies the artist for whom to search for new concerts.
