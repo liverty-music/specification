@@ -1,4 +1,4 @@
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Passkey Authentication CTA
 
@@ -47,3 +47,11 @@ The system SHALL redirect already-authenticated users away from the landing page
 - **THEN** the system SHALL display the landing page with an error toast: "Could not determine account status. Please try signing in again."
 - **AND** the system SHALL NOT crash to a white screen
 - **AND** the system SHALL allow the user to manually navigate via the Log In button
+
+## REMOVED Requirements
+
+### Requirement: Completed user sees Login only
+
+**Reason**: Replaced by the "always show both CTAs" behavior. The conditional toggle based on `onboardingStep === COMPLETED` created UX problems when localStorage was cleared or when accessing from a different device.
+
+**Migration**: No migration needed. The `showGetStarted` getter and its `if.bind` conditionals are removed. Both buttons render unconditionally.
