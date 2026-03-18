@@ -35,6 +35,6 @@
 
 ## 7. Verification
 
-- [ ] 7.1 Run `make check` in backend (blocked: handler references BSR-generated types not yet available)
-- [ ] 7.2 Run `make check` in frontend (blocked: imports BSR-generated types not yet available)
+- [x] 7.1 Run `make check` in backend — passed (lint 0 issues, all tests green)
+- [x] 7.2 Run `make check` in frontend — passed (670 tests, all existing lint warnings only)
 - [ ] 7.3 Manual E2E: verify onboarding flow from discovery → dashboard → stage spotlights → concert card → my-artists
