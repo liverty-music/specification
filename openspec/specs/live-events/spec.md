@@ -36,6 +36,18 @@ The system MUST define standard data structures for core concert entities to ens
 - **AND** all primitive scalar fields SHALL be represented as VO wrapper messages.
 - **AND** it SHALL NOT include `create_time` or `update_time` fields.
 
+#### Scenario: Concert card displays ticket journey badge
+
+- **WHEN** a concert is rendered on the dashboard
+- **AND** the user has a ticket journey for that concert's event
+- **THEN** the concert card SHALL display a badge indicating the current `TicketJourneyStatus`
+
+#### Scenario: Concert card without ticket journey
+
+- **WHEN** a concert is rendered on the dashboard
+- **AND** the user has no ticket journey for that concert's event
+- **THEN** the concert card SHALL NOT display a journey status badge
+
 ### Requirement: Artist Management
 
 The system MUST provide an interface to manage artists and their media links.

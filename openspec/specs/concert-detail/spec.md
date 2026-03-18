@@ -40,6 +40,31 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 - **WHEN** the concert detail view is open and `source_url` is present
 - **THEN** it SHALL render a "View Official Info" button linking to `source_url` in a new tab
 
+#### Scenario: Display ticket journey status
+
+- **WHEN** the concert detail view is open
+- **AND** the user has a ticket journey for this event
+- **THEN** the sheet SHALL display the current ticket journey status
+- **AND** the sheet SHALL provide controls to change the status to any valid `TicketJourneyStatus` value
+
+#### Scenario: Set ticket journey status from detail view
+
+- **WHEN** the user selects a new status from the journey status controls
+- **THEN** the system SHALL call `TicketJourneyService.SetStatus` with the event_id and selected status
+- **AND** the displayed status SHALL update to reflect the change
+
+#### Scenario: Start tracking from detail view
+
+- **WHEN** the concert detail view is open
+- **AND** the user has no ticket journey for this event
+- **THEN** the sheet SHALL provide a control to begin tracking (set initial status)
+
+#### Scenario: Remove ticket journey from detail view
+
+- **WHEN** the user removes the journey status from the detail view controls
+- **THEN** the system SHALL call `TicketJourneyService.Delete` with the event_id
+- **AND** the status display SHALL revert to the untracked state
+
 #### Scenario: Dismiss sheet via light dismiss (non-onboarding)
 
 - **WHEN** the user is NOT in onboarding Step 4
