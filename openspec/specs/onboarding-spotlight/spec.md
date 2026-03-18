@@ -72,6 +72,8 @@ The spotlight SHALL remain continuously active from the moment it first appears 
 
 The `findAndHighlight()` method SHALL validate `targetSelector` before calling `querySelector`. When `targetSelector` is empty or falsy, the method SHALL return immediately without calling `querySelector` or initiating retry logic. This prevents `InvalidSelectorError` caused by non-deterministic Aurelia binding update order when multiple Store properties change simultaneously.
 
+The `findAndHighlight()` method SHALL cancel any pending retry timer before starting a new retry chain. This prevents timer leaks when `targetSelectorChanged` fires while a previous retry is still running (e.g., during the lane introduction sequence where phases advance every 2 seconds but retry chains run up to 5 seconds).
+
 #### Scenario: Spotlight activates at Step 1 and persists through Step 5
 
 - **WHEN** the coach mark first activates at Step 1 (Dashboard icon in discover page)
@@ -84,8 +86,8 @@ The `findAndHighlight()` method SHALL validate `targetSelector` before calling `
 
 - **WHEN** `onboardingStep` advances to 6 (SignUp)
 - **THEN** the overlay popover SHALL call `hidePopover()`
-- **AND** the current target's `anchor-name` SHALL be removed
-- **AND** the scroll lock on `<au-viewport>` SHALL be released
+- **AND** the current target's `anchor-name` SHALL be cleared
+- **AND** the scroll lock on `<au-viewport>` SHALL be released (`overflow` reset)
 - **AND** no orphaned click-blockers or anchor-names SHALL remain in the DOM
 
 #### Scenario: App-shell level placement
@@ -102,6 +104,12 @@ The `findAndHighlight()` method SHALL validate `targetSelector` before calling `
 - **THEN** `findAndHighlight()` SHALL return immediately without calling `document.querySelector`
 - **AND** no `InvalidSelectorError` SHALL be thrown
 - **AND** no retry timer SHALL be started
+
+#### Scenario: Retry timer cancelled on new target
+
+- **WHEN** `findAndHighlight()` is called while a previous retry chain is still pending
+- **THEN** the pending retry timer SHALL be cancelled via `cleanup()` before starting the new retry chain
+- **AND** only one retry chain SHALL be active at any time
 
 ### Requirement: Smooth Spotlight Movement via View Transitions API
 
