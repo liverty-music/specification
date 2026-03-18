@@ -81,11 +81,13 @@ message Fanart {
 }
 
 message LogoColorProfile {
-  float dominant_hue = 1;        // 0-360, OKLCH hue angle
-  float dominant_lightness = 2;  // 0-1, OKLCH lightness
-  bool is_chromatic = 3;         // true if logo has significant color
+  optional float dominant_hue = 1;  // 0-360, OKLCH hue angle (present only for chromatic logos)
+  float dominant_lightness = 2;     // 0-1, OKLCH lightness
+  bool is_chromatic = 3;            // true if logo has significant color
 }
 ```
+
+**Why `dominant_hue` is optional?** In proto3, a non-optional float defaults to `0.0`, which is a valid hue (red). For achromatic logos, hue is meaningless. Without `optional`, consumers cannot distinguish "hue is red" from "hue is not applicable." The `optional` keyword gives explicit presence semantics (`has_dominant_hue()`).
 
 **Why inside Fanart?** LogoColorProfile is meaningless without fanart data — it's derived from the logo image. Placing it as a peer field on `Artist` would create a confusing ownership model.
 
@@ -94,10 +96,10 @@ message LogoColorProfile {
 ```
 if (artist.fanart?.logoColorProfile) {
   // Use analysis-driven hue + lightness
-  if (logoColorProfile.isChromatic) {
-    hue = logoColorProfile.dominantHue  // logo's own hue family
+  if (logoColorProfile.dominantHue != null) {
+    hue = logoColorProfile.dominantHue  // chromatic: logo's own hue family
   } else {
-    hue = hash(artistName)          // preserve variety
+    hue = hash(artistName)              // achromatic: preserve variety
   }
   bgLightness = derived from logoColorProfile.dominantLightness
 } else if (artist.fanart) {
