@@ -5,6 +5,7 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/artist.proto";
 import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/venue.proto";
 
 // Concert represents a specific music live event.
@@ -12,7 +13,7 @@ import "liverty_music/entity/v1/venue.proto";
 // connecting an artist to a specific venue at a scheduled time.
 message Concert {
   // The unique identifier of the concert event.
-  ConcertId id = 1 [(buf.validate.field).required = true];
+  EventId id = 1 [(buf.validate.field).required = true];
 
   // The unique identifier of the performing artist.
   ArtistId artist_id = 2 [(buf.validate.field).required = true];
@@ -44,10 +45,4 @@ message Concert {
   // The raw venue name as scraped from the source.
   // Preserves the original text separately from the normalised Venue.name.
   ListedVenueName listed_venue_name = 10;
-}
-
-// ConcertId is a globally unique identifier for a concert.
-message ConcertId {
-  // A UUID string representing the unique identity of the concert.
-  string value = 1 [(buf.validate.field).string.uuid = true];
 }
