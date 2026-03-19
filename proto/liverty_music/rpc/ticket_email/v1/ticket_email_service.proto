@@ -6,7 +6,7 @@ package liverty_music.rpc.ticket_email.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
-import "liverty_music/entity/v1/ticket.proto";
+import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/ticket_email.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/ticket_email/v1;ticketemailv1";
