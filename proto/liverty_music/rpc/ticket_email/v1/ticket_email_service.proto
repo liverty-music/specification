@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.ticket_email.v1 provides the TicketEmailService
+// for importing and managing ticket-related emails parsed by Gemini Flash.
+package liverty_music.rpc.ticket_email.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/ticket.proto";
+import "liverty_music/entity/v1/ticket_email.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/ticket_email/v1;ticketemailv1";
+
+// TicketEmailService manages the import and confirmation of ticket-related emails.
+// Users share emails from their Gmail app via PWA Share Target. The service parses
+// the unstructured email text using Gemini Flash, persists the results, and upon
+// user confirmation updates the associated TicketJourney statuses.
+//
+// The flow is two-step:
+//  1. CreateTicketEmail: parse + persist (user reviews the parsed output)
+//  2. UpdateTicketEmail: user confirms/corrects → TicketJourney status updated
+service TicketEmailService {
+  // CreateTicketEmail parses a shared email body using Gemini Flash, persists the
+  // raw email and parsed results, and returns the created records for user review.
+  // One TicketEmail record is created per event_id provided.
+  //
+  // The user_id is derived from the authentication context.
+  //
+  // Possible errors:
+  //  - INVALID_ARGUMENT: Missing or invalid fields (empty body, invalid email_type,
+  //    no event_ids, malformed event_id).
+  //  - INTERNAL: Gemini Flash parsing failed or returned unparseable results.
+  //  - UNAUTHENTICATED: The user identity could not be verified.
+  rpc CreateTicketEmail(CreateTicketEmailRequest) returns (CreateTicketEmailResponse);
+
+  // UpdateTicketEmail applies user corrections to a previously created ticket email
+  // record and triggers TicketJourney status updates based on the confirmed data.
+  //
+  // Status transitions by email_type:
+  //  - LOTTERY_INFO   → TRACKING
+  //  - LOTTERY_RESULT → UNPAID (won, payment pending)
+  //                   → PAID   (won, payment completed)
+  //                   → LOST   (lost)
+  //
+  // Possible errors:
+  //  - NOT_FOUND: The ticket_email_id does not exist or belongs to another user.
+  //  - INVALID_ARGUMENT: Missing or invalid fields.
+  //  - UNAUTHENTICATED: The user identity could not be verified.
+  rpc UpdateTicketEmail(UpdateTicketEmailRequest) returns (UpdateTicketEmailResponse);
+}
+
+// CreateTicketEmailRequest contains the email text and metadata for parsing.
+message CreateTicketEmailRequest {
+  // Required. The email body text as shared from Gmail (optionally redacted by the user).
+  string raw_body = 1 [(buf.validate.field).string.min_len = 1];
+
+  // Required. The type of ticket email being imported.
+  liverty_music.entity.v1.TicketEmailType email_type = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // Required. One or more event IDs to associate this email with.
+  // One TicketEmail record is created per event_id.
+  repeated liverty_music.entity.v1.EventId event_ids = 3 [(buf.validate.field).repeated.min_items = 1];
+}
+
+// CreateTicketEmailResponse contains the created ticket email records with parsed data.
+message CreateTicketEmailResponse {
+  // The created ticket email records, one per event_id in the request.
+  repeated liverty_music.entity.v1.TicketEmail ticket_emails = 1;
+}
+
+// UpdateTicketEmailRequest contains user corrections for a previously created ticket email.
+message UpdateTicketEmailRequest {
+  // Required. The ticket email record to update.
+  liverty_music.entity.v1.TicketEmailId ticket_email_id = 1 [(buf.validate.field).required = true];
+
+  // Corrected payment deadline. If set, overrides the parsed value.
+  optional google.protobuf.Timestamp payment_deadline = 2;
+
+  // Corrected lottery application start date. If set, overrides the parsed value.
+  optional google.protobuf.Timestamp lottery_start = 3;
+
+  // Corrected lottery application end date. If set, overrides the parsed value.
+  optional google.protobuf.Timestamp lottery_end = 4;
+
+  // Corrected application URL. If set, overrides the parsed value.
+  optional string application_url = 5;
+
+  // Corrected lottery result. If set, overrides the parsed value.
+  optional liverty_music.entity.v1.LotteryResult lottery_result = 6 [(buf.validate.field).enum.defined_only = true];
+
+  // Corrected payment status. If set, overrides the parsed value.
+  optional liverty_music.entity.v1.PaymentStatus payment_status = 7 [(buf.validate.field).enum.defined_only = true];
+}
+
+// UpdateTicketEmailResponse contains the updated ticket email record.
+message UpdateTicketEmailResponse {
+  // The updated ticket email record reflecting the confirmed data.
+  liverty_music.entity.v1.TicketEmail ticket_email = 1;
+}

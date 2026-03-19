@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/ticket.proto";
+import "liverty_music/entity/v1/user.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// TicketEmailId uniquely identifies a single imported ticket email record.
+// It wraps a UUID string to provide type safety and prevent accidental misuse of raw identifiers.
+message TicketEmailId {
+  // value is the UUID that uniquely identifies this ticket email across the platform.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// TicketEmailType classifies the kind of ticket-related email that was imported.
+// Each type determines which fields are expected to be present after parsing
+// and which TicketJourney status transition to apply upon confirmation.
+enum TicketEmailType {
+  // Default value; must not be used in API requests.
+  TICKET_EMAIL_TYPE_UNSPECIFIED = 0;
+
+  // A lottery announcement email containing ticket sales dates and an application URL.
+  // Importing this type sets TicketJourney status to TRACKING upon confirmation.
+  TICKET_EMAIL_TYPE_LOTTERY_INFO = 1;
+
+  // A lottery result notification email indicating win/loss and payment details.
+  // Importing this type sets TicketJourney status to UNPAID, PAID, or LOST upon confirmation.
+  TICKET_EMAIL_TYPE_LOTTERY_RESULT = 2;
+}
+
+// LotteryResult indicates whether the user won or lost a ticket lottery.
+// Used within parsed data from lottery result emails.
+enum LotteryResult {
+  // Default value; must not be used in API requests.
+  LOTTERY_RESULT_UNSPECIFIED = 0;
+
+  // The user won the ticket lottery (当選).
+  LOTTERY_RESULT_WON = 1;
+
+  // The user lost the ticket lottery (落選).
+  LOTTERY_RESULT_LOST = 2;
+}
+
+// PaymentStatus indicates the payment state for a won lottery ticket.
+// Used within parsed data from lottery result emails.
+enum PaymentStatus {
+  // Default value; must not be used in API requests.
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+
+  // Payment is pending — the user must pay before the deadline (入金待ち).
+  PAYMENT_STATUS_UNPAID = 1;
+
+  // Payment has been completed — typically via automatic credit card charge (支払済).
+  PAYMENT_STATUS_PAID = 2;
+}
+
+// TicketEmail represents a ticket-related email imported by a user via PWA Share Target.
+// Each record stores the raw email body, structured data extracted by Gemini Flash,
+// and is linked to a specific user and event. Multiple emails may be imported for
+// the same event (e.g., lottery announcement followed by result notification).
+message TicketEmail {
+  // id is the unique identifier for this ticket email record.
+  TicketEmailId id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // user_id identifies the fan who imported this email.
+  UserId user_id = 2 [(buf.validate.field).required = true];
+
+  // event_id identifies the event this email is associated with.
+  EventId event_id = 3 [(buf.validate.field).required = true];
+
+  // email_type classifies the kind of ticket email (lottery info or lottery result).
+  TicketEmailType email_type = 4 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // raw_body is the email text as provided (and optionally redacted) by the user.
+  // This is the text that was parsed by Gemini Flash.
+  string raw_body = 5 [(buf.validate.field).string.min_len = 1];
+
+  // parsed_data stores the structured output from Gemini Flash parsing.
+  // The schema varies by email_type but is preserved as a JSON object
+  // for flexibility and auditability.
+  google.protobuf.Struct parsed_data = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // payment_deadline is the date by which the user must complete payment.
+  // Present only for LOTTERY_RESULT emails where the user won with pending payment.
+  optional google.protobuf.Timestamp payment_deadline = 7;
+
+  // lottery_start is the start date/time of the lottery application period.
+  // Present only for LOTTERY_INFO emails.
+  optional google.protobuf.Timestamp lottery_start = 8;
+
+  // lottery_end is the end date/time of the lottery application period.
+  // Present only for LOTTERY_INFO emails.
+  optional google.protobuf.Timestamp lottery_end = 9;
+
+  // application_url is the URL where the user can apply for the ticket lottery.
+  // Present only for LOTTERY_INFO emails.
+  optional string application_url = 10;
+
+  // lottery_result indicates whether the user won or lost the lottery.
+  // Present only for LOTTERY_RESULT emails.
+  optional LotteryResult lottery_result = 11 [(buf.validate.field).enum.defined_only = true];
+
+  // payment_status indicates whether payment has been completed.
+  // Present only for LOTTERY_RESULT emails where the user won.
+  optional PaymentStatus payment_status = 12 [(buf.validate.field).enum.defined_only = true];
+}
