@@ -8,6 +8,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/ticket_email.proto";
+import "liverty_music/entity/v1/ticket_journey.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/ticket_email/v1;ticketemailv1";
 
@@ -88,11 +89,9 @@ message UpdateTicketEmailRequest {
   // Corrected application URL. If set, overrides the parsed value.
   optional string application_url = 5;
 
-  // Corrected lottery result. If set, overrides the parsed value.
-  optional liverty_music.entity.v1.LotteryResult lottery_result = 6 [(buf.validate.field).enum.defined_only = true];
-
-  // Corrected payment status. If set, overrides the parsed value.
-  optional liverty_music.entity.v1.PaymentStatus payment_status = 7 [(buf.validate.field).enum.defined_only = true];
+  // Corrected journey status. If set, overrides the parsed value.
+  // Valid values: LOST, UNPAID, PAID (for LOTTERY_RESULT emails) or TRACKING (for LOTTERY_INFO).
+  optional liverty_music.entity.v1.TicketJourneyStatus journey_status = 6 [(buf.validate.field).enum.defined_only = true];
 }
 
 // UpdateTicketEmailResponse contains the updated ticket email record.

@@ -8,6 +8,7 @@ import "google/api/field_behavior.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/ticket_journey.proto";
 import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
@@ -33,32 +34,6 @@ enum TicketEmailType {
   // A lottery result notification email indicating win/loss and payment details.
   // Importing this type sets TicketJourney status to UNPAID, PAID, or LOST upon confirmation.
   TICKET_EMAIL_TYPE_LOTTERY_RESULT = 2;
-}
-
-// LotteryResult indicates whether the user won or lost a ticket lottery.
-// Used within parsed data from lottery result emails.
-enum LotteryResult {
-  // Default value; must not be used in API requests.
-  LOTTERY_RESULT_UNSPECIFIED = 0;
-
-  // The user won the ticket lottery (当選).
-  LOTTERY_RESULT_WON = 1;
-
-  // The user lost the ticket lottery (落選).
-  LOTTERY_RESULT_LOST = 2;
-}
-
-// PaymentStatus indicates the payment state for a won lottery ticket.
-// Used within parsed data from lottery result emails.
-enum PaymentStatus {
-  // Default value; must not be used in API requests.
-  PAYMENT_STATUS_UNSPECIFIED = 0;
-
-  // Payment is pending — the user must pay before the deadline (入金待ち).
-  PAYMENT_STATUS_UNPAID = 1;
-
-  // Payment has been completed — typically via automatic credit card charge (支払済).
-  PAYMENT_STATUS_PAID = 2;
 }
 
 // TicketEmail represents a ticket-related email imported by a user via PWA Share Target.
@@ -106,11 +81,9 @@ message TicketEmail {
   // Present only for LOTTERY_INFO emails.
   optional string application_url = 10;
 
-  // lottery_result indicates whether the user won or lost the lottery.
-  // Present only for LOTTERY_RESULT emails.
-  optional LotteryResult lottery_result = 11 [(buf.validate.field).enum.defined_only = true];
-
-  // payment_status indicates whether payment has been completed.
-  // Present only for LOTTERY_RESULT emails where the user won.
-  optional PaymentStatus payment_status = 12 [(buf.validate.field).enum.defined_only = true];
+  // journey_status is the TicketJourney status derived from the email content.
+  // For LOTTERY_INFO emails this is TRACKING. For LOTTERY_RESULT emails this is
+  // LOST (落選), UNPAID (当選・入金待ち), or PAID (当選・支払済).
+  // The user may correct this value before confirmation.
+  optional TicketJourneyStatus journey_status = 11 [(buf.validate.field).enum.defined_only = true];
 }
