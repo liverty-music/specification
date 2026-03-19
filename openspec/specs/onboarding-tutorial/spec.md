@@ -16,7 +16,7 @@ The system SHALL enforce a strict linear progression through onboarding steps. U
 - **WHEN** a user is at Step `'discovery'`
 - **AND** the user has followed 3 or more artists via bubble taps
 - **AND** the backend search status for all followed artists has reached `COMPLETED` or `FAILED` (verified via `ListSearchStatuses` polling), or the per-artist frontend polling deadline (15 seconds) has elapsed
-- **AND** `ListWithProximity` returns at least 1 proximity group for the followed artists
+- **AND** at least one followed artist has concerts in the database (verified via `ConcertService/List` per artist)
 - **THEN** the system SHALL activate the continuous spotlight on the Dashboard icon in the bottom navigation bar (target: `[data-nav-dashboard]`)
 - **AND** the coach mark SHALL display the message: "タイムテーブルを見てみよう！"
 - **AND** when the user taps the Dashboard icon through the spotlight, the system SHALL advance `onboardingStep` to `'dashboard'`
@@ -35,16 +35,17 @@ The system SHALL enforce a strict linear progression through onboarding steps. U
 
 - **WHEN** all followed artists have reached a terminal search state (`COMPLETED`, `FAILED`, or timed out)
 - **AND** the user has followed 3 or more artists
-- **THEN** the system SHALL call `ListWithProximity` to verify that concert data exists in the database
-- **AND** if at least 1 proximity group is returned, the system SHALL activate the Dashboard coach mark
-- **AND** if 0 proximity groups are returned, the system SHALL NOT activate the Dashboard coach mark and SHALL re-evaluate each time a new artist's search completes
+- **THEN** the system SHALL call `ConcertService/List` for each followed artist in parallel to verify that concert data exists in the database
+- **AND** the system SHALL NOT require `guest.home` for this verification
+- **AND** if at least 1 artist has concerts, the system SHALL activate the Dashboard coach mark
+- **AND** if 0 artists have concerts, the system SHALL NOT activate the Dashboard coach mark and SHALL re-evaluate each time a new artist's search completes
 
 #### Scenario: Step 1 - Concert searches complete with no results
 
 - **WHEN** a user is at Step `'discovery'`
 - **AND** the user has followed 3 or more artists
 - **AND** all artists' search statuses have reached a terminal state
-- **AND** `ListWithProximity` returns 0 proximity groups
+- **AND** no followed artist has concerts (all `ConcertService/List` responses are empty)
 - **THEN** the system SHALL NOT activate the Dashboard coach mark
 - **AND** the system SHALL re-evaluate the concert data gate each time a new artist is followed and their search reaches a terminal state
 
