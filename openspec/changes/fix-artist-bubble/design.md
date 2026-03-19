@@ -62,9 +62,10 @@ Discovery 画面の `dna-orb-canvas` コンポーネントは Canvas 2D + Matter
 |-------------|---------|-----------|
 | `findClosestBubble(bubbles, x, y)` | `BubblePhysics.getBubbleAt` | ヒット判定 |
 | `wrapText(text, maxWidth, measureFn)` | `DnaOrbCanvas.wrapText` | テキスト折り返し |
-| `computeBubbleFont(name, radius, measureFn)` | `DnaOrbCanvas.renderBubbleText` | フォントサイズ決定 |
 
 `measureFn` は `(text: string) => number` として注入し、テスト時にモック可能にする。
+
+フォントサイズ決定ロジック (`renderBubbleText` 内) は Canvas 2D コンテキスト状態 (`ctx.font` 設定 → `measureText` 計測) に依存するため、純粋関数としての抽出は行わない。`minFont=10` 制約は数式レベルのユニットテストで検証する。
 
 ### Decision 5: minFont を 7px → 10px に引き上げ
 
