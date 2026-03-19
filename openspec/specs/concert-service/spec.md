@@ -14,6 +14,7 @@ The system SHALL provide a gRPC service to manage concerts and artists.
 
 - **WHEN** `List` is called with a valid `artist_id`
 - **THEN** it returns a list of concerts associated with that artist
+- **AND** each concert SHALL include an `EventId` (not `ConcertId`) as its identifier
 - **AND** each concert SHALL include a resolved `Venue` object with `name` and `admin_area` if available
 - **AND** each concert SHALL include `listed_venue_name` with the raw scraped venue name
 - **AND** returns an empty list if no concerts are found (not an error)
@@ -154,7 +155,8 @@ The `ConcertRepository.ListByArtist` implementation SHALL JOIN the `venues` tabl
 #### Scenario: Concert mapper includes Venue
 
 - **WHEN** a `Concert` entity is mapped to proto
-- **THEN** `ConcertToProto` SHALL populate the `venue` field using `VenueToProto`
+- **THEN** `ConcertToProto` SHALL populate the `id` field using `EventId` (not `ConcertId`)
+- **AND** SHALL populate the `venue` field using `VenueToProto`
 - **AND** SHALL populate `listed_venue_name` from `Concert.Event.ListedVenueName`
 
 #### Scenario: ListByArtists (plural) query with coordinates

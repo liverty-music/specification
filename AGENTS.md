@@ -70,7 +70,7 @@ proto/liverty_music/
 │   ├── entity.proto   # Package-level doc (no messages)
 │   ├── user.proto     # User, UserId, UserEmail
 │   ├── artist.proto   # Artist, ArtistId, OfficialSite, Mbid
-│   ├── concert.proto  # Concert, ConcertId, ConcertTitle
+│   ├── concert.proto  # Concert, EventId, ConcertTitle
 │   └── venue.proto    # Venue, VenueId, VenueName
 └── rpc/          # Service definitions — one service per subdirectory
     ├── user/v1/user_service.proto       # UserService (Get, Create)
