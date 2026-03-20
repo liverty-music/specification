@@ -6,8 +6,8 @@
 
 ## 2. Service Refactoring
 
-- [x] 2.1 Rewrite `OnboardingService` — remove `resolveStore()` dependency, add `@observable step` with `stepChanged()` callback for persistence, hydrate from `loadStep()` in constructor, keep existing DI interface and public API
-- [x] 2.2 Create `GuestService` (replacing `LocalArtistClient`) — own `follows` array and `@observable home`, hydrate from `loadFollows()`/`loadHome()` in constructor, call `saveFollows()`/`saveHome()` explicitly after mutations, register via `DI.createInterface<IGuestService>()`
+- [x] 2.1 Rewrite `OnboardingService` — remove `resolveStore()` dependency, add `@observable step` with `stepChanged()` callback for persistence, hydrate from `loadStep()` at field initialization time (e.g., `@observable step = loadStep()`), keep existing DI interface and public API
+- [x] 2.2 Create `GuestService` (replacing `LocalArtistClient`) — own `follows` array and `@observable home`, hydrate from `loadFollows()`/`loadHome()` at field initialization time (e.g., `follows = loadFollows()`, `@observable home = loadHome()`), call `saveFollows()`/`saveHome()` explicitly after mutations, register via `DI.createInterface<IGuestService>()`
 - [x] 2.3 Update `src/services/follow-service-client.ts` to use `IGuestService` instead of `ILocalArtistClient` / `resolveStore()`
 - [x] 2.4 Update `src/services/guest-data-merge-service.ts` to use `IGuestService` and `IOnboardingService` instead of store
 - [x] 2.5 Update `src/services/concert-service.ts` to use `IGuestService` instead of `resolveStore()`
