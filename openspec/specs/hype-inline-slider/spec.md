@@ -35,9 +35,9 @@ The My Artists list view SHALL display a sticky header row showing hype tier ico
 
 Each artist row in the My Artists list view SHALL include a 4-stop discrete dot slider for hype level selection, enabling 1-tap changes without opening a bottom sheet.
 
-The slider component SHALL accept `HypeType` enum values directly from the parent binding. No intermediate string type conversion SHALL exist in the parent route.
+The slider component SHALL be a pure presentation component with zero business logic. It SHALL expose `hype` as a `twoWay` bindable and render the active dot accordingly. The slider SHALL NOT contain authentication, onboarding, persistence, or event dispatch logic.
 
-The slider SHALL use native HTML `<fieldset>` with a visually hidden `<legend>` as the group container. Each hype stop SHALL be a `<label>` wrapping a native `<input type="radio">` (visually hidden) and a visual dot `<span>`. The radio inputs SHALL use Aurelia 2's `model.bind`/`checked.bind` pattern for two-way binding.
+The slider SHALL use native HTML `<fieldset>` with a visually hidden `<legend>` as the group container. Each hype stop SHALL be a `<label>` wrapping a native `<input type="radio">` (visually hidden) and a visual dot `<span>`. The radio inputs SHALL use Aurelia 2's `model.bind`/`checked.bind` pattern with two-way binding on `hype`. When the user taps a dot, the radio's native behavior updates `hype` via Aurelia binding, which pushes to the parent's data via `twoWay` mode. The native `change` event bubbles through the light DOM to the parent, which decides whether to accept or revert the change.
 
 #### Scenario: Slider renders on each artist row
 
@@ -47,12 +47,25 @@ The slider SHALL use native HTML `<fieldset>` with a visually hidden `<legend>` 
 - **AND** the active dot SHALL be 14px diameter; inactive dots SHALL be 8px diameter
 - **AND** each dot SHALL have a minimum 44x44px transparent tap target area
 
-#### Scenario: Parent binds HypeType directly
+#### Scenario: User taps a dot
 
-- **WHEN** the my-artists-route template renders a `hype-inline-slider`
-- **THEN** the binding SHALL be `hype.bind="artist.hype"` using the `HypeType` proto enum
-- **AND** the component SHALL NOT require the parent to perform type conversion
-- **AND** Aurelia SHALL observe `artist.hype` directly, ensuring optimistic updates are reflected
+- **WHEN** a user taps any dot on a slider
+- **THEN** the radio's native `checked` state SHALL update via Aurelia's `checked.bind`
+- **AND** the `twoWay` binding SHALL push the new value to the parent's bound property
+- **AND** the native `change` event SHALL bubble through the custom element boundary
+- **AND** the parent SHALL handle the `change` event to apply business logic
+
+#### Scenario: Parent accepts hype selection
+
+- **WHEN** the parent does NOT revert the bound property after a `change` event
+- **THEN** the slider SHALL remain at the new position (already updated by native radio behavior)
+
+#### Scenario: Parent reverts hype selection
+
+- **WHEN** the parent reverts the bound property (e.g., `artist.hype = prevValue`) after a `change` event
+- **THEN** the `twoWay` binding SHALL push the reverted value back to the slider
+- **AND** the slider SHALL return to the previous dot position
+- **AND** the programmatic update SHALL NOT trigger another `change` event (native DOM behavior)
 
 #### Scenario: Active dot reflects hype tier CSS effects
 
@@ -71,22 +84,6 @@ The slider SHALL use native HTML `<fieldset>` with a visually hidden `<legend>` 
 - **THEN** all pulse and gradient rotation animations on active dots SHALL be disabled
 - **AND** static border and glow styles SHALL remain visible
 
-#### Scenario: Authenticated user taps a dot
-
-- **WHEN** an authenticated user taps an inactive dot on a slider
-- **THEN** the active dot SHALL animate to the tapped position (200ms ease-out transition)
-- **AND** the system SHALL optimistically update `artist.hype` in the parent's artists array
-- **AND** the system SHALL call `SetHype` RPC with the new hype level
-- **AND** if the RPC fails, the slider SHALL revert to the previous position
-- **AND** the `hype-changed` event detail SHALL contain `{ artistId: string, hype: HypeType }`
-
-#### Scenario: Unauthenticated user taps a dot
-
-- **WHEN** an unauthenticated user taps any dot on a slider
-- **THEN** the slider SHALL NOT move
-- **AND** the system SHALL dispatch a `hype-signup-prompt` custom event
-- **AND** the My Artists page SHALL handle this event by displaying the notification dialog
-
 #### Scenario: Native radio input semantics
 
 - **WHEN** the slider renders
@@ -94,7 +91,16 @@ The slider SHALL use native HTML `<fieldset>` with a visually hidden `<legend>` 
 - **AND** each stop SHALL be a `<label>` containing a visually hidden `<input type="radio">` and a visual dot `<span>`
 - **AND** all radio inputs SHALL share a `name` attribute scoped to the artist (e.g., `hype-{artistId}`)
 - **AND** the selected radio SHALL be `checked` via Aurelia's `model.bind`/`checked.bind` pattern
-- **AND** for unauthenticated users, `click` SHALL be intercepted with `preventDefault()` to block selection
+
+### Requirement: Slider Track Vertical Centering
+
+The slider track line SHALL be vertically centered within the slider grid cell using CSS logical properties.
+
+#### Scenario: Track is vertically centered
+
+- **WHEN** the slider renders
+- **THEN** the `.hype-slider-track` element SHALL use `inset-block-start: 50%` and `translate: 0 -50%` to center vertically within the grid row
+- **AND** the track SHALL remain centered across viewport sizes
 
 ### Requirement: Slider dot positions align with header columns
 

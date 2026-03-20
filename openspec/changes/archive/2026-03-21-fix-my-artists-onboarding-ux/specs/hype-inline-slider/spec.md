@@ -39,12 +39,12 @@ The slider SHALL use native HTML `<fieldset>` with a visually hidden `<legend>` 
 #### Scenario: Active dot reflects hype tier CSS effects
 
 - **WHEN** the slider renders with a specific hype level selected
-- **THEN** the active dot SHALL apply CSS glow effects based on the `HypeType` enum value:
-  - WATCH (1): `1px solid white/10` border, no glow
-  - HOME (2): artist-color border at 40% opacity, `box-shadow: 0 0 8px` at 30% opacity
-  - NEARBY (3): artist-color `2px solid` border, `box-shadow: 0 0 16px` at 50% opacity, gentle pulse animation
-  - AWAY (4): animated gradient border, layered glow (`0 0 24px` at 60% + `0 0 48px` at 20%), strong pulse animation
-- **AND** the CSS `data-level` attribute SHALL use `HypeType` enum values (1, 2, 3, 4)
+- **THEN** the active dot SHALL apply CSS glow effects based on the hype level string:
+  - `watch`: `1px solid white/10` border, no glow
+  - `home`: artist-color border at 40% opacity, `box-shadow: 0 0 8px` at 30% opacity
+  - `nearby`: artist-color `2px solid` border, `box-shadow: 0 0 16px` at 50% opacity, gentle pulse animation
+  - `away`: artist-color `2px solid` border, layered glow (`0 0 24px` at 60% + `0 0 48px` at 20%), strong pulse animation
+- **AND** the CSS `data-level` attribute SHALL use hype level strings (`watch`, `home`, `nearby`, `away`)
 - **AND** the artist color SHALL be derived from the existing deterministic color generator
 
 #### Scenario: Reduced motion preference
@@ -55,10 +55,10 @@ The slider SHALL use native HTML `<fieldset>` with a visually hidden `<legend>` 
 
 #### Scenario: Native radio input semantics
 
-- **WHEN** the slider renders
-- **THEN** the container SHALL be a `<fieldset>` with a visually hidden `<legend>` reading "Hype level"
-- **AND** each stop SHALL be a `<label>` containing a visually hidden `<input type="radio">` and a visual dot `<span>`
-- **AND** all radio inputs SHALL share a `name` attribute scoped to the artist (e.g., `hype-{artistId}`)
+- **WHEN** the artist table renders
+- **THEN** the entire table SHALL be wrapped in a `<fieldset>` with a visually hidden `<legend>` (the page title serves as label)
+- **AND** each hype stop within a row SHALL be a `<label>` containing a visually hidden `<input type="radio">` and a visual dot `<span>`
+- **AND** all radio inputs for one artist SHALL share a `name` attribute scoped to the artist (e.g., `hype-{artistId}`)
 - **AND** the selected radio SHALL be `checked` via Aurelia's `model.bind`/`checked.bind` pattern
 
 ## REMOVED Requirements

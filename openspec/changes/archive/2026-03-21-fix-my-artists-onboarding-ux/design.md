@@ -40,9 +40,9 @@ The parent handles the `change` event with all business logic. If the selection 
 | `!isAuthenticated` | Revert hype → show notification dialog (signup prompt) |
 | `isAuthenticated` | Accept → update `prevHypes` → `SetHype` RPC with retry |
 
-### 3. Spotlight target: `.artist-list` instead of `[data-hype-header]`
+### 3. Spotlight target: `[data-artist-rows]` instead of `[data-hype-header]`
 
-The hype-legend header is a passive reference element. The interactive target is the artist list containing hype sliders. Using `.artist-list` makes the spotlight cutout cover the actual tap target area.
+The hype-legend header is a passive reference element. The interactive target is the artist list containing hype sliders. Using `[data-artist-rows]` makes the spotlight cutout cover the actual tap target area.
 
 ### 4. CSS logical properties for track centering
 
@@ -56,4 +56,4 @@ Use `inset-block-start: 50%; translate: 0 -50%` for vertical centering. The proj
 
 - **[Risk] twoWay binding + revert pattern** → Reverts are safe because programmatic changes to radio checked state do not fire native `change` events. No infinite loop risk.
 - **[Risk] `prevHypes` Map adds state tracking** → Minimal overhead. Initialized once in `loading()`, updated only on successful authenticated changes.
-- **[Risk] Spotlight over `.artist-list` is a larger area** → The larger spotlight correctly matches the interactive region. Click-blockers and target-interceptor already handle arbitrary-sized targets.
+- **[Risk] Spotlight over `[data-artist-rows]` is a larger area** → The larger spotlight correctly matches the interactive region. Click-blockers and target-interceptor already handle arbitrary-sized targets.

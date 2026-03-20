@@ -8,7 +8,7 @@ The system SHALL enforce a strict linear progression through onboarding steps. U
 
 - **WHEN** a user is at Step `'my-artists'`
 - **AND** followed artists have been loaded
-- **THEN** the spotlight SHALL highlight the `.artist-list` element (the list containing artist rows with hype sliders)
+- **THEN** the spotlight SHALL highlight the `[data-artist-rows]` element (the `<tbody>` containing artist rows with hype sliders)
 - **AND** the coach mark SHALL display the message: "絶対に見逃したくないアーティストの熱量を上げておこう"
 
 #### Scenario: Step 5 - User taps a hype dot
@@ -19,4 +19,12 @@ The system SHALL enforce a strict linear progression through onboarding steps. U
 - **AND** the parent SHALL detect `isOnboardingStepMyArtists` and revert the hype change
 - **AND** the system SHALL deactivate the spotlight
 - **AND** the system SHALL advance `onboardingStep` to `'completed'`
-- **AND** the system SHALL navigate to the landing page
+- **AND** if the user is not authenticated, the system SHALL open the hype-notification-dialog on the same tap (without requiring a second tap)
+
+#### Scenario: Step 5 - Spotlight activation for unauthenticated users
+
+- **WHEN** a user is at Step `'my-artists'`
+- **AND** the user is not authenticated
+- **THEN** `loading()` SHALL NOT call `ListFollowed` RPC (the RPC requires authentication)
+- **AND** the system SHALL still activate the spotlight on `[data-artist-rows]` with the guidance message
+- **AND** the artist list SHALL display artists from the guest store (populated during onboarding)
