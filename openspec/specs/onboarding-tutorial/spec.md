@@ -97,7 +97,7 @@ The system SHALL enforce a strict linear progression through onboarding steps. U
 
 - **WHEN** a user is at Step `'my-artists'`
 - **AND** followed artists have been loaded
-- **THEN** the spotlight SHALL highlight the `.artist-list` element (the list containing artist rows with hype sliders)
+- **THEN** the spotlight SHALL highlight the `[data-artist-rows]` element (the list containing artist rows with hype sliders)
 - **AND** the coach mark SHALL display the message: "絶対に見逃したくないアーティストの熱量を上げておこう"
 
 #### Scenario: Step 5 - User taps a hype dot

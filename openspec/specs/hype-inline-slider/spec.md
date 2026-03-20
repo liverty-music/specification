@@ -86,10 +86,10 @@ The slider SHALL use native HTML `<fieldset>` with a visually hidden `<legend>` 
 
 #### Scenario: Native radio input semantics
 
-- **WHEN** the slider renders
-- **THEN** the container SHALL be a `<fieldset>` with a visually hidden `<legend>` reading "Hype level"
-- **AND** each stop SHALL be a `<label>` containing a visually hidden `<input type="radio">` and a visual dot `<span>`
-- **AND** all radio inputs SHALL share a `name` attribute scoped to the artist (e.g., `hype-{artistId}`)
+- **WHEN** the artist table renders
+- **THEN** the entire table SHALL be wrapped in a `<fieldset>` with a visually hidden `<legend>` (the page title serves as label)
+- **AND** each hype stop within a row SHALL be a `<label>` containing a visually hidden `<input type="radio">` and a visual dot `<span>`
+- **AND** all radio inputs for one artist SHALL share a `name` attribute scoped to the artist (e.g., `hype-{artistId}`)
 - **AND** the selected radio SHALL be `checked` via Aurelia's `model.bind`/`checked.bind` pattern
 
 ### Requirement: Slider Track Vertical Centering
