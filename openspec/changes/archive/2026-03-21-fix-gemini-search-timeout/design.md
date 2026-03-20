@@ -38,7 +38,7 @@ Three issues compound:
 
 Pass `&http.Client{Timeout: 60 * time.Second}` to `NewConcertSearcher` in `provider.go` instead of `nil`.
 
-**Why 60s?** The Google Maps client already uses 10s. Gemini with Google Search Grounding involves web crawling and synthesis — 60s per attempt is generous but bounded. With 3 retry attempts and backoff, worst case is ~60+1+60+2+60 ≈ 183s, well within the 120s background timeout because the context cancellation will cut off retries early. Each individual attempt is bounded.
+**Why 60s?** The Google Maps client already uses 10s. Gemini with Google Search Grounding involves web crawling and synthesis — 60s per attempt is generous but bounded. With 3 retry attempts and backoff, the theoretical worst case is ~60+1+60+2+60 ≈ 183s, but the 120s background context will cancel retries before that point. Each individual attempt is bounded.
 
 **Alternative considered: per-attempt context deadline inside the retry loop.** This would work but adds complexity. The HTTP client timeout achieves the same goal more simply and is consistent with how the Maps client is configured.
 
