@@ -1,0 +1,1 @@
+No spec-level requirement changes. The existing alerting requirements (severity="ERROR" filter, notification rate limiting, label extractors) remain unchanged. This change only modifies which application code emits ERROR vs WARN logs.
