@@ -43,6 +43,19 @@ service UserService {
   // - NOT_FOUND: No user record exists for the authenticated identity.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc UpdateHome(UpdateHomeRequest) returns (UpdateHomeResponse);
+
+  // ResendEmailVerification triggers a new email verification message for the
+  // authenticated user via the identity provider (Zitadel).
+  //
+  // The user identity is extracted from the JWT context — clients do not
+  // provide it in the request.
+  //
+  // Possible errors:
+  // - FAILED_PRECONDITION: The user's email is already verified.
+  // - RESOURCE_EXHAUSTED: The user has exceeded the resend rate limit.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - UNAVAILABLE: The email verification service is not configured.
+  rpc ResendEmailVerification(ResendEmailVerificationRequest) returns (ResendEmailVerificationResponse);
 }
 
 // GetRequest is the request for retrieving the authenticated user's profile.
@@ -88,3 +101,12 @@ message UpdateHomeResponse {
   // The updated user entity with the new home area applied.
   entity.v1.User user = 1 [(buf.validate.field).required = true];
 }
+
+// ResendEmailVerificationRequest is the request for resending the email
+// verification message. The user identity is resolved from the JWT context —
+// no fields are required.
+message ResendEmailVerificationRequest {}
+
+// ResendEmailVerificationResponse is returned when the verification email has
+// been successfully queued for delivery.
+message ResendEmailVerificationResponse {}
