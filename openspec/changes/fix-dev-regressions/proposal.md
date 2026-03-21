@@ -16,7 +16,7 @@ _(none)_
 
 ### Modified Capabilities
 
-- `bottom-sheet-ce`: Replace JS-driven backdrop opacity with CSS Scroll-Driven Animations; remove `onBackdropClick` and `.sheet-page` wrapper; simplify DOM to dialog > scroll-wrapper > dismiss-zone + sheet-body
+- `bottom-sheet-ce`: Replace JS-driven backdrop opacity with CSS Scroll-Driven Animations; remove `onBackdropClick`, `.scroll-wrapper`, and `.sheet-page` wrapper; simplify DOM to dialog > dismiss-zone + sheet-body
 
 ## Impact
 
