@@ -9,6 +9,9 @@ During onboarding Step 5 (My Artists), four UX bugs prevent the flow from comple
 - **Spotlight target widened to artist list**: Change from `[data-hype-header]` (legend row only) to `.artist-list` (the interactive area).
 - **Hype slider track vertical centering**: Add `inset-block-start: 50%; translate: 0 -50%` to center the track line.
 - **Default hype level corrected**: Guest follows default from `'away'` → `'watch'`.
+- **Track line containing block fix**: Move `::before` pseudo-element from `.hype-col` (`<td>`, which cannot serve as containing block for `position: absolute`) to `.hype-col:first-of-type .hype-label::before` (a `position: relative; display: flex` element).
+- **Unauthenticated loading guard**: `loading()` returns early for unauthenticated users to avoid calling `ListFollowed` RPC which requires authentication. Spotlight is still activated for onboarding users.
+- **First-tap notification dialog**: The onboarding complete branch in `onHypeInput()` now opens the hype-notification-dialog for unauthenticated users on the same tap, rather than requiring a second tap.
 
 ## Capabilities
 
@@ -19,8 +22,9 @@ During onboarding Step 5 (My Artists), four UX bugs prevent the flow from comple
 ### Modified Capabilities
 
 - `hype-inline-slider`: Refactor to pure presentation component. Remove auth/onboarding logic. Replace `hype-changed`/`hype-signup-prompt` custom events with twoWay `hype` binding; native `change` event bubbles to parent. Fix track vertical alignment.
-- `onboarding-tutorial`: Step 5 spotlight target changes from `[data-hype-header]` to `.artist-list`. Step 5 completion handled by parent route via `onHypeInput()` reacting to native `change` event.
+- `onboarding-tutorial`: Step 5 spotlight target changes from `[data-hype-header]` to `.artist-list`. Step 5 completion handled by parent route via `onHypeInput()` reacting to native `change` event. Unauthenticated users see notification dialog on same tap as onboarding completion. Spotlight activated without RPC for unauthenticated users.
 - `frontend-onboarding-flow`: Guest follow default hype corrected from `'away'` to `'watch'`.
+- `my-artists`: Track line `::before` moved from `<td>` to flex child for correct containing block. `loading()` early return for unauthenticated users.
 
 ## Impact
 
@@ -29,7 +33,8 @@ During onboarding Step 5 (My Artists), four UX bugs prevent the flow from comple
   - `src/components/hype-inline-slider/hype-inline-slider.ts` — remove `selectHype`, `isAuthenticated`, `isOnboarding`; retain only data bindables
   - `src/components/hype-inline-slider/hype-inline-slider.html` — replace `click.trigger`
   - `src/components/hype-inline-slider/hype-inline-slider.css` — track centering fix
-  - `src/routes/my-artists/my-artists-route.ts` — replace `onHypeChanged` + `onHypeSignupPrompt` with `onHypeInput`; spotlight target
+  - `src/routes/my-artists/my-artists-route.ts` — replace `onHypeChanged` + `onHypeSignupPrompt` with `onHypeInput`; spotlight target; `loading()` early return for unauthenticated users; first-tap notification dialog in onboarding branch
   - `src/routes/my-artists/my-artists-route.html` — replace event bindings; remove `is-authenticated`/`is-onboarding`
+  - `src/routes/my-artists/my-artists-route.css` — track line `::before` moved from `.hype-col` to `.hype-label::before`
   - `src/services/follow-service-client.ts` — default hype value
-  - `test/routes/my-artists-route.spec.ts` — updated for new event flow
+  - `test/routes/my-artists-route.spec.ts` — updated for new event flow; unauthenticated tests populate artists manually
