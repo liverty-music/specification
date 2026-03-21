@@ -7,9 +7,11 @@ The system SHALL create a local user record in the application database when a u
 #### Scenario: Successful signup provisioning from tutorial
 
 - **WHEN** a user completes Passkey authentication at tutorial Step 6
-- **THEN** the frontend SHALL call the `Create` RPC with the user's `email` parameter
+- **THEN** the frontend SHALL call `UserService/Get` to check for an existing user record
+- **AND** if the backend returns `NOT_FOUND`, the frontend SHALL call the `Create` RPC with the user's `email` parameter
 - **AND** the backend SHALL extract `external_id` (from JWT `sub` claim) and `name` (from JWT `name` claim)
 - **AND** the backend SHALL create a new user record with `external_id`, `email`, and `name` persisted
+- **AND** the frontend SHALL cache the `User` entity from the `CreateResponse.user` field without making an additional `Get` RPC call
 - **AND** the frontend SHALL then proceed to sync guest data (follows, passion levels)
 
 #### Scenario: Successful provisioning from Login link
