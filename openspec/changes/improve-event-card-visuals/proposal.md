@@ -7,7 +7,7 @@ Additionally, logo images used as artist names do not stretch to fill the card w
 ## What Changes
 
 - **Background hue derivation**: For chromatic logos, shift the card background hue to the complementary angle (`dominantHue + 180° mod 360`) so the logo color always contrasts with the background. Achromatic logos continue to use the name-hash fallback.
-- **Remove unmatched dimming**: Replace the clamped dark background with the standard `--artist-color` for unmatched cards.
+- **Remove unmatched dimming**: Replace the clamped dark background with the standard `--artist-color-dim` for unmatched cards.
 - **Logo width fill**: Stretch artist logo images to fill the card's inline size while maintaining aspect ratio.
 
 ## Capabilities

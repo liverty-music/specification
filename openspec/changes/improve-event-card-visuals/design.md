@@ -35,7 +35,7 @@ Current data flow:
 
 **Rationale**: 180° shift maximizes perceptual distance on the hue wheel. The computation is trivial (one addition + modulo) and belongs entirely in the view layer.
 
-### Decision 2: Remove unmatched dimming, use `--artist-color` directly
+### Decision 2: Remove unmatched dimming, use `--artist-color-dim` directly
 
 **Choice**: Replace the `.event-card:not([data-matched])` background rule with `background-color: var(--artist-color-dim)` (oklch 65% 0.03 hue). This uses the already-defined CSS custom property, keeping the background muted enough that matched cards with full `--artist-color` and spotlight effects remain visually distinct.
 
