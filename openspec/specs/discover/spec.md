@@ -19,8 +19,15 @@ The system SHALL provide the onboarding Bubble UI as a reusable discovery experi
 #### Scenario: Genre filtering
 - **WHEN** the Bubble UI is displayed
 - **THEN** genre/tag chips SHALL be displayed above the bubble area (e.g., Rock, Pop, Anime, Jazz, Electronic, Hip-Hop)
-- **AND** tapping a genre chip SHALL regenerate bubbles with artists from that genre
+- **AND** tapping a genre chip SHALL regenerate bubbles with artists from that genre via `ArtistService.ListTop` with the selected tag
+- **AND** genre results SHALL be global (not country-filtered) due to Last.fm API constraints
 - **AND** the active genre chip SHALL be visually highlighted
+
+#### Scenario: Genre deselection reverts to regional results
+- **WHEN** a genre chip is active
+- **AND** the user taps the same genre chip again (deselection)
+- **THEN** the system SHALL regenerate bubbles using `ArtistService.ListTop` with the detected country and no tag
+- **AND** the system SHALL return to showing regional top artists
 
 #### Scenario: Already-followed artists
 - **WHEN** an artist bubble represents an already-followed artist
