@@ -55,10 +55,15 @@ service ArtistService {
   // - NOT_FOUND: The specified seed artist could not be found or has no recommendations.
   rpc ListSimilar(ListSimilarRequest) returns (ListSimilarResponse);
 
-  // ListTop retrieves globally or regionally popular artists.
+  // ListTop retrieves popular artists from one of three data sources,
+  // selected by the following priority:
+  //
+  //   1. tag is set       → tag-based global chart (country is ignored)
+  //   2. country is set   → region-based chart
+  //   3. both empty       → global chart
   //
   // Possible errors:
-  // - INVALID_ARGUMENT: The specified country code is invalid.
+  // - INVALID_ARGUMENT: The specified country name is invalid.
   rpc ListTop(ListTopRequest) returns (ListTopResponse);
 }
 
@@ -141,11 +146,14 @@ message ListSimilarResponse {
 // ListTopRequest specifies the parameters for retrieving popular artists.
 message ListTopRequest {
   // Optional. ISO 3166-1 country name (e.g., "Japan").
-  // If empty, the system returns a global chart.
+  // Used for region-based charts. Ignored when tag is set.
+  // If both country and tag are empty, the system returns a global chart.
   string country = 1;
 
-  // Optional. Filter top artists by genre or tag (e.g., "rock", "pop", "anime").
-  // When empty, returns top artists across all genres.
+  // Optional. Genre or tag filter (e.g., "rock", "pop", "anime").
+  // When set, returns a global genre chart — country is ignored because
+  // the upstream data source does not support combined tag + country filtering.
+  // When empty, returns top artists across all genres (regional or global).
   string tag = 2 [(buf.validate.field).string.max_len = 50];
 
   // Optional. Maximum number of top artists to return.
