@@ -34,22 +34,16 @@ service ConcertService {
   //   or exceeds the maximum number of artist IDs (50).
   rpc ListWithProximity(ListWithProximityRequest) returns (ListWithProximityResponse);
 
-  // SearchNewConcerts triggers an asynchronous discovery process for new concerts.
-  // It enqueues a background search job and returns immediately. The actual search
-  // runs asynchronously with a 120-second timeout and publishes a
-  // concert.discovered.v1 event for downstream consumers.
+  // SearchNewConcerts discovers new concerts for a given artist using generative AI.
+  // The call blocks until the search completes (up to 60 seconds) and returns any
+  // newly discovered concerts. If a recent search exists (within 24 hours), the
+  // external API call is skipped and an empty list is returned.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The artist ID is missing or invalid.
   // - NOT_FOUND: The specified artist does not exist.
+  // - DEADLINE_EXCEEDED: The search did not complete within the timeout.
   rpc SearchNewConcerts(SearchNewConcertsRequest) returns (SearchNewConcertsResponse);
-
-  // ListSearchStatuses returns the current search status for one or more artists.
-  // Use this to poll for completion after calling SearchNewConcerts.
-  //
-  // Possible errors:
-  // - INVALID_ARGUMENT: The artist IDs list is empty or contains invalid IDs.
-  rpc ListSearchStatuses(ListSearchStatusesRequest) returns (ListSearchStatusesResponse);
 }
 
 // ListRequest is the request for retrieving concerts associated with a specific artist.
@@ -128,46 +122,10 @@ message SearchNewConcertsRequest {
   entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
 }
 
-// SearchNewConcertsResponse is intentionally empty. Concert persistence happens
-// asynchronously via event-driven consumers after the discovery process publishes
-// a concert.discovered.v1 event.
+// SearchNewConcertsResponse contains the concerts discovered by the search.
+// The list includes only newly discovered concerts (after deduplication against
+// existing data). An empty list indicates no new concerts were found.
 message SearchNewConcertsResponse {
-  reserved 1;
-  reserved "concerts";
-}
-
-// ListSearchStatusesRequest specifies the artists whose search status is queried.
-message ListSearchStatusesRequest {
-  // Required. The artist identifiers to query search status for.
-  repeated entity.v1.ArtistId artist_ids = 1 [(buf.validate.field).repeated.min_items = 1];
-}
-
-// ListSearchStatusesResponse contains the search status for each requested artist.
-message ListSearchStatusesResponse {
-  // The search status for each requested artist.
-  repeated ArtistSearchStatus statuses = 1;
-}
-
-// ArtistSearchStatus represents the current search status for a single artist.
-message ArtistSearchStatus {
-  // The artist identifier.
-  entity.v1.ArtistId artist_id = 1;
-
-  // The current search status.
-  SearchStatus status = 2;
-}
-
-// SearchStatus indicates the state of a concert search job for an artist.
-enum SearchStatus {
-  // Default value. No search log exists for this artist.
-  SEARCH_STATUS_UNSPECIFIED = 0;
-
-  // A search is currently in progress.
-  SEARCH_STATUS_PENDING = 1;
-
-  // The search completed successfully.
-  SEARCH_STATUS_COMPLETED = 2;
-
-  // The search failed after all retries.
-  SEARCH_STATUS_FAILED = 3;
+  // The newly discovered concerts for the requested artist.
+  repeated entity.v1.Concert concerts = 1;
 }
