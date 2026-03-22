@@ -65,6 +65,7 @@ The CronJob SHALL use a lightweight DI initializer that provisions only the depe
 
 - **WHEN** the concert discovery job starts
 - **THEN** it SHALL initialize config, logger, database, repositories, Gemini searcher, and ConcertUseCase
+- **AND** the Gemini searcher SHALL be initialized with `HTTPClient: nil` to use SDK-managed ADC authentication
 - **AND** it SHALL NOT initialize HTTP server, RPC handlers, auth interceptors, or in-memory caches
 
 #### Scenario: Graceful resource cleanup
