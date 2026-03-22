@@ -71,3 +71,18 @@ The system SHALL provide a custom `ISink` implementation that bridges Aurelia 2'
 - **WHEN** the application is configured
 - **THEN** `LoggerConfiguration` SHALL register both `ConsoleSink` and `OtelLogSink`
 - **AND** all log events SHALL be emitted to both sinks
+- **AND** the log level SHALL be determined by the `VITE_LOG_LEVEL` environment variable
+
+#### Scenario: Log level controlled by environment variable
+- **WHEN** `VITE_LOG_LEVEL` is set to a valid level (trace, debug, info, warn, error)
+- **THEN** the `LoggerConfiguration` level SHALL match the specified level
+
+#### Scenario: Log level fallback when unset in development
+- **WHEN** `VITE_LOG_LEVEL` is not set
+- **AND** the build mode is development (`import.meta.env.DEV === true`)
+- **THEN** the `LoggerConfiguration` level SHALL be `LogLevel.debug`
+
+#### Scenario: Log level fallback when unset in production
+- **WHEN** `VITE_LOG_LEVEL` is not set
+- **AND** the build mode is production (`import.meta.env.DEV === false`)
+- **THEN** the `LoggerConfiguration` level SHALL be `LogLevel.warn`
