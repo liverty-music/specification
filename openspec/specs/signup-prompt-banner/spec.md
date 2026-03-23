@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Provide a persistent inline banner on My Artists and Dashboard pages prompting unauthenticated users to create an account, dismissed automatically on signup completion.
+Provide a persistent fixed banner on My Artists and Dashboard pages prompting unauthenticated users to create an account, dismissed automatically on signup completion.
 
 ## Requirements
 
-### Requirement: Inline Signup Banner on My Artists
+### Requirement: Signup Banner on My Artists
 
-The My Artists page SHALL display a persistent inline banner at the end of the artist list prompting unauthenticated users to sign up.
+The My Artists page SHALL display a persistent fixed banner above the bottom navigation bar prompting unauthenticated users to sign up.
 
 #### Scenario: Banner appears for unauthenticated users
 
@@ -28,15 +28,15 @@ The My Artists page SHALL display a persistent inline banner at the end of the a
 - **WHEN** the user completes signup (isAuthenticated becomes true)
 - **THEN** the signup banner SHALL be removed from the DOM
 
-### Requirement: Inline Signup Banner on Dashboard
+### Requirement: Signup Banner on Dashboard
 
-The Dashboard page SHALL display a persistent inline banner prompting unauthenticated users to sign up.
+The Dashboard page SHALL display a persistent fixed banner above the bottom navigation bar prompting unauthenticated users to sign up.
 
 #### Scenario: Banner appears on dashboard for unauthenticated users
 
 - **WHEN** an unauthenticated user views the Dashboard
 - **AND** the user has completed onboarding (onboardingStep >= 7) or has dismissed the notification dialog
-- **THEN** the system SHALL display an inline banner after the lane grid content
+- **THEN** the system SHALL display the signup-prompt-banner
 - **AND** the banner SHALL display: "🔔 ライブ通知を受け取ろう [アカウント作成]"
 - **AND** the [アカウント作成] button SHALL initiate the Zitadel OIDC Passkey flow
 
