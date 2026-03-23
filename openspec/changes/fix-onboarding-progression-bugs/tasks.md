@@ -14,8 +14,14 @@
 - [x] 3.2 Verify `TicketJourneyService.listByUser` exists in the updated `node_modules/@buf/liverty-music_schema.connectrpc_es` JS file
 - [ ] 3.3 Commit updated `package-lock.json` (pending commit)
 
-## 4. Verification
+## 4. Frontend: Fix bottom-sheet scroll-area height in popover top-layer
 
-- [x] 4.1 Run `make check` in backend
-- [x] 4.2 Run `make check` in frontend
-- [ ] 4.3 Deploy to dev and run full onboarding flow end-to-end: discovery → dashboard (lane intro with concert data) → my-artists (spotlight tap → hype slider → complete)
+- [x] 4.1 In `frontend/src/components/bottom-sheet/bottom-sheet.css`, change `.scroll-area { block-size: 100% }` to `block-size: 100dvh`
+- [x] 4.2 Update bottom-sheet-ce spec to document `100dvh` sizing requirement
+- [x] 4.3 Run `make check` in frontend
+
+## 5. Verification
+
+- [x] 5.1 Run `make check` in backend
+- [x] 5.2 Run `make check` in frontend
+- [ ] 5.3 Deploy to dev and run full onboarding flow end-to-end: discovery → dashboard (lane intro with concert data) → my-artists (spotlight tap → hype slider → complete)
