@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provides a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, using the Popover API with CSS scroll-snap dismiss.
+Provides a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, using the Popover API on the CE host element with CSS scroll-snap dismiss via an internal scroll container.
 
 ## Requirements
 
@@ -11,46 +11,55 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 
 #### Scenario: Basic open/close via bindable
 - **WHEN** `<bottom-sheet open.bind="isOpen">` has `open` set to `true`
-- **THEN** the CE SHALL call `showPopover()` on the internal `<dialog>` element
-- **AND** the CE SHALL defer `scrollTo({ top: scrollHeight })` by one animation frame (`requestAnimationFrame`) to ensure the browser has completed top-layer layout before programmatic scroll
-- **AND** the sheet-body SHALL be visible at the bottom of the viewport after the deferred scroll
+- **THEN** the CE SHALL call `showPopover()` on the CE host element (via `resolve(INode)`)
+- **AND** the sheet-body SHALL be visible at the bottom of the viewport via CSS `initial-snap` animation (no JS `scrollTo` required)
 - **WHEN** `open` is set to `false`
-- **THEN** the CE SHALL call `hidePopover()` and the sheet SHALL animate out
-
-#### Scenario: Scroll-snap dismiss
-- **WHEN** the sheet is open and `dismissable` is `true`
-- **THEN** a dismiss zone SHALL be rendered above the sheet content as a direct child of the `dialog` element
-- **AND** swiping down (physical gesture: finger moves downward, scrollTop decreases) SHALL scroll toward the dismiss zone at the top, triggering close on `scrollend`
-- **AND** the `::backdrop` opacity SHALL track scroll progress via CSS Scroll-Driven Animations (`scroll-timeline` on `dialog`, `animation-timeline` on `dialog::backdrop`)
-- **AND** if the browser does not support Scroll-Driven Animations on `::backdrop`, the backdrop SHALL display at static full opacity as a fallback
+- **THEN** the CE SHALL call `hidePopover()` on the CE host element and the sheet SHALL animate out
 
 #### Scenario: DOM structure
 - **WHEN** the sheet is rendered
-- **THEN** the internal DOM SHALL be `dialog > .dismiss-zone + .sheet-body`
-- **AND** the `.dismiss-zone` SHALL be the first child (`scroll-snap-align: start`) at the top of the scroll container
-- **AND** the `.sheet-body` SHALL be the last child (`scroll-snap-align: end`) at the bottom of the scroll container
-- **AND** the `dialog` element itself SHALL be the scroll-snap container (`overflow-y: auto`, `scroll-snap-type: y mandatory`)
-- **AND** no intermediate `.scroll-wrapper` or `.sheet-page` wrapper SHALL exist
+- **THEN** the CE host element (`<bottom-sheet>`) SHALL be the popover host with `popover` attribute set programmatically
+- **AND** the CE host SHALL have `role="dialog"` set in `attached()`
+- **AND** the internal DOM SHALL be `.scroll-area > .dismiss-zone + section.sheet-body`
+- **AND** `.scroll-area` SHALL be a `<div>` element serving as the scroll-snap container (`overflow-y: auto`, `scroll-snap-type: y mandatory`)
+- **AND** `.sheet-body` SHALL be a `<section>` element (semantic content container)
+- **AND** the `::backdrop` pseudo-element SHALL belong to the CE host (popover host)
+
+#### Scenario: Initial snap animation
+- **WHEN** the popover opens (`showPopover()` on CE host)
+- **THEN** `.scroll-area` SHALL run an `initial-snap` CSS animation (`0.01s`, `animation-fill-mode: backwards`)
+- **AND** during the animation, `--_snap-align` SHALL be `none`, disabling dismiss-zone's scroll-snap-align
+- **AND** `.sheet-body` (`scroll-snap-align: end`) SHALL be the only active snap target
+- **AND** the browser SHALL snap to `.sheet-body` on open
+- **AND** after the animation completes, dismiss-zone snap SHALL restore to its CSS-determined value
+- **AND** no JavaScript `scrollTo()` or `requestAnimationFrame` SHALL be required
+
+#### Scenario: Scroll-snap dismiss
+- **WHEN** the sheet is open and `dismissable` is `true`
+- **THEN** `.scroll-area` SHALL have `data-dismissable="true"`
+- **AND** the dismiss zone SHALL have `scroll-snap-align: var(--_snap-align, start)` (active after initial-snap animation)
+- **AND** swiping down (physical gesture: finger moves downward, scrollTop decreases) SHALL scroll toward the dismiss zone at the top, triggering close on `scrollend`
 
 #### Scenario: Swipe-down dismiss detection
 - **WHEN** the user swipes down (finger moves downward), decreasing scrollTop toward the dismiss zone
-- **AND** the `scrollend` event fires
+- **AND** the `scrollend` event fires on `.scroll-area`
 - **THEN** the CE SHALL check if `scrollRatio < 0.1` (scrolled near the top where the dismiss zone is)
 - **AND** if so, the CE SHALL set `open` to `false` and dispatch `sheet-closed`
 
 #### Scenario: Non-dismissable mode
 - **WHEN** `dismissable` is `false`
-- **THEN** the CE SHALL use `popover="manual"`
-- **AND** the dismiss zone SHALL NOT be rendered
-- **AND** scroll-snap dismiss SHALL be disabled
+- **THEN** the CE SHALL use `popover="manual"` on the CE host
+- **AND** `.scroll-area` SHALL have `data-dismissable="false"`
+- **AND** the dismiss zone SHALL remain in the DOM with `aria-hidden="true"` (required for `initial-snap` animation pattern)
+- **AND** CSS SHALL set `.dismiss-zone` to `scroll-snap-align: none` and `pointer-events: none` via `.scroll-area:not([data-dismissable="true"]) .dismiss-zone`
+- **AND** `.sheet-body` SHALL be the only active snap target, ensuring the sheet body is visible on open
 - **AND** ESC key SHALL NOT close the sheet
 
 #### Scenario: Dismissable mode with ESC dismiss
 - **WHEN** `dismissable` is `true` (default)
-- **THEN** the CE SHALL use `popover="auto"`
+- **THEN** the CE SHALL use `popover="auto"` on the CE host
 - **AND** pressing Escape SHALL close the sheet via the browser's native popover light dismiss
-- **AND** the CE SHALL handle the `toggle` event to detect ESC dismiss and dispatch `sheet-closed`
-- **AND** backdrop click dismiss SHALL NOT function (the full-viewport dialog has no clickable `::backdrop` area)
+- **AND** the CE SHALL handle the `toggle` event on the CE host to detect ESC dismiss and dispatch `sheet-closed`
 
 #### Scenario: Sheet closed event
 - **WHEN** the sheet is closed by any mechanism (ESC dismiss, scroll-snap, programmatic)
@@ -64,7 +73,7 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 
 #### Scenario: Sheet body structure
 - **WHEN** the sheet is rendered
-- **THEN** the sheet body SHALL have `border-radius: var(--radius-sheet)` on top corners
+- **THEN** the sheet body (`<section>`) SHALL have `border-radius: var(--radius-sheet)` on top corners
 - **AND** background SHALL be `var(--color-surface-raised)`
 - **AND** box-shadow SHALL be `var(--shadow-sheet)`
 - **AND** `max-block-size` SHALL be `90dvh`
@@ -76,7 +85,7 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 
 #### Scenario: Focus management
 - **WHEN** the sheet opens
-- **THEN** the sheet `<dialog>` element SHALL receive focus
+- **THEN** the CE host element SHALL receive focus via `showPopover()`
 - **WHEN** the sheet closes
 - **THEN** focus SHALL return to the element that was focused before the sheet opened
 
@@ -87,9 +96,10 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 
 #### Scenario: Reduced motion
 - **WHEN** `prefers-reduced-motion: reduce` is active
-- **THEN** all transition durations SHALL be reduced to `var(--transition-fast)`
+- **THEN** all transition durations SHALL be reduced to `var(--_duration-reduced)`
 
 #### Scenario: Detach cleanup
 - **WHEN** the CE is detached from the DOM while the sheet is open
-- **THEN** all event listeners (popstate, toggle) SHALL be removed
+- **THEN** all event listeners (toggle) SHALL be removed from the CE host
+- **AND** `hidePopover()` SHALL be called on the CE host
 - **AND** no memory leaks SHALL occur

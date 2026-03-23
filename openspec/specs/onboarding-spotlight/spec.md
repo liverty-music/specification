@@ -185,6 +185,19 @@ The coach mark tooltip SHALL be positioned using CSS Anchor Positioning relative
 - **AND** the tooltip SHALL use `position-area: block-end` as the default placement
 - **AND** the tooltip SHALL use `position-try-fallbacks: flip-block, flip-inline` for overflow handling
 
+### Requirement: Tooltip Visual Treatment
+
+The coach mark tooltip SHALL render with a transparent background, allowing the handwritten text to float directly on the dark overlay.
+
+#### Scenario: Tooltip renders without solid background
+
+- **WHEN** the coach mark tooltip is displayed
+- **THEN** `.coach-mark-tooltip` SHALL have `background: transparent`
+- **AND** `.coach-mark-tooltip` SHALL have `filter: none` (no drop-shadow)
+- **AND** the tooltip text color SHALL remain `var(--color-white)`
+- **AND** the font SHALL remain `var(--coach-font-handwritten)` ("Klee One", cursive)
+- **AND** the tooltip SHALL be visually readable against the 70% black overlay
+
 ### Requirement: Inline SVG Directional Arrow
 
 The tooltip SHALL include a hand-drawn style directional arrow rendered as inline SVG. No external image assets (`<img>`, `.png`, `.svg` files) SHALL be used. The arrow SHALL visually connect the tooltip to the spotlight target.
