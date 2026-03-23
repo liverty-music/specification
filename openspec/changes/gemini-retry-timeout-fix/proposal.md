@@ -4,7 +4,7 @@ SearchNewConcerts RPC が Gemini API (gemini-3-flash-preview + Google Search gro
 
 ## What Changes
 
-- Gemini API 呼び出しの context を親 RPC から切り離し、リトライごとに `context.Background()` ベースで 120 秒 timeout の新 context を作成する（client cancel でも Gemini call を止めない）
+- Gemini API 呼び出しの context を親 RPC から切り離し、リトライごとに `context.WithoutCancel(parentCtx)` ベースで 120 秒 timeout の新 context を作成する（client cancel でも Gemini call を止めない）
 - `isRetryable` に Google 公式推奨のエラーコード (408, 500, 502, 504) を追加する
 - backoff の `MaxInterval` を 10 秒 → 60 秒に引き上げる
 - ConcertService の RPC に対してのみ HandlerTimeout を 120 秒に分離する（他の軽量 RPC への影響を回避）
