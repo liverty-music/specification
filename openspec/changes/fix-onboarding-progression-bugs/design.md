@@ -84,6 +84,28 @@ Run `npm install` in the frontend to pull the latest BSR package version that in
 - **[Risk] BSR package version drift** → After `npm install`, the lock file will update. CI must rebuild with the new lock file. Low risk since this is a dev environment fix.
 - **[Risk] Other public RPCs may also be missing from whitelist** → Out of scope for this change, but worth auditing. The `ListWithProximity` omission was introduced when the RPC was added in a recent PR.
 
+### D4: Fix scroll-area `block-size` percentage resolution in popover top-layer
+
+The bottom-sheet component's `.scroll-area` uses `block-size: 100%` to fill the popover host. However, inside the popover top-layer, percentage block-size does not resolve against the CE host's fixed-position height — instead, the scroll-area expands to fit its content (dismiss-zone + sheet-body). When `scrollHeight === clientHeight`, no overflow occurs, scroll-snap cannot function, and the sheet-body is positioned off-screen at the bottom of the scroll container with no way to reach it.
+
+**Root cause timeline:**
+
+| Commit | Architecture | scroll-area sizing | Status |
+|--------|-------------|-------------------|--------|
+| `6a995e4` | `<dialog popover>` > `.scroll-wrapper` > `.sheet-page` | `block-size: 100dvh` on `.scroll-wrapper` | Working |
+| `8d905f3` | `<dialog popover>` is the scroll container | `position: fixed; inset: 0` on dialog (implicit sizing) | Working |
+| `72c768a` | `<bottom-sheet popover>` > `.scroll-area` | `block-size: 100%` on `.scroll-area` | **Broken** — percentage resolve fails |
+
+**Fix:** Change `.scroll-area { block-size: 100% }` → `block-size: 100dvh`.
+
+- `100dvh` matches the popover host's viewport-filling size deterministically
+- Restores the original sizing strategy from `6a995e4` (`.scroll-wrapper` used `100dvh`)
+- Playwright-verified: `100dvh` produces `scrollHeight (1287) > clientHeight (1093)`, scroll-snap engages, `scrollTop: 194` (snapped to sheet-body)
+
+**Why not other approaches:**
+- `position: absolute; inset: 0` on `.scroll-area` — would work but adds unnecessary positioning complexity to a scroll container
+- JS `scrollTo` fallback — was the approach in `15a2538`, eliminated by `72c768a` in favor of CSS-only scroll-snap; re-introducing it would be a regression in design direction
+
 ## Open Questions
 
 (none — all decisions are straightforward implementation fixes)

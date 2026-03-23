@@ -21,7 +21,8 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 - **THEN** the CE host element (`<bottom-sheet>`) SHALL be the popover host with `popover` attribute set programmatically
 - **AND** the CE host SHALL have `role="dialog"` set in `attached()`
 - **AND** the internal DOM SHALL be `.scroll-area > .dismiss-zone + section.sheet-body`
-- **AND** `.scroll-area` SHALL be a `<div>` element serving as the scroll-snap container (`overflow-y: auto`, `scroll-snap-type: y mandatory`)
+- **AND** `.scroll-area` SHALL be a `<div>` element serving as the scroll-snap container (`overflow-y: auto`, `scroll-snap-type: y mandatory`, `block-size: 100dvh`)
+- **NOTE** `.scroll-area` MUST use `100dvh` (not `100%`) because percentage block-size does not resolve against the CE host's fixed-position height inside the popover top-layer — the scroll container would expand to content size, preventing overflow and disabling scroll-snap
 - **AND** `.sheet-body` SHALL be a `<section>` element (semantic content container)
 - **AND** the `::backdrop` pseudo-element SHALL belong to the CE host (popover host)
 
