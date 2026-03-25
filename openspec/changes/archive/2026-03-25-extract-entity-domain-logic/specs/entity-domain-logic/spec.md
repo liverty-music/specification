@@ -2,9 +2,12 @@
 
 ### Requirement: ZKP public signal parsing
 
-The entity package SHALL provide a `ParseZKPPublicSignals(proof []byte) (*ZKPPublicSignals, error)` function that extracts public signals from a ZKP proof JSON payload.
+The entity package SHALL provide a `ParseZKPPublicSignals(publicSignalsJSON string) (*ZKPPublicSignals, error)` function that extracts public signals from a ZKP public signals JSON array.
 
-The `ZKPPublicSignals` type SHALL hold the parsed signal values as `[32]byte` arrays.
+The `ZKPPublicSignals` type SHALL hold:
+- `MerkleRoot []byte` — 32-byte big-endian representation of the Merkle root field element
+- `EventID *big.Int` — event UUID encoded as BigInt(hex(uuid_without_hyphens))
+- `NullifierHash []byte` — 32-byte big-endian representation of the nullifier hash field element
 
 #### Scenario: Valid proof payload
 
@@ -53,8 +56,8 @@ The method SHALL:
 ### Requirement: ZKP byte conversion helpers
 
 The entity package SHALL provide:
-- `BigIntToBytes32(b *big.Int) [32]byte` -- converts a big.Int to a right-padded 32-byte array.
-- `BytesEqual(a, b [32]byte) bool` -- compares two 32-byte arrays for equality.
+- `BigIntToBytes32(n *big.Int, label string) ([]byte, error)` -- converts a big.Int to a left-zero-padded 32-byte big-endian slice. Returns an error if the value exceeds 32 bytes (outside BN254 field). The `label` parameter is included in the error message to identify the overflowing field.
+- `BytesEqual(a, b []byte) bool` -- compares two byte slices for equality.
 
 #### Scenario: BigIntToBytes32 round-trip
 
@@ -112,25 +115,35 @@ The method SHALL:
 2. Populate `TicketJourneyStatus` fields from the corresponding `ParsedEmailData` fields.
 3. Return a pointer to the constructed `TicketJourneyStatus`.
 
-#### Scenario: Purchase confirmation email
+#### Scenario: LotteryResult win email → Purchased status
 
-- **WHEN** JourneyStatus is called with a purchase confirmation email type
-- **THEN** the returned TicketJourneyStatus reflects the purchased phase with relevant parsed fields
+- **WHEN** JourneyStatus is called with a LotteryResult win email type
+- **THEN** the returned TicketJourneyStatus reflects the Purchased phase with lottery result fields populated
 
-#### Scenario: Entry confirmation email
+#### Scenario: LotteryResult lost email → Lost status
 
-- **WHEN** JourneyStatus is called with an entry confirmation email type
-- **THEN** the returned TicketJourneyStatus reflects the entered phase
+- **WHEN** JourneyStatus is called with a LotteryResult lost email type
+- **THEN** the returned TicketJourneyStatus reflects the Lost phase
 
-#### Scenario: Refund email
+#### Scenario: LotteryInfo email → Tracking status
 
-- **WHEN** JourneyStatus is called with a refund email type
-- **THEN** the returned TicketJourneyStatus reflects the refunded phase
+- **WHEN** JourneyStatus is called with a LotteryInfo email type
+- **THEN** the returned TicketJourneyStatus reflects the Tracking phase (lottery not yet resolved)
 
-#### Scenario: Unknown email type
+#### Scenario: EntryConfirmation email → Entered status
+
+- **WHEN** JourneyStatus is called with an EntryConfirmation email type
+- **THEN** the returned TicketJourneyStatus reflects the Entered phase
+
+#### Scenario: Refund email → Refunded status
+
+- **WHEN** JourneyStatus is called with a Refund email type
+- **THEN** the returned TicketJourneyStatus reflects the Refunded phase
+
+#### Scenario: Unknown email type → nil (no journey update)
 
 - **WHEN** JourneyStatus is called with an unrecognized email type
-- **THEN** the returned TicketJourneyStatus has a default/unknown phase
+- **THEN** the returned TicketJourneyStatus pointer is nil (no journey state change)
 
 ---
 
