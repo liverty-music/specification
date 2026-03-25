@@ -18,8 +18,9 @@ The concert search usecase (`internal/usecase/`) SHALL NOT directly import any p
 
 #### Scenario: No direct infrastructure imports in usecase package
 
-- **WHEN** reviewing the import declarations of files in `internal/usecase/`
-- **THEN** no file SHALL import any path matching `internal/infrastructure/*`
+- **WHEN** reviewing the import declarations of **production** files in `internal/usecase/`
+- **THEN** no production file SHALL import any path matching `internal/infrastructure/*`
+- **NOTE** Test files (`_test.go`) are exempt from this rule; integration tests may import infrastructure packages directly.
 
 ### Requirement: Search status marking SHALL use defer pattern
 
