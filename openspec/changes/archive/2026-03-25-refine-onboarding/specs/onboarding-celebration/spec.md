@@ -1,10 +1,4 @@
-# Onboarding Celebration
-
-## Purpose
-
-Provides an emotional payoff after the Lane Intro sequence completes on the Dashboard during onboarding, displaying a full-screen celebration overlay with confetti animation. The overlay advances onboarding from DASHBOARD to MY_ARTISTS and is dismissed by a user tap.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Celebration Overlay on Dashboard — Repositioned After Lane Intro
 
@@ -40,19 +34,21 @@ The system SHALL display the Celebration Overlay after the Lane Intro sequence c
 - **AND** the overlay SHALL appear instantly and remain until tapped
 - **AND** the overlay SHALL disappear instantly (no fade) on tap
 
-### Requirement: Celebration appears before Lane Intro (REMOVED)
+## REMOVED Requirements
+
+### Requirement: Celebration appears before Lane Intro
 
 **Reason**: Celebration before Lane Intro means users are congratulated before seeing what they've built. Moving it after Lane Intro makes it the natural emotional payoff and explicit end of the guided sequence.
 
 **Migration**: In `dashboard-route.ts`, remove the `showCelebration → onCelebrationComplete → startLaneIntro` sequence. Replace with `startLaneIntro → (AWAY phase complete) → showCelebration`.
 
-### Requirement: Celebration auto-dismisses after 2.5 seconds (REMOVED)
+### Requirement: Celebration auto-dismisses after 2.5 seconds
 
 **Reason**: Auto-dismiss removes user agency at the moment of highest engagement. Tap-to-dismiss lets users read the secondary message ("自由にタイムテーブルを触ってみよう") before proceeding.
 
 **Migration**: Remove the `displayDuration` setTimeout in `celebration-overlay.ts`. Fire the completion callback only when the user taps (click/pointerdown event on the overlay).
 
-### Requirement: Celebration transitions to region selection flow (REMOVED)
+### Requirement: Celebration transitions to region selection flow
 
 **Reason**: Region selection now happens inline during the Lane Intro HOME phase, before Celebration.
 

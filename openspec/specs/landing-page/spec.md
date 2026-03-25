@@ -31,6 +31,15 @@ The system SHALL provide both a primary [Get Started] CTA and a secondary [Log I
 - **THEN** the system SHALL NOT display email/password fields or social login buttons (Google, Spotify, etc.)
 - **AND** Passkey SHALL be the sole authentication method
 
+### Requirement: Guest-Friendly Welcome Copy
+
+The Welcome page SHALL communicate that no account is required to try the product.
+
+#### Scenario: Guest-friendly copy displayed on Welcome page
+
+- **WHEN** the Welcome page renders
+- **THEN** the page SHALL display "アカウント不要でお試しいただけます" near the [使ってみる] CTA button
+
 ### Requirement: Authenticated User Redirect
 
 The system SHALL redirect already-authenticated users away from the landing page to the Dashboard, regardless of `onboardingStep` value.

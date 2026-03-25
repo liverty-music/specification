@@ -1,3 +1,5 @@
+## MODIFIED Requirements
+
 ### Requirement: Interactive Artist Discovery (Bubble Network UI)
 
 The system SHALL provide an engaging, gamified interface for users to discover and follow artists using Last.fm API data. During onboarding, followed artists are stored locally (not via backend RPC). The system SHALL trigger a background concert search for each followed artist and track which artists have concerts. The Coach Mark SHALL appear when the progression condition is reached, remain visible for 2 seconds, then fade out. Navigation to the Dashboard is not triggered automatically — the user taps the Home nav tab at their own pace.
@@ -48,6 +50,8 @@ The system SHALL provide an engaging, gamified interface for users to discover a
 - **AND** `listConcerts(artistId)` returns at least one concert
 - **THEN** the system SHALL display a snack notification indicating the artist has upcoming events
 
+## MODIFIED Requirements
+
 ### Requirement: Step Sequence
 
 The onboarding step sequence SHALL be LP → DISCOVERY → DASHBOARD → MY_ARTISTS → COMPLETED. The DETAIL step is removed.
@@ -65,7 +69,9 @@ The onboarding step sequence SHALL be LP → DISCOVERY → DASHBOARD → MY_ARTI
 - **AND** the stored value is `'detail'`
 - **THEN** the system SHALL treat it as `'dashboard'` for routing and step logic
 
-### Requirement: DETAIL onboarding step (REMOVED)
+## REMOVED Requirements
+
+### Requirement: DETAIL onboarding step
 
 **Reason**: The DETAIL step existed solely to spotlight the My Artists nav tab after a card tap. With card taps now correctly opening the Detail Sheet and guidance shifting to a pull model, this intermediate step is no longer needed. My Artists guidance is handled by PageHelp auto-open on first visit.
 

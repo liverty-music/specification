@@ -22,6 +22,31 @@ The coach mark spotlight SHALL use a CSS Anchor Positioning hybrid approach. A `
 - **WHEN** the spotlight is positioned over a target element
 - **THEN** the spotlight cutout SHALL extend 8px beyond the target's bounding box on all sides (via `margin: -8px`)
 
+### Requirement: Coach Mark Overlay System
+
+The system SHALL provide a reusable coach mark overlay component that highlights a target element. The `aria-label` on the tooltip SHALL be `"Onboarding tip"`. Navigation SHALL be delegated to the target element's native click behavior; the coach mark SHALL NOT call `router.load()`.
+
+#### Scenario: Spotlight renders for active step
+
+- **WHEN** an onboarding step requires a coach mark
+- **THEN** the system SHALL display the spotlight overlay with instructional text
+- **AND** the tooltip `aria-label` SHALL be `"Onboarding tip"`
+
+#### Scenario: Nav tab tap through spotlight delegates to href
+
+- **WHEN** a coach mark spotlight is active on a nav tab element
+- **AND** the user taps the spotlighted element
+- **THEN** the system SHALL call `currentTarget.click()` to fire the element's native click event
+- **AND** the system SHALL call `onTap?.()` callback (for step-advance logic only)
+- **AND** the system SHALL NOT call `router.load()` from within the coach mark component or its `onTap` callback
+
+#### Scenario: Blocker divs prevent off-target interaction
+
+- **WHEN** a coach mark spotlight is active
+- **THEN** blocker divs SHALL cover the viewport area outside the spotlight target
+- **AND** taps on blocker divs SHALL be silently ignored (no navigation, no error)
+- **AND** the scroll lock (`overflow: hidden` on `au-viewport`) SHALL remain active while the coach mark is active
+
 ### Requirement: Click-Blocker Layer via Transparent Anchor-Positioned Divs
 
 The coach mark SHALL use four transparent click-blocker divs (top, right, bottom, left) positioned with CSS `anchor()` functions to block interactions outside the target element.
@@ -40,6 +65,13 @@ The coach mark SHALL use four transparent click-blocker divs (top, right, bottom
 - **THEN** the tap SHALL pass through to the actual target element
 - **AND** the target element SHALL receive the click event natively
 
+#### Scenario: Target interceptor invokes onTap callback
+
+- **WHEN** the coach mark overlay is active with an `onTap` callback registered
+- **AND** the user taps the target interceptor overlay
+- **THEN** the `onTap` callback SHALL be invoked
+- **AND** the caller MAY use the callback to deactivate the spotlight (e.g., `deactivateSpotlight()`)
+
 #### Scenario: Click-blockers cover the entire viewport except target bounds
 
 - **WHEN** the coach mark overlay is active
@@ -47,6 +79,14 @@ The coach mark SHALL use four transparent click-blocker divs (top, right, bottom
 - **AND** `.mask-bottom` SHALL cover from `anchor(target bottom)` to viewport bottom
 - **AND** `.mask-left` SHALL cover from viewport left to `anchor(target left)`, between target top and bottom
 - **AND** `.mask-right` SHALL cover from `anchor(target right)` to viewport right, between target top and bottom
+
+#### Scenario: My Artists step provides onTap dismissal callback
+
+- **WHEN** the onboarding step is `my-artists`
+- **AND** `activateSpotlight` is called for the `[data-hype-header]` target
+- **THEN** an `onTap` callback SHALL be provided that calls `deactivateSpotlight()`
+- **AND** after the spotlight is dismissed, the hype sliders SHALL be interactive
+- **AND** the user SHALL be able to change a hype level to complete onboarding
 
 ### Requirement: Spotlight Uses Popover Top Layer
 

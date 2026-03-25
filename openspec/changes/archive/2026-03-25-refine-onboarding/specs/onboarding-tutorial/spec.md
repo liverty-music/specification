@@ -1,3 +1,5 @@
+## MODIFIED Requirements
+
 ### Requirement: Linear Step Progression
 
 The system SHALL enforce a guided progression through onboarding steps. During the Lane Intro phase of DASHBOARD, user interaction outside the spotlighted element is blocked via blocker divs and scroll lock. After Celebration dismissal, the user explores freely and navigates to My Artists at their own pace.
@@ -84,80 +86,28 @@ The system SHALL delegate navigation from coach mark taps to the target element'
 - **THEN** the nav tab's native click event SHALL handle navigation
 - **AND** the system SHALL NOT call `router.load()` from the `onTap` callback
 
-### Requirement: Step 3 - Concert card tap advances to DETAIL step (REMOVED)
+## REMOVED Requirements
+
+### Requirement: Step 3 - Concert card tap advances to DETAIL step
 
 **Reason**: The DETAIL step is removed. Card taps now open the EventDetailSheet directly. Step progression from DASHBOARD is triggered by Celebration open, not card tap.
 
 **Migration**: Remove `onOnboardingCardTapped()` method's step-advance logic from `dashboard-route.ts`. Replace with `eventDetailSheet.open(concert)` call.
 
-### Requirement: Step 4 - Detail sheet with My Artists tab guidance (REMOVED)
+### Requirement: Step 4 - Detail sheet with My Artists tab guidance
 
 **Reason**: DETAIL step is removed. The My Artists spotlight sequence after card tap is replaced by the PageHelp auto-open on first visit to My Artists.
 
 **Migration**: Remove all `isOnboardingStepDetail` checks. Remove the My Artists spotlight activation from the DETAIL → MY_ARTISTS transition.
 
-### Requirement: Step 5 - Passion Level guidance spotlight (REMOVED)
+### Requirement: Step 5 - Passion Level guidance spotlight
 
 **Reason**: Replaced by PageHelp auto-open on first visit to My Artists. The explicit `[data-artist-rows]` spotlight is removed.
 
 **Migration**: Remove `activateSpotlight('[data-artist-rows]', ...)` call from `my-artists-route.ts` loading logic.
 
-### Requirement: Step 5 - Hype dot tap reverts change and completes onboarding (REMOVED)
+### Requirement: Step 5 - Hype dot tap reverts change and completes onboarding
 
 **Reason**: Hype changes are now persisted (not reverted). Onboarding completion is triggered by any hype change without reverting the user's selection.
 
 **Migration**: Remove `artist.hype = prev` revert line. Keep `setStep(COMPLETED)` and `deactivateSpotlight()`.
-
-### Requirement: Route guard onboarding enforcement
-
-The system SHALL use route data `onboardingStep` (string step value) to control access during onboarding. The auth hook SHALL compare step ordering using `stepIndex()` rather than numeric comparison.
-
-#### Scenario: Route guard allows current or past steps
-
-- **WHEN** a route has `data.onboardingStep` set to a step value
-- **AND** the user is in the onboarding flow
-- **THEN** the auth hook SHALL allow navigation if `stepIndex(currentStep) >= stepIndex(route.onboardingStep)`
-
-#### Scenario: Route guard redirects future steps
-
-- **WHEN** a route has `data.onboardingStep` set to a step value
-- **AND** the user is in the onboarding flow
-- **AND** `stepIndex(currentStep) < stepIndex(route.onboardingStep)`
-- **THEN** the auth hook SHALL redirect to the route for the current step
-
-## REMOVED Requirements
-
-### Requirement: Step 2 - Loading sequence (deprecated for onboarding)
-
-**Reason**: The LOADING step was removed in a prior change. The backward compatibility mapping (`onboardingStep=2` → redirect to Dashboard) is no longer needed.
-
-**Migration**: Remove `OnboardingStep.LOADING` and all references to Step 2 in route guards.
-
-### Requirement: Step 6 - SignUp modal display
-
-**Reason**: The SIGNUP step was removed in a prior change. Users complete onboarding at MY_ARTISTS and return to LP. Signup is handled separately via the signup banner.
-
-**Migration**: Remove `OnboardingStep.SIGNUP` and all references to Step 6.
-
-### Requirement: Step 6 - Passkey authentication success
-
-**Reason**: Same as above. Signup flow is separate from onboarding completion.
-
-**Migration**: Remove Step 6 scenario references.
-
-### Requirement: Step 6 - Page reload
-
-**Reason**: Same as above.
-
-**Migration**: Remove Step 6 reload scenario.
-
-### Requirement: Step 5 to Step 6 - Spotlight deactivation
-
-**Reason**: Step 6 no longer exists. Spotlight deactivation happens at Step 5 completion (advancing directly to COMPLETED).
-
-**Migration**: Remove scenario. Covered by "Step 5 - Passion Level changed" which deactivates spotlight before advancing to COMPLETED.
-
-## RENAMED Requirements
-
-- FROM: `Tutorial tip` aria-label → TO: `Onboarding tip` aria-label
-- FROM: `tutorialStep` route data key → TO: `onboardingStep` route data key
