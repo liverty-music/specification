@@ -1,0 +1,3 @@
+# unify-scraped-concert-entity
+
+ScrapedConcertDataを廃止しScrapedConcertに統合、ScrapedConcertsコレクション型にFilterNewメソッドを追加
