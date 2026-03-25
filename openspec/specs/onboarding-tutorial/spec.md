@@ -1,8 +1,6 @@
-## MODIFIED Requirements
-
 ### Requirement: Linear Step Progression
 
-The system SHALL enforce a strict linear progression through onboarding steps. Users SHALL NOT be able to skip steps or navigate freely during onboarding. Direct navigation via the bottom nav bar SHALL advance the step when the prerequisite conditions are met.
+The system SHALL enforce a guided progression through onboarding steps. During the Lane Intro phase of DASHBOARD, user interaction outside the spotlighted element is blocked via blocker divs and scroll lock. After Celebration dismissal, the user explores freely and navigates to My Artists at their own pace.
 
 #### Scenario: Step 0 - Landing Page entry
 
@@ -11,114 +9,104 @@ The system SHALL enforce a strict linear progression through onboarding steps. U
 - **THEN** the system SHALL advance `onboardingStep` to `'discovery'`
 - **AND** navigate to the Artist Discovery screen
 
-#### Scenario: Step 1 - Artist Discovery completion with concert data gate
+#### Scenario: Step 1 - Artist Discovery completion
 
 - **WHEN** a user is at Step `'discovery'`
-- **AND** the user has followed 3 or more artists via bubble taps
-- **AND** the backend search status for all followed artists has reached `COMPLETED` or `FAILED` (verified via `ListSearchStatuses` polling), or the per-artist frontend polling deadline (15 seconds) has elapsed
-- **AND** at least one followed artist has concerts in the database (verified via `ConcertService/List` per artist)
-- **THEN** the system SHALL activate the continuous spotlight on the Dashboard icon in the bottom navigation bar (target: `[data-nav-dashboard]`)
-- **AND** the coach mark SHALL display the message: "タイムテーブルを見てみよう！"
-- **AND** when the user taps the Dashboard icon through the spotlight, the system SHALL advance `onboardingStep` to `'dashboard'`
-- **AND** the system SHALL navigate to the Dashboard (`/dashboard`)
-
-#### Scenario: Step 1 - Search status polling mechanism
-
-- **WHEN** a user follows an artist during onboarding
-- **THEN** the system SHALL fire the `SearchNewConcerts` RPC to initiate the backend search
-- **AND** the system SHALL NOT treat the RPC return as search completion (the RPC is fire-and-forget; the actual search runs asynchronously on the backend)
-- **AND** the system SHALL poll `ListSearchStatuses` every 2 seconds to detect when the backend search log transitions to `COMPLETED` or `FAILED`
-- **AND** the system SHALL batch all pending artist IDs into a single `ListSearchStatuses` call per poll cycle
-- **AND** the system SHALL enforce a 15-second per-artist polling deadline as a fallback timeout
-
-#### Scenario: Step 1 - Concert data verification after search completion
-
-- **WHEN** all followed artists have reached a terminal search state (`COMPLETED`, `FAILED`, or timed out)
-- **AND** the user has followed 3 or more artists
-- **THEN** the system SHALL call `ConcertService/List` for each followed artist in parallel to verify that concert data exists in the database
-- **AND** the system SHALL NOT require `guest.home` for this verification
-- **AND** if at least 1 artist has concerts, the system SHALL activate the Dashboard coach mark
-- **AND** if 0 artists have concerts, the system SHALL NOT activate the Dashboard coach mark and SHALL re-evaluate each time a new artist's search completes
-
-#### Scenario: Step 1 - Concert searches complete with no results
-
-- **WHEN** a user is at Step `'discovery'`
-- **AND** the user has followed 3 or more artists
-- **AND** all artists' search statuses have reached a terminal state
-- **AND** no followed artist has concerts (all `ConcertService/List` responses are empty)
-- **THEN** the system SHALL NOT activate the Dashboard coach mark
-- **AND** the system SHALL re-evaluate the concert data gate each time a new artist is followed and their search reaches a terminal state
-
-#### Scenario: Step 1 - Direct Home nav tap when coach mark is active
-
-- **WHEN** a user is at Step `'discovery'`
-- **AND** the coach mark spotlight on the Dashboard icon is active
-- **AND** the user taps the Home/Dashboard icon in the bottom nav bar (bypassing the coach mark overlay)
-- **THEN** the system SHALL advance `onboardingStep` to `'dashboard'`
+- **AND** the progression condition is met (5 follows OR 3 artists with concerts)
+- **THEN** the system SHALL activate the coach mark spotlight on the Dashboard icon for 2 seconds, then deactivate it
+- **AND** when the user taps the Home/Dashboard icon, the system SHALL advance `onboardingStep` to `'dashboard'`
 - **AND** the system SHALL navigate to `/dashboard`
 
-#### Scenario: Step 1 - Spotlight deactivation before navigation
-
-- **WHEN** a user is at Step `'discovery'`
-- **AND** the user taps the Dashboard coach mark
-- **THEN** the system SHALL deactivate the spotlight (`deactivateSpotlight()`) before navigating to `/dashboard`
-
-#### Scenario: Step 3 - Dashboard reveal with celebration and lane introduction
+#### Scenario: Step 3 - Dashboard Lane Intro begins
 
 - **WHEN** a user is at Step `'dashboard'`
-- **THEN** the system SHALL display the celebration overlay only once per onboarding session, persisted via `localStorage` key `onboarding.celebrationShown`
-- **AND** after celebration (or immediately if already shown), the system SHALL display the region selection BottomSheet overlay (if home area not yet set)
-- **AND** after region selection, the system SHALL run the lane introduction sequence
-- **AND** the spotlight SHALL slide to the first concert card
-- **AND** the system SHALL display a coach mark tooltip: "タップして詳細を見てみよう！"
+- **AND** the Dashboard page loads
+- **THEN** the system SHALL begin the Lane Intro sequence (see `dashboard-lane-introduction` spec)
+- **AND** blocker divs SHALL be active and scroll SHALL be locked during Lane Intro phases
 
-#### Scenario: Step 3 - Concert card tap
+#### Scenario: Step 3 - Celebration opens and DASHBOARD step completes
 
-- **WHEN** a user is at Step `'dashboard'`
-- **AND** the user taps the spotlighted concert card
-- **THEN** the system SHALL advance `onboardingStep` to `'detail'`
-- **AND** open the concert detail sheet (popover)
-- **AND** the spotlight SHALL slide to the [My Artists] tab in the bottom navigation bar
+- **WHEN** the Lane Intro sequence completes all phases (home, near, away)
+- **THEN** the system SHALL open the Celebration Overlay
+- **AND** opening the Celebration Overlay SHALL advance `onboardingStep` to `'my-artists'`
 
-#### Scenario: Step 4 - Detail sheet with My Artists tab guidance
+#### Scenario: Step 3 - Celebration dismissed; free exploration begins
 
-- **WHEN** a user is at Step `'detail'` (Detail sheet open)
-- **THEN** the spotlight SHALL be highlighting the [My Artists] tab
-- **AND** the system SHALL display a coach mark tooltip: "アーティスト一覧も見てみよう！"
+- **WHEN** the Celebration Overlay is dismissed (user taps anywhere)
+- **THEN** blocker divs SHALL be deactivated
+- **AND** scroll lock SHALL be released
+- **AND** all nav tabs SHALL become fully interactive
+- **AND** the user SHALL be able to freely browse the timetable and tap concert cards
 
-#### Scenario: Step 4 - My Artists tab tap
+#### Scenario: Step 3 - Concert card tap opens Detail Sheet
 
-- **WHEN** a user is at Step `'detail'`
-- **AND** the user taps the highlighted [My Artists] tab
-- **THEN** the system SHALL advance `onboardingStep` to `'my-artists'`
-- **AND** navigate to the My Artists screen
+- **WHEN** a user is in free exploration after Celebration dismissal
+- **AND** the user taps a concert card
+- **THEN** the system SHALL open the EventDetailSheet for that concert
+- **AND** the system SHALL NOT advance any onboarding step
 
-#### Scenario: Step 5 - Passion Level guidance
+#### Scenario: Step 5 - My Artists page first visit
 
-- **WHEN** a user is at Step `'my-artists'`
-- **AND** followed artists have been loaded
-- **THEN** the spotlight SHALL highlight the `[data-artist-rows]` element (the list containing artist rows with hype sliders)
-- **AND** the coach mark SHALL display the message: "絶対に見逃したくないアーティストの熱量を上げておこう"
+- **WHEN** a user at Step `'my-artists'` navigates to the My Artists page (by their own nav tap)
+- **THEN** the PageHelp bottom-sheet SHALL auto-open (first visit, per `onboarding-page-help` spec)
+- **AND** the sheet SHALL explain hype levels
 
-#### Scenario: Step 5 - User taps a hype dot
+#### Scenario: Step 5 - Hype change completes onboarding
 
-- **WHEN** a user is at Step `'my-artists'`
-- **AND** the user taps any hype dot on the inline slider
-- **THEN** the native `change` event SHALL bubble to `MyArtistsRoute`
-- **AND** the parent SHALL detect `isOnboardingStepMyArtists` and revert the hype change
-- **AND** the system SHALL deactivate the spotlight
+- **WHEN** a user at Step `'my-artists'` changes a hype level
+- **THEN** the system SHALL persist the hype change (no revert)
 - **AND** the system SHALL advance `onboardingStep` to `'completed'`
-- **AND** the system SHALL navigate to the landing page
 
-### Requirement: Coach Mark Overlay System
+### Requirement: Non-spotlighted Nav Tabs Visually Disabled During Lane Intro
 
-The system SHALL provide a reusable coach mark overlay component that highlights a target element. The `aria-label` on the tooltip SHALL be `"Onboarding tip"`.
+The system SHALL visually indicate that non-spotlighted nav tabs are inactive during the Lane Intro sequence.
 
-#### Scenario: Spotlight renders for active step
+#### Scenario: Nav tabs dimmed during Lane Intro
 
-- **WHEN** an onboarding step requires a coach mark
-- **THEN** the system SHALL display the spotlight overlay with instructional text
-- **AND** the tooltip `aria-label` SHALL be `"Onboarding tip"`
+- **WHEN** the Lane Intro sequence is active (any phase: home, near, away)
+- **THEN** nav tabs that are not the current spotlight target SHALL have reduced opacity (0.3)
+- **AND** non-target nav tabs SHALL have `aria-disabled="true"` set
+
+#### Scenario: Nav tabs restored after Celebration dismissal
+
+- **WHEN** the Celebration Overlay is dismissed
+- **THEN** all nav tabs SHALL return to full opacity
+- **AND** all `aria-disabled` attributes SHALL be removed
+
+### Requirement: Coach Mark Navigation Delegation
+
+The system SHALL delegate navigation from coach mark taps to the target element's native href, not to a separate `router.load()` call.
+
+#### Scenario: Nav tab tap through coach mark
+
+- **WHEN** a coach mark spotlight is active on a nav tab
+- **AND** the user taps the spotlighted nav tab
+- **THEN** the nav tab's native click event SHALL handle navigation
+- **AND** the system SHALL NOT call `router.load()` from the `onTap` callback
+
+### Requirement: Step 3 - Concert card tap advances to DETAIL step (REMOVED)
+
+**Reason**: The DETAIL step is removed. Card taps now open the EventDetailSheet directly. Step progression from DASHBOARD is triggered by Celebration open, not card tap.
+
+**Migration**: Remove `onOnboardingCardTapped()` method's step-advance logic from `dashboard-route.ts`. Replace with `eventDetailSheet.open(concert)` call.
+
+### Requirement: Step 4 - Detail sheet with My Artists tab guidance (REMOVED)
+
+**Reason**: DETAIL step is removed. The My Artists spotlight sequence after card tap is replaced by the PageHelp auto-open on first visit to My Artists.
+
+**Migration**: Remove all `isOnboardingStepDetail` checks. Remove the My Artists spotlight activation from the DETAIL → MY_ARTISTS transition.
+
+### Requirement: Step 5 - Passion Level guidance spotlight (REMOVED)
+
+**Reason**: Replaced by PageHelp auto-open on first visit to My Artists. The explicit `[data-artist-rows]` spotlight is removed.
+
+**Migration**: Remove `activateSpotlight('[data-artist-rows]', ...)` call from `my-artists-route.ts` loading logic.
+
+### Requirement: Step 5 - Hype dot tap reverts change and completes onboarding (REMOVED)
+
+**Reason**: Hype changes are now persisted (not reverted). Onboarding completion is triggered by any hype change without reverting the user's selection.
+
+**Migration**: Remove `artist.hype = prev` revert line. Keep `setStep(COMPLETED)` and `deactivateSpotlight()`.
 
 ### Requirement: Route guard onboarding enforcement
 

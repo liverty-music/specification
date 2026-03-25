@@ -6,6 +6,16 @@ Provide a persistent fixed banner on My Artists and Dashboard pages prompting un
 
 ## Requirements
 
+### Requirement: Guest Signup Prompt Banner
+
+The system SHALL display a non-modal signup prompt banner to guest users after onboarding completion. The banner copy SHALL emphasize follow data persistence and notification benefit.
+
+#### Scenario: Banner copy reflects data persistence and notifications
+
+- **WHEN** the signup prompt banner is displayed to a guest user
+- **THEN** the banner SHALL display: "アカウントを作成してフォロー情報を保存しよう。新着コンサート通知も有効になります！"
+- **AND** the banner SHALL include a [アカウント作成] CTA button
+
 ### Requirement: Signup Banner on My Artists
 
 The My Artists page SHALL display a persistent fixed banner above the bottom navigation bar prompting unauthenticated users to sign up.
@@ -15,8 +25,6 @@ The My Artists page SHALL display a persistent fixed banner above the bottom nav
 - **WHEN** an unauthenticated user views the My Artists page
 - **AND** the user has completed onboarding (`onboarding.isCompleted` is true)
 - **THEN** the system SHALL display the signup-prompt-banner
-- **AND** the banner SHALL display: "🔔 通知を有効にするには [アカウント作成]"
-- **AND** the [アカウント作成] button SHALL initiate the Zitadel OIDC Passkey flow
 
 #### Scenario: Banner not shown for authenticated users
 
@@ -37,8 +45,6 @@ The Dashboard page SHALL display a persistent fixed banner above the bottom navi
 - **WHEN** an unauthenticated user views the Dashboard
 - **AND** the user has completed onboarding (onboardingStep >= 7) or has dismissed the notification dialog
 - **THEN** the system SHALL display the signup-prompt-banner
-- **AND** the banner SHALL display: "🔔 ライブ通知を受け取ろう [アカウント作成]"
-- **AND** the [アカウント作成] button SHALL initiate the Zitadel OIDC Passkey flow
 
 #### Scenario: Banner not shown during onboarding steps 1-4
 

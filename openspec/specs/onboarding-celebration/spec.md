@@ -2,44 +2,58 @@
 
 ## Purpose
 
-Provides an emotional payoff when the user first arrives at the Dashboard during onboarding, displaying a full-screen celebration overlay with confetti animation after completing artist discovery.
+Provides an emotional payoff after the Lane Intro sequence completes on the Dashboard during onboarding, displaying a full-screen celebration overlay with confetti animation. The overlay advances onboarding from DASHBOARD to MY_ARTISTS and is dismissed by a user tap.
 
 ## Requirements
 
-### Requirement: Celebration Overlay on Dashboard Generation
+### Requirement: Celebration Overlay on Dashboard — Repositioned After Lane Intro
 
-The system SHALL display a full-screen celebration overlay when the user first arrives at the Dashboard during onboarding, providing an emotional payoff after completing artist discovery.
+The system SHALL display the Celebration Overlay after the Lane Intro sequence completes, not before. Opening the Celebration Overlay SHALL advance `onboardingStep` from `'dashboard'` to `'my-artists'`. The overlay is dismissed by a tap anywhere on the screen.
 
-#### Scenario: Celebration overlay appears on first dashboard visit
+#### Scenario: Celebration overlay appears after Lane Intro
 
-- **WHEN** the user navigates to the Dashboard during onboarding (Step 3)
-- **AND** `onboarding.currentStep` transitions to `DASHBOARD`
-- **THEN** the system SHALL display a full-screen celebration overlay
-- **AND** the overlay SHALL display the text "あなただけのタイムテーブルが完成しました！" centered on screen
-- **AND** the overlay SHALL play a confetti/particle CSS animation in the background
-- **AND** the overlay SHALL remain visible for 2.5 seconds
-- **AND** the overlay SHALL then fade out over 400ms
+- **WHEN** the Lane Intro AWAY phase tap is received
+- **THEN** the system SHALL open the Celebration Overlay
+- **AND** opening the overlay SHALL advance `onboardingStep` to `'my-artists'`
+- **AND** the overlay SHALL display "あなただけのタイムテーブルが完成しました！"
+- **AND** the overlay SHALL display a secondary message: "自由にタイムテーブルを触ってみよう"
+- **AND** the overlay SHALL play confetti/particle animation
 
-#### Scenario: Dashboard content hidden during celebration
+#### Scenario: Celebration dismissed by tap
 
-- **WHEN** the celebration overlay is visible
-- **THEN** the dashboard content (lanes, cards, headers) SHALL NOT be visible beneath the overlay
-- **AND** the user SHALL NOT be able to interact with dashboard content
+- **WHEN** the user taps anywhere on the Celebration Overlay
+- **THEN** the overlay SHALL fade out over 400ms
+- **AND** blocker divs SHALL be deactivated
+- **AND** scroll lock SHALL be released
+- **AND** the user SHALL enter free exploration mode on the Dashboard
 
 #### Scenario: Celebration does not replay
 
-- **WHEN** the user has already seen the celebration overlay during this onboarding session
-- **AND** the user returns to the Dashboard (e.g., via route guard redirect)
-- **THEN** the system SHALL NOT display the celebration overlay again
+- **WHEN** the user has already seen the Celebration Overlay during this onboarding session
+- **AND** the user returns to the Dashboard
+- **THEN** the system SHALL NOT display the Celebration Overlay again
 
 #### Scenario: Reduced motion preference
 
 - **WHEN** the user has `prefers-reduced-motion: reduce` enabled
 - **THEN** the confetti/particle animation SHALL be skipped
-- **AND** the celebration text SHALL appear instantly and remain for 1.5 seconds
-- **AND** the overlay SHALL disappear instantly (no fade)
+- **AND** the overlay SHALL appear instantly and remain until tapped
+- **AND** the overlay SHALL disappear instantly (no fade) on tap
 
-#### Scenario: Celebration transitions to lane introduction
+### Requirement: Celebration appears before Lane Intro (REMOVED)
 
-- **WHEN** the celebration overlay fade-out completes
-- **THEN** the system SHALL proceed to the region selection flow (if needed) or the lane introduction sequence
+**Reason**: Celebration before Lane Intro means users are congratulated before seeing what they've built. Moving it after Lane Intro makes it the natural emotional payoff and explicit end of the guided sequence.
+
+**Migration**: In `dashboard-route.ts`, remove the `showCelebration → onCelebrationComplete → startLaneIntro` sequence. Replace with `startLaneIntro → (AWAY phase complete) → showCelebration`.
+
+### Requirement: Celebration auto-dismisses after 2.5 seconds (REMOVED)
+
+**Reason**: Auto-dismiss removes user agency at the moment of highest engagement. Tap-to-dismiss lets users read the secondary message ("自由にタイムテーブルを触ってみよう") before proceeding.
+
+**Migration**: Remove the `displayDuration` setTimeout in `celebration-overlay.ts`. Fire the completion callback only when the user taps (click/pointerdown event on the overlay).
+
+### Requirement: Celebration transitions to region selection flow (REMOVED)
+
+**Reason**: Region selection now happens inline during the Lane Intro HOME phase, before Celebration.
+
+**Migration**: Remove the region-selection trigger from `onCelebrationComplete`. Region selection is handled within `startLaneIntroHomePhase()`.
