@@ -134,3 +134,31 @@ The system SHALL provide a global authentication lifecycle hook that checks the 
 - **When** navigating to `/dashboard`
 - **Then** AuthHook SHALL return a redirect to `/discovery`
 - **And** no step advancement SHALL occur
+
+#### TC-RG-07: readyForDashboard is true when follow count threshold is met
+
+- **Given** `onboardingStep = 'discovery'`
+- **And** `followedCount = 5` (≥ DASHBOARD_FOLLOW_TARGET)
+- **When** `OnboardingService.readyForDashboard` is evaluated
+- **Then** it SHALL return `true`
+
+#### TC-RG-08: readyForDashboard is true when concert artist threshold is met
+
+- **Given** `onboardingStep = 'discovery'`
+- **And** `artistsWithConcertsCount = 3` (≥ DASHBOARD_CONCERT_TARGET)
+- **When** `OnboardingService.readyForDashboard` is evaluated
+- **Then** it SHALL return `true`
+
+#### TC-RG-09: readyForDashboard is false when both counts are below threshold
+
+- **Given** `onboardingStep = 'discovery'`
+- **And** `followedCount < 5` AND `artistsWithConcertsCount < 3`
+- **When** `OnboardingService.readyForDashboard` is evaluated
+- **Then** it SHALL return `false`
+
+#### TC-RG-10: readyForDashboard is false when step is not discovery
+
+- **Given** `onboardingStep` is any value other than `'discovery'`
+- **And** `followedCount` and `artistsWithConcertsCount` exceed their respective thresholds
+- **When** `OnboardingService.readyForDashboard` is evaluated
+- **Then** it SHALL return `false`
