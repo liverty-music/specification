@@ -1,10 +1,4 @@
-# Discover
-
-## Purpose
-
-Provides a dedicated space for users to discover and follow new artists after onboarding. Combines the gamified Bubble UI experience with a targeted text search, both accessible anytime via the Discover tab.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Bubble UI Re-experience
 The system SHALL provide the onboarding Bubble UI as a reusable discovery experience on the Discover tab, with a simplified 3-row grid layout. After following an artist, the Discovery page SHALL call `ConcertService.List` to check for existing concerts and update onboarding state. The page SHALL NOT call `SearchNewConcerts` directly.
@@ -46,8 +40,6 @@ The system SHALL provide the onboarding Bubble UI as a reusable discovery experi
 - **AND** SHALL NOT call `SearchNewConcerts`
 - **AND** `artistsWithConcerts` SHALL be updated for each artist that has stored concerts
 
----
-
 ### Requirement: Manual Search
 The system SHALL provide a text search for targeted artist discovery.
 
@@ -71,8 +63,6 @@ The system SHALL provide a text search for targeted artist discovery.
 - **THEN** the search results SHALL be hidden
 - **AND** the Bubble UI SHALL be restored
 
----
-
 ### Requirement: Search bar icon explicit sizing
 The search bar SVG icons SHALL have explicit intrinsic dimensions to prevent layout overflow.
 
@@ -87,8 +77,6 @@ The search bar SVG icons SHALL have explicit intrinsic dimensions to prevent lay
 - **THEN** the `.clear-button` SHALL have explicit `inline-size` and `block-size` values
 - **AND** the button SHALL have `flex-shrink: 0` to prevent compression
 - **AND** the button's SVG child SHALL be constrained to the button's dimensions
-
----
 
 ### Requirement: Performance on Tab Switch
 The system SHALL manage Bubble UI resources efficiently when the tab is not active.

@@ -1,8 +1,5 @@
-# follow-triggered-search Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change trigger-search-on-first-follow. Update Purpose after archive.
-## Requirements
 ### Requirement: Trigger concert search on first follow
 When a user follows an artist and no search log exists for that artist, the system SHALL launch a background concert search via `SearchNewConcerts`. The frontend SHALL NOT independently call `SearchNewConcerts` after a follow — concert discovery is solely the responsibility of the backend (first-follow trigger) and the daily cronjob.
 
@@ -36,4 +33,3 @@ The system SHALL treat search log lookup errors (other than NotFound) as non-fat
 #### Scenario: Search log lookup fails
 - **WHEN** `searchLogRepo.GetByArtistID` returns an unexpected error
 - **THEN** the system SHALL log the error and skip the background search (do not trigger search on ambiguous state)
-
