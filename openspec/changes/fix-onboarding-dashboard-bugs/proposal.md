@@ -4,7 +4,7 @@ Onboarding flow on the dashboard page has three interacting bugs that create a b
 
 ## What Changes
 
-- **Fix page-help auto-open race condition**: `PageHelp.attached()` must not auto-open when celebration overlay or lane intro is active. Defer auto-open until celebration is dismissed.
+- **Fix page-help auto-open scope**: `PageHelp.attached()` must only auto-open on Discovery and My Artists. Dashboard is permanently excluded via an `autoOpenPages` allowlist — no auto-open at all on Dashboard (not deferred, permanently excluded).
 - **Fix `?` icon positioning on dashboard**: Move `<page-help>` inside the dashboard page header (matching the pattern used in my-artists-route).
 - **Fix lane intro not starting after celebration**: The `loading()` method sets `showCelebration = true` before `attached()` runs, which causes `startLaneIntro()` to be skipped. After celebration is dismissed, lane intro must be triggered.
 - **Add regression tests**: Unit tests for `PageHelp` auto-open gating and `DashboardRoute` onboarding orchestration. E2E test for the full onboarding-to-dashboard flow.
@@ -17,9 +17,9 @@ Onboarding flow on the dashboard page has three interacting bugs that create a b
 
 ### Modified Capabilities
 
-- `onboarding-page-help`: Auto-open must be suppressed while celebration overlay or lane intro is active
-- `onboarding-celebration`: Celebration dismiss must trigger lane intro sequence instead of entering free exploration directly
-- `dashboard-lane-introduction`: Lane intro must start after celebration dismiss when arriving from discovery during onboarding
+- `onboarding-page-help`: Dashboard page SHALL NOT auto-open the help sheet; auto-open is restricted to Discovery and My Artists via an `autoOpenPages` allowlist
+- `onboarding-celebration`: Celebration MUST NOT appear before lane intro; it appears only after `completeLaneIntro()` is called (AWAY phase tap)
+- `dashboard-lane-introduction`: Lane intro runs immediately on Dashboard attach; `completeLaneIntro()` (after AWAY tap) triggers celebration — not the other way around
 
 ## Impact
 
