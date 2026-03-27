@@ -48,7 +48,7 @@
 
 - [x] 7.1-7.4 Skipped — investigation revealed page-help uses `<bottom-sheet>` (no dismiss-zone element). The JS dispatch workarounds were caused by popover top-layer interception in serial mode, not page-help.
 
-## 8. Fix popover and visually-hidden interaction issues (Design Decision 4B, 4C)
+## 8. Fix popover and visually-hidden interaction issues (Design Decision 4A, 4B)
 
 - [x] 8.1 Add popover cleanup to serial-mode E2E test `beforeEach` — close all open popovers before each test. Replace event card JS dispatch with native Playwright `click()`.
 - [x] 8.2 Skipped — hype radio uses Aurelia `change.trigger` binding which requires `dispatchEvent(new Event('change'))`. Labels have no readable text. JS dispatch is the correct approach here.
