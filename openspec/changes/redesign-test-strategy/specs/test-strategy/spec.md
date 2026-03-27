@@ -34,9 +34,10 @@ The frontend test suite SHALL be organized into five distinct layers with clear 
 ### Requirement: Prohibited patterns per layer
 Each test layer SHALL enforce specific prohibition rules to prevent test fragility.
 
-#### Scenario: boundingBox() prohibited in Layers 3 and 5
-- **WHEN** a test in `e2e/functional/` or `e2e/pwa/` calls `boundingBox()`
+#### Scenario: boundingBox() prohibited in Layers 3, 4, and 5
+- **WHEN** a test in `e2e/functional/`, `e2e/visual/`, or `e2e/pwa/` calls `boundingBox()`
 - **THEN** the test SHALL be considered a violation of the test strategy
+- **EXCEPT** `boundingBox()` used solely to verify element existence or non-zero dimensions — without numeric coordinate comparisons — is permitted in Layer 3
 
 #### Scenario: waitForTimeout() prohibited in Layers 1-4
 - **WHEN** a test in Layer 1, 2, 3, or 4 calls `waitForTimeout()`
