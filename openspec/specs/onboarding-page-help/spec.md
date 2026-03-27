@@ -55,7 +55,10 @@ The help bottom-sheet SHALL display page-specific guide content when opened. Onl
 
 - **WHEN** the help bottom-sheet opens on the Dashboard page
 - **THEN** the sheet SHALL display an explanation of the three stage lanes: HOME, NEAR, and AWAY
-- **AND** each stage label SHALL be rendered in its corresponding stage color (`--color-stage-home`, `--color-stage-near`, `--color-stage-away`)
+- **AND** the HOME stage label SHALL use `color: var(--color-stage-home)` via the `.stage-home` CSS class
+- **AND** the NEAR stage label SHALL use `color: var(--color-stage-near)` via the `.stage-near` CSS class
+- **AND** the AWAY stage label SHALL use `color: var(--color-stage-away)` via the `.stage-away` CSS class
+- **AND** stage labels SHALL NOT use `data-stage` attributes (reserved for `concert-highway` lane headers)
 - **AND** the sheet SHALL explain that tapping a concert card opens the concert detail
 
 #### Scenario: My Artists help content
@@ -79,6 +82,22 @@ The help bottom-sheet SHALL use design tokens that ensure clear visual distincti
 - **THEN** the sheet background SHALL use `var(--color-surface-overlay)` so the sheet is visually elevated above the page surface
 - **AND** help section titles SHALL use `font-family: var(--font-display)`
 - **AND** secondary text (notes, tips) SHALL use `color: var(--color-text-secondary)` instead of reduced opacity
+
+### Requirement: Top-layer Popover Text Color Inheritance
+
+All popover and dialog elements promoted to the browser's top-layer SHALL inherit the application's text color. The global CSS layer SHALL set `color: var(--color-text-primary)` on `:where([popover], dialog)` to prevent top-layer elements from inheriting the browser-default `color: black` from `<html>`.
+
+#### Scenario: Bottom-sheet text is readable on dark background
+
+- **WHEN** a `bottom-sheet` component opens as a popover in the top-layer
+- **THEN** all text inside the bottom-sheet SHALL inherit `color: var(--color-text-primary)` (near-white)
+- **AND** the text SHALL be readable against the dark sheet background (`var(--color-surface-overlay)`)
+
+#### Scenario: Global rule uses zero specificity
+
+- **WHEN** the global CSS sets `color` on popover/dialog elements
+- **THEN** the rule SHALL use `:where()` pseudo-class for zero specificity
+- **AND** any block-level CSS rule SHALL be able to override the color without specificity conflicts
 
 ### Requirement: Help seen flags cleared on onboarding reset
 
