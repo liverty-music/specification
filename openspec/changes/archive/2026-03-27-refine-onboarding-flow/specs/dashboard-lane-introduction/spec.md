@@ -1,10 +1,4 @@
-# Dashboard Lane Introduction
-
-## Purpose
-
-Introduces each dashboard lane to the user during onboarding by sequentially spotlighting the STAGE headers with explanatory coach marks, providing context about the three-lane timetable layout. Each phase waits for a user tap anywhere on the screen to advance. The HOME phase pauses to collect the user's home area selection before displaying the dynamic coach mark text.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Sequential Lane Header Spotlight
 
@@ -93,37 +87,3 @@ The system SHALL introduce each dashboard lane by sequentially spotlighting the 
 - **THEN** the system SHALL call `ConcertService/ListWithProximity` with the guest's followed artist IDs and selected Home
 - **AND** the system SHALL NOT call `ConcertService/List` individually per artist
 - **AND** concerts SHALL be distributed across HOME/NEAR/AWAY lanes based on server-provided proximity classification
-
-### Requirement: Auto-advance timer (2-second per phase) (REMOVED)
-
-**Reason**: Auto-advance gives users insufficient time to read coach mark text and prevents them from absorbing the lane structure at their own pace. Tap-to-advance respects user agency and is architecturally simpler (no timer to cancel on interrupt).
-
-**Migration**: Remove `scheduleLaneIntroAdvance()` and the 2-second `setTimeout`. Each phase now calls `advanceLaneIntro()` only from the tap callback.
-
-### Requirement: Transition to first card spotlight after lane intro (REMOVED)
-
-**Reason**: The card spotlight step (phase: `'card'`) is removed. After AWAY phase, the sequence proceeds directly to Celebration. The Celebration overlay replaces the card spotlight as the transition point to free exploration.
-
-**Migration**: Remove the `'card'` phase from `laneIntroPhase` type. Remove card spotlight activation. The `laneIntroPhase: 'done'` state now transitions to Celebration open instead of card spotlight.
-
-### Requirement: Lane Introduction State Management
-
-The lane introduction sequence SHALL be managed locally within the dashboard component, not persisted in the onboarding service.
-
-#### Scenario: Lane intro state is ephemeral
-
-- **WHEN** the dashboard component manages the lane introduction
-- **THEN** the intro state SHALL be a local variable (e.g., `laneIntroPhase: 'home' | 'near' | 'away' | 'done'`)
-- **AND** the state SHALL NOT be written to `liverty:onboardingStep` in LocalStorage
-
-#### Scenario: Page reload during lane introduction
-
-- **WHEN** the user reloads the page during the lane introduction sequence
-- **THEN** the system SHALL restart the lane introduction from the beginning (HOME STAGE)
-- **AND** the celebration overlay SHALL NOT replay (it uses a separate one-time flag)
-
-#### Scenario: Data loading awaited before lane intro decision
-
-- **WHEN** `startLaneIntro()` is called
-- **THEN** the system SHALL await the `dataPromise` (ConcertService/List response) before deciding whether to run or skip the lane intro
-- **AND** if the data fetch fails, the system SHALL proceed with whatever data is available (possibly empty, triggering the skip path)
