@@ -457,14 +457,6 @@ All test suites SHALL include proper cleanup in `afterEach` to prevent state lea
 - **WHEN** a test suite reads or writes `localStorage`
 - **THEN** `localStorage.clear()` SHALL be called in `afterEach`
 
-#### Scenario: Fake timers are restored in afterEach, not inside it()
-- **WHEN** a test suite uses `vi.useFakeTimers()`
-- **THEN** `vi.useRealTimers()` SHALL be called in `afterEach`, never inside individual `it()` blocks
-
-#### Scenario: Mock spies are restored in afterEach
-- **WHEN** a test suite creates mock spies
-- **THEN** `vi.restoreAllMocks()` SHALL be called in `afterEach`
-
 ### Requirement: Mock helpers return typed Partial interfaces
 All mock factory functions in `test/helpers/mock-*.ts` SHALL return explicitly typed `Partial<IInterface>` with all method properties as `vi.fn()` spies.
 
@@ -648,16 +640,16 @@ The `WelcomeRoute` component SHALL have integration tests verifying auth guard b
 - **WHEN** `currentLocale` changes
 - **THEN** the `currentLocaleChanged` handler SHALL call `changeLocale` with the new locale
 
-### Requirement: Custom attribute tests use createFixture with style assertions
-All custom attribute tests SHALL use `createFixture` to render the attribute on a host element and verify DOM mutations using `fixture.assertStyles()` or `fixture.assertAttr()`.
+### Requirement: Custom attribute tests use createFixture with style verification
+All custom attribute tests SHALL use `createFixture` to render the attribute on a host element and verify DOM mutations using `fixture.getBy()` + `style.getPropertyValue()` for CSS custom properties (JSDOM does not expose custom properties via `getComputedStyle()`).
 
 #### Scenario: tile-color attribute applies CSS custom property
 - **WHEN** a `tile-color` custom attribute is rendered with a bound color value
-- **THEN** `fixture.assertStyles('div', { '--tile-color': expectedColor })` SHALL pass
+- **THEN** `fixture.getBy('div').style.getPropertyValue('--_tile-color')` SHALL return the expected color value
 
 ### Requirement: Value converter tests include fixture integration tests
 Value converter test suites SHALL include at least one `createFixture` integration test verifying the converter works within an Aurelia view pipeline.
 
 #### Scenario: Date converter renders correctly in template
-- **WHEN** `createFixture` renders `${date | dateFormat}` with a known date value
+- **WHEN** `createFixture` renders `${date | date}` with a known date value
 - **THEN** `fixture.assertText()` SHALL contain the expected formatted date string
