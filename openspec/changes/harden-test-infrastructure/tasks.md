@@ -4,7 +4,7 @@
 - [x] 1.2 Remove `Object.assign(globalThis, { window, document, navigator, ... })` from `test/setup.ts`
 - [x] 1.3 Verify `BrowserPlatform` initialization uses vitest's environment-provided `window` (no import needed)
 - [x] 1.4 Run full test suite (`make test`) and verify no `document is not defined` errors
-- [x] 1.5 If any tests fail due to missing globals, add them via `vitest.config.ts` `environmentOptions.jsdom` instead of manual assignment — Node.js 25 provides non-functional localStorage stub; added MemoryStorage polyfill in setup.ts + defensive stop/tearDown fallback for fixture cleanup
+- [x] 1.5 Node.js 25 provides non-functional localStorage stub ([vitest#8757](https://github.com/vitest-dev/vitest/issues/8757)). Fixed via `poolOptions.forks.execArgv: ['--no-experimental-webstorage']` in vitest.config.ts — disables Node's built-in localStorage so jsdom provides its own working implementation. Also added defensive stop/tearDown fallback for fixture cleanup.
 
 ## 2. Contain Aurelia template module graph (Design Decision 2)
 
@@ -28,21 +28,21 @@
 
 ## 5. data-testid selector introduction (Design Decision 3)
 
-- [ ] 5.1 Add `data-testid="concert-scroll"` to concert-highway.html `<ol class="concert-scroll">`
-- [ ] 5.2 Add `data-testid="journey-badge"` to event-card.html journey badge element
-- [ ] 5.3 Add `data-testid="sheet-journey"` to event-detail-sheet.html journey section
-- [ ] 5.4 Add `data-testid="journey-btn-{status}"` to event-detail-sheet.html journey buttons (use repeat.for variable)
-- [ ] 5.5 Add `data-testid="journey-remove-btn"` to event-detail-sheet.html remove button
-- [ ] 5.6 Add `data-testid="dashboard-loading"` to dashboard-route.html loading text
-- [ ] 5.7 Add `data-testid="welcome-preview"` to welcome-route.html preview section
+- [x] 5.1 Add `data-testid="concert-scroll"` to concert-highway.html
+- [x] 5.2 Add `data-testid="journey-badge"` to event-card.html
+- [x] 5.3 Add `data-testid="sheet-journey"` to event-detail-sheet.html
+- [x] 5.4 Add static `data-testid="journey-btn"` to event-detail-sheet.html journey buttons — dynamic `journey-btn-${s}` rejected by `lint-no-data-interpolation` rule; use `[data-testid="journey-btn"][data-journey-status="X"]` for specificity
+- [x] 5.5 Add `data-testid="journey-remove-btn"` to event-detail-sheet.html
+- [x] 5.6 Add `data-testid="dashboard-loading"` to dashboard-route.html
+- [x] 5.7 Add `data-testid="welcome-preview"` to welcome-route.html
 
 ## 6. Migrate E2E selectors to data-testid
 
-- [ ] 6.1 Update `e2e/layout/dashboard.layout.spec.ts` — replace `.concert-scroll` selectors with `getByTestId`
-- [ ] 6.2 Update `e2e/layout/ticket-journey.layout.spec.ts` — replace `.journey-badge`, `.sheet-journey`, `.journey-btn`, `.journey-remove-btn` selectors with `getByTestId`
-- [ ] 6.3 Update `e2e/dashboard-lane-classification.spec.ts` — replace `.concert-scroll` selectors with `getByTestId`
-- [ ] 6.4 Update `e2e/onboarding-flow.spec.ts` — replace `.welcome-preview` and `.loading-text` selectors with `getByTestId`
-- [ ] 6.5 Configure Playwright `testIdAttribute` in `playwright.config.mjs` if default `data-testid` needs customization
+- [x] 6.1 Update `e2e/layout/dashboard.layout.spec.ts` — replaced `.concert-scroll` with `[data-testid="concert-scroll"]`
+- [x] 6.2 Update `e2e/layout/ticket-journey.layout.spec.ts` — replaced `.journey-badge`, `.sheet-journey`, `.journey-btn`, `.journey-remove-btn` selectors with `[data-testid]` equivalents
+- [x] 6.3 `e2e/dashboard-lane-classification.spec.ts` — no targeted selectors found, no changes needed
+- [x] 6.4 Update `e2e/onboarding-flow.spec.ts` — replaced `.welcome-preview` with `[data-testid="welcome-preview"]`
+- [x] 6.5 Playwright default `data-testid` attribute works without customization
 
 ## 7. Fix page-help dismiss-zone pointer-events (Design Decision 4A)
 

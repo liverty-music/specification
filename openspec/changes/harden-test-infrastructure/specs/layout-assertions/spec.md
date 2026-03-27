@@ -17,7 +17,8 @@ All E2E test selectors for elements that are subject to refactoring SHALL use `d
 
 #### Scenario: Journey status buttons use data-testid with status qualifier
 - **WHEN** an E2E test targets a specific journey status button
-- **THEN** it SHALL use `page.getByTestId('journey-btn-tracking')` (combining testid with status) instead of `.journey-btn[data-journey-status="tracking"]`
+- **THEN** it SHALL use `[data-testid="journey-btn"][data-journey-status="tracking"]` (static testid combined with existing status attribute) instead of `.journey-btn[data-journey-status="tracking"]`
+- **AND** the template SHALL use static `data-testid="journey-btn"` (not dynamic interpolation, per `lint-no-data-interpolation` rule)
 
 #### Scenario: Dashboard loading indicator uses data-testid
 - **WHEN** an E2E test targets the dashboard loading text

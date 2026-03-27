@@ -197,7 +197,7 @@ const scroll = page.getByTestId('concert-scroll')
 | `[data-live-card]` | event-card | (already stable) |
 | `.journey-badge` | event-card | `journey-badge` |
 | `.sheet-journey` | event-detail-sheet | `sheet-journey` |
-| `.journey-btn` | event-detail-sheet | `journey-btn` |
+| `.journey-btn` | event-detail-sheet | `journey-btn` (static; combine with `[data-journey-status]` for specificity) |
 | `.journey-remove-btn` | event-detail-sheet | `journey-remove-btn` |
 | `.loading-text` | dashboard-route | `dashboard-loading` |
 | `.welcome-preview` | welcome-route | `welcome-preview` |
@@ -206,30 +206,13 @@ const scroll = page.getByTestId('concert-scroll')
 
 ### Decision 4: Fix application-layer issues causing page.evaluate() workarounds
 
-**Choice:** Fix the root causes in application code rather than keeping test workarounds.
+**Choice:** Address the root causes of JS dispatch workarounds in E2E tests.
 
-**Issue A: page-help dismiss-zone intercepts pointer events**
+**Issue A: Popover top-layer blocks Playwright hit-testing (actual root cause)**
 
-The `page-help` component creates a full-viewport dismiss zone that captures all click events. E2E tests must use `page.evaluate(() => el.click())` to bypass it.
+Initial hypothesis was that `page-help` had a `.dismiss-zone` element intercepting pointer events. **Investigation during implementation revealed this was incorrect** — `page-help` uses `<bottom-sheet>` which renders as a popover in the top layer. In serial-mode E2E tests, popovers from prior tests can remain open and intercept Playwright's actionability checks.
 
-**Fix:** Add `pointer-events: none` to the dismiss zone when the help overlay is not actively shown, and use `pointer-events: auto` only when visible:
-
-```css
-/* page-help.css */
-.dismiss-zone {
-  pointer-events: none;  /* default: transparent to clicks */
-}
-
-.dismiss-zone[data-active="true"] {
-  pointer-events: auto;  /* only intercept when help is shown */
-}
-```
-
-**Issue B: Popover top-layer blocks Playwright hit-testing**
-
-Popover elements in the top layer intercept Playwright's actionability checks even when visually non-overlapping due to top-layer stacking.
-
-**Fix:** Ensure popovers are closed (removed from top layer) before E2E assertions on elements behind them. In serial mode tests, add explicit popover dismiss before each interaction:
+**Fix:** Add explicit popover cleanup in serial-mode `beforeEach` to close lingering popovers, then use native Playwright `click()`:
 
 ```typescript
 // In E2E beforeEach for serial tests
@@ -238,24 +221,22 @@ await page.evaluate(() => {
     try { (el as HTMLElement).hidePopover() } catch {}
   })
 })
+
+// Now native Playwright click works
+await page.locator('[data-live-card]').first().click()
 ```
 
-**Issue C: visually-hidden radio inputs**
+**Issue B: visually-hidden radio inputs (JS dispatch is correct)**
 
-Radio inputs with `class="visually-hidden"` are not clickable by Playwright (zero bounding box).
+Initial hypothesis was to replace JS dispatch with `page.getByLabel()`. **Investigation revealed this is not feasible** — Aurelia's `change.trigger` binding fires only on native `change` events, not on `click`. The hype radio labels contain only visual dots (`<span class="hype-dot">`) with no readable text, so `page.getByLabel()` cannot target them.
 
-**Fix per [Playwright docs](https://playwright.dev/docs/actionability#visible):** Use `force: true` on the label click, or use Playwright's `page.getByLabel()` which clicks the associated label:
+**Conclusion:** JS dispatch via `dispatchEvent(new Event('change', { bubbles: true }))` is the **correct approach** for Aurelia `change.trigger` bindings on visually-hidden inputs without readable label text. These are not workarounds — they are the appropriate interaction pattern.
 
-```typescript
-// BEFORE: JS dispatch workaround
-await page.evaluate(() => {
-  const radio = document.querySelector('input[type="radio"]')
-  radio.dispatchEvent(new Event('change', { bubbles: true }))
-})
-
-// AFTER: Click the visible label
-await page.getByLabel('日本語').click()
-```
+**Remaining JS dispatch sites (audit results):**
+- 2 hype radio dispatches — correct (Aurelia `change.trigger`)
+- 4 journey button clicks — pending native click validation after popover cleanup
+- 3 nav tab clicks — pending investigation (may be related to popover interception)
+- 2 event card clicks in other specs — pending popover cleanup propagation
 
 ### Decision 5: CE composition integration tests via createFixture
 
