@@ -6,4 +6,4 @@
 ## 2. Verify PostSignupDialog opens
 
 - [x] 2.1 Run existing PostSignupDialog tests to confirm no regressions
-- [ ] 2.2 Manual verification: signup with a new account on dev environment and confirm PostSignupDialog BottomSheet opens on dashboard
+- [x] 2.2 Manual verification: signup with a new account on dev environment and confirm PostSignupDialog BottomSheet opens on dashboard
