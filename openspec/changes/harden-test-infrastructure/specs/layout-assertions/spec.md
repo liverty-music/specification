@@ -35,31 +35,24 @@ All E2E test selectors for elements that are subject to refactoring SHALL use `d
 ### Requirement: E2E tests use Playwright native locator API without JS dispatch workarounds
 E2E tests SHALL use Playwright's native locator API (`click()`, `fill()`, `check()`) instead of `page.evaluate()` for user interactions, per [Playwright actionability docs](https://playwright.dev/docs/actionability).
 
-#### Scenario: page-help dismiss-zone does not intercept clicks when inactive
-- **WHEN** the page-help overlay is not actively shown
-- **THEN** the dismiss-zone element SHALL have `pointer-events: none`
-- **AND** Playwright `click()` on elements behind it SHALL succeed without JS dispatch
-
-#### Scenario: page-help dismiss-zone intercepts clicks when active
-- **WHEN** the page-help overlay is actively shown (data-active="true")
-- **THEN** the dismiss-zone element SHALL have `pointer-events: auto`
-
 #### Scenario: Popover elements are dismissed before serial test interactions
 - **WHEN** a serial-mode E2E test begins a new interaction after a prior test opened a popover
-- **THEN** the test setup SHALL close any open popovers before performing actions
+- **THEN** the test setup SHALL close any open popovers via `hidePopover()` before performing actions
 - **AND** subsequent Playwright `click()` calls SHALL succeed without JS dispatch
 
 #### Scenario: Visually-hidden radio inputs are clickable via labels
-- **WHEN** an E2E test needs to select a radio option with a visually-hidden input
+- **WHEN** an E2E test needs to select a radio option with a visually-hidden input whose label has readable text and does not use an event-sensitive binding (e.g. Aurelia `change.trigger`)
 - **THEN** it SHALL use `page.getByLabel('label text').click()` per [Playwright getByLabel docs](https://playwright.dev/docs/locators#locate-by-label)
 - **AND** it SHALL NOT use `page.evaluate()` to dispatch synthetic events
+- **WHEN** the input has no readable label text or requires a native `change` event (e.g. Aurelia `change.trigger` binding)
+- **THEN** it SHALL use `page.evaluate(() => el.dispatchEvent(new Event('change', { bubbles: true })))` — this is correct behavior, not a workaround (see Design Decision 4)
 
 #### Scenario: Event card clicks use native Playwright click
-- **WHEN** an E2E test clicks an event card to open the detail sheet
-- **THEN** it SHALL use `page.getByTestId('live-card').first().click()` or equivalent Playwright locator
+- **WHEN** an E2E test clicks an event card to open the detail sheet and popovers have been cleaned up
+- **THEN** it SHALL use `page.locator('[data-live-card]').first().click()` or equivalent Playwright locator
 - **AND** it SHALL NOT use `page.evaluate(() => el.click())`
 
 #### Scenario: Journey button clicks use native Playwright click
 - **WHEN** an E2E test clicks a journey status button inside the detail sheet
-- **THEN** it SHALL use `page.getByTestId('journey-btn-tracking').click()` or equivalent
+- **THEN** it SHALL use `page.locator('[data-testid="journey-btn"][data-journey-status="tracking"]').click()` or equivalent
 - **AND** it SHALL NOT use `page.evaluate(() => btn.click())`
