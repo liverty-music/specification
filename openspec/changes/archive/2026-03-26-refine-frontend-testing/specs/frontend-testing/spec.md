@@ -53,27 +53,31 @@ All test files SHALL use `stop(true)` instead of the deprecated `tearDown()` met
 - **THEN** zero usages SHALL be found (excluding comments and type imports)
 
 ### Requirement: Component integration tests use createFixture with official assertion helpers
-All component integration tests SHALL use `createFixture` (fluent builder API) from `@aurelia/testing` and verify DOM output using the official fixture assertion methods (`assertText`, `assertAttr`, `assertClass`, `assertValue`, `getBy`, `queryBy`, `trigger.click`, `type`).
+Component integration tests SHALL use `createFixture` (fluent builder API) from `@aurelia/testing` and verify DOM output using the official fixture assertion methods. Components that depend on browser APIs unavailable in JSDOM (e.g., popover, showModal, Canvas) SHALL use DI Unit tests instead.
 
 #### Scenario: Fixture test verifies template binding
 - **WHEN** a component integration test is created for a component with bindable properties
 - **THEN** the test SHALL use `createFixture.component(X).html(Y).deps(Z).build().started` and verify rendered output with `fixture.assertText()` or `fixture.assertAttr()`
 
-#### Scenario: Fixture test uses trigger for user interaction
-- **WHEN** a component integration test verifies click or keyboard interaction
+#### Scenario: Fixture test uses trigger for user interaction (when applicable)
+- **WHEN** a component integration test verifies click or keyboard interaction on a component whose template does not require browser-only APIs (popover, dialog, canvas)
 - **THEN** the test SHALL use `fixture.trigger.click(selector)` or `fixture.trigger.keydown(selector, init)` instead of manually dispatching events
 
-#### Scenario: Fixture test uses type() for input simulation
-- **WHEN** a component integration test verifies text input binding
+#### Scenario: Fixture test uses type() for input simulation (when applicable)
+- **WHEN** a component integration test verifies text input binding on a component whose template does not require browser-only APIs
 - **THEN** the test SHALL use `fixture.type(selector, value)` which sets the value and dispatches an input event to trigger two-way binding
 
-#### Scenario: Fixture test awaits tasksSettled() after state mutation
-- **WHEN** a test mutates component state and then asserts DOM output
+#### Scenario: Fixture test awaits tasksSettled() after state mutation (when applicable)
+- **WHEN** a fixture test mutates component state and then asserts DOM output
 - **THEN** the test SHALL call `await tasksSettled()` between the mutation and the assertion
 
 #### Scenario: Fixture test uses stop(true) for cleanup
 - **WHEN** a component integration test completes
 - **THEN** the test SHALL call `await fixture.stop(true)` (not the deprecated `tearDown()`) for proper cleanup
+
+#### Scenario: Components with JSDOM-incompatible APIs use DI Unit tests
+- **WHEN** a component depends on popover API, showModal, HTMLCanvasElement.getContext, or other browser-only APIs
+- **THEN** the component SHALL be tested via DI Unit pattern (`createTestContainer` + `Registration.instance`) instead of `createFixture`
 
 ### Requirement: Smoke tests use meaningful DOM assertions
 Smoke tests in `test/smoke/component-compile.spec.ts` SHALL replace tautological assertions with meaningful DOM verification using fixture assertion methods.
@@ -97,20 +101,16 @@ The `BottomNavBar` component SHALL have integration tests verifying navigation i
 - **WHEN** the router reports the current path as `/dashboard`
 - **THEN** the dashboard nav item SHALL have the active CSS class
 
-### Requirement: Snack bar has component integration tests
-The `SnackBar` component SHALL have integration tests verifying toast message display, auto-dismiss, and action callbacks.
+### Requirement: Snack bar service logic is tested
+The `SnackBar` component depends on the popover API (`showPopover`/`hidePopover`) which is not available in JSDOM. Service-level snack bar logic (event aggregation, toast lifecycle, auto-dismiss timing) SHALL be tested via DI Unit tests. DOM behavior SHALL be verified by E2E tests.
 
-#### Scenario: Toast message is displayed
-- **WHEN** a toast message is triggered
-- **THEN** the snack bar DOM SHALL contain the message text
+#### Scenario: Snack events are aggregated and shown
+- **WHEN** a `Snack` event is published via `IEventAggregator`
+- **THEN** the snack bar service SHALL add the message to its internal queue (tested in `test/services/snack-bar.spec.ts`)
 
-#### Scenario: Auto-dismiss removes toast after duration
-- **WHEN** a toast with a configured duration is shown and the duration elapses (using fake timers)
-- **THEN** the toast element SHALL be removed from the DOM
-
-#### Scenario: Action callback is invoked on click
-- **WHEN** a toast with an action button is shown and the user clicks the action
-- **THEN** the action callback SHALL be invoked
+#### Scenario: Auto-dismiss fires after configured duration
+- **WHEN** a snack is shown with a configured `durationMs`
+- **THEN** the service SHALL schedule dismissal after the duration (tested in `test/services/snack-bar.spec.ts`)
 
 ### Requirement: User home selector has component integration tests
 The `UserHomeSelector` component SHALL have integration tests verifying region/prefecture selection and persistence.
