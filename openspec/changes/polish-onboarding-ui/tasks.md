@@ -6,9 +6,9 @@
 
 ## 2. Lane Intro Sequencing
 
-- [x] 2.1 Modify `dashboard-route.ts` `startLaneIntro()`: when `needsRegion=true`, show HOME coach mark before opening Home Selector
-- [x] 2.2 Verify the coach mark text matches spec: "ここがHOME STAGEです。あなたの地元のライブが並びます。居住エリアはどこですか？"
-- [x] 2.3 Verify Home Selector opens inline alongside the coach mark (not replacing it)
+- [x] 2.1 Update Home Selector description text (`userHome.description`) to convey HOME STAGE context
+- [x] 2.2 Verify `startLaneIntro()` does NOT activate coach mark spotlight during `waiting-for-home` (z-index overlap)
+- [x] 2.3 Improve Home Selector spacing (padding, line-height, grid gap) for readability
 
 ## 3. My Artists Header Cleanup
 
@@ -18,7 +18,7 @@
 ## 4. Signup Banner Layout
 
 - [x] 4.1 Change `.signup-banner` flex-direction from row to column in `signup-prompt-banner.css`
-- [x] 4.2 Make CTA button full-width (`inline-size: 100%`)
+- [x] 4.2 Make CTA button centered, content-width with generous padding
 - [x] 4.3 Reposition dismiss button (×) to top-right of banner
 - [x] 4.4 Verify banner renders correctly above bottom nav bar
 
@@ -26,5 +26,5 @@
 
 - [x] 5.1 Run `make check` in frontend repo
 - [ ] 5.2 Visual check: Discovery page orb sizing at 0, 3, and 5+ follows
-- [ ] 5.3 Visual check: Dashboard lane intro shows coach mark before Home Selector
+- [ ] 5.3 Visual check: Dashboard Home Selector shows HOME STAGE description text
 - [ ] 5.4 Visual check: Signup banner vertical layout on mobile viewport

@@ -16,7 +16,7 @@ The signup prompt banner SHALL be implemented as a shared component reusable acr
 - **WHEN** the signup-prompt-banner is rendered on a mobile viewport
 - **THEN** the banner layout SHALL be vertical (column direction): message text on top, CTA button below
 - **AND** the message text SHALL use the full available width
-- **AND** the CTA button SHALL be content-width (not full-width), left-aligned below the message text
+- **AND** the CTA button SHALL be content-width (not full-width), centered below the message text
 - **AND** the dismiss button (×) SHALL be positioned at the top-right corner of the banner
 
 #### Scenario: Banner has frosted glass background

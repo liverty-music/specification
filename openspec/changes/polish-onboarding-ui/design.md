@@ -63,13 +63,13 @@ The `<span class="artist-count">(${artists.length})</span>` in `my-artists-route
 
 ### 5. Signup Banner Vertical Layout
 
-Change `.signup-banner` from `flex-direction: row` to `column`. The CTA button becomes full-width below the message text. The dismiss button moves to the top-right corner of the text row (absolute positioned or inline with text).
+Change `.signup-banner` from `flex-direction: row` to `column`. The dismiss button moves to the top-right corner of the text row. The CTA button is centered, content-width with generous horizontal padding — not full-width (which looked disproportionate on mobile) or left-aligned (which looked unbalanced). Font sizes increased one step for better readability on the fixed bottom banner.
 
 ```
 Before:                          After:
 ┌─────────────────────────┐     ┌─────────────────────────────┐
 │ Text...  [CTA] [×]      │     │ Text message here...      × │
-└─────────────────────────┘     │ [     CTA Button          ] │
+└─────────────────────────┘     │     [ CTA Button ]           │
                                 └─────────────────────────────┘
 ```
 
