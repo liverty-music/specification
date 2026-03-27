@@ -1,0 +1,64 @@
+## ADDED Requirements
+
+### Requirement: E2E selectors use data-testid for stability
+All E2E test selectors for elements that are subject to refactoring SHALL use `data-testid` attributes instead of CSS class selectors, per [Playwright locator best practices](https://playwright.dev/docs/locators#locate-by-test-id).
+
+#### Scenario: Concert highway scroll container uses data-testid
+- **WHEN** an E2E test targets the concert scroll container
+- **THEN** it SHALL use `page.getByTestId('concert-scroll')` instead of `page.locator('.concert-scroll')`
+
+#### Scenario: Journey badge uses data-testid
+- **WHEN** an E2E test targets a ticket journey badge on an event card
+- **THEN** it SHALL use `page.getByTestId('journey-badge')` instead of `page.locator('.journey-badge')`
+
+#### Scenario: Detail sheet journey section uses data-testid
+- **WHEN** an E2E test targets the journey section in the event detail sheet
+- **THEN** it SHALL use `page.getByTestId('sheet-journey')` instead of `page.locator('.sheet-journey')`
+
+#### Scenario: Journey status buttons use data-testid with status qualifier
+- **WHEN** an E2E test targets a specific journey status button
+- **THEN** it SHALL use `page.getByTestId('journey-btn-tracking')` (combining testid with status) instead of `.journey-btn[data-journey-status="tracking"]`
+
+#### Scenario: Dashboard loading indicator uses data-testid
+- **WHEN** an E2E test targets the dashboard loading text
+- **THEN** it SHALL use `page.getByTestId('dashboard-loading')` instead of `page.locator('.loading-text')`
+
+#### Scenario: Welcome preview section uses data-testid
+- **WHEN** an E2E test targets the welcome page preview section
+- **THEN** it SHALL use `page.getByTestId('welcome-preview')` instead of `page.locator('.welcome-preview')`
+
+#### Scenario: data-testid attributes are present in component templates
+- **WHEN** a component template contains an element targeted by E2E tests
+- **THEN** the element SHALL have a `data-testid` attribute with a kebab-case value matching its semantic purpose
+
+### Requirement: E2E tests use Playwright native locator API without JS dispatch workarounds
+E2E tests SHALL use Playwright's native locator API (`click()`, `fill()`, `check()`) instead of `page.evaluate()` for user interactions, per [Playwright actionability docs](https://playwright.dev/docs/actionability).
+
+#### Scenario: page-help dismiss-zone does not intercept clicks when inactive
+- **WHEN** the page-help overlay is not actively shown
+- **THEN** the dismiss-zone element SHALL have `pointer-events: none`
+- **AND** Playwright `click()` on elements behind it SHALL succeed without JS dispatch
+
+#### Scenario: page-help dismiss-zone intercepts clicks when active
+- **WHEN** the page-help overlay is actively shown (data-active="true")
+- **THEN** the dismiss-zone element SHALL have `pointer-events: auto`
+
+#### Scenario: Popover elements are dismissed before serial test interactions
+- **WHEN** a serial-mode E2E test begins a new interaction after a prior test opened a popover
+- **THEN** the test setup SHALL close any open popovers before performing actions
+- **AND** subsequent Playwright `click()` calls SHALL succeed without JS dispatch
+
+#### Scenario: Visually-hidden radio inputs are clickable via labels
+- **WHEN** an E2E test needs to select a radio option with a visually-hidden input
+- **THEN** it SHALL use `page.getByLabel('label text').click()` per [Playwright getByLabel docs](https://playwright.dev/docs/locators#locate-by-label)
+- **AND** it SHALL NOT use `page.evaluate()` to dispatch synthetic events
+
+#### Scenario: Event card clicks use native Playwright click
+- **WHEN** an E2E test clicks an event card to open the detail sheet
+- **THEN** it SHALL use `page.getByTestId('live-card').first().click()` or equivalent Playwright locator
+- **AND** it SHALL NOT use `page.evaluate(() => el.click())`
+
+#### Scenario: Journey button clicks use native Playwright click
+- **WHEN** an E2E test clicks a journey status button inside the detail sheet
+- **THEN** it SHALL use `page.getByTestId('journey-btn-tracking').click()` or equivalent
+- **AND** it SHALL NOT use `page.evaluate(() => btn.click())`
