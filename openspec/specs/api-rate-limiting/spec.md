@@ -43,8 +43,9 @@ The system SHALL enforce per-IP rate limiting on public (unauthenticated) Connec
 #### Scenario: IP extraction from X-Forwarded-For
 
 - **WHEN** the request contains an `X-Forwarded-For` header (from GKE Ingress/load balancer)
-- **THEN** the system SHALL use the leftmost (client) IP for rate limiting
-- **AND** SHALL fall back to `RemoteAddr` if the header is absent
+- **THEN** the system SHALL use the **rightmost** IP entry appended by the trusted GCP load balancer
+- **AND** SHALL NOT use the leftmost entry, which is client-supplied and trivially spoofable
+- **AND** SHALL fall back to `X-Real-Ip`, then an empty string if the header is absent
 
 ### Requirement: Rate limiter interceptor placement
 
