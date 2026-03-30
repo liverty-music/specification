@@ -110,7 +110,7 @@ The system SHALL introduce each dashboard lane by sequentially spotlighting the 
 
 ### Requirement: Lane Introduction State Management
 
-The lane introduction sequence SHALL be managed locally within the dashboard component, not persisted in the onboarding service. Reactive data observation SHALL be used to coordinate spotlight activation with data availability.
+The lane introduction sequence SHALL be managed locally within the dashboard component, not persisted in the onboarding service. Nav-tab dimming SHALL be delegated to an injectable `INavDimmingService` rather than performed via direct DOM queries, enabling the state machine to be unit-tested without a real DOM. Reactive data observation SHALL be used to coordinate spotlight activation with data availability.
 
 #### Scenario: Lane intro state is ephemeral
 
@@ -137,6 +137,21 @@ The lane introduction sequence SHALL be managed locally within the dashboard com
 - **THEN** `queueTask()` SHALL schedule spotlight activation after Aurelia completes its template update cycle
 - **AND** the `if.bind="dateGroups.length > 0"` on the stage header SHALL have been evaluated
 - **AND** `concert-highway [data-stage="home"]` SHALL be present in the DOM when the spotlight activates
+
+#### Scenario: Nav tabs are dimmed via INavDimmingService
+- **WHEN** the lane introduction starts
+- **THEN** `INavDimmingService.setDimmed(true)` SHALL be called
+- **AND** the component SHALL NOT directly query `[data-nav]` elements from the DOM
+
+#### Scenario: Nav tabs are undimmed on completion or dismissal
+- **WHEN** the lane introduction completes or the celebration is dismissed
+- **THEN** `INavDimmingService.setDimmed(false)` SHALL be called
+
+#### Scenario: Nav tab dimming is expressed via data attribute, not inline style
+- **WHEN** `INavDimmingService.setDimmed(true)` is called on a `[data-nav]` element
+- **THEN** the element SHALL receive a `data-dimmed` attribute (via `toggleAttribute`)
+- **AND** the visual treatment (opacity, transition) SHALL be applied via CSS (`[data-nav][data-dimmed]` rule in the exception layer)
+- **AND** no `style.setProperty` or `aria-disabled` manipulation SHALL occur
 
 ### Requirement: Data loading awaited before lane intro decision (polling loop) (REMOVED)
 
