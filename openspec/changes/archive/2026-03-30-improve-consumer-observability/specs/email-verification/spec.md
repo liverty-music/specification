@@ -4,7 +4,7 @@
 
 The system SHALL publish a `USER.created` event to NATS JetStream when a user is successfully provisioned in the backend. A consumer SHALL subscribe to this event and call Zitadel's `POST /v2/users/{externalId}/email/send` API to trigger a verification email via the configured SMTP provider (Postmark).
 
-The infrastructure layer (`EmailVerifier.SendVerification`) SHALL emit a structured INFO log entry on successful API call completion, and a structured ERROR log entry on failure. Both log entries MUST include the `external_id` field.
+The infrastructure layer (`EmailVerifier.SendVerification`) SHALL emit a structured INFO log entry on successful API call completion. On failure, the error is returned to the caller without logging — the caller (`UserConsumer`) is responsible for logging the failure. The INFO log entry MUST include the `external_id` field.
 
 #### Scenario: New user signs up via Passkey
 
