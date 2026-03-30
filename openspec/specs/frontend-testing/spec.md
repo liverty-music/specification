@@ -405,6 +405,17 @@ The test helper library SHALL provide typed mock factories for all DI interfaces
 - **WHEN** `createMockErrorBoundary` is called
 - **THEN** it SHALL return a `Partial<IErrorBoundaryService>` with `captureError` and `dismiss` as Vitest spies
 
+### Requirement: Mock helpers cover INavDimmingService and ILocalStorage
+The test helper library SHALL provide typed mock factories for the nav-dimming and local-storage injectable services.
+
+#### Scenario: createMockNavDimmingService returns spy
+- **WHEN** `createMockNavDimmingService()` is called
+- **THEN** it SHALL return an object with `setDimmed` as a Vitest spy
+
+#### Scenario: createMockLocalStorage returns configurable spy
+- **WHEN** `createMockLocalStorage(initialData)` is called with an initial key-value map
+- **THEN** it SHALL return an object implementing `ILocalStorage` with `getItem`, `setItem`, `removeItem` as Vitest spies that read/write the initial data
+
 ### Requirement: Timer cleanup uses afterEach unconditionally
 All tests that use `vi.useFakeTimers()` SHALL restore real timers in `afterEach`, never inside individual `it()` blocks.
 
@@ -428,7 +439,7 @@ Vitest SHALL be configured with V8 coverage reporting with raised thresholds ref
 - **THEN** a coverage report SHALL be generated showing statement, branch, and function coverage
 
 #### Scenario: Coverage thresholds enforce minimum levels
-- **WHEN** coverage falls below thresholds (statements: 65%, branches: 75%, functions: 65%, lines: 65%)
+- **WHEN** coverage falls below thresholds (statements: 70%, branches: 78%, functions: 70%, lines: 70%)
 - **THEN** the coverage check SHALL fail
 
 #### Scenario: Dead config patterns are removed
