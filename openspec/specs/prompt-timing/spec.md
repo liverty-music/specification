@@ -80,9 +80,9 @@ The system SHALL display at most one permission prompt (PWA install or push noti
 
 ---
 
-### Requirement: Notification Prompt Priority Over PWA Install
+### Requirement: Notification Prompt Priority Over Disruptive PWA Prompts
 
-The notification prompt SHALL have higher priority than the PWA install prompt. When both prompts are eligible in the same session, the notification prompt SHALL be displayed.
+The notification prompt SHALL have higher priority than any disruptive PWA install prompt. The PWA install FAB is passive UI and is not subject to this constraint — it SHALL remain visible regardless of whether the notification prompt is shown.
 
 #### Scenario: Both prompts eligible (first or later post-completion session)
 
@@ -91,7 +91,7 @@ The notification prompt SHALL have higher priority than the PWA install prompt. 
 - **AND** the notification prompt has not been dismissed
 - **AND** the PWA install FAB is also eligible
 - **THEN** the system SHALL display the notification prompt
-- **AND** the system SHALL NOT display the PWA install prompt in the same session
+- **AND** the PWA install FAB SHALL remain visible (it is passive UI and does not compete with the notification prompt)
 
 #### Scenario: Notification prompt already dismissed
 
