@@ -1,10 +1,4 @@
-# Concert Highway Custom Element
-
-## Purpose
-
-Reusable custom element that renders the 3-column concert lane grid (home/nearby/away) with stage headers, date separators, event cards, and laser beam effects. Used by both the authenticated dashboard and the Welcome page preview.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Concert Highway Custom Element
 
