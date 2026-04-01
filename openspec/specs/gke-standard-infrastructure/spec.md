@@ -38,3 +38,11 @@ All workload pod templates in the dev environment SHALL use the Standard-cluster
 - **WHEN** rendering any dev overlay manifest
 - **THEN** the pod template SHALL include nodeSelector `cloud.google.com/gke-spot: "true"`
 - **AND** SHALL NOT include `cloud.google.com/compute-class: autopilot-spot`
+
+### Requirement: Shielded GKE Nodes SHALL be enabled on the Spot node pool
+The dev cluster node pool SHALL have Shielded GKE Nodes enabled (`shieldedInstanceConfig`), since Standard clusters do not enforce this automatically unlike Autopilot. This is especially important given nodes have public external IPs (`enablePrivateNodes: false`).
+
+#### Scenario: Node pool has shieldedInstanceConfig enabled
+- **WHEN** describing the dev GKE node pool configuration
+- **THEN** `shieldedInstanceConfig.enableSecureBoot` SHALL be `true`
+- **AND** `shieldedInstanceConfig.enableIntegrityMonitoring` SHALL be `true`
