@@ -28,13 +28,53 @@ The system SHALL maintain a follow relationship between users and artists, store
 
 ### Requirement: ListFollowed Response
 
-The system SHALL return the user's followed artists via the ListFollowed RPC.
+The system SHALL return the user's followed artists via the ListFollowed RPC. The frontend SHALL update the `followedArtists` observable upon receiving the response, and SHALL set it to an empty list when the user has no follows.
 
 #### Scenario: Response uses FollowedArtist wrapper
 
 - **GIVEN** a user calls ListFollowed
 - **WHEN** the response is returned
 - **THEN** each entry SHALL be a FollowedArtist wrapper containing the artist entity and the user's passion level
+
+#### Scenario: followedArtists observable updated after fetch (authenticated)
+
+- **GIVEN** an authenticated user
+- **WHEN** ListFollowed RPC completes successfully
+- **THEN** the `followedArtists` observable SHALL be updated with the returned list of followed artists
+
+#### Scenario: followedArtists observable updated after fetch (guest)
+
+- **GIVEN** a guest (unauthenticated) user
+- **WHEN** the followed artists fetch is skipped or returns empty
+- **THEN** the `followedArtists` observable SHALL be set to an empty list
+
+#### Scenario: followedArtists observable set to empty when no follows exist
+
+- **GIVEN** an authenticated user with no followed artists
+- **WHEN** ListFollowed RPC completes and returns an empty list
+- **THEN** the `followedArtists` observable SHALL be set to an empty list
+
+### Requirement: ArtistFilterBar sheet initializes pendingIds from followedArtists
+
+When the ArtistFilterBar sheet is opened, it SHALL initialize its `pendingIds` state from the current `followedArtists` observable so that the selection reflects the user's actual followed artists.
+
+#### Scenario: Empty followedArtists on openSheet
+
+- **GIVEN** the `followedArtists` observable is empty
+- **WHEN** `openSheet` is called
+- **THEN** `pendingIds` SHALL be initialized to an empty set
+
+#### Scenario: Multiple followed artists on openSheet
+
+- **GIVEN** the `followedArtists` observable contains multiple artists
+- **WHEN** `openSheet` is called
+- **THEN** `pendingIds` SHALL be initialized with the IDs of all currently followed artists
+
+#### Scenario: openSheet called twice resets pendingIds
+
+- **GIVEN** the sheet has been opened and `pendingIds` has been mutated
+- **WHEN** `openSheet` is called again
+- **THEN** `pendingIds` SHALL be reset to reflect the current `followedArtists` observable, discarding any prior mutations
 
 ### Requirement: Idempotent Unfollow Logic
 The system SHALL allow users to unfollow artists, ensuring that the operation is idempotent. The use case layer SHALL resolve the external identity to the internal user UUID before deleting from `followed_artists`.
