@@ -29,7 +29,7 @@ The system SHALL display a dialog after the first successful signup that consoli
 - **WHEN** the PostSignupDialog is displayed
 - **THEN** it SHALL show a success confirmation (アカウント登録完了！)
 - **AND** it SHALL offer a notification opt-in action (新着ライブ通知をオンにしよう)
-- **AND** it SHALL offer a PWA install action (ホーム画面に追加するとより快適に)
+- **AND** it SHALL offer a PWA install action (ホーム画面に追加するとより快適に) if `PwaInstallService.canShowFab` is `true` AND the platform is not iOS Safari (iOS users use the persistent FAB instruction sheet instead)
 - **AND** it SHALL provide a dismiss action (あとで)
 
 #### Scenario: Notification opt-in from dialog
@@ -39,17 +39,25 @@ The system SHALL display a dialog after the first successful signup that consoli
 - **AND** on success, the notification row SHALL show a confirmed state
 - **AND** on failure or denial, the notification row SHALL show an error state
 
-#### Scenario: PWA install from dialog
+#### Scenario: PWA install from dialog (Android/Chrome)
 
 - **WHEN** the user taps the PWA install button in the PostSignupDialog
+- **AND** `beforeinstallprompt` has fired
 - **THEN** the system SHALL trigger the deferred `beforeinstallprompt` event
-- **AND** if the event is not available (already installed or not supported), the button SHALL be hidden
+
+#### Scenario: PWA install row hidden on iOS Safari
+
+- **WHEN** the PostSignupDialog is displayed
+- **AND** the platform is iOS Safari (`beforeinstallprompt` never fires)
+- **THEN** the PWA install row SHALL NOT be shown in the dialog
+- **AND** the persistent FAB instruction sheet provides the iOS install path instead
 
 #### Scenario: Dialog dismissed
 
 - **WHEN** the user taps あとで
 - **THEN** the PostSignupDialog SHALL close
-- **AND** neither prompt SHALL be shown again in the same session (coordinated via `IPromptCoordinator`)
+- **AND** the notification prompt SHALL NOT be shown again in the same session (coordinated via `IPromptCoordinator`)
+- **AND** the PWA install FAB SHALL remain visible (it is not affected by PostSignupDialog dismissal)
 
 ### Requirement: Dialog reliably opens when active is true at creation time
 The PostSignupDialog SHALL reliably open when `active` is bound to `true` at component creation time, not only when `active` transitions from `false` to `true` after the component is attached.

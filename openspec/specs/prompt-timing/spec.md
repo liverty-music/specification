@@ -2,27 +2,27 @@
 
 ## Purpose
 
-Defines the eligibility rules for displaying PWA install and push notification permission prompts. Prompts are gated by authentication state, onboarding completion, session count, and a per-session single-prompt constraint to avoid overwhelming the user.
+Defines the eligibility rules for displaying PWA install and push notification permission prompts. Prompts are gated by authentication state, onboarding completion, and a per-session single-prompt constraint to avoid overwhelming the user.
 
 ## Requirements
 
 ### Requirement: PWA Install Prompt Blocked During Onboarding
 
-The system SHALL NOT display the PWA install prompt while the user is in onboarding Steps 1-6.
+The system SHALL NOT display the PWA install FAB while the user is in active onboarding steps (DISCOVERY, DASHBOARD, MY_ARTISTS).
 
-#### Scenario: User is mid-tutorial on the dashboard (Step 3)
+#### Scenario: User is mid-tutorial on the dashboard
 
-- **WHEN** the user is at onboarding Step 3 (Dashboard)
+- **WHEN** the user is at onboarding step DASHBOARD
 - **AND** the browser fires the `beforeinstallprompt` event
 - **THEN** the system SHALL capture the event
-- **AND** the system SHALL NOT display the PWA install banner
-- **AND** `PwaInstallService.canShow` SHALL remain `false`
+- **AND** the system SHALL NOT display the PWA install FAB
+- **AND** `PwaInstallService.canShowFab` SHALL remain `false`
 
-#### Scenario: User has not started onboarding (Step 0)
+#### Scenario: User has not started onboarding (LP step)
 
-- **WHEN** the user is at onboarding Step 0 (LP)
+- **WHEN** the user is at onboarding step LP
 - **AND** the browser fires the `beforeinstallprompt` event
-- **THEN** the system SHALL NOT display the PWA install banner
+- **THEN** the system SHALL NOT display the PWA install FAB
 
 ---
 
@@ -46,11 +46,11 @@ The system SHALL NOT display the push notification prompt when the user is not a
 
 ### Requirement: Notification Prompt Blocked During Onboarding
 
-The system SHALL NOT display the push notification prompt during onboarding Steps 1-6.
+The system SHALL NOT display the push notification prompt during active onboarding steps.
 
-#### Scenario: User at Step 5 (My Artists) before sign-up
+#### Scenario: User at MY_ARTISTS step before sign-up
 
-- **WHEN** the user is at onboarding Step 5
+- **WHEN** the user is at onboarding step MY_ARTISTS
 - **THEN** the system SHALL NOT display the notification prompt
 - **AND** the notification prompt component SHALL not evaluate visibility
 
@@ -80,36 +80,34 @@ The system SHALL display at most one permission prompt (PWA install or push noti
 
 ---
 
-### Requirement: Notification Prompt Priority Over PWA Install
+### Requirement: Notification Prompt Priority Over Disruptive PWA Prompts
 
-The notification prompt SHALL have higher priority than the PWA install prompt. When both prompts are eligible in the same session, the notification prompt SHALL be displayed.
+The notification prompt SHALL have higher priority than any disruptive PWA install prompt. The PWA install FAB is passive UI and is not subject to this constraint — it SHALL remain visible regardless of whether the notification prompt is shown.
 
-#### Scenario: Both prompts eligible (second or later post-completion session)
+#### Scenario: Both prompts eligible (first or later post-completion session)
 
 - **WHEN** the user has completed onboarding
 - **AND** notification permission is not yet granted
 - **AND** the notification prompt has not been dismissed
-- **AND** the PWA install prompt is also eligible
-- **AND** the user is on the second or later session after onboarding completion
+- **AND** the PWA install FAB is also eligible
 - **THEN** the system SHALL display the notification prompt
-- **AND** the system SHALL NOT display the PWA install prompt
+- **AND** the PWA install FAB SHALL remain visible (it is passive UI and does not compete with the notification prompt)
 
-#### Scenario: Notification prompt already dismissed (second or later session)
+#### Scenario: Notification prompt already dismissed
 
 - **WHEN** the user has previously dismissed the notification prompt
-- **AND** the PWA install prompt is eligible
-- **AND** the user is on the second or later session after onboarding completion
-- **THEN** the system SHALL display the PWA install prompt
+- **AND** the PWA install FAB is eligible
+- **THEN** the system SHALL display the PWA install FAB
 
 ---
 
 ### Requirement: Notification Prompt Eligible on First Post-Completion Session
 
-The notification prompt SHALL be eligible to display on the first session after onboarding completion (Step 7), when user motivation is highest.
+The notification prompt SHALL be eligible to display on the first session after onboarding completion, when user motivation is highest.
 
 #### Scenario: User completes onboarding and returns
 
-- **WHEN** the user has completed onboarding (Step 7)
+- **WHEN** the user has completed onboarding (`OnboardingStep.COMPLETED`)
 - **AND** the user starts a new session (page load)
 - **AND** the user is authenticated
 - **AND** the notification prompt has not been dismissed
@@ -118,44 +116,43 @@ The notification prompt SHALL be eligible to display on the first session after 
 
 #### Scenario: User completes onboarding within the same session
 
-- **WHEN** the user completes Step 6 and transitions to Step 7 within the current session
-- **THEN** the system SHALL NOT display any prompt in the same session as completion
-- **AND** the prompt SHALL be eligible starting from the next session
+- **WHEN** the user transitions to `OnboardingStep.COMPLETED` within the current session
+- **THEN** the system SHALL NOT display any notification prompt in the same session as completion
+- **AND** the notification prompt SHALL be eligible starting from the next session
 
 ---
 
-### Requirement: PWA Install Prompt Deferred to Second Post-Completion Session
+### Requirement: PWA Install FAB Eligible After Onboarding Completion
 
-The PWA install prompt SHALL be eligible starting from the second session after onboarding completion, giving the notification prompt a clear first-session window.
+The PWA install FAB SHALL be eligible immediately after onboarding completion, regardless of authentication state or session count.
 
-#### Scenario: First session after completion
+#### Scenario: First session after completion — guest user
 
-- **WHEN** the user is on the first session after onboarding completion
-- **AND** the `beforeinstallprompt` event has fired
-- **THEN** the system SHALL NOT display the PWA install prompt, regardless of notification prompt dismissal state
+- **WHEN** the user has completed onboarding
+- **AND** the user is NOT authenticated
+- **AND** `beforeinstallprompt` has fired OR the platform is iOS Safari
+- **THEN** the system SHALL display the PWA install FAB
 
-#### Scenario: Second session after completion
+#### Scenario: First session after completion — authenticated user
 
-- **WHEN** the user is on the second or later session after onboarding completion
-- **AND** the `beforeinstallprompt` event has fired
-- **AND** the PWA install prompt has not been dismissed
-- **AND** no other prompt has been shown this session
-- **THEN** the system SHALL display the PWA install prompt
+- **WHEN** the user has completed onboarding
+- **AND** the user is authenticated
+- **AND** `beforeinstallprompt` has fired OR the platform is iOS Safari
+- **THEN** the system SHALL display the PWA install FAB
+
+#### Scenario: Completion within the same session
+
+- **WHEN** the user transitions to `OnboardingStep.COMPLETED` within the current session
+- **THEN** the FAB SHALL become visible immediately in that same session
 
 ---
 
 ### Requirement: Dismissed Prompts Do Not Reappear
 
-When the user dismisses a prompt, the system SHALL persist the dismissal and SHALL NOT show that prompt again. This is existing behavior preserved by this change.
+When the user dismisses a prompt, the system SHALL persist the dismissal and SHALL NOT show that prompt again. This applies to the notification prompt; the PWA install FAB has no dismiss action.
 
 #### Scenario: User dismisses notification prompt
 
 - **WHEN** the user taps the dismiss control on the notification prompt
 - **THEN** the system SHALL write the dismissal to LocalStorage
 - **AND** the notification prompt SHALL NOT appear on subsequent sessions
-
-#### Scenario: User dismisses PWA install prompt
-
-- **WHEN** the user taps the dismiss control on the PWA install prompt
-- **THEN** the system SHALL write the dismissal to LocalStorage
-- **AND** the PWA install prompt SHALL NOT appear on subsequent sessions
