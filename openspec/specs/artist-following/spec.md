@@ -76,12 +76,6 @@ When the ArtistFilterBar sheet is opened, it SHALL initialize its `pendingIds` s
 - **WHEN** `openSheet` is called again
 - **THEN** `pendingIds` SHALL be reset to reflect the current `followedArtists` observable, discarding any prior mutations
 
-#### Scenario: dismiss with unknown ID does not modify selectedIds
-
-- **GIVEN** the sheet is open with a set of `pendingIds`
-- **WHEN** `dismiss` is called with an artist ID not present in `pendingIds`
-- **THEN** `selectedIds` SHALL NOT be modified
-
 ### Requirement: Idempotent Unfollow Logic
 The system SHALL allow users to unfollow artists, ensuring that the operation is idempotent. The use case layer SHALL resolve the external identity to the internal user UUID before deleting from `followed_artists`.
 
