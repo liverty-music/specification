@@ -9,7 +9,7 @@ The FAB SHALL animate on first appearance to draw user attention, then display a
 - **WHEN** the FAB becomes visible for the first time in a session
 - **THEN** the system SHALL animate the FAB sliding up from below (`translateY(150%) → translateY(0)`, 400ms ease-out)
 - **AND** after the slide completes, a ripple ring SHALL animate outward and fade exactly 2 times, then stop
-- **AND** after the entry animation, the idle state SHALL display a pulsing neon border/glow via `box-shadow` animation (`fab-neon-pulse`, 2.5s ease-in-out infinite)
+- **AND** after the entry animation, the idle state SHALL display a pulsing neon border/glow via `box-shadow` animation (`pwa-fab-neon-pulse`, 2.5s ease-in-out infinite)
 
 #### Scenario: Reduced motion
 
