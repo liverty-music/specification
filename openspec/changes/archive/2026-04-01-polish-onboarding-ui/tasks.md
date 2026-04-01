@@ -25,6 +25,6 @@
 ## 5. Validation
 
 - [x] 5.1 Run `make check` in frontend repo
-- [ ] 5.2 Visual check: Discovery page orb sizing at 0, 3, and 5+ follows
-- [ ] 5.3 Visual check: Dashboard Home Selector shows HOME STAGE description text
-- [ ] 5.4 Visual check: Signup banner vertical layout on mobile viewport
+- [x] 5.2 Visual check: Discovery page orb sizing at 0, 3, and 5+ follows
+- [x] 5.3 Visual check: Dashboard Home Selector shows HOME STAGE description text
+- [x] 5.4 Visual check: Signup banner vertical layout on mobile viewport
