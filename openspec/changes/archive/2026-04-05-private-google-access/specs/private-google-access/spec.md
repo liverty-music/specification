@@ -8,12 +8,8 @@ A private Cloud DNS zone for `googleapis.com.` SHALL exist and be bound to the p
 - **THEN** the resolved IP SHALL be within `199.36.153.4/30` (restricted.googleapis.com range)
 - **AND** the lookup SHALL NOT return a public googleapis.com IP
 
-### Requirement: Private DNS zone for restricted.googleapis.com
-A private Cloud DNS zone for `restricted.googleapis.com.` SHALL exist and be bound to the project VPC, with A records for all four IPs in the `/30` range.
-
-#### Scenario: restricted.googleapis.com A records are present
-- **WHEN** querying `restricted.googleapis.com` from within the VPC
-- **THEN** the response SHALL contain A records for 199.36.153.4, 199.36.153.5, 199.36.153.6, and 199.36.153.7
+### ~~Requirement: Private DNS zone for restricted.googleapis.com~~
+**Superseded — see tasks.md 1.3.** The original plan created a separate `restricted.googleapis.com.` private zone, but Cloud DNS private zones do not follow cross-zone CNAMEs. The A record for `restricted.googleapis.com` was placed in the same `googleapis.com.` zone instead (PR #188). The living spec at `openspec/specs/private-google-access/spec.md` reflects the correct single-zone implementation.
 
 ### Requirement: Google API traffic bypasses Cloud NAT
 Google API traffic from GKE nodes SHALL route through Private Google Access and SHALL NOT be processed by the Cloud NAT gateway.
