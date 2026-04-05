@@ -53,15 +53,30 @@ The page header SHALL display a filter trigger button that visually indicates wh
 - **AND** the user can deselect artists and confirm to reduce or clear the filter
 
 ### Requirement: Artist-selection bottom sheet
-A bottom sheet SHALL allow the user to select one or more followed artists as a filter.
+A bottom sheet SHALL allow the user to select one or more followed artists as a filter. Artists SHALL be presented as pill-shaped chip elements. A "全て解除" (Clear all) button SHALL appear beside the sheet title and allow the user to deselect all pending selections before confirming.
 
 #### Scenario: Opening the bottom sheet
 - **WHEN** the user taps the filter trigger button
-- **THEN** the bottom sheet SHALL open listing all followed artists
+- **THEN** the bottom sheet SHALL open listing all followed artists as selectable chips
 
 #### Scenario: Pre-selecting current filter
 - **WHEN** the bottom sheet opens while a filter is already active
-- **THEN** the currently filtered artists SHALL be pre-selected in the list
+- **THEN** the currently filtered artists SHALL be pre-selected (chips in selected state)
+
+#### Scenario: Chip selected state
+- **WHEN** the user taps an artist chip
+- **THEN** the chip SHALL display a checkmark and a brand-colour tinted background to indicate selection
+
+#### Scenario: Clear all pending selections
+- **WHEN** one or more chips are in the pending-selected state
+- **THEN** the "全て解除" button SHALL be enabled
+- **WHEN** the user taps "全て解除"
+- **THEN** all pending selections SHALL be cleared (chips return to unselected state)
+- **AND** the change SHALL NOT be applied until the user confirms
+
+#### Scenario: Clear all button disabled when nothing selected
+- **WHEN** no chips are in the pending-selected state
+- **THEN** the "全て解除" button SHALL be disabled
 
 #### Scenario: Confirming selection
 - **WHEN** the user selects artists and taps the confirm button
@@ -69,7 +84,7 @@ A bottom sheet SHALL allow the user to select one or more followed artists as a 
 - **THEN** the bottom sheet SHALL close
 
 #### Scenario: Confirming empty selection
-- **WHEN** the user deselects all artists and confirms
+- **WHEN** the user deselects all artists (or taps "全て解除") and confirms
 - **THEN** the filter SHALL be cleared (equivalent to no filter)
 
 ### Requirement: Push notification deep-link to filtered dashboard
