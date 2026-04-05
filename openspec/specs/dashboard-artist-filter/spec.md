@@ -29,37 +29,28 @@ When the user changes the active filter via the UI, the dashboard URL SHALL be u
 - **THEN** the browser URL SHALL update to `/dashboard?artists=<selectedIds>` via `history.replaceState`
 - **THEN** the concert highway SHALL immediately display only matching concerts
 
-#### Scenario: User removes a filter chip
-- **WHEN** the user taps the `×` on an active artist chip
-- **THEN** that artist SHALL be removed from `filteredArtistIds`
-- **THEN** the URL SHALL update accordingly (or revert to `/dashboard` if the list becomes empty)
-
-#### Scenario: All chips dismissed
-- **WHEN** the last active filter chip is dismissed
-- **THEN** the URL SHALL revert to `/dashboard` (no `artists` param)
-- **THEN** all followed-artist concerts SHALL be displayed
-
 #### Scenario: Page reload preserves filter
 - **WHEN** the user reloads the page while a filter is active
 - **THEN** the `artists` query param SHALL be re-parsed from the URL
 - **THEN** the same filtered view SHALL be restored
 
 ### Requirement: Filter chip UI in page header
-The page header SHALL display a dismissible chip for each active artist filter. A trigger button SHALL always be available to open the artist-selection bottom sheet.
+The page header SHALL display a filter trigger button that visually indicates when a filter is active. Artist names SHALL NOT be rendered as chips in the header.
 
 #### Scenario: No active filter — header unchanged
 - **WHEN** `filteredArtistIds` is empty
-- **THEN** no filter chips SHALL be visible in the header
-- **THEN** a compact filter trigger button SHALL be visible
+- **THEN** no filter indicator SHALL be visible in the header beyond the compact filter trigger button
+- **AND** the filter trigger button SHALL be in its default (inactive) visual state
 
-#### Scenario: Active filter — chips displayed
+#### Scenario: Active filter — icon state only
 - **WHEN** `filteredArtistIds` contains one or more IDs
-- **THEN** one chip per artist SHALL appear in the header showing the artist name
-- **THEN** each chip SHALL have a `×` dismiss control
+- **THEN** the filter trigger button SHALL display in its active visual state (e.g., color change via `[data-active="true"]` CSS)
+- **AND** no artist name chips SHALL be rendered in the header
 
-#### Scenario: Long artist name overflow
-- **WHEN** an artist name exceeds available chip width
-- **THEN** the name SHALL be truncated with an ellipsis within the chip
+#### Scenario: Dismissing an active filter
+- **WHEN** a filter is active and the user taps the filter trigger button
+- **THEN** the bottom sheet SHALL open with currently filtered artists pre-selected
+- **AND** the user can deselect artists and confirm to reduce or clear the filter
 
 ### Requirement: Artist-selection bottom sheet
 A bottom sheet SHALL allow the user to select one or more followed artists as a filter.
