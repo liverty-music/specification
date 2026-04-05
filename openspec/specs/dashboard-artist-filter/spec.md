@@ -55,6 +55,8 @@ The page header SHALL display a filter trigger button that visually indicates wh
 ### Requirement: Artist-selection bottom sheet
 A bottom sheet SHALL allow the user to select one or more followed artists as a filter. Artists SHALL be presented as pill-shaped chip elements. A "全て解除" (Clear all) button SHALL appear beside the sheet title and allow the user to deselect all pending selections before confirming.
 
+The sheet content SHALL be structured as a `<section>` element (not `<fieldset>`) with an `<h2>` heading as the title. The chip list SHALL carry `aria-labelledby` referencing the heading ID. `role="group"` SHALL NOT be applied to the `<ul>` element as it overrides the native `list` role and causes screen readers to lose item count information.
+
 #### Scenario: Opening the bottom sheet
 - **WHEN** the user taps the filter trigger button
 - **THEN** the bottom sheet SHALL open listing all followed artists as selectable chips
@@ -87,6 +89,11 @@ A bottom sheet SHALL allow the user to select one or more followed artists as a 
 - **WHEN** the user deselects all artists (or taps "全て解除") and confirms
 - **THEN** the filter SHALL be cleared (equivalent to no filter)
 
+#### Scenario: Sheet snaps flush to viewport bottom
+- **WHEN** the filter bottom sheet opens
+- **THEN** the sheet body SHALL be snapped flush to the bottom of the viewport via `scroll-snap-align: end` on `.sheet-body`
+- **AND** the section content height SHALL be correctly reported to the scroll container (no `fieldset`/`legend` height anomalies)
+
 ### Requirement: Push notification deep-link to filtered dashboard
 Tapping a push notification that carries a `/dashboard?artists=<artistId>` URL SHALL open the dashboard pre-filtered to that artist.
 
@@ -95,7 +102,7 @@ Tapping a push notification that carries a `/dashboard?artists=<artistId>` URL S
 - **THEN** the browser SHALL navigate to `/dashboard?artists=<artistId>`
 - **THEN** the dashboard SHALL display only concerts for `<artistId>`
 
-#### Scenario: Filter disabled during onboarding
-- **WHEN** the user is in the onboarding flow (lane intro active)
-- **THEN** the filter trigger button SHALL be hidden or disabled
-- **THEN** the `artists` query param SHALL be ignored until onboarding is complete
+#### Scenario: Filter hidden during onboarding
+- **WHEN** the user is in the onboarding flow (`isOnboarding` is true)
+- **THEN** the filter trigger button SHALL be hidden (via `if.bind="!isOnboarding"`)
+- **AND** the `artists` query param SHALL be ignored until onboarding is complete
