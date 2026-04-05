@@ -6,31 +6,10 @@ Display and manage the user's followed artists, providing list and grid views wi
 
 ## Requirements
 
-### Requirement: Artist List Row
+### Requirement: Artist List Row (REMOVED)
 
-Each artist row in the My Artists list view SHALL be a horizontal scroll-snap container with the artist content and a dismiss trigger.
-
-#### Scenario: Artist row layout
-
-- **WHEN** an artist row is rendered in list view
-- **THEN** the row SHALL be a horizontal scroll container with `scroll-snap-type: x mandatory` and hidden scrollbar
-- **AND** the row content SHALL display the artist name (left) and inline dot slider (right) using `grid-template-areas: "name watch home nearby away"`
-- **AND** the artist name SHALL truncate with ellipsis if it exceeds available space
-- **AND** a dismiss trigger element SHALL be placed after the content as the scroll-snap end target
-
-#### Scenario: Swipe-to-dismiss unfollows artist
-
-- **WHEN** the user swipes an artist row left past the dismiss threshold
-- **THEN** the scroll-snap SHALL snap to the dismiss-end position
-- **AND** the system SHALL trigger unfollow for that artist
-- **AND** if the View Transitions API is available, the remaining rows SHALL animate smoothly to fill the gap
-- **AND** if the View Transitions API is unavailable, the unfollow SHALL execute immediately without animation
-
-#### Scenario: Swipe cancel snaps back
-
-- **WHEN** the user swipes an artist row left but does NOT pass the dismiss threshold
-- **THEN** the scroll-snap SHALL snap back to the start position (content fully visible)
-- **AND** no unfollow action SHALL be triggered
+**Reason**: The swipe-to-dismiss unfollow mechanism was abandoned due to `display: table-row` layout constraints that prevented the scroll-snap container from functioning correctly inside the artist list. Replaced by the long-press-to-unfollow flow.
+**Migration**: The horizontal scroll-snap dismiss trigger is removed. Unfollow is initiated by long-pressing an artist row for ~500ms, which opens an `ArtistUnfollowSheet` confirmation bottom sheet. See `long-press-unfollow` capability spec.
 
 #### Scenario: Hype slider replaces passion icon
 
