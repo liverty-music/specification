@@ -56,8 +56,8 @@ The system SHALL sync all locally stored guest data to the backend via existing 
 
 - **WHEN** Passkey authentication completes successfully
 - **THEN** the system SHALL call `UserService.Create` with the user's email
-- **AND** the system SHALL call `ArtistService.Follow` for each artist in `liverty:guest:followedArtists`
-- **AND** upon successful completion of all calls, the system SHALL clear all `liverty:guest:*` keys from LocalStorage
+- **AND** the system SHALL call `ArtistService.Follow` for each artist in `guest.followedArtists`
+- **AND** upon successful completion of all calls, the system SHALL clear `guest.followedArtists` and `liverty:guest:region` from LocalStorage
 
 #### Scenario: User already exists during merge
 
@@ -84,11 +84,11 @@ The system SHALL remove all guest data from LocalStorage after a successful merg
 #### Scenario: Cleanup after successful merge
 
 - **WHEN** the data merge completes (regardless of partial failures)
-- **THEN** the system SHALL remove `liverty:guest:followedArtists` from LocalStorage
+- **THEN** the system SHALL remove `guest.followedArtists` from LocalStorage
 - **AND** the system SHALL remove `liverty:guest:region` from LocalStorage
 
 #### Scenario: Cleanup on fresh tutorial start
 
 - **WHEN** a user taps [Get Started] on the LP to begin the tutorial
-- **AND** stale `liverty:guest:*` keys exist in LocalStorage
-- **THEN** the system SHALL clear all `liverty:guest:*` keys before starting Step 1
+- **AND** stale guest keys (`guest.followedArtists`, `liverty:guest:region`) exist in LocalStorage
+- **THEN** the system SHALL clear those keys before starting Step 1
