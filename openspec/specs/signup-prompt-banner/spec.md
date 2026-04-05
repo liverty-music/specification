@@ -8,13 +8,19 @@ Provide a persistent fixed banner on My Artists and Dashboard pages prompting un
 
 ### Requirement: Guest Signup Prompt Banner
 
-The system SHALL display a non-modal signup prompt banner to guest users after onboarding completion. The banner copy SHALL emphasize follow data persistence and notification benefit.
+The system SHALL display a non-modal signup prompt banner to guest users after onboarding completion. The banner copy SHALL be concise (≤2 lines on mobile) and SHALL be consistent in intent across English and Japanese locales.
 
-#### Scenario: Banner copy reflects data persistence and notifications
+#### Scenario: Banner copy — Japanese
 
-- **WHEN** the signup prompt banner is displayed to a guest user
-- **THEN** the banner SHALL display: "アカウントを作成してフォロー情報を保存しよう。新着コンサート通知も有効になります！"
+- **WHEN** the signup prompt banner is displayed to a guest user in Japanese locale
+- **THEN** the banner SHALL display: "フォロー情報を保存してコンサート通知を受け取ろう！"
 - **AND** the banner SHALL include a [アカウント作成] CTA button
+
+#### Scenario: Banner copy — English
+
+- **WHEN** the signup prompt banner is displayed to a guest user in English locale
+- **THEN** the banner SHALL display: "Save your followed artists and get concert notifications."
+- **AND** the banner SHALL include a [Create Account] CTA button
 
 ### Requirement: Signup Banner on My Artists
 
