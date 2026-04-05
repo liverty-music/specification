@@ -4,7 +4,7 @@ The `artist-filter-bar` sheet is misaligned from the bottom of the screen due to
 
 ## What Changes
 
-- **Fix** `artist-filter-bar` bottom-sheet layout: replace `<fieldset>/<legend>` with `<section>/<h2>` + `role="group"`, resolving the scroll-snap misalignment and the "全て解除" button positioning bug
+- **Fix** `artist-filter-bar` bottom-sheet layout: replace `<fieldset>/<legend>` with `<section>/<h2>` + `aria-labelledby` (without `role="group"` — spec prohibits it on `<ul>` as it overrides the native list role), resolving the scroll-snap misalignment and the "全て解除" button positioning bug
 - **Remove** the lane introduction sequence from the onboarding flow: delete `LaneIntroPhase` type, all lane intro state/methods/getters, and associated i18n keys
 - Simplify `onHomeSelected()`: remove the `waiting-for-home` branch — home selection now only triggers a data reload
 - Remove unused imports (`queueTask`, `watch`, `translationKey`) from `dashboard-route.ts`

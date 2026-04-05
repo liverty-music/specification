@@ -28,7 +28,7 @@ Two independent issues are addressed together since both originate in the onboar
 
 **Alternatives considered**:
 - **Option A — Keep `<fieldset>`, empty `<legend>`, move header to `<div>`**: This preserves the fieldset grouping semantic but requires a hidden `<legend>` element just to satisfy the parser — a semantically odd pattern.
-- **Option B — Replace with `<section>/<h2>`**: Cleaner. `<section aria-labelledby>` provides equivalent accessibility grouping. The checkbox list gets `role="group" aria-labelledby` to preserve the WAI-ARIA group semantics. `display: flex` on `<section>` behaves predictably across all browsers.
+- **Option B — Replace with `<section>/<h2>`**: Cleaner. `<section aria-labelledby>` provides equivalent accessibility grouping. The chip list carries `aria-labelledby` referencing the heading ID (without `role="group"`, which would override the native list role and cause screen readers to lose item count information). `display: flex` on `<section>` behaves predictably across all browsers.
 
 Option B is simpler, more predictable, and semantically appropriate — `<fieldset>` is designed for form field grouping with a visible label; here the label is a heading, and the interaction is confirmed by a separate button.
 
