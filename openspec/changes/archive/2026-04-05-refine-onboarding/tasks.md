@@ -2,7 +2,7 @@
 
 - [x] 1.1 Replace `<fieldset>` with `<section aria-labelledby="filter-sheet-title">` in `artist-filter-bar.html`
 - [x] 1.2 Replace `<legend class="sheet-header">` with `<div class="sheet-header">` containing `<h2 class="sheet-title">`
-- [x] 1.3 Add `role="group" aria-labelledby="filter-sheet-title"` to `<ul class="artists-list">`
+- [x] 1.3 Add `aria-labelledby="filter-sheet-title"` to `<ul class="artists-list">` (omit `role="group"` — spec prohibits it on `<ul>`)
 - [x] 1.4 Remove `fieldset` browser-default resets (`margin: 0; border: none;`) from `artist-filter-bar.css`
 - [x] 1.5 Verify sheet snaps flush to viewport bottom in browser
 
