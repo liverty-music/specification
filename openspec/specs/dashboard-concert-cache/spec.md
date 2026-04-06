@@ -10,7 +10,7 @@ Defines in-memory caching behavior for concert and follow data on the Dashboard,
 `ConcertServiceClient` SHALL cache the result of `listByFollower()` in memory within the Aurelia singleton service. The cache SHALL have a TTL of 24 hours. While the cache is valid, subsequent calls to `listByFollower()` SHALL return the cached value without issuing an RPC.
 
 #### Scenario: Cache hit on Dashboard re-entry
-- **WHEN** the user navigates to Dashboard a second time within 24 hours without having followed or unfollowed any artists
+- **WHEN** the user navigates to Dashboard a second time within 24 hours without having followed any artists
 - **THEN** `listByFollower()` SHALL return the cached result without making an RPC call
 
 #### Scenario: Cache miss on first load
