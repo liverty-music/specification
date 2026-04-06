@@ -1,10 +1,4 @@
-# venue-normalization Specification
-
-## Purpose
-
-The Venue Normalization capability resolves scraped venue names to canonical venue records via Google Places API during concert creation. Venues are either resolved to a canonical record (with name, coordinates, and `google_place_id`) or the concert is skipped with structured logging.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Venue Resolution During Concert Creation
 
@@ -45,32 +39,3 @@ The concert creation pipeline SHALL resolve venues via a DB-first lookup before 
 - **AND** Google Places API returns a match
 - **AND** a venue with the same `google_place_id` already exists in the database
 - **THEN** the existing venue SHALL be reused (no new venue created)
-
-### Requirement: Skip Unresolvable Venues
-
-The concert creation pipeline SHALL skip concerts whose venues cannot be resolved via Google Places API, rather than creating venue records with incomplete data.
-
-#### Scenario: Places API returns NotFound
-
-- **WHEN** `resolveVenue` calls Google Places API for a scraped venue name
-- **AND** the API returns NotFound
-- **THEN** the concert SHALL NOT be persisted to the database
-- **AND** the system SHALL emit a structured Warn log containing all fields of the `ScrapedConcert` (title, local_date, start_time, open_time, listed_venue_name, admin_area, source_url)
-- **AND** processing SHALL continue with the next concert in the batch
-
-#### Scenario: Places API returns a non-retryable error
-
-- **WHEN** `resolveVenue` calls Google Places API for a scraped venue name
-- **AND** the API returns an error that is not NotFound (e.g., InvalidArgument)
-- **THEN** the concert SHALL NOT be persisted to the database
-- **AND** the system SHALL emit a structured Warn log with the error and all `ScrapedConcert` fields
-- **AND** processing SHALL continue with the next concert in the batch
-
-### Requirement: PlaceSearcher Is Required
-
-The `ConcertCreationUseCase` SHALL require a non-nil `VenuePlaceSearcher` at construction time.
-
-#### Scenario: Nil placeSearcher at startup
-
-- **WHEN** `NewConcertCreationUseCase` is called with a nil `placeSearcher`
-- **THEN** the function SHALL panic with a descriptive message
