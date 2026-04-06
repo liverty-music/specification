@@ -5,7 +5,7 @@ Every route navigation to Dashboard fires three parallel RPCs unconditionally, e
 ## What Changes
 
 - `ConcertServiceClient.listByFollower()` gains a 24-hour in-memory cache keyed per authenticated user session; the cache is invalidated on `follow()`.
-- `FollowServiceClient.getFollowedArtistMap()` skips the `listFollowed()` RPC when `followedArtists` is already populated in memory (the service already tracks this state via `@observable`).
+- ~~`FollowServiceClient.getFollowedArtistMap()` skips the `listFollowed()` RPC when `followedArtists` is already populated in memory (the service already tracks this state via `@observable`).~~ *(deferred — see design Decision 4; `listFollowed()` is called on every invocation to provide hype data)*
 - `FollowServiceClient.follow()` calls `concertService.invalidateFollowerCache()` after a successful follow RPC to ensure the next dashboard load reflects newly discovered concerts.
 
 ## Capabilities
