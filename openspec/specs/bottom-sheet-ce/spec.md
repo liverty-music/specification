@@ -7,7 +7,7 @@ Provides a `<bottom-sheet>` custom element as the single dialog primitive for al
 ## Requirements
 
 ### Requirement: Bottom Sheet Custom Element
-The system SHALL provide a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, using the Popover API with CSS scroll-snap dismiss.
+The system SHALL provide a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, using the Popover API on the CE host element with CSS scroll-snap dismiss via an internal scroll container.
 
 #### Scenario: Basic open/close via bindable
 - **WHEN** `<bottom-sheet open.bind="isOpen">` has `open` set to `true`
@@ -31,8 +31,14 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 - **AND** the internal DOM SHALL be `.scroll-area > .dismiss-zone + section.sheet-body`
 - **AND** `.scroll-area` SHALL be a `<div>` element serving as the scroll-snap container (`overflow-y: auto`, `scroll-snap-type: y mandatory`, `block-size: 100dvh`)
 - **NOTE** `.scroll-area` MUST use `100dvh` (not `100%`) because percentage block-size does not resolve against the CE host's fixed-position height inside the popover top-layer — the scroll container would expand to content size, preventing overflow and disabling scroll-snap
-- **AND** `.sheet-body` SHALL be a `<section>` element (semantic content container)
+- **AND** `.sheet-body` SHALL be a `<section>` element (semantic content container) with `contain: layout`
 - **AND** the `::backdrop` pseudo-element SHALL belong to the CE host (popover host)
+
+#### Scenario: Layout stability with dynamic sheet content
+- **WHEN** content inside `.sheet-body` changes layout (e.g., a checkbox is checked, an element toggles `display`)
+- **THEN** `.sheet-body` SHALL remain at the bottom of the viewport
+- **AND** `.scroll-area` SHALL NOT be displaced from its rendered position
+- **NOTE** This is enforced by `contain: layout` on `.sheet-body`. Without it, Chromium's scroll-snap re-evaluation inside a popover top-layer incorrectly offsets `.scroll-area` by `-scrollTop` pixels when a child layout change triggers a re-snap. This is a Chromium rendering bug (scroll container offset on snap re-evaluation inside top-layer). `contain: layout` prevents child layout changes from propagating to `.scroll-area`, avoiding the re-evaluation. When Chromium fixes this bug, `contain: layout` MAY be removed — the regression guard is the artist-filter chip-check E2E test.
 
 #### Scenario: Initial snap animation
 - **WHEN** the popover opens (`showPopover()` on CE host)
@@ -87,6 +93,7 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 - **AND** box-shadow SHALL be `var(--shadow-sheet)`
 - **AND** `max-block-size` SHALL be `90dvh`
 - **AND** overflow-y SHALL be `auto` for scrollable content
+- **AND** `contain` SHALL be `layout` (layout containment boundary — see layout stability scenario)
 
 #### Scenario: Slotted content
 - **WHEN** content is placed inside `<bottom-sheet>`
