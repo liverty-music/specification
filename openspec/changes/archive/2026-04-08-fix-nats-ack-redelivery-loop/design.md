@@ -40,7 +40,7 @@ Current observed impact: ~7-minute redelivery cycles running continuously since 
 
 **Rationale**: `DeliverNew` sets `DeliverPolicy = DeliverNewPolicy`, meaning a newly created durable consumer will only receive messages published _after_ the consumer is created. This is the correct semantics for an event-driven notification system: if the consumer state is lost, we accept that historical events will not be reprocessed — the concert data is already in the DB from the first processing run.
 
-**Alternative considered**: `DeliverLastPerSubject` — delivers only the most recent message per subject on consumer creation. Rejected because subjects in this stream (`CONCERT.discovered`, etc.) are per-event UUIDs, making "last per subject" equivalent to "last overall" in practice, which is still an arbitrary historical message.
+**Alternative considered**: `DeliverLastPerSubject` — delivers only the most recent message per subject on consumer creation. Rejected because subjects in this stream are shared static event-type subjects (`CONCERT.discovered`, `CONCERT.created`, etc.) — not per-event identifiers. `DeliverLastPerSubject` would deliver exactly one arbitrary historical message per subject type, which is still an undesired historical redelivery. `DeliverNew` cleanly avoids any historical message regardless of subject scheme.
 
 **Alternative considered**: Keep `DeliverAll` and manage consumer state externally (e.g., snapshot PVC before cluster migration). Rejected as operationally fragile — any NATS pod restart would still trigger full redelivery.
 
