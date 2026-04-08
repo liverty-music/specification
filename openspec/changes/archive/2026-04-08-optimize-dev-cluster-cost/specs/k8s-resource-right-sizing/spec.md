@@ -1,10 +1,4 @@
-# k8s-resource-right-sizing Specification
-
-## Purpose
-
-Defines the resource request and limit policies for all Kubernetes workloads in the dev environment, targeting Standard GKE minimums for idle workloads.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Dev environment resource requests use Standard GKE minimums
 All dev environment workloads SHALL set CPU request to 10m (Standard GKE minimum for idle workloads; no Autopilot Bursting floor applies). Memory requests SHALL be set to 1.5-2x of observed peak usage, with a floor of 20MiB.
@@ -49,6 +43,8 @@ All dev environment workloads SHALL set CPU request to 10m (Standard GKE minimum
 #### Scenario: Atlas Operator resource requests
 - **WHEN** rendering the atlas-operator dev overlay manifests
 - **THEN** the atlas-operator CPU request SHALL be 10m
+
+## ADDED Requirements
 
 ### Requirement: KEDA ScaledObjects in dev SHALL cap at maxReplicaCount 1
 Consumer workload ScaledObjects in the dev environment SHALL set `maxReplicaCount: 1` to prevent horizontal scale-out in a low-traffic environment.
