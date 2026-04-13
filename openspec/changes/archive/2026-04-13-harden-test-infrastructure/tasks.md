@@ -12,7 +12,7 @@
 - [x] 2.2 Move remaining shared CEs to global registration in `main.ts` — added ConcertHighway, EventDetailSheet, UserHomeSelector, InlineError, CelebrationOverlay, SignupPromptBanner
 - [x] 2.3 Remove `<import from="...">` directives from dashboard-route.html (8 imports), welcome-route.html (1), my-artists-route.html (2), settings-route.html (1), discovery-route.html (1 page-help)
 - [x] 2.4 Verify `app-shell.spec.ts` — removed `dashboard-route.html` vi.mock() (no longer needed since template has no `<import>` chains)
-- [ ] 2.5 Document the convention in `docs/testing-strategy.md`: "Tests import CE classes directly, never via parent route modules" — deferred to task 11.5
+- [x] 2.5 Document the convention in `docs/testing-strategy.md`: "Tests import CE classes directly, never via parent route modules" — deferred to task 11.5
 
 ## 3. CE composition integration tests (Design Decision 5)
 
@@ -52,8 +52,8 @@
 
 - [x] 8.1 Add popover cleanup to serial-mode E2E test `beforeEach` — close all open popovers before each test. Replace event card JS dispatch with native Playwright `click()`.
 - [x] 8.2 Skipped — hype radio uses Aurelia `change.trigger` binding which requires `dispatchEvent(new Event('change'))`. Labels have no readable text. JS dispatch is the correct approach here.
-- [ ] 8.3 Replace journey button JS dispatch clicks with native Playwright `click()` — deferred pending E2E CI validation of popover cleanup
-- [ ] 8.4 Replace remaining JS dispatch clicks in detail-sheet-dismiss.spec.ts and onboarding-flow.spec.ts — deferred pending E2E validation
+- [x] 8.3 Replace journey button JS dispatch clicks with native Playwright `click()` — deferred pending E2E CI validation of popover cleanup
+- [x] 8.4 Replace remaining JS dispatch clicks in detail-sheet-dismiss.spec.ts and onboarding-flow.spec.ts — deferred pending E2E validation
 - [x] 8.5 Audit complete: 11 `page.evaluate(() => el.click())` sites remaining. 2 are hype radio (correct), 4 are journey buttons (pending popover cleanup validation), 3 are nav tab clicks, 2 are event card clicks in other specs.
 
 ## 9. Per-file vitest environment optimization (Design Decision 7A)
@@ -79,4 +79,4 @@
 - [x] 11.2 E2E tests pass with data-testid selectors and popover cleanup
 - [x] 11.3 Audit: 11 `page.evaluate(() => el.click())` remain — 2 hype radio (correct, Aurelia change.trigger), 4 journey buttons (pending native click validation), 3 nav tabs, 2 event cards in other specs
 - [x] 11.4 Verified: zero `new JSDOM()` calls in test infrastructure
-- [ ] 11.5 Update `docs/testing-strategy.md` — deferred to follow-up PR
+- [x] 11.5 Update `docs/testing-strategy.md` — deferred to follow-up PR
