@@ -3,6 +3,8 @@ syntax = "proto3";
 package liverty_music.rpc.push_notification.v1;
 
 import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/push_subscription.proto";
+import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/push_notification/v1;pushnotificationv1";
 
@@ -12,18 +14,19 @@ option go_package = "github.com/liverty-music/specification/gen/go/liverty_music
 // session, enabling the platform to proactively notify users about upcoming
 // concerts, new releases from followed artists, and other time-sensitive
 // events.
+//
+// Subscriptions are keyed by the browser-provided endpoint URL. A single user
+// may hold multiple subscriptions simultaneously — one per active browser. The
+// Get and Delete methods operate on the unique (user, endpoint) pair so that
+// each RPC call affects only the specific browser session the caller names.
 service PushNotificationService {
-  // Subscribe registers a new browser push subscription for the authenticated
-  // user. The subscription materials are obtained from the browser's Web Push
-  // API and must be forwarded to this endpoint so the platform can later
-  // deliver notifications to that browser session.
-  //
-  // The caller must supply the three pieces of information that together
-  // uniquely identify a push channel: the push service endpoint URL, the
-  // ECDH public key (p256dh), and the authentication secret (auth).
+  // Create registers the calling browser's push subscription for the
+  // authenticated user. The subscription materials are obtained from the
+  // browser's PushManager API and must be forwarded to this endpoint so the
+  // platform can later deliver notifications to that browser session.
   //
   // If the endpoint is already registered, the existing record is updated
-  // with the new key material (upsert behavior).
+  // with the new key material (upsert behaviour).
   //
   // Possible errors:
   //   - UNAUTHENTICATED: The request does not carry a valid user session.
@@ -31,79 +34,113 @@ service PushNotificationService {
   //     is missing, empty, or not a valid URI (for the endpoint field).
   //   - INTERNAL: An unexpected error occurred while persisting the
   //     subscription.
-  rpc Subscribe(SubscribeRequest) returns (SubscribeResponse);
+  rpc Create(CreateRequest) returns (CreateResponse);
 
-  // Unsubscribe removes all browser push subscriptions associated with the
-  // authenticated user. After this call completes successfully, the platform
-  // will no longer attempt to deliver push notifications to any of the user's
-  // previously registered browser sessions.
+  // Get retrieves the push subscription uniquely identified by the supplied
+  // (user_id, endpoint) pair.
   //
-  // This operation is idempotent: calling it when the user has no active
-  // subscriptions returns a successful response without error.
+  // The user_id field must match the userID derived from the authenticated
+  // session; mismatches are rejected with PERMISSION_DENIED to prevent cross-
+  // user disclosure. The settings page uses this RPC to determine whether a
+  // given browser's subscription is known to the backend; a NOT_FOUND response
+  // triggers the client's self-heal flow (re-registration via Create).
   //
   // Possible errors:
   //   - UNAUTHENTICATED: The request does not carry a valid user session.
+  //   - PERMISSION_DENIED: The supplied user_id does not match the userID
+  //     derived from the authenticated session.
+  //   - NOT_FOUND: No subscription exists for the supplied (user_id, endpoint)
+  //     pair.
+  //   - INVALID_ARGUMENT: The request is missing user_id or endpoint, or one
+  //     of them fails validation.
+  //   - INTERNAL: An unexpected error occurred while querying the store.
+  rpc Get(GetRequest) returns (GetResponse);
+
+  // Delete removes the push subscription uniquely identified by the supplied
+  // (user_id, endpoint) pair. Only the specified browser's subscription is
+  // removed; other browsers registered by the same user remain active.
+  //
+  // The user_id field must match the userID derived from the authenticated
+  // session; mismatches are rejected with PERMISSION_DENIED. The operation is
+  // idempotent: deleting a subscription that does not exist returns a
+  // successful empty response.
+  //
+  // Possible errors:
+  //   - UNAUTHENTICATED: The request does not carry a valid user session.
+  //   - PERMISSION_DENIED: The supplied user_id does not match the userID
+  //     derived from the authenticated session.
+  //   - INVALID_ARGUMENT: The request is missing user_id or endpoint, or one
+  //     of them fails validation.
   //   - INTERNAL: An unexpected error occurred while removing the
-  //     subscriptions.
-  rpc Unsubscribe(UnsubscribeRequest) returns (UnsubscribeResponse);
+  //     subscription.
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
 }
 
-// SubscribeRequest carries the browser-generated Web Push subscription
-// materials that the platform needs in order to deliver notifications to a
-// specific browser session. All three fields are produced by the browser's
-// PushManager API and must be forwarded to this service without modification.
-message SubscribeRequest {
-  // endpoint is the unique URL provided by the user's browser push service
-  // (e.g., Mozilla's autopush or Google's FCM) that the platform calls when
-  // delivering a notification to this browser session. It must be a valid
-  // absolute URI.
-  string endpoint = 1 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string = {
-      uri: true
-      max_len: 2048
-    }
-  ];
+// CreateRequest carries the browser-generated Web Push
+// subscription materials that the platform needs in order to deliver
+// notifications to the calling browser session.
+//
+// The authenticated user is always the owner of the created subscription;
+// clients do not supply a user_id here because the session context already
+// identifies the caller.
+message CreateRequest {
+  // The push service endpoint URL provided by the browser's PushManager API.
+  entity.v1.PushEndpoint endpoint = 1 [(buf.validate.field).required = true];
 
-  // p256dh is the Elliptic Curve Diffie-Hellman (ECDH) public key generated
-  // by the browser for this subscription. The platform uses it to encrypt
-  // notification payloads so that only the subscribing browser can decrypt
-  // them. The value is Base64url-encoded and must not be empty.
-  string p256dh = 2 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string = {
-      min_len: 1
-      max_len: 256
-    }
-  ];
-
-  // auth is the authentication secret generated by the browser for this
-  // subscription. Together with the p256dh key, it forms the cryptographic
-  // material required to encrypt notification payloads according to the Web
-  // Push Encryption specification. The value is Base64url-encoded and must
-  // not be empty.
-  string auth = 3 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).string = {
-      min_len: 1
-      max_len: 64
-    }
-  ];
+  // The ECDH public key and authentication secret generated by the browser.
+  entity.v1.PushKeys keys = 2 [(buf.validate.field).required = true];
 }
 
-// SubscribeResponse is returned upon successful registration of a browser push
-// subscription. An empty response confirms that the subscription has been
-// persisted and the platform is ready to deliver notifications to the
-// registered browser session.
-message SubscribeResponse {}
+// CreateResponse returns the persisted subscription entity so
+// the client can record the minted PushSubscriptionId if desired.
+message CreateResponse {
+  // The newly created (or upserted) subscription, including its assigned id.
+  entity.v1.PushSubscription subscription = 1 [(buf.validate.field).required = true];
+}
 
-// UnsubscribeRequest initiates the removal of all browser push subscriptions
-// belonging to the authenticated user. No additional input is required because
-// the user identity is established from the authenticated session context.
-message UnsubscribeRequest {}
+// GetRequest identifies a subscription by the unique
+// (user_id, endpoint) pair.
+//
+// The user_id is supplied explicitly so the handler can verify it against
+// the JWT-derived userID and reject cross-user queries before any store
+// lookup is performed.
+message GetRequest {
+  // The caller's user identifier. Must match the userID derived from the
+  // authenticated session; mismatches are rejected with PERMISSION_DENIED.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
 
-// UnsubscribeResponse is returned upon successful removal of all browser push
-// subscriptions for the authenticated user. An empty response confirms that
-// the platform will no longer attempt to deliver push notifications to any
-// of the user's previously registered browser sessions.
-message UnsubscribeResponse {}
+  // The push service endpoint URL identifying the specific browser session.
+  entity.v1.PushEndpoint endpoint = 2 [(buf.validate.field).required = true];
+}
+
+// GetResponse returns the subscription matching the requested
+// (user_id, endpoint) pair. If no matching subscription exists, the RPC
+// returns NOT_FOUND rather than an empty response so clients can branch on
+// the error path alone.
+message GetResponse {
+  // The subscription matching the requested (user_id, endpoint) pair.
+  entity.v1.PushSubscription subscription = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteRequest identifies the subscription to remove by the
+// unique (user_id, endpoint) pair.
+//
+// The user_id is supplied explicitly so the handler can verify it against
+// the JWT-derived userID and reject cross-user deletions before any row is
+// touched.
+message DeleteRequest {
+  // The caller's user identifier. Must match the userID derived from the
+  // authenticated session; mismatches are rejected with PERMISSION_DENIED.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+
+  // The push service endpoint URL identifying the specific browser session to
+  // remove. Only this endpoint's row is deleted; other registered browsers
+  // remain active.
+  entity.v1.PushEndpoint endpoint = 2 [(buf.validate.field).required = true];
+}
+
+// DeleteResponse is returned upon successful removal. An empty
+// response confirms that the specified (user_id, endpoint) pair no longer has
+// a persisted subscription. Deleting a subscription that did not exist also
+// returns a successful empty response (idempotency).
+message DeleteResponse {}
