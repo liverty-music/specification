@@ -50,9 +50,11 @@ The system SHALL display a dialog after the first successful signup that consoli
 #### Scenario: Notification opt-in from dialog
 
 - **WHEN** the user taps the notification opt-in button in the PostSignupDialog
-- **THEN** the system SHALL call `PushService.subscribe()`
+- **THEN** the system SHALL call `PushService.create()` (backed by `PushNotificationService.Create` RPC)
+- **AND** the system SHALL NOT write any `localStorage` flag for push notification enabled state
 - **AND** on success, the notification row SHALL show a confirmed state
 - **AND** on failure or denial, the notification row SHALL show an error state
+- **AND** the settings page SHALL subsequently derive the toggle state from the backend via `PushNotificationService.Get` without relying on any `localStorage` flag
 
 #### Scenario: PWA install from dialog (Android/Chrome)
 
@@ -134,7 +136,7 @@ The footer button label in PostSignupDialog SHALL dynamically reflect whether th
 #### Scenario: Button switches to "Close" after enabling notifications
 
 - **WHEN** the user taps the notification opt-in button
-- **AND** `pushService.subscribe()` succeeds
+- **AND** `pushService.create()` succeeds
 - **AND** `canInstallPwa` is `false`
 - **THEN** `notificationManager.permission` becomes `'granted'`
 - **AND** `isAllDone` becomes `true`
