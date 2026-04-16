@@ -80,9 +80,9 @@ The `PushNotificationService` SHALL expose a `NotifyNewConcerts` RPC that invoke
 #### Scenario: Request shape
 
 - **WHEN** a client calls `PushNotificationService.NotifyNewConcerts`
-- **THEN** the request SHALL carry an `ArtistId` and a repeated `ConcertId`
+- **THEN** the request SHALL carry an `ArtistId` and a repeated `EventId` (concerts are identified by the event UUID since `Concert.id` is typed as `EventId`)
 - **AND** the request SHALL be validated via `protovalidate`
-- **AND** the `ConcertId` list SHALL be non-empty (`min_items = 1`)
+- **AND** the `EventId` list SHALL be non-empty (`min_items = 1`)
 
 #### Scenario: Successful invocation in non-production
 
