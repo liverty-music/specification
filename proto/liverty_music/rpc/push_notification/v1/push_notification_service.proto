@@ -3,6 +3,8 @@ syntax = "proto3";
 package liverty_music.rpc.push_notification.v1;
 
 import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/push_subscription.proto";
 import "liverty_music/entity/v1/user.proto";
 
@@ -74,6 +76,22 @@ service PushNotificationService {
   //   - INTERNAL: An unexpected error occurred while removing the
   //     subscription.
   rpc Delete(DeleteRequest) returns (DeleteResponse);
+
+  // NotifyNewConcerts triggers the push notification delivery pipeline for a
+  // specific set of newly created concerts belonging to an artist. This RPC
+  // invokes the same code path as the CONCERT.created event consumer, but
+  // bypasses the NATS event bus for deterministic integration testing and
+  // operator-initiated re-delivery.
+  //
+  // This RPC is restricted to non-production environments. In production the
+  // server returns PERMISSION_DENIED regardless of the caller's credentials.
+  //
+  // Possible errors:
+  //   - UNAUTHENTICATED: The request does not carry a valid user session.
+  //   - PERMISSION_DENIED: The server is running in a production environment.
+  //   - INVALID_ARGUMENT: One or more concert_ids do not belong to the
+  //     specified artist, or validation constraints are not met.
+  rpc NotifyNewConcerts(NotifyNewConcertsRequest) returns (NotifyNewConcertsResponse);
 }
 
 // CreateRequest carries the browser-generated Web Push
@@ -144,3 +162,31 @@ message DeleteRequest {
 // a persisted subscription. Deleting a subscription that did not exist also
 // returns a successful empty response (idempotency).
 message DeleteResponse {}
+
+// NotifyNewConcertsRequest identifies the artist and the specific set of
+// newly created concerts for which push notifications should be delivered.
+//
+// The caller must supply at least one concert identifier, and every supplied
+// identifier must belong to the specified artist. If any identifier does not
+// resolve to a concert owned by the artist, the entire request is rejected
+// with INVALID_ARGUMENT (no partial delivery).
+message NotifyNewConcertsRequest {
+  // The artist whose followers should be notified.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+
+  // The identifiers of the concerts that were just created. Each must be a
+  // valid event UUID belonging to the specified artist. The delivery pipeline
+  // computes hype-level filtering and notification payloads exclusively from
+  // this set — pre-existing concerts for the same artist are excluded.
+  repeated entity.v1.EventId concert_ids = 2 [(buf.validate.field) = {
+    required: true
+    repeated: {
+      min_items: 1
+      max_items: 1000
+    }
+  }];
+}
+
+// NotifyNewConcertsResponse is returned after the delivery pipeline completes.
+// Currently empty; reserved for future delivery statistics.
+message NotifyNewConcertsResponse {}
