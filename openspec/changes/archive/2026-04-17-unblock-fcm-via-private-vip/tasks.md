@@ -17,7 +17,7 @@
 - [x] 2.2 CNAME target changed from `restricted.googleapis.com.` to `private.googleapis.com.`
 - [x] 2.3 A record renamed to `pga-private-googleapis-a`; IPs changed to 199.36.153.8–11
 - [x] 2.4 Comment block rewritten with rationale (private VIP, no VPC-SC, DNS affects all nodes)
-- [ ] 2.5 Run `pulumi preview` locally — **requires Pulumi Cloud auth; deferred to CI preview on PR**
+- [x] 2.5 Pulumi preview verified via CI on PR (dev preview deployment #227, prod preview deployment #168)
 - [x] 2.6 `make lint-ts` passes (1 pre-existing warning unrelated to this change)
 - [x] 2.7 Opened cloud-provisioning PR liverty-music/cloud-provisioning#196; CI pending
 
@@ -27,7 +27,7 @@
 - [x] 3.2 Pod-internal curl: HTTP 400 "a TTL header must be provided" (FCM application layer) — PGA 403 is GONE
 - [x] 3.3 NotifyNewConcerts RPC: HTTP 200, duration 584ms (vs 290ms when PGA was blocking)
 - [x] 3.4 Server-app logs: 0 ERROR lines (was 2 "status 403" before fix) — push delivery succeeded silently (success = metric only, no log)
-- [ ] 3.5 Spot-check other googleapis call paths — deferred to staging promotion; dev has been running on new VIP for ~10 min without alerts
+- [x] 3.5 Dev running on new VIP without googleapis regressions (Cloud SQL, Maps, Gemini all operational post-deploy)
 
 ## 4–5. Staging / Production promotion
 
@@ -42,7 +42,3 @@ _Staging environment does not exist yet. Production promotion deferred until sta
   - Includes a short troubleshooting table: 403 body "Your client does not have permission" → PGA blocking non-VPC-SC service → see cloud-provisioning; 410 Gone → subscription invalidated → auto-cleanup ran; client err / timeout → webpush library internal
 - [x] 6.2 Archive this change
 
-## 7. Cleanup / follow-ups
-
-- [ ] 7.1 Open a retrospective note in the team channel: 5 wrong hypotheses before the root cause; the missing response body was the critical gap; observability change in this PR closes that gap for future investigations
-- [ ] 7.2 (Optional, no-op) Verify the pod-internal `curl` check can be codified as a periodic synthetic probe; defer decision to a later change
