@@ -1,10 +1,4 @@
-# private-google-access Specification
-
-## Purpose
-
-Defines requirements for the Private Google Access DNS configuration that routes `*.googleapis.com` traffic through Google's internal network via the private VIP, bypassing Cloud NAT data processing charges for clusters with private nodes while maintaining reachability to all Google APIs including services not protected by VPC Service Controls.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Private DNS zone for googleapis.com
 
@@ -34,6 +28,8 @@ Google API traffic from GKE nodes SHALL route through Private Google Access via 
 - **WHEN** a GKE pod sends a request to any `*.googleapis.com` endpoint
 - **THEN** the traffic SHALL use the internal PGA route (199.36.153.8/30)
 - **AND** SHALL NOT appear in Cloud NAT data processing metrics
+
+## ADDED Requirements
 
 ### Requirement: Reachability of services not protected by VPC Service Controls
 
