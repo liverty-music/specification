@@ -9,24 +9,44 @@ import "liverty_music/entity/v1/user.proto";
 service UserService {
   // Get retrieves the profile of the authenticated user.
   //
-  // The user identity is extracted from the JWT context by the backend —
-  // clients do not provide it in the request.
+  // Per the rpc-auth-scoping convention, the request carries an explicit
+  // user_id that the backend verifies against the userID derived from the
+  // JWT context; mismatches are rejected with PERMISSION_DENIED.
   //
   // Possible errors:
+  // - INVALID_ARGUMENT: The request is missing user_id or the field is malformed.
   // - NOT_FOUND: No user record exists for the authenticated identity.
+  // - PERMISSION_DENIED: The supplied user_id does not match the authenticated caller.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Get(GetRequest) returns (GetResponse);
 
-  // Create registers a new user profile in the system.
+  // Create registers a new user profile in the system, or returns the
+  // existing profile when the caller's external_id (Zitadel sub) is already
+  // provisioned.
+  //
+  // Create is the sanctioned exception to the rpc-auth-scoping convention:
+  // the caller's internal user_id does not yet exist at call time, so the
+  // request does NOT carry one. The backend identifies the caller via
+  // external_id extracted from the JWT.
+  //
+  // Create is idempotent on duplicate external_id: a second call for the
+  // same external_id returns the existing user as a successful response
+  // (CreateResponse.user populated) rather than ALREADY_EXISTS. The
+  // pre-existing email and name fields on the stored row are NOT overwritten
+  // — the duplicate call is a read, not an upsert. This gives the frontend a
+  // uniform "resolve-or-provision" bootstrap RPC when its local userID cache
+  // is empty (e.g., fresh device).
   //
   // The home field may be provided when the user has already selected their
   // home area during the onboarding flow (before account creation). Supplying
-  // it here persists the home area atomically with the user record, avoiding a
-  // separate UpdateHome call immediately after sign-up.
+  // it here persists the home area atomically with the initial user record,
+  // avoiding a separate UpdateHome call immediately after sign-up. On the
+  // idempotent-return path, home is ignored — use UpdateHome to change an
+  // already-provisioned user's home area.
   //
   // Possible errors:
-  // - ALREADY_EXISTS: A user with the same unique identifier or email already exists.
   // - INVALID_ARGUMENT: The provided user data is missing required fields or is malformed.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Create(CreateRequest) returns (CreateResponse);
 
   // UpdateHome sets or changes the authenticated user's home area.
@@ -35,23 +55,29 @@ service UserService {
   // "Home", "Nearby", and "Away" lanes. Users typically set this during
   // onboarding and may update it later from settings.
   //
-  // The user ID is extracted from the authenticated JWT context — clients
-  // do not provide it in the request.
+  // Per the rpc-auth-scoping convention, the request carries an explicit
+  // user_id that the backend verifies against the userID derived from the
+  // JWT context; mismatches are rejected with PERMISSION_DENIED.
   //
   // Possible errors:
-  // - INVALID_ARGUMENT: The provided home value contains an unrecognized or malformed code.
+  // - INVALID_ARGUMENT: user_id is missing, or the home value contains an unrecognized or malformed code.
   // - NOT_FOUND: No user record exists for the authenticated identity.
+  // - PERMISSION_DENIED: The supplied user_id does not match the authenticated caller.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc UpdateHome(UpdateHomeRequest) returns (UpdateHomeResponse);
 
   // ResendEmailVerification triggers a new email verification message for the
   // authenticated user via the identity provider (Zitadel).
   //
-  // The user identity is extracted from the JWT context — clients do not
-  // provide it in the request.
+  // Per the rpc-auth-scoping convention, the request carries an explicit
+  // user_id that the backend verifies against the userID derived from the
+  // JWT context; mismatches are rejected with PERMISSION_DENIED before any
+  // Zitadel API call is made.
   //
   // Possible errors:
+  // - INVALID_ARGUMENT: The request is missing user_id or the field is malformed.
   // - FAILED_PRECONDITION: The user's email is already verified.
+  // - PERMISSION_DENIED: The supplied user_id does not match the authenticated caller.
   // - RESOURCE_EXHAUSTED: The user has exceeded the resend rate limit.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   // - UNAVAILABLE: The email verification service is not configured.
@@ -59,8 +85,11 @@ service UserService {
 }
 
 // GetRequest is the request for retrieving the authenticated user's profile.
-// The user identity is resolved from the JWT context — no fields are required.
-message GetRequest {}
+message GetRequest {
+  // The caller's user identifier. Must match the userID derived from the
+  // authenticated session; mismatches are rejected with PERMISSION_DENIED.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+}
 
 // GetResponse contains the profile information of the requested user.
 message GetResponse {
@@ -71,14 +100,22 @@ message GetResponse {
 // CreateRequest provides the necessary details to register a new user profile.
 // The external_id (Zitadel sub claim) and name are extracted from the authenticated JWT context
 // by the backend and MUST NOT be provided by the client.
+//
+// Unlike the other per-user RPCs, CreateRequest does NOT carry a user_id —
+// the caller's internal user_id has not yet been minted. Create is the
+// sanctioned exception to the rpc-auth-scoping convention. See the Create
+// RPC documentation for the idempotent-return semantics on duplicate
+// external_id.
 message CreateRequest {
   // Required. The user's email address for account identity.
   entity.v1.UserEmail email = 1 [(buf.validate.field).required = true];
 
   // Optional. The user's home area, when it has already been selected during
   // the onboarding flow before account creation. Providing this field here
-  // persists the home area atomically with the user record. When absent, the
-  // home area remains unset and can be configured later via UpdateHome.
+  // persists the home area atomically with the initial user record. When
+  // absent, the home area remains unset and can be configured later via
+  // UpdateHome. Ignored on the idempotent-return path (duplicate
+  // external_id) — the existing row's home is not overwritten.
   entity.v1.Home home = 2;
 }
 
@@ -89,11 +126,14 @@ message CreateResponse {
 }
 
 // UpdateHomeRequest provides the new home area for the authenticated user.
-// The user identity is extracted from the JWT context by the backend.
 message UpdateHomeRequest {
+  // The caller's user identifier. Must match the userID derived from the
+  // authenticated session; mismatches are rejected with PERMISSION_DENIED.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+
   // Required. The structured home area representing the user's geographic base
   // for live event attendance. See entity.v1.Home for the full code system contract.
-  entity.v1.Home home = 1 [(buf.validate.field).required = true];
+  entity.v1.Home home = 2 [(buf.validate.field).required = true];
 }
 
 // UpdateHomeResponse returns the updated user profile after the home area change.
@@ -103,9 +143,13 @@ message UpdateHomeResponse {
 }
 
 // ResendEmailVerificationRequest is the request for resending the email
-// verification message. The user identity is resolved from the JWT context —
-// no fields are required.
-message ResendEmailVerificationRequest {}
+// verification message.
+message ResendEmailVerificationRequest {
+  // The caller's user identifier. Must match the userID derived from the
+  // authenticated session; mismatches are rejected with PERMISSION_DENIED
+  // before any Zitadel API call is made.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+}
 
 // ResendEmailVerificationResponse is returned when the verification email has
 // been successfully queued for delivery.
