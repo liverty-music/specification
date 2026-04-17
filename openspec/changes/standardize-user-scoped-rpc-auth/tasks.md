@@ -6,13 +6,13 @@
 
 ## 2. Specification (proto)
 
-- [ ] 2.1 Update `proto/liverty_music/rpc/user/v1/user_service.proto`: add required `entity.v1.UserId user_id = 1` to `GetRequest`
-- [ ] 2.2 Add required `entity.v1.UserId user_id` (field 1) to `UpdateHomeRequest`; shift existing `home` to field 2
-- [ ] 2.3 Add required `entity.v1.UserId user_id = 1` to `ResendEmailVerificationRequest`
-- [ ] 2.4 Update all doc comments to reflect the new `user_id` field and the JWT-match behavior, including `PERMISSION_DENIED` in the Possible Errors list for `Get`, `UpdateHome`, and `ResendEmailVerification`
-- [ ] 2.5 Do NOT add `user_id` to `CreateRequest`; update `CreateRequest`'s doc to explicitly state that creation RPCs are exempt per the `rpc-auth-scoping` capability, AND that the RPC is idempotent on duplicate `external_id` (returns the existing user rather than `ALREADY_EXISTS`) per `user-account-sync`
-- [ ] 2.6 Run `buf lint` and `buf format -w` until clean
-- [ ] 2.7 Run `buf breaking --against '.git#branch=main'` and expect breaking changes; add the `buf skip breaking` PR label
+- [x] 2.1 Update `proto/liverty_music/rpc/user/v1/user_service.proto`: add required `entity.v1.UserId user_id = 1` to `GetRequest`
+- [x] 2.2 Add required `entity.v1.UserId user_id` (field 1) to `UpdateHomeRequest`; shift existing `home` to field 2
+- [x] 2.3 Add required `entity.v1.UserId user_id = 1` to `ResendEmailVerificationRequest`
+- [x] 2.4 Update all doc comments to reflect the new `user_id` field and the JWT-match behavior, including `PERMISSION_DENIED` in the Possible Errors list for `Get`, `UpdateHome`, and `ResendEmailVerification`
+- [x] 2.5 Do NOT add `user_id` to `CreateRequest`; update `CreateRequest`'s doc to explicitly state that creation RPCs are exempt per the `rpc-auth-scoping` capability, AND that the RPC is idempotent on duplicate `external_id` (returns the existing user rather than `ALREADY_EXISTS`) per `user-account-sync`
+- [x] 2.6 Run `buf lint` and `buf format -w` until clean
+- [x] 2.7 Run `buf breaking --against '.git#branch=main'` and expect breaking changes; add the `buf skip breaking` PR label
 - [ ] 2.8 Commit and open specification PR; merge; create GitHub Release so `buf-release.yml` publishes to BSR
 
 ## 3. Backend — shared helper
