@@ -60,6 +60,14 @@ Developers frequently work on multiple projects that each run a default-port Pos
 
 **Rationale**: Integration tests run on the host against the local `postgres` container (started via `docker compose up -d postgres --wait`). Without updating this constant, `make test` would fail after the port change. A follow-up refactor to source the port from env is out of scope.
 
+### Decision 6: Align GitHub Actions service-container host ports with the new `15432`
+
+**Chosen**: Update `.github/workflows/test.yml` and `.github/workflows/atlas-ci.yml` so the `postgres` service container's host-side port mapping is `15432:5432` (container internal port stays `5432`), and the `atlas migrate apply` URLs and `DATABASE_URL` env use `localhost:15432`.
+
+**Alternative considered**: Make `setup_test.go` read the port from env (e.g., `DATABASE_PORT`), keep CI workflows at `5432`.
+
+**Rationale**: CI service containers have no cross-project conflict risk, so the original reasoning "GitHub Actions workflows are unaffected" is technically valid in isolation. However, because `setup_test.go` hardcodes `15432`, mismatched CI and local values cause `TestMain` to fail before any test runs. Aligning the host-side mapping in CI is a 4-line change (two workflow files, port mapping + migrate URL each) and preserves the simple hardcoded-constant approach without introducing env plumbing. The env-reading alternative expands scope and requires `make test` to source `.env.test`, which is an ergonomic regression for little gain.
+
 ## Risks / Trade-offs
 
 - **Risk**: Developers with existing `compose.yml` state may have a `postgres` container still listening on `5432` after `git pull`. → **Mitigation**: Document in the tasks that developers must run `docker compose down postgres` and `docker compose up -d postgres` once after pulling; persistent volume `postgres_data` is not affected.

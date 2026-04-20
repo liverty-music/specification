@@ -18,6 +18,8 @@
 - [ ] 3.2 Update the `env "local"` block in `backend/atlas.hcl` so `url` uses `localhost:15432`
 - [ ] 3.3 Replace `localhost:5432` with `localhost:15432` in all three atlas allowlist entries in `backend/.claude/settings.json`
 - [ ] 3.4 Change `Port: 5432` to `Port: 15432` in `backend/internal/infrastructure/database/rdb/setup_test.go:41`
+- [ ] 3.5 Update `backend/.github/workflows/test.yml`: change both postgres service port mappings to `15432:5432` and both `atlas migrate apply` URLs to `localhost:15432`
+- [ ] 3.6 Update `backend/.github/workflows/atlas-ci.yml`: change the postgres service port mapping to `15432:5432` and the `DATABASE_URL` env to `localhost:15432`
 
 ## 4. Backend repo — verification
 

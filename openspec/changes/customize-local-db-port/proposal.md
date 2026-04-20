@@ -19,8 +19,8 @@ Multiple projects on the same developer machine run PostgreSQL on the default po
 
 ## Impact
 
-- **Affected repos**: `specification` (spec delta), `backend` (compose, env, atlas config, settings, test setup).
-- **Not affected**: `cloud-provisioning` (Cloud SQL / K8s DATABASE_PORT stays `5432`), GitHub Actions service containers, `backend/k8s/atlas/base/atlas-migration.yaml`.
+- **Affected repos**: `specification` (spec delta), `backend` (compose, env, atlas config, settings, test setup, CI workflow port mappings).
+- **Not affected**: `cloud-provisioning` (Cloud SQL / K8s DATABASE_PORT stays `5432`), `backend/k8s/atlas/base/atlas-migration.yaml`.
 - **Developer action required**: After merging, developers must `docker compose down` and recreate the local `postgres` container; any cached `localhost:5432` bookmarks/scripts pointing to liverty-music's local DB must be updated to `15432`.
 - **No data migration**: Port change only; the `postgres_data` volume is preserved.
 - **BSR / generated code**: No proto changes.
