@@ -33,26 +33,42 @@ This change aligns `UserService` to the new convention so the authenticated RPC 
 
 ### D2: Shared helper / interceptor for the JWT-match check
 
-**Decision:** Implement the check as a helper function invoked at the start of each relevant handler:
+**Decision:** Implement the check as a helper function invoked at the start of each relevant handler. The helper takes the caller's already-resolved internal user ID alongside the request-supplied value (rather than reading the JWT userID from `ctx`), because every per-user handler already needs to resolve the caller via `GetByExternalID(ctx, externalID)` to perform its real work — passing that resolved ID into the helper avoids a duplicated resolution step inside the helper itself:
 
 ```go
-func requireMatchingUserID(ctx context.Context, reqUserID string) error {
-    jwtUserID := ctxutil.UserIDFromContext(ctx)
+// internal/adapter/rpc/mapper/user.go
+func RequireUserIDMatch(callerUserID, reqUserID string) error {
     if reqUserID == "" {
-        return apperr.InvalidArgument("user_id is required")
+        return connect.NewError(connect.CodeInvalidArgument, errors.New("user_id is required"))
     }
-    if reqUserID != jwtUserID {
-        return apperr.PermissionDenied("user_id does not match authenticated user")
+    if reqUserID != callerUserID {
+        return connect.NewError(connect.CodePermissionDenied, errors.New("user_id does not match authenticated user"))
     }
     return nil
 }
 ```
 
+Handler call site pattern:
+
+```go
+externalID, err := mapper.GetExternalUserID(ctx)
+if err != nil { return nil, err }
+user, err := h.userUseCase.GetByExternalID(ctx, externalID)
+if err != nil { return nil, err }
+if err := mapper.RequireUserIDMatch(user.ID, req.Msg.GetUserId().GetValue()); err != nil {
+    return nil, err
+}
+// ... business logic ...
+```
+
 **Rationale:** A Connect interceptor is attractive but would need per-RPC configuration to know which field holds the `user_id` (since proto messages have no uniform field name at that layer). A helper function keeps each handler explicit about what it is checking, while still being a one-liner at the top of each RPC. Simplicity wins over the pseudo-magic of an interceptor.
+
+The `(callerUserID, reqUserID)` signature was chosen over `(ctx, reqUserID)` because the handler must resolve the caller's internal UUID anyway (`external_id` in the JWT vs. `user_id` UUID in the database are distinct identities); making the helper consume the already-resolved value keeps the resolution path explicit and avoids hiding a DB call inside what looks like a pure validation helper.
 
 **Alternatives considered:**
 - *Connect interceptor with per-message reflection.* Rejected: fragile reflection, no benefit when a one-line helper does the same job.
 - *Generated code via a protoc plugin.* Over-engineered for the current footprint; revisit only if the service count grows past ~10.
+- *`(ctx, reqUserID)` signature with the helper resolving the caller internally.* Rejected for the reason above — would either duplicate the `GetByExternalID` lookup or force the helper to take a repository dependency.
 
 ### D3: Ordering behind `fix-push-notification-toggle-sync`
 
