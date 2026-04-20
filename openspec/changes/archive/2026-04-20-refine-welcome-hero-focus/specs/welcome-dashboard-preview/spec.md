@@ -1,10 +1,4 @@
-# Welcome Dashboard Preview
-
-## Purpose
-
-Displays an interactive, read-only dashboard preview on the Welcome page using live concert data from a curated popular-artist fallback list, giving new users a tangible preview of what they will build during onboarding.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Live Dashboard Preview on Welcome Page
 

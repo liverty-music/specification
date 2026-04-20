@@ -1,4 +1,4 @@
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Passkey Authentication CTA
 
@@ -39,6 +39,8 @@ The system SHALL provide both a primary `[Get Started]` CTA and a secondary `[Lo
 - **THEN** the system SHALL NOT display email/password fields or social login buttons (Google, Spotify, etc.)
 - **AND** Passkey SHALL be the sole authentication method
 
+## ADDED Requirements
+
 ### Requirement: Hero Screen Scroll Affordance
 
 The landing page Screen 1 SHALL provide a single, clearly labeled affordance that invites the user to reveal the dashboard preview on Screen 2, whenever Screen 2 is rendered. This affordance SHALL be the only primary interactive control on Screen 1 (apart from the language switcher) when Screen 2 is present, preserving the "message-first" intent of the hero screen. When Screen 2 is not rendered (no preview data), the scroll-affordance SHALL NOT be displayed, because there is no target to scroll to — the inline CTA fallback takes its place (see `Passkey Authentication CTA`).
@@ -76,50 +78,3 @@ The landing page Screen 1 SHALL provide a single, clearly labeled affordance tha
 - **THEN** the button label SHALL display a Japanese equivalent of "See how it works ↓"
 - **WHEN** the landing page is rendered in English
 - **THEN** the button label SHALL display "See how it works ↓" (or its configured English text)
-
-### Requirement: Guest-Friendly Welcome Copy
-
-The Welcome page SHALL communicate that no account is required to try the product.
-
-#### Scenario: Guest-friendly copy displayed on Welcome page
-
-- **WHEN** the Welcome page renders
-- **THEN** the page SHALL display "アカウント不要でお試しいただけます" near the [使ってみる] CTA button
-
-### Requirement: Authenticated User Redirect
-
-The system SHALL redirect already-authenticated users away from the landing page to the Dashboard, regardless of `onboardingStep` value.
-
-#### Scenario: Authenticated user visits landing page
-
-- **WHEN** an authenticated user navigates to `/`
-- **THEN** the system SHALL redirect to the Dashboard with full unrestricted access
-- **AND** the system SHALL NOT check `onboardingStep`
-
-#### Scenario: Redirect target check fails
-
-- **WHEN** the redirect fails due to a network or API error
-- **THEN** the system SHALL display the landing page with an error toast: "Could not determine account status. Please try signing in again."
-- **AND** the system SHALL NOT crash to a white screen
-- **AND** the system SHALL allow the user to manually navigate via the Log In button
-
-### Requirement: Welcome Page Language Switcher
-
-The landing page SHALL provide a language toggle for unauthenticated users to switch between supported locales without requiring sign-in.
-
-#### Scenario: Language toggle visible on welcome page
-- **WHEN** an unauthenticated user visits the welcome page
-- **THEN** the system SHALL display a language toggle on Screen 1, below the hero subtitle and above the scroll-affordance button (or the inline fallback CTA group when preview data is unavailable)
-- **AND** the toggle SHALL show all supported languages (EN, JA)
-- **AND** the current active language SHALL be visually distinguished (e.g., bold or underline)
-
-#### Scenario: Switching language on welcome page
-- **WHEN** the user taps a language option
-- **THEN** the system SHALL call `i18n.setLocale(lang)` to update all translated strings immediately
-- **AND** the system SHALL persist the choice via `localStorage.setItem('language', lang)`
-- **AND** no page reload SHALL be required
-
-#### Scenario: Language preference persists across sessions
-- **WHEN** the user selects a language on the welcome page and later returns
-- **THEN** the i18next language detector SHALL read the persisted `language` key from localStorage
-- **AND** the application SHALL start in the previously selected language
