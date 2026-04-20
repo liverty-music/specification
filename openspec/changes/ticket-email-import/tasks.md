@@ -11,33 +11,33 @@
 
 - [x] 2.1 Create Atlas migration for `ticket_emails` table (id UUID PK, user_id FK, event_id FK, email_type SMALLINT, raw_body TEXT, parsed_data JSONB, payment_deadline TIMESTAMPTZ, lottery_start TIMESTAMPTZ, lottery_end TIMESTAMPTZ, application_url TEXT)
 - [x] 2.2 Add index on `(user_id, event_id)` for efficient lookups
-- [ ] 2.3 Apply migration locally and verify with `atlas migrate apply --env local`
+- [x] 2.3 Apply migration locally and verify with `atlas migrate apply --env local`
 
 ## 3. Backend Entity & Repository (backend)
 
 - [x] 3.1 Define `TicketEmail` entity struct and `TicketEmailType` constants in `internal/entity/ticket_email.go`
 - [x] 3.2 Define `TicketEmailRepository` interface (Create, Update, GetByID, ListByUserAndEvent)
 - [x] 3.3 Implement pgx-based `TicketEmailRepository`
-- [ ] 3.4 Write repository integration tests
+- [x] 3.4 Write repository integration tests
 
 ## 4. Gemini Client (backend)
 
 - [x] 4.1 Create `internal/gemini/parser.go` with `TicketEmailParser` interface
 - [x] 4.2 Implement Vertex AI Gemini Flash client with structured output (response schema defining lottery dates, payment deadline, win/loss status, payment status, application URL)
 - [x] 4.3 Define the Gemini prompt for Japanese ticket email parsing
-- [ ] 4.4 Write unit tests with mock Gemini responses
+- [x] 4.4 Write unit tests with mock Gemini responses
 
 ## 5. Backend Service Handler (backend)
 
 - [x] 5.1 Implement `CreateTicketEmail` handler: validate input → call Gemini parser → persist TicketEmail records (one per event_id) → return parsed results
 - [x] 5.2 Implement `UpdateTicketEmail` handler: validate ownership → update TicketEmail record → upsert TicketJourney status based on email_type and parsed content
 - [x] 5.3 Wire `TicketEmailService` into DI graph (Google Wire)
-- [ ] 5.4 Write handler unit tests (mock repository + mock Gemini parser)
+- [x] 5.4 Write handler unit tests (mock repository + mock Gemini parser)
 
 ## 6. Cloud Provisioning
 
-- [ ] 6.1 Verify Vertex AI API is enabled in GCP project
-- [ ] 6.2 Add Vertex AI permissions to backend service account IAM (if not already present)
+- [x] 6.1 Verify Vertex AI API is enabled in GCP project
+- [x] 6.2 Add Vertex AI permissions to backend service account IAM (if not already present)
 
 ## 7. Frontend: PWA Share Target (frontend)
 
