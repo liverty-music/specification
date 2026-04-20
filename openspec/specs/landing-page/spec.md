@@ -109,7 +109,7 @@ The landing page SHALL provide a language toggle for unauthenticated users to sw
 
 #### Scenario: Language toggle visible on welcome page
 - **WHEN** an unauthenticated user visits the welcome page
-- **THEN** the system SHALL display a language toggle below the Log In button
+- **THEN** the system SHALL display a language toggle on Screen 1, below the hero subtitle and above the scroll-affordance button (or the inline fallback CTA group when preview data is unavailable)
 - **AND** the toggle SHALL show all supported languages (EN, JA)
 - **AND** the current active language SHALL be visually distinguished (e.g., bold or underline)
 
