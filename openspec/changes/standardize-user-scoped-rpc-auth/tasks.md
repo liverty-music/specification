@@ -13,7 +13,7 @@
 - [x] 2.5 Do NOT add `user_id` to `CreateRequest`; update `CreateRequest`'s doc to explicitly state that creation RPCs are exempt per the `rpc-auth-scoping` capability, AND that the RPC is idempotent on duplicate `external_id` (returns the existing user rather than `ALREADY_EXISTS`) per `user-account-sync`
 - [x] 2.6 Run `buf lint` and `buf format -w` until clean
 - [x] 2.7 Run `buf breaking --against '.git#branch=main'` and expect breaking changes; add the `buf skip breaking` PR label
-- [x] 2.8 Commit and open specification PR (#411); merge + create GitHub Release pending user action
+- [x] 2.8 Commit and open specification PR (#411); merged; GitHub Release v0.38.0 created → BSR gen v0.38.0 published
 
 ## 3. Backend — shared helper
 
