@@ -7,6 +7,7 @@ package liverty_music.rpc.ticket.v1;
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/ticket.proto";
+import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/ticket/v1;ticketv1";
 
@@ -30,14 +31,15 @@ service TicketService {
 }
 
 // MintTicketRequest carries the information needed to issue a new soulbound ticket.
-// The recipient fan is identified from the authenticated user's JWT claims,
-// not from a request field, to prevent unauthorized minting on behalf of others.
+// The caller supplies the user_id explicitly per the rpc-auth-scoping convention;
+// the backend verifies it matches the JWT-derived userID before minting.
 message MintTicketRequest {
   // event_id identifies the event for which the ticket should be minted.
   liverty_music.entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
 
-  reserved 2;
-  reserved "user_id";
+  // user_id identifies the fan receiving the ticket. The backend rejects the request
+  // with PERMISSION_DENIED if it does not match the JWT-derived userID.
+  liverty_music.entity.v1.UserId user_id = 2 [(buf.validate.field).required = true];
 }
 
 // MintTicketResponse contains the newly minted ticket returned after a successful minting operation.
@@ -60,11 +62,13 @@ message GetTicketResponse {
   liverty_music.entity.v1.Ticket ticket = 1;
 }
 
-// ListTicketsRequest requests the ticket collection of the authenticated fan.
-// The user is identified from JWT claims to prevent listing other users' tickets.
+// ListTicketsRequest requests the ticket collection of a specific fan.
+// The caller supplies the user_id explicitly per the rpc-auth-scoping convention;
+// the backend rejects mismatches against the JWT-derived userID with PERMISSION_DENIED.
 message ListTicketsRequest {
-  reserved 1;
-  reserved "user_id";
+  // user_id identifies the fan whose tickets are being listed. The backend rejects
+  // the request with PERMISSION_DENIED if it does not match the JWT-derived userID.
+  liverty_music.entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
 }
 
 // ListTicketsResponse contains all tickets held by the requested fan.
