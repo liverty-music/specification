@@ -38,7 +38,7 @@
 - [ ] 5.3 Remove `src/zitadel/components/token-action.ts` (v1 Action + TriggerActions)
 - [ ] 5.4 Remove `src/zitadel/scripts/add-email-claim.js` (v1 JS)
 - [ ] 5.5 Create `src/zitadel/components/actions-v2.ts` instantiating two `ZitadelTarget`s and their corresponding `ZitadelExecutionFunction` / `ZitadelExecutionRequest`
-- [ ] 5.6 Update `src/zitadel/components/frontend.ts` redirect URIs to include `https://auth.dev.liverty-music.app/auth/callback` (Zitadel's own Login UI) as well as the existing frontend callbacks
+- [ ] 5.6 _Dropped_ — `src/zitadel/components/frontend.ts` redirect URIs require **no change**. Redirect URIs point at the OIDC **client** (frontend SPA at `https://dev.liverty-music.app/auth/callback`), not at the IdP. Only the **issuer** hostname changes (from `dev-svijfm.us1.zitadel.cloud` to `auth.dev.liverty-music.app`); the issuer is configured by the Pulumi provider `domain` input (task 5.1), not by redirect URIs.
 - [ ] 5.7 Update `src/index.ts` to pass the new `domain` and `jwtProfileJson` args to the Zitadel component
 - [ ] 5.8 Run `make lint-ts` and fix any type errors
 
