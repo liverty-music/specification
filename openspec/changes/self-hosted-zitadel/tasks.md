@@ -1,0 +1,132 @@
+## 1. Pre-flight & Confirmations
+
+- [ ] 1.1 Verify Cloud SQL `postgres-osaka` `databaseVersion` is `POSTGRES_18` via Pulumi code inspection (no live query needed)
+- [ ] 1.2 Confirm latest `ghcr.io/zitadel/zitadel` and `ghcr.io/zitadel/login` image tags are `v4.11.0` or later; pin exact version in Helm values
+- [ ] 1.3 Take a pre-migration Cloud SQL backup snapshot (manual via console or gcloud) and note the backup id
+- [ ] 1.4 Record current Zitadel Cloud tenant export (orgs, projects, applications) for reference during cutover verification
+
+## 2. cloud-provisioning — Cloud SQL & GCP Resources
+
+- [ ] 2.1 In `src/gcp/components/postgres.ts`, add a `zitadel` `gcp.sql.Database` resource on `postgres-osaka`
+- [ ] 2.2 Add a `gcp.sql.User` of type `CLOUD_IAM_SERVICE_ACCOUNT` named `zitadel-sa@liverty-music-dev.iam`
+- [ ] 2.3 Grant the IAM user ownership of the `zitadel` database via a `gcp.sql.DatabaseIAMGrant` or an equivalent SQL helper (post-deploy task runner)
+- [ ] 2.4 Create GCP service account `zitadel-sa@liverty-music-dev.iam.gserviceaccount.com` with `roles/cloudsql.instanceUser` and `roles/cloudsql.client`
+- [ ] 2.5 Bind Workload Identity: K8s SA `zitadel/zitadel` → GCP SA `zitadel-sa@liverty-music-dev.iam`
+- [ ] 2.6 Create DNS A record `auth.dev.liverty-music.app` pointing at the GKE Gateway IP via Cloudflare Pulumi resources
+- [ ] 2.7 Add Google-managed certificate for `auth.dev.liverty-music.app` attached to the existing dev Gateway
+
+## 3. cloud-provisioning — GCP Secret Manager
+
+- [ ] 3.1 Generate a 32-byte random masterkey via `random.RandomString({length:32, special:false})` and write to GSM secret `zitadel-masterkey`
+- [ ] 3.2 Create placeholder GSM secret `zitadel-admin-sa-key` (value set by bootstrap Job at first run; Pulumi only provisions the secret resource itself and its IAM binding)
+- [ ] 3.3 Grant ESO service account `roles/secretmanager.secretAccessor` on both new secrets
+- [ ] 3.4 Retain existing `zitadel-postmark-smtp` GSM secret and its ESO binding unchanged
+
+## 4. cloud-provisioning — Pulumi Dynamic Resource for Actions v2
+
+- [ ] 4.1 Create new directory `src/zitadel/dynamic/` with `zitadel-api-client.ts` implementing `getAccessToken(jwtProfileJson)` via OIDC `client_credentials` grant
+- [ ] 4.2 Implement `ZitadelTarget` class extending `pulumi.dynamic.Resource` with create/read/update/delete calling `/v2/actions/targets`
+- [ ] 4.3 Implement `ZitadelExecutionFunction` class with create/read/update/delete calling `/v2/actions/executions`
+- [ ] 4.4 Implement `ZitadelExecutionRequest` class for the auto-verify-email user-creation interception
+- [ ] 4.5 Add unit tests for the Dynamic Resource lifecycle using a mocked HTTP client
+- [ ] 4.6 Export classes from `src/zitadel/dynamic/index.ts`
+
+## 5. cloud-provisioning — Rewrite src/zitadel/ for self-hosted target
+
+- [ ] 5.1 In `src/zitadel/index.ts`, change provider `domain` input from `config.domain` (cloud) to `auth.dev.liverty-music.app`
+- [ ] 5.2 Change `jwtProfileJson` source from Pulumi config to `gcp.secretmanager.getSecretVersion({secret:"zitadel-admin-sa-key"})`
+- [ ] 5.3 Remove `src/zitadel/components/token-action.ts` (v1 Action + TriggerActions)
+- [ ] 5.4 Remove `src/zitadel/scripts/add-email-claim.js` (v1 JS)
+- [ ] 5.5 Create `src/zitadel/components/actions-v2.ts` instantiating two `ZitadelTarget`s and their corresponding `ZitadelExecutionFunction` / `ZitadelExecutionRequest`
+- [ ] 5.6 Update `src/zitadel/components/frontend.ts` redirect URIs to include `https://auth.dev.liverty-music.app/auth/callback` (Zitadel's own Login UI) as well as the existing frontend callbacks
+- [ ] 5.7 Update `src/index.ts` to pass the new `domain` and `jwtProfileJson` args to the Zitadel component
+- [ ] 5.8 Run `make lint-ts` and fix any type errors
+
+## 6. cloud-provisioning — Kustomize base for zitadel namespace
+
+- [ ] 6.1 Create `k8s/namespaces/zitadel/base/namespace.yaml`
+- [ ] 6.2 Create `k8s/namespaces/zitadel/base/serviceaccount.yaml` with Workload Identity annotation pointing at `zitadel-sa@...iam.gserviceaccount.com`
+- [ ] 6.3 Create `k8s/namespaces/zitadel/base/configmap.yaml` with Zitadel YAML config (ExternalDomain, ExternalSecure, TLS mode, Database.postgres.Host/Port/User/Database, Admin.ExistingDatabase, FIRSTINSTANCE env)
+- [ ] 6.4 Create `k8s/namespaces/zitadel/base/external-secret.yaml` for `zitadel-masterkey` and `zitadel-admin-sa-key`
+- [ ] 6.5 Create `k8s/namespaces/zitadel/base/deployment-api.yaml` — main container + cloud-sql-proxy sidecar + emptyDir volume for admin-sa key
+- [ ] 6.6 Create `k8s/namespaces/zitadel/base/deployment-login.yaml`
+- [ ] 6.7 Create `k8s/namespaces/zitadel/base/service-api.yaml` and `service-login.yaml`
+- [ ] 6.8 Create `k8s/namespaces/zitadel/base/httproute.yaml` with path split: `/ui/v2/login/*` → zitadel-login, `/*` → zitadel
+- [ ] 6.9 Create `k8s/namespaces/zitadel/base/pdb.yaml` with `minAvailable: 1` for each Deployment
+- [ ] 6.10 Create `k8s/namespaces/zitadel/base/bootstrap-job.yaml` — waits for the emptyDir key file, uploads to GSM `zitadel-admin-sa-key`, exits
+- [ ] 6.11 Create `k8s/namespaces/zitadel/base/kustomization.yaml` referencing all of the above
+
+## 7. cloud-provisioning — Dev overlay
+
+- [ ] 7.1 Create `k8s/namespaces/zitadel/overlays/dev/kustomization.yaml`
+- [ ] 7.2 Create a configmap patch setting `ZITADEL_DATABASE_POSTGRES_MAXOPENCONNS=3` and `_MAXIDLECONNS=1`
+- [ ] 7.3 Create a deployment patch setting `replicas: 2`, resource `requests`/`limits` sized for `e2-medium` spot, and `podAntiAffinity` on `kubernetes.io/hostname`
+- [ ] 7.4 Leave readiness/liveness probe defaults from the base; confirm `/debug/ready` works through the sidecar network namespace
+- [ ] 7.5 Add `interruptOnError: false` to both Pulumi Action v2 Executions for dev (handled in `actions-v2.ts` via env-aware argument)
+
+## 8. cloud-provisioning — ArgoCD Application & sync-wave
+
+- [ ] 8.1 Add `k8s/argocd-apps/dev/zitadel.yaml` registering the `overlays/dev` path
+- [ ] 8.2 Annotate the bootstrap-Job with `argocd.argoproj.io/sync-wave: "1"` and the Deployments with `"2"` so the Job completes first
+- [ ] 8.3 Run `make lint-k8s` and fix any kube-linter findings
+
+## 9. backend — /pre-access-token Handler
+
+- [ ] 9.1 In `backend/internal/adapter/http/` (or an equivalent new directory), add `pre_access_token_handler.go` exposing `POST /pre-access-token`
+- [ ] 9.2 Reuse the existing `internal/infrastructure/auth` JWT validator to verify the incoming Zitadel-signed JWT body
+- [ ] 9.3 Parse the webhook payload shape (`user.human.email`, `user_grants`, `org`) and construct the `append_claims` response
+- [ ] 9.4 Unit tests: valid JWT → `append_claims` contains email; invalid JWT → 401; machine user → no email in response
+- [ ] 9.5 Register the handler on the existing HTTP mux so it is served on the same port as health/ready, but behind an internal-only Service (not exposed via Gateway)
+- [ ] 9.6 Run `make check` — linting and tests pass
+
+## 10. backend — User Data Truncation Migration
+
+- [ ] 10.1 Generate Atlas migration: `atlas migrate diff --env local truncate_users_for_zitadel_migration`
+- [ ] 10.2 Edit the generated migration to `TRUNCATE` `users`, `follows`, `user_onboarding_state`, and any other `external_id`-dependent tables (use `--cascade` if needed)
+- [ ] 10.3 Verify the down direction is a no-op with a comment explaining the rollback is to leave the empty tables empty
+- [ ] 10.4 Apply locally against the dev DB: `atlas migrate apply --env local`; verify schema health via `make test-integration`
+
+## 11. backend — Configmap & Issuer Switch
+
+- [ ] 11.1 In `cloud-provisioning/k8s/namespaces/backend/overlays/dev/server/configmap.env`, change `OIDC_ISSUER_URL` to `https://auth.dev.liverty-music.app`
+- [ ] 11.2 In `k8s/namespaces/backend/overlays/dev/consumer/configmap.env`, apply the same change if the consumer reads the issuer
+- [ ] 11.3 Confirm backend `email_verifier` integration still targets the correct Zitadel Management API path under the new domain
+
+## 12. frontend — OIDC Config Switch
+
+- [ ] 12.1 In the frontend GitHub Actions `dev` environment, update secrets `VITE_ZITADEL_ISSUER`, `VITE_ZITADEL_CLIENT_ID`, `VITE_ZITADEL_ORG_ID` to the new instance's values (client id and org id become known after Pulumi stack #2 applies)
+- [ ] 12.2 Rebuild and redeploy the dev frontend through ArgoCD Image Updater flow
+
+## 13. Cutover Execution
+
+- [ ] 13.1 Pause ArgoCD `dev` auto-sync on `backend` and `frontend` namespaces (UI or `argocd app set --sync-policy none`)
+- [ ] 13.2 Apply cloud-provisioning Pulumi stack #1: Cloud SQL DB/user, GSM placeholders, DNS, managed cert (`pulumi up`)
+- [ ] 13.3 Resume ArgoCD auto-sync on `zitadel` namespace only; confirm pods come up, bootstrap Job completes, admin-sa-key lands in GSM
+- [ ] 13.4 Apply cloud-provisioning Pulumi stack #2: Zitadel Project/App/LoginPolicy/SMTP/MachineUser/MachineKey/OrgMember + Actions v2 resources (`pulumi up`)
+- [ ] 13.5 Apply Atlas migration on the dev backend DB to truncate user-scoped tables
+- [ ] 13.6 Resume ArgoCD auto-sync on `backend`; rollout picks up new `OIDC_ISSUER_URL`
+- [ ] 13.7 Resume ArgoCD auto-sync on `frontend`; rollout picks up new Vite env; verify SPA loads
+- [ ] 13.8 Manual smoke test: landing-page Login flow; Tutorial Step-6 Sign-Up flow; verify JWT `email` claim present in backend logs
+
+## 14. E2E Auth Regeneration
+
+- [ ] 14.1 In `frontend`, regenerate Playwright `.auth/` storage state against the new issuer following the existing `.auth/README.md` procedure (use the test users created against the new Zitadel instance)
+- [ ] 14.2 Commit updated `.auth/` artifacts
+- [ ] 14.3 Run `npx playwright test` locally and verify all existing E2E tests pass
+
+## 15. Cooldown & Cleanup
+
+- [ ] 15.1 Leave Zitadel Cloud tenant active and unchanged for two weeks post-cutover as a rollback target
+- [ ] 15.2 Monitor `/debug/metrics` and backend JWT validation logs daily for the first week; document any anomalies
+- [ ] 15.3 After two weeks clean run, open a follow-up change (`archive-zitadel-cloud-tenant`) that deletes the Cloud tenant and removes rollback references
+
+## 16. Rollback Readiness (not executed unless needed)
+
+- [ ] 16.1 Document rollback steps in `openspec/changes/self-hosted-zitadel/rollback.md` (optional, inline in design.md is sufficient)
+- [ ] 16.2 Verify Pulumi stack can be re-applied with `domain` reverted to Zitadel Cloud if rollback is triggered
+- [ ] 16.3 Verify ArgoCD configmap revert to old `OIDC_ISSUER_URL` is a single commit reversal
+
+## 17. Archive Change
+
+- [ ] 17.1 Run `/opsx:verify self-hosted-zitadel` to confirm implementation matches proposal/design/specs
+- [ ] 17.2 Run `/opsx:archive self-hosted-zitadel` to move the change into the archive and fold spec deltas into `openspec/specs/`
