@@ -70,14 +70,16 @@
 - [ ] 8.2 Annotate the bootstrap-Job with `argocd.argoproj.io/sync-wave: "1"` and the Deployments with `"2"` so the Job completes first
 - [ ] 8.3 Run `make lint-k8s` and fix any kube-linter findings
 
-## 9. backend — /pre-access-token Handler
+## 9. backend — Webhook Handlers + Internal-Only Exposure
 
-- [ ] 9.1 In `backend/internal/adapter/http/` (or an equivalent new directory), add `pre_access_token_handler.go` exposing `POST /pre-access-token`
-- [ ] 9.2 Reuse the existing `internal/infrastructure/auth` JWT validator to verify the incoming Zitadel-signed JWT body
-- [ ] 9.3 Parse the webhook payload shape (`user.human.email`, `user_grants`, `org`) and construct the `append_claims` response
-- [ ] 9.4 Unit tests: valid JWT → `append_claims` contains email; invalid JWT → 401; machine user → no email in response
-- [ ] 9.5 Register the handler on the existing HTTP mux so it is served on the same port as health/ready, but behind an internal-only Service (not exposed via Gateway)
-- [ ] 9.6 Run `make check` — linting and tests pass
+- [ ] 9.1 In `backend/internal/adapter/webhook/` (new directory), add `pre_access_token_handler.go` exposing `POST /pre-access-token` and `auto_verify_email_handler.go` exposing `POST /auto-verify-email`
+- [ ] 9.2 Reuse the existing `internal/infrastructure/auth` JWT validator to verify the incoming Zitadel-signed JWT body. Extend the validator (or wrap it) to pin the expected `aud` claim per endpoint: `urn:liverty-music:webhook:pre-access-token` and `urn:liverty-music:webhook:auto-verify-email`
+- [ ] 9.3 Parse the `/pre-access-token` payload shape (`user.human.email`, `user_grants`, `org`) and return `{"append_claims":[{"key":"email","value":<email>}]}`. For `/auto-verify-email`, parse the intercepted `AddHumanUser` request and return a mutated request with `email.is_verified = true`
+- [ ] 9.4 Unit tests: valid JWT with matching aud → success; invalid signature/issuer/expiry/aud → 401; machine user → empty `append_claims`; aud mismatch between endpoints → 401 even when other claims valid
+- [ ] 9.5 Serve the webhook handlers on a **separate listener** (`:9090`) inside the backend pod process, distinct from the public Connect-RPC listener on `:8080`. The webhook listener has no `authn.Middleware` (the body-JWT verification replaces header-Bearer auth)
+- [ ] 9.6 Expose port `9090` on the backend `Deployment` `containerPort` list, and create a new `Service` named `server-webhook-svc` (`ClusterIP`, `port: 9090 -> targetPort: 9090`) alongside the existing `server-svc`. The existing `server-route` HTTPRoute continues to reference only `server-svc`, so the webhook paths are unreachable via the GKE Gateway
+- [ ] 9.7 Verify external-access rejection: from outside the cluster, `curl https://api.dev.liverty-music.app/pre-access-token` (or equivalent) SHALL return a Gateway-level 404 because no HTTPRoute rule matches that path
+- [ ] 9.8 Run `make check` — linting and tests pass
 
 ## 10. backend — User Data Truncation Migration
 

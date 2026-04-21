@@ -45,17 +45,23 @@ The webhook endpoint SHALL authenticate incoming requests by validating the `PAY
 
 ### Requirement: Webhook Reachable Only Within Cluster
 
-The webhook endpoint SHALL be reachable from the in-cluster Zitadel Target endpoint DNS name and SHALL NOT be exposed externally through the GKE Gateway.
+The webhook endpoints SHALL be served on a dedicated backend port (`:9090`) behind a dedicated in-cluster `Service` (`server-webhook-svc`), distinct from the public Connect-RPC port (`:8080` / `server-svc`). The existing GKE Gateway / `HTTPRoute` SHALL continue to reference only `server-svc`, so the webhook paths are unreachable via the public hostname regardless of URL guess-work.
 
-**Rationale**: Webhook traffic is internal service-to-service communication; exposing it to the public internet broadens the attack surface for no functional benefit.
+**Rationale**: Webhook traffic is internal service-to-service communication; exposing it to the public internet broadens the attack surface for no functional benefit. Physically separating the listener from the public one removes any dependency on negative-match routing rules or per-path filters.
 
 #### Scenario: In-cluster call from Zitadel succeeds
 
-- **WHEN** the Zitadel pod invokes the Target endpoint using the in-cluster Service DNS name
-- **THEN** the call SHALL reach the backend handler
+- **WHEN** the Zitadel pod POSTs to `http://server-webhook-svc.backend.svc.cluster.local/pre-access-token` (or `/auto-verify-email`)
+- **THEN** the call SHALL reach the backend webhook handler on port `9090`
 
 #### Scenario: External call from the internet is blocked
 
-- **WHEN** a request arrives at the backend's public Gateway hostname for path `/pre-access-token`
-- **THEN** the Gateway SHALL NOT route it to the webhook handler
-- **AND** the request SHALL receive a 404 or equivalent routing rejection
+- **WHEN** a request arrives at the backend's public Gateway hostname for path `/pre-access-token` or `/auto-verify-email`
+- **THEN** the Gateway SHALL NOT route it to any backend (no HTTPRoute rule matches)
+- **AND** the client SHALL receive a 404 or equivalent routing rejection
+
+#### Scenario: Public Connect-RPC listener does not serve webhooks
+
+- **WHEN** an in-cluster client POSTs to `http://server-svc.backend.svc.cluster.local/pre-access-token` on port `80`
+- **THEN** the public Connect-RPC listener on port `8080` SHALL NOT expose webhook routes
+- **AND** the request SHALL receive a 404
