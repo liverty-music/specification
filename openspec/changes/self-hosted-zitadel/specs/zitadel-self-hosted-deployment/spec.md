@@ -94,7 +94,7 @@ Pulumi SHALL create the `zitadel` database and the `zitadel-sa@liverty-music-dev
 
 In the `dev` environment, the Zitadel database configuration SHALL use `MaxOpenConns: 3` and `MaxIdleConns: 1`, such that across both Zitadel replicas the total open connections do not exceed 6.
 
-**Rationale**: The existing Cloud SQL `db-f1-micro` instance has a 25-connection cap; backend workloads already consume ~12 connections, leaving ~13 headroom. Applying the production-recommended pool of 10 would exhaust the budget.
+**Rationale**: The existing Cloud SQL `db-f1-micro` instance has a 25-connection cap; backend server (5) + backend consumer (5) + Atlas (2) already consume ~12 connections, leaving ~13 headroom. Applying the production-recommended pool of 10 (20 across both replicas) would exhaust the budget.
 
 #### Scenario: Dev Helm values carry the reduced pool
 
