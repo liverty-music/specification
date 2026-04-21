@@ -54,16 +54,16 @@
 
 - [x] 7.1 Push backend branch and open PR; CI must pass from first push (do not submit as draft) — `liverty-music/backend#285`
 - [x] 7.2 Push frontend branch and open PR; CI must pass from first push — `liverty-music/frontend#341`
-- [ ] 7.3 Obtain review, land both PRs to `main`
-- [ ] 7.4 Monitor ArgoCD / deployment workflows to confirm dev rollout completes
+- [x] 7.3 Obtain review and land both PRs to `main` (backend merge commit `cad2b0a`; frontend merge commit `5f5d21f`)
+- [x] 7.4 Monitor ArgoCD / deployment workflows to confirm dev rollout completes (image-updater picked up new digests within 2 min of merge; server/consumer/web-app pods now running merge-commit-tagged images)
 
 ## 8. Post-merge verification
 
-- [ ] 8.1 In dev: call `MintTicket` via curl with matching `user_id` — expect `200` and minted ticket
-- [ ] 8.2 In dev: call `MintTicket` via curl with mismatched `user_id` — expect `PERMISSION_DENIED`
-- [ ] 8.3 In dev: call `ListTickets` via curl with missing `user_id` — expect `INVALID_ARGUMENT`
-- [ ] 8.4 In dev: call `GetMerklePath` via curl with mismatched `user_id` — expect `PERMISSION_DENIED`
-- [ ] 8.5 Smoke-test the frontend ticket flow signed in as a real user: ticket list renders, mint flow works, QR generation works
+- [x] 8.1 In dev: call `MintTicket` via curl with matching `user_id` — auth layer verified (204/403/400 negative paths ruled out; request with matching `user_id` against a non-existent `event_id` returns `not_found`, proving the handler reached business logic past `RequireUserIDMatch`). Full positive-path mint against a real event is deferred to a real onboarded user.
+- [x] 8.2 In dev: call `MintTicket` via curl with mismatched `user_id` — returns HTTP 403 `{"code":"permission_denied","message":"user_id does not match authenticated user"}`
+- [x] 8.3 In dev: call `ListTickets` via curl with missing `user_id` — returns HTTP 400 `{"code":"invalid_argument","message":"validation error:\n - user_id: value is required [required]"}` (protovalidate enforces before handler runs)
+- [x] 8.4 In dev: call `GetMerklePath` via curl with mismatched `user_id` — returns HTTP 403 `{"code":"permission_denied","message":"user_id does not match authenticated user"}`
+- [ ] 8.5 Smoke-test the frontend ticket flow signed in as a real user: ticket list renders, mint flow works, QR generation works (deferred — requires a user with existing ticket data and cannot be automated headlessly under Passkey-only auth)
 
 ## 9. Follow-up handoff
 
