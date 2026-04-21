@@ -67,5 +67,5 @@
 
 ## 9. Follow-up handoff
 
-- [ ] 9.1 Flag to the owner of `implement-ticket-system-mvp` that `manual-verification.md` needs `user_id` added to the sample curl payloads for `MintTicket`, `ListTickets`, and `GetMerklePath`
-- [ ] 9.2 Once all tasks above are done, this change is ready for `/opsx:archive`
+- [x] 9.1 Flag to the owner of `implement-ticket-system-mvp` that `manual-verification.md` needs `user_id` added to the sample curl payloads for `MintTicket`, `ListTickets`, and `GetMerklePath` (same owner; delivered in `liverty-music/specification#422` — the runbook now resolves `${USER_ID}` via idempotent `UserService.Create` and includes `user_id` in every relevant curl, plus documents the `PERMISSION_DENIED` / `INVALID_ARGUMENT` paths)
+- [x] 9.2 Ready for `/opsx:archive`
