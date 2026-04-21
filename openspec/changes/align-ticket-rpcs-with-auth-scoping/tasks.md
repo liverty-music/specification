@@ -11,49 +11,49 @@
 
 ## 2. Specification — PR and Release
 
-- [ ] 2.1 Commit proto + change artifacts on a new branch in the specification repo
-- [ ] 2.2 Open PR with the `buf skip breaking` label; `buf-pr-checks.yml` must pass
-- [ ] 2.3 Obtain review and merge to `main`
-- [ ] 2.4 Create GitHub Release on specification (new minor version `vX.Y.0`, body flagged as containing breaking changes) so `buf-release.yml` pushes to BSR
+- [x] 2.1 Commit proto + change artifacts on a new branch in the specification repo
+- [x] 2.2 Open PR with the `buf skip breaking` label; `buf-pr-checks.yml` must pass (PR #418)
+- [x] 2.3 Obtain review and merge to `main` (merge commit f3c0e8a)
+- [x] 2.4 Create GitHub Release on specification (new minor version `vX.Y.0`, body flagged as containing breaking changes) so `buf-release.yml` pushes to BSR (v0.39.0)
 - [ ] 2.5 Monitor `buf-release.yml` via `gh run watch --repo liverty-music/specification` until BSR gen completes
 
 ## 3. Backend — Prepare branch against planned type shape
 
-- [ ] 3.1 Branch the backend repo from current `main`
-- [ ] 3.2 In `internal/adapter/rpc/ticket_handler.go`, update `MintTicket`: insert `if err := mapper.RequireUserIDMatch(user.ID, req.Msg.GetUserId().GetValue()); err != nil { return nil, err }` immediately after the `userRepo.GetByExternalID` call and before the Safe-address block
-- [ ] 3.3 Similarly update `ListTickets`: insert `RequireUserIDMatch(user.ID, req.Msg.GetUserId().GetValue())` before `ticketUseCase.ListTicketsForUser`
-- [ ] 3.4 Locate the `EntryService.GetMerklePath` handler and insert `RequireUserIDMatch(user.ID, req.Msg.GetUserId().GetValue())` before the Merkle-path lookup
-- [ ] 3.5 At each of the three call sites, leave a `// TODO: swap to generated type after BSR gen` comment next to the `req.Msg.GetUserId().GetValue()` call to mark the placeholder
-- [ ] 3.6 Confirm `GetTicket` and `VerifyEntry` handlers remain unchanged
+- [x] 3.1 Branch the backend repo from current `main`
+- [x] 3.2 In `internal/adapter/rpc/ticket_handler.go`, update `MintTicket`: insert `if err := mapper.RequireUserIDMatch(user.ID, req.Msg.GetUserId().GetValue()); err != nil { return nil, err }` immediately after the `userRepo.GetByExternalID` call and before the Safe-address block
+- [x] 3.3 Similarly update `ListTickets`: insert `RequireUserIDMatch(user.ID, req.Msg.GetUserId().GetValue())` before `ticketUseCase.ListTicketsForUser`
+- [x] 3.4 Locate the `EntryService.GetMerklePath` handler and insert `RequireUserIDMatch(user.ID, req.Msg.GetUserId().GetValue())` before the Merkle-path lookup
+- [x] 3.5 BSR gen completed before handler edits — TODO placeholders were not needed; generated `GetUserId()` accessor used directly
+- [x] 3.6 Confirm `GetTicket` and `VerifyEntry` handlers remain unchanged
 
 ## 4. Backend — Handler tests
 
-- [ ] 4.1 In `internal/adapter/rpc/ticket_handler_test.go`, add a table-driven test case for `MintTicket` where `request.user_id != jwt.sub`-resolved user.ID, asserting `connect.CodePermissionDenied`
-- [ ] 4.2 Add a test case for `MintTicket` with matching `user_id` that proceeds to mint (happy path)
-- [ ] 4.3 Add equivalent mismatch + match test cases for `ListTickets`
-- [ ] 4.4 Add equivalent mismatch + match test cases for `GetMerklePath` (in the appropriate entry handler test file)
-- [ ] 4.5 Confirm existing JWT-absent tests still produce `UNAUTHENTICATED` (middleware still runs first)
+- [x] 4.1 In `internal/adapter/rpc/ticket_handler_test.go`, add a table-driven test case for `MintTicket` where `request.user_id != jwt.sub`-resolved user.ID, asserting `connect.CodePermissionDenied`
+- [x] 4.2 Add a test case for `MintTicket` with matching `user_id` that proceeds to mint (happy path)
+- [x] 4.3 Add equivalent mismatch + match test cases for `ListTickets`
+- [x] 4.4 Add equivalent mismatch + match test cases for `GetMerklePath` (in the appropriate entry handler test file)
+- [x] 4.5 Confirm existing JWT-absent tests still produce `UNAUTHENTICATED` (middleware still runs first)
 
 ## 5. Frontend — Prepare branch against planned type shape
 
-- [ ] 5.1 Branch the frontend repo from current `main`
-- [ ] 5.2 Grep for every call site of `ticketService.mintTicket` / `.listTickets` and `entryService.getMerklePath`; list them in a local note
-- [ ] 5.3 Inject the cached `user_id` (from the `UserIdCache` service introduced by `standardize-user-scoped-rpc-auth`) into each request body — same pattern as existing `userService.get` / `userService.updateHome` call sites
-- [ ] 5.4 Add a `// TODO: swap to generated type after BSR gen` comment at each injection point
+- [x] 5.1 Branch the frontend repo from current `main`
+- [x] 5.2 Grep for every call site of `ticketService.mintTicket` / `.listTickets` and `entryService.getMerklePath`; list them in a local note (findings: only `listTickets` in tickets-route.ts and `getMerklePath` via proof-service — `MintTicket` has no frontend call site yet)
+- [x] 5.3 Inject `user_id` from `IUserService.current.id` into each request body — matches existing `userService.get` / `userService.updateHome` pattern
+- [x] 5.4 BSR gen completed before frontend edits — TODO placeholders were not needed; generated `UserId` type used directly
 
 ## 6. Cross-repo release — BSR coordination
 
-- [ ] 6.1 After specification Release + BSR gen completes (task 2.5), run `go get buf.build/gen/go/liverty-music/schema/...@vX.Y.0` in backend; `go mod tidy`
-- [ ] 6.2 Swap placeholder types for generated types at the three backend handler call sites; remove the TODO comments
-- [ ] 6.3 Run `make check` in backend — lint + tests must pass
-- [ ] 6.4 Run `npm install @buf/liverty-music_schema.connectrpc_es@latest` in frontend
-- [ ] 6.5 Swap placeholder types for generated types at frontend call sites; remove TODO comments
-- [ ] 6.6 Run `make check` in frontend — lint + tests must pass
+- [x] 6.1 After specification Release + BSR gen completes (task 2.5), run `go get buf.build/gen/go/liverty-music/schema/...@vX.Y.0` in backend; `go mod tidy` (upgraded to v1.36.11-20260421074642-d769c71c8006.1)
+- [x] 6.2 Generated types used directly — no placeholder swap needed because BSR gen completed before handler edits
+- [x] 6.3 Run `make check` in backend — lint + tests must pass
+- [x] 6.4 Run `npm install @buf/liverty-music_schema.connectrpc_es@<v1-channel>` in frontend (pinned: `1.10.0-20260421074642-d769c71c8006.1` / `1.6.1-20260421074642-d769c71c8006.2`)
+- [x] 6.5 Generated types used directly — no placeholder swap needed
+- [x] 6.6 Run `make check` in frontend — lint + tests must pass
 
 ## 7. Backend and Frontend PRs
 
-- [ ] 7.1 Push backend branch and open PR; CI must pass from first push (do not submit as draft)
-- [ ] 7.2 Push frontend branch and open PR; CI must pass from first push
+- [x] 7.1 Push backend branch and open PR; CI must pass from first push (do not submit as draft) — `liverty-music/backend#285`
+- [x] 7.2 Push frontend branch and open PR; CI must pass from first push — `liverty-music/frontend#341`
 - [ ] 7.3 Obtain review, land both PRs to `main`
 - [ ] 7.4 Monitor ArgoCD / deployment workflows to confirm dev rollout completes
 
