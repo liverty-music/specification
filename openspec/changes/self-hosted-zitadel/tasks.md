@@ -62,7 +62,7 @@
 - [ ] 7.2 Create a configmap patch setting `ZITADEL_DATABASE_POSTGRES_MAXOPENCONNS=3` and `_MAXIDLECONNS=1`
 - [ ] 7.3 Create a deployment patch setting `replicas: 2`, resource `requests`/`limits` sized for `e2-medium` spot, and `podAntiAffinity` on `kubernetes.io/hostname`
 - [ ] 7.4 Leave readiness/liveness probe defaults from the base; confirm `/debug/ready` works through the sidecar network namespace
-- [ ] 7.5 Add `interruptOnError: false` to both Pulumi Action v2 Executions for dev (handled in `actions-v2.ts` via env-aware argument)
+- [ ] 7.5 Apply per-Execution `interruptOnError` policy in `actions-v2.ts`: email-claim injection Execution SHALL use `interruptOnError: true` in every environment (email claim is a hard invariant per the identity-management spec — every access token must carry it); auto-verify-email Execution SHALL use `interruptOnError: false` in `dev` only (fall back to the Zitadel OTP step when the webhook is unreachable) and `interruptOnError: true` in `staging` / `prod`
 
 ## 8. cloud-provisioning — ArgoCD Application & sync-wave
 
