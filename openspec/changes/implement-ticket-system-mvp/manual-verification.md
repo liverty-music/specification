@@ -318,7 +318,7 @@ curl -s -X POST \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${TOKEN}" \
   -d "{
-    \"ticket_id\": \"${TICKET_ID}\"
+    \"ticket_id\": {\"value\": \"${TICKET_ID}\"}
   }" | jq .
 ```
 
@@ -548,7 +548,7 @@ curl -s -X POST \
   https://api.dev.liverty-music.app/liverty_music.rpc.entry.v1.EntryService/VerifyEntry \
   -H "Content-Type: application/json" \
   -d '{
-    "event_id": "e0000000-0000-0000-0000-000000000001",
+    "event_id": {"value": "e0000000-0000-0000-0000-000000000001"},
     "proof_json": "{\"pi_a\":[...],\"pi_b\":[[...],[...]],\"pi_c\":[...],\"protocol\":\"groth16\"}",
     "public_signals_json": "[\"signal1\",\"signal2\"]"
   }' | jq .
