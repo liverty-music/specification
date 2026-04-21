@@ -15,7 +15,7 @@
 - [x] 2.2 Open PR with the `buf skip breaking` label; `buf-pr-checks.yml` must pass (PR #418)
 - [x] 2.3 Obtain review and merge to `main` (merge commit f3c0e8a)
 - [x] 2.4 Create GitHub Release on specification (new minor version `vX.Y.0`, body flagged as containing breaking changes) so `buf-release.yml` pushes to BSR (v0.39.0)
-- [ ] 2.5 Monitor `buf-release.yml` via `gh run watch --repo liverty-music/specification` until BSR gen completes
+- [x] 2.5 Monitor `buf-release.yml` via `gh run watch --repo liverty-music/specification` until BSR gen completes (workflow completed in 9s; BSR-generated packages verified available via `go get` and `npm install` of v0.39.0-based versions)
 
 ## 3. Backend — Prepare branch against planned type shape
 
