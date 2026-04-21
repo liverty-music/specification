@@ -80,9 +80,10 @@ curl -s -o /dev/null -w "%{http_code}" \
   -X POST https://api.dev.liverty-music.app/liverty_music.rpc.ticket.v1.TicketService/ListTickets \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{}'
+  -d '{"user_id":{"value":"YOUR_USER_ID"}}'
 
-# 200 or 401 = service registered
+# 200 or 401 or 403 = service registered
+# 400 with "user_id: value is required" = service registered (protovalidate before handler)
 # 404 = service NOT registered (env vars missing)
 ```
 
@@ -110,6 +111,30 @@ All ticket/entry RPCs (except `VerifyEntry`) require a valid JWT. You can obtain
 ```bash
 export TOKEN="eyJhbGciOiJSUzI1NiIs..."
 ```
+
+### 12.0.2.1 — Resolve your internal user_id
+
+Per the `rpc-auth-scoping` convention (introduced by `standardize-user-scoped-rpc-auth` and applied to the ticket/entry surface by `align-ticket-rpcs-with-auth-scoping`), every authenticated per-user RPC — including `MintTicket`, `ListTickets`, and `GetMerklePath` — requires the caller to supply their **internal `user_id` (UUIDv7)** in the request body. The backend verifies it matches the JWT-derived userID and rejects mismatches with `PERMISSION_DENIED`.
+
+The `UserService.Create` RPC is idempotent on duplicate `external_id`: calling it again for an already-provisioned user returns the existing record, making it a uniform way to resolve the internal `user_id`. Extract the email from your JWT's `email` claim before running this:
+
+```bash
+# Set your signup email (matches JWT "email" claim):
+export EMAIL="pannpers+dev14@pannpers.dev"
+
+# Resolve internal user_id via idempotent Create:
+export USER_ID=$(curl -sS -X POST \
+  https://api.dev.liverty-music.app/liverty_music.rpc.user.v1.UserService/Create \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -d "{\"email\":{\"value\":\"${EMAIL}\"}}" \
+  | jq -r '.user.id.value')
+
+echo "USER_ID=${USER_ID}"
+# USER_ID=019d6067-9850-729c-94a6-8cf07dec37a0
+```
+
+Use `${USER_ID}` in the request bodies for `MintTicket`, `ListTickets`, and `GetMerklePath` below.
 
 ### 12.0.3 — Seed Test Data (Events and Venues)
 
@@ -191,9 +216,10 @@ curl -s -X POST \
   https://api.dev.liverty-music.app/liverty_music.rpc.ticket.v1.TicketService/MintTicket \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${TOKEN}" \
-  -d '{
-    "event_id": "e0000000-0000-0000-0000-000000000001"
-  }' | jq .
+  -d "{
+    \"event_id\": {\"value\": \"e0000000-0000-0000-0000-000000000001\"},
+    \"user_id\": {\"value\": \"${USER_ID}\"}
+  }" | jq .
 ```
 
 **2. Expected successful response:**
@@ -234,6 +260,8 @@ export TICKET_ID="01968abc-..."
 | Error | HTTP Status | Connect Code | Cause |
 |-------|-------------|--------------|-------|
 | Missing/invalid JWT | 401 | `unauthenticated` | No `Authorization` header or expired token |
+| Missing `user_id` | 400 | `invalid_argument` | Request body omits `user_id` (protovalidate) |
+| Mismatched `user_id` | 403 | `permission_denied` | `user_id` does not match the JWT-derived userID |
 | User not found | 404 | `not_found` | JWT `sub` not matching any `users.external_id` |
 | Event not found | 404 | `not_found` | Invalid `event_id` |
 | Duplicate ticket | 409 | `already_exists` | User already has a ticket for this event |
@@ -247,9 +275,33 @@ curl -s -X POST \
   https://api.dev.liverty-music.app/liverty_music.rpc.ticket.v1.TicketService/MintTicket \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${TOKEN}" \
-  -d '{"event_id": "e0000000-0000-0000-0000-000000000001"}' | jq .
+  -d "{\"event_id\": {\"value\": \"e0000000-0000-0000-0000-000000000001\"}, \"user_id\": {\"value\": \"${USER_ID}\"}}" | jq .
 
 # Expected: error with code "already_exists"
+```
+
+**Test user_id enforcement (rpc-auth-scoping convention):**
+
+```bash
+# Mismatched user_id — the handler resolves the caller's internal ID from the JWT,
+# sees it does not match the supplied user_id, and returns PERMISSION_DENIED
+# before any event lookup or on-chain transaction.
+curl -s -X POST \
+  https://api.dev.liverty-music.app/liverty_music.rpc.ticket.v1.TicketService/MintTicket \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -d "{\"event_id\": {\"value\": \"e0000000-0000-0000-0000-000000000001\"}, \"user_id\": {\"value\": \"00000000-0000-0000-0000-000000000000\"}}" | jq .
+
+# Expected: {"code":"permission_denied","message":"user_id does not match authenticated user"}
+
+# Missing user_id — protovalidate rejects before handler runs.
+curl -s -X POST \
+  https://api.dev.liverty-music.app/liverty_music.rpc.ticket.v1.TicketService/MintTicket \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -d '{"event_id": {"value": "e0000000-0000-0000-0000-000000000001"}}' | jq .
+
+# Expected: {"code":"invalid_argument","message":"validation error:\n - user_id: value is required [required]"}
 ```
 
 ---
@@ -314,10 +366,10 @@ curl -s -X POST \
   https://api.dev.liverty-music.app/liverty_music.rpc.ticket.v1.TicketService/ListTickets \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${TOKEN}" \
-  -d '{}' | jq .
+  -d "{\"user_id\": {\"value\": \"${USER_ID}\"}}" | jq .
 ```
 
-> **Note**: The request body is empty `{}`. The user is determined from the JWT `sub` claim.
+> **Note**: The request body MUST include `user_id` per the `rpc-auth-scoping` convention. The backend compares it against the JWT-derived userID and returns `PERMISSION_DENIED` on mismatch (or `INVALID_ARGUMENT` via protovalidate if the field is absent).
 
 ### Expected Response
 
@@ -368,10 +420,13 @@ curl -s -X POST \
   https://api.dev.liverty-music.app/liverty_music.rpc.entry.v1.EntryService/GetMerklePath \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${TOKEN}" \
-  -d '{
-    "event_id": "e0000000-0000-0000-0000-000000000001"
-  }' | jq .
+  -d "{
+    \"event_id\": {\"value\": \"e0000000-0000-0000-0000-000000000001\"},
+    \"user_id\": {\"value\": \"${USER_ID}\"}
+  }" | jq .
 ```
+
+> **Note**: `user_id` is required per `rpc-auth-scoping`. Mismatch returns `PERMISSION_DENIED`; absence returns `INVALID_ARGUMENT` from protovalidate.
 
 ### Expected Response
 
@@ -401,6 +456,8 @@ curl -s -X POST \
 
 | Error | Connect Code | Cause |
 |-------|--------------|-------|
+| Missing `user_id` | `invalid_argument` | Request body omits `user_id` (protovalidate) |
+| Mismatched `user_id` | `permission_denied` | `user_id` does not match the JWT-derived userID |
 | No ticket for event | `not_found` | User hasn't minted a ticket for this event |
 | Missing JWT | `unauthenticated` | No `Authorization` header |
 | Service not registered | 404 (HTTP) | `ZKP_VERIFICATION_KEY_PATH` env var not set |
