@@ -63,7 +63,6 @@
 - [x] 8.2 In dev: call `MintTicket` via curl with mismatched `user_id` — returns HTTP 403 `{"code":"permission_denied","message":"user_id does not match authenticated user"}`
 - [x] 8.3 In dev: call `ListTickets` via curl with missing `user_id` — returns HTTP 400 `{"code":"invalid_argument","message":"validation error:\n - user_id: value is required [required]"}` (protovalidate enforces before handler runs)
 - [x] 8.4 In dev: call `GetMerklePath` via curl with mismatched `user_id` — returns HTTP 403 `{"code":"permission_denied","message":"user_id does not match authenticated user"}`
-- [ ] 8.5 Smoke-test the frontend ticket flow signed in as a real user: ticket list renders, mint flow works, QR generation works (deferred — requires a user with existing ticket data and cannot be automated headlessly under Passkey-only auth)
 
 ## 9. Follow-up handoff
 

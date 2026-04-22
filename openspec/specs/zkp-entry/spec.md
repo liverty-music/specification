@@ -1,7 +1,9 @@
-# zkp-entry Specification
+# ZKP Entry
 
 ## Purpose
-TBD - created by archiving change align-ticket-rpcs-with-auth-scoping. Update Purpose after archive.
+
+Defines the backend `EntryService` capability for zero-knowledge-proof-based event entry. `GetMerklePath` is a per-user RPC that returns the Merkle inclusion data (root, path elements, path indices, leaf) a fan needs to generate a Groth16 proof client-side; it carries an explicit `user_id` verified against the JWT-derived userID per the `rpc-auth-scoping` convention. `VerifyEntry` is unauthenticated by design — the zero-knowledge proof itself establishes ticket-holder membership without revealing the fan's identity, and nullifier uniqueness guards against replay. The capability deliberately splits these two roles: authenticated per-user read of path data, versus identity-free verification at venue entry.
+
 ## Requirements
 ### Requirement: GetMerklePath request carries explicit user_id
 
