@@ -1,7 +1,9 @@
-# ticket-management Specification
+# Ticket Management
 
 ## Purpose
-TBD - created by archiving change align-ticket-rpcs-with-auth-scoping. Update Purpose after archive.
+
+Defines the backend `TicketService` capability that lets authenticated fans mint, retrieve, and list soulbound ticket records for music events. The per-user RPCs (`MintTicket`, `ListTickets`) carry explicit `user_id` fields verified against the JWT-derived userID per the `rpc-auth-scoping` convention, so the authenticated ticket surface behaves uniformly with the rest of the authenticated RPC surface. `GetTicket` remains identifier-scoped (keyed by `ticket_id`) — the ticket identifier itself is the authorization scope, and the rpc-auth-scoping convention does not apply.
+
 ## Requirements
 ### Requirement: MintTicket request carries explicit user_id
 
