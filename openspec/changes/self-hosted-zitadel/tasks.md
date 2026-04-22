@@ -8,10 +8,10 @@
 ## 2. cloud-provisioning — Cloud SQL & GCP Resources
 
 - [ ] 2.1 In `src/gcp/components/postgres.ts`, add a `zitadel` `gcp.sql.Database` resource on `postgres-osaka`
-- [ ] 2.2 Add a `gcp.sql.User` of type `CLOUD_IAM_SERVICE_ACCOUNT` named `zitadel-sa@liverty-music-dev.iam`
+- [ ] 2.2 Add a `gcp.sql.User` of type `CLOUD_IAM_SERVICE_ACCOUNT` named `zitadel@liverty-music-dev.iam`
 - [ ] 2.3 Grant the IAM user ownership of the `zitadel` database via a `gcp.sql.DatabaseIAMGrant` or an equivalent SQL helper (post-deploy task runner)
-- [ ] 2.4 Create GCP service account `zitadel-sa@liverty-music-dev.iam.gserviceaccount.com` with `roles/cloudsql.instanceUser` and `roles/cloudsql.client`
-- [ ] 2.5 Bind Workload Identity: K8s SA `zitadel/zitadel` → GCP SA `zitadel-sa@liverty-music-dev.iam`
+- [ ] 2.4 Create GCP service account `zitadel@liverty-music-dev.iam.gserviceaccount.com` with `roles/cloudsql.instanceUser` and `roles/cloudsql.client`
+- [ ] 2.5 Bind Workload Identity: K8s SA `zitadel/zitadel` → GCP SA `zitadel@liverty-music-dev.iam`
 - [ ] 2.6 Create DNS A record `auth.dev.liverty-music.app` pointing at the GKE Gateway IP via Cloudflare Pulumi resources
 - [ ] 2.7 Add Google-managed certificate for `auth.dev.liverty-music.app` attached to the existing dev Gateway
 
@@ -45,7 +45,7 @@
 ## 6. cloud-provisioning — Kustomize base for zitadel namespace
 
 - [ ] 6.1 Create `k8s/namespaces/zitadel/base/namespace.yaml`
-- [ ] 6.2 Create `k8s/namespaces/zitadel/base/serviceaccount.yaml` with Workload Identity annotation pointing at `zitadel-sa@...iam.gserviceaccount.com`
+- [ ] 6.2 Create `k8s/namespaces/zitadel/base/serviceaccount.yaml` with Workload Identity annotation pointing at `zitadel@...iam.gserviceaccount.com`
 - [ ] 6.3 Create `k8s/namespaces/zitadel/base/configmap.yaml` with Zitadel YAML config (ExternalDomain, ExternalSecure, TLS mode, Database.postgres.Host/Port/User/Database, Admin.ExistingDatabase, FIRSTINSTANCE env)
 - [ ] 6.4 Create `k8s/namespaces/zitadel/base/external-secret.yaml` for `zitadel-masterkey` and `zitadel-admin-sa-key`
 - [ ] 6.5 Create `k8s/namespaces/zitadel/base/deployment-api.yaml` — main container + cloud-sql-proxy sidecar + emptyDir volume for admin-sa key

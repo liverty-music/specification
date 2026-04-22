@@ -55,14 +55,14 @@ The Zitadel API container SHALL run with `ExternalSecure: true`, `ExternalDomain
 
 ### Requirement: Cloud SQL Connection via Auth Proxy Sidecar with IAM Authentication
 
-Each Zitadel API pod SHALL include a Cloud SQL Auth Proxy sidecar container running with `--auto-iam-authn` and `--private-ip`, connected to the Cloud SQL instance `liverty-music-dev:asia-northeast2:postgres-osaka`, such that the Zitadel container connects to `127.0.0.1:5432` as the IAM-authenticated user `zitadel-sa@liverty-music-dev.iam` with no password in the connection configuration.
+Each Zitadel API pod SHALL include a Cloud SQL Auth Proxy sidecar container running with `--auto-iam-authn` and `--private-ip`, connected to the Cloud SQL instance `liverty-music-dev:asia-northeast2:postgres-osaka`, such that the Zitadel container connects to `127.0.0.1:5432` as the IAM-authenticated user `zitadel@liverty-music-dev.iam` with no password in the connection configuration.
 
 **Rationale**: Using IAM authentication through the Auth Proxy removes the need to manage a password-bearing DSN secret, mirrors the existing backend DB-access pattern, and leverages Workload Identity for credentialless authentication.
 
 #### Scenario: Zitadel connects to Cloud SQL without a password
 
 - **WHEN** the Zitadel container starts
-- **THEN** the configured `Database.postgres.User.Username` SHALL be `zitadel-sa@liverty-music-dev.iam`
+- **THEN** the configured `Database.postgres.User.Username` SHALL be `zitadel@liverty-music-dev.iam`
 - **AND** `Database.postgres.User.Password` SHALL NOT be set
 - **AND** `Database.postgres.Host` SHALL be `localhost`
 - **AND** the connection SHALL succeed through the sidecar
@@ -76,19 +76,19 @@ Each Zitadel API pod SHALL include a Cloud SQL Auth Proxy sidecar container runn
 
 ### Requirement: Cloud SQL Database and IAM User Pre-Provisioned by Pulumi
 
-Pulumi SHALL create the `zitadel` database and the `zitadel-sa@liverty-music-dev.iam` Cloud SQL IAM user on the `postgres-osaka` instance, grant the IAM user ownership of the `zitadel` database, and bind Workload Identity so that the Zitadel Kubernetes Service Account can impersonate the IAM user.
+Pulumi SHALL create the `zitadel` database and the `zitadel@liverty-music-dev.iam` Cloud SQL IAM user on the `postgres-osaka` instance, grant the IAM user ownership of the `zitadel` database, and bind Workload Identity so that the Zitadel Kubernetes Service Account can impersonate the IAM user.
 
 #### Scenario: Database resources exist after Pulumi apply
 
 - **WHEN** the Pulumi stack is applied
 - **THEN** a database named `zitadel` SHALL exist on `postgres-osaka`
-- **AND** a Cloud SQL IAM user of type `CLOUD_IAM_SERVICE_ACCOUNT` named `zitadel-sa@liverty-music-dev.iam` SHALL exist
+- **AND** a Cloud SQL IAM user of type `CLOUD_IAM_SERVICE_ACCOUNT` named `zitadel@liverty-music-dev.iam` SHALL exist
 - **AND** the IAM user SHALL own the `zitadel` database
 
 #### Scenario: Workload Identity binding exists
 
 - **WHEN** the Pulumi stack is applied
-- **THEN** the Kubernetes Service Account `zitadel` in namespace `zitadel` SHALL be bound to impersonate the GCP service account `zitadel-sa@liverty-music-dev.iam.gserviceaccount.com`
+- **THEN** the Kubernetes Service Account `zitadel` in namespace `zitadel` SHALL be bound to impersonate the GCP service account `zitadel@liverty-music-dev.iam.gserviceaccount.com`
 
 ### Requirement: Connection Pool Sized Within Dev Connection Budget
 
