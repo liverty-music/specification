@@ -103,7 +103,7 @@ _§5.1–5.4 and 5.7 are deferred to the **cutover PR** per the reshape strategy
 
 ## 12. frontend — OIDC Config Switch
 
-- [ ] 12.1 In the frontend GitHub Actions `dev` environment, update secrets `VITE_ZITADEL_ISSUER`, `VITE_ZITADEL_CLIENT_ID`, `VITE_ZITADEL_ORG_ID` to the new instance's values (client id and org id become known after Pulumi stack #2 applies)
+- [x] 12.1 In the frontend GitHub Actions `dev` environment, update secrets `VITE_ZITADEL_ISSUER`, `VITE_ZITADEL_CLIENT_ID`, `VITE_ZITADEL_ORG_ID` to the new instance's values (client id and org id become known after Pulumi stack #2 applies) _Implemented as Pulumi-managed `github.ActionsEnvironmentVariable` resources rather than manual UI updates: see `src/index.ts` and `Zitadel.applicationClientId` in `src/zitadel/index.ts` (cloud-provisioning#209). Diverged from the original wording in two ways — (a) **variables**, not secrets, because Vite inlines the values into the deployed bundle at build time so they are public; (b) **Pulumi-managed**, not manual, because keeping the UI as the source of truth would invite drift after every Pulumi-driven `web-frontend` ApplicationOidc replacement. The values flow from Zitadel's `application.clientId` output and `zitadelDomainMap[env]` constant in the same `pulumi up` that creates / re-creates the OIDC client._
 - [ ] 12.2 Rebuild and redeploy the dev frontend through ArgoCD Image Updater flow
 
 ## 13. Cutover Execution
