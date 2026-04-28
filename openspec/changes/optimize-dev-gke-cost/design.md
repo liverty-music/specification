@@ -5,7 +5,7 @@ The dev Compute Engine bill jumped to ¥9,953/month (+1403%) following the Apr 8
 1. **Boot disks**: 3 nodes × 100GB pd-balanced = ~¥4,500/month. The 100GB size is the GKE NodePool default when `diskSizeGb` is unspecified; pd-balanced is the default `diskType`. Neither is justified for dev — image cache and OS rarely exceed 10GB.
 2. **3rd Spot node**: forced by Zitadel API+Login Deployments running 2 replicas each with `requiredDuringSchedulingIgnoredDuringExecution` pod anti-affinity. With 4 replicas and `topologyKey: kubernetes.io/hostname`, the scheduler cannot pack onto 2 nodes, so the autoscaler permanently runs at the new `maxNodeCount: 3`.
 
-The cluster currently runs at ~85% CPU request packing across 3 e2-medium nodes (940m allocatable each). Removing one Zitadel API replica (240m total, including its cloud-sql-proxy and bootstrap-uploader sidecars) plus one Login replica (50m) frees enough headroom that the autoscaler can downscale to 2 nodes when load is idle, eliminating the 3rd node's compute, disk, and external IP charges.
+The cluster currently runs at ~85% CPU request packing across 3 e2-medium nodes (940m allocatable each). Removing one Zitadel API replica (120m total, including its cloud-sql-proxy and bootstrap-uploader sidecars) plus one Login replica (50m) frees enough headroom that the autoscaler can downscale to 2 nodes when load is idle, eliminating the 3rd node's compute, disk, and external IP charges.
 
 dev does not require HA: a Spot preemption already causes 1-2 minute service interruptions even with 2 replicas. The cost-vs-availability trade-off favors aggressive cost reduction.
 

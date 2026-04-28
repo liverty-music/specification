@@ -25,11 +25,11 @@
 ## 4. Pre-merge validation
 
 - [x] 4.1 Run `make check` in `cloud-provisioning` (lint-ts + lint-k8s) and confirm all checks pass. **Result: `make check` exits 0. (Pre-commit target only runs lint-ts; lint-k8s is broken by Helm v4 in argocd overlay — see 3.4 note.)**
-- [ ] 4.2 Open a PR against `cloud-provisioning/main`. Note in the description that NodePool replacement triggers a ~2-3 minute reschedule window.
+- [ ] 4.2 Open a PR against `cloud-provisioning/main`. Note in the description that the NodePool in-place update triggers a GKE surge upgrade (~90 s per-pod eviction window).
 
 ## 5. Deploy and verify (post-merge)
 
-- [ ] 5.1 Monitor the auto-`pulumi up` job at https://app.pulumi.com/pannpers/liverty-music/dev/deployments until the NodePool replace completes successfully.
+- [ ] 5.1 Monitor the auto-`pulumi up` job at https://app.pulumi.com/pannpers/liverty-music/dev/deployments until the NodePool in-place update and GKE surge upgrade complete successfully.
 - [ ] 5.2 Verify boot disks: `gcloud compute disks list --filter="name~^gke-standard-cluster--spot-pool"` shows all spot node disks at `SIZE_GB: 30` and `TYPE: pd-standard`.
 - [ ] 5.3 Wait for ArgoCD to sync the `zitadel` Application after the cloud-provisioning merge. Verify `kubectl get deploy -n zitadel` shows both Deployments at `1/1`.
 - [ ] 5.4 Verify `kubectl get pdb -n zitadel` shows both PDBs with `MIN AVAILABLE: 0`.
