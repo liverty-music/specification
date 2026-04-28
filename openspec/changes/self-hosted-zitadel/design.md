@@ -82,12 +82,14 @@ Because `ZITADEL_FIRSTINSTANCE_*` only applies at instance creation, the env var
 
 ### D8. Schedule onto the existing spot node pool with PDB and podAntiAffinity
 
-The single-person `dev` cluster cost posture explicitly accepts short auth outages; promoting Zitadel to an on-demand pool would nearly double the dev compute bill for protection against a scenario that already occurs (node eviction) for the existing backend. Two defenses compensate:
+The single-person `dev` cluster cost posture explicitly accepts short auth outages; promoting Zitadel to an on-demand pool would nearly double the dev compute bill for protection against a scenario that already occurs (node eviction) for the existing backend. Two defenses compensate at the **base manifest** level:
 - `PodDisruptionBudget minAvailable: 1` protects against K8s-initiated voluntary disruption (autoscaler drain, node upgrades) — not GCP Spot preemption, but meaningful during routine cluster maintenance.
 - `podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution` on `kubernetes.io/hostname` forces the two replicas onto different nodes so a single preemption cannot take both down.
 - `readinessProbe: /debug/ready` removes a pod from the Gateway backend pool during startup or migration; `rollingUpdate.maxUnavailable: 0` prevents the deploy-time gap.
 
 The trade-off is that a simultaneous two-node preemption does cause a ~30–90s total auth outage in `dev` during the rare case that both spot VMs are reclaimed. `staging` / `prod` will use an on-demand pool with regional distribution in the follow-up change.
+
+**Dev-specific cost override** _(landed via the `optimize-dev-gke-cost` change, cloud-provisioning#208 / specification#425, after the initial `self-hosted-zitadel` proposal)_: in `dev` the API and Login Deployments run with `replicas: 1`, and both `PodDisruptionBudget`s relax to `minAvailable: 0`. With a single replica the anti-affinity defense becomes vestigial in dev (it remains on the base for staging/prod), and the PDB relaxation lets a single replica drain cleanly during node upgrades / autoscaler compaction. The dev posture explicitly accepts a ~60s auth outage per node event in exchange for ~¥5,500/month savings on the spot pool's boot disk + node count footprint. `staging` / `prod` retain the base `replicas: 2` + `minAvailable: 1` posture.
 
 ### D9. Wipe user-scoped backend tables instead of running a user migration
 

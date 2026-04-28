@@ -92,9 +92,9 @@ Pulumi SHALL create the `zitadel` database and the `zitadel@liverty-music-dev.ia
 
 ### Requirement: Connection Pool Sized Within Dev Connection Budget
 
-In the `dev` environment, the Zitadel database configuration SHALL use `MaxOpenConns: 3` and `MaxIdleConns: 1`, such that across both Zitadel replicas the total open connections do not exceed 6.
+In the `dev` environment, the Zitadel database configuration SHALL use `MaxOpenConns: 3` and `MaxIdleConns: 1`, sized so that the total open connections per Zitadel replica fits within the dev Cloud SQL connection budget.
 
-**Rationale**: The existing Cloud SQL `db-f1-micro` instance has a 25-connection cap; backend server (5) + backend consumer (5) + Atlas (2) already consume ~12 connections, leaving ~13 headroom. Applying the production-recommended pool of 10 (20 across both replicas) would exhaust the budget.
+**Rationale**: The existing Cloud SQL `db-f1-micro` instance has a 25-connection cap; backend server (5) + backend consumer (5) + Atlas (2) already consume ~12 connections, leaving ~13 headroom. Applying the production-recommended pool of 10 per replica would exhaust the budget. The original `self-hosted-zitadel` design assumed 2 dev replicas (worst-case 6 open connections); the `optimize-dev-gke-cost` change subsequently dropped dev to 1 replica (worst-case 3 open connections) — the per-replica `MaxOpenConns: 3` value is unchanged so that re-scaling dev to 2 replicas in future remains safe without revisiting the pool.
 
 #### Scenario: Dev Helm values carry the reduced pool
 
@@ -140,15 +140,23 @@ The system SHALL generate a 32-byte Zitadel masterkey exactly once (by Pulumi's 
 
 ### Requirement: Resilient Scheduling on Shared Spot Node Pool
 
-The Zitadel API and Login Deployments SHALL each run with `replicaCount: 2`, a `PodDisruptionBudget` of `minAvailable: 1`, a required `podAntiAffinity` on `kubernetes.io/hostname`, a readiness probe pointed at `/debug/ready`, and a rolling update strategy of `maxUnavailable: 0`.
+The Zitadel API and Login Deployments SHALL each be authored against the base manifest with `replicaCount: 2`, a `PodDisruptionBudget` of `minAvailable: 1`, a required `podAntiAffinity` on `kubernetes.io/hostname`, a readiness probe pointed at `/debug/ready`, and a rolling update strategy of `maxUnavailable: 0`. The `dev` overlay MAY relax `replicaCount` and `minAvailable` per the `optimize-dev-gke-cost` change to trade resilience for cost; `staging` / `prod` overlays SHALL inherit the base values.
 
-**Rationale**: The `dev` cluster uses a shared Spot node pool; anti-affinity prevents a single preemption from taking both replicas, and the readiness probe holds Gateway traffic off until migrations complete.
+**Rationale**: The `dev` cluster uses a shared Spot node pool; on the base manifest (and in `staging` / `prod`), anti-affinity prevents a single preemption from taking both replicas, and the readiness probe holds Gateway traffic off until migrations complete. In `dev`, the `optimize-dev-gke-cost` change collapses both Deployments to `replicas: 1` and PDBs to `minAvailable: 0` — anti-affinity becomes a no-op for a single pod, and the relaxed PDB is what lets that single pod drain during node upgrades. The dev posture explicitly accepts a brief auth outage per node event for cost savings.
 
-#### Scenario: Replicas land on different nodes
+#### Scenario: Replicas land on different nodes (base / staging / prod)
 
-- **WHEN** two Zitadel API pods are scheduled
+- **WHEN** two Zitadel API pods are scheduled in `staging` or `prod` (or in any environment whose overlay does not collapse `replicaCount` to 1)
 - **THEN** they SHALL land on different Kubernetes nodes
 - **AND** an unscheduled third pod (e.g., during a rollout surge) SHALL wait for a different node to become available
+
+#### Scenario: Single-replica dev Deployment drains cleanly during node upgrade
+
+- **WHEN** the `dev` overlay reduces `replicaCount` to 1 and PDB `minAvailable` to 0
+- **AND** the cluster autoscaler or a node upgrade evicts the node hosting the Zitadel pod
+- **THEN** the eviction SHALL succeed (PDB does not block)
+- **AND** the Deployment SHALL re-schedule the pod onto another spot node
+- **AND** the auth outage during this gap SHALL be acceptable per the dev cost posture (D8)
 
 #### Scenario: Unready pod is excluded from Gateway backend
 

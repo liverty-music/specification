@@ -59,7 +59,7 @@ _§5.1–5.4 and 5.7 are deferred to the **cutover PR** per the reshape strategy
 - [x] 6.6 Create `k8s/namespaces/zitadel/base/deployment-login.yaml`
 - [x] 6.7 Create `k8s/namespaces/zitadel/base/service-api.yaml` and `service-login.yaml`
 - [x] 6.8 Create `k8s/namespaces/zitadel/base/httproute.yaml` with path split: `/ui/v2/login/*` → zitadel-login, `/*` → zitadel
-- [x] 6.9 Create `k8s/namespaces/zitadel/base/pdb.yaml` with `minAvailable: 1` for each Deployment
+- [x] 6.9 Create `k8s/namespaces/zitadel/base/pdb.yaml` with `minAvailable: 1` for each Deployment _Base manifest retains `minAvailable: 1` for staging / prod. The `dev` overlay subsequently introduced a `pdb-patch.yaml` that relaxes both PDBs to `minAvailable: 0` per the `optimize-dev-gke-cost` change (cloud-provisioning#208 / specification#425). With the dev `replicas: 1` override (§7.3), `minAvailable: 1` would block every node drain — relaxing to 0 is the correct dev-only posture._
 - [x] 6.10 _Implemented as sidecar_ — rather than a separate K8s Job coordinating with the main Zitadel container via a shared volume (which would require a PVC), the admin-sa-key upload runs as a third container (`bootstrap-uploader`) in the Zitadel API Pod. Shared `emptyDir` works natively in-pod and is idempotent on restarts. See `deployment-api.yaml`.
 - [x] 6.11 Create `k8s/namespaces/zitadel/base/kustomization.yaml` referencing all of the above
 
@@ -67,7 +67,7 @@ _§5.1–5.4 and 5.7 are deferred to the **cutover PR** per the reshape strategy
 
 - [x] 7.1 Create `k8s/namespaces/zitadel/overlays/dev/kustomization.yaml`
 - [x] 7.2 Create a configmap patch setting `ZITADEL_DATABASE_POSTGRES_MAXOPENCONNS=3` and `_MAXIDLECONNS=1`
-- [x] 7.3 Create a deployment patch setting `replicas: 2`, resource `requests`/`limits` sized for `e2-medium` spot, and `podAntiAffinity` on `kubernetes.io/hostname`
+- [x] 7.3 Create a deployment patch setting `replicas: 2`, resource `requests`/`limits` sized for `e2-medium` spot, and `podAntiAffinity` on `kubernetes.io/hostname` _Initial dev overlay shipped with `replicas: 2`. The subsequent `optimize-dev-gke-cost` change (cloud-provisioning#208 / specification#425) reduced both API and Login Deployments to `replicas: 1` to fit within a 2-node spot pool budget; resource requests/limits and `podAntiAffinity` are unchanged on the base, and a sibling `pdb-patch.yaml` (§6.9) relaxes the PDB to `minAvailable: 0` so the single replica can drain. The original 2-replica intent is preserved on the base manifest for `staging` / `prod`._
 - [x] 7.4 Leave readiness/liveness probe defaults from the base; confirm `/debug/ready` works through the sidecar network namespace
 - [ ] 7.5 Apply per-Execution `interruptOnError` policy in `actions-v2.ts`: email-claim injection Execution SHALL use `interruptOnError: true` in every environment (email claim is a hard invariant per the identity-management spec — every access token must carry it); auto-verify-email Execution SHALL use `interruptOnError: false` in `dev` only (fall back to the Zitadel OTP step when the webhook is unreachable) and `interruptOnError: true` in `staging` / `prod` _[deferred to cutover PR alongside wiring `ActionsV2Component`]_
 
