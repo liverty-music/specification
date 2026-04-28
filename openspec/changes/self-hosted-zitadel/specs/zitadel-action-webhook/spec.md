@@ -22,20 +22,26 @@ The backend SHALL expose an HTTP endpoint at `POST /pre-access-token` that Zitad
 
 ### Requirement: Webhook Authentication via Zitadel-Issued JWT
 
-The webhook endpoint SHALL authenticate incoming requests by validating the `PAYLOAD_TYPE_JWT` body as a JWT signed by the configured Zitadel instance, using the same JWKS endpoint that the existing backend JWT validator trusts.
+The webhook endpoint SHALL authenticate incoming requests by validating the `PAYLOAD_TYPE_JWT` body as a JWT signed by the configured Zitadel instance, using the same JWKS endpoint that the existing backend JWT validator trusts, AND SHALL pin a per-endpoint `aud` (audience) claim distinct from the end-user access-token audience so that a captured end-user access token cannot be replayed against the webhook endpoint.
 
-**Rationale**: Reusing the JWKS trust chain avoids introducing an additional shared HMAC secret, cuts one secret from the deployment, and provides asymmetric-key authentication where the backend never holds a signing secret.
+**Rationale**: Reusing the JWKS trust chain avoids introducing an additional shared HMAC secret, cuts one secret from the deployment, and provides asymmetric-key authentication where the backend never holds a signing secret. Because end-user access tokens and webhook JWTs are signed by the same JWKS, signature + issuer + expiry checks alone cannot distinguish them — the per-endpoint `aud` check (e.g., `urn:liverty-music:webhook:pre-access-token`) is the load-bearing defense against access-token replay against the webhook surface. This Requirement intentionally mirrors `authentication/spec.md` "Validate Zitadel Actions v2 Webhook JWTs"; the two specs describe the same defense from different angles (this one from the webhook endpoint's contract, the authentication spec from the JWT validator's contract).
 
 #### Scenario: Request with valid Zitadel-issued JWT is accepted
 
-- **WHEN** the webhook receives a request whose JWT body is signed by the Zitadel instance and has not expired
+- **WHEN** the webhook receives a request whose JWT body is signed by the Zitadel instance, has not expired, and whose `aud` claim matches the endpoint's configured webhook audience
 - **THEN** the endpoint SHALL proceed to produce the claim-injection response
 
 #### Scenario: Request with invalid JWT is rejected
 
-- **WHEN** the webhook receives a request whose JWT signature fails verification, has expired, or was signed by an unknown issuer
+- **WHEN** the webhook receives a request whose JWT signature fails verification, has expired, was signed by an unknown issuer, or carries an `aud` claim that does not match the endpoint's configured webhook audience
 - **THEN** the endpoint SHALL return HTTP 401
 - **AND** the endpoint SHALL log the authentication failure with correlation metadata for security monitoring
+
+#### Scenario: End-user access token replay against webhook is rejected
+
+- **WHEN** the webhook receives a request whose JWT body is a valid end-user access token (correct signature, issuer, expiry against the same JWKS) but whose `aud` claim is the end-user access-token audience rather than the webhook-specific audience
+- **THEN** the endpoint SHALL return HTTP 401
+- **AND** the endpoint SHALL NOT act on the webhook payload
 
 #### Scenario: Request without a JWT body is rejected
 
@@ -51,7 +57,7 @@ The webhook endpoints SHALL be served on a dedicated backend port (`:9090`) behi
 
 #### Scenario: In-cluster call from Zitadel succeeds
 
-- **WHEN** the Zitadel pod POSTs to `http://server-webhook-svc.backend.svc.cluster.local/pre-access-token` (or `/auto-verify-email`)
+- **WHEN** the Zitadel pod POSTs to `http://server-webhook-svc.backend.svc.cluster.local:9090/pre-access-token` (or `/auto-verify-email`)
 - **THEN** the call SHALL reach the backend webhook handler on port `9090`
 
 #### Scenario: External call from the internet is blocked

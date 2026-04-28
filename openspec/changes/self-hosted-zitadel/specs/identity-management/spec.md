@@ -67,6 +67,14 @@ The system SHALL manage the Zitadel Actions v2 `Target` and `ExecutionFunction` 
 - **THEN** the Target's `payloadType` SHALL be `PAYLOAD_TYPE_JWT`
 - **AND** the Target SHALL NOT be configured with a shared `signingKey`
 
+#### Scenario: Auto-verify-email backend endpoint validates the webhook JWT
+
+- **WHEN** the backend `/auto-verify-email` endpoint receives a request from Zitadel
+- **THEN** the endpoint SHALL apply the webhook-JWT validation contract defined in `authentication/spec.md` "Validate Zitadel Actions v2 Webhook JWTs"
+- **AND** the validator SHALL pin the `aud` claim to `urn:liverty-music:webhook:auto-verify-email` (distinct from the end-user access-token audience and from the `pre-access-token` audience)
+- **AND** a request whose JWT is a valid end-user access token, or a valid `pre-access-token` webhook JWT, SHALL be rejected with HTTP 401 because the `aud` does not match
+- **AND** only a request whose JWT carries the `auto-verify-email` audience SHALL proceed to mutate the user-creation request
+
 ## REMOVED Requirements
 
 **Note**: No requirement is removed by this change. The existing "Auto-Verify Email on Self-Registration" requirement is retained via the `MODIFIED Requirements` section above, with the implementation mechanism shifted from Actions v1 JavaScript to Actions v2 webhook. Removal of the underlying v1 Pulumi resources (`zitadel.Action`, `zitadel.TriggerActions`) is an implementation detail of the modified requirement, not a separate removed capability.
