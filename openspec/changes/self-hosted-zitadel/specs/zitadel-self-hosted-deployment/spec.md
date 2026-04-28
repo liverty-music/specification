@@ -114,6 +114,7 @@ On first startup of an empty database, Zitadel SHALL create an initial admin mac
 - **THEN** `ZITADEL_FIRSTINSTANCE_MACHINEKEYPATH` SHALL point to a path on an `emptyDir` volume mounted into both the Zitadel container and the `bootstrap-uploader` sidecar container in the same Pod
 - **AND** Zitadel SHALL write a JSON key file at that path
 - **AND** the `bootstrap-uploader` sidecar container in the same Pod SHALL upload the file to GCP Secret Manager secret `zitadel-admin-sa-key`
+- **AND** the `bootstrap-uploader` sidecar SHALL unlink the key file from the shared `emptyDir` after a successful GSM upload, so the org-admin private key does not persist in the volume for the Pod's lifetime where any future co-located container with the same `volumeMount` could read it
 
 #### Scenario: Subsequent boots skip bootstrap
 
