@@ -54,7 +54,7 @@ _§5.1–5.4 and 5.7 are deferred to the **cutover PR** per the reshape strategy
 - [x] 6.1 Create `k8s/namespaces/zitadel/base/namespace.yaml`
 - [x] 6.2 Create `k8s/namespaces/zitadel/base/serviceaccount.yaml` with Workload Identity annotation pointing at `zitadel@...iam.gserviceaccount.com`
 - [x] 6.3 Create `k8s/namespaces/zitadel/base/configmap.yaml` with Zitadel YAML config (ExternalDomain, ExternalSecure, TLS mode, Database.postgres.Host/Port/User/Database, Admin.ExistingDatabase, FIRSTINSTANCE env)
-- [x] 6.4 Create `k8s/namespaces/zitadel/base/external-secret.yaml` for `zitadel-masterkey` and `zitadel-admin-sa-key`
+- [x] 6.4 Create `k8s/namespaces/zitadel/base/external-secret.yaml` for `zitadel-masterkey` _Implements only `zitadel-masterkey` syncing to a Kubernetes Secret consumed by the Zitadel API container via `envFrom`. `zitadel-admin-sa-key` is intentionally NOT mirrored into a K8s Secret: per task §5.2, Pulumi reads the admin SA key directly from GSM via `gcp.secretmanager.getSecretVersion()`, and no in-cluster workload mounts it. Mirroring it into a K8s Secret would (a) create an orphan Secret with the placeholder value at first sync (before the bootstrap-uploader has populated GSM v1) and (b) risk a future workload accidentally mounting a stale snapshot rather than the live GSM value._
 - [x] 6.5 Create `k8s/namespaces/zitadel/base/deployment-api.yaml` — main container + cloud-sql-proxy sidecar + emptyDir volume for admin-sa key
 - [x] 6.6 Create `k8s/namespaces/zitadel/base/deployment-login.yaml`
 - [x] 6.7 Create `k8s/namespaces/zitadel/base/service-api.yaml` and `service-login.yaml`
