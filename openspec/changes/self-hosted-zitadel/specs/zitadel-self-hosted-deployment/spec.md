@@ -21,7 +21,7 @@ The system SHALL run Zitadel as an in-cluster Kubernetes workload in the `dev` G
 
 ### Requirement: Two-Container Deployment with Path-Based Routing
 
-The system SHALL deploy Zitadel as two separate Kubernetes Deployments — one for the API container (`ghcr.io/zitadel/zitadel`, port `8080`) and one for the Login V2 UI container (`ghcr.io/zitadel/login`, port `3000`) — and SHALL expose both through a single hostname via a GKE Gateway `HTTPRoute` that routes the path prefix `/ui/v2/login/` to the Login Service and all other paths to the API Service.
+The system SHALL deploy Zitadel as two separate Kubernetes Deployments — one for the API container (`ghcr.io/zitadel/zitadel`, port `8080`) and one for the Login V2 UI container (`ghcr.io/zitadel/login`, port `3000`) — and SHALL expose both through a single hostname via a GKE Gateway `HTTPRoute` that routes the path prefix `/ui/v2/login` to the Login Service and all other paths to the API Service.
 
 **Rationale**: Zitadel v4 split the Login UI into a dedicated container. Keeping both on the same hostname preserves OIDC issuer identity; path-based routing avoids the extra DNS and certificate surface of a second hostname.
 
