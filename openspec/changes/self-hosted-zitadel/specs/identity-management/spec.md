@@ -17,17 +17,17 @@ The system SHALL automatically mark a user's email as verified before account cr
 
 #### Scenario: Webhook failure in production
 
-- **WHEN** the auto-verify webhook fails in staging or production
-- **THEN** the Execution SHALL be configured with `interruptOnError: true`
-- **AND** the registration flow SHALL fail
+- **GIVEN** the auto-verify Execution is configured with `interruptOnError: true` (the staging / prod default)
+- **WHEN** the auto-verify webhook fails
+- **THEN** the registration flow SHALL fail
 - **AND** the error SHALL be logged for investigation
 
 #### Scenario: Webhook failure in development
 
-- **WHEN** the auto-verify webhook fails in the dev environment
-- **THEN** the Execution SHALL be configured with `interruptOnError: false`
-- **AND** the registration flow SHALL continue
-- **AND** the user MAY see the OTP step as a fallback
+- **GIVEN** the auto-verify Execution is configured with `interruptOnError: false` (dev only)
+- **WHEN** the auto-verify webhook fails
+- **THEN** the registration flow SHALL continue
+- **AND** the user MAY see the Zitadel OTP step as a fallback
 
 ## ADDED Requirements
 
