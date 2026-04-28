@@ -51,9 +51,9 @@ The webhook endpoint SHALL authenticate incoming requests by validating the `PAY
 
 ### Requirement: Webhook Reachable Only Within Cluster
 
-The webhook endpoints SHALL be served on a dedicated backend port (`:9090`) behind a dedicated in-cluster `Service` (`server-webhook-svc`), distinct from the public Connect-RPC port (`:8080` / `server-svc`). The existing GKE Gateway / `HTTPRoute` SHALL continue to reference only `server-svc`, so the webhook paths are unreachable via the public hostname regardless of URL guess-work.
+The webhook endpoints SHALL be served on a dedicated backend port (`:9090`) behind a dedicated in-cluster `Service` (`server-webhook-svc`), distinct from the public Connect-RPC port (`:8080` / `server-svc`). The existing GKE Gateway / `HTTPRoute` SHALL continue to reference only `server-svc`. The webhook **handler** SHALL therefore be unreachable from the public hostname because no handler is registered on the `:8080` listener for webhook paths; the public `:8080` listener's `authn.Middleware` provides defense-in-depth by rejecting any unauthenticated request before the request mux dispatches.
 
-**Rationale**: Webhook traffic is internal service-to-service communication; exposing it to the public internet broadens the attack surface for no functional benefit. Physically separating the listener from the public one removes any dependency on negative-match routing rules or per-path filters.
+**Rationale**: Webhook traffic is internal service-to-service communication; exposing it to the public internet broadens the attack surface for no functional benefit. The primary defense is **physical listener separation** — the webhook handler binds only to `:9090`, which is fronted exclusively by the in-cluster `server-webhook-svc` and never by the public Gateway. The Gateway's `server-route` HTTPRoute uses a `/*` catch-all and so DOES route a public request for `/pre-access-token` to the backend Pod's `:8080` listener; the secondary defense (rejection at `authn.Middleware`) handles that case. The two layers eliminate any dependency on negative-match routing rules or per-path filters.
 
 #### Scenario: In-cluster call from Zitadel succeeds
 
