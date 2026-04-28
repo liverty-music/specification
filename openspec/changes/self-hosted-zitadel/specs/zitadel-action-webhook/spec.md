@@ -63,8 +63,11 @@ The webhook endpoints SHALL be served on a dedicated backend port (`:9090`) behi
 #### Scenario: External call from the internet is blocked
 
 - **WHEN** a request arrives at the backend's public Gateway hostname for path `/pre-access-token` or `/auto-verify-email`
-- **THEN** the Gateway SHALL NOT route it to any backend (no HTTPRoute rule matches)
-- **AND** the client SHALL receive a 404 or equivalent routing rejection
+- **THEN** the request SHALL NOT reach any webhook handler
+- **AND** the client SHALL receive an authentication or routing rejection (HTTP 401 or HTTP 404)
+- **AND** the rejection SHALL occur because the public `:8080` listener has no handler registered for webhook paths AND the existing `authn.Middleware` rejects unauthenticated requests before any handler is invoked
+
+> **Note**: the existing `server-route` `HTTPRoute` matches `/*` (catch-all) and forwards `/pre-access-token` to `server-svc:80`, so the Gateway does route the request to the backend. The verified runtime behavior is therefore HTTP 401 from `authn.Middleware`, not Gateway-level 404. A future follow-up MAY tighten the `server-route` HTTPRoute to enumerate only public paths, at which point the rejection upgrades to a Gateway-level 404 without changing the security outcome (external requests cannot reach the webhook handler in either case).
 
 #### Scenario: Public Connect-RPC listener does not serve webhooks
 
