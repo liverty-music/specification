@@ -103,7 +103,7 @@ _§5.1–5.4 and 5.7 are deferred to the **cutover PR** per the reshape strategy
 
 ## 12. frontend — OIDC Config Switch
 
-- [ ] 12.1 In the frontend GitHub Actions `dev` environment, update secrets `VITE_ZITADEL_ISSUER`, `VITE_ZITADEL_CLIENT_ID`, `VITE_ZITADEL_ORG_ID` to the new instance's values (client id and org id become known after Pulumi stack #2 applies)
+- [ ] 12.1 In the frontend repository, edit the committed `.env` file to update `VITE_ZITADEL_ISSUER`, `VITE_ZITADEL_CLIENT_ID`, and `VITE_ZITADEL_ORG_ID` to the new self-hosted instance's values (client id and org id become known after the Pulumi cutover apply succeeds; pull them from the Pulumi `dev` stack outputs). _Original wording said "GitHub Actions environment secrets" but the frontend's actual build path doesn't read GH variables for these — `.env` is committed to the repo and `Dockerfile` `COPY . .` propagates it into the Vite builder stage, where Vite inlines `import.meta.env.VITE_*` into `dist/`. A short-lived experiment to manage these via Pulumi `github.ActionsEnvironmentVariable` (cloud-provisioning#209 commit `8b22b70`) was reverted because (a) the build pipeline never consumed `vars.VITE_*` and (b) hiding the values in the GitHub UI hurts discoverability — the canonical config belongs in the repo where `git blame` and code review can see it. The `.env` edit lands in the same PR as §14.x (Playwright `.auth/` regen) so the frontend rebuild that picks up §14 also rebuilds the bundle with the new issuer / client / org._
 - [ ] 12.2 Rebuild and redeploy the dev frontend through ArgoCD Image Updater flow
 
 ## 13. Cutover Execution
