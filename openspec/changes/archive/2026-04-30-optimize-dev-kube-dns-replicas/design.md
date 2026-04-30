@@ -11,7 +11,7 @@ replicas = max(
 # preventSinglePointFailure: true forces ≥2 if total_nodes ≥ 2
 ```
 
-The single-point-of-failure guard is the only reason kube-dns sits at 2 replicas. Each pod requests 270m CPU, so 2 replicas consume 540m — by far the largest non-DaemonSet CPU draw in the cluster (next is Zitadel API at 120m). With this 540m freed, the cluster's total request budget drops to ~2018m, comfortably fitting the 2-node ceiling (1880m allocatable) and unblocking the cluster autoscaler from retiring the 3rd spot node.
+The single-point-of-failure guard is the only reason kube-dns sits at 2 replicas. Each pod requests 270m CPU, so 2 replicas consume 540m — by far the largest non-DaemonSet CPU draw in the cluster (next is Zitadel API at 120m). With ~270m freed (one of the two replicas removed), the cluster's total request budget drops to ~2018m. Although that still exceeds the 2-node allocatable ceiling (1880m) on raw request math, the cluster autoscaler scales on per-node utilization rather than aggregate requests, and retiring a node also removes that node's per-node DaemonSet pods (~378m worth). The actual post-compaction state recorded in tasks.md is ~1614m on 1880m capacity (86% packed, ~266m headroom).
 
 GKE's stance on customization (verified across two official pages):
 
