@@ -21,9 +21,9 @@ The system SHALL run Zitadel as an in-cluster Kubernetes workload in the `dev` G
 
 ### Requirement: Two-Container Deployment with Path-Based Routing
 
-The system SHALL deploy Zitadel as two separate Kubernetes Deployments — one for the API container (`ghcr.io/zitadel/zitadel`, port `8080`) and one for the Login V2 UI container (`ghcr.io/zitadel/login`, port `3000`) — and SHALL expose both through a single hostname via a GKE Gateway `HTTPRoute` that routes the path prefix `/ui/v2/login` to the Login Service and all other paths to the API Service.
+The system SHALL deploy Zitadel as two separate Kubernetes Deployments — one for the API container (`ghcr.io/zitadel/zitadel`, port `8080`) and one for the Login V2 UI container (`ghcr.io/zitadel/zitadel-login`, port `3000`) — and SHALL expose both through a single hostname via a GKE Gateway `HTTPRoute` that routes the path prefix `/ui/v2/login` to the Login Service and all other paths to the API Service.
 
-**Rationale**: Zitadel v4 split the Login UI into a dedicated container. Keeping both on the same hostname preserves OIDC issuer identity; path-based routing avoids the extra DNS and certificate surface of a second hostname.
+**Rationale**: Zitadel v4 split the Login UI into a dedicated container. Keeping both on the same hostname preserves OIDC issuer identity; path-based routing avoids the extra DNS and certificate surface of a second hostname. The image path is `ghcr.io/zitadel/zitadel-login`, NOT `ghcr.io/zitadel/login` (the latter 404s); the upstream Helm chart default uses the same path.
 
 #### Scenario: API request reaches the API container
 
@@ -34,6 +34,25 @@ The system SHALL deploy Zitadel as two separate Kubernetes Deployments — one f
 
 - **WHEN** a browser requests `https://auth.dev.liverty-music.app/ui/v2/login/register`
 - **THEN** the HTTPRoute SHALL forward the request to the `zitadel-login` Service on port `3000`
+
+### Requirement: Login V2 UI Calls Zitadel API via Public URL
+
+The `zitadel-login` container SHALL set `ZITADEL_API_URL` to the public issuer URL (`https://auth.dev.liverty-music.app`), NOT the cluster-internal Service URL (`http://zitadel.zitadel.svc.cluster.local`).
+
+**Rationale**: Zitadel v4 selects the virtual instance from the request's `Host` header and matches it against the configured `InstanceDomains`. The cluster-internal Service hostname is not registered as an InstanceDomain, so calls with `Host: zitadel.zitadel.svc.cluster.local` return HTTP 404 before reaching any handler — the Login UI's SSR sees `Failed to fetch security settings ... status:404` and returns HTTP 500. Setting `ZITADEL_API_URL` to the public URL makes the Login UI's outbound calls carry the correct `Host` header. Traffic still stays in-cluster (Login Pod → Gateway external IP → HTTPRoute `/` catch-all → `zitadel` API Service); the Gateway round-trip adds ~10ms versus a direct Service hop, acceptable for dev.
+
+#### Scenario: Login UI Pod reaches Zitadel API via the public hostname
+
+- **WHEN** the `zitadel-login` Pod issues an outbound request to fetch instance settings
+- **THEN** the request URL SHALL be `https://auth.dev.liverty-music.app/...`
+- **AND** the resulting `Host` header SHALL match the configured `ExternalDomain`
+- **AND** Zitadel SHALL resolve the request to the correct virtual instance
+
+#### Scenario: Login UI does not bypass the Gateway
+
+- **WHEN** the `zitadel-login` Pod's `ZITADEL_API_URL` is configured
+- **THEN** the value SHALL be the public HTTPS URL (terminated at the Gateway)
+- **AND** the value SHALL NOT be the cluster-internal Service URL — that bypass produces 404s because the Service hostname is not in `InstanceDomains`
 
 ### Requirement: TLS Terminated at Gateway, Cluster Traffic Unencrypted
 
@@ -121,6 +140,31 @@ On first startup of an empty database, Zitadel SHALL create an initial admin mac
 - **WHEN** Zitadel starts against an already-initialized database
 - **THEN** the `ZITADEL_FIRSTINSTANCE_*` environment variables SHALL be ignored
 - **AND** the existing admin machine user and key in Secret Manager SHALL remain unchanged
+
+### Requirement: Backend MachineKey Lifecycle Tied to Zitadel-Side Identity
+
+The backend's machine-user JWT private key (`zitadel-machine-key` in GSM) SHALL track the `MachineKey` Pulumi resource's `keyDetails` output one-to-one. State drift between the Zitadel DB, the GSM SecretVersion, and the Pulumi state SHALL be treated as a critical incident — backend → Zitadel API auth fails with `Errors.AuthNKey.NotFound` whenever the kid in the GSM-mounted JSON key does not have a matching row in Zitadel's AuthNKey table.
+
+**Rationale**: Discovered post-cutover when `ResendEmailVerification` returned `Errors.Internal (OIDC-AhX2u) parent: invalid signature (error fetching keys: Errors.AuthNKey.NotFound)`. The cause was a three-way drift after the cutover incident chain:
+
+1. Pulumi created a fresh self-hosted MachineKey at v252; GSM was updated with the new keyDetails.
+2. `pulumi state delete --target-dependents` cascade-removed the MachineKey state at v250.
+3. The merged-state import at v254 re-injected the v246 (Cloud-era) MachineKey output into Pulumi state.
+4. v258's SecretVersion replace pulled `secretData` from the (now stale) `MachineKey.keyDetails`, writing the Cloud-era key back into GSM. Zitadel DB still held the self-hosted key.
+
+The fix (cloud-provisioning#216) was to force-replace the `MachineKey` resource by changing `expirationDate` from the magic upstream-example value `2519-04-01T08:45:00Z` to a clean `2099-01-01T00:00:00Z`. Replacement re-runs the create flow, which produces a fresh `keyDetails` value that propagates through the dependency graph.
+
+#### Scenario: keyId in GSM matches Zitadel DB
+
+- **WHEN** Pulumi state contains a `MachineKey` for a given user
+- **THEN** the `keyId` in the GSM SecretVersion's JSON SHALL match a row in Zitadel's AuthNKey table for that user
+- **AND** backend → Zitadel API JWT bearer auth SHALL succeed
+
+#### Scenario: Force-replace on detected drift
+
+- **WHEN** the operator detects keyId drift (e.g., via `Errors.AuthNKey.NotFound` in backend logs)
+- **THEN** the operator SHALL force-replace the Pulumi `MachineKey` resource by changing a non-cosmetic property (e.g., bumping `expirationDate` to a different valid value)
+- **AND** the resulting Pulumi apply SHALL produce a new `keyDetails` value, propagate it through `KubernetesComponent.secrets`, replace the GSM SecretVersion, sync ESO, and trigger Reloader-driven backend Pod restart
 
 ### Requirement: Masterkey Generated Once and Stored Immutably
 
