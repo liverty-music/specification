@@ -24,7 +24,7 @@ Goal: fix the user-visible "Failed to send verification email" bug for users cre
 
 ## 3. PR-B1 — cloud-provisioning: Pulumi Dynamic Resource lifecycle test suite
 
-Goal: lock in the Zitadel v4 wire-level contract (POST for both create and update; `targets: string[]` not `[]Target`; 404 tolerance on read) that the §13.5 / §13.6 incidents broke. Tests cover the existing three resources only; the new `ZitadelSmtpActivation` resource lands in PR-B2 and gets the same scaffold by copy-edit.
+Goal: lock in the Zitadel v4 wire-level contract (POST for both create and update; `targets: string[]` not `[]Target`; 404 tolerance on read) that the §13.5 / §13.6 incidents broke. Tests cover the existing three resources only; the new `ZitadelSmtpActivation` resource lands in PR-B2 and gets a narrower side-effect-only scaffold (per design.md D4) that reuses this PR's mock-`fetch` infrastructure.
 
 - [ ] 3.1 Add `vitest` as a `devDependency` in `cloud-provisioning/package.json` if not already present; ensure `package.json` `scripts.test` invokes it
 - [ ] 3.2 Create `cloud-provisioning/src/zitadel/dynamic/__tests__/zitadel-api-client.test.ts` with a `vi.fn()` fetch mock + a `getAccessToken` happy-path test that asserts the `client_credentials` grant URL and request body
