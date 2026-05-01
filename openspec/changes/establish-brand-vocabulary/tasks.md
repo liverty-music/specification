@@ -52,4 +52,4 @@
 - [x] 6.1 Open PR in `specification/` containing the new `brand-vocabulary` spec, the `frontend-i18n` delta, and this change folder — liverty-music/specification#430
 - [x] 6.2 Open PR in `frontend/` containing the `entity` namespace scaffold, the lint script, and the Makefile wiring — liverty-music/frontend#344
 - [x] 6.3 Cross-link the two PRs in their descriptions
-- [ ] 6.4 After both PRs merge, archive the change with `openspec archive establish-brand-vocabulary` (creates `openspec/specs/brand-vocabulary/spec.md` and updates `openspec/specs/frontend-i18n/spec.md`)
+- [x] 6.4 After both PRs merge, archive the change with `openspec archive establish-brand-vocabulary` (creates `openspec/specs/brand-vocabulary/spec.md` and updates `openspec/specs/frontend-i18n/spec.md`) — done manually because the `openspec archive` MODIFIED matcher rejected the existing `### Requirement: Translation Resource Files` header even though it is present in main spec; see archive PR for delta-to-main sync
