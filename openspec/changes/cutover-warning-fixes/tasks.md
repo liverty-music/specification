@@ -44,18 +44,23 @@ Goal: lock in the Zitadel v4 wire-level contract (POST for both create and updat
 
 Goal: make Zitadel SMTP activation declarative so every rebuild does not silently break first-sign-up email verification.
 
-- [ ] 4.1 Create `cloud-provisioning/src/zitadel/dynamic/smtp-activation.ts` exporting `ZitadelSmtpActivation` extending `pulumi.dynamic.Resource`. Lifecycle handlers:
+- [ ] 4.1 Create `cloud-provisioning/src/zitadel/dynamic/smtp-activation.ts` exporting `ZitadelSmtpActivation` extending `pulumi.dynamic.Resource`. Lifecycle handlers (note: this resource intentionally diverges from the Target / Execution four-case lifecycle because activation is a one-shot side effect with no readable or updatable state at the Zitadel API surface):
   - `create(inputs.smtpConfigId)`: get OAuth token via `getAccessToken`, then `POST /admin/v1/smtp/{id}/_activate`. Return an outputs object containing `smtpConfigId` and `activatedAt` (timestamp).
-  - `update()`: re-fire `_activate` (idempotent on Zitadel side); store new `activatedAt`.
+  - `update()`: **no-op**. Do NOT re-fire `_activate`; do NOT mutate `activatedAt`. Pulumi handles input-diff replace-vs-update internally; an `update` call here means inputs other than `smtpConfigId` changed (none exist in the input shape today), so there is nothing to do. Aligns with `design.md` D2 and the spec scenario "Activation is idempotent across re-apply."
   - `delete()`: no-op (no `_deactivate` semantic in our use-case).
-  - `read()`: optional GET `/admin/v1/smtp/{id}` to confirm `state === SMTP_CONFIG_ACTIVE`; return current outputs unchanged. Skip if Zitadel API surface is awkward; log warning instead.
+  - `read()`: no-op returning current outputs unchanged. Activation is a side effect with no separate readable state at the Zitadel API surface (one would GET `SmtpConfig`, which is owned by a different resource). Drift detection is explicitly deferred per `design.md` D2 Risks.
 - [ ] 4.2 Export `ZitadelSmtpActivation` from `src/zitadel/dynamic/index.ts`
 - [ ] 4.3 In `src/zitadel/components/smtp.ts`, instantiate `ZitadelSmtpActivation` with `smtpConfigId: smtpConfig.id` and `dependsOn: [smtpConfig]`
-- [ ] 4.4 Extend `__tests__/smtp-activation.test.ts` (new file) with the same four-case scaffold from PR-B1: `create()` POSTs, `update()` POSTs, `delete()` no-op, `read()` tolerates 404. Mock fetch responses match Zitadel's actual `_activate` 200 and "already active" responses
+- [ ] 4.4 Add `__tests__/smtp-activation.test.ts` (new file). The test scaffold is **deliberately narrower** than the four-case scaffold from PR-B1 because of the resource's side-effect-only semantics:
+  - `create()` issues `POST /admin/v1/smtp/{id}/_activate` with the expected request shape; mock 200 response satisfies the call
+  - `create()` succeeds when the upstream returns the "already active" response shape (idempotency on first apply against an out-of-band-activated SMTP)
+  - `update()` makes ZERO HTTP requests (no `fetch` invocation); asserts the mock was not called
+  - `delete()` makes ZERO HTTP requests
+  - `read()` makes ZERO HTTP requests and returns current outputs unchanged
 - [ ] 4.5 Run `make check`; all tests + lint green
 - [ ] 4.6 Run `pulumi preview --stack dev` from a clean checkout; expected diff: `+ create urn:...:ZitadelSmtpActivation:smtp-activation` and zero replacements / deletes
 - [ ] 4.7 Open cloud-provisioning PR titled `feat(zitadel): auto-activate SmtpConfig via Pulumi Dynamic Resource`; verify the `pulumi preview` output is attached to the PR description; merge after approval
-- [ ] 4.8 Post-merge: confirm Pulumi Cloud Deployment auto-runs `pulumi up`; SMTP state in dev Zitadel transitions from current state to `SMTP_CONFIG_ACTIVE` (already active from the manual `curl` step, so the `update` handler's no-op path runs)
+- [ ] 4.8 Post-merge: confirm Pulumi Cloud Deployment auto-runs `pulumi up`; SMTP state in dev Zitadel remains `SMTP_CONFIG_ACTIVE` (already active from the manual `curl` step). The first apply executes `create()` (which calls `_activate`; Zitadel returns the "already active" response and the operation succeeds idempotently). Subsequent applies execute `update()` as a no-op with zero HTTP traffic.
 - [ ] 4.9 Confirm via Zitadel admin API: `GET /admin/v1/smtp/{id}` returns `state: SMTP_CONFIG_ACTIVE`
 
 ## 5. Verification

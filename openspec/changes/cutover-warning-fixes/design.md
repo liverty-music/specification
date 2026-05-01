@@ -55,14 +55,16 @@ The `ZitadelSmtpActivation` resource tracks no state — it's a pure side-effect
 
 ### D4. Test fixtures encode the v4 contract that broke during cutover
 
-Each Dynamic Resource gets at least these test cases:
+The four-case scaffold below applies to **stateful** Dynamic Resources — those that map to a Zitadel API resource readable via `GET /<path>/{id}`. The current three (`ZitadelTarget`, `ZitadelExecutionFunction`, `ZitadelExecutionRequest`) all qualify. Test cases:
 
 - `create()` MUST issue a `POST` to the documented path, with the request body shape that Zitadel v4 actually accepts (e.g., `targets: string[]` for Execution, NOT `targets: [{target: string}]`).
 - `update()` MUST issue a `POST` (NOT `PATCH`) — Zitadel v4 returns `405 Method Not Allowed` on PATCH for Actions v2 resources.
 - `delete()` MUST issue a `DELETE` to `<path>/{id}`.
 - `read()` MUST tolerate the `404 Not Found` case (resource was deleted out-of-band) by returning `null` rather than throwing.
 
-These four cases collectively encode the §13.5 / §13.6 incident shapes plus the standard Pulumi Dynamic Resource lifecycle expectations. Any future Dynamic Resource added to the module gets the same four-test scaffold by copy-edit.
+These four cases collectively encode the §13.5 / §13.6 incident shapes plus the standard Pulumi Dynamic Resource lifecycle expectations.
+
+**Carve-out for side-effect-only resources.** `ZitadelSmtpActivation` (the new resource introduced in PR-B2) intentionally diverges from this scaffold: activation is a one-shot side effect with no individually addressable `_activate` resource at the API surface — there is no `GET /admin/v1/smtp/{id}/_activation` endpoint to read, no separate `_deactivate` endpoint, and no inputs other than `smtpConfigId` to update. Its `update()` / `read()` / `delete()` handlers are no-ops by design (per D2's "side-effect-only resource" framing and the spec's idempotency scenario), so its test scaffold is narrower: assert that `create()` POSTs and that the other three lifecycle methods make ZERO HTTP calls. Future Dynamic Resources added to the module SHOULD inherit the four-case scaffold unless they are also side-effect-only, in which case they SHOULD inherit the narrower scaffold and call out the divergence in their tasks document (as PR-B2 does in §4.1 and §4.4).
 
 ### D5. Backend RPC change is a 1-line endpoint swap, not an architectural rework
 
