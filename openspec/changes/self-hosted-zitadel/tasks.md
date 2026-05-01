@@ -169,17 +169,18 @@ These are gaps surfaced by the cutover that did not exist in the original propos
 - [ ] 18.3.1 Delete `internal/adapter/webhook/auto_verify_email_handler.go` + tests + DI wiring + `Service/server-webhook-svc` route registration for `/auto-verify-email`. The Zitadel-side Target + Execution were removed in cloud-provisioning#215; the backend handler is now dead code receiving no traffic.
 - [ ] 18.3.2 Keep the `:9090` listener and `/pre-access-token` handler unchanged.
 
-### 18.4 Auto-verify-email — proper implementation if/when needed
+### 18.4 Auto-verify-email — decided: accept the default OTP step
 
-- [ ] 18.4.1 If passkey-only sign-ups should skip the email-verification screen (the original §13 §10 design intent that did not actually work), there are two options:
-  - **Option A**: Disable the email-verification step at the LoginPolicy level (no Action required).
-  - **Option B**: Reconstruct the FULL `AddHumanUserRequest` in the webhook response (parse the JWT body, set `email.is_verified = true`, return the entire request payload — not just the email). Requires backend handler rewrite.
-- [ ] 18.4.2 Until then, sign-up users go through Zitadel's default OTP step. Acceptable for dev; revisit when the cutover extends to staging / prod.
+- [x] 18.4.1 **Decision**: keep Zitadel's default OTP step on Self-Registration. The previously-considered alternatives are both unavailable:
+  - LoginPolicy / DomainPolicy / OrgIAMPolicy toggle to skip email verification: **does not exist**. Per Zitadel maintainers ([discussion #4145](https://github.com/zitadel/zitadel/discussions/4145)): "emails can't be marked as optional they are always required. Disabling the email verification would not solve your problem, because ZITADEL requires verified email addresses." The `EMAIL_VERIFICATION` env var on `zitadel-login` controls **login-time** verification, not Self-Registration.
+  - Reconstructing the full `AddHumanUserRequest` in an Actions v2 `request:*` webhook (zitadel/zitadel#9748 workaround): brittle — every Zitadel proto-field addition silently strips fields the handler doesn't echo. Not worth the maintenance burden for a dev-only UX polish.
+- [x] 18.4.2 Sign-up users go through Zitadel's default OTP step. Acceptable for dev. Revisit if/when staging / prod cutover changes the cost-benefit.
 
 ### 18.5 Playwright E2E — password-based test user
 
 - [ ] 18.5.1 Provision a password-only test user in the new self-hosted Zitadel (Pulumi resource `zitadel.HumanUser` + initial password) for use by Playwright. Passkey-only users are incompatible with headless / CI testing because passkey requires biometric / PIN gesture.
 - [ ] 18.5.2 Update `.auth/README.md` to document the new test user credentials and the WSL2-friendly capture path (likely Playwright MCP headless rather than the existing `capture-auth-state.ts` headed-Chromium script).
+- **Tracked in**: [liverty-music/frontend#345](https://github.com/liverty-music/frontend/issues/345). Open before this change is archived; the GitHub issue is the actionable surface, not this checkbox.
 
 ### 18.6 Zitadel API in-memory state pollution after long uptime
 
@@ -192,6 +193,7 @@ These are gaps surfaced by the cutover that did not exist in the original propos
 - [ ] 18.7.1 Rename Deployment / Service / HTTPRoute backendRefs / HealthCheckPolicy targetRefs / PDB selectors in `cloud-provisioning/k8s/namespaces/zitadel/` for naming consistency. Container names follow (`api`, `web`).
 - [ ] 18.7.2 Update `ZITADEL_API_URL` default to point at the new Service name (still public URL externally; the rename is for cluster-internal clarity).
 - [ ] 18.7.3 Brief downtime acceptable in dev; ArgoCD performs delete-then-create on resource rename.
+- **Tracked in**: openspec change `k8s-naming-cleanup` (proposal-only stub at archive time; expand via `/opsx:continue` when scheduled).
 
 ### 18.8 GSM secret rename: `zitadel-machine-key` → `zitadel-backend-app-key`
 
@@ -199,6 +201,7 @@ These are gaps surfaced by the cutover that did not exist in the original propos
   - Step 1 (cloud-provisioning): create new GSM secret `zitadel-backend-app-key` populated from current `MachineKey.keyDetails`; add new ExternalSecret + K8s Secret in backend namespace; keep old in place.
   - Step 2 (backend): switch Deployment volumeMount to new K8s Secret name + update `ZITADEL_MACHINE_KEY_PATH` env if needed.
   - Step 3 (cloud-provisioning, cleanup): remove old GSM Secret + ExternalSecret + K8s Secret.
+- **Tracked in**: openspec change `rename-zitadel-machine-key-secret` (proposal-only stub at archive time; expand via `/opsx:continue` when scheduled).
 
 ### 18.9 Pulumi state import safeguards
 
@@ -207,3 +210,9 @@ These are gaps surfaced by the cutover that did not exist in the original propos
   - The merged-state-import procedure used in v254.
   - The need to scrub `__pulumi_raw_state_delta` after import (provider panic prevention).
 - [ ] 18.9.2 Add a Pulumi Cloud "deployment guardrail" or pre-deploy check that diff-counts `delete > 50` and requires explicit human approval (Pulumi Cloud has a similar `pulumi-deployments-config.yaml` policy hook).
+- **Tracked in**: openspec change `pulumi-deploy-safeguards` (proposal-only stub at archive time; expand via `/opsx:continue` when scheduled). Both 18.9.1 (runbook) and 18.9.2 (deploy hook) are in the same change.
+
+### 18.10 Cloud tenant decommission (after cooldown)
+
+- [ ] 18.10.1 After §15.2 cooldown closes clean (~2026-05-14), delete Zitadel Cloud tenant `dev-svijfm.us1.zitadel.cloud` and remove rollback escape hatch from design docs. Folds together with §15.3.
+- **Tracked in**: openspec change `archive-zitadel-cloud-tenant` (proposal-only stub at archive time; expand via `/opsx:continue` when scheduled).
