@@ -12,8 +12,8 @@ The `establish-brand-vocabulary` change just landed, providing the `entity.*` na
 
 - **Populate Layer A registry** with the first concrete entries:
   - `entity.hype.label` → JA `Stage` / EN `Hype` (asymmetric — first real exercise of the namespace's design rule)
-  - `entity.hype.values.{watch,home,near,away}` → JA `観測 / 地元 / 近郊 / 全国` and EN `Watching / Home / Near / Away`
-  - `entity.concert.label` → `ライブ` / `Live`
+  - `entity.hype.values.{watch,home,nearby,away}` → JA `観測 / 地元 / 近郊 / 全国` and EN `Watching / Home / Near / Away` (key segment `nearby` mirrors the TS `Hype` enum value)
+  - `entity.concert.label` → `ライブ` / `Concert` (asymmetric — JA canonical fan-vocab term differs from EN noun)
   - `entity.artist.label` → `アーティスト` / `Artist`
 - **Migrate existing `hype.*` and screen-local hype text** to the new `entity.hype.*` keys; remove orphaned legacy keys.
 - **Unify terminology** in JA copy: `ライブ` (not `コンサート`), `タイムテーブル` (not `ダッシュボード` / `ライブカレンダー` in user-visible contexts), `フォロー` (not `登録`).

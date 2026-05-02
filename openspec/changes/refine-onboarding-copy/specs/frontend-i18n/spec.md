@@ -6,10 +6,9 @@ When a top-level i18n namespace is superseded by an `entity.*` namespace path, t
 
 #### Scenario: hype.* migrated to entity.hype.*
 
-- **WHEN** `entity.hype.label` and `entity.hype.values.{watch,home,near,away}` are populated in both locales
+- **WHEN** `entity.hype.label` and `entity.hype.values.{watch,home,nearby,away}` are populated in both locales
 - **AND** all template / TypeScript bindings are switched to read from `entity.hype.*`
 - **THEN** the legacy `hype.watch`, `hype.home`, `hype.nearby`, `hype.away` keys SHALL be removed from both locale files
-- **AND** the legacy `myArtists.coachMark.setHype` text SHALL be updated to reference Stage (JA) / Hype (EN) consistent with the new label
 - **AND** no source file SHALL retain a reference to a removed legacy key (verified by Biome / typecheck against generated i18n key types if available, otherwise by grep in CI)
 
 #### Scenario: Per-screen hype labels collapse into the entity path

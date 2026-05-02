@@ -72,7 +72,7 @@ The system SHALL display a dialog after the first successful signup that consoli
 ## REMOVED Requirements
 
 ### Requirement: Hype guide hint always visible in PostSignupDialog
-**Reason**: The Hype guide is contextual guidance about a feature on the My Artists page; presenting it inside the post-signup celebration moment competes with the celebration tone and surfaces guidance for a screen the user has not yet visited. The same guidance is now delivered at its natural location via the existing `myArtists.coachMark.setHype` coach mark, which fires when the user reaches the My Artists page for the first time.
+**Reason**: The Hype guide is contextual guidance about a feature on the My Artists page; presenting it inside the post-signup celebration moment competes with the celebration tone and surfaces guidance for a screen the user has not yet visited. The `myArtists.coachMark.setHype` i18n key was never rendered by any component and was deleted in this change (see task 4.6), so Hype discoverability is accepted as a known regression — see the Discoverability trade-off note below.
 
 **Migration**: No data migration. The `postSignup.hypeGuideLabel` i18n key (and corresponding template row) is removed from `frontend/src/locales/{ja,en}/translation.json` and the PostSignupDialog template.
 

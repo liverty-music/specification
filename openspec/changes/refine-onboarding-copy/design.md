@@ -48,7 +48,7 @@ The `dna-orb` component name and the spec-level `artist-discovery-dna-orb-ui` ca
 
 ### Decision 3: PostSignupDialog Hype guide is removed, not relocated as a copy edit
 
-The "Hype guide hint always visible" requirement in the post-signup-dialog capability is REMOVED, not modified. The dialog becomes celebration-first; notification + PWA become optional power-up rows; the Hype guide concept lives only at its natural home in the My Artists page (already covered by `myArtists.coachMark.setHype`).
+The "Hype guide hint always visible" requirement in the post-signup-dialog capability is REMOVED, not modified. The dialog becomes celebration-first; notification + PWA become optional power-up rows. The Hype guide concept is left to the My Artists page itself; first-time discoverability is an accepted regression (the previously-existing `myArtists.coachMark.setHype` i18n key was never rendered by any component and was deleted in this change — see the Discoverability trade-off note in the post-signup-dialog spec). If the team later judges this regression to be meaningful, a follow-up change can wire an in-page hint or coach mark.
 
 This is a spec-level removal (REMOVED Requirement) because the existing scenarios assert the row is *always* visible regardless of permission state — that invariant no longer holds.
 
