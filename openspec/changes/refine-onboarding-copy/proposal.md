@@ -15,12 +15,13 @@ The `establish-brand-vocabulary` change just landed, providing the `entity.*` na
   - `entity.hype.values.{watch,home,nearby,away}` → JA `観測 / 地元 / 近郊 / 全国` and EN `Watching / Home / Near / Away` (key segment `nearby` mirrors the TS `Hype` enum value)
   - `entity.concert.label` → `ライブ` / `Concert` (asymmetric — JA canonical fan-vocab term differs from EN noun)
   - `entity.artist.label` → `アーティスト` / `Artist`
+  - `entity.homeArea.label` → `ホームエリア` / `Home Area`
 - **Migrate existing `hype.*` and screen-local hype text** to the new `entity.hype.*` keys; remove orphaned legacy keys.
 - **Unify terminology** in JA copy: `ライブ` (not `コンサート`), `タイムテーブル` (not `ダッシュボード` / `ライブカレンダー` in user-visible contexts), `フォロー` (not `登録`).
 - **Welcome hero** ([`welcome-route.html`](frontend/src/routes/welcome/welcome-route.html)): add a one-line product descriptor under the brand; rewrite the primary CTA to predict its reward; promote `welcome.guestFriendly` from below the buttons.
 - **Discovery**: drop `discovery.orbLabel` ("Music DNA") entirely; rewrite `discovery.popoverGuide` and `coachMark.viewTimetable` to celebrate the experience instead of merely instructing.
 - **Signup gate**: delete `チュートリアルお疲れさまでした`; restructure as value-first ("通知が届く / 端末横断 / 履歴保持") with Passkey as a means, not the lead.
-- **Post-Signup Dialog**: **BREAKING** for the `post-signup-dialog` capability — drop the always-visible Hype guide row; lead with celebration; demote notification + PWA to optional power-ups. Hype guidance migrates to the My Artists context (already covered by `myArtists.coachMark.setHype`).
+- **Post-Signup Dialog**: **BREAKING** for the `post-signup-dialog` capability — drop the always-visible Hype guide row; lead with celebration; demote notification + PWA to optional power-ups. Hype discoverability is an accepted regression — `myArtists.coachMark.setHype` was never rendered and was deleted in this change; a follow-up can wire a My Artists coach mark if the team judges the regression meaningful.
 - **Empty / error microcopy**: turn `dashboard.empty` from a flat statement into a promise; split the boilerplate `失敗しました。もう一度お試しください` into 2 tones (network vs transient).
 
 ### Visual polish (added in design review iteration after the initial copy refresh landed)
