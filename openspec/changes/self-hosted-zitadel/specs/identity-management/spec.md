@@ -74,11 +74,19 @@ The system SHALL invoke the Zitadel admin API `POST /admin/v1/smtp/{id}/_activat
 - **AND** the resulting state SHALL be `SMTP_CONFIG_ACTIVE`
 - **AND** subsequent verification emails SHALL be queued AND delivered to the SMTP provider
 
-#### Scenario: Activation is idempotent across re-apply
+#### Scenario: First apply against an already-active SMTP succeeds (create-time idempotency)
 
-- **WHEN** Pulumi re-applies the stack and the SMTP config is already active
-- **THEN** the `ZitadelSmtpActivation` resource's `update` handler SHALL be a no-op AND SHALL NOT fail
-- **AND** SHALL NOT trigger a destructive replace
+- **WHEN** Pulumi runs `create()` for `ZitadelSmtpActivation` against an SMTP config that is already in `SMTP_CONFIG_ACTIVE` state (e.g., activated out-of-band by a manual `curl` step prior to this resource being added to the stack)
+- **THEN** the `_activate` POST SHALL return Zitadel's "already active" response shape
+- **AND** `create()` SHALL treat that response as success
+- **AND** the resource SHALL be recorded in Pulumi state with a fresh `activatedAt` timestamp
+
+#### Scenario: Re-apply with unchanged inputs is a Pulumi-graph no-op
+
+- **WHEN** Pulumi re-applies the stack and the `ZitadelSmtpActivation` resource's inputs (`smtpConfigId`, `domain`, `jwtProfileJson`) are unchanged from the previous apply
+- **THEN** Pulumi's input diff SHALL be empty
+- **AND** no lifecycle handler (`create` / `update` / `delete` / `read`) on `ZitadelSmtpActivation` SHALL be invoked
+- **AND** zero HTTP traffic SHALL be generated against the Zitadel admin API
 - **AND** the Pulumi state graph SHALL continue to record the resource as up-to-date
 
 #### Scenario: Activation runs on a fresh Zitadel rebuild without operator intervention
