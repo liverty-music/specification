@@ -13,7 +13,7 @@ When a top-level i18n namespace is superseded by an `entity.*` namespace path, t
 
 #### Scenario: Per-screen hype labels collapse into the entity path
 
-- **WHEN** a screen-local key (e.g. `myArtists.table.watch`, `myArtists.hypeExplanation.watch`, `myArtists.table.home`, `postSignup.hypeGuideLabel`) duplicates a value now expressible via `entity.hype.values.*` or `entity.hype.label`
+- **WHEN** a screen-local key (e.g. `myArtists.table.watch`, `myArtists.hypeExplanation.watch`, `myArtists.table.home`) duplicates a value now expressible via `entity.hype.values.*` or `entity.hype.label`
 - **THEN** the screen template SHALL bind to the `entity.*` path instead
 - **AND** the duplicate screen-local key SHALL be removed from both locale files
 - **AND** any wording variation in the screen-local key (e.g. `近郊まで` vs `近郊`, `どこでも！` vs `全国`) SHALL be reconciled in favor of the canonical `entity.hype.values.*` value, eliminating the variant
