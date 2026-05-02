@@ -23,6 +23,18 @@ The `establish-brand-vocabulary` change just landed, providing the `entity.*` na
 - **Post-Signup Dialog**: **BREAKING** for the `post-signup-dialog` capability — drop the always-visible Hype guide row; lead with celebration; demote notification + PWA to optional power-ups. Hype guidance migrates to the My Artists context (already covered by `myArtists.coachMark.setHype`).
 - **Empty / error microcopy**: turn `dashboard.empty` from a flat statement into a promise; split the boilerplate `失敗しました。もう一度お試しください` into 2 tones (network vs transient).
 
+### Visual polish (added in design review iteration after the initial copy refresh landed)
+
+The copy refresh exposed a number of presentation-layer issues that text alone could not address. Captured here so the change reflects what actually shipped, not a partial truth:
+
+- **Welcome hero visual refinement** — drop the redundant `descriptor` line, rewrite title to eliminate `もう` echo, split subtitle into 2 keys (pain + action) for distinct paragraph treatment, apply a "festival-spotlight" glow vocabulary (reusing `event-card[data-matched]` text-shadow pattern) to the brand wordmark and the role-reversal verbs (`追う`/`行く`/`tracks`/`go`), apply `text-wrap: balance` + `word-break: auto-phrase` for phrase-aware CJK wrapping, switch hero to full-viewport (drop the awkward 5svh peek), and bump margins for breathing room.
+- **Page-help dialog redesign** — info icon + title + divider header; bullet markers (`▸` brand-accent) on tip lists; `<dl>` + CSS grid for the dashboard HOME/NEAR/AWAY lane block (descriptions now align in a flush-left column instead of being thrown off by label-width differences); inline genre-chip demo on the discovery help (show the actual UI primitive instead of describing it); brand-accent help trigger so it reads as tappable instead of disabled.
+- **Bottom-sheet baseline padding** — bump `.handle-bar` bottom padding so all sheets (user-home-selector, post-signup, page-help, etc.) get a baseline gap between the handle and content.
+- **Bottom-nav active state** — 3-layer cue (color + bold label + 2px top accent bar) so the current page reads instantly.
+- **Page header polish** — title font-size up + bolder weight; render unconditionally on My Artists (was hidden when empty, breaking page-identity continuity).
+- **State-placeholder icon visibility** — switch icon color to brand-accent and fix an app-wide bug where `:where(svg) { fill: currentcolor }` in the global reset overrode each Lucide icon's `fill="none"` attribute, causing all stroked icons to render as filled disks.
+- **Nav rename** — `nav.home` value `"Home"` → `"Timetable"` in both locales (route stays `/dashboard`); the user-facing label aligns with the brand vocabulary established by the welcome page.
+
 ## Capabilities
 
 ### New Capabilities

@@ -81,8 +81,48 @@
 
 ## 12. Pull Requests
 
-- [ ] 12.1 Open PR in `specification/` containing this change folder + spec deltas
-- [ ] 12.2 Open PR in `frontend/` containing the i18n migration + screen edits + post-signup-dialog component change + test updates
-- [ ] 12.3 Cross-link the two PRs
-- [ ] 12.4 Recommend reviewing the frontend PR commit-by-commit (one screen / one concern per commit per the migration plan in design.md)
+- [x] 12.1 Open PR in `specification/` containing this change folder + spec deltas — liverty-music/specification#434
+- [x] 12.2 Open PR in `frontend/` — liverty-music/frontend#350
+- [x] 12.3 Cross-link the two PRs
+- [x] 12.4 ~~Per-screen commits~~ — collapsed to a single commit. translation.json is shared across all 9 modification groups and partial-staging it would have required `git add -p` gymnastics with little reviewer benefit. The PR description mirrors the per-area structure
 - [ ] 12.5 After both PRs merge, archive with the same manual delta-sync pattern used for `establish-brand-vocabulary` (see archive PR #432 for template)
+
+## 13. Welcome Hero Visual Refinement (post-initial review iteration)
+
+After landing the initial copy refresh in PR #350, design review surfaced several visual issues the copy alone could not address. This section captures the visual polish round.
+
+- [x] 13.1 Drop the `welcome.hero.descriptor` introduction — duplicated the subtitle's mechanism explanation. Brand → title → subtitle is a tighter hierarchy
+- [x] 13.2 Rewrite title from `"もう二度と見逃さない"` to `"絶対に見逃さない"` — eliminates `もう` echo with the subtitle's `もう終わり`
+- [x] 13.3 Restructure subtitle as 2-line `subtitlePain` + `subtitleAction` keys to allow distinct paragraph treatment without HTML in i18n
+- [x] 13.4 Apply festival-spotlight glow vocabulary (`text-shadow` reusing `event-card[data-matched]` pattern) to:
+  - `welcome-brand` — ブランドが視覚階層の最上位として光る
+  - `welcome-subtitle-action strong` — 強調動詞 `追う` / `行く` / `tracks` / `go` がブランドの声として浮かぶ
+- [x] 13.5 Embed `<strong>` tags in `welcome.hero.subtitleAction` and bind via `t="[html]..."` so emphasis lives in HTML semantic markup, not slot composition
+- [x] 13.6 Apply `text-wrap: balance` + `word-break: auto-phrase` to `.welcome-title`, `.welcome-subtitle`, `.welcome-preview-label` for phrase-aware CJK line breaks
+- [x] 13.7 `welcome-hero` height: `95svh` → `100svh` (eliminates the awkward 5svh peek that caught either preview-label text or stage headers; the explicit scroll CTA covers the affordance)
+- [x] 13.8 Bump margins for breathing room: `.welcome-title` `space-s → space-m`, `.welcome-subtitle` `space-2xs → space-xs` + `line-height: relaxed`, `.welcome-subtitle-action` `space-l → space-xl`, `.welcome-brand` font-size `step-0 → step-2`, `line-height: snug` on title
+- [x] 13.9 Drop leading `↓` from `welcome.hero.seePreview` i18n value — CSS `::after` already adds the trailing arrow, leading caused duplication
+
+## 14. Page-Help Redesign
+
+`<page-help>` was a plain text dump; refined into a proper info dialog with semantic structure and visible hierarchy.
+
+- [x] 14.1 Add `<header>` wrapping a `<svg-icon name="info">` + `<h2>` title with a subtle bottom divider — anchors the dialog with a visual entry point
+- [x] 14.2 Bullet markers (`▸` in `--color-brand-accent`) for `.page-help-tips` items so tips read as advice, not generic copy
+- [x] 14.3 Lane block (HOME/NEAR/AWAY in dashboard help): convert `<ul><li>` to `<dl><dt><dd>` (semantic definition list) + CSS grid `grid-template-columns: auto 1fr` so descriptions align in a flush-left column regardless of label width. Drop leading `—` from the description i18n values (column gap replaces it)
+- [x] 14.4 Embed an inline genre-chip demo (`Rock` / `Pop` (active) / `Jazz`) in the discovery help — show the actual UI primitive instead of just describing it. CSS mimics `.genre-chip` rules from discovery-route via local `--_white-*` tokens for design coherence
+- [x] 14.5 Hype table (My Artists help): add row separators (`tr + tr` border-block-start) for clearer scanning
+- [x] 14.6 `.page-help-trigger` (the `?` button): brand-accent border + tinted background, instead of muted color — discoverable as a tappable affordance not a disabled chip
+
+## 15. Bottom-Sheet / Nav / State-Placeholder Polish
+
+App-wide visual primitives that the page-help work surfaced as needing attention.
+
+- [x] 15.1 `bottom-sheet`: bump `.handle-bar` bottom padding `space-3xs → space-xs` so all sheets get a baseline gap between handle and content (fixes user-home-selector's previously cramped header without disrupting sheets that already added their own top padding)
+- [x] 15.2 `user-home-selector.css`: add `padding-block-start: var(--space-m)` to `.selector-content` — was missing, causing the title to crash into the handle
+- [x] 15.3 `bottom-nav-bar`: strengthen active-tab treatment with a 3-layer cue — brand-accent color (existing) + `font-weight: 700` on `.nav-label` + 2px `::before` accent bar at the top edge of the active tab. "Current page" now reads instantly
+- [x] 15.4 `page-header`: page title font-size `step-1 → step-2`, `font-weight: normal → 600` — page identity now visually weighted vs. nav labels
+- [x] 15.5 `page-header` is rendered unconditionally in `my-artists-route.html` (was hidden when `artists.length === 0`, leaving the empty state without a page identity)
+- [x] 15.6 `state-placeholder`: switch icon color from `--color-text-muted` to `--color-brand-accent` so the empty-state icon reads as "promised / waiting" instead of "broken / forgotten". Increase wrapper gap `space-2xs → space-s` for breathing room
+- [x] 15.7 `svg-icon` global fix: add `.svg-icon[fill="none"] { fill: none }` rule. The global reset (`:where(svg) { fill: currentcolor }`) was overriding each SVG's `fill="none"` attribute (presentation attributes lose to even zero-specificity CSS), causing all stroked Lucide icons (clock, music, info, etc.) to render as filled disks. **Visible app-wide impact** — every icon that uses `fill="none"` now renders as the intended outline
+- [x] 15.8 Nav rename: `nav.home` JA/EN value `"Home"` → `"Timetable"`. Both consumers (bottom-nav label + dashboard page-header title) update via the single i18n value change. The dashboard route stays at `/dashboard` (internal name); the user-facing label aligns with the brand vocabulary established by the welcome page
