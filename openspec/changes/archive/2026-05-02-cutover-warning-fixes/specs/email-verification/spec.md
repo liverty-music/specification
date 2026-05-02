@@ -35,7 +35,7 @@ The infrastructure layer (`EmailVerifier.ResendVerification`) SHALL emit a struc
 #### Scenario: Resend Zitadel API call fails
 
 - **WHEN** `EmailVerifier.ResendVerification` is called and the Zitadel `_resend_verification` API call returns an error
-- **THEN** `EmailVerifier.ResendVerification` SHALL emit an ERROR log entry with `msg="failed to resend email code"` and `external_id`
+- **THEN** `EmailVerifier.ResendVerification` SHALL emit an ERROR log entry with `msg="failed to resend email verification"` and `external_id`
 - **AND** the error SHALL be returned to the caller
 
 #### Scenario: User is already verified

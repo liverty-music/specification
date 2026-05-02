@@ -31,7 +31,7 @@
 - [x] 4.2 Implement `ZitadelTarget` class extending `pulumi.dynamic.Resource` with create/read/update/delete calling `/v2/actions/targets`
 - [x] 4.3 Implement `ZitadelExecutionFunction` class with create/read/update/delete calling `/v2/actions/executions`
 - [x] 4.4 Implement `ZitadelExecutionRequest` class for the auto-verify-email user-creation interception
-- [ ] 4.5 Add unit tests for the Dynamic Resource lifecycle using a mocked HTTP client _Deferred — covered in §18.9 follow-up. The cutover incident chain (#211 PATCH→POST, #212 array-of-strings) would have been caught by these tests; high-priority follow-up._
+- [x] 4.5 Add unit tests for the Dynamic Resource lifecycle using a mocked HTTP client *(resolved 2026-05-02 by `cutover-warning-fixes` PR-B1 — cloud-provisioning#217. Lifecycle tests for `ZitadelTarget` / `ZitadelExecutionFunction` / `ZitadelExecutionRequest` (and the new `ZitadelSmtpActivation` from PR-B2) live under `src/zitadel/dynamic/__tests__/`.)*
 - [x] 4.6 Export classes from `src/zitadel/dynamic/index.ts`
 
 ## 5. cloud-provisioning — Rewrite src/zitadel/ for self-hosted target
@@ -155,19 +155,25 @@ These are gaps surfaced by the cutover that did not exist in the original propos
 
 ### 18.1 Pulumi auto-activate `SmtpConfig`
 
-- [ ] 18.1.1 Investigate whether `@pulumiverse/zitadel.SmtpConfig` exposes an `activate` argument (it does not in v0.2.0). If not, ship a Pulumi Dynamic Resource (`ZitadelSmtpActivation`) that calls `POST /admin/v1/smtp/{id}/_activate` after `SmtpConfig` creation, mirroring the existing `ZitadelTarget` / `ZitadelExecutionFunction` pattern in `src/zitadel/dynamic/`.
-- [ ] 18.1.2 Document in `zitadel-self-hosted-deployment` spec that `SMTP_CONFIG_INACTIVE` is the default after `CreateSmtp` and a separate `_activate` call is required.
-- [ ] 18.1.3 Without this, every Zitadel rebuild requires a manual API call to re-activate SMTP — and email verification silently fails on first sign-up of every new instance until the call is made.
+*Resolved 2026-05-02 by `cutover-warning-fixes` PR-B2 — cloud-provisioning#218.*
+
+- [x] 18.1.1 Investigate whether `@pulumiverse/zitadel.SmtpConfig` exposes an `activate` argument (it does not in v0.2.0). If not, ship a Pulumi Dynamic Resource (`ZitadelSmtpActivation`) that calls `POST /admin/v1/smtp/{id}/_activate` after `SmtpConfig` creation, mirroring the existing `ZitadelTarget` / `ZitadelExecutionFunction` pattern in `src/zitadel/dynamic/`.
+- [x] 18.1.2 Document in `zitadel-self-hosted-deployment` spec that `SMTP_CONFIG_INACTIVE` is the default after `CreateSmtp` and a separate `_activate` call is required. *(Captured in the modified `identity-management` requirement "SMTP Configuration Must Be Activated After Creation" in `cutover-warning-fixes`.)*
+- [x] 18.1.3 Without this, every Zitadel rebuild requires a manual API call to re-activate SMTP — and email verification silently fails on first sign-up of every new instance until the call is made.
 
 ### 18.2 Backend `ResendEmailVerification` RPC calls wrong Zitadel endpoint
 
-- [ ] 18.2.1 Backend's `liverty_music.rpc.user.v1.UserService/ResendEmailVerification` invokes the v2 `_resend_code` endpoint (which only resends an EXISTING code; if no code was ever generated — which happens when SMTP was inactive at sign-up time — the call returns `Code is empty (EMAIL-5w5ilin4yt)` and the frontend surfaces "Failed to send verification email").
-- [ ] 18.2.2 Switch to Management v1 `POST /users/{userId}/email/_resend_verification`, which generates a fresh code AND sends the email. Verified to work via direct API call during the cutover smoke test.
+*Resolved 2026-05-02 by `cutover-warning-fixes` PR-A2 — backend#291.*
+
+- [x] 18.2.1 Backend's `liverty_music.rpc.user.v1.UserService/ResendEmailVerification` invokes the v2 `_resend_code` endpoint (which only resends an EXISTING code; if no code was ever generated — which happens when SMTP was inactive at sign-up time — the call returns `Code is empty (EMAIL-5w5ilin4yt)` and the frontend surfaces "Failed to send verification email").
+- [x] 18.2.2 Switch to Management v1 `POST /users/{userId}/email/_resend_verification`, which generates a fresh code AND sends the email. Verified to work via direct API call during the cutover smoke test. *(Implemented as gRPC `management.v1.ManagementService/ResendHumanEmailVerification` — semantic equivalent of the documented REST path.)*
 
 ### 18.3 Cleanup orphaned `auto-verify-email` backend handler
 
-- [ ] 18.3.1 Delete `internal/adapter/webhook/auto_verify_email_handler.go` + tests + DI wiring + `Service/server-webhook-svc` route registration for `/auto-verify-email`. The Zitadel-side Target + Execution were removed in cloud-provisioning#215; the backend handler is now dead code receiving no traffic.
-- [ ] 18.3.2 Keep the `:9090` listener and `/pre-access-token` handler unchanged.
+*Resolved 2026-05-02 by `cutover-warning-fixes` PR-A1 — backend#290.*
+
+- [x] 18.3.1 Delete `internal/adapter/webhook/auto_verify_email_handler.go` + tests + DI wiring + `Service/server-webhook-svc` route registration for `/auto-verify-email`. The Zitadel-side Target + Execution were removed in cloud-provisioning#215; the backend handler is now dead code receiving no traffic.
+- [x] 18.3.2 Keep the `:9090` listener and `/pre-access-token` handler unchanged.
 
 ### 18.4 Auto-verify-email — decided: accept the default OTP step
 
