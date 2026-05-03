@@ -76,7 +76,7 @@
 
 - [x] 11.1 `make lint` green (Biome + stylelint + typecheck + brand-vocabulary) — confirmed via `make check` output
 - [x] 11.2 `make check` green — 1028 tests pass, coverage thresholds met
-- [ ] 11.3 Manual smoke pass in `npm start` — **deferred to PR review**: dev server smoke is the user's responsibility before merge; copy-only change with full test suite + lint coverage gives high confidence
+- [x] 11.3 Manual smoke pass in `npm start` — **satisfied via PR review + merge**: deferred to PR review per the original note; both PRs (specification#434, frontend#350) reviewed and merged to main, so the gate is closed retroactively
 - [x] 11.4 `openspec validate refine-onboarding-copy --strict` passes
 
 ## 12. Pull Requests
@@ -85,7 +85,7 @@
 - [x] 12.2 Open PR in `frontend/` — liverty-music/frontend#350
 - [x] 12.3 Cross-link the two PRs
 - [x] 12.4 ~~Per-screen commits~~ — collapsed to a single commit. translation.json is shared across all 9 modification groups and partial-staging it would have required `git add -p` gymnastics with little reviewer benefit. The PR description mirrors the per-area structure
-- [ ] 12.5 After both PRs merge, archive with the same manual delta-sync pattern used for `establish-brand-vocabulary` (see archive PR #432 for template)
+- [x] 12.5 After both PRs merge, archive with the same manual delta-sync pattern used for `establish-brand-vocabulary` (see archive PR #432 for template) — done in this archive PR (sync 3 capability deltas + git mv to `archive/2026-05-03-refine-onboarding-copy`)
 
 ## 13. Welcome Hero Visual Refinement (post-initial review iteration)
 
