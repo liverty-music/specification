@@ -8,7 +8,7 @@ Consolidates notification permission and PWA install prompts into a single dialo
 
 ### Requirement: Post-Signup Dialog on First Authentication
 
-The system SHALL display a dialog after the first successful signup that consolidates notification permission and PWA install prompts.
+The system SHALL display a dialog after the first successful signup that consolidates a celebration message with optional power-up actions (notification permission, PWA install), without front-loading guidance for features the user has not yet encountered.
 
 #### Scenario: Dialog shown after first signup
 
@@ -24,14 +24,13 @@ The system SHALL display a dialog after the first successful signup that consoli
 - **AND** `localStorage['liverty:postSignup:shown']` is already set
 - **THEN** the system SHALL NOT show the `PostSignupDialog`
 
-#### Scenario: Dialog content
+#### Scenario: Dialog content leads with celebration
 
 - **WHEN** the PostSignupDialog is displayed
-- **THEN** it SHALL show a success confirmation (アカウント登録完了！)
-- **AND** it SHALL always show a hype guide hint row (My Artists ページで hype を変更すると通知の範囲をコントロールできます)
-- **AND** it SHALL offer a notification opt-in action (新着ライブ通知をオンにしよう) if `notificationManager.permission === 'default'`
+- **THEN** the first content row SHALL be a celebration message acknowledging completion of onboarding
+- **AND** it SHALL offer a notification opt-in action if `notificationManager.permission === 'default'`
 - **AND** it SHALL show a notification denied message if `notificationManager.permission === 'denied'`
-- **AND** it SHALL offer a PWA install action (ホーム画面に追加するとより快適に) if `PwaInstallService.canShowFab` is `true` AND the platform is not iOS Safari
+- **AND** it SHALL offer a PWA install action if `PwaInstallService.canShowFab` is `true` AND the platform is not iOS Safari
 - **AND** it SHALL provide a dismiss/close action in the footer
 
 #### Scenario: Footer button label when all actions are complete
@@ -39,13 +38,13 @@ The system SHALL display a dialog after the first successful signup that consoli
 - **WHEN** the PostSignupDialog is displayed
 - **AND** `PwaInstallService.canShowFab` is `false` (PWA already installed or not applicable)
 - **AND** `notificationManager.permission` is `'granted'`
-- **THEN** the footer button SHALL display the label "Close" (閉じる)
+- **THEN** the footer button SHALL display the label "Close"
 
 #### Scenario: Footer button label when actions remain
 
 - **WHEN** the PostSignupDialog is displayed
 - **AND** either `PwaInstallService.canShowFab` is `true` OR `notificationManager.permission` is not `'granted'`
-- **THEN** the footer button SHALL display the label "Later" (あとで)
+- **THEN** the footer button SHALL display the label "Later"
 
 #### Scenario: Notification opt-in from dialog
 
@@ -71,7 +70,7 @@ The system SHALL display a dialog after the first successful signup that consoli
 
 #### Scenario: Dialog dismissed
 
-- **WHEN** the user taps あとで
+- **WHEN** the user taps the dismiss button
 - **THEN** the PostSignupDialog SHALL close
 - **AND** the notification prompt SHALL NOT be shown again in the same session (coordinated via `IPromptCoordinator`)
 - **AND** the PWA install FAB SHALL remain visible (it is not affected by PostSignupDialog dismissal)
@@ -109,25 +108,6 @@ All user-visible strings in the PostSignupDialog component SHALL use `@aurelia/i
 #### Scenario: Translation key parity
 - **WHEN** `postSignup.title` or `postSignup.ariaLabel` keys exist in `ja/translation.json`
 - **THEN** the same keys SHALL exist in `en/translation.json`
-
-### Requirement: Hype guide hint always visible in PostSignupDialog
-
-The PostSignupDialog SHALL always display a hype guide hint row, regardless of notification permission state or PWA installation state.
-
-#### Scenario: Hype guide row shown when PWA installed and notification granted
-
-- **WHEN** the PostSignupDialog is displayed
-- **AND** PWA is already installed
-- **AND** `notificationManager.permission` is `'granted'`
-- **THEN** the hype guide hint row SHALL still be visible
-- **AND** the footer button SHALL display "Close"
-
-#### Scenario: Hype guide row shown when no actions are available
-
-- **WHEN** the PostSignupDialog is displayed
-- **AND** no notification row and no PWA install row are shown
-- **THEN** the hype guide hint row SHALL remain visible
-- **AND** the dialog SHALL NOT appear empty
 
 ### Requirement: PostSignupDialog footer button reflects completion state
 
