@@ -31,10 +31,12 @@ membership reviewable via `git diff`.
     Hosts `pulumi-admin` (existing machine user) and the new
     `pannpers@pannpers.dev` human admin.
   - **`liverty-music` org** — the product org. Created by Pulumi via
-    `zitadel.Org` and marked as the Zitadel default org. Hosts the
-    `liverty-music` Project, `ApplicationOidc`, end-user `LoginPolicy`
-    (passkey-only, unchanged), `login-client` machine user, and future
-    end-user accounts.
+    `zitadel.Org` with `isDefault: false` (the `admin` org is the
+    Zitadel default — see design D8 for why Console routing requires
+    that). Hosts the `liverty-music` Project, `ApplicationOidc`,
+    end-user `LoginPolicy` (passkey-only, unchanged), and future
+    end-user accounts. Note: `login-client` machine user lives in the
+    `admin` org per design D7, not here.
 - Add `ZITADEL_FIRSTINSTANCE_ORG_NAME=admin` to
   `k8s/namespaces/zitadel/base/configmap.env` so any environment that
   bootstraps from this configmap produces an `admin` role org, no rename
@@ -52,9 +54,13 @@ membership reviewable via `git diff`.
   org's policy. Store the Google OAuth 2.0 Client `client_id` /
   `client_secret` in Pulumi ESC.
 - Pre-provision a `HumanUser` for `pannpers@pannpers.dev` in the `admin`
-  org, with no initial password, email pre-verified, and an `InstanceMember`
-  granting `IAM_OWNER`. On first Google sign-in, Zitadel auto-links the
-  Google identity to this user by verified-email match.
+  org, with a random `initialPassword` (required by `@pulumiverse/zitadel`
+  for `isEmailVerified = true` at creation; unreachable at runtime via
+  `LoginPolicy.userLogin = false`), email pre-verified, and an
+  `InstanceMember` granting `IAM_OWNER`. A `ZitadelUserIdpLink` Dynamic
+  Resource pre-links the admin's Google `sub` claim to this user before
+  first sign-in (auto-link by verified email fails in this policy
+  combination — see design D11).
 - Document and codify a break-glass invariant: the `pulumi-admin` machine
   user (now in the `admin` org) and its JSON key in GCP Secret Manager
   (`zitadel-admin-sa-key`) MUST remain intact and unrotated as a recovery
@@ -82,8 +88,10 @@ _None._ All requirements added by this change extend the existing
   organization / project / OIDC application / login-policy requirements are
   re-scoped to the new `liverty-music` product org. Adds requirements for
   the bootstrap-time `admin` role org, an instance-level Google IdP, a
-  human admin user with `IAM_OWNER`, IdP auto-linking by verified email,
-  break-glass machine-user retention, and Google OAuth client provisioning.
+  human admin user with `IAM_OWNER`, IaC pre-linking of Google identity
+  via `ZitadelUserIdpLink` (see design D11), per-admin `sub`-claim
+  storage in ESC, break-glass machine-user retention, and Google OAuth
+  client provisioning.
 
 ## Impact
 

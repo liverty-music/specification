@@ -242,9 +242,11 @@ at the product org level.
   `LoginPolicy`
 - **AND** the IdP SHALL NOT be referenced by the `liverty-music` product
   org's `LoginPolicy`
-- **AND** the IdP SHALL set `isLinkingAllowed = true` so that successful
-  Google sign-in links to a pre-provisioned local human user with the
-  matching verified email
+- **AND** the IdP SHALL set `isLinkingAllowed = true` (defence-in-depth;
+  the actual first-sign-in resolution uses the IaC-managed
+  `ZitadelUserIdpLink` records — see *Pre-link Google Identity to
+  Human Admin via IaC* — because the policy combination disables
+  Zitadel's native autoLink prompt)
 - **AND** the IdP SHALL set `isCreationAllowed = false` and
   `isAutoCreation = false` so that no anonymous Google identity becomes a
   Zitadel user without explicit Pulumi provisioning
