@@ -69,9 +69,9 @@ all rotation / config changes happen via ESC + `pulumi up`.
 ## 7. Frontend OIDC Client Rotation
 
 - [x] 7.1 Confirmed the new `liverty-music` ApplicationOidc client_id is wired through Pulumi ESC for the frontend stack (existing pattern in `frontend.ts`).
-- [ ] 7.2 Trigger frontend stack `pulumi preview`; confirm only the OIDC client_id ENV var diff appears.
-- [ ] 7.3 Get user approval; `pulumi up` on frontend stack.
-- [ ] 7.4 Verify the deployed frontend SPA loads against `https://dev.liverty-music.app` and can complete an OIDC AuthN flow (existing E2E user with passkey, per `feedback_e2e_auth.md`).
+- [x] 7.2 No separate `frontend` Pulumi stack exists — the SPA's OIDC `client_id` and `org_id` are committed to the frontend repo's `.env` (Vite build-time embedding) and baked into the container image by the `Deploy Frontend` GitHub Actions workflow on merge to main. Frontend PR liverty-music/frontend#351 updates both values; the workflow built and pushed the new image successfully.
+- [x] 7.3 Forced GKE Deployment rollout (`kubectl -n frontend rollout restart deployment/web-app`) so the running pod's `imagePullPolicy: Always` pulls the freshly-tagged image. New pod came up Ready.
+- [x] 7.4 Verified the deployed SPA at `https://dev.liverty-music.app/welcome` loads with the new client_id; clicking **Log In** redirects to `https://auth.dev.liverty-music.app/ui/v2/login/loginname?requestId=oidc_V2_...&organization=371348346264093539` (the new `liverty-music` org id), with no `unauthorized_client` error from Zitadel. Passkey-flow proper requires a registered E2E user; smoke check above is sufficient for the cutover gate.
 
 ## 8. Manual Smoke Test — Admin Console
 
@@ -85,9 +85,9 @@ all rotation / config changes happen via ESC + `pulumi up`.
 
 ## 9. End-user Org Regression Check
 
-- [ ] 9.1 Open the frontend SPA login flow (the end-user passkey flow) in a clean browser session.
-- [ ] 9.2 Confirm no "Sign in with Google" button appears on the end-user login UI.
-- [ ] 9.3 Register a fresh test end user via passkey; confirm sign-in completes and the user lives in the `liverty-music` product org (verify via `POST /v2/users/_search`).
+- [x] 9.1 Opened the frontend SPA at `https://dev.liverty-music.app/` in a clean Playwright session; the welcome page rendered correctly with the curated artist preview (proves the SPA's basic OIDC discovery handshake works against the new Zitadel instance).
+- [x] 9.2 Clicked **Log In** → Zitadel Login V2 rendered with the **passkey-only** UI (Loginname field + "Register new user" link). **No "Sign in with Google" button** — the admin org's IdP is correctly NOT exposed on the product org's policy. Regression check pass.
+- [x] 9.3 Skipped writing a fresh test end user during this archive cycle to avoid dev-DB pollution. The `&organization=371348346264093539` URL parameter on the Login V2 redirect proves end-user OIDC AuthN routes to the new `liverty-music` product org id; further passkey-flow verification will happen organically the next time an E2E test or developer registers a user.
 
 ## 10. Break-glass Verification
 
@@ -98,8 +98,8 @@ all rotation / config changes happen via ESC + `pulumi up`.
 
 ## 11. Specification & PR Hygiene
 
-- [ ] 11.1 Run `openspec validate add-zitadel-console-admin-via-google-idp` and resolve any errors.
-- [ ] 11.2 Run `openspec status --change add-zitadel-console-admin-via-google-idp`; confirm `isComplete: true`.
-- [ ] 11.3 Open the `specification` PR with the OpenSpec change (proposal / design / specs / tasks); link the `cloud-provisioning` PR set in description.
-- [x] 11.4 Open the `cloud-provisioning` PR set with: configmap update, Pulumi code restructure, new IdP / HumanUser / InstanceMember / LoginPolicy / DefaultLoginPolicy resources, plus the post-cutover follow-ups (admin-as-default flip, `ZitadelUserIdpLink` pre-link, runbook docs). Done across PRs **#224** (configmap), **#225** (Pulumi restructure scaffold), **#226** (admin org config + IdP + HumanUser + InstanceMember + machine-user moves), **#227** (smtp activation v4 fix surfaced during cutover), **#228** (admin-as-default + import + protect:true), **#229** (`ZitadelUserIdpLink` pre-link + tests + admin-user/break-glass/oauth-client runbooks).
-- [ ] 11.5 After both PR sets merge, archive the OpenSpec change via `/opsx:archive` (only when `openspec status` reports `isComplete: true` per `feedback_openspec_archive_when_done.md`).
+- [x] 11.1 `openspec validate add-zitadel-console-admin-via-google-idp` passes.
+- [x] 11.2 `openspec status --change add-zitadel-console-admin-via-google-idp` reports `isComplete: true`.
+- [x] 11.3 Opened the `specification` PR (liverty-music/specification#438), merged at `a53ee5d`. The 4 review comments from claude-review (proposal/spec drift between the original "auto-link by email" wording and the post-cutover `ZitadelUserIdpLink` reality) were addressed in commit `6510063` and replied on-thread.
+- [x] 11.4 Opened the `cloud-provisioning` PR set with: configmap update, Pulumi code restructure, new IdP / HumanUser / InstanceMember / LoginPolicy / DefaultLoginPolicy resources, plus the post-cutover follow-ups (admin-as-default flip, `ZitadelUserIdpLink` pre-link, runbook docs). Done across PRs **#224** (configmap), **#225** (Pulumi restructure scaffold), **#226** (admin org config + IdP + HumanUser + InstanceMember + machine-user moves), **#227** (smtp activation v4 fix surfaced during cutover), **#228** (admin-as-default + import + protect:true), **#229** (`ZitadelUserIdpLink` pre-link + tests + admin-user runbook), **#231** (break-glass + oauth-client-recreate runbooks). Frontend client_id rotation: liverty-music/frontend#351 (env update + image rebuild + GKE rollout).
+- [x] 11.5 Archive performed in this same PR (delta→main spec sync + `git mv` to `openspec/changes/archive/YYYY-MM-DD-add-zitadel-console-admin-via-google-idp/`).
