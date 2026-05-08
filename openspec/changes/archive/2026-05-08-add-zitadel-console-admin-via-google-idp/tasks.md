@@ -68,7 +68,7 @@ all rotation / config changes happen via ESC + `pulumi up`.
 
 ## 7. Frontend OIDC Client Rotation
 
-- [x] 7.1 Confirmed the new `liverty-music` ApplicationOidc client_id is wired through Pulumi ESC for the frontend stack (existing pattern in `frontend.ts`).
+- [x] 7.1 As-built (corrected from the original task wording): the `liverty-music` ApplicationOidc `client_id` is **not** consumed via Pulumi ESC by a separate frontend Pulumi stack — see 7.2 for the actual mechanism. Pulumi exports the value as a stack output for visibility, but the consumer is the frontend repo's CI, not another stack.
 - [x] 7.2 No separate `frontend` Pulumi stack exists — the SPA's OIDC `client_id` and `org_id` are committed to the frontend repo's `.env` (Vite build-time embedding) and baked into the container image by the `Deploy Frontend` GitHub Actions workflow on merge to main. Frontend PR liverty-music/frontend#351 updates both values; the workflow built and pushed the new image successfully.
 - [x] 7.3 Forced GKE Deployment rollout (`kubectl -n frontend rollout restart deployment/web-app`) so the running pod's `imagePullPolicy: Always` pulls the freshly-tagged image. New pod came up Ready.
 - [x] 7.4 Verified the deployed SPA at `https://dev.liverty-music.app/welcome` loads with the new client_id; clicking **Log In** redirects to `https://auth.dev.liverty-music.app/ui/v2/login/loginname?requestId=oidc_V2_...&organization=371348346264093539` (the new `liverty-music` org id), with no `unauthorized_client` error from Zitadel. Passkey-flow proper requires a registered E2E user; smoke check above is sufficient for the cutover gate.

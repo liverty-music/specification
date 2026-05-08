@@ -108,8 +108,14 @@ end-user authentication.
   `liverty-music` project
 - **AND** the application Type SHALL be "SPA"
 - **AND** the Auth Method Type SHALL be "NONE"
-- **AND** the application's `client_id` SHALL be exported through Pulumi
-  ESC for the frontend stack to consume
+- **AND** the application's `client_id` SHALL be committed to the
+  frontend repo's build-time `.env` (alongside the owning org's id as
+  `VITE_ZITADEL_ORG_ID`) so it is embedded into the SPA bundle by Vite
+  and baked into the `web-app` container image by the `Deploy Frontend`
+  GitHub Actions workflow on merge to `main`. There is intentionally no
+  separate "frontend" Pulumi stack consuming the value via ESC — the
+  build-time embedding model is simpler and matches Vite's
+  `import.meta.env.VITE_*` convention.
 
 ### Requirement: Configure Login Policy
 
