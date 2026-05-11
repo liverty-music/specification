@@ -7,7 +7,7 @@
 ## 2. Runbook Authorship
 
 - [ ] 2.1 Author `cloud-provisioning/docs/runbooks/pulumi-state-recovery.md` with the structure: (a) header + "STOP — try this first" prevention guidance steering operators to `pulumi destroy --target`, (b) `pulumi state delete --target-dependents` blast-radius footgun explanation with the §13.4 87-resource cascade as the worked example, (c) step-by-step recovery procedure (5 steps: snapshot, merge, import, scrub, verify) with copy-pasteable shell commands, (d) "what NOT to use this for" section explicitly saying the runbook is for state corruption recovery only, not for normal destroys.
-- [ ] 2.2 Cross-link the runbook from `cloud-provisioning/CLAUDE.md` under the existing `## Operating Protocols` section, in a new sub-section like `### Pulumi State Recovery` that pointers at `docs/pulumi-state-recovery.md`. The pointer text SHALL include the trigger (`pulumi state delete --target-dependents` consideration or post-incident recovery) so the agent matches it during planning.
+- [ ] 2.2 Cross-link the runbook from `cloud-provisioning/CLAUDE.md` under the existing `## Operating Protocols` section, in a new sub-section like `### Pulumi State Recovery` that pointers at `docs/runbooks/pulumi-state-recovery.md`. The pointer text SHALL include the trigger (`pulumi state delete --target-dependents` consideration or post-incident recovery) so the agent matches it during planning.
 - [ ] 2.3 Optionally cross-link from `cloud-provisioning/docs/runbooks/zitadel-break-glass.md` (the only other `pulumi state` adjacent runbook) so an operator already in the runbooks folder discovers it.
 
 ## 3. PR Hygiene

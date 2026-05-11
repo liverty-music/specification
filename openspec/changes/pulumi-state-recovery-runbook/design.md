@@ -34,7 +34,7 @@ multi-hour forensic exercise during what is likely already a
 high-pressure scenario.
 
 The fix this change ships is a single operator runbook
-(`cloud-provisioning/docs/pulumi-state-recovery.md`) capturing the
+(`cloud-provisioning/docs/runbooks/pulumi-state-recovery.md`) capturing the
 procedure end-to-end so the next incident is a "follow the runbook"
 exercise.
 
@@ -153,7 +153,7 @@ not incident response.
 
 ## Migration Plan
 
-1. Author and PR `cloud-provisioning/docs/pulumi-state-recovery.md`
+1. Author and PR `cloud-provisioning/docs/runbooks/pulumi-state-recovery.md`
    with the procedure transcribed from §13.4.
 2. Add a one-line cross-reference from `cloud-provisioning/CLAUDE.md`
    to the new runbook in the operator-protocol section.
