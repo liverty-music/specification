@@ -134,9 +134,8 @@ _The original linear pause→apply→resume sequence (§13.1–13.8) was bypasse
 
 ## 15. Cooldown & Cleanup
 
-- [x] 15.1 Leave Zitadel Cloud tenant active and unchanged for two weeks post-cutover as a rollback target _Cloud tenant `dev-svijfm.us1.zitadel.cloud` retained; Pulumi resources for it were removed from the dev stack but the tenant itself is intact in the Zitadel Cloud console._
-- [ ] 15.2 Monitor `/debug/metrics` and backend JWT validation logs daily for the first week; document any anomalies _Cooldown observation in progress (post-cutover 2026-04-30); two-week window ends ~2026-05-14. One incident already observed: Zitadel API container hung on `GetAuthRequest` (30s timeouts, returned `code: internal`) after ~3.5 days uptime + heavy state-changing API traffic during the cutover incident chain. Resolved by `kubectl rollout restart deploy/zitadel`. Likely cause: in-memory projection updater stuck or Cloud SQL connection-pool exhaustion accumulated through the many `_activate` / MachineKey replace / Action delete / email change operations. DB content was not affected; restart fully cleared the issue. Tracked as follow-up §18._
-- [ ] 15.3 After two weeks clean run, open a follow-up change (`archive-zitadel-cloud-tenant`) that deletes the Cloud tenant and removes rollback references
+- [x] 15.1 Leave Zitadel Cloud tenant active and unchanged post-cutover as a rollback target _Cloud tenant `dev-svijfm.us1.zitadel.cloud` retained; Pulumi resources for it were removed from the dev stack but the tenant itself is intact in the Zitadel Cloud console. **Decision (2026-05-11):** the tenant stays as an **indefinite** rollback escape hatch — no scheduled decommission. The Cloud tenant has zero ongoing cost on the free plan and zero attack surface (no production data, no DNS pointing at it post-cutover). Originally tracked in `archive-zitadel-cloud-tenant` change (now removed)._
+- [x] 15.2 Cooldown observation closed _Two-week observation window ran 2026-04-30 → ~2026-05-14. One incident surfaced: Zitadel API container hung on `GetAuthRequest` (30s timeouts, `code: internal`) after ~3.5 days uptime + heavy state-changing API traffic during the cutover incident chain. Resolved by `kubectl rollout restart deploy/zitadel`. Likely cause: in-memory projection updater stuck or Cloud SQL connection-pool exhaustion accumulated through the many `_activate` / MachineKey replace / Action delete / email change operations. DB content was not affected; restart fully cleared the issue. Tracked as follow-up §18.6 (zitadel-hang alerts + runbook landed in cloud-provisioning #232 + `add-zitadel-console-admin-via-google-idp` archive)._
 
 ## 16. Rollback Readiness (not executed unless needed)
 
@@ -220,7 +219,6 @@ These are gaps surfaced by the cutover that did not exist in the original propos
 - [ ] 18.9.2 Add a Pulumi Cloud "deployment guardrail" or pre-deploy check that diff-counts `delete > 50` and requires explicit human approval (Pulumi Cloud has a similar `pulumi-deployments-config.yaml` policy hook).
 - **Tracked in**: openspec change `pulumi-deploy-safeguards` (proposal-only stub at archive time; expand via `/opsx:continue` when scheduled). Both 18.9.1 (runbook) and 18.9.2 (deploy hook) are in the same change.
 
-### 18.10 Cloud tenant decommission (after cooldown)
+### 18.10 Cloud tenant decommission (descoped 2026-05-11)
 
-- [ ] 18.10.1 After §15.2 cooldown closes clean (~2026-05-14), delete Zitadel Cloud tenant `dev-svijfm.us1.zitadel.cloud` and remove rollback escape hatch from design docs. Folds together with §15.3.
-- **Tracked in**: openspec change `archive-zitadel-cloud-tenant` (proposal-only stub at archive time; expand via `/opsx:continue` when scheduled).
+Removed from the work plan. The Zitadel Cloud tenant `dev-svijfm.us1.zitadel.cloud` will be retained indefinitely as a no-cost rollback escape hatch — see §15.1's updated decision note. The corresponding stub change `archive-zitadel-cloud-tenant` has been deleted.
