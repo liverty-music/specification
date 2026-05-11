@@ -11,7 +11,7 @@ dependents, not just same-component-tree). Recovery required:
    filtering obsolete entries, to produce the recovery-target state
 3. `pulumi stack import`-ing the merged JSON
 4. Scrubbing `__pulumi_raw_state_delta` from the affected resources to
-   work around a provider panic on import
+   work around a provider panic on the next operation after import
 
 Cumulative recovery cost: ~3 hours of operator time. The exact
 procedure was reverse-engineered during the incident — it is NOT
