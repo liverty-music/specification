@@ -3,9 +3,7 @@
 ## Purpose
 
 Defines requirements for the dev GKE Standard cluster configuration, including Spot VM node pools and network topology.
-
 ## Requirements
-
 ### Requirement: Standard zonal GKE cluster for dev
 The dev GKE cluster SHALL be a Standard (non-Autopilot) zonal cluster in `asia-northeast2-a` with a Spot VM node pool.
 
@@ -60,20 +58,26 @@ The dev GKE cluster SHALL NOT use ADVANCED_DATAPATH (Dataplane V2 / eBPF). The d
 - **THEN** a `kube-proxy` DaemonSet SHALL be present
 
 ### Requirement: Dev cluster SHALL disable Google Managed Prometheus
-The dev GKE cluster SHALL explicitly disable Google Managed Prometheus (GMP) and restrict logging and monitoring to system components only.
+The dev GKE cluster SHALL explicitly disable Google Managed Prometheus (GMP), restrict `monitoringConfig.enableComponents` to `SYSTEM_COMPONENTS`, and include both `SYSTEM_COMPONENTS` and `WORKLOADS` in `loggingConfig.enableComponents`. Workload logging is required so log-based alerts (e.g., backend ERROR log alerts, JWT validation error rate, Atlas migration failure, poison queue messages) can fire on real workload events. Monitoring stays system-only because the project has no metric-based workload alerts today, and enabling GMP would add Cloud Monitoring cost without a current consumer.
 
 #### Scenario: GMP is disabled
 - **WHEN** describing the dev GKE cluster monitoring configuration
 - **THEN** `managedPrometheus.enabled` SHALL be `false`
 - **AND** no `gmp-system/collector` DaemonSet SHALL exist
 
-#### Scenario: Logging restricted to system components
+#### Scenario: Logging includes workloads
 - **WHEN** describing the dev GKE cluster logging configuration
-- **THEN** `loggingConfig.enableComponents` SHALL contain only `SYSTEM_COMPONENTS`
+- **THEN** `loggingConfig.enableComponents` SHALL contain both `SYSTEM_COMPONENTS` and `WORKLOADS`
+- **AND** workload pod stdout SHALL appear in Cloud Logging within ~1 minute of emission under `resource.type="k8s_container"` with the pod's namespace, name, and labels propagated as queryable fields
 
 #### Scenario: Monitoring restricted to system components
 - **WHEN** describing the dev GKE cluster monitoring configuration
 - **THEN** `monitoringConfig.enableComponents` SHALL contain only `SYSTEM_COMPONENTS`
+
+#### Scenario: Log-based alerts read from workload logs
+- **WHEN** a backend container emits a `severity=ERROR` log entry whose payload matches an existing log-based metric filter (e.g., `backend_jwt_validation_zitadel_errors`)
+- **THEN** the corresponding Cloud Monitoring `AlertPolicy` SHALL evaluate the rate increase within its `alignmentPeriod` and transition to `OPEN` once the threshold and duration are met
+- **AND** the configured notification channels SHALL receive a page
 
 ### Requirement: Dev cluster Spot node pool boot disk SHALL be 30GB pd-standard
 The dev GKE Spot node pool boot disk SHALL be explicitly configured with `diskSizeGb: 30` and `diskType: pd-standard`. The default GKE values (100GB, pd-balanced) SHALL NOT be used. Rationale: the E2 machine series does not support any Hyperdisk variant per GCP documentation, so pd-standard is the cheapest available type, and 30GB is GKE's recommended minimum that comfortably fits the cluster's image cache without triggering DiskPressure evictions.
@@ -109,3 +113,4 @@ The dev GKE cluster SHALL override the GKE-managed `kube-dns-autoscaler` ConfigM
 - **WHEN** comparing rendered manifests for `prod` and `staging` overlays
 - **THEN** neither overlay SHALL include a `kube-dns-autoscaler` ConfigMap override
 - **AND** the GKE-default `preventSinglePointFailure: true` SHALL apply in those environments
+
