@@ -7,11 +7,11 @@ flag's blast radius was wider than expected (it follows ALL transitive
 dependents, not just same-component-tree). Recovery required:
 
 1. Snapshotting a pre-incident `pulumi stack export --version N`
-2. Hand-merging current state (129 resources) with the missing 85 to
-   produce a 214-resource merged state
-3. `pulumi stack import`-ing it to v254
-4. Scrubbing `__pulumi_raw_state_delta` from 177 resources after a
-   provider panic on import (v255)
+2. Hand-merging the current state with the resources missing from it,
+   filtering obsolete entries, to produce the recovery-target state
+3. `pulumi stack import`-ing the merged JSON
+4. Scrubbing `__pulumi_raw_state_delta` from the affected resources to
+   work around a provider panic on import
 
 Cumulative recovery cost: ~3 hours of operator time. The exact
 procedure was reverse-engineered during the incident — it is NOT
@@ -43,7 +43,7 @@ actual failure mode (operator-initiated `state delete` mishap) directly.
 
 ## What Changes
 
-- **Add `cloud-provisioning/docs/pulumi-state-recovery.md`** — operator
+- **Add `cloud-provisioning/docs/runbooks/pulumi-state-recovery.md`** — operator
   runbook covering:
   - The `pulumi state delete --target-dependents` blast-radius footgun,
     with the §13.4 incident as a worked example.
@@ -80,7 +80,7 @@ None.
 
 **Affected resources**
 
-- `cloud-provisioning/docs/pulumi-state-recovery.md` (new) — operator
+- `cloud-provisioning/docs/runbooks/pulumi-state-recovery.md` (new) — operator
   runbook.
 - `cloud-provisioning/CLAUDE.md` (modified) — add a one-line cross-link
   to the new runbook in the operator-protocol section.

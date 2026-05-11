@@ -12,13 +12,20 @@ The recovery procedure was reverse-engineered live during the
 incident:
 
 1. Find a pre-incident `stack export --version N`.
-2. Hand-merge it with the current state to produce the missing-resource
-   superset (current 129 + missing 85 − 2 obsolete = 214).
+2. Hand-merge it with the current state to produce the
+   missing-resource superset, filtering obsolete entries (e.g. v1
+   actions resources superseded after the cutover).
 3. `pulumi stack import` the merged JSON.
-4. Scrub `__pulumi_raw_state_delta` from 177 resources to avoid a
-   provider panic on the next operation.
+4. Scrub `__pulumi_raw_state_delta` from affected resources to avoid
+   a provider panic on the next operation.
 5. Verify with a clean `pulumi preview` (empty diff = recovery
    succeeded).
+
+(The §13.4 archive line records concrete counts — current 129, missing
+85, 2 obsolete, 214 final — though the arithmetic doesn't quite add up
+literally; treat those as an order-of-magnitude trace of the incident,
+not as the canonical formula. The runbook itself documents the
+procedure in resource-count-agnostic terms.)
 
 This procedure is currently encoded only in the operator's head and a
 few git commit messages. The next operator hitting the same incident
@@ -99,10 +106,10 @@ the auto-deploy when destructive ops exceed a threshold.
   layer is in fact insufficient, we can revisit the guard then with
   empirical motivation, not speculation.
 
-### D2: Runbook lives in `cloud-provisioning/docs/`
+### D2: Runbook lives in `cloud-provisioning/docs/runbooks/`
 
-**Choice:** `cloud-provisioning/docs/pulumi-state-recovery.md` —
-co-located with the rest of the cloud-provisioning operator runbooks
+**Choice:** `cloud-provisioning/docs/runbooks/pulumi-state-recovery.md`
+— co-located with the rest of the cloud-provisioning operator runbooks
 (`zitadel-hang.md`, `zitadel-break-glass.md`,
 `zitadel-oauth-client-recreate.md`, `add-zitadel-admin-user.md`).
 
@@ -110,9 +117,9 @@ co-located with the rest of the cloud-provisioning operator runbooks
 
 - Pulumi Cloud is the deployment surface for cloud-provisioning. The
   runbook is operational documentation for that subsystem.
-- Co-location with the existing zitadel runbooks keeps the operator's
-  mental model simple: one `docs/runbooks/` (or `docs/`) folder for
-  "things to read at 3 AM."
+- Co-location with the existing zitadel runbooks at
+  `cloud-provisioning/docs/runbooks/` keeps the operator's mental
+  model simple: one folder for "things to read at 3 AM."
 - Cross-references from `cloud-provisioning/CLAUDE.md` work without
   needing a URL.
 
