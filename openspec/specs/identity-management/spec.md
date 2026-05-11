@@ -143,42 +143,6 @@ requirements.
 - **AND** the `admin` role org SHALL retain a separate login policy that
   allows external IdP sign-in (see "Configure Admin Org Login Policy")
 
-### Requirement: Auto-Verify Email on Self-Registration
-
-The system SHALL automatically mark a user's email as verified before
-account creation during Zitadel Self-Registration in the `liverty-music`
-product org, via a Zitadel Action on the
-`INTERNAL_AUTHENTICATION / PRE_CREATION` flow that calls
-`api.setEmailVerified(true)`.
-
-**Rationale**: Zitadel's Hosted Login blocks the OIDC authorization flow
-with an OTP step when SMTP is configured and email is unverified. Setting
-email as verified before creation skips this step, allowing the OIDC flow
-to complete immediately after passkey registration. The `LoginPolicy`
-resource does not expose an email verification toggle.
-
-#### Scenario: New end user registers via Self-Registration
-
-- **WHEN** a new end user completes Self-Registration (email + passkey) in
-  the `liverty-music` product org
-- **THEN** the `PRE_CREATION` Zitadel Action SHALL call
-  `api.setEmailVerified(true)` before user creation
-- **AND** the user SHALL be created with email already verified
-- **AND** the OIDC authorization flow SHALL complete without an OTP step
-- **AND** the user SHALL be redirected to `/auth/callback` immediately
-
-#### Scenario: Action failure in production
-
-- **WHEN** the auto-verify Action fails in staging or production
-- **THEN** the registration flow SHALL fail (`allowedToFail: false`)
-- **AND** the error SHALL be logged for investigation
-
-#### Scenario: Action failure in development
-
-- **WHEN** the auto-verify Action fails in the dev environment
-- **THEN** the registration flow SHALL continue (`allowedToFail: true`)
-- **AND** the user MAY see the OTP step as a fallback
-
 ### Requirement: Configure Admin Org Login Policy
 
 The system SHALL configure a `LoginPolicy` on the `admin` role org that
@@ -562,3 +526,101 @@ these values. Subsequent rotation is handled via the same ESC keys + a
   redirect URI → `esc env set` of the new credentials)
 - **AND** following the runbook SHALL restore the admin Google sign-in
   flow without any spec change
+
+### Requirement: Inject Email Claim into Access Tokens via Actions v2
+
+The system SHALL inject the authenticated user's `email` claim into every issued JWT access token by configuring a Zitadel Actions v2 `ExecutionFunction` bound to the `preaccesstoken` function, pointing at the backend `/pre-access-token` webhook Target.
+
+**Rationale**: Zitadel does not include `email` in access tokens by default; the backend JWT validator requires this claim for user provisioning. Injection previously occurred via an Actions v1 JavaScript function (`addEmailClaim`); migrating to Actions v2 aligns with the upstream deprecation of v1 and moves the logic into a testable backend handler.
+
+#### Scenario: Access token issued to a human user contains email
+
+- **WHEN** a human user completes the OIDC authorization flow
+- **THEN** the issued JWT access token SHALL contain an `email` claim equal to the user's verified email address
+
+#### Scenario: Access token issued to a machine user omits email
+
+- **WHEN** a machine user obtains an access token via client-credentials
+- **THEN** the issued JWT access token SHALL NOT contain an `email` claim
+- **AND** the token issuance SHALL succeed
+
+### Requirement: Provision Actions v2 Target and Execution Resources
+
+The system SHALL manage the Zitadel Actions v2 `Target` and `ExecutionFunction` resources for email-claim injection via Infrastructure as Code, using a Pulumi Dynamic Resource that calls the Zitadel REST API because the installed `@pulumiverse/zitadel` provider does not yet expose Actions v2 resource types.
+
+**Rationale**: Managing these resources declaratively alongside existing v1 resources (Project, ApplicationOidc, LoginPolicy) preserves drift detection and reproducibility across rebuilds.
+
+#### Scenario: Pulumi apply creates Actions v2 resources
+
+- **WHEN** the Pulumi stack is applied
+- **THEN** a Zitadel Actions v2 Target named `pre-access-token-webhook` SHALL exist pointing at the backend `/pre-access-token` endpoint
+- **AND** a Zitadel Actions v2 ExecutionFunction SHALL bind the `preaccesstoken` function to that Target
+
+#### Scenario: Targets use JWT payload authentication
+
+- **WHEN** a Target is created by Pulumi
+- **THEN** the Target's `payloadType` SHALL be `PAYLOAD_TYPE_JWT`
+- **AND** the Target SHALL NOT be configured with a shared `signingKey`
+
+### Requirement: Dedicated Service User for Login V2 UI
+
+The system SHALL provision a Zitadel `MachineUser` named `login-client` with `IAM_LOGIN_CLIENT` instance-level role and a long-lived `PersonalAccessToken`, mounted into the `zitadel-login` Pod as a file referenced by the `ZITADEL_SERVICE_USER_TOKEN_FILE` environment variable.
+
+**Rationale**: The self-hosted Zitadel Login V2 UI (Next.js, separate container from the Zitadel API) calls privileged settings + cross-org user-search APIs at SSR time and cannot use end-user OIDC tokens. Without a service-user PAT, the Login UI's SSR returns HTTP 500 with `fetch() returned undefined` from every settings call, breaking every login flow. This requirement was missing from the original cutover plan because Zitadel Cloud handles the Login UI's authentication internally; in self-hosted, the Login UI must be registered as a first-class API client. See https://zitadel.com/docs/self-hosting/manage/login-client.
+
+#### Scenario: Login UI authenticates to Zitadel API on every SSR request
+
+- **WHEN** the `zitadel-login` Pod handles a `/ui/v2/login/*` route
+- **THEN** the Next.js server SHALL read the PAT from the file referenced by `ZITADEL_SERVICE_USER_TOKEN_FILE`
+- **AND** SHALL include it as a Bearer token on outgoing API calls
+- **AND** the Zitadel API SHALL accept the token and return the requested settings / user data
+
+#### Scenario: PAT is mounted as a file, not an env var value
+
+- **WHEN** the K8s manifest sets up the PAT
+- **THEN** the K8s Secret data key SHALL be projected to a file at `/var/run/zitadel/login-client.pat`
+- **AND** the env var `ZITADEL_SERVICE_USER_TOKEN_FILE` SHALL point at that path
+- **AND** the env var `ZITADEL_SERVICE_USER_TOKEN` SHALL NOT be set, so that the PAT does not appear in `kubectl describe pod` env dumps
+
+#### Scenario: PAT has no expiration in dev
+
+- **WHEN** Pulumi creates the `login-client` `PersonalAccessToken` for `dev`
+- **THEN** `expirationDate` SHALL be omitted (Zitadel treats this as never-expires)
+- **AND** an inline comment in the Pulumi component SHALL document that staging / prod must adopt a real expiration + rotation runbook before extending the cutover beyond dev
+
+### Requirement: SMTP Configuration Must Be Activated After Creation
+
+The system SHALL invoke the Zitadel admin API `POST /admin/v1/smtp/{id}/_activate` after creating a `SmtpConfig` resource via a **Pulumi Dynamic Resource (`ZitadelSmtpActivation`)** that fires as a declarative dependency of the `SmtpConfig` resource, because Zitadel v4 ships new SMTP configurations in `SMTP_CONFIG_INACTIVE` state and the `@pulumiverse/zitadel.SmtpConfig` resource does not flip the activation flag.
+
+**Rationale**: An inactive SMTP config silently swallows all outbound notification events. Verification emails, password reset emails, and admin notifications are queued but never delivered to the SMTP provider. The failure mode is invisible — the API call to send the email returns success (202-equivalent), the notification worker logs nothing, and the user-facing UX is "no email arrived." Discovered during the dev cutover smoke test when sign-up succeeded but verification emails never reached Postmark. The implementation contract is pinned to the Dynamic Resource (rather than "Dynamic Resource OR equivalent") so a manual `curl` step cannot be a "valid implementation" — every Zitadel rebuild must activate SMTP declaratively without operator memory.
+
+#### Scenario: Newly provisioned SMTP config is activated automatically
+
+- **WHEN** Pulumi provisions a `SmtpConfig` resource on a fresh Zitadel instance
+- **THEN** the `ZitadelSmtpActivation` Dynamic Resource SHALL call `POST /admin/v1/smtp/{id}/_activate` as part of the same `pulumi up`
+- **AND** the resulting state SHALL be `SMTP_CONFIG_ACTIVE`
+- **AND** subsequent verification emails SHALL be queued AND delivered to the SMTP provider
+
+#### Scenario: First apply against an already-active SMTP succeeds (create-time idempotency)
+
+- **WHEN** Pulumi runs `create()` for `ZitadelSmtpActivation` against an SMTP config that is already in `SMTP_CONFIG_ACTIVE` state (e.g., activated out-of-band by a manual `curl` step prior to this resource being added to the stack)
+- **THEN** the `_activate` POST SHALL return Zitadel's "already active" response shape
+- **AND** `create()` SHALL treat that response as success
+- **AND** the resource SHALL be recorded in Pulumi state with a fresh `activatedAt` timestamp
+
+#### Scenario: Re-apply with unchanged inputs is a Pulumi-graph no-op
+
+- **WHEN** Pulumi re-applies the stack and the `ZitadelSmtpActivation` resource's inputs (`smtpConfigId`, `domain`, `jwtProfileJson`) are unchanged from the previous apply
+- **THEN** Pulumi's input diff SHALL be empty
+- **AND** no lifecycle handler (`create` / `update` / `delete` / `read`) on `ZitadelSmtpActivation` SHALL be invoked
+- **AND** zero HTTP traffic SHALL be generated against the Zitadel admin API
+- **AND** the Pulumi state graph SHALL continue to record the resource as up-to-date
+
+#### Scenario: Activation runs on a fresh Zitadel rebuild without operator intervention
+
+- **WHEN** the dev (or future staging / prod) Zitadel instance is destroyed and recreated from scratch
+- **AND** Pulumi runs `pulumi up` against the recreated instance
+- **THEN** the `SmtpConfig` resource SHALL be recreated
+- **AND** the `ZitadelSmtpActivation` resource SHALL fire `_activate` automatically as the next step in the dependency graph
+- **AND** the operator SHALL NOT need to run any manual `curl` or `gcloud` step
+- **AND** the first user sign-up after the rebuild SHALL receive a verification email
