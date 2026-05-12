@@ -108,7 +108,7 @@ The `self-hosted-zitadel` change was archived on 2026-05-11, so the spec target 
 
 **[R1] ESO refresh lag during step 3 transition** — When Pulumi adds the new GSM secret and the `ExternalSecret` is updated to read both, ESO's `refreshInterval` (currently 1h) governs how quickly the K8s Secret reflects the new data. → **Mitigation:** soak each transitional step for ≥1 ESO refresh cycle in dev (effectively next-day) before progressing.
 
-**[R2] Backend env-var transition ordering** — If cp step 3 (configmap drops old env var) lands before be step 2 (backend reads new with fallback) is fully deployed, pods restart without the env var they expect. → **Mitigation:** each PR description SHALL declare its predecessor; downstream PRs SHALL NOT merge until the predecessor is **deployed in dev** (not merely merged). Verify via ArgoCD sync status.
+**[R2] Backend env-var transition ordering** — If cp step 4 (configmap drops old env var) lands before be step 2 (backend reads new with fallback) is fully deployed, pods restart without the env var they expect. → **Mitigation:** each PR description SHALL declare its predecessor; downstream PRs SHALL NOT merge until the predecessor is **deployed in dev** (not merely merged). Verify via ArgoCD sync status.
 
 **[R3] Destroy step is one-way** — GSM `SecretManagerSecret` destruction releases the resource id; recreating with the same name + version history requires manual Pulumi state import or accepting a fresh history. → **Mitigation:** mandatory 7-day soak for backend-app (covers a weekly on-call rotation); mandatory 1-cycle Pulumi apply confirmation for pulumi-admin.
 

@@ -41,7 +41,7 @@
 
 - [ ] 5.1 In `cloud-provisioning/src/gcp/index.ts`, remove the old `name: 'zitadel-machine-key'` secret entry (this destroys the Pulumi-managed `SecretManagerSecretVersion` writer but **leaves the underlying GSM secret intact** until PR 6 removes the resource)
 - [ ] 5.2 In `cloud-provisioning/src/index.ts`, leave the `zitadelMachineKey` variable wiring (still needed for the new secret); only remove if all consumers are gone
-- [ ] 5.3 In `external-secret.yaml` (server + consumer), remove the old `data[]` entry for `zitadel-machine-key`
+- [ ] 5.3 In `cloud-provisioning/k8s/namespaces/backend/base/server/external-secret.yaml`, remove the old `data[]` entry for `zitadel-machine-key`
 - [ ] 5.4 In `deployment.yaml` (server + consumer), remove the old `volumes[]`, `volumeMounts[]`, and `secret.items[]` for `zitadel-machine-key`
 - [ ] 5.5 In `configmap.env` (server + consumer), remove `ZITADEL_MACHINE_KEY_PATH`
 - [ ] 5.6 Verify `pulumi preview` shows only the expected old-secret-version writer removal (no MachineKey replacement, no destroy of the GSM secret resource itself yet)
@@ -108,7 +108,7 @@
 - [ ] 12.2 In `cloud-provisioning/src/gcp/index.ts`, remove the GSM `SecretManagerSecret` resource for `zitadel-admin-sa-key` entirely
 - [ ] 12.3 In `cloud-provisioning/src/zitadel/components/secrets.ts`, remove the legacy `zitadel-admin-sa-key` `SecretManagerSecret` declaration + ESO accessor / Zitadel writer IAM bindings (lines ~80, 82, 102, 116)
 - [ ] 12.4 In `cloud-provisioning/docs/runbooks/zitadel-break-glass.md`, replace all 12 references to `zitadel-admin-sa-key` with `zitadel-machine-key-for-pulumi-admin` (in `gcloud secrets versions access --secret=...` commands and prose); verify example commands still resolve against the new GSM secret name
-- [ ] 12.5 In `cloud-provisioning/src/zitadel/index.ts`, update the `@pulumiverse/zitadel` provider config `secret:` field (line ~162) and update doc comments (lines ~34, 86) to the new name. (If task 11.1 already updated 11.1 the provider config, skip the provider-config step and only update the comments.)
+- [ ] 12.5 In `cloud-provisioning/src/zitadel/index.ts`, update the `@pulumiverse/zitadel` provider config `secret:` field (line ~162) and update doc comments (lines ~34, 86) to the new name. (If task 11.1 already updated the provider config, skip the provider-config step and only update the comments.)
 - [ ] 12.6 In `cloud-provisioning/src/zitadel/constants.ts` (line ~75) and `src/index.ts` (lines ~67, 113), update doc comments referencing the old GSM secret name
 - [ ] 12.7 Verify `pulumi preview` shows `- destroy` for the old SecretManagerSecret only (no other resource churn)
 - [ ] 12.8 Open PR, description declares `Depends on: pulumi-admin PR 2 (deployed in dev ≥ 1 apply cycle) — final destroy step, one-way`
