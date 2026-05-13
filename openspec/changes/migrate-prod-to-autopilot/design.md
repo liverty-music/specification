@@ -88,18 +88,21 @@ Prod has zero application workloads currently — only the cluster control plane
 - The existing key has zero etcd contents pointing at it (since the old cluster had no Secrets in etcd) — there is no live data to re-encrypt. The new cluster starts encrypting *its* etcd with the same key from the first Secret onward.
 - The KMS service-agent IAM binding for the GKE control plane remains valid (same project, same service agent identity).
 
-### D5: GMP cost-control config is part of the cluster cutover
+### D5: GMP cost-control is set at the cluster level via `autoMonitoringConfig.scope: 'NONE'`
 
-**Decision:** A `ClusterPodMonitoring` resource that drops all metrics outside an explicit allow-list, with `interval: 60s`, is applied to the new cluster as part of the cutover — not deferred to the `prod-k8s-manifests` follow-up.
+**Decision:** Bound Autopilot's mandatory GMP managed collection by setting `monitoringConfig.managedPrometheus.autoMonitoringConfig.scope: 'NONE'` directly on the `gcp.container.Cluster` Pulumi resource. No `ClusterPodMonitoring` or per-Pod scrape-config CR is authored as part of the cutover.
 
-**Why:**
+**Why** (revised during PR #450 review):
 
-- If the new Autopilot cluster runs even briefly with default GMP scrape config (15s interval, no relabel filter), GMP samples start ingesting immediately at the unfiltered rate. The cost-control config has to be in place before the first scrape cycle.
-- The ClusterPodMonitoring resource is a Kubernetes CR, so it must be applied via `kubectl` or via the cluster's bootstrap mechanism. Since ArgoCD bootstrap is in the `prod-k8s-manifests` follow-up, this change applies the ClusterPodMonitoring directly via `kubectl apply -f` post-cluster-create.
-- Default allow-list (initial cut, revisable later): `kube_(node|deployment|pod|namespace|statefulset|daemonset)_.+` (kube-state-metrics core series — `statefulset` covers Zitadel / NATS / ArgoCD redis-ha, `daemonset` covers Autopilot's system DaemonSets such as `anetd`) and `container_(cpu|memory)_.+` (cAdvisor essentials). Everything else dropped.
-- Scrape interval extends from default 15s → 60s for a 75% sample-volume reduction per [Google's cost-optimization guidance](https://docs.cloud.google.com/stackdriver/docs/managed-prometheus/cost-controls).
+- The first draft of this design proposed a `ClusterPodMonitoring` with `metricRelabeling` keep-rules and `interval: 60s`. PR review (claude-bot, discussion 3232006619) correctly pointed out that **a user-applied scrape CR only filters metrics it scrapes itself**. The kube-state-metrics, kubelet, and cAdvisor scrapes that drive Autopilot's GMP cost are run by GKE's *managed* collection pipeline — independent of any user CR. The proposed `ClusterPodMonitoring` would not have intercepted them, and the `$5-15/mo` target would have been silently missed.
+- The actual lever on Autopilot ≥ 1.25 is the cluster-level `autoMonitoringConfig.scope` flag (verified against [GKE setup-managed docs](https://docs.cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed) and the [Pulumi gcp.container.Cluster docs](https://www.pulumi.com/registry/packages/gcp/api-docs/container/cluster/)). Setting `scope: 'NONE'` disables Autopilot's auto-discovery and scraping of application Pods — the path through which most of an idle cluster's GMP cost would otherwise grow as workloads land.
+- The GKE-managed system pipeline (kubelet, cAdvisor, kube-state-metrics) cannot be disabled on Autopilot ≥ 1.25. We accept that as the unavoidable cost floor. Empirically: a few thousand yen / month for the prior dev Autopilot cluster, translating to roughly the `$5-15/mo` target band for an idle / light prod cluster.
+- User workload metrics become opt-in via per-namespace `PodMonitoring` CRDs in the `prod-k8s-manifests` follow-up. That keeps the ingestion explicit and per-workload measurable.
 
-**Alternative:** Defer to `prod-k8s-manifests`. Rejected because GMP starts billing the second the cluster's control plane is up; a deferred config means a billable window of unfiltered ingestion.
+**Alternative considered (and rejected):**
+
+- **`OperatorConfig` in `gmp-public` namespace** (reviewer's suggestion). The `OperatorConfig` resource exists and is editable, but its actual fields (`features.targetStatus.enabled`, `features.config.compression`, `scaling.vpa.enabled`) are about operator-level behavior, not metric filtering. There is no `spec.collection.filter` field that drops system-pipeline metrics by name. Rejected as it would not bound the cost as intended.
+- **Author a `ClusterPodMonitoring` for cosmetic completeness.** Adds a maintenance burden and confuses readers about what's actually controlling the cost. Rejected — the cluster-level flag is sufficient.
 
 ### D6: Spot pricing remains the default for Pods via the existing `gke-spot` label
 
@@ -151,10 +154,10 @@ Single Pulumi commit, executed as one `pulumi up --stack prod` operation:
    - Trigger `pulumi up --stack prod` manually after merge (per the existing `deployment-infrastructure` spec's "Manual Deployment Flow (Prod)" requirement).
    - Apply duration: ~15 minutes (Autopilot cluster creation takes a similar time to Standard regional creation).
 
-4. **Post-create configuration (one-shot, via kubectl)**:
+4. **Post-create verification (one-shot, via kubectl + gcloud)**:
    - `gcloud container clusters get-credentials autopilot-cluster-osaka --region asia-northeast2 --project liverty-music-prod`.
-   - `kubectl apply -f cluster-pod-monitoring.yaml` (the GMP cost-control config). The yaml is committed in `cloud-provisioning/k8s/cluster/overlays/prod/`. This is the *only* k8s manifest the migration introduces; everything else is deferred to `prod-k8s-manifests`.
-   - Verify ingestion is filtered: query `monitoring.googleapis.com/api/v1/series` count after 5 minutes, confirm it's bounded.
+   - `gcloud container clusters describe autopilot-cluster-osaka --region asia-northeast2 --project liverty-music-prod --format='value(monitoringConfig.managedPrometheusConfig.enabled,monitoringConfig.managedPrometheusConfig.autoMonitoringConfig.scope)'` SHALL return `True NONE`. No k8s CR application is required at this stage — the GMP cost-control is enforced by the cluster-level Pulumi config (D5).
+   - Per-workload `PodMonitoring` CRs are deferred to the `prod-k8s-manifests` follow-up.
 
 5. **Verification**:
    - Re-run `verify-prod-spec-scenarios.sh` (will fail several scenarios on the spec wording since the spec is being updated; the post-migration spec scenarios are what passes now).
@@ -162,12 +165,12 @@ Single Pulumi commit, executed as one `pulumi up --stack prod` operation:
    - Confirm GCP billing dashboard shows the management fee dropping in the next billing period.
 
 6. **Rollback strategy**:
-   - If create step fails: `pulumi stack import` from `pre-migrate-prod-state.json`, then re-apply the pre-migration code (one git revert commit).
+   - If create step fails: `pulumi stack import --stack prod /tmp/pre-migrate-prod-state-YYYYMMDD.json` (the snapshot from pre-flight §1.3), then re-apply the pre-migration code (one git revert commit), then `pulumi up --stack prod`. The state-import step is non-optional — after the destroy phase, Pulumi's saved state no longer contains the old `standard-cluster-osaka` resource; reverting the code alone would produce a fresh create with no captured outputs.
    - If create succeeds but discovers problems within `<2 days`: same procedure, plus destroy the new Autopilot cluster to avoid double-management-fee billing.
    - Beyond 2 days: rollback gets harder (KMS key history, billing cycle, etc.). Treat the post-2-day state as a soft commit.
 
 ## Open Questions
 
-- **OQ1: ClusterPodMonitoring allow-list scope.** The initial allow-list (`kube_(node|deployment|pod|namespace|statefulset|daemonset)_.+` plus `container_(cpu|memory)_.+`) is a minimal-cost cut. Future workloads (e.g., backend with custom Prometheus metrics) will need additions. Should we ship a `prod-k8s-manifests`-style mechanism for per-workload allow-list extension, or expand the cluster-wide allow-list ad hoc? *Default decision unless raised before implementation:* start minimal; extend per workload via opt-in PodMonitoring CRDs in the `prod-k8s-manifests` follow-up.
+- **OQ1: When real workloads land, how do we opt-in their Prometheus metrics?** With `autoMonitoringConfig.scope: 'NONE'`, application metric scraping is suppressed by default. Each workload that wants its own metrics scraped will need a `PodMonitoring` (or `ClusterPodMonitoring`) CR in its namespace. *Default decision unless raised before implementation:* defer to the `prod-k8s-manifests` follow-up; per-workload `PodMonitoring` CRs are added alongside each workload's overlay, with `metricRelabeling` keep-rules limiting that workload's ingested metrics to what its alerts actually consume.
 - **OQ2: Cluster name during migration.** Does renaming `standard-cluster-osaka` → `autopilot-cluster-osaka` add value, or is it just churn? *Default decision unless raised before implementation:* rename, per D3.
 - **OQ3: Timing of dev retirement.** This change works whether dev is still running or already retired. But the *cost savings* only materialize after dev is gone (because dev currently consumes the free tier). Should we sequence this change with dev retirement explicitly? *Default decision unless raised before implementation:* perform this migration independently, and treat dev retirement as a separate concern. The new prod Autopilot cluster runs correctly during the dev-overlap period; only the cost benefit is dev-retirement-gated.

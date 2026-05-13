@@ -48,22 +48,20 @@ The prod GKE cluster SHALL NOT enable cluster-level Confidential GKE Nodes. On A
 
 ## ADDED Requirements
 
-### Requirement: Prod cluster SHALL constrain Google Managed Service for Prometheus (GMP) cost via metric filtering and extended scrape interval
-Because GMP cannot be disabled on Autopilot clusters running GKE ≥ 1.25 (per [official docs](https://docs.cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed): *"You can't turn off managed collection in GKE Autopilot clusters running GKE version 1.25 or greater"*), the prod cluster SHALL apply cluster-wide GMP cost-control configuration that keeps the empirical monthly GMP cost in the `$5-15/month` band. The configuration SHALL be applied at cluster creation (before any workload Pods are scheduled) so that no billable window of unfiltered ingestion occurs.
+### Requirement: Prod cluster SHALL bound Google Managed Service for Prometheus (GMP) cost via disabled application auto-monitoring
+Because GMP managed collection cannot be disabled on Autopilot clusters running GKE ≥ 1.25 (per [official docs](https://docs.cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed): *"You can't turn off managed collection in GKE Autopilot clusters running GKE version 1.25 or greater"*), the prod cluster SHALL bound GMP ingestion cost by disabling Autopilot's automatic discovery and scraping of application Pods. Cluster-level workload metrics SHALL therefore become opt-in via per-namespace `PodMonitoring` CRDs (deferred to the `prod-k8s-manifests` follow-up). The unavoidable GKE-managed system pipeline (kubelet, cAdvisor, kube-state-metrics) is accepted as the cost floor. Empirical monthly GMP cost target band: `$5-15/month` for an idle / light cluster.
 
-#### Scenario: ClusterPodMonitoring exists with metric_relabel drop rules
-- **WHEN** running `kubectl get clusterpodmonitoring -o yaml` on the prod cluster
-- **THEN** at least one ClusterPodMonitoring resource SHALL exist
-- **AND** its `spec.endpoints[*].metricRelabeling` SHALL contain a `keep`-action rule that restricts ingested metrics to an explicit allow-list (e.g., `kube_(node|deployment|pod|namespace|statefulset|daemonset)_.+` and `container_(cpu|memory)_.+`)
+A user-applied `ClusterPodMonitoring` with `metricRelabeling` keep-rules SHALL NOT be relied on for filtering managed-collection system metrics — its relabel rules only apply to metrics that the CR itself scrapes, not to GKE's independent managed-collection pipeline.
 
-#### Scenario: Scrape interval is extended from default 15s to 60s
-- **WHEN** inspecting any PodMonitoring or ClusterPodMonitoring resource on the prod cluster
-- **THEN** `spec.endpoints[*].interval` SHALL equal `60s` (or longer) for every scrape target
-
-#### Scenario: Automatic application monitoring is disabled
+#### Scenario: Automatic application monitoring is disabled at the cluster level
 - **WHEN** describing the prod cluster's monitoring configuration via `gcloud container clusters describe`
-- **THEN** `monitoringConfig.managedPrometheusConfig.autoMonitoringConfig.scope` SHALL be `NONE` (or unset / absent)
-- **AND** workload metric collection SHALL be opt-in via explicit PodMonitoring CRDs only
+- **THEN** `monitoringConfig.managedPrometheusConfig.autoMonitoringConfig.scope` SHALL be `NONE`
+- **AND** workload metric collection SHALL be opt-in via explicit `PodMonitoring` CRDs only
+
+#### Scenario: GMP managed collection remains enabled
+- **WHEN** describing the prod cluster's monitoring configuration via `gcloud container clusters describe`
+- **THEN** `monitoringConfig.managedPrometheusConfig.enabled` SHALL be `true`
+- **AND** kubelet / cAdvisor / kube-state-metrics scrapes SHALL continue to be ingested into GMP (they are not user-disable-able on Autopilot ≥ 1.25)
 
 #### Scenario: GMP billing stays bounded
 - **WHEN** the prod cluster has been live for a full billing month with idle workloads (only system Pods)
@@ -95,6 +93,6 @@ On Autopilot, Spot vs on-demand scheduling is per-Pod (no node pool). Pods that 
 ### Requirement: Prod cluster SHALL disable Google Managed Prometheus and restrict logging
 **Reason**: Autopilot ≥ 1.25 cannot disable managed Prometheus collection per [official docs](https://docs.cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed): *"You can't turn off managed collection in GKE Autopilot clusters running GKE version 1.25 or greater"*. The original requirement's first scenario (`managedPrometheus.enabled` SHALL be `false`) cannot be satisfied on Autopilot.
 
-**Migration**: GMP becomes mandatory; cost is controlled via metric filtering and extended scrape interval, formalized in the new `Prod cluster SHALL constrain Google Managed Service for Prometheus (GMP) cost via metric filtering and extended scrape interval` requirement. The empirical cost target is `$5-15/month` (vs the previous `$0` under Standard mode with GMP disabled).
+**Migration**: GMP managed collection becomes mandatory; cost is bounded by setting `monitoringConfig.managedPrometheus.autoMonitoringConfig.scope: 'NONE'` at cluster creation to prevent auto-discovery of application Pods. This is formalized in the new `Prod cluster SHALL bound Google Managed Service for Prometheus (GMP) cost via disabled application auto-monitoring` requirement. The empirical cost target is `$5-15/month` (vs the previous `$0` under Standard mode with GMP disabled).
 
 The original logging-component restriction (`loggingConfig.enableComponents` to `[SYSTEM_COMPONENTS, WORKLOADS]`) is also relaxed: Autopilot manages logging configuration internally and exposes fewer knobs. The cluster's default Autopilot logging behavior is accepted.

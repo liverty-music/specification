@@ -11,7 +11,7 @@
 - [x] 2.1 In `kubernetes.ts`, replace the prod `gcp.container.Cluster` block: set `enableAutopilot: true`, set `location: ${region}` (regional), set `databaseEncryption: { state: 'ENCRYPTED', keyName: kmsKeyName }` reusing the existing KMS key, keep `ipAllocationPolicy` with the same `pods-range`/`services-range` secondary range names, rename the resource to `autopilot-cluster-osaka`
 - [x] 2.2 In `kubernetes.ts`, remove the prod-specific `spot-pool-osaka` `gcp.container.NodePool` block (Autopilot manages nodes internally)
 - [x] 2.3 In `kubernetes.ts`, remove explicit `datapathProvider: 'ADVANCED_DATAPATH'` from the prod cluster definition (Autopilot enables Dataplane V2 by default — the resulting cluster still has DPv2 enabled)
-- [x] 2.4 In `kubernetes.ts`, remove explicit `monitoringConfig.managedPrometheus.enabled: false` and `loggingConfig.enableComponents` overrides from the prod cluster definition (Autopilot does not honor these knobs the same way; GMP cost-control happens via ClusterPodMonitoring in §4 instead)
+- [x] 2.4 In `kubernetes.ts`, remove explicit `loggingConfig.enableComponents` overrides from the prod cluster definition (Autopilot manages logging internally). Replace `monitoringConfig.managedPrometheus.enabled: false` with the new Autopilot-shaped config: `monitoringConfig.managedPrometheus: { enabled: true, autoMonitoringConfig: { scope: 'NONE' } }` — this is the GMP cost-control lever for the prod cluster (see §4 — no separate k8s manifest needed).
 - [x] 2.5 In `kubernetes.ts`, remove `privateClusterConfig.enablePrivateNodes: false` from the prod cluster definition (not user-configurable on Autopilot)
 - [x] 2.6 In `kubernetes.ts`, remove explicit `shieldedInstanceConfig` from the prod cluster definition (enforced by Autopilot automatically)
 - [x] 2.7 In `kubernetes.ts`, retain `removeDefaultNodePool: false` removal for prod (or omit — Autopilot does not have a default node pool concept) — omitted (Autopilot has no default node pool concept)
@@ -24,15 +24,13 @@
 
 - [x] 3.1 Update `docs/PROD_BOOTSTRAP_DECISIONS.md`: change the "Decision Summary" table row for `Cluster mode` from `Standard` to `Autopilot`, update the rationale section (D1) to reflect the Autopilot decision, add a "Migration history" note explaining the original Standard → Autopilot pivot driven by the free-tier math (`provision-prod-gcp-resources` archived 2026-05-13 → `migrate-prod-to-autopilot` ~2026-05 onward)
 - [x] 3.2 Update `docs/GKE_CLUSTER_MODE_DECISION.md`: revise the dev/prod environment table (`dev: Standard zonal`, `prod: Autopilot regional`) and add a "Why we revised the prod decision" subsection citing the free-tier math + GMP-cost-controllability
-- [x] 3.3 Update `docs/DEV_VS_PROD_DIFFERENCES.md`: change the "GKE cluster mode" row from `Standard | Standard` to `Standard | Autopilot`; change the "GMP" row from `Disabled | Disabled` to `Disabled | Enabled with cost-control config (60s scrape + metric_relabel keep-list)`; remove or restructure rows that no longer apply (Spot node pool sizing, machine type, boot disk, public/private nodes — all become "Autopilot-managed" for prod)
+- [x] 3.3 Update `docs/DEV_VS_PROD_DIFFERENCES.md`: change the "GKE cluster mode" row from `Standard | Standard` to `Standard | Autopilot`; change the "GMP" row from `Disabled | Disabled` to `Disabled | Enabled with cost-control flag (autoMonitoringConfig.scope: NONE)`; remove or restructure rows that no longer apply (Spot node pool sizing, machine type, boot disk, public/private nodes — all become "Autopilot-managed" for prod)
 - [x] 3.4 Update `docs/runbooks/prod-cluster-credentials.md`: change all `standard-cluster-osaka` references to `autopilot-cluster-osaka`; update the "Verifying the irreversible-decision state" snippet to expect `autopilot.enabled: True` + `databaseEncryption.state: ALL_OBJECTS_ENCRYPTION_ENABLED` + Dataplane V2 implicit
 - [x] 3.5 Update `docs/runbooks/setup-prod-credentials.md` if any reference to `standard-cluster-osaka` exists (likely none, but grep to confirm) — grep confirmed no occurrences
 
-## 4. GMP cost-control config (`cloud-provisioning/k8s/cluster/overlays/prod/`)
+## 4. GMP cost-control (cluster-level, no k8s manifest needed)
 
-- [x] 4.1 Create `cloud-provisioning/k8s/cluster/overlays/prod/cluster-pod-monitoring.yaml` declaring a `ClusterPodMonitoring` resource with `metricRelabeling` `keep` rules restricting ingested metrics to `kube_(node|deployment|pod|namespace|statefulset|daemonset)_.+` and `container_(cpu|memory)_.+`, with `interval: 60s` for every endpoint
-- [x] 4.2 Add a kustomization entry in `cloud-provisioning/k8s/cluster/overlays/prod/kustomization.yaml` to include the new ClusterPodMonitoring (scoped to GMP only — `../../base` ClusterSecretStores deferred to prod-k8s-manifests follow-up because they need a projectID patch)
-- [x] 4.3 Confirm `kubectl kustomize cloud-provisioning/k8s/cluster/overlays/prod` renders without errors
+- [x] 4.1 GMP cost-control is enforced via the cluster-level Pulumi flag set in §2.4 (`monitoringConfig.managedPrometheus.autoMonitoringConfig.scope: 'NONE'`). No `ClusterPodMonitoring` or `OperatorConfig` Kubernetes resource is authored — a user-applied scrape CR cannot filter the GKE-managed system-pipeline metrics (verified during PR #450 review). Per-workload `PodMonitoring` CRDs are deferred to the `prod-k8s-manifests` follow-up.
 
 ## 5. Local validation
 
@@ -55,15 +53,14 @@
 - [ ] 7.1b Refresh Pulumi state so the saved value of `deletionProtection` for the old cluster matches the live flag set in 7.1a: `pulumi refresh --stack prod` (from Pulumi Cloud console or locally). Without this, Pulumi may compare its saved-state-true against the new code's "destroy" intent and still block.
 - [ ] 7.2 Trigger `pulumi up --stack prod` manually (per the existing `deployment-infrastructure` capability's "Manual Deployment Flow (Prod)" requirement)
 - [ ] 7.3 Monitor the deploy: the destroy phase removes the old cluster (~5-10 min), the create phase provisions the new Autopilot cluster (~10-15 min). Total expected duration ~20 min
-- [ ] 7.4 If deploy fails mid-way (destroy succeeded, create failed): re-apply the rollback Pulumi commit (one git revert of the §2 changes) and re-run `pulumi up --stack prod` to restore the Standard cluster
+- [ ] 7.4 If deploy fails mid-way (destroy succeeded, create failed): (a) `pulumi stack import --stack prod /tmp/pre-migrate-prod-state-20260513.json` to restore Pulumi's saved state for the old `standard-cluster-osaka` (required — after the destroy phase, the old resource is no longer in Pulumi state), (b) re-apply the rollback Pulumi commit (one git revert of the §2 changes), and (c) re-run `pulumi up --stack prod` to recreate the Standard cluster from the captured state.
 
-## 8. Post-create configuration
+## 8. Post-create verification
 
 - [ ] 8.1 `gcloud container clusters get-credentials autopilot-cluster-osaka --region asia-northeast2 --project liverty-music-prod`
 - [ ] 8.2 Confirm kubectl context switched: `kubectl config current-context`
-- [ ] 8.3 Apply the GMP cost-control config immediately: `kubectl apply -k cloud-provisioning/k8s/cluster/overlays/prod` (or whatever the kustomize path resolves to once §4 is authored)
-- [ ] 8.4 Verify the ClusterPodMonitoring is active: `kubectl get clusterpodmonitoring -o yaml | grep -E '(metricRelabeling|interval)'`
-- [ ] 8.5 Wait 10 minutes for the first scrape cycle, then check GMP ingestion volume in Cloud Monitoring's Metrics Management page — confirm volume is bounded (target: less than 1000 series for system pods)
+- [ ] 8.3 Verify the GMP cost-control flag was applied at cluster creation: `gcloud container clusters describe autopilot-cluster-osaka --region asia-northeast2 --project liverty-music-prod --format='value(monitoringConfig.managedPrometheusConfig.enabled,monitoringConfig.managedPrometheusConfig.autoMonitoringConfig.scope)'` — expect `True NONE`
+- [ ] 8.4 Wait 10 minutes for the first scrape cycle, then check GMP ingestion volume in Cloud Monitoring's Metrics Management page — confirm volume is bounded to the system pipeline (kubelet / cAdvisor / kube-state-metrics) and shows no application-pod auto-discovery
 
 ## 9. Post-migration verification
 
@@ -78,4 +75,4 @@
 - [ ] 10.2 Run `openspec validate migrate-prod-to-autopilot --strict` — must pass
 - [ ] 10.3 Sync delta spec to main spec (`openspec/specs/prod-environment-bootstrap/spec.md`) — apply MODIFIED/ADDED/REMOVED operations from the delta
 - [ ] 10.4 Move change directory: `git mv openspec/changes/migrate-prod-to-autopilot openspec/changes/archive/YYYY-MM-DD-migrate-prod-to-autopilot`
-- [ ] 10.5 `git add` the modifications + main spec changes, commit with `chore(openspec): archive migrate-prod-to-autopilot`, force-push and merge the archive PR
+- [ ] 10.5 `git add` the modifications + main spec changes, commit with `chore(openspec): archive migrate-prod-to-autopilot`, push and merge the archive PR (no force-push needed — this is a straightforward new commit, not a rebase / squash)
