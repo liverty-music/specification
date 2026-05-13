@@ -121,7 +121,12 @@ The `self-hosted-zitadel` change was archived on 2026-05-11, so the spec target 
 **[R7] `bootstrap-uploader` dual-write does not fire on already-bootstrapped instances** — The sidecar's `while [ ! -f "$KEY_FILE" ]; do sleep 2; done` loop blocks until Zitadel writes the admin key file to the shared `emptyDir`. Per the "Subsequent boots skip bootstrap" scenario in `zitadel-self-hosted-deployment`, that write only happens on first-instance bootstrap against an empty database; subsequent pod restarts leave the sidecar idling forever. → **Consequence:** PR 10's dual-write code path is only exercised on a fresh Zitadel instance. On an already-bootstrapped environment (e.g., dev at the time this change rolls out), the new GSM secret `zitadel-machine-key-for-pulumi-admin` will exist as an empty resource shell with no `SecretVersion`, and PR 11 (Pulumi switches to read the new name) would fail authentication. → **Mitigation:** between PR 10 deploy and PR 11 author/merge, an operator SHALL perform a **one-shot manual seed** of the new secret from the legacy `zitadel-admin-sa-key` value:
 
 ```bash
+set -euo pipefail
 TMP=$(mktemp)
+# Guarantee cleanup even on SIGINT / network hang. Without the trap,
+# Ctrl+C during a hung `gcloud secrets versions add` leaves the
+# admin SA private key sitting unshredded on local disk.
+trap 'shred -u "$TMP" 2>/dev/null || rm -f "$TMP"' EXIT
 gcloud secrets versions access latest --secret=zitadel-admin-sa-key \
   --project=liverty-music-dev --out-file="$TMP"
 gcloud secrets versions add zitadel-machine-key-for-pulumi-admin \
