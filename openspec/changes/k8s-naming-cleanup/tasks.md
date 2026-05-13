@@ -113,7 +113,7 @@
   - [x] 4.2.1 `namespace: zitadel`.
   - [x] 4.2.2 `resources: [../../base]`; `cronjob-restart-zitadel.yaml` explicitly NOT imported (verified via render: prod has no `zitadel-restart` resources).
   - [x] 4.2.3 `patches`: references `deployment-api-patch.yaml`, `deployment-web-patch.yaml`, `httproute-patch.yaml`.
-  - [x] 4.2.4 No `configMapGenerator` merge for prod (deferred to prod-provisioning change).
+  - [x] 4.2.4 **REVISED** — `configMapGenerator` merge IS needed: `base/configmap.env` carries env-specific values (`ZITADEL_EXTERNALDOMAIN`, `ZITADEL_DATABASE_POSTGRES_USER_USERNAME`, `ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME` all dev-flavored). Added `overlays/prod/configmap-patch.env` overriding these to prod equivalents; kustomization references it via `configMapGenerator.behavior: merge`. Same env-leak-from-base pattern as design Decision #1 (hostname).
 
 - [x] 4.3 NEW: `deployment-api-patch.yaml`:
   - [x] 4.3.1 `metadata.name: zitadel-api`.
@@ -124,6 +124,7 @@
   - [x] 4.4.1 `metadata.name: zitadel-web`.
   - [x] 4.4.2 Same as 4.3.2: replicas inherits base, no patch needed.
   - [x] 4.4.3 Spot-pool nodeSelector applied.
+  - [x] 4.4.4 **ADDED (post-review)** — `ZITADEL_API_URL` env var override on the `web` container. Base hardcodes the dev URL (`https://auth.dev.liverty-music.app`); without this patch, the prod Login UI would call the dev domain → 404 from InstanceDomains mismatch → SSR 500. Same env-leak-from-base pattern as the HTTPRoute hostname.
 
 - [x] 4.5 NEW: `httproute-patch.yaml`:
   - [x] 4.5.1 `metadata.name: zitadel-route`.
@@ -142,7 +143,7 @@
 
 - [x] 6.1 `kubectl kustomize k8s/namespaces/zitadel/base` — renders cleanly. HTTPRoute has no `hostnames`; Deployments/Services/PDBs/HCPs use new names; ExternalSecret `zitadel-web-pat` mirrors GSM `zitadel-login-pat`.
 - [x] 6.2 `kubectl kustomize k8s/namespaces/zitadel/overlays/dev` — renders with `hostnames: [auth.dev.liverty-music.app]`, `replicas: 1`, `cronjob-restart-zitadel` resources (SA/Role/RoleBinding/CronJob), new resource names.
-- [x] 6.3 `kubectl kustomize k8s/namespaces/zitadel/overlays/prod` — renders with `hostnames: [auth.liverty-music.app]`, `replicas: 2`, spot nodeSelector, new resource names, no `restart-zitadel` CronJob.
+- [x] 6.3 `kubectl kustomize k8s/namespaces/zitadel/overlays/prod` — renders with `hostnames: [auth.liverty-music.app]`, `replicas: 2`, spot nodeSelector, new resource names, no `zitadel-restart` CronJob, and `ZITADEL_API_URL=https://auth.liverty-music.app`.
 - [~] 6.4 **Partial** — `make lint-k8s` fails on the unrelated `argocd` dev overlay due to a local `helm` CLI compatibility issue (`helm version -c --short`: unknown flag). Zitadel-only verification passed: `kube-linter lint /tmp/rendered-zitadel --config .kube-linter.yaml` → "No lint errors found!"; `./scripts/check-spot-nodeselector.sh /tmp/rendered-zitadel` → "OK: All workloads have Spot VM nodeSelector." Full `make lint-k8s` should be retried in CI where helm is wired up.
 - [x] 6.5 `make lint-ts` — clean (biome + tsc on 44 files).
 - [x] 6.6 `make check` — clean (lint-ts + 40 tests pass).

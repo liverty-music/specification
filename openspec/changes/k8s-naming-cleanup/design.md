@@ -6,7 +6,7 @@
 
 `base/httproute.yaml` currently hardcodes `auth.dev.liverty-music.app` — env-specific value leaking into base. Moving the field to per-environment overlays makes the env-leak explicit and matches how `backend/base/server/httproute.yaml` and `frontend/base/web/httproute.yaml` already work (those files omit `hostnames` entirely — they don't need scoping because they don't have a `/` catch-all rule).
 
-Zitadel's HTTPRoute is special: it has a `/` catch-all rule (`/ui/v2/login` plus everything-else → API). Without an explicit `hostnames` filter, the `/` catch-all would intercept all Gateway traffic, breaking `backend` and `frontend` routing. Hostname scoping is therefore **load-bearing** for zitadel and must be preserved per environment.
+Zitadel's HTTPRoute is special: it has two rules — a path-prefix match for `/ui/v2/login` (→ `zitadel-web`) and a `/` catch-all (→ `zitadel-api`). Without an explicit `hostnames` filter, the `/` catch-all would intercept all Gateway traffic, breaking `backend` and `frontend` routing. Hostname scoping is therefore **load-bearing** for zitadel and must be preserved per environment.
 
 **Implementation**:
 
