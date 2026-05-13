@@ -105,6 +105,15 @@ The HTTPRoute `hostnames` field SHALL NOT appear in `base/httproute.yaml`; inste
 - **AND** the rendered `zitadel-config` ConfigMap SHALL have `ZITADEL_EXTERNALDOMAIN: auth.liverty-music.app`
 - **AND** the rendered `zitadel-config` ConfigMap SHALL have `ZITADEL_DATABASE_POSTGRES_USER_USERNAME: zitadel@liverty-music-prod.iam`
 - **AND** the rendered `zitadel-config` ConfigMap SHALL have `ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: zitadel@liverty-music-prod.iam`
+- **AND** the rendered `zitadel` ServiceAccount SHALL have `annotations."iam.gke.io/gcp-service-account": zitadel@liverty-music-prod.iam.gserviceaccount.com`
+- **AND** the rendered `zitadel-api` Deployment's `cloud-sql-proxy` container SHALL have its positional instance-connection-name arg set to `liverty-music-prod:asia-northeast2:postgres-osaka` (not the dev value)
+
+#### Scenario: Dev-only DB grant Job stays out of prod
+
+- **WHEN** `kubectl kustomize k8s/namespaces/zitadel/overlays/prod` is executed
+- **THEN** the rendered output SHALL NOT contain a Job named `zitadel-db-grant` (that Job lives in `overlays/dev/` because it hardcodes the dev Cloud SQL instance and dev IAM SA username)
+- **WHEN** `kubectl kustomize k8s/namespaces/zitadel/overlays/dev` is executed
+- **THEN** the rendered output SHALL contain the `zitadel-db-grant` Job
 
 #### Scenario: Base HTTPRoute has no hostnames field
 

@@ -119,6 +119,7 @@
   - [x] 4.3.1 `metadata.name: zitadel-api`.
   - [x] 4.3.2 **REVISED** — `replicas` field NOT set in patch (inherits base `replicas: 2` after the section-2 drift fix). Explicit patch was originally planned but is redundant with the base value.
   - [x] 4.3.3 Spot-pool nodeSelector applied.
+  - [x] 4.3.4 **ADDED (post-review)** — `cloud-sql-proxy` container `args` override pointing at `liverty-music-prod:asia-northeast2:postgres-osaka`. Base hardcodes the dev instance connection name; without this patch, prod API pods would proxy to the dev DB. Strategic merge replaces the full `args` list since the field has no mergeKey.
 
 - [x] 4.4 NEW: `deployment-web-patch.yaml`:
   - [x] 4.4.1 `metadata.name: zitadel-web`.
@@ -131,6 +132,10 @@
   - [x] 4.5.2 `spec.hostnames: [auth.liverty-music.app]`.
 
 - [x] 4.6 No `pdb-patch.yaml` in prod (verified: base `minAvailable: 1` flows through; render confirms).
+
+- [x] 4.7 **ADDED (post-review)** — `overlays/prod/serviceaccount-patch.yaml` + kustomization wiring. Base annotates the `zitadel` SA with the dev Workload Identity GCP SA (`zitadel@liverty-music-dev.iam.gserviceaccount.com`); prod patch overrides to `zitadel@liverty-music-prod.iam.gserviceaccount.com`. Same env-leak-from-base pattern.
+
+- [x] 4.8 **ADDED (post-review)** — `job-grant-db.yaml` moved out of base into `overlays/dev/`. The Job hardcodes the dev Cloud SQL instance + the dev IAM SA usernames in its proxy args and SQL grants; making it overlay-only keeps base clean and prevents prod from accidentally running grants against dev resources. Base `kustomization.yaml` updated to drop the resource and add an explanatory comment; dev `kustomization.yaml` now imports it directly.
 
 ## 5. ArgoCD prod Application
 
