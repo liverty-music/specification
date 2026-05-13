@@ -1,4 +1,21 @@
-## ADDED Requirements
+# prod-environment-bootstrap Specification
+
+## Purpose
+
+Defines requirements for provisioning the initial `liverty-music-prod`
+GCP infrastructure, capturing the irreversible decisions baked in at
+cluster creation (regional Standard cluster, Dataplane V2, etcd
+Application-layer Secrets Encryption via Cloud KMS, IP CIDR plan
+matching dev) together with the cost-first reversible defaults (Spot
+node pool, public nodes, GMP disabled, Cloud SQL `db-f1-micro`). The
+capability also contracts that prod hosts the same kinds of
+peripheral GCP resources as dev (Cloud SQL, Artifact Registry,
+Service Accounts, Secret Manager, Cloud DNS, Certificate Manager),
+and bounds the scope so that Kubernetes-side workload bootstrap
+(ArgoCD Applications, per-namespace overlays) is explicitly deferred
+to a separate follow-up change.
+
+## Requirements
 
 ### Requirement: Prod GKE cluster SHALL be a Standard regional cluster in asia-northeast2
 The `liverty-music-prod` GCP project SHALL contain exactly one GKE Standard (non-Autopilot) regional cluster whose `location` is `asia-northeast2`. The cluster mode (Standard vs Autopilot) is set at creation and cannot be changed without rebuilding the cluster.
@@ -24,10 +41,10 @@ The prod GKE cluster SHALL be created with `datapathProvider: 'ADVANCED_DATAPATH
 - **WHEN** describing the prod GKE cluster network configuration
 - **THEN** `datapathProvider` SHALL equal `ADVANCED_DATAPATH`
 
-#### Scenario: anetd DaemonSet is present
+#### Scenario: anetd DaemonSet is present and kube-proxy is unscheduled
 - **WHEN** listing DaemonSets in `kube-system` on the prod cluster
 - **THEN** an `anetd` DaemonSet SHALL be present
-- **AND** no `kube-proxy` DaemonSet SHALL be present
+- **AND** the `kube-proxy` DaemonSet — if present as a Dataplane V2 implementation artifact — SHALL have `desiredNumberScheduled: 0` (no nodes match its selector and no Running pods exist)
 
 #### Scenario: NetworkPolicy enforcement is implicitly enabled
 - **WHEN** applying a Kubernetes `NetworkPolicy` resource to the prod cluster
@@ -38,7 +55,7 @@ The prod GKE cluster SHALL be created with `databaseEncryption.state: ENCRYPTED`
 
 #### Scenario: databaseEncryption is configured
 - **WHEN** describing the prod GKE cluster
-- **THEN** `databaseEncryption.state` SHALL equal `ENCRYPTED`
+- **THEN** `databaseEncryption.state` SHALL be one of `ENCRYPTED` (the Pulumi/Terraform input value) or `ALL_OBJECTS_ENCRYPTION_ENABLED` (GCP's steady-state value emitted by `gcloud container clusters describe` after the initial encryption backfill completes)
 - **AND** `databaseEncryption.keyName` SHALL match the pattern `projects/liverty-music-prod/locations/asia-northeast2/keyRings/gke-cluster/cryptoKeys/gke-etcd-encryption`
 
 #### Scenario: Stored Kubernetes Secrets are encrypted with the CMEK key
@@ -174,18 +191,22 @@ The prod project SHALL provision a Cloud DNS public zone scoped to GCP-fronted s
 - **WHEN** querying authoritative nameservers for `liverty-music.app` (apex)
 - **THEN** the response SHALL come from Cloudflare nameservers, not Cloud DNS
 
-### Requirement: Prod ArgoCD bootstrap SHALL run the same Applications as dev
-The prod cluster SHALL be bootstrapped with the same ArgoCD Application set as dev (`argocd-apps/prod/` mirrors the structure of `argocd-apps/dev/`), provisioning the same set of namespaces (`argocd`, `external-secrets`, `reloader`, `atlas-operator`, `nats`, `keda`, `otel-collector`, `image-updater`, `backend`, `frontend`, `zitadel`). Per-namespace prod overlays SHALL be created only where the base Kustomize manifest is unsuitable for prod.
+### Requirement: Prod GCP infrastructure ships without ArgoCD bootstrap (workloads in follow-up change)
+This change SHALL provision the prod GCP infrastructure (GKE cluster, KMS, Cloud SQL, Secret Manager, Cloud DNS, Certificate Manager) without authoring the Kubernetes manifests that drive ArgoCD bootstrap (`argocd-apps/prod/`) or the per-namespace prod overlays (`namespaces/<ns>/overlays/prod/`). Those manifests are explicitly out of scope and SHALL be delivered by a separate follow-up OpenSpec change (working title: `prod-k8s-manifests`). The prod cluster SHALL therefore idle (no ArgoCD Applications synced, no workloads running) until that follow-up change lands.
 
-#### Scenario: argocd-apps/prod/ directory exists
-- **WHEN** inspecting the `cloud-provisioning/k8s/argocd-apps/` directory after this change is applied
-- **THEN** a `prod/` subdirectory SHALL exist
-- **AND** it SHALL declare ArgoCD Applications for the same namespaces declared under `dev/`
+Rationale: bounding this change's blast radius to GCP-side resources keeps the destructive surface (irreversible cluster settings, KMS key) reviewable as a single coherent PR, and lets the k8s-manifest authoring proceed asynchronously once the live cluster is available for `kubectl kustomize` dry-runs against actual cluster API versions.
 
-#### Scenario: Prod overlays exist where divergence is required
-- **WHEN** inspecting `cloud-provisioning/k8s/namespaces/<ns>/overlays/`
-- **THEN** every namespace whose base manifest requires environment-specific overrides for prod SHALL have a `prod/` overlay
-- **AND** namespaces where the base is sufficient SHALL NOT have an empty `prod/` overlay
+#### Scenario: GCP infrastructure is fully provisioned without ArgoCD bootstrap
+- **WHEN** this change is fully applied (Pulumi up succeeded, all secrets populated)
+- **THEN** the prod GKE cluster, KMS keyring/key, Cloud SQL instance, Cloud DNS zones, Certificate Manager resources, and GCP Service Accounts SHALL all exist and be operational
+- **AND** `cloud-provisioning/k8s/argocd-apps/prod/` MAY remain unauthored
+- **AND** the prod cluster MAY have no ArgoCD Applications synced
+- **AND** the prod cluster MAY have no application workloads running
+
+#### Scenario: Follow-up change is tracked separately
+- **WHEN** archiving this `provision-prod-gcp-resources` change
+- **THEN** a separate OpenSpec change tracking the prod k8s manifests SHALL be filed before any external traffic is routed to the prod cluster
+- **AND** that follow-up change SHALL cover `argocd-apps/prod/` authoring, per-namespace `prod/` overlay decisions, and the initial ArgoCD bootstrap procedure
 
 ### Requirement: Initial prod Pulumi deploy SHALL be manual-triggered
 The first `pulumi up` for the prod stack after this change is merged SHALL be triggered manually via the Pulumi Cloud console, not via automatic merge-to-main deployment. This requirement aligns with the existing `deployment-infrastructure` capability's "Manual Deployment Flow (Prod)" requirement and is restated here for emphasis given the destructive blast radius of green-field provisioning.
