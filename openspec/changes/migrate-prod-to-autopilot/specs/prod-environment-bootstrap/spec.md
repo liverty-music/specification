@@ -54,7 +54,7 @@ Because GMP cannot be disabled on Autopilot clusters running GKE ≥ 1.25 (per [
 #### Scenario: ClusterPodMonitoring exists with metric_relabel drop rules
 - **WHEN** running `kubectl get clusterpodmonitoring -o yaml` on the prod cluster
 - **THEN** at least one ClusterPodMonitoring resource SHALL exist
-- **AND** its `spec.endpoints[*].metricRelabeling` SHALL contain a `keep`-action rule that restricts ingested metrics to an explicit allow-list (e.g., `kube_(node|deployment|pod|namespace)_.+` and `container_(cpu|memory)_.+`)
+- **AND** its `spec.endpoints[*].metricRelabeling` SHALL contain a `keep`-action rule that restricts ingested metrics to an explicit allow-list (e.g., `kube_(node|deployment|pod|namespace|statefulset|daemonset)_.+` and `container_(cpu|memory)_.+`)
 
 #### Scenario: Scrape interval is extended from default 15s to 60s
 - **WHEN** inspecting any PodMonitoring or ClusterPodMonitoring resource on the prod cluster
@@ -62,7 +62,7 @@ Because GMP cannot be disabled on Autopilot clusters running GKE ≥ 1.25 (per [
 
 #### Scenario: Automatic application monitoring is disabled
 - **WHEN** describing the prod cluster's monitoring configuration via `gcloud container clusters describe`
-- **THEN** `monitoringConfig.advancedDatapathObservabilityConfig.enableMetrics` SHALL be `false` (or unset)
+- **THEN** `monitoringConfig.managedPrometheusConfig.autoMonitoringConfig.scope` SHALL be `NONE` (or unset / absent)
 - **AND** workload metric collection SHALL be opt-in via explicit PodMonitoring CRDs only
 
 #### Scenario: GMP billing stays bounded

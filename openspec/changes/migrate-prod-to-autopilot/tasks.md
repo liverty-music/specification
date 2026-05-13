@@ -43,14 +43,16 @@
 ## 6. PR preparation
 
 - [x] 6.1 Commit changes per Conventional Commits format (`feat(infra)!: migrate prod GKE cluster from Standard to Autopilot regional`) — note the `!` marking the breaking cluster recreation
-- [ ] 6.2 Open PR in `cloud-provisioning` repo referencing this OpenSpec change + the prior `provision-prod-gcp-resources` archive
-- [ ] 6.3 Open companion PR in `specification` repo with this OpenSpec change (proposal + design + specs/* delta + tasks)
+- [x] 6.2 Open PR in `cloud-provisioning` repo referencing this OpenSpec change + the prior `provision-prod-gcp-resources` archive — https://github.com/liverty-music/cloud-provisioning/pull/249
+- [x] 6.3 Open companion PR in `specification` repo with this OpenSpec change (proposal + design + specs/* delta + tasks) — https://github.com/liverty-music/specification/pull/450
 - [ ] 6.4 Wait for Pulumi Cloud auto-preview to complete on both dev and prod stacks; verify dev shows zero changes and prod shows the expected destroy+create plan
 - [ ] 6.5 Wait for reviewer approval — given the destroy-and-recreate blast radius, require explicit "approved for prod cluster recreation" comment before merge
 
 ## 7. Prod migration (manual deploy, after PR merge)
 
 - [ ] 7.1 In Pulumi Cloud console, trigger `pulumi preview --stack prod` and confirm the plan matches the expected destroy+create
+- [ ] 7.1a Disable `deletionProtection` on the old cluster so Pulumi's GCP provider will allow the destroy: `gcloud container clusters update standard-cluster-osaka --region asia-northeast2 --project liverty-music-prod --no-deletion-protection`. **Required** — the GCP provider's client-side check on `gcp.container.Cluster` refuses to destroy a cluster with `deletionProtection: true`, and the cutover renames the Pulumi URN so the old resource is deleted in the same `pulumi up`.
+- [ ] 7.1b Refresh Pulumi state so the saved value of `deletionProtection` for the old cluster matches the live flag set in 7.1a: `pulumi refresh --stack prod` (from Pulumi Cloud console or locally). Without this, Pulumi may compare its saved-state-true against the new code's "destroy" intent and still block.
 - [ ] 7.2 Trigger `pulumi up --stack prod` manually (per the existing `deployment-infrastructure` capability's "Manual Deployment Flow (Prod)" requirement)
 - [ ] 7.3 Monitor the deploy: the destroy phase removes the old cluster (~5-10 min), the create phase provisions the new Autopilot cluster (~10-15 min). Total expected duration ~20 min
 - [ ] 7.4 If deploy fails mid-way (destroy succeeded, create failed): re-apply the rollback Pulumi commit (one git revert of the §2 changes) and re-run `pulumi up --stack prod` to restore the Standard cluster
