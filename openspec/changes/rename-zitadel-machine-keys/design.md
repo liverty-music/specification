@@ -118,6 +118,19 @@ The `self-hosted-zitadel` change was archived on 2026-05-11, so the spec target 
 
 **[R6] Verbose Go field name** — `ZitadelMachineKeyForBackendAppPath` is 33 chars (vs the prior 21). → **Mitigation:** referenced only at DI wiring (3 sites); not user-facing; readability of `envconfig` tag matters more.
 
+**[R7] `bootstrap-uploader` dual-write does not fire on already-bootstrapped instances** — The sidecar's `while [ ! -f "$KEY_FILE" ]; do sleep 2; done` loop blocks until Zitadel writes the admin key file to the shared `emptyDir`. Per the "Subsequent boots skip bootstrap" scenario in `zitadel-self-hosted-deployment`, that write only happens on first-instance bootstrap against an empty database; subsequent pod restarts leave the sidecar idling forever. → **Consequence:** PR 10's dual-write code path is only exercised on a fresh Zitadel instance. On an already-bootstrapped environment (e.g., dev at the time this change rolls out), the new GSM secret `zitadel-machine-key-for-pulumi-admin` will exist as an empty resource shell with no `SecretVersion`, and PR 11 (Pulumi switches to read the new name) would fail authentication. → **Mitigation:** between PR 10 deploy and PR 11 author/merge, an operator SHALL perform a **one-shot manual seed** of the new secret from the legacy `zitadel-admin-sa-key` value:
+
+```bash
+TMP=$(mktemp)
+gcloud secrets versions access latest --secret=zitadel-admin-sa-key \
+  --project=liverty-music-dev --out-file="$TMP"
+gcloud secrets versions add zitadel-machine-key-for-pulumi-admin \
+  --project=liverty-music-dev --data-file="$TMP"
+shred -u "$TMP"
+```
+
+The seed is byte-identical to the legacy secret, so once `bootstrap-uploader` does eventually fire (next first-instance bootstrap), its idempotency check (`if [ "$existing" = "$(cat "$KEY_FILE")" ]; then ... skipping upload`) treats the seeded value as already-current and does NOT overwrite. **Spec invariant note:** the documented invariant "only legitimate write to admin-sa-key SHALL be performed by `bootstrap-uploader`" is preserved in spirit — the seeded value is byte-equal to the value `bootstrap-uploader` would have written — but the writer of record for this one-time copy is the operator, not the sidecar. The transition completes the moment PR 12 destroys the legacy resource.
+
 ## Migration Plan
 
 ### backend-app key — 6-step zero-downtime split

@@ -91,8 +91,9 @@
 - [ ] 10.2 In `cloud-provisioning/src/gcp/index.ts` (or wherever the admin-sa GSM secret is declared), declare the new `zitadel-machine-key-for-pulumi-admin` `SecretManagerSecret` resource so Pulumi tracks the resource lifecycle (the value is written by the sidecar, but the resource itself exists in Pulumi state)
 - [ ] 10.3 Verify `pulumi preview` shows `+ create` for the new SecretManagerSecret only
 - [ ] 10.4 Open PR, description declares `Depends on: none — first step of pulumi-admin migration`
-- [ ] 10.5 After merge, trigger a Zitadel pod restart in dev (or wait for natural rotation); verify `bootstrap-uploader` logs show successful write to both GSM names
-- [ ] 10.6 Verify `gcloud secrets versions list zitadel-machine-key-for-pulumi-admin` returns at least one version
+- [ ] 10.5 After merge, trigger a Zitadel pod restart in dev (or wait for natural rotation). **Expected: bootstrap-uploader logs show `waiting for /var/zitadel/bootstrap/admin-sa.json` and idle indefinitely** on already-bootstrapped instances — Zitadel only writes the key file on first-instance bootstrap, so the dual-write code path does not fire. See design.md R7
+- [ ] 10.6 **One-shot manual seed** (consequence of R7): copy the legacy `zitadel-admin-sa-key` value into the new `zitadel-machine-key-for-pulumi-admin` so PR 11 has a populated source to read from. Use `gcloud secrets versions access ... --out-file` + `gcloud secrets versions add --data-file` via a `mktemp`'d file with restrictive permissions; `shred -u` the file immediately after upload. Verify with `diff` that both secret payloads are byte-identical before progressing
+- [ ] 10.7 Verify `gcloud secrets versions list zitadel-machine-key-for-pulumi-admin` returns at least one version
 
 ## 11. pulumi-admin PR 2 (cp) — Pulumi reads NEW GSM secret
 
