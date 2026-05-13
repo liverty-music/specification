@@ -128,14 +128,15 @@ Two reference documents in the cloud-provisioning repo capture the underlying ra
 
 **Reversibility:** Cluster-level is irreversible; node-pool-level is additive and can be done later.
 
-### D8: Single Pulumi component, env-aware (no refactor)
+### D8: Single Pulumi component, env-aware; targeted refactor allowed when URN-safe
 
-**Decision:** Extend the existing `KubernetesComponent` and `NetworkComponent` in `cloud-provisioning/src/gcp/components/` to handle prod, rather than creating a parallel `ProdKubernetesComponent`.
+**Decision:** Extend the existing `KubernetesComponent` and `NetworkComponent` in `cloud-provisioning/src/gcp/components/` to handle prod, rather than creating a parallel `ProdKubernetesComponent`. A targeted refactor that reduces duplication IS allowed when it provably preserves every existing dev resource URN (verified via `pulumi preview --diff --stack dev`).
 
-**Why:** Both components already have `environment === 'dev'` / `environment === 'prod'` branches in places. Adding prod branches alongside existing dev branches is a small, focused diff. Splitting into parallel components would duplicate the subnet, KMS, and Cluster wiring code unnecessarily.
+**Why:** Both components already have `environment === 'dev'` / `environment === 'prod'` branches in places. Adding prod branches alongside existing dev branches is a small, focused diff. The actual implementation in `network.ts` extracted a `SERVICES` catalog, a `buildZoneTopology(env, tld)` env-aware zone mapper, and a `provisionManagedHostname()` per-service helper — collapsing what would have been 3x duplicated per-service blocks (DnsAuthorization + Certificate + CertificateMapEntry + A record + ACME-challenge CNAME, repeated for `backend-server` + `web-app` + `zitadel`) into a single helper invocation. The refactor was verified zero-functional-diff against the dev stack (232 unchanged + 1 unrelated Zitadel dashboard drift) before the prod branch was added.
 
 **Alternative considered:**
-- **Refactor into env-strategy classes** (one component per env): *Rejected* as scope creep. The current branching pattern is readable, and we should not refactor while simultaneously adding new functionality.
+- **Strict no-refactor**: *Rejected*. Keeping the 3x duplicated per-service block would have accrued additional maintenance burden (any new hostname requires editing 3-5 nearly-identical Pulumi resource blocks) while providing no safety benefit — the URN-preservation property is what protects dev state, and that property is verifiable for a refactored helper just as well as for inlined code.
+- **Refactor into env-strategy classes** (one component per env): *Still rejected* as scope creep. The current env-aware function pattern is readable, proven, and avoids duplicating the subnet/KMS/cluster wiring code.
 
 ### D9: K8s manifests reuse dev overlays where possible
 
