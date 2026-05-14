@@ -11,14 +11,15 @@ The dev self-hosted Zitadel instance SHALL provision, via Pulumi, a password-bas
 - **WHEN** `pulumi up` runs on the `dev` stack
 - **THEN** a `zitadel.HumanUser` resource SHALL be created in the self-hosted Zitadel instance with a recognizable display name and an email under the dev domain
 - **AND** the user SHALL have `InitialPassword` set from the ESC value `pulumiConfig.zitadel.e2eTestUser.password` (read via `config.requireSecretObject`)
+- **AND** the user SHALL have `isEmailVerified` set to `true` — without this flag Zitadel injects an email-verification step into the OIDC flow that the headless capture script cannot handle
 - **AND** the user SHALL have no second-factor (TOTP / SMS / passkey) enrollment
 
-#### Scenario: Pulumi apply on non-dev stack rejects the resource
+#### Scenario: Non-dev stacks do not provision the test user
 
 - **WHEN** `pulumi up` runs on any stack other than `dev`
-- **AND** the test-user resource definition is reachable in code
-- **THEN** the Pulumi component SHALL throw at synthesis time with a clear "test user is dev-only" error message
-- **AND** no test-user resource SHALL be created in Zitadel
+- **THEN** the Pulumi program SHALL NOT instantiate the test-user component (today via the outer `if (env === "dev")` check that gates the entire `Zitadel` composition; see Tasks §1.6/§1.8)
+- **AND** no `zitadel.HumanUser` resource for `e2e-test-password` SHALL appear in the preview diff
+- **AND** the component-internal synthesis guard (`if (env !== "dev") throw …`) and the parent `Zitadel` class guard remain in place as defensive depth — if the outer `if (env === "dev")` check is removed in a future refactor, either guard SHALL throw with a clear "dev-only" error message before any Zitadel API call is made
 
 #### Scenario: `initialPassword` changes do not trigger silent replacement
 

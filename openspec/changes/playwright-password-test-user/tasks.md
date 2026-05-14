@@ -1,13 +1,13 @@
 ## 1. Pulumi — provision password-based test user (cloud-provisioning)
 
 - [ ] 1.1 Add an ESC secret for the test user's password targeting the dev environment only (`esc env set liverty-music/dev pulumiConfig.zitadel.e2eTestUser.password <value> --secret`); do NOT set it on `liverty-music/staging` or `liverty-music/prod`. Use `esc env set`, NOT `pulumi config set` — the project's ESC-vs-Pulumi-config protocol is documented in `cloud-provisioning/CLAUDE.md` (writing to the stack YAML risks committing the secret name to git history).
-- [ ] 1.2 In `cloud-provisioning/src/zitadel/`, add a new component (e.g., `e2e-test-user.ts`) that creates a `zitadel.HumanUser` resource with `userName`, `firstName`, `lastName`, `email` (under the dev-only domain), and `initialPassword` from the stack-config secret
+- [ ] 1.2 In `cloud-provisioning/src/zitadel/`, add a new component (e.g., `e2e-test-user.ts`) that creates a `zitadel.HumanUser` resource with `userName`, `firstName`, `lastName`, `email` (under the dev-only domain), `initialPassword` from the ESC secret, and `isEmailVerified: true` — without this flag Zitadel defaults to `false`, sends a verification email, and injects an email-verification step into the OIDC flow that the headless capture script cannot handle
 - [ ] 1.3 In the same component, add a `pulumi.getStack() !== "dev"` synthesis-time guard that throws a clear `"E2E test user is dev-only"` error if the component is instantiated outside dev
 - [ ] 1.4 Wire `ignoreChanges: ["initialPassword"]` on the resource so casual edits do not silently trigger replacement; document the `--replace` requirement for intentional rotation
 - [ ] 1.5 Grant the new user the same OIDC Application role as the existing passkey user (so the same OIDC client can authenticate either)
 - [ ] 1.6 Wire the component into the dev stack's Zitadel composition; verify `pulumi preview` shows the expected single create
 - [ ] 1.7 Apply on dev (`pulumi up`); confirm the user appears in the Zitadel admin console under the dev project and that the `users` table in dev DB does NOT yet have a row for the new user (DB row is created lazily on first sign-in via the existing Create RPC)
-- [ ] 1.8 Verify the synthesis guard by running `pulumi preview --stack staging` (or any non-dev stack) and confirming the deploy aborts with the dev-only error
+- [ ] 1.8 Verify dev-only gating end-to-end by running `pulumi preview --stack staging` (or any non-dev stack) and confirming the preview shows NO `zitadel.HumanUser`-with-name-`e2e-test-password` resource in the diff. (The actual gating mechanism today is the outer `if (env === "dev")` check that skips Zitadel-component instantiation entirely on non-dev stacks — the synthesis guards inside `Zitadel` and `E2eTestUserComponent` are defensive depth that would only fire if the outer check is removed in a future refactor.)
 
 ## 2. Frontend — credentials handoff & gitignore
 

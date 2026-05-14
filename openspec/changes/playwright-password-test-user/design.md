@@ -69,7 +69,7 @@ The Pulumi config protocol matters: per `cloud-provisioning/CLAUDE.md`, environm
 - **In-cluster K8s Secret only**: Same problem in reverse — the developer needs the password locally for `npx playwright test`, so the K8s-only path doesn't help.
 - **Plaintext committed to git**: Rejected, obviously — even for a dev throwaway, a committed credential creates secret-scanning noise and a bad pattern.
 
-**Rationale**: `frontend/.auth/` already holds a gitignored `password.md` under the existing `.auth/*` exclusion in `frontend/.gitignore`. Reusing the path is zero new infrastructure and consistent with the existing `e2e-auth-testing` capability's "StorageState Gitignore" requirement.
+**Rationale**: `frontend/.auth/` is already covered by the `.auth/*` exclusion in `frontend/.gitignore` (Task 2.1 verifies this and adds the pattern if absent — the `password.md` file itself does not yet exist). Slotting `password.md` under the existing exclusion is minimal new infrastructure (one verification step, one file write) and consistent with the existing `e2e-auth-testing` capability's "StorageState Gitignore" requirement.
 
 ### D4: Single-factor password (no TOTP) on the test user
 
