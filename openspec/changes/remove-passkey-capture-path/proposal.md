@@ -24,7 +24,7 @@ The Cloud tenant where the user was originally provisioned is retained indefinit
 
 ### Modified Capabilities
 
-- `e2e-auth-testing`: one requirement REMOVED (`Existing Passkey Capture Path Retained`). No requirements added or otherwise modified. The capability narrows to password-only on its remaining requirements (Password-Based Storage State Capture Path, Test-User Credential File Gitignored).
+- `e2e-auth-testing`: one requirement REMOVED (`Existing Passkey Capture Path Retained`). No requirements added or otherwise modified. The remaining requirements (Playwright MCP Authenticated Session, StorageState Capture Script, StorageState Gitignore, Password-Based Storage State Capture Path, Test-User Credential File Gitignored) continue to describe the password capture path correctly — the first three are credential-type-agnostic and the last two were added by `playwright-password-test-user`.
 
 ### New Capabilities
 
