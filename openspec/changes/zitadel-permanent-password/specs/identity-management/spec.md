@@ -1,6 +1,6 @@
 ## ADDED Requirements
 
-### Requirement: E2E Test User Password Marked Permanent at Provision Time
+### Requirement: E2E Test User Password Marked Permanent
 
 The dev self-hosted Zitadel instance SHALL mark the password-based E2E test user's password as permanent (`noChangeRequired = true`) at Pulumi-apply time, via a dedicated Dynamic Resource that calls the Zitadel Management API `POST /management/v1/users/{user_id}/password` immediately after the `zitadel.HumanUser` is created. The dev `e2e-test-password` user SHALL NOT be redirected to `/ui/v2/login/password/change` on its first sign-in or on any subsequent sign-in.
 
@@ -25,8 +25,16 @@ The dev self-hosted Zitadel instance SHALL mark the password-based E2E test user
 
 - **WHEN** an operator runs `pulumi up --replace <urn-of-humanUser>` on the dev stack with a rotated ESC password value
 - **THEN** the `zitadel.HumanUser` SHALL be re-created with the new `initialPassword`
-- **AND** the `ZitadelHumanUserPasswordPermanent` resource SHALL be replaced (or its `update()` handler invoked) to re-POST `SetPassword` with the new password and `noChangeRequired: true`
+- **AND** the `ZitadelHumanUserPasswordPermanent` resource SHALL be replaced (NOT updated) via its `replaceOnChanges: ['userId']` directive — the HumanUser's new snowflake id flows into the marker's `userId` input, triggering destroy + fresh create rather than `update()` with the stale (ignored) password value
+- **AND** the new marker's `create()` SHALL POST `SetPassword` with the new password and `noChangeRequired: true` against the new user
 - **AND** after apply, the user SHALL still NOT be redirected to `/password/change` on the next sign-in
+
+#### Scenario: ESC-secret edit without --replace does not silently rotate
+
+- **WHEN** an operator edits the ESC value `pulumiConfig.zitadel.e2eTestUser.password` without running `pulumi up --replace`
+- **THEN** the `zitadel.HumanUser` resource SHALL NOT diff (its `ignoreChanges: ['initialPassword']` directive suppresses the input change)
+- **AND** the `ZitadelHumanUserPasswordPermanent` marker SHALL NOT diff either (its `ignoreChanges: ['password']` directive mirrors the HumanUser's, preventing the marker from re-POSTing `SetPassword` and silently rotating the live credential)
+- **AND** the previously captured Playwright `storageState.json` SHALL remain valid until the operator explicitly forces a replacement via the rotation protocol
 
 #### Scenario: Resource removal does not unset permanence
 
