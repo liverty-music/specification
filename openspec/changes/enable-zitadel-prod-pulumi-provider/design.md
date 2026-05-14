@@ -4,7 +4,7 @@ After the `prod-k8s-manifests` change deploy on 2026-05-14, the prod self-hosted
 
 What didn't happen: the planned "second `pulumi up --stack prod`" did not create the backend MachineKey, because the Pulumi code that creates it (`MachineUserComponent`) is invoked only from inside the `Zitadel` class at [`src/zitadel/index.ts`](https://github.com/liverty-music/cloud-provisioning/blob/main/src/zitadel/index.ts), and that class is instantiated only when `env === 'dev'` at [`src/index.ts:74`](https://github.com/liverty-music/cloud-provisioning/blob/main/src/index.ts#L74). The original gate was correct for the SaaS Cloud-tenant Zitadel; it was not lifted when prod switched to self-hosted.
 
-The blast-radius separation that `prod-k8s-manifests` round-12 fix established (org-admin JWT → Pulumi only; backend uses a derived lower-privilege MachineKey) is correct — the gap is purely on the Pulumi side. Five Pulumi resources need to exist after this change runs successfully: the prod Zitadel `MachineUser` and `MachineKey` (Zitadel-provider resources targeting `auth.liverty-music.app`), the GSM `Secret` named `zitadel-machine-key-for-backend-app`, its `SecretVersion`, and the `SecretIamMember` granting ESO read access (all three GCP resources in project `liverty-music-prod`).
+The blast-radius separation that `prod-k8s-manifests` round-12 fix established (org-admin JWT → Pulumi only; backend uses a derived lower-privilege MachineKey) is correct — the gap is purely on the Pulumi side. After this change runs successfully, six backing Pulumi resources will exist (plus parent ComponentResources + a new Zitadel provider): the prod Zitadel `Org` (the new product org named `liverty-music`), `MachineUser`, `MachineKey`, and `OrgMember` (Zitadel-provider resources targeting `auth.liverty-music.app`), plus the GSM `Secret` named `zitadel-machine-key-for-backend-app`, its `SecretVersion`, and the `SecretIamMember` granting ESO read access (the three GCP resources in project `liverty-music-prod`).
 
 Backend Pods on prod are currently stuck in `ContainerCreating` waiting for that GSM Secret. The blocker chain is: this change merges → `pulumi up --stack prod` creates the 5 new resources → ESO syncs the new GSM Secret into the backend namespace → Reloader rolls the backend Deployment → backend Pods reach Running → backend → Zitadel auth path is live.
 
@@ -28,7 +28,7 @@ Backend Pods on prod are currently stuck in `ContainerCreating` waiting for that
 
 ### D1: Extract `BackendMachineKeyComponent` (Option B) over lifting the full `Zitadel` class gate (Option A)
 
-**Decision:** Extract a focused, top-level `BackendMachineKeyComponent` that takes minimal inputs (Zitadel provider, org ID, GSM project) and produces the five resources needed (`MachineUser`, `MachineKey`, GSM `Secret`, GSM `SecretVersion`, `SecretIamMember`). Do NOT lift the env gate on the existing `Zitadel` class.
+**Decision:** Extract a focused, top-level `BackendMachineKeyComponent` that takes minimal inputs (env, GSM project, optional ESO SA email) and produces the six backing resources needed (Zitadel `Org`, `MachineUser`, `MachineKey`, `OrgMember`, GSM `Secret`, GSM `SecretVersion`, `SecretIamMember` — 7 total). Do NOT lift the env gate on the existing `Zitadel` class.
 
 **Why:**
 
@@ -38,13 +38,15 @@ Backend Pods on prod are currently stuck in `ContainerCreating` waiting for that
 
 **Alternative considered (Option A):** Lift the `env === 'dev'` gate on `new Zitadel(...)` and pass `env`-conditional skip flags into the class to disable `adminOrg`/`productOrg`/etc. for prod. Rejected — it broadens an already-complex class, and the prod path would still call the `Zitadel` class with most arguments set to `undefined`, which is confusing at the call site.
 
-### D2: Look up the "admin" org rather than create it
+### D2: Create a Pulumi-managed product org; backend MachineUser lives there (not in the first-boot admin org)
 
-**Decision:** The `BackendMachineKeyComponent` accepts the org ID as a *data input* (resolved via `zitadel.getOrg({ name: 'admin' }, { provider })`) — it does not create the org. The org was auto-created by first-boot via `ZITADEL_FIRSTINSTANCE_ORG_NAME=admin`; trying to `new zitadel.Org(...)` would conflict (the org already exists outside Pulumi state).
+**Decision:** `BackendMachineKeyComponent` creates a `zitadel.Org` named `liverty-music` (the product org) and places the backend `MachineUser` + `OrgMember` (ORG_USER_MANAGER) inside it. Pulumi does NOT touch the first-boot "admin" org (which the Zitadel runtime auto-creates via `ZITADEL_FIRSTINSTANCE_ORG_NAME=admin`). No data-source lookup of the admin org is required.
 
-**Why:** Aligns Pulumi state with the runtime reality. The first-boot org is owned by Zitadel itself; importing it as a Pulumi-managed resource would tightly couple Zitadel's bootstrap to Pulumi's state and create a destroy-cascade hazard (`pulumi destroy` on prod would attempt to delete the admin org, which is the same org the admin JWT belongs to — circular dependency).
+**Why:** The first-boot admin org holds operator identities — `pulumi-admin` (IaC break-glass), `login-client` (Login V2 PAT host), human IAM_OWNER admins. Granting the backend MachineUser `ORG_USER_MANAGER` *in that org* would let the runtime backend Pod create, suspend, or modify those operator identities — a privilege-escalation foothold from a compromised backend Pod to the IaC/admin tier. Placing backend-app in a separate Pulumi-managed product org confines `ORG_USER_MANAGER` to end-user principals (per the `Place Machine Users by Responsibility` rule that the dev path implements via `productOrg`).
 
-**Alternative considered:** `zitadel.Org` resource with `aliases:` pointing at an imported state. Rejected — the imported state has no Pulumi history, and the lifecycle (Zitadel-managed `firstInstance` vs Pulumi-managed) doesn't fit the alias-rename pattern.
+Pulumi also does NOT manage the admin org: the bootstrap creates it outside Pulumi's state, and importing it would tightly couple Zitadel's bootstrap to Pulumi's lifecycle and create a destroy-cascade hazard (`pulumi destroy` on prod would attempt to delete the admin org the admin JWT belongs to — circular dependency).
+
+**Alternative considered (original D2):** Look up the first-boot admin org via `zitadel.getOrgsOutput({ name: 'admin' })` and place the backend MachineUser there. Rejected after round-3 review caught the privilege-escalation bug — gives backend `ORG_USER_MANAGER` over operator identities, which is exactly the kind of cross-tier authority the round-12 fix of `prod-k8s-manifests` was meant to prevent for the JWT itself. The new D2 closes the same hole on the Zitadel-side authorization axis.
 
 ### D3: Provider configuration sources the admin JWT from GSM by URN reference, not by passing the secret value
 
