@@ -59,7 +59,7 @@ Stakeholders: frontend (E2E pipeline owner), cloud-provisioning (Pulumi-provisio
 
 **Choice**: The test user's password is the value of an **ESC secret** at `liverty-music/dev → pulumiConfig.zitadel.e2eTestUser.password`. Pulumi reads it via `config.requireSecretObject`, sets it as the HumanUser's `initialPassword`, and the developer mirrors the same value into `frontend/.auth/password.md` (gitignored — `.auth/*` pattern in `frontend/.gitignore`) for the Playwright capture script to consume.
 
-ESC is the source of truth; `.auth/password.md` is a local read mirror. The developer retrieves the value once via `esc env get liverty-music/dev pulumiConfig.zitadel.e2eTestUser.password --show-secrets` (or `pulumi stack output --show-secrets` if surfaced as a stack output) and writes it locally.
+ESC is the source of truth; `.auth/password.md` is a local read mirror. The developer retrieves the value once via `esc env get liverty-music/dev pulumiConfig.zitadel.e2eTestUser.password --show-secrets` and writes it locally. `pulumi stack output` is NOT a valid retrieval path — the password is not surfaced as a stack output, and the project's ESC-vs-pulumi-config protocol (see `cloud-provisioning/CLAUDE.md`) keeps environment-scoped secrets out of stack YAML.
 
 The Pulumi config protocol matters: per `cloud-provisioning/CLAUDE.md`, environment-specific secrets MUST be set via `esc env set`, NOT `pulumi config set`. The former writes to the ESC environment; the latter writes to the stack YAML and risks committing the secret reference to git.
 
@@ -110,7 +110,7 @@ This is dev-only and additive; no migration of existing data.
 **Rollout order:**
 
 1. `cloud-provisioning`: add the Pulumi `zitadel.HumanUser` resource + initial password Pulumi config; apply to dev stack.
-2. Developer pulls the password from ESC (or the Pulumi stack output), writes `frontend/.auth/password.md` (gitignored).
+2. Developer pulls the password from ESC (`esc env get liverty-music/dev pulumiConfig.zitadel.e2eTestUser.password --show-secrets`), writes `frontend/.auth/password.md` (gitignored).
 3. `frontend`: add the new headless capture script; regenerate `.auth/storageState.json` locally (gitignored — each developer regenerates on demand, per the existing "StorageState Gitignore" requirement).
 4. Run `npx playwright test` locally; verify the full E2E suite passes against the new issuer.
 5. Archive the change once all `tasks.md` items are checked off.
