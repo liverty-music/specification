@@ -1,13 +1,11 @@
 ## RENAMED Requirements
 
-### Requirement: Self-Hosted Zitadel Runtime in Dev Cluster → Self-Hosted Zitadel Runtime in Each Environment Cluster
-
-- **FROM:** Self-Hosted Zitadel Runtime in Dev Cluster
-- **TO:** Self-Hosted Zitadel Runtime in Each Environment Cluster
+- **FROM:** `### Requirement: Self-Hosted Zitadel Runtime in Dev Cluster`
+- **TO:** `### Requirement: Self-Hosted Zitadel Runtime in Each Environment Cluster`
 
 ## MODIFIED Requirements
 
-### Requirement: Self-Hosted Zitadel Runtime in Each Environment Cluster
+### Requirement: Self-Hosted Zitadel Runtime in Dev Cluster
 
 The system SHALL run Zitadel as an in-cluster Kubernetes workload in each environment's GKE cluster (`dev` and `prod`), reachable at the environment-specific OIDC issuer URL, replacing the previous dependency on a Zitadel Cloud tenant.
 

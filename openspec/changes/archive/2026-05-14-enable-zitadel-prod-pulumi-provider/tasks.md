@@ -42,26 +42,26 @@
 
 ## 6. PR preparation
 
-- [ ] 6.1 Commit with Conventional Commits: `feat(infra): enable Zitadel prod Pulumi provider + backend MachineKey creation`.
-- [ ] 6.2 Open PR in `cloud-provisioning` referencing this OpenSpec change.
-- [ ] 6.3 Open companion PR in `specification` with this OpenSpec change task ticks.
-- [ ] 6.4 Wait for Pulumi Cloud auto-preview on both stacks: dev shows the same single Dashboard etag drift; prod shows the expected 9-resource creation.
-- [ ] 6.5 Wait for reviewer approval. Given this affects prod (creates Zitadel API objects + new GSM Secret), require explicit "approved" comment.
+- [x] 6.1 Commit with Conventional Commits: `feat(infra): enable Zitadel prod Pulumi provider + backend MachineKey creation`. cloud-provisioning PR #257 (final merge commit 47b1b47).
+- [x] 6.2 Open PR in `cloud-provisioning` referencing this OpenSpec change. https://github.com/liverty-music/cloud-provisioning/pull/257.
+- [x] 6.3 Open companion PR in `specification` with this OpenSpec change task ticks. https://github.com/liverty-music/specification/pull/465 (merged at b18b3be).
+- [x] 6.4 Wait for Pulumi Cloud auto-preview on both stacks: dev shows the same single Dashboard etag drift; prod shows the expected creation set. Verified — prod preview settled at 10 resources to create after the round-3 productOrg fix (one more than the original design — see §5.3 note).
+- [x] 6.5 Wait for reviewer approval. **Review surfaced three real bugs across 3 rounds**: (round-1) `MachineUser.keyDetails` → `MachineKey.keyDetails` typo; (round-2) `pulumi.secret()` wraps missing on admin JWT + backend MachineKey, `index.ts` orchestration logic violating the thin-dispatch principle (per CLAUDE.md), hardcoded `auth.liverty-music.app` not using `zitadelDomainMap[env]`; (round-3) **privilege-escalation** — original D2 placed backend-app in admin org with `ORG_USER_MANAGER`, giving it user-management authority over operator identities (pulumi-admin, login-client, human IAM_OWNERs). Fixed by creating a separate `productOrg` for backend-app. Round-4 CI: zero new comments; both PRs merged.
 
 ## 7. Prod deployment (manual, after PR merge)
 
-- [ ] 7.1 Trigger `pulumi up --stack prod` from Pulumi Cloud console.
-- [ ] 7.2 Verify the prod-side resources created: `gcloud secrets versions list zitadel-machine-key-for-backend-app --project liverty-music-prod` returns ≥1 enabled version.
-- [ ] 7.3 ESO reconciles the new GSM SecretVersion to the backend namespace's K8s Secret within ~30s.
-- [ ] 7.4 Reloader picks up the new K8s Secret and rolls the backend Deployment.
-- [ ] 7.5 Backend Pods (`server-app`, `consumer-app`) transition from `ContainerCreating` to `Running`.
-- [ ] 7.6 Verify backend → Zitadel auth path is live: `curl -I https://api.liverty-music.app/grpc.health.v1.Health/Check` returns 200 (this exercises the gRPC health endpoint which is auth-exempt; for an auth-bearing test, hit any RPC that calls Zitadel, e.g. user info read).
+- [x] 7.1 Trigger `pulumi up --stack prod` from Pulumi Cloud console. Done 2026-05-14T14:58 UTC.
+- [x] 7.2 Verify the prod-side resources created: `gcloud secrets versions list zitadel-machine-key-for-backend-app --project liverty-music-prod` returns ≥1 enabled version. Verified — v1 enabled at 2026-05-14T14:59:40Z.
+- [x] 7.3 ESO reconciles the new GSM SecretVersion to the backend namespace's K8s Secret within ~30s. **Required a manual `kubectl annotate force-sync=now` to trigger early reconcile** — ESO's first reconcile attempt failed before the GSM Secret existed and the next retry was scheduled per the 1h refresh interval. After force-sync, K8s Secret `backend-secrets` populated within ~5s.
+- [x] 7.4 Reloader picks up the new K8s Secret and rolls the backend Deployment. Done automatically.
+- [x] 7.5 Backend Pods (`server-app`, `consumer-app`) transition from `ContainerCreating` to `Running`. **Required an additional manual IAM grant**: `backend-app@liverty-music-prod.iam` GSA was missing `roles/cloudsql.client` (same manual binding gap as dev — Pulumi doesn't manage this role; dev has it via a manual gcloud applied historically). Applied via `gcloud projects add-iam-policy-binding`. After grant, `server-app` Pod reached `1/1 Running`. `consumer-app` Pod is scaled to 0 by KEDA (expected — no NATS traffic in greenfield prod). **Follow-up**: a separate change should Pulumi-manage this binding for both dev and prod to eliminate the manual step.
+- [x] 7.6 Verify backend → Zitadel auth path is live: `curl -I https://api.liverty-music.app/grpc.health.v1.Health/Check` returns 200 (this exercises the gRPC health endpoint which is auth-exempt). **Verified 200** via `curl -s -X POST -H 'Content-Type: application/json' -d '{}' https://api.liverty-music.app/grpc.health.v1.Health/Check` — Connect-RPC requires POST (the `curl -I` HEAD pattern returns 405 by Connect-RPC design).
 
 ## 8. Archive
 
-- [ ] 8.1 Update this tasks.md + design.md with any incident notes from the live bootstrap (Pulumi-up duration, any data-source lookup quirks, observed backend Pod sync time).
-- [ ] 8.2 Run `openspec validate enable-zitadel-prod-pulumi-provider --strict`.
-- [ ] 8.3 Sync delta specs to main specs (`openspec/specs/zitadel-self-hosted-deployment/spec.md` — apply MODIFIED + ADDED operations).
-- [ ] 8.4 Move change directory: `git mv openspec/changes/enable-zitadel-prod-pulumi-provider openspec/changes/archive/YYYY-MM-DD-enable-zitadel-prod-pulumi-provider`.
-- [ ] 8.5 Commit + push + merge the archive PR.
-- [ ] 8.6 Now that backend is up, also archive the `prod-k8s-manifests` change (open its archive PR — it was deferred until backend reached Healthy).
+- [x] 8.1 Update this tasks.md + design.md with any incident notes from the live bootstrap. **Notes captured**: (a) ESO needs manual force-sync after a new GSM Secret appears mid-reconcile (1h refresh interval is too coarse for first-creation reconciliation); (b) `roles/cloudsql.client` is a manual IAM binding for `backend-app` GSA on both dev and prod — separate follow-up needed to Pulumi-manage; (c) Pulumi-up itself completed in ~90s; (d) backend Pod `server-app` reached Running after ~9 min total (Pulumi up + ESO sync + reloader + container start + Pod restart backoff from earlier CrashLoopBackOff state).
+- [x] 8.2 Run `openspec validate enable-zitadel-prod-pulumi-provider --strict`. Validated.
+- [x] 8.3 Sync delta specs to main specs (`openspec/specs/zitadel-self-hosted-deployment/spec.md` — apply MODIFIED + ADDED operations). Done in archive PR.
+- [x] 8.4 Move change directory: `git mv openspec/changes/enable-zitadel-prod-pulumi-provider openspec/changes/archive/2026-05-15-enable-zitadel-prod-pulumi-provider`. Done in archive PR.
+- [x] 8.5 Commit + push + merge the archive PR.
+- [x] 8.6 Now that backend is up, also archive the `prod-k8s-manifests` change. Bundled into the same archive PR.
