@@ -2,28 +2,28 @@
 
 ## Purpose
 
-Defines requirements for provisioning the initial `liverty-music-prod`
-GCP infrastructure, capturing the irreversible decisions baked in at
-cluster creation (regional Standard cluster, Dataplane V2, etcd
-Application-layer Secrets Encryption via Cloud KMS, IP CIDR plan
-matching dev) together with the cost-first reversible defaults (Spot
-node pool, public nodes, GMP disabled, Cloud SQL `db-f1-micro`). The
-capability also contracts that prod hosts the same kinds of
-peripheral GCP resources as dev (Cloud SQL, Artifact Registry,
-Service Accounts, Secret Manager, Cloud DNS, Certificate Manager),
-and bounds the scope so that Kubernetes-side workload bootstrap
-(ArgoCD Applications, per-namespace overlays) is explicitly deferred
-to a separate follow-up change.
+Defines requirements for provisioning the `liverty-music-prod` GCP
+infrastructure, capturing the irreversible decisions baked in at
+cluster creation (regional Autopilot cluster, Dataplane V2 via Autopilot
+default, etcd Application-layer Secrets Encryption via Cloud KMS, IP CIDR
+plan matching dev) together with the cost-bounded reversible defaults
+(Autopilot-managed compute, no Cloud NAT, GMP cost-bounded via disabled
+application auto-monitoring, Cloud SQL `db-f1-micro`). The capability
+also contracts that prod hosts the same kinds of peripheral GCP
+resources as dev (Cloud SQL, Artifact Registry, Service Accounts, Secret
+Manager, Cloud DNS, Certificate Manager), and bounds the scope so that
+Kubernetes-side workload bootstrap (ArgoCD Applications, per-namespace
+overlays) is explicitly deferred to a separate follow-up change.
 
 ## Requirements
 
-### Requirement: Prod GKE cluster SHALL be a Standard regional cluster in asia-northeast2
-The `liverty-music-prod` GCP project SHALL contain exactly one GKE Standard (non-Autopilot) regional cluster whose `location` is `asia-northeast2`. The cluster mode (Standard vs Autopilot) is set at creation and cannot be changed without rebuilding the cluster.
+### Requirement: Prod GKE cluster SHALL be an Autopilot regional cluster in asia-northeast2
+The `liverty-music-prod` GCP project SHALL contain exactly one GKE Autopilot regional cluster whose `location` is `asia-northeast2`. The cluster mode (Standard vs Autopilot) is set at creation and cannot be changed without rebuilding the cluster. This change supersedes the prior decision (recorded in the `provision-prod-gcp-resources` change) to use Standard regional; the rationale is that Autopilot is GKE free-tier-eligible (covering the `$72/month` management fee post-dev-retirement) while regional Standard is not, and Autopilot's operational simplicity matches Liverty Music's workload profile (HPA-driven web apps, no privileged DaemonSets).
 
-#### Scenario: Cluster is Standard mode
+#### Scenario: Cluster is Autopilot mode
 - **WHEN** describing the prod GKE cluster via `gcloud container clusters describe`
-- **THEN** the response SHALL NOT include `autopilot.enabled: true`
-- **AND** the cluster SHALL have an explicit node pool managed as a separate `gcp.container.NodePool` resource
+- **THEN** the response SHALL include `autopilot.enabled: true`
+- **AND** the cluster SHALL NOT have any user-managed `gcp.container.NodePool` resources (Autopilot manages node provisioning internally)
 
 #### Scenario: Cluster is regional
 - **WHEN** describing the prod GKE cluster
@@ -34,8 +34,14 @@ The `liverty-music-prod` GCP project SHALL contain exactly one GKE Standard (non
 - **WHEN** listing GKE clusters in the `liverty-music-prod` project
 - **THEN** exactly one cluster SHALL be returned
 
+#### Scenario: Cluster qualifies for GKE free tier
+- **WHEN** the prod GKE cluster has been live for a full billing month
+- **AND** the `liverty-music-prod` project is the only project in the billing account with a GKE-free-tier-eligible cluster (i.e., dev has been retired or never had a zonal Standard / Autopilot cluster active that month)
+- **THEN** the GCP billing line item for `Kubernetes Engine` cluster management fee SHALL be `$0` for that billing period
+- **AND** the `$74.40/month` free tier credit SHALL have been applied against the prod cluster's `$72/month` fee
+
 ### Requirement: Prod GKE cluster SHALL enable Dataplane V2
-The prod GKE cluster SHALL be created with `datapathProvider: 'ADVANCED_DATAPATH'`. Dataplane V2 is irreversible after cluster creation per Google Cloud documentation.
+The prod GKE cluster SHALL use Dataplane V2 (`datapathProvider: ADVANCED_DATAPATH`) for its networking. On Autopilot, Dataplane V2 is the default and is enabled automatically — explicit configuration is not required, but the behavior is identical to the Standard cluster's prior explicit setting. Dataplane V2 is irreversible after cluster creation per Google Cloud documentation.
 
 #### Scenario: ADVANCED_DATAPATH is set
 - **WHEN** describing the prod GKE cluster network configuration
@@ -105,54 +111,43 @@ The prod GKE cluster SHALL use `subnetCidr: 10.10.0.0/20`, `podsCidr: 10.20.0.0/
 - **THEN** `clusterSecondaryRangeName` SHALL equal `pods-range`
 - **AND** `servicesSecondaryRangeName` SHALL equal `services-range`
 
-### Requirement: Prod cluster nodes SHALL initially run on Spot e2-medium with public IPs
-The prod cluster SHALL start with a single Spot `e2-medium` node pool mirroring dev's configuration, with `enablePrivateNodes: false` (no Cloud NAT). Both choices are mutable and are recorded as the cost-first initial state; flipping to private nodes plus on-demand pools is a separate change triggered when real users arrive.
-
-#### Scenario: Initial Spot node pool exists
-- **WHEN** listing node pools on the prod cluster
-- **THEN** at least one node pool SHALL have `spot: true`
-- **AND** its `machineType` SHALL equal `e2-medium`
-- **AND** its autoscaling SHALL be configured with `minNodeCount: 1` and `maxNodeCount: 3`
-
-#### Scenario: Boot disk is 30 GB pd-standard
-- **WHEN** describing the prod Spot node pool's `nodeConfig`
-- **THEN** `diskSizeGb` SHALL equal `30`
-- **AND** `diskType` SHALL equal `pd-standard`
-
-#### Scenario: Shielded GKE Nodes are enabled
-- **WHEN** describing the prod node pool's `nodeConfig`
-- **THEN** `shieldedInstanceConfig.enableSecureBoot` SHALL be `true`
-- **AND** `shieldedInstanceConfig.enableIntegrityMonitoring` SHALL be `true`
-
-#### Scenario: Nodes have public IPs
-- **WHEN** running `kubectl get nodes -o wide` on the prod cluster
-- **THEN** every node SHALL show a non-empty `EXTERNAL-IP`
-
-#### Scenario: No Cloud NAT is provisioned for prod
-- **WHEN** listing Cloud NAT gateways in the `liverty-music-prod` project
-- **THEN** no Cloud NAT gateway SHALL exist for `asia-northeast2`
-
-### Requirement: Prod cluster SHALL disable Google Managed Prometheus and restrict logging
-The prod GKE cluster SHALL set `managedPrometheus.enabled: false`, set `loggingConfig.enableComponents` to `[SYSTEM_COMPONENTS, WORKLOADS]`, and set `monitoringConfig.enableComponents` to `[SYSTEM_COMPONENTS]` only. These cost-first defaults are mutable and will be revisited when real users arrive.
-
-#### Scenario: GMP is disabled
-- **WHEN** describing the prod cluster's monitoring configuration
-- **THEN** `managedPrometheus.enabled` SHALL be `false`
-
-#### Scenario: Workloads logs are streamed
-- **WHEN** describing the prod cluster's logging configuration
-- **THEN** `loggingConfig.enableComponents` SHALL contain exactly `SYSTEM_COMPONENTS` and `WORKLOADS`
-
-#### Scenario: Monitoring is restricted to system components
-- **WHEN** describing the prod cluster's monitoring configuration
-- **THEN** `monitoringConfig.enableComponents` SHALL contain exactly `SYSTEM_COMPONENTS`
-
 ### Requirement: Prod cluster SHALL NOT enable Confidential GKE Nodes at cluster level
-The prod GKE cluster SHALL be created with `confidentialNodes.enabled: false` or with the field unset. Cluster-level Confidential Nodes is irreversible; enabling is deferred to a per-node-pool decision triggered by blockchain mainnet GA.
+The prod GKE cluster SHALL NOT enable cluster-level Confidential GKE Nodes. On Autopilot, this knob is not user-exposed at the cluster level; Confidential workloads would be requested per-workload via ComputeClasses if/when needed (deferred to a hypothetical blockchain-mainnet-GA future change). The intent of "no cluster-wide Confidential Nodes" is preserved.
 
 #### Scenario: Cluster-level Confidential Nodes is off
 - **WHEN** describing the prod GKE cluster
 - **THEN** `confidentialNodes.enabled` SHALL NOT be `true`
+
+### Requirement: Prod cluster SHALL bound Google Managed Service for Prometheus (GMP) cost via disabled application auto-monitoring
+Because GMP managed collection cannot be disabled on Autopilot clusters running GKE ≥ 1.25 (per [official docs](https://docs.cloud.google.com/stackdriver/docs/managed-prometheus/setup-managed): *"You can't turn off managed collection in GKE Autopilot clusters running GKE version 1.25 or greater"*), the prod cluster SHALL bound GMP ingestion cost by disabling Autopilot's automatic discovery and scraping of application Pods. Cluster-level workload metrics SHALL therefore become opt-in via per-namespace `PodMonitoring` CRDs (deferred to the `prod-k8s-manifests` follow-up). The unavoidable GKE-managed system pipeline (kubelet, cAdvisor, kube-state-metrics) is accepted as the cost floor. Empirical monthly GMP cost target band: `$5-15/month` for an idle / light cluster.
+
+A user-applied `ClusterPodMonitoring` with `metricRelabeling` keep-rules SHALL NOT be relied on for filtering managed-collection system metrics — its relabel rules only apply to metrics that the CR itself scrapes, not to GKE's independent managed-collection pipeline.
+
+#### Scenario: Automatic application monitoring is disabled at the cluster level
+- **WHEN** describing the prod cluster's monitoring configuration via `gcloud container clusters describe`
+- **THEN** `monitoringConfig.managedPrometheusConfig.autoMonitoringConfig.scope` SHALL be `NONE` or the field SHALL be unset / absent (Autopilot default — equivalent to `NONE` per [GMP auto-monitoring docs](https://docs.cloud.google.com/stackdriver/docs/managed-prometheus/auto-monitoring): *"Automatic application monitoring is OFF by default for both Autopilot and Standard clusters."*)
+- **AND** workload metric collection SHALL be opt-in via explicit `PodMonitoring` CRDs only
+
+#### Scenario: GMP managed collection remains enabled
+- **WHEN** describing the prod cluster's monitoring configuration via `gcloud container clusters describe`
+- **THEN** `monitoringConfig.managedPrometheusConfig.enabled` SHALL be `true`
+- **AND** kubelet / cAdvisor / kube-state-metrics scrapes SHALL continue to be ingested into GMP (they are not user-disable-able on Autopilot ≥ 1.25)
+
+#### Scenario: GMP billing stays bounded
+- **WHEN** the prod cluster has been live for a full billing month with idle workloads (only system Pods)
+- **THEN** the GCP billing line item for "Managed Service for Prometheus samples ingested" for the `liverty-music-prod` project SHALL be no more than `$20` for that billing period
+
+### Requirement: Workload Pods SHALL request Spot scheduling via the `cloud.google.com/gke-spot` label
+On Autopilot, Spot vs on-demand scheduling is per-Pod (no node pool). Pods that can tolerate preemption SHALL include the `cloud.google.com/gke-spot: "true"` nodeSelector. Autopilot honors this label and bills the Pod at Spot Pod rates. This continues the labeling convention already enforced for dev workloads.
+
+#### Scenario: Spot-tolerant Pods have the gke-spot label
+- **WHEN** rendering any prod overlay manifest for a Pod that can run on Spot compute
+- **THEN** the Pod template SHALL include `nodeSelector: { "cloud.google.com/gke-spot": "true" }`
+
+#### Scenario: Autopilot honors the gke-spot label
+- **WHEN** a Pod with `cloud.google.com/gke-spot: "true"` is scheduled on the prod cluster
+- **THEN** Autopilot SHALL bill the Pod at Spot Pod rates (vCPU + memory at the discounted Spot tier)
+- **AND** the Pod SHALL be eligible for preemption with the standard ~25-second notice
 
 ### Requirement: Prod GCP project SHALL host the same peripheral GCP resources as dev
 The `liverty-music-prod` project SHALL contain Pulumi-managed resources of the same kinds the `liverty-music-dev` project contains: Cloud SQL Postgres instance (PSC-only, IAM auth), Artifact Registry repositories for backend and frontend, GCP Service Accounts (gke-node, backend-app, otel-collector, zitadel, eso, image-updater), Secret Manager entries for the same secret keys dev declares, and Cloud DNS plus Certificate Manager resources for the prod hostnames. Configuration values (instance tiers, secret values, hostnames) MAY differ from dev, but the resource kinds SHALL match.
