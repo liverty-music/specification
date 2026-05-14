@@ -7,7 +7,8 @@
 
 ## 2. Spec sync
 
-- [ ] 2.1 The `e2e-auth-testing` spec delta in this change defines a single REMOVED requirement ("Existing Passkey Capture Path Retained") with a clear `Reason:` + `Migration:` block. No additional spec edits are required — the rest of `e2e-auth-testing` (Playwright MCP Authenticated Session, StorageState Capture Script, StorageState Gitignore, Password-Based Storage State Capture Path, Test-User Credential File Gitignored) stays intact and continues to describe the password capture path correctly
+- [ ] 2.1 The `e2e-auth-testing` spec delta in this change defines a single REMOVED requirement ("Existing Passkey Capture Path Retained") with a clear `Reason:` + `Migration:` block. The remaining `e2e-auth-testing` requirements (Playwright MCP Authenticated Session, StorageState Capture Script, StorageState Gitignore, Password-Based Storage State Capture Path, Test-User Credential File Gitignored) stay intact and continue to describe the password capture path correctly
+- [ ] 2.2 The `identity-management` spec delta in this change defines (a) a REMOVED requirement ("Test User Coexists with Passkey User") with a clear `Reason:` + `Migration:` block — the passkey user it requires to remain present does not exist on the active dev Zitadel; and (b) a MODIFIED of the "Provision Password-Based E2E Test User in Dev Zitadel" requirement dropping the "distinct from the existing passkey-only test user" phrasing inherited from `playwright-password-test-user`. After the archive folds these in, `identity-management` no longer references the wiped passkey user
 
 ## 3. Verification
 
