@@ -32,8 +32,9 @@ Each prod overlay's kustomize patches SHALL be limited to the *minimal* set of e
 2. Hostnames in ConfigMap data and HTTPRoute `spec.hostnames`: `api.dev.liverty-music.app` → `api.liverty-music.app`, `auth.dev.liverty-music.app` → `auth.liverty-music.app`
 3. ArgoCD project labels or Application metadata as needed
 4. Resource requests/limits SHALL match dev's values (no env-specific sizing yet)
+5. Replica counts SHALL be `1` for all workload `Deployment` and `StatefulSet` resources (per design D8); HPA/KEDA ScaledObjects MAY scale beyond 1 under load
 
-Image references SHALL NOT be patched per env — both envs use the same images with ArgoCD Image Updater managing tag bumps. Replica counts SHALL be `1` for all workload `Deployment` AND `StatefulSet` resources in prod (HPA / KEDA-driven scale-up is the path to multi-replica).
+Image references SHALL NOT be patched per env — both envs use the same images with ArgoCD Image Updater managing tag bumps.
 
 #### Scenario: No image-tag divergence between dev and prod overlays
 - **WHEN** diffing the rendered output of `k8s/namespaces/backend/overlays/dev` and `k8s/namespaces/backend/overlays/prod` (and similarly for other namespaces)
