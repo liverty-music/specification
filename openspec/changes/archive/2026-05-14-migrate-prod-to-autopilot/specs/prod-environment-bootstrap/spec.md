@@ -55,7 +55,7 @@ A user-applied `ClusterPodMonitoring` with `metricRelabeling` keep-rules SHALL N
 
 #### Scenario: Automatic application monitoring is disabled at the cluster level
 - **WHEN** describing the prod cluster's monitoring configuration via `gcloud container clusters describe`
-- **THEN** `monitoringConfig.managedPrometheusConfig.autoMonitoringConfig.scope` SHALL be `NONE`
+- **THEN** `monitoringConfig.managedPrometheusConfig.autoMonitoringConfig.scope` SHALL be `NONE` or the field SHALL be unset / absent (Autopilot default — equivalent to `NONE` per [GMP auto-monitoring docs](https://docs.cloud.google.com/stackdriver/docs/managed-prometheus/auto-monitoring): *"Automatic application monitoring is OFF by default for both Autopilot and Standard clusters."*)
 - **AND** workload metric collection SHALL be opt-in via explicit `PodMonitoring` CRDs only
 
 #### Scenario: GMP managed collection remains enabled
