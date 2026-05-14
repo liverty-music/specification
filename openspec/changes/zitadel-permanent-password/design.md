@@ -48,7 +48,7 @@ Scope: dev only. The parent `Zitadel` class is gated to the dev stack already; t
 
 **Choice**: The new resource's CRUD lifecycle is:
 
-- `create`: POST `/management/v1/users/{user_id}/password` with `{ password, noChangeRequired: true }`. Treat any 2xx as success, including the case where the password was already permanent (Zitadel returns 200 for both transitions and no-op calls).
+- `create`: POST `/management/v1/users/{user_id}/password` with `{ password, noChangeRequired: true }`. Treat any 2xx as success. The Zitadel response shape for the already-permanent no-op case is verified during §1.x live-ops apply (see Open Questions below); the implementation also carries an `isAlreadyPermanent` body-check on non-2xx as a defensive hedge mirroring `smtp-activation.ts`'s `isAlreadyActive` pattern.
 - `update`: Re-POST `SetPassword` against the same userId with `news.password` (the value carried from prior state because `password` is suppressed by `ignoreChanges` per the call-site directives — see the Risks-table row at line 103). Only reachable when `domain` or `jwtProfileJson` changes (`password` ignored, `userId` triggers `replaceOnChanges`). Acts as a drift-recovery / re-assertion path: if an operator manually un-marks the password in the Zitadel admin console, the next provider/JWT rotation re-asserts permanence. Preserves `markedAt` from prior state for diff stability.
 - `delete`: No-op. There is no `_unset_permanent` verb; removing the Pulumi resource record should not flip the user back to `changeRequired = true`. If true drift handling is needed later, it lives elsewhere (matches the smtp-activation precedent).
 - `read`: No-op returning current outputs unchanged. Zitadel's Management API has no `GET /password/state` to query; drift detection is explicitly deferred.
@@ -121,4 +121,4 @@ Dev-only and additive. No data migration.
 
 ## Open Questions
 
-- Does Zitadel's Management API return 200 for `SetPassword` calls against an already-permanent password, the same way `_activate` does for already-active SMTP? Need to verify during §1.x implementation. If it returns 4xx, the `isAlreadyPermanent` body-check pattern from `smtp-activation.ts` applies; otherwise the 2xx happy path covers idempotency cleanly.
+- Empirical response shape for `SetPassword` against an already-permanent password — does Zitadel return 200 (like `_activate` does for already-active SMTP, where re-firing is silently idempotent) or 4xx with a recognizable "no change" / "already set" marker (like `_activate` does for the SMTP "no work to do" case via code 9 / 412)? Verified during §1.x implementation. The implementation ships with both paths handled: the 2xx happy path is the common case, and `isAlreadyPermanent` body-checks non-2xx responses as a defensive hedge. The Open Question exists to record the actual observed shape so that a future audit can prune whichever path is provably unreachable.
