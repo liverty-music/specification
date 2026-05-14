@@ -19,7 +19,7 @@ Stakeholders: frontend (E2E pipeline owner), cloud-provisioning (Pulumi-provisio
 - A password-based `zitadel.HumanUser` exists in the dev self-hosted Zitadel instance, provisioned by Pulumi, separate from the existing passkey user.
 - The Playwright `.auth/storageState.json` is regeneratable on WSL2 against the new self-hosted issuer using a headless capture flow (Playwright MCP or equivalent).
 - `npx playwright test` runs to completion against the new issuer and exercises the OIDC callback, hydration, and `pre-access-token` webhook integration end-to-end.
-- The capture credentials live in a gitignored file under `frontend/.auth/`, consistent with the existing `[reference_e2e_auth]` convention.
+- The capture credentials live in a gitignored file under `frontend/.auth/`, matching the existing `e2e-auth-testing` capability's "StorageState Gitignore" requirement and the `.auth/` exclusion already in `frontend/.gitignore`.
 
 **Non-Goals:**
 
@@ -57,7 +57,7 @@ Stakeholders: frontend (E2E pipeline owner), cloud-provisioning (Pulumi-provisio
 
 ### D3: Credentials in ESC + gitignored `.auth/password.md`, NOT GSM
 
-**Choice**: The test user's password is the value of an **ESC secret** at `liverty-music/dev → pulumiConfig.zitadel.e2eTestUser.password`. Pulumi reads it via `config.requireSecretObject`, sets it as the HumanUser's `initialPassword`, and the developer mirrors the same value into `frontend/.auth/password.md` (gitignored, per the existing `[reference_e2e_auth]` convention) for the Playwright capture script to consume.
+**Choice**: The test user's password is the value of an **ESC secret** at `liverty-music/dev → pulumiConfig.zitadel.e2eTestUser.password`. Pulumi reads it via `config.requireSecretObject`, sets it as the HumanUser's `initialPassword`, and the developer mirrors the same value into `frontend/.auth/password.md` (gitignored — `.auth/*` pattern in `frontend/.gitignore`) for the Playwright capture script to consume.
 
 ESC is the source of truth; `.auth/password.md` is a local read mirror. The developer retrieves the value once via `esc env get liverty-music/dev pulumiConfig.zitadel.e2eTestUser.password --show-secrets` (or `pulumi stack output --show-secrets` if surfaced as a stack output) and writes it locally.
 
@@ -69,7 +69,7 @@ The Pulumi config protocol matters: per `cloud-provisioning/CLAUDE.md`, environm
 - **In-cluster K8s Secret only**: Same problem in reverse — the developer needs the password locally for `npx playwright test`, so the K8s-only path doesn't help.
 - **Plaintext committed to git**: Rejected, obviously — even for a dev throwaway, a committed credential creates secret-scanning noise and a bad pattern.
 
-**Rationale**: The existing `.auth/` convention already handles a sensitive `password.md` (gitignored) per `[reference_e2e_auth]`. Reusing it is zero new infrastructure.
+**Rationale**: `frontend/.auth/` already holds a gitignored `password.md` under the existing `.auth/*` exclusion in `frontend/.gitignore`. Reusing the path is zero new infrastructure and consistent with the existing `e2e-auth-testing` capability's "StorageState Gitignore" requirement.
 
 ### D4: Single-factor password (no TOTP) on the test user
 
@@ -97,7 +97,7 @@ The Pulumi config protocol matters: per `cloud-provisioning/CLAUDE.md`, environm
 |---|---|
 | Test user becomes a security liability if accidentally enabled in staging / prod. | Pulumi resource is gated to the dev stack (`pulumi.getStack() === "dev"`). Stack-config check in the Pulumi component fails the deploy if the test-user resource is enabled in any non-dev stack. |
 | Storage state expires (Zitadel access tokens have a finite TTL); E2E starts failing silently with 401. | Capture script always overwrites with fresh storage state; CI hook (future) detects 401 in the first navigation and re-runs the capture. For now, developer regenerates on demand — documented in `.auth/README.md`. |
-| Playwright MCP has its own WSL2 issues we haven't hit yet. | Validate on the developer's actual WSL2 host before declaring §14 done. If MCP fails on WSL2, fall back option is `xvfb-run` + Chromium CDP headless — a smaller intervention than fixing WSLg. |
+| Playwright MCP has its own WSL2 issues we haven't hit yet. | Validate on the developer's actual WSL2 host as part of §3.5 (the live-ops "Run the capture script on the developer's WSL2 + WSLg host" task) before checking the box. If MCP fails on WSL2, fall back option is `xvfb-run` + Chromium CDP headless — a smaller intervention than fixing WSLg. |
 | Password discoverability — anyone with repo + `.auth/` access can authenticate as the test user. | The user has zero application data (fresh provisioning), no admin role, and exists only on the dev Zitadel instance. Equivalent to any dev-only seed credential. |
 | Pulumi `InitialPassword` rotates on resource replace, breaking storage state without warning. | Use Pulumi `ignoreChanges` on the `initialPassword` field after first creation. Document that intentional rotation requires `pulumi up --replace` AND `.auth/password.md` regeneration AND `.auth/storageState.json` regeneration, in that order. |
 | Test user shows up in admin console alongside real signups — operator confusion. | Pulumi-managed user has a recognizable display name (`e2e-test-password`) and email domain (`e2e-test@dev.liverty-music.app` or similar). Document the convention in `.auth/README.md`. |

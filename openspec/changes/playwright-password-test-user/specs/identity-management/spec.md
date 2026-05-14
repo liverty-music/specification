@@ -20,11 +20,19 @@ The dev self-hosted Zitadel instance SHALL provision, via Pulumi, a password-bas
 - **THEN** the Pulumi component SHALL throw at synthesis time with a clear "test user is dev-only" error message
 - **AND** no test-user resource SHALL be created in Zitadel
 
-#### Scenario: Resource replacement preserves operator awareness
+#### Scenario: `initialPassword` changes do not trigger silent replacement
 
-- **WHEN** a Pulumi diff would replace the test user (e.g., from changing `InitialPassword` directly)
-- **THEN** the operator SHALL receive a clear preview indicating the replacement
-- **AND** the test user's `initialPassword` field SHALL be marked `ignoreChanges` so casual edits do not trigger silent re-provisioning that would invalidate the captured Playwright storage state
+- **WHEN** an operator changes the ESC value `pulumiConfig.zitadel.e2eTestUser.password`
+- **AND** `pulumi preview --stack dev` is run on the next deploy
+- **THEN** the preview SHALL show NO change to the e2e-test-user `zitadel.HumanUser` resource (the `ignoreChanges: ['initialPassword']` directive on the resource hides the diff)
+- **AND** the captured Playwright `storageState.json` SHALL remain valid until the operator explicitly forces a replacement
+
+#### Scenario: Intentional rotation requires an explicit replace
+
+- **WHEN** an operator runs `pulumi up --replace <urn-of-e2e-test-user>` on the dev stack
+- **THEN** the preview SHALL clearly indicate the replacement (`-/+ create replacement`)
+- **AND** after apply, the new HumanUser SHALL use the latest ESC `initialPassword` value
+- **AND** the operator is then responsible for re-mirroring `.auth/password.md` and re-running the headless capture script to regenerate `.auth/storageState.json`
 
 ### Requirement: Test User Coexists with Passkey User
 

@@ -11,9 +11,9 @@
 
 ## 2. Frontend — credentials handoff & gitignore
 
-- [ ] 2.1 Read the test user's password back from the Pulumi stack output (`pulumi stack output --show-secrets`) and write `frontend/.auth/password.md` locally; confirm `git status` does NOT list the file
-- [ ] 2.2 Verify `frontend/.gitignore` already excludes `.auth/password.md`; if not, add the pattern
-- [ ] 2.3 Update `frontend/.auth/README.md` to document: (a) the dual test-user setup (passkey vs password), (b) how to retrieve the password from the dev Pulumi stack, (c) which capture script to use for which user, (d) the WSL2 caveat
+- [ ] 2.1 Verify `frontend/.gitignore` excludes `.auth/password.md` (and any other future password files under `.auth/`); if not, add the pattern. **Order matters**: do this BEFORE §2.2 so the password file cannot be accidentally tracked between write and gitignore-correction
+- [ ] 2.2 Read the test user's password back from the ESC environment (`esc env get liverty-music/dev pulumiConfig.zitadel.e2eTestUser.password --show-secrets`) and write `frontend/.auth/password.md` locally; confirm `git status` does NOT list the file. **MUST use `esc env get`** (the ESC environment is the source of truth per Design D3), NOT `pulumi stack output` (the value isn't surfaced as a stack output and `pulumi config` writes elsewhere — see `cloud-provisioning/CLAUDE.md`)
+- [ ] 2.3 Update `frontend/.auth/README.md` to document: (a) the dual test-user setup (passkey vs password), (b) how to retrieve the password from ESC, (c) which capture script to use for which user, (d) the WSL2 caveat
 
 ## 3. Frontend — headless capture script
 
