@@ -1,3 +1,10 @@
+## RENAMED Requirements
+
+### Requirement: Self-Hosted Zitadel Runtime in Dev Cluster → Self-Hosted Zitadel Runtime in Each Environment Cluster
+
+- **FROM:** Self-Hosted Zitadel Runtime in Dev Cluster
+- **TO:** Self-Hosted Zitadel Runtime in Each Environment Cluster
+
 ## MODIFIED Requirements
 
 ### Requirement: Self-Hosted Zitadel Runtime in Each Environment Cluster
