@@ -62,6 +62,6 @@
 - [x] 8.1 Update this tasks.md + design.md with any incident notes from the live bootstrap. **Notes captured**: (a) ESO needs manual force-sync after a new GSM Secret appears mid-reconcile (1h refresh interval is too coarse for first-creation reconciliation); (b) `roles/cloudsql.client` is a manual IAM binding for `backend-app` GSA on both dev and prod — separate follow-up needed to Pulumi-manage; (c) Pulumi-up itself completed in ~90s; (d) backend Pod `server-app` reached Running after ~9 min total (Pulumi up + ESO sync + reloader + container start + Pod restart backoff from earlier CrashLoopBackOff state).
 - [x] 8.2 Run `openspec validate enable-zitadel-prod-pulumi-provider --strict`. Validated.
 - [x] 8.3 Sync delta specs to main specs (`openspec/specs/zitadel-self-hosted-deployment/spec.md` — apply MODIFIED + ADDED operations). Done in archive PR.
-- [x] 8.4 Move change directory: `git mv openspec/changes/enable-zitadel-prod-pulumi-provider openspec/changes/archive/2026-05-15-enable-zitadel-prod-pulumi-provider`. Done in archive PR.
+- [x] 8.4 Move change directory: `git mv openspec/changes/enable-zitadel-prod-pulumi-provider openspec/changes/archive/2026-05-14-enable-zitadel-prod-pulumi-provider`. Done in archive PR.
 - [x] 8.5 Commit + push + merge the archive PR.
 - [x] 8.6 Now that backend is up, also archive the `prod-k8s-manifests` change. Bundled into the same archive PR.
