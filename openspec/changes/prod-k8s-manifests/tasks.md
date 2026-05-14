@@ -37,12 +37,13 @@ For each of the 10 namespaces missing a prod overlay (`atlas-operator`, `backend
 - [ ] 4.8 otel-collector: create overlay with prod exporter endpoints (Cloud Trace / Cloud Monitoring SA = prod's `otel-collector` GSA). Resource exporter targets the prod GCP project.
 - [ ] 4.9 reloader: create overlay (likely just inherits base; Reloader is a controller with no env-divergent state).
 - [ ] 4.10 zitadel: create overlay with prod hostname, prod GSM secret refs, prod Cloud SQL connection, prod OIDC issuer. Match the existing `Per-Environment Overlay Topology` requirement in `zitadel-self-hosted-deployment` spec (must omit the dev-only `zitadel-restart` CronJob). Replicas: 1 for each of `zitadel-api` + `zitadel-web` (per design.md D8).
+- [ ] 4.11 cluster: create `k8s/cluster/overlays/prod/` mirroring `k8s/cluster/overlays/dev/` (currently has `cluster-secret-store-patch.yaml`, `cluster-secret-store-argocd-patch.yaml`, `kube-dns-autoscaler.yaml`, `kustomization.yaml`). For prod, the two ClusterSecretStore patches set `provider.gcpsm.projectID: liverty-music-prod` (matching the prod-scoped SecretStore convention). The `kube-dns-autoscaler.yaml` from dev is a cost-optimization tweak (replicas: 1) for Standard-mode; on Autopilot the kube-dns autoscaler isn't user-modifiable, so omit it from the prod overlay. Verify via `kubectl kustomize k8s/cluster/overlays/prod` renders cleanly. This overlay is what the `cluster` Application syncs at wave 1 — without it, the cluster Application fails on first reconciliation.
 
 ## 5. Spot label + lint extension
 
 - [ ] 5.1 Run `kubectl kustomize k8s/namespaces/<ns>/overlays/prod` for each of the 11 namespaces — every rendered Pod template MUST have `nodeSelector["cloud.google.com/gke-spot"] = "true"`. Validate the inheritance from base manifests survived all overlay patches.
-- [ ] 5.2 Update `cloud-provisioning/Makefile`'s `lint-k8s` target. Change the for-loop from `k8s/namespaces/*/overlays/dev` to `k8s/namespaces/*/overlays/{dev,prod}`. Confirm the rendered output dir naming doesn't collide (e.g., `/tmp/rendered/<ns>.yaml` becomes `/tmp/rendered/<ns>-<env>.yaml`).
-- [ ] 5.3 Run `make lint-k8s` — must pass for all 22 overlays (11 namespaces × 2 envs).
+- [ ] 5.2 Update `cloud-provisioning/Makefile`'s `lint-k8s` target. Change the for-loop from `k8s/namespaces/*/overlays/dev` to `k8s/namespaces/*/overlays/dev k8s/namespaces/*/overlays/prod` (explicit listing — brace expansion `{dev,prod}` is bash-only; Make's default `SHELL=/bin/sh` is `dash` on Debian-family runners and won't expand it). Also include `k8s/cluster/overlays/dev k8s/cluster/overlays/prod` so the cluster overlay (per §4.11) is linted too. Confirm the rendered output dir naming doesn't collide (e.g., `/tmp/rendered/<ns>.yaml` becomes `/tmp/rendered/<ns>-<env>.yaml`).
+- [ ] 5.3 Run `make lint-k8s` — must pass for all 24 overlays (11 namespaces × 2 envs + 1 cluster × 2 envs).
 
 ## 6. PodMonitoring opt-in CRDs
 
@@ -54,7 +55,7 @@ For each of the 10 namespaces missing a prod overlay (`atlas-operator`, `backend
 
 - [ ] 7.1 `make lint-ts` in `cloud-provisioning` — must pass after the §2 Pulumi change.
 - [ ] 7.2 `make lint-k8s` — must pass with both dev + prod overlays + spot-label check.
-- [ ] 7.3 For each prod overlay, run `kustomize build --enable-helm k8s/namespaces/<ns>/overlays/prod | kube-linter lint -` — all 11 overlays must pass kube-linter.
+- [ ] 7.3 For each prod overlay, run `kustomize build --enable-helm <overlay-path> | kube-linter lint -` — all 12 prod overlays (11 namespace + 1 cluster) must pass kube-linter.
 - [ ] 7.4 `kubectl kustomize k8s/argocd-apps/prod` — renders all 14 Applications without error.
 - [ ] 7.5 Verify the Backend Atlas migration plan against an empty Postgres: `cd backend; atlas migrate diff --dry-run` against a fresh `postgres:18` Docker container — review output for any DROP TABLE / data-loss patterns that would break a clean-slate prod schema (none expected, but confirm).
 - [ ] 7.6 `pulumi preview --stack prod` — confirms only the 6 new GSM-related resources (no cluster churn).

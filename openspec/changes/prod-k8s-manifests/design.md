@@ -145,13 +145,13 @@ ArgoCD's automatic dependency resolution handles the ordering within wave 0 — 
 @for overlay in k8s/namespaces/*/overlays/dev; do ...
 ```
 
-to:
+to (explicit listing, not brace expansion — Make's default `SHELL=/bin/sh` is `dash` on Debian-family runners, which does not expand `{dev,prod}`; the literal token would iterate once over a non-existent path and silently lint nothing):
 
 ```makefile
-@for overlay in k8s/namespaces/*/overlays/{dev,prod}; do ...
+@for overlay in k8s/namespaces/*/overlays/dev k8s/namespaces/*/overlays/prod k8s/cluster/overlays/dev k8s/cluster/overlays/prod; do ...
 ```
 
-Both env's overlays render with `kustomize build --enable-helm`, kube-linter runs against the merged output, and `./scripts/check-spot-nodeselector.sh` validates the Spot label on every prod Pod template too.
+All env+scope overlays render with `kustomize build --enable-helm`, kube-linter runs against the merged output, and `./scripts/check-spot-nodeselector.sh` validates the Spot label on every prod Pod template too. The cluster overlays (`k8s/cluster/overlays/{dev,prod}` — see tasks.md §4.11 for prod authoring) are included so the `cluster` Application's source path is also linted.
 
 **Why:** without this, CI on this PR would render only dev — prod overlays could ship broken until first ArgoCD sync surfaces the error. Extending the lint target keeps the safety net.
 

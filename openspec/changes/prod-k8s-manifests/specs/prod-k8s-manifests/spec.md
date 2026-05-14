@@ -26,7 +26,7 @@ For each of the 11 namespaces under `cloud-provisioning/k8s/namespaces/` (`argoc
 - **WHEN** running `kustomize build --enable-helm k8s/namespaces/<ns>/overlays/prod` for each of the 11 namespaces
 - **THEN** the command SHALL exit with code 0 and emit valid YAML
 
-### Requirement: Prod overlays SHALL diverge from dev only by ESC secret refs, hostnames, and ArgoCD project labels
+### Requirement: Prod overlays SHALL diverge from dev only by ESC secret refs, hostnames, ArgoCD project labels, replica counts, and (when needed) resource requests/limits
 Each prod overlay's kustomize patches SHALL be limited to the *minimal* set of env-divergent fields:
 1. `ExternalSecret.spec.secretStoreRef.name` patched to a prod-scoped SecretStore (e.g., `google-secret-manager-prod`)
 2. Hostnames in ConfigMap data and HTTPRoute `spec.hostnames`: `api.dev.liverty-music.app` → `api.liverty-music.app`, `auth.dev.liverty-music.app` → `auth.liverty-music.app`
