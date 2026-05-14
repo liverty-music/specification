@@ -51,34 +51,36 @@ The GSM name `zitadel-machine-key-for-backend-app` follows the platform-wide con
 
 ## ADDED Requirements
 
-### Requirement: First-Boot Org Looked Up via Provider Data Source
+### Requirement: Backend MachineUser Placed in Product Org, Not the First-Boot Admin Org
 
-Pulumi SHALL NOT create the Zitadel "admin" org as a `zitadel.Org` resource for any environment where the org is auto-created by Zitadel's first-boot bootstrap (i.e., where `ZITADEL_FIRSTINSTANCE_ORG_NAME` is set in the deployment's configmap). Instead, Pulumi SHALL look up the existing org by name via the Zitadel provider's data source and reference its `id` for downstream resources such as the backend `MachineUser`.
+The Pulumi `BackendMachineKeyComponent` (or equivalent) SHALL create the backend `MachineUser` (with its `ORG_USER_MANAGER` role grant) inside a **Pulumi-managed product org** (named `liverty-music`), NOT the first-boot "admin" org. Pulumi SHALL NOT create or manage the first-boot admin org (which the Zitadel runtime auto-creates via `ZITADEL_FIRSTINSTANCE_ORG_NAME`); attempting to own it would create a destroy-cascade hazard because the org-admin JWT used by Pulumi's Zitadel provider belongs to that org.
 
-**Rationale**: First-boot bootstrap creates the admin org outside Pulumi's state. Importing it as a Pulumi-managed resource creates a destroy-cascade hazard — `pulumi destroy` on the stack would attempt to delete the admin org, which is the same org the admin JWT belongs to, creating a circular dependency. Looking up the org as a data source (read-only) keeps Pulumi out of the org's lifecycle.
+**Rationale**: The first-boot admin org holds operator identities — `pulumi-admin` (IaC break-glass), `login-client` (Login V2 PAT host), and any human IAM_OWNER admins. Granting the backend MachineUser `ORG_USER_MANAGER` in that org would let the runtime backend Pod create, suspend, or modify those operator identities — a privilege-escalation foothold from a compromised backend Pod to the IaC/admin tier. Placing backend-app in a separate Pulumi-managed product org confines `ORG_USER_MANAGER` to end-user principals (per the `Place Machine Users by Responsibility` rule that the dev path already implements via `productOrg`).
 
-#### Scenario: Pulumi state has no `zitadel.Org` resource named "admin"
+#### Scenario: backend-app MachineUser lives in the product org
 
-- **WHEN** the Pulumi stack is applied for an environment where first-boot bootstrap created the admin org (currently: prod)
-- **THEN** Pulumi state SHALL NOT contain a `zitadel.Org` resource with name "admin"
-- **AND** the backend `MachineUser` resource SHALL reference the org id resolved by a `zitadel.getOrg` (or equivalent) data source lookup
+- **WHEN** the Pulumi stack is applied
+- **THEN** Pulumi state SHALL contain a `zitadel.Org` resource with name `liverty-music` (the product org)
+- **AND** the backend `MachineUser` resource SHALL reference `productOrg.id` (NOT the first-boot admin org id)
+- **AND** the `OrgMember` resource granting `ORG_USER_MANAGER` SHALL also scope to `productOrg.id`
 
-#### Scenario: Org lookup is unambiguous
+#### Scenario: Pulumi does not manage the first-boot admin org
 
-- **WHEN** the data source `zitadel.getOrg({ name: 'admin' })` is invoked
-- **THEN** it SHALL return exactly one org
-- **AND** the component SHALL fail the Pulumi preview with a clear error message if the lookup returns zero or multiple results
+- **WHEN** Pulumi state is exported
+- **THEN** it SHALL NOT contain any `zitadel.Org` resource that targets the org auto-created by `ZITADEL_FIRSTINSTANCE_ORG_NAME` (typically named `admin`)
+- **AND** no data-source lookup against the admin org SHALL be required for this component (the provider's JWT identity is already scoped to the admin org for org-creation authority; the resolved-org name is irrelevant to downstream operations because backend resources live in `productOrg`)
 
 ### Requirement: Prod Backend MachineKey Component Authenticates with Bootstrap-Uploaded Admin JWT
 
-The Pulumi `BackendMachineKeyComponent` (or equivalent top-level component) for the prod stack SHALL configure its Zitadel provider with `domain: 'auth.liverty-music.app'` and the `jwtProfileJson` SHALL be sourced from the GSM SecretVersion `zitadel-machine-key-for-pulumi-admin` (project `liverty-music-prod`) via a `gcp.secretmanager.getSecretVersion` data source — NOT from a Pulumi config or ESC value. The component SHALL fail Pulumi preview/up with a clear error if the GSM Secret has zero enabled versions.
+The Pulumi `BackendMachineKeyComponent` (or equivalent top-level component) for the prod stack SHALL configure its Zitadel provider with `domain: 'auth.liverty-music.app'` and the `jwtProfileJson` SHALL be sourced from the GSM SecretVersion `zitadel-machine-key-for-pulumi-admin` (project `liverty-music-prod`) via a `gcp.secretmanager.getSecretVersionAccess` data source — NOT from a Pulumi config or ESC value. The fetched secret value SHALL be wrapped in `pulumi.secret()` before being passed to the provider so that the embedded RSA private key never appears in plaintext in `pulumi preview` output, CI logs, or Pulumi state history.
 
-**Rationale**: The org-admin JWT is minted by Zitadel's first-boot bootstrap and uploaded to GSM by the in-cluster `bootstrap-uploader` sidecar — it is generated *after* Pulumi creates the GSM Secret shell, so it cannot be a Pulumi-config input at stack-create time. Reading it via a data source on each `pulumi up` ensures Pulumi always uses the current version and preserves the source-of-truth ordering (Zitadel → GSM → Pulumi-runtime, never Pulumi → JWT).
+**Rationale**: The org-admin JWT is minted by Zitadel's first-boot bootstrap and uploaded to GSM by the in-cluster `bootstrap-uploader` sidecar — it is generated *after* Pulumi creates the GSM Secret shell, so it cannot be a Pulumi-config input at stack-create time. Reading it via a data source on each `pulumi up` ensures Pulumi always uses the current version and preserves the source-of-truth ordering (Zitadel → GSM → Pulumi-runtime, never Pulumi → JWT). The `pulumi.secret()` wrap is required because `getSecretVersionAccessOutput` does NOT auto-mark its output as secret; without it, the JWT-profile JSON (which embeds an RSA private key) would surface in plaintext in `pulumi preview` diffs and Pulumi service state history. The same wrap MUST also be applied when persisting the produced backend `MachineKey.keyDetails` into the `zitadel-machine-key-for-backend-app` SecretVersion (the `@pulumiverse/zitadel` provider similarly does not auto-mark `keyDetails` as secret).
 
 #### Scenario: Provider configured from GSM data source
 
 - **WHEN** the prod Pulumi stack is applied
-- **THEN** the Zitadel provider's `jwtProfileJson` argument SHALL be a Pulumi `Output<string>` produced by a `gcp.secretmanager.getSecretVersion` data source pointing at the GSM Secret `zitadel-machine-key-for-pulumi-admin` in project `liverty-music-prod`
+- **THEN** the Zitadel provider's `jwtProfileJson` argument SHALL be a Pulumi `Output<string>` produced by a `gcp.secretmanager.getSecretVersionAccess` data source pointing at the GSM Secret `zitadel-machine-key-for-pulumi-admin` in project `liverty-music-prod`
+- **AND** the value SHALL be wrapped in `pulumi.secret()` before being passed to the provider
 - **AND** the JWT value SHALL NOT appear in the Pulumi stack's config nor in any ESC environment
 
 #### Scenario: Missing GSM secret fails fast
@@ -86,3 +88,8 @@ The Pulumi `BackendMachineKeyComponent` (or equivalent top-level component) for 
 - **WHEN** the prod Pulumi stack is applied and the GSM Secret `zitadel-machine-key-for-pulumi-admin` has zero enabled versions
 - **THEN** Pulumi preview SHALL fail with a clear "secret version not found" error referencing the missing GSM resource
 - **AND** no Zitadel MachineUser, MachineKey, or downstream GSM resource SHALL be created
+
+#### Scenario: Backend MachineKey JWT is secret-wrapped before write
+
+- **WHEN** the `BackendMachineKeyComponent` writes the produced `MachineKey.keyDetails` to the `gcp.secretmanager.SecretVersion` for `zitadel-machine-key-for-backend-app`
+- **THEN** the `secretData` argument SHALL be wrapped in `pulumi.secret()` so the JWT-profile JSON does not appear in plaintext in Pulumi state history
