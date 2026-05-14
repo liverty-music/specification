@@ -14,9 +14,7 @@ resources as dev (Cloud SQL, Artifact Registry, Service Accounts, Secret
 Manager, Cloud DNS, Certificate Manager), and bounds the scope so that
 Kubernetes-side workload bootstrap (ArgoCD Applications, per-namespace
 overlays) is explicitly deferred to a separate follow-up change.
-
 ## Requirements
-
 ### Requirement: Prod GKE cluster SHALL be an Autopilot regional cluster in asia-northeast2
 The `liverty-music-prod` GCP project SHALL contain exactly one GKE Autopilot regional cluster whose `location` is `asia-northeast2`. The cluster mode (Standard vs Autopilot) is set at creation and cannot be changed without rebuilding the cluster. This change supersedes the prior decision (recorded in the `provision-prod-gcp-resources` change) to use Standard regional; the rationale is that Autopilot is GKE free-tier-eligible (covering the `$72/month` management fee post-dev-retirement) while regional Standard is not, and Autopilot's operational simplicity matches Liverty Music's workload profile (HPA-driven web apps, no privileged DaemonSets).
 
@@ -186,23 +184,6 @@ The prod project SHALL provision a Cloud DNS public zone scoped to GCP-fronted s
 - **WHEN** querying authoritative nameservers for `liverty-music.app` (apex)
 - **THEN** the response SHALL come from Cloudflare nameservers, not Cloud DNS
 
-### Requirement: Prod GCP infrastructure ships without ArgoCD bootstrap (workloads in follow-up change)
-This change SHALL provision the prod GCP infrastructure (GKE cluster, KMS, Cloud SQL, Secret Manager, Cloud DNS, Certificate Manager) without authoring the Kubernetes manifests that drive ArgoCD bootstrap (`argocd-apps/prod/`) or the per-namespace prod overlays (`namespaces/<ns>/overlays/prod/`). Those manifests are explicitly out of scope and SHALL be delivered by a separate follow-up OpenSpec change (working title: `prod-k8s-manifests`). The prod cluster SHALL therefore idle (no ArgoCD Applications synced, no workloads running) until that follow-up change lands.
-
-Rationale: bounding this change's blast radius to GCP-side resources keeps the destructive surface (irreversible cluster settings, KMS key) reviewable as a single coherent PR, and lets the k8s-manifest authoring proceed asynchronously once the live cluster is available for `kubectl kustomize` dry-runs against actual cluster API versions.
-
-#### Scenario: GCP infrastructure is fully provisioned without ArgoCD bootstrap
-- **WHEN** this change is fully applied (Pulumi up succeeded, all secrets populated)
-- **THEN** the prod GKE cluster, KMS keyring/key, Cloud SQL instance, Cloud DNS zones, Certificate Manager resources, and GCP Service Accounts SHALL all exist and be operational
-- **AND** `cloud-provisioning/k8s/argocd-apps/prod/` MAY remain unauthored
-- **AND** the prod cluster MAY have no ArgoCD Applications synced
-- **AND** the prod cluster MAY have no application workloads running
-
-#### Scenario: Follow-up change is tracked separately
-- **WHEN** archiving this `provision-prod-gcp-resources` change
-- **THEN** a separate OpenSpec change tracking the prod k8s manifests SHALL be filed before any external traffic is routed to the prod cluster
-- **AND** that follow-up change SHALL cover `argocd-apps/prod/` authoring, per-namespace `prod/` overlay decisions, and the initial ArgoCD bootstrap procedure
-
 ### Requirement: Initial prod Pulumi deploy SHALL be manual-triggered
 The first `pulumi up` for the prod stack after this change is merged SHALL be triggered manually via the Pulumi Cloud console, not via automatic merge-to-main deployment. This requirement aligns with the existing `deployment-infrastructure` capability's "Manual Deployment Flow (Prod)" requirement and is restated here for emphasis given the destructive blast radius of green-field provisioning.
 
@@ -216,3 +197,4 @@ The first `pulumi up` for the prod stack after this change is merged SHALL be tr
 - **WHEN** an operator reviews the prod preview and approves the deploy
 - **THEN** `pulumi up --stack prod` SHALL run via Pulumi Cloud Deployments
 - **AND** the resulting GCP resources SHALL match the design's deployment-order plan
+
