@@ -10,7 +10,7 @@ The dev self-hosted Zitadel instance SHALL provision, via Pulumi, a password-bas
 
 - **WHEN** `pulumi up` runs on the `dev` stack
 - **THEN** a `zitadel.HumanUser` resource SHALL be created in the self-hosted Zitadel instance with a recognizable display name and an email under the dev domain
-- **AND** the user SHALL have `InitialPassword` set from a Pulumi config value (encrypted at rest in the stack's secrets backend)
+- **AND** the user SHALL have `InitialPassword` set from the ESC value `pulumiConfig.zitadel.e2eTestUser.password` (read via `config.requireSecretObject`)
 - **AND** the user SHALL have no second-factor (TOTP / SMS / passkey) enrollment
 
 #### Scenario: Pulumi apply on non-dev stack rejects the resource

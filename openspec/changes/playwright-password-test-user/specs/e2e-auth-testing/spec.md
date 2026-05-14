@@ -40,6 +40,6 @@ The test user's password SHALL live in a gitignored file under `frontend/.auth/`
 #### Scenario: Git status after capture
 
 - **WHEN** the password capture flow is set up on a fresh clone
-- **AND** the developer creates `frontend/.auth/password.md` from the Pulumi stack output
+- **AND** the developer creates `frontend/.auth/password.md` from the ESC environment (`esc env get liverty-music/dev pulumiConfig.zitadel.e2eTestUser.password --show-secrets`)
 - **THEN** `git status` SHALL NOT list `frontend/.auth/password.md` as either tracked or untracked
 - **AND** `frontend/.gitignore` SHALL contain a pattern that excludes `.auth/password.md`
