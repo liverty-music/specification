@@ -1,0 +1,42 @@
+## 1. Pulumi — provision password-based test user (cloud-provisioning)
+
+- [ ] 1.1 Add a Pulumi stack-config entry for the test user's password (`pulumi config set --secret zitadel:e2eTestUserPassword <value>`) on the `dev` stack only; do NOT set it on staging / prod
+- [ ] 1.2 In `cloud-provisioning/src/zitadel/`, add a new component (e.g., `e2e-test-user.ts`) that creates a `zitadel.HumanUser` resource with `userName`, `firstName`, `lastName`, `email` (under the dev-only domain), and `initialPassword` from the stack-config secret
+- [ ] 1.3 In the same component, add a `pulumi.getStack() !== "dev"` synthesis-time guard that throws a clear `"E2E test user is dev-only"` error if the component is instantiated outside dev
+- [ ] 1.4 Wire `ignoreChanges: ["initialPassword"]` on the resource so casual edits do not silently trigger replacement; document the `--replace` requirement for intentional rotation
+- [ ] 1.5 Grant the new user the same OIDC Application role as the existing passkey user (so the same OIDC client can authenticate either)
+- [ ] 1.6 Wire the component into the dev stack's Zitadel composition; verify `pulumi preview` shows the expected single create
+- [ ] 1.7 Apply on dev (`pulumi up`); confirm the user appears in the Zitadel admin console under the dev project and that the `users` table in dev DB does NOT yet have a row for the new user (DB row is created lazily on first sign-in via the existing Create RPC)
+- [ ] 1.8 Verify the synthesis guard by running `pulumi preview --stack staging` (or any non-dev stack) and confirming the deploy aborts with the dev-only error
+
+## 2. Frontend — credentials handoff & gitignore
+
+- [ ] 2.1 Read the test user's password back from the Pulumi stack output (`pulumi stack output --show-secrets`) and write `frontend/.auth/password.md` locally; confirm `git status` does NOT list the file
+- [ ] 2.2 Verify `frontend/.gitignore` already excludes `.auth/password.md`; if not, add the pattern
+- [ ] 2.3 Update `frontend/.auth/README.md` to document: (a) the dual test-user setup (passkey vs password), (b) how to retrieve the password from the dev Pulumi stack, (c) which capture script to use for which user, (d) the WSL2 caveat
+
+## 3. Frontend — headless capture script
+
+- [ ] 3.1 Decide on the capture tool: try Playwright MCP first (per Design D2). Validate that it can output a Playwright-compatible `storageState.json` against `https://auth.dev.liverty-music.app`. If MCP cannot produce the storage-state shape directly, fall back to Playwright Node API in headless mode (driving Chromium via CDP without a display)
+- [ ] 3.2 Add a new script under `frontend/scripts/` (e.g., `capture-auth-state-password.ts`) that: launches headless Chromium → navigates to the app → submits the email + password → completes the OIDC redirect → writes `frontend/.auth/storageState.json`
+- [ ] 3.3 Expose the script via an `npm run auth:capture:password` package.json entry; ensure it exits non-zero on any auth failure (no silent 401 producing a broken storageState)
+- [ ] 3.4 Add a smoke step inside the script: after writing storageState, replay it in a fresh browser context and assert that a known protected route (e.g., `/dashboard`) loads without redirecting to the landing page. Abort the script if the smoke fails
+- [ ] 3.5 Run the capture script on the developer's WSL2 + WSLg host; confirm it produces a working `storageState.json` without any display server
+
+## 4. Frontend — verify E2E suite passes
+
+- [ ] 4.1 Run `npx playwright test` locally against the regenerated storage state; verify every existing test passes
+- [ ] 4.2 If any test fails specifically because of the user-identity change (e.g., a test expected the passkey user's display name), update the test to be user-type-agnostic OR fork the test to cover both identities — do NOT silently mask the failure
+- [ ] 4.3 Commit the updated `.auth/storageState.json` (storage-state shape is public per `[reference_e2e_auth]`; credentials remain in the gitignored password.md)
+
+## 5. Documentation & retention
+
+- [ ] 5.1 Confirm `frontend/.auth/capture-auth-state.ts` (the existing headed passkey script) is untouched and the README clearly identifies it as the passkey path
+- [ ] 5.2 Cross-link this change from `frontend/.auth/README.md`: "the password user provisioned by `cloud-provisioning/src/zitadel/e2e-test-user.ts` is the default for headless capture"
+
+## 6. Archive prep
+
+- [ ] 6.1 `openspec validate playwright-password-test-user` → passes
+- [ ] 6.2 `openspec status --change playwright-password-test-user` reports `isComplete=true`
+- [ ] 6.3 Close GitHub issue [liverty-music/frontend#345](https://github.com/liverty-music/frontend/issues/345) with a reference to the archive PR
+- [ ] 6.4 `/opsx:archive playwright-password-test-user`
