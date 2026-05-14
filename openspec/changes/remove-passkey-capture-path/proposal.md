@@ -25,6 +25,7 @@ The Cloud tenant where the user was originally provisioned is retained indefinit
 ### Modified Capabilities
 
 - `e2e-auth-testing`: one requirement REMOVED (`Existing Passkey Capture Path Retained`). No requirements added or otherwise modified. The remaining requirements (Playwright MCP Authenticated Session, StorageState Capture Script, StorageState Gitignore, Password-Based Storage State Capture Path, Test-User Credential File Gitignored) continue to describe the password capture path correctly — the first three are credential-type-agnostic and the last two were added by `playwright-password-test-user`.
+- `identity-management`: one requirement MODIFIED (`Provision Password-Based E2E Test User in Dev Zitadel`, dropping the "distinct from the existing passkey-only test user" phrase from the statement and rationale) and one requirement REMOVED (`Test User Coexists with Passkey User`). Both were added by `playwright-password-test-user`. After the deltas land, `identity-management` has a single normative source for the dev E2E test user (the modified `Provision Password-Based E2E Test User in Dev Zitadel` requirement) and no surviving references to the wiped passkey user.
 
 ### New Capabilities
 
@@ -39,6 +40,7 @@ None at the capability level — only one requirement within `e2e-auth-testing` 
 **Affected repositories**
 
 - `specification/openspec/specs/e2e-auth-testing/spec.md`: one requirement folded out via archive's delta-sync.
+- `specification/openspec/specs/identity-management/spec.md`: one requirement MODIFIED in place + one folded out via archive's delta-sync.
 - `frontend/scripts/capture-auth-state.ts`: deleted (~90 lines).
 - `frontend/AGENTS.md`: "Playwright MCP" section trimmed (~10 lines net).
 - `frontend/.auth/README.md`: dual-user matrix collapsed to single-user procedure (~30 lines net).

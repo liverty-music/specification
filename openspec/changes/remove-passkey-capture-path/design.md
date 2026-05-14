@@ -8,7 +8,7 @@ This is a pure-removal change. There are no new components, no new capabilities,
 
 **Goals:**
 
-- Bring the spec into alignment with reality on self-hosted dev Zitadel: the passkey capture path no longer functions, so the requirement that mandates its retention should be removed.
+- Bring **both** affected capability specs into alignment with reality on self-hosted dev Zitadel. `e2e-auth-testing` retires the `Existing Passkey Capture Path Retained` requirement (the script the requirement names no longer functions). `identity-management` MODIFIES `Provision Password-Based E2E Test User in Dev Zitadel` to drop the "distinct from the existing passkey-only test user" phrasing and REMOVES `Test User Coexists with Passkey User` (the coexistence requirement asserts a user state that does not exist).
 - Eliminate dead code (`frontend/scripts/capture-auth-state.ts`) and misleading documentation (`AGENTS.md` + `.auth/README.md` references to a wiped user).
 - Leave a clear forward-pointer for any future WebAuthn / passkey CI regression testing need.
 
@@ -63,9 +63,9 @@ This is a pure-removal change. There are no new components, no new capabilities,
 
 Pure removal — no migration of state or runtime data. Specification PR + frontend PR can land in either order:
 
-1. `specification` PR REMOVES the requirement and adds this change's artifacts.
+1. `specification` PR REMOVES `Existing Passkey Capture Path Retained` from `e2e-auth-testing`, MODIFIES `Provision Password-Based E2E Test User in Dev Zitadel` and REMOVES `Test User Coexists with Passkey User` from `identity-management`, and adds this change's artifacts (`proposal.md`, this `design.md`, `tasks.md`, the two spec deltas under `specs/`).
 2. `frontend` PR `git rm`s the script + simplifies the docs.
-3. After both merge, `/opsx:archive remove-passkey-capture-path` folds the REMOVED delta into the main `e2e-auth-testing/spec.md` (decrementing its requirement count by 1).
+3. After both merge, `/opsx:archive remove-passkey-capture-path` folds both deltas into main: `e2e-auth-testing/spec.md` loses one requirement; `identity-management/spec.md` updates one requirement in place and loses another.
 
 **Rollback**: revert both PR merges. The spec requirement comes back, the script comes back from git history, the docs revert. The dead path is restored, but functionally nothing changes because the user it targets is still gone — rollback only undoes the cleanup.
 

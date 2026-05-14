@@ -4,7 +4,7 @@
 
 The dev self-hosted Zitadel instance SHALL provision, via Pulumi, a password-based `zitadel.HumanUser` for E2E test automation. The provisioning SHALL be gated to the `dev` Pulumi stack and SHALL NOT execute in any other stack.
 
-**Rationale**: Headless test automation cannot drive a passkey-only login flow (passkey requires a biometric / PIN gesture from a registered device). A Pulumi-managed password-based user provides a credential path the headless capture script can drive end-to-end, unblocking E2E coverage of the post-cutover self-hosted issuer. (Earlier wording referenced "distinct from the existing passkey-only test user" — that wording was inherited from the original `playwright-password-test-user` change but no passkey-only test user exists on the active self-hosted dev Zitadel; the Zitadel-Cloud-era Self-Registration user was wiped by `self-hosted-zitadel §10` and never re-provisioned. See change `remove-passkey-capture-path` for the cleanup record.)
+**Rationale**: Headless test automation cannot drive a passkey-only login flow (passkey requires a biometric / PIN gesture from a registered device). A Pulumi-managed password-based user provides a credential path the headless capture script can drive end-to-end, unblocking E2E coverage of the post-cutover self-hosted issuer. (Earlier wording referenced "distinct from the existing passkey-only test user" — that wording was inherited from the original `playwright-password-test-user` change but no passkey-only test user exists on the active self-hosted dev Zitadel; the Zitadel-Cloud-era Self-Registration user was wiped by `self-hosted-zitadel §10` and never re-provisioned.)
 
 #### Scenario: Pulumi apply on dev stack provisions the test user
 
