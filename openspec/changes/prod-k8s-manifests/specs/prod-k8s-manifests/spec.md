@@ -33,17 +33,18 @@ Each prod overlay's kustomize patches SHALL be limited to the *minimal* set of e
 3. ArgoCD project labels or Application metadata as needed
 4. Resource requests/limits SHALL match dev's values (no env-specific sizing yet)
 
-Image references SHALL NOT be patched per env — both envs use the same images with ArgoCD Image Updater managing tag bumps. Replica counts SHALL be `1` for all workload Deployments in prod (HPA-driven scale-up is the path to multi-replica).
+Image references SHALL NOT be patched per env — both envs use the same images with ArgoCD Image Updater managing tag bumps. Replica counts SHALL be `1` for all workload `Deployment` AND `StatefulSet` resources in prod (HPA / KEDA-driven scale-up is the path to multi-replica).
 
 #### Scenario: No image-tag divergence between dev and prod overlays
 - **WHEN** diffing the rendered output of `k8s/namespaces/backend/overlays/dev` and `k8s/namespaces/backend/overlays/prod` (and similarly for other namespaces)
 - **THEN** container image references SHALL be identical (tags + digests match)
 - **AND** the only differences SHALL be: hostnames, secret references, project labels, resource requests/limits (when env-divergent), and replica counts (per design D8)
 
-#### Scenario: Single replica per Deployment for prod
+#### Scenario: Single replica per Deployment and StatefulSet for prod
 - **WHEN** rendering any prod overlay
 - **THEN** every `Deployment` SHALL have `spec.replicas: 1`
-- **AND** HPA resources MAY exist to scale beyond 1 under load (not in scope for this change to author the HPAs themselves)
+- **AND** every `StatefulSet` SHALL have `spec.replicas: 1`
+- **AND** HPA / KEDA `ScaledObject` resources MAY exist to scale beyond 1 under load (not in scope for this change to author the autoscalers themselves)
 
 ### Requirement: Every Pod template in prod overlays SHALL include the gke-spot nodeSelector
 Every Pod template (Deployment, StatefulSet, DaemonSet, Job, CronJob) rendered from any `k8s/namespaces/<ns>/overlays/prod/` SHALL include `spec.template.spec.nodeSelector["cloud.google.com/gke-spot"] = "true"`. Workloads inherit this from the base manifests (which already enforce it for dev); the prod lint SHALL verify the inheritance survived the overlay patches.

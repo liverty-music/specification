@@ -57,7 +57,7 @@ For each of the 10 namespaces missing a prod overlay (`atlas-operator`, `backend
 - [ ] 7.2 `make lint-k8s` — must pass with both dev + prod overlays + spot-label check.
 - [ ] 7.3 For each prod overlay, run `kustomize build --enable-helm <overlay-path> | kube-linter lint -` — all 12 prod overlays (11 namespace + 1 cluster) must pass kube-linter.
 - [ ] 7.4 `kubectl kustomize k8s/argocd-apps/prod` — renders all 14 Applications without error.
-- [ ] 7.5 Verify the Backend Atlas migration plan against an empty Postgres: `cd backend; atlas migrate diff --dry-run` against a fresh `postgres:18` Docker container — review output for any DROP TABLE / data-loss patterns that would break a clean-slate prod schema (none expected, but confirm).
+- [ ] 7.5 Verify the Backend Atlas migration plan against an empty Postgres: `cd backend; atlas migrate apply --dry-run --url "postgres://postgres:pass@localhost:5432/dev?sslmode=disable"` against a fresh `postgres:18` Docker container — replays the existing migration files (NOT a re-diff, which is what `atlas migrate diff` does — `apply --dry-run` is the right command for the validation goal). Review output for any DROP TABLE / data-loss patterns that would break a clean-slate prod schema (none expected, but confirm). Optionally also run `atlas migrate lint --latest 5` for structured destructive-change detection.
 - [ ] 7.6 `pulumi preview --stack prod` — confirms only the 6 new GSM-related resources (no cluster churn).
 
 ## 8. PR preparation

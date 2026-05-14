@@ -180,7 +180,7 @@ This change is k8s-manifest-only — no Pulumi cluster changes. Deployment is:
 1. **Pre-merge prep (human, before opening PR)**:
    - No prod ESC seeding required for Zitadel — the masterkey is Pulumi-generated (random 32-char string by `SecretsComponent`), and the admin machine key is populated automatically by the in-cluster `bootstrap-uploader` sidecar on first Zitadel boot (per D4 + the canonical `zitadel-self-hosted-deployment` bootstrap requirement).
 2. **PR + CI**:
-   - `make lint-k8s` runs against `k8s/namespaces/*/overlays/{dev,prod}` — must pass for all 22 overlays.
+   - `make lint-k8s` runs against `k8s/namespaces/*/overlays/dev`, `k8s/namespaces/*/overlays/prod`, `k8s/cluster/overlays/dev`, `k8s/cluster/overlays/prod` (explicit listing — see D7 for the sh-compat reason) — must pass for all 24 overlays (11 namespaces × 2 envs + 1 cluster × 2 envs).
    - Pulumi preview runs against prod stack — expect ~6 changes from lifting the `env === 'dev'` gate at `src/index.ts:119`: 2 new prod GSM Secret resources (`zitadel-masterkey`, `zitadel-machine-key-for-pulumi-admin`) + 1 SecretVersion (the masterkey value — admin-machine-key stays an empty shell) + 3 IAM bindings (ESO read on both Secrets, Zitadel SA `secretVersionAdder` on admin-machine-key).
 3. **Merge**:
    - Merge to main triggers Pulumi auto-deploy on dev (no-op for k8s manifest paths). Prod stays on manual trigger.
