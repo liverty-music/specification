@@ -1,7 +1,7 @@
 # prod-k8s-manifests Specification
 
 ## Purpose
-TBD - created by archiving change prod-k8s-manifests. Update Purpose after archive.
+Defines the Kubernetes manifest contract for the prod cluster: the ArgoCD Application set structure (14 Applications mirroring dev), per-namespace and cluster-scope `prod/` overlays with the *minimum* env-divergent patch set, Spot node label enforcement, static-IP binding for the API/auth Gateway, and PodMonitoring opt-in patterns for backend and Zitadel workloads. Per-workload runtime/network requirements stay in their respective capabilities (`zitadel-self-hosted-deployment`, `gke-gateway-infrastructure`); this spec contracts the prod manifest set as a coherent unit.
 ## Requirements
 ### Requirement: Prod cluster SHALL run a full ArgoCD Application set matching dev's structure
 The `cloud-provisioning/k8s/argocd-apps/prod/` directory SHALL contain ArgoCD `Application` manifests covering the same 14 deployment units the dev environment ships: `argocd`, `atlas-operator`, `backend-migrations`, `backend`, `cluster`, `external-secrets`, `frontend`, `gateway`, `keda`, `namespaces`, `nats`, `otel-collector`, `reloader`, `zitadel`. Each Application SHALL point its `spec.source.path` at the corresponding `k8s/namespaces/<ns>/overlays/prod/` (or `k8s/cluster/overlays/prod/` for cluster-scope). Sync-wave annotations SHALL match dev's wave assignments so dependency ordering (CRDs → controllers → workloads) is preserved.

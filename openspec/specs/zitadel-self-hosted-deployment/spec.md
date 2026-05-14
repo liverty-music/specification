@@ -10,7 +10,7 @@ Zitadel instance — including the bootstrap chicken-and-egg resolution,
 the masterkey immutability constraint, and the post-cutover incident
 findings on backend MachineKey lifecycle.
 ## Requirements
-### Requirement: Self-Hosted Zitadel Runtime in Dev Cluster
+### Requirement: Self-Hosted Zitadel Runtime in Each Environment Cluster
 
 The system SHALL run Zitadel as an in-cluster Kubernetes workload in each environment's GKE cluster (`dev` and `prod`), reachable at the environment-specific OIDC issuer URL, replacing the previous dependency on a Zitadel Cloud tenant.
 
