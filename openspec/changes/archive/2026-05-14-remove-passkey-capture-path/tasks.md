@@ -13,7 +13,7 @@
 ## 3. Verification
 
 - [x] 3.1 After both PRs merge: confirm `frontend/scripts/capture-auth-state.ts` is gone on `main` and `npm run auth:capture:password` still completes end-to-end on WSL2 + WSLg with "Smoke test PASSED" _Verified post-frontend-merge: `ls frontend/scripts/` returns 3 files (`capture-auth-state-password.ts`, `check-brand-vocabulary.ts`, `known-entities.ts`) — passkey script gone. Password capture path was last end-to-end verified during the playwright-password-test-user §3.5 run (Smoke test PASSED reaching /dashboard), unchanged in this change._
-- [x] 3.2 `openspec validate remove-passkey-capture-path` passes locally _Re-verified after each of the 4 review-fix commits (`0a0620f`, `8c49c39`, `8d2c845`, `65c994c`, `ae99ae7`) on PR #462._
+- [x] 3.2 `openspec validate remove-passkey-capture-path` passes locally _Re-verified after the initial proposal commit `0a0620f` and each of the 4 review-fix commits (`8c49c39`, `8d2c845`, `65c994c`, `ae99ae7`) on PR #462._
 - [x] 3.3 `openspec list --json` shows the change with `isComplete=true` after tasks are ticked _Verified after this follow-up PR's commit (all `- [ ]` ticked; the `- 4.1` plain-bullet "out of scope" line correctly does not gate `isComplete`)._
 
 ## 4. Out of scope (do NOT include in this change)
