@@ -269,7 +269,7 @@ The HTTPRoute `hostnames` field SHALL NOT appear in `base/httproute.yaml`; inste
 
 - **WHEN** `kubectl kustomize k8s/namespaces/zitadel/overlays/dev` is executed
 - **THEN** the rendered HTTPRoute SHALL have `hostnames: [auth.dev.liverty-music.app]`
-- **AND** the rendered overlay SHALL still include the dev-only `cronjob-restart-zitadel` CronJob
+- **AND** the rendered overlay SHALL still include the dev-only `zitadel-restart` CronJob (carrying the `liverty-music.app/temporary` annotation)
 
 #### Scenario: Prod overlay omits the dev-only CronJob
 
