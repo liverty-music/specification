@@ -18,7 +18,7 @@
 
 ## 4. Out of scope (do NOT include in this change)
 
-- [ ] 4.1 Cloud-tenant cleanup of `pepperoni9+playwright-1@gmail.com` — Cloud tenant retention is governed by `self-hosted-zitadel §15.1` / `§18.10` (retained indefinitely as no-cost rollback escape hatch). User is inert (no DNS, no OIDC traffic). Folded into a future Cloud-decommission change if and when one is opened. This task exists in tasks.md only as an explicit "do not do here" marker for the implementer
+- 4.1 Cloud-tenant cleanup of `pepperoni9+playwright-1@gmail.com` — Cloud tenant retention is governed by `self-hosted-zitadel §15.1` / `§18.10` (retained indefinitely as no-cost rollback escape hatch). User is inert (no DNS, no OIDC traffic). Folded into a future Cloud-decommission change if and when one is opened. This bullet exists in tasks.md only as an explicit "do not do here" marker for the implementer — formatted as a plain bullet (not `- [ ]`) so the `isComplete` calculation does not gate on it
 
 ## 5. Archive prep
 
