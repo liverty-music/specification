@@ -35,5 +35,6 @@ The system SHALL run Zitadel as an in-cluster Kubernetes workload in each enviro
 
 - **WHEN** inspecting the rendered `k8s/namespaces/zitadel/overlays/prod/` manifests
 - **THEN** the `cloud-sql-proxy` sidecar SHALL connect to the prod Cloud SQL instance `liverty-music-prod:asia-northeast2:postgres-osaka`
-- **AND** the `ExternalSecret` resources SHALL reference the `liverty-music-prod` GSM secrets (`zitadel-machine-key`, `zitadel-login-pat`) via the prod-scoped `ClusterSecretStore`
-- **AND** the bootstrap admin SA key SHALL be present in `zitadel-machine-key` BEFORE the first Zitadel sync (manually seeded via `gcloud secrets versions add` per the §10.1 incident note from the prior dev deployment)
+- **AND** the `ExternalSecret` resources SHALL reference the `liverty-music-prod` GSM secrets `zitadel-masterkey` and `zitadel-machine-key-for-pulumi-admin` (the canonical names provisioned by `SecretsComponent` per the existing `Bootstrap Admin Machine Key Stored in Secret Manager` requirement) via the prod-scoped `ClusterSecretStore`
+- **AND** the `zitadel-masterkey` GSM Secret SHALL have a Pulumi-managed first version (random 32-char string) by the time the first Zitadel API Pod boots
+- **AND** the `zitadel-machine-key-for-pulumi-admin` GSM Secret SHALL exist as an empty shell at first boot — the in-cluster `bootstrap-uploader` sidecar populates it automatically on first-instance Zitadel bootstrap; no human pre-seed is required

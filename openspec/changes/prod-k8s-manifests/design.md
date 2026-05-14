@@ -165,7 +165,7 @@ Both env's overlays render with `kustomize build --enable-helm`, kube-linter run
 
 ## Risks / Trade-offs
 
-- **[Risk] First Zitadel sync fails because admin SA key isn't seeded into GSM yet.** → Mitigation: document the GSM-seed step explicitly in tasks.md as a pre-deploy human action; verify via `gcloud secrets versions list zitadel-machine-key --project liverty-music-prod` before triggering ArgoCD sync.
+- **[Risk] First Zitadel sync fails because the bootstrap-uploader sidecar can't write to `zitadel-machine-key-for-pulumi-admin` (e.g., empty shell wasn't created or IAM binding is missing).** → Mitigation: pre-deploy verification (tasks.md §9.2) confirms `pulumi up --stack prod` has created the empty shell + the `secretVersionAdder` IAM binding on the Zitadel SA before triggering ArgoCD sync. If the shell is missing, the sidecar's `gcloud secrets versions add` call would 404, surfaced as a sidecar-container crash-loop visible in the Zitadel Pod status (caught before the Zitadel API container becomes Ready).
 - **[Risk] Gateway sync claims the static IP but DNS still has stale TTL → some users see SERVFAIL.** → Mitigation: not a real risk today (no users), but document that DNS TTL on the existing A records is 300s, so propagation completes within 5 min of sync.
 - **[Risk] Backend-migrations Application runs Atlas against an empty prod schema and creates the full schema in one shot.** → This is desired; the prod Cloud SQL `liverty_music` database is empty, and Atlas is the source of truth. The "risk" is incident-finding from migrations that worked on dev's older schema but fail on a fresh-empty schema. → Mitigation: validate the Atlas plan against an empty schema as part of pre-merge lint.
 - **[Risk] ExternalSecret reconciliation lag — secret-store auth issues delay all app workloads.** → Mitigation: ArgoCD's intra-wave dependency resolution handles the ordering at wave 0 — application Pods that reference ExternalSecret-managed Kubernetes Secrets stay `Pending`/`ContainerCreating` until ESO has reconciled the CRs successfully. An ESO auth failure surfaces as a CRD reconcile error (visible in the `external-secrets` Application's status in ArgoCD) before any dependent Pod becomes Ready, so it's caught early without needing a barrier wave.
@@ -190,7 +190,7 @@ This change is k8s-manifest-only — no Pulumi cluster changes. Deployment is:
    - `kubectl --context gke_liverty-music-prod_asia-northeast2_autopilot-cluster-osaka apply -k k8s/argocd-apps/prod/` to register the 14 Applications.
    - ArgoCD reconciles wave -1 (`namespaces`) first, then wave 0 default (most Apps including `argocd`, infra controllers, app workloads — ordering resolved by resource dependencies, not by sub-wave annotations), then wave 1 (`cluster`). Total sync time: ~5-15 min.
    - During the wave 0 sync, the first-time Zitadel API container boot triggers the bootstrap-uploader sidecar to populate `zitadel-machine-key-for-pulumi-admin` with the generated admin JWT-profile key. ESO then mounts it into the backend Pod for runtime use.
-7. **Verification**:
+6. **Verification**:
    - All 14 Applications show Healthy in ArgoCD UI.
    - `api-gateway-static-ip` status: `IN_USE`, claimed by the prod Gateway.
    - `curl -I https://api.liverty-music.app/grpc.health.v1.Health/Check` returns 200 (or appropriate Connect-RPC framing).
