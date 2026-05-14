@@ -26,7 +26,7 @@ For each of the 11 namespaces under `cloud-provisioning/k8s/namespaces/` (`argoc
 - **WHEN** running `kustomize build --enable-helm k8s/namespaces/<ns>/overlays/prod` for each of the 11 namespaces
 - **THEN** the command SHALL exit with code 0 and emit valid YAML
 
-### Requirement: Prod overlays SHALL diverge from dev only by ESC secret refs, hostnames, ArgoCD project labels, replica counts, and (when needed) resource requests/limits
+### Requirement: Prod overlays SHALL diverge from dev only by ESC secret refs, hostnames, ArgoCD project labels, and replica counts
 Each prod overlay's kustomize patches SHALL be limited to the *minimal* set of env-divergent fields:
 1. `ExternalSecret.spec.secretStoreRef.name` patched to a prod-scoped SecretStore (e.g., `google-secret-manager-prod`)
 2. Hostnames in ConfigMap data and HTTPRoute `spec.hostnames`: `api.dev.liverty-music.app` → `api.liverty-music.app`, `auth.dev.liverty-music.app` → `auth.liverty-music.app`
@@ -39,7 +39,7 @@ Image references SHALL NOT be patched per env — both envs use the same images 
 #### Scenario: No image-tag divergence between dev and prod overlays
 - **WHEN** diffing the rendered output of `k8s/namespaces/backend/overlays/dev` and `k8s/namespaces/backend/overlays/prod` (and similarly for other namespaces)
 - **THEN** container image references SHALL be identical (tags + digests match)
-- **AND** the only differences SHALL be: hostnames, secret references, project labels, resource requests/limits (when env-divergent), and replica counts (per design D8)
+- **AND** the only differences SHALL be: hostnames, secret references, project labels, and replica counts (per design D8 — resource requests/limits match dev exactly per requirement bullet 4)
 
 #### Scenario: Single replica per Deployment and StatefulSet for prod
 - **WHEN** rendering any prod overlay
