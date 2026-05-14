@@ -11,7 +11,7 @@
 - [ ] 2.2 Inside the new component, instantiate the existing `MachineUserComponent` (re-export from `./machine-user.js`) with the provided `orgId` + `zitadelProvider`. This re-uses the proven dev pattern verbatim.
 - [ ] 2.3 Inside the new component, write the `MachineKey.keyDetails` to GSM via:
       - `new gcp.secretmanager.Secret('zitadel-machine-key-for-backend-app', ...)` (project from args, secretId = `zitadel-machine-key-for-backend-app`, auto replication)
-      - `new gcp.secretmanager.SecretVersion(...)` (secretData = `MachineUser.keyDetails`, deletionPolicy DELETE)
+      - `new gcp.secretmanager.SecretVersion(...)` (secretData = `MachineKey.keyDetails`, deletionPolicy DELETE)
       - `new gcp.secretmanager.SecretIamMember(...)` (role `secretAccessor`, member = the ESO GSA email `k8s-external-secrets@${gcpProject}.iam.gserviceaccount.com`)
 - [ ] 2.4 Apply `aliases: [{ name: 'OLD_URN' }]` to the `MachineKey` resource in `BackendMachineKeyComponent` for the dev URN to preserve dev state after refactor — capture the current dev URN via `pulumi stack export --stack dev | jq '.deployment.resources[] | select(.type == "zitadel:index/machineKey:MachineKey")'`.
 
