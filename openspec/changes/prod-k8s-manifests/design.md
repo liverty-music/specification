@@ -96,7 +96,7 @@ The `zitadelMachineKey` / `zitadelLoginPat` Pulumi `Output`s at `src/index.ts:72
 2. ArgoCD syncs the Zitadel workload. First-time Zitadel API container boots against the empty `zitadel` database with `ZITADEL_FIRSTINSTANCE_*` env vars set.
 3. Zitadel generates an initial admin machine user and writes the JWT-profile JSON key to a shared `emptyDir` volume.
 4. The `bootstrap-uploader` sidecar container co-located in the same Pod reads the file from `emptyDir`, uploads it to `zitadel-machine-key-for-pulumi-admin` via `gcloud secrets versions add` (Pod identity has `secretVersionAdder` role per the IAM binding above), and `unlink`s the file from the shared volume so the org-admin private key doesn't persist.
-5. ESO reads the now-populated `zitadel-machine-key-for-pulumi-admin` GSM Secret and mounts it into the backend Pod for runtime use (NOT the Zitadel Pod — see the "Mounted secret" bullet above for the blast-radius rationale).
+5. The bootstrap flow ends here: `zitadel-machine-key-for-pulumi-admin` now has its first version. The org-admin JWT is consumed by a subsequent `pulumi up --stack prod` (NOT by any K8s Pod) — that run uses the JWT as the Zitadel org-admin to create the backend's lower-privilege `MachineKey`, which Pulumi writes to a *separate* GSM Secret `zitadel-machine-key-for-backend-app` (per the canonical `zitadel-self-hosted-deployment` spec at lines 164 + 175). ESO syncs the **`zitadel-machine-key-for-backend-app`** Secret into the backend Pod for runtime use — the `pulumi-admin` JWT itself is never mounted into any Pod, preserving the blast-radius separation called out in the "Mounted secret" bullet above.
 
 **No human pre-seed step is required.** Earlier drafts of this design proposed a manual `gcloud secrets versions add` before the first sync — that's redundant because the bootstrap-uploader sidecar performs the seed automatically on first boot. Memory `reference_zitadel_bootstrap_uploader_scenario_2.md` notes that the sidecar only fires on first-instance bootstrap (subsequent boots idle); for greenfield prod, the first boot IS the first-instance bootstrap, so the sidecar fires normally.
 
@@ -189,8 +189,10 @@ This change is k8s-manifest-only — no Pulumi cluster changes. Deployment is:
 5. **ArgoCD bootstrap (manual, post-Pulumi-up)**:
    - `kubectl --context gke_liverty-music-prod_asia-northeast2_autopilot-cluster-osaka apply -k k8s/argocd-apps/prod/` to register the 14 Applications.
    - ArgoCD reconciles wave -1 (`namespaces`) first, then wave 0 default (most Apps including `argocd`, infra controllers, app workloads — ordering resolved by resource dependencies, not by sub-wave annotations), then wave 1 (`cluster`). Total sync time: ~5-15 min.
-   - During the wave 0 sync, the first-time Zitadel API container boot triggers the bootstrap-uploader sidecar to populate `zitadel-machine-key-for-pulumi-admin` with the generated admin JWT-profile key. ESO then mounts it into the backend Pod for runtime use.
-6. **Verification**:
+   - During the wave 0 sync, the first-time Zitadel API container boot triggers the bootstrap-uploader sidecar to populate `zitadel-machine-key-for-pulumi-admin` with the generated admin JWT-profile key. **Note**: at this point the backend Pods will be in `ContainerCreating` waiting for their own machine-key Secret (`zitadel-machine-key-for-backend-app`) which doesn't exist yet — a second `pulumi up --stack prod` (step 6 below) creates it.
+6. **Second Pulumi up (manual, post-Zitadel-bootstrap)**:
+   - Trigger `pulumi up --stack prod` again from Pulumi Cloud console. This time the prod Zitadel org-admin JWT exists in `zitadel-machine-key-for-pulumi-admin`, so the `MachineKey` Pulumi resource for the backend app succeeds — it calls Zitadel API as org-admin, creates the backend's machine user + machine key, and Pulumi writes the JWT-profile to `zitadel-machine-key-for-backend-app`. ESO syncs this into the backend Pod; reloader kicks the backend Deployment so it picks up the new Secret. Backend → Zitadel auth now works.
+7. **Verification**:
    - All 14 Applications show Healthy in ArgoCD UI.
    - `api-gateway-static-ip` status: `IN_USE`, claimed by the prod Gateway.
    - `curl -I https://api.liverty-music.app/grpc.health.v1.Health/Check` returns 200 (or appropriate Connect-RPC framing).
