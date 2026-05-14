@@ -104,6 +104,23 @@ Prod has zero application workloads currently — only the cluster control plane
 - **`OperatorConfig` in `gmp-public` namespace** (reviewer's suggestion). The `OperatorConfig` resource exists and is editable, but its actual fields (`features.targetStatus.enabled`, `features.config.compression`, `scaling.vpa.enabled`) are about operator-level behavior, not metric filtering. There is no `spec.collection.filter` field that drops system-pipeline metrics by name. Rejected as it would not bound the cost as intended.
 - **Author a `ClusterPodMonitoring` for cosmetic completeness.** Adds a maintenance burden and confuses readers about what's actually controlling the cost. Rejected — the cluster-level flag is sufficient.
 
+**Implementation iterations during the live migration (post-archive incident notes):**
+
+D5's GMP cost-control mechanism went through 4 implementation states before reaching its final shape. Each was driven by empirical findings during the cutover:
+
+1. **v1 — `ClusterPodMonitoring` with metric_relabeling (rejected pre-merge).** The first PR #249 draft authored a user `ClusterPodMonitoring` resource with `keep` rules and `interval: 60s`. PR #450 review (claude-bot discussion 3232006619) pointed out the design flaw documented above — user-applied scrape CRs do not filter GKE-managed system-pipeline metrics. Replaced before merge.
+2. **v2 — `monitoringConfig.managedPrometheus.autoMonitoringConfig.scope: 'NONE'` (intent for first deploy).** The replacement plan: set the cluster-level flag at creation. This is what the merged migrate change committed. **But the first `pulumi up` (v149) failed at create** with `Error 400: Autopilot clusters must have monitoring enabled`. Root cause: the Pulumi/Terraform provider serialized the partial `monitoringConfig` block (only `managedPrometheus` declared, no `enableComponents`) as an empty `enableComponents` list, which Autopilot rejected. PR #250 hotfix dropped the entire `monitoringConfig` block, relying on Autopilot's full default (which already includes `autoMonitoringConfig.scope: NONE` per the docs). v150 succeeded.
+3. **v3 — Minimum `monitoringConfig` with reduced `enableComponents` (PR #252 tightening).** With the cluster up, observed that Autopilot's default monitoring includes 11 components and DPv2 observability metrics — both billable per-node. PR #252 reintroduced a minimum `monitoringConfig` with `enableComponents: ['SYSTEM_COMPONENTS']` only and `advancedDatapathObservabilityConfig.enableMetrics: false`. Result: the addon-installed `kube-state-metrics` StatefulSet in `gke-managed-cim` namespace was **uninstalled by GKE** following the component reduction — confirmed empirically. This is the actual cost-reduction mechanism: removing the GKE-managed scrape source, not filtering its output.
+4. **v4 — Drop `advancedDatapathObservabilityConfig` block (PR #253 drift fix).** Setting `enableMetrics: false` failed silently: Pulumi reported `update: succeeded` but Autopilot reconciled the value back to `true` on every apply. Pulumi inputs (code) said `false`, outputs (live API) said `true` — perpetual drift on every subsequent preview. PR #253 dropped the field entirely so Pulumi accepts whatever Autopilot returns. **Autopilot enforces DPv2 observability metrics; this is not user-disableable.**
+
+**Net final state (post-PR-#253):**
+- `monitoringConfig.componentConfig.enableComponents: [SYSTEM_COMPONENTS]` — minimum, GKE removed the system kube-state-metrics scraper as a side effect
+- `monitoringConfig.managedPrometheusConfig.enabled: true` — Autopilot-mandatory
+- `monitoringConfig.managedPrometheusConfig.autoMonitoringConfig.scope`: unset (= NONE per default)
+- `monitoringConfig.advancedDatapathObservabilityConfig.enableMetrics: true` — Autopilot-enforced floor (not in our Pulumi inputs)
+
+Empirical idle-cluster GMP cost at the time of these notes: ~$0/mo (Autopilot has provisioned zero nodes since prod has zero workloads; all GMP scraper Pods including `gmp-operator`, `alertmanager`, `rule-evaluator` are `Pending`). Cost will materialize as the first workloads land and trigger node provisioning.
+
 ### D6: Spot pricing remains the default for Pods via the existing `gke-spot` label
 
 **Decision:** Pods continue to request Spot scheduling via the existing `cloud.google.com/gke-spot: "true"` nodeSelector. Autopilot honors this and bills the Pod at Spot rates.

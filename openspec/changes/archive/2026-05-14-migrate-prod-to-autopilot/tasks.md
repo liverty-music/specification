@@ -1,0 +1,78 @@
+## 1. Pre-flight verification
+
+- [x] 1.1 Confirm the current prod cluster has zero application workloads (`kubectl get all,secrets,pvc -A | grep -vE '^(kube-system|gke-|gmp-system)/'` returns nothing)
+- [x] 1.2 Re-run `/tmp/verify-prod-spec-scenarios.sh` against the *current* Standard cluster — establish a clean pre-migration baseline (actual: 45/47 PASS; 2 known script-vs-reality drifts: R2.3 kube-proxy presence with desiredScheduled=0 is normal for DPv2, R3.1 live API returns `ALL_OBJECTS_ENCRYPTION_ENABLED` not `ENCRYPTED`. Cluster config is correct.)
+- [x] 1.3 Snapshot the prod Pulumi stack state: `pulumi stack export --stack prod > /tmp/pre-migrate-prod-state-$(date +%Y%m%d).json` (1.0M, /tmp/pre-migrate-prod-state-20260513.json)
+- [x] 1.4 Verify the KMS key `gke-etcd-encryption` exists and is healthy: `gcloud kms keys describe gke-etcd-encryption --keyring gke-cluster --location asia-northeast2 --project liverty-music-prod` (state: ENABLED, purpose: ENCRYPT_DECRYPT, 90-day rotation)
+- [x] 1.5 Note the static IP currently bound: `gcloud compute addresses describe api-gateway-static-ip --global --project liverty-music-prod --format='value(address,users[])'` — confirm the IP value and that it is currently unbound (no users) since prod has no Gateway (address: 34.110.151.208, status: RESERVED, no users)
+
+## 2. Pulumi code changes (`cloud-provisioning/src/gcp/components/`)
+
+- [x] 2.1 In `kubernetes.ts`, replace the prod `gcp.container.Cluster` block: set `enableAutopilot: true`, set `location: ${region}` (regional), set `databaseEncryption: { state: 'ENCRYPTED', keyName: kmsKeyName }` reusing the existing KMS key, keep `ipAllocationPolicy` with the same `pods-range`/`services-range` secondary range names, rename the resource to `autopilot-cluster-osaka`
+- [x] 2.2 In `kubernetes.ts`, remove the prod-specific `spot-pool-osaka` `gcp.container.NodePool` block (Autopilot manages nodes internally)
+- [x] 2.3 In `kubernetes.ts`, remove explicit `datapathProvider: 'ADVANCED_DATAPATH'` from the prod cluster definition (Autopilot enables Dataplane V2 by default — the resulting cluster still has DPv2 enabled)
+- [x] 2.4 In `kubernetes.ts`, remove explicit `loggingConfig.enableComponents` overrides from the prod cluster definition (Autopilot manages logging internally). Replace `monitoringConfig.managedPrometheus.enabled: false` with the new Autopilot-shaped config: `monitoringConfig.managedPrometheus: { enabled: true, autoMonitoringConfig: { scope: 'NONE' } }` — this is the GMP cost-control lever for the prod cluster (see §4 — no separate k8s manifest needed).
+- [x] 2.5 In `kubernetes.ts`, remove `privateClusterConfig.enablePrivateNodes: false` from the prod cluster definition (not user-configurable on Autopilot)
+- [x] 2.6 In `kubernetes.ts`, remove explicit `shieldedInstanceConfig` from the prod cluster definition (enforced by Autopilot automatically)
+- [x] 2.7 In `kubernetes.ts`, retain `removeDefaultNodePool: false` removal for prod (or omit — Autopilot does not have a default node pool concept) — omitted (Autopilot has no default node pool concept)
+- [x] 2.8 In `kubernetes.ts`, update the prod cluster's `deletionProtection` to remain `true` for the new Autopilot cluster
+- [x] 2.9 Verify `kms.ts` is unchanged — KMS keyring and CryptoKey are reused as-is
+- [x] 2.10 Verify `network.ts` is unchanged — VPC, subnet, Cloud DNS zones, Certificate Manager, static IP all reused
+- [x] 2.11 Verify `postgres.ts` is unchanged — Cloud SQL instance is reused
+
+## 3. Documentation updates (`cloud-provisioning/docs/`)
+
+- [x] 3.1 Update `docs/PROD_BOOTSTRAP_DECISIONS.md`: change the "Decision Summary" table row for `Cluster mode` from `Standard` to `Autopilot`, update the rationale section (D1) to reflect the Autopilot decision, add a "Migration history" note explaining the original Standard → Autopilot pivot driven by the free-tier math (`provision-prod-gcp-resources` archived 2026-05-13 → `migrate-prod-to-autopilot` ~2026-05 onward)
+- [x] 3.2 Update `docs/GKE_CLUSTER_MODE_DECISION.md`: revise the dev/prod environment table (`dev: Standard zonal`, `prod: Autopilot regional`) and add a "Why we revised the prod decision" subsection citing the free-tier math + GMP-cost-controllability
+- [x] 3.3 Update `docs/DEV_VS_PROD_DIFFERENCES.md`: change the "GKE cluster mode" row from `Standard | Standard` to `Standard | Autopilot`; change the "GMP" row from `Disabled | Disabled` to `Disabled | Enabled with cost-control flag (autoMonitoringConfig.scope: NONE)`; remove or restructure rows that no longer apply (Spot node pool sizing, machine type, boot disk, public/private nodes — all become "Autopilot-managed" for prod)
+- [x] 3.4 Update `docs/runbooks/prod-cluster-credentials.md`: change all `standard-cluster-osaka` references to `autopilot-cluster-osaka`; update the "Verifying the irreversible-decision state" snippet to expect `autopilot.enabled: True` + `databaseEncryption.state: ALL_OBJECTS_ENCRYPTION_ENABLED` + Dataplane V2 implicit
+- [x] 3.5 Update `docs/runbooks/setup-prod-credentials.md` if any reference to `standard-cluster-osaka` exists (likely none, but grep to confirm) — grep confirmed no occurrences
+
+## 4. GMP cost-control (cluster-level, no k8s manifest needed)
+
+- [x] 4.1 GMP cost-control is enforced via the cluster-level Pulumi flag set in §2.4 (`monitoringConfig.managedPrometheus.autoMonitoringConfig.scope: 'NONE'`). No `ClusterPodMonitoring` or `OperatorConfig` Kubernetes resource is authored — a user-applied scrape CR cannot filter the GKE-managed system-pipeline metrics (verified during PR #450 review). Per-workload `PodMonitoring` CRDs are deferred to the `prod-k8s-manifests` follow-up.
+
+## 5. Local validation
+
+- [x] 5.1 Run `make lint-ts` in `cloud-provisioning` — must pass
+- [x] 5.2 Run `make lint-k8s` in `cloud-provisioning` — must pass for the new overlay (lint-k8s target only covers `k8s/namespaces/*/overlays/dev`; the new cluster overlay was verified via `kustomize build k8s/cluster/overlays/prod` instead — renders clean)
+- [x] 5.3 Run `pulumi preview --stack prod` locally — expect deletions of the old cluster + node pool + cluster-attached IAM and creations of the new Autopilot cluster. Verify no unexpected changes to KMS, Cloud SQL, network, or DNS resources (actual: +1 create autopilot-cluster-osaka, -2 delete standard-cluster-osaka + spot-pool-osaka, 193 unchanged. KMS/SQL/network/DNS all untouched.)
+
+## 6. PR preparation
+
+- [x] 6.1 Commit changes per Conventional Commits format (`feat(infra)!: migrate prod GKE cluster from Standard to Autopilot regional`) — note the `!` marking the breaking cluster recreation
+- [x] 6.2 Open PR in `cloud-provisioning` repo referencing this OpenSpec change + the prior `provision-prod-gcp-resources` archive — https://github.com/liverty-music/cloud-provisioning/pull/249
+- [x] 6.3 Open companion PR in `specification` repo with this OpenSpec change (proposal + design + specs/* delta + tasks) — https://github.com/liverty-music/specification/pull/450
+- [x] 6.4 Wait for Pulumi Cloud auto-preview to complete on both dev and prod stacks; verify dev shows zero changes and prod shows the expected destroy+create plan (dev preview: 1 cosmetic dashboard update — unrelated cosmetic drift; prod preview: matched local +1/-2/193 unchanged plan)
+- [x] 6.5 Wait for reviewer approval — given the destroy-and-recreate blast radius, require explicit "approved for prod cluster recreation" comment before merge (claude-bot review surfaced 6 inline comments across two rounds — all addressed; merge approval came via user merging both PRs)
+
+## 7. Prod migration (manual deploy, after PR merge)
+
+- [x] 7.1 In Pulumi Cloud console, trigger `pulumi preview --stack prod` and confirm the plan matches the expected destroy+create (matched local preview: +1 create / -2 delete / 193 unchanged)
+- [x] 7.1a ~~Disable `deletionProtection` on the old cluster via `gcloud container clusters update standard-cluster-osaka --region asia-northeast2 --project liverty-music-prod --no-deletion-protection`.~~ **CORRECTION (live-migration discovery)**: this gcloud flag does NOT exist. `deletionProtection` is a Pulumi/Terraform-provider-only client-side attribute, NOT a GCP API field — the live cluster has no notion of "deletionProtection". The actual fix used during the live migration was a **Pulumi state edit**: `pulumi stack export --stack prod > /tmp/state.json`, then `jq` to flip `inputs.deletionProtection` AND `outputs.deletionProtection` from `true` to `false` on the `standard-cluster-osaka` resource, then `pulumi stack import --stack prod --file /tmp/state-edited.json`. After this, the next `pulumi up` proceeds with the destroy.
+- [x] 7.1b ~~Refresh Pulumi state via `pulumi refresh --stack prod`.~~ **NOT NEEDED (live-migration discovery)**: superseded by §7.1a's state edit — the edit directly updates Pulumi state to match the destroy intent, so refresh is unnecessary. (Attempted during live migration: refresh failed with an unrelated KMS API quota-project error in `liverty-music-dev`, but the state edit had already accomplished the equivalent.)
+- [x] 7.2 Trigger `pulumi up --stack prod` manually (per the existing `deployment-infrastructure` capability's "Manual Deployment Flow (Prod)" requirement) — required 3 deploy iterations: (1) v149 FAILED at create with `Error 400: Autopilot clusters must have monitoring enabled` (partial `monitoringConfig` block serialized as empty `enableComponents`); (2) PR #250 hotfix dropped `monitoringConfig` entirely → v150 SUCCEEDED (+1 create / -2 delete / 193 unchanged); (3) PR #252 added minimum `monitoringConfig` + PR #253 dropped non-converging DPv2 field → final state achieved.
+- [x] 7.3 Monitor the deploy: the destroy phase removes the old cluster (~5-10 min), the create phase provisions the new Autopilot cluster (~10-15 min). Total expected duration ~20 min (actual v150 took ~10 min state-transition-to-RUNNING: PROVISIONING at 18:19 → RUNNING at 18:22 (2 min create) → OLD STOPPING at 18:25 → OLD NOT_FOUND at 18:29; Pulumi did create-before-destroy due to URN rename)
+- [x] 7.4 If deploy fails mid-way (destroy succeeded, create failed): (a) `pulumi stack import --stack prod /tmp/pre-migrate-prod-state-20260513.json` to restore Pulumi's saved state for the old `standard-cluster-osaka` (required — after the destroy phase, the old resource is no longer in Pulumi state), (b) re-apply the rollback Pulumi commit (one git revert of the §2 changes), and (c) re-run `pulumi up --stack prod` to recreate the Standard cluster from the captured state. **N/A — not exercised**: v149 failed at create BEFORE destroy ran, so cluster state was safe; PR #250 hotfix path was taken instead of rollback.
+
+## 8. Post-create verification
+
+- [x] 8.1 `gcloud container clusters get-credentials autopilot-cluster-osaka --region asia-northeast2 --project liverty-music-prod` (kubeconfig generated)
+- [x] 8.2 Confirm kubectl context switched: `kubectl config current-context` (= `gke_liverty-music-prod_asia-northeast2_autopilot-cluster-osaka`)
+- [x] 8.3 Verify the GMP cost-control flag was applied at cluster creation: `gcloud container clusters describe autopilot-cluster-osaka --region asia-northeast2 --project liverty-music-prod --format='value(monitoringConfig.managedPrometheusConfig.enabled,monitoringConfig.managedPrometheusConfig.autoMonitoringConfig.scope)'` — expect `True NONE` (actual: `True` + `autoMonitoringConfig` field is unset/absent which is the Autopilot-default form of NONE per [GMP auto-monitoring docs](https://docs.cloud.google.com/stackdriver/docs/managed-prometheus/auto-monitoring); spec scenario accommodates "NONE or unset / absent")
+- [ ] 8.4 Wait 10 minutes for the first scrape cycle, then check GMP ingestion volume in Cloud Monitoring's Metrics Management page — confirm volume is bounded to the system pipeline (kubelet / cAdvisor / kube-state-metrics) and shows no application-pod auto-discovery — **DEFERRED**: with no application workloads, Autopilot has provisioned zero nodes; all system Pods (gmp-operator, alertmanager, rule-evaluator, kube-state-metrics, etc.) are `Pending`, so empirical GMP ingestion is effectively zero. Re-check when first workloads land.
+
+## 9. Post-migration verification
+
+- [x] 9.1 Re-run `/tmp/verify-prod-spec-scenarios.sh` (after updating the script to reflect the spec changes from this change's specs/* delta) — expect 100% PASS on the updated scenario set. **Actual: 35/35 PASS** (only verifiable-now scenarios; 4 scenarios deferred as documented: R1 free-tier billing 30-day check, R2.2 anetd DaemonSet, R4 GMP $20/mo billing 30-day check, R5 workload Spot label N/A without workloads; 1 external check: R9 Cloudflare apex NS delegation)
+- [x] 9.2 Verify cluster mode and key settings: `gcloud container clusters describe autopilot-cluster-osaka --region asia-northeast2 --project liverty-music-prod --format='value(autopilot.enabled,databaseEncryption.state,databaseEncryption.keyName,networkConfig.datapathProvider)'` — expect `True ALL_OBJECTS_ENCRYPTION_ENABLED projects/liverty-music-prod/locations/asia-northeast2/keyRings/gke-cluster/cryptoKeys/gke-etcd-encryption ADVANCED_DATAPATH` (actual: exact match)
+- [x] 9.3 Verify only one cluster exists in prod (no Standard regional leftover): `gcloud container clusters list --project liverty-music-prod --format='value(name,location)' | wc -l` returns `1` (actual: 1, autopilot-cluster-osaka in asia-northeast2)
+- [ ] 9.4 Check the GCP billing dashboard 24 hours post-migration: the daily `Kubernetes Engine` cluster management fee should drop to `$0` (assuming dev is retired) or remain at `$72` (if dev still consuming the free tier). Whichever is the case, the prod cluster's management line item should reflect the change — **DEFERRED**: requires 24h+ wall-clock for billing aggregation; check on next-day open.
+
+## 10. Archive
+
+- [x] 10.1 Update spec.md / design.md / tasks.md with any incident notes from the live migration (e.g., the actual duration, any rollback events, the observed GMP ingestion volume) — **Captured**: design.md D5 has a "Implementation iterations during the live migration" subsection documenting the 4-state GMP mechanism evolution (v1 ClusterPodMonitoring rejected → v2 autoMonitoringConfig.scope intent → PR #250 hotfix drop-monitoringConfig-block → v3 PR #252 enableComponents minimum + DPv2 attempt → v4 PR #253 drop-DPv2-drift). tasks.md §7.1a/b/2/3/4 corrected with live-migration findings (gcloud `--no-deletion-protection` flag doesn't exist → state edit used; v149 monitoringConfig validation failure → PR #250 hotfix; ~10 min visible state transitions). spec.md scenarios remained correct against the live cluster (verified by 35/35 pass on the updated verify script).
+- [x] 10.2 Run `openspec validate migrate-prod-to-autopilot --strict` — must pass
+- [x] 10.3 Sync delta spec to main spec (`openspec/specs/prod-environment-bootstrap/spec.md`) — apply MODIFIED/ADDED/REMOVED operations from the delta (3 MODIFIED: Standard→Autopilot regional cluster, Dataplane V2, Confidential Nodes; 2 ADDED: GMP cost-control via autoMonitoringConfig.scope=NONE, gke-spot label per-Pod; 2 REMOVED: Spot e2-medium node pool, GMP disabled+restricted logging; Purpose section also updated to reflect Autopilot reality)
+- [x] 10.4 Move change directory: `git mv openspec/changes/migrate-prod-to-autopilot openspec/changes/archive/YYYY-MM-DD-migrate-prod-to-autopilot` (= `2026-05-14-migrate-prod-to-autopilot`)
+- [x] 10.5 `git add` the modifications + main spec changes, commit with `chore(openspec): archive migrate-prod-to-autopilot`, push and merge the archive PR (no force-push needed — this is a straightforward new commit, not a rebase / squash)
