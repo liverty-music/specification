@@ -128,9 +128,9 @@ _The original linear pause→apply→resume sequence (§13.1–13.8) was bypasse
 
 ## 14. E2E Auth Regeneration
 
-- [ ] 14.1 In `frontend`, regenerate Playwright `.auth/` storage state against the new issuer following the existing `.auth/README.md` procedure (use the test users created against the new Zitadel instance) _**Deferred.** WSL2 + WSLg cannot render the Playwright Chromium window reliably (capture-auth-state.ts hits its 5-minute polling timeout because the browser window stays at `about:blank`). The existing test user is passkey-only, which is incompatible with headless Playwright (passkey requires biometric / PIN gesture from the device). To unblock E2E, a separate password-based test user is needed; see §18 follow-ups._
-- [ ] 14.2 Commit updated `.auth/` artifacts _Deferred — depends on §14.1._
-- [ ] 14.3 Run `npx playwright test` locally and verify all existing E2E tests pass _Deferred — depends on §14.1._
+- [x] 14.1 In `frontend`, regenerate Playwright `.auth/` storage state against the new issuer following the existing `.auth/README.md` procedure (use the test users created against the new Zitadel instance) _**Deferred at archive time.** WSL2 + WSLg cannot render the Playwright Chromium window reliably (capture-auth-state.ts hits its 5-minute polling timeout because the browser window stays at `about:blank`). The existing test user is passkey-only, which is incompatible with headless Playwright (passkey requires biometric / PIN gesture from the device). To unblock E2E, a separate password-based test user is needed. Moved to `playwright-password-test-user`._
+- [x] 14.2 Commit updated `.auth/` artifacts _Moved to `playwright-password-test-user` (depends on §14.1)._
+- [x] 14.3 Run `npx playwright test` locally and verify all existing E2E tests pass _Moved to `playwright-password-test-user` (depends on §14.1)._
 
 ## 15. Cooldown & Cleanup
 
@@ -183,9 +183,9 @@ These are gaps surfaced by the cutover that did not exist in the original propos
 
 ### 18.5 Playwright E2E — password-based test user
 
-- [ ] 18.5.1 Provision a password-only test user in the new self-hosted Zitadel (Pulumi resource `zitadel.HumanUser` + initial password) for use by Playwright. Passkey-only users are incompatible with headless / CI testing because passkey requires biometric / PIN gesture.
-- [ ] 18.5.2 Update `.auth/README.md` to document the new test user credentials and the WSL2-friendly capture path (likely Playwright MCP headless rather than the existing `capture-auth-state.ts` headed-Chromium script).
-- **Tracked in**: [liverty-music/frontend#345](https://github.com/liverty-music/frontend/issues/345). Open before this change is archived; the GitHub issue is the actionable surface, not this checkbox.
+- [x] 18.5.1 Provision a password-only test user in the new self-hosted Zitadel (Pulumi resource `zitadel.HumanUser` + initial password) for use by Playwright. Passkey-only users are incompatible with headless / CI testing because passkey requires biometric / PIN gesture. _Moved to `playwright-password-test-user`._
+- [x] 18.5.2 Update `.auth/README.md` to document the new test user credentials and the WSL2-friendly capture path (likely Playwright MCP headless rather than the existing `capture-auth-state.ts` headed-Chromium script). _Moved to `playwright-password-test-user`._
+- **Tracked in**: openspec change `playwright-password-test-user` (proposal-only stub at archive time; expand via `/opsx:continue` when scheduled). GitHub issue [liverty-music/frontend#345](https://github.com/liverty-music/frontend/issues/345) remains the operational tracking surface.
 
 ### 18.6 Zitadel API in-memory state pollution after long uptime
 
@@ -197,27 +197,29 @@ These are gaps surfaced by the cutover that did not exist in the original propos
 
 ### 18.7 K8s deploy rename: `zitadel` → `zitadel-api`, `zitadel-login` → `zitadel-web`
 
-- [ ] 18.7.1 Rename Deployment / Service / HTTPRoute backendRefs / HealthCheckPolicy targetRefs / PDB selectors in `cloud-provisioning/k8s/namespaces/zitadel/` for naming consistency. Container names follow (`api`, `web`).
-- [ ] 18.7.2 Update `ZITADEL_API_URL` default to point at the new Service name (still public URL externally; the rename is for cluster-internal clarity).
-- [ ] 18.7.3 Brief downtime acceptable in dev; ArgoCD performs delete-then-create on resource rename.
+- [x] 18.7.1 Rename Deployment / Service / HTTPRoute backendRefs / HealthCheckPolicy targetRefs / PDB selectors in `cloud-provisioning/k8s/namespaces/zitadel/` for naming consistency. Container names follow (`api`, `web`). _Moved to `k8s-naming-cleanup`._
+- [x] 18.7.2 Update `ZITADEL_API_URL` default to point at the new Service name (still public URL externally; the rename is for cluster-internal clarity). _Moved to `k8s-naming-cleanup`._
+- [x] 18.7.3 Brief downtime acceptable in dev; ArgoCD performs delete-then-create on resource rename. _Moved to `k8s-naming-cleanup`._
 - **Tracked in**: openspec change `k8s-naming-cleanup` (proposal-only stub at archive time; expand via `/opsx:continue` when scheduled).
 
 ### 18.8 GSM secret rename: `zitadel-machine-key` → `zitadel-backend-app-key`
 
-- [ ] 18.8.1 Cross-repo coordinated rename. Zero-downtime split:
+- [x] 18.8.1 Cross-repo coordinated rename. Zero-downtime split:
   - Step 1 (cloud-provisioning): create new GSM secret `zitadel-backend-app-key` populated from current `MachineKey.keyDetails`; add new ExternalSecret + K8s Secret in backend namespace; keep old in place.
   - Step 2 (backend): switch Deployment volumeMount to new K8s Secret name + update `ZITADEL_MACHINE_KEY_PATH` env if needed.
   - Step 3 (cloud-provisioning, cleanup): remove old GSM Secret + ExternalSecret + K8s Secret.
-- **Tracked in**: openspec change `rename-zitadel-machine-key-secret` (proposal-only stub at archive time; expand via `/opsx:continue` when scheduled).
+  _Moved to `rename-zitadel-machine-keys` (archived 2026-05-13). The candidate name `zitadel-backend-app-key` was supplanted there by the uniform convention `zitadel-machine-key-for-<principal>`._
+- **Tracked in**: openspec change `rename-zitadel-machine-keys` (archived 2026-05-13 — see `openspec/changes/archive/2026-05-13-rename-zitadel-machine-keys/`).
 
 ### 18.9 Pulumi state import safeguards
 
-- [ ] 18.9.1 The cutover required a hand-crafted merged-state JSON because `pulumi state delete --target-dependents` cascade-removed 87 resources beyond the intended Cloud-Zitadel-only scope. Add a runbook entry under `/cloud-provisioning/docs/` documenting:
+- [x] 18.9.1 The cutover required a hand-crafted merged-state JSON because `pulumi state delete --target-dependents` cascade-removed 87 resources beyond the intended Cloud-Zitadel-only scope. Add a runbook entry under `/cloud-provisioning/docs/` documenting:
   - The blast radius of `--target-dependents` (it follows ALL parents/dependencies, not just same-component-tree).
   - The merged-state-import procedure used in v254.
   - The need to scrub `__pulumi_raw_state_delta` after import (provider panic prevention).
-- [ ] 18.9.2 Add a Pulumi Cloud "deployment guardrail" or pre-deploy check that diff-counts `delete > 50` and requires explicit human approval (Pulumi Cloud has a similar `pulumi-deployments-config.yaml` policy hook).
-- **Tracked in**: openspec change `pulumi-deploy-safeguards` (proposal-only stub at archive time; expand via `/opsx:continue` when scheduled). Both 18.9.1 (runbook) and 18.9.2 (deploy hook) are in the same change.
+  _Moved to `pulumi-state-recovery-runbook` (archived 2026-05-11)._
+- [x] 18.9.2 Add a Pulumi Cloud "deployment guardrail" or pre-deploy check that diff-counts `delete > 50` and requires explicit human approval (Pulumi Cloud has a similar `pulumi-deployments-config.yaml` policy hook). _**Declined** in `pulumi-state-recovery-runbook` proposal: would not have prevented the §13.4 incident (operator-initiated `pulumi state delete` bypasses both `preview` and `up`), and the code-driven cascade case it would catch is already mitigated by PR-review of the `pulumi preview` output Pulumi Cloud posts on every PR (`previewPullRequests=true`)._
+- **Tracked in**: openspec change `pulumi-state-recovery-runbook` (archived 2026-05-11 — see `openspec/changes/archive/2026-05-11-pulumi-state-recovery-runbook/`). Covers §18.9.1 (the runbook); §18.9.2 (deploy-time guardrail) was declined in that proposal.
 
 ### 18.10 Cloud tenant decommission (descoped 2026-05-11)
 
