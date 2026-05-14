@@ -4,7 +4,7 @@ After the `prod-k8s-manifests` change deploy on 2026-05-14, the prod self-hosted
 
 What didn't happen: the planned "second `pulumi up --stack prod`" did not create the backend MachineKey, because the Pulumi code that creates it (`MachineUserComponent`) is invoked only from inside the `Zitadel` class at [`src/zitadel/index.ts`](https://github.com/liverty-music/cloud-provisioning/blob/main/src/zitadel/index.ts), and that class is instantiated only when `env === 'dev'` at [`src/index.ts:74`](https://github.com/liverty-music/cloud-provisioning/blob/main/src/index.ts#L74). The original gate was correct for the SaaS Cloud-tenant Zitadel; it was not lifted when prod switched to self-hosted.
 
-The blast-radius separation that `prod-k8s-manifests` round-12 fix established (org-admin JWT → Pulumi only; backend uses a derived lower-privilege MachineKey) is correct — the gap is purely on the Pulumi side. Three GCP resources need to exist after this change runs successfully: the prod Zitadel `MachineUser`, the prod Zitadel `MachineKey`, and the GSM `Secret` + `SecretVersion` named `zitadel-machine-key-for-backend-app` (project `liverty-music-prod`).
+The blast-radius separation that `prod-k8s-manifests` round-12 fix established (org-admin JWT → Pulumi only; backend uses a derived lower-privilege MachineKey) is correct — the gap is purely on the Pulumi side. Five Pulumi resources need to exist after this change runs successfully: the prod Zitadel `MachineUser` and `MachineKey` (Zitadel-provider resources targeting `auth.liverty-music.app`), the GSM `Secret` named `zitadel-machine-key-for-backend-app`, its `SecretVersion`, and the `SecretIamMember` granting ESO read access (all three GCP resources in project `liverty-music-prod`).
 
 Backend Pods on prod are currently stuck in `ContainerCreating` waiting for that GSM Secret. The blocker chain is: this change merges → `pulumi up --stack prod` creates the 5 new resources → ESO syncs the new GSM Secret into the backend namespace → Reloader rolls the backend Deployment → backend Pods reach Running → backend → Zitadel auth path is live.
 
@@ -28,7 +28,7 @@ Backend Pods on prod are currently stuck in `ContainerCreating` waiting for that
 
 ### D1: Extract `BackendMachineKeyComponent` (Option B) over lifting the full `Zitadel` class gate (Option A)
 
-**Decision:** Extract a focused, top-level `BackendMachineKeyComponent` that takes minimal inputs (Zitadel provider, org ID, GSM project) and produces the four resources needed. Do NOT lift the env gate on the existing `Zitadel` class.
+**Decision:** Extract a focused, top-level `BackendMachineKeyComponent` that takes minimal inputs (Zitadel provider, org ID, GSM project) and produces the five resources needed (`MachineUser`, `MachineKey`, GSM `Secret`, GSM `SecretVersion`, `SecretIamMember`). Do NOT lift the env gate on the existing `Zitadel` class.
 
 **Why:**
 

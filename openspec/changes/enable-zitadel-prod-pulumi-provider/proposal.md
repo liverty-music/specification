@@ -23,7 +23,11 @@ This change closes that gap: enables a prod-scoped `Zitadel` Pulumi instance tha
 
 ### Modified Capabilities
 
-- `zitadel-self-hosted-deployment`: extend the existing Bootstrap Admin Machine Key + Backend MachineKey Lifecycle requirements to cover **prod** (currently they reference dev's project/SA/connection name with the implicit assumption that an `env === 'dev'` gate exists Pulumi-side). The requirement narrative becomes env-agnostic, and the prod-specific values (project = `liverty-music-prod`, Zitadel API URL = `https://auth.liverty-music.app`, IAM SA = `zitadel@liverty-music-prod.iam`) are validated against the existing scenarios. No new requirements; existing requirements broaden to apply equally to dev + prod.
+- `zitadel-self-hosted-deployment`: 2 MODIFIED + 2 ADDED requirements.
+  - **MODIFIED** "Cloud SQL Database and IAM User Pre-Provisioned by Pulumi" and "Backend MachineKey Lifecycle Tied to Zitadel-Side Identity" — narratives become env-agnostic (`zitadel@liverty-music-${env}.iam`), and the latter gains a new scenario asserting both dev and prod stacks each produce their own `MachineKey` + GSM `Secret`/`SecretVersion`.
+  - **ADDED** "First-Boot Org Looked Up via Provider Data Source" — prohibits creating the admin org as a `zitadel.Org` resource when first-boot bootstrap auto-created it (destroy-cascade hazard); mandates a `zitadel.getOrg` data-source lookup.
+  - **ADDED** "Prod Backend MachineKey Component Authenticates with Bootstrap-Uploaded Admin JWT" — mandates the prod provider's `jwtProfileJson` is sourced from `gcp.secretmanager.getSecretVersion` on `zitadel-machine-key-for-pulumi-admin`, never from Pulumi config or ESC.
+  - Prod-specific values (project = `liverty-music-prod`, Zitadel API URL = `https://auth.liverty-music.app`, IAM SA = `zitadel@liverty-music-prod.iam`) are validated against the broadened scenarios.
 
 ## Impact
 
