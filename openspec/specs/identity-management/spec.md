@@ -627,9 +627,9 @@ The system SHALL invoke the Zitadel admin API `POST /admin/v1/smtp/{id}/_activat
 
 ### Requirement: Provision Password-Based E2E Test User in Dev Zitadel
 
-The dev self-hosted Zitadel instance SHALL provision, via Pulumi, a password-based `zitadel.HumanUser` for E2E test automation, distinct from the existing passkey-only test user. The provisioning SHALL be gated to the `dev` Pulumi stack and SHALL NOT execute in any other stack.
+The dev self-hosted Zitadel instance SHALL provision, via Pulumi, a password-based `zitadel.HumanUser` for E2E test automation. The provisioning SHALL be gated to the `dev` Pulumi stack and SHALL NOT execute in any other stack.
 
-**Rationale**: Passkey authentication requires a biometric/PIN gesture from a registered device and cannot be replayed by headless Playwright. A separate password-based user provides a credential path that headless test automation can drive end-to-end, unblocking E2E coverage of the post-cutover self-hosted issuer.
+**Rationale**: Headless test automation cannot drive a passkey-only login flow (passkey requires a biometric / PIN gesture from a registered device). A Pulumi-managed password-based user provides a credential path the headless capture script can drive end-to-end, unblocking E2E coverage of the post-cutover self-hosted issuer. (Earlier wording referenced "distinct from the existing passkey-only test user" — that wording was inherited from the original `playwright-password-test-user` change but no passkey-only test user exists on the active self-hosted dev Zitadel; the Zitadel-Cloud-era Self-Registration user was wiped by `self-hosted-zitadel §10` and never re-provisioned.)
 
 #### Scenario: Pulumi apply on dev stack provisions the test user
 
@@ -659,17 +659,4 @@ The dev self-hosted Zitadel instance SHALL provision, via Pulumi, a password-bas
 - **THEN** the preview SHALL clearly indicate the replacement (`-/+ create replacement`)
 - **AND** after apply, the new HumanUser SHALL use the latest ESC `initialPassword` value
 - **AND** the operator is then responsible for re-mirroring `.auth/password.md` and re-running the headless capture script to regenerate `.auth/storageState.json`
-
-### Requirement: Test User Coexists with Passkey User
-
-The Pulumi-provisioned password-based E2E test user SHALL coexist with the existing passkey-only test user. Neither user SHALL replace, deactivate, or alter the other.
-
-**Rationale**: The passkey user remains the canonical UX path for device-bound manual smoke testing. The password user is added purely to unblock headless automation. Removing the passkey user would lose coverage of the passkey login flow.
-
-#### Scenario: Both users present after provisioning
-
-- **WHEN** the change is applied to dev
-- **THEN** the existing passkey-only user SHALL still be present in Zitadel and unchanged
-- **AND** the new password-based user SHALL also be present
-- **AND** both users SHALL be assignable to the same OIDC Application via the same role grants
 
