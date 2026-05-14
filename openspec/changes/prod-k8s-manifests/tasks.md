@@ -23,9 +23,9 @@
   - Keep `argocd.argoproj.io/sync-wave` annotations identical to dev.
 - [ ] 3.3 Verify all 14 Applications point at `*/overlays/prod` (no leftover dev refs): `grep -l "overlays/dev" cloud-provisioning/k8s/argocd-apps/prod/` should return empty.
 
-## 4. Per-namespace prod overlays (`cloud-provisioning/k8s/namespaces/<ns>/overlays/prod/`)
+## 4. Prod overlays (`cloud-provisioning/k8s/namespaces/<ns>/overlays/prod/` + `cloud-provisioning/k8s/cluster/overlays/prod/`)
 
-For each of the 10 namespaces missing a prod overlay (`atlas-operator`, `backend`, `external-secrets`, `frontend`, `gateway`, `keda`, `nats`, `otel-collector`, `reloader`, `zitadel`):
+For each of the 10 namespaces missing a prod overlay (`atlas-operator`, `backend`, `external-secrets`, `frontend`, `gateway`, `keda`, `nats`, `otel-collector`, `reloader`, `zitadel`), plus the cluster-scope overlay at `k8s/cluster/overlays/prod/` authored in §4.11:
 
 - [ ] 4.1 atlas-operator: create overlay with prod-scoped Helm values (target Cloud SQL prod instance, prod IAM SA). Most fields will be the same as dev; the env-divergent piece is the Atlas Operator's per-namespace AtlasMigration CRs that reference the Cloud SQL connection string.
 - [ ] 4.2 backend: create overlay with prod hostname (`api.liverty-music.app`), prod ESC-secret refs, prod Connect-RPC server config (allowed-origins includes `https://liverty-music.app`), prod OIDC issuer (`https://auth.liverty-music.app`). Replicas: 1.
@@ -57,7 +57,7 @@ For each of the 10 namespaces missing a prod overlay (`atlas-operator`, `backend
 - [ ] 7.2 `make lint-k8s` — must pass with both dev + prod overlays + spot-label check.
 - [ ] 7.3 For each prod overlay, run `kustomize build --enable-helm <overlay-path> | kube-linter lint -` — all 12 prod overlays (11 namespace + 1 cluster) must pass kube-linter.
 - [ ] 7.4 `kubectl kustomize k8s/argocd-apps/prod` — renders all 14 Applications without error.
-- [ ] 7.5 Verify the Backend Atlas migration plan against an empty Postgres: `cd backend; atlas migrate apply --dry-run --url "postgres://postgres:pass@localhost:5432/dev?sslmode=disable"` against a fresh `postgres:18` Docker container — replays the existing migration files (NOT a re-diff, which is what `atlas migrate diff` does — `apply --dry-run` is the right command for the validation goal). Review output for any DROP TABLE / data-loss patterns that would break a clean-slate prod schema (none expected, but confirm). Optionally also run `atlas migrate lint --latest 5` for structured destructive-change detection.
+- [ ] 7.5 Verify the Backend Atlas migration plan against an empty Postgres. Start a fresh container with the `liverty_music` database pre-created: `docker run --rm -e POSTGRES_PASSWORD=pass -e POSTGRES_DB=liverty_music -p 5432:5432 postgres:18`. Then `cd backend; atlas migrate apply --dry-run --url "postgres://postgres:pass@localhost:5432/liverty_music?sslmode=disable"` — replays the existing migration files against the empty DB (NOT a re-diff, which is what `atlas migrate diff` does — `apply --dry-run` is the right command for the validation goal). Review output for any DROP TABLE / data-loss patterns that would break a clean-slate prod schema (none expected, but confirm). Optionally also run `atlas migrate lint --latest 5` for structured destructive-change detection.
 - [ ] 7.6 `pulumi preview --stack prod` — confirms only the 6 new GSM-related resources (no cluster churn).
 
 ## 8. PR preparation

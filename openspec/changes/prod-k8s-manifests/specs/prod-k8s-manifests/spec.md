@@ -53,7 +53,7 @@ The repo's `Makefile` `lint-k8s` target SHALL render *both* dev and prod overlay
 
 #### Scenario: lint-k8s covers prod overlays
 - **WHEN** running `make lint-k8s`
-- **THEN** the target SHALL render every overlay under `k8s/namespaces/*/overlays/{dev,prod}` (not just `dev`)
+- **THEN** the target SHALL render every overlay under both `k8s/namespaces/*/overlays/dev` and `k8s/namespaces/*/overlays/prod` (explicit listing — brace expansion `{dev,prod}` is bash-only and silently expands to nothing in Make's default `/bin/sh`)
 - **AND** `./scripts/check-spot-nodeselector.sh` SHALL run against the prod rendered output
 - **AND** the lint SHALL pass iff every Pod template in both envs has the gke-spot nodeSelector
 
