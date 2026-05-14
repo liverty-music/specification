@@ -4,7 +4,7 @@ The dev self-hosted Zitadel instance (cutover landed 2026-04-30 via `self-hosted
 
 Concretely, three things are blocked today:
 
-1. The committed Playwright `.auth/storageState.json` was captured against the pre-cutover Zitadel Cloud issuer and is stale — every `npx playwright test` run fails before reaching application code.
+1. Each developer's local `.auth/storageState.json` (gitignored per the existing `e2e-auth-testing` "StorageState Gitignore" requirement) was last captured against the pre-cutover Zitadel Cloud issuer and is stale — `npx playwright test` fails before reaching application code.
 2. The existing capture script (headed Chromium) cannot regenerate the storage state on the developer's WSL2 host.
 3. Even on a working display, the passkey credential can't be replayed by Playwright headless because the gesture requirement bypasses any scripted automation.
 
@@ -110,8 +110,8 @@ This is dev-only and additive; no migration of existing data.
 **Rollout order:**
 
 1. `cloud-provisioning`: add the Pulumi `zitadel.HumanUser` resource + initial password Pulumi config; apply to dev stack.
-2. Developer pulls the password from the Pulumi output, writes `frontend/.auth/password.md` (gitignored).
-3. `frontend`: add the new headless capture script (Playwright MCP path); regenerate `.auth/storageState.json`; commit the storage state file.
+2. Developer pulls the password from ESC (or the Pulumi stack output), writes `frontend/.auth/password.md` (gitignored).
+3. `frontend`: add the new headless capture script; regenerate `.auth/storageState.json` locally (gitignored — each developer regenerates on demand, per the existing "StorageState Gitignore" requirement).
 4. Run `npx playwright test` locally; verify the full E2E suite passes against the new issuer.
 5. Archive the change once all `tasks.md` items are checked off.
 
