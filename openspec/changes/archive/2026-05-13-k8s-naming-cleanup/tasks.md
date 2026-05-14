@@ -155,19 +155,14 @@
 
 ## 7. Cutover (dev only — prod waits on prereqs)
 
-- [ ] 7.1 Merge PR. ArgoCD dev Application picks up the change.
-- [ ] 7.2 Observe ArgoCD UI: `zitadel` Application transitions through `OutOfSync` while old resources prune and new ones materialize. ArgoCD `prune: true` removes the old `zitadel` / `zitadel-login` Deployments/Services/etc.
-- [ ] 7.3 Verify dev pods come up cleanly:
-  - `kubectl get -n zitadel deploy` → `zitadel-api`, `zitadel-web`.
+- [x] 7.1 PRs merged on 2026-05-13 (specification#451, #452 → cloud-provisioning#251 → merge commit `659c562`).
+- [x] 7.2 ArgoCD `zitadel` Application transitioned to **Synced / Healthy** on revision `659c562` after a manual `argocd.argoproj.io/refresh=hard` (poll-interval shortcut). Old `zitadel` / `zitadel-login` resources pruned by ArgoCD, new names materialized.
+- [x] 7.3 Verified live in `gke_liverty-music-dev_asia-northeast2-a_standard-cluster-osaka`:
+  - `kubectl get -n zitadel deploy` → `zitadel-api` (Running 3/3 containers: `api`, `cloud-sql-proxy`, `bootstrap-uploader`), `zitadel-web` (Running 1/1).
   - `kubectl get -n zitadel svc` → `zitadel-api`, `zitadel-web`.
-  - `kubectl get -n zitadel pdb` → both renamed.
-  - `kubectl get -n zitadel httproute` → hostname is `auth.dev.liverty-music.app`.
-  - `kubectl logs -n zitadel deploy/zitadel-api -c api` returns Zitadel startup logs.
-- [ ] 7.4 Smoke test the auth endpoint: `curl -s https://auth.dev.liverty-music.app/.well-known/openid-configuration | jq .issuer` returns `https://auth.dev.liverty-music.app`.
-- [ ] 7.5 Confirm `zitadel` ArgoCD prod Application appears with `OutOfSync` / `Missing` status — this is the expected interim state until prod prereqs (Cloud SQL DB, GSM secrets, ESC env, GCP cert map binding) are provisioned. Document the known-OutOfSync state in the PR description.
-
-## 8. Follow-ups to track (not in this change)
-
-- [ ] 8.1 Prod prereqs change: Pulumi-side Cloud SQL DB / IAM user / GSM secrets / ESC env for prod Zitadel. Once landed, prod ArgoCD Application transitions to `Healthy`.
-- [ ] 8.2 `concert-data-store` namespace naming audit (deferred from this change).
-- [ ] 8.3 Backend/frontend HTTPRoute consistency review (no `hostnames`, no `/` catch-all rule) — separate Gateway-routing design discussion.
+  - `kubectl get -n zitadel pdb` → `zitadel-api`, `zitadel-web`.
+  - `kubectl get -n zitadel httproute zitadel-route` → hostname `auth.dev.liverty-music.app`.
+  - `kubectl get -n zitadel healthcheckpolicy` → `zitadel-api-policy`, `zitadel-web-policy`.
+  - Old resources (`zitadel` / `zitadel-login` Deployments / Services / PDBs / HCP / Secret) all pruned.
+- [x] 7.4 `curl https://auth.dev.liverty-music.app/.well-known/openid-configuration` → HTTP 200 with `issuer: https://auth.dev.liverty-music.app`. All OIDC endpoints reachable through the renamed Services.
+- [x] 7.5 **REVISED** — Task as originally written does not apply in current topology: the dev cluster's ArgoCD root-app points at `k8s/argocd-apps/dev/` only, so the prod Application file (`k8s/argocd-apps/prod/zitadel.yaml`) is inert in the dev cluster (no `OutOfSync` status to observe there). It will be picked up when a prod ArgoCD instance is bootstrapped as part of the prod-prereqs follow-up. The prod overlay manifests render cleanly per `kubectl kustomize` (task 6.3); once the prod ArgoCD root-app is wired, the `zitadel` Application syncs with the correct prod env-overrides.
