@@ -55,9 +55,13 @@ Stakeholders: frontend (E2E pipeline owner), cloud-provisioning (Pulumi-provisio
 
 **Rationale**: Playwright MCP runs Chromium with no display server, sidesteps the WSL2 + WSLg rendering bug, and the dependency is already in the project's evaluation pool (the AGENTS memory references Playwright MCP as a tool the agent has access to). The two scripts targeting two user types keeps each code path single-purpose.
 
-### D3: Credentials in gitignored `.auth/password.md`, NOT GSM
+### D3: Credentials in ESC + gitignored `.auth/password.md`, NOT GSM
 
-**Choice**: The test user's password lives in `frontend/.auth/password.md` (gitignored, per the existing `[reference_e2e_auth]` convention). Pulumi sets it as the `InitialPassword` and surfaces it via a Pulumi stack output read once at provisioning time.
+**Choice**: The test user's password is the value of an **ESC secret** at `liverty-music/dev → pulumiConfig.zitadel.e2eTestUser.password`. Pulumi reads it via `config.requireSecretObject`, sets it as the HumanUser's `initialPassword`, and the developer mirrors the same value into `frontend/.auth/password.md` (gitignored, per the existing `[reference_e2e_auth]` convention) for the Playwright capture script to consume.
+
+ESC is the source of truth; `.auth/password.md` is a local read mirror. The developer retrieves the value once via `esc env get liverty-music/dev pulumiConfig.zitadel.e2eTestUser.password --show-secrets` (or `pulumi stack output --show-secrets` if surfaced as a stack output) and writes it locally.
+
+The Pulumi config protocol matters: per `cloud-provisioning/CLAUDE.md`, environment-specific secrets MUST be set via `esc env set`, NOT `pulumi config set`. The former writes to the ESC environment; the latter writes to the stack YAML and risks committing the secret reference to git.
 
 **Alternatives considered**:
 
@@ -97,6 +101,7 @@ Stakeholders: frontend (E2E pipeline owner), cloud-provisioning (Pulumi-provisio
 | Password discoverability — anyone with repo + `.auth/` access can authenticate as the test user. | The user has zero application data (fresh provisioning), no admin role, and exists only on the dev Zitadel instance. Equivalent to any dev-only seed credential. |
 | Pulumi `InitialPassword` rotates on resource replace, breaking storage state without warning. | Use Pulumi `ignoreChanges` on the `initialPassword` field after first creation. Document that intentional rotation requires `pulumi up --replace` AND `.auth/password.md` regeneration AND `.auth/storageState.json` regeneration, in that order. |
 | Test user shows up in admin console alongside real signups — operator confusion. | Pulumi-managed user has a recognizable display name (`e2e-test-password`) and email domain (`e2e-test@dev.liverty-music.app` or similar). Document the convention in `.auth/README.md`. |
+| ProductOrg `LoginPolicy.userLogin=true` is currently a workaround for Zitadel upstream issue [#11682](https://github.com/zitadel/zitadel/issues/11682) (Login V2 Register page does not render form fields when `userLogin=false`, even with `passwordlessType=ALLOWED`). The e2e-test-user's password sign-in depends on this flag staying `true`. If/when the upstream fix lands and `userLogin` is reverted to `false`, the e2e-test-user can no longer authenticate via username + password and the entire headless capture path stops working. | Add a comment in `components/frontend.ts` next to the `userLogin: true` line cross-referencing this change. When reverting `userLogin` to `false`, the reverting PR MUST either (a) remove the e2e-test-user component AND switch back to passkey-only headless capture (no current path), (b) move the e2e-test-user into a third org with its own `LoginPolicy` that has `userLogin: true`, or (c) defer the revert until a per-user passwordless-override mechanism is available. Track via the upstream-issue subscription. |
 
 ## Migration Plan
 

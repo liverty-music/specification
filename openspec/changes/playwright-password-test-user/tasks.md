@@ -1,6 +1,6 @@
 ## 1. Pulumi — provision password-based test user (cloud-provisioning)
 
-- [ ] 1.1 Add a Pulumi stack-config entry for the test user's password (`pulumi config set --secret zitadel:e2eTestUserPassword <value>`) on the `dev` stack only; do NOT set it on staging / prod
+- [ ] 1.1 Add an ESC secret for the test user's password targeting the dev environment only (`esc env set liverty-music/dev pulumiConfig.zitadel.e2eTestUser.password <value> --secret`); do NOT set it on `liverty-music/staging` or `liverty-music/prod`. Use `esc env set`, NOT `pulumi config set` — the project's ESC-vs-Pulumi-config protocol is documented in `cloud-provisioning/CLAUDE.md` (writing to the stack YAML risks committing the secret name to git history).
 - [ ] 1.2 In `cloud-provisioning/src/zitadel/`, add a new component (e.g., `e2e-test-user.ts`) that creates a `zitadel.HumanUser` resource with `userName`, `firstName`, `lastName`, `email` (under the dev-only domain), and `initialPassword` from the stack-config secret
 - [ ] 1.3 In the same component, add a `pulumi.getStack() !== "dev"` synthesis-time guard that throws a clear `"E2E test user is dev-only"` error if the component is instantiated outside dev
 - [ ] 1.4 Wire `ignoreChanges: ["initialPassword"]` on the resource so casual edits do not silently trigger replacement; document the `--replace` requirement for intentional rotation
