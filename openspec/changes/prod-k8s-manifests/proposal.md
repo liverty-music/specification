@@ -23,7 +23,7 @@ This change closes the loop. After it lands, prod runs the same 14 ArgoCD Applic
 ### Modified Capabilities
 
 - `prod-environment-bootstrap`: remove the existing "Prod GCP infrastructure ships without ArgoCD bootstrap (workloads in follow-up change)" requirement. After this change, prod ships *with* the full manifest set. The companion "follow-up change is tracked separately" scenario is also removed.
-- `zitadel-self-hosted-deployment`: extend the existing dev-scoped runtime/network/database/secrets requirements to apply equally to prod. Add scenarios for the prod OIDC issuer (`auth.liverty-music.app`), prod GSM secret namespace, and prod Cloud SQL `zitadel` database. The bootstrap and MachineKey lifecycle invariants apply identically.
+- `zitadel-self-hosted-deployment`: extend the existing dev-scoped *runtime* requirement (cluster + OIDC issuer URL) to apply equally to prod. The other dev-scoped requirements in that capability (Cloud SQL Connection via Auth Proxy Sidecar, Database & IAM User pre-provisioning, Bootstrap Admin Machine Key Storage) describe env-specific values (`liverty-music-dev:asia-northeast2:postgres-osaka`, etc.) that the prod overlay-level patches replicate for prod via env-divergent kustomize fields — runtime behavior is correct for both envs after this change. A separate consolidation change can broaden those dev-scoped specs to be env-agnostic; that doc cleanup is intentionally out of scope here to avoid PR-scope creep.
 
 ## Impact
 

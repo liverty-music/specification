@@ -104,20 +104,23 @@ Each PodMonitoring uses `interval: 60s` (4× reduction vs the default 15s) to ke
 
 **Future revisit:** when an alert is added that depends on a metric outside the keep-list, the relevant overlay's PodMonitoring keep-rule extends to include it. Adding more workloads to the scraped set is a separate, deliberate decision per workload.
 
-### D6: ArgoCD sync-wave ordering — cluster-scope first, then infra, then apps
+### D6: ArgoCD sync-wave ordering — exact mirror of dev's actual annotations
 
-**Decision:** Each prod Application's `argocd.argoproj.io/sync-wave` annotation matches the dev pattern:
+**Decision:** Each prod Application's `argocd.argoproj.io/sync-wave` annotation matches the dev annotation verbatim. After inspecting `k8s/argocd-apps/dev/*.yaml`, the actual dev pattern is:
 
-- **Wave -1**: `namespaces` (creates all 11 namespaces with labels)
-- **Wave 0**: `cluster` (cluster-scope resources: ClusterSecretStore, CRD bootstrap)
-- **Wave 1**: `external-secrets`, `reloader`, `atlas-operator`, `keda`, `otel-collector` (infrastructure controllers)
-- **Wave 2**: `nats`, `gateway` (app-shared infrastructure)
-- **Wave 3**: `backend-migrations` (Atlas-driven schema migrations — must complete before backend starts)
-- **Wave 4**: `backend`, `frontend`, `zitadel` (application workloads)
+| Wave | Applications |
+|------|-------------|
+| **-1** | `namespaces` |
+| **1** | `cluster` |
+| **0 (default — no annotation)** | `argocd`, `external-secrets`, `reloader`, `keda`, `nats`, `atlas-operator`, `otel-collector`, `gateway`, `backend-migrations`, `backend`, `frontend`, `zitadel` |
 
-ArgoCD waits for each wave to be Healthy before starting the next.
+Apps without a `sync-wave` annotation default to wave 0. The `cluster` Application is the one outlier that runs AFTER wave 0 (it depends on CRDs installed by other Apps and seeds cluster-scope resources). The `namespaces` Application runs first (-1) so per-namespace Apps have somewhere to deploy into.
 
-**Why match dev:** the wave ordering encodes real dependencies (CRDs before controllers, controllers before workloads, schema migrations before app). Deviating from dev's wave assignments would risk discovering an unknown dependency on the prod cluster.
+ArgoCD's automatic dependency resolution handles the ordering within wave 0 — resources reference each other (e.g., `backend` Deployments mount Secrets created by ExternalSecret CRs reconciled by `external-secrets`), so the controllers come up before the workloads that depend on them, naturally.
+
+**Why match dev verbatim:** the wave annotations encode the team's tested ordering. Inventing finer-grained waves (e.g., separating `backend-migrations` from `backend`) without empirical evidence of dependency churn is over-engineering — if dev syncs cleanly without those barriers, prod will too.
+
+**Note:** an earlier draft of this design proposed waves 2/3/4 for finer ordering of `nats`/`gateway`, `backend-migrations`, and `backend`/`frontend`/`zitadel`. Verifying against dev showed those waves don't exist in practice. Removed during PR #457 review.
 
 ### D7: Lint coverage extension — `lint-k8s` renders both dev and prod overlays
 
@@ -161,18 +164,20 @@ This change is k8s-manifest-only — no Pulumi cluster changes. Deployment is:
 
 1. **Pre-merge prep (human, before opening PR)**:
    - Seed prod ESC values: `esc env set liverty-music/prod pulumiConfig.zitadel.zitadelMachineKey <base64-decoded-admin-key> --secret` and same for `zitadelLoginPat`.
-   - Seed prod GSM directly with the admin SA key for Zitadel bootstrap: `gcloud secrets versions add zitadel-machine-key --data-file=- --project liverty-music-prod < /path/to/admin-key.json`. (The bootstrap-uploader sidecar only fires on first-instance boot; pre-seeding short-circuits the dependency.)
+   - (GSM pre-seed deferred to step 5 — the `zitadel-machine-key` Secret resource doesn't exist in prod GSM until Pulumi creates it, so direct `gcloud secrets versions add` here would 404. The pre-seed step has to follow Pulumi creating the Secret.)
 2. **PR + CI**:
    - `make lint-k8s` runs against `k8s/namespaces/*/overlays/{dev,prod}` — must pass for all 22 overlays.
-   - Pulumi preview runs against prod stack — expect ~10-15 changes (remove zitadel-prod env-gate from `src/index.ts` flows new ESC values into 2 new prod GSM Secret resources + IAM bindings for those).
+   - Pulumi preview runs against prod stack — expect ~6 changes (remove zitadel-prod env-gate from `src/index.ts` flows new ESC values into 2 new prod GSM Secret resources + 2 SecretVersion resources + IAM bindings for those).
 3. **Merge**:
    - Merge to main triggers Pulumi auto-deploy on dev (no-op for k8s manifest paths). Prod stays on manual trigger.
 4. **Pulumi up for prod (manual, post-merge)**:
-   - Trigger `pulumi up --stack prod` from Pulumi Cloud console to apply the Pulumi-side changes (2 new GSM Secrets + IAM bindings).
-5. **ArgoCD bootstrap (manual, post-Pulumi-up)**:
+   - Trigger `pulumi up --stack prod` from Pulumi Cloud console to apply the Pulumi-side changes (2 new GSM Secrets + IAM bindings). After this step, the `zitadel-machine-key` and `zitadel-login-pat` Secret resources exist in prod GSM with a Pulumi-managed default placeholder version.
+5. **GSM pre-seed (human, post-Pulumi-up, pre-ArgoCD-sync)**:
+   - Add the prod admin SA key to the now-existing Secret: `gcloud secrets versions add zitadel-machine-key --data-file=/path/to/admin-key.json --project liverty-music-prod`. ESO will read the latest version when Zitadel starts. The bootstrap-uploader sidecar only fires on first-instance Zitadel boot; pre-seeding short-circuits the dependency. Same for `zitadel-login-pat` if needed.
+6. **ArgoCD bootstrap (manual, post-pre-seed)**:
    - `kubectl --context gke_liverty-music-prod_asia-northeast2_autopilot-cluster-osaka apply -k k8s/argocd-apps/prod/` to register the 14 Applications.
-   - ArgoCD reconciles wave -1 (`namespaces`) first, then 0 (`cluster`), then 1 (infrastructure), then 2 (`nats` + `gateway`), then 3 (`backend-migrations`), then 4 (`backend` + `frontend` + `zitadel`). Total sync time: ~5-15 min.
-6. **Verification**:
+   - ArgoCD reconciles wave -1 (`namespaces`) first, then wave 0 default (most Apps including `argocd`, infra controllers, app workloads — ordering resolved by resource dependencies, not by sub-wave annotations), then wave 1 (`cluster`). Total sync time: ~5-15 min.
+7. **Verification**:
    - All 14 Applications show Healthy in ArgoCD UI.
    - `api-gateway-static-ip` status: `IN_USE`, claimed by the prod Gateway.
    - `curl -I https://api.liverty-music.app/grpc.health.v1.Health/Check` returns 200 (or appropriate Connect-RPC framing).

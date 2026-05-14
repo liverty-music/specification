@@ -4,7 +4,7 @@
 - [ ] 1.2 Confirm the api-gateway-static-ip is `RESERVED` (unbound) and has the IP `34.110.151.208`: `gcloud compute addresses describe api-gateway-static-ip --global --project liverty-music-prod --format='value(status,address)'`
 - [ ] 1.3 Confirm prod Cloud SQL `postgres-osaka` is `RUNNABLE` with the `liverty_music` and `zitadel` databases provisioned (from prior `provision-prod-gcp-resources` work)
 - [ ] 1.4 Confirm prod GSM has placeholder Pulumi-managed secrets for the non-Zitadel keys (`lastfm-api-key`, `fanarttv-api-key`, `blockchain-*`, `postgres-admin-password`, `vapid-private-key`, etc.) — these were seeded during the `provision-prod-gcp-resources` archive but verify each has at least one version
-- [ ] 1.5 Pre-seed prod Zitadel admin SA key into GSM (manual one-shot, bypassing the bootstrap-uploader sidecar). Generate or extract the admin SA key, then: `gcloud secrets versions add zitadel-machine-key --data-file=/path/to/admin-key.json --project liverty-music-prod`. The bootstrap-uploader sidecar only fires on first-instance Zitadel boot per memory `reference_zitadel_bootstrap_uploader_scenario_2.md`; pre-seeding avoids the chicken-and-egg.
+- [ ] 1.5 Generate or extract the prod Zitadel admin SA key locally (do NOT add to GSM yet — the `zitadel-machine-key` Secret resource doesn't exist in prod GSM until Pulumi creates it in §9.1; trying to add a version now would 404). Stash the key file safely (e.g., `/tmp/zitadel-admin-key-prod.json`, gitignored) — it gets added to GSM in §9.2 once Pulumi has created the Secret.
 
 ## 2. Pulumi-side preparation (`cloud-provisioning/src/`)
 
@@ -35,7 +35,7 @@ For each of the 10 namespaces missing a prod overlay (`atlas-operator`, `backend
 - [ ] 4.4 frontend: create overlay with prod hostname / Aurelia env config (PROJECT_ID = `liverty-music-prod`, OIDC issuer = `https://auth.liverty-music.app`). Replicas: 1.
 - [ ] 4.5 gateway: create overlay with prod Gateway CR (`spec.addresses` → `NamedAddress: api-gateway-static-ip`) + prod HTTPRoutes for `api.liverty-music.app` (→ backend) and `auth.liverty-music.app` (→ zitadel-api / zitadel-web path-split per the existing zitadel-self-hosted-deployment spec). Reference the existing Certificate Manager certs via cert-map annotations.
 - [ ] 4.6 keda: create overlay with prod Helm values (likely identical to dev; KEDA itself is a controller with no env-divergent state).
-- [ ] 4.7 nats: create overlay with prod values for the NATS JetStream cluster (3 replicas, same as dev base — or 1-replica for cost; revisit if cluster mode is required).
+- [ ] 4.7 nats: create overlay with prod values for the NATS StatefulSet. Replicas: 1 (per design D8 — dev base has 3 for cluster mode, but prod starts single-replica for cost; cluster-mode is a follow-up change when traffic justifies it). KEDA can scale the StatefulSet later.
 - [ ] 4.8 otel-collector: create overlay with prod exporter endpoints (Cloud Trace / Cloud Monitoring SA = prod's `otel-collector` GSA). Resource exporter targets the prod GCP project.
 - [ ] 4.9 reloader: create overlay (likely just inherits base; Reloader is a controller with no env-divergent state).
 - [ ] 4.10 zitadel: create overlay with prod hostname, prod GSM secret refs, prod Cloud SQL connection, prod OIDC issuer. Match the existing `Per-Environment Overlay Topology` requirement in `zitadel-self-hosted-deployment` spec (must omit the dev-only `zitadel-restart` CronJob). Replicas: 1 for each of `zitadel-api` + `zitadel-web` (per design.md D8).
@@ -71,17 +71,15 @@ For each of the 10 namespaces missing a prod overlay (`atlas-operator`, `backend
 
 ## 9. Prod cluster bootstrap (manual, after PR merge)
 
-- [ ] 9.1 Trigger `pulumi up --stack prod` from Pulumi Cloud console to apply §2 Pulumi changes (creates the 2 prod GSM Secrets + 4 IAM bindings).
-- [ ] 9.2 Verify prod Zitadel GSM secrets exist with the pre-seeded values: `gcloud secrets versions list zitadel-machine-key --project liverty-music-prod` (expect 2 versions: one from §1.5 pre-seed, one from §9.1 Pulumi-managed default) — or just one if Pulumi's SecretVersion `accessControl` mode allows version skipping.
-- [ ] 9.3 Apply the prod ArgoCD Applications: `kubectl --context gke_liverty-music-prod_asia-northeast2_autopilot-cluster-osaka apply -k k8s/argocd-apps/prod/` (or via the bootstrap script if one exists). This registers all 14 Applications with the in-cluster ArgoCD.
-- [ ] 9.4 Watch ArgoCD reconcile each sync wave in the ArgoCD UI:
-  - Wave -1: `namespaces` Application creates 11 namespaces.
-  - Wave 0: `cluster` Application creates ClusterSecretStores + CRDs.
-  - Wave 1: `external-secrets`, `reloader`, `atlas-operator`, `keda`, `otel-collector` controllers come up.
-  - Wave 2: `nats` + `gateway` infra workloads come up — Gateway claims the static IP.
-  - Wave 3: `backend-migrations` runs Atlas migrations against the empty `liverty_music` database.
-  - Wave 4: `backend`, `frontend`, `zitadel` application workloads come up.
-- [ ] 9.5 Monitor Autopilot node provisioning during the sync — Pods that need nodes trigger Autopilot to provision them; expect ~5-10 nodes by the end of wave 4 sync.
+- [ ] 9.1 Trigger `pulumi up --stack prod` from Pulumi Cloud console to apply §2 Pulumi changes (creates the 2 prod GSM Secret resources + 2 Pulumi-managed SecretVersion resources with placeholder values + IAM bindings).
+- [ ] 9.2 Pre-seed the prod admin SA key (from §1.5 stash) into the now-existing GSM Secret: `gcloud secrets versions add zitadel-machine-key --data-file=/tmp/zitadel-admin-key-prod.json --project liverty-music-prod`. ESO reads `latest` version by default, so this becomes the active secret for the first Zitadel Pod. Same pattern for `zitadel-login-pat` if a fresh PAT is needed. (The bootstrap-uploader sidecar only fires on first-instance Zitadel boot per memory `reference_zitadel_bootstrap_uploader_scenario_2.md`; pre-seeding short-circuits the dependency.)
+- [ ] 9.3 Verify the pre-seeded versions are present: `gcloud secrets versions list zitadel-machine-key --project liverty-music-prod` returns ≥2 versions (the Pulumi-managed placeholder from §9.1 + the §9.2 admin-key version, with the admin-key version being `latest`).
+- [ ] 9.4 Apply the prod ArgoCD Applications: `kubectl --context gke_liverty-music-prod_asia-northeast2_autopilot-cluster-osaka apply -k k8s/argocd-apps/prod/` (or via the bootstrap script if one exists). This registers all 14 Applications with the in-cluster ArgoCD.
+- [ ] 9.5 Watch ArgoCD reconcile (per design D6 — dev's actual 3-wave pattern):
+  - Wave **-1**: `namespaces` Application creates 11 namespaces.
+  - Wave **0** (default — no annotation): most Apps in parallel, including `argocd` (self-management), `external-secrets`, `reloader`, `keda`, `nats`, `atlas-operator`, `otel-collector`, `gateway`, `backend-migrations`, `backend`, `frontend`, `zitadel`. ArgoCD's dependency resolution handles ordering inside the wave (controllers come up before workloads that depend on their CRDs/Services).
+  - Wave **1**: `cluster` Application runs last (depends on CRDs installed by other Apps).
+- [ ] 9.6 Monitor Autopilot node provisioning during the sync — Pods that need nodes trigger Autopilot to provision them; expect ~5-10 nodes by sync completion.
 
 ## 10. Post-bootstrap verification
 

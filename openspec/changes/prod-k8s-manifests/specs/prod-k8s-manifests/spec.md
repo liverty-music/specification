@@ -38,7 +38,7 @@ Image references SHALL NOT be patched per env — both envs use the same images 
 #### Scenario: No image-tag divergence between dev and prod overlays
 - **WHEN** diffing the rendered output of `k8s/namespaces/backend/overlays/dev` and `k8s/namespaces/backend/overlays/prod` (and similarly for other namespaces)
 - **THEN** container image references SHALL be identical (tags + digests match)
-- **AND** the only differences SHALL be hostnames, secret references, and project labels
+- **AND** the only differences SHALL be: hostnames, secret references, project labels, resource requests/limits (when env-divergent), and replica counts (per design D8)
 
 #### Scenario: Single replica per Deployment for prod
 - **WHEN** rendering any prod overlay
@@ -73,7 +73,7 @@ After ArgoCD sync, the static IP SHALL transition from `RESERVED` to `IN_USE`, c
 #### Scenario: HTTPRoutes target prod hostnames
 - **WHEN** listing HTTPRoute resources in the rendered prod gateway overlay
 - **THEN** at least one HTTPRoute SHALL have `hostnames` including `api.liverty-music.app` and `backendRefs` pointing at the `backend` Service in namespace `backend`
-- **AND** at least one HTTPRoute SHALL have `hostnames` including `auth.liverty-music.app` and `backendRefs` pointing at the `zitadel` Service in namespace `zitadel`
+- **AND** at least one HTTPRoute SHALL have `hostnames` including `auth.liverty-music.app` with path-split `backendRefs` per the canonical `zitadel-self-hosted-deployment` Two-Container Deployment requirement: path prefix `/ui/v2/login` → `zitadel-web` Service (port 3000), all other paths → `zitadel-api` Service (port 8080), both in namespace `zitadel`
 
 #### Scenario: Static IP becomes IN_USE after sync
 - **WHEN** querying `gcloud compute addresses describe api-gateway-static-ip --global --project liverty-music-prod` after the gateway Application has synced Healthy
