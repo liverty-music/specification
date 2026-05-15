@@ -1,4 +1,4 @@
-# Protobuf Scaffold
+# liverty-music/specification
 
 A repository for managing application entity and API definitions using Protocol Buffers with Buf Schema Registry (BSR) for remote code generation.
 
