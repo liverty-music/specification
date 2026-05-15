@@ -1,7 +1,9 @@
 # apex-frontend-serving Specification
 
 ## Purpose
-TBD - created by archiving change consolidate-public-dns-on-cloudflare. Update Purpose after archive.
+
+Defines the contract for serving the apex domain `liverty-music.app` via GKE Gateway with Google-managed TLS. Cloudflare is the authoritative DNS provider, with an A record (DNS-only, `proxied: false`) pointing to the shared `api-gateway-static-ip`. All prod-stack apex resources (A record, DnsAuthorization, Certificate, CertificateMapEntry) carry Pulumi `protect: true`. Routing is handled by a pre-existing HTTPRoute (from the `prod-k8s-manifests` change) that targets the `web-app` Service in the `frontend` namespace.
+
 ## Requirements
 ### Requirement: Apex hostname SHALL be served end-to-end via the GKE Gateway with a Google-managed TLS certificate
 The production apex hostname `liverty-music.app` SHALL serve the Aurelia frontend SPA via the same GKE Gateway that fronts `api.liverty-music.app` (backend) and `auth.liverty-music.app` (Zitadel). The apex SHALL participate in the shared Gateway / shared static IP / shared Certificate Map pattern used by the other prod hostnames. TLS termination SHALL happen at the Gateway using a Google-managed Certificate Manager certificate; Cloudflare SHALL be authoritative for the DNS A record only (Proxy OFF, no Cloudflare TLS termination).
