@@ -123,21 +123,26 @@ Note: the Mode B `VAPID_PUBLIC_KEY=` configmap update was moved to §6.5+ (Phase
 
 ## 13. Operator: Mainnet ticket SBT contract deployment (Phase 13)
 
-- [ ] 13.1 Deploy the ticket SBT contract to Polygon mainnet (or the target EVM mainnet) using the prod deployer private key from `blockchain.deployerPrivateKey`. Record the deployed contract address.
-- [ ] 13.2 Run the backend's existing SBT integration test against the deployed mainnet address; confirm `name()`, `symbol()`, `owner()`, `totalSupply()` respond correctly.
-- [ ] 13.3 Open a cloud-provisioning PR updating the `TICKET_SBT_ADDRESS=` value in:
+**Pre-deploy verification gate** (§13.1-§13.3): the ESC values consumed by §13.4's `forge create` / equivalent contract deploy SHALL be confirmed to target mainnet BEFORE the deploy fires. A misconfigured `blockchain.rpcUrl` (still pointing at Amoy / Mumbai / Sepolia testnet) would cause the deploy to land on the wrong network — an irreversible on-chain action whose only "rollback" is redeploying to mainnet (paying gas + losing the testnet address). The `owner()` post-deploy check (§13.7) catches private-key mismatches but only after the on-chain action.
+
+- [ ] 13.1 **Pre-deploy**: decrypt `blockchain.rpcUrl` from prod ESC; verify the URL host matches a known Polygon mainnet provider AND contains NO `amoy`/`mumbai`/`sepolia`/`testnet` substring.
+- [ ] 13.2 **Pre-deploy**: decrypt `blockchain.bundlerApiKey` from prod ESC; query the bundler's `chainId`; confirm it equals `137` (Polygon mainnet) or the mainnet chainId of the chosen target chain.
+- [ ] 13.3 If either §13.1 or §13.2 fails: `esc env set liverty-music/prod pulumiConfig.blockchain.<key>` with the correct mainnet value; `pulumi up --stack prod` to propagate; re-run §13.1 + §13.2. HALT here until both pass.
+- [ ] 13.4 **Deploy**: deploy the ticket SBT contract to Polygon mainnet (or the target EVM mainnet) using the prod deployer private key from `blockchain.deployerPrivateKey`. Record the deployed contract address.
+- [ ] 13.5 Run the backend's existing SBT integration test against the deployed mainnet address; confirm `name()`, `symbol()`, `owner()`, `totalSupply()` respond correctly.
+- [ ] 13.6 Open a cloud-provisioning PR updating the `TICKET_SBT_ADDRESS=` value in:
   - `k8s/namespaces/backend/overlays/prod/server/configmap.env`
   - `k8s/namespaces/backend/overlays/prod/consumer/configmap.env`
   - `k8s/namespaces/backend/overlays/prod/cronjob/concert-discovery/configmap.env`
-- [ ] 13.4 Review + merge; ArgoCD picks up the new configmap; Reloader rolls server-app + consumer-app pods.
-- [ ] 13.5 Verify via backend logs that the SBT client picks up the new contract address.
+- [ ] 13.7 Review + merge; ArgoCD picks up the new configmap; Reloader rolls server-app + consumer-app pods.
+- [ ] 13.8 Verify via backend logs that the SBT client picks up the new contract address.
 
-## 14. Operator: Verify blockchain mainnet values (Phase 13.5)
+## 14. Operator: Post-deploy blockchain owner() verification (Phase 13.5)
 
-- [ ] 14.1 Decrypt `blockchain.rpcUrl` from prod ESC; verify it points at Polygon mainnet (no `amoy`/`mumbai`/`sepolia`/`testnet` substrings).
-- [ ] 14.2 Decrypt `blockchain.deployerPrivateKey`; derive the Ethereum address; verify it equals the `owner()` of the mainnet SBT contract from §13.
-- [ ] 14.3 Decrypt `blockchain.bundlerApiKey`; query the bundler's `chainId`; confirm it equals the mainnet chainId (137 for Polygon).
-- [ ] 14.4 If any value is wrong, `esc env set liverty-music/prod pulumiConfig.blockchain.<key>` with the correct mainnet value.
+The pre-deploy `rpcUrl` + bundler `chainId` checks are now in §13.1-§13.3 (gated before §13.4 fires). §14 is the post-deploy check that the deployed contract's `owner()` matches the deployer key's derived address — this can only happen after §13.4 has produced an address.
+
+- [ ] 14.1 Decrypt `blockchain.deployerPrivateKey` from prod ESC; derive the Ethereum address; verify it equals the `owner()` of the mainnet SBT contract from §13.4.
+- [ ] 14.2 If mismatch: investigate (likely the ESC private key was rotated post-deploy or never matched). Operator-attended remediation; do NOT silently rotate the key, because the deployed contract's owner is fixed at deploy time.
 
 ## 15. Operator: Verify prod admin Google sub (Phase 13.5 continued)
 

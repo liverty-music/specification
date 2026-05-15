@@ -18,7 +18,7 @@ The prod overlay SHALL diverge from the existing dev overlay in:
 
 #### Scenario: Prod overlay renders cleanly
 
-- **WHEN** running `kubectl kustomize liverty-music/backend:k8s/atlas/overlays/prod`
+- **WHEN** running `kubectl kustomize k8s/atlas/overlays/prod` from the `liverty-music/backend` repo root
 - **THEN** the command SHALL exit with code 0
 - **AND** SHALL emit at least one `AtlasMigration` resource targeting the prod Cloud SQL connection
 
