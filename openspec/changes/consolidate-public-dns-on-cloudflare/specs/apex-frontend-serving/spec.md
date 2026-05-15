@@ -31,6 +31,8 @@ The production apex hostname `liverty-music.app` SHALL serve the Aurelia fronten
 ### Requirement: Apex serving SHALL route to the `web-app` frontend Service via HTTPRoute hostname matching
 The Kubernetes HTTPRoute that serves the apex SHALL match on `hostnames: ['liverty-music.app']` and route to the `web-app` Service in the `frontend` namespace. This HTTPRoute SHALL share the same Gateway as the HTTPRoutes for `api.liverty-music.app` (routing to backend) and `auth.liverty-music.app` (routing to Zitadel) — differentiation is by HTTPRoute hostname, not by Gateway listener.
 
+> **Note**: The HTTPRoute hostname binding is pre-existing — configured by the prior `prod-k8s-manifests` change (archived 2026-05-14) in `cloud-provisioning/k8s/namespaces/frontend/overlays/prod/kustomization.yaml`. The `consolidate-public-dns-on-cloudflare` change consumes the existing binding and verifies it via a pre-flight task; it does not author or modify any HTTPRoute YAML. The requirement is documented here because the apex-frontend-serving capability collects the end-to-end serving contract regardless of which change first satisfied each piece.
+
 #### Scenario: Frontend HTTPRoute binds apex hostname
 - **WHEN** rendering `cloud-provisioning/k8s/namespaces/frontend/overlays/prod/`
 - **THEN** an `HTTPRoute` resource SHALL exist with `spec.hostnames` containing `liverty-music.app`

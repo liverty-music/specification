@@ -6,6 +6,7 @@
 - [ ] 1.4 Confirm current Cloud DNS dev zone exists: `gcloud dns managed-zones list --project liverty-music-dev` shows `liverty-music-app-public-zone` (dev's single zone covering all 4 dev hostnames).
 - [ ] 1.5 Confirm Cloudflare zone ID for `liverty-music.app` is correctly seeded in ESC at `pulumiConfig.cloudflare.zoneId` (both `liverty-music/dev` and `liverty-music/prod`). Run `esc env get liverty-music/prod pulumiConfig.cloudflare.zoneId` and verify non-empty.
 - [ ] 1.6 Confirm Cloudflare API token at `pulumiConfig.cloudflare.apiToken` has `Zone:Read` + `Zone DNS:Edit` permissions scoped to `liverty-music.app` zone (Cloudflare Dashboard → My Profile → API Tokens → token details).
+- [ ] 1.7 Confirm the prod frontend HTTPRoute already binds the apex hostname (pre-existing from `prod-k8s-manifests` 2026-05-14). Run `grep -n "liverty-music.app" cloud-provisioning/k8s/namespaces/frontend/overlays/prod/kustomization.yaml`; expected output contains a line with `hostnames: ["liverty-music.app"]`. If the binding is missing, **HALT** — fix it in a follow-up PR to `cloud-provisioning` before this change's prod cutover. (Satisfies the apex-frontend-serving capability's "Frontend HTTPRoute binds apex hostname" scenario without authoring HTTPRoute YAML in this change.)
 
 ## 2. Manual prerequisite: Cloudflare Dashboard role lockdown (D6)
 

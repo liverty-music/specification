@@ -19,7 +19,7 @@ Beyond the immediate apex outage, the split DNS architecture creates a permanent
 - Codifying Cloudflare member role assignments via `cloudflare.AccountMember` Pulumi resources (deferred to a follow-up change).
 - Enabling Cloudflare Proxy (`proxied: true` / orange-cloud) for any record — all records stay DNS-only on first deploy.
 - Splitting Cloudflare API tokens per environment — single shared admin token retained.
-- Modifying HTTPRoute, Gateway, or Certificate Manager TLS-termination layers; they consume the new DNS/cert state without change.
+- Modifying HTTPRoute YAML in k8s overlays — the prod apex hostname binding was already configured by the prior `prod-k8s-manifests` change (2026-05-14); this PR verifies the binding via pre-flight task but does not author or edit any HTTPRoute resource. Gateway and Cert Manager TLS-termination layers similarly consume the new DNS/cert state without change.
 
 ## Capabilities
 
@@ -33,7 +33,7 @@ Beyond the immediate apex outage, the split DNS architecture creates a permanent
 ## Impact
 
 - **`cloud-provisioning/src/gcp/components/network.ts`**: ~150 lines deleted (`buildZoneTopology`, `ZoneConfig`, `ZoneTopologyEntry`, per-zone provisioning loop, NS delegation loop), ~80 lines modified (`provisionManagedHostname` rewrite, `SERVICES` catalog refactor), ~20 lines added (apex resources, single CF provider consolidation, `protect: true` annotations).
-- **Pulumi prod state**: ~9 destroys (3 ManagedZones, 6 NS-delegation DnsRecords) + ~15 creates (apex Cert + DnsAuth + A + ACME CNAME; api/auth/apex direct Cloudflare A records) + 1 update on `api-gateway-cert-map` (adds apex entry).
+- **Pulumi prod state**: ~11 destroys (2 ManagedZones, 6 NS-delegation DnsRecords, 3 old api/auth A records) + ~15 creates (apex Cert + DnsAuth + A + ACME CNAME; api/auth/apex direct Cloudflare A records) + 1 update on `api-gateway-cert-map` (adds apex entry).
 - **Pulumi dev state**: ~6 destroys (1 ManagedZone, 4 NS-delegation records, 2 Postmark records) + ~10 creates (3 service A records + 3 ACME CNAMEs + 2 Postmark records directly in CF).
 - **GCP Cloud DNS API cost**: Drops by 3 public zones (~¥30/month savings; negligible).
 - **Cloudflare zone record count**: Increases by ~12-15 records in the single `liverty-music.app` zone (well within Free-tier limits).

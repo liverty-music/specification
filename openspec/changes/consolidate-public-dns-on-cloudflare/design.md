@@ -38,7 +38,7 @@ Stakeholders:
 - Codifying Cloudflare member roles via `cloudflare.AccountMember` Pulumi resources. Manual runbook for now; codification is a separate change if/when the team grows.
 - Enabling Cloudflare Proxy (`proxied: true` / orange-cloud) for any record. All records stay DNS-only. Future enablement (WAF, edge cache for the apex) is a separate decision.
 - Splitting the Cloudflare API token per environment. Single shared admin token retained; protect:true + Dashboard role lockdown provide the operational guard.
-- Touching the HTTPRoute / Gateway / Cert Manager TLS-termination layer. The Gateway already references `api-gateway-cert-map`; we add an apex CertificateMapEntry and the Gateway picks it up automatically.
+- Modifying HTTPRoute YAML in k8s overlays. The prod apex hostname binding (`hostnames: ['liverty-music.app']` on the prod frontend HTTPRoute) was already configured by the prior `prod-k8s-manifests` change (archived 2026-05-14) — this change does **not** author or edit any HTTPRoute resource, only consumes the existing binding. A pre-flight verification task confirms the binding is in place before cutover. The Gateway already references `api-gateway-cert-map`; we add an apex `CertificateMapEntry` (Cert Manager GCP resource, not HTTPRoute YAML) and the Gateway picks it up automatically.
 - Migrating Cloud DNS for any reason other than the public zones being consolidated here. Existing `sql.goog` and `googleapis.com` private zones are untouched.
 - Cross-repo follow-ups previously deferred by `refactor-unify-env-dispatch`: backend Atlas migration prod overlay, frontend `.env.prod`. Those are tracked separately.
 
