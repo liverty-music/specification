@@ -4,6 +4,17 @@ on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
 
+# Permissions are inherited by the reusable workflow's job and intersected
+# with its own workflow-level declarations. Set them here in the caller so
+# the called job has everything it needs (sticky/inline comment, Claude
+# action OIDC, Check Run publish).
+permissions:
+  contents: read
+  pull-requests: write
+  issues: read
+  id-token: write
+  checks: write
+
 jobs:
   review:
     uses: liverty-music/.github/.github/workflows/claude-review.yml@main
