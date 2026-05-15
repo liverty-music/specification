@@ -1,4 +1,4 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Prod public DNS SHALL be managed entirely by Cloudflare, with apex A record bound to the shared GKE Gateway static IP
 The prod project SHALL NOT provision any public Cloud DNS zone. All prod public DNS records — apex (`liverty-music.app`), `api.liverty-music.app`, `auth.liverty-music.app`, plus ACME DNS-01 challenge CNAMEs and Postmark DKIM/Return-Path records — SHALL live directly in the single Cloudflare-managed zone `liverty-music.app`. The apex SHALL have an A record pointing to the same `api-gateway-static-ip` GlobalAddress that fronts the prod GKE Gateway. The apex SHALL receive a Google-managed TLS certificate via Certificate Manager with the ACME DNS-01 challenge resolved against the Cloudflare zone.
