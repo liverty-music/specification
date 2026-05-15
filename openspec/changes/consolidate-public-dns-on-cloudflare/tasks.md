@@ -56,55 +56,49 @@
 - [x] 8.4 `grep -rn "publicZone\|publicZoneNameservers" src/` returns empty (no consumer of these fields after their deletion).
 - [x] 8.5 `grep -En "provisionManagedHostname\(" src/` shows exactly one call site (the loop in `network.ts`).
 
-## 9. Pulumi preview verification (Phase A only — keeps old state)
+## 9. Pulumi preview verification (single-apply)
 
-**Important**: This change is best applied in two PRs to enable phased Phase A → Phase B+C migration. If applying in a single PR, document the rationale and accept that Phase A and B+C land together with the brief DNS gap. The recommended split:
+The §3-8 code refactor deletes the old Cloud DNS provisioning path in the same diff that adds the new Cloudflare records. The Pulumi preview therefore shows creates **and** destroys in a single apply per env (design D3 single-apply path). Dependency ordering between new Cert/DnsAuthorization and destroy of old Cloud DNS RecordSets is sequenced by Pulumi; the new Cert reaches ACTIVE before the old A record is destroyed.
 
-**Implementation note (2026-05-15)**: §3-8 code refactor was applied as a **single-PR full refactor** (design.md D3 single-apply path). The §9.1 "additions only, keep old in parallel" instruction no longer applies — the refactor deletes `buildZoneTopology` + `provisionedZones` immediately. Pulumi preview will show creates AND destroys in one apply. Operator should re-read §9-11 with this context: §9.2-9.3 expected-resource lists are augmented by ~9-10 destroys (Cloud DNS zones, NS records, old Cloud-DNS-backed A records and ACME CNAMEs); §10 + §11 collapse into a single `pulumi up` per env.
+- [ ] 9.1 Push the feature branch. Pulumi Cloud runs `pulumi preview` automatically for both `dev` and `prod` stacks and posts the diffs as PR comments.
+- [ ] 9.2 **Dev preview expectation**: ~14 creates (3 Cloudflare A records: web-app, backend-server, zitadel; 3 ACME CNAMEs; 3 new `gcp.certificatemanager.Certificate`/`DnsAuthorization`/`CertificateMapEntry` triplets bound to the Cloudflare-hosted ACME CNAMEs; 2 Cloudflare Postmark records DKIM + Return-Path) + ~7 destroys (1 ManagedZone `liverty-music-app-public-zone` + 4 NS-delegation Cloudflare records `liverty-music-app-dns-delegation-ns-{0..3}` + 2 dev Postmark `gcp.dns.RecordSet` resources; 6 old `gcp.dns.RecordSet` inside the dev zone die together with the zone) + ~1 update on `api-gateway-cert-map` (CertMapEntry references swap). Confirm the diff matches before approving.
+- [ ] 9.3 **Prod preview expectation**: ~10 creates (3 Cloudflare A records for apex/api/auth; 3 ACME CNAMEs; 4 new resources for the apex Cert chain: `web-app-cert` + `web-app-dns-auth` + `web-app-cert-map-entry` + apex A record; the api/auth Cert chain is unchanged in identity — only the ACME CNAME provider flips) + ~9 destroys (2 ManagedZones `api-liverty-music-app-public-zone`, `auth-liverty-music-app-public-zone` + 6 NS-delegation Cloudflare records [3-4 each for api + auth] + 3 old api/auth `gcp.dns.RecordSet` inside the zones) + ~1 update on `api-gateway-cert-map` (gains apex entry). Note: exact NS-record count depends on observed GCP nameserver count (3 or 4); adjust expectation to match preview.
+- [ ] 9.4 Operator reviews both preview outputs and quotes the "Resource Changes" blocks (full creates + destroys + updates) into the PR description for the review record. Verify no unexpected `+- replace` operations on the api/auth Cert resources — replaces would indicate Pulumi sees a domain-immutability change and would deadlock against the existing CertMapEntry.
 
-- [ ] 9.1 Open Phase A PR. In `cloud-provisioning/`, push the feature branch with only the **additions** active: new Cloudflare provider config flow; new `web-app-cert` resources for apex; new `cloudflare.DnsRecord` A records and ACME CNAMEs alongside existing Cloud DNS resources. Implementation hint: temporarily keep the old `buildZoneTopology` + `provisionedZones` loop creating Cloud DNS resources, AND add the new Cloudflare-direct resources in parallel.
-- [ ] 9.2 Dev preview verification (Phase A): expects ~10 creates (3 new Cloudflare A records: web-app, backend-server, zitadel; 3 new ACME CNAMEs; 1 new apex Cert + DnsAuth + CertMapEntry [but dev's "apex" = `dev.liverty-music.app` already exists as web-app — only the ACME CNAME provider changes]; 2 new Cloudflare Postmark records). Zero destroys, zero state-impacting updates.
-- [ ] 9.3 Prod preview verification (Phase A): expects ~7-8 creates (1 new apex Cert `web-app-cert` + 1 new DnsAuth `web-app-dns-auth` + 1 new CertMapEntry `web-app-cert-map-entry` + 1 new apex A record + 1 new ACME CNAME for apex; new direct A records for api/auth in Cloudflare; new ACME CNAMEs for api/auth in Cloudflare). Zero destroys.
-- [ ] 9.4 Operator reviews preview output and quotes the Resource Changes block in the Phase A PR description.
+## 10. Pulumi apply (dev)
 
-## 10. Phase A apply (dev → prod, manual gate between)
+Dev applies automatically on merge per the `deployment-infrastructure` capability (Pulumi Cloud Deployments). Pre-merge DKIM verification gates the merge.
 
-- [ ] 10.1 Merge Phase A PR. Dev `pulumi up` auto-runs via Pulumi Cloud Deployments.
-- [ ] 10.2 **Dev Phase A verification**:
-  - `gcloud certificatemanager certificates describe web-app-cert --location global --project liverty-music-dev --format='value(managed.state)'` returns `ACTIVE` (wait up to 60 min if not yet).
-  - `gcloud certificatemanager certificates describe backend-server-cert --location global --project liverty-music-dev` shows the NEW cert is ACTIVE (it's a replacement for the old Cloud-DNS-bound cert — both may exist in this transitional state, distinguished by `dnsAuthorizations` references).
-  - `dig @1.1.1.1 dev.liverty-music.app` returns the dev static IP (NS delegation still authoritative; verifies Cloudflare CAN be queried but is not yet authoritative for the A record).
-- [ ] 10.3 **Prod Phase A trigger**: operator triggers `pulumi up --stack prod` from Pulumi Cloud console.
-- [ ] 10.4 **Prod Phase A verification**:
-  - `gcloud certificatemanager certificates describe web-app-cert --location global --project liverty-music-prod --format='value(managed.state)'` returns `ACTIVE`.
-  - api/auth new certs (with Cloudflare-hosted ACME CNAMEs) are ACTIVE.
-  - `dig @1.1.1.1 api.liverty-music.app` still returns the value via NS delegation chain → Cloud DNS (old authoritative path).
-
-## 11. Phase B+C apply (cutover and cleanup, dev → prod)
-
-- [ ] 11.1 Open Phase B+C PR. Remove from `network.ts`: the old `buildZoneTopology` + `provisionedZones` Cloud DNS provisioning loop; the old Cloud DNS-backed `gcp.dns.RecordSet` calls inside `provisionManagedHostname` (keep only the Cloudflare versions); the Cloudflare NS-delegation records for `dev.`, `api.`, `auth.` subzones. The function signature stabilizes per task 4.1.
-- [ ] 11.2 Pulumi preview (Phase B+C):
-  - **Dev**: expects ~7 destroys (1 ManagedZone `liverty-music-app-public-zone` + 4 NS-delegation records for `dev` subdomain + 2 dev Postmark DnsRecords in Cloud DNS — actually the Postmark in dev was in Cloud DNS; in Phase A we added them to Cloudflare; Phase B+C destroys the Cloud DNS versions; the 2-3 old A records inside the dev zone die when the zone dies); ~3 updates (CertMap reshuffles its entry references).
-  - **Prod**: expects ~9 destroys (2 ManagedZones `api-liverty-music-app-public-zone`, `auth-liverty-music-app-public-zone` + 6 NS-delegation records [3 each for api + auth — assuming 3 nameservers each based on GCP's typical 3-4 NS count, adjust to observed value] + 3 old api/auth A records inside the zones). ~1 update on `api-gateway-cert-map` adding the apex entry (already added in Phase A, so this update is a no-op or absent). Zero creates.
-- [ ] 11.3 **DKIM verification before dev cutover** (R3 mitigation):
-  - `dig +short TXT <dkim-selector>._domainkey.mail.dev.liverty-music.app @1.1.1.1` — note the public key value (the part after `p=`).
-  - Compare to `esc env get liverty-music/dev pulumiConfig.postmark.dkimPublicKey`.
-  - If values match, proceed. If mismatch, **halt** — investigate ESC vs Cloudflare drift before cutover.
-- [ ] 11.4 Merge Phase B+C PR. Dev `pulumi up` auto-runs.
-- [ ] 11.5 **Dev cutover verification** (~30s after Pulumi up completes):
-  - `dig +short dev.liverty-music.app @1.1.1.1` returns the dev static IP — answer comes from Cloudflare directly, not NS-chained to Cloud DNS.
-  - `dig +short NS dev.liverty-music.app @1.1.1.1` returns empty or only Cloudflare's NS (no Google nameservers).
+- [ ] 10.1 **DKIM verification before merge** (R3 mitigation):
+  - `dig +short TXT <dkim-selector>._domainkey.mail.dev.liverty-music.app @1.1.1.1` — note the current public key value (the part after `p=`).
+  - Compare against `esc env get liverty-music/dev pulumiConfig.postmark.dkimPublicKey`.
+  - If values match, proceed. If mismatch, **HALT** — investigate ESC vs Cloud DNS drift before applying; the migration must not break Postmark's DKIM verification for dev.
+- [ ] 10.2 Merge the PR. Pulumi Cloud Deployments triggers `pulumi up --stack dev` automatically.
+- [ ] 10.3 **Dev verification post-apply** (~1-2 min after apply completes; cert provisioning may add up to 60 min):
+  - `gcloud certificatemanager certificates describe web-app-cert --location global --project liverty-music-dev --format='value(managed.state)'` returns `ACTIVE`.
+  - Same check for `backend-server-cert` and `zitadel-cert` — all `ACTIVE`.
+  - `dig +short dev.liverty-music.app @1.1.1.1` returns the dev `api-gateway-static-ip` value, served by Cloudflare authoritative (not NS-chained to Cloud DNS).
+  - `dig +short NS dev.liverty-music.app @1.1.1.1` is empty or only Cloudflare's NS (no Google nameservers remain).
   - `curl -I https://dev.liverty-music.app/` returns `200 OK`.
-  - `curl -I https://api.dev.liverty-music.app/grpc.health.v1.Health/Check` — depending on auth requirements, expect 200 or auth-required, but not TLS handshake failure.
+  - `curl -I https://api.dev.liverty-music.app/grpc.health.v1.Health/Check` returns 200 or auth-required (NOT a TLS handshake failure).
   - `curl -I https://auth.dev.liverty-music.app/.well-known/openid-configuration` returns `200 OK`.
-  - Postmark dev sender domain shows verified status in Postmark Dashboard.
-- [ ] 11.6 **Prod cutover trigger**: operator triggers `pulumi up --stack prod` from Pulumi Cloud console.
-- [ ] 11.7 **Prod cutover verification**:
-  - `curl -I https://liverty-music.app/` returns `200 OK` — the apex SPA loads. **This is the primary success criterion.**
-  - `dig +short A liverty-music.app @1.1.1.1` returns the prod static IP (`34.110.151.208` or current value).
-  - `openssl s_client -connect liverty-music.app:443 -servername liverty-music.app < /dev/null 2>&1 | grep 'subject='` shows `CN=liverty-music.app` and issuer is Google Trust Services.
-  - `curl -I https://api.liverty-music.app/` returns the backend response.
+  - Postmark dashboard for `mail.dev.liverty-music.app` sender domain shows verified status.
+
+## 11. Pulumi apply (prod, manual trigger)
+
+Per `deployment-infrastructure` capability, prod applies are manual via Pulumi Cloud console. Operator-attended.
+
+- [ ] 11.1 Operator triggers `pulumi up --stack prod` from Pulumi Cloud console (https://app.pulumi.com/pannpers/liverty-music/prod/deployments). Operator approves the preview's destroy list before clicking apply.
+- [ ] 11.2 **Prod verification post-apply**:
+  - `gcloud certificatemanager certificates describe web-app-cert --location global --project liverty-music-prod --format='value(managed.state)'` returns `ACTIVE` — the apex cert is the new resource provisioned by this change.
+  - `gcloud certificatemanager certificates describe backend-server-cert --location global --project liverty-music-prod --format='value(managed.state)'` returns `ACTIVE`.
+  - `gcloud certificatemanager certificates describe zitadel-cert --location global --project liverty-music-prod --format='value(managed.state)'` returns `ACTIVE`.
+  - `curl -I https://liverty-music.app/` returns `200 OK` — **the apex SPA loads. This is the primary success criterion for the entire change.**
+  - `dig +short A liverty-music.app @1.1.1.1` returns the prod `api-gateway-static-ip` value (`34.110.151.208` or current value).
+  - `openssl s_client -connect liverty-music.app:443 -servername liverty-music.app < /dev/null 2>&1 | grep -E 'subject=|issuer='` shows `CN=liverty-music.app` and issuer is Google Trust Services (NOT Cloudflare Universal SSL).
+  - `curl -I https://api.liverty-music.app/` returns the backend Connect-RPC response (200 or auth-required, not TLS error).
   - `curl -I https://auth.liverty-music.app/.well-known/openid-configuration` returns `200 OK` with Zitadel JSON.
+  - `gcloud dns managed-zones list --project liverty-music-prod` no longer contains `api-liverty-music-app-public-zone` or `auth-liverty-music-app-public-zone`.
 
 ## 12. Post-cutover smoke tests
 
