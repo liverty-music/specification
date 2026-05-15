@@ -78,14 +78,19 @@ Prod images carry two tags:
 
 ### D7. Cross-repo PR fan-out: one PR per repo, sequenced
 
-| Phase | Repo | PR contents | Reviewer concern |
-|---|---|---|---|
-| 1 | `specification` | This change's artifacts (proposal, design, specs, tasks) | Spec-level review, requirements completeness |
-| 2 | `cloud-provisioning` | Prod `ApplicationOidc` Pulumi resource; prod overlay kustomize `images:` pinning; runbook updates | Pulumi preview review + kustomize render diff |
-| 3 | `backend` | `deploy.yml` Release-trigger path; `k8s/atlas/overlays/prod/` | CI workflow review + Atlas overlay sanity |
-| 4 | `frontend` | `push-image.yaml` Release-trigger path; `.env.prod` committed | CI workflow + bundle-bake assertion |
+There is NOT a single PR per repo — `cloud-provisioning` opens **three to four** PRs spread across phases because each addresses a different stage's concerns. The full list:
 
-PRs 2-4 can run in parallel after PR 1 lands (none depend on each other for code; they depend operationally on the artifact sequence in D4).
+| # | Phase | Repo | PR contents | Sequencing |
+|---|---|---|---|---|
+| A | 1 | `specification` | This change's artifacts (proposal, design, specs, tasks) | First — gates everything else |
+| B | 2 | `cloud-provisioning` | Prod `ApplicationOidc` Pulumi resource (exports `client_id` + product-org-id via stack outputs) | After A; produces values needed by E |
+| C | 4 | `backend` | `deploy.yml` Release-trigger path; `k8s/atlas/overlays/prod/` | After A; can run in parallel with B |
+| D | 6 (Mode B only) | `cloud-provisioning` | New `VAPID_PUBLIC_KEY` value in three backend prod configmap.env files | After A; bundled with the §6 GSM rotation per D9 atomicity |
+| E | 7 | `frontend` | `push-image.yaml` Release-trigger path; `.env.prod` committed | After Phase 3 (Pulumi apply of B's `ApplicationOidc`, which produces the `client_id` + product-org-id values consumed by `.env.prod`); also after D in Mode B (needs the resolved VAPID public) |
+| F | 9 | `cloud-provisioning` | Kustomize prod overlay image-pinning (backend + frontend); IAM revocation runbook | After Phase 8 (frontend Release cut produced the SHA the overlay pins) |
+| G | 13 | `cloud-provisioning` | `TICKET_SBT_ADDRESS=` bump to mainnet address in three backend configmap.env files | After Phase 12 (operator deployed the mainnet contract) |
+
+**Parallelism**: only B and C can run in parallel after A lands. E is gated on Phase 3 outputs from B; D is gated on §6's Mode-B branch firing; F and G are sequenced later in the migration plan. The original "PRs 2-4 in parallel" framing was wrong — captured in the 2026-05-15 review feedback on this design.
 
 ### D8. Stale ESC field cleanup via `esc env rm`, not Pulumi
 
@@ -133,7 +138,7 @@ The contract deploy itself is outside this change's code scope (it's a smart-con
 3. **Phase 3** — Operator: `pulumi up --stack prod` to provision the prod `ApplicationOidc`. Record client_id + product-org-id from Pulumi outputs.
 4. **Phase 4** — Backend PR: extend `deploy.yml` with Release-trigger path; new `k8s/atlas/overlays/prod/` directory.
 5. **Phase 5** — Backend Release tag cut (`v1.0.0`): first prod images pushed to `liverty-music-prod/backend`.
-6. **Phase 6** — Operator: VAPID keypair verification (D9). Mode A: GSM-derived public matches the configmap value, no action; Mode B: regenerate the keypair, push the new private to GSM via `esc env set` + `pulumi up`, and capture the new public for use in Phases 7 and 9. This phase MUST precede Phase 7 so `.env.prod` is committed with the authoritative VAPID public key in one shot (otherwise the `v1.0.0` frontend image ships a placeholder VAPID value that violates the `prod-environment-bootstrap` byte-equal invariant).
+6. **Phase 6** — Operator: VAPID keypair verification (D9). Mode A: GSM-derived public matches the configmap value, no action. Mode B: regenerate the keypair AND open a dedicated cloud-provisioning PR (item D in D7) updating `VAPID_PUBLIC_KEY=` in the three backend configmap.env files, then apply the rotation as a single coordinated window — merge the configmap PR + `pulumi up` (publishes new GSM secret version) + ESO force-sync, all in close succession. Capture the new public for use in Phase 7. The "atomicity" target is a sub-minute mismatch window between the two reconciliation channels (ArgoCD for configmaps, ESO for GSM-backed Secrets); strict atomicity is unachievable but prod is pre-launch with zero live push subscriptions, so the gap is acceptable. This phase MUST precede Phase 7 so `.env.prod` is committed with the authoritative VAPID public key in one shot.
 7. **Phase 7** — Frontend PR: extend `push-image.yaml` with Release-trigger path; commit `.env.prod` with prod values (using Phase 3's recorded client_id + org_id; apex API URL; apex issuer; the VAPID public key resolved in Phase 6; info log level).
 8. **Phase 8** — Frontend Release tag cut: first prod image pushed to `liverty-music-prod/frontend/web-app`.
 9. **Phase 9** — Cloud-provisioning PR: kustomize prod overlay image-pinning patches; runbook updates for IAM revocation; if Phase 6 fired Mode B, also bump `VAPID_PUBLIC_KEY=` in the three backend prod configmap.env files in this same PR.

@@ -42,11 +42,16 @@ This section runs BEFORE §7 so `.env.prod` is committed with the authoritative 
 
 - [ ] 6.1 Decrypt the prod `vapid-private-key` GSM secret: `gcloud secrets versions access latest --secret=vapid-private-key --project=liverty-music-prod`.
 - [ ] 6.2 Derive the public point from the private key (Base64URL-encoded uncompressed P-256). Compare to the current `VAPID_PUBLIC_KEY` value in `cloud-provisioning/k8s/namespaces/backend/overlays/prod/server/configmap.env`.
-- [ ] 6.3 If match (Mode A in design D9): record the GSM-derived public key value to use in §7.1 (`.env.prod`) and §9 (overlay PR — no configmap change needed). Proceed to §7.
-- [ ] 6.4 If mismatch (Mode B): generate a fresh prod VAPID keypair (`openssl ecparam -name prime256v1 -genkey -noout -out vapid-private.pem`; derive public point in Base64URL).
-- [ ] 6.5 (Mode B only) `esc env set liverty-music/prod pulumiConfig.gcp.vapidPrivateKey "$(cat vapid-private.pem)" --secret`; `pulumi up --stack prod` to push the new GSM secret version.
-- [ ] 6.6 (Mode B only) Wait for the `server-backend-secrets` ExternalSecret to refresh (or force-sync via `kubectl annotate externalsecret server-backend-secrets -n backend force-sync=now-$(date +%s) --overwrite`); Reloader rolls the backend pods with the new private key.
-- [ ] 6.7 Record the public key value (Mode A: GSM-derived = current configmap value; Mode B: freshly generated) in `tmp/vapid-public-prod.txt` for consumption by §7.1 and §9 (Mode B only).
+- [ ] 6.3 If match (Mode A in design D9): record the GSM-derived public key value (which equals the current configmap value) for use in §7.1 (`.env.prod`). No cloud-provisioning PR needed in this phase. Proceed to §7.
+- [ ] 6.4 If mismatch (Mode B): generate a fresh prod VAPID keypair locally (`openssl ecparam -name prime256v1 -genkey -noout -out vapid-private.pem`; derive public point in Base64URL).
+- [ ] 6.5 (Mode B only) Open a cloud-provisioning PR ("Mode B VAPID rotation") updating `VAPID_PUBLIC_KEY=` to the newly-generated public point in three backend prod configmap.env files (`server`, `consumer`, `cronjob/concert-discovery`). Review. Do NOT merge yet.
+- [ ] 6.6 (Mode B only) `esc env set liverty-music/prod pulumiConfig.gcp.vapidPrivateKey "$(cat vapid-private.pem)" --secret`. ESC is not yet applied to GSM until the next `pulumi up`.
+- [ ] 6.7 (Mode B only) **Atomic apply window** (target: sub-minute mismatch). In rapid succession:
+  - Merge the §6.5 cloud-provisioning PR. ArgoCD will detect the change on its next poll cycle (~30s) and sync the configmaps; Reloader will roll the backend pods with the new configmap.
+  - Immediately run `pulumi up --stack prod` (manual via Pulumi Cloud console) — this publishes the new GSM secret version.
+  - Force-sync ESO right after the Pulumi apply succeeds: `kubectl annotate externalsecret server-backend-secrets -n backend force-sync=now-$(date +%s) --overwrite`. ESO refreshes the in-cluster Secret; Reloader rolls the backend pods again with the new GSM private key.
+- [ ] 6.8 (Mode B only) Acknowledge: there is an unavoidable ~30-90s window where the rolled pods have either OLD-private + NEW-public or NEW-private + OLD-public (the two updates can't be truly atomic given ArgoCD and ESO are independent reconciliation channels). Prod is pre-launch with zero live push subscriptions, so this window is acceptable. If push subscriptions ever exist at the time of rotation, briefly disable subscription endpoints first.
+- [ ] 6.9 Record the public key value (Mode A: GSM-derived = current configmap value; Mode B: freshly generated) in `tmp/vapid-public-prod.txt` for consumption by §7.1.
 
 ## 7. Frontend: `.env.prod` + Release-tag-triggered prod build path (Phase 7 — `liverty-music/frontend`)
 
@@ -77,17 +82,18 @@ This section runs BEFORE §7 so `.env.prod` is committed with the authoritative 
   - The embedded OIDC `client_id` matches the value captured in §2.3.
   - The embedded `VITE_VAPID_PUBLIC_KEY` matches the value from §6.7.
 
-## 9. Cloud-provisioning: Prod overlay image pinning + runbook + (Mode B) configmap VAPID update (Phase 9 — `liverty-music/cloud-provisioning`)
+## 9. Cloud-provisioning: Prod overlay image pinning + IAM revocation runbook (Phase 9 — `liverty-music/cloud-provisioning`)
+
+Note: the Mode B `VAPID_PUBLIC_KEY=` configmap update was moved to §6.5+ (Phase 6) so the GSM rotation and configmap update land in the same coordinated apply window (per design D9 atomicity).
 
 - [ ] 9.1 In `k8s/namespaces/backend/overlays/prod/kustomization.yaml`, add an `images:` block pinning each of `server`, `consumer`, `concert-discovery`, `artist-image-sync` to `asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/<name>:<sha-from-§5>`.
 - [ ] 9.2 In `k8s/namespaces/frontend/overlays/prod/kustomization.yaml`, add an `images:` block pinning `web-app` to `asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/web-app:<sha-from-§8>`.
-- [ ] 9.3 (Mode B only — only if §6.4 fired) Update `VAPID_PUBLIC_KEY=` in three backend prod configmap.env files (`server`, `consumer`, `cronjob/concert-discovery`) to the new value from §6.7.
-- [ ] 9.4 Run `kustomize build k8s/namespaces/backend/overlays/prod` and `... frontend/overlays/prod`; grep rendered Deployment images:
+- [ ] 9.3 Run `kustomize build k8s/namespaces/backend/overlays/prod` and `... frontend/overlays/prod`; grep rendered Deployment images:
   - Every backend Deployment image SHALL match `^asia-northeast2-docker\.pkg\.dev/liverty-music-prod/backend/`.
   - The frontend Deployment image SHALL match `^asia-northeast2-docker\.pkg\.dev/liverty-music-prod/frontend/`.
   - No rendered image URI contains the substring `liverty-music-dev/`.
-- [ ] 9.5 Add `docs/runbooks/revoke-cross-project-ar-iam.md` documenting the exact `gcloud projects remove-iam-policy-binding` invocation with a "MUST run AFTER overlay merge" guard.
-- [ ] 9.6 Open cloud-provisioning PR; review; merge.
+- [ ] 9.4 Add `docs/runbooks/revoke-cross-project-ar-iam.md` documenting the exact `gcloud projects remove-iam-policy-binding` invocation with a "MUST run AFTER overlay merge" guard.
+- [ ] 9.5 Open cloud-provisioning PR; review; merge.
 
 ## 10. Cloud-provisioning: Verify ArgoCD prod cutover (Phase 10 — operator-attended)
 
