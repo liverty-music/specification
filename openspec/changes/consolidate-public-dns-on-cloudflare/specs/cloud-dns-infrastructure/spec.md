@@ -85,7 +85,11 @@ The system SHALL ensure the public Cloudflare zone does not conflict with the ex
 ### Requirement: Cloud DNS Zone for Dev Environment (Subdomain Delegation)
 **Reason**: Dev no longer uses a Cloud DNS subzone. The `dev.liverty-music.app` zone is destroyed and dev's DNS records move directly into the Cloudflare apex zone (with `dev` subdomain prefix on each record). This eliminates the dev/prod asymmetry where dev used Cloud DNS subzone delegation and prod used (per the now-also-removed prod-environment-bootstrap requirement) two separate Cloud DNS subzones.
 
-**Migration**:
-1. Phase A: Provision new Cloudflare-direct A records for `dev`, `api.dev`, `auth.dev` labels in the `liverty-music.app` Cloudflare zone, alongside the still-active Cloud DNS subzone (NS delegation continues to resolve old records). New Cloudflare ACME CNAMEs for the dev hostnames provision in parallel. Verify new dev cert reaches ACTIVE state.
-2. Phase B: Destroy the Cloudflare NS-delegation records for `dev.liverty-music.app` → Cloud DNS. The Cloudflare-direct A records become authoritative. ~30 second DNS propagation window.
-3. Phase C: Destroy the Cloud DNS zone `dev.liverty-music.app` and the old A records / ACME CNAMEs inside it.
+**Migration**: A single `pulumi up --stack dev` (automatic on PR merge per the `deployment-infrastructure` capability) performs the transition in one transaction:
+
+- Creates new Cloudflare-direct A records for `dev`, `api.dev`, `auth.dev` labels in the `liverty-music.app` Cloudflare zone, plus the corresponding ACME DNS-01 CNAMEs in Cloudflare. The existing `gcp.certificatemanager.Certificate` / `DnsAuthorization` / `CertificateMapEntry` resources retain identical Pulumi URNs (their `domain` field is unchanged); only the ACME CNAME backing resource type flips from `gcp.dns.RecordSet` to `cloudflare.DnsRecord`.
+- Destroys the Cloud DNS managed zone `dev.liverty-music.app`, the Cloudflare NS-delegation records that pointed to it, and the `gcp.dns.RecordSet` resources (A + ACME CNAME + Postmark) that lived inside the zone.
+- Pulumi's dependency graph orders the new Cloudflare CNAMEs to exist before the old Cloud DNS records are destroyed so the cert validators have continuous resolution.
+- A ~30-second DNS propagation window may occur as resolvers transition from the cached NS-chained answer to the new Cloudflare-direct answer; this is acceptable for the pre-launch dev environment.
+
+The split-apply alternative (Phase A → Phase B → Phase C across two PRs) was considered and rejected — see `design.md` D3 for rationale.

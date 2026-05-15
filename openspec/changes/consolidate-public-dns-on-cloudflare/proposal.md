@@ -33,10 +33,9 @@ Beyond the immediate apex outage, the split DNS architecture creates a permanent
 ## Impact
 
 - **`cloud-provisioning/src/gcp/components/network.ts`**: ~150 lines deleted (`buildZoneTopology`, `ZoneConfig`, `ZoneTopologyEntry`, per-zone provisioning loop, NS delegation loop), ~80 lines modified (`provisionManagedHostname` rewrite, `SERVICES` catalog refactor), ~20 lines added (apex resources, single CF provider consolidation, `protect: true` annotations).
-- **Pulumi prod state**: ~11 destroys (2 ManagedZones, 6 NS-delegation DnsRecords, 3 old api/auth A records) + ~15 creates (apex Cert + DnsAuth + A + ACME CNAME; api/auth/apex direct Cloudflare A records) + 1 update on `api-gateway-cert-map` (adds apex entry).
-- **Pulumi dev state**: ~6 destroys (1 ManagedZone, 4 NS-delegation records, 2 Postmark records) + ~10 creates (3 service A records + 3 ACME CNAMEs + 2 Postmark records directly in CF).
+- **Pulumi state churn (both envs)**: Each env's single-apply destroys the env's Cloud DNS public zone(s), the Cloudflare NS-delegation records pointing to them, and the `gcp.dns.RecordSet` resources inside the zones; and creates Cloudflare-direct A records, ACME CNAMEs, and (for prod only) the apex `web-app-*` Cert chain. Existing api/auth/web-app Cert/DnsAuthorization/CertMapEntry resources retain identical Pulumi URNs and `domain` fields — only the backing ACME CNAME resource type flips from `gcp.dns.RecordSet` to `cloudflare.DnsRecord`. The authoritative preview-resource breakdown lives in `tasks.md` §9.2 (dev) and §9.3 (prod); operators reconcile expectations against actual `pulumi preview` output.
 - **GCP Cloud DNS API cost**: Drops by 3 public zones (~¥30/month savings; negligible).
 - **Cloudflare zone record count**: Increases by ~12-15 records in the single `liverty-music.app` zone (well within Free-tier limits).
 - **External system**: Postmark sender domain `mail.dev.liverty-music.app` verification must be re-confirmed after dev migration (DKIM TXT and Return-Path CNAME values are identical; verification step is to confirm Postmark's revalidation succeeds).
-- **Operator runbook**: Cloudflare Dashboard member roles updated out-of-band (manual prerequisite before Phase B cutover).
+- **Operator runbook**: Cloudflare Dashboard member roles updated out-of-band (manual prerequisite before the prod single-apply).
 - **Sequencing prerequisite**: `pulumi up --stack prod` for `refactor-unify-env-dispatch` (cloud-provisioning PR #262) must be applied before this change's prod cutover — verified via Pulumi Cloud console state inspection.
