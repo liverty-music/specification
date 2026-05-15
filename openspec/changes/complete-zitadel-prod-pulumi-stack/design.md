@@ -1,6 +1,6 @@
 ## Context
 
-The prior change `enable-zitadel-prod-pulumi-provider` (archived 2026-05-14) wired the Zitadel Pulumi provider + the `backend-app` machine user into prod via a single `BackendMachineKeyComponent`. That delivered backend ↔ Zitadel JWT auth (programmatic), but left **9 of the dev `Zitadel` class's 12 Zitadel-side components** unwired for prod. Concretely, today's prod state:
+The prior change `enable-zitadel-prod-pulumi-provider` (archived 2026-05-14) wired the Zitadel Pulumi provider + the `backend-app` machine user into prod via a single `BackendMachineKeyComponent`. That delivered backend ↔ Zitadel JWT auth (programmatic), but left **9 of the dev `Zitadel` class's 13 Zitadel-side components** unwired for prod. Concretely, today's prod state:
 
 - No browser user (operator or end-user) can sign in. `https://auth.liverty-music.app/ui/console` returns 401 — there's no `login-client` PAT for the `zitadel-web` Pod to authenticate to Zitadel.
 - No verification emails go out. There's no `SmtpConfig` + activation against the prod Zitadel instance.
@@ -79,14 +79,19 @@ The org id is fetched via the Zitadel admin API using the bootstrap-uploaded `pu
 - **Alternative considered (rejected): bundle only the inter-dependent quartet (Frontend + Smtp + LoginClient + ActionsV2) and ship the admin org cluster (GoogleIdp + AdminOrgConfig + HumanAdmin) in a follow-up.** Cost: leaves Console operator-locked for a deployment cycle and forces a second `pulumi import` window. Benefit: smaller preview. Net: rejected — the components are tightly coupled.
 - **Alternative considered (rejected): land the admin-org-side stack first (so Console works), then end-user-side.** Cost: end-user sign-up emails stay broken between cuts, observable as silent failures in prod sign-up. Benefit: operator can debug from Console mid-cutover. Net: marginal benefit, rejected.
 
-### D4 — Wrap `getSecretVersionAccessOutput` results and `MachineKey.keyDetails` in `pulumi.secret()` consistently across all 9 components
+### D4 — Wrap secret-bearing `Output<string>` values in `pulumi.secret()` at the earliest producer / wrapper boundary
 
-**Decision:** Every code path inside `ZitadelProdStackComponent` that reads `zitadel-machine-key-for-pulumi-admin` from GSM (for the Provider's `jwtProfileJson`, for the `SmtpActivation` dynamic-resource Zitadel admin-API call, for `HumanAdminComponent`'s dynamic admin-API call) MUST wrap the result in `pulumi.secret()`. Same rule for the `MachineKey.keyDetails` output emitted by `LoginClientComponent` (the new login-client PAT) and any other Zitadel `Output<string>` carrying credential bytes.
+**Decision:** Every Pulumi `Output<string>` carrying credential bytes MUST be wrapped in `pulumi.secret()` at the earliest place it surfaces. Concretely:
+
+1. **GSM read at plan time:** `getSecretVersionAccessOutput({ secret: 'zitadel-machine-key-for-pulumi-admin' })` results are wrapped immediately inside `BackendMachineKeyComponent` (producer) and exposed as `BackendMachineKeyComponent.adminJwt` for sibling reuse (SMTP activation, ActionsV2 Target/Execution, HumanAdmin IdP-link dynamic resources).
+2. **Zitadel `MachineKey.keyDetails`:** wrapped inside `BackendMachineKeyComponent` when writing the SecretVersion (`pulumi.secret(this.machineUser.keyDetails)`), and AGAIN at the `ZitadelProdStackComponent` boundary when exposed as `machineKeyDetails` (so the value is masked in this ComponentResource's `registerOutputs(...)` state record).
+3. **Zitadel `PersonalAccessToken.token`:** wrapped at the `ZitadelProdStackComponent` boundary when exposed as `loginClientToken` (the inner `LoginClientComponent.token` is the upstream-supported plain Output<string>, kept unwrapped to preserve the dev contract). Downstream `Gcp.esoOnlySecrets` ALSO wraps defensively when writing the SecretVersion, so the value is secret-marked at every state-touching point.
 
 **Rationale:**
 
 - **`@pulumi/gcp`'s `getSecretVersionAccessOutput` does NOT mark its output secret.** The dev path's `src/zitadel/index.ts:170` and `BackendMachineKeyComponent`'s round-2 review fix both prove this: without an explicit `pulumi.secret()` wrap, the RSA private key embedded in the JWT-profile JSON surfaces in `pulumi preview` output (including Pulumi Cloud PR previews), CI logs, and Pulumi service state history.
-- **`@pulumiverse/zitadel`'s `MachineKey.keyDetails` is a plain `Output<string>`.** Same leak risk for any newly-issued JWT-profile keys (none expected from this change's 9 components beyond `loginClientToken` for the PAT, but the rule applies uniformly).
+- **`@pulumiverse/zitadel`'s `MachineKey.keyDetails` and `PersonalAccessToken.token` are plain `Output<string>`** — neither is auto-marked secret by the provider. Both surface in the owning ComponentResource's `registerOutputs(...)` state record if exposed unwrapped.
+- **Wrapper-boundary wrap protects against intermediate component-graph traversal.** `ZitadelProdStackComponent.registerOutputs({ loginClientToken, machineKeyDetails })` writes to Pulumi state; without the wrap, the values would surface in this ComponentResource's outputs even if the downstream SecretVersion consumer-site wrap exists.
 - Same protection pattern as `BackendMachineKeyComponent` (`src/zitadel/components/backend-machine-key.ts:109-116, 170`).
 
 ### D5 — Defer `E2eTestUserComponent` to a separate follow-up change
@@ -146,7 +151,7 @@ The org id is fetched via the Zitadel admin API using the bootstrap-uploaded `pu
 | **`ZitadelUserIdpLink` (dynamic resource) failure on first deploy** leaves `pannpers` un-linked → operator can't sign in to Console | tasks.md §10 smoke-tests Console sign-in immediately after `pulumi up`. If link failed, re-run the dynamic resource (idempotent) via `pulumi up --target zitadel:liverty-music:ZitadelProdStack$...$pannpers-idp-link`. |
 | **Admin LoginPolicy ordering hazard:** if `AdminOrgConfigComponent` applies *before* `GoogleAdminIdpComponent`, the policy references a non-existent IdP id and Pulumi-graph cycle creates rollback complexity | The component's `dependsOn: [googleAdminIdp.idp]` explicit dependency forces ordering. Mirrors dev's wiring exactly. |
 | **`SmtpConfig` activation pre-empts an instance-level default config** → existing dev SMTP configuration would be unaffected, but if prod was pre-seeded out-of-band with a different SMTP config, the dynamic activation could conflict | `tasks.md §1` pre-flight checks the Zitadel admin API for existing SMTP configs and documents a manual cleanup step if any are present. |
-| **ESC seeding leak risk:** copy-paste of `clientSecret` or `pulumiJwtProfileJson` outside `esc env set --secret` would persist in shell history | tasks.md §2 explicitly uses `--secret` flag on every secret-marked value and instructs the operator to source values from a secure password manager, not shell history. |
+| **ESC seeding leak risk:** copy-paste of `clientSecret` outside `esc env set --secret` would persist in shell history | tasks.md §2 explicitly uses `--secret` flag on every secret-marked value and instructs the operator to source values from a secure password manager, not shell history. |
 | **`pulumi up --stack prod` is manual** (per `CLAUDE.md` "Pulumi Deployments (Automated)") → no auto-deploy on PR merge → window between PR merge and deployment leaves prod docs/state out-of-sync | Explicit step in tasks.md to manually trigger from Pulumi Cloud console. Verified state in archive step. |
 
 ## Migration Plan
@@ -158,7 +163,7 @@ The org id is fetched via the Zitadel admin API using the bootstrap-uploaded `pu
    - `pulumiConfig.zitadel.googleAdminIdp.clientId` (plaintext)
    - `pulumiConfig.zitadel.googleAdminIdp.clientSecret` (secret-marked)
    - `pulumiConfig.zitadel.adminGoogleSubs.pannpers` (same `sub` claim as dev — pannpers@pannpers.dev; secret-marked for consistency)
-   - `pulumiConfig.zitadel.pulumiJwtProfileJson` (admin JWT for HumanAdminComponent's dynamic resource; secret-marked)
+   - No separate ESC entry for the admin JWT. `HumanAdminComponent`'s dynamic-resource Zitadel Management API call sources the JWT inside `ZitadelProdStackComponent` from GSM `zitadel-machine-key-for-pulumi-admin` via `getSecretVersionAccessOutput` (wrapped in `pulumi.secret()`), routed through `BackendMachineKeyComponent.adminJwt` for sibling re-use.
 3. Fetch the prod admin-org-id via the Zitadel admin API using the bootstrap-uploaded `pulumi-admin` JWT. Verify the bootstrap-uploader sidecar has completed by checking the `zitadel-machine-key-for-pulumi-admin` GSM Secret has a non-empty `latest` version.
 
 **Phase 2 — Pulumi import (one-time):**
