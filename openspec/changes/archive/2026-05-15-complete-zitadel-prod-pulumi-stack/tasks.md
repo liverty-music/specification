@@ -1,3 +1,9 @@
+> ⚠️ **This change is SUPERSEDED.** See [SUPERSEDED.md](./SUPERSEDED.md) for the
+> rationale. The `[ ]` markers in the tasks below were **not performed** — they are
+> preserved unchanged for audit-trail honesty (not fake-checked as `[x]`).
+> `refactor-unify-env-dispatch` (archived alongside this directory) delivered the
+> same end-state via a simpler unified-class shape.
+
 ## 1. Pre-Flight (Out-of-Band, Before First `pulumi up --stack prod`)
 
 - [ ] 1.1 Verify the prod `bootstrap-uploader` sidecar has completed: `gcloud secrets versions list zitadel-machine-key-for-pulumi-admin --project liverty-music-prod` SHALL return at least one ENABLED version.
