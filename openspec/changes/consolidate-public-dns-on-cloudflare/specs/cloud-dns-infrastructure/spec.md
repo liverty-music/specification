@@ -1,7 +1,12 @@
+## RENAMED Requirements
+
+- FROM: `### Requirement: Cloudflare DNS Zone Management (Production)`
+- TO: `### Requirement: Cloudflare DNS Zone Management`
+
 ## MODIFIED Requirements
 
-### Requirement: Cloudflare DNS Zone Management (Production)
-The system SHALL manage the Cloudflare DNS zone for the production domain (`liverty-music.app`) with Proxy OFF (DNS only mode). The zone SHALL be the **single authoritative source** for all public DNS records across both dev and prod environments — including A records for service hostnames, ACME DNS-01 challenge CNAMEs for Google-managed certificates, Postmark DKIM TXT records, and Postmark Return-Path CNAMEs. No public DNS subzone SHALL be delegated to Cloud DNS.
+### Requirement: Cloudflare DNS Zone Management
+The system SHALL manage the Cloudflare DNS zone for the domain (`liverty-music.app`) with Proxy OFF (DNS only mode). The zone SHALL be the **single authoritative source** for all public DNS records across both dev and prod environments — including A records for service hostnames, ACME DNS-01 challenge CNAMEs for Google-managed certificates, Postmark DKIM TXT records, and Postmark Return-Path CNAMEs. No public DNS subzone SHALL be delegated to Cloud DNS.
 
 #### Scenario: Cloudflare provider configured
 - **WHEN** Pulumi code in cloud-provisioning uses `@pulumi/cloudflare` package

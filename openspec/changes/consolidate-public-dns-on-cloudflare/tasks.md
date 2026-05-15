@@ -110,13 +110,15 @@ Per `deployment-infrastructure` capability, prod applies are manual via Pulumi C
   - `curl -I https://api.liverty-music.app/` returns the backend Connect-RPC response (200 or auth-required, not TLS error).
   - `curl -I https://auth.liverty-music.app/.well-known/openid-configuration` returns `200 OK` with Zitadel JSON.
   - `gcloud dns managed-zones list --project liverty-music-prod` no longer contains `api-liverty-music-app-public-zone` or `auth-liverty-music-app-public-zone`.
+  - **Per R3b** (prod Postmark force-replace race from D4 provider consolidation): `dig +short TXT <dkim-selector>._domainkey.mail.liverty-music.app @1.1.1.1` returns the expected DKIM public key value (matching ESC `pulumiConfig.postmark.dkimPublicKey`); `dig +short CNAME pm-bounces.mail.liverty-music.app @1.1.1.1` returns `pm.mtasv.net`. If either returns empty or NXDOMAIN, the provider-URN-replace race transient may still be propagating — retry within 60 s; if still missing, manually verify the records exist in the Cloudflare dashboard and re-run `pulumi up` to reconverge.
 
 ## 12. Post-cutover smoke tests
 
 - [ ] 12.1 Browser smoke: open `https://liverty-music.app/` in a fresh browser, complete OIDC sign-in via `auth.liverty-music.app`, land in the SPA dashboard. Verify the Aurelia frontend renders without console errors.
 - [ ] 12.2 Postmark smoke (dev): trigger a sign-up flow that sends a verification email from the dev backend. Email arrives within 60s.
-- [ ] 12.3 Backend health smoke (prod): `kubectl -n backend logs deployment/server --context prod --tail 100` shows no recent TLS / DNS errors.
-- [ ] 12.4 Cloudflare audit log review: confirm only Pulumi-attributed changes appear in the past 24 hours; no unexpected manual edits.
+- [ ] 12.3 Postmark smoke (prod): trigger a prod-backend transactional email (e.g., test sign-up or a manual `curl` against the Postmark-bound endpoint), confirm delivery to a disposable inbox. Verifies the R3b prod Postmark force-replace did not leave the DKIM TXT in an unverified state. Check the Postmark dashboard sender domain `mail.liverty-music.app` status is `Verified` (not `Pending verification` / `Verification failed`); if drifted, run `Verify DKIM` in the dashboard.
+- [ ] 12.4 Backend health smoke (prod): `kubectl -n backend logs deployment/server --context prod --tail 100` shows no recent TLS / DNS errors.
+- [ ] 12.5 Cloudflare audit log review: confirm only Pulumi-attributed changes appear in the past 24 hours; no unexpected manual edits.
 
 ## 13. Documentation + archive
 
