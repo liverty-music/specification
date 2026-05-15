@@ -38,7 +38,7 @@ Stakeholders:
 
 ### D1 — Drop `staging` from the `Environment` type; comment out the Cloud NAT block for future re-introduction
 
-**Decision:** `Environment = 'dev' | 'staging' | 'prod'` → `Environment = 'dev' | 'prod'`. All `if (env === 'staging')` blocks deleted (or commented out where re-introduction is anticipated). The `staging` cluster block in `kubernetes.ts:725-776` is **deleted** outright (staging cluster has never been deployed and its code has dormant bugs). The Cloud NAT block in `network.ts:200-228` is **commented out** with a TODO referencing the conditions under which it should be re-enabled (private nodes returning to prod, or staging stack adoption).
+**Decision:** `Environment = 'dev' | 'staging' | 'prod'` → `Environment = 'dev' | 'prod'`. All `if (env === 'staging')` blocks deleted (or commented out where re-introduction is anticipated). The `staging` cluster block in `kubernetes.ts:725-776` is **deleted** outright (staging cluster has never been deployed and its code has dormant bugs). The Cloud NAT block in `network.ts:193-228` (including the leading explanatory comment at line 193 so the commented-out block stays self-documenting) is **commented out** with a TODO referencing the conditions under which it should be re-enabled (private nodes returning to prod, or staging stack adoption).
 
 **Rationale:**
 
@@ -90,6 +90,7 @@ These outer guards now serve a single purpose: "is this env's ESC seeded with th
 
 - The dev thresholds in `ZitadelMonitoringComponent` are deliberately generous (50× over steady-state for latency p99, 10 errors / 60s for JWT). They will not page on the pre-launch prod traffic shape; if they become noisy later, threshold tuning is a separate concern.
 - The billing budget needs DIFFERENT amount values per env (dev: ¥3000, prod: TBD by operator). However, the dev billing budget is currently *dormant* — `gcpConfig.billingAlertEmail` is unset in dev ESC, so the inner `if` evaluates false and no Budget resource exists in dev state today. Refactoring to "all envs" is effectively no-op until ESC is seeded. When seeded, the budget amount is read from `gcpConfig.budgetAmountJpy` (new field) — per-env value seeded by operator.
+- **Resource renames (two of them, both env-prefix removal)**: `dev-cost-budget` → `cost-budget` and `dev-billing-alert-email` → `billing-alert-email`. Env-prefix removal follows D8 (Pulumi stack URN already disambiguates env). Pulumi state impact: zero — both resources are currently DORMANT in dev state (the inner `if (gcpConfig.billingAlertEmail)` evaluates false today, so neither resource exists in any stack state), so the rename triggers no destroy+create operation. If the operator seeds `billingAlertEmail` in ESC *after* the refactor lands, the resources are created under the new (un-prefixed) names directly.
 - **`MonitoringComponent` parameterization for env-correct cluster targeting**: `gcp/index.ts:324-327` currently hardcodes `clusterLocation: ${Regions.Osaka}-a` (zonal — dev-only) and `clusterName: standard-cluster-osaka` (dev-only). For prod the cluster is regional (`asia-northeast2`) and named `autopilot-cluster-osaka`. Without parameterization, prod alerts would silently target log entries from the dev cluster — a real bug. The fix is two new env-keyed maps in `constants.ts`-equivalent location (or inline ternaries):
   ```ts
   const clusterNameByEnv: Record<Environment, string> = {
@@ -128,7 +129,7 @@ The `if (env === 'dev')` / `else` (= prod) structural branch remains because:
 
 ### D7 — Comment out (not delete) the staging Cloud NAT block; delete the staging cluster block
 
-**Decision:** The staging-only Cloud NAT scaffolding in `network.ts:200-228` is **commented out** (with a clearly-labeled TODO comment explaining re-enable conditions). The staging-only cluster block in `kubernetes.ts:725-776` is **deleted** outright.
+**Decision:** The staging-only Cloud NAT scaffolding in `network.ts:193-228` (including the leading explanatory comment at line 193 so the commented-out block stays self-documenting) is **commented out** (with a clearly-labeled TODO comment explaining re-enable conditions). The staging-only cluster block in `kubernetes.ts:725-776` is **deleted** outright.
 
 **Rationale (per user direction):**
 

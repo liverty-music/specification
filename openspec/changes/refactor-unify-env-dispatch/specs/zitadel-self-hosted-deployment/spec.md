@@ -26,42 +26,32 @@ The Pulumi `cloud-provisioning` codebase SHALL provision the Zitadel application
 - **THEN** the preview SHALL show zero changes to existing Zitadel-side resource URNs in dev state
 - **AND** the `Zitadel` class internal structure SHALL be byte-equivalent to its pre-refactor form modulo the removal of the `env !== 'dev'` throw guard and the addition of env-conditional `E2eTestUserComponent` creation
 
-### Requirement: Env-Driven Configuration Uses Maps or Ternaries, Not Top-Level If-Branches
+### Requirement: Per-Environment Configuration Values Sourced From Env-Keyed Map
 
-The Pulumi `cloud-provisioning` codebase SHALL express environment-specific configuration values via `Record<Environment, T>` constant maps or inline ternary expressions. Top-level `if (env === 'dev')` / `if (env === 'prod')` branches in component constructors or in `src/index.ts` SHALL be reserved for **structurally different resource shapes** — i.e., cases where the env difference produces fundamentally different Pulumi resource types or resource graphs that cannot be expressed as parameter differences on the same resource declaration.
+Environment-keyed configuration values that vary across stacks (admin org ids, redirect URI lists, sender addresses, cluster names for monitoring filters, etc.) SHALL be expressed as `Record<Environment, T>` constant maps and looked up via `[env]` indexing, OR as inline ternary expressions on `env`. Per-env scalar constants (such as a legacy `ZITADEL_DEV_ADMIN_ORG_ID` covering only one env) SHALL NOT be used when a corresponding value is needed for additional envs.
 
-Examples of structural differences (where `if` IS justified):
-- DNS topology: prod uses Cloudflare for the apex + Cloud DNS for subdomains; non-prod uses Cloud DNS only with a single zone (`src/gcp/components/network.ts`)
-- K8s cluster mode: dev uses Standard cluster + separate NodePool resource; prod uses Autopilot cluster with mutually-exclusive config knobs (`src/gcp/components/kubernetes.ts`)
-- Organization folder: prod creates a new folder; non-prod imports via `StackReference` (`src/gcp/components/project.ts`)
-- GitHub organization-level config: prod stack owns the GitHub org-level resources to avoid cross-stack conflict (`src/index.ts`)
+**Rationale**: Localizing env-keyed differences in a single map forces the env-specific value to be the only thing that varies. Future env additions update the map; future env removals delete an entry. The alternative — duplicating surrounding code per-env branch — has historically led to drift (e.g., the `MonitoringComponent` clusterName hardcoded to a dev-only value, which silently routed prod alerts to the wrong cluster).
 
-Examples of NON-structural differences (where ternary / map SHALL replace `if`):
-- Environment-specific redirect URIs (add localhost only for dev)
-- Environment-specific OAuth client values
-- Environment-specific admin org ids
-- Environment-specific Postmark sender addresses
-- Conditional API enablement of harmless APIs
+**Out-of-scope for this requirement** (not a SHALL): general code-style preferences such as "use ternary spread over `if-push`" for array construction. Those are coding conventions tracked outside the capability spec, because their verifiability depends on judgment calls that no spec scenario can pin down.
 
-**Rationale**: The `if`-as-default pattern leads to code drift across env branches because each branch carries an independent copy of the surrounding configuration. Centralizing env-keyed differences in maps and inline ternaries forces the env-specific value to be the ONLY thing that varies, making divergence visible at the point of value selection rather than spread across duplicated blocks.
-
-#### Scenario: Per-env redirect URIs use ternary spread, not if-push
-
-- **WHEN** `FrontendComponent` constructs `redirectUris` for the SPA's `ApplicationOidc`
-- **THEN** dev-only localhost URIs SHALL be added via ternary spread (`...(env === 'dev' ? ['http://localhost:9000/auth/callback'] : [])`)
-- **AND** an `if (env === 'dev')` block that calls `redirectUris.push(...)` SHALL NOT appear
-
-#### Scenario: Per-env admin org id sourced from env-keyed map
+#### Scenario: Admin org id sourced from env-keyed map
 
 - **WHEN** the `Zitadel` class imports the admin org via `zitadel.Org('admin', ...)` resource option `import:`
 - **THEN** the import id SHALL be `adminOrgIdMap[env]` where `adminOrgIdMap: Record<Environment, string>` lives in `src/zitadel/constants.ts`
+- **AND** the map SHALL contain entries for every env in `Environment` type union (at minimum `dev` + `prod`)
 - **AND** no per-env scalar constant (such as a legacy `ZITADEL_DEV_ADMIN_ORG_ID`) SHALL be referenced
+
+#### Scenario: MonitoringComponent cluster targeting via env-keyed map
+
+- **WHEN** `MonitoringComponent` is instantiated for any env
+- **THEN** its `clusterName` and `clusterLocation` arguments SHALL be sourced from env-keyed maps (e.g., `clusterNameByEnv`, `clusterLocationByEnv`) or inline ternaries
+- **AND** the resolved values SHALL match the cluster actually deployed in that env (dev: `standard-cluster-osaka` / `asia-northeast2-a`; prod: `autopilot-cluster-osaka` / `asia-northeast2`)
+- **AND** no per-cluster name SHALL be hardcoded to a single env's value
 
 #### Scenario: places.googleapis.com enabled in all environments
 
 - **WHEN** `src/gcp/components/kubernetes.ts` builds the `apisToEnable` list
 - **THEN** `places.googleapis.com` SHALL be included unconditionally (no env-gated `apisToEnable.push`)
-- **AND** API enablement SHALL incur zero recurring cost when the API is not called (justified by GCP's enablement-is-free / per-call-is-paid pricing)
 
 ### Requirement: Backend MachineUser Lives in Product Org Across All Environments
 
