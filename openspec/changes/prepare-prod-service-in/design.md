@@ -133,22 +133,25 @@ The contract deploy itself is outside this change's code scope (it's a smart-con
 3. **Phase 3** — Operator: `pulumi up --stack prod` to provision the prod `ApplicationOidc`. Record client_id + product-org-id from Pulumi outputs.
 4. **Phase 4** — Backend PR: extend `deploy.yml` with Release-trigger path; new `k8s/atlas/overlays/prod/` directory.
 5. **Phase 5** — Backend Release tag cut (`v1.0.0`): first prod images pushed to `liverty-music-prod/backend`.
-6. **Phase 6** — Frontend PR: extend `push-image.yaml` with Release-trigger path; commit `.env.prod` with prod values (using Phase 3's recorded client_id + org_id; apex API URL; apex issuer; prod VAPID public key per D9 outcome; info log level).
-7. **Phase 7** — Frontend Release tag cut: first prod image pushed to `liverty-music-prod/frontend/web-app`.
-8. **Phase 8** — Cloud-provisioning PR: kustomize prod overlay image-pinning patches; runbook updates for IAM revocation.
-9. **Phase 9** — Operator: merge cloud-provisioning PR; wait for ArgoCD prod reconciliation; verify all prod pods running on prod-AR images.
-10. **Phase 10** — Operator: `gcloud projects remove-iam-policy-binding liverty-music-dev` (per D4 step 7).
-11. **Phase 11** — Operator: `esc env set liverty-music/prod` for `gcp.monitoring.slackNotificationChannels.alertBackend`, `gcp.billingAlertEmail`, `gcp.budgetAmountJpy`.
-12. **Phase 12** — Operator: deploy mainnet ticket SBT contract; update three configmap.env files with mainnet address (committed in cloud-provisioning).
-13. **Phase 13** — Operator: VAPID keypair verification (D9); if mismatch, regenerate + update configmaps + ESC.
+6. **Phase 6** — Operator: VAPID keypair verification (D9). Mode A: GSM-derived public matches the configmap value, no action; Mode B: regenerate the keypair, push the new private to GSM via `esc env set` + `pulumi up`, and capture the new public for use in Phases 7 and 9. This phase MUST precede Phase 7 so `.env.prod` is committed with the authoritative VAPID public key in one shot (otherwise the `v1.0.0` frontend image ships a placeholder VAPID value that violates the `prod-environment-bootstrap` byte-equal invariant).
+7. **Phase 7** — Frontend PR: extend `push-image.yaml` with Release-trigger path; commit `.env.prod` with prod values (using Phase 3's recorded client_id + org_id; apex API URL; apex issuer; the VAPID public key resolved in Phase 6; info log level).
+8. **Phase 8** — Frontend Release tag cut: first prod image pushed to `liverty-music-prod/frontend/web-app`.
+9. **Phase 9** — Cloud-provisioning PR: kustomize prod overlay image-pinning patches; runbook updates for IAM revocation; if Phase 6 fired Mode B, also bump `VAPID_PUBLIC_KEY=` in the three backend prod configmap.env files in this same PR.
+10. **Phase 10** — Operator: merge cloud-provisioning PR; wait for ArgoCD prod reconciliation; verify all prod pods running on prod-AR images.
+11. **Phase 11** — Operator: `gcloud projects remove-iam-policy-binding liverty-music-dev` (per D4 step 7).
+12. **Phase 12** — Operator: `esc env set liverty-music/prod` for `gcp.monitoring.slackNotificationChannels.alertBackend`, `gcp.billingAlertEmail`, `gcp.budgetAmountJpy`; then `pulumi up --stack prod` to materialize `MonitoringComponent`, `ZitadelMonitoringComponent`, `cost-budget`, and `billing-alert-email`.
+13. **Phase 13** — Operator: deploy mainnet ticket SBT contract; open a separate cloud-provisioning PR updating `TICKET_SBT_ADDRESS=` in three configmap.env files with the deployed mainnet address.
 14. **Phase 14** — Operator: `esc env rm` for stale fields (`zitadel.domain`, `zitadel.orgId`, `zitadel.pulumiJwtProfileJson`) in both `liverty-music/dev` and `liverty-music/prod`.
-15. **Phase 15** — Operator: `pulumi up --stack prod` final pass to materialize MonitoringComponent + budget; smoke test `https://liverty-music.app/` end-to-end (sign-up, sign-in, follow artist, push notification).
+15. **Phase 15** — Operator: `pulumi up --stack prod` final pass for any remaining IaC effects (admin Google sub correction from §15, blockchain mainnet ESC corrections from §14); end-to-end smoke of `https://liverty-music.app/` (sign-up, sign-in, follow artist, push notification, alert delivery). Note: MonitoringComponent + budget materialize earlier at Phase 12, not here.
 
 **Rollback strategy**:
-- Phases 5/7 — re-cut a prior Release tag; ArgoCD will pin to the older image.
-- Phase 10 — re-add the IAM grant via `gcloud projects add-iam-policy-binding`.
-- Phase 11 — `esc env rm` of the just-added keys (Pulumi auto-removes the gated resources on next `pulumi up`).
-- Phase 14 — `esc env set` to re-add the removed field with its original value (operators MUST capture each field's value before deletion, in a paste-bin or `tmp/` file, for rollback eligibility).
+- Phases 5/8 — re-cut a prior Release tag; ArgoCD will pin to the older image.
+- Phase 6 (Mode B regeneration) — re-`esc env set` the previous VAPID private key value (operators MUST capture the current GSM value before regen for this to be possible); roll back the overlay's three-configmap update in Phase 9.
+- Phase 11 — re-add the IAM grant via `gcloud projects add-iam-policy-binding`.
+- Phase 12 — `esc env rm` of the just-added keys (Pulumi auto-removes the gated resources on next `pulumi up`).
+- Phase 14 — `esc env set` to re-add the removed field with its original value. Field-specific rollback handling:
+  - `zitadel.domain` and `zitadel.orgId` are non-sensitive legacy identifiers — capture the current value to a local `tmp/` file before `esc env rm` if rollback eligibility is desired.
+  - `zitadel.pulumiJwtProfileJson` is a service-account JSON containing an RSA private key — **do NOT** store the value in any third-party paste service (even unlisted pastes can be retained or indexed indefinitely). If rollback insurance is required, store the value in a GSM secret in `liverty-music-dev` (e.g., `zitadel-machine-key-for-pulumi-admin-rollback`) and remove that secret after the change is archived. Recommended path: accept no-rollback for this field, because `zitadel-machine-key-for-pulumi-admin` in GSM is already the canonical replacement source-of-truth.
 
 ## Open Questions
 
