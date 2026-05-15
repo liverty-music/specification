@@ -6,7 +6,7 @@ package liverty_music.entity.v1;
 // Used wherever the domain model requires a geographic location — for example,
 // the centroid of a user's home area or the position of a concert venue.
 message Coordinates {
-  // The WGS 84 latitude in decimal degrees (range: -90 to +90).
+  // The WGS 84 latitude in decimal degrees (range: -180 to +180).
   double latitude = 1;
 
   // The WGS 84 longitude in decimal degrees (range: -180 to +180).
