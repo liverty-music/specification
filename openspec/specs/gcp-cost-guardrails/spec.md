@@ -2,8 +2,10 @@
 
 ## Purpose
 
-Defines cost-protection mechanisms for the `liverty-music-dev` GCP project, including billing budget alerts and consumer quota overrides for high-cost APIs (Places API, Vertex AI). These guardrails prevent runaway spend in the development environment while allowing normal workloads to operate unimpeded.
+Defines cost-protection mechanisms for GCP projects in scope (`liverty-music-dev`, `liverty-music-prod`). Billing budget alerts apply per-env via ESC materialization; quota overrides for high-cost APIs (Places API, Vertex AI) are dev-only guardrails that prevent runaway spend in the development environment while allowing normal workloads to operate unimpeded.
+
 ## Requirements
+
 ### Requirement: Places API Daily Quota Limit (Dev)
 The `liverty-music-dev` GCP project SHALL have a consumer quota override limiting Places API (New) Text Search requests to **20 requests per day**. This limit SHALL be managed as a Pulumi resource and SHALL only apply to the dev environment.
 

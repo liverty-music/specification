@@ -3,7 +3,9 @@
 ## Purpose
 
 Defines the requirements for database schema migration management using the Atlas Kubernetes Operator. The operator runs inside GKE where PSC connectivity to Cloud SQL is available, replacing the previous application-startup migration approach.
+
 ## Requirements
+
 ### Requirement: Atlas Operator SHALL be installed in the GKE cluster
 
 The system SHALL deploy the Atlas Kubernetes Operator via Helm chart in a dedicated namespace. The Operator SHALL manage `AtlasMigration` CRDs to apply versioned database migrations.

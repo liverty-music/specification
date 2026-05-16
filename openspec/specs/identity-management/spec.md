@@ -3,7 +3,9 @@
 ## Purpose
 
 Manage identity, authentication, and authorization policies for the Liverty Music platform.
+
 ## Requirements
+
 ### Requirement: Manage Zitadel Organization
 
 The system SHALL manage Zitadel organization topology via Infrastructure as

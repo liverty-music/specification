@@ -14,7 +14,9 @@ resources as dev (Cloud SQL, Artifact Registry, Service Accounts, Secret
 Manager, Cloud DNS, Certificate Manager), and bounds the scope so that
 Kubernetes-side workload bootstrap (ArgoCD Applications, per-namespace
 overlays) is explicitly deferred to a separate follow-up change.
+
 ## Requirements
+
 ### Requirement: Prod GKE cluster SHALL be an Autopilot regional cluster in asia-northeast2
 The `liverty-music-prod` GCP project SHALL contain exactly one GKE Autopilot regional cluster whose `location` is `asia-northeast2`. The cluster mode (Standard vs Autopilot) is set at creation and cannot be changed without rebuilding the cluster. This change supersedes the prior decision (recorded in the `provision-prod-gcp-resources` change) to use Standard regional; the rationale is that Autopilot is GKE free-tier-eligible (covering the `$72/month` management fee post-dev-retirement) while regional Standard is not, and Autopilot's operational simplicity matches Liverty Music's workload profile (HPA-driven web apps, no privileged DaemonSets).
 
