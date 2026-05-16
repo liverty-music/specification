@@ -2,7 +2,9 @@
 
 ### Requirement: Prod Artifact Registry Docker repositories SHALL enforce tag immutability at the registry API level
 
-Every Docker-format `gcp.artifactregistry.Repository` resource provisioned in the `liverty-music-prod` GCP project SHALL declare `dockerConfig.immutableTags = true`. The Artifact Registry API SHALL reject any attempt to re-point a tag **that was written after `immutableTags` was enabled on the repository** to a different image digest (whether issued via `docker push`, `gcloud artifacts docker tags add`, or the AR REST API), returning HTTP 409 Conflict. The flag is forward-only by GCP design: tags that existed before the flag was enabled remain mutable for the lifetime of those specific tag values; only tag writes performed AFTER enablement are locked. In the liverty-music-prod ops model, no operator re-tags historical releases, so this carve-out is documentary rather than operationally consequential — but tests that verify the 409 behavior MUST target a post-enablement tag (e.g., the first release cut after this change applies) rather than a pre-existing tag. Dev-project AR repositories SHALL remain at the default (`immutableTags = false`) because ArgoCD Image Updater requires the ability to rewrite `:latest` and `:main` tags during dev iteration.
+Every Docker-format `gcp.artifactregistry.Repository` resource provisioned in the `liverty-music-prod` GCP project SHALL declare `dockerConfig.immutableTags = true`. The Artifact Registry API SHALL reject any attempt to re-point a tag **that was written after `immutableTags` was enabled on the repository** to a different image digest (whether issued via `docker push`, `gcloud artifacts docker tags add`, or the AR REST API), returning HTTP 409 Conflict. Dev-project AR repositories SHALL remain at the default (`immutableTags = false`) because ArgoCD Image Updater requires the ability to rewrite `:latest` and `:main` tags during dev iteration.
+
+**Forward-only carve-out (non-testable, documentary):** Per GCP's documented behavior, `immutableTags` is forward-only — tags written to the prod AR repository before the flag was enabled remain mutable for the lifetime of those specific tag values. No operational process re-tags historical releases, so this carve-out is documentary rather than operationally consequential. Empirical validation of the 409 enforcement (tasks.md §10) MUST target a post-enablement tag (e.g., the first release cut after this change applies); attempting validation against a pre-enablement tag has unspecified AR behavior and would not exercise the enforcement path.
 
 #### Scenario: Prod backend AR repo enforces immutable tags
 
@@ -31,16 +33,11 @@ Every Docker-format `gcp.artifactregistry.Repository` resource provisioned in th
 - **THEN** the command SHALL fail with an error referencing HTTP 409 / "tag already exists" / "immutable tags" semantics
 - **AND** the tag SHALL continue to resolve to its originally-written digest
 
-#### Scenario: Pre-enablement tags retain their original mutability (documentary note)
-
-- **GIVEN** a tag `:vA.B.C` that was first written to the prod AR repository BEFORE `dockerConfig.immutableTags = true` was applied
-- **WHEN** an operator attempts to re-point that tag to a different digest
-- **THEN** the AR API behavior is unspecified by this requirement (GCP documentation states pre-enablement tags remain mutable; the operational policy is that no operator SHALL re-tag historical releases regardless of API behavior)
-- **AND** to validate the 409 enforcement empirically, operators SHALL target a post-enablement tag, not a pre-enablement one
-
 ### Requirement: Prod kustomize overlays SHALL pin image URIs to semantic version tags
 
 Every kustomize `images:` transformation entry inside `cloud-provisioning/k8s/namespaces/<ns>/overlays/prod/kustomization.yaml` SHALL set `newTag:` to a semantic version string matching the regex `^v\d+\.\d+\.\d+(-[A-Za-z0-9.-]+)?$` (e.g., `v1.0.0`, `v1.2.3-rc1`). Commit-SHA-only tags (40-char hex) SHALL NOT appear as `newTag:` values in any prod overlay. The `:latest` tag SHALL NEVER appear in prod overlays. Each `newTag:` SHALL be accompanied by an inline comment recording the corresponding source commit SHA, in the form `newTag: vX.Y.Z  # commit <40-char-sha>` (or a multi-line equivalent comment block immediately preceding the entry), so incident-response trace from manifest → exact commit does not require an Artifact Registry round-trip.
+
+**Regex scope note:** The regex intentionally permits a pre-release suffix (`-rc1`, `-alpha.2`) but intentionally **excludes** SemVer build metadata (the `+build.<id>` form). Docker / OCI registry tag names have inconsistent support for the `+` character across registries, and build metadata carries no semantic version ordering weight (per SemVer 2.0.0 §10), so it provides no operational signal that a release tag does not already carry. A future author "fixing" the regex to be SemVer-complete would inadvertently allow tag names that some downstream tooling cannot parse.
 
 #### Scenario: Backend prod overlay uses semver tags only
 

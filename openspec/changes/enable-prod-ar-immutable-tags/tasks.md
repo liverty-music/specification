@@ -90,8 +90,7 @@ This section validates the AR enforcement empirically. Optional because it requi
     asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/server:v1.0.1
   ```
   - Confirm the command fails with a 409 / "immutable tags" / "tag already exists" error.
-- [ ] 10.5 (Optional) Document the pre-enablement carve-out empirically: attempt the same re-tag against the pre-enablement `:v1.0.0`. Per GCP docs the API may accept it; record actual observed behavior in the runbook to set operator expectations correctly. (This task is documentary — do NOT actually let the re-tag stand; if AR accepts, immediately re-tag back to the original digest.)
-- [ ] 10.6 Bump prod overlay `newTag: v1.0.0` → `newTag: v1.0.1` (and `app.kubernetes.io/version: "1.0.1"`) in a new cloud-provisioning PR. Merge. Confirm ArgoCD rolls cleanly.
+- [ ] 10.5 Bump prod overlay `newTag: v1.0.0` → `newTag: v1.0.1` (and `app.kubernetes.io/version: "1.0.1"`) in a new cloud-provisioning PR. Merge. Confirm ArgoCD rolls cleanly. NOTE: the pre-enablement carve-out (whether AR accepts re-tag on the original `:v1.0.0`) is NOT empirically validated — GCP's documentation is sufficient. Mutating a prod tag to "document" GCP-documented behavior would put production at risk if the recovery re-tag failed mid-way. See spec.md "Forward-only carve-out" prose note under Requirement 1.
 
 ## 11. Archive
 
