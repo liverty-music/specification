@@ -62,7 +62,7 @@ The runtime configuration document SHALL be a JSON object whose top-level shape 
 
 The SPA SHALL refuse to start if the `environment` field in `/config.json` is inconsistent with `window.location.hostname` for the well-known production-tier hostnames (`liverty-music.app` → `prod`, `dev.liverty-music.app` → `dev`, `staging.liverty-music.app` → `staging`). This guards against the failure mode in which a misconfigured deployment serves the image's bundled fallback config in a production-tier environment.
 
-The `staging` environment is reserved/forward-looking: the `AppConfig.environment` union includes it and the host map MUST include `staging.liverty-music.app`, but no Kubernetes overlay or hostname currently maps to `staging` (introduced when the staging cluster is provisioned by a future change). The cross-check requirement holds whether or not the staging cluster exists yet.
+> **Note on staging**: `staging` is reserved/forward-looking. The `AppConfig.environment` union includes it AND the host map MUST include `staging.liverty-music.app` so that the SPA bundle is ready for staging the moment a cluster is provisioned — but no Kubernetes overlay or hostname currently maps to `staging`. **The staging-host scenarios below are aspirational placeholders, not blocking acceptance criteria for the initial implementation.** Implementers MAY treat the staging scenarios as forward-looking documentation; they become enforceable acceptance criteria when a `staging` overlay is added in a follow-up change. The other (dev / prod) scenarios in this requirement ARE blocking.
 
 #### Scenario: Production host with dev config refuses to start
 

@@ -1,3 +1,5 @@
+> **Cross-repo task layout**: Tasks 1–7 live in `frontend` and `cloud-provisioning`; tasks 8–10 are the user-gated rollout (merges, release tag, prod cutover, archive). This specification PR ships only the OpenSpec artifacts. The companion implementation PRs (`liverty-music/frontend#358`, `liverty-music/cloud-provisioning#275`) track sections 1–7. A checked box under sections 1–7 indicates work landed on the companion branch; section 8.x items remain `[ ]` until the corresponding merge / release event fires.
+
 ## 1. Frontend — runtime config plumbing
 
 - [x] 1.1 Create `frontend/src/config/app-config.ts` exporting: `AppConfig` interface, `IAppConfig` DI token, `loadAppConfig()` async loader (with required-field validation), `getAppConfig()` synchronous accessor (throws if pre-bootstrap), `validateEnvironmentMatchesHost(config)` for production-host cross-check
