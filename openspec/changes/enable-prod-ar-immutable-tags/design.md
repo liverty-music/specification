@@ -44,11 +44,13 @@ Alternative considered: hybrid (`newTag: v1.0.0` + `digest: sha256:...` in same 
 
 Alternative considered: pin to combined tag `v1.0.0-3bc2dada` (build pipeline pushes a third tag). Rejected — adds a workflow change with no security benefit over immutable-semver-tag, and the combined tag is no more readable than `v1.0.0` alone.
 
-### D2: Dev AR stays mutable
+### D2: Dev AR stays mutable; any other env (incl. future staging) gets immutable-tags by default
 
 ArgoCD Image Updater on dev rewrites the `:latest` and `:main` tags on every push to `liverty-music/{backend,frontend}:main`. Enabling immutable-tags on dev AR would break this — `:latest` would have to be deleted and recreated on every push, which is not how Image Updater works. The cost-benefit: dev exists to be churned; immutability there has zero operational value.
 
-Pulumi scope: `dockerConfig.immutableTags = true` is set ONLY on the prod-stack `gcp.artifactregistry.Repository` resources (`backend`, `frontend`). The dev-stack resources for the same names are left at the default (`immutableTags = false`).
+Pulumi scope: `dockerConfig.immutableTags = true` is set on every stack EXCEPT dev (i.e., the conditional is `environment !== 'dev'`, not `environment === 'prod'`). This is intentionally fail-secure: any future non-dev environment (staging when it gets provisioned, any prod-replica, etc.) automatically inherits the immutable-tags policy without needing a follow-up change. Listing prod by name would force every future env to opt in via explicit code change, with the failure mode of "operator forgets, env runs with mutable tags". The negative-form conditional makes the secure case the default.
+
+Today only dev and prod stacks exist; staging is documented as a future possibility (per the workspace CLAUDE.md). When staging is provisioned, its AR repos will be created with `immutableTags: true` automatically.
 
 ### D3: Always pin (no `:latest` even on prod)
 

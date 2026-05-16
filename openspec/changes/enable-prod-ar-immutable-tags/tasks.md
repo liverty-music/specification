@@ -39,7 +39,7 @@
 
 - [x] 5.1 Run `kubectl kustomize cloud-provisioning/k8s/namespaces/backend/overlays/prod` and grep rendered Deployment + CronJob `image:` fields. Confirm every image URI ends with `:v1.0.0` and starts with `asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/`.
 - [x] 5.2 Run `kubectl kustomize cloud-provisioning/k8s/namespaces/frontend/overlays/prod` and confirm the `web-app` Deployment image URI ends with `:v1.0.0` and starts with `asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/`.
-- [x] 5.3 Confirm rendered output contains `app.kubernetes.io/version: "1.0.0"` at both the Deployment/CronJob `metadata.labels` level AND the Pod template `spec.template.metadata.labels` level for every workload in both overlays.
+- [x] 5.3 Confirm rendered output contains `app.kubernetes.io/version: "1.0.0"` at all required paths per the spec requirement: (a) Deployment / CronJob `metadata.labels` (top-level), (b) Deployment `spec.template.metadata.labels` (Pod template), (c) CronJob `spec.jobTemplate.metadata.labels` (Job template), (d) CronJob `spec.jobTemplate.spec.template.metadata.labels` (Pod template inside the Job template — the path Prometheus / OTel actually scrape, since CronJobs have NO `spec.template`).
 - [x] 5.4 Confirm no `selector.matchLabels.app.kubernetes.io/version` is added (selector modifications would break running Deployments — the label SHALL be metadata-only).
 - [x] 5.5 Run `make lint-k8s` from cloud-provisioning. Confirm the spot-nodeselector / kube-linter passes still hold. (NOTE: local `make lint-k8s` fails on argocd Helm chart prerequisite — `helm` not installed locally; backend + frontend prod overlays render cleanly via `kubectl kustomize` and `scripts/check-spot-nodeselector.sh` passes. CI has Helm.)
 - [x] 5.6 Confirm no dev overlay was accidentally modified: `git diff cloud-provisioning/k8s/namespaces/*/overlays/dev/` SHALL be empty.
@@ -63,8 +63,8 @@
 - [ ] 8.1 Watch ArgoCD detect the cloud-provisioning main-branch change and sync the `backend` + `frontend` Applications on prod.
 - [ ] 8.2 Verify post-sync Deployment + CronJob spec on prod via `kubectl --context=gke_liverty-music-prod_asia-northeast2_autopilot-cluster-osaka -n backend get deploy,cronjob -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.template.spec.containers[*].image}{"\t"}{.spec.jobTemplate.spec.template.spec.containers[*].image}{"\n"}{end}'` — every image SHALL end with `:v1.0.0`.
 - [ ] 8.3 Same check for frontend namespace.
-- [ ] 8.4 Verify `app.kubernetes.io/version` label is present on every Deployment + CronJob in prod backend + frontend namespaces.
-- [ ] 8.5 Verify the label propagates to Pods: `kubectl --context=...-prod -n backend get pod --show-labels | grep app.kubernetes.io/version` returns non-empty.
+- [ ] 8.4 Verify `app.kubernetes.io/version` label is present on every Deployment + CronJob in prod backend + frontend namespaces (top-level: `kubectl get deploy,cronjob -A -o jsonpath='{range .items[*]}{.metadata.labels.app\.kubernetes\.io/version}{"\n"}{end}'`).
+- [ ] 8.5 Verify the label propagates to the Pod template path that Prometheus / OTel actually scrape. For Deployments: `kubectl get deploy -A -o jsonpath='{range .items[*]}{.spec.template.metadata.labels.app\.kubernetes\.io/version}{"\n"}{end}'`. For CronJobs: `kubectl get cronjob -A -o jsonpath='{range .items[*]}{.spec.jobTemplate.spec.template.metadata.labels.app\.kubernetes\.io/version}{"\n"}{end}'` (CronJobs have NO `spec.template`; the Pod template lives under `spec.jobTemplate.spec.template`). Also verify on a live Pod: `kubectl get pod -n backend --show-labels | grep app.kubernetes.io/version` returns non-empty.
 - [ ] 8.6 Spot-check: ensure Pods did not enter `ImagePullBackOff` or `ErrImagePull` — the image bytes are unchanged (same digest, different tag), so the rollout SHALL succeed within standard rolling-update time.
 
 ## 9. Smoke: confirm no regression in apex / api / auth serving
@@ -77,17 +77,21 @@
 
 This section validates the AR enforcement empirically. Optional because it requires cutting a real (or no-op) release; defer if not convenient at archive time.
 
-- [ ] 10.1 Cut a no-op patch release on either `liverty-music/backend` or `liverty-music/frontend` (e.g., `v1.0.1` with a docs-only commit).
+- [ ] 10.1 Cut a no-op patch release on either `liverty-music/backend` or `liverty-music/frontend` (e.g., `v1.0.1` with a docs-only commit). This produces the **first post-enablement tag** — the only kind that exercises the AR immutability enforcement (pre-enablement `:v1.0.0` was written before `immutableTags: true` was applied and remains technically mutable per GCP's forward-only semantics).
 - [ ] 10.2 Watch the GHA workflow push `:v1.0.1` + `:<new-sha>` to prod AR. Confirm both pushes succeed (AR accepts new tags).
-- [ ] 10.3 Attempt a re-push: re-trigger the same workflow run from GitHub Actions UI. The second `:v1.0.1` push SHALL fail with 409 Conflict (or `docker/build-push-action` SHALL short-circuit on identical digest — verify which case occurs).
-- [ ] 10.4 Attempt a manual re-tag of an existing tag to a different digest (operator-attended, lab-only):
+- [ ] 10.3 Attempt a re-push: re-trigger the same workflow run from GitHub Actions UI. Two possible outcomes:
+  - (a) `docker/build-push-action` re-builds with deterministic identical bytes → AR accepts the no-op push of the same digest under `:v1.0.1` (no 409 fires because nothing is being re-pointed).
+  - (b) Build produces non-identical bytes (timestamp / dependency drift in image layers) → AR rejects the second `:v1.0.1` push with HTTP 409 Conflict. **This is the intended enforcement.**
+  Verify which case occurs and update the spec scenario annotation if (a) turns out to be universally true.
+- [ ] 10.4 Attempt a manual re-tag of the post-enablement tag (NOT `:v1.0.0` which is pre-enablement and may behave inconsistently):
   ```
   gcloud artifacts docker tags add \
-    asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/server@sha256:<some-other-digest> \
-    asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/server:v1.0.0
+    asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/server@sha256:<some-other-existing-digest> \
+    asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/server:v1.0.1
   ```
   - Confirm the command fails with a 409 / "immutable tags" / "tag already exists" error.
-- [ ] 10.5 Bump prod overlay `newTag: v1.0.0` → `newTag: v1.0.1` in a new cloud-provisioning PR. Merge. Confirm ArgoCD rolls cleanly.
+- [ ] 10.5 (Optional) Document the pre-enablement carve-out empirically: attempt the same re-tag against the pre-enablement `:v1.0.0`. Per GCP docs the API may accept it; record actual observed behavior in the runbook to set operator expectations correctly. (This task is documentary — do NOT actually let the re-tag stand; if AR accepts, immediately re-tag back to the original digest.)
+- [ ] 10.6 Bump prod overlay `newTag: v1.0.0` → `newTag: v1.0.1` (and `app.kubernetes.io/version: "1.0.1"`) in a new cloud-provisioning PR. Merge. Confirm ArgoCD rolls cleanly.
 
 ## 11. Archive
 
