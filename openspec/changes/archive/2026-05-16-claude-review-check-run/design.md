@@ -82,9 +82,26 @@ The Pulumi change to add `Claude review` for the other three repos is in scope o
 
 `Allow specified actors to bypass required pull request reviews` stays **off** — no service-account-shaped escape hatch. When Claude misfires, a repo admin uses the standard `Allow administrators to bypass configured protections` toggle (or the per-PR override) to merge. This keeps the policy boundary cleanly at "human admin override".
 
-### 7. Anthropic API key
+### 7. Anthropic auth: OAuth (Max plan), not API key
 
-`ANTHROPIC_API_KEY` already exists as an `ActionsOrganizationSecret` (`visibility: 'all'`). The new `.github` repo automatically inherits it; no Pulumi change is required for secret distribution. The caller workflows pass `secrets: inherit` to forward it into the reusable workflow.
+> **NOTE (added during implementation, 2026-05-16):** the original design assumed `ANTHROPIC_API_KEY` would route through an org-level secret. That premise was wrong for this org — see the implementation note below. The reusable workflow ultimately uses `claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}` with a Pulumi-managed `claude-code-oauth-token` org-level `ActionsOrganizationSecret`.
+
+The reusable workflow authenticates via `claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}`. The token is provisioned as an org-level `ActionsOrganizationSecret` (`visibility: 'all'`) in `cloud-provisioning/src/github/components/organization.ts` (mirroring the pre-existing `anthropic-api-key` and `gemini-api-key` patterns), with the value stored in Pulumi ESC at `pulumiConfig.github.claudeCodeOauthToken`. The new `.github` repo and all four product repos automatically inherit it; caller workflows pass `secrets: inherit`.
+
+#### Why OAuth instead of `ANTHROPIC_API_KEY`?
+
+Anthropic has **two separate billing systems**, gated by the credential type:
+
+| Credential | Routed via | Quota source |
+|---|---|---|
+| `claude_code_oauth_token` | claude.ai OAuth (Max plan / Pro / Team subscriptions) | The subscription's usage quota |
+| `anthropic_api_key` | console.anthropic.com API key | The Console wallet's pay-as-you-go credit balance (separate, top-up required) |
+
+This org's `claude.ai` Max plan has healthy usage; the Console wallet shows `$0.00`. Routing CI through `ANTHROPIC_API_KEY` would fail with `Credit balance is too low` until the Console wallet is funded, even though the Max plan subscription has plenty of usage. That mistake was caught during the Section 4 pilot (Anthropic API call returned `Credit balance is too low`); the reusable workflow was switched to OAuth in `liverty-music/.github#3` and the org-level OAuth token was provisioned in `cloud-provisioning#269`.
+
+#### Generalised lesson
+
+When picking a credential type for an Anthropic-API-using CI workflow, check **which Anthropic surface the credentials bill against**, not just "is the secret available?". Org-level secret distribution (the original "Decision 7" framing) is necessary but not sufficient.
 
 ## Risks / Trade-offs
 
@@ -107,6 +124,14 @@ The Pulumi change to add `Claude review` for the other three repos is in scope o
 **[Risk] Reusable workflow referenced as `@main`** → the four callers consume the tip of `main` in the `.github` repo, so a broken workflow change immediately affects all repos.
 
 → **Mitigation**: Acceptable during pilot (one caller). Before rolling out to all four repos, decide whether to switch to `@v1` tag pinning. Tracked in the change's open questions / Step 6.
+
+### Retrospective risks (added 2026-05-16 at archive time)
+
+**[Risk] Pulumi `AlertPolicy` resources reference OTEL metrics that the workload hasn't yet emitted to GCP** → `pulumi up -s prod` errors with HTTP 404 `Cannot find metric(s) that match type=...` and aborts the **entire** stack update, blocking unrelated work (e.g., this change's Required Status Check rollout).
+
+→ **Observed during this change**: `alert-zitadel-oidc-latency-p99` filters on `workload.googleapis.com/rpc.server.duration`, which the prod metric inventory had not yet seen (Zitadel had not handled any server-side gRPC RPCs). Disabled in `cloud-provisioning#273` with inline TODO; tracked for re-enable once the metric appears.
+
+→ **Mitigation (general)**: For monitoring resources whose AlertPolicy filter depends on workload-emitted OTEL metrics, **either** (a) gate AlertPolicy creation on a post-deploy warm-up step that synthetically exercises the workload to seed the metric in the inventory, **or** (b) split monitoring into a two-phase deploy (workload-first, alerts-second). Without one of these, any unrelated `pulumi up` can be held hostage by a metric-not-yet-present alert. Worth folding into the cloud-provisioning runbook for future alerts.
 
 ## Migration Plan
 
