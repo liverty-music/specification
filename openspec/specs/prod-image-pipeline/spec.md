@@ -1,7 +1,9 @@
 # prod-image-pipeline Specification
 
 ## Purpose
-TBD - created by archiving change prepare-prod-service-in. Update Purpose after archive.
+
+Defines the container-image build and deployment pipeline for the production environment. Covers release-tag-triggered image builds (backend and frontend), env-scoped Artifact Registry routing, conditional image tagging, prod-only Workload Identity authentication, kustomize overlay image pinning, and cross-project IAM isolation.
+
 ## Requirements
 ### Requirement: Prod container images SHALL be sourced exclusively from the prod project's Artifact Registry
 
