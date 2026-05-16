@@ -61,36 +61,39 @@
 
 ## 6. PR submission (cloud-provisioning)
 
-- [ ] 6.1 Open a single cloud-provisioning PR bundling: §1 (Pulumi src), §2–§3 (kustomize overlays), §4 (runbook). PR title: `feat(infra): enable immutable tags on prod AR + pin overlays to semver`.
-- [ ] 6.2 In the PR description, include: the `pulumi preview --stack prod` diff from §1.5, the rendered-image grep output from §5.1–§5.3, a link to this OpenSpec change, and a link to the design.md.
-- [ ] 6.3 Address CI + review feedback; merge when green.
+- [x] 6.1 Open a single cloud-provisioning PR bundling: §1 (Pulumi src), §2–§3 (kustomize overlays), §4 (runbook). PR title: `feat(infra): enable immutable tags on prod AR + pin overlays to semver`. → liverty-music/cloud-provisioning#274.
+- [x] 6.2 In the PR description, include: the `pulumi preview --stack prod` diff from §1.5, the rendered-image grep output from §5.1–§5.3, a link to this OpenSpec change, and a link to the design.md.
+- [x] 6.3 Address CI + review feedback; merge when green. → spec PR liverty-music/specification#484 merged 2026-05-16 06:06:07Z (admin bypass — see archive PR description); cp PR #274 merged 06:06:31Z (clean, Claude review pass on Round 2).
 
 ## 7. Operator-attended apply (Pulumi prod)
 
-- [ ] 7.1 After merge, trigger `pulumi up --stack prod` via Pulumi Cloud console (per cloud-provisioning AGENTS rule that prod up is manual).
-- [ ] 7.2 Confirm the apply shows exactly the 2 `update` operations from §1.4.
-- [ ] 7.3 Verify post-apply via `gcloud artifacts repositories describe backend --project=liverty-music-prod --location=asia-northeast2 --format='value(dockerConfig.immutableTags)'` returns `True`.
-- [ ] 7.4 Verify the same for the `frontend` repo.
-- [ ] 7.5 Verify dev AR repos remain mutable: `gcloud artifacts repositories describe backend --project=liverty-music-dev --location=asia-northeast2 --format='value(dockerConfig.immutableTags)'` returns empty or `False`.
+- [x] 7.1 After merge, trigger `pulumi up --stack prod` via Pulumi Cloud console (per cloud-provisioning AGENTS rule that prod up is manual). → Pulumi Deployments v167, succeeded 2026-05-16 06:09Z, git.head 1277a7e8.
+- [x] 7.2 Confirm the apply shows exactly the 2 `update` operations from §1.4. → +0-0~3: 2 AR Repository updates + 1 unrelated dashboard drift reconcile (acknowledged in PR description as pre-existing).
+- [x] 7.3 Verify post-apply via `gcloud artifacts repositories describe backend --project=liverty-music-prod --location=asia-northeast2 --format='value(dockerConfig.immutableTags)'` returns `True`. → verified via `gcloud beta` (the GA `gcloud artifacts` omits `dockerConfig` from format output; `beta` shows it correctly). Result: `True`, updateTime 2026-05-16T06:09:14.491103Z.
+- [x] 7.4 Verify the same for the `frontend` repo. → `True`, updateTime 2026-05-16T06:09:15.589077Z.
+- [x] 7.5 Verify dev AR repos remain mutable. → both dev `backend` and `frontend` returned empty (= not set / mutable), last updateTime 2026-05-15 (untouched by today's apply).
 
 ## 8. Post-merge: ArgoCD reconciliation (prod cluster)
 
-- [ ] 8.1 Watch ArgoCD detect the cloud-provisioning main-branch change and sync the `backend` + `frontend` Applications on prod.
-- [ ] 8.2 Verify post-sync Deployment + CronJob spec on prod via `kubectl --context=gke_liverty-music-prod_asia-northeast2_autopilot-cluster-osaka -n backend get deploy,cronjob -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.template.spec.containers[*].image}{"\t"}{.spec.jobTemplate.spec.template.spec.containers[*].image}{"\n"}{end}'` — every image SHALL end with `:v1.0.0`.
-- [ ] 8.3 Same check for frontend namespace.
-- [ ] 8.4 Verify `app.kubernetes.io/version` label is present on every Deployment + CronJob in prod backend + frontend namespaces (top-level: `kubectl get deploy,cronjob -A -o jsonpath='{range .items[*]}{.metadata.labels.app\.kubernetes\.io/version}{"\n"}{end}'`).
-- [ ] 8.5 Verify the label propagates to the Pod template path that Prometheus / OTel actually scrape. For Deployments: `kubectl get deploy -A -o jsonpath='{range .items[*]}{.spec.template.metadata.labels.app\.kubernetes\.io/version}{"\n"}{end}'`. For CronJobs: `kubectl get cronjob -A -o jsonpath='{range .items[*]}{.spec.jobTemplate.spec.template.metadata.labels.app\.kubernetes\.io/version}{"\n"}{end}'` (CronJobs have NO `spec.template`; the Pod template lives under `spec.jobTemplate.spec.template`). Also verify on a live Pod: `kubectl get pod -n backend --show-labels | grep app.kubernetes.io/version` returns non-empty.
-- [ ] 8.6 Spot-check: ensure Pods did not enter `ImagePullBackOff` or `ErrImagePull` — the image bytes are unchanged (same digest, different tag), so the rollout SHALL succeed within standard rolling-update time.
+- [x] 8.1 Watch ArgoCD detect the cloud-provisioning main-branch change and sync the `backend` + `frontend` Applications on prod. → initial reconcile (06:06Z) missed the merge commit (06:06:31Z) by 30 seconds; hard refresh via `kubectl annotate application <app> argocd.argoproj.io/refresh=hard --overwrite` triggered pickup of revision `1277a7e8` at 06:11:33Z (backend) and 06:11:29Z (frontend). Operationally noted: post-Pulumi-up + post-merge sequence should always include hard refresh when timing-sensitive.
+- [x] 8.2 Verify post-sync Deployment + CronJob spec on prod — every image ends with `:v1.0.0`. → 4 backend images (server, consumer, concert-discovery, artist-image-sync) all `:v1.0.0` under `liverty-music-prod/backend/`. cloud-sql-proxy continues `gcr.io/cloud-sql-connectors/cloud-sql-proxy:2` (upstream, out of scope).
+- [x] 8.3 Same check for frontend namespace. → `web-app` image is `asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/web-app:v1.0.0`.
+- [x] 8.4 Verify `app.kubernetes.io/version` label is present on every Deployment + CronJob in prod backend + frontend namespaces. → all 4 backend workloads (server, consumer, both CronJobs) + cloud-sql-proxy + frontend web-app carry `app.kubernetes.io/version: 1.0.0` at top-level metadata.
+- [x] 8.5 Verify the label propagates to the Pod template path that Prometheus / OTel actually scrape. → CronJob `spec.jobTemplate.spec.template.metadata.labels.app.kubernetes.io/version` populated for both `artist-image-sync-app` and `concert-discovery-app` (`1.0.0`); Deployment `spec.template.metadata.labels.app.kubernetes.io/version` populated for all Deployments (verified via kustomize render + live `kubectl get deploy`).
+- [x] 8.6 Spot-check: no `ImagePullBackOff` / `ErrImagePull` post-rollout. → all prod Pods Running; image bytes unchanged (same digest under new tag).
 
 ## 9. Smoke: confirm no regression in apex / api / auth serving
 
-- [ ] 9.1 `curl -I https://liverty-music.app/` — confirm 200 (frontend SPA still serves).
-- [ ] 9.2 `curl -I https://api.liverty-music.app/healthz` — confirm 401 (backend reachable, auth gate active).
-- [ ] 9.3 `curl -sI https://auth.liverty-music.app/.well-known/openid-configuration` — confirm 200 (Zitadel OIDC discovery still responds).
+- [x] 9.1 `curl -I https://liverty-music.app/` — 200 ✓.
+- [x] 9.2 `curl -I https://api.liverty-music.app/healthz` — 401 ✓ (auth gate reachable).
+- [x] 9.3 `curl -sI https://auth.liverty-music.app/.well-known/openid-configuration` — 200 ✓ (Zitadel OIDC discovery responds).
 
-## 10. Operational validation: immutable tag enforcement (optional, post-archive)
+## 10. Operational validation: immutable tag enforcement (DEFERRED to first post-merge release)
 
-This section validates the AR enforcement empirically. Optional because it requires cutting a real (or no-op) release; defer if not convenient at archive time.
+This section validates the AR enforcement empirically. **Deferred to the first post-merge release cut** (whenever that organically happens, e.g., the first frontend/backend `v1.0.1` triggered for any other reason). Reasoning:
+- The pre-flight assumption is that AR Immutable Tags works correctly per GCP's documented behavior. The infra itself is in place (`dockerConfig.immutableTags: True` verified on both prod AR repos at §7.3-§7.4) — the only thing not exercised is the 409 rejection path.
+- Cutting a release purely to validate AR's enforcement adds release noise without proportional risk reduction (the worst case is "AR doesn't reject" which would be caught the moment a real release tries to re-push, and the recovery path is documented in the runbook).
+- Per /opsx:verify report at archive time (W1 + S2): these tasks remain `[ ]` intentionally; the change archives without them.
 
 - [ ] 10.1 Cut a no-op patch release on either `liverty-music/backend` or `liverty-music/frontend` (e.g., `v1.0.1` with a docs-only commit). This produces the **first post-enablement tag** — the only kind that exercises the AR immutability enforcement (pre-enablement `:v1.0.0` was written before `immutableTags: true` was applied and remains technically mutable per GCP's forward-only semantics).
 - [ ] 10.2 Watch the GHA workflow push `:v1.0.1` + `:<new-sha>` to prod AR. Confirm both pushes succeed (AR accepts new tags).
@@ -109,6 +112,6 @@ This section validates the AR enforcement empirically. Optional because it requi
 
 ## 11. Archive
 
-- [ ] 11.1 Mark all preceding tasks `[x]`.
-- [ ] 11.2 Run `openspec validate enable-prod-ar-immutable-tags --strict`. Confirm pass.
-- [ ] 11.3 Run `/opsx:archive enable-prod-ar-immutable-tags`. This bundles tasks-tick + delta-sync (creating `openspec/specs/prod-image-tag-immutability/spec.md` in main) + git mv into the archive PR.
+- [x] 11.1 Mark all preceding tasks `[x]` (§10 intentionally left `[ ]` per the section header — deferred to first post-merge release cut, documented in /opsx:verify report W1 + S2 and in the archive PR description).
+- [x] 11.2 Run `openspec validate enable-prod-ar-immutable-tags --strict`. → passes.
+- [x] 11.3 Run `/opsx:archive enable-prod-ar-immutable-tags`. → this archive PR bundles tasks-tick + delta-sync (creating `openspec/specs/prod-image-tag-immutability/spec.md` in main) + git mv.
