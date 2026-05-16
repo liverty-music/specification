@@ -112,7 +112,6 @@ The frontend `push-image.yaml` workflow SHALL build and push to `liverty-music-p
 
 - **WHEN** comparing the `docker build` invocations of the dev push path and the release prod path
 - **THEN** neither invocation SHALL pass a `--build-arg VITE_MODE` (or any other env-specific build-arg)
-- **AND** the Dockerfile evaluation SHALL produce functionally identical `/srv/*` content for both paths, modulo timestamps and other non-deterministic build metadata
 
 #### Scenario: Post-build template-presence assertion gates both paths
 

@@ -207,7 +207,7 @@ After any deploy that updates the frontend image or ConfigMap in any environment
 - **WHEN** the smoke check loads `https://<env-host>/` after a deploy
 - **AND** waits for `networkidle` (or equivalent stabilization signal)
 - **THEN** `document.body.innerText.trim()` SHALL be non-empty
-- **AND** at least one element matching the welcome route's first-screen selector (e.g., `.welcome-hero` or `[data-screen-1]`) SHALL be present in the DOM
+- **AND** at least one element matching the CSS selector `.welcome-brand` (the welcome route's first-screen marker, also used by `scripts/verify-build-templates.ts`) SHALL be present in the DOM
 
 #### Scenario: Smoke check validates /config.json environment field
 

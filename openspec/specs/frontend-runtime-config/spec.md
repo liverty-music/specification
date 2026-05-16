@@ -26,7 +26,7 @@ The Aurelia 2 frontend SPA SHALL fetch a same-origin `/config.json` file during 
 - **THEN** zero occurrences SHALL be found in any of those patterns
 - **AND** the only origin-specific URL that MAY appear in chunks SHALL be `window.location.origin`-derived (e.g., redirect URIs constructed at runtime)
 
-#### Scenario: All eight legacy VITE_ read sites are migrated
+#### Scenario: All legacy VITE_ read sites are migrated
 
 - **WHEN** running `grep -rn 'import\.meta\.env\.VITE_' frontend/src`
 - **THEN** the result SHALL be empty
