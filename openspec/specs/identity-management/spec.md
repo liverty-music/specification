@@ -109,23 +109,23 @@ end-user authentication.
 - **AND** the application Type SHALL be "SPA"
 - **AND** the Auth Method Type SHALL be "NONE"
 - **AND** the application's `client_id` SHALL be committed to the
-  frontend repo's build-time environment file for that env (`.env` for
-  the dev build pipeline, `.env.prod` for the prod build pipeline —
-  see the `prod-image-pipeline` capability) alongside the owning org's
-  id as `VITE_ZITADEL_ORG_ID`, so each env's build embeds its own
-  identifiers into the SPA bundle by Vite and bakes them into the
-  `web-app` container image. There is intentionally no separate
-  "frontend" Pulumi stack consuming the value via ESC — the build-time
-  embedding model is simpler and matches Vite's `import.meta.env.VITE_*`
-  convention. Each env's build pipeline selects its own env file via the
-  release-tag-triggered workflow.
+  per-environment `web-app-runtime-config` ConfigMap under
+  `cloud-provisioning/k8s/namespaces/frontend/overlays/<env>/configmap.yaml`
+  (`zitadelClientId` field) alongside the owning org's id
+  (`zitadelOrgId` field), so each env's pod serves its own identifiers
+  via the runtime `/config.json` endpoint consumed by the SPA at
+  bootstrap (see the `frontend-runtime-config` capability). There is
+  intentionally no separate "frontend" Pulumi stack consuming the
+  value via ESC — the deploy-time ConfigMap model is simpler and keeps
+  per-environment divergence in the GitOps tree alongside the rest of
+  the cluster config.
 
-#### Scenario: Prod build embeds prod identifiers
+#### Scenario: Prod env serves prod identifiers via /config.json
 
-- **WHEN** the prod frontend build runs (triggered by a GitHub Release in `liverty-music/frontend`)
-- **THEN** the resulting `web-app:vX.Y.Z` image SHALL embed `VITE_ZITADEL_CLIENT_ID` equal to the `liverty-music` `ApplicationOidc` `client_id` in the **prod** Zitadel `liverty-music` product org
-- **AND** SHALL embed `VITE_ZITADEL_ORG_ID` equal to the prod `liverty-music` product org id
-- **AND** SHALL NOT embed any dev identifiers (no dev client_id, no dev org_id)
+- **WHEN** the prod frontend Deployment is rolled out (image pinned by `cloud-provisioning/k8s/namespaces/frontend/overlays/prod/kustomization.yaml`)
+- **THEN** the pod SHALL serve `https://liverty-music.app/config.json` with `zitadelClientId` equal to the `liverty-music` `ApplicationOidc` `client_id` in the **prod** Zitadel `liverty-music` product org
+- **AND** the same response SHALL carry `zitadelOrgId` equal to the prod `liverty-music` product org id
+- **AND** the response SHALL NOT carry any dev identifiers (no dev client_id, no dev org_id)
 
 ### Requirement: Configure Login Policy
 
