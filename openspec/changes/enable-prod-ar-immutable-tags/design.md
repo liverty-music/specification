@@ -76,10 +76,16 @@ The label could also carry the SHA (`app.kubernetes.io/version: "1.0.0-3bc2dada"
 
 ### D6: GHA push idempotency under immutable-tags
 
-The backend `deploy.yml` and frontend `push-image.yaml` workflows push BOTH `:vX.Y.Z` and `:<sha>` tags on every Release publish. The push is implemented via `docker/build-push-action@v5` with `push: true` and `tags: <tag1>,<tag2>`. Under immutable-tags:
+The backend `deploy.yml` and frontend `push-image.yaml` workflows push BOTH `:vX.Y.Z` and `:<sha>` tags on every Release publish. The push is implemented via `docker/build-push-action@v5` with `push: true` and `tags: <tag1>,<tag2>`. AR's enforcement rule under `immutableTags: true` is precise:
 
-- First-time push of `:v1.0.0` + `:<sha>` for a fresh Release: both pushes succeed. AR locks both tags.
-- Re-run of a Release that already succeeded (operator re-publishes the same GH Release, GHA re-fires): the second push attempt of `:v1.0.0` would return 409 Conflict. The workflow step fails. **This is the intended enforcement** — silent overwrite would defeat the entire policy.
+- AR **accepts** re-push of the **same digest** under the same tag. This is the no-op case (deterministic rebuild, identical bytes) — the tag-to-digest mapping doesn't change, so nothing is being re-pointed and there is nothing for the immutability rule to reject.
+- AR **rejects** push of a **different digest** under an existing tag, returning 409 Conflict. This is the case the immutability policy guards against: a re-build that produced different bytes (timestamp drift in image layers, dependency churn, intentional content change) would silently replace the running image's bytes if allowed.
+
+Concrete scenarios:
+
+- First-time push of `:v1.0.0` + `:<sha>` for a fresh Release: both pushes succeed. AR locks the digest under both tags.
+- Re-run of a Release where the rebuild was deterministic (same bytes): pushes succeed as no-ops. AR sees the same digest.
+- Re-run of a Release where the rebuild diverged: the second push attempt of `:v1.0.0` against a different digest returns 409. The workflow step fails. **This is the intended enforcement.**
 
 Operator playbook for re-run scenarios: if the original release content is correct but the Release notes need fixing, edit Release notes only (no re-run). If the release content needs to change (a bad release that needs a fix), cut a new patch version (`v1.0.1`). Document in the runbook.
 
