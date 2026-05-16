@@ -275,7 +275,7 @@ This catches the specific regression that v1.0.0 hit AND any analogous future re
    - Deployment patch (volumeMount + volume + Reloader annotation) under `base/web/deployment.yaml`.
 3. Open `frontend/adopt-runtime-config` PR with code refactor + `public/config.json` (dev values) + Caddyfile + Dockerfile cleanup + post-build assertion script. Delete `.env.prod`.
 4. Both PRs reviewed in parallel.
-5. Merge `cloud-provisioning` PR first. ArgoCD applies; dev pod restarts via Reloader, picks up new ConfigMap. Dev still serves the OLD image (no `/config.json` reader yet). No visible change.
+5. Merge `cloud-provisioning` PR first. ArgoCD applies; the dev pod restarts via Reloader and the ConfigMap subPath-mounts dev `config.json` at `/srv/config.json`. The OLD frontend image reads `import.meta.env.VITE_*` (baked at build time) and **does not read `/config.json` at all** — there is no fallback mechanism; the mounted file is simply dormant. Behaviour is unchanged because the old code is oblivious to the file, not because anything falls back. The ConfigMap remains live but dormant until the frontend PR is merged.
 6. Merge `frontend` PR. Dev CI builds new image, pushes to dev-AR `:latest`. ArgoCD Image Updater bumps dev Deployment. New pod starts, fetches `/config.json`, app boots with runtime config. Verify dev `https://dev.liverty-music.app/` works.
 7. Cut frontend release tag `v1.0.1` on the new merge commit. Release CI builds → pushes to `liverty-music-prod/frontend/web-app:v1.0.1`.
 8. Update `cloud-provisioning/k8s/namespaces/frontend/overlays/prod/kustomization.yaml` image pin to `v1.0.1`. Merge.

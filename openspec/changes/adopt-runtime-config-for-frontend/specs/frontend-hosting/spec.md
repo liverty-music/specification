@@ -42,7 +42,7 @@ The Kubernetes Deployment for the `web-app` container SHALL mount a ConfigMap vo
 
 - **WHEN** inspecting the rendered `web-app` Deployment in any environment overlay
 - **THEN** the Deployment metadata SHALL include the annotation `reloader.stakater.com/auto: "true"`
-- **AND** when the `web-app-runtime-config` ConfigMap is updated in-cluster, Reloader SHALL initiate a rolling restart of the Deployment within 30 seconds
+- **AND** the cluster's deployed Reloader operator SHALL be responsible for issuing the rolling restart when `web-app-runtime-config` changes. Precise rollout latency is determined by the operator's configured reconciliation interval (typically tens of seconds) and is an operational expectation rather than a CI-testable assertion. See `Risks / Trade-offs` in the proposing change for the live-update caveat behind this mechanism.
 
 #### Scenario: Pod is healthy with the mounted config
 

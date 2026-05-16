@@ -50,6 +50,14 @@ The runtime configuration document SHALL be a JSON object whose top-level shape 
 - **THEN** bootstrap SHALL succeed (the field is required-present but MAY be empty per the schema)
 - **AND** the `ProofService` (or equivalent ZK-using service) SHALL treat the empty value as "circuits unavailable in this environment" and disable ZK features at the call sites without attempting any circuit fetch
 
+#### Scenario: `previewArtistIds` and `previewArtistNames` length mismatch is rejected
+
+- **WHEN** `/config.json` parses successfully
+- **AND** `previewArtistIds.length` does not equal `previewArtistNames.length`
+- **THEN** bootstrap SHALL throw an error naming the length-mismatch invariant
+- **AND** the SPA SHALL NOT call `Aurelia.start()`
+- **AND** the rendered error page SHALL state the observed lengths so the operator can correct the ConfigMap
+
 ### Requirement: Bootstrap SHALL cross-check the configured environment against the page host
 
 The SPA SHALL refuse to start if the `environment` field in `/config.json` is inconsistent with `window.location.hostname` for the well-known production-tier hostnames (`liverty-music.app` → `prod`, `dev.liverty-music.app` → `dev`, `staging.liverty-music.app` → `staging`). This guards against the failure mode in which a misconfigured deployment serves the image's bundled fallback config in a production-tier environment.
