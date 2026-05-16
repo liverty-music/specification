@@ -76,6 +76,8 @@ The label SHALL propagate to the Pod template so that Prometheus Pod-level label
 
 The kustomize `labels:` block with `includeTemplates: true` (Kustomize v4.5+) covers both Deployment and CronJob propagation paths automatically; this requirement explicitly enumerates the paths so future kustomize-version regressions or hand-written patches can be validated against them.
 
+> **Kubectl context alias**: The scenarios below use `--context=prod` for readability. The canonical GKE context is `gke_liverty-music-prod_asia-northeast2_autopilot-cluster-osaka`; operators are expected to either run `kubectl config rename-context gke_liverty-music-prod_asia-northeast2_autopilot-cluster-osaka prod` once, or substitute the canonical name when executing the scenarios.
+
 #### Scenario: Backend prod Deployments carry the version label
 
 - **WHEN** running `kubectl --context=prod -n backend get deploy -o jsonpath='{range .items[*]}{.metadata.labels.app\.kubernetes\.io/version}{"\n"}{end}'`
