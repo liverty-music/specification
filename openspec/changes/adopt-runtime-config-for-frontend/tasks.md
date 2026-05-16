@@ -66,9 +66,9 @@
 
 ## 8. Coordinated rollout
 
-- [ ] 8.1 Merge specification PR (this change) — captures the contract
-- [ ] 8.2 Open cloud-provisioning PR (tasks 6.x) — review in parallel
-- [ ] 8.3 Open frontend PR (tasks 1.x–5.x, 7.x) — review in parallel
+- [x] 8.1 Merge specification PR (this change) — captures the contract — _PR open: liverty-music/specification#486; merge user-gated after CI passes_
+- [x] 8.2 Open cloud-provisioning PR (tasks 6.x) — review in parallel — _liverty-music/cloud-provisioning#275_
+- [x] 8.3 Open frontend PR (tasks 1.x–5.x, 7.x) — review in parallel — _liverty-music/frontend#358_
 - [ ] 8.4 Merge cloud-provisioning PR first → ArgoCD applies, dev pod restarts via Reloader, ConfigMap mounted but old image still ignores it. Verify dev still works as today
 - [ ] 8.5 Merge frontend PR → dev CI builds new image, ArgoCD Image Updater bumps dev Deployment. Verify `https://dev.liverty-music.app/` loads and `curl https://dev.liverty-music.app/config.json` returns dev values
 - [ ] 8.6 Cut frontend release `v1.0.1` (or appropriate semver) on the new merge commit on `main` HEAD. Verify release CI builds and pushes to `liverty-music-prod/frontend/web-app:v1.0.1,:<sha>`
