@@ -149,7 +149,7 @@ The system SHALL provision DNS records and TLS certificates for the frontend dom
 - **THEN** frontend and backend SHALL share the same certificate map
 - **THEN** routing differentiation SHALL be handled by HTTPRoute hostname matching
 
-### Requirement: Caddy SHALL serve `/config.json` with no-cache headers
+### Requirement: Caddy SHALL serve `/config.json` with no-store header
 
 The Caddy web server in the frontend container SHALL serve `/config.json` from the document root (`/srv/config.json`) with `Cache-Control: no-store` and `Content-Type: application/json; charset=utf-8` response headers. `no-store` alone is sufficient (it prohibits any cache from storing the response). This ensures that ConfigMap updates (followed by pod rollout) propagate to clients on the next page load without depending on cache busting at the URL level.
 
@@ -164,7 +164,7 @@ The Caddy web server in the frontend container SHALL serve `/config.json` from t
 
 - **WHEN** running `curl -I https://<env>.liverty-music.app/config.json` (or the apex for prod)
 - **THEN** the response status SHALL be `200`
-- **AND** the `Cache-Control` header SHALL contain `no-cache`
+- **AND** the `Cache-Control` header SHALL contain `no-store`
 - **AND** the `Content-Type` header SHALL be `application/json` (charset suffix permitted)
 
 ### Requirement: Frontend Deployment SHALL mount a per-environment runtime-config ConfigMap
@@ -196,7 +196,7 @@ The Kubernetes Deployment for the `web-app` container SHALL mount a ConfigMap vo
 - **WHEN** a pod from this Deployment is running
 - **AND** `kubectl exec` into the container reads `/srv/config.json`
 - **THEN** the file content SHALL equal the `config.json` value from the ConfigMap (modulo trailing whitespace)
-- **AND** `curl localhost/config.json` from inside the pod SHALL return the same content with the headers defined in the "Caddy SHALL serve `/config.json` with no-cache headers" requirement
+- **AND** `curl localhost/config.json` from inside the pod SHALL return the same content with the headers defined in the "Caddy SHALL serve `/config.json` with no-store header" requirement
 
 ### Requirement: Post-deploy smoke verification SHALL assert the SPA renders
 
