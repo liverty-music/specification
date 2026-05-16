@@ -9,6 +9,20 @@
 ## 2. Kustomize: Rewrite prod overlays from SHA to semver tags (cloud-provisioning)
 
 - [x] 2.1 Read the current backend prod overlay `cloud-provisioning/k8s/namespaces/backend/overlays/prod/kustomization.yaml`. Identify the 4 `images:` entries with `newTag: <40-char-sha>` (server, consumer, concert-discovery, artist-image-sync). Note the current SHA value for each.
+- [x] 2.1a **Pre-flight gate**: confirm `:v1.0.0` exists in prod AR for all 5 images (4 backend + 1 frontend) BEFORE rewriting any overlay. If any image's `:v1.0.0` is missing, STOP — `prepare-prod-service-in` §1-§10 have not completed for that image; do not proceed (otherwise ArgoCD would reconcile to a non-existent tag and prod Pods would enter `ImagePullBackOff`).
+  ```bash
+  for IMG in server consumer concert-discovery artist-image-sync; do
+    OUT=$(gcloud artifacts docker images list \
+      asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/$IMG \
+      --filter='tags:v1.0.0' --format='value(tags)' --project=liverty-music-prod 2>&1)
+    if [ -z "$OUT" ]; then echo "FAIL: $IMG :v1.0.0 missing"; exit 1; else echo "OK: $IMG"; fi
+  done
+  OUT=$(gcloud artifacts docker images list \
+    asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/web-app \
+    --filter='tags:v1.0.0' --format='value(tags)' --project=liverty-music-prod 2>&1)
+  if [ -z "$OUT" ]; then echo "FAIL: web-app :v1.0.0 missing"; exit 1; else echo "OK: web-app"; fi
+  ```
+  All 5 SHALL print `OK:`.
 - [x] 2.2 For each of the 4 backend entries, rewrite `newTag:` to `v1.0.0` and append an inline comment recording the current commit SHA: `newTag: v1.0.0  # commit <40-char-sha>`. The comment SHALL be on the same line as the `newTag:` field.
 - [x] 2.3 Read the current frontend prod overlay `cloud-provisioning/k8s/namespaces/frontend/overlays/prod/kustomization.yaml`. Identify the 1 `images:` entry for `web-app` with `newTag: <40-char-sha>`. Note the current SHA value.
 - [x] 2.4 Rewrite the frontend `newTag:` to `v1.0.0` with the same inline SHA comment pattern.

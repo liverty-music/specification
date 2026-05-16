@@ -56,8 +56,8 @@ Every kustomize `images:` transformation entry inside `cloud-provisioning/k8s/na
 #### Scenario: Commit SHA is preserved in an inline comment
 
 - **WHEN** reading any `newTag:` line in a prod overlay's `images:` block
-- **THEN** an inline comment (`#`) on the same line OR on an adjacent line within 3 lines preceding the entry SHALL contain a 40-character lowercase hex commit SHA
-- **AND** the comment SHALL be parseable by a regex of the form `#.*\b[0-9a-f]{40}\b`
+- **THEN** an inline comment (`#`) on the **same line** as the `newTag:` field SHALL contain a 40-character lowercase hex commit SHA
+- **AND** the comment SHALL be parseable by a regex of the form `newTag:\s+\S+\s+#.*\b[0-9a-f]{40}\b` (i.e., the SHA appears after a `#` on the SAME physical line that begins with `newTag:`)
 
 #### Scenario: Rendered Deployment image references carry the semver tag
 
