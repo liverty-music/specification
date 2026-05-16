@@ -53,7 +53,7 @@ The Kubernetes Deployment for the `web-app` container SHALL mount a ConfigMap vo
 
 ### Requirement: Post-deploy smoke verification SHALL assert the SPA renders
 
-After any deploy that updates the frontend image or ConfigMap in any environment, an automated post-deploy smoke check SHALL fetch the environment's homepage URL, load it in a headless browser (Playwright), and assert that the rendered DOM is non-empty and that the SPA's first-screen UI element is present. This catches blank-page regressions agnostic of root cause.
+After any deploy that updates the frontend image or ConfigMap in any environment, an automated post-deploy smoke check SHALL fetch the environment's homepage URL, load it in a headless browser (Playwright), and assert that the rendered DOM is non-empty and that the SPA's first-screen UI element is present. This catches blank-page regressions agnostic of root cause. The smoke run SHALL be bounded by a wall-clock timeout (60 seconds default) so that a hanging deploy fails closed rather than indefinitely blocking the pipeline.
 
 #### Scenario: Smoke check asserts non-empty rendered DOM
 
@@ -70,6 +70,6 @@ After any deploy that updates the frontend image or ConfigMap in any environment
 #### Scenario: Smoke failure blocks promotion
 
 - **WHEN** a deploy to a non-prod environment triggers the smoke check
-- **AND** any smoke assertion fails
+- **AND** any smoke assertion fails OR the smoke run exceeds its wall-clock timeout
 - **THEN** the deploy workflow SHALL be marked failed
 - **AND** the promotion of the same artifact to the next environment SHALL NOT proceed automatically

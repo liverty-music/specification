@@ -85,4 +85,14 @@
 
 ## 10. Archive
 
-- [ ] 10.1 After tasks 1–8 verified in dev + prod, mark this change complete and prepare an archive PR per the repo's openspec-sync-specs pattern (move `openspec/changes/adopt-runtime-config-for-frontend/` to `openspec/changes/archive/<date>-adopt-runtime-config-for-frontend/` and merge the spec deltas into `openspec/specs/`)
+- [ ] 10.1 After tasks 1–8 verified in dev + prod, mark this change complete and prepare an archive PR per the repo's openspec-sync-specs pattern (move `openspec/changes/adopt-runtime-config-for-frontend/` to `openspec/changes/archive/<date>-adopt-runtime-config-for-frontend/`).
+- [ ] 10.2 Merge spec deltas into canonical `openspec/specs/`:
+  - **Add** new `openspec/specs/frontend-runtime-config/spec.md` (full file from this change's `specs/frontend-runtime-config/spec.md`).
+  - **Edit** `openspec/specs/prod-image-pipeline/spec.md`:
+    - DELETE the requirement "Frontend prod build SHALL bake env-prod values into the SPA bundle" with all three of its scenarios (Prod build resolves API endpoints to prod hostnames; Prod build uses prod SPA OIDC client_id; Prod build uses info-level logging).
+    - REPLACE the requirement "Frontend prod image build SHALL be triggered by GitHub Release tags" with the MODIFIED version from this change (drops the `.env.prod` bake-time assertion, adds the env-agnostic-build + identical-Dockerfile-inputs scenarios + post-build template-presence gate scenario).
+    - ADD the new requirement "Frontend prod image SHALL be env-agnostic at the bundle level" with all four of its scenarios.
+  - **Edit** `openspec/specs/frontend-hosting/spec.md`:
+    - APPEND the three new ADDED requirements: "Caddy SHALL serve `/config.json` with no-cache headers"; "Frontend Deployment SHALL mount a per-environment runtime-config ConfigMap"; "Post-deploy smoke verification SHALL assert the SPA renders".
+    - The existing "Caddyfile configuration" requirement remains; its scenarios are unchanged in shape (no scenario deletion).
+- [ ] 10.3 Run `openspec validate` against the merged canonical specs to confirm no orphan references remain (e.g., the `.env.prod` string in any spec file).

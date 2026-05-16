@@ -34,25 +34,27 @@ The Aurelia 2 frontend SPA SHALL fetch a same-origin `/config.json` file during 
 
 ### Requirement: `/config.json` SHALL conform to the AppConfig schema
 
-The runtime configuration document SHALL be a JSON object whose top-level shape exactly matches the TypeScript `AppConfig` interface declared in `frontend/src/config/app-config.ts`. The interface SHALL be the single source of truth for the contract between the SPA bundle and any environment that serves `/config.json`. The schema fields SHALL include: `environment` (one of `dev | staging | prod`), `apiBaseUrl` (absolute https URL), `zitadelIssuer` (absolute https URL), `zitadelClientId` (non-empty string), `zitadelOrgId` (non-empty string), `vapidPublicKey` (non-empty string), `circuitBaseUrl` (string, MAY be empty when ZK circuits are unavailable in the environment), `previewArtistIds` (string array), `previewArtistNames` (string array, same length as `previewArtistIds`), and `logLevel` (one of `trace | debug | info | warn | error`).
+The runtime configuration document SHALL be a JSON object whose top-level shape exactly matches the TypeScript `AppConfig` interface declared in `frontend/src/config/app-config.ts`. The interface SHALL be the single source of truth for the contract between the SPA bundle and any environment that serves `/config.json`. The schema fields SHALL include: `environment` (one of `dev | staging | prod`), `apiBaseUrl` (absolute https URL), `zitadelIssuer` (absolute https URL), `zitadelClientId` (non-empty string), `zitadelOrgId` (non-empty string), `vapidPublicKey` (non-empty string), `circuitBaseUrl` (string, MAY be empty when ZK circuits are unavailable in the environment), `previewArtistIds` (string array), `previewArtistNames` (string array, same length as `previewArtistIds`), and `logLevel` (one of `trace | debug | info | warn | error`). All fields except `circuitBaseUrl` (which MAY be empty) and the two `previewArtist*` arrays (which MAY be empty) are required-and-non-empty; the spec's "MAY be empty" carve-outs are exhaustive.
 
 #### Scenario: Bootstrap validates required fields
 
 - **WHEN** `/config.json` is fetched and parsed
-- **AND** any of `apiBaseUrl`, `zitadelIssuer`, `zitadelClientId`, `vapidPublicKey`, `environment` is missing, empty, or not a string of the expected shape
+- **AND** any of `apiBaseUrl`, `zitadelIssuer`, `zitadelClientId`, `zitadelOrgId`, `vapidPublicKey`, `environment`, or `logLevel` is missing, empty, or not a string of the expected shape
 - **THEN** bootstrap SHALL throw an error naming the offending field
 - **AND** the SPA SHALL NOT call `Aurelia.start()`
 - **AND** the page SHALL render a minimal static error notice that surfaces the validation failure to the user
 
-#### Scenario: Optional fields tolerate empty strings
+#### Scenario: Empty-string `circuitBaseUrl` disables ZK features
 
-- **WHEN** `circuitBaseUrl` is an empty string in the parsed config
-- **THEN** bootstrap SHALL succeed
-- **AND** the `ProofService` (or equivalent ZK-using service) SHALL treat the empty value as "circuits unavailable in this environment" and disable ZK features accordingly
+- **WHEN** `circuitBaseUrl` is present in the parsed config but is the empty string
+- **THEN** bootstrap SHALL succeed (the field is required-present but MAY be empty per the schema)
+- **AND** the `ProofService` (or equivalent ZK-using service) SHALL treat the empty value as "circuits unavailable in this environment" and disable ZK features at the call sites without attempting any circuit fetch
 
 ### Requirement: Bootstrap SHALL cross-check the configured environment against the page host
 
-The SPA SHALL refuse to start if the `environment` field in `/config.json` is inconsistent with `window.location.hostname` for the well-known production hostnames. This guards against the failure mode in which a misconfigured deployment serves the image's bundled fallback config in a production-tier environment.
+The SPA SHALL refuse to start if the `environment` field in `/config.json` is inconsistent with `window.location.hostname` for the well-known production-tier hostnames (`liverty-music.app` → `prod`, `dev.liverty-music.app` → `dev`, `staging.liverty-music.app` → `staging`). This guards against the failure mode in which a misconfigured deployment serves the image's bundled fallback config in a production-tier environment.
+
+The `staging` environment is reserved/forward-looking: the `AppConfig.environment` union includes it and the host map MUST include `staging.liverty-music.app`, but no Kubernetes overlay or hostname currently maps to `staging` (introduced when the staging cluster is provisioned by a future change). The cross-check requirement holds whether or not the staging cluster exists yet.
 
 #### Scenario: Production host with dev config refuses to start
 
@@ -62,9 +64,22 @@ The SPA SHALL refuse to start if the `environment` field in `/config.json` is in
 - **AND** the SPA SHALL NOT call `Aurelia.start()`
 - **AND** the rendered error page SHALL state the expected and actual environment values
 
+#### Scenario: Staging host with non-staging config refuses to start
+
+- **WHEN** the page is loaded at `https://staging.liverty-music.app/`
+- **AND** `/config.json` has `environment` field equal to `dev` or `prod`
+- **THEN** bootstrap SHALL throw an error naming the mismatch
+- **AND** the SPA SHALL NOT call `Aurelia.start()`
+
+#### Scenario: Staging host with staging config passes
+
+- **WHEN** the page is loaded at `https://staging.liverty-music.app/`
+- **AND** `/config.json` has `environment` field equal to `staging`
+- **THEN** the host cross-check SHALL pass and bootstrap SHALL proceed
+
 #### Scenario: Localhost or preview hostname skips the check
 
-- **WHEN** the page is loaded at `http://localhost`, `http://127.0.0.1`, or any hostname not in the well-known production list
+- **WHEN** the page is loaded at `http://localhost`, `http://127.0.0.1`, or any hostname not in the well-known production-tier list
 - **THEN** bootstrap SHALL skip the host-vs-environment check
 - **AND** SHALL proceed with whatever `environment` value is in `/config.json`
 

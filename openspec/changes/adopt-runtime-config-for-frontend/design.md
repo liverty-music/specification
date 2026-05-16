@@ -88,7 +88,13 @@ export interface AppConfig {
 export async function loadAppConfig(): Promise<AppConfig> {
   const res = await fetch('/config.json', { cache: 'no-store' })
   if (!res.ok) throw new Error(`config.json fetch failed: ${res.status}`)
-  return await res.json() as AppConfig
+  const parsed = await res.json() as unknown
+  // Runtime field validation (sketch): real impl iterates required keys
+  // and throws naming the offending field — see task 1.1 and the
+  // "Bootstrap validates required fields" scenario in
+  // specs/frontend-runtime-config/spec.md. The `as AppConfig` below is
+  // intentionally NOT a trust boundary; validate before the cast.
+  return validateAndCast(parsed)
 }
 
 // src/main.ts (sketch)
