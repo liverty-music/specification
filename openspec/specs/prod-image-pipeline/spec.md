@@ -45,26 +45,31 @@ No GCP service account owned by the `liverty-music-prod` project (notably `gke-n
 - **THEN** a runbook SHALL document the exact `gcloud projects remove-iam-policy-binding liverty-music-dev` invocation that revokes the manual grant
 - **AND** the runbook SHALL warn that revocation MUST follow successful prod image migration (otherwise prod pods enter `ImagePullBackOff`)
 
-### Requirement: Frontend prod build SHALL bake env-prod values into the SPA bundle
+### Requirement: Frontend prod image SHALL be env-agnostic at the bundle level
 
-The frontend Vite build that produces the prod container image SHALL load environment values from a prod-specific source (a `.env.prod` file at the repo root or an equivalent build-arg mechanism), not from the default `.env` file. The prod-specific source SHALL provide all `VITE_*` keys consumed by the SPA, with values pointing at prod-side endpoints (apex `liverty-music.app`, prod Zitadel issuer at `auth.liverty-music.app`, prod SPA OIDC client_id, prod product-org-id, prod VAPID public key, `info` log level), so the resulting bundle never references dev hostnames or dev identifiers.
+The frontend container image SHALL be built with no env-specific build-args, so that the bundle's JavaScript chunks contain no environment-divergent literals (no hardcoded dev or prod hostnames, no OIDC client IDs, no VAPID public keys, no environment flags other than Vite's `import.meta.env.DEV` / `PROD` / `MODE` which encode "vite dev server vs. vite build artifact"). Per-environment values SHALL be sourced exclusively from `/config.json` served at request time (see `frontend-runtime-config` capability). This invariant SHALL be asserted by CI on every build.
 
-#### Scenario: Prod build resolves API endpoints to prod hostnames
+#### Scenario: Bundle contains no env-divergent hostnames
 
-- **WHEN** searching the prod-built `web-app` container's static assets for the string `dev.liverty-music.app`
-- **THEN** zero occurrences SHALL be found
-- **AND** the strings `api.liverty-music.app` and `auth.liverty-music.app` SHALL each appear in at least one JS chunk
+- **WHEN** searching every JavaScript chunk in the built `dist/` output (excluding `public/config.json` which is the bundled fallback) for substrings of dev or prod hostnames (`api.dev.liverty-music.app`, `api.liverty-music.app`, `auth.dev.liverty-music.app`, `auth.liverty-music.app`)
+- **THEN** zero matches SHALL be found in any chunk's compiled JavaScript
 
-#### Scenario: Prod build uses prod SPA OIDC client_id
+#### Scenario: Bundle contains no OIDC client IDs
 
-- **WHEN** decoding the bundled OIDC client configuration from the prod-built `web-app` static assets
-- **THEN** `client_id` SHALL equal the `liverty-music` SPA `ApplicationOidc` client_id provisioned in the prod Zitadel `liverty-music` product org
+- **WHEN** searching every JavaScript chunk for the literal dev OIDC client_id (`371355407710421859`) or the literal prod OIDC client_id (`373015520582107291`)
+- **THEN** zero matches SHALL be found
 
-#### Scenario: Prod build uses info-level logging
+#### Scenario: Image build receives no env-specific build-arg
 
-- **WHEN** decoding the bundled log configuration from the prod-built `web-app` static assets
-- **THEN** the log level SHALL NOT equal `debug`
-- **AND** SHALL be one of `info`, `warn`, or `error`
+- **WHEN** inspecting `frontend/Dockerfile`
+- **THEN** no `ARG VITE_MODE` declaration SHALL exist
+- **AND** the `npm run build` command SHALL NOT receive a `--mode` flag
+
+#### Scenario: Same image SHA can be deployed to multiple environments
+
+- **WHEN** the same image (by digest) is pulled by a `frontend` namespace pod in any of dev, staging, or prod clusters
+- **AND** the pod's ConfigMap mount serves a `/config.json` for its target environment
+- **THEN** the SPA SHALL function correctly in that environment without any image-level change
 
 ### Requirement: Backend prod image build SHALL be triggered by GitHub Release tags
 
@@ -89,7 +94,7 @@ The backend `deploy.yml` workflow SHALL build and push images to `liverty-music-
 
 ### Requirement: Frontend prod image build SHALL be triggered by GitHub Release tags
 
-The frontend `push-image.yaml` workflow SHALL build with `.env.prod` (per the build-time env requirement above) and push to `liverty-music-prod/frontend/web-app` Artifact Registry only when triggered by a published GitHub Release. The image SHALL be tagged with the release's tag and with the commit SHA. The existing dev path SHALL be preserved.
+The frontend `push-image.yaml` workflow SHALL build and push to `liverty-music-prod/frontend/web-app` Artifact Registry only when triggered by a published GitHub Release. The build SHALL be env-agnostic (per the "Frontend prod image SHALL be env-agnostic at the bundle level" requirement) — the same Dockerfile inputs are used whether the workflow's trigger is `push: branches: [main]` (dev path) or `release: types: [published]` (prod path). The image SHALL be tagged with the release's tag and with the commit SHA. The existing dev path (push-to-main → `liverty-music-dev/frontend/web-app:latest,:<sha>`) SHALL be preserved.
 
 #### Scenario: Push to main triggers dev-only frontend build
 
@@ -102,7 +107,19 @@ The frontend `push-image.yaml` workflow SHALL build with `.env.prod` (per the bu
 - **WHEN** a GitHub Release is published in `liverty-music/frontend` with tag `vX.Y.Z`
 - **THEN** the workflow SHALL push to `liverty-music-prod/frontend/web-app`
 - **AND** the image SHALL carry tag `vX.Y.Z` and the commit SHA
-- **AND** the build SHALL have consumed `.env.prod` (asserted via the bake-time invariant in the build-bake requirement above)
+
+#### Scenario: Prod and dev builds use identical Dockerfile inputs
+
+- **WHEN** comparing the `docker build` invocations of the dev push path and the release prod path
+- **THEN** neither invocation SHALL pass a `--build-arg VITE_MODE` (or any other env-specific build-arg)
+- **AND** the Dockerfile evaluation SHALL produce functionally identical `/srv/*` content for both paths, modulo timestamps and other non-deterministic build metadata
+
+#### Scenario: Post-build template-presence assertion gates both paths
+
+- **WHEN** either the dev push path or the release prod path runs `npm run build`
+- **THEN** a post-build assertion step SHALL run `scripts/verify-build-templates.ts` (or equivalent)
+- **AND** the step SHALL fail the workflow if any route chunk under `dist/assets/*-route-*.js` does not contain its expected template-derived marker string
+- **AND** the workflow SHALL refuse to push the image if the assertion fails
 
 ### Requirement: Prod kustomize overlays SHALL pin image URIs to prod-AR paths
 
