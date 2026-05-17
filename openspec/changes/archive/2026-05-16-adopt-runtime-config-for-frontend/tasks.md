@@ -71,30 +71,35 @@
 - [x] 8.1 Merge specification PR (this change) — captures the contract — _PR open: liverty-music/specification#486; merge user-gated after CI passes_
 - [x] 8.2 Open cloud-provisioning PR (tasks 6.x) — review in parallel — _liverty-music/cloud-provisioning#275_
 - [x] 8.3 Open frontend PR (tasks 1.x–5.x, 7.x) — review in parallel — _liverty-music/frontend#358_
-- [ ] 8.4 Merge cloud-provisioning PR first → ArgoCD applies, dev pod restarts via Reloader, ConfigMap mounted but old image still ignores it. Verify dev still works as today
-- [ ] 8.5 Merge frontend PR → dev CI builds new image, ArgoCD Image Updater bumps dev Deployment. Verify `https://dev.liverty-music.app/` loads and `curl https://dev.liverty-music.app/config.json` returns dev values
-- [ ] 8.6 Cut frontend release `v1.0.1` (or appropriate semver) on the new merge commit on `main` HEAD. Verify release CI builds and pushes to `liverty-music-prod/frontend/web-app:v1.0.1,:<sha>`
-- [ ] 8.7 Update `cloud-provisioning/k8s/namespaces/frontend/overlays/prod/kustomization.yaml` image pin to `v1.0.1`. Open + merge the pin-bump PR
-- [ ] 8.8 ArgoCD syncs prod. Verify `https://liverty-music.app/` renders the welcome route (no longer blank), and `curl https://liverty-music.app/config.json` returns prod values with `environment: prod`
-- [ ] 8.9 Run post-deploy smoke E2E against the live prod URL (manual or CI-triggered)
+- [x] 8.4 Merge cloud-provisioning PR first → ArgoCD applies, dev pod restarts via Reloader, ConfigMap mounted but old image still ignores it. Verify dev still works as today — _merged 2026-05-16 (cloud-provisioning#275)_
+- [x] 8.5 Merge frontend PR → dev CI builds new image, ArgoCD Image Updater bumps dev Deployment. Verify `https://dev.liverty-music.app/` loads and `curl https://dev.liverty-music.app/config.json` returns dev values — _merged 2026-05-16 (frontend#358); dev verified env=dev with no-store Cache-Control_
+- [x] 8.6 Cut frontend release `v1.0.1` (or appropriate semver) on the new merge commit on `main` HEAD. Verify release CI builds and pushes to `liverty-music-prod/frontend/web-app:v1.0.1,:<sha>` — _v1.0.1 published 2026-05-16, prod AR push succeeded_
+- [x] 8.7 Update `cloud-provisioning/k8s/namespaces/frontend/overlays/prod/kustomization.yaml` image pin to `v1.0.1`. Open + merge the pin-bump PR — _cloud-provisioning#276 merged 2026-05-16_
+- [x] 8.8 ArgoCD syncs prod. Verify `https://liverty-music.app/` renders the welcome route (no longer blank), and `curl https://liverty-music.app/config.json` returns prod values with `environment: prod` — _verified 2026-05-16: bundle index-Cpb6eda2.js, env=prod, bootstrap-loading element present_
+- [x] 8.9 Run post-deploy smoke E2E against the live prod URL (manual or CI-triggered) — _ran `SMOKE_BASE_URL=https://liverty-music.app npm run test:smoke` 2026-05-16, 2/2 passed_
 
-## 9. Defense-in-depth follow-ups (track separately if not done in this PR)
+## 9. Defense-in-depth follow-ups (tracked as separate issues)
 
-- [ ] 9.1 File an issue on `@aurelia/vite-plugin` GitHub repository describing the literal `mode === 'production'` check and proposing `command === 'build'` (or `config.isProduction`) as the gate. Include a minimal repro
-- [ ] 9.2 (Optional) Open a PR with the proposed fix on `@aurelia/vite-plugin`
-- [ ] 9.3 Document the runtime-config contract in `frontend/docs/` (or repo README) for new contributors: how `public/config.json` differs from the K8s-mounted version, where to add a new VITE_-equivalent field, the bootstrap order
-- [ ] 9.4 (Phase 2, separate change) Switch release-tag CI from rebuild to retag (dev-AR → prod-AR via `gcloud artifacts docker tags add`) for true binary-identical image promotion
+- [ ] 9.1 File an issue on `@aurelia/vite-plugin` GitHub repository describing the literal `mode === 'production'` check and proposing `command === 'build'` (or `config.isProduction`) as the gate. Include a minimal repro — _tracked: liverty-music/specification#490_
+- [ ] 9.2 (Optional) Open a PR with the proposed fix on `@aurelia/vite-plugin` — _tracked under #490_
+- [ ] 9.3 Document the runtime-config contract in `frontend/docs/` (or repo README) for new contributors: how `public/config.json` differs from the K8s-mounted version, where to add a new VITE_-equivalent field, the bootstrap order — _tracked: liverty-music/specification#491_
+- [ ] 9.4 (Phase 2, separate change) Switch release-tag CI from rebuild to retag (dev-AR → prod-AR via `gcloud artifacts docker tags add`) for true binary-identical image promotion — _tracked: liverty-music/specification#492_
 
 ## 10. Archive
 
-- [ ] 10.1 After tasks 1–8 verified in dev + prod, mark this change complete and prepare an archive PR per the repo's openspec-sync-specs pattern (move `openspec/changes/adopt-runtime-config-for-frontend/` to `openspec/changes/archive/<date>-adopt-runtime-config-for-frontend/`).
-- [ ] 10.2 Merge spec deltas into canonical `openspec/specs/`:
+- [x] 10.1 After tasks 1–8 verified in dev + prod, mark this change complete and prepare an archive PR per the repo's openspec-sync-specs pattern (move `openspec/changes/adopt-runtime-config-for-frontend/` to `openspec/changes/archive/<date>-adopt-runtime-config-for-frontend/`). — _done in liverty-music/specification#488_
+- [x] 10.2 Merge spec deltas into canonical `openspec/specs/`:
   - **Add** new `openspec/specs/frontend-runtime-config/spec.md` (full file from this change's `specs/frontend-runtime-config/spec.md`).
   - **Edit** `openspec/specs/prod-image-pipeline/spec.md`:
     - DELETE the requirement "Frontend prod build SHALL bake env-prod values into the SPA bundle" with all three of its scenarios (Prod build resolves API endpoints to prod hostnames; Prod build uses prod SPA OIDC client_id; Prod build uses info-level logging).
     - REPLACE the requirement "Frontend prod image build SHALL be triggered by GitHub Release tags" with the MODIFIED version from this change (drops the `.env.prod` bake-time assertion, adds the env-agnostic-build + identical-Dockerfile-inputs scenarios + post-build template-presence gate scenario).
     - ADD the new requirement "Frontend prod image SHALL be env-agnostic at the bundle level" with all four of its scenarios.
   - **Edit** `openspec/specs/frontend-hosting/spec.md`:
-    - APPEND the three new ADDED requirements: "Caddy SHALL serve `/config.json` with no-cache headers"; "Frontend Deployment SHALL mount a per-environment runtime-config ConfigMap"; "Post-deploy smoke verification SHALL assert the SPA renders".
-    - The existing "Caddyfile configuration" requirement remains; its scenarios are unchanged in shape (no scenario deletion).
-- [ ] 10.3 Run `openspec validate` against the merged canonical specs to confirm no orphan references remain (e.g., the `.env.prod` string in any spec file).
+    - APPEND the three new ADDED requirements: "Caddy SHALL serve `/config.json` with no-cache headers" (later renamed to "with no-store header" per #488 review); "Frontend Deployment SHALL mount a per-environment runtime-config ConfigMap"; "Post-deploy smoke verification SHALL assert the SPA renders".
+    - The existing "Caddyfile configuration" requirement remains; its scenarios are unchanged in shape (no scenario deletion). — _done in liverty-music/specification#488_
+- [ ] 10.3 Run `openspec validate` against the merged canonical specs to confirm no orphan references remain (e.g., the `.env.prod` string in any spec file). — _partially: orphan-reference grep verified empty in #488; the `openspec validate` CLI requires an explicit subcommand (`--specs` or `<item-name>`) that wasn't run cleanly during archive_
+
+## Verify-report follow-ups (added 2026-05-17 after `/opsx:verify`)
+
+- [ ] V1 Wire `npm run test:smoke` into CI (was task 5.5; the spec existed but wasn't auto-triggered) — _tracked: liverty-music/specification#489_
+- [ ] V2 Add unit test for `verify-build-templates.ts` (was task 4.4; deferred due to `nodePolyfills` conflict, now addressed via lib/cli split) — _tracked under #489_
