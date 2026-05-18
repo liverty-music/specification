@@ -24,7 +24,7 @@ No GCP service account **that runs inside a `liverty-music-prod` GKE cluster** (
 
 ### Requirement: Frontend prod image SHALL be promoted to prod AR on GitHub Release tags
 
-> **Renamed from**: `Frontend prod image build SHALL be triggered by GitHub Release tags` (the word "build" is misleading after this change — the release path no longer runs `docker build`; it promotes the dev AR image by tag-add).
+> **Renamed from**: `Frontend prod image build SHALL be triggered by GitHub Release tags` (the word "build" is misleading after this change — the release path no longer runs `docker build`; it promotes the dev AR image by cross-repository copy via `crane copy`).
 
 The frontend `push-image.yaml` workflow SHALL publish to `liverty-music-prod/frontend/web-app` Artifact Registry only when triggered by a published GitHub Release. On the release path, the workflow SHALL **promote the dev AR image via cross-repository copy** rather than rebuild — it resolves the dev AR digest for `github.sha`, then invokes `crane copy` (from `google/go-containerregistry`, installed via `imjasonh/setup-crane`) twice to copy that exact digest to `liverty-music-prod/frontend/web-app:<release-tag>` and `:<sha>`. No `docker build` SHALL run on the release path. The existing dev path (push-to-main → `liverty-music-dev/frontend/web-app:latest,:main,:<sha>`) SHALL be preserved unchanged. This ensures prod runs byte-identical bytes to dev: the digest tested in dev is the digest deployed to prod.
 
@@ -41,7 +41,7 @@ The frontend `push-image.yaml` workflow SHALL publish to `liverty-music-prod/fro
 - **AND** the workflow SHALL resolve the dev AR digest for `asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app:${GITHUB_SHA}` via `gcloud artifacts docker images describe`
 - **AND** the workflow SHALL run `crane copy asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app@<digest> asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/web-app:vX.Y.Z`
 - **AND** the workflow SHALL run `crane copy asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app@<digest> asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/web-app:${GITHUB_SHA}`
-- **AND** the workflow SHALL invoke `gcloud auth configure-docker <region>-docker.pkg.dev` before the copy steps so `crane`'s authentication (which reads `~/.docker/config.json` credential helpers, not `GOOGLE_APPLICATION_CREDENTIALS` directly) resolves to the prod CI service account's WIF token
+- **AND** the workflow SHALL invoke `gcloud auth configure-docker asia-northeast2-docker.pkg.dev` before the copy steps so `crane`'s authentication (which reads `~/.docker/config.json` credential helpers, not `GOOGLE_APPLICATION_CREDENTIALS` directly) resolves to the prod CI service account's WIF token
 
 #### Scenario: Prod and dev images share the same digest after promotion
 

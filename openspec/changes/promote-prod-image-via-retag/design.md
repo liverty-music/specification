@@ -55,7 +55,7 @@ Constraints that shape this design:
 - `skopeo copy`: registry-to-registry first-class citizen. Equivalent capability to `crane copy`; rejected only because `crane` was already in scope as the canonical Google-published toolchain for AR-resident workflows. Re-evaluatable if `crane` ever lags AR feature support.
 - `docker pull && docker tag && docker push`: redundant — materializes the image locally for no reason. Rejected.
 
-`crane copy` reads its auth from `~/.docker/config.json` credential helpers, NOT from `GOOGLE_APPLICATION_CREDENTIALS` directly. The release path therefore runs `gcloud auth configure-docker <region>-docker.pkg.dev` (already on the dev push path; now shared with the release path) so the gcloud credential helper is registered. Without it `crane` falls back to anonymous and the prod-AR write returns HTTP 403.
+`crane copy` reads its auth from `~/.docker/config.json` credential helpers, NOT from `GOOGLE_APPLICATION_CREDENTIALS` directly. The release path therefore runs `gcloud auth configure-docker asia-northeast2-docker.pkg.dev` (already on the dev push path; now shared with the release path) so the gcloud credential helper is registered. Without it `crane` falls back to anonymous and the prod-AR write returns HTTP 403.
 
 The retag invocation is two calls (one per tag — `:vX.Y.Z` and `:<sha>`). Within the same AR region `crane copy` uses cross-repo blob mounting (a server-side OCI primitive): the destination registry references the source's existing blobs by digest rather than re-uploading them, so only manifest objects (a few KB each) actually transfer. Total wall-clock ~10s for both calls.
 
