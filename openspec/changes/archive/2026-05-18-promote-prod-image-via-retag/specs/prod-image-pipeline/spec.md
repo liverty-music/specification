@@ -92,16 +92,24 @@ The `github-actions@liverty-music-prod.iam.gserviceaccount.com` service account 
 - **WHEN** running `gcloud artifacts repositories get-iam-policy backend --project=liverty-music-dev --location=asia-northeast2 --flatten='bindings[].members' --filter='bindings.members~github-actions@liverty-music-prod'`
 - **THEN** the output SHALL be empty (this change is frontend-only; backend retag is a separate change that will add the symmetric grant)
 
-## REMOVED Requirements
+## MODIFIED Requirements (scenario removals only)
 
-### Requirement: Prod kustomize overlays SHALL pin image URIs to prod-AR paths — "Image tags are explicit, never `:latest`" scenario
+### Requirement: Prod kustomize overlays SHALL pin image URIs to prod-AR paths
 
-**Reason**: Superseded by `prod-image-tag-immutability`'s "Prod kustomize overlays SHALL pin image URIs to semantic version tags" requirement, which is strictly stricter — it forbids `:<sha>`-only tags that the scenario being removed permitted, and explicitly forbids `:latest`. The `prod-image-tag-immutability` spec already documents this supersession (see the "Relationship to `prod-image-pipeline`" cross-spec note in `prod-image-tag-immutability`).
+> **Scope of this modification**: drops the "Image tags are explicit, never `:latest`" scenario. Requirement body and the two remaining scenarios (Backend / Frontend overlay rewrites) are unchanged.
 
-**Migration**: No operational change. The stricter rule is already in force in canonical specs. Removing the weaker scenario eliminates a contradiction that would otherwise confuse readers comparing the two specs.
+Each prod overlay under `cloud-provisioning/k8s/namespaces/<ns>/overlays/prod/` whose namespace contains a Deployment whose base references an image SHALL emit a kustomize `images:` transformation (or equivalent JSON 6902 patch) that rewrites the rendered image URI to the corresponding `liverty-music-prod` AR path. This prevents accidental dev-AR pulls if the base manifest's `image:` ever drifts.
 
-### Requirement: Frontend prod image SHALL be promoted to prod AR on GitHub Release tags — "Prod and dev builds use identical Dockerfile inputs" scenario
+#### Scenario: Backend prod overlay rewrites image URIs
 
-**Reason**: With the retag flow there is no prod-side `docker build` invocation to compare against the dev one. The scenario's precondition (`comparing the docker build invocations of the dev push path and the release prod path`) is no longer satisfiable on the release path — only the dev path runs `docker build`. The env-agnostic-bundle invariant that this scenario asserted is preserved by the dev path's own template-presence assertion plus the byte-identity guarantee of the retag (the prod tag points at the exact same digest as the dev image that already passed the template gate).
+- **WHEN** running `kustomize build k8s/namespaces/backend/overlays/prod`
+- **THEN** every rendered Deployment's `image:` SHALL begin with `asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/`
 
-**Migration**: Removed in lock-step with the MODIFIED "Frontend prod image build SHALL be triggered by GitHub Release tags" requirement above. The remaining scenarios on that requirement carry the env-agnostic guarantee forward: the dev-path template assertion + the byte-identity scenario (`Prod and dev images share the same digest after promotion`) together cover the original intent.
+#### Scenario: Frontend prod overlay rewrites image URIs
+
+- **WHEN** running `kustomize build k8s/namespaces/frontend/overlays/prod`
+- **THEN** the rendered `web-app` Deployment's `image:` SHALL begin with `asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/`
+
+> **Reason for removing "Image tags are explicit, never `:latest`"**: superseded by `prod-image-tag-immutability`'s "Prod kustomize overlays SHALL pin image URIs to semantic version tags" requirement, which is strictly stricter — it forbids `:<sha>`-only tags that the scenario being removed permitted, and explicitly forbids `:latest`. The `prod-image-tag-immutability` spec already documents this supersession (see the "Relationship to `prod-image-pipeline`" cross-spec note in `prod-image-tag-immutability`). No operational change — the stricter rule is already in force in canonical specs. Removing the weaker scenario eliminates a contradiction that would otherwise confuse readers comparing the two specs.
+
+> **Reason for the bonus scenario drop on the "Frontend prod image build SHALL be triggered by GitHub Release tags" requirement** ("Prod and dev builds use identical Dockerfile inputs"): the retag flow has no prod-side `docker build` invocation to compare against the dev one. The scenario's precondition (`comparing the docker build invocations of the dev push path and the release prod path`) is no longer satisfiable on the release path — only the dev path runs `docker build`. The env-agnostic-bundle invariant that this scenario asserted is preserved by the dev path's own template-presence assertion plus the byte-identity guarantee of the retag (the prod tag points at the exact same digest as the dev image that already passed the template gate). The scenario is dropped as part of the MODIFIED body replacement on that requirement above; no separate REMOVED entry is needed.
