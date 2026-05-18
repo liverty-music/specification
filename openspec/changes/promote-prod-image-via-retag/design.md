@@ -125,10 +125,14 @@ Forward-only after that: if the cause is identified, re-roll the workflow PR wit
 
 ## Open Questions
 
-1. **Should the digest-resolve step retry if the dev AR push is in-flight?** A release can theoretically be cut seconds after the merge-to-main, while the dev build is still pushing. The dev push is a few minutes; a simple "wait up to 5 min for the dev :<sha> tag to appear" retry loop would handle the race. → Recommended: yes, retry with bounded wait (5 attempts × 60s). Captured in tasks.md.
+1. **Should the digest-resolve step retry if the dev AR push is in-flight?** A release can theoretically be cut seconds after the merge-to-main, while the dev build is still pushing. The dev push is a few minutes; a simple "wait up to 5 min for the dev :<sha> tag to appear" retry loop would handle the race. → Recommended: yes, retry with bounded wait (5 attempts × 60s). Captured in tasks.md and made a `SHALL` requirement in the spec delta.
 
-2. **Should we add a release-time check that the dev AR digest matches `dist/` we'd build locally?** Would catch the case where the dev image was tampered post-build (extremely unlikely with Workload Identity + AR ACLs, but it's the kind of attestation step a future SBOM-signing change might want). → Out of scope. Listed as a future enhancement in the spec delta.
+2. **Should we add a release-time check that the dev AR digest matches `dist/` we'd build locally?** Would catch the case where the dev image was tampered post-build (extremely unlikely with Workload Identity + AR ACLs, but it's the kind of attestation step a future SBOM-signing change might want). → Out of scope. Listed as a future enhancement in tasks.md §6.2.
 
 3. **Backend retag scope**: do we capture a tracking issue/proposal stub at the same time we ship this, or wait until frontend retag has soaked? → Recommended: wait. Validate the pattern on frontend (one image, simpler workflow) before applying to backend's 4-image matrix.
 
-4. **Should `prod-image-pipeline`'s removed "`:<sha>` permitted" scenario stay as a tombstone or be silently dropped?** It's already superseded by `prod-image-tag-immutability`'s semver-only rule. → Spec delta drops it. The `prod-image-tag-immutability` spec already documents the supersession (see the "Relationship to `prod-image-pipeline`" cross-spec note in that spec). Resolved in round-1 review: the deletion is now an explicit REMOVED entry with reason + migration, rather than a silent drop. The second REMOVED entry tombstones the orphaned "Prod and dev builds use identical Dockerfile inputs" scenario that the MODIFIED retag flow no longer supports.
+## Resolved
+
+- **`prod-image-pipeline`'s removed "`:<sha>` permitted" scenario — tombstone or silent drop?** → Tombstone, in round-1 review. The spec delta now has an explicit REMOVED entry with reason + migration. The second REMOVED entry similarly tombstones the orphaned "Prod and dev builds use identical Dockerfile inputs" scenario that the MODIFIED retag flow no longer supports.
+
+- **Dev-path tag set: `:latest,:<sha>` (canonical spec) vs `:latest,:main,:<sha>` (this delta)?** → Verified against `frontend/.github/workflows/push-image.yaml` line 113: the dev push path actually writes `:latest,:<sha>,:main`. The canonical spec was incomplete; this delta's MODIFIED requirement body incidentally corrects the gap. No behavior change to the workflow.

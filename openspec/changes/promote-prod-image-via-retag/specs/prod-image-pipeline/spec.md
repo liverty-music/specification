@@ -9,14 +9,12 @@ No GCP service account **that runs inside a `liverty-music-prod` GKE cluster** (
 #### Scenario: No prod cluster SA in dev project IAM policy
 
 - **WHEN** running `gcloud projects get-iam-policy liverty-music-dev --flatten='bindings[].members' --filter='bindings.members:(gke-node@liverty-music-prod.iam.gserviceaccount.com OR backend-app@liverty-music-prod.iam.gserviceaccount.com)'`
-- **THEN** the result SHALL be empty
-- **AND** project-level IAM SHALL NOT contain any `github-actions@liverty-music-prod` binding either (the CI-SA carve-out is repo-scoped, not project-scoped)
+- **THEN** the result SHALL be empty (the CI-SA's project-level absence is asserted by the CI-SA carve-out's own scenarios)
 
 #### Scenario: No prod cluster SA on dev AR repos
 
 - **WHEN** running `gcloud artifacts repositories get-iam-policy <repo> --project=liverty-music-dev --location=asia-northeast2 --flatten='bindings[].members' --filter='bindings.members:(gke-node@liverty-music-prod.iam.gserviceaccount.com OR backend-app@liverty-music-prod.iam.gserviceaccount.com)'` for each of `backend` and `frontend`
-- **THEN** the result SHALL be empty (cluster SAs hold no repo-level grants either)
-- **AND** the only `@liverty-music-prod.iam.gserviceaccount.com` member that MAY appear under a separate filter is `github-actions@liverty-music-prod` with `roles/artifactregistry.reader` — asserted positively by the CI-SA carve-out requirement's own scenarios
+- **THEN** the result SHALL be empty (cluster SAs hold no repo-level grants either; the CI-SA carve-out's own scenarios assert its presence positively)
 
 #### Scenario: Revocation runbook is documented
 
@@ -38,21 +36,21 @@ The frontend `push-image.yaml` workflow SHALL publish to `liverty-music-prod/fro
 
 - **WHEN** a GitHub Release is published in `liverty-music/frontend` with tag `vX.Y.Z`
 - **THEN** the workflow SHALL NOT invoke `docker build` or `docker/build-push-action` on the release path
-- **AND** the workflow SHALL resolve the dev AR digest for `liverty-music-dev/frontend/web-app:${github.sha}` via `gcloud artifacts docker images describe`
-- **AND** the workflow SHALL run `gcloud artifacts docker tags add <dev-AR-FQDN>@<digest> liverty-music-prod/frontend/web-app:vX.Y.Z`
-- **AND** the workflow SHALL run `gcloud artifacts docker tags add <dev-AR-FQDN>@<digest> liverty-music-prod/frontend/web-app:<sha>`
+- **AND** the workflow SHALL resolve the dev AR digest for `asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app:${GITHUB_SHA}` via `gcloud artifacts docker images describe`
+- **AND** the workflow SHALL run `gcloud artifacts docker tags add asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app@<digest> asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/web-app:vX.Y.Z`
+- **AND** the workflow SHALL run `gcloud artifacts docker tags add asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app@<digest> asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/web-app:${GITHUB_SHA}`
 
 #### Scenario: Prod and dev images share the same digest after promotion
 
-- **WHEN** comparing `gcloud artifacts docker images describe liverty-music-dev/frontend/web-app:<sha>` against `gcloud artifacts docker images describe liverty-music-prod/frontend/web-app:vX.Y.Z` after a release event for that SHA
+- **WHEN** comparing `gcloud artifacts docker images describe asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app:<sha>` against `gcloud artifacts docker images describe asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/web-app:vX.Y.Z` after a release event for that SHA
 - **THEN** the `image_summary.digest` field SHALL be identical between the two outputs
 
 #### Scenario: Release CI SHALL refuse if dev AR :<sha> is missing
 
-- **WHEN** a GitHub Release is published with a `github.sha` for which no `liverty-music-dev/frontend/web-app:<sha>` tag exists (e.g., release cut on a non-main commit, or dev build failed)
+- **WHEN** a GitHub Release is published with a `github.sha` for which no `asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app:<sha>` tag exists (e.g., release cut on a non-main commit, or dev build failed)
 - **THEN** the release workflow SHALL fail at the digest-resolve step with an explicit error referencing the recovery runbook section
 - **AND** the workflow SHALL NOT publish any tag to prod AR
-- **AND** the digest-resolve step SHALL retry up to 5 times with 60-second waits between attempts before failing (to absorb the race window where a release is cut seconds after a push and the dev build is still in-flight)
+- **AND** the digest-resolve step SHALL retry up to 5 times with 60-second waits between attempts before failing, for a maximum total wait of approximately 5 minutes (to absorb the race window where a release is cut seconds after a push and the dev build is still in-flight)
 
 #### Scenario: Post-build template-presence assertion gates the dev path
 
@@ -84,7 +82,7 @@ The `github-actions@liverty-music-prod.iam.gserviceaccount.com` service account 
 #### Scenario: Prod CI SA holds NO project-level reader on dev project
 
 - **WHEN** running `gcloud projects get-iam-policy liverty-music-dev --flatten='bindings[].members' --filter='bindings.members~github-actions@liverty-music-prod'`
-- **THEN** any matching binding SHALL be empty (the grant lives at the repo level, not the project level)
+- **THEN** the result SHALL be empty (the grant lives at the repo level, not the project level)
 
 #### Scenario: Backend dev AR is NOT yet granted (forward-looking)
 

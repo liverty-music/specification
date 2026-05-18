@@ -1,4 +1,4 @@
-> **Cross-repo task layout**: Tasks 1 lives in `specification`; tasks 2 in `cloud-provisioning`; tasks 3 in `frontend`; tasks 4 is the user-gated cutover; tasks 5 is archive. The specification PR ships only the contract — implementation lands in companion PRs that reference this change's archive.
+> **Cross-repo task layout**: §1 lives in `specification`; §2 in `cloud-provisioning`; §3 in `frontend`; §4 is the user-gated cutover; §5 is archive. The specification PR ships only the contract — implementation lands in companion PRs that reference this change's archive.
 
 ## 1. Specification
 
@@ -42,7 +42,7 @@
 ## 5. Archive
 
 - [ ] 5.1 After tasks 1–4 verified, prepare an archive PR per the repo's openspec-sync-specs pattern: move `openspec/changes/promote-prod-image-via-retag/` to `openspec/changes/archive/<date>-promote-prod-image-via-retag/`.
-- [ ] 5.2 Merge spec deltas into canonical `openspec/specs/prod-image-pipeline/spec.md`:
+- [ ] 5.2 Merge spec deltas into canonical `openspec/specs/prod-image-pipeline/spec.md`. **Note for the archiver**: the MODIFIED "Frontend prod image build SHALL be triggered by GitHub Release tags" requirement replaces its **entire body paragraph** (not just scenarios) — the rebuild prose becomes retag prose. Do not attempt to patch scenarios against the existing requirement body verbatim; copy the requirement body from this delta file in full.
   - **MODIFIED**: "Prod cluster service accounts SHALL NOT hold cross-project Artifact Registry IAM grants" — tightened scope text + scenario renames (`No prod SA in dev project IAM policy` → `No prod cluster SA in dev project IAM policy`).
   - **MODIFIED**: "Frontend prod image build SHALL be triggered by GitHub Release tags" — replaced rebuild body with the retag flow; added 3 new scenarios (`GitHub Release publish promotes the dev AR digest`, `Prod and dev images share the same digest after promotion`, `Release CI SHALL refuse if dev AR :<sha> is missing`); preserved + renamed the post-build template-presence scenario (`Post-build template-presence assertion gates both paths` → `Post-build template-presence assertion gates the dev path` to reflect that prod no longer runs a build).
   - **ADDED**: "CI service accounts MAY hold scoped cross-project AR reader for image promotion" with all four scenarios.
