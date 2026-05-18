@@ -22,7 +22,9 @@ No GCP service account **that runs inside a `liverty-music-prod` GKE cluster** (
 - **THEN** a runbook SHALL document the exact `gcloud projects remove-iam-policy-binding liverty-music-dev` invocation that revokes the manual grant
 - **AND** the runbook SHALL warn that revocation MUST follow successful prod image migration (otherwise prod pods enter `ImagePullBackOff`)
 
-### Requirement: Frontend prod image build SHALL be triggered by GitHub Release tags
+### Requirement: Frontend prod image SHALL be promoted to prod AR on GitHub Release tags
+
+> **Renamed from**: `Frontend prod image build SHALL be triggered by GitHub Release tags` (the word "build" is misleading after this change — the release path no longer runs `docker build`; it promotes the dev AR image by tag-add).
 
 The frontend `push-image.yaml` workflow SHALL publish to `liverty-music-prod/frontend/web-app` Artifact Registry only when triggered by a published GitHub Release. On the release path, the workflow SHALL **promote the dev AR image via tag-add** rather than rebuild — it resolves the dev AR digest for `github.sha`, then invokes `gcloud artifacts docker tags add` twice to copy that exact digest to `liverty-music-prod/frontend/web-app:<release-tag>` and `:<sha>`. No `docker build` SHALL run on the release path. The existing dev path (push-to-main → `liverty-music-dev/frontend/web-app:latest,:main,:<sha>`) SHALL be preserved unchanged. This ensures prod runs byte-identical bytes to dev: the digest tested in dev is the digest deployed to prod.
 
@@ -50,7 +52,7 @@ The frontend `push-image.yaml` workflow SHALL publish to `liverty-music-prod/fro
 - **WHEN** a GitHub Release is published with a `github.sha` for which no `asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app:<sha>` tag exists (e.g., release cut on a non-main commit, or dev build failed)
 - **THEN** the release workflow SHALL fail at the digest-resolve step with an explicit error referencing the recovery runbook section
 - **AND** the workflow SHALL NOT publish any tag to prod AR
-- **AND** the digest-resolve step SHALL retry up to 5 times with 60-second waits between attempts before failing, for a maximum total wait of approximately 5 minutes (to absorb the race window where a release is cut seconds after a push and the dev build is still in-flight)
+- **AND** the digest-resolve step SHALL retry up to 5 additional times after the initial attempt (6 total attempts) with 60-second waits between attempts, for a maximum total wait of approximately 5 minutes — to absorb the race window where a release is cut seconds after a push and the dev build is still in-flight
 
 #### Scenario: Post-build template-presence assertion gates the dev path
 
@@ -97,7 +99,7 @@ The `github-actions@liverty-music-prod.iam.gserviceaccount.com` service account 
 
 **Migration**: No operational change. The stricter rule is already in force in canonical specs. Removing the weaker scenario eliminates a contradiction that would otherwise confuse readers comparing the two specs.
 
-### Requirement: Frontend prod image build SHALL be triggered by GitHub Release tags — "Prod and dev builds use identical Dockerfile inputs" scenario
+### Requirement: Frontend prod image SHALL be promoted to prod AR on GitHub Release tags — "Prod and dev builds use identical Dockerfile inputs" scenario
 
 **Reason**: With the retag flow there is no prod-side `docker build` invocation to compare against the dev one. The scenario's precondition (`comparing the docker build invocations of the dev push path and the release prod path`) is no longer satisfiable on the release path — only the dev path runs `docker build`. The env-agnostic-bundle invariant that this scenario asserted is preserved by the dev path's own template-presence assertion plus the byte-identity guarantee of the retag (the prod tag points at the exact same digest as the dev image that already passed the template gate).
 
