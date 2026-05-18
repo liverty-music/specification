@@ -41,20 +41,25 @@ Constraints that shape this design:
 - **Backend retag**: same opportunity, different blast radius (4 images, 4× tag-ops); separate change.
 - **Removing `cache-from: type=gha` on the dev path**: dev path keeps its current build behavior; only the release path changes.
 - **Bit-reproducible builds**: not pursued. Dev produces one canonical bytes; prod just inherits them. Reproducibility tooling (`diffoscope`, SOURCE_DATE_EPOCH) is decoupled and stays out of scope.
-- **Replacing `gcloud` with `crane`/`skopeo`**: tooling is already available via `setup-gcloud@v2`; no value in adding a second dep.
 - **Re-tagging historical prod images** (v1.0.0, v1.0.1): forward-only. Existing prod tags stay as they are.
 
 ## Decisions
 
-### D1. Retag tool: `gcloud artifacts docker tags add`
+### D1. Retag tool: `crane copy`
 
-**Chosen**: `gcloud artifacts docker tags add <dev-AR-FQDN>@<digest> <prod-AR-FQDN>:<tag>`
+**Chosen**: `crane copy <dev-AR-FQDN>@<digest> <prod-AR-FQDN>:<tag>` — `crane` is `google/go-containerregistry`'s OCI-registry CLI, installed via `imjasonh/setup-crane@v0.4`.
 
 **Alternatives considered**:
-- `gcrane copy` / `skopeo copy`: registry-to-registry copy first-class citizens. Rejected because the dev path already uses `setup-gcloud@v2`; the prod path can reuse the same SDK setup with zero new tooling deps. The gcloud command is one line; gcrane would require a separate install step.
+- `gcloud artifacts docker tags add`: initial choice; rejected after implementation. The command name is misleading — despite presenting `<source> <destination>` arguments, the API only **renames a tag within a single repository**. Cross-repository or cross-project copy returns `ERROR: Image <src-FQDN> does not match image <dst-FQDN>` because the API resolves the target image by matching the source's repo path against the destination's repo path, and they must be byte-equal. Verified live on v1.0.2 release run #26025105562. The argument shape suggested registry-to-registry copy was supported; that is not the case.
+- `gcrane copy`: rejected for surprising tooling-availability reasons. `gcrane` is a GCR-specific convenience wrapper from the same `google/go-containerregistry` repo, but the standard `imjasonh/setup-crane` action installs only the generic `crane` binary, not its `gcrane` sibling. Verified live on v1.0.2 release run #26025721319 (`gcrane: command not found`). Sourcing `gcrane` separately would require a custom install step; `crane` is functionally equivalent for AR (which speaks the OCI registry protocol) so there is no payoff.
+- `skopeo copy`: registry-to-registry first-class citizen. Equivalent capability to `crane copy`; rejected only because `crane` was already in scope as the canonical Google-published toolchain for AR-resident workflows. Re-evaluatable if `crane` ever lags AR feature support.
 - `docker pull && docker tag && docker push`: redundant — materializes the image locally for no reason. Rejected.
 
-The retag invocation is two calls (one per tag — `:vX.Y.Z` and `:<sha>`), each ~5s. AR's tag-add API is registry-internal; no image bytes move.
+`crane copy` reads its auth from `~/.docker/config.json` credential helpers, NOT from `GOOGLE_APPLICATION_CREDENTIALS` directly. The release path therefore runs `gcloud auth configure-docker asia-northeast2-docker.pkg.dev` (already on the dev push path; now shared with the release path) so the gcloud credential helper is registered. Without it `crane` falls back to anonymous and the prod-AR write returns HTTP 403.
+
+The retag invocation is two calls (one per tag — `:vX.Y.Z` and `:<sha>`). Within the same AR region `crane copy` uses cross-repo blob mounting (a server-side OCI primitive): the destination registry references the source's existing blobs by digest rather than re-uploading them, so only manifest objects (a few KB each) actually transfer. Total wall-clock ~10s for both calls.
+
+**Historical note** — the original D1 chose `gcloud artifacts docker tags add` on the (incorrect) premise that gcloud's API supported cross-repository copy. That assumption was inherited from the command's misleading name and not validated against a live cross-project test before the proposal merged. The corrective sequence is preserved as PRs #361 (gcloud-tags-add, failed), #362 (gcrane, failed), #363 (crane, succeeded). Future spec changes touching registry primitives SHOULD include a smoke step against a non-trivial source/destination pair before merging the contract.
 
 ### D2. IAM model: scoped reader on dev AR for prod CI SA
 
