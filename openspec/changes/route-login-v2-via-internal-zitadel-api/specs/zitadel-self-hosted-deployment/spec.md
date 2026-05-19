@@ -1,3 +1,44 @@
+## MODIFIED Requirements
+
+### Requirement: Per-Environment Overlay Topology
+
+The Zitadel namespace SHALL provide both `overlays/dev/` and `overlays/prod/` Kustomize overlays, each importing from `overlays/../base`, such that the renamed canonical names (`zitadel-api`, `zitadel-web`) are present in any rendered manifest tree. The `prod` overlay SHALL match the `dev` overlay's structural shape (kustomization, Deployment patches, HTTPRoute hostname patch) but SHALL NOT include resources scoped to `dev` only (notably the weekly restart CronJob marked with the `liverty-music.app/temporary` annotation).
+
+The HTTPRoute `hostnames` field SHALL NOT appear in `base/httproute.yaml`; instead each overlay SHALL contribute a patch that supplies its environment-specific hostname (`auth.dev.liverty-music.app` for dev; `auth.liverty-music.app` for prod, treating prod as the canonical apex). Both overlays SHALL apply the Spot-pool `nodeSelector` to both Deployments.
+
+**Rationale**: Production-readiness of the manifest topology must land in source before prod ArgoCD picks it up — otherwise prod would briefly inherit the old (pre-rename) names and immediately churn. The hostname-out-of-base discipline keeps `base/` free of environment-specific values and mirrors how `backend` and `frontend` HTTPRoutes work (no hostnames in base). The dev-only CronJob is an explicit band-aid scoped to dev's `self-hosted-zitadel` §18.6 hang; prod must not silently inherit it. `ZITADEL_API_URL` is no longer in this list of env-overridden values: per the `Login V2 UI Calls Zitadel API via Cluster-Internal URL` requirement the value is now the cluster-internal Service URL (environment-agnostic), so the prod overlay does NOT patch it and the dev overlay does NOT diverge.
+
+#### Scenario: Prod overlay renders the renamed resources
+
+- **WHEN** `kubectl kustomize k8s/namespaces/zitadel/overlays/prod` is executed
+- **THEN** the rendered output SHALL contain a Deployment named `zitadel-api` with a container named `api`
+- **AND** a Deployment named `zitadel-web` with a container named `web`
+- **AND** Services named `zitadel-api` and `zitadel-web`
+- **AND** PodDisruptionBudgets named `zitadel-api` and `zitadel-web`
+- **AND** HealthCheckPolicies named `zitadel-api-policy` and `zitadel-web-policy`
+- **AND** an HTTPRoute with `hostnames: [auth.liverty-music.app]`
+
+#### Scenario: Dev overlay renders its hostname patch
+
+- **WHEN** `kubectl kustomize k8s/namespaces/zitadel/overlays/dev` is executed
+- **THEN** the rendered HTTPRoute SHALL have `hostnames: [auth.dev.liverty-music.app]`
+- **AND** the rendered overlay SHALL still include the dev-only `zitadel-restart` CronJob (carrying the `liverty-music.app/temporary` annotation)
+
+#### Scenario: Prod overlay omits the dev-only CronJob
+
+- **WHEN** `kubectl kustomize k8s/namespaces/zitadel/overlays/prod` is executed
+- **THEN** the rendered output SHALL NOT contain any CronJob named `zitadel-restart` (or any CronJob carrying the `liverty-music.app/temporary` annotation)
+
+#### Scenario: Prod overlay overrides env-specific values from base
+
+- **WHEN** `kubectl kustomize k8s/namespaces/zitadel/overlays/prod` is executed
+- **THEN** the rendered `zitadel-config` ConfigMap SHALL have `ZITADEL_EXTERNALDOMAIN: auth.liverty-music.app`
+- **AND** the rendered `zitadel-config` ConfigMap SHALL have `ZITADEL_DATABASE_POSTGRES_USER_USERNAME: zitadel@liverty-music-prod.iam`
+- **AND** the rendered `zitadel-config` ConfigMap SHALL have `ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: zitadel@liverty-music-prod.iam`
+- **AND** the rendered `zitadel` ServiceAccount SHALL have `annotations."iam.gke.io/gcp-service-account": zitadel@liverty-music-prod.iam.gserviceaccount.com`
+- **AND** the rendered `zitadel-api` Deployment's `cloud-sql-proxy` container SHALL have its positional instance-connection-name arg set to `liverty-music-prod:asia-northeast2:postgres-osaka` (not the dev value)
+- **AND** the rendered `zitadel-web` Deployment's `ZITADEL_API_URL` env SHALL be the cluster-internal Service URL (`http://zitadel-api.zitadel.svc.cluster.local`), identical to the dev overlay (no per-env override) — see the `Login V2 UI Calls Zitadel API via Cluster-Internal URL` requirement
+
 ## REMOVED Requirements
 
 ### Requirement: Login V2 UI Calls Zitadel API via Public URL
@@ -30,7 +71,7 @@ The `zitadel-web` container SHALL set `ZITADEL_API_URL` to the cluster-internal 
 
 ### Requirement: Cluster-Internal Hostname Registered as InstanceCustomDomain
 
-The Zitadel instance in each environment SHALL have `zitadel-api.zitadel.svc.cluster.local` registered as an `InstanceCustomDomain`, declared as a Pulumi `zitadel.InstanceCustomDomain` resource and applied by the System User-authenticated Zitadel provider.
+The Zitadel instance in each environment SHALL have `zitadel-api.zitadel.svc.cluster.local` registered as an `InstanceCustomDomain`, declared as a Pulumi `ZitadelInstanceCustomDomain` Dynamic Resource (the implementation type — `@pulumiverse/zitadel@0.2.0` does not expose `InstanceCustomDomain` as a typed resource; see `design.md` D3) and applied with a System User-signed JWT.
 
 **Rationale**: Zitadel v4 matches the request's `Host` header against the instance's configured `InstanceDomains` to select a virtual instance; unmatched hosts return HTTP 404 before reaching any handler. The `Login V2 UI Calls Zitadel API via Cluster-Internal URL` requirement makes the Login UI's outbound calls carry `Host: zitadel-api.zitadel.svc.cluster.local`, so the API must recognise that hostname. `InstanceCustomDomain` (not `InstanceTrustedDomain`) is required because only the former participates in `Host`-based routing; trusted domains affect OIDC discovery and email templates only.
 
