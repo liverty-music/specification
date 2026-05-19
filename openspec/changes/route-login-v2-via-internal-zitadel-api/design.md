@@ -46,7 +46,9 @@ The alternative the existing rationale rejected ("registering the internal hostn
 
 ### D1: Use cluster-internal Service URL for `ZITADEL_API_URL`, registered as an InstanceCustomDomain
 
-`zitadel-web` will set `ZITADEL_API_URL=http://zitadel-api.zitadel.svc.cluster.local:8080` (plaintext HTTP; intra-cluster). The hostname `zitadel-api.zitadel.svc.cluster.local` is registered with the Zitadel instance as an `InstanceCustomDomain` so the API matches the request's `Host` header to a known instance and routes the call internally.
+`zitadel-web` will set `ZITADEL_API_URL=http://zitadel-api.zitadel.svc.cluster.local` (plaintext HTTP; intra-cluster). The hostname `zitadel-api.zitadel.svc.cluster.local` is registered with the Zitadel instance as an `InstanceCustomDomain` so the API matches the request's `Host` header to a known instance and routes the call internally.
+
+**Port note**: the existing `zitadel-api` Service ([`k8s/namespaces/zitadel/base/service-api.yaml`](cloud-provisioning/k8s/namespaces/zitadel/base/service-api.yaml)) exposes `port: 80` → `targetPort: 8080`, so the URL above carries no explicit port and Node's HTTP client emits `Host: zitadel-api.zitadel.svc.cluster.local` (no `:80` suffix — RFC 7230 §5.4 only includes the port when non-default). The `InstanceCustomDomain` is registered with the bare hostname (no port), so Host matching is exact regardless of whether Zitadel's matching strategy strips the port or compares literally. This sidesteps a potential class of bugs that adding `:8080` to the URL would have introduced.
 
 **Why not alternatives:**
 
