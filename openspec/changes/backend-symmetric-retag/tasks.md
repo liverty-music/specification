@@ -12,9 +12,10 @@
 - [ ] 2.3 Replace the release-path `Build and Push Docker Image` step with two new release-only steps per matrix entry:
   - `Resolve dev AR digest for <matrix.image.name>:${GITHUB_SHA}` — runs the 6-attempt × 60s-wait loop documented in the frontend equivalent. Source image FQDN: `${REGION}-docker.pkg.dev/liverty-music-dev/${REPOSITORY}/${matrix.image.name}:${GITHUB_SHA}`.
   - `Promote dev AR digest to prod AR (semver + sha tags)` — runs `crane copy <src>@<digest> <dst>:<release-tag>` and `crane copy <src>@<digest> <dst>:${GITHUB_SHA}`. Destination FQDN: `${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${matrix.image.name}` (where `PROJECT_ID` resolves to `liverty-music-prod` via the `prod` GH environment binding).
-- [ ] 2.4 Gate the existing `Set up Docker Buildx` step and the `docker/build-push-action` step to `if: github.event_name == 'push'` so neither runs on the release path. Keep the `Set Image URI`, `Set Image Tags (dev path)`, `Set Image Tags (prod path)` steps as-is on the conditions they already have (the prod-path tag-set step is now dead code; remove it).
-- [ ] 2.5 Update the inline comment block at the top of `deploy.yml` to document the dual-trigger semantics: `push → dev rebuild`, `release → 4× crane copy`. Reference this archived OpenSpec change once archived.
-- [ ] 2.6 Open the backend PR after step 1's IAM grant is live. Body links this OpenSpec change. Merge after CI + review.
+- [ ] 2.4 Gate the existing `Set up Docker Buildx` step and the `docker/build-push-action` step to `if: github.event_name == 'push'` so neither runs on the release path. Keep the `Set Image URI`, `Set Image Tags (dev path)` steps as-is on the conditions they already have.
+- [ ] 2.5 Remove the now-dead `Set Image Tags (prod path)` step from `deploy.yml`. The release path no longer consumes `IMAGE_TAGS` because `crane copy` takes destination tags directly. Leaving the step would mislead future readers about whether prod-path tag-set still wires anything.
+- [ ] 2.6 Update the inline comment block at the top of `deploy.yml` to document the dual-trigger semantics: `push → dev rebuild`, `release → 4× crane copy`. Reference this archived OpenSpec change once archived.
+- [ ] 2.7 Open the backend PR after step 1's IAM grant is live. Body links this OpenSpec change. Merge after CI + review.
 
 ## 3. Workflow runtime validation (dev path unchanged)
 
