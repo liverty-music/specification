@@ -80,13 +80,13 @@ Stakeholders: product/design (vocabulary, copy), frontend (implementation), QA (
 |---|---|---|
 | `eventDetail.ariaLabel` | ライブ詳細 | Event details |
 | `eventDetail.openStart` | 開場 {{open}} / 開演 {{start}} | Open {{open}} / Start {{start}} |
-| `eventDetail.openStartFallback` | — | — |
+| `eventDetail.openStartFallback` | `—` (U+2014 em-dash literal) | `—` (U+2014 em-dash literal) |
 | `eventDetail.openInGoogleMaps` | Google Maps で開く | Open in Google Maps |
 | `eventDetail.ticketStatus` | チケット状況 | Ticket Status |
 | `eventDetail.stopTracking` | 追跡を停止 | Stop tracking |
 | `eventDetail.viewOfficialInfo` | 公式情報を見る | View Official Info |
 | `eventDetail.addToCalendar` | カレンダーに追加 | Add to Calendar |
-| `eventDetail.journeyStatus.tracking` | 検討中 | Tracking |
+| `eventDetail.journeyStatus.tracking` | 追跡中 | Tracking |
 | `eventDetail.journeyStatus.applied` | 申込済み | Applied |
 | `eventDetail.journeyStatus.lost` | 落選 | Lost |
 | `eventDetail.journeyStatus.unpaid` | 当選・未入金 | Unpaid |
@@ -121,5 +121,5 @@ This is a pure frontend copy / behavior tweak with no data, schema, or contract 
 ## Open Questions
 
 - Does the existing `brand-vocabulary` lint script support flagging an absolute banned term ("推し" anywhere in `translation.json`), or does it only check `entity.*` parity? If the former is not yet supported, do we extend the linter in this change or file a follow-up?
-- Are the proposed JA translations for `JourneyStatus` (`tracking → 検討中`, `applied → 申込済み`, `lost → 落選`, `unpaid → 当選・未入金`, `paid → 入金済み`) acceptable to product, or should `tracking` map to a different verb (e.g., 追跡中 vs 検討中)?
+- ~~Are the proposed JA translations for `JourneyStatus` (`tracking → 検討中`, `applied → 申込済み`, `lost → 落選`, `unpaid → 当選・未入金`, `paid → 入金済み`) acceptable to product, or should `tracking` map to a different verb (e.g., 追跡中 vs 検討中)?~~ **Resolved**: `tracking` maps to `追跡中` (in tracking), not `検討中` (under consideration). `追跡中` matches the ticket-journey semantics of "I'm actively following this event" — the user has already committed to watching it, they are not deliberating. The remaining four mappings (`申込済み` / `落選` / `当選・未入金` / `入金済み`) stand.
 - Should the popover-guide string `discovery.popoverGuide` retain its em-dash structure ("気になるアーティストをタップ — フォローしたアーティストのライブが…") or be rewritten more naturally as two sentences? (Defaulting to "preserve structure" for this change.)

@@ -17,7 +17,7 @@ The frontend SHALL render all user-facing text in the concert detail sheet via i
 - **THEN** the following `eventDetail.*` keys SHALL be defined in both JA and EN translation files:
   - `eventDetail.ariaLabel` — the sheet's `aria-label`
   - `eventDetail.openStart` — the open/start time line with `{{open}}` and `{{start}}` interpolation placeholders
-  - `eventDetail.openStartFallback` — the placeholder used when open or start time is unknown
+  - `eventDetail.openStartFallback` — the placeholder substituted for an unknown open time inside `eventDetail.openStart`; the canonical value SHALL be the em-dash character `—` (U+2014) in both JA and EN
   - `eventDetail.openInGoogleMaps` — the Google Maps link label
   - `eventDetail.ticketStatus` — the ticket-status section heading
   - `eventDetail.stopTracking` — the "remove ticket journey" button label
@@ -26,14 +26,14 @@ The frontend SHALL render all user-facing text in the concert detail sheet via i
 
 #### Scenario: Journey status enum values are i18n-keyed
 
-- **WHEN** the concert detail sheet renders a `JourneyStatus` value as a button label or as the currently-displayed status
+- **WHEN** the concert detail sheet renders a `TicketJourneyStatus` value as a button label or as the currently-displayed status
 - **THEN** the surface form SHALL be sourced from a sub-namespace `eventDetail.journeyStatus.<value>` rather than the raw enum string
-- **AND** the JA and EN translation files SHALL both contain values for every supported `JourneyStatus` value (currently `tracking`, `applied`, `lost`, `unpaid`, `paid`)
+- **AND** the JA and EN translation files SHALL both contain values for every supported `TicketJourneyStatus` value (currently `tracking`, `applied`, `lost`, `unpaid`, `paid`)
 - **AND** the raw enum string SHALL NOT appear in the rendered UI
 
-#### Scenario: Adding a new JourneyStatus value
+#### Scenario: Adding a new TicketJourneyStatus value
 
-- **WHEN** a new value is added to the `JourneyStatus` type
+- **WHEN** a new value is added to the `TicketJourneyStatus` type
 - **THEN** the change SHALL add a corresponding `eventDetail.journeyStatus.<newValue>` entry to both the JA and EN translation files
 - **AND** the absence of either locale value SHALL be a defect
 

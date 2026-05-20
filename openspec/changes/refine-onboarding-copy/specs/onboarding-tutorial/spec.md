@@ -4,6 +4,8 @@
 
 The system SHALL enforce a guided progression through onboarding steps. During the Lane Intro phase of DASHBOARD, user interaction outside the spotlighted element is blocked via blocker divs and scroll lock. After Celebration dismissal, the user explores freely and navigates to My Artists at their own pace.
 
+> **Note on Step numbering**: The "Step N" labels in the scenario titles below mirror the existing `onboardingStep` state-machine values (`'lp'` = Step 0, `'discovery'` = Step 1, `'dashboard'` = Step 3, `'my-artists'` = Step 5, `'completed'` = Step 6). Steps 2 and 4 correspond to in-flight transitions handled by other specs (`onboarding-popover-guide` and the EventDetailSheet open-during-onboarding flow in `concert-detail`) and so are intentionally absent from this spec's scenario list.
+
 #### Scenario: Step 0 - Landing Page entry
 
 - **WHEN** a user is at Step `'lp'`
