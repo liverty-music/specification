@@ -15,7 +15,7 @@ The help bottom-sheet SHALL display page-specific guide content when opened. Onl
 
 - **WHEN** the help bottom-sheet opens on the Dashboard page
 - **THEN** the sheet SHALL render two sub-sections:
-  - `pageHelp.dashboard.lanesSectionTitle` ("ステージレーンの読み方" / "Reading the Stage Lanes") — containing the description that followed artists' lives are shown by distance, and the explanation list of the three stage lanes: HOME, NEAR, and AWAY
+  - `pageHelp.dashboard.lanesSectionTitle` ("ステージレーンの読み方" / "Reading the Stage Lanes") — containing the description that followed artists' concerts are shown by distance, and the explanation list of the three stage lanes: HOME, NEAR, and AWAY
   - `pageHelp.dashboard.detailsSectionTitle` ("ライブ詳細を見る" / "Viewing Concert Details") — containing the tip that tapping a concert card opens the concert detail
 - **AND** the HOME stage label SHALL use `color: var(--color-stage-home)` via the `.stage-home` CSS class
 - **AND** the NEAR stage label SHALL use `color: var(--color-stage-near)` via the `.stage-near` CSS class
@@ -79,8 +79,8 @@ The My Artists help sheet's hype tier explanation SHALL render as a 3-column CSS
 - **WHEN** the help sheet renders the hype tier grid
 - **THEN** the four rows SHALL be (in order, top-to-bottom):
   - `👀` · `Watch` · "通知なし" (JA) / "No notifications" (EN)
-  - `🔥` · `Home` · "居住エリアのライブを通知" (JA) / "Notify for home area lives" (EN)
-  - `🔥🔥` · `Nearby` · "近くのライブも通知" (JA) / "Notify for nearby lives too" (EN)
+  - `🔥` · `Home` · "居住エリアのライブを通知" (JA) / "Notify for home-area concerts" (EN)
+  - `🔥🔥` · `Nearby` · "近くのライブも通知" (JA) / "Notify for nearby concerts too" (EN)
   - `🔥🔥🔥` · `Away` · "全てのライブを通知" (JA) / "Notify for every concert" (EN)
 - **AND** the tier labels in column 2 SHALL be the invariant English forms regardless of locale (per the `Hype Tier Surface Labels Are Layer B` requirement in the `brand-vocabulary` capability)
 - **AND** the Away description SHALL NOT contain the word `全国` (the old JA copy was inaccurate because the proto's `HYPE_TYPE_AWAY` semantics include international concerts, not only nationwide)

@@ -56,13 +56,19 @@ This bundle refines the my-artists help-sheet copy and structure, unifies the hy
 - `pageHelp.myArtists.description` (EN): `Hype level controls how far away you get notified. Tap a dot to change it.` → `Hype controls how far away you get notified. Tap the slider to change it.`
 - `pageHelp.myArtists.awayDesc` (JA): `全国のライブを通知` → `全てのライブを通知`
 - `pageHelp.myArtists.awayDesc` (EN): `Notify for all lives nationwide` → `Notify for every concert`
+- `pageHelp.myArtists.homeDesc` (EN): `Notify for home area lives` → `Notify for home-area concerts` (consistency — "lives" was a Japanism)
+- `pageHelp.myArtists.nearbyDesc` (EN): `Notify for nearby lives too` → `Notify for nearby concerts too` (same)
 - `pageHelp.myArtists.tip` (JA): `まずは気になるアーティストを Home に設定してみましょう。近くでライブがあればお知らせします。` → `遠征してでも見たいアーティストは Away に設定してみましょう！`
 - `pageHelp.myArtists.tip` (EN): `Start by setting artists you're curious about to Home — you'll get notified when they play nearby.` → `Set artists you'd travel for to Away to never miss them!`
 - `pageHelp.myArtists.longPressTip` and `pageHelp.dashboard.cardTip` retain their current copy but move into their own dedicated sub-section.
-- Two new keys SHALL be introduced for the sub-section titles:
-  - `pageHelp.myArtists.hypeSectionTitle` / `pageHelp.myArtists.unfollowSectionTitle`
-  - `pageHelp.dashboard.lanesSectionTitle` / `pageHelp.dashboard.detailsSectionTitle`
-  - `pageHelp.discovery.findingSectionTitle` / `pageHelp.discovery.unfollowSectionTitle`
+- Seven new keys SHALL be introduced — six sub-section titles (one per `<section>` across the three help sheets) and one new descriptive copy key for the Discovery unfollow sub-section:
+  - `pageHelp.discovery.findingSectionTitle`
+  - `pageHelp.discovery.unfollowSectionTitle`
+  - `pageHelp.discovery.unfollowDesc` (new descriptive copy: JA `フォロー解除は My Artists ページから行えます。` / EN `You can unfollow from the My Artists page.`)
+  - `pageHelp.dashboard.lanesSectionTitle`
+  - `pageHelp.dashboard.detailsSectionTitle`
+  - `pageHelp.myArtists.hypeSectionTitle`
+  - `pageHelp.myArtists.unfollowSectionTitle`
 
 ### Signup-prompt-banner persistence (signup-prompt-banner capability)
 
