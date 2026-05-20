@@ -11,7 +11,7 @@ The system SHALL maintain a registry of colloquial Japanese terms whose use in u
 - **WHEN** authoring or reviewing JA user-facing copy in `frontend/src/locales/ja/translation.json`
 - **THEN** the token `推し` SHALL NOT appear as a noun standing in for "artist a user follows"
 - **AND** the noun SHALL be expressed as `アーティスト` (mapping to the protobuf `Artist` entity)
-- **AND** the act of marking an artist as followed SHALL be expressed with the verb `フォローする` (mapping to the `ArtistService.Follow` RPC semantics)
+- **AND** the act of marking an artist as followed SHALL be expressed with the verb `フォローする` (mapping to the `FollowService.Follow` RPC semantics)
 - **AND** typical surface forms SHALL follow these patterns:
   - CTA verb phrase: `アーティストをフォローする`
   - Outcome phrase: `フォローしたアーティストの<…>`

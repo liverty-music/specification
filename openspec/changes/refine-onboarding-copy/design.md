@@ -8,7 +8,7 @@ This change is the second major copy-and-microUX pass over the onboarding surfac
 - The home selector's Step 2 (prefecture) header renders an icon-only `<button>` with a 2rem circular background and an SVG chevron at `--color-text-secondary`. Users perceive the circle but not the chevron, leading them to ask "what is this dot?" — i.e., the back affordance is invisible as a back affordance.
 - The concert detail sheet (`event-detail-sheet.html`) ships hardcoded English strings ("Open / Start", "Open in Google Maps", "Ticket Status", "Stop tracking", "View Official Info", "Add to Calendar") and renders `TicketJourneyStatus` enum values (`'tracking' | 'applied' | 'lost' | 'unpaid' | 'paid'`) verbatim via `${s}`. Japanese users see English in an otherwise Japanese UI.[^ts-name]
 
-[^ts-name]: The frontend codebase currently exposes this concept as a TypeScript string-literal union locally named `JourneyStatus` (in `frontend/src/components/live-highway/live-event.ts`). The canonical spec name across `openspec/specs/{ticket-journey,live-events,id-resolution}` is `TicketJourneyStatus`. Renaming the TS type to match the canonical spec name is out of scope for this change (see Non-Goals) — references in this design that name the concept use the canonical `TicketJourneyStatus`; references to the literal TS type identifier in code stay as `JourneyStatus` until the rename happens.
+[^ts-name]: The canonical spec/proto name is `TicketJourneyStatus`, defined as a proto enum in `proto/liverty_music/entity/v1/ticket_journey.proto` and consumed by `openspec/specs/{ticket-journey,live-events,id-resolution}`. The frontend has not yet adopted the BSR-generated TypeScript enum — it currently exposes this concept as a local string-literal union named `JourneyStatus` (in `frontend/src/components/live-highway/live-event.ts`). Migrating the frontend off the local literal union to the generated enum is out of scope for this change (see Non-Goals) — references in this design that name the concept use the canonical `TicketJourneyStatus`; references to the literal TS type identifier in code stay as `JourneyStatus` until the frontend adopts the generated type.
 
 Stakeholders: product/design (vocabulary, copy), frontend (implementation), QA (Playwright selectors that may need updates).
 
@@ -29,7 +29,7 @@ Stakeholders: product/design (vocabulary, copy), frontend (implementation), QA (
 - Restructuring the i18n architecture (still i18next + `@aurelia/i18n`, still ja/en, still file-per-locale).
 - Adding new locales beyond JA/EN.
 - Touching protobuf entities, RPC contracts, or backend behavior.
-- Migrating `TicketJourneyStatus` (currently exposed in the frontend as a string-literal union TS type named `JourneyStatus`) to a proto-generated enum (out of scope; the rendering fix at the i18n layer is sufficient).
+- Switching the frontend off its local `JourneyStatus` string-literal union onto the BSR-generated TypeScript enum for `TicketJourneyStatus` (the proto enum already exists in `proto/liverty_music/entity/v1/ticket_journey.proto`; the frontend has simply not adopted it yet). Out of scope for this change — the rendering fix at the i18n layer is sufficient.
 - Removing the brief 2-second window in *other* coach marks that may also use timers — this change targets only the Discovery → Dashboard coach mark identified in `onboarding-tutorial` Step 1.
 
 ## Decisions
@@ -93,9 +93,9 @@ Stakeholders: product/design (vocabulary, copy), frontend (implementation), QA (
 | `eventDetail.journeyStatus.unpaid` | 当選・未入金 | Unpaid |
 | `eventDetail.journeyStatus.paid` | 入金済み | Paid |
 
-**Alternative considered**: Promote `TicketJourneyStatus` to a proto-generated enum and surface translations via the existing `entity.*` namespace per `brand-vocabulary` Layer A. Rejected for this change — it requires a proto change, BSR gen, and backend updates, none of which are needed for the copy fix. Can be revisited as a follow-up if/when the entity model is formalized.
+**Alternative considered**: Have the frontend adopt the BSR-generated TypeScript enum for `TicketJourneyStatus` (the proto enum already exists in `proto/liverty_music/entity/v1/ticket_journey.proto`) and surface translations via the existing `entity.*` namespace per `brand-vocabulary` Layer A. Rejected for this change — adoption requires touching every frontend call site that handles ticket-journey status, aligning the local literal values against the proto enum's value names, and updating downstream tests; none of that is needed to fix the visible English-leaking-into-JA bug at hand. Can be picked up as a focused follow-up.
 
-**Rationale**: The frontend's local TS type (literally named `JourneyStatus`) is private to the frontend right now. Treating its labels as Layer B brand expressions (frontend-managed surface forms) is consistent with `brand-vocabulary`'s current shape until a proto entity exists.
+**Rationale**: The frontend's local TS type (literally named `JourneyStatus`) is private to the frontend right now. Until the frontend migrates to the generated enum, treating its surface forms as Layer B brand expressions (frontend-managed labels) is the lowest-risk way to localize the rendered text without coupling this copy change to a type-system migration.
 
 ### D6. Discovery snack copy — change at the i18n key level, no spec scenario rewording
 
