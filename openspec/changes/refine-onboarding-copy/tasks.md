@@ -35,11 +35,11 @@
 
 ## 5. Concert detail sheet — JA/EN i18n
 
-- [x] 5.1 Add a new top-level `eventDetail` namespace to `frontend/src/locales/ja/translation.json` and `frontend/src/locales/en/translation.json` containing keys: `ariaLabel`, `openStart`, `openStartFallback`, `openInGoogleMaps`, `ticketStatus`, `stopTracking`, `viewOfficialInfo`, `addToCalendar` (use the JA/EN values from the design table).
+- [x] 5.1 Add a new top-level `eventDetail` namespace to `frontend/src/locales/ja/translation.json` and `frontend/src/locales/en/translation.json` containing keys: `ariaLabel`, `openStart`, `openInGoogleMaps`, `ticketStatus`, `stopTracking`, `viewOfficialInfo`, `addToCalendar` (use the JA/EN values from the design table). The em-dash fallback is locale-invariant and supplied directly by the ViewModel, not through an i18n key.
 - [x] 5.2 Add a sub-namespace `eventDetail.journeyStatus` to both locale files with entries for every value of the `TicketJourneyStatus` enum (`tracking`, `applied`, `lost`, `unpaid`, `paid`). Note: the frontend currently exposes this concept as a local TS string-literal union named `JourneyStatus`; the canonical concept name from `openspec/specs/ticket-journey` is `TicketJourneyStatus`.
 - [x] 5.3 In `frontend/src/components/live-highway/event-detail-sheet.html`:
   - Replace the literal `aria-label="Event details"` on the `<bottom-sheet>` element with a binding to `eventDetail.ariaLabel`.
-  - Replace the literal `Open ${event.openTime || '—'} / Start ${event.startTime}` line with an i18n call using key `eventDetail.openStart` and `{{open}}`, `{{start}}` interpolation; route the `—` fallback through `eventDetail.openStartFallback`.
+  - Replace the literal `Open ${event.openTime || '—'} / Start ${event.startTime}` line with an i18n call using key `eventDetail.openStart` and `{{open}}`, `{{start}}` interpolation. Supply the `{{open}}` value via a VM getter (e.g. `openTimeOrFallback`) that returns `event.openTime ?? '—'`; do not introduce a separate i18n key for the fallback character.
   - Replace `Open in Google Maps` link text with `t="eventDetail.openInGoogleMaps"`.
   - Replace `Ticket Status` heading with `t="eventDetail.ticketStatus"`.
   - Replace `Stop tracking` button label with `t="eventDetail.stopTracking"`.

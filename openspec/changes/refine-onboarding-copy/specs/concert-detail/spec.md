@@ -16,8 +16,7 @@ The frontend SHALL render all user-facing text in the concert detail sheet via i
 - **WHEN** the concert detail sheet is implemented
 - **THEN** the following `eventDetail.*` keys SHALL be defined in both JA and EN translation files:
   - `eventDetail.ariaLabel` — the sheet's `aria-label`
-  - `eventDetail.openStart` — the open/start time line with `{{open}}` and `{{start}}` interpolation placeholders
-  - `eventDetail.openStartFallback` — the placeholder substituted for an unknown open time inside `eventDetail.openStart`; the canonical value SHALL be the em-dash character `—` (U+2014) in both JA and EN
+  - `eventDetail.openStart` — the open/start time line with `{{open}}` and `{{start}}` interpolation placeholders. When the open time is unknown, the `{{open}}` slot SHALL be filled with the em-dash character `—` (U+2014) supplied directly by the component (locale-invariant; not routed through an i18n key).
   - `eventDetail.openInGoogleMaps` — the Google Maps link label
   - `eventDetail.ticketStatus` — the ticket-status section heading
   - `eventDetail.stopTracking` — the "remove ticket journey" button label

@@ -76,13 +76,12 @@ Stakeholders: product/design (vocabulary, copy), frontend (implementation), QA (
 
 ### D5. `eventDetail.*` namespace scope — translate the surface only, do not refactor the type model
 
-**Decision**: Create a new top-level i18n namespace `eventDetail.*` with subkeys for every literal string currently embedded in `event-detail-sheet.html`. Add a sub-namespace `eventDetail.journeyStatus.{tracking|applied|lost|unpaid|paid}` for the journey-status enum surface forms, and look it up at the rendering site via `${'eventDetail.journeyStatus.' + s | t}` or equivalent binding.
+**Decision**: Create a new top-level i18n namespace `eventDetail.*` with subkeys for every literal string currently embedded in `event-detail-sheet.html`. Add a sub-namespace `eventDetail.journeyStatus.{tracking|applied|lost|unpaid|paid}` for the journey-status enum surface forms, and look it up at the rendering site via `${'eventDetail.journeyStatus.' + s | t}` or equivalent binding. The open-time fallback character (em-dash `—`, U+2014) is NOT routed through an i18n key — it is locale-invariant, so the component supplies the literal directly to avoid a dictionary lookup with no benefit and an unnecessary `I18N` dependency in the ViewModel.
 
 | Key | JA | EN |
 |---|---|---|
 | `eventDetail.ariaLabel` | ライブ詳細 | Event details |
 | `eventDetail.openStart` | 開場 {{open}} / 開演 {{start}} | Open {{open}} / Start {{start}} |
-| `eventDetail.openStartFallback` | `—` (U+2014 em-dash literal) | `—` (U+2014 em-dash literal) |
 | `eventDetail.openInGoogleMaps` | Google Maps で開く | Open in Google Maps |
 | `eventDetail.ticketStatus` | チケット状況 | Ticket Status |
 | `eventDetail.stopTracking` | 追跡を停止 | Stop tracking |
