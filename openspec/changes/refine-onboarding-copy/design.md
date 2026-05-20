@@ -6,7 +6,9 @@ This change is the second major copy-and-microUX pass over the onboarding surfac
 - The Discovery snack "近日開催予定" makes a temporal claim ("imminent") that is not actually verified — the snack fires when *any* concerts are discovered, regardless of date proximity.
 - The Step 1 → Step 3 coach mark on Discovery currently auto-dismisses after 2 seconds (`COACH_MARK_FADE_MS = 2000`). Field observation: users do not read and act in 2 seconds; the spotlight disappears before they understand it.
 - The home selector's Step 2 (prefecture) header renders an icon-only `<button>` with a 2rem circular background and an SVG chevron at `--color-text-secondary`. Users perceive the circle but not the chevron, leading them to ask "what is this dot?" — i.e., the back affordance is invisible as a back affordance.
-- The concert detail sheet (`event-detail-sheet.html`) ships hardcoded English strings ("Open / Start", "Open in Google Maps", "Ticket Status", "Stop tracking", "View Official Info", "Add to Calendar") and renders `JourneyStatus` enum values (`'tracking' | 'applied' | 'lost' | 'unpaid' | 'paid'`) verbatim via `${s}`. Japanese users see English in an otherwise Japanese UI.
+- The concert detail sheet (`event-detail-sheet.html`) ships hardcoded English strings ("Open / Start", "Open in Google Maps", "Ticket Status", "Stop tracking", "View Official Info", "Add to Calendar") and renders `TicketJourneyStatus` enum values (`'tracking' | 'applied' | 'lost' | 'unpaid' | 'paid'`) verbatim via `${s}`. Japanese users see English in an otherwise Japanese UI.[^ts-name]
+
+[^ts-name]: The frontend codebase currently exposes this concept as a TypeScript string-literal union locally named `JourneyStatus` (in `frontend/src/components/live-highway/live-event.ts`). The canonical spec name across `openspec/specs/{ticket-journey,live-events,id-resolution}` is `TicketJourneyStatus`. Renaming the TS type to match the canonical spec name is out of scope for this change (see Non-Goals) — references in this design that name the concept use the canonical `TicketJourneyStatus`; references to the literal TS type identifier in code stay as `JourneyStatus` until the rename happens.
 
 Stakeholders: product/design (vocabulary, copy), frontend (implementation), QA (Playwright selectors that may need updates).
 
@@ -27,7 +29,7 @@ Stakeholders: product/design (vocabulary, copy), frontend (implementation), QA (
 - Restructuring the i18n architecture (still i18next + `@aurelia/i18n`, still ja/en, still file-per-locale).
 - Adding new locales beyond JA/EN.
 - Touching protobuf entities, RPC contracts, or backend behavior.
-- Migrating `JourneyStatus` from a string-literal union to a proto-generated enum (out of scope; the rendering fix at the i18n layer is sufficient).
+- Migrating `TicketJourneyStatus` (currently exposed in the frontend as a string-literal union TS type named `JourneyStatus`) to a proto-generated enum (out of scope; the rendering fix at the i18n layer is sufficient).
 - Removing the brief 2-second window in *other* coach marks that may also use timers — this change targets only the Discovery → Dashboard coach mark identified in `onboarding-tutorial` Step 1.
 
 ## Decisions
@@ -92,9 +94,9 @@ Stakeholders: product/design (vocabulary, copy), frontend (implementation), QA (
 | `eventDetail.journeyStatus.unpaid` | 当選・未入金 | Unpaid |
 | `eventDetail.journeyStatus.paid` | 入金済み | Paid |
 
-**Alternative considered**: Promote `JourneyStatus` to a proto-generated enum and surface translations via the existing `entity.*` namespace per `brand-vocabulary` Layer A. Rejected for this change — it requires a proto change, BSR gen, and backend updates, none of which are needed for the copy fix. Can be revisited as a follow-up if/when the entity model is formalized.
+**Alternative considered**: Promote `TicketJourneyStatus` to a proto-generated enum and surface translations via the existing `entity.*` namespace per `brand-vocabulary` Layer A. Rejected for this change — it requires a proto change, BSR gen, and backend updates, none of which are needed for the copy fix. Can be revisited as a follow-up if/when the entity model is formalized.
 
-**Rationale**: The string-literal union `JourneyStatus` is private to the frontend right now. Treating its labels as Layer B brand expressions (frontend-managed surface forms) is consistent with `brand-vocabulary`'s current shape until a proto entity exists.
+**Rationale**: The frontend's local TS type (literally named `JourneyStatus`) is private to the frontend right now. Treating its labels as Layer B brand expressions (frontend-managed surface forms) is consistent with `brand-vocabulary`'s current shape until a proto entity exists.
 
 ### D6. Discovery snack copy — change at the i18n key level, no spec scenario rewording
 
@@ -121,5 +123,5 @@ This is a pure frontend copy / behavior tweak with no data, schema, or contract 
 ## Open Questions
 
 - Does the existing `brand-vocabulary` lint script support flagging an absolute banned term ("推し" anywhere in `translation.json`), or does it only check `entity.*` parity? If the former is not yet supported, do we extend the linter in this change or file a follow-up?
-- ~~Are the proposed JA translations for `JourneyStatus` (`tracking → 検討中`, `applied → 申込済み`, `lost → 落選`, `unpaid → 当選・未入金`, `paid → 入金済み`) acceptable to product, or should `tracking` map to a different verb (e.g., 追跡中 vs 検討中)?~~ **Resolved**: `tracking` maps to `追跡中` (in tracking), not `検討中` (under consideration). `追跡中` matches the ticket-journey semantics of "I'm actively following this event" — the user has already committed to watching it, they are not deliberating. The remaining four mappings (`申込済み` / `落選` / `当選・未入金` / `入金済み`) stand.
+- ~~Are the proposed JA translations for `TicketJourneyStatus` (`tracking → 検討中`, `applied → 申込済み`, `lost → 落選`, `unpaid → 当選・未入金`, `paid → 入金済み`) acceptable to product, or should `tracking` map to a different verb (e.g., 追跡中 vs 検討中)?~~ **Resolved**: `tracking` maps to `追跡中` (in tracking), not `検討中` (under consideration). `追跡中` matches the ticket-journey semantics of "I'm actively following this event" — the user has already committed to watching it, they are not deliberating. The remaining four mappings (`申込済み` / `落選` / `当選・未入金` / `入金済み`) stand.
 - Should the popover-guide string `discovery.popoverGuide` retain its em-dash structure ("気になるアーティストをタップ — フォローしたアーティストのライブが…") or be rewritten more naturally as two sentences? (Defaulting to "preserve structure" for this change.)

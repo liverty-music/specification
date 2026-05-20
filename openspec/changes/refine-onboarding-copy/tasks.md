@@ -36,7 +36,7 @@
 ## 5. Concert detail sheet — JA/EN i18n
 
 - [x] 5.1 Add a new top-level `eventDetail` namespace to `frontend/src/locales/ja/translation.json` and `frontend/src/locales/en/translation.json` containing keys: `ariaLabel`, `openStart`, `openStartFallback`, `openInGoogleMaps`, `ticketStatus`, `stopTracking`, `viewOfficialInfo`, `addToCalendar` (use the JA/EN values from the design table).
-- [x] 5.2 Add a sub-namespace `eventDetail.journeyStatus` to both locale files with entries for every value of the `JourneyStatus` union (`tracking`, `applied`, `lost`, `unpaid`, `paid`).
+- [x] 5.2 Add a sub-namespace `eventDetail.journeyStatus` to both locale files with entries for every value of the `TicketJourneyStatus` enum (`tracking`, `applied`, `lost`, `unpaid`, `paid`). Note: the frontend currently exposes this concept as a local TS string-literal union named `JourneyStatus`; the canonical concept name from `openspec/specs/ticket-journey` is `TicketJourneyStatus`.
 - [x] 5.3 In `frontend/src/components/live-highway/event-detail-sheet.html`:
   - Replace the literal `aria-label="Event details"` on the `<bottom-sheet>` element with a binding to `eventDetail.ariaLabel`.
   - Replace the literal `Open ${event.openTime || '—'} / Start ${event.startTime}` line with an i18n call using key `eventDetail.openStart` and `{{open}}`, `{{start}}` interpolation; route the `—` fallback through `eventDetail.openStartFallback`.
@@ -45,7 +45,7 @@
   - Replace `Stop tracking` button label with `t="eventDetail.stopTracking"`.
   - Replace `View Official Info` link text with `t="eventDetail.viewOfficialInfo"` (keep the `<svg-icon>` adjacent to the localized text).
   - Replace `Add to Calendar` link text with `t="eventDetail.addToCalendar"`.
-- [x] 5.4 In the `repeat.for="s of journeyStatuses"` `<button>` and any other rendering site that displays a raw `JourneyStatus` string, replace `${s}` with a localized lookup that resolves `eventDetail.journeyStatus.<s>` via the same `t` mechanism (e.g. `<span t.bind="'eventDetail.journeyStatus.' + s"></span>`).
+- [x] 5.4 In the `repeat.for="s of journeyStatuses"` `<button>` and any other rendering site that displays a raw `TicketJourneyStatus` string (typed as `JourneyStatus` in the frontend TS code today), replace `${s}` with a localized lookup that resolves `eventDetail.journeyStatus.<s>` via the same `t` mechanism (e.g. `<span t.bind="'eventDetail.journeyStatus.' + s"></span>`).
 - [x] 5.5 If the currently-displayed `event.journeyStatus` is rendered anywhere outside the button list, apply the same `eventDetail.journeyStatus.<value>` localization there.
 - [x] 5.6 Run `make lint` (which includes brand-vocabulary parity check) and confirm `eventDetail.*` keys are present in both locales.
 - [x] 5.7 Run `make test` (vitest) and resolve any failing unit test that asserts on the previous literal English text in the detail sheet.
