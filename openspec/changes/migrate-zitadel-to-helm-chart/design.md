@@ -115,24 +115,35 @@ already use for `external-secrets`, `reloader`, `nats`, `keda`,
   App, single values.yaml, chart version pinned, render is reproducible
   in CI via `kubectl kustomize --enable-helm`. Matches existing pattern.
 
-### D2: Resource naming via `fullnameOverride`
+### D2: Resource naming via `fullnameOverride` (with chart constraint discovered during prototyping)
 
-**Choice**: Set `fullnameOverride: zitadel-api` and
-`login.fullnameOverride: zitadel-web` (or whichever keys the chart
-exposes — verified against
-[zitadel-charts/charts/zitadel/values.yaml](https://github.com/zitadel/zitadel-charts/blob/main/charts/zitadel/values.yaml)
-at the pinned version during apply) so that:
+**Choice**: Set `fullnameOverride: zitadel-api` for the API side. The
+Login UI side is NOT user-renameable — the chart's
+`_helpers.tpl:38` hard-codes `zitadel.login.fullname` to
+`<zitadel.fullname>-login`, ignoring `login.fullnameOverride`
+(verified against [zitadel-charts@9.34.1](https://github.com/zitadel/zitadel-charts/blob/zitadel-9.34.1/charts/zitadel/templates/_helpers.tpl)
+during prototyping). The Login UI therefore lands as `zitadel-api-login`.
 
-- Deployment names: `zitadel-api`, `zitadel-web` (unchanged).
-- Service names: `zitadel-api`, `zitadel-web` (unchanged).
-- ServiceAccount names: `zitadel-api`, `zitadel-web` (unchanged).
+Resulting names:
+- API Deployment / Service / ConfigMap: `zitadel-api` (via `fullnameOverride`).
+- Login UI Deployment / Service: `zitadel-api-login` (chart-forced suffix).
 
-**Why**: The existing HTTPRoute backendRefs, HealthCheckPolicy targets,
-ServiceMonitor selectors, and Workload Identity GSA→KSA binding all
-refer to these names. Preserving them keeps the diff to the manifest
-files surgical (additions + deletions, no rename cascade). The chart's
-internal port references (`ZITADEL_API_URL=http://<release>-zitadel:8080`)
-get rewritten in values.yaml to match the override.
+The shared ServiceAccount `zitadel` is reused via `serviceAccount.create: false` +
+`serviceAccount.name: zitadel` (both at top-level and under `login:`).
+
+**Why this naming**: `fullnameOverride: zitadel-api` (not the
+chart-default `zitadel`) avoids re-introducing the legacy
+`ZITADEL_PORT` env-var Viper collision that motivated the earlier
+`zitadel`→`zitadel-api` rename (K8s service-discovery env var
+`ZITADEL_PORT=tcp://<ip>:80` would otherwise be parsed by Viper as
+the binary's `Port` config field and startup would fail).
+
+**Downstream consequences of the Login UI name**: HTTPRoute
+backendRefs and HealthCheckPolicy targetRef are updated from the
+prior `zitadel-web` to `zitadel-api-login` to match the chart-natural
+name. The `HealthCheckPolicy` resource name `zitadel-web-policy` is
+retained for ops continuity — only its `targetRef.name` field is
+updated.
 
 ### D3: Reuse existing masterkey and admin MachineKey GSM Secrets
 
