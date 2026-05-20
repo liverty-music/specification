@@ -69,7 +69,7 @@
 - [x] 9.1 Merge the specification PR first (no runtime impact)
 - [x] 9.2 Merge the cloud-provisioning PR. Dev Pulumi auto-up triggers — watch via `gh run list --repo liverty-music/cloud-provisioning --branch main --limit 3` and `gh run watch`
 - [x] 9.3 After dev Pulumi up completes successfully (5 resources deleted), wait for ArgoCD to sync the new manifests in dev. Watch `kubectl -n zitadel get pods -w` until both `zitadel-api` and `zitadel-api-login` Pods are `1/1 Running`
-- [x] 9.3a Update the existing instance's `LoginV2.BaseURI` feature flag on the dev instance (the `DefaultInstance.Features.LoginV2.BaseURI: /ui/v2` config in `values.yaml` only applies to NEW instances — `FirstInstance.Skip: true` means the bootstrapped instance does NOT auto-pick up the change on restart). Procedure: `curl -X POST https://auth.dev.liverty-music.app/zitadel.feature.v2.FeatureService/SetInstanceFeatures -H "Authorization: Bearer <pulumi-admin JWT>" -H "Content-Type: application/json" -d '{"loginV2":{"required":true,"baseUri":"/ui/v2"}}'`. Verify with `GetInstanceFeatures` that `loginV2.baseUri == "/ui/v2"` in the response. If this step is skipped, the API will continue redirecting OIDC users to `/ui/v2/login/login?...` even though the Login UI now serves at `/ui/v2`
+- [x] 9.3a **NOT EXECUTED — see postscript §D.** Dev cluster was in shutdown mode for this cutover (no Pods to roll); also the URL-collapse intent that motivated `SetInstanceFeatures` was abandoned post-revert. The `DefaultInstance.Features.LoginV2.BaseURI` config that this step was meant to propagate is no longer set in `base/values.yaml`. Item kept in the task list for archive completeness but the original procedure does not apply
 - [x] 9.4 Verify chart-rendered topology in dev: `kubectl -n zitadel get deploy,svc,sa,pdb,cm` should show resources with `app.kubernetes.io/managed-by: Helm`
 - [x] 9.5 Run `kubectl -n zitadel logs deploy/zitadel-api -c cloud-sql-proxy` and confirm IAM-auth connection succeeded (no password prompts, no auth errors)
 - [x] 9.6 Run `kubectl -n zitadel logs deploy/zitadel-api -c bootstrap-uploader` and confirm it idled (scenario 2: existing instance, sidecar exits with "instance already initialized")
@@ -81,7 +81,7 @@
 - [x] 10.1 Trigger prod Pulumi up manually via Pulumi Cloud console (https://app.pulumi.com/pannpers/liverty-music/prod/deployments)
 - [x] 10.2 After prod Pulumi up completes, watch ArgoCD sync prod. `kubectl -n zitadel get pods -w` until both Deployments are Ready
 - [x] 10.3 Repeat 9.4–9.7 against `auth.liverty-music.app`
-- [x] 10.3a Same as 9.3a but for prod: call `SetInstanceFeatures` against `https://auth.liverty-music.app/zitadel.feature.v2.FeatureService/SetInstanceFeatures` with `loginV2.baseUri="/ui/v2"`. Verify via `GetInstanceFeatures`
+- [x] 10.3a **NOT EXECUTED — see postscript §D.** Same reason as 9.3a: URL collapse intent was abandoned post-revert; no `SetInstanceFeatures` call was issued against prod. The deployed `DefaultInstance.Features.LoginV2.BaseURI` was reverted to chart default (empty), so the prod instance's `loginV2.baseUri` continues to default to the chart-built path `/ui/v2/login`
 - [x] 10.4 End-to-end Login UI verification against prod (`https://liverty-music.app`)
 - [x] 10.5 Confirm via Pulumi Cloud console that prod stack has no `protect: true` resources for System User / InstanceCustomDomain anymore (5 resources removed)
 

@@ -51,7 +51,7 @@ The system SHALL run Zitadel as an in-cluster Kubernetes workload in each enviro
 
 ### Requirement: Two-Container Deployment with Path-Based Routing
 
-The system SHALL deploy Zitadel as two separate Kubernetes Deployments — one for the API container (`ghcr.io/zitadel/zitadel`, port `8080`, Deployment name `zitadel-api`) and one for the Login V2 UI container (`ghcr.io/zitadel/zitadel-login`, port `3000`, Deployment name `zitadel-api-login`) — and SHALL expose both through a single hostname via a GKE Gateway `HTTPRoute` that routes the path prefix `/ui/v2` to the Login UI Service (`zitadel-api-login`) and all other paths to the API Service (`zitadel-api`). Both Deployments SHALL be rendered by the official `zitadel/zitadel-charts` Helm chart with `fullnameOverride: zitadel-api` (NOT hand-written manifests under `k8s/namespaces/zitadel/base/`).
+The system SHALL deploy Zitadel as two separate Kubernetes Deployments — one for the API container (`ghcr.io/zitadel/zitadel`, port `8080`, Deployment name `zitadel-api`) and one for the Login V2 UI container (`ghcr.io/zitadel/zitadel-login`, port `3000`, Deployment name `zitadel-api-login`) — and SHALL expose both through a single hostname via a GKE Gateway `HTTPRoute` that routes the path prefix `/ui/v2/login` to the Login UI Service (`zitadel-api-login`) and all other paths to the API Service (`zitadel-api`). Both Deployments SHALL be rendered by the official `zitadel/zitadel-charts` Helm chart with `fullnameOverride: zitadel-api` (NOT hand-written manifests under `k8s/namespaces/zitadel/base/`).
 
 **Rationale**: Zitadel v4 split the Login UI into a dedicated container. Keeping both on the same hostname preserves OIDC issuer identity; path-based routing avoids the extra DNS and certificate surface of a second hostname. The API Deployment / Service is named `zitadel-api` to avoid the legacy `ZITADEL_PORT` env-var Viper collision that would occur with the chart-default `zitadel` name (Kubernetes' service-discovery env-var injection would inject `ZITADEL_PORT=tcp://<ip>:80` which Viper parses as the binary's `Port` config field — startup fails). The Login UI Deployment / Service is named `zitadel-api-login` because the chart hard-codes the Login UI's resource name to `<zitadel.fullname>-login` regardless of `login.fullnameOverride`. The image path is `ghcr.io/zitadel/zitadel-login`, NOT `ghcr.io/zitadel/login` (the latter 404s); the upstream Helm chart default uses the same path. Rendering via the official chart eliminates the divergence from upstream defaults that hand-tuned manifests accumulated.
 
@@ -62,14 +62,14 @@ The system SHALL deploy Zitadel as two separate Kubernetes Deployments — one f
 
 #### Scenario: Login UI request reaches the Login UI container
 
-- **WHEN** a browser requests `https://auth.dev.liverty-music.app/ui/v2/register`
+- **WHEN** a browser requests `https://auth.dev.liverty-music.app/ui/v2/login/register`
 - **THEN** the HTTPRoute SHALL forward the request to the `zitadel-api-login` Service on port `80` (Service targetPort 3000)
 
 #### Scenario: HealthCheckPolicy targets chart-natural Service names
 
 - **WHEN** the GKE Gateway evaluates backend health
 - **THEN** a `HealthCheckPolicy` named `zitadel-api-policy` SHALL target the `zitadel-api` Service with probe path `/debug/healthz`
-- **AND** a `HealthCheckPolicy` named `zitadel-web-policy` SHALL target the `zitadel-api-login` Service with probe path `/ui/v2/healthy` (the resource name `zitadel-web-policy` is retained for ops continuity; the targetRef and probe path are updated)
+- **AND** a `HealthCheckPolicy` named `zitadel-web-policy` SHALL target the `zitadel-api-login` Service with probe path `/ui/v2/login/healthy` (the resource name `zitadel-web-policy` is retained for ops continuity; the targetRef is updated but the probe path keeps the chart-default base — see "Deferred: Login V2 UI base path collapse" note below)
 
 #### Scenario: Both Deployments are chart-rendered with the expected names
 
@@ -436,34 +436,25 @@ The Pulumi `cloud-provisioning` codebase SHALL instantiate `ZitadelMonitoringCom
 - **AND** the resolved values SHALL match the cluster actually deployed in that env (dev: `standard-cluster-osaka` / `asia-northeast2-a`; prod: `autopilot-cluster-osaka` / `asia-northeast2`)
 - **AND** no per-cluster name SHALL be hardcoded to a single env's value
 
-### Requirement: Login V2 UI Base Path Collapsed to `/ui/v2`
-
-The Login V2 UI container SHALL serve at base path `/ui/v2` (NOT the chart-default `/ui/v2/login`), and the Zitadel API SHALL be configured with `DefaultInstance.Features.LoginV2.BaseURI: /ui/v2` so its OIDC redirect target is `/ui/v2/login?authRequest=<id>` instead of the historical `/ui/v2/login/login?authRequest=<id>`. The HTTPRoute path-prefix rule for the Login UI SHALL match `/ui/v2` (NOT `/ui/v2/login`), and Pod-level + Gateway-level health probes SHALL use the new probe paths `/ui/v2/healthy` and `/ui/v2/ready`.
-
-**Rationale**: The user-visible URL `/ui/v2/login/login` is a redundant concatenation of the Login UI's base path (`/ui/v2/login`, chart default) and its `/login` Next.js page route. Collapsing the base path to `/ui/v2` eliminates the redundancy while preserving the route structure of the upstream Zitadel Login V2 UI app. The `/ui/v2` prefix does NOT collide with the API's `/ui/console` Admin Console SPA (they diverge at the second path segment). The chart's `login.{liveness,readiness}Probe.enabled: true` defaults serve the now-stale paths `/ui/v2/login/{healthy,ready}` (template helpers `login.livenessProbePath` / `login.readinessProbePath` hard-code these); we set `enabled: false` on the chart probes and re-inject correct probes via a Kustomize patch (`overlays/<env>/login-probe-patch.yaml`).
-
-#### Scenario: OIDC redirect lands on the single-`/login` URL
-
-- **WHEN** a browser starts an OIDC authorize flow against `https://auth.dev.liverty-music.app/oauth/v2/authorize?...`
-- **THEN** the Zitadel API SHALL redirect the browser to `https://auth.dev.liverty-music.app/ui/v2/login?authRequest=<id>` (NOT `.../ui/v2/login/login?authRequest=<id>`)
-
-#### Scenario: Login UI register flow lands on the single-base URL
-
-- **WHEN** a browser navigates from `/ui/v2/login?authRequest=<id>` to the register flow
-- **THEN** the URL SHALL become `https://auth.dev.liverty-music.app/ui/v2/register?...` (NOT `.../ui/v2/login/register?...`)
-
-#### Scenario: Pod liveness/readiness probes target the new paths
-
-- **WHEN** the chart-rendered Login UI Deployment is inspected
-- **THEN** the container's `livenessProbe.httpGet.path` SHALL be `/ui/v2/healthy`
-- **AND** the container's `readinessProbe.httpGet.path` SHALL be `/ui/v2/ready`
-- **AND** the chart's hard-coded `/ui/v2/login/{healthy,ready}` paths SHALL NOT appear in the rendered Deployment (chart probes disabled via `login.{readiness,liveness}Probe.enabled: false`)
-
-#### Scenario: Existing instance Feature flag updated post-cutover
-
-- **WHEN** the chart values' `DefaultInstance.Features.LoginV2.BaseURI: /ui/v2` is applied
-- **THEN** the value SHALL take effect for NEW instances created from that point forward
-- **AND** for the already-bootstrapped instance (where `FirstInstance.Skip: true`), the operator SHALL invoke `instance.v2.SetInstanceFeatures` with `loginV2.baseUri = "/ui/v2"` post-deploy to apply the change to the running instance
+> **Deferred: Login V2 UI base path collapse.** The
+> `migrate-zitadel-to-helm-chart` change attempted to collapse the
+> redundant `/ui/v2/login/login` user-visible URL down to
+> `/ui/v2/login` by setting `NEXT_PUBLIC_BASE_PATH=/ui/v2` at runtime
+> on the Login UI Pod + matching probe paths + HTTPRoute prefix +
+> `DefaultInstance.Features.LoginV2.BaseURI: /ui/v2`. The collapse
+> CrashLooped the Login UI on the prod cutover: `NEXT_PUBLIC_*` env
+> vars in Next.js are inlined at IMAGE BUILD time, so the v4.14.0
+> `zitadel-login` image kept serving at its baked-in
+> `/ui/v2/login/*` regardless of our runtime override — our probes at
+> `/ui/v2/{healthy,ready}` got 404 and the Pod was killed. Reverted
+> via cloud-provisioning #299. User-visible URL stays
+> `/ui/v2/login/login` post-migration. A proper collapse requires
+> either rebuilding the upstream image with a different
+> `NEXT_PUBLIC_BASE_PATH` set at build time, OR adding a Gateway
+> URLRewrite mapping `/ui/v2/login` → `/ui/v2/login/login` server-side.
+> Tracked as a future change. See archive:
+> `openspec/changes/archive/2026-05-20-migrate-zitadel-to-helm-chart/tasks.md`
+> "Deployment-incident postscript" §D for the full timeline.
 
 ### Requirement: Zitadel Deployment Rendered by Official Helm Chart
 
