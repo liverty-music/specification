@@ -4,6 +4,8 @@
 
 The system SHALL maintain a registry of colloquial Japanese terms whose use in user-facing copy is forbidden in favor of entity-grounded vocabulary, and SHALL provide the canonical replacement guidance for each.
 
+> **Enforcement model**: This requirement is normative (the `SHALL NOT` clauses below are binding on any change to JA user-facing copy). Until the `check-brand-vocabulary` lint script is extended to flag arbitrary banned tokens (currently it enforces `entity.*` JA/EN parity only — see Open Questions in this change's `design.md`), enforcement relies on (a) the registry below acting as the single source of truth and (b) reviewer attention during PR review. The follow-up to add automated token scanning is tracked separately and does not block any change that respects the rules.
+
 #### Scenario: 推し is deprecated in favor of entity-grounded vocabulary
 
 - **WHEN** authoring or reviewing JA user-facing copy in `frontend/src/locales/ja/translation.json`
