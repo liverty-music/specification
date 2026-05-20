@@ -89,5 +89,4 @@ The My Artists help sheet's hype tier explanation SHALL render as a 3-column CSS
 
 - **WHEN** the help sheet renders the hype tier grid
 - **THEN** the grid SHALL use a semantic `<dl>` (definition list) where each tier is encoded as a pair of `<dt>` elements (icon + label) followed by a single `<dd>` element (description)
-- **OR** the grid MAY use a `<table>` element with three cells per row if assistive-technology behaviour for the `<dl>`-two-dts pattern is verified to be inadequate during implementation
-- **AND** the chosen markup decision SHALL be documented in implementation comments next to the template
+- **AND** the template SHALL carry an inline implementation comment noting the two-`<dt>`-per-`<dd>` pattern so future contributors understand why the icon and label are NOT merged into one element

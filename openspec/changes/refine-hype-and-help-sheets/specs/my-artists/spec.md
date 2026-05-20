@@ -44,6 +44,14 @@ The system SHALL initialize every newly-created follow record with hype value `n
 - **AND** the guest-data merge service processes those follows
 - **THEN** the merge service SHALL still suppress merging follows that match the default value (`nearby`), so that an authenticated user's pre-existing hype setting for the same artist is not overwritten by a guest record that simply held the default
 
+#### Scenario: Explicit guest "Nearby" choice indistinguishable from passive default acceptance (known limitation)
+
+- **WHEN** a guest user deliberately sets a follow's hype to `nearby` (for example by following the artist, changing the tier to `away`, then changing back to `nearby`)
+- **AND** the guest later signs up and the guest-data merge service runs
+- **THEN** the merge service SHALL apply the same suppression as for passive default acceptance (no SetHype RPC call), because the persisted guest hype value `nearby` carries no marker distinguishing "explicit choice" from "default left untouched"
+- **AND** if the authenticated user's backend record for that artist holds a different hype value (legacy `watch` from before the default flip, or a tier set on another device), the guest's explicit `nearby` choice SHALL NOT overwrite it
+- **AND** this is an accepted limitation of the current suppression heuristic; resolving it would require either a separate "explicit-set" flag in guest storage or always calling SetHype during merge (which would overwrite legitimate non-default backend values). The trade-off is revisited only if the limitation becomes observably user-visible.
+
 #### Scenario: Existing stored records are not migrated
 
 - **WHEN** the `DEFAULT_HYPE` change ships
