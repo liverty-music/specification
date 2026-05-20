@@ -238,26 +238,43 @@ full list (including the identical `bootstrap-uploader`) into the
 overlay. ~25 lines of duplication for `bootstrap-uploader`, vs ~150
 lines avoided by sharing the rest.
 
-### D6: `CUSTOM_REQUEST_HEADERS` via Login UI chart values
+### D6: Chart auto-generates `CUSTOM_REQUEST_HEADERS`; only override `NEXT_PUBLIC_BASE_PATH`
 
-**Choice**: Configure `login.env` (or chart equivalent) with:
+**Choice**: Let the chart auto-generate `CUSTOM_REQUEST_HEADERS` and
+`ZITADEL_API_URL` via its `login-config-dotenv` ConfigMap. Override
+only `NEXT_PUBLIC_BASE_PATH=/ui/v2` via `login.env` to collapse the
+`/ui/v2/login/login` redundancy.
 
-```yaml
-- name: CUSTOM_REQUEST_HEADERS
-  value: "Host:auth.liverty-music.app"        # prod
-  # value: "Host:auth.dev.liverty-music.app"  # dev (overlay)
+The chart at v9.34.1 emits the following on the Login UI Pod
+(confirmed via local `kustomize build --enable-helm` render):
+
+```
+ZITADEL_API_URL=http://zitadel-api:80
+CUSTOM_REQUEST_HEADERS=Host:<ExternalDomain>,X-Zitadel-Public-Host:<ExternalDomain>
 ```
 
-The chart sets `ZITADEL_API_URL` by default to its own in-cluster
-Service URL, so we don't have to set it ourselves (verify default
-during values.yaml authoring).
+`ZITADEL_API_URL` is the cluster-internal Service URL derived from
+the chart's `fullnameOverride: zitadel-api` + `service.port: 80`.
+`CUSTOM_REQUEST_HEADERS` carries both `Host` and the canonical
+`X-Zitadel-Public-Host` header (the latter is what Zitadel's
+`PublicHostHeaders` default reads from in `cmd/defaults.yaml` for
+instance discovery from cluster-internal callers).
+
+DO NOT override `CUSTOM_REQUEST_HEADERS` inline in `login.env` — that
+would silently drop the auto-generated `X-Zitadel-Public-Host` half
+of the header pair, breaking instance discovery on the cluster-internal
+hop.
 
 **Why over alternatives**:
 
-- *Option A — InstanceCustomDomain registration (current state).*
-  Rejected per proposal: this is the over-engineered path.
-- *Option B (chosen) — `CUSTOM_REQUEST_HEADERS`.* Canonical upstream
-  pattern, two lines of config, zero Pulumi state, zero GSM secrets.
+- *Option A — InstanceCustomDomain registration (the
+  `route-login-v2-via-internal-zitadel-api` approach).* Rejected per
+  proposal: this is the over-engineered path being superseded.
+- *Option B (chosen) — let the chart's `login-config-dotenv` ConfigMap
+  drive both env vars, override only what we need to differ from chart
+  defaults (`NEXT_PUBLIC_BASE_PATH`).* Canonical upstream pattern,
+  no Pulumi state, no GSM secrets, the X-Zitadel-Public-Host header
+  is included automatically.
 
 ### D7: Pulumi state cleanup for `protect: true` resources
 

@@ -134,9 +134,17 @@ testing.
   `zitadel-machine-key-for-pulumi-admin` — names preserved; chart
   reads via `existingMasterkeySecretName` and the existing
   bootstrap-uploader sidecar pattern.
-- Pulumi state cleanup: 5 `protect: true` resources will need explicit
-  `pulumi state delete` after `delete` lines are removed from code, or
-  unset `protect` then `pulumi up`. Documented in design.md.
+- Pulumi state cleanup: `protect: true` resources (5 on dev, 6 on prod
+  including the `zitadel-api-internal` Dynamic Resource) MUST be
+  unprotected via `pulumi -s <env> state unprotect <urn>` BEFORE the
+  PR merge. `pulumi state unprotect` only writes the state flag — it
+  does NOT touch the live resources. Once unprotected, the regular
+  `pulumi up` triggered by the merge deletes the cloud objects normally
+  (the code declarations are gone, so Pulumi computes the diff as a
+  deletion). See design.md D7 + tasks.md §4 for the procedure. Do NOT
+  use `pulumi state delete` here — that removes the entry from state
+  without destroying the cloud object, leaving GSM Secrets and IAM
+  bindings as orphaned infrastructure.
 
 **Runbooks / docs**:
 - `docs/runbooks/dev-shutdown-restart.md`: remove Section B6b
