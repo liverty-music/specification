@@ -51,44 +51,31 @@ The system SHALL run Zitadel as an in-cluster Kubernetes workload in each enviro
 
 ### Requirement: Two-Container Deployment with Path-Based Routing
 
-The system SHALL deploy Zitadel as two separate Kubernetes Deployments — one for the API container (`ghcr.io/zitadel/zitadel`, port `8080`, Deployment name `zitadel-api`, container name `api`) and one for the Login V2 UI container (`ghcr.io/zitadel/zitadel-login`, port `3000`, Deployment name `zitadel-web`, container name `web`) — and SHALL expose both through a single hostname via a GKE Gateway `HTTPRoute` that routes the path prefix `/ui/v2/login` to the Web Service (`zitadel-web`) and all other paths to the API Service (`zitadel-api`).
+The system SHALL deploy Zitadel as two separate Kubernetes Deployments — one for the API container (`ghcr.io/zitadel/zitadel`, port `8080`, Deployment name `zitadel-api`) and one for the Login V2 UI container (`ghcr.io/zitadel/zitadel-login`, port `3000`, Deployment name `zitadel-api-login`) — and SHALL expose both through a single hostname via a GKE Gateway `HTTPRoute` that routes the path prefix `/ui/v2/login` to the Login UI Service (`zitadel-api-login`) and all other paths to the API Service (`zitadel-api`). Both Deployments SHALL be rendered by the official `zitadel/zitadel-charts` Helm chart with `fullnameOverride: zitadel-api` (NOT hand-written manifests under `k8s/namespaces/zitadel/base/`).
 
-**Rationale**: Zitadel v4 split the Login UI into a dedicated container. Keeping both on the same hostname preserves OIDC issuer identity; path-based routing avoids the extra DNS and certificate surface of a second hostname. Resource names follow the platform-wide `<role>-<tier>` convention (`zitadel-api`, `zitadel-web`) so operator tooling (`kubectl get -n zitadel`, in-cluster DNS) is unambiguous; container names are the short forms (`api`, `web`) for log readability. The image path is `ghcr.io/zitadel/zitadel-login`, NOT `ghcr.io/zitadel/login` (the latter 404s); the upstream Helm chart default uses the same path.
+**Rationale**: Zitadel v4 split the Login UI into a dedicated container. Keeping both on the same hostname preserves OIDC issuer identity; path-based routing avoids the extra DNS and certificate surface of a second hostname. The API Deployment / Service is named `zitadel-api` to avoid the legacy `ZITADEL_PORT` env-var Viper collision that would occur with the chart-default `zitadel` name (Kubernetes' service-discovery env-var injection would inject `ZITADEL_PORT=tcp://<ip>:80` which Viper parses as the binary's `Port` config field — startup fails). The Login UI Deployment / Service is named `zitadel-api-login` because the chart hard-codes the Login UI's resource name to `<zitadel.fullname>-login` regardless of `login.fullnameOverride`. The image path is `ghcr.io/zitadel/zitadel-login`, NOT `ghcr.io/zitadel/login` (the latter 404s); the upstream Helm chart default uses the same path. Rendering via the official chart eliminates the divergence from upstream defaults that hand-tuned manifests accumulated.
 
 #### Scenario: API request reaches the API container
 
 - **WHEN** a request arrives at `https://auth.dev.liverty-music.app/oauth/v2/keys`
-- **THEN** the HTTPRoute SHALL forward the request to the `zitadel-api` Service on port `8080`
+- **THEN** the HTTPRoute SHALL forward the request to the `zitadel-api` Service on port `80` (Service targetPort 8080)
 
-#### Scenario: Login UI request reaches the Web container
+#### Scenario: Login UI request reaches the Login UI container
 
 - **WHEN** a browser requests `https://auth.dev.liverty-music.app/ui/v2/login/register`
-- **THEN** the HTTPRoute SHALL forward the request to the `zitadel-web` Service on port `3000`
+- **THEN** the HTTPRoute SHALL forward the request to the `zitadel-api-login` Service on port `80` (Service targetPort 3000)
 
-#### Scenario: HealthCheckPolicy targets the renamed Services
+#### Scenario: HealthCheckPolicy targets chart-natural Service names
 
 - **WHEN** the GKE Gateway evaluates backend health
 - **THEN** a `HealthCheckPolicy` named `zitadel-api-policy` SHALL target the `zitadel-api` Service with probe path `/debug/healthz`
-- **AND** a `HealthCheckPolicy` named `zitadel-web-policy` SHALL target the `zitadel-web` Service with probe path `/ui/v2/login`
+- **AND** a `HealthCheckPolicy` named `zitadel-web-policy` SHALL target the `zitadel-api-login` Service with probe path `/ui/v2/login/healthy` (the resource name `zitadel-web-policy` is retained for ops continuity; the targetRef is updated but the probe path keeps the chart-default base — see "Deferred: Login V2 UI base path collapse" note below)
 
-### Requirement: Login V2 UI Calls Zitadel API via Public URL
+#### Scenario: Both Deployments are chart-rendered with the expected names
 
-The `zitadel-web` container SHALL set `ZITADEL_API_URL` to the public issuer URL (`https://auth.dev.liverty-music.app`), NOT the cluster-internal Service URL (`http://zitadel-api.zitadel.svc.cluster.local`).
-
-**Rationale**: Zitadel v4 selects the virtual instance from the request's `Host` header and matches it against the configured `InstanceDomains`. The cluster-internal Service hostname is not registered as an InstanceDomain, so calls with `Host: zitadel-api.zitadel.svc.cluster.local` return HTTP 404 before reaching any handler — the Login UI's SSR sees `Failed to fetch security settings ... status:404` and returns HTTP 500. Setting `ZITADEL_API_URL` to the public URL makes the Login UI's outbound calls carry the correct `Host` header. Traffic still stays in-cluster (`zitadel-web` Pod → Gateway external IP → HTTPRoute `/` catch-all → `zitadel-api` Service); the Gateway round-trip adds ~10ms versus a direct Service hop, acceptable for dev. The naming rename (`zitadel`→`zitadel-api`, `zitadel-login`→`zitadel-web`) does not affect this behavior — it only changes the cluster-internal hostname that is, by design, NOT used here.
-
-#### Scenario: Login UI Pod reaches Zitadel API via the public hostname
-
-- **WHEN** the `zitadel-web` Pod issues an outbound request to fetch instance settings
-- **THEN** the request URL SHALL be `https://auth.dev.liverty-music.app/...` (or the prod equivalent in prod)
-- **AND** the resulting `Host` header SHALL match the configured `ExternalDomain`
-- **AND** Zitadel SHALL resolve the request to the correct virtual instance
-
-#### Scenario: Login UI does not bypass the Gateway
-
-- **WHEN** the `zitadel-web` Pod's `ZITADEL_API_URL` is configured
-- **THEN** the value SHALL be the public HTTPS URL (terminated at the Gateway)
-- **AND** the value SHALL NOT be the cluster-internal Service URL — that bypass produces 404s because the Service hostname is not in `InstanceDomains`
+- **WHEN** `kustomize build --enable-helm k8s/namespaces/zitadel/overlays/dev` is rendered
+- **THEN** both Deployments SHALL carry the `app.kubernetes.io/managed-by: Helm` label
+- **AND** their `metadata.name` SHALL be `zitadel-api` (top-level `fullnameOverride`) and `zitadel-api-login` (chart-hard-coded `<fullname>-login`)
 
 ### Requirement: TLS Terminated at Gateway, Cluster Traffic Unencrypted
 
@@ -448,4 +435,80 @@ The Pulumi `cloud-provisioning` codebase SHALL instantiate `ZitadelMonitoringCom
 - **THEN** the `clusterName` and `clusterLocation` arguments SHALL be sourced from env-keyed maps (e.g., `clusterNameByEnv`, `clusterLocationByEnv`)
 - **AND** the resolved values SHALL match the cluster actually deployed in that env (dev: `standard-cluster-osaka` / `asia-northeast2-a`; prod: `autopilot-cluster-osaka` / `asia-northeast2`)
 - **AND** no per-cluster name SHALL be hardcoded to a single env's value
+
+> **Deferred: Login V2 UI base path collapse.** The
+> `migrate-zitadel-to-helm-chart` change attempted to collapse the
+> redundant `/ui/v2/login/login` user-visible URL down to
+> `/ui/v2/login` by setting `NEXT_PUBLIC_BASE_PATH=/ui/v2` at runtime
+> on the Login UI Pod + matching probe paths + HTTPRoute prefix +
+> `DefaultInstance.Features.LoginV2.BaseURI: /ui/v2`. The collapse
+> CrashLooped the Login UI on the prod cutover: `NEXT_PUBLIC_*` env
+> vars in Next.js are inlined at IMAGE BUILD time, so the v4.14.0
+> `zitadel-login` image kept serving at its baked-in
+> `/ui/v2/login/*` regardless of our runtime override — our probes at
+> `/ui/v2/{healthy,ready}` got 404 and the Pod was killed. Reverted
+> via cloud-provisioning #299. User-visible URL stays
+> `/ui/v2/login/login` post-migration. A proper collapse requires
+> either rebuilding the upstream image with a different
+> `NEXT_PUBLIC_BASE_PATH` set at build time, OR adding a Gateway
+> URLRewrite mapping `/ui/v2/login` → `/ui/v2/login/login` server-side.
+> Tracked as a future change. See archive:
+> `openspec/changes/archive/2026-05-20-migrate-zitadel-to-helm-chart/tasks.md`
+> "Deployment-incident postscript" §D for the full timeline.
+
+### Requirement: Zitadel Deployment Rendered by Official Helm Chart
+
+The Zitadel API and Login V2 UI Deployments, Services, ServiceAccounts, PodDisruptionBudgets, and ConfigMap SHALL be rendered from the official `zitadel/zitadel-charts` Helm chart via Kustomize's `helmCharts:` integration (pinned to a specific chart version in each overlay's `kustomization.yaml`), NOT hand-written. The chart's top-level `fullnameOverride: zitadel-api` SHALL preserve the API Deployment / Service / ConfigMap names; the Login V2 UI subchart hard-codes its resource name to `<zitadel.fullname>-login` (i.e., `zitadel-api-login`) — `login.fullnameOverride` exists as a values key but is NOT honored by the chart templates. HTTPRoute backendRefs and HealthCheckPolicy targets SHALL be updated to reference `zitadel-api-login` for the Login UI side; the API side remains `zitadel-api`.
+
+**Rationale**: The Helm chart is the upstream-supported deployment artifact for Zitadel self-hosting. Hand-rolled Kustomize Deployments diverge from upstream defaults at every release. The `helmCharts:` integration pattern is already in use for `external-secrets`, `reloader`, `nats`, `keda`, and `atlas-operator`, so adopting it for Zitadel keeps the manifest tree internally consistent. The `fullnameOverride: zitadel-api` (not the chart-default `zitadel`) avoids re-introducing the legacy `ZITADEL_PORT` env-var Viper collision that motivated the prior `zitadel`→`zitadel-api` rename. Shared values live in `base/values.yaml`; each overlay layers env-specific diffs via `helmCharts.additionalValuesFiles`. The cross-directory `valuesFile: ../../base/values.yaml` reference requires `--load-restrictor=LoadRestrictionsNone` on both CI (`Makefile:lint-k8s`) and ArgoCD (`argocd-cm.kustomize.buildOptions`); the documented Kustomize trade-off (loss of kustomization relocatability) is acceptable here because no overlay is designed to be moved/copied.
+
+#### Scenario: API Deployment originates from the chart
+
+- **WHEN** `kustomize build --enable-helm k8s/namespaces/zitadel/overlays/dev` is rendered
+- **THEN** the output SHALL include a Deployment named `zitadel-api` whose `app.kubernetes.io/managed-by` label is `Helm`
+- **AND** the Deployment SHALL run the image `ghcr.io/zitadel/zitadel:<pinned-tag>` at port `8080`
+
+#### Scenario: Login UI Deployment originates from the chart
+
+- **WHEN** `kustomize build --enable-helm k8s/namespaces/zitadel/overlays/dev` is rendered
+- **THEN** the output SHALL include a Deployment named `zitadel-api-login` whose `app.kubernetes.io/managed-by` label is `Helm`
+- **AND** the Deployment SHALL run the image `ghcr.io/zitadel/zitadel-login:<pinned-tag>` at port `3000`
+
+#### Scenario: Chart version is pinned
+
+- **WHEN** the `helmCharts:` entry for `zitadel/zitadel-charts` is inspected in `kustomization.yaml`
+- **THEN** the `version:` field SHALL be set to an explicit semver value (not `latest`)
+- **AND** chart upgrades SHALL be performed by explicit edit to that field in a pull request
+
+#### Scenario: HTTPRoute and HealthCheckPolicy reference chart-natural Service names
+
+- **WHEN** the chart-rendered Services replace the hand-rolled Services
+- **THEN** the `HTTPRoute` SHALL list backendRefs `zitadel-api` (API catch-all) and `zitadel-api-login` (Login UI path prefix `/ui/v2/login`)
+- **AND** the `HealthCheckPolicy` resource `zitadel-api-policy` SHALL target the `zitadel-api` Service
+- **AND** the `HealthCheckPolicy` resource `zitadel-web-policy` SHALL target the `zitadel-api-login` Service (the resource name `zitadel-web-policy` is retained for ops continuity; the targetRef is updated)
+
+### Requirement: Login V2 UI Routes Outbound Calls Via Cluster-Internal Service Using CUSTOM_REQUEST_HEADERS
+
+The Login UI container (chart-rendered Deployment `zitadel-api-login`) SHALL connect to the API via `ZITADEL_API_URL` pointed at the cluster-internal Service URL (`http://zitadel-api:80`, the chart's auto-generated default given `fullnameOverride: zitadel-api` and `service.port: 80`) AND SHALL carry `CUSTOM_REQUEST_HEADERS=Host:<ExternalDomain>,X-Zitadel-Public-Host:<ExternalDomain>` so that Connect-RPC traffic stays in-cluster while presenting the public issuer hostname as the `Host` header.
+
+**Rationale**: This is the canonical upstream pattern, documented in `zitadel/zitadel-charts/charts/zitadel/values.yaml` and `zitadel/zitadel/deploy/compose/docker-compose.yml`. The Login V2 UI's `apps/login/src/lib/custom-headers.ts` parses `CUSTOM_REQUEST_HEADERS` and merges those headers into every outbound Connect-RPC call. The API's `internal/api/grpc/server/connect_middleware/instance_interceptor.go` resolves the instance by the `Host` header, matching it against `InstanceDomains` (which already contains the public ExternalDomain). No per-instance domain registration, no System User, no JWT signing pipeline, and no instance-id discovery are required. Eliminates the entire `route-login-v2-via-internal-zitadel-api` apparatus (Pulumi Dynamic Resource + System User + GSM Secrets) by replacing it with two env values delivered via chart configuration. Simultaneously eliminates the prod GCP HTTPS LB hairpin that caused the original 30s timeout on `/ui/v2/login/login?authRequest=...`.
+
+#### Scenario: Login UI Pod reaches the API via cluster-internal Service DNS
+
+- **WHEN** the Login UI Pod (`zitadel-api-login`) issues an outbound Connect-RPC call
+- **THEN** the connection target SHALL be the cluster-internal Service DNS name of the chart-rendered API Service (resolvable as `zitadel-api.zitadel.svc.cluster.local`)
+- **AND** the request SHALL NOT egress to the GKE Gateway external IP
+
+#### Scenario: Outbound calls carry the public Host header
+
+- **WHEN** the Zitadel API Pod receives a request from the Login UI Pod
+- **THEN** the `Host` header SHALL be the configured `ExternalDomain` (`auth.dev.liverty-music.app` in dev, `auth.liverty-music.app` in prod)
+- **AND** the API's `instance_interceptor` SHALL resolve the request to the correct virtual instance
+
+#### Scenario: CUSTOM_REQUEST_HEADERS is auto-generated by the chart, not overridden
+
+- **WHEN** the Login UI container env is inspected
+- **THEN** the `CUSTOM_REQUEST_HEADERS` env var SHALL be sourced from the chart-rendered `login-config-dotenv` ConfigMap, which the chart auto-populates from `zitadel.configmapConfig.ExternalDomain` as `Host:<ExternalDomain>,X-Zitadel-Public-Host:<ExternalDomain>`
+- **AND** `login.env` SHALL NOT carry a manual `CUSTOM_REQUEST_HEADERS` override (overriding inline drops the `X-Zitadel-Public-Host` half that Zitadel's `PublicHostHeaders` default reads for instance discovery from cluster-internal callers)
+- **AND** there SHALL NOT be a Kustomize patch overriding `ZITADEL_API_URL` to a public hostname
 
