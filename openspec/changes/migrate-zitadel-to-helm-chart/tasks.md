@@ -1,0 +1,94 @@
+## 1. Local prototype: Chart rendering and values.yaml
+
+- [x] 1.1 Add `helmCharts:` entry pinned to `zitadel/zitadel-charts@9.34.1` per overlay (NOT in base — see 1.3 for rationale)
+- [x] 1.2 Write per-overlay `values.yaml` (`overlays/dev/values.yaml`, `overlays/prod/values.yaml`) covering: `fullnameOverride: zitadel-api`, `image.tag: v4.14.0`, `replicaCount: 1`, masterkey via `zitadel.masterkeySecretName: zitadel-masterkey` (chart expects Secret key `masterkey`, see updated `external-secret.yaml`), database config to Cloud SQL `liverty-music-{env}:asia-northeast2:postgres-osaka` with IAM user `zitadel@liverty-music-{env}.iam`, `zitadel.extraContainers` for `cloud-sql-proxy` + `bootstrap-uploader` sidecars, `login.env` carrying `CUSTOM_REQUEST_HEADERS=Host:<ExternalDomain>`, `serviceAccount.create: false` + `name: zitadel` (reusing existing SA), `tools.wait4x.resources` + `initJob.resources` (chart defaults are `{}` and fail kube-linter `unset-cpu-requirements`), `setupJob.machinekeyWriter.enabled: false` + `cleanupJob.enabled: false` + `postgresql.enabled: false`
+- [x] 1.3 Investigated chart at v9.34.1: `login.fullnameOverride` is NOT honored by chart templates (login subchart hard-codes `<zitadel.fullname>-login`), so the Login UI lands as `zitadel-api-login` not `zitadel-web`. HTTPRoute / HealthCheckPolicy updated accordingly. Per-overlay `values.yaml` (rather than shared base + additionalValuesFiles) is required because Kustomize default `LoadRestrictionsRootOnly` blocks cross-directory file refs used by CI's `kustomize build --enable-helm`
+- [x] 1.4 Per-overlay `values.yaml` self-contained — no separate `values-patch.yaml`. Dev: ExternalDomain `auth.dev.liverty-music.app`, IAM user `zitadel@liverty-music-dev.iam`, Cloud SQL instance `liverty-music-dev:asia-northeast2:postgres-osaka`. Prod: same with `prod` substitutions. Both: replicaCount=1, nodeSelector gke-spot, affinity: {} (Autopilot CPU constraint)
+- [x] 1.5 Ran `kustomize build --enable-helm k8s/namespaces/zitadel/overlays/dev` — render succeeded (1156 lines). Renders: 2 Deployments (`zitadel-api`, `zitadel-api-login`), 2 Services with `app.kubernetes.io/managed-by: Helm`, both have `nodeSelector: gke-spot=true`, all containers have resource requests/limits, cloud-sql-proxy + bootstrap-uploader sidecars present on API Pod, init/setup Jobs included
+- [x] 1.6 Ran `kustomize build --enable-helm k8s/namespaces/zitadel/overlays/prod` — render succeeded (1071 lines, no CronJob since cronjob-restart-zitadel.yaml is dev-only). Same shape with prod-specific values
+- [x] 1.7 Verified via kube-linter `lint /tmp/rendered --config .kube-linter.yaml` — "No lint errors found!". `./scripts/check-spot-nodeselector.sh /tmp/rendered` — "OK: All workloads have Spot VM nodeSelector". Note: full `make lint-k8s` fails on a pre-existing `argocd` namespace docker-credential issue unrelated to this change
+
+## 2. Delete old hand-rolled manifests
+
+- [x] 2.1 Deleted `k8s/namespaces/zitadel/base/deployment-api.yaml`
+- [x] 2.2 Deleted `k8s/namespaces/zitadel/base/deployment-web.yaml`
+- [x] 2.3 Deleted `k8s/namespaces/zitadel/base/external-secret-system-api-pub.yaml`
+- [x] 2.4 Deleted `k8s/namespaces/zitadel/base/service-api.yaml` and `service-web.yaml` (chart-rendered Services land with `zitadel-api` and `zitadel-api-login` — HTTPRoute updated to use `zitadel-api-login` for the Login UI path)
+- [x] 2.5 Kept `k8s/namespaces/zitadel/base/serviceaccount.yaml` (chart `serviceAccount.create: false` + `name: zitadel` reuses our existing SA + Workload Identity annotation; prod overlay's `serviceaccount-patch.yaml` still applies)
+- [x] 2.6 Deleted `k8s/namespaces/zitadel/base/pdb.yaml` (chart `pdb.enabled: true` renders equivalent; overlays set minAvailable=0)
+- [x] 2.7 Deleted `k8s/namespaces/zitadel/base/configmap.env` (chart `zitadel.configmapConfig` covers the same surface in YAML form, except OTEL_* env vars — see TODO in §3.8)
+- [x] 2.8 Deleted `k8s/namespaces/zitadel/overlays/prod/deployment-web-patch.yaml`
+- [x] 2.9 Updated `k8s/namespaces/zitadel/base/kustomization.yaml`'s `resources:` list (removed deleted entries; chart's `helmCharts:` block lives in overlays not base — see 1.3)
+- [x] 2.10 Re-ran `kustomize build --enable-helm` on both overlays after deletions; kube-linter clean
+
+## 3. Delete Pulumi InstanceCustomDomain + System User infrastructure
+
+- [x] 3.1 In `src/index.ts`: delete the `new ZitadelInstanceCustomDomain('zitadel-api-internal', ...)` block and its `protect: true`/`dependsOn` wiring
+- [x] 3.2 Delete `src/zitadel/dynamic/instance-custom-domain.ts`
+- [x] 3.3 Delete `src/zitadel/dynamic/__tests__/instance-custom-domain.test.ts`
+- [x] 3.4 In `src/zitadel/dynamic/api-client.ts`: delete `buildSystemAssertion()`, `systemApiCall()`, and the `SystemUserProfile` type (keep the admin-MachineKey-based client used by `ZitadelPermanentPassword`)
+- [x] 3.5 Delete `scripts/discover-zitadel-instance-id.mjs`
+- [x] 3.6 In `src/zitadel/constants.ts`: delete `instanceIdMap`, `SYSTEM_API_USER_NAME`, `ZITADEL_API_INTERNAL_HOST`
+- [x] 3.7 In `src/zitadel/components/secrets.ts`: delete the `tls.PrivateKey` for the System User, `zitadel-system-api-key` GSM Secret, `zitadel-system-api-pub` GSM Secret, the two SecretVersion resources, the ESO IAM binding (`secretmanager.SecretIamMember`), and the `mergeIcdSecretOutputs` helper if no longer referenced
+- [x] 3.8 Per-overlay `values.yaml` contains no `ZITADEL_SYSTEMAPIUSERS` env, no system-api Secret volume mount, no `/var/run/zitadel/system-api/` references. OTEL_* env vars re-injected via the chart's top-level `env:` value (NOT `zitadel.env` — the chart's `deployment_zitadel.yaml` template references `.Values.env` at the top level). Rendered output confirms all 7 OTEL_* env vars land on the API container
+- [x] 3.9 Run `make lint-ts` in `cloud-provisioning/` to confirm no dangling imports
+
+## 4. Pulumi state cleanup (unprotect before merge)
+
+- [ ] 4.1 List the URNs of the 5 `protect: true` resources to be deleted: `pulumi stack -s dev export --file /tmp/dev-stack.json && jq -r '.deployment.resources[] | select(.protect == true) | .urn' /tmp/dev-stack.json` (filter to the System User + InstanceCustomDomain ones)
+- [ ] 4.2 For each URN in dev, run `pulumi -s dev state unprotect <urn>` and confirm "Resource <urn> deprotected"
+- [ ] 4.3 Repeat 4.1 and 4.2 for prod (`pulumi -s prod ...`)
+- [ ] 4.4 Verify `pulumi -s dev preview` shows the resources as "-" (will be deleted), not "blocked by protect"
+
+## 5. Runbook + docs update
+
+- [x] 5.1 Deleted Section B6b (instance-id capture step) from `docs/runbooks/dev-shutdown-restart.md`
+- [x] 5.2 Created `docs/runbooks/zitadel-helm-chart.md` covering file layout (base shared + overlay diffs), chart version bump procedure with diff-before-bump pattern, known chart quirks (login.fullnameOverride ignored / extraContainers Job hang / hard-coded probe paths / auto-generated CUSTOM_REQUEST_HEADERS / DefaultInstance.Features only at new-instance creation), and catastrophic restore-from-scratch path
+- [x] 5.3 Reviewed `cloud-provisioning/CLAUDE.md` — no rules to delete; the route-login change did not add any
+
+## 6. Supersede the route-login-v2-via-internal-zitadel-api change
+
+- [x] 6.1 Delete the directory `openspec/changes/route-login-v2-via-internal-zitadel-api/` (this change is superseded by the current change before it could be archived; its spec deltas conflict with what we just specified)
+- [x] 6.2 Confirm `openspec list` no longer shows route-login-v2-via-internal-zitadel-api as a pending change
+- [x] 6.3 Added `> **Supersedes:**` header block to this change's proposal.md (openspec/project.md does not exist in this repo; references/ holds analysis docs not change-timeline notes). The supersede relationship is now explicit in the change that will become the archive entry — future readers tracing the deployment timeline will find it there
+
+## 7. Open PRs
+
+- [ ] 7.1 Open PR in `specification` repo containing: this change's `proposal.md`, `design.md`, `specs/zitadel-self-hosted-deployment/spec.md`, `tasks.md`, and the deleted `openspec/changes/route-login-v2-via-internal-zitadel-api/` directory. Use the `create-pr` skill. PR title: `feat(zitadel): migrate to official Helm chart, remove InstanceCustomDomain plumbing`
+- [ ] 7.2 Open PR in `cloud-provisioning` repo containing all `src/**` deletions, all `k8s/namespaces/zitadel/**` changes, and the runbook updates. Use the `create-pr` skill. PR title: same as 7.1, plus a description that references the specification PR
+- [ ] 7.3 In both PR descriptions, link the two PRs to each other and to the OpenSpec change
+
+## 8. CI + review iteration
+
+- [ ] 8.1 Watch both PRs' CI; address any failures (lint, biome, tsc, kustomize render, kube-linter)
+- [ ] 8.2 Address `Claude review` findings; per `feedback_liverty_claude_review_check_failure`, the check fails on ANY note regardless of severity, so all suggestions must be addressed or explicitly counter-argued
+- [ ] 8.3 Per `feedback_inline_review_comments`, fetch inline review comments via `gh api repos/.../pulls/N/comments` (not just `gh pr view --json reviews`) before claiming all comments are resolved
+
+## 9. Merge and dev cutover
+
+- [ ] 9.1 Merge the specification PR first (no runtime impact)
+- [ ] 9.2 Merge the cloud-provisioning PR. Dev Pulumi auto-up triggers — watch via `gh run list --repo liverty-music/cloud-provisioning --branch main --limit 3` and `gh run watch`
+- [ ] 9.3 After dev Pulumi up completes successfully (5 resources deleted), wait for ArgoCD to sync the new manifests in dev. Watch `kubectl -n zitadel get pods -w` until both `zitadel-api` and `zitadel-api-login` Pods are `1/1 Running`
+- [ ] 9.3a Update the existing instance's `LoginV2.BaseURI` feature flag on the dev instance (the `DefaultInstance.Features.LoginV2.BaseURI: /ui/v2` config in `values.yaml` only applies to NEW instances — `FirstInstance.Skip: true` means the bootstrapped instance does NOT auto-pick up the change on restart). Procedure: `curl -X POST https://auth.dev.liverty-music.app/zitadel.feature.v2.FeatureService/SetInstanceFeatures -H "Authorization: Bearer <pulumi-admin JWT>" -H "Content-Type: application/json" -d '{"loginV2":{"required":true,"baseUri":"/ui/v2"}}'`. Verify with `GetInstanceFeatures` that `loginV2.baseUri == "/ui/v2"` in the response. If this step is skipped, the API will continue redirecting OIDC users to `/ui/v2/login/login?...` even though the Login UI now serves at `/ui/v2`
+- [ ] 9.4 Verify chart-rendered topology in dev: `kubectl -n zitadel get deploy,svc,sa,pdb,cm` should show resources with `app.kubernetes.io/managed-by: Helm`
+- [ ] 9.5 Run `kubectl -n zitadel logs deploy/zitadel-api -c cloud-sql-proxy` and confirm IAM-auth connection succeeded (no password prompts, no auth errors)
+- [ ] 9.6 Run `kubectl -n zitadel logs deploy/zitadel-api -c bootstrap-uploader` and confirm it idled (scenario 2: existing instance, sidecar exits with "instance already initialized")
+- [ ] 9.7 Hit `https://auth.dev.liverty-music.app/.well-known/openid-configuration` and confirm `issuer: https://auth.dev.liverty-music.app` (instance reattached to existing database with existing masterkey)
+- [ ] 9.8 End-to-end Login UI verification: open `https://dev.liverty-music.app` in a Pixel-style mobile viewport, trigger "アカウント作成", verify the redirect URL in the browser address bar is `/ui/v2/login?authRequest=...` (single `/login` segment — NOT `/ui/v2/login/login?authRequest=...`), verify the page loads within 2s (no 30s timeout, no 500 from SSR), verify the sign-up form is interactive. If the URL still shows `/ui/v2/login/login`, the instance feature flag update from 9.3a did not take effect — re-check
+
+## 10. Prod cutover
+
+- [ ] 10.1 Trigger prod Pulumi up manually via Pulumi Cloud console (https://app.pulumi.com/pannpers/liverty-music/prod/deployments)
+- [ ] 10.2 After prod Pulumi up completes, watch ArgoCD sync prod. `kubectl -n zitadel get pods -w` until both Deployments are Ready
+- [ ] 10.3 Repeat 9.4–9.7 against `auth.liverty-music.app`
+- [ ] 10.3a Same as 9.3a but for prod: call `SetInstanceFeatures` against `https://auth.liverty-music.app/zitadel.feature.v2.FeatureService/SetInstanceFeatures` with `loginV2.baseUri="/ui/v2"`. Verify via `GetInstanceFeatures`
+- [ ] 10.4 End-to-end Login UI verification against prod (`https://liverty-music.app`)
+- [ ] 10.5 Confirm via Pulumi Cloud console that prod stack has no `protect: true` resources for System User / InstanceCustomDomain anymore (5 resources removed)
+
+## 11. Archive
+
+- [ ] 11.1 Run `openspec status --change migrate-zitadel-to-helm-chart` and confirm `isComplete: true` (all checkboxes checked)
+- [ ] 11.2 Per `feedback_openspec_archive_when_done`: only archive once isComplete=true is observed
+- [ ] 11.3 Apply the `openspec-sync-specs` skill to fold the spec delta into `openspec/specs/zitadel-self-hosted-deployment/spec.md`, deleting the now-stale "Login V2 UI Calls Zitadel API via Public URL" content and replacing the "Two-Container Deployment" requirement with its MODIFIED form
+- [ ] 11.4 Open a single archive PR per `reference_openspec_archive_pattern`: bundle doc-fixes + delta→main spec sync + `git mv openspec/changes/migrate-zitadel-to-helm-chart openspec/changes/archive/migrate-zitadel-to-helm-chart` into one PR
+- [ ] 11.5 Merge the archive PR after CI is green and review is clean
