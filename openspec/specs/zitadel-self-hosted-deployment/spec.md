@@ -69,7 +69,7 @@ The system SHALL deploy Zitadel as two separate Kubernetes Deployments — one f
 
 - **WHEN** the GKE Gateway evaluates backend health
 - **THEN** a `HealthCheckPolicy` named `zitadel-api-policy` SHALL target the `zitadel-api` Service with probe path `/debug/healthz`
-- **AND** a `HealthCheckPolicy` named `zitadel-web-policy` SHALL target the `zitadel-api-login` Service with probe path `/ui/v2/login/healthy` (the resource name `zitadel-web-policy` is retained for ops continuity; the targetRef is updated but the probe path keeps the chart-default base — see "Deferred: Login V2 UI base path collapse" note below)
+- **AND** a `HealthCheckPolicy` named `zitadel-web-policy` SHALL target the `zitadel-api-login` Service with probe path `/ui/v2/login/healthy` (the resource name `zitadel-web-policy` is retained for ops continuity; the targetRef is updated but the probe path keeps the chart-default base — see the "Login V2 UI URL is `/ui/v2/login/login`" accepted-state note below)
 
 #### Scenario: Both Deployments are chart-rendered with the expected names
 
@@ -436,25 +436,32 @@ The Pulumi `cloud-provisioning` codebase SHALL instantiate `ZitadelMonitoringCom
 - **AND** the resolved values SHALL match the cluster actually deployed in that env (dev: `standard-cluster-osaka` / `asia-northeast2-a`; prod: `autopilot-cluster-osaka` / `asia-northeast2`)
 - **AND** no per-cluster name SHALL be hardcoded to a single env's value
 
-> **Deferred: Login V2 UI base path collapse.** The
-> `migrate-zitadel-to-helm-chart` change attempted to collapse the
-> redundant `/ui/v2/login/login` user-visible URL down to
-> `/ui/v2/login` by setting `NEXT_PUBLIC_BASE_PATH=/ui/v2` at runtime
-> on the Login UI Pod + matching probe paths + HTTPRoute prefix +
-> `DefaultInstance.Features.LoginV2.BaseURI: /ui/v2`. The collapse
-> CrashLooped the Login UI on the prod cutover: `NEXT_PUBLIC_*` env
-> vars in Next.js are inlined at IMAGE BUILD time, so the v4.14.0
-> `zitadel-login` image kept serving at its baked-in
-> `/ui/v2/login/*` regardless of our runtime override — our probes at
-> `/ui/v2/{healthy,ready}` got 404 and the Pod was killed. Reverted
-> via cloud-provisioning #299. User-visible URL stays
-> `/ui/v2/login/login` post-migration. A proper collapse requires
-> either rebuilding the upstream image with a different
-> `NEXT_PUBLIC_BASE_PATH` set at build time, OR adding a Gateway
-> URLRewrite mapping `/ui/v2/login` → `/ui/v2/login/login` server-side.
-> Tracked as a future change. See archive:
-> `openspec/changes/archive/2026-05-20-migrate-zitadel-to-helm-chart/tasks.md`
-> "Deployment-incident postscript" §D for the full timeline.
+> **Accepted as the operational state: Login V2 UI URL is
+> `/ui/v2/login/login`.** The `migrate-zitadel-to-helm-chart` change
+> attempted to collapse the redundant `/ui/v2/login/login` URL down
+> to `/ui/v2/login` by setting `NEXT_PUBLIC_BASE_PATH=/ui/v2` at
+> runtime on the Login UI Pod + matching probe paths + HTTPRoute
+> prefix + `DefaultInstance.Features.LoginV2.BaseURI: /ui/v2`. The
+> collapse CrashLooped the Login UI on the prod cutover:
+> `NEXT_PUBLIC_*` env vars in Next.js are inlined at IMAGE BUILD
+> time, so the v4.14.0 `zitadel-login` image kept serving at its
+> baked-in `/ui/v2/login/*` regardless of our runtime override — our
+> probes at `/ui/v2/{healthy,ready}` got 404 and the Pod was killed.
+> Reverted via cloud-provisioning #299.
+>
+> The redundant `/ui/v2/login/login` URL is **accepted as the
+> permanent operational state**, NOT tracked as a future change. A
+> proper collapse would require either rebuilding the upstream image
+> with a different `NEXT_PUBLIC_BASE_PATH` set at build time
+> (ongoing fork-maintenance cost), OR adding a Gateway URLRewrite
+> mapping `/ui/v2/login` → `/ui/v2/login/login` server-side (added
+> routing complexity for purely cosmetic gain). Neither risk/cost is
+> justified against a URL the end-user only sees during sign-in
+> flow. If a future Zitadel upstream release changes the
+> Login UI's base path, this note may become re-relevant.
+>
+> See archive `openspec/changes/archive/2026-05-20-migrate-zitadel-to-helm-chart/tasks.md`
+> "Deployment-incident postscript" §D for the full incident timeline.
 
 ### Requirement: Zitadel Deployment Rendered by Official Helm Chart
 
