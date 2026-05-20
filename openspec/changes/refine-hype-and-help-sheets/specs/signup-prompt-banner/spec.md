@@ -1,0 +1,77 @@
+## MODIFIED Requirements
+
+### Requirement: Signup Banner on My Artists
+
+The My Artists page SHALL display a persistent fixed banner above the bottom navigation bar prompting unauthenticated users to sign up. The banner SHALL be visible for any guest user on the My Artists page, regardless of onboarding state.
+
+#### Scenario: Banner appears for guest user during onboarding
+
+- **WHEN** an unauthenticated user views the My Artists page
+- **AND** the user is in the My Artists onboarding step (or any earlier step that has progressed to this page)
+- **THEN** the system SHALL display the signup-prompt-banner
+- **AND** the banner SHALL be present from the moment the artist list has finished loading
+
+#### Scenario: Banner appears for guest user after onboarding
+
+- **WHEN** an unauthenticated user views the My Artists page
+- **AND** the user has completed onboarding (`onboarding.isCompleted` is true)
+- **THEN** the system SHALL display the signup-prompt-banner
+
+#### Scenario: Banner not shown for authenticated users
+
+- **WHEN** an authenticated user views the My Artists page
+- **THEN** the signup banner SHALL NOT be rendered
+
+#### Scenario: Banner disappears after signup
+
+- **WHEN** the user completes signup (isAuthenticated becomes true) while on the My Artists page
+- **THEN** the signup banner SHALL be removed from the DOM
+
+### Requirement: Shared Banner Component
+
+The signup prompt banner SHALL be implemented as a shared component reusable across pages. The banner SHALL NOT offer the user any UI affordance to dismiss it; visibility is entirely controlled by the host page via the `visible` bindable.
+
+#### Scenario: Component renders consistently
+
+- **WHEN** the signup-prompt-banner component is used on different pages
+- **THEN** the visual style SHALL be consistent (same padding, typography, button style)
+- **AND** the component SHALL accept a `message` attribute for page-specific copy
+- **AND** the component SHALL be fixed-positioned above the bottom navigation bar
+
+#### Scenario: No dismiss control
+
+- **WHEN** the signup-prompt-banner is rendered
+- **THEN** the banner template SHALL NOT contain a dismiss control (no `X` button, no `Dismiss` link, no swipe-to-dismiss gesture handler)
+- **AND** the banner SHALL NOT emit a `banner-dismissed` custom event under any condition
+- **AND** the host page SHALL NOT need to provide a `banner-dismissed.trigger` binding or `onBannerDismissed` handler
+
+#### Scenario: Banner has frosted glass background
+
+- **WHEN** the signup-prompt-banner is rendered
+- **THEN** the banner background SHALL use a frosted glass surface (dark base at 85% opacity with backdrop blur)
+- **AND** the top border SHALL display a 2px gradient from `--color-brand-primary` to `--color-brand-secondary`
+
+#### Scenario: CTA button has glow pulse animation
+
+- **WHEN** the signup-prompt-banner is rendered
+- **AND** the user has not set `prefers-reduced-motion: reduce`
+- **THEN** the "Create Account" button SHALL display a continuous glow pulse animation using `--color-brand-primary` as the glow color
+- **AND** the animation SHALL cycle every 2.5 seconds with ease-in-out timing
+
+#### Scenario: CTA button has no animation for reduced motion
+
+- **WHEN** the signup-prompt-banner is rendered
+- **AND** the user has set `prefers-reduced-motion: reduce`
+- **THEN** the "Create Account" button SHALL NOT display the glow pulse animation
+
+#### Scenario: Banner slides in on appearance
+
+- **WHEN** the signup-prompt-banner becomes visible
+- **AND** the user has not set `prefers-reduced-motion: reduce`
+- **THEN** the banner SHALL animate in from below with a slide-up and fade-in transition over 400ms
+
+#### Scenario: Banner appears instantly for reduced motion
+
+- **WHEN** the signup-prompt-banner becomes visible
+- **AND** the user has set `prefers-reduced-motion: reduce`
+- **THEN** the banner SHALL appear immediately without animation
