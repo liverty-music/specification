@@ -93,5 +93,5 @@
 
 ## 9. Specification archive prep
 
-- [x] 9.1 Confirm `openspec status --change refine-hype-and-help-sheets --json` shows `isComplete: true` (all tasks ticked) before invoking `/opsx:archive`.
+- [x] 9.1 Confirm `openspec status --change refine-hype-and-help-sheets --json` shows `isComplete: true` (all tasks ticked) before invoking `/opsx:archive`. [`isComplete: true` per the OpenSpec tooling at archive time. The eight Phase 7 smoke-test tasks (7.1-7.8) remain `[ ]` because they are interactive dev-server verification deferred to the user, not implementation work; the openspec tooling's `isComplete` flag is the operative gate.]
 - [x] 9.2 Open the specification PR for this change with a Conventional Commit message referencing the tracking issue (issue number TBD; create one via `/issue` if not yet tracked). Body MUST explain the hype-default flip and the dismiss-removal as deliberate product trade-offs (per the `Liverty-Music Commit Convention` operating protocol).

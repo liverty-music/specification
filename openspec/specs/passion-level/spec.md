@@ -56,16 +56,16 @@ The change to the database column default SHALL be forward-looking only. Existin
 - **THEN** the newly-inserted row SHALL have `hype = 'nearby'`
 - **AND** subsequent `ListFollowed` calls SHALL return that follow with `hype = HYPE_TYPE_NEARBY`
 
-### Requirement: Hype Changes Require Authentication
+### Requirement: Hype Changes Require Authentication for Server-Side Persistence
 
-The system SHALL prevent unauthenticated users from changing hype levels. Hype state SHALL NOT be persisted in localStorage.
+The system SHALL prevent unauthenticated users from calling the `SetHype` RPC or persisting hype changes to any server-side store. Guest hype selections MAY be held client-side in `GuestService` (localStorage) pending signup; see the `my-artists` capability for the guest-hype lifecycle and the `guest-data-merge` capability for the signup-time merge semantics.
 
-#### Scenario: Unauthenticated user attempts hype change
+#### Scenario: Unauthenticated user attempts hype change (server-side write blocked)
 
 - **WHEN** an unauthenticated user attempts to change a hype level (via slider tap or any UI control)
-- **THEN** the system SHALL NOT update the hype level
-- **AND** the system SHALL trigger a signup prompt flow
-- **AND** no hype value SHALL be written to localStorage
+- **THEN** the system SHALL NOT call the `SetHype` RPC
+- **AND** the system SHALL persist the chosen value in `GuestService` (localStorage) so the choice survives reloads and can be merged into the user's account on signup
+- **AND** the signup-prompt-banner SHALL be visible (per the `signup-prompt-banner` capability) so the user is aware that server-side persistence requires signup
 
 #### Scenario: Authenticated user changes hype
 
