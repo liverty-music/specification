@@ -56,12 +56,18 @@ testing.
 - **BREAKING**: Drop the `instance-id capture` step from the dev
   shutdown/restart runbook (Section B6b in `docs/runbooks/dev-shutdown-restart.md`)
   — no longer needed once `instanceIdMap` is gone.
-- Resource naming: chart releases land as `zitadel` (chart default);
-  the existing platform convention requires `zitadel-api` / `zitadel-web`
-  Service and Deployment names. Configure chart values
-  (`fullnameOverride`, `login.fullnameOverride`) to preserve the names
-  so HTTPRoute, HealthCheckPolicy, and the existing `ServiceMonitor`
-  selectors continue to match without modification.
+- Resource naming: chart releases default to `zitadel`. Set
+  `fullnameOverride: zitadel-api` to preserve the API resource name
+  (avoiding the legacy `ZITADEL_PORT` env-var Viper collision that
+  motivated the earlier `zitadel`→`zitadel-api` rename). The Login UI
+  resource name is NOT user-configurable: the chart's `_helpers.tpl:38`
+  hard-codes `zitadel.login.fullname` to `<zitadel.fullname>-login`,
+  ignoring `login.fullnameOverride` (verified empirically against
+  chart v9.34.1). The Login UI therefore lands as `zitadel-api-login`,
+  and the existing HTTPRoute backendRef + HealthCheckPolicy `targetRef`
+  are updated from the prior `zitadel-web` to `zitadel-api-login`
+  (HealthCheckPolicy resource name `zitadel-web-policy` retained for
+  ops continuity — only the `targetRef.name` field changes).
 - Preserve data continuity: the masterkey, admin org id, and instance
   id all live in Postgres (Cloud SQL) and GSM. The chart deploys
   against the existing database, reuses the existing `zitadel-masterkey`
