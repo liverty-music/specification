@@ -59,7 +59,10 @@ message User {
   // backfill it by calling UpdatePreferredLanguage with their currently
   // effective locale, so that subsequent sessions can rely on the backend
   // as the single source of truth for the user's language preference.
-  optional string preferred_language = 7 [(buf.validate.field).string.pattern = "^[a-z]{2}$"];
+  optional string preferred_language = 7 [(buf.validate.field).string = {
+    min_len: 2
+    pattern: "^[a-z]{2}$"
+  }];
 }
 
 // Home represents the user's home area as a structured geographic location,

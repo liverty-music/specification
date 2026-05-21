@@ -1,9 +1,9 @@
 ## 1. Specification (proto)
 
-- [x] 1.1 Add `optional string preferred_language` to `entity.v1.User` with `protovalidate` pattern `^[a-z]{2}$`; document semantics (ISO 639-1, absent = NULL = not yet set by client)
-- [x] 1.2 Add required `string preferred_language` to `rpc.user.v1.CreateRequest` with the same `protovalidate` pattern; document idempotent-return non-overwrite rule
-- [x] 1.3 Add `rpc UpdatePreferredLanguage(UpdatePreferredLanguageRequest) returns (UpdatePreferredLanguageResponse)` to `UserService`; define request (`UserId user_id`, `string preferred_language`) and response (`User user`); document error matrix (INVALID_ARGUMENT / PERMISSION_DENIED / NOT_FOUND / UNAUTHENTICATED)
-- [x] 1.4 Run `buf lint` and `buf format -w` locally; verify `buf breaking --against '.git#branch=main'` reports only the intentional break on CreateRequest (label PR with `buf skip breaking` if required by repo convention)
+- [x] 1.1 Add `optional string preferred_language` to `entity.v1.User` with `protovalidate` constraints `min_len: 2` and `pattern: "^[a-z]{2}$"`; document semantics (ISO 639-1, absent = NULL = not yet set by client)
+- [x] 1.2 Add `optional string preferred_language` to `rpc.user.v1.CreateRequest` with the same `protovalidate` constraints; document idempotent-return non-overwrite rule and the absent-equals-backfill path for old clients
+- [x] 1.3 Add `rpc UpdatePreferredLanguage(UpdatePreferredLanguageRequest) returns (UpdatePreferredLanguageResponse)` to `UserService`; define request (`UserId user_id`, `string preferred_language` with `min_len: 2` + pattern) and response (`User user`); document error matrix (INVALID_ARGUMENT / PERMISSION_DENIED / NOT_FOUND / UNAUTHENTICATED)
+- [x] 1.4 Run `buf lint` and `buf format -w` locally; verify `buf breaking --against '.git#branch=main'` passes (all wire changes are additive — no `buf skip breaking` label required)
 - [x] 1.5 Open specification PR; after approval and CI pass, merge to main
 - [ ] 1.6 Cut GitHub Release `vX.Y.Z` on specification; monitor `buf-release.yml` until BSR gen completes
 

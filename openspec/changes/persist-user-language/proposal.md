@@ -4,8 +4,8 @@ The user's preferred display language is currently stored only in browser `local
 
 ## What Changes
 
-- **BREAKING (proto)** — `entity.v1.User` adds a `preferred_language` field (ISO 639-1).
-- **BREAKING (proto)** — `rpc.user.v1.CreateRequest` adds a required `preferred_language` field. Clients must capture the effective locale at signup and send it.
+- `entity.v1.User` adds an optional `preferred_language` field (ISO 639-1). Additive only — wire-compatible.
+- `rpc.user.v1.CreateRequest` adds an optional `preferred_language` field. Wire-compatible — old clients that omit the field create users with NULL preferred_language and trigger the same hydration-backfill path as legacy rows. Updated clients always send the value.
 - Add new RPC `UserService.UpdatePreferredLanguage(user_id, preferred_language)` (mirrors the existing `UpdateHome` custom-method pattern).
 - Backend: remove the `DEFAULT 'en'` from `users.preferred_language`, set existing rows to `NULL` so the client can backfill on next hydration.
 - Backend: extend `UserToProto` and `NewUserFromCreateRequest` to carry `preferred_language`; add a `UpdatePreferredLanguage` handler/use-case/repo method.
@@ -30,7 +30,7 @@ The user's preferred display language is currently stored only in browser `local
 
 ## Impact
 
-- **Proto / BSR**: `User.preferred_language` field added; `CreateRequest.preferred_language` added; new `UpdatePreferredLanguage` RPC. Will be released as a minor version bump in the BSR schema; the new `CreateRequest` field is required, so older frontend clients are temporarily incompatible until they ship the matching change.
+- **Proto / BSR**: `User.preferred_language` field added; `CreateRequest.preferred_language` added (both `optional`); new `UpdatePreferredLanguage` RPC. Will be released as a minor version bump in the BSR schema. All wire changes are additive — `buf breaking` passes and old clients keep working through the optional-field semantics (their Create calls succeed with `preferred_language` NULL on the resulting row).
 - **Backend (Go)**: `internal/adapter/rpc/mapper/user.go` (mapper extension), `internal/adapter/rpc/user_handler.go` (new RPC), `internal/usecase/user_uc.go` (new use-case method), `internal/infrastructure/database/rdb/user_repo.go` (language-only update). Atlas migration to drop `DEFAULT 'en'` and NULL out existing rows.
 - **Frontend (Aurelia 2)**: `src/main.ts` (i18n detector `caches: ['localStorage']`), `src/entities/user.ts` (add field), `src/adapter/rpc/client/user-client.ts` (new method + Create signature), `src/services/user-service.ts`, `src/services/user-hydration-task.ts` (apply + backfill), `src/routes/auth-callback/auth-callback-route.ts` (cleanup localStorage), `src/routes/settings/settings-route.ts` (route through RPC), `src/util/change-locale.ts` (split: anon vs authed paths).
 - **Database**: `app.users.preferred_language` — DEFAULT dropped, existing rows updated to NULL.
