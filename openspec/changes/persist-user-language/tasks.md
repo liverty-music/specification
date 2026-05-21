@@ -4,7 +4,7 @@
 - [x] 1.2 Add required `string preferred_language` to `rpc.user.v1.CreateRequest` with the same `protovalidate` pattern; document idempotent-return non-overwrite rule
 - [x] 1.3 Add `rpc UpdatePreferredLanguage(UpdatePreferredLanguageRequest) returns (UpdatePreferredLanguageResponse)` to `UserService`; define request (`UserId user_id`, `string preferred_language`) and response (`User user`); document error matrix (INVALID_ARGUMENT / PERMISSION_DENIED / NOT_FOUND / UNAUTHENTICATED)
 - [x] 1.4 Run `buf lint` and `buf format -w` locally; verify `buf breaking --against '.git#branch=main'` reports only the intentional break on CreateRequest (label PR with `buf skip breaking` if required by repo convention)
-- [ ] 1.5 Open specification PR; after approval and CI pass, merge to main
+- [x] 1.5 Open specification PR; after approval and CI pass, merge to main
 - [ ] 1.6 Cut GitHub Release `vX.Y.Z` on specification; monitor `buf-release.yml` until BSR gen completes
 
 ## 2. Backend (Go) — preparation while specification PR is in flight

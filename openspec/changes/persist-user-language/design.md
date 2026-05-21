@@ -39,11 +39,19 @@ Alternatives considered:
 - Leave the default in place and treat `'en'` as both "set by user" and "default": rejected — undistinguishable states block any backfill heuristic.
 - Read a one-time legacy `localStorage['language']` at hydration to backfill: rejected — leaves a time-limited compatibility path in the code (the user explicitly wants no localStorage reads while authenticated).
 
-### D3. Proto: `optional string preferred_language` on entity, required `string preferred_language` on `CreateRequest`
+### D3. Proto: `optional string preferred_language` on both `User` and `CreateRequest`
 
-On `User`, the field uses `optional` so the wire can distinguish "unset" (NULL in DB) from "explicitly empty" — required for the backfill decision on the frontend. On `CreateRequest`, the field is required (`protovalidate.field.string.min_len = 2`) — the client always knows its current locale and must always send it.
+On `User`, the field uses `optional` so the wire can distinguish "unset" (NULL in DB) from "explicitly empty" — required for the backfill decision on the frontend.
 
-The value is an ISO 639-1 two-letter code (`ja`, `en`). Validation rule: `pattern = "^[a-z]{2}$"`. This keeps room for `ja-JP` style tags in the future via a separate field or a relaxed pattern, but for now Phase-1 supports only base codes.
+On `CreateRequest`, the field is ALSO `optional` (revised from the initial "required" formulation) to keep the RPC backward-compatible during the rolling-deploy window where the new backend may briefly serve old frontend clients that don't know about the field. Updated clients SHALL always send the value (the frontend code does), but old clients that omit it are accepted: the new user row is stored with a NULL `preferred_language` and the client backfills it on next hydration via `UpdatePreferredLanguage`. This converges on the same end-state as legacy rows, so the legacy-row backfill path doubly serves as the old-client transition path — no extra code surface.
+
+For `UpdatePreferredLanguageRequest`, the field is required (plain `string`) — there is no transition concern since the RPC is brand new; any caller MUST be from updated code.
+
+The value is an ISO 639-1 two-letter code (`ja`, `en`). Validation when present: `min_len: 2` and `pattern: "^[a-z]{2}$"`. The `min_len` annotation is explicit even though the pattern implicitly rejects empty strings — it makes the "non-empty when present" semantics legible to SDK / doc generators that read proto annotations independently. This keeps room for `ja-JP` style tags in the future via a separate field or a relaxed pattern, but for now Phase-1 supports only base codes.
+
+**Alternatives considered for the deployment-window concern (Issue 1 from PR review):**
+- Keep `CreateRequest.preferred_language` required and manually time the deploys: rejected — manual coordination is fragile (one failed deploy or rollback breaks the window) and breaks `Create` for any legitimate old client between backend ship and frontend ship.
+- Two-phase rollout (ship as optional, then tighten in a follow-up PR): rejected as unnecessary — the backfill mechanism already exists for legacy rows, so absent-on-Create can collapse into that same path with no follow-up tightening needed. The "fail loud if frontend forgets" benefit doesn't justify a second migration.
 
 ### D4. Frontend: i18next-browser-languagedetector `caches: ['localStorage']`
 

@@ -44,10 +44,16 @@ service UserService {
   // idempotent-return path, home is ignored — use UpdateHome to change an
   // already-provisioned user's home area.
   //
-  // The preferred_language field is required: clients always know their
-  // current effective locale at signup and MUST send it. On the
-  // idempotent-return path, preferred_language is IGNORED — the existing
-  // row's language is not overwritten, mirroring the rule for home. Use
+  // The preferred_language field is optional on the wire so this RPC
+  // remains backward-compatible during a rolling deploy where the new
+  // backend may be live before all frontend clients have been updated.
+  // Updated clients MUST send their currently effective locale; the
+  // value, when present, is persisted atomically with the new user row.
+  // Absent values are stored as NULL and trigger the same client-side
+  // backfill path as legacy rows (see UpdatePreferredLanguage and the
+  // user-profile-hydration capability). On the idempotent-return path,
+  // preferred_language is IGNORED — the existing row's language is not
+  // overwritten, mirroring the rule for home. Use
   // UpdatePreferredLanguage to change an already-provisioned user's
   // preferred display language.
   //
@@ -143,17 +149,27 @@ message CreateRequest {
   // external_id) — the existing row's home is not overwritten.
   entity.v1.Home home = 2;
 
-  // Required. The user's preferred display language as an ISO 639-1
-  // two-letter code (e.g., "ja", "en"), captured from the client's
-  // effective locale at the moment of signup. Persisted atomically with
-  // the new user record so subsequent sessions can render the UI in the
-  // user's chosen language without relying on browser storage.
+  // Optional on the wire to keep this RPC backward-compatible during a
+  // rolling deploy where the new backend may serve old frontend clients
+  // briefly. Updated clients SHALL send their currently effective locale
+  // as an ISO 639-1 two-letter code (e.g., "ja", "en"). When present,
+  // the value is validated against `^[a-z]{2}$` and persisted atomically
+  // with the new user record so subsequent sessions can render the UI in
+  // the user's chosen language without relying on browser storage.
+  //
+  // When absent, the user row is created with a NULL preferred_language
+  // — semantically equivalent to a legacy row pending backfill — and the
+  // client backfills it on next hydration via UpdatePreferredLanguage.
+  // This keeps the old-client transition window safe without requiring
+  // perfectly synchronized deploys.
   //
   // Ignored on the idempotent-return path (duplicate external_id) — the
   // existing row's preferred_language is not overwritten, mirroring the
-  // rule for home. Use UpdatePreferredLanguage to change an
-  // already-provisioned user's preferred display language.
-  string preferred_language = 3 [(buf.validate.field).string.pattern = "^[a-z]{2}$"];
+  // rule for home.
+  optional string preferred_language = 3 [(buf.validate.field).string = {
+    min_len: 2
+    pattern: "^[a-z]{2}$"
+  }];
 }
 
 // CreateResponse returns the user profile as successfully created.
@@ -189,7 +205,10 @@ message UpdatePreferredLanguageRequest {
   // Required. The new preferred display language as an ISO 639-1 two-letter
   // code (e.g., "ja", "en"). Empty values and codes outside the
   // `^[a-z]{2}$` pattern are rejected with INVALID_ARGUMENT.
-  string preferred_language = 2 [(buf.validate.field).string.pattern = "^[a-z]{2}$"];
+  string preferred_language = 2 [(buf.validate.field).string = {
+    min_len: 2
+    pattern: "^[a-z]{2}$"
+  }];
 }
 
 // UpdatePreferredLanguageResponse returns the updated user profile after the

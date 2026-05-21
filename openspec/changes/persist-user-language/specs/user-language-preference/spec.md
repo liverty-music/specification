@@ -20,7 +20,7 @@ The `entity.v1.User` message SHALL expose the user's preferred display language 
 
 ### Requirement: Create RPC Captures Preferred Language at Signup
 
-The `UserService.Create` RPC SHALL accept a required `preferred_language` field carrying the client's effective locale at the moment of signup, and SHALL persist it atomically with the new user row.
+The `UserService.Create` RPC SHALL accept an optional `preferred_language` field carrying the client's effective locale at the moment of signup. When the field is present, the backend SHALL persist it atomically with the new user row; when absent, the row SHALL be created with NULL and the client SHALL backfill on next hydration via `UpdatePreferredLanguage`. The field is `optional` on the wire so the RPC stays backward-compatible during a rolling deploy where the new backend may briefly serve old frontend clients.
 
 #### Scenario: Successful Create persists the supplied language
 
@@ -28,9 +28,16 @@ The `UserService.Create` RPC SHALL accept a required `preferred_language` field 
 - **THEN** the backend SHALL persist `preferred_language = "ja"` on the new `users` row
 - **AND** the returned `User` entity SHALL include `preferred_language = "ja"`
 
-#### Scenario: Create rejects missing or malformed preferred_language
+#### Scenario: Create accepts absent preferred_language for old clients
 
-- **WHEN** a client calls `Create` without `preferred_language` or with a value that does not match `^[a-z]{2}$`
+- **WHEN** a client calls `Create` without supplying the `preferred_language` field at all (i.e. the field is absent on the wire, as an unupdated client would send)
+- **THEN** the backend SHALL create the user row with `preferred_language` as NULL
+- **AND** the returned `User` entity SHALL NOT include `preferred_language`
+- **AND** subsequent hydration SHALL trigger client-side backfill via `UpdatePreferredLanguage`
+
+#### Scenario: Create rejects malformed preferred_language
+
+- **WHEN** a client calls `Create` with `preferred_language` explicitly present but not matching `^[a-z]{2}$` (e.g., `""`, `"jpn"`, `"JA"`, `"ja-JP"`)
 - **THEN** the backend SHALL reject the request with `INVALID_ARGUMENT`
 - **AND** no user row SHALL be created
 
