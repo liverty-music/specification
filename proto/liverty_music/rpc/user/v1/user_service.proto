@@ -44,10 +44,41 @@ service UserService {
   // idempotent-return path, home is ignored — use UpdateHome to change an
   // already-provisioned user's home area.
   //
+  // The preferred_language field is optional on the wire so this RPC
+  // remains backward-compatible during a rolling deploy where the new
+  // backend may be live before all frontend clients have been updated.
+  // Updated clients MUST send their currently effective locale; the
+  // value, when present, is persisted atomically with the new user row.
+  // Absent values are stored as NULL and trigger the same client-side
+  // backfill path as legacy rows (see UpdatePreferredLanguage and the
+  // user-profile-hydration capability). On the idempotent-return path,
+  // preferred_language is IGNORED — the existing row's language is not
+  // overwritten, mirroring the rule for home. Use
+  // UpdatePreferredLanguage to change an already-provisioned user's
+  // preferred display language.
+  //
   // Possible errors:
   // - INVALID_ARGUMENT: The provided user data is missing required fields or is malformed.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Create(CreateRequest) returns (CreateResponse);
+
+  // UpdatePreferredLanguage sets or changes the authenticated user's
+  // preferred display language.
+  //
+  // The preferred language determines the locale used to render the UI and
+  // user-facing notifications. Users typically set this at signup (carried
+  // in the Create RPC) and may update it later from settings.
+  //
+  // Per the rpc-auth-scoping convention, the request carries an explicit
+  // user_id that the backend verifies against the userID derived from the
+  // JWT context; mismatches are rejected with PERMISSION_DENIED.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: user_id is missing or malformed, or preferred_language is empty or not a valid ISO 639-1 two-letter code.
+  // - NOT_FOUND: No user record exists for the authenticated identity.
+  // - PERMISSION_DENIED: The supplied user_id does not match the authenticated caller.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc UpdatePreferredLanguage(UpdatePreferredLanguageRequest) returns (UpdatePreferredLanguageResponse);
 
   // UpdateHome sets or changes the authenticated user's home area.
   //
@@ -117,6 +148,28 @@ message CreateRequest {
   // UpdateHome. Ignored on the idempotent-return path (duplicate
   // external_id) — the existing row's home is not overwritten.
   entity.v1.Home home = 2;
+
+  // Optional on the wire to keep this RPC backward-compatible during a
+  // rolling deploy where the new backend may serve old frontend clients
+  // briefly. Updated clients SHALL send their currently effective locale
+  // as an ISO 639-1 two-letter code (e.g., "ja", "en"). When present,
+  // the value is validated against `^[a-z]{2}$` and persisted atomically
+  // with the new user record so subsequent sessions can render the UI in
+  // the user's chosen language without relying on browser storage.
+  //
+  // When absent, the user row is created with a NULL preferred_language
+  // — semantically equivalent to a legacy row pending backfill — and the
+  // client backfills it on next hydration via UpdatePreferredLanguage.
+  // This keeps the old-client transition window safe without requiring
+  // perfectly synchronized deploys.
+  //
+  // Ignored on the idempotent-return path (duplicate external_id) — the
+  // existing row's preferred_language is not overwritten, mirroring the
+  // rule for home.
+  optional string preferred_language = 3 [(buf.validate.field).string = {
+    min_len: 2
+    pattern: "^[a-z]{2}$"
+  }];
 }
 
 // CreateResponse returns the user profile as successfully created.
@@ -139,6 +192,29 @@ message UpdateHomeRequest {
 // UpdateHomeResponse returns the updated user profile after the home area change.
 message UpdateHomeResponse {
   // The updated user entity with the new home area applied.
+  entity.v1.User user = 1 [(buf.validate.field).required = true];
+}
+
+// UpdatePreferredLanguageRequest provides the new preferred language for the
+// authenticated user.
+message UpdatePreferredLanguageRequest {
+  // The caller's user identifier. Must match the userID derived from the
+  // authenticated session; mismatches are rejected with PERMISSION_DENIED.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The new preferred display language as an ISO 639-1 two-letter
+  // code (e.g., "ja", "en"). Empty values and codes outside the
+  // `^[a-z]{2}$` pattern are rejected with INVALID_ARGUMENT.
+  string preferred_language = 2 [(buf.validate.field).string = {
+    min_len: 2
+    pattern: "^[a-z]{2}$"
+  }];
+}
+
+// UpdatePreferredLanguageResponse returns the updated user profile after the
+// preferred language change.
+message UpdatePreferredLanguageResponse {
+  // The updated user entity with the new preferred language applied.
   entity.v1.User user = 1 [(buf.validate.field).required = true];
 }
 

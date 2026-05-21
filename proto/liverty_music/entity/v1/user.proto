@@ -48,6 +48,21 @@ message User {
   // are classified as HOME, nearby areas as NEARBY, and everything else as AWAY.
   // Absent until the user explicitly selects their area during onboarding or in settings.
   Home home = 6;
+
+  // The user's preferred display language as an ISO 639-1 two-letter code
+  // (e.g., "ja", "en"). Used to render the UI in the user's chosen language
+  // and to localize user-facing notifications.
+  //
+  // Absent (NULL in storage) until the client first asserts a preference —
+  // either via Create at signup or via UpdatePreferredLanguage for legacy
+  // rows that predate this field. Clients observing an absent value SHALL
+  // backfill it by calling UpdatePreferredLanguage with their currently
+  // effective locale, so that subsequent sessions can rely on the backend
+  // as the single source of truth for the user's language preference.
+  optional string preferred_language = 7 [(buf.validate.field).string = {
+    min_len: 2
+    pattern: "^[a-z]{2}$"
+  }];
 }
 
 // Home represents the user's home area as a structured geographic location,
