@@ -3,20 +3,34 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/artist.proto";
 import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/series.proto";
 import "liverty_music/entity/v1/venue.proto";
 
-// Concert represents a specific music live event.
-// It serves as the primary entity for scheduling and user notifications,
-// connecting an artist to a specific venue at a scheduled time.
-message Concert {
-  // The unique identifier of the concert event.
-  EventId id = 1 [(buf.validate.field).required = true];
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
-  // The unique identifier of the performing artist.
-  ArtistId artist_id = 2 [(buf.validate.field).required = true];
+// Concert is the user-facing DTO for a music live event.
+// It serves as the primary projection for scheduling and user notifications,
+// composing the underlying Event with its parent Series and the full list of
+// performing artists so that a single RPC response carries everything the UI
+// needs without follow-up fetches.
+//
+// Series-level metadata (title, source URL, type) is sourced from the embedded
+// `series` field. Performing artists are exposed via the repeated `performers`
+// field, which supports festival lineups, co-headliners, and support acts.
+message Concert {
+  // Field numbers 2, 7, 8 were previously occupied by `artist_id`, `title`,
+  // and `source_url` respectively. `artist_id` has been replaced by the
+  // repeated `performers` field below; `title` and `source_url` have been
+  // promoted to the parent Series. Reserved to prevent accidental reuse.
+  reserved 2, 7, 8;
+  reserved "artist_id", "title", "source_url";
+
+  // The unique identifier of the underlying event.
+  EventId id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The unique identifier of the venue where the concert is hosted.
   // Retained for backward compatibility; prefer the embedded `venue` field.
@@ -32,12 +46,6 @@ message Concert {
   // The time when the venue doors open to the audience.
   OpenTime open_time = 6;
 
-  // The official title or name of the concert tour or event.
-  Title title = 7 [(buf.validate.field).required = true];
-
-  // The official source URL for the concert information.
-  Url source_url = 8;
-
   // The resolved venue where the concert is hosted.
   // Populated by the server on every response; includes name and admin_area when available.
   Venue venue = 9 [(buf.validate.field).required = true];
@@ -45,4 +53,15 @@ message Concert {
   // The raw venue name as scraped from the source.
   // Preserves the original text separately from the normalised Venue.name.
   ListedVenueName listed_venue_name = 10;
+
+  // The parent series that aggregates this concert with any sibling events
+  // sharing the same tour, festival, or multi-day run. Title, source URL, and
+  // series type are exposed through this embedded message rather than being
+  // duplicated on Concert.
+  Series series = 11 [(buf.validate.field).required = true];
+
+  // The artists performing at this concert, in display order. Always contains
+  // at least one performer; multi-performer values are used for festivals,
+  // co-headlining bills, and support acts.
+  repeated Artist performers = 12 [(buf.validate.field).repeated.min_items = 1];
 }
