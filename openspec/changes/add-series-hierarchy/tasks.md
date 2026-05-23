@@ -1,10 +1,10 @@
 ## 1. Protobuf — Entity Layer (specification repo)
 
-- [ ] 1.1 Create `proto/liverty_music/entity/v1/series.proto` with `SeriesId`, `SeriesType` enum (`TOUR`, `SINGLE`, `FESTIVAL`), and `Series` message (`id`, `title`, `type`, `source_url`). Add protovalidate constraints and documentation comments.
-- [ ] 1.2 Rewrite `proto/liverty_music/entity/v1/event.proto` `Event` message to the slimmed shape: `id`, `series_id` (required), `venue`, `local_date`, `start_time`, `open_time`, `merkle_root`. Remove `title`. Keep `EventId` unchanged.
-- [ ] 1.3 Modify `proto/liverty_music/entity/v1/concert.proto` `Concert` message: remove `Title title`, remove `Url source_url`, replace `ArtistId artist_id` with `repeated Artist performers` (min_items=1), add embedded `Series series` (required).
-- [ ] 1.4 Run `buf format -w` and `buf lint` locally; ensure no STANDARD or COMMENTS rule violations.
-- [ ] 1.5 Run `buf breaking --against '.git#branch=main'` and confirm the expected breaking diff. The PR will require the `buf skip breaking` label.
+- [x] 1.1 Create `proto/liverty_music/entity/v1/series.proto` with `SeriesId`, `SeriesType` enum (`TOUR`, `SINGLE`, `FESTIVAL`), and `Series` message (`id`, `title`, `type`, `source_url`). Add protovalidate constraints and documentation comments.
+- [x] 1.2 Rewrite `proto/liverty_music/entity/v1/event.proto` `Event` message to the slimmed shape: `id`, `series_id` (required), `venue`, `local_date`, `start_time`, `open_time`, `merkle_root`. Remove `title`. Keep `EventId` unchanged. Removed field number reserved.
+- [x] 1.3 Modify `proto/liverty_music/entity/v1/concert.proto` `Concert` message: remove `Title title`, remove `Url source_url`, replace `ArtistId artist_id` with `repeated Artist performers` (min_items=1), add embedded `Series series` (required). Removed field numbers reserved.
+- [x] 1.4 Run `buf format -w` and `buf lint` locally; ensure no STANDARD or COMMENTS rule violations.
+- [x] 1.5 Run `buf breaking --against '.git#branch=main'` and confirm the expected breaking diff. The PR will require the `buf skip breaking` label.
 
 ## 2. OpenSpec — Spec Sync (specification repo)
 
