@@ -12,11 +12,11 @@
 
 ## 3. Database — Atlas Migration (backend repo)
 
-- [ ] 3.1 Update `internal/infrastructure/database/rdb/schema/schema.sql` desired-state schema: add `CREATE TYPE series_type`, `CREATE TABLE series`, `CREATE TABLE event_performers`; modify `events` (drop `artist_id`, `title`, `source_url`; add `series_id` NOT NULL FK; replace `uq_events_natural_key` with `(series_id, local_event_date, venue_id)`); modify `concerts` (drop `artist_id`); add `idx_events_series_id`, `idx_event_performers_artist_id`; drop `idx_concerts_artist_id`.
-- [ ] 3.2 Run `atlas migrate diff --env local add_series_hierarchy` to generate the migration file under `k8s/atlas/base/migrations/`.
-- [ ] 3.3 Hand-edit the generated migration to prepend `TRUNCATE TABLE events CASCADE;` (Atlas does not infer destructive data ops automatically). Verify the rest of the diff matches the schema changes above.
-- [ ] 3.4 Add the new migration filename to `k8s/atlas/base/kustomization.yaml` under `configMapGenerator.files`.
-- [ ] 3.5 Run `atlas migrate validate --env local` and `atlas migrate apply --env local` against a fresh local Postgres to confirm the migration applies cleanly.
+- [x] 3.1 Update `internal/infrastructure/database/rdb/schema/schema.sql` desired-state schema: add `CREATE TYPE series_type`, `CREATE TABLE series`, `CREATE TABLE event_performers`; modify `events` (drop `artist_id`, `title`, `source_url`; add `series_id` NOT NULL FK; replace `uq_events_natural_key` with `(series_id, local_event_date, venue_id)`); modify `concerts` (drop `artist_id`); add `idx_events_series_id`, `idx_event_performers_artist_id`; drop `idx_concerts_artist_id`.
+- [x] 3.2 Run `atlas migrate diff --env local add_series_hierarchy` to generate the migration file under `k8s/atlas/base/migrations/`.
+- [x] 3.3 Hand-edit the generated migration to prepend `TRUNCATE TABLE events CASCADE;` (Atlas does not infer destructive data ops automatically). Also removed unrelated `DROP INDEX idx_venues_listed_name_admin_area` (schema.sql drift, tracked separately) and stripped `"app"."<name>"` schema qualifiers to match the existing migration convention (`"<name>"`, resolved via search_path).
+- [x] 3.4 Add the new migration filename to `k8s/atlas/base/kustomization.yaml` under `configMapGenerator.files`.
+- [x] 3.5 Run `atlas migrate validate --env local` and `atlas migrate apply --env local` against a fresh local Postgres to confirm the migration applies cleanly. Validate not run (Atlas v1.0.1 `docker://` dev URL incompatible with `search_path=app,public` syntax on this environment); apply succeeded in 309ms, 22 statements OK; schema verified with `\d events`, `\d series`, `\d event_performers`.
 
 ## 4. Backend — Entity Layer (backend repo)
 
