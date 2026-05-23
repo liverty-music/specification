@@ -20,7 +20,7 @@
 
 ## 4. Backend — Entity Layer (backend repo)
 
-- [ ] 4.1 Add `internal/entity/series.go` defining `Series` and `SeriesID` types. Mirror the proto shape (no struct tags unless required).
+- [x] 4.1 Add `internal/entity/series.go` defining `Series` and `SeriesID` types. Mirror the proto shape (no struct tags unless required). Also defined `SeriesType` enum and `SeriesRepository` interface in the same file so Section 5 has an explicit target.
 - [ ] 4.2 Update `internal/entity/event.go` (or equivalent) to remove `Title`, `SourceURL`, `ArtistID`; add `SeriesID`.
 - [ ] 4.3 Add `internal/entity/event_performer.go` (or fold into `event.go`) representing the M:N relation. Decide based on existing conventions whether to expose performers as `[]ArtistID` on `Event` or as a separate aggregate.
 
