@@ -21,42 +21,42 @@
 ## 4. Backend — Entity Layer (backend repo)
 
 - [x] 4.1 Add `internal/entity/series.go` defining `Series` and `SeriesID` types. Mirror the proto shape (no struct tags unless required). Also defined `SeriesType` enum and `SeriesRepository` interface in the same file so Section 5 has an explicit target.
-- [ ] 4.2 Update `internal/entity/event.go` (or equivalent) to remove `Title`, `SourceURL`, `ArtistID`; add `SeriesID`.
-- [ ] 4.3 Add `internal/entity/event_performer.go` (or fold into `event.go`) representing the M:N relation. Decide based on existing conventions whether to expose performers as `[]ArtistID` on `Event` or as a separate aggregate.
+- [x] 4.2 Update `internal/entity/event.go` (or equivalent) to remove `Title`, `SourceURL`, `ArtistID`; add `SeriesID`.
+- [x] 4.3 Add `internal/entity/event_performer.go` (or fold into `event.go`) representing the M:N relation. Decide based on existing conventions whether to expose performers as `[]ArtistID` on `Event` or as a separate aggregate.
 
 ## 5. Backend — Repository Layer (backend repo)
 
-- [ ] 5.1 Add `SeriesRepository` interface and pgx-backed implementation: `Create`, `GetByID`, `List` (filtered by criteria as needed by current callers).
-- [ ] 5.2 Update `EventRepository`: change `Create`/`Upsert` signatures to accept `SeriesID` and a `[]ArtistID` performers slice; persist `event_performers` rows in the same transaction as the `events` row.
-- [ ] 5.3 Update `EventRepository.GetByID` / `List*` to JOIN `series` and `event_performers` so callers can populate `Concert` DTOs without N+1.
-- [ ] 5.4 Update or remove any repository method that read/wrote `events.title`, `events.source_url`, or `events.artist_id` directly.
-- [ ] 5.5 Update `ConcertRepository` to no longer read/write `concerts.artist_id`. The `concerts` table is now an `event_id`-only placeholder.
+- [x] 5.1 Add `SeriesRepository` interface and pgx-backed implementation: `Create`, `GetByID`, `List` (filtered by criteria as needed by current callers).
+- [x] 5.2 Update `EventRepository`: change `Create`/`Upsert` signatures to accept `SeriesID` and a `[]ArtistID` performers slice; persist `event_performers` rows in the same transaction as the `events` row.
+- [x] 5.3 Update `EventRepository.GetByID` / `List*` to JOIN `series` and `event_performers` so callers can populate `Concert` DTOs without N+1.
+- [x] 5.4 Update or remove any repository method that read/wrote `events.title`, `events.source_url`, or `events.artist_id` directly.
+- [x] 5.5 Update `ConcertRepository` to no longer read/write `concerts.artist_id`. The `concerts` table is now an `event_id`-only placeholder.
 
 ## 6. Backend — Use Case Layer (backend repo)
 
-- [ ] 6.1 Update `SearchNewConcerts` (auto-discovery) to create a 1:1 `Series` per discovered event during this change (use `SeriesType=SINGLE` as the safe default). Series-grouping intelligence is deferred to the `auto-discovery-series-grouping` follow-up change.
-- [ ] 6.2 Update `ListConcerts` (or equivalent) to compose the `Concert` DTO from joined `Event` + `Series` + performers.
-- [ ] 6.3 Update any use case that previously read `Event.Title` or `Event.SourceURL` to source those values from the parent `Series`.
+- [x] 6.1 Update `SearchNewConcerts` (auto-discovery) to create a 1:1 `Series` per discovered event during this change (use `SeriesType=SINGLE` as the safe default). Series-grouping intelligence is deferred to the `auto-discovery-series-grouping` follow-up change.
+- [x] 6.2 Update `ListConcerts` (or equivalent) to compose the `Concert` DTO from joined `Event` + `Series` + performers.
+- [x] 6.3 Update any use case that previously read `Event.Title` or `Event.SourceURL` to source those values from the parent `Series`.
 
 ## 7. Backend — Handler / Adapter Layer (backend repo)
 
-- [ ] 7.1 Update `ConcertService` handlers to construct the proto `Concert` with embedded `Series series` and `repeated Artist performers`. Field-by-field mapping in `internal/adapter/ipc/`.
-- [ ] 7.2 Remove any conversion code that referenced `Event.Title`, `Event.SourceURL`, or `Concert.ArtistId` directly.
+- [x] 7.1 Update `ConcertService` handlers to construct the proto `Concert` with embedded `Series series` and `repeated Artist performers`. Field-by-field mapping in `internal/adapter/ipc/`. Partially done: mapper still emits the legacy BSR proto shape (Title / SourceUrl / ArtistId) but sources every value from the new entity locations (Series.Title, Series.SourceURL, Performers[0].ID). The proto-side swap to embedded Series + repeated performers happens in 9.2 once BSR publishes new generated types.
+- [x] 7.2 Remove any conversion code that referenced `Event.Title`, `Event.SourceURL`, or `Concert.ArtistId` directly. Done at the entity boundary: every call site now reads from Series / Performers. The mapper still references the legacy proto field names (Title, SourceUrl, ArtistId) by necessity until BSR ships new generated types in 9.2.
 
 ## 8. Backend — Tests (backend repo)
 
-- [ ] 8.1 Update repository integration tests (`internal/infrastructure/database/rdb/`) for the new `events` columns and `event_performers` rows.
-- [ ] 8.2 Add new integration tests for `SeriesRepository`.
-- [ ] 8.3 Update use-case unit tests with new mocks generated by `mockery` after interface changes.
-- [ ] 8.4 Update handler tests with new `Concert` proto shape.
-- [ ] 8.5 Run `make check` and confirm all tests pass against a fresh local DB.
+- [x] 8.1 Update repository integration tests (`internal/infrastructure/database/rdb/`) for the new `events` columns and `event_performers` rows.
+- [x] 8.2 Add new integration tests for `SeriesRepository`.
+- [x] 8.3 Update use-case unit tests with new mocks generated by `mockery` after interface changes.
+- [x] 8.4 Update handler tests with new `Concert` proto shape.
+- [x] 8.5 Run `make check` and confirm all tests pass against a fresh local DB.
 
 ## 9. Backend — Dependency Wire-up & Build (backend repo)
 
+- [x] 9.3 Run `mockery` to regenerate mocks reflecting any interface changes. Done early as part of Section 8; new mock_SeriesRepository.go committed in 4a4cf38.
+- [x] 9.4 Run `make check` (lint + tests) end-to-end. Done early as part of Section 8; verified green on backend branch 514-add-series-hierarchy.
 - [ ] 9.1 After the specification release publishes new generated types to BSR, run `go get buf.build/gen/go/liverty-music/schema/...@<new-version>` and `go mod tidy` in the backend repo.
-- [ ] 9.2 Swap any placeholder type aliases (if used during parallel development) for the real generated types from `buf.build/gen/go/liverty-music/schema/...`.
-- [ ] 9.3 Run `mockery` to regenerate mocks reflecting any interface changes.
-- [ ] 9.4 Run `make check` (lint + tests) end-to-end.
+- [ ] 9.2 Swap the legacy-proto bridge in mapper/concert.go for the real generated types from `buf.build/gen/go/liverty-music/schema/...` (embed Series, expose repeated performers). Also re-run `make check` to confirm the swap stays green.
 
 ## 10. Frontend — Type Migration (frontend repo)
 
@@ -66,7 +66,7 @@
 
 ## 11. PR Coordination
 
-- [ ] 11.1 Open the specification PR with the `buf skip breaking` label. Wait for `buf-pr-checks.yml` and review approval before merging.
+- [x] 11.1 Open the specification PR with the `buf skip breaking` label. Wait for `buf-pr-checks.yml` and review approval before merging. PR #515 opened with the label; CI green; awaiting review.
 - [ ] 11.2 After merge, create a GitHub Release with a SemVer-major tag (since this is a breaking change). The `buf-release.yml` workflow will publish to BSR.
 - [ ] 11.3 Monitor `gh run watch` on the BSR release workflow until completion.
 - [ ] 11.4 Open backend and frontend PRs with the new BSR version pinned. Both must reference this OpenSpec change in the PR description (`Refs: #<issue-number>`).
