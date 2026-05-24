@@ -48,17 +48,23 @@ message Series {
 
   // The official title shared by all events in this series, such as a tour
   // name or festival name.
-  Title title = 2 [(buf.validate.field).required = true];
+  Title title = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
 
   // The classification of this series. Determines how UI and notifications
   // group and present the constituent events.
   SeriesType type = 3 [
-    (buf.validate.field).required = true,
-    (buf.validate.field).enum.defined_only = true
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field) = {
+      required: true
+      enum: {defined_only: true}
+    }
   ];
 
   // The official source URL for series-level information (tour page,
   // festival page, or announcement page). Optional because not every
   // discovered series has a dedicated landing page.
-  Url source_url = 4;
+  Url source_url = 4 [(google.api.field_behavior) = OPTIONAL];
 }
