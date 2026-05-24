@@ -53,23 +53,23 @@
 
 ## 9. Backend — Dependency Wire-up & Build (backend repo)
 
-- [x] 9.3 Run `mockery` to regenerate mocks reflecting any interface changes. Done early as part of Section 8; new mock_SeriesRepository.go committed in 4a4cf38.
-- [x] 9.4 Run `make check` (lint + tests) end-to-end. Done early as part of Section 8; verified green on backend branch 514-add-series-hierarchy.
-- [ ] 9.1 After the specification release publishes new generated types to BSR, run `go get buf.build/gen/go/liverty-music/schema/...@<new-version>` and `go mod tidy` in the backend repo.
-- [ ] 9.2 Swap the legacy-proto bridge in mapper/concert.go for the real generated types from `buf.build/gen/go/liverty-music/schema/...` (embed Series, expose repeated performers). Also re-run `make check` to confirm the swap stays green. Update `internal/adapter/rpc/concert_handler_test.go` assertions per the inline TODO at the top of the file: replace `resp.Msg.Concerts[i].Title` / `.SourceUrl` / `.ArtistId` references with `Series.Title` / `Series.SourceUrl` / `Performers[]`, and add at least one multi-performer assertion now that `repeated Artist performers` is generated.
+- [x] 9.1 After the specification release publishes new generated types to BSR, run `go get buf.build/gen/go/liverty-music/schema/...@<new-version>` and `go mod tidy` in the backend repo. Upgraded `buf.build/gen/go/liverty-music/schema/protocolbuffers/go` and `connectrpc/go` to the v0.41.0-derived BSR builds (commit e7f694dd726b, build 20260524050818) in backend@c5c467e.
+- [x] 9.2 Swap the legacy-proto bridge in mapper/concert.go for the real generated types from `buf.build/gen/go/liverty-music/schema/...` (embed Series, expose repeated performers). Re-ran `make check` (green). Also retired the placeholder TODO at the top of `internal/adapter/rpc/concert_handler_test.go` and switched the response-shape assertions to `resp.Msg.Concerts[i].GetSeries().GetTitle()` / `.GetSeries().GetSourceUrl()` / `.GetPerformers()[]`. Added a multi-performer test case (2 performers) at the handler boundary plus a 3-performer "festival lineup" case in the mapper test.
+- [x] 9.3 Run `mockery` to regenerate mocks reflecting any interface changes. Run twice — first as part of Section 8 (mock_SeriesRepository.go added in 4a4cf38), again after the 9.2 mapper rewrite (no interface changes, no mock diff).
+- [x] 9.4 Run `make check` (lint + tests) end-to-end. Green on backend branch 514-add-series-hierarchy at backend@c5c467e.
 
 ## 10. Frontend — Type Migration (frontend repo)
 
-- [ ] 10.1 After BSR release, run `npm install @buf/liverty-music_schema.connectrpc_es@<new-version>` to consume the new generated types.
-- [ ] 10.2 Update any frontend code reading `Concert.title` / `Concert.sourceUrl` / `Concert.artistId` to read from `Concert.series.title` / `Concert.series.sourceUrl` / `Concert.performers`.
-- [ ] 10.3 Run `make check` in the frontend repo.
+- [x] 10.1 After BSR release, run `npm install @buf/liverty-music_schema.connectrpc_es@<new-version>` to consume the new generated types. Pinned `@buf/liverty-music_schema.bufbuild_es@1.10.0-20260524050818-e7f694dd726b.1` and `@buf/liverty-music_schema.connectrpc_es@1.6.1-20260524050818-e7f694dd726b.2` in frontend@a11f30f (v1.x lineage; the v2.x lineage is not yet published for connectrpc_es, so v1 is the only coherent pair today).
+- [x] 10.2 Update any frontend code reading `Concert.title` / `Concert.sourceUrl` / `Concert.artistId` to read from `Concert.series.title` / `Concert.series.sourceUrl` / `Concert.performers`. Done in `src/adapter/rpc/mapper/concert-mapper.ts` (sources title/sourceUrl from `proto.series`, projects `proto.performers[0]` onto the flat entity Concert.artistId — the dashboard entity stays single-artist-flat; multi-performer concerts surface only the lead artist for now) and `src/services/concert-service.ts` (proximity-lane convert loop keys off the first performer). `test/adapter/rpc/mapper/concert-mapper.spec.ts` fixture rewritten to the new proto shape plus a new "projects the first performer when multiple are present" test.
+- [x] 10.3 Run `make check` in the frontend repo. Green on frontend branch 514-add-series-hierarchy at frontend@a11f30f.
 
 ## 11. PR Coordination
 
-- [x] 11.1 Open the specification PR with the `buf skip breaking` label. Wait for `buf-pr-checks.yml` and review approval before merging. PR #515 opened with the label; CI green; awaiting review.
-- [ ] 11.2 After merge, create a GitHub Release with a SemVer-major tag (since this is a breaking change). The `buf-release.yml` workflow will publish to BSR.
-- [ ] 11.3 Monitor `gh run watch` on the BSR release workflow until completion.
-- [ ] 11.4 Open backend and frontend PRs with the new BSR version pinned. Both must reference this OpenSpec change in the PR description (`Refs: #<issue-number>`).
+- [x] 11.1 Open the specification PR with the `buf skip breaking` label. Wait for `buf-pr-checks.yml` and review approval before merging. PR #515 opened, six rounds of Claude bot review iteration addressed (final `Claude review` check passed at SUCCESS), merged via merge commit 383341d.
+- [x] 11.2 After merge, create a GitHub Release with a SemVer-major tag (since this is a breaking change). The `buf-release.yml` workflow will publish to BSR. Tagged v0.41.0 (minor bump per the existing 0.x repo convention; the team treats 0.x as breaking-allowed) — release notes summarise the schema changes and migration notes.
+- [x] 11.3 Monitor `gh run watch` on the BSR release workflow until completion. `Buf BSR Push on Release` workflow run id 26352579947 completed SUCCESS at 2026-05-24T05:08:12Z; `npm view` confirms the matching `e7f694dd726b` BSR build is published for both bufbuild_es (v1 and v2 lineages) and connectrpc_es (v1 lineage).
+- [x] 11.4 Open backend and frontend PRs with the new BSR version pinned. Both must reference this OpenSpec change in the PR description (`Refs: #<issue-number>`). Backend PR liverty-music/backend#305 and frontend PR liverty-music/frontend#367 both opened against main with `Refs: liverty-music/specification#514` in the description.
 
 ## 12. Post-Merge Verification
 
