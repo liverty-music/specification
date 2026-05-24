@@ -41,7 +41,10 @@ enum SeriesType {
 // duplicated on every event row.
 message Series {
   // The unique identifier for this series.
-  SeriesId id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  SeriesId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
 
   // The official title shared by all events in this series, such as a tour
   // name or festival name.

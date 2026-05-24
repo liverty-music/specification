@@ -30,7 +30,10 @@ message Concert {
   reserved "artist_id", "title", "source_url";
 
   // The unique identifier of the underlying event.
-  EventId id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  EventId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
 
   // The unique identifier of the venue where the concert is hosted.
   // Retained for backward compatibility; prefer the embedded `venue` field.
@@ -58,10 +61,16 @@ message Concert {
   // sharing the same tour, festival, or multi-day run. Title, source URL, and
   // series type are exposed through this embedded message rather than being
   // duplicated on Concert.
-  Series series = 11 [(buf.validate.field).required = true];
+  Series series = 11 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
 
   // The artists performing at this concert, in display order. Always contains
   // at least one performer; multi-performer values are used for festivals,
   // co-headlining bills, and support acts.
-  repeated Artist performers = 12 [(buf.validate.field).repeated.min_items = 1];
+  repeated Artist performers = 12 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).repeated.min_items = 1
+  ];
 }
