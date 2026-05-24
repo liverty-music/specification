@@ -48,16 +48,6 @@ message Event {
   // This date is displayed to fans when browsing or purchasing tickets.
   LocalDate local_date = 4 [(buf.validate.field).required = true];
 
-  // series_id references the parent Series that aggregates this event with any
-  // sibling events sharing the same tour, festival, or multi-day run.
-  // Declared after the other required fields and before the optional ones to
-  // satisfy AIP-140 source-ordering, while keeping the appended wire-format
-  // number (8) so existing consumers stay compatible.
-  SeriesId series_id = 8 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (buf.validate.field).required = true
-  ];
-
   // start_time is the timestamp when the performance is scheduled to begin.
   // This field is optional and may be omitted for events where the start time is not yet confirmed.
   StartTime start_time = 5;
@@ -71,4 +61,13 @@ message Event {
   // published on-chain and allows entry validators to verify membership without querying
   // a central database, preserving fan privacy.
   optional bytes merkle_root = 7 [(buf.validate.field).bytes.len = 32];
+
+  // series_id references the parent Series that aggregates this event with any
+  // sibling events sharing the same tour, festival, or multi-day run.
+  // Declared at the end of the message in source order to match its appended
+  // wire-format number (8), keeping the visual / numeric order monotonic.
+  SeriesId series_id = 8 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
 }
