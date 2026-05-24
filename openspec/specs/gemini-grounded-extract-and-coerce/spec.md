@@ -1,4 +1,11 @@
-## ADDED Requirements
+# gemini-grounded-extract-and-coerce Specification
+
+## Purpose
+
+Defines the two-step Gemini call pipeline that powers `ConcertSearcher.Search` in the backend's `internal/infrastructure/gcp/gemini` package. Step 1 runs a `gemini-3.5-flash` call with `GoogleSearch` and `URLContext` enabled together, fans out into three parallel slices (tours_near, tours_far, standalones), and emits a per-field `<extracted>` XML envelope whose verbatim fields are parsed Go-side. Step 2 runs a `gemini-3.1-flash-lite` call with no tools and `responseJsonSchema` set, receives a JSON list of per-event raw fields, and returns coerced `admin_area` plus RFC 3339 date/time values that are merged back with the Step 1 drafts by `index`. Title / source_url / venue / country never enter Step 2's schema, eliminating LLM-side hallucination paths on those fields. The capability also covers the page-context year-inference rule, the `(local_date, venue, start_time)` Go-side dedup key, per-step tool-set invariants, the per-step `SearchMetadata` fields, and the A/B harness raw-response shape.
+
+## Requirements
+
 
 ### Requirement: ConcertSearcher executes a two-step Gemini call sequence per Search invocation
 
@@ -311,3 +318,28 @@ The integration test `searcher_integration_test.go`'s `writeRawResponse` SHALL p
 - **WHEN** a smoke cell completes
 - **THEN** the per-cell raw file SHALL contain `step1_grounded` and `step2_parse` keys at the top level
 - **AND** each key's value SHALL contain `prompt_tokens`, `candidates_tokens`, `total_tokens`, and `cost_usd`
+
+### Requirement: cmd/smoke-diff reports per-event evaluation breakdown for a single smoke run
+
+The backend SHALL provide a `cmd/smoke-diff` Go command that consumes one A/B-harness raw artifact (`cell_*.json`) plus the `testdata/ab_ground_truth.json` fixture and prints a per-event breakdown of one artist's discovered events partitioned into four buckets: MATCH (in fixture and smoke), MISS (in fixture, not in smoke), FALSE_POSITIVE (in smoke, not in fixture), TIME_MISMATCH (date and venue match but `start_time` differs). The tool SHALL exit 0 regardless of bucket counts (it is observation-only, not a CI gate) and SHALL accept a `-json` flag to additionally emit a machine-readable JSON object alongside the human-readable summary.
+
+This requirement formalises the ad-hoc `jq` + `comm` shell pipelines that were used during the 4-artist post-cleanup smoke (UVERworld / Vaundy / BRADIO / SUPER BEAVER, recall 92/95 at 100% precision) so future contributors can reproduce the per-event analysis with a single command instead of reconstructing the shell incantations from session transcripts.
+
+#### Scenario: Human-readable breakdown for an 86%-recall cell
+
+- **WHEN** `go run ./cmd/smoke-diff -fixture=testdata/ab_ground_truth.json -smoke=testdata/ab_results/<ts>_raw/cell_001_*_BRADIO_*.json -artist=BRADIO` is invoked against a smoke artifact with 19 discovered concerts and a fixture containing 22 BRADIO in-scope events
+- **THEN** stdout SHALL contain one section per bucket, each listing the affected events' `(local_date, start_time, venue, title)`
+- **AND** the final summary line SHALL show `Recall: 86.4% | Precision: 100%` (or the equivalent computed ratio)
+- **AND** the exit code SHALL be 0 regardless of the bucket counts
+
+#### Scenario: Machine-readable JSON output
+
+- **WHEN** `cmd/smoke-diff` is invoked with `-json` against the same inputs
+- **THEN** stdout SHALL also contain a JSON object whose top-level keys are `matched`, `missed`, `false_positives`, `time_mismatches`, `recall_pct`, `precision_pct`
+- **AND** each event element under the four list keys SHALL contain `local_date`, `start_time`, `venue`, `title`, `source_url` (empty string when the source value is empty)
+
+#### Scenario: TIME_MISMATCH classification distinct from MISS
+
+- **WHEN** the smoke artifact records an event whose `local_date` and `venue` match a fixture entry but whose `start_time` differs (e.g. smoke has empty `start_time` while fixture has `2026-10-03T20:00:00+08:00`)
+- **THEN** that event SHALL be classified as `TIME_MISMATCH`, not `MISS` and not `FALSE_POSITIVE`
+- **AND** the breakdown summary SHALL count it under the time-mismatch bucket only

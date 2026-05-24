@@ -56,4 +56,20 @@ Confirm the dead-code removal in Section 2 is behaviour-preserving.
 - [ ] 5.3 If `make check` passes, prepare a PR with all related commits (`84f7399`..`48c2001`) for the `evaluate-gemini-search-model` branch. (Awaiting user approval to push; `make check` lint clean, `pkg/config` and `internal/infrastructure/gcp/gemini` unit tests pass; pre-existing `events.title` schema migration drift breaks `internal/infrastructure/database/rdb` integration tests on this worktree, tracked separately.)
 - [ ] 5.4 Open follow-up tickets for the out-of-scope items called out in the proposal's Non-Goals: (a) 対バン discovery for guest appearances, (b) overseas venue timezone extraction, (c) production cost optimisation. (Deferred per user direction: 対バン support was explicitly scoped out earlier in the session; (b) and (c) remain as informal backlog items.)
 - [x] 5.5 Run `/opsx:verify redesign-concert-searcher-grounded-extract` and confirm zero CRITICAL issues remain. (Run on 2026-05-25: 15/15 spec requirements covered, D1–D9 all reflected in code, 0 CRITICAL, 0 WARNING. The two SUGGESTIONs raised: S1 — `parseStep1Envelope` empty-input contract test — implemented in commit `7710b32`; S2 — untracked `openspec/changes/evaluate-gemini-search-model/` directory cleanup — deferred per user direction as a separate task.)
-- [ ] 5.6 Run `/opsx:archive redesign-concert-searcher-grounded-extract` once `openspec status` reports `isComplete=true`.
+- [x] 5.6 Run `/opsx:archive redesign-concert-searcher-grounded-extract` once `openspec status` reports `isComplete=true`. (Archived on 2026-05-25 to `openspec/changes/archive/2026-05-25-redesign-concert-searcher-grounded-extract/`. Delta specs synced to `openspec/specs/gemini-grounded-extract-and-coerce/spec.md` and `openspec/specs/gemini-searcher-config/spec.md` in the same commit.)
+
+## 6. cmd/smoke-diff per-event evaluation tool (added post-archive review; implementation lands in a follow-up PR)
+
+This section was added after the change was first archived, when the
+4-artist post-cleanup smoke (Section 4) made it clear that the
+ad-hoc `jq` + `comm` pipelines used to compute per-event MATCH / MISS
+/ FP / TIME_MISMATCH breakdowns were not reproducible from session
+transcripts. The new requirement (`gemini-grounded-extract-and-coerce`
+R16) formalises the tool surface. Implementation is intentionally
+deferred so the in-flight specification PR is not blocked.
+
+- [ ] 6.1 Create `backend/cmd/smoke-diff/main.go` with the CLI surface (`-fixture`, `-smoke`, `-artist`, `-json`) and the bucket classification logic per the R16 scenarios.
+- [ ] 6.2 Reuse `gemini.LoadGroundTruth` for the fixture side and the existing per-cell raw artifact reader path (mirrors `cmd/replay-ab-log`) for the smoke side; do not re-implement the parsers.
+- [ ] 6.3 Add a small unit test under `cmd/smoke-diff/main_test.go` covering the four-bucket classifier (MATCH / MISS / FALSE_POSITIVE / TIME_MISMATCH) against a hand-crafted fixture and a 4-event smoke payload, including the TIME_MISMATCH scenario from R16.
+- [ ] 6.4 Document `cmd/smoke-diff` usage in `backend/docs/gemini-concert-searcher-tuning.md` as an addition to the existing "A/B 評価ログ" subsection (or a new "Evaluation tools" subsection near §10) — show the BRADIO 19/22 invocation as the canonical example.
+- [ ] 6.5 Open the follow-up PR titled `feat(cmd/smoke-diff): per-event evaluation breakdown` against `liverty-music/backend`. Refs: #303.

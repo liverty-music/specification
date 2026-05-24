@@ -21,12 +21,13 @@ This change records that architecture as the new spec so future work has a singl
 - **`SearchMetadata` exposes `Step1Grounded` and `Step2Parse`** (each `*PassMetadata`). `Step1Search` / `Step2Extract` / `Step3Parse` from the abandoned three-step proposal do not appear.
 - The public `Search` / `SearchExt` wrappers keep their signatures and `[]*entity.ScrapedConcert` return type. The `SearchNewConcerts` RPC and the `auto-concert-discovery` CronJob are unaffected.
 - The earlier `redesign-concert-searcher-two-pass` and `redesign-concert-searcher-three-step-pipeline` change proposals are removed (never committed, never archived) and superseded by this change.
+- **`cmd/smoke-diff` per-event evaluation tool**: a new Go command in `backend/cmd/smoke-diff/` that consumes one A/B-harness raw artifact and the ground-truth fixture and prints a four-bucket breakdown (MATCH / MISS / FALSE_POSITIVE / TIME_MISMATCH) for a single artist. Formalises the ad-hoc `jq` + `comm` pipelines used during the 4-artist post-cleanup smoke so per-event analysis is reproducible from a single command. Implementation lands in a follow-up PR (`feat(cmd/smoke-diff)`); the requirement and tasks are recorded here so the contract is captured alongside the architecture it observes.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `gemini-grounded-extract-and-coerce`: the two-step grounded-extract / JSON-coerce pipeline, three parallel Step 1 slices, the `<extracted>` XML envelope shape, the Go-side verbatim parse, the year-inference rule, the `(local_date, venue, start_time)` dedup key, the tool-set invariants per step, and the per-step `SearchMetadata` fields.
+- `gemini-grounded-extract-and-coerce`: the two-step grounded-extract / JSON-coerce pipeline, three parallel Step 1 slices, the `<extracted>` XML envelope shape, the Go-side verbatim parse, the year-inference rule, the `(local_date, venue, start_time)` dedup key, the tool-set invariants per step, the per-step `SearchMetadata` fields, and the `cmd/smoke-diff` per-event evaluation tool that consumes the resulting raw artifacts.
 - `gemini-searcher-config`: per-step model configuration. Two fields — `ModelExtract` (Step 1) and `ModelParse` (Step 2) — each with a `defaultSearch*` fallback and a `GCP_GEMINI_SEARCH_MODEL_*` env var override. Default model bindings: extract → `gemini-3.5-flash`, parse → `gemini-3.1-flash-lite`. No `ModelDiscovery`.
 
 ### Modified Capabilities
