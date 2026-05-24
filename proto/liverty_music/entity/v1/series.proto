@@ -54,12 +54,18 @@ message Series {
   ];
 
   // The classification of this series. Determines how UI and notifications
-  // group and present the constituent events.
+  // group and present the constituent events. `not_in: [0]` rejects the
+  // SERIES_TYPE_UNSPECIFIED zero value at the proto boundary, matching the
+  // spec invariant that SERIES_TYPE_UNSPECIFIED SHALL never be persisted —
+  // `defined_only` alone would accept 0 because it is a declared enum value.
   SeriesType type = 3 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field) = {
       required: true
-      enum: {defined_only: true}
+      enum: {
+        defined_only: true
+        not_in: [0]
+      }
     }
   ];
 

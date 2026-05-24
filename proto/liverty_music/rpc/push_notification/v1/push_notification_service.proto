@@ -178,9 +178,7 @@ message NotifyNewConcertsRequest {
   // cannot be expressed as a per-field protovalidate / CEL rule because
   // it requires a DB lookup; the server enforces it before sending any
   // notifications and rejects the entire request with INVALID_ARGUMENT
-  // when any id fails the check. See backend handler
-  // `PushNotificationUseCase.NotifyNewConcerts` (commit 4a4cf38)
-  // for the runtime enforcement and the matching test fixtures.
+  // when any id fails the check.
 
   // The artist whose followers should be notified.
   entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];

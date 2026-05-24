@@ -66,8 +66,12 @@ message Event {
   // sibling events sharing the same tour, festival, or multi-day run.
   // Declared at the end of the message in source order to match its appended
   // wire-format number (8), keeping the visual / numeric order monotonic.
+  // Marked REQUIRED rather than OUTPUT_ONLY because it is a caller-supplied
+  // foreign-key reference (in any future CreateEvent / BulkImport flow the
+  // client identifies which Series the event belongs to), not a server-
+  // generated value like Event.id.
   SeriesId series_id = 8 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
 }
