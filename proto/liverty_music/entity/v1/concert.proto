@@ -37,7 +37,10 @@ message Concert {
 
   // The unique identifier of the venue where the concert is hosted.
   // Retained for backward compatibility; prefer the embedded `venue` field.
-  VenueId venue_id = 3 [(buf.validate.field).required = true];
+  VenueId venue_id = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
 
   // The scheduled calendar date of the concert event in the venue's local timezone.
   LocalDate local_date = 4 [(buf.validate.field).required = true];
@@ -51,7 +54,10 @@ message Concert {
 
   // The resolved venue where the concert is hosted.
   // Populated by the server on every response; includes name and admin_area when available.
-  Venue venue = 9 [(buf.validate.field).required = true];
+  Venue venue = 9 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
 
   // The raw venue name as scraped from the source.
   // Preserves the original text separately from the normalised Venue.name.

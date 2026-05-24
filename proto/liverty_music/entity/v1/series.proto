@@ -65,6 +65,9 @@ message Series {
 
   // The official source URL for series-level information (tour page,
   // festival page, or announcement page). Optional because not every
-  // discovered series has a dedicated landing page.
+  // discovered series has a dedicated landing page. A nil wrapper
+  // skips inner-Url validation by protovalidate's default presence
+  // semantics (Ignore.IGNORE_UNSPECIFIED), so callers omitting the
+  // field never hit the Url.value min_len / uri rules.
   Url source_url = 4 [(google.api.field_behavior) = OPTIONAL];
 }
