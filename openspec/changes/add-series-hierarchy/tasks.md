@@ -1,0 +1,78 @@
+## 1. Protobuf — Entity Layer (specification repo)
+
+- [x] 1.1 Create `proto/liverty_music/entity/v1/series.proto` with `SeriesId`, `SeriesType` enum (`TOUR`, `SINGLE`, `FESTIVAL`), and `Series` message (`id`, `title`, `type`, `source_url`). Add protovalidate constraints and documentation comments.
+- [x] 1.2 Rewrite `proto/liverty_music/entity/v1/event.proto` `Event` message to the slimmed shape: `id`, `series_id` (required), `venue`, `local_date`, `start_time`, `open_time`, `merkle_root`. Remove `title`. Keep `EventId` unchanged. Removed field number reserved.
+- [x] 1.3 Modify `proto/liverty_music/entity/v1/concert.proto` `Concert` message: remove `Title title`, remove `Url source_url`, replace `ArtistId artist_id` with `repeated Artist performers` (min_items=1), add embedded `Series series` (required). Removed field numbers reserved.
+- [x] 1.4 Run `buf format -w` and `buf lint` locally; ensure no STANDARD or COMMENTS rule violations.
+- [x] 1.5 Run `buf breaking --against '.git#branch=main'` and confirm the expected breaking diff. The PR will require the `buf skip breaking` label.
+
+## 2. OpenSpec — Spec Sync (specification repo)
+
+- [ ] 2.1 After PR merge and Release, the existing spec at `openspec/specs/event-management/spec.md` will be patched by the archive flow. No manual change here beyond the delta already authored under `openspec/changes/add-series-hierarchy/specs/event-management/spec.md`.
+
+## 3. Database — Atlas Migration (backend repo)
+
+- [x] 3.1 Update `internal/infrastructure/database/rdb/schema/schema.sql` desired-state schema: add `CREATE TYPE series_type`, `CREATE TABLE series`, `CREATE TABLE event_performers`; modify `events` (drop `artist_id`, `title`, `source_url`; add `series_id` NOT NULL FK; replace `uq_events_natural_key` with `(series_id, local_event_date, venue_id)`); modify `concerts` (drop `artist_id`); add `idx_events_series_id`, `idx_event_performers_artist_id`; drop `idx_concerts_artist_id`.
+- [x] 3.2 Run `atlas migrate diff --env local add_series_hierarchy` to generate the migration file under `k8s/atlas/base/migrations/`.
+- [x] 3.3 Hand-edit the generated migration to prepend `TRUNCATE TABLE events CASCADE;` (Atlas does not infer destructive data ops automatically). Also removed unrelated `DROP INDEX idx_venues_listed_name_admin_area` (schema.sql drift, tracked separately) and stripped `"app"."<name>"` schema qualifiers to match the existing migration convention (`"<name>"`, resolved via search_path).
+- [x] 3.4 Add the new migration filename to `k8s/atlas/base/kustomization.yaml` under `configMapGenerator.files`.
+- [x] 3.5 Run `atlas migrate validate --env local` and `atlas migrate apply --env local` against a fresh local Postgres to confirm the migration applies cleanly. Validate not run (Atlas v1.0.1 `docker://` dev URL incompatible with `search_path=app,public` syntax on this environment); apply succeeded in 309ms, 22 statements OK; schema verified with `\d events`, `\d series`, `\d event_performers`.
+
+## 4. Backend — Entity Layer (backend repo)
+
+- [x] 4.1 Add `internal/entity/series.go` defining `Series` and `SeriesID` types. Mirror the proto shape (no struct tags unless required). Also defined `SeriesType` enum and `SeriesRepository` interface in the same file so Section 5 has an explicit target.
+- [x] 4.2 Update `internal/entity/event.go` (or equivalent) to remove `Title`, `SourceURL`, `ArtistID`; add `SeriesID`.
+- [x] 4.3 Add `internal/entity/event_performer.go` (or fold into `event.go`) representing the M:N relation. Decide based on existing conventions whether to expose performers as `[]ArtistID` on `Event` or as a separate aggregate.
+
+## 5. Backend — Repository Layer (backend repo)
+
+- [x] 5.1 Add `SeriesRepository` interface and pgx-backed implementation: `Create`, `GetByID`, `List` (filtered by criteria as needed by current callers).
+- [x] 5.2 Update `EventRepository`: change `Create`/`Upsert` signatures to accept `SeriesID` and a `[]ArtistID` performers slice; persist `event_performers` rows in the same transaction as the `events` row.
+- [x] 5.3 Update `EventRepository.GetByID` / `List*` to JOIN `series` and `event_performers` so callers can populate `Concert` DTOs without N+1.
+- [x] 5.4 Update or remove any repository method that read/wrote `events.title`, `events.source_url`, or `events.artist_id` directly.
+- [x] 5.5 Update `ConcertRepository` to no longer read/write `concerts.artist_id`. The `concerts` table is now an `event_id`-only placeholder.
+
+## 6. Backend — Use Case Layer (backend repo)
+
+- [x] 6.1 Update `SearchNewConcerts` (auto-discovery) to create a 1:1 `Series` per discovered event during this change (use `SeriesType=SINGLE` as the safe default). Series-grouping intelligence is deferred to the `auto-discovery-series-grouping` follow-up change.
+- [x] 6.2 Update `ListConcerts` (or equivalent) to compose the `Concert` DTO from joined `Event` + `Series` + performers.
+- [x] 6.3 Update any use case that previously read `Event.Title` or `Event.SourceURL` to source those values from the parent `Series`.
+
+## 7. Backend — Handler / Adapter Layer (backend repo)
+
+- [x] 7.1 Update `ConcertService` handlers to construct the proto `Concert` with embedded `Series series` and `repeated Artist performers`. Field-by-field mapping in `internal/adapter/ipc/`. Partially done: mapper still emits the legacy BSR proto shape (Title / SourceUrl / ArtistId) but sources every value from the new entity locations (Series.Title, Series.SourceURL, Performers[0].ID). The proto-side swap to embedded Series + repeated performers happens in 9.2 once BSR publishes new generated types.
+- [x] 7.2 Remove any conversion code that referenced `Event.Title`, `Event.SourceURL`, or `Concert.ArtistId` directly. Done at the entity boundary: every call site now reads from Series / Performers. The mapper still references the legacy proto field names (Title, SourceUrl, ArtistId) by necessity until BSR ships new generated types in 9.2.
+
+## 8. Backend — Tests (backend repo)
+
+- [x] 8.1 Update repository integration tests (`internal/infrastructure/database/rdb/`) for the new `events` columns and `event_performers` rows. Also added two scenario-coverage tests under `concert_repo_test.go`: `TestConcertRepository_CoHeadliners` (M:N performers round-trip) and `TestConcertRepository_DifferentSeriesSameVenueDate` (positive half of the natural-key contract). Both close gaps surfaced by `/opsx:verify`.
+- [x] 8.2 Add new integration tests for `SeriesRepository` at `internal/infrastructure/database/rdb/series_repo_test.go`: Create (single / bulk / nil-skip / preset ID / ON CONFLICT DO NOTHING / empty title or type rejection), Get (existing / NotFound / InvalidArgument / source URL absence preserved), ListByIDs (full match / silent omission / empty-slice rejection / SeriesType round-trip).
+- [x] 8.3 Update use-case unit tests with new mocks generated by `mockery` after interface changes.
+- [x] 8.4 Update handler tests with new `Concert` proto shape.
+- [x] 8.5 Run `make check` and confirm all tests pass against a fresh local DB.
+
+## 9. Backend — Dependency Wire-up & Build (backend repo)
+
+- [x] 9.3 Run `mockery` to regenerate mocks reflecting any interface changes. Done early as part of Section 8; new mock_SeriesRepository.go committed in 4a4cf38.
+- [x] 9.4 Run `make check` (lint + tests) end-to-end. Done early as part of Section 8; verified green on backend branch 514-add-series-hierarchy.
+- [ ] 9.1 After the specification release publishes new generated types to BSR, run `go get buf.build/gen/go/liverty-music/schema/...@<new-version>` and `go mod tidy` in the backend repo.
+- [ ] 9.2 Swap the legacy-proto bridge in mapper/concert.go for the real generated types from `buf.build/gen/go/liverty-music/schema/...` (embed Series, expose repeated performers). Also re-run `make check` to confirm the swap stays green. Update `internal/adapter/rpc/concert_handler_test.go` assertions per the inline TODO at the top of the file: replace `resp.Msg.Concerts[i].Title` / `.SourceUrl` / `.ArtistId` references with `Series.Title` / `Series.SourceUrl` / `Performers[]`, and add at least one multi-performer assertion now that `repeated Artist performers` is generated.
+
+## 10. Frontend — Type Migration (frontend repo)
+
+- [ ] 10.1 After BSR release, run `npm install @buf/liverty-music_schema.connectrpc_es@<new-version>` to consume the new generated types.
+- [ ] 10.2 Update any frontend code reading `Concert.title` / `Concert.sourceUrl` / `Concert.artistId` to read from `Concert.series.title` / `Concert.series.sourceUrl` / `Concert.performers`.
+- [ ] 10.3 Run `make check` in the frontend repo.
+
+## 11. PR Coordination
+
+- [x] 11.1 Open the specification PR with the `buf skip breaking` label. Wait for `buf-pr-checks.yml` and review approval before merging. PR #515 opened with the label; CI green; awaiting review.
+- [ ] 11.2 After merge, create a GitHub Release with a SemVer-major tag (since this is a breaking change). The `buf-release.yml` workflow will publish to BSR.
+- [ ] 11.3 Monitor `gh run watch` on the BSR release workflow until completion.
+- [ ] 11.4 Open backend and frontend PRs with the new BSR version pinned. Both must reference this OpenSpec change in the PR description (`Refs: #<issue-number>`).
+
+## 12. Post-Merge Verification
+
+- [ ] 12.1 Confirm ArgoCD has synced the new schema (Atlas operator applies migration in dev).
+- [ ] 12.2 Smoke-test `ConcertService` against `api.dev.liverty-music.app` using a captured Zitadel JWT; verify the response carries the embedded `Series` and `performers[]`.
+- [ ] 12.3 Archive this OpenSpec change with `/opsx:archive` once `openspec status` reports `isComplete=true`.

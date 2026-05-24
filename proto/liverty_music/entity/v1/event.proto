@@ -6,6 +6,7 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/series.proto";
 import "liverty_music/entity/v1/venue.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
@@ -18,20 +19,30 @@ message EventId {
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
-// Event represents a scheduled music performance at a venue, such as a concert or live session.
-// Events are the central business object connecting artists, venues, and fans. When an event
-// is configured for ticketing, it holds a Merkle root that enables zero-knowledge proof
-// entry verification without revealing individual attendee identities.
+// Event represents a single performance occurring on a specific date at a specific venue.
+// Every Event belongs to a parent Series that owns shared metadata such as the tour or
+// festival title. Series-level fields (title, source URL, type) are intentionally absent
+// from Event to avoid duplication across multiple events that share the same series.
+// Performing artists are modelled as an M:N relation outside this message; consumers
+// should consult `event_performers` to resolve who is performing.
 message Event {
+  // Field number 3 was previously occupied by `Title title`, which has been
+  // promoted to the parent Series. Reserved to prevent accidental reuse.
+  reserved 3;
+  reserved "title";
+
   // id is the unique identifier for this event within the Liverty Music platform.
-  EventId id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  EventId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
 
   // venue is the physical location where this event will take place.
   // Populated by the server; includes name and admin_area when available.
-  Venue venue = 2 [(buf.validate.field).required = true];
-
-  // title is the human-readable name of the event, such as the concert name or tour stop.
-  Title title = 3 [(buf.validate.field).required = true];
+  Venue venue = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
 
   // local_date is the calendar date of the event in the venue's local timezone.
   // This date is displayed to fans when browsing or purchasing tickets.
@@ -50,4 +61,17 @@ message Event {
   // published on-chain and allows entry validators to verify membership without querying
   // a central database, preserving fan privacy.
   optional bytes merkle_root = 7 [(buf.validate.field).bytes.len = 32];
+
+  // series_id references the parent Series that aggregates this event with any
+  // sibling events sharing the same tour, festival, or multi-day run.
+  // Declared at the end of the message in source order to match its appended
+  // wire-format number (8), keeping the visual / numeric order monotonic.
+  // Marked REQUIRED rather than OUTPUT_ONLY because it is a caller-supplied
+  // foreign-key reference (in any future CreateEvent / BulkImport flow the
+  // client identifies which Series the event belongs to), not a server-
+  // generated value like Event.id.
+  SeriesId series_id = 8 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
 }

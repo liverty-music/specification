@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "liverty_music/entity/v1/entity.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// SeriesId is a globally unique identifier for an event series.
+// A series groups one or more events that share metadata such as the tour
+// title or official source URL. Examples: a multi-stop tour, a multi-day
+// single-venue run, or a festival.
+message SeriesId {
+  // A UUID string mapping to the series's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// SeriesType classifies the shape of an event series so that consumers
+// (notifications, UI, search) can apply the appropriate presentation and
+// filtering rules. New values may be appended; existing values must not be
+// renumbered.
+enum SeriesType {
+  // Default value; must not be used in API requests.
+  SERIES_TYPE_UNSPECIFIED = 0;
+  // A series of events at multiple venues by the same set of performers,
+  // typically branded with a tour name (e.g. "Eras Tour 2026").
+  SERIES_TYPE_TOUR = 1;
+  // A standalone engagement at a single venue, spanning one or more
+  // consecutive days (e.g. a single concert or "Tokyo Dome 3 Days").
+  SERIES_TYPE_SINGLE = 2;
+  // A multi-performer event such as a music festival
+  // (e.g. "FUJI ROCK FESTIVAL 2026").
+  SERIES_TYPE_FESTIVAL = 3;
+}
+
+// Series is the parent aggregation above Event. It owns metadata that is
+// shared across every stop or day of the same engagement, ensuring fields
+// like title and source URL are stored exactly once per series rather than
+// duplicated on every event row.
+message Series {
+  // The unique identifier for this series.
+  SeriesId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The official title shared by all events in this series, such as a tour
+  // name or festival name.
+  Title title = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The classification of this series. Determines how UI and notifications
+  // group and present the constituent events. `not_in: [0]` rejects the
+  // SERIES_TYPE_UNSPECIFIED zero value at the proto boundary, matching the
+  // spec invariant that SERIES_TYPE_UNSPECIFIED SHALL never be persisted —
+  // `defined_only` alone would accept 0 because it is a declared enum value.
+  SeriesType type = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field) = {
+      required: true
+      enum: {
+        defined_only: true
+        not_in: [0]
+      }
+    }
+  ];
+
+  // The official source URL for series-level information (tour page,
+  // festival page, or announcement page). Optional because not every
+  // discovered series has a dedicated landing page. A nil wrapper
+  // skips inner-Url validation by protovalidate's default presence
+  // semantics (Ignore.IGNORE_UNSPECIFIED), so callers omitting the
+  // field never hit the Url.value min_len / uri rules.
+  Url source_url = 4 [(google.api.field_behavior) = OPTIONAL];
+}
