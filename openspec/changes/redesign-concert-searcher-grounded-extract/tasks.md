@@ -51,9 +51,9 @@ Confirm the dead-code removal in Section 2 is behaviour-preserving.
 
 ## 5. Commit, archive, and follow-up tracking
 
-- [ ] 5.1 Commit the Section 2 dead-code removal under `chore(infra/gemini): drop unused ModelDiscovery config plumbing` with `Refs: #303`.
-- [ ] 5.2 Commit the Section 3 doc refresh under `docs(infra/gemini): rewrite tuning doc around grounded-extract architecture` with `Refs: #303`.
-- [ ] 5.3 If `make check` passes, prepare a PR with all related commits (`84f7399`..plus the two cleanup commits) for the `evaluate-gemini-search-model` branch.
-- [ ] 5.4 Open follow-up tickets for the out-of-scope items called out in the proposal's Non-Goals: (a) 対バン discovery for guest appearances, (b) overseas venue timezone extraction, (c) production cost optimisation.
+- [x] 5.1 Commit the Section 2 dead-code removal as `chore(infra/gemini): drop ModelDiscovery, flip per-step defaults` (commit `7960968` on `evaluate-gemini-search-model`).
+- [x] 5.2 Commit the Section 3 doc refresh as `docs(infra/gemini): document the grounded-extract concert search pipeline` (commit `48c2001` on `evaluate-gemini-search-model`).
+- [ ] 5.3 If `make check` passes, prepare a PR with all related commits (`84f7399`..`48c2001`) for the `evaluate-gemini-search-model` branch. (Awaiting user approval to push; `make check` lint clean, `pkg/config` and `internal/infrastructure/gcp/gemini` unit tests pass; pre-existing `events.title` schema migration drift breaks `internal/infrastructure/database/rdb` integration tests on this worktree, tracked separately.)
+- [ ] 5.4 Open follow-up tickets for the out-of-scope items called out in the proposal's Non-Goals: (a) 対バン discovery for guest appearances, (b) overseas venue timezone extraction, (c) production cost optimisation. (Deferred per user direction: 対バン support was explicitly scoped out earlier in the session; (b) and (c) remain as informal backlog items.)
 - [ ] 5.5 Run `/opsx:verify redesign-concert-searcher-grounded-extract` and confirm zero CRITICAL issues remain.
 - [ ] 5.6 Run `/opsx:archive redesign-concert-searcher-grounded-extract` once `openspec status` reports `isComplete=true`.
