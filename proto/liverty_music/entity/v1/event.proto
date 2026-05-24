@@ -32,11 +32,17 @@ message Event {
   reserved "title";
 
   // id is the unique identifier for this event within the Liverty Music platform.
-  EventId id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  EventId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
 
   // venue is the physical location where this event will take place.
   // Populated by the server; includes name and admin_area when available.
-  Venue venue = 2 [(buf.validate.field).required = true];
+  Venue venue = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
 
   // local_date is the calendar date of the event in the venue's local timezone.
   // This date is displayed to fans when browsing or purchasing tickets.
@@ -47,7 +53,10 @@ message Event {
   // Declared after the other required fields and before the optional ones to
   // satisfy AIP-140 source-ordering, while keeping the appended wire-format
   // number (8) so existing consumers stay compatible.
-  SeriesId series_id = 8 [(buf.validate.field).required = true];
+  SeriesId series_id = 8 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
 
   // start_time is the timestamp when the performance is scheduled to begin.
   // This field is optional and may be omitted for events where the start time is not yet confirmed.
