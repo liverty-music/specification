@@ -106,6 +106,12 @@ The system SHALL allow users to change the display language of the application. 
 - **THEN** the system SHALL show a "Language" row displaying the current language name derived from `UserService.current.preferred_language` (e.g., "日本語" or "English")
 - **AND** the system SHALL NOT read `localStorage['language']` to populate this row
 
+#### Scenario: Displaying language option before backfill completes
+- **WHEN** the Settings page is displayed and `UserService.current.preferredLanguage` is absent (legacy NULL row, or backfill RPC still in flight after hydration)
+- **THEN** the system SHALL derive the displayed language name from `I18N.getLocale()` (the currently active locale, which is the value the backfill RPC will send)
+- **AND** the system SHALL NOT read `localStorage['language']` to populate this row
+- **AND** the row SHALL re-evaluate automatically once `UserService.current.preferredLanguage` becomes populated by the backfill response
+
 #### Scenario: Changing language
 - **WHEN** a user taps the "Language" row
 - **THEN** the system SHALL display a selection UI with available languages: 日本語, English

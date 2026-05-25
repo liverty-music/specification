@@ -91,7 +91,7 @@ When the user's profile is mutated via an RPC, the in-memory `current` state SHA
 - **WHEN** an authenticated user calls `UserService.updatePreferredLanguage()` successfully
 - **THEN** the system SHALL update `UserService.current` with the `User` entity returned in the RPC response
 - **AND** subsequent reads of `UserService.current.preferredLanguage` SHALL reflect the new value
-- **AND** the system SHALL call `I18N.setLocale()` with the new value so all `t`-bound bindings re-render
+- **AND** `I18N.setLocale()` SHALL be called exactly once for this change, by the shared language-switch utility per `frontend-i18n`'s "Authenticated caller path" (NOT by `UserService` write-through) — this scenario covers only the entity state update, not the i18n side-effect
 
 ### Requirement: Apply Preferred Language to i18n After Hydration
 

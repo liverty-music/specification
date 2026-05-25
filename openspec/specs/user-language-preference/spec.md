@@ -66,7 +66,6 @@ The `UserService.Create` RPC SHALL accept an optional `preferred_language` field
 - **WHEN** `Create`'s INSERT fails with `unique_violation`
 - **AND** the idempotent retry `GetByExternalID(claims.sub)` returns `NotFound`
 - **THEN** the backend SHALL respond with the original `AlreadyExists`
-- **AND** the response SHALL indicate that the conflicting column was the email unique constraint, not the external_id constraint
 
 ### Requirement: UpdatePreferredLanguage RPC
 
@@ -125,13 +124,18 @@ The `app.users.preferred_language` column SHALL NOT carry a server-side `DEFAULT
 - **WHEN** an operator inspects `\d+ app.users` or queries `pg_description` for the column
 - **THEN** the comment SHALL state that NULL means "not yet set by client; client backfills via UpdatePreferredLanguage on first observation"
 
-### Requirement: Repository Scans Nullable users Columns Through sql.NullString
+### Requirement: Repository NULL-Safe Reads on Nullable users Columns
 
-`UserRepository.scanUser` SHALL scan every nullable column on the `users` table (currently `preferred_language`, `country`, `time_zone`, `safe_address`) through a `sql.NullString` intermediate local, NOT directly into the entity's `string` field. The entity field is assigned from the intermediate's `.String` only when `.Valid`; otherwise the field is left at its zero value (empty string). This SHALL apply uniformly across `Get`, `GetByExternalID`, `GetByEmail`, `Update`, `UpdateHome` (post-update re-scan), and `List` since they share the same scanner.
+Every nullable column on the `users` table (currently `preferred_language`, `country`, `time_zone`, `safe_address`) SHALL be read in a NULL-safe way so that a NULL value never propagates as a pgx scan error. Two equivalent patterns are accepted:
 
-Rationale: pgx returns an error when scanning SQL NULL into a non-nullable Go `string`. Direct scans on a nullable column work today only because every existing row happens to have a non-NULL value; the next migration or operator-side write that introduces a NULL causes every read of that row to fail at the wire boundary, manifesting at the handler layer as `not_found` / `already_exists` and masking the true cause.
+1. **Go-side `sql.NullString` intermediate** — the SELECT scans into a `sql.NullString` local, and the entity field is assigned from the intermediate's `.String` only when `.Valid`; otherwise the field is left at its zero value (empty string). This is the pattern used for `preferred_language`, `country`, and `time_zone`.
+2. **SQL-side `COALESCE(col, '')`** — the SELECT projects the column through `COALESCE(col, '')` so pgx never sees a NULL at the scan boundary. This is the pattern used for `safe_address` (since the very first commit that introduced the column).
 
-#### Scenario: Scan succeeds when the nullable column is NULL
+Both patterns SHALL apply uniformly across `Get`, `GetByExternalID`, `GetByEmail`, `Update`, `UpdateHome` (post-update re-scan), and `List` since they share the same scanner.
+
+Rationale: pgx returns an error when scanning SQL NULL into a non-nullable Go `string`. The next migration or operator-side write that introduces a NULL into a column read with neither pattern in place would cause every read of that row to fail at the wire boundary, manifesting at the handler layer as `not_found` / `already_exists` and masking the true cause.
+
+#### Scenario: Scan succeeds when a nullable column is NULL
 
 - **WHEN** `scanUser` reads a row whose `preferred_language` (or `country`, or `time_zone`, or `safe_address`) is NULL
 - **THEN** the scan SHALL succeed without error
@@ -150,8 +154,8 @@ Rationale: pgx returns an error when scanning SQL NULL into a non-nullable Go `s
 - **THEN** the helper `nullStringFromEmpty` (or equivalent) SHALL convert it to `sql.NullString{Valid: false}` before binding to the SQL statement
 - **AND** the resulting row SHALL store SQL NULL in that column, not the empty string
 
-#### Scenario: Coverage extends to all four currently-nullable users columns
+#### Scenario: Coverage extends to every currently-nullable users column
 
 - **WHEN** auditing `scanUser`
-- **THEN** none of `preferred_language`, `country`, `time_zone`, `safe_address` SHALL be scanned directly into the entity's `string` field
-- **AND** any future addition of a nullable column to `users` SHALL follow the same pattern (enforced by code review)
+- **THEN** `preferred_language`, `country`, `time_zone`, and `safe_address` SHALL each be read via one of the two accepted NULL-safe patterns
+- **AND** any future addition of a nullable column to `users` SHALL adopt one of the same two patterns (enforced by code review)
