@@ -19,5 +19,3 @@ jobs:
   review:
     uses: liverty-music/.github/.github/workflows/claude-review.yml@main
     secrets: inherit
-    with:
-      additional_focus: "Protobuf style (Google AIP), buf.validate annotations, backward compatibility"
