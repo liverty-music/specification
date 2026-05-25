@@ -74,3 +74,10 @@ No `SearchModelDiscovery()` method SHALL exist on `GCPConfig`. The legacy `Searc
 
 - **WHEN** `runStep2Parse` selects a model name for the API call
 - **THEN** it SHALL call `s.config.modelParse()`
+
+#### Scenario: Searcher rejects empty model name at construction
+
+- **WHEN** `gemini.NewConcertSearcher` is called with a `Config` whose `modelExtract()` or `modelParse()` resolves to the empty string (e.g. a future DI path that drops the per-step wiring AND leaves the legacy `ModelName` empty)
+- **THEN** the constructor SHALL return an error before any Gemini client is initialised
+- **AND** the error message SHALL identify which per-step field was unresolved (`ModelExtract` vs `ModelParse`)
+- **AND** no Gemini API call SHALL be issued for that searcher

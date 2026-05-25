@@ -208,14 +208,17 @@ The function `mergeAndDedupEnvelopes` SHALL combine each per-slice envelope into
 
 - **WHEN** no slice contains a parseable `<extracted>` wrapper
 - **AND** at least one slice returned non-empty text
-- **THEN** `mergeAndDedupEnvelopes` SHALL return the first non-empty slice text verbatim
-- **AND** Step 2 SHALL still receive a non-empty input
+- **THEN** `mergeAndDedupEnvelopes` SHALL return the first non-empty slice text verbatim (so the merged-envelope artefact is preserved for logs / observability)
+- **AND** `parseStep1Envelope` SHALL produce an empty `[]EventDraft` from that non-XML body
+- **AND** `runStep2Parse` SHALL short-circuit on the empty draft list and return `(nil, nil, nil)` — no Step 2 API call SHALL be issued, and `Search` SHALL return an empty `[]*entity.ScrapedConcert`
 
 ### Requirement: Step 2 receives only the JSON-coercion-relevant fields
 
 The `step2InputEvent` payload sent to Step 2 SHALL contain exactly these fields per event: `index` (integer, the join key back to the EventDraft), `venue`, `country`, `local_date`, `start_time`, `open_time`. The fields `title` and `source_url` from the EventDraft SHALL NOT enter Step 2's input or schema.
 
 Step 2's `responseJSONSchema` SHALL describe an object with a single `events` array. Each element SHALL be an object with exactly these properties: `index`, `admin_area`, `local_date`, `start_time`, `open_time`. All five fields SHALL be required. `additionalProperties` SHALL be false.
+
+`admin_area` SHALL be the sub-national administrative region of the input event's venue (Japanese 都道府県, US/CA state, etc.), expressed in **local form** (e.g. `愛知県`, `東京都`, `California`) and NOT in ISO 3166-2 codes (e.g. `JP-23`). Step 2 SHALL derive it from `venue` together with `country` when the venue text does not already carry the prefecture/state prefix. Step 2 SHALL emit `""` (empty string) when the region cannot be determined with confidence — `null` SHALL NOT be emitted. The Step 2 system instruction's `adminAreaField.description` carries the same contract.
 
 #### Scenario: Step 2 input shape
 
@@ -229,7 +232,7 @@ Step 2's `responseJSONSchema` SHALL describe an object with a single `events` ar
 - **THEN** each output entry SHALL have exactly the fields `{index, admin_area, local_date, start_time, open_time}`
 - **AND** `title` and `source_url` SHALL NOT appear in the schema or output
 
-### Requirement: Step 2 tools MUST be empty; responseJsonSchema MUST be set
+### Requirement: Step 2 tools MUST be empty; responseJSONSchema MUST be set
 
 Step 2's `GenerateContentConfig.Tools` SHALL be empty (no `GoogleSearch`, no `URLContext`, no function tools). `GenerateContentConfig.ResponseJsonSchema` SHALL be set to `responseJSONSchema`. The `assertStepInvariants("step2_parse", cfg)` guard SHALL enforce this contract and return an internal error before the API call is issued if any invariant is violated.
 
@@ -278,12 +281,18 @@ If Step 2's output omits an `index` that exists in the drafts, the searcher SHAL
 - **WHEN** the input drafts contain two events with identical `(local_date, venue, start_time)` triples
 - **THEN** the final result SHALL contain exactly one entry for that triple
 
+#### Scenario: Cross-slice duplicate at the 12-month boundary → fold
+
+- **WHEN** the `tours_near` and `tours_far` slices both extract the same event at the boundary date (`tours_near.to_date` == `tours_far.from_date` == `now + 12mo`), producing two drafts with identical `(local_date, venue, start_time)` triples (e.g. `(2027-05-25, 日本武道館, 18:00:00+09:00)`)
+- **THEN** `parseStep2Response` SHALL return exactly one `*entity.ScrapedConcert` for that triple
+- **AND** SHALL NOT distinguish the two source slices in the merged output
+
 ### Requirement: SearchMetadata exposes Step1Grounded and Step2Parse
 
 `SearchMetadata` SHALL expose two `*PassMetadata` fields populated per call:
 
 - `Step1Grounded` — aggregated metadata across all parallel Step 1 slices (sum of token counts, OR-ed finish reasons, concatenated raw response text).
-- `Step2Parse` — Step 2 metadata when Step 2 ran, or nil when every Step 1 slice failed transiently.
+- `Step2Parse` — Step 2 metadata when Step 2 ran. SHALL be nil in any path where Step 2 did not run, namely: (a) every Step 1 slice exhausted its transient retry policy, (b) `Search` aborted because at least one Step 1 slice returned a permanent error, or (c) `parseStep1Envelope` produced an empty `[]EventDraft` and `runStep2Parse` short-circuited.
 
 The top-level token counters and `RawResponseText` on `SearchMetadata` SHALL mirror `Step2Parse` once Step 2 completes (back-compat with existing log consumers). The harness raw-response writer SHALL emit per-step sub-objects under the JSON keys `step1_grounded` and `step2_parse`.
 
@@ -316,7 +325,16 @@ The integration test `searcher_integration_test.go`'s `writeRawResponse` SHALL p
 
 The backend SHALL provide a `cmd/smoke-diff` Go command that consumes one A/B-harness raw artifact (`cell_*.json`) plus the `testdata/ab_ground_truth.json` fixture and prints a per-event breakdown of one artist's discovered events partitioned into four buckets: MATCH (in fixture and smoke), MISS (in fixture, not in smoke), FALSE_POSITIVE (in smoke, not in fixture), TIME_MISMATCH (date and venue match but `start_time` differs). The tool SHALL exit 0 regardless of bucket counts (it is observation-only, not a CI gate) and SHALL accept a `-json` flag to additionally emit a machine-readable JSON object alongside the human-readable summary.
 
-This requirement formalises the ad-hoc `jq` + `comm` shell pipelines that were used during the 4-artist post-cleanup smoke (UVERworld / Vaundy / BRADIO / SUPER BEAVER, recall 92/95 at 100% precision) so future contributors can reproduce the per-event analysis with a single command instead of reconstructing the shell incantations from session transcripts.
+`recall_pct` and `precision_pct` SHALL be computed as:
+
+```
+recall_pct    = 100 × MATCH / (MATCH + MISS + TIME_MISMATCH)
+precision_pct = 100 × MATCH / (MATCH + FALSE_POSITIVE)
+```
+
+That is, TIME_MISMATCH counts against recall (the fixture event was not delivered with its expected time) but does not count against precision (the smoke event is not spurious; only its time field is wrong). Both ratios SHALL be rounded to one decimal place in the human-readable summary and emitted as `float64` in the JSON output. The 86.4% / 100% values that appear in the BRADIO scenario below presume `TIME_MISMATCH = 0` for that run; with any non-zero TIME_MISMATCH the recall would drop by `100 / (MATCH + MISS + TIME_MISMATCH)` per misclassified event.
+
+This requirement formalises the ad-hoc `jq` + `comm` shell pipelines that were used during the 4-artist post-cleanup smoke (UVERworld / Vaundy / BRADIO / SUPER BEAVER) so future contributors can reproduce the per-event analysis with a single command instead of reconstructing the shell incantations from session transcripts. That smoke recorded an aggregate effective recall of 92 / 95 at 100% precision, counting Vaundy's three HK/KR time-zone extraction misses as date-level matches; the strict (date+time) count for the same run is 89 / 95 (93.7%), per design.md's smoke summary.
 
 #### Scenario: Human-readable breakdown for an 86%-recall cell
 
