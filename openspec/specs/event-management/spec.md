@@ -8,7 +8,7 @@ The Event Management capability handles the lifecycle of generic events, providi
 
 ### Requirement: Generic Event Management
 
-The system SHALL support a generic `Event` entity that represents a single performance occurring on a specific date at a specific venue. Each `Event` SHALL encapsulate per-occurrence properties: `EventId`, `SeriesId` (parent reference), `Venue`, `LocalEventDate`, `StartTime`, and `OpenTime`. The `EventId` message SHALL be defined in `event.proto` as the canonical event identifier for the platform.
+The system SHALL support a generic `Event` entity that represents a single performance occurring on a specific date at a specific venue. Each `Event` SHALL encapsulate per-occurrence properties: `EventId`, `SeriesId` (parent reference), `Venue` (embedded; the DB stores the relationship as a scalar `venue_id` FK and the server hydrates the full `Venue` on read), `LocalDate` (proto field name; the underlying DB column is `local_event_date`), `StartTime`, and `OpenTime`. The `EventId` message SHALL be defined in `event.proto` as the canonical event identifier for the platform.
 
 Series-level metadata (title, source URL, type) SHALL NOT be stored on `Event`; those properties belong to the parent `Series` entity.
 
@@ -34,8 +34,10 @@ Series-level metadata (title, source URL, type) SHALL NOT be stored on `Event`; 
 #### Scenario: Event does not carry series-level metadata
 
 - **WHEN** the `Event` proto message is defined
-- **THEN** it SHALL NOT contain a `Title`, `Url source_url`, or any field representing series-level metadata
+- **THEN** it SHALL NOT contain a `Title title` field (previously occupied field number 3, now reserved) or any other field representing series-level metadata
 - **AND** retrieving the title or source URL for an event SHALL require resolving its parent `Series`
+
+> Note: `source_url` was never a field on `Event` — it lived on `Concert` (field 8, now reserved). The series-level relocation applies to both messages: `Concert.title` / `Concert.source_url` were moved to `Series.title` / `Series.source_url`, while `Event` had only `title` to relocate.
 
 ### Requirement: Event-Type Extensibility
 
@@ -55,9 +57,9 @@ The system SHALL support extending the base `Event` entity with domain-specific 
 
 ### Requirement: Series as Parent Aggregation
 
-The system SHALL support a `Series` entity that aggregates one or more `Event` rows representing a tour, a multi-day single-venue run, or a festival. Each `Event` MUST belong to exactly one `Series`. A `Series` SHALL own the metadata that is common across all its events.
+The system SHALL support a `Series` entity that aggregates one or more `Event` rows representing a tour, a multi-day single-venue run, or a festival. Each `Event` SHALL belong to exactly one `Series`. A `Series` SHALL own the metadata that is common across all its events.
 
-The `Series` entity SHALL include: `SeriesId`, `Title`, `SeriesType` (one of `TOUR`, `SINGLE`, `FESTIVAL`), and an optional `source_url`. The `SeriesType` enum SHALL be designed as additive — new values MAY be appended without breaking existing consumers.
+The `Series` entity SHALL include: `SeriesId`, `Title`, `SeriesType` (one of `SERIES_TYPE_TOUR`, `SERIES_TYPE_SINGLE`, `SERIES_TYPE_FESTIVAL` — these are the proto-prefixed enum values enforced by `buf lint ENUM_VALUE_PREFIX`; `TOUR` / `SINGLE` / `FESTIVAL` are the human-readable suffixes used in prose), and an optional `source_url`. The `SeriesType` enum SHALL be designed as additive — new values MAY be appended without breaking existing consumers.
 
 #### Scenario: Series owns shared metadata
 
@@ -74,7 +76,7 @@ The `Series` entity SHALL include: `SeriesId`, `Title`, `SeriesType` (one of `TO
 #### Scenario: SeriesType enumerates supported series shapes
 
 - **WHEN** a `Series` is created
-- **THEN** its `type` SHALL be one of `TOUR`, `SINGLE`, or `FESTIVAL`
+- **THEN** its `type` SHALL be one of `SERIES_TYPE_TOUR`, `SERIES_TYPE_SINGLE`, or `SERIES_TYPE_FESTIVAL`
 - **AND** the `SERIES_TYPE_UNSPECIFIED` value SHALL never be persisted
 
 #### Scenario: Series natural identity is not enforced at the database layer
@@ -109,7 +111,7 @@ The `Concert` DTO SHALL expose the resolved performers via a repeated field, ens
 
 ### Requirement: Event Natural Key Reflects Series Membership
 
-The natural key of `events` SHALL be `(series_id, local_event_date, venue_id)`. The previous key `(artist_id, local_event_date)` SHALL be removed because `artist_id` no longer exists on `events`.
+The natural key of the `events` table SHALL be `(series_id, local_event_date, venue_id)` — this is a database-layer constraint expressed in the storage column names; the corresponding proto fields are `series_id`, `local_date` (note the proto/DB column rename), and the embedded `venue.id`. The previous key `(artist_id, local_event_date)` SHALL be removed because `artist_id` no longer exists on the `events` row (performers live in `event_performers`).
 
 #### Scenario: Same series cannot have two events at the same venue on the same date
 
