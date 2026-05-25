@@ -75,4 +75,4 @@
 
 - [ ] 12.3 Archive this OpenSpec change with `/opsx:archive` once `openspec status` reports `isComplete=true`.
 
-> Tasks 12.1 (ArgoCD sync confirmation) and 12.2 (dev-env smoke against `api.dev.liverty-music.app`) were removed because the dev environment is currently offline. Add follow-up tasks in a separate change if the environment is restored and an end-to-end smoke is needed before archive.
+> Tasks 12.1 (ArgoCD sync confirmation) and 12.2 (dev-env smoke against `api.dev.liverty-music.app`) were removed because the dev environment is currently offline. The resurrection plan is tracked in [issue #518](https://github.com/liverty-music/specification/issues/518) so the smoke-test intent survives the archive step.
