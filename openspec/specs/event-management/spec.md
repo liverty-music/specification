@@ -8,7 +8,7 @@ The Event Management capability handles the lifecycle of generic events, providi
 
 ### Requirement: Generic Event Management
 
-The system SHALL support a generic `Event` entity that represents a single performance occurring on a specific date at a specific venue. Each `Event` SHALL encapsulate per-occurrence properties: `EventId`, `SeriesId` (parent reference), `Venue` (embedded; the DB stores the relationship as a scalar `venue_id` FK and the server hydrates the full `Venue` on read), `LocalDate` (proto field name; the underlying DB column is `local_event_date`), `StartTime`, and `OpenTime`. The `EventId` message SHALL be defined in `event.proto` as the canonical event identifier for the platform.
+The system SHALL support a generic `Event` entity that represents a single performance occurring on a specific date at a specific venue. Each `Event` SHALL encapsulate per-occurrence properties: `EventId`, `SeriesId` (parent reference), `Venue` (embedded message; the DB stores the relationship as a scalar `venue_id` FK and the server hydrates the full `Venue` on read), `local_date` of type `LocalDate` (the DB column is named `local_event_date`), `StartTime`, and `OpenTime`. The `EventId` message SHALL be defined in `event.proto` as the canonical event identifier for the platform.
 
 Series-level metadata (title, source URL, type) SHALL NOT be stored on `Event`; those properties belong to the parent `Series` entity.
 
@@ -59,7 +59,14 @@ The system SHALL support extending the base `Event` entity with domain-specific 
 
 The system SHALL support a `Series` entity that aggregates one or more `Event` rows representing a tour, a multi-day single-venue run, or a festival. Each `Event` SHALL belong to exactly one `Series`. A `Series` SHALL own the metadata that is common across all its events.
 
-The `Series` entity SHALL include: `SeriesId`, `Title`, `SeriesType` (one of `SERIES_TYPE_TOUR`, `SERIES_TYPE_SINGLE`, `SERIES_TYPE_FESTIVAL` — these are the proto-prefixed enum values enforced by `buf lint ENUM_VALUE_PREFIX`; `TOUR` / `SINGLE` / `FESTIVAL` are the human-readable suffixes used in prose), and an optional `source_url`. The `SeriesType` enum SHALL be designed as additive — new values MAY be appended without breaking existing consumers.
+The `Series` entity SHALL include: `SeriesId`, `Title`, `SeriesType`, and an optional `source_url`. The `SeriesType` enum SHALL declare:
+
+- `SERIES_TYPE_UNSPECIFIED = 0` — the proto3-mandated zero-value sentinel; rejected at the proto boundary by `(buf.validate.field).enum.not_in = [0]` so it can never be persisted.
+- `SERIES_TYPE_TOUR = 1` — a series of events at multiple venues by the same set of performers, typically branded with a tour name.
+- `SERIES_TYPE_SINGLE = 2` — a standalone engagement at a single venue, spanning one or more consecutive days.
+- `SERIES_TYPE_FESTIVAL = 3` — a multi-performer event such as a music festival.
+
+The proto-prefixed identifiers above are enforced by `buf lint ENUM_VALUE_PREFIX` and match the generated Go / TS constants; the bare `TOUR` / `SINGLE` / `FESTIVAL` aliases used elsewhere in this spec refer to the same values in prose. The `SeriesType` enum SHALL be designed as additive — new non-zero values MAY be appended without breaking existing consumers.
 
 #### Scenario: Series owns shared metadata
 
@@ -128,6 +135,8 @@ The natural key of the `events` table SHALL be `(series_id, local_event_date, ve
 The `Concert` proto message SHALL embed the full `Series` parent and SHALL expose performing artists via `repeated Artist performers`, so that a single RPC response carries all data needed to render the event to a user.
 
 The `Concert` message SHALL NOT contain `Title title` or `Url source_url` fields; those values SHALL be accessed through the embedded `Series`.
+
+The `Concert` message MAY retain `VenueId venue_id` alongside the embedded `Venue venue` field as a backward-compatibility convenience for clients that have not yet migrated to reading `venue.id`. The proto comment on `venue_id` SHALL flag the field as legacy ("prefer the embedded `venue` field"), and a future change SHOULD migrate consumers off it and reserve the field number.
 
 #### Scenario: Concert response carries embedded Series
 
