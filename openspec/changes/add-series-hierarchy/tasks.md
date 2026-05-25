@@ -73,6 +73,6 @@
 
 ## 12. Post-Merge Verification
 
-- [ ] 12.1 Confirm ArgoCD has synced the new schema (Atlas operator applies migration in dev).
-- [ ] 12.2 Smoke-test `ConcertService` against `api.dev.liverty-music.app` using a captured Zitadel JWT; verify the response carries the embedded `Series` and `performers[]`.
 - [ ] 12.3 Archive this OpenSpec change with `/opsx:archive` once `openspec status` reports `isComplete=true`.
+
+> Tasks 12.1 (ArgoCD sync confirmation) and 12.2 (dev-env smoke against `api.dev.liverty-music.app`) were removed because the dev environment is currently offline. Add follow-up tasks in a separate change if the environment is restored and an end-to-end smoke is needed before archive.
