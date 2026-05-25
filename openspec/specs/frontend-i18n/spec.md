@@ -18,17 +18,19 @@ The system SHALL register `@aurelia/i18n` in the Aurelia 2 DI container at appli
 ---
 
 ### Requirement: Locale Detection
-The system SHALL detect the user's preferred language using a priority chain: URL parameter, persisted preference, browser language, then fallback. Detection results SHALL be persisted to `localStorage` so that the chosen language survives subsequent reloads for anonymous users.
+The system SHALL detect the user's preferred language using a priority chain: URL parameter, persisted preference, browser language, then fallback. Detection results SHALL be persisted to `localStorage` so that the chosen language survives subsequent reloads for anonymous users. The detection chain runs at i18next initialization, BEFORE the authenticated-user hydration cycle has resolved — its output is therefore a TENTATIVE initial locale. For authenticated sessions, the hydration cycle overrides this tentative value with the DB-sourced locale per the "Locale Sourced from Backend User Entity for Authenticated Sessions" requirement below, and the legacy `localStorage['language']` key is cleared per `user-profile-hydration`'s "Cleanup runs after authenticated session begins" scenario.
 
 #### Scenario: URL parameter override
 - **WHEN** the URL contains a `?lang=en` query parameter
 - **THEN** the system SHALL set the active locale to EN regardless of other settings
 - **AND** the system SHALL write `en` to `localStorage` under the `language` key
 
-#### Scenario: Persisted preference from localStorage
+#### Scenario: Persisted preference from localStorage (tentative initial locale)
 - **WHEN** no `?lang=` URL parameter is present
 - **AND** localStorage contains a `language` key with value `en`
-- **THEN** the system SHALL set the active locale to EN
+- **THEN** the system SHALL set the active locale to EN as the tentative initial value
+- **AND** for an anonymous session, this tentative value SHALL be the final active locale
+- **AND** for an authenticated session, this tentative value SHALL be overridden by `UserService.current.preferredLanguage` as soon as hydration resolves, AND the `localStorage['language']` key SHALL be removed per `user-profile-hydration`
 
 #### Scenario: Browser language detection persists to localStorage
 - **WHEN** no `?lang=` URL parameter is present

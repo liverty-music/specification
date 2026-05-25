@@ -124,8 +124,8 @@ The system SHALL allow users to change the display language of the application. 
 
 #### Scenario: Language change RPC failure
 - **WHEN** the `UpdatePreferredLanguage` RPC fails (network or server error)
-- **THEN** the active locale SHALL remain unchanged
-- **AND** the displayed "Language" row SHALL continue to show the prior value
+- **THEN** the active locale SHALL end at the value it held before the change was attempted (the implementation MAY apply the new locale optimistically and revert on failure, consistent with `frontend-i18n`'s "Authenticated language switch RPC failure" scenario; the user-observable end-state SHALL be unchanged)
+- **AND** the displayed "Language" row SHALL end at the prior value (since the row is derived from `UserService.current.preferredLanguage`, which is restored when the optimistic update is reverted)
 - **AND** the system SHALL surface a Snack notification indicating the change could not be saved
 
 #### Scenario: Re-selecting the current language is a no-op

@@ -62,19 +62,20 @@ When the hydrated user profile has no preferred language set (NULL legacy row), 
 
 ---
 
-### Requirement: Remove Legacy localStorage Language Key After Hydration
+### Requirement: Remove Legacy localStorage Language Key After Authenticated Session Begins
 
-After successful authenticated hydration, the system SHALL remove `localStorage['language']` so subsequent code paths cannot read a stale value. This SHALL run regardless of whether `preferred_language` was already set or required backfill.
+Once the application has determined the user is authenticated, the system SHALL remove `localStorage['language']` so subsequent code paths cannot read a stale value. This SHALL run regardless of whether `ensureLoaded()` ultimately resolves or rejects — the legacy key must NOT survive a hydration failure, because the next boot's i18next detection chain would re-source the (now forbidden) locale from `localStorage` for an authenticated session.
 
-#### Scenario: Cleanup runs after hydration completes
+#### Scenario: Cleanup runs after authenticated session begins
 
-- **WHEN** `UserService.ensureLoaded()` resolves for an authenticated user
-- **THEN** the system SHALL call `localStorage.removeItem('language')`
-- **AND** the removal SHALL execute even if `preferred_language` was already populated in the response
+- **WHEN** the application determines the user is authenticated (i.e., `authService.isAuthenticated === true`)
+- **THEN** the system SHALL call `localStorage.removeItem('language')` as early as possible in the authenticated lifecycle, BEFORE `ensureLoaded()` is awaited
+- **AND** the removal SHALL execute even if `ensureLoaded()` subsequently fails
+- **AND** the removal SHALL execute even if `preferred_language` was already populated in the hydration response
 
 #### Scenario: Cleanup is idempotent
 
 - **WHEN** `localStorage['language']` has already been removed
-- **AND** hydration runs again (e.g., subsequent boot)
+- **AND** the authenticated lifecycle runs again (e.g., subsequent boot)
 - **THEN** `removeItem` SHALL be a safe no-op
 - **AND** no error SHALL be raised

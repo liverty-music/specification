@@ -116,8 +116,8 @@ The `app.users.preferred_language` column SHALL NOT carry a server-side `DEFAULT
 #### Scenario: Legacy rows are NULL until backfilled
 
 - **WHEN** the migration runs against an existing database
-- **THEN** all rows previously holding `'en'` from the dropped DEFAULT SHALL be set to NULL
-- **AND** clients observing NULL SHALL call `UpdatePreferredLanguage` with their currently effective locale to backfill
+- **THEN** every row with a non-NULL `preferred_language` SHALL be set to NULL — including rows that had been explicitly set by users before this change shipped, not only rows holding the dropped `'en'` DEFAULT (the shipped migration is `UPDATE app.users SET preferred_language = NULL WHERE preferred_language IS NOT NULL`)
+- **AND** clients observing NULL SHALL call `UpdatePreferredLanguage` with their currently effective locale to backfill — for rows whose pre-migration value differed from the device's current locale, this results in the user-visible language matching the device, which is the intended "client owns the preference" semantics
 
 #### Scenario: Column comment documents the semantics
 
