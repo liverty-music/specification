@@ -48,7 +48,7 @@ The system SHALL re-render all translated strings when the active locale changes
 
 #### Scenario: Authenticated language switch RPC failure
 - **WHEN** the `UpdatePreferredLanguage` RPC fails (network, server error)
-- **THEN** the system SHALL NOT change the active locale
+- **THEN** the active locale SHALL end at the value it held before the change was attempted (the implementation MAY apply the new locale optimistically and revert on failure; the user-observable end-state SHALL be unchanged)
 - **AND** the system SHALL surface a user-visible error notification (Snack)
 
 ---

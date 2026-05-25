@@ -49,6 +49,20 @@ The `UserService.Create` RPC SHALL accept an optional `preferred_language` field
 - **THEN** the backend SHALL return `OK` with the existing user
 - **AND** the stored `preferred_language` SHALL remain `"ja"` (the duplicate call is a read, not an upsert — mirroring the existing rule for `home`)
 
+#### Scenario: Create retry surfaces non-NotFound errors truthfully
+
+- **WHEN** `Create`'s INSERT fails with `unique_violation`
+- **AND** the idempotent retry `GetByExternalID(claims.sub)` returns an error
+- **AND** that error's code is NOT `NotFound` (e.g., `Internal` from a scan failure or `Unavailable` from a transient pool error)
+- **THEN** the backend SHALL respond with the retry's error code, not the original `AlreadyExists`
+- **AND** the backend SHALL log a WARN with both errors so the operator sees the full context
+
+#### Scenario: Create retry treats NotFound as the email-collision case
+
+- **WHEN** `Create`'s INSERT fails with `unique_violation`
+- **AND** the idempotent retry `GetByExternalID(claims.sub)` returns `NotFound`
+- **THEN** the backend SHALL respond with the original `AlreadyExists`
+
 ---
 
 ### Requirement: UpdatePreferredLanguage RPC
@@ -88,18 +102,62 @@ The `UserService.UpdatePreferredLanguage` RPC SHALL allow an authenticated user 
 
 The `app.users.preferred_language` column SHALL NOT carry a server-side `DEFAULT` value. NULL SHALL denote "client has not yet asserted a language preference" and SHALL be the trigger for client-side backfill on next observation.
 
-#### Scenario: New row from Create always has a non-NULL language
+#### Scenario: New row from Create carries the client-supplied language
 
-- **WHEN** a row is inserted via the Create RPC
-- **THEN** `preferred_language` SHALL be non-NULL (the Create contract requires the field)
+- **WHEN** a row is inserted via the Create RPC with `preferred_language` present
+- **THEN** `preferred_language` SHALL hold that value
+
+#### Scenario: New row from Create without language is NULL
+
+- **WHEN** a row is inserted via the Create RPC without `preferred_language`
+- **THEN** `preferred_language` SHALL be NULL
+- **AND** the next hydration SHALL backfill it via `UpdatePreferredLanguage`
 
 #### Scenario: Legacy rows are NULL until backfilled
 
 - **WHEN** the migration runs against an existing database
-- **THEN** all rows previously holding `'en'` from the dropped DEFAULT SHALL be set to NULL
-- **AND** clients observing NULL SHALL call `UpdatePreferredLanguage` with their currently effective locale to backfill
+- **THEN** every row with a non-NULL `preferred_language` SHALL be set to NULL — including rows that had been explicitly set by users before this change shipped, not only rows holding the dropped `'en'` DEFAULT (the shipped migration is `UPDATE app.users SET preferred_language = NULL WHERE preferred_language IS NOT NULL`)
+- **AND** clients observing NULL SHALL call `UpdatePreferredLanguage` with their currently effective locale to backfill — for rows whose pre-migration value differed from the device's current locale, this results in the user-visible language matching the device, which is the intended "client owns the preference" semantics
 
 #### Scenario: Column comment documents the semantics
 
 - **WHEN** an operator inspects `\d+ app.users` or queries `pg_description` for the column
 - **THEN** the comment SHALL state that NULL means "not yet set by client; client backfills via UpdatePreferredLanguage on first observation"
+
+---
+
+### Requirement: Repository NULL-Safe Reads on Nullable users Columns
+
+Every nullable column on the `users` table (currently `preferred_language`, `country`, `time_zone`, `safe_address`) SHALL be read in a NULL-safe way so that a NULL value never propagates as a pgx scan error. Two equivalent patterns are accepted:
+
+1. **Go-side `sql.NullString` intermediate** — the SELECT scans into a `sql.NullString` local, and the entity field is assigned from the intermediate's `.String` only when `.Valid`; otherwise the field is left at its zero value (empty string). This is the pattern used for `preferred_language`, `country`, and `time_zone`.
+2. **SQL-side `COALESCE(col, '')`** — the SELECT projects the column through `COALESCE(col, '')` so pgx never sees a NULL at the scan boundary. This is the pattern used for `safe_address` (since the very first commit that introduced the column).
+
+Both patterns SHALL apply uniformly across `Get`, `GetByExternalID`, `GetByEmail`, `Update`, `UpdateHome` (post-update re-scan), and `List` since they share the same scanner.
+
+Rationale: pgx returns an error when scanning SQL NULL into a non-nullable Go `string`. The next migration or operator-side write that introduces a NULL into a column read with neither pattern in place would cause every read of that row to fail at the wire boundary, manifesting at the handler layer as `not_found` / `already_exists` and masking the true cause.
+
+#### Scenario: Scan succeeds when a nullable column is NULL
+
+- **WHEN** `scanUser` reads a row whose `preferred_language` (or `country`, or `time_zone`, or `safe_address`) is NULL
+- **THEN** the scan SHALL succeed without error
+- **AND** the corresponding entity field SHALL be the zero value (empty string)
+- **AND** higher layers SHALL interpret the zero value as "absent" per the entity convention
+
+#### Scenario: Scan preserves the value when the nullable column has a value
+
+- **WHEN** `scanUser` reads a row whose `preferred_language` is the string `"ja"`
+- **THEN** the entity's `PreferredLanguage` field SHALL be the string `"ja"`
+- **AND** the same SHALL hold for `country`, `time_zone`, and `safe_address` when populated
+
+#### Scenario: Write boundary helper round-trips empty string as SQL NULL
+
+- **WHEN** a repository write method receives an entity whose `PreferredLanguage` field is the empty string
+- **THEN** the helper `nullStringFromEmpty` (or equivalent) SHALL convert it to `sql.NullString{Valid: false}` before binding to the SQL statement
+- **AND** the resulting row SHALL store SQL NULL in that column, not the empty string
+
+#### Scenario: Coverage extends to every currently-nullable users column
+
+- **WHEN** auditing `scanUser`
+- **THEN** `preferred_language`, `country`, `time_zone`, and `safe_address` SHALL each be read via one of the two accepted NULL-safe patterns
+- **AND** any future addition of a nullable column to `users` SHALL adopt one of the same two patterns (enforced by code review)
