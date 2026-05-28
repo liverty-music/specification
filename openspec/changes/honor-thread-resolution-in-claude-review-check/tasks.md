@@ -1,25 +1,25 @@
 ## 1. Preparation
 
 - [x] 1.1 Archive `mechanize-claude-review-verdict` (after confirming `tasks.md` §5.2 acknowledges that the resolution-signal gap is being addressed in this follow-up change) so that its spec delta lands in canonical `openspec/specs/ci-optimization/spec.md`. Without this, the MODIFIED requirement in §2 of this change targets outdated canonical text. — archived to `archive/2026-05-28-mechanize-claude-review-verdict/`; canonical now contains the `commit_id == HEAD_SHA` text that this change MODIFIES
-- [ ] 1.2 Create tracking issue in `liverty-music/specification` titled `Honor thread resolution in Claude review Check Run` and note its number for all subsequent commits (`Refs: #<N>`).
+- [x] 1.2 Create tracking issue in `liverty-music/specification` titled `Honor thread resolution in Claude review Check Run` and note its number for all subsequent commits (`Refs: #<N>`). — created as [#525](https://github.com/liverty-music/specification/issues/525)
 - [x] 1.3 Re-confirm the Claude bot identity by inspecting an existing resolved-thread PR via GraphQL. — Verified 2026-05-28 against frontend#367: bot login in GraphQL is `"claude"` (NOT `"claude[bot]"` as in REST), `__typename == "Bot"`. Design and spec updated to reflect actual values and use both fields for defensive matching.
 
 ## 2. Reusable workflow (`liverty-music/.github`)
 
-- [ ] 2.1 Create branch off `main` in the `.github` repo (e.g., `<N>-honor-thread-resolution`).
-- [ ] 2.2 Edit `.github/workflows/claude-review.yml`: add `if: github.event_name == 'pull_request'` to the `Run Claude review` step.
-- [ ] 2.3 Replace the `Count Claude inline comments` step body: drop the REST `gh api repos/<owner>/<repo>/pulls/<N>/comments` call and the `commit_id == HEAD_SHA` filter; add a `gh api graphql` call with the `reviewThreads` query from `design.md` Decision 1.
-- [ ] 2.4 In the new count step, after the GraphQL call succeeds, check `pageInfo.hasNextPage`. If `true`, write `count=-1` to `$GITHUB_OUTPUT` and exit 0 (publish step will emit `neutral`).
-- [ ] 2.5 In the new count step, apply the jq filter `[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false and .isOutdated == false and .comments.nodes[0].author.__typename == "Bot" and .comments.nodes[0].author.login == "claude")] | length` and write the result to `$GITHUB_OUTPUT`.
-- [ ] 2.6 Verify the existing `Publish Claude review Check Run` step still maps `count → conclusion` correctly: `0 → success`, `≥1 → failure`, `-1 → neutral`. Update the `neutral` title to optionally append `(>100 threads)` when `count == -1` and the GraphQL call succeeded (vs. when it failed entirely). Both paths still map to `count == -1` from the bash step's perspective; the title differentiation MAY be deferred.
-- [ ] 2.7 Open PR in `liverty-music/.github`; merge after CI passes.
+- [x] 2.1 Create branch off `main` in the `.github` repo. — branch `525-honor-thread-resolution`
+- [x] 2.2 Edit `.github/workflows/claude-review.yml`: add `if: github.event_name == 'pull_request'` to the `Run Claude review` step. — applied in liverty-music/.github#5
+- [x] 2.3 Replace the `Count Claude inline comments` step body. — applied in liverty-music/.github#5
+- [x] 2.4 GraphQL pageInfo.hasNextPage handling. — applied in liverty-music/.github#5
+- [x] 2.5 jq filter applied. — applied in liverty-music/.github#5 (uses __typename + login)
+- [x] 2.6 Publish step verified to still map count → conclusion correctly. — unchanged from mechanize; differentiated `(>100 threads)` title deferred
+- [x] 2.7 Open PR in `liverty-music/.github`. — [liverty-music/.github#5](https://github.com/liverty-music/.github/pull/5); merge pending CI
 
 ## 3. Caller workflows (4 repos)
 
-- [ ] 3.1 `liverty-music/specification`: edit `.github/workflows/claude-code-review.yml` `on:` block — add `pull_request_review_thread: { types: [resolved, unresolved] }` alongside the existing `pull_request:` trigger. Open PR; merge.
-- [ ] 3.2 `liverty-music/backend`: same edit. Open PR; merge.
-- [ ] 3.3 `liverty-music/frontend`: same edit. Open PR; merge.
-- [ ] 3.4 `liverty-music/cloud-provisioning`: same edit. Open PR; merge.
+- [x] 3.1 `liverty-music/specification` caller workflow updated. — [#526](https://github.com/liverty-music/specification/pull/526); merge pending CI
+- [x] 3.2 `liverty-music/backend` caller workflow updated. — [#311](https://github.com/liverty-music/backend/pull/311); merge pending CI
+- [x] 3.3 `liverty-music/frontend` caller workflow updated. — [#371](https://github.com/liverty-music/frontend/pull/371); merge pending CI
+- [x] 3.4 `liverty-music/cloud-provisioning` caller workflow updated. — [#310](https://github.com/liverty-music/cloud-provisioning/pull/310); merge pending CI
 
 ## 4. Validation
 
