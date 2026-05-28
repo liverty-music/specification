@@ -3,8 +3,6 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
-  pull_request_review_thread:
-    types: [resolved, unresolved]
 
 # Permissions are inherited by the reusable workflow's job and intersected
 # with its own workflow-level declarations. Set them here in the caller so
@@ -19,13 +17,5 @@ permissions:
 
 jobs:
   review:
-    if: ${{ github.event_name == 'pull_request' }}
     uses: liverty-music/.github/.github/workflows/claude-review.yml@main
-    secrets: inherit
-
-  recompute-verdict:
-    if: ${{ github.event_name == 'pull_request_review_thread' }}
-    uses: liverty-music/.github/.github/workflows/claude-review.yml@main
-    with:
-      verdict_only: true
     secrets: inherit
