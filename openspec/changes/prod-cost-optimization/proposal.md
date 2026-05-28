@@ -1,10 +1,10 @@
 ## Why
 
-prod 環境の月次コストが想定を上回り、SKU レベルの調査で 3 つの即効性のある削減候補が見つかった: ① otel-collector が低価値な OTLP metric を素通しで Cloud Monitoring に流して billing account の free tier (150 MiB) を圧迫している、② prod overlay は semver pin 運用に変更済みなのに Argo CD の image-updater 等が常駐して Autopilot per-Pod 課金を発生させている、③ Cloud SQL prod インスタンスが launch 直後の SLA 要件を超える `REGIONAL` HA で動いており約 2 倍のコストを払っている。本 change はこの 3 点を 1 つの作業単位として並行で潰し、月 ¥3,000-3,300 (~10%) のコスト圧縮を行う。加えて、今回の調査が「BigQuery Billing Export が無いと SKU 別の日次分解ができず推測に頼らざるを得なかった」反省から、コスト調査基盤として ④ **BigQuery Billing Export 用の BQ dataset と IAM bindings を Pulumi 管理化**して恒久的な観測手段を整備する。
+prod 環境の月次コストが想定を上回り、SKU レベルの調査で 3 つの即効性のある削減候補が見つかった: ① otel-collector が低価値な OTLP metric を素通しで Cloud Monitoring に流して billing account の free tier (150 MiB) を圧迫している、② prod overlay は semver pin 運用に変更済みなのに Argo CD の image-updater 等が常駐して Autopilot per-Pod 課金を発生させている、③ Cloud SQL prod インスタンスが launch 直後の SLA 要件を超える `REGIONAL` HA で動いており約 2 倍のコストを払っている。本 change はこの 3 点を 1 つの作業単位として並行で潰し、月 ¥3,250-3,600 (~11%) のコスト圧縮を行う。加えて、今回の調査が「BigQuery Billing Export が無いと SKU 別の日次分解ができず推測に頼らざるを得なかった」反省から、コスト調査基盤として ④ **BigQuery Billing Export 用の BQ dataset と IAM bindings を Pulumi 管理化**して恒久的な観測手段を整備する。
 
 ## What Changes
 
-- otel-collector Deployment の `googlecloud` exporter pipeline に **filter processor** を追加し、`workload.googleapis.com/rpc.server.*` (5 metric) と `workload.googleapis.com/http.client.*` (2 metric) を drop。残す metric は `concert.search.count` と `db.pool.{active,idle}_connections` の 3 種のみ。
+- otel-collector Deployment の `googlecloud` exporter pipeline に **filter processor** を追加し、`rpc.server.*` (5 metric) と `http.client.*` (2 metric) を OTLP レベルで drop(Cloud Monitoring 上では `workload.googleapis.com/rpc.server.*` と `workload.googleapis.com/http.client.*` として見えるが、filter processor は `googlecloud` exporter より前段で動くため OTLP 名で指定する)。残す metric は `concert.search.count` と `db.pool.{active,idle}_connections` の 3 種のみ。
 - prod overlay (`k8s/namespaces/argocd/overlays/prod/`) で **Argo CD pod 数を最小化**: image-updater-controller を完全に disable、未使用なら notifications-controller / applicationset-controller も disable、argocd-server の replicas を 2 → 1 に。
 - Cloud SQL prod の **`availabilityType` を REGIONAL → ZONAL** に変更し、HA レプリカを廃止。Pulumi (`postgres.ts` または環境設定) で切り替え、`pulumi up` で適用。短時間のダウンタイムを許容する。
 - **BigQuery Billing Export** 用のリソース (BQ dataset `billing_export` + billing-export service account への IAM binding) を Pulumi で provision。実際の export 有効化操作 (Console 経由 or `gcloud billing` CLI) は手動で行うがそのための runbook を整備する。

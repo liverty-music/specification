@@ -55,6 +55,6 @@
 ## 5. 完了確認 & ドキュメント
 
 - [ ] 5.1 翌請求月の billing CSV で Cloud Monitoring `Metric Volume`, Argo CD 経由の `Autopilot Spot Pod` 合計, Cloud SQL `Regional Micro` の SKU 単位コストの減少を確認
-- [ ] 5.2 削減実績を記録(目標 ¥3,000-3,300/月、実績は CSV 差分から計算)
+- [ ] 5.2 削減実績を記録(目標 ¥3,250-3,600/月 ≈ otel filter ¥1,800-2,000 + Argo CD ¥150-300 + Cloud SQL ¥1,300、実績は CSV 差分から計算)
 - [ ] 5.3 OpenSpec change を `/opsx:verify` で検証
 - [ ] 5.4 `/opsx:archive` で change を archive

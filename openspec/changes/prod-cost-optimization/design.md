@@ -24,7 +24,7 @@ prod 環境を 5/13 に立ち上げ、5/18 に dev cluster を削除して安定
 **Goals:**
 - otel-collector の filter で Cloud Monitoring metric ingest を 45 MiB/月 → ~0.3 MiB/月 に削減 (現課金 ¥1,800/月の解消 + 将来 prod scale-up 時の free tier 突破防御)。
 - Argo CD prod overlay の pod 数を 8 → 5 に削減(image-updater-controller と applicationset-controller を `replicas: 0`、argocd-server を 2 → 1。notifications-controller は active subscription のため維持)。
-- Cloud SQL prod を ZONAL 化して HA レプリカ分を解放 (¥1,000/月削減)。
+- Cloud SQL prod を ZONAL 化して HA レプリカ分を解放 (¥1,300/月削減 ≈ Regional Micro 月額 ¥2,600 の ~50%)。
 - BQ billing export 基盤を Pulumi 管理化し、コスト調査を SQL で完結できる状態にする。
 - 上記 4 つの作業を、安全な順序 (otel → Argo CD → BQ → Cloud SQL) で段階的に適用できる単一 change としてまとめる。
 
