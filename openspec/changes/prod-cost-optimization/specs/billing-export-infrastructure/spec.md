@@ -22,7 +22,7 @@ The system SHALL grant the GCP billing export service account write permissions 
 #### Scenario: Billing export service account can write to dataset
 - **WHEN** Pulumi applies the prod stack
 - **THEN** the billing export service account SHALL have `roles/bigquery.dataEditor` on the `billing_export` dataset
-- **AND** the service account principal SHALL match the form documented by GCP (e.g., `billing-export-bigquery@system.gserviceaccount.com` or the project's billing service agent)
+- **AND** the service account principal SHALL match the form documented by GCP (e.g., `cloud-billing-export@system.gserviceaccount.com` or the project's billing service agent)
 
 #### Scenario: Permission survives drift
 - **WHEN** the IAM binding is removed manually

@@ -23,7 +23,7 @@ prod 環境を 5/13 に立ち上げ、5/18 に dev cluster を削除して安定
 
 **Goals:**
 - otel-collector の filter で Cloud Monitoring metric ingest を 45 MiB/月 → ~0.3 MiB/月 に削減 (現課金 ¥1,800/月の解消 + 将来 prod scale-up 時の free tier 突破防御)。
-- Argo CD prod overlay の pod 数を 8 → 4 程度に削減 (Autopilot per-Pod 最小課金分の削減)。
+- Argo CD prod overlay の pod 数を 8 → 5 に削減(image-updater-controller と applicationset-controller を `replicas: 0`、argocd-server を 2 → 1。notifications-controller は active subscription のため維持)。
 - Cloud SQL prod を ZONAL 化して HA レプリカ分を解放 (¥1,000/月削減)。
 - BQ billing export 基盤を Pulumi 管理化し、コスト調査を SQL で完結できる状態にする。
 - 上記 4 つの作業を、安全な順序 (otel → Argo CD → BQ → Cloud SQL) で段階的に適用できる単一 change としてまとめる。
@@ -151,7 +151,7 @@ new gcp.bigquery.Dataset('billing-export', {
 new gcp.bigquery.DatasetIamMember('billing-export-svc', {
   datasetId: 'billing_export',
   role: 'roles/bigquery.dataEditor',
-  member: 'serviceAccount:billing-export-bigquery@system.gserviceaccount.com',
+  member: 'serviceAccount:cloud-billing-export@system.gserviceaccount.com',
   // ↑ 正確なサービスアカウント名は GCP docs で確認、または billing-account の serviceConfig から取得
 })
 ```
@@ -189,7 +189,7 @@ new gcp.bigquery.DatasetIamMember('billing-export-svc', {
   → **Mitigation:** Cloudflare の前段で 503 を返す or maintenance ページに切り替え。Pulumi の preview で変更内容を確認後、低トラフィック時間帯 (深夜 JST) に実施。トラフィック規模が小さい launch 直後である今が実施好機。
 
 - **Risk:** BQ Billing Export の IAM 権限不足で provision 後も export が始まらない
-  → **Mitigation:** runbook の検証ステップ (24h 後の `bq ls` 確認) を必須化。失敗時は GCP docs に従って `billing-export-bigquery@system.gserviceaccount.com` 以外の正しい SA を IAM に追加。
+  → **Mitigation:** runbook の検証ステップ (24h 後の `bq ls` 確認) を必須化。失敗時は GCP docs / Cloud Logging audit trail で実際の writer SA を特定し、`cloud-billing-export@system.gserviceaccount.com` 以外の SA であれば IAM binding を差し替える。
 
 - **Trade-off:** ZONAL 化で zonal failover の自動冗長性を失う
   → 将来トラフィック増加で SLA が厳しくなったら config key を `REGIONAL` に戻すだけで HA 復活可能。今のコスト > SLA リスクの判断。
@@ -212,4 +212,4 @@ Rollback: 各 PR を revert + 再 ArgoCD sync / `pulumi up` で原状復帰。
 
 - **Q1:** Argo CD の `notifications-controller` と `applicationset-controller` は実運用で使用されているか? 未使用なら disable、使用中なら維持。tasks.md の 1st step で確認する。
 - **Q2:** Cloud SQL config key 化 (Decision 3) の名前。`postgres.availabilityType` (string) と `postgres.haEnabled` (boolean) のどちらが好みか。前者は GCP 用語そのもの、後者は意図が読みやすい。tasks.md で実装時に決定する。
-- **Q3:** BQ Billing Export の billing service account 名は公式 docs を参照すべき。`billing-export-bigquery@system.gserviceaccount.com` は推測値、正確な値は実装時に GCP docs で確認する。
+- **Q3 (resolved):** BQ Billing Export の billing service account 名は GCP 公式 docs で確認済み。`cloud-billing-export@system.gserviceaccount.com` を Pulumi 実装で採用。GCP が将来 principal 名を変えた場合は runbook の troubleshooting セクションで Cloud Logging audit trail から実際の SA を特定する手順を整備済み。

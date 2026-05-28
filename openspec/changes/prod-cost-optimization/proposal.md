@@ -31,7 +31,7 @@ prod 環境の月次コストが想定を上回り、SKU レベルの調査で 3
   - `cloud-provisioning/docs/runbooks/` に Billing Export 有効化手順を新規 runbook として追加
 - 影響インフラ:
   - prod GKE クラスタの otel-collector Deployment が再起動 (数秒)
-  - Argo CD pod 4 個ほどが削除され、観測 / Slack 通知が無効になる
+  - Argo CD pod 3 個が削除される(image-updater-controller 無効化、applicationset-controller 無効化、argocd-server を 2→1)。notifications-controller は active な Google Chat subscription を保持しているため維持し、sync-failed / health-degraded / sync-status-unknown のアラートは引き続き動く
   - Cloud SQL prod が REGIONAL → ZONAL 切り替え時に短時間 (数分以内) のダウンタイム
   - `liverty-music-prod` プロジェクトに新規 BQ dataset `billing_export` (asia-northeast1) と IAM binding が作成される
 - 関連メトリクス: Cloud Monitoring の bytes_ingested、Autopilot Spot Pod mCPU/Memory、Cloud SQL Regional/Zonal Micro Instance の SKU 課金額
