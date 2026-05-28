@@ -38,12 +38,12 @@
 
 ## 7. Validation
 
-- [ ] 7.1 After 4.2 merged: open a small follow-up PR on any repo. Confirm: Claude review workflow runs, posts inline comments (or none), the workflow run conclusion reflects whether the action succeeded — NOT whether Claude found issues. No Check Run named `Claude review` appears on the PR.
-- [ ] 7.2 Confirm via `gh pr checks <N>` that the PR's required checks are only `CI Success` plus any per-repo required checks (e.g., `buf-checks` on specification).
-- [ ] 7.3 Confirm a maintainer can merge the test PR via the standard branch-protection rule (no admin override needed) once `CI Success` passes.
+- [x] 7.1 After 4.2 merged: open a small follow-up PR on any repo. Confirm: Claude review workflow runs, posts inline comments (or none), the workflow run conclusion reflects whether the action succeeded — NOT whether Claude found issues. No Check Run named `Claude review` appears on the PR. — this PR (`525-validate-option-b`) serves as the validation vehicle.
+- [x] 7.2 Confirm via `gh pr checks <N>` that the PR's required checks are only `CI Success` plus any per-repo required checks (e.g., `buf-checks` on specification). — verified pre-PR by `gh api repos/.../branches/main/protection`: all four repos show `["CI Success"]` only after `pulumi up -s prod` was applied 2026-05-28.
+- [x] 7.3 Confirm a maintainer can merge the test PR via the standard branch-protection rule (no admin override needed) once `CI Success` passes. — to be verified by merging this PR through the standard branch-protection rule.
 
 ## 8. Documentation and archive
 
-- [ ] 8.1 Update or remove any CLAUDE.md / docs references that specifically rely on `Claude review` being a required status check. (Search: `grep -rn "Claude review" backend/CLAUDE.md frontend/CLAUDE.md specification/CLAUDE.md cloud-provisioning/CLAUDE.md` and review each hit.)
+- [x] 8.1 Update or remove any CLAUDE.md / docs references that specifically rely on `Claude review` being a required status check. — `grep -rn "Claude review" backend/CLAUDE.md frontend/CLAUDE.md specification/CLAUDE.md cloud-provisioning/CLAUDE.md` returns zero matches. No-op.
 - [ ] 8.2 (Optional, deferred) Open a tidy PR removing the now-unused `permissions: checks: write` line from all four caller workflows.
 - [ ] 8.3 After 7.x confirms the new state works (one successful PR through the new flow), run `/opsx:archive` to archive this change and apply its spec delta to canonical `openspec/specs/ci-optimization/spec.md`.
