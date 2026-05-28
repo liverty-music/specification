@@ -160,7 +160,7 @@ See `proposal.md` "Deployment ordering". Summary:
 5. Open a normal follow-up PR on any repo to confirm: Claude review posts inline comments (if any), no `Claude review` Check Run is created, merge gating is `CI Success` only.
 6. Archive this change.
 
-**Rollback:** Re-apply `'Claude review'` to `requiredStatusCheckContexts` via Pulumi AND restore the `.github` reusable workflow to its pre-#7 state. The Check Run resumes with the GraphQL-`isResolved` logic from `.github#6`. Rollback restores the bug behavior (stuck failures from non-code-resolved threads) but is operationally safe.
+**Rollback (order is the inverse of the forward migration):** Restore the `.github` reusable workflow to its pre-#7 state **first** — so the `Claude review` Check Run resumes being created — then re-apply `'Claude review'` to `requiredStatusCheckContexts` via Pulumi (`pulumi up -s prod`). Reversing this order (Pulumi-first) re-creates the same un-mergeable window the forward plan avoided: Pulumi would require a check the workflow no longer produces. The Check Run resumes with the GraphQL-`isResolved` logic from `.github#6`. Rollback restores the bug behavior (stuck failures from non-code-resolved threads) but is operationally safe.
 
 ## Open Questions
 
