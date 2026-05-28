@@ -61,22 +61,27 @@ The workflow SHALL NOT submit a formal pull request review (`APPROVE` or `REQUES
 - **WHEN** any Claude review run completes (success, failure, or neutral)
 - **THEN** `gh pr view --json reviews` SHALL NOT show a review authored by Claude with state `APPROVED` or `CHANGES_REQUESTED`
 
-### Requirement: Claude review caller workflows fire on PR events AND thread resolve events
-Each caller workflow at `<repo>/.github/workflows/claude-code-review.yml` SHALL register `on:` triggers for both `pull_request` (types `opened`, `synchronize`, `reopened`) AND `pull_request_review_thread` (types `resolved`, `unresolved`). The caller workflow MAY also register `workflow_dispatch` for manual recompute.
+### Requirement: Claude review caller workflows split into review and recompute-verdict jobs
+Each caller workflow at `<repo>/.github/workflows/claude-code-review.yml` SHALL register `on:` triggers for both `pull_request` (types `opened`, `synchronize`, `ready_for_review`, `reopened`) AND `pull_request_review_thread` (types `resolved`, `unresolved`). Each caller SHALL declare two jobs that each `uses:` the same reusable workflow:
 
-The reusable workflow at `liverty-music/.github/.github/workflows/claude-review.yml` SHALL guard its `Run Claude review` step with `if: github.event_name == 'pull_request'` so that re-triggers from thread-resolve events do not consume Anthropic API tokens or re-post inline comments. The count step and publish step SHALL run on every trigger.
+- A `review` job guarded by `if: ${{ github.event_name == 'pull_request' }}` that invokes the reusable workflow with default inputs (the LLM review runs).
+- A `recompute-verdict` job guarded by `if: ${{ github.event_name == 'pull_request_review_thread' }}` that invokes the reusable workflow with `verdict_only: true` (the LLM review is skipped).
+
+The reusable workflow at `liverty-music/.github/.github/workflows/claude-review.yml` SHALL declare a `verdict_only: boolean` input on its `workflow_call` trigger (default `false`) and SHALL guard its `Run Claude review` step with `if: ${{ !inputs.verdict_only }}`. The count step and publish step SHALL run regardless of `verdict_only`.
 
 #### Scenario: PR is opened or updated
-- **WHEN** a pull request is opened, synchronized, or reopened
-- **THEN** the caller workflow SHALL invoke the reusable workflow
-- **AND** the reusable workflow's `Run Claude review` step SHALL execute (the `if` guard is satisfied)
+- **WHEN** a pull request is opened, synchronized, marked ready for review, or reopened
+- **THEN** the caller workflow's `review` job SHALL invoke the reusable workflow with `verdict_only` unset (i.e., default `false`)
+- **AND** the caller workflow's `recompute-verdict` job SHALL be skipped (its `if` guard fails)
+- **AND** the reusable workflow's `Run Claude review` step SHALL execute
 - **AND** the count step SHALL execute after the Claude run completes
 - **AND** the publish step SHALL create or update the Check Run
 
 #### Scenario: Maintainer toggles thread resolution
 - **WHEN** a `pull_request_review_thread` event fires with `action: resolved` or `action: unresolved`
-- **THEN** the caller workflow SHALL invoke the reusable workflow
-- **AND** the reusable workflow's `Run Claude review` step SHALL be skipped (the `if` guard fails)
+- **THEN** the caller workflow's `recompute-verdict` job SHALL invoke the reusable workflow with `verdict_only: true`
+- **AND** the caller workflow's `review` job SHALL be skipped (its `if` guard fails)
+- **AND** the reusable workflow's `Run Claude review` step SHALL be skipped (the `verdict_only` guard fails)
 - **AND** the count step SHALL still execute
 - **AND** the publish step SHALL create or update the Check Run
 
@@ -84,3 +89,4 @@ The reusable workflow at `liverty-music/.github/.github/workflows/claude-review.
 - **WHEN** a caller workflow at `<repo>/.github/workflows/claude-code-review.yml` is read
 - **THEN** the `on:` block SHALL contain both `pull_request` and `pull_request_review_thread`
 - **AND** the `pull_request_review_thread.types` value SHALL include both `resolved` and `unresolved`
+- **AND** the `jobs:` block SHALL contain exactly two jobs (`review` and `recompute-verdict`) each calling the same reusable workflow under mutually exclusive `if` guards

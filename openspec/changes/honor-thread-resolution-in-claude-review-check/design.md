@@ -99,24 +99,63 @@ on:
 
 **Alternative considered:** Use `pull_request_review.types: [submitted]`. Rejected because it fires on every review submission (formal review or comment batch), not on resolve, and the count step is decoupled from review submissions.
 
-### Decision 3: Guard the `Run Claude review` step with `if: github.event_name == 'pull_request'`
+### Decision 3: Split caller into two jobs; reusable workflow accepts a `verdict_only` input
 
-Inside the reusable workflow, the `anthropics/claude-code-action@v1` step is gated:
+Rather than gating the expensive step inside the reusable workflow with `if: github.event_name == 'pull_request'`, gate at the **caller job level** with an explicit `verdict_only` input on the reusable workflow. The caller has two jobs that each invoke the reusable, one per triggering event:
 
 ```yaml
-- name: Run Claude review
-  id: claude
-  if: github.event_name == 'pull_request'
-  uses: anthropics/claude-code-action@v1
-  with: ...
+# caller workflow (each of the 4 repos)
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+  pull_request_review_thread:
+    types: [resolved, unresolved]
+
+jobs:
+  review:
+    if: ${{ github.event_name == 'pull_request' }}
+    uses: liverty-music/.github/.github/workflows/claude-review.yml@main
+    secrets: inherit
+
+  recompute-verdict:
+    if: ${{ github.event_name == 'pull_request_review_thread' }}
+    uses: liverty-music/.github/.github/workflows/claude-review.yml@main
+    with:
+      verdict_only: true
+    secrets: inherit
 ```
 
-The count step and publish step remain ungated (`if: always()` for the count, no conditional for publish).
+The reusable workflow declares the new input and gates the LLM step against it:
+
+```yaml
+# .github/workflows/claude-review.yml
+on:
+  workflow_call:
+    inputs:
+      verdict_only:
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN:
+        required: true
+
+jobs:
+  review:
+    steps:
+      - name: Run Claude review
+        if: ${{ !inputs.verdict_only }}
+        uses: anthropics/claude-code-action@v1
+      # count + publish steps run regardless
+```
 
 **Why:**
 
 - Resolve clicks should recompute the verdict cheaply. Re-running Claude on every resolve click would (a) burn Anthropic API tokens for no signal change, (b) likely re-post the same nits the maintainer just resolved, creating a cycle.
 - The count step's input (the set of review threads) is independent of whether Claude just ran — it queries the live PR state — so skipping Claude on thread events still produces a correct count.
+- The split-job + `verdict_only` input pattern makes the contract explicit. A caller declares "this is a recompute-only run" via the input rather than relying on `github.event_name` inside the reusable. This is easier to reason about and easier to extend (e.g., future `workflow_dispatch` trigger can also pass `verdict_only: true`).
+
+**Alternative considered:** Gate the expensive step inside the reusable with `if: github.event_name == 'pull_request'`. Rejected because (a) it implicitly couples the reusable to event-name semantics rather than exposing an explicit input contract, (b) it makes the caller's intent harder to read — you have to know how the reusable interprets event names, (c) any future trigger (e.g., `workflow_dispatch`) needs to be added to the reusable's `if` expression rather than just passing `verdict_only: true` at the call site.
 
 **Alternative considered:** Run Claude on every trigger and rely on the skip-on-repeat upstream behavior to be cheap. Rejected because skip-on-repeat is not free (the action still spins up, reads the diff, and decides to skip), and skip-on-repeat is itself a known-unreliable behavior under model degradation.
 

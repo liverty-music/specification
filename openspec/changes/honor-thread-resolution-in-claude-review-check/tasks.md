@@ -7,7 +7,7 @@
 ## 2. Reusable workflow (`liverty-music/.github`)
 
 - [x] 2.1 Create branch off `main` in the `.github` repo. — branch `525-honor-thread-resolution`
-- [x] 2.2 Edit `.github/workflows/claude-review.yml`: add `if: github.event_name == 'pull_request'` to the `Run Claude review` step. — applied in liverty-music/.github#5
+- [x] 2.2 Edit `.github/workflows/claude-review.yml`: declare a `verdict_only: boolean` input on `workflow_call` (default `false`) and gate the `Run Claude review` step with `if: ${{ !inputs.verdict_only }}`. — applied in liverty-music/.github#5 (revised from initial event_name-based guard to a verdict_only input contract per design Decision 3)
 - [x] 2.3 Replace the `Count Claude inline comments` step body. — applied in liverty-music/.github#5
 - [x] 2.4 GraphQL pageInfo.hasNextPage handling. — applied in liverty-music/.github#5
 - [x] 2.5 jq filter applied. — applied in liverty-music/.github#5 (uses __typename + login)
@@ -16,10 +16,10 @@
 
 ## 3. Caller workflows (4 repos)
 
-- [x] 3.1 `liverty-music/specification` caller workflow updated. — [#526](https://github.com/liverty-music/specification/pull/526); merge pending CI
-- [x] 3.2 `liverty-music/backend` caller workflow updated. — [#311](https://github.com/liverty-music/backend/pull/311); merge pending CI
-- [x] 3.3 `liverty-music/frontend` caller workflow updated. — [#371](https://github.com/liverty-music/frontend/pull/371); merge pending CI
-- [x] 3.4 `liverty-music/cloud-provisioning` caller workflow updated. — [#310](https://github.com/liverty-music/cloud-provisioning/pull/310); merge pending CI
+- [x] 3.1 `liverty-music/specification` caller workflow updated (split-job + verdict_only pattern). — [#526](https://github.com/liverty-music/specification/pull/526); merge pending CI
+- [x] 3.2 `liverty-music/backend` caller workflow updated (split-job + verdict_only pattern). — [#311](https://github.com/liverty-music/backend/pull/311); merge pending CI
+- [x] 3.3 `liverty-music/frontend` caller workflow updated (split-job + verdict_only pattern). — [#371](https://github.com/liverty-music/frontend/pull/371); merge pending CI
+- [x] 3.4 `liverty-music/cloud-provisioning` caller workflow updated (split-job + verdict_only pattern). — [#310](https://github.com/liverty-music/cloud-provisioning/pull/310); merge pending CI
 
 ## 4. Validation
 
