@@ -1,219 +1,169 @@
 ## Context
 
-The `Claude review` Check Run was first introduced [2026-05-16](../archive/2026-05-16-claude-review-check-run/) (LLM-emitted verdict via `/tmp/claude-verdict.json`), then redesigned [2026-05-25](../mechanize-claude-review-verdict/) to derive its conclusion from a mechanical count of bot-authored inline comments scoped by `commit_id == HEAD_SHA`. The redesign correctly addressed the LLM confidence-inflation problem documented in that change's `design.md`.
+The `Claude review` Check Run was introduced 2026-05-15 ([archive/2026-05-16-claude-review-check-run](../archive/2026-05-16-claude-review-check-run/)) on the theory that the bot's review output should gate merges via Required Status Checks. Two subsequent changes ([mechanize](../archive/2026-05-28-mechanize-claude-review-verdict/), and the initial revisions of this change) tried to fix progressively-discovered bugs in the gating mechanism:
 
-Two real-world PRs immediately exposed a second-order bug that the redesign's validation (`tasks.md` §4.3) did not probe. Frontend [`#367`](https://github.com/liverty-music/frontend/pull/367) and backend [`#305`](https://github.com/liverty-music/backend/pull/305) ran the full bot review cycle (17 rounds, 100+ inline comments accumulated), then the maintainer marked every thread `isResolved = true` via the standard GitHub UI. The `Claude review` Check Run stayed at `18 issue(s) found` (frontend) and `51 issue(s) found` (backend) — both PRs were merged via admin override.
+| Iteration | Mechanism | Discovered failure mode | Outcome |
+|---|---|---|---|
+| 1 (2026-05-16) | LLM emits `/tmp/claude-verdict.json` | Binary-classification confidence inflation under degraded models ([arxiv 2602.17170](https://arxiv.org/pdf/2602.17170)) | Replaced by mechanize |
+| 2 (mechanize, 2026-05-25) | REST `commit_id == HEAD_SHA AND user.login == "claude[bot]"` filter | `commit_id` is auto-bumped forward on every push for still-applicable comments — does NOT mean "posted against this SHA"; misses UI Resolve and empty-commit pushes | Replaced by [.github#6](https://github.com/liverty-music/.github/pull/6) (merged) |
+| 3 (.github#6, 2026-05-28) | GraphQL `reviewThreads.isResolved == false AND comments.commit.oid == HEAD_SHA AND author.bot == claude` | Better, but no auto-recompute on UI Resolve clicks; this PR set out to add the recompute trigger | Being reverted by [.github#7](https://github.com/liverty-music/.github/pull/7) |
+| 4 (this change's initial design) | Split-job caller + `verdict_only` input + `pull_request_review_thread: [resolved, unresolved]` trigger | The `pull_request_review_thread` trigger is documented as a webhook event but silently disables ALL GitHub Actions triggers on the workflow (spurious push-event stub failures; no `pull_request` runs fire). Verified empirically against this PR's caller workflow changes, and confirmed by 11+ third-party production workflows on GitHub that use the same trigger and are all in `failure` state | Abandoned; this change pivots to Option B |
 
-Root-cause investigation showed that GitHub's REST `/pulls/N/comments` field `commit_id` is not what the redesign assumed. It is **not** "the SHA the comment was posted against" (that field exists too, as `original_commit_id`); it is "the most recent SHA where the line being commented on is still present in the diff". GitHub re-evaluates every inline comment on every push and bumps `commit_id` forward if the line is unchanged. Therefore the filter `commit_id == HEAD_SHA` selects bot comments **still applicable to the current code** — which is a strict subset of "issues the reviewer hasn't acknowledged".
+Investigation through iteration 4 surfaced a deeper question: is the gate even viable upstream? The answer is no:
 
-The fix is to switch the resolution signal from `commit_id` (REST) to `isResolved` (GraphQL), which honors all three reviewer acknowledgement paths (UI resolve, code-change resolve, defended-via-reply-then-resolve).
+- [`anthropics/claude-code-action`](https://github.com/anthropics/claude-code-action) (action v1) exposes no verdict, pass/fail, or Check Run output. The README and `docs/custom-automations.md` are silent on the topic.
+- All official examples ([`examples/`](https://github.com/anthropics/claude-code-action/tree/main/examples)) — including the three PR-review examples (`pr-review-comprehensive.yml`, `pr-review-filtered-authors.yml`, `pr-review-filtered-paths.yml`) — invoke the action and stop. None create a Check Run, none set workflow conclusion, none gate the merge.
+- The [`code-review`](https://github.com/anthropics/claude-code/blob/main/plugins/code-review/commands/code-review.md) slash command itself posts inline comments and a terminal summary — no verdict file, no structured output.
+
+The four-iteration accumulation is therefore not a series of bugs in a supported pattern; it is a series of user-side wrappers for a pattern upstream does not offer. Per the operating instruction "可能な限り構成をシンプルに / 場当たり的なハックは禁止", this change abandons the gate entirely and aligns with the upstream pattern.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Make `Claude review` Check Run honor GitHub-native thread resolution (the "Resolve conversation" button).
-- Continue to honor code-change resolution (covered by `isOutdated`).
-- Re-fire the Check Run on resolve/unresolve clicks so feedback is immediate, without forcing a no-op commit.
-- Avoid burning Anthropic API tokens (and re-posting nits) when the workflow is re-triggered by a resolve event.
-- Preserve every preserved property of `mechanize-claude-review-verdict`: Check Run name, conclusion vocabulary, branch-protection contract, caller-workflow surface area, no Pulumi changes.
+- Align the `Claude review` workflow with the official `anthropics/claude-code-action` pattern (`pr-review-comprehensive.yml`).
+- Remove the `Claude review` Check Run, its Pulumi-managed required-status-check enforcement, and all user-side counting / GraphQL / pagination / `verdict_only` logic.
+- Preserve `Claude review`'s ability to post inline review comments on PRs (advisory only).
+- Eliminate the operating-protocol conflict where the current broken gate forces admin-override merges to bypass branch protection.
 
 **Non-Goals:**
 
-- Fix the upstream `code-review` skip-on-repeat behavior ([anthropics/claude-code#19618](https://github.com/anthropics/claude-code/issues/19618)). Still mitigated, not resolved.
-- Add CODEOWNERS-based governance for who can resolve threads. The default GitHub trust model (anyone with write access) is consistent with branch-protection trust.
-- Add a `claude-review-acknowledged` label override. The `isResolved` mechanism already provides a per-thread acknowledgement affordance with the same authority surface; a label override would be redundant and would defeat the per-thread granularity.
-- Migrate to the cloud-hosted "Code Review" product on `claude.com`.
+- Replace the gate with a different gating mechanism (e.g., CODEOWNERS-enforced thread-resolution, GitHub App webhook bridge, scheduled recompute). Considered and rejected — see Decision 3.
+- Add or migrate to alternative review automation products (Anthropic's hosted Code Review at `claude.com`, third-party bots). Out of scope.
+- Change `CI Success` or any other existing required check.
+- Reorganize permissions on caller workflows (`checks: write` on each caller becomes unused after this change; harmless and deferred for future cleanup).
 
 ## Decisions
 
-### Decision 1: GraphQL `reviewThreads` with `isResolved` and `isOutdated` filters replaces REST `commit_id` filter
+### Decision 1: Revert the reusable workflow to the official `pr-review-comprehensive.yml` shape
 
-The reusable workflow's count step calls `gh api graphql` against:
-
-```graphql
-query($owner: String!, $repo: String!, $number: Int!) {
-  repository(owner: $owner, name: $repo) {
-    pullRequest(number: $number) {
-      reviewThreads(first: 100) {
-        pageInfo { hasNextPage }
-        nodes {
-          isResolved
-          isOutdated
-          comments(first: 1) {
-            nodes { author { __typename login } }
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-The filter is:
-
-```jq
-[
-  .data.repository.pullRequest.reviewThreads.nodes[]
-  | select(.isResolved == false
-           and .isOutdated == false
-           and .comments.nodes[0].author.__typename == "Bot"
-           and .comments.nodes[0].author.login == "claude")
-] | length
-```
-
-**Bot identity note (verified 2026-05-28 against frontend#367):** GitHub's GraphQL Author interface returns bot login *without* the `[bot]` suffix (e.g., `"claude"`), unlike the REST API which returns `"claude[bot]"`. The `__typename == "Bot"` guard ensures we cannot be spoofed by a human GitHub user named "claude".
-
-**Why:**
-
-- `isResolved` reflects the standard GitHub UI affordance (the "Resolve conversation" button). Using it as the resolution signal aligns the Check Run with the reviewer's own mental model.
-- `isOutdated` is GitHub's authoritative judgment of "is this comment still applicable to the diff" — strictly broader and more accurate than the REST `commit_id` heuristic, since it also covers cases where the line was moved or its surrounding context changed.
-- `comments.nodes[0]` is the thread opener. GraphQL's default ordering for `comments` is chronological, so the first node is reliably the bot. (In our workflow Claude always opens threads; maintainer replies are never thread openers.)
-- `first: 100` keeps the query under GitHub's hard cap of 100 nodes per page and avoids cursor pagination complexity. Healthy PRs are far below this limit; see Decision 4.
-
-**Alternative considered:** Use the REST `/pulls/N/comments` endpoint and filter by `in_reply_to_id` and a separate "is thread resolved" lookup. Rejected because the REST API does not expose thread-resolved state — `isResolved` is a GraphQL-only concept on the `PullRequestReviewThread` object.
-
-**Alternative considered:** Use `original_commit_id` + a side-channel "issues acknowledged" registry. Rejected because GitHub already provides the registry as `reviewThreads.isResolved`.
-
-### Decision 2: Add `pull_request_review_thread` to caller-workflow `on:` triggers
-
-Each caller workflow at `<repo>/.github/workflows/claude-code-review.yml` adds:
+`liverty-music/.github/.github/workflows/claude-review.yml` becomes a single-job, single-step workflow:
 
 ```yaml
-on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-  pull_request_review_thread:
-    types: [resolved, unresolved]
-```
+name: Reusable Claude Review
 
-**Why:**
-
-- Without this, clicking "Resolve conversation" does nothing observable to the Check Run — the failure persists until something else (manual re-run, no-op push) re-fires the workflow. That breaks the reviewer's expectation of immediate feedback.
-- GitHub fires `pull_request_review_thread` events with full `pull_request` context in the payload, so the reusable workflow's `github.event.pull_request.number` and `.head.sha` continue to work without changes.
-- `unresolved` is included so that re-opening a thread also recomputes the Check Run, restoring `failure` symmetrically.
-
-**Trigger documentation note (verified 2026-05-28):** The official GitHub Actions ["Events that trigger workflows" reference](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows) does NOT list `pull_request_review_thread` as a workflow trigger. The webhook event IS documented at the [webhook reference](https://docs.github.com/en/webhooks/webhook-events-and-payloads#pull_request_review_thread) with activity types `resolved` and `unresolved`. The Actions runtime supports this trigger even though the Actions docs are silent on it — verified by 11+ production workflows on GitHub using `on: pull_request_review_thread: types: [resolved, unresolved]` (e.g., [`akasper/plate_template/feedback-resolution-check.yml`](https://github.com/akasper/plate_template/blob/main/.github/workflows/feedback-resolution-check.yml), [`smart-village-solutions/sva-studio/bot-comment-governance.yml`](https://github.com/smart-village-solutions/sva-studio/blob/main/.github/workflows/bot-comment-governance.yml)). YAML schema validators (vscode-github-actions extension included) may flag this as an unknown property — false positive due to outdated schema.
-
-**Alternative considered:** Add only `pull_request_review_thread.types: [resolved]`. Rejected for asymmetry — unresolving must also reflect immediately, otherwise an accidentally-resolved-then-unresolved thread leaves the Check Run stuck on `success`.
-
-**Alternative considered:** Use `pull_request_review.types: [submitted]`. Rejected because it fires on every review submission (formal review or comment batch), not on resolve, and the count step is decoupled from review submissions.
-
-### Decision 3: Split caller into two jobs; reusable workflow accepts a `verdict_only` input
-
-Rather than gating the expensive step inside the reusable workflow with `if: github.event_name == 'pull_request'`, gate at the **caller job level** with an explicit `verdict_only` input on the reusable workflow. The caller has two jobs that each invoke the reusable, one per triggering event:
-
-```yaml
-# caller workflow (each of the 4 repos)
-on:
-  pull_request:
-    types: [opened, synchronize, ready_for_review, reopened]
-  pull_request_review_thread:
-    types: [resolved, unresolved]
-
-jobs:
-  review:
-    if: ${{ github.event_name == 'pull_request' }}
-    uses: liverty-music/.github/.github/workflows/claude-review.yml@main
-    secrets: inherit
-
-  recompute-verdict:
-    if: ${{ github.event_name == 'pull_request_review_thread' }}
-    uses: liverty-music/.github/.github/workflows/claude-review.yml@main
-    with:
-      verdict_only: true
-    secrets: inherit
-```
-
-The reusable workflow declares the new input and gates the LLM step against it:
-
-```yaml
-# .github/workflows/claude-review.yml
 on:
   workflow_call:
-    inputs:
-      verdict_only:
-        type: boolean
-        required: false
-        default: false
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN:
         required: true
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: read
+  id-token: write
+
 jobs:
   review:
+    runs-on: ubuntu-latest
     steps:
-      - name: Run Claude review
-        if: ${{ !inputs.verdict_only }}
-        uses: anthropics/claude-code-action@v1
-      # count + publish steps run regardless
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          plugin_marketplaces: https://github.com/anthropics/claude-code.git
+          plugins: code-review@claude-code-plugins
+          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }} --comment'
+          claude_args: '--allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh search:*),mcp__github_inline_comment__create_inline_comment"'
+```
+
+Removed: the `verdict_only` input on `workflow_call`; the `Count unresolved Claude review threads` step; the `Publish Claude review Check Run` step; the `checks: write` permission; all pagination loop / GraphQL / jq logic.
+
+**Why:**
+
+- This is the exact shape of [`pr-review-comprehensive.yml`](https://github.com/anthropics/claude-code-action/blob/main/examples/pr-review-comprehensive.yml) with only two delta: (1) the `prompt` invokes the `code-review` slash command instead of inlining review instructions, matching how mechanize structured it; (2) `secrets.CLAUDE_CODE_OAUTH_TOKEN` is used rather than `secrets.ANTHROPIC_API_KEY` because liverty-music authenticates via Claude OAuth.
+- No custom code = no custom bugs. Future upstream improvements (e.g., if Anthropic adds a verdict mechanism) are picked up by bumping the action pin.
+
+**Alternative considered:** Keep the GraphQL-`isResolved` post-step but remove the Check Run creation, just for telemetry. Rejected — telemetry without a gate is unused information and still drags in pagination / filter logic that has to be maintained.
+
+### Decision 2: Drop `'Claude review'` from `requiredStatusCheckContexts` in Pulumi
+
+`cloud-provisioning/src/index.ts` updates all four `GitHubRepositoryComponent` invocations to `requiredStatusCheckContexts: ['CI Success']`. The Pilot-graduation comment on the `specification` entry is removed.
+
+**Why:**
+
+- If Decision 1 ships and the required check stays, every PR is permanently blocked — the `Claude review` Check Run is no longer created, so it can never turn green. Pulumi must lead Decision 1's deploy.
+- `'CI Success'` remains as the deterministic gate (lint, test, build, etc.). This is the same set of checks that gated PRs before the mechanize / honor-thread-resolution arc.
+
+### Decision 3: No replacement gating mechanism
+
+Considered and rejected:
+
+- **GitHub App webhook bridge**: A small App listening for `pull_request_review_thread` webhooks and triggering `repository_dispatch` events. Solves the auto-recompute problem but adds an external service to operate, a secret to manage, and rate-limit considerations. Disproportionate complexity for the value.
+- **`workflow_dispatch` manual recompute**: Add a manual "Recompute verdict" button to the Actions UI. Half-measure — the Check Run still exists, still needs the count logic, still has all the maintenance burden, in exchange for an affordance that humans rarely click. Worse total cost than just deleting the gate.
+- **CODEOWNERS-gated `isResolved` filter**: Only count threads resolved by a non-author CODEOWNER as truly resolved. Adds code complexity, governance subtleties, and doesn't solve the resolve-without-push problem.
+- **Periodic cron recompute**: A scheduled workflow that walks open PRs and updates Check Runs. Adds a cron, walks a quota, and produces stale-by-design results.
+
+The principled choice is: **bot review is advisory by nature; treat it as such.** Reviewers (human + automation) see comments and act on them; merge is gated on objective, deterministic checks.
+
+### Decision 4: Caller workflows on all four repos remain unchanged
+
+`.github/workflows/claude-code-review.yml` on `backend`, `frontend`, `specification`, `cloud-provisioning` keeps:
+
+```yaml
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+permissions:
+  contents: read
+  pull-requests: write
+  issues: read
+  id-token: write
+  checks: write   # unused after Decision 1; harmless, deferred for cleanup
+jobs:
+  review:
+    uses: liverty-music/.github/.github/workflows/claude-review.yml@main
+    secrets: inherit
 ```
 
 **Why:**
 
-- Resolve clicks should recompute the verdict cheaply. Re-running Claude on every resolve click would (a) burn Anthropic API tokens for no signal change, (b) likely re-post the same nits the maintainer just resolved, creating a cycle.
-- The count step's input (the set of review threads) is independent of whether Claude just ran — it queries the live PR state — so skipping Claude on thread events still produces a correct count.
-- The split-job + `verdict_only` input pattern makes the contract explicit. A caller declares "this is a recompute-only run" via the input rather than relying on `github.event_name` inside the reusable. This is easier to reason about and easier to extend (e.g., future `workflow_dispatch` trigger can also pass `verdict_only: true`).
+- The reusable workflow's `workflow_call` interface no longer accepts `verdict_only`. Caller workflows that don't pass that input continue to work — no breaking change for callers.
+- The shape matches the official `pr-review-comprehensive.yml` `on:` block exactly.
+- No need to add `pull_request_review_thread`, `workflow_dispatch`, or any other re-trigger affordance — there's no Check Run to recompute.
+- The `checks: write` permission becomes unused but is harmless. Cleaning it up across four repos is deferred to a follow-up tidy PR.
 
-**Alternative considered:** Gate the expensive step inside the reusable with `if: github.event_name == 'pull_request'`. Rejected because (a) it implicitly couples the reusable to event-name semantics rather than exposing an explicit input contract, (b) it makes the caller's intent harder to read — you have to know how the reusable interprets event names, (c) any future trigger (e.g., `workflow_dispatch`) needs to be added to the reusable's `if` expression rather than just passing `verdict_only: true` at the call site.
+### Decision 5: Document the historical arc in the spec delta but keep the canonical spec lean
 
-**Alternative considered:** Run Claude on every trigger and rely on the skip-on-repeat upstream behavior to be cheap. Rejected because skip-on-repeat is not free (the action still spins up, reads the diff, and decides to skip), and skip-on-repeat is itself a known-unreliable behavior under model degradation.
+The spec delta in this change rewrites the `Claude review publishes its verdict as a GitHub Check Run` requirement to a simpler "Claude review posts advisory inline comments" requirement, and removes the `Claude review is enforced as a Required Status Check via Pulumi` requirement and the pilot-rollout requirement.
 
-### Decision 4: Fail-neutral on >100 threads (pagination overflow)
-
-If the GraphQL response's `pageInfo.hasNextPage == true`, the count step writes `count=-1` and the publish step emits `conclusion: neutral` with title `Verdict could not be computed (>100 threads)`.
-
-**Why:**
-
-- A PR with >100 review threads is unhealthy regardless of who authored them. Neither auto-passing nor auto-failing is meaningful; surface ambiguity and let humans investigate.
-- The highest observed count in production is 66 threads (backend#305), so 100 is a comfortable ceiling for healthy PRs.
-- Implementing cursor pagination would add ~15 lines of bash and a second `gh api` call; on a runaway PR it would just produce a high but uninformative count.
-
-### Decision 5: Bot-author detection unchanged (`user.login == "claude[bot]"`)
-
-The bot identity check is the same exact-match used in `mechanize-claude-review-verdict` task 1.2.
+The why-trail (LLM verdict → REST `commit_id` → GraphQL `isResolved` → broken trigger → revert) is captured in this design.md and in the [issue #525](https://github.com/liverty-music/specification/issues/525) thread. It is NOT reproduced in the canonical spec — the spec describes the current state of the system, not the historical journey.
 
 **Why:**
 
-- Risk surface is unchanged from the predecessor change.
-- If Anthropic ever renames the bot identity, this filter silently produces `count=0` (success). Same risk as the predecessor; mitigated by the same logic — if zero threads match the filter but the GraphQL response had any bot threads from any author, that would warrant escalation. (Not implemented as code; documented as a known-unmonitored risk.)
+- Canonical specs that document failed approaches become "if-not, why-not" mazes that obscure the current contract.
+- The archive of `mechanize-claude-review-verdict` and this change's design.md jointly preserve the chronological record for anyone investigating the operating-protocol clash referenced in CLAUDE.md.
 
 ## Risks / Trade-offs
 
-- **[Stale `failure` until a re-trigger fires]** → After this change, clicking "Resolve conversation" re-fires the workflow, so the lag is bounded by GitHub's event delivery (<10s in practice). Before either workflow_dispatch or a commit could clear it. This is a strict improvement.
+- **[Loss of forced response to bot findings]** → Reviewers can now merge a PR with un-addressed Claude review comments. Mitigation: human reviewers should treat the bot's output as an input to their review, same as any other reviewer. The bot is advisory by nature ([upstream pattern](https://github.com/anthropics/claude-code-action/blob/main/examples/pr-review-comprehensive.yml)) and treating it otherwise — as we found over four iterations — fights the tool.
 
-- **[Resolve-as-mute by PR author]** → The default GitHub trust model lets the PR author resolve their own threads, which silences the bot's gate. This is consistent with the existing branch-protection trust (PR authors with write access can also approve merges via admin override). Documented as expected behavior in the migration plan; not a CODEOWNERS-enforced restriction. If this becomes a problem, a follow-up change can introduce a CODEOWNERS check.
+- **[Bot still spends Anthropic API budget on every PR push]** → No change from current state. If cost becomes a concern, separate work to add path/author filters (per [`pr-review-filtered-authors.yml`](https://github.com/anthropics/claude-code-action/blob/main/examples/pr-review-filtered-authors.yml) and [`pr-review-filtered-paths.yml`](https://github.com/anthropics/claude-code-action/blob/main/examples/pr-review-filtered-paths.yml)).
 
-- **[Replay attack: maintainer resolves all threads, then bot re-reviews on next push and re-flags them]** → Acceptable. The bot is the source of truth on whether an issue still exists. If it re-flags, the maintainer can defend and re-resolve, or fix the code. The Check Run reflects the latest state.
+- **[CLAUDE.md "NEVER skip hooks unless explicitly requested" guard becomes vacuous for Claude review]** → The guard applied because admin-override was the only way past the stuck Check Run. After this change there is no Check Run to override; the guard is unaffected for other checks (lint, test, signing). Update CLAUDE.md if the guard's existing wording specifically references Claude review (none observed at the time of writing).
 
-- **[`pull_request_review_thread` event delivery delay]** → GitHub does not document a delivery SLA. If the event is delayed or dropped, the Check Run stays stale until the next `pull_request` synchronize. Mitigation: nothing — the predecessor failure mode was worse (stuck permanently), so a brief stuck state on event drops is an acceptable degradation.
+- **[`permissions: checks: write` on each caller becomes unused]** → No functional impact. Defer cleanup to a tidy PR.
 
-- **[GraphQL rate limits]** → The default `GITHUB_TOKEN` has a 5,000-point/hour rate budget for GraphQL. This query is single-shot and ~2 points. Even pathological re-trigger volume (one resolve click per second) is well within budget.
-
-- **[>100 threads collapses to neutral, blocking the gate from concluding]** → The `requiredStatusCheckContexts` rule treats `neutral` as a pass (per GitHub's documented behavior). A PR that overflows would be merge-eligible despite an unreviewed state. Acceptable: this is a degenerate PR that needs human attention regardless.
-
-- **[Caller-workflow `on:` block change is required in 4 repos]** → Cannot be done purely in the reusable workflow because `on:` is owned by the caller. This makes the rollout a 5-PR fan-out instead of 1. Documented in the migration plan.
+- **[Pulumi deploy ordering risk]** → If `.github#7` merges before `pulumi up -s prod` is applied, every open PR becomes permanently un-mergeable. Deployment ordering documented in `proposal.md` "Deployment ordering" section and in the Pulumi PR description.
 
 ## Migration Plan
 
-1. **Archive `mechanize-claude-review-verdict`** so its spec delta lands in canonical `openspec/specs/ci-optimization/spec.md`. The current canonical still describes the verdict-file mechanism — without archiving first, this change's MODIFIED requirement would target outdated text and create a delta-against-delta state.
-2. Create tracking issue in `liverty-music/specification` ("Honor thread resolution in Claude review Check Run").
-3. Land the `.github` repo change first (reusable workflow): GraphQL count step + Claude-run step guard. All four caller workflows reference `@main`, so they pick up the new logic on the next push.
-4. Land the four caller-repo changes (add `pull_request_review_thread` to `on:`). Order does not matter.
-5. **Validate** on a real PR by deliberately reproducing the bug-and-fix cycle:
-   - Open a PR that intentionally contains a CLAUDE.md violation.
-   - Confirm `Claude review` = `failure` with a non-zero count.
-   - Click "Resolve conversation" on each bot thread via the GitHub UI (no commit push).
-   - Confirm the workflow re-runs on `pull_request_review_thread.resolved`, and the Check Run flips to `success` within ~30s.
-   - Click "Unresolve" on one thread.
-   - Confirm the workflow re-runs and Check Run flips back to `failure` with count 1.
-6. (Optional) Land a documentation update in each repo's `CLAUDE.md` describing the resolve-to-clear flow.
-7. Archive this change.
+See `proposal.md` "Deployment ordering". Summary:
 
-**Rollback:** Revert the merge commits in `liverty-music/.github` and the four caller repos. The Check Run returns to the (broken-but-tolerated) `commit_id == HEAD_SHA` behavior — but production has been operating in that broken state for the entire mechanize window, so rollback is safe.
+1. Merge [`cloud-provisioning#311`](https://github.com/liverty-music/cloud-provisioning/pull/311).
+2. Run `pulumi up -s prod`. Verify required checks via `gh api ...` on all four repos.
+3. Merge [`.github#7`](https://github.com/liverty-music/.github/pull/7).
+4. Merge this PR ([`specification#526`](https://github.com/liverty-music/specification/pull/526)).
+5. Open a normal follow-up PR on any repo to confirm: Claude review posts inline comments (if any), no `Claude review` Check Run is created, merge gating is `CI Success` only.
+6. Archive this change.
+
+**Rollback:** Re-apply `'Claude review'` to `requiredStatusCheckContexts` via Pulumi AND restore the `.github` reusable workflow to its pre-#7 state. The Check Run resumes with the GraphQL-`isResolved` logic from `.github#6`. Rollback restores the bug behavior (stuck failures from non-code-resolved threads) but is operationally safe.
 
 ## Open Questions
 
-- Should the `Claude review` Check Run's summary link to the unresolved threads filter (`?reviewer=claude%5Bbot%5D` style) in addition to the Files-changed view? Defer; can be a non-breaking enhancement after the core fix lands.
-- Should the workflow also include `pull_request_review_thread.types: [outdated]`? GitHub does not currently document `outdated` as a `pull_request_review_thread` event subtype, so likely no. To be verified during implementation by inspecting webhook delivery on a real outdated event.
-- Should the `Run Claude review` step also be skipped on `workflow_dispatch` (manual recompute), or is keeping it gated to `pull_request` enough? Likely yes — `workflow_dispatch` is the natural "I want to force a recount without re-reviewing" trigger. To be confirmed once the workflow is functioning.
+- Should we add path filters per [`pr-review-filtered-paths.yml`](https://github.com/anthropics/claude-code-action/blob/main/examples/pr-review-filtered-paths.yml) to skip review on cosmetic-only PRs (e.g., openspec doc changes)? Deferred — separate work, not blocking this change.
+- Should `permissions: checks: write` be removed from all four caller workflows? Deferred — harmless, tidy-PR.
+- If a future need arises to revisit gating, the principled path is to wait for an upstream feature (Anthropic-side Check Run support in `claude-code-action`) rather than to rebuild the wrapper. Open as a research watch.

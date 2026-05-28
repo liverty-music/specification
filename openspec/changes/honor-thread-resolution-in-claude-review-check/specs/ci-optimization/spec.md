@@ -1,92 +1,58 @@
 ## MODIFIED Requirements
 
-### Requirement: Claude review publishes its verdict as a GitHub Check Run
-The reusable workflow SHALL create a GitHub Check Run named exactly `Claude review` on the pull request's head commit. The Check Run `conclusion` SHALL be derived deterministically from the count of **unresolved review threads opened by the Claude bot**, computed in a post-step that calls `gh api graphql` against the pull request's `reviewThreads(first: 100)` field and filters by `isResolved == false` AND `isOutdated == false` AND (`comments.nodes[0].author.__typename == "Bot"` AND `comments.nodes[0].author.login == "claude"`).
+### Requirement: Claude review posts advisory inline comments on pull requests
+The reusable workflow `liverty-music/.github/.github/workflows/claude-review.yml` SHALL invoke `anthropics/claude-code-action@v1` with the `code-review@claude-code-plugins` plugin and the `--comment` argument so that Claude posts inline review comments on each pull request. The workflow SHALL NOT create a GitHub Check Run, SHALL NOT emit a verdict file, and SHALL NOT submit a formal pull request review (`APPROVED` or `CHANGES_REQUESTED`).
 
-The Check Run conclusion mapping SHALL be:
+The reusable workflow's `workflow_call` interface SHALL declare only the `CLAUDE_CODE_OAUTH_TOKEN` secret (no inputs). The workflow SHALL request permissions `contents: read`, `pull-requests: write`, `issues: read`, `id-token: write` — and SHALL NOT request `checks: write`.
 
-| Filtered thread count | `conclusion` |
-|---|---|
-| `0` | `success` |
-| `≥ 1` | `failure` |
-| GraphQL call fails, response is unparseable, or `pageInfo.hasNextPage == true` (>100 threads) | `neutral` |
-
-The Check Run output `title` SHALL be `No issues found` when `conclusion == success`, `N issue(s) found` when `conclusion == failure` (where `N` is the filtered thread count), and `Verdict could not be computed` when `conclusion == neutral` (the title MAY append `(>100 threads)` when the pagination-overflow branch is taken). The Check Run output `summary` SHALL link to the pull request's `Files changed` view.
-
-The verdict SHALL NOT be derived from an LLM-emitted artifact (such as a JSON file written by the Claude run), and SHALL NOT be derived from a REST-comments-`commit_id` filter. The Claude run is responsible only for posting inline review comments; the verdict is computed mechanically against live thread state after the count step completes.
-
-The workflow SHALL NOT submit a formal pull request review (`APPROVE` or `REQUEST_CHANGES`) for the verdict. Only the inline comments (posted by the plugin) and the Check Run are produced.
-
-#### Scenario: Claude finds no high-signal issues
-- **WHEN** the Claude run completes and zero `reviewThreads` match `isResolved == false AND isOutdated == false AND comments.nodes[0].author.__typename == "Bot" AND comments.nodes[0].author.login == "claude"`
-- **THEN** the workflow SHALL create a `Claude review` Check Run with `conclusion: success`
-- **AND** the Check Run output title SHALL be `No issues found`
-
-#### Scenario: Claude has open unresolved bot threads
-- **WHEN** the count step finds `N ≥ 1` `reviewThreads` matching the filter
-- **THEN** the workflow SHALL create a `Claude review` Check Run with `conclusion: failure`
-- **AND** the Check Run output title SHALL be `N issue(s) found`
-
-#### Scenario: Verdict computation fails
-- **WHEN** the `gh api graphql` call exits non-zero, OR its output cannot be parsed, OR `pageInfo.hasNextPage == true`
-- **THEN** the workflow SHALL create a `Claude review` Check Run with `conclusion: neutral`
-- **AND** the Check Run output title SHALL be `Verdict could not be computed`
-
-#### Scenario: Maintainer resolves a bot thread via the GitHub UI
-- **WHEN** a maintainer clicks "Resolve conversation" on a bot-opened thread
-- **THEN** GitHub SHALL fire a `pull_request_review_thread` event with `action: resolved`
-- **AND** the caller workflow SHALL re-invoke the reusable workflow
-- **AND** the count step SHALL recompute against live thread state
-- **AND** the Check Run on the head SHA SHALL be republished with the new count
-
-#### Scenario: Maintainer un-resolves a previously-resolved bot thread
-- **WHEN** a maintainer clicks "Unresolve conversation" on a previously-resolved bot thread
-- **THEN** the caller workflow SHALL re-invoke the reusable workflow on the `pull_request_review_thread.unresolved` event
-- **AND** the count step SHALL include that thread again
-- **AND** the Check Run SHALL reflect the higher count
-
-#### Scenario: Subsequent push fixes earlier-flagged issues by changing the lines
-- **WHEN** a PR initially has `conclusion: failure` from bot threads on commit SHA `A`
-- **AND** a new commit SHA `B` is pushed that edits or removes the flagged lines (such that GitHub marks the corresponding threads `isOutdated: true`)
-- **THEN** the workflow on commit `B` SHALL exclude those threads from the count
-- **AND** if no other unresolved bot threads remain, the Check Run SHALL be `conclusion: success`
-
-#### Scenario: Empty or unrelated commit is pushed without resolving any threads
-- **WHEN** a commit is pushed that does not touch any line referenced by an open bot thread, AND no threads are marked resolved
-- **THEN** every open bot thread remains `isResolved: false AND isOutdated: false`
-- **AND** the Check Run conclusion SHALL remain `failure` with the same count as before the push
-- **AND** the count SHALL NOT be inflated by the new HEAD SHA (the count is independent of `commit_id`)
-
-#### Scenario: Claude review never submits a formal PR review
-- **WHEN** any Claude review run completes (success, failure, or neutral)
-- **THEN** `gh pr view --json reviews` SHALL NOT show a review authored by Claude with state `APPROVED` or `CHANGES_REQUESTED`
-
-### Requirement: Claude review caller workflows split into review and recompute-verdict jobs
-Each caller workflow at `<repo>/.github/workflows/claude-code-review.yml` SHALL register `on:` triggers for both `pull_request` (types `opened`, `synchronize`, `ready_for_review`, `reopened`) AND `pull_request_review_thread` (types `resolved`, `unresolved`). Each caller SHALL declare two jobs that each `uses:` the same reusable workflow:
-
-- A `review` job guarded by `if: ${{ github.event_name == 'pull_request' }}` that invokes the reusable workflow with default inputs (the LLM review runs).
-- A `recompute-verdict` job guarded by `if: ${{ github.event_name == 'pull_request_review_thread' }}` that invokes the reusable workflow with `verdict_only: true` (the LLM review is skipped).
-
-The reusable workflow at `liverty-music/.github/.github/workflows/claude-review.yml` SHALL declare a `verdict_only: boolean` input on its `workflow_call` trigger (default `false`) and SHALL guard its `Run Claude review` step with `if: ${{ !inputs.verdict_only }}`. The count step and publish step SHALL run regardless of `verdict_only`.
+The workflow SHALL match the shape of the official Anthropic example [`pr-review-comprehensive.yml`](https://github.com/anthropics/claude-code-action/blob/main/examples/pr-review-comprehensive.yml): a single job with a checkout step and a single `anthropics/claude-code-action@v1` step.
 
 #### Scenario: PR is opened or updated
 - **WHEN** a pull request is opened, synchronized, marked ready for review, or reopened
-- **THEN** the caller workflow's `review` job SHALL invoke the reusable workflow with `verdict_only` unset (i.e., default `false`)
-- **AND** the caller workflow's `recompute-verdict` job SHALL be skipped (its `if` guard fails)
-- **AND** the reusable workflow's `Run Claude review` step SHALL execute
-- **AND** the count step SHALL execute after the Claude run completes
-- **AND** the publish step SHALL create or update the Check Run
+- **THEN** the caller workflow SHALL invoke the reusable workflow
+- **AND** the reusable workflow SHALL run `anthropics/claude-code-action@v1` with the `code-review` plugin and `--comment`
+- **AND** Claude SHALL post inline review comments (zero or more) on the PR's head commit
+- **AND** no GitHub Check Run named `Claude review` (or any other name) SHALL be created by this workflow
 
-#### Scenario: Maintainer toggles thread resolution
-- **WHEN** a `pull_request_review_thread` event fires with `action: resolved` or `action: unresolved`
-- **THEN** the caller workflow's `recompute-verdict` job SHALL invoke the reusable workflow with `verdict_only: true`
-- **AND** the caller workflow's `review` job SHALL be skipped (its `if` guard fails)
-- **AND** the reusable workflow's `Run Claude review` step SHALL be skipped (the `verdict_only` guard fails)
-- **AND** the count step SHALL still execute
-- **AND** the publish step SHALL create or update the Check Run
+#### Scenario: Claude finds no issues
+- **WHEN** the Claude run completes and posts zero inline comments
+- **THEN** the workflow run SHALL succeed
+- **AND** Claude MAY post a top-level PR comment via `gh pr comment` per the `code-review` slash command's documented behavior
 
-#### Scenario: Caller workflow is inspected
-- **WHEN** a caller workflow at `<repo>/.github/workflows/claude-code-review.yml` is read
-- **THEN** the `on:` block SHALL contain both `pull_request` and `pull_request_review_thread`
-- **AND** the `pull_request_review_thread.types` value SHALL include both `resolved` and `unresolved`
-- **AND** the `jobs:` block SHALL contain exactly two jobs (`review` and `recompute-verdict`) each calling the same reusable workflow under mutually exclusive `if` guards
+#### Scenario: Claude finds issues
+- **WHEN** the Claude run completes and posts one or more inline comments
+- **THEN** the workflow run SHALL succeed (the workflow does not fail on the presence of comments)
+- **AND** reviewers SHALL treat the inline comments as advisory input alongside other reviewers' comments
+- **AND** the PR's mergeability SHALL NOT be affected by the comments' presence or count
+
+### Requirement: Branch protection gates merges on CI Success only
+For every liverty-music repository whose `GitHubRepositoryComponent` participates in Claude review (`backend`, `frontend`, `specification`, `cloud-provisioning`), `cloud-provisioning/src/index.ts` SHALL set `requiredStatusCheckContexts` to `['CI Success']`. The string `'Claude review'` SHALL NOT appear in `requiredStatusCheckContexts` for any repo.
+
+Branch protection is applied only when the Pulumi stack environment is `prod`; the Required Status Check is effective after `pulumi up -s prod`.
+
+#### Scenario: PR has a failing CI Success check
+- **WHEN** a pull request is open with `CI Success` Check Run `conclusion: failure`
+- **THEN** the protected branch SHALL block merging
+- **AND** the Claude review workflow's success or failure SHALL NOT affect mergeability
+
+#### Scenario: PR has Claude inline comments but CI Success passes
+- **WHEN** a pull request has Claude-posted inline comments (any count, any resolution state) AND `CI Success` Check Run `conclusion: success`
+- **THEN** the protected branch SHALL allow merging
+- **AND** no Claude-review-related Check Run SHALL be present in `gh api repos/.../branches/main/protection`'s required contexts
+
+## REMOVED Requirements
+
+### Requirement: Claude review publishes its verdict as a GitHub Check Run
+**Reason**: Removed because `anthropics/claude-code-action` provides no upstream verdict / Check Run mechanism, and four iterations of user-side wrappers each introduced new bugs (LLM verdict confidence inflation, REST `commit_id` semantics not matching expected meaning, GraphQL `pull_request_review_thread` trigger silently disabling the workflow). The pattern is unsupported upstream; aligning with the upstream advisory-only pattern is the principled solution. See this change's `design.md` "Decision 1" for the full reasoning.
+
+**Migration**: Reviewers read Claude's inline comments alongside other review input. There is no Check Run to consult, query, or override. Branch protection uses `CI Success` (deterministic) as the sole gate.
+
+### Requirement: `Claude review` is enforced as a Required Status Check via Pulumi
+**Reason**: Removed in conjunction with the Check Run itself. With no Check Run being created, leaving `'Claude review'` in `requiredStatusCheckContexts` would render every PR un-mergeable.
+
+**Migration**: `cloud-provisioning/src/index.ts` updated to `requiredStatusCheckContexts: ['CI Success']` for all four repos. `pulumi up -s prod` applies the change before the reusable workflow is updated.
+
+### Requirement: Claude review pilots on `specification` before all-repo rollout
+**Reason**: Removed because the pilot-then-rollout posture only made sense when there was a gate to roll out. With no gate, there is nothing to pilot.
+
+**Migration**: All four repos have the same advisory-only Claude review behavior from day one. No pilot phase.
