@@ -7,12 +7,12 @@
 ## 2. Reusable workflow (`liverty-music/.github`)
 
 - [x] 2.1 Create branch off `main` in the `.github` repo. — branch `525-honor-thread-resolution`
-- [x] 2.2 Edit `.github/workflows/claude-review.yml`: declare a `verdict_only: boolean` input on `workflow_call` (default `false`) and gate the `Run Claude review` step with `if: ${{ !inputs.verdict_only }}`. — applied in liverty-music/.github#5 (revised from initial event_name-based guard to a verdict_only input contract per design Decision 3)
-- [x] 2.3 Replace the `Count Claude inline comments` step body. — applied in liverty-music/.github#5
-- [x] 2.4 GraphQL pageInfo.hasNextPage handling. — applied in liverty-music/.github#5
-- [x] 2.5 jq filter applied. — applied in liverty-music/.github#5 (uses __typename + login)
+- [x] 2.2 Edit `.github/workflows/claude-review.yml`: declare a `verdict_only: boolean` input on `workflow_call` (default `false`) and gate the `Run Claude review` step with `if: ${{ !inputs.verdict_only }}`. — applied in liverty-music/.github#6 (revised from initial event_name-based guard to a verdict_only input contract per design Decision 3)
+- [x] 2.3 Replace the `Count Claude inline comments` step body. — applied in liverty-music/.github#6
+- [x] 2.4 GraphQL pageInfo.hasNextPage handling. — applied in liverty-music/.github#6
+- [x] 2.5 jq filter applied. — applied in liverty-music/.github#6 (uses __typename + login)
 - [x] 2.6 Publish step verified to still map count → conclusion correctly. — unchanged from mechanize; differentiated `(>100 threads)` title deferred
-- [x] 2.7 Open PR in `liverty-music/.github`. — [liverty-music/.github#5](https://github.com/liverty-music/.github/pull/5); merge pending CI
+- [x] 2.7 Open PR in `liverty-music/.github`. — [liverty-music/.github#6](https://github.com/liverty-music/.github/pull/6) merged 2026-05-28T06:19:11Z. (Parallel PR `.github#5` was closed as superseded; the merged change uses the equivalent `isResolved == false AND commit.oid == head_sha` filter, which is logically identical to `isResolved == false AND isOutdated == false` for inline review comments per probe on frontend#367.)
 
 ## 3. Caller workflows (4 repos)
 
