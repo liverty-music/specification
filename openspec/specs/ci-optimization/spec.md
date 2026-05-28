@@ -103,77 +103,42 @@ The reusable workflow's `claude_args.--allowedTools` SHALL be aligned with the `
 - **WHEN** a caller workflow at `<repo>/.github/workflows/claude-code-review.yml` is inspected
 - **THEN** the `jobs.review.with:` block SHALL be absent (or empty), with no `additional_focus` or other free-form text inputs passed to the reusable workflow
 
-### Requirement: Claude review publishes its verdict as a GitHub Check Run
-The reusable workflow SHALL create a GitHub Check Run named exactly `Claude review` on the pull request's head commit. The Check Run `conclusion` SHALL be derived deterministically from the count of inline review comments that the Claude bot has posted against the pull request's head commit SHA, computed in a post-step that calls `gh api repos/<owner>/<repo>/pulls/<N>/comments` and filters by `commit_id == <head_sha>` AND `user.login == <claude bot identity>`.
+### Requirement: Claude review posts advisory inline comments on pull requests
+The reusable workflow `liverty-music/.github/.github/workflows/claude-review.yml` SHALL invoke `anthropics/claude-code-action@v1` with the `code-review@claude-code-plugins` plugin and the `--comment` argument so that Claude posts inline review comments on each pull request. The workflow SHALL NOT create a GitHub Check Run, SHALL NOT emit a verdict file, and SHALL NOT submit a formal pull request review (`APPROVED` or `CHANGES_REQUESTED`).
 
-The conclusion mapping SHALL be:
+The reusable workflow's `workflow_call` interface SHALL declare only the `CLAUDE_CODE_OAUTH_TOKEN` secret (no inputs). The workflow SHALL request permissions `contents: read`, `pull-requests: write`, `issues: read`, `id-token: write` — and SHALL NOT request `checks: write`.
 
-| Filtered comment count | `conclusion` |
-|---|---|
-| `0` | `success` |
-| `≥ 1` | `failure` |
-| `gh api` call fails or output unparseable | `neutral` |
+The workflow SHALL match the shape of the official Anthropic example [`pr-review-comprehensive.yml`](https://github.com/anthropics/claude-code-action/blob/main/examples/pr-review-comprehensive.yml): a single job with a checkout step and a single `anthropics/claude-code-action@v1` step.
 
-The Check Run output `title` SHALL be `No issues found` when `conclusion == success`, `N issue(s) found` when `conclusion == failure` (where `N` is the filtered comment count), and `Verdict could not be computed` when `conclusion == neutral`. The Check Run output `summary` SHALL link to the pull request's `Files changed` view.
+#### Scenario: PR is opened or updated
+- **WHEN** a pull request is opened, synchronized, marked ready for review, or reopened
+- **THEN** the caller workflow SHALL invoke the reusable workflow
+- **AND** the reusable workflow SHALL run `anthropics/claude-code-action@v1` with the `code-review` plugin and `--comment`
+- **AND** Claude SHALL post inline review comments (zero or more) on the PR's head commit
+- **AND** no GitHub Check Run named `Claude review` (or any other name) SHALL be created by this workflow
 
-The verdict SHALL NOT be derived from an LLM-emitted artifact (such as a JSON file written by the Claude run). The Claude run is responsible only for posting inline review comments; the verdict is computed mechanically after the Claude run completes.
+#### Scenario: Claude finds no issues
+- **WHEN** the Claude run completes and posts zero inline comments
+- **THEN** the workflow run SHALL succeed
+- **AND** Claude MAY post a top-level PR comment via `gh pr comment` per the `code-review` slash command's documented behavior
 
-The workflow SHALL NOT submit a formal pull request review (`APPROVE` or `REQUEST_CHANGES`) for the verdict. Only the inline comments (posted by the plugin) and the Check Run are produced.
+#### Scenario: Claude finds issues
+- **WHEN** the Claude run completes and posts one or more inline comments
+- **THEN** the workflow run SHALL succeed (the workflow does not fail on the presence of comments)
+- **AND** reviewers SHALL treat the inline comments as advisory input alongside other reviewers' comments
+- **AND** the PR's mergeability SHALL NOT be affected by the comments' presence or count
 
-#### Scenario: Claude finds no high-signal issues
-- **WHEN** the Claude run completes and `gh api repos/.../pulls/<N>/comments` returns zero comments matching `commit_id == <head_sha>` AND `user.login == <claude bot identity>`
-- **THEN** the workflow SHALL create a `Claude review` Check Run with `conclusion: success`
-- **AND** the Check Run output title SHALL be `No issues found`
+### Requirement: Branch protection gates merges on CI Success only
+For every liverty-music repository whose `GitHubRepositoryComponent` participates in Claude review (`backend`, `frontend`, `specification`, `cloud-provisioning`), `cloud-provisioning/src/index.ts` SHALL set `requiredStatusCheckContexts` to `['CI Success']`. The string `'Claude review'` SHALL NOT appear in `requiredStatusCheckContexts` for any repo.
 
-#### Scenario: Claude posts inline comments against the PR head
-- **WHEN** the Claude run completes and `gh api repos/.../pulls/<N>/comments` returns `N ≥ 1` comments matching `commit_id == <head_sha>` AND `user.login == <claude bot identity>`
-- **THEN** the workflow SHALL create a `Claude review` Check Run with `conclusion: failure`
-- **AND** the Check Run output title SHALL be `N issue(s) found`
+Branch protection is applied only when the Pulumi stack environment is `prod`; the Required Status Check is effective after `pulumi up -s prod`.
 
-#### Scenario: Verdict computation fails
-- **WHEN** the `gh api` call to fetch PR comments exits non-zero, or its output cannot be parsed as JSON
-- **THEN** the workflow SHALL create a `Claude review` Check Run with `conclusion: neutral`
-- **AND** the Check Run output title SHALL be `Verdict could not be computed`
+#### Scenario: PR has a failing CI Success check
+- **WHEN** a pull request is open with `CI Success` Check Run `conclusion: failure`
+- **THEN** the protected branch SHALL block merging
+- **AND** the Claude review workflow's success or failure SHALL NOT affect mergeability
 
-#### Scenario: Subsequent push fixes earlier-flagged issues
-- **WHEN** a PR initially has `conclusion: failure` from Claude comments on commit SHA `A`
-- **AND** a new commit SHA `B` is pushed that fixes the flagged issues (such that the slash command's skip-on-repeat behavior exits the Claude run without posting new comments)
-- **AND** no inline comments exist with `commit_id == B`
-- **THEN** the workflow on commit `B` SHALL create a `Claude review` Check Run with `conclusion: success`
-- **AND** the prior `failure` Check Run on commit `A` does not affect commit `B`'s conclusion
-
-#### Scenario: Claude review never submits a formal PR review
-- **WHEN** any Claude review run completes (success, failure, or neutral)
-- **THEN** `gh pr view --json reviews` SHALL NOT show a review authored by Claude with state `APPROVED` or `CHANGES_REQUESTED`
-
-### Requirement: `Claude review` is enforced as a Required Status Check via Pulumi
-For every liverty-music repository whose `GitHubRepositoryComponent` participates in Claude review, `cloud-provisioning/src/index.ts` SHALL include `'Claude review'` in `requiredStatusCheckContexts` alongside the existing `'CI Success'`. Branch protection is applied only when the Pulumi stack environment is `prod`, so the Required Status Check is effective only after `pulumi up -s prod`.
-
-A failing or pending `Claude review` Check Run SHALL block merging on the protected branch. Repo administrators retain the standard branch-protection admin-override capability; no other bypass actors are configured.
-
-#### Scenario: PR has a failing Claude review Check Run
-- **WHEN** a pull request is open with `Claude review` Check Run `conclusion: failure`
-- **AND** all other Required Status Checks pass
-- **THEN** the PR's merge button SHALL be disabled for non-admin users
-
-#### Scenario: PR has a neutral Claude review Check Run
-- **WHEN** a pull request is open with `Claude review` Check Run `conclusion: neutral`
-- **AND** all other Required Status Checks pass
-- **THEN** the PR's merge button SHALL be enabled (neutral does not block)
-
-#### Scenario: Repo admin merges despite failing Claude review
-- **WHEN** a repository administrator opens the merge dialog on a PR with `Claude review` `conclusion: failure`
-- **THEN** the admin SHALL be able to merge via the standard branch-protection administrator-override path
-
-### Requirement: Claude review pilots on `specification` before all-repo rollout
-The first deployment of the new reusable workflow + Required Status Check SHALL enable `'Claude review'` in `requiredStatusCheckContexts` for the `specification` repository only. The other three repos (`backend`, `frontend`, `cloud-provisioning`) SHALL retain `requiredStatusCheckContexts: ['CI Success']` until the pilot has run for at least one calendar week without persistent false-positive issues.
-
-#### Scenario: Initial deployment after pilot Pulumi PR
-- **WHEN** the first Pulumi PR introducing this change has been applied to `prod`
-- **THEN** only the `specification` repo's branch protection SHALL include `'Claude review'` in `requiredStatusCheckContexts`
-- **AND** `backend`, `frontend`, `cloud-provisioning` SHALL still have `requiredStatusCheckContexts: ['CI Success']`
-
-#### Scenario: Pilot graduates to full rollout
-- **WHEN** the pilot has run for at least one calendar week without unmitigated false-positive issues
-- **THEN** a follow-up Pulumi PR SHALL add `'Claude review'` to `requiredStatusCheckContexts` for `backend`, `frontend`, and `cloud-provisioning`
-- **AND** each of those three repos SHALL have its `.github/workflows/claude-code-review.yml` replaced with a caller of the reusable workflow before that Pulumi PR is deployed to `prod`
+#### Scenario: PR has Claude inline comments but CI Success passes
+- **WHEN** a pull request has Claude-posted inline comments (any count, any resolution state) AND `CI Success` Check Run `conclusion: success`
+- **THEN** the protected branch SHALL allow merging
+- **AND** no Claude-review-related Check Run SHALL be present in `gh api repos/.../branches/main/protection`'s required contexts

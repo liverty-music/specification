@@ -13,16 +13,16 @@
 
 ## 3. Implementation — Pulumi first (must precede reusable revert)
 
-- [ ] 3.1 Open Pulumi PR in `cloud-provisioning` removing `'Claude review'` from `requiredStatusCheckContexts` on all four `GitHubRepositoryComponent` invocations (lines ~190, 200, 213, 223 of `src/index.ts`). — [cloud-provisioning#311](https://github.com/liverty-music/cloud-provisioning/pull/311) opened
-- [ ] 3.2 `make lint-ts` passes locally. — verified at PR open time
-- [ ] 3.3 Merge the Pulumi PR.
-- [ ] 3.4 User manually runs `pulumi up -s prod`.
-- [ ] 3.5 Verify required checks via `gh api repos/liverty-music/<repo>/branches/main/protection --jq '.required_status_checks.contexts'` on all four repos. Expected result: `["CI Success"]` only.
+- [x] 3.1 Open Pulumi PR in `cloud-provisioning` removing `'Claude review'` from `requiredStatusCheckContexts` on all four `GitHubRepositoryComponent` invocations (lines ~190, 200, 213, 223 of `src/index.ts`). — [cloud-provisioning#311](https://github.com/liverty-music/cloud-provisioning/pull/311) opened
+- [x] 3.2 `make lint-ts` passes locally. — verified at PR open time
+- [x] 3.3 Merge the Pulumi PR. — merged 2026-05-28T07:51:16Z, commit e172585
+- [x] 3.4 User manually runs `pulumi up -s prod`. — applied 2026-05-28
+- [x] 3.5 Verify required checks via `gh api repos/liverty-music/<repo>/branches/main/protection --jq '.required_status_checks.contexts'` on all four repos. Expected result: `["CI Success"]` only.
 
 ## 4. Implementation — reusable workflow revert
 
-- [ ] 4.1 Open `.github` PR reverting the reusable workflow to the official `pr-review-comprehensive.yml` shape. Drop: `verdict_only` input, GraphQL count step, Publish Check Run step, `checks: write` permission. — [liverty-music/.github#7](https://github.com/liverty-music/.github/pull/7) opened
-- [ ] 4.2 After 3.5 confirmed, merge `.github#7`.
+- [x] 4.1 Open `.github` PR reverting the reusable workflow to the official `pr-review-comprehensive.yml` shape. Drop: `verdict_only` input, GraphQL count step, Publish Check Run step, `checks: write` permission. — [liverty-music/.github#7](https://github.com/liverty-music/.github/pull/7) opened
+- [x] 4.2 After 3.5 confirmed, merge `.github#7`. — merged 2026-05-28T08:05:43Z, commit a700ee9
 
 ## 5. Implementation — caller workflows (no changes needed)
 
@@ -32,9 +32,9 @@
 
 ## 6. Implementation — OpenSpec proposal
 
-- [ ] 6.1 Rewrite this change's `proposal.md`, `design.md`, `specs/ci-optimization/spec.md`, and `tasks.md` to reflect Option B (this current document).
-- [ ] 6.2 `openspec validate honor-thread-resolution-in-claude-review-check` passes.
-- [ ] 6.3 Merge specification#526.
+- [x] 6.1 Rewrite this change's `proposal.md`, `design.md`, `specs/ci-optimization/spec.md`, and `tasks.md` to reflect Option B (this current document).
+- [x] 6.2 `openspec validate honor-thread-resolution-in-claude-review-check` passes.
+- [x] 6.3 Merge specification#526. — merged 2026-05-28T07:52:23Z, commit 00d690a; follow-up validation PR #529 merged 2026-05-28T23:33:15Z, commit 6c5263f
 
 ## 7. Validation
 
@@ -46,4 +46,4 @@
 
 - [x] 8.1 Update or remove any CLAUDE.md / docs references that specifically rely on `Claude review` being a required status check. — `grep -rn "Claude review" backend/CLAUDE.md frontend/CLAUDE.md specification/CLAUDE.md cloud-provisioning/CLAUDE.md` returns zero matches. No-op.
 - [ ] 8.2 (Optional, deferred) Open a tidy PR removing the now-unused `permissions: checks: write` line from all four caller workflows.
-- [ ] 8.3 After 7.x confirms the new state works (one successful PR through the new flow), run `/opsx:archive` to archive this change and apply its spec delta to canonical `openspec/specs/ci-optimization/spec.md`.
+- [x] 8.3 After 7.x confirms the new state works (one successful PR through the new flow), run `/opsx:archive` to archive this change and apply its spec delta to canonical `openspec/specs/ci-optimization/spec.md`.
