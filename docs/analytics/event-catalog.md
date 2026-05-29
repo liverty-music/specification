@@ -2,8 +2,8 @@
 
 This document is the single source of truth for every product-analytics event emitted by Liverty Music. It is referenced by the OpenSpec capability `product-analytics` and is the authority that frontend and backend event-name constants are reviewed against.
 
-- **Frontend constants**: [`frontend/src/services/analytics-events.ts`](../../../frontend/src/services/analytics-events.ts)
-- **Backend constants**: [`backend/internal/usecase/analytics_events.go`](../../../backend/internal/usecase/analytics_events.go)
+- **Frontend constants**: [`frontend/src/services/analytics-events.ts`](https://github.com/liverty-music/frontend/blob/main/src/services/analytics-events.ts)
+- **Backend constants**: [`backend/internal/usecase/analytics_events.go`](https://github.com/liverty-music/backend/blob/main/internal/usecase/analytics_events.go)
 
 Every pull request that adds, removes, or renames an event MUST update this catalogue in the same change. CI fails any code-side event constant that does not appear here.
 
@@ -34,12 +34,12 @@ Conversion-critical events MAY include a `trace_id` property carrying the active
 | Event name | Source | Domain | Properties | Consumers |
 | --- | --- | --- | --- | --- |
 | `page.viewed` | FE | page | `path`, `title`, `referrer?`, `trace_id?` | Acquisition funnel, top-of-funnel dashboard |
-| `account.signup.started` | FE | account | `source`, `trace_id?` | Signup funnel |
+| `account.signup.started` | FE | account | `source` (pre-consent: no `trace_id` per `analytics-consent` spec) | Signup funnel |
 | `account.signup.completed` | BE | account | `signup_month`, `locale`, `home_region?`, `trace_id?` | Signup funnel, D7/D30 retention cohort |
 | `account.login` | BE | account | `trace_id?` | Active user trends |
 | `account.preferred_language.updated` | BE | account | `from_locale`, `to_locale`, `trace_id?` | Locale change rate |
-| `user.created` | BE | account | `signup_month`, `locale`, `home_region?`, `trace_id?` | Acquisition by month |
-| `user.deleted` | BE | account | `account_age_days_bucket`, `trace_id?` | Account-deletion analysis |
+| `user.created` | BE | user | `signup_month`, `locale`, `home_region?`, `trace_id?` | Acquisition by month |
+| `user.deleted` | BE | user | `account_age_days_bucket`, `trace_id?` | Account-deletion analysis |
 | `artist.discovery.viewed` | FE | artist | `artist_id`, `source`, `trace_id?` | Artist discovery funnel |
 | `artist.search` | FE | artist | `query_length`, `result_count`, `trace_id?` | Search quality |
 | `artist.follow.requested` | FE | artist | `artist_id`, `source`, `trace_id?` | Follow funnel (paired) |
@@ -77,6 +77,6 @@ Initial PostHog dashboards built on top of this catalogue:
 
 1. Decide the source (FE for UI/intent, BE for trust-critical state changes, both only for the paired-events set).
 2. Add an entry to this catalogue with the domain, action, outcome, source, properties, and consuming dashboards.
-3. Add the corresponding constant to [`frontend/src/services/analytics-events.ts`](../../../frontend/src/services/analytics-events.ts) or [`backend/internal/usecase/analytics_events.go`](../../../backend/internal/usecase/analytics_events.go).
+3. Add the corresponding constant to [`frontend/src/services/analytics-events.ts`](https://github.com/liverty-music/frontend/blob/main/src/services/analytics-events.ts) or [`backend/internal/usecase/analytics_events.go`](https://github.com/liverty-music/backend/blob/main/internal/usecase/analytics_events.go).
 4. If the event is emitted from the backend, configure the relevant subject in the `analytics-consumer` worker so that the corresponding NATS payload is decoded and forwarded.
 5. In the same pull request, link the catalogue update so the CI check passes.
