@@ -159,13 +159,13 @@ PostHog and OpenTelemetry MUST NOT share concerns. PostHog receives product/user
 
 ## Risks / Trade-offs
 
-- **[Risk] Cross-border consent fatigue at signup → Mitigation**: limit the consent screen to two toggles with brief plain-language descriptions, default analytics ON, and surface a "Set up later" path that defers to settings. Measure post-launch what fraction reject and tune copy if rejection rate exceeds 15%.
+- **[Risk] Cross-border consent friction at signup measurably reduces opt-in rate → Mitigation**: per Decision 7 both toggles default OFF (explicit opt-in) for APPI Article 28 compliance; the consent screen is limited to two toggles with brief plain-language descriptions and a "Set up later" path that defers to settings without blocking signup. Measure post-launch what fraction grant consent and tune copy / placement (NOT default state) if the analytics opt-in rate trends below 50%.
 
 - **[Risk] PostHog Cloud event-volume cost grows faster than expected → Mitigation**: dashboards in the first 90 days monitor event volume by domain prefix; if approaching 1M events/month, the `analytics-consumer` is the first throttle point (drop low-value events) before paying the paid-tier rate.
 
 - **[Risk] PostHog availability incident blocks app rendering when flags are over-relied-upon → Mitigation**: Decision 9 mandates default fallback values on both frontend and backend so that a PostHog outage degrades gracefully. CI checks for any flag evaluation lacking a default.
 
-- **[Risk] Event-schema drift between FE and BE for paired events → Mitigation**: `docs/analytics/event-catalog.md` is the single source of truth, FE and BE constants are PR-reviewed against it, and an end-to-end smoke test validates that one paired event flow (`artist.follow`) produces both `*.requested` and `*.completed` with matching `user_id` and `artist_id`.
+- **[Risk] Event-schema drift between FE and BE for paired events → Mitigation**: `docs/analytics/event-catalog.md` is the single source of truth, FE and BE constants are PR-reviewed against it, and an end-to-end smoke test validates that one paired event flow (`artist.follow`) produces both `*.requested` and `*.completed` with matching `distinct_id` (the platform `UserId` UUID) and `artist_id`.
 
 - **[Risk] Session replay captures PII despite masking → Mitigation**: the default-masked posture (`maskAllInputs: true`) errs on the side of over-masking. Selectors that opt back in (`data-ph-unmask`) are forbidden in PR review. A monthly random-sample audit of 10 recordings confirms no PII appears in replays.
 
