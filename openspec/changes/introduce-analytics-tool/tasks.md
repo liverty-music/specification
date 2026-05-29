@@ -69,7 +69,7 @@
 ## 9. Event catalogue & dashboards
 
 - [x] 9.1 Create `specification/docs/analytics/event-catalog.md` listing every event with its name, domain, action, outcome, source (FE/BE), required properties, and intended consumers
-- [ ] 9.2 Add a CI check that fails when an event constant in frontend `events.ts` or backend `events/events.go` lacks a matching catalogue entry
+- [ ] 9.2 Add a CI check that fails when an event constant in `frontend/src/services/analytics-events.ts` or `backend/internal/usecase/analytics_events.go` lacks a matching catalogue entry
 - [ ] 9.3 Create the discover → follow → lottery → purchase → entry funnel dashboard in PostHog
 - [ ] 9.4 Create the D7 / D30 retention cohort by signup month in PostHog
 - [ ] 9.5 Create per-domain event-volume monitoring dashboard for the first 90 days
