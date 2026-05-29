@@ -32,12 +32,12 @@ The system SHALL use the Liverty Music `UserId` (UUID) as the `distinct_id` for 
 
 ---
 
-### Requirement: Event names follow `domain.action[.outcome]` in dot.case
-Every PostHog event name SHALL be a dot-separated lowercase identifier in the form `<domain>.<action>` or `<domain>.<action>.<outcome>`, where `<domain>` matches a domain prefix listed in the event catalogue. Property keys SHALL use `snake_case`.
+### Requirement: Event names follow `domain.action[.qualifier][.outcome]` in dot.case
+Every PostHog event name SHALL be a dot-separated lowercase identifier of two to four segments in the form `<domain>.<action>`, `<domain>.<action>.<outcome>`, or `<domain>.<action>.<qualifier>.<outcome>`, where `<domain>` matches a domain prefix listed in the event catalogue. The four-segment form supports paired-funnel events such as `ticket.lottery.entry.submitted` and `ticket.lottery.result.assigned`. Property keys SHALL use `snake_case`.
 
 #### Scenario: A new event is added to the catalogue
 - **WHEN** an engineer adds a new event constant to `frontend/src/services/analytics-events.ts` or `backend/internal/usecase/analytics_events.go`
-- **THEN** the event name SHALL match the regex `^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){1,2}$`
+- **THEN** the event name SHALL match the regex `^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){1,3}$`
 - **AND** the event SHALL be documented in `docs/analytics/event-catalog.md` with its domain, action, outcome (if any), source (FE/BE), required properties, and consuming dashboards
 
 #### Scenario: Property keys use snake_case

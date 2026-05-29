@@ -9,7 +9,7 @@ Every pull request that adds, removes, or renames an event MUST update this cata
 
 ## Naming conventions
 
-- **Event name**: `<domain>.<action>[.<outcome>]`, lowercase, dot-separated, snake_case segments. Matches `^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){1,2}$`.
+- **Event name**: `<domain>.<action>[.<qualifier>][.<outcome>]`, lowercase, dot-separated, snake_case segments. Matches `^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){1,3}$`. The optional qualifier supports four-segment names like `ticket.lottery.entry.{submitted,accepted,rejected}` and `ticket.lottery.result.assigned`.
 - **Property keys**: snake_case, lowercase. Matches `^[a-z][a-z0-9_]*$`.
 - **Outcomes**: `requested`, `submitted`, `initiated` (frontend intent); `completed`, `accepted`, `rejected`, `failed`, `verified`, `served`, `assigned`, `delivered`, `dismissed`, `opened` (state-confirming).
 
