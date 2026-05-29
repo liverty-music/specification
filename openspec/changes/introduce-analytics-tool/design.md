@@ -111,14 +111,16 @@ Backend-originated analytics events are published as domain events on existing N
 
 ### Decision 7: APPI consent collected at signup with explicit cross-border disclosure
 
-A consent screen at the final step of signup obtains explicit agreement for cross-border data transfer to PostHog (Netherlands). Pre-signup, anonymous page-view telemetry runs in memory-only persistence with IP collection disabled. The signup screen offers two toggles — analytics (default ON, recommended) and marketing measurement (default OFF, reserved for future use) — with a link to the privacy policy enumerating each named third party.
+A consent screen at the final step of signup obtains explicit agreement for cross-border data transfer to PostHog (Netherlands). Pre-consent telemetry runs in memory-only persistence with IP collection disabled and is restricted to a closed allowlist (`page.viewed`, `account.signup.started`) that carries no identifier. The signup screen offers two toggles — analytics and marketing measurement — **both defaulting to OFF (explicit opt-in)** with a link to the privacy policy enumerating each named third party.
 
 **Alternatives considered:**
 
 - *Strict cookie-banner-first*: full block of all telemetry until consent. Rejected because anonymous acquisition attribution is lost and the modal friction hurts the signup conversion measurably in B2C contexts.
 - *Implicit consent via privacy policy acceptance*: rejected as legally insufficient under APPI Article 28 for cross-border transfer.
+- *Analytics toggle default ON ("opt-out" pattern)*: initially proposed for UX/conversion reasons. **Rejected on review** as internally contradictory: a pre-ticked toggle is the same passive opt-out pattern this same Decision rejects above for being legally insufficient under APPI Article 28. The cross-border transfer rule requires affirmative consent, and a Requirement titled "explicit consent" cannot mandate a default-on toggle in the same Scenario.
+- *Drop the APPI Article 28 framing and keep default-on*: rejected. The framing is load-bearing for the legal posture against a Japan-based user base; weakening it would require legal review and a privacy-policy rewrite.
 
-**Rationale:** Anonymous, IP-stripped, memory-persisted page views are low-risk under APPI and preserve top-of-funnel measurement. Identified analytics — where the risk lives — is gated behind explicit, purpose-specific consent collected at the natural friction point of signup.
+**Rationale:** Anonymous, IP-stripped, memory-persisted, allowlisted events are low-risk under APPI and preserve top-of-funnel measurement. Identified analytics — where the risk lives — is gated behind affirmative, purpose-specific consent. The trade-off is a measurable hit to opted-in conversion rate; this is accepted as the cost of legal posture certainty. Conversion-rate impact is monitored post-launch and informs whether copy or UX refinements (not default changes) can recover the gap.
 
 ### Decision 8: PostHog SDK defers initialisation until after first paint and disables autocapture
 
