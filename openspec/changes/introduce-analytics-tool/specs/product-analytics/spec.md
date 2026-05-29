@@ -36,7 +36,7 @@ The system SHALL use the Liverty Music `UserId` (UUID) as the `distinct_id` for 
 Every PostHog event name SHALL be a dot-separated lowercase identifier in the form `<domain>.<action>` or `<domain>.<action>.<outcome>`, where `<domain>` matches a domain prefix listed in the event catalogue. Property keys SHALL use `snake_case`.
 
 #### Scenario: A new event is added to the catalogue
-- **WHEN** an engineer adds a new event constant to `frontend/src/lib/analytics/events.ts` or `backend/internal/analytics/events/events.go`
+- **WHEN** an engineer adds a new event constant to `frontend/src/services/analytics-events.ts` or `backend/internal/usecase/analytics_events.go`
 - **THEN** the event name SHALL match the regex `^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){1,2}$`
 - **AND** the event SHALL be documented in `docs/analytics/event-catalog.md` with its domain, action, outcome (if any), source (FE/BE), required properties, and consuming dashboards
 
@@ -65,7 +65,7 @@ The system SHALL emit each event from the side that is the source of truth for t
 - **WHEN** the user submits a ticket lottery entry form
 - **THEN** the frontend SHALL emit `ticket.lottery.entry.submitted` immediately on submit
 - **AND** the backend SHALL emit `ticket.lottery.entry.accepted` on successful persistence or `ticket.lottery.entry.rejected` on failure
-- **AND** both events SHALL share the same `user_id` and `concert_id` properties
+- **AND** both events SHALL share the same `distinct_id` (the platform `UserId` UUID) and the same `concert_id` property
 
 ---
 
@@ -162,6 +162,6 @@ PostHog SHALL receive product-domain events only. OpenTelemetry SHALL receive re
 The system SHALL maintain `docs/analytics/event-catalog.md` in the specification repository as the canonical inventory of every emitted event. Frontend and backend event constants SHALL be reviewed against the catalogue during pull-request review.
 
 #### Scenario: Pull request adds an event without catalogue update
-- **WHEN** a pull request introduces a new event constant in `frontend/src/lib/analytics/events.ts` or `backend/internal/analytics/events/events.go`
+- **WHEN** a pull request introduces a new event constant in `frontend/src/services/analytics-events.ts` or `backend/internal/usecase/analytics_events.go`
 - **THEN** the pull request SHALL also update `docs/analytics/event-catalog.md` with the event's domain, action, outcome (if any), source (FE/BE), required properties, and at least one consuming dashboard or KPI
 - **AND** the pull request SHALL NOT be approved without that update
