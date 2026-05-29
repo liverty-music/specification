@@ -8,11 +8,11 @@
 
 ## 2. Backend dependencies & domain types
 
-- [ ] 2.1 Add `github.com/posthog/posthog-go` to backend go.mod and pin the version
+- [x] 2.1 Add `github.com/posthog/posthog-go` to backend go.mod and pin the version (v1.13.1)
 - [x] 2.2 Add `backend/internal/usecase/analytics_events.go` defining the canonical event-name constants emitted by the backend (placed flat under `usecase/` to match repo convention, not under a new sub-package)
 - [x] 2.3 Define the `AnalyticsClient` interface in `backend/internal/usecase/analytics_client.go` covering `Enqueue(distinctID, eventName, properties)` and `Close(ctx)` semantics
-- [ ] 2.4 Implement `PostHogAnalyticsClient` under `backend/internal/adapter/analytics/posthog/` against the `AnalyticsClient` interface using `posthog-go`
-- [ ] 2.5 Wire the `AnalyticsClient` binding in the Google Wire DI graph with environment-driven configuration
+- [x] 2.4 Implement `PostHogAnalyticsClient` under `backend/internal/infrastructure/analytics/posthog/` against the `AnalyticsClient` interface using `posthog-go` (placed under `infrastructure/` to match repo convention for outbound dependencies; the design.md `adapter/analytics/` path was inconsistent with the existing `infrastructure/messaging/`, `infrastructure/webpush/` etc. pattern)
+- [ ] 2.5 Wire the `AnalyticsClient` binding in the manual DI graph (`internal/di/provider.go` — note: repo uses hand-written DI, not Google Wire) with environment-driven configuration — **deferred to Batch 2b together with the `analytics-consumer` worker so the wiring has an actual consumer at the same time**
 
 ## 3. Backend `analytics-consumer` worker
 
@@ -76,7 +76,7 @@
 
 ## 10. Testing
 
-- [ ] 10.1 Unit-test the `AnalyticsClient` interface contract and the `PostHogAnalyticsClient` implementation including PostHog-unreachable degradation
+- [x] 10.1 Unit-test the `AnalyticsClient` interface contract and the `PostHogAnalyticsClient` implementation including PostHog-unreachable degradation (8 test cases covering happy path, empty distinctID/eventName validation, nil properties, SDK error wrapping, Close propagation, and constructor input validation)
 - [ ] 10.2 Unit-test the `analytics-consumer` per-subject decoders including property sanitisation and trace_id propagation
 - [ ] 10.3 Unit-test the frontend `AnalyticsService` deferred initialisation, in-memory queue flushing, identify gating on consent, and feature-flag default fallback
 - [ ] 10.4 Unit-test the `ConsentService` state persistence and revocation behaviour
