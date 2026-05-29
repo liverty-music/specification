@@ -37,19 +37,19 @@ Example:
 [OWNER] @pannpers
 [HYPOTHESIS] Recommendation algorithm v2 increases artist.follow.completed by ≥ 10%
 [KPI] artist.follow.completed / concert.recommendation.served
-[KILL_DATE] 2026-08-29
+[KILL_DATE] 2026-08-27
 [ISSUE] https://github.com/liverty-music/frontend/issues/123
 ```
 
 ## Evaluation rules
 
-- **Significant experiments** (anything whose variant influences revenue, conversion, or per-user behaviour) MUST be evaluated only after `posthog.identify()` has completed. This eliminates the anonymous-to-identified bucket flip that would otherwise switch the variant mid-session.
+- **Significant experiments** (anything whose variant influences revenue, conversion, or per-user behaviour) MUST be evaluated only after `posthog.identify()` has completed. This defers experiment exposure to after identification, so analytics records only post-identification variant assignments; users in a treatment arm still see a deterministic, bounded control→treatment transition at the moment `identify` completes (matching the corresponding scenario in `specs/feature-flag-management/spec.md`), but variant churn for the rest of the session is eliminated.
 - **Release toggles, geographic gates, and emergency kill switches** MAY be evaluated against the anonymous identifier when the variant difference is harmless to bucket flips (e.g. show or hide a landing-page section).
 - **Default values are mandatory**. Every flag evaluation in frontend and backend code MUST specify a default that represents the safe, conservative behaviour. A CI check fails any evaluation lacking a default.
 
 ### Frontend evaluation
 
-The frontend bootstraps flag values from `localStorage` on initialisation so that the first render uses the same variant the user saw on the previous session, then refreshes from PostHog asynchronously. The user-facing variant does not flip mid-session unless the rollout reaches a new bucket.
+The frontend bootstraps flag values from `localStorage` on initialisation so that the first render uses the same variant the user saw on the previous session, then refreshes from PostHog asynchronously. The user-facing variant does not flip mid-session for returning users in the same identity state; for a first-session user a control→assigned-variant transition is permitted at the moment `posthog.identify()` completes (per the evaluation rule above) and at rollout-bucket boundaries.
 
 ### Backend evaluation
 
