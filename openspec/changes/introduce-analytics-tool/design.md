@@ -144,7 +144,7 @@ Frontend flag evaluation uses bootstrap with the last-known value from `localSto
 - *Flag every new feature*: maximum safety but creates persistent flag debt and code complexity. Rejected as a default; reserved for the narrowest of cases.
 - *No flags, use deploys and Kustomize overlays*: simplest but forfeits A/B experimentation and gradual rollout. Rejected.
 
-**Rationale:** The申告 record makes flag creation a deliberate act rather than a reflex, the kill date forces a decision, and the post-identify evaluation rule eliminates the failure mode where a user who browses anonymously and then signs up sees the variant flip mid-session.
+**Rationale:** The申告 record makes flag creation a deliberate act rather than a reflex, the kill date forces a decision, and the post-identify evaluation rule reduces the risk of unexpected bucket reassignment mid-session by deferring experiment exposure to after `identify`, so analytics records only post-identification variant assignments. The corresponding spec scenario in `specs/feature-flag-management/spec.md` still mandates a deterministic control-to-assigned-variant flip at identify for users in a treatment arm; that is acknowledged as a single bounded transition rather than a continuous source of variant churn.
 
 ### Decision 10: Strict separation between PostHog and OpenTelemetry; only `trace_id` bridges
 
