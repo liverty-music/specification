@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
-### Requirement: Cross-border data-transfer consent is collected at signup
-The system SHALL collect explicit consent for cross-border transfer of personal data to PostHog (Netherlands) as the final step of the signup flow before the user reaches the authenticated experience. The consent screen SHALL name PostHog as the third-party recipient and link to the privacy policy enumerating the purpose of transfer.
+### Requirement: Opt-in consent for cross-border data transfer is collected at signup
+The system SHALL collect opt-in consent for cross-border transfer of personal data to PostHog (Netherlands) as the final step of the signup flow before the user reaches the authenticated experience. The consent is a trust commitment beyond the APPI statutory baseline (under APPI Article 28, prior consent is not required for transfer to an adequacy-designated jurisdiction, and the EU has been so designated since January 2019). The consent screen SHALL name PostHog as the third-party recipient and link to the privacy policy enumerating the purpose of transfer.
 
 #### Scenario: New user completes signup and reaches consent screen
 - **WHEN** a new user completes account creation in Zitadel and is redirected back to the Aurelia 2 PWA

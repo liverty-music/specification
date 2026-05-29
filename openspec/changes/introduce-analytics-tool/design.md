@@ -4,7 +4,7 @@ Liverty Music is approaching production launch with the technical platform fully
 
 The frontend is an Aurelia 2 PWA with strict Core Web Vitals budgets, an existing OIDC integration with Zitadel, a Workbox-based offline strategy, and an OpenTelemetry web SDK already initialized at startup. The backend is a Go Connect-RPC service with a Clean Architecture layout and a layered domain model in which `UserId` (a UUID owned by the platform) is the canonical primary key for every user-owned entity; the Zitadel `sub` claim is stored only on the `User` record as `UserExternalId` for IdP linkage. Infrastructure runs on GCP under Pulumi-managed Kubernetes manifests delivered via ArgoCD.
 
-Two regulatory considerations shape this design. First, Japan's Act on the Protection of Personal Information (APPI), specifically Article 28 on cross-border data transfer, requires explicit user consent when personal data is provided to a third party outside Japan. PostHog Cloud EU stores data in the Netherlands; this is a cross-border transfer regardless of which EU sub-region is chosen. Second, the 2026 APPI amendments permit processing for statistical purposes without fresh consent when data is rendered non-identifying through documented technical and organisational measures, which informs the PII-redaction approach.
+Two regulatory considerations shape this design. First, Japan's Act on the Protection of Personal Information (APPI) governs cross-border transfer of personal data. PostHog Cloud EU stores data in the Netherlands (Klant Solutions B.V.). Under APPI Article 28, prior user consent is not required when the destination is in a jurisdiction that the Personal Information Protection Commission has recognised as having an adequate data-protection regime; the EU and the UK have been so designated since January 2019. Liverty Music therefore has no statutory APPI obligation to obtain prior consent for transfer to PostHog Cloud EU. The design nevertheless adopts an opt-in consent UX as a trust/transparency commitment to users and to future-proof the implementation against (a) a future migration to a non-adequate destination, and (b) expansion of the user base outside the adequacy bubble. Second, the 2026 APPI amendments permit processing for statistical purposes without fresh consent when data is rendered non-identifying through documented technical and organisational measures, which informs the PII-redaction approach.
 
 A prior exploration considered five stacks (lightweight privacy-first, all-in-one PostHog, raw-event ownership via Snowplow, SaaS-first with Mixpanel, and a hybrid with GA4) before converging on the PostHog-only design captured here.
 
@@ -13,7 +13,7 @@ A prior exploration considered five stacks (lightweight privacy-first, all-in-on
 **Goals:**
 
 - Provide product, growth, and engineering with a single source of truth for user-behaviour data covering the live-music funnel (discover → follow → lottery → purchase → entry).
-- Maintain a privacy posture that satisfies APPI cross-border transfer requirements without degrading the signup conversion funnel.
+- Maintain a privacy posture that meets APPI cross-border transfer requirements (cleared by the EU adequacy designation) and goes one trust-signal step further with opt-in consent UX, without degrading the signup conversion funnel.
 - Preserve the analytics history across future identity-provider changes by decoupling analytics identity from Zitadel-issued identifiers.
 - Keep the Core Web Vitals impact of the analytics SDK negligible (target: zero impact on LCP, ≤10 ms INP impact).
 - Establish naming and instrumentation conventions strong enough that a second engineer can add a correctly-shaped event without consulting the author.
@@ -34,7 +34,7 @@ A prior exploration considered five stacks (lightweight privacy-first, all-in-on
 
 ### Decision 1: PostHog Cloud EU as the single analytics platform
 
-We will use PostHog Cloud (EU region, Frankfurt) as the sole product-analytics platform. PostHog bundles event analytics, funnels, cohorts, retention, session replay, feature flags, and A/B testing in one product with a single SDK on the client.
+We will use PostHog Cloud (EU region, Netherlands — Klant Solutions B.V.) as the sole product-analytics platform. PostHog bundles event analytics, funnels, cohorts, retention, session replay, feature flags, and A/B testing in one product with a single SDK on the client.
 
 **Alternatives considered:**
 
@@ -43,7 +43,7 @@ We will use PostHog Cloud (EU region, Frankfurt) as the sole product-analytics p
 - *PostHog self-hosted on GKE*: rejected. Kubernetes is officially unsupported since May 2023; the recommended self-host path is Docker Compose ("hobby" tier), which is not production-suitable. Running ClickHouse + Kafka + Postgres for analytics adds an SRE workload disproportionate to the value delivered.
 - *Plausible / Umami self-hosted*: rejected for the primary tool. They lack funnel, cohort, replay, and feature-flag capabilities required for the live-music conversion analysis.
 
-**Rationale:** PostHog Cloud EU minimises operational burden, provides every analytics capability the launch requires, and the EU residency satisfies APPI cross-border requirements with a single consent (rather than separate consents for multiple SaaS vendors). The free tier (1M events/month, 5K session replays/month) covers the launch and early-growth period.
+**Rationale:** PostHog Cloud EU minimises operational burden, provides every analytics capability the launch requires, and the EU residency is covered by APPI's adequacy designation so cross-border transfer is permitted without per-user statutory consent. The free tier (1M events/month, 5K session replays/month) covers the launch and early-growth period.
 
 ### Decision 2: Decline GA4 / GA4 + BigQuery for the initial scope
 
@@ -109,18 +109,18 @@ Backend-originated analytics events are published as domain events on existing N
 
 **Rationale:** Reuses the existing NATS infrastructure, isolates analytics failures from RPC latency, allows multiple consumers (push notifications, analytics, future ML pipelines) to consume the same domain events, and enforces a clean separation between business logic and observability concerns.
 
-### Decision 7: APPI consent collected at signup with explicit cross-border disclosure
+### Decision 7: Opt-in consent collected at signup as a trust commitment beyond APPI statutory baseline
 
 A consent screen at the final step of signup obtains explicit agreement for cross-border data transfer to PostHog (Netherlands). Pre-consent telemetry runs in memory-only persistence with IP collection disabled and is restricted to a closed allowlist (`page.viewed`, `account.signup.started`) that carries no identifier. The signup screen offers two toggles — analytics and marketing measurement — **both defaulting to OFF (explicit opt-in)** with a link to the privacy policy enumerating each named third party.
 
 **Alternatives considered:**
 
 - *Strict cookie-banner-first*: full block of all telemetry until consent. Rejected because anonymous acquisition attribution is lost and the modal friction hurts the signup conversion measurably in B2C contexts.
-- *Implicit consent via privacy policy acceptance*: rejected as legally insufficient under APPI Article 28 for cross-border transfer.
-- *Analytics toggle default ON ("opt-out" pattern)*: initially proposed for UX/conversion reasons. **Rejected on review** as internally contradictory: a pre-ticked toggle is the same passive opt-out pattern this same Decision rejects above for being legally insufficient under APPI Article 28. The cross-border transfer rule requires affirmative consent, and a Requirement titled "explicit consent" cannot mandate a default-on toggle in the same Scenario.
-- *Drop the APPI Article 28 framing and keep default-on*: rejected. The framing is load-bearing for the legal posture against a Japan-based user base; weakening it would require legal review and a privacy-policy rewrite.
+- *Implicit consent via privacy policy acceptance*: rejected as a trust posture even though APPI does not require explicit consent for transfer to adequacy-designated jurisdictions. A privacy-policy-only model gives the user no actionable signal about the cross-border transfer at the moment it begins.
+- *Analytics toggle default ON ("opt-out" pattern)*: initially proposed for UX/conversion reasons. **Rejected on review** because, while APPI permits opt-out for transfer to an adequacy-designated jurisdiction, a pre-ticked toggle conflicts with the trust commitment this Decision is making to users. If we want users to feel that consent was genuinely given, the toggle must default OFF.
+- *Skip the consent screen entirely (rely on APPI EU adequacy)*: rejected. APPI's adequacy designation removes the legal obligation but not the user-trust obligation. A consent screen at signup is a one-time UX friction with a durable trust dividend, and it future-proofs the design against (a) a future migration to a non-adequate destination such as a US-region analytics tool, and (b) expansion of the user base beyond the adequacy bubble.
 
-**Rationale:** Anonymous, IP-stripped, memory-persisted, allowlisted events are low-risk under APPI and preserve top-of-funnel measurement. Identified analytics — where the risk lives — is gated behind affirmative, purpose-specific consent. The trade-off is a measurable hit to opted-in conversion rate; this is accepted as the cost of legal posture certainty. Conversion-rate impact is monitored post-launch and informs whether copy or UX refinements (not default changes) can recover the gap.
+**Rationale:** Cross-border transfer to PostHog Cloud EU is legally permitted under APPI's EU adequacy designation without per-user consent. The opt-in flow exists as a trust commitment to users (a transparent, explicit moment where they decide whether anonymous behavioural data may be analysed) and as future-proofing for jurisdictions outside the adequacy bubble. Anonymous, IP-stripped, memory-persisted, allowlisted pre-consent events are low-risk and preserve top-of-funnel measurement. Identified analytics is gated behind affirmative, purpose-specific consent. The trade-off is a measurable hit to opted-in conversion rate; this is accepted as the cost of a stronger trust posture. Conversion-rate impact is monitored post-launch and informs whether copy or UX refinements (not default changes) can recover the gap.
 
 ### Decision 8: PostHog SDK defers initialisation until after first paint and disables autocapture
 
@@ -159,7 +159,7 @@ PostHog and OpenTelemetry MUST NOT share concerns. PostHog receives product/user
 
 ## Risks / Trade-offs
 
-- **[Risk] Cross-border consent friction at signup measurably reduces opt-in rate → Mitigation**: per Decision 7 both toggles default OFF (explicit opt-in) for APPI Article 28 compliance; the consent screen is limited to two toggles with brief plain-language descriptions and a "Set up later" path that defers to settings without blocking signup. Measure post-launch what fraction grant consent and tune copy / placement (NOT default state) if the analytics opt-in rate trends below 50%.
+- **[Risk] Consent screen friction at signup measurably reduces opt-in rate → Mitigation**: per Decision 7 both toggles default OFF as a trust commitment beyond the APPI statutory baseline (EU adequacy already discharges the legal requirement); the consent screen is limited to two toggles with brief plain-language descriptions and a "Set up later" path that defers to settings without blocking signup. Measure post-launch what fraction grant consent and tune copy / placement (NOT default state) if the analytics opt-in rate trends below 50%.
 
 - **[Risk] PostHog Cloud event-volume cost grows faster than expected → Mitigation**: dashboards in the first 90 days monitor event volume by domain prefix; if approaching 1M events/month, the `analytics-consumer` is the first throttle point (drop low-value events) before paying the paid-tier rate.
 
@@ -193,5 +193,5 @@ This is a greenfield introduction, not a migration. There is no existing analyti
 
 - *Should `analytics-consumer` participate in distributed tracing?* Yes in principle (`trace_id` propagation from NATS metadata), but the consumer is otherwise simple and the trace fan-out budget is unclear. Decide during Phase 2.
 - *Where does the privacy-policy text actually live and who owns updates?* The privacy policy is currently a frontend route under `frontend-onboarding-flow`; this change adds PostHog as a third party but does not propose a generalised policy-management process. Resolved by the time this change is implemented.
-- *Should the `ConsentService` persist consent state to the backend (`User.preferences`) or remain frontend-local in `localStorage`?* Frontend-local is simpler and consistent with the per-device nature of cookies, but persisting to backend enables cross-device consistency. Recommend frontend-local for the launch and revisit if cross-device complaints emerge.
+- *Should the `ConsentService` persist consent state to the backend (`User.preferences`) or remain frontend-local in `localStorage`?* Frontend-local is sufficient for the launch posture because (a) APPI's EU adequacy designation removes the statutory requirement for cross-border-transfer consent, so the consent flow operates as a trust commitment rather than a legal gate; (b) the backend `analytics-consumer` therefore does not need to look up per-user consent before forwarding identified events for the launch — the trust commitment is upheld by the frontend SDK gate (`posthog.opt_in_capturing()` / `opt_out_capturing()`) and by the documented pre-consent allowlist. Server-side consent persistence (with `analytics-consumer` consulting it before forwarding, plus cross-device sync) is a scope-expanded design tracked as a future change, gated on (a) a request for cross-device consent UX, (b) a migration to a non-adequate analytics destination such as a US-region tool, or (c) expansion of the user base beyond the APPI adequacy bubble. None of those triggers exist at launch.
 - *How are PostHog API keys rotated?* Standard GCP Secret Manager rotation procedures, but a runbook entry is needed. Created as part of Phase 1.
