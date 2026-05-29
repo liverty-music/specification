@@ -99,7 +99,7 @@ Event emission is partitioned by trust requirement:
 
 ### Decision 6: Backend events flow through the existing NATS event bus to an `analytics-consumer`
 
-Backend-originated analytics events are published as domain events on existing NATS subjects (`user.created`, `ticket.purchase.completed`, `entry.zk_proof.verified`, etc.). A new `analytics-consumer` worker under `backend/internal/adapter/event/` subscribes to the relevant subjects and forwards them to PostHog via the `posthog-go` SDK after sanitising properties per the PII policy.
+Backend-originated analytics events are published as domain events on existing NATS subjects. A new `analytics-consumer` worker under `backend/internal/adapter/event/` subscribes to seven subject wildcards that cover every backend-emitted event in the catalogue — `account.*`, `user.*`, `artist.*`, `concert.*`, `ticket.*`, `entry.*`, and `push.*` — and forwards each matching message to PostHog via the `posthog-go` SDK after sanitising properties per the PII policy.
 
 **Alternatives considered:**
 
@@ -182,7 +182,7 @@ PostHog and OpenTelemetry MUST NOT share concerns. PostHog receives product/user
 This is a greenfield introduction, not a migration. There is no existing analytics tool to replace and no historical data to preserve. Deployment proceeds in phases:
 
 1. **Phase 1 — Infrastructure (week 1)**: PostHog Cloud EU project provisioned. API keys stored in GCP Secret Manager. Pulumi stack for cloud-provisioning updated with `posthog_project_api_key` secret references and ArgoCD `ConfigMap` overlays for backend.
-2. **Phase 2 — Backend instrumentation (week 1–2)**: `posthog-go` dependency added. `AnalyticsClient` interface defined under `backend/internal/usecase/analytics/`. `analytics-consumer` worker created under `backend/internal/adapter/event/` subscribing to `user.*`, `ticket.*`, `entry.*`, and `push.*` NATS subjects. Mocks generated via mockery. Tests cover happy path and PostHog-down degraded behaviour.
+2. **Phase 2 — Backend instrumentation (week 1–2)**: `posthog-go` dependency added. `AnalyticsClient` interface defined under `backend/internal/usecase/`. `analytics-consumer` worker created under `backend/internal/adapter/event/` subscribing to `account.*`, `user.*`, `artist.*`, `concert.*`, `ticket.*`, `entry.*`, and `push.*` NATS subjects — the wildcard set that covers every backend-emitted event in the catalogue. Mocks generated via mockery. Tests cover happy path and PostHog-down degraded behaviour.
 3. **Phase 3 — Frontend instrumentation (week 2)**: `posthog-js` dependency added. `AnalyticsService` and `Events` catalogue introduced under `frontend/src/lib/analytics/`. App root wires `AttachedLifecycle` to invoke deferred initialisation, page-view emission tied to Aurelia router navigation-end events. Consent screen added to the final step of `frontend-onboarding-flow`.
 4. **Phase 4 — Event catalogue and dashboards (week 2)**: `docs/analytics/event-catalog.md` published in the specification repo with the full event list, properties, and source. Initial PostHog dashboards created for the discover → follow → lottery → purchase → entry funnel; retention cohorts created for D7 / D30 by signup month.
 5. **Phase 5 — Privacy policy and rollout (week 3)**: Privacy policy updated to enumerate PostHog as a named third party with the cross-border purpose. Feature flag `analytics-enabled` is rolled out from 10% to 100% over three days, observing INP/LCP metrics and event-volume forecast.
