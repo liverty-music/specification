@@ -5,8 +5,8 @@
 ### 1.1 Overview
 
 The onboarding state machine guides new users through a linear multi-step introduction flow.
-Each step advances strictly forward. The flow completes when the user arrives at the My Artists
-screen (no hype change is required).
+Each step advances strictly forward. The flow completes when the user sets a hype level on the
+My Artists screen.
 
 ### 1.2 States
 
@@ -25,7 +25,7 @@ screen (no hype change is required).
 | Get Started button       | `lp`          | `discovery`   | welcome-route                  |
 | Dashboard nav tap ¹      | `discovery`   | `dashboard`   | auth-hook (coach-mark / readyForDashboard) |
 | Dashboard arrival        | `dashboard`   | `my-artists`  | dashboard-route (`attached`)   |
-| My Artists arrival       | `my-artists`  | `completed`   | my-artists-route (`attached`)  |
+| Hype level set           | `my-artists`  | `completed`   | my-artists-route               |
 
 ¹ User taps the Dashboard nav tab once the progression condition is met (coach-mark spotlight or `readyForDashboard`). There is no longer a separate "Generate Dashboard" CTA, and no `detail` step.
 
@@ -49,7 +49,7 @@ stateDiagram-v2
     discovery --> dashboard : Dashboard nav tap (coach-mark / readyForDashboard)
     state "my-artists" as my_artists
     dashboard --> my_artists : dashboard .attached() (Lane Intro removed)
-    my_artists --> completed : my-artists .attached() (was: hype change)
+    my_artists --> completed : Hype level set
 
     completed --> [*]
 

@@ -44,8 +44,9 @@ flowchart TD
   ZLIGHT --> FREE[free roam]
   PSD --> FREE
 
-  FREE --> MYART["my-artists arrival (PageHelp auto-open)"]
-  MYART -->|"NEW: on arrival (.attached)"| COMPLETED["setStep COMPLETED + release unfollow"]
+  FREE --> MYART["my-artists (PageHelp auto-open)"]
+  MYART -->|"hype change"| CONSENT["consent step (main; out of scope here)"]
+  CONSENT --> COMPLETED["setStep COMPLETED"]
   COMPLETED --> BANNER["signup-prompt-banner (dashboard / my-artists)"]
   BANNER -->|create account| SIGNUP["authService.signUp()"]
 
@@ -69,11 +70,11 @@ stateDiagram-v2
   discovery --> dashboard : tap Home nav (coach-mark / readyForDashboard)
   state "my-artists" as my_artists
   dashboard --> my_artists : dashboard .attached() (Lane Intro removed)
-  my_artists --> completed : my-artists arrival .attached() (NEW; was: hype change)
+  my_artists --> completed : hype change → consent → complete (main; out of scope here)
   completed --> [*]
 ```
 
-The stale diagram still shows a `detail` state and a `discovery --> dashboard : "Generate Dashboard CTA"` transition — both removed long ago. This change deletes those and updates the completion trigger.
+The stale diagram still shows a `detail` state and a `discovery --> dashboard : "Generate Dashboard CTA"` transition — both removed long ago. This change deletes those.
 
 ## Goals / Non-Goals
 
@@ -111,11 +112,8 @@ Replace the COMPLETED-guest hard block (Priority 3 currently allows only dashboa
 Relax `welcome-route.canLoad` and the guard's "no onboardingStep" redirect so Welcome can be revisited (value-prop re-read). Login lives in Settings (D2), so Welcome-return is a secondary affordance, not the login lifeline.
 - *Trade-off*: `handleGetStarted` preserves guest data while `handleLogin` clears it; revisiting Welcome must not silently reset onboarding. Welcome's CTA still calls `setStep(DISCOVERY)` only on explicit tap, so merely viewing Welcome is safe.
 
-### D5. Completion triggers on My Artists arrival, not hype change (scope A6)
-Move the `setStep(COMPLETED)` from `onHypeInput()` to `my-artists-route.attached()` (`if isOnboardingStepMyArtists → deactivateSpotlight() + setStep(COMPLETED)`).
-- *Why arrival over help-close*: implemented in one file (no new PageHelp API), and robust — closing-the-help requires a close event that does **not** fire if the user navigates away with the sheet open, leaving onboarding stuck. Arrival always fires.
-- *Lifecycle ordering*: Aurelia 2 runs child `attached` before parent, so `PageHelp.attached()` (which auto-opens while `isOnboarding` is still true) runs **before** the route's `attached()` completes onboarding — auto-open is preserved.
-- *Consequence (accepted)*: `isOnboarding` flips false on arrival, releasing the My Artists unfollow block. This is consistent with the free-roam direction.
+### D5. (dropped) Completion-on-arrival — superseded by the consent step
+The original scope A6 moved `setStep(COMPLETED)` to `my-artists-route.attached()` so completion no longer required a hype change. While this change was in review, `main` merged the analytics-consent feature, which inserts a `CONSENT` step between MY_ARTISTS and COMPLETED (`my-artists → hype → CONSENT → complete`). Completing on My Artists arrival would skip the consent screen, so **A6 was dropped**: this change leaves the MY_ARTISTS → COMPLETED transition entirely to the consent-step flow and makes no `my-artists-route` changes.
 
 ### D6. Celebration is one component, two tiers, gated by `maybeCelebrate()` (scope B)
 Revive `celebration-overlay` with a new `@bindable confetti = true`; the confetti container renders `if.bind="confetti"`. A single `maybeCelebrate()` is the only fire point, called from **both** `dashboard-route.attached()` (when `!needsRegion`, data ready) and `onHomeSelected()` (after `loadData` resolves) so it always fires once the timetable is real, guarded by a localStorage "shown" flag.
@@ -132,7 +130,6 @@ Delete `nav-dimming-service`; remove `dashboard-lane-introduction`; trim Lane-In
 
 - **Guest language change is local-only** → On the next sign-in the backend `preferred_language` wins; a guest's locale choice may appear to "reset". Mitigation: scope says guest language is a convenience; document the non-persistence; merge could optionally carry locale (out of scope).
 - **Free roam exposes half-empty screens** (e.g. Tickets for a guest) → Mitigation: rely on each screen's existing empty state; only Settings gets bespoke guest UI in this change; Tickets guest polish is a follow-up.
-- **Completion-on-arrival changes a long-standing invariant** (hype no longer required) → Mitigation: covered by the route-guard + my-artists spec deltas and unit tests; behavioral break is intentional and called out BREAKING.
 - **maybeCelebrate double-fire** across the two call sites → Mitigation: single localStorage "shown" guard checked inside `maybeCelebrate()`; both call sites are idempotent.
 - **Spec deletion churn** (8 modified + 1 removed capability) → Mitigation: most edits are removals re-aligning to shipped code; the corrected diagrams in this design are the reference.
 

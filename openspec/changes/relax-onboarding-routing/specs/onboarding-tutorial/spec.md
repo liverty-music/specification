@@ -2,7 +2,7 @@
 
 ### Requirement: Linear Step Progression
 
-The system SHALL guide the user forward through onboarding steps. The DASHBOARD step has no Lane Intro sequence, blocker divs, or scroll lock — arriving at the dashboard completes the step. The MY_ARTISTS step completes on arrival. After dashboard arrival the user explores freely.
+The system SHALL guide the user forward through onboarding steps. The DASHBOARD step has no Lane Intro sequence, blocker divs, or scroll lock — arriving at the dashboard completes the step. After dashboard arrival the user explores freely. (The MY_ARTISTS → COMPLETED transition is owned by the consent-step flow and is out of scope for this change.)
 
 > **Note on Step numbering**: The "Step N" labels mirror the `onboardingStep` state-machine values (`'lp'` = Step 0, `'discovery'` = Step 1, `'dashboard'` = Step 3, `'my-artists'` = Step 5, `'completed'` = Step 7, per `frontend-route-guard`).
 
@@ -41,14 +41,6 @@ The system SHALL guide the user forward through onboarding steps. The DASHBOARD 
 - **WHEN** a user at Step `'my-artists'` navigates to the My Artists page
 - **THEN** the PageHelp bottom-sheet SHALL auto-open (first visit, per `onboarding-page-help` spec)
 - **AND** the sheet SHALL explain hype levels
-
-#### Scenario: Step 5 - My Artists arrival completes onboarding
-
-- **WHEN** a user at Step `'my-artists'` arrives at the My Artists page (its `attached()` lifecycle runs)
-- **THEN** the system SHALL deactivate any active spotlight
-- **AND** the system SHALL advance `onboardingStep` to `'completed'`
-- **AND** completion SHALL NOT require the user to change a hype level
-- **AND** the My Artists unfollow control SHALL become available (onboarding no longer in progress)
 
 #### Scenario: Step 1 spotlight cleanup on non-target navigation
 

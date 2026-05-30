@@ -15,12 +15,12 @@
 - [x] 2.4 Add i18n keys for the guest auth-entry CTA (JA/EN).
 - [x] 2.5 Vitest: guest vs authenticated Settings rendering; guest language change does not call the backend RPC.
 
-## 3. Completion trigger moves to My Artists arrival (scope A6)
+## 3. (Dropped) Completion trigger on My Artists arrival — scope A6
 
-- [x] 3.1 Add `attached()` to `my-artists-route.ts`: if `isOnboardingStepMyArtists`, call `deactivateSpotlight()` + `setStep(COMPLETED)`.
-- [x] 3.2 Remove the MY_ARTISTS completion block from `onHypeInput()` (hype change no longer completes onboarding).
-- [x] 3.3 Verify PageHelp auto-open still fires (child `attached` runs before route `attached`); confirm unfollow is released post-completion.
-- [x] 3.4 Vitest: arrival completes onboarding without a hype change; dashboard signup banner appears after arrival.
+Dropped during review: `main` merged the analytics-consent feature, which inserts a `CONSENT`
+step between MY_ARTISTS and COMPLETED. Completing on My Artists arrival would skip the consent
+screen, so this change makes no `my-artists-route` completion changes and leaves the
+MY_ARTISTS → COMPLETED transition to the consent-step flow.
 
 ## 4. Celebration revival, two-tier (scope B)
 
@@ -36,7 +36,7 @@
 - [x] 5.1 Delete `src/services/nav-dimming-service.ts` and its registration in `main.ts`; remove the `navDimming` injection and `setDimmed(false)` call in `dashboard-route.ts`. (Also removed the orphaned `test/helpers/mock-nav-dimming-service.ts`.)
 - [x] 5.2 Confirm `celebration-overlay` is now actually rendered (no longer dead code) and keep its `main.ts` registration.
 - [ ] 5.3 Delete the dead `openspec/specs/dashboard-lane-introduction/spec.md` capability at archive time (all requirements already tombstoned).
-- [x] 5.4 Correct `openspec/specs/state-transition-diagram/spec.md`: remove the `detail` state and the "Generate Dashboard CTA" transition; set completion to occur on My Artists arrival; refresh the mermaid diagram.
+- [x] 5.4 Correct `openspec/specs/state-transition-diagram/spec.md`: remove the `detail` state and the "Generate Dashboard CTA" transition; refresh the mermaid diagram. (Dashboard arrival advances to my-artists; the MY_ARTISTS → COMPLETED transition is left as-is for the consent-step flow.)
 
 ## 6. End-to-end verification
 
