@@ -194,7 +194,7 @@ The frontend SHALL provide a single reusable `user-home-selector` component for 
 - **AND** Step 2 SHALL display a back control to return to Step 1
 - **AND** the back control SHALL render BOTH a chevron-back icon AND a visible text label so the affordance is recognizable as a back action without relying on the icon alone
 - **AND** the visible text label SHALL be sourced from a localized i18n key
-- **AND** the back control SHALL NOT carry a separately bound `aria-label`; per WCAG 2.5.3 (Label in Name) the visible text label IS the accessible name, and supplying a separate `aria-label` risks divergence between the visible and the spoken label
+- **AND** the back control SHALL NOT carry a separately bound `aria-label`; the visible text label supplies the accessible name directly, and a diverging `aria-label` would violate WCAG 2.5.3 (Label in Name). Use visible text as the sole accessible name to eliminate that risk.
 
 #### Scenario: Prefecture selection in Step 2 confirms
 
