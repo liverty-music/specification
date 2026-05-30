@@ -1,14 +1,14 @@
 ## Purpose
 
-Define the guided first-run onboarding tutorial: the linear step progression through landing, artist discovery, dashboard lane introduction, and My Artists hype tuning, including how spotlights, coach marks, and interaction blockers steer the user until onboarding completes.
+Define the guided first-run onboarding tutorial: the linear step progression through landing, artist discovery, dashboard arrival, and My Artists, including how spotlights and coach marks steer the user. The dashboard Lane Intro sequence (blocker divs, scroll lock, nav dimming) has been removed; arriving at the dashboard completes that step.
 
 ## Requirements
 
 ### Requirement: Linear Step Progression
 
-The system SHALL enforce a guided progression through onboarding steps. During the Lane Intro phase of DASHBOARD, user interaction outside the spotlighted element is blocked via blocker divs and scroll lock. After Celebration dismissal, the user explores freely and navigates to My Artists at their own pace.
+The system SHALL guide the user forward through onboarding steps. The DASHBOARD step has no Lane Intro sequence, blocker divs, or scroll lock — arriving at the dashboard completes the step. After dashboard arrival the user explores freely. (The MY_ARTISTS → COMPLETED transition is owned by the consent-step flow and is out of scope for this change.)
 
-> **Note on Step numbering**: The "Step N" labels in the scenario titles below mirror the existing `onboardingStep` state-machine values (`'lp'` = Step 0, `'discovery'` = Step 1, `'dashboard'` = Step 3, `'my-artists'` = Step 5, `'completed'` = Step 7, per the canonical numbering in `frontend-route-guard`). Steps 2, 4, and 6 correspond to in-flight transitions handled by other specs (`onboarding-popover-guide` and the EventDetailSheet open-during-onboarding flow in `concert-detail`) and so are intentionally absent from this spec's scenario list.
+> **Note on Step numbering**: The "Step N" labels mirror the `onboardingStep` state-machine values (`'lp'` = Step 0, `'discovery'` = Step 1, `'dashboard'` = Step 3, `'my-artists'` = Step 5, `'completed'` = Step 7, per `frontend-route-guard`).
 
 #### Scenario: Step 0 - Landing Page entry
 
@@ -26,68 +26,32 @@ The system SHALL enforce a guided progression through onboarding steps. During t
 - **AND** when the user taps the Home/Dashboard icon, the system SHALL advance `onboardingStep` to `'dashboard'`
 - **AND** the system SHALL navigate to `/dashboard`
 
-#### Scenario: Step 3 - Dashboard Lane Intro begins
+#### Scenario: Step 3 - Dashboard arrival completes the step
 
 - **WHEN** a user is at Step `'dashboard'`
-- **AND** the Dashboard page loads
-- **THEN** the system SHALL begin the Lane Intro sequence (see `dashboard-lane-introduction` spec)
-- **AND** blocker divs SHALL be active and scroll SHALL be locked during Lane Intro phases
-
-#### Scenario: Step 3 - Celebration opens and DASHBOARD step completes
-
-- **WHEN** the Lane Intro sequence completes all phases (home, near, away)
-- **THEN** the system SHALL open the Celebration Overlay
-- **AND** opening the Celebration Overlay SHALL advance `onboardingStep` to `'my-artists'`
-
-#### Scenario: Step 3 - Celebration dismissed; free exploration begins
-
-- **WHEN** the Celebration Overlay is dismissed (user taps anywhere)
-- **THEN** blocker divs SHALL be deactivated
-- **AND** scroll lock SHALL be released
-- **AND** all nav tabs SHALL become fully interactive
-- **AND** the user SHALL be able to freely browse the timetable and tap concert cards
+- **AND** the Dashboard page is attached
+- **THEN** the system SHALL advance `onboardingStep` to `'my-artists'`
+- **AND** the system SHALL NOT run any Lane Intro sequence, blocker divs, or scroll lock
+- **AND** all nav tabs SHALL be fully interactive
 
 #### Scenario: Step 3 - Concert card tap opens Detail Sheet
 
-- **WHEN** a user is in free exploration after Celebration dismissal
-- **AND** the user taps a concert card
+- **WHEN** a user taps a concert card on the dashboard during onboarding
 - **THEN** the system SHALL open the EventDetailSheet for that concert
 - **AND** the system SHALL NOT advance any onboarding step
 
-#### Scenario: Step 5 - My Artists page first visit
+#### Scenario: Step 5 - My Artists first visit auto-opens help
 
-- **WHEN** a user at Step `'my-artists'` navigates to the My Artists page (by their own nav tap)
+- **WHEN** a user at Step `'my-artists'` navigates to the My Artists page
 - **THEN** the PageHelp bottom-sheet SHALL auto-open (first visit, per `onboarding-page-help` spec)
 - **AND** the sheet SHALL explain hype levels
 
-#### Scenario: Step 5 - Hype change completes onboarding
-
-- **WHEN** a user at Step `'my-artists'` changes a hype level
-- **THEN** the system SHALL persist the hype change (no revert)
-- **AND** the system SHALL advance `onboardingStep` to `'completed'`
-
-#### Scenario: Step 1 spotlight persists across route changes only via cleanup
+#### Scenario: Step 1 spotlight cleanup on non-target navigation
 
 - **WHEN** the Step 1 coach mark spotlight is active on the Dashboard icon
-- **AND** the user navigates away from the Discovery route by means other than tapping the spotlighted target (e.g., browser back, direct nav-tab tap to a different tab)
+- **AND** the user navigates away from Discovery by means other than tapping the spotlighted target
 - **THEN** the spotlight SHALL be deactivated via the route's `detaching()` lifecycle hook (per `onboarding-spotlight` "Route Detach Spotlight Cleanup")
 - **AND** no time-based fade timer SHALL be involved in the cleanup path
-
-### Requirement: Non-spotlighted Nav Tabs Visually Disabled During Lane Intro
-
-The system SHALL visually indicate that non-spotlighted nav tabs are inactive during the Lane Intro sequence.
-
-#### Scenario: Nav tabs dimmed during Lane Intro
-
-- **WHEN** the Lane Intro sequence is active (any phase: home, near, away)
-- **THEN** nav tabs that are not the current spotlight target SHALL have reduced opacity (0.3)
-- **AND** non-target nav tabs SHALL have `aria-disabled="true"` set
-
-#### Scenario: Nav tabs restored after Celebration dismissal
-
-- **WHEN** the Celebration Overlay is dismissed
-- **THEN** all nav tabs SHALL return to full opacity
-- **AND** all `aria-disabled` attributes SHALL be removed
 
 ### Requirement: Coach Mark Navigation Delegation
 

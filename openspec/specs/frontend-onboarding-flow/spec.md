@@ -1,3 +1,11 @@
+# Frontend Onboarding Flow
+
+## Purpose
+
+Defines the guest onboarding flow: interactive artist discovery, the linear onboarding step sequence (LP → DISCOVERY → DASHBOARD → MY_ARTISTS → … → COMPLETED), and the local-storage-backed progression that precedes account creation.
+
+## Requirements
+
 ### Requirement: Interactive Artist Discovery (Bubble Network UI)
 
 The system SHALL provide an engaging, gamified interface for users to discover and follow artists using Last.fm API data. During onboarding, followed artists are stored locally (not via backend RPC). The system SHALL trigger a background concert search for each followed artist and track which artists have concerts. The Coach Mark SHALL appear when the progression condition is reached, remain visible for 2 seconds, then fade out. Navigation to the Dashboard is not triggered automatically — the user taps the Home nav tab at their own pace.
@@ -50,12 +58,12 @@ The system SHALL provide an engaging, gamified interface for users to discover a
 
 ### Requirement: Step Sequence
 
-The onboarding step sequence SHALL be LP → DISCOVERY → DASHBOARD → MY_ARTISTS → COMPLETED. The DETAIL step is removed.
+The onboarding step sequence SHALL be LP → DISCOVERY → DASHBOARD → MY_ARTISTS → … → COMPLETED. The DETAIL step is removed. The DASHBOARD step SHALL complete on dashboard arrival (no Lane Intro sequence). The MY_ARTISTS → COMPLETED transition is out of scope for this change (owned by the consent-step flow).
 
 #### Scenario: Step sequence excludes DETAIL
 
 - **WHEN** `onboardingStep` is `'dashboard'`
-- **AND** the DASHBOARD step completes (Celebration Overlay opens)
+- **AND** the Dashboard page is attached
 - **THEN** the system SHALL advance `onboardingStep` to `'my-artists'`
 - **AND** the system SHALL NOT pass through any intermediate `'detail'` step
 
@@ -64,9 +72,3 @@ The onboarding step sequence SHALL be LP → DISCOVERY → DASHBOARD → MY_ARTI
 - **WHEN** the system reads `liverty:onboardingStep` from localStorage
 - **AND** the stored value is `'detail'`
 - **THEN** the system SHALL treat it as `'dashboard'` for routing and step logic
-
-### Requirement: DETAIL onboarding step (REMOVED)
-
-**Reason**: The DETAIL step existed solely to spotlight the My Artists nav tab after a card tap. With card taps now correctly opening the Detail Sheet and guidance shifting to a pull model, this intermediate step is no longer needed. My Artists guidance is handled by PageHelp auto-open on first visit.
-
-**Migration**: Remove `OnboardingStep.DETAIL` from the enum in `onboarding.ts`. Remove `'detail'` from `STEP_ROUTE_MAP`. Update all `isOnboardingStepDetail` checks. Add migration shim in `OnboardingStorage` to map stored `'detail'` → `'dashboard'`.
