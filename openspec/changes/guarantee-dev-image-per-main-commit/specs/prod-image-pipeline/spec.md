@@ -36,12 +36,12 @@ A force-push or branch-creation push SHALL take the BUILD path, never the inheri
 - **THEN** the workflow SHALL take the BUILD path and SHALL NOT take the inherit path
 - **AND** it SHALL NOT inherit a digest from `github.event.before` (which on a force-push is an orphaned, non-ancestor tip whose bytes are not equivalent to the new commit's tree)
 
-#### Scenario: Missing parent image fails loudly rather than silently breaking the chain
+#### Scenario: Missing parent image fails loudly with no tag fallback
 
-- **WHEN** the inherit path runs (a normal, non-forced push that changed no build-relevant file) and the parent digest `<image>:${{ github.event.before }}` cannot be resolved (e.g., an earlier run left a gap)
-- **THEN** the workflow SHALL attempt a single fallback resolution to the `:main` tag's current digest (which, in linear history, points at the prior tip's image)
-- **AND** if no parent image is resolvable, the workflow SHALL fail with a non-zero exit and an explicit message instructing the operator to seed the chain by touching a build-relevant file
-- **AND** the workflow SHALL NOT publish a `<image>:${GITHUB_SHA}` tag pointing at an incorrect digest (in particular it SHALL NOT fall back to `HEAD^1`, which on a multi-commit push is an intermediate commit inside the pushed range, not a prior `main` tip)
+- **WHEN** the inherit path runs (a normal, non-forced push that changed no build-relevant file) and the parent digest `<image>:${{ github.event.before }}` cannot be resolved
+- **THEN** the workflow SHALL classify the resolve failure: an auth failure (`PERMISSION_DENIED` / `401` / `403`) SHALL fail fast with auth-specific guidance; a transient failure SHALL be retried within a bounded budget; a genuine `NOT_FOUND` after retries SHALL fail with a non-zero exit and a message instructing the operator to seed the chain (push a build-relevant change) and re-cut the release on the new HEAD
+- **AND** the workflow SHALL NOT fall back to any other tag (`:main`, `HEAD^1`, or otherwise) to obtain a digest — when `<image>:${{ github.event.before }}` is missing the chain has a gap, so any other tag may resolve to a commit whose tree differs, and inheriting it would pin non-equivalent bytes
+- **AND** the workflow SHALL NOT publish a `<image>:${GITHUB_SHA}` tag pointing at an incorrect digest
 
 #### Scenario: Consecutive main pushes are serialized to preserve the chain
 
