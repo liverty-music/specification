@@ -1,8 +1,14 @@
+# Frontend Route Guard
+
+## Purpose
+
+Defines the global authentication / onboarding navigation guard (`AuthHook`) that gates SPA route loads based on auth state and onboarding step — including the contextual feedback shown when navigation is blocked, the routes reachable early by guests (Settings, Welcome), and free roam after the dashboard.
+
 ## Requirements
 
 ### Requirement: Global Auth Hook
 
-The system SHALL provide a global authentication lifecycle hook that checks the user's authentication state and onboarding step before allowing navigation. The hook SHALL follow a priority-based decision tree: authentication status first, then onboarding step, with an onboarding-aware fallback for routes without tutorial step metadata.
+The system SHALL provide a global authentication lifecycle hook that checks the user's authentication state and onboarding step before allowing navigation. The hook SHALL follow a priority-based decision tree: authentication status first, then onboarding step, with an onboarding-aware fallback for routes without tutorial step metadata. When the hook redirects a user away from a route they attempted to reach during onboarding, it SHALL surface contextual feedback (a snackbar or a re-lit coach mark) — no guard-initiated redirect during onboarding SHALL be a silent no-op.
 
 #### Scenario: Authenticated user navigates to any route
 
@@ -16,7 +22,7 @@ The system SHALL provide a global authentication lifecycle hook that checks the 
 - **AND** `onboardingStep` is between 1 and 6
 - **AND** the target route has `data.tutorialStep` defined
 - **THEN** the system SHALL allow navigation if `onboardingStep >= tutorialStep`
-- **AND** the system SHALL redirect to the current step's route if `onboardingStep < tutorialStep`
+- **AND** if `onboardingStep < tutorialStep`, the system SHALL redirect to the current step's route AND publish a contextual snackbar explaining what is required to unlock the target
 
 #### Scenario: Unauthenticated user in onboarding navigates to a route without tutorialStep
 
@@ -24,9 +30,9 @@ The system SHALL provide a global authentication lifecycle hook that checks the 
 - **AND** `onboardingStep` is between 1 and 6
 - **AND** the target route does NOT have `data.tutorialStep` defined
 - **AND** the target route does NOT have `data.auth = false`
+- **AND** the target route is NOT an explicitly early-unlocked route (see "Settings Reachable During Onboarding")
 - **THEN** the system SHALL redirect to the route corresponding to the current onboarding step
-- **AND** the system SHALL NOT display a "Login required" toast
-- **AND** the system SHALL NOT display any error notification
+- **AND** the system SHALL publish a contextual snackbar indicating why the destination is not yet available
 
 #### Scenario: Unauthenticated discovery-step user who has met the progression condition navigates to dashboard
 
@@ -45,14 +51,15 @@ The system SHALL provide a global authentication lifecycle hook that checks the 
 - **AND** `OnboardingService.readyForDashboard` is `false`
 - **AND** the user navigates to the `/dashboard` route
 - **THEN** the system SHALL redirect the user back to `/discovery`
-- **AND** no toast SHALL be shown
+- **AND** the system SHALL publish a contextual snackbar (e.g. "あと N 組フォローでタイムテーブルが見られます", where N = `DASHBOARD_FOLLOW_TARGET - followedCount`) or re-light the dashboard coach mark
 
 #### Scenario: Unauthenticated user with onboardingStep = COMPLETED
 
 - **WHEN** a user has `isAuthenticated = false`
 - **AND** `onboardingStep` is COMPLETED (7)
-- **THEN** the system SHALL redirect the user to the landing page
-- **AND** the landing page SHALL display only the [Login] CTA
+- **THEN** the system SHALL allow navigation to any application route (free roam)
+- **AND** the system SHALL NOT force a redirect to the landing page
+- **AND** account-only features on each destination SHALL be hidden at point of use rather than blocked (per `guest-mode-access`)
 
 #### Scenario: Unauthenticated user with no onboardingStep
 
@@ -90,75 +97,27 @@ The system SHALL provide a global authentication lifecycle hook that checks the 
 - **WHEN** `onboardingStep` is any value other than `'discovery'`
 - **THEN** `OnboardingService.readyForDashboard` SHALL return `false`
 
-## Test Cases
+### Requirement: Settings Reachable During Onboarding
 
-### Unit Tests (Vitest)
+The system SHALL allow an unauthenticated user to navigate to the Settings route from the `'discovery'` step onward, regardless of `tutorialStep` ordering, so that the sign-in / sign-up and language affordances are reachable early.
 
-#### TC-RG-01: Onboarding user navigating to route without tutorialStep redirects silently
+#### Scenario: Discovery-step guest opens Settings
 
-- **Given** `isAuthenticated = false`, `onboardingStep = 1`
-- **When** navigating to a route without `data.tutorialStep` (e.g., Tickets)
-- **Then** AuthHook SHALL return a redirect to the current step's route
-- **And** no "Login required" toast SHALL be published to EventAggregator
+- **WHEN** a user has `isAuthenticated = false`
+- **AND** `onboardingStep` is `'discovery'` or later (but not COMPLETED)
+- **AND** the user navigates to `/settings`
+- **THEN** the system SHALL allow the Settings route to load
+- **AND** the system SHALL NOT redirect back to the current onboarding step
 
-#### TC-RG-02: Onboarding user navigating to future step redirects to current step
+### Requirement: Welcome Reachable During Onboarding
 
-- **Given** `isAuthenticated = false`, `onboardingStep = 1`
-- **When** navigating to a route with `data.tutorialStep = 3`
-- **Then** AuthHook SHALL redirect to the Step 1 route (discover)
-- **And** no toast SHALL be published
+The system SHALL allow an unauthenticated user in onboarding to navigate back to the Welcome (landing) route to re-read the value proposition, without being bounced forward to the current onboarding step.
 
-#### TC-RG-03: Non-onboarding unauthenticated user sees "Login required" toast
+#### Scenario: Onboarding guest returns to Welcome
 
-- **Given** `isAuthenticated = false`, `onboardingStep = 0` (or unset)
-- **When** navigating to a protected route
-- **Then** AuthHook SHALL redirect to the landing page
-- **And** a "Login required" toast SHALL be published to EventAggregator
-
-#### TC-RG-04: Authenticated user passes through without restriction
-
-- **Given** `isAuthenticated = true`
-- **When** navigating to any route
-- **Then** AuthHook SHALL allow navigation (return `true`)
-
-#### TC-RG-05: Discovery-step user with readyForDashboard=true navigates to dashboard — allowed + step advanced
-
-- **Given** `isAuthenticated = false`, `onboardingStep = 'discovery'`, `readyForDashboard = true`
-- **When** navigating to `/dashboard`
-- **Then** AuthHook SHALL return `true`
-- **And** `onboarding.setStep('dashboard')` SHALL be called
-
-#### TC-RG-06: Discovery-step user with readyForDashboard=false navigates to dashboard — redirected
-
-- **Given** `isAuthenticated = false`, `onboardingStep = 'discovery'`, `readyForDashboard = false`
-- **When** navigating to `/dashboard`
-- **Then** AuthHook SHALL return a redirect to `/discovery`
-- **And** no step advancement SHALL occur
-
-#### TC-RG-07: readyForDashboard is true when follow count threshold is met
-
-- **Given** `onboardingStep = 'discovery'`
-- **And** `followedCount = 5` (≥ DASHBOARD_FOLLOW_TARGET)
-- **When** `OnboardingService.readyForDashboard` is evaluated
-- **Then** it SHALL return `true`
-
-#### TC-RG-08: readyForDashboard is true when concert artist threshold is met
-
-- **Given** `onboardingStep = 'discovery'`
-- **And** `artistsWithConcertsCount = 3` (≥ DASHBOARD_CONCERT_TARGET)
-- **When** `OnboardingService.readyForDashboard` is evaluated
-- **Then** it SHALL return `true`
-
-#### TC-RG-09: readyForDashboard is false when both counts are below threshold
-
-- **Given** `onboardingStep = 'discovery'`
-- **And** `followedCount < 5` AND `artistsWithConcertsCount < 3`
-- **When** `OnboardingService.readyForDashboard` is evaluated
-- **Then** it SHALL return `false`
-
-#### TC-RG-10: readyForDashboard is false when step is not discovery
-
-- **Given** `onboardingStep` is any value other than `'discovery'`
-- **And** `followedCount` and `artistsWithConcertsCount` exceed their respective thresholds
-- **When** `OnboardingService.readyForDashboard` is evaluated
-- **Then** it SHALL return `false`
+- **WHEN** a user has `isAuthenticated = false`
+- **AND** `onboardingStep` is between 1 and 6
+- **AND** the user navigates to `/` (Welcome)
+- **THEN** the system SHALL allow the Welcome route to load
+- **AND** merely viewing Welcome SHALL NOT reset `onboardingStep`
+- **AND** `onboardingStep` SHALL change only if the user explicitly taps [Get Started]
