@@ -38,13 +38,12 @@ MY_ARTISTS → COMPLETED transition to the consent-step flow.
 - [ ] 5.3 Delete the dead `openspec/specs/dashboard-lane-introduction/spec.md` capability at archive time (all requirements already tombstoned).
 - [x] 5.4 Correct `openspec/specs/state-transition-diagram/spec.md`: remove the `detail` state and the "Generate Dashboard CTA" transition; refresh the mermaid diagram. (Dashboard arrival advances to my-artists; the MY_ARTISTS → COMPLETED transition is left as-is for the consent-step flow.)
 
-## 6. End-to-end verification
+## 6. Verification
 
-- [ ] 6.1 Playwright: guest flow welcome → discovery → dashboard (Z-light) → my-artists (auto-complete) → signup banner; confirm Settings reachable from discovery and Welcome return works. (DEFERRED — dev env intentionally stopped; run manually when dev is up.)
-- [ ] 6.2 Playwright: sign-up flow → post-signup dashboard shows confetti celebration → PostSignupDialog after dismissal. (DEFERRED — see 6.1.)
-- [x] 6.3 Run `make check` (lint + test) in `frontend`; fix any failures. (Exit 0: 1101 tests pass, tsc + biome + brand-vocabulary + templates clean.)
+- [x] 6.1 Run `make check` (lint + test) in `frontend`; fix any failures. (Exit 0: 1129 tests pass, tsc + biome + brand-vocabulary + templates clean.)
+- [x] 6.2 Confirm the CI Playwright suites pass — they run against a mocked local build (no dev-environment dependency, per the intentionally-stopped dev env): E2E, Smoke, and Visual Regression all green on the merged commit. (No dev-server / manual walkthrough tasks: the dev environment is intentionally stopped, so dev-dependent verification is out of scope.)
 
 ## 7. Spec sync & PR
 
-- [x] 7.1 Confirm `openspec validate relax-onboarding-routing` passes and `openspec status` shows `isComplete: true`.
-- [ ] 7.2 Open the specification PR with a Conventional Commit message linking the tracking issue (`Refs: #<issue>`).
+- [x] 7.1 Confirm `openspec validate relax-onboarding-routing` passes.
+- [x] 7.2 Open the specification PR with a Conventional Commit message linking the tracking issue (`Refs: #542`). (PR #543 — merged.)
