@@ -1,3 +1,9 @@
+## Purpose
+
+Define the user's home area capability end to end: the structured `Home` data model (proto, database, Go entity, centroid resolution), the RPCs that create and update it, and the unified `user-home-selector` frontend component and its `userHome.*` i18n namespace used in both onboarding and Settings.
+
+## Requirements
+
 ### Requirement: User Home Area Data Model
 
 The system SHALL support a structured `home` field on the User entity representing the user's home area — the geographic area where the user regularly attends live events without considering it a "trip" (遠征). The value is a structured geographic location expressed through a hierarchy of internationally standardized codes, with centroid coordinates for proximity calculations.
@@ -185,7 +191,10 @@ The frontend SHALL provide a single reusable `user-home-selector` component for 
 
 - **WHEN** a user taps a region button
 - **THEN** the component SHALL transition to Step 2 displaying the prefectures within that region
-- **AND** Step 2 SHALL display a back button to return to Step 1
+- **AND** Step 2 SHALL display a back control to return to Step 1
+- **AND** the back control SHALL render BOTH a chevron-back icon AND a visible text label so the affordance is recognizable as a back action without relying on the icon alone
+- **AND** the visible text label SHALL be sourced from a localized i18n key
+- **AND** the back control SHALL NOT carry a separately bound `aria-label`; the visible text label supplies the accessible name directly, and a diverging `aria-label` would violate WCAG 2.5.3 (Label in Name). Use visible text as the sole accessible name to eliminate that risk.
 
 #### Scenario: Prefecture selection in Step 2 confirms
 
@@ -217,7 +226,15 @@ The frontend SHALL use a unified `userHome.*` i18n namespace for all home area s
   - `userHome.description` for the subtitle
   - `userHome.quickSelect` for the quick-select section heading
   - `userHome.selectByRegion` for the region section heading
-  - `userHome.back` for the Step 2 back button
+  - `userHome.selectPrefecture` for the Step 2 instruction line
+  - `userHome.backToRegions` for the Step 2 back control's visible text label (this label is the sole source of the control's accessible name; no separate `userHome.back` aria-label key SHALL be introduced)
   - `userHome.regions.*` for region names
   - `userHome.prefectures.*` for prefecture names
   - `userHome.cities.*` for quick-select city names
+
+#### Scenario: Description copy explains what HOME STAGE displays and asks for residence
+
+- **WHEN** the `user-home-selector` is opened
+- **THEN** the `userHome.description` JA value SHALL explain what the selected area controls (the HOME STAGE lane contents) AND ask which area the user resides in, presented as a single string composed of two clearly-separated clauses
+- **AND** the copy SHALL NOT use `あなたの地元` (which inaccurately implies a known home rather than a chosen area)
+- **AND** the canonical JA form SHALL be: `HOME STAGEには選択したエリアのライブが並びます。あなたの居住エリアはどこですか？`
