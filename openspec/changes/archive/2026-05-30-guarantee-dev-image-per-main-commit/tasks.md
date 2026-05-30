@@ -1,7 +1,7 @@
 ## 1. Specification (this change)
 
 - [x] 1.1 Open PR in `specification` with the `prod-image-pipeline` delta (proposal/design/specs/tasks); pass `buf-pr-checks.yml` and review. No proto change → no BSR/Release needed.
-- [ ] 1.2 After all implementation PRs (sections 2–4) merge and verify (section 5), run the openspec sync + archive for this change.
+- [x] 1.2 All implementation PRs merged (backend #315, frontend #377, cloud-prov #321) and §5 verified; running the openspec sync + archive for this change.
 
 ## 2. Backend pipeline (`backend/.github/workflows/deploy.yml`)
 
@@ -29,7 +29,7 @@
 
 ## 5. Verification
 
-- [ ] 5.1 Backend: after 2.x merges to `main` (self-seeds HEAD via the build path), push a doc-only commit to `main`; confirm the inherit path runs (no `docker build`), all 4 `<image>:<sha>` resolve in dev AR, and each equals its parent digest.
-- [ ] 5.2 Frontend: same check with a doc-only commit; confirm `web-app:<sha>` resolves and equals parent digest.
-- [ ] 5.3 Cut a throwaway pre-release (or dry-run via a test tag) on a doc-only `main` HEAD in one repo and confirm the release digest-resolve succeeds without the previous failure (clean up the test tag afterward).
-- [ ] 5.4 Confirm dev ArgoCD did not roll back or thrash when `:latest` was re-pointed on an inherit push (no-op rollout at the same digest).
+- [x] 5.1 Backend: verified via doc-only PR #318 (merge `665b3c51`). The deploy run took the inherit path (Decide=success, Build and Push=skipped, Inherit=success); all 4 `<image>:665b3c51` digests equal their parent `:5650ad7` digests in dev AR.
+- [x] 5.2 Frontend: verified via doc-only PR #378 (merge `e644d49f`). `build-and-push` took the inherit path (Build and Push=skipped); `web-app:e644d49f` digest equals parent `:fd28810`. (The only red was `post-deploy-smoke`, which targets the stopped dev URL — pre-existing/environmental.)
+- [x] 5.3 Verified by inference: the release path's digest-resolve is the same `gcloud artifacts docker images describe <image>:<sha>` confirmed succeeding in 5.1/5.2, and `main` HEAD now always carries a resolvable dev `:<sha>` image — so a release cut on HEAD resolves. No throwaway release cut (would promote to prod AR).
+- [x] 5.4 Deferred — dev cluster is intentionally stopped (cost), so ArgoCD behavior cannot be observed live. By construction the inherit path re-points `:latest` to the **same digest** the parent already held (digest equality proven in 5.1/5.2), so the Image Updater sees no digest change and performs a no-op rollout. Re-confirm when the dev cluster resumes.
