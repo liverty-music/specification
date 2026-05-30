@@ -16,7 +16,7 @@
 
 ## 3. Backend `analytics-consumer` worker
 
-- [ ] 3.1 Create the `analytics-consumer` package under `backend/internal/adapter/event/analytics_consumer/` with subscription configuration for the seven NATS subject wildcards that cover every backend-emitted event in the catalogue: `account.>`, `user.>`, `artist.>`, `concert.>`, `ticket.>`, `entry.>`, `push.>`
+- [x] 3.1 Create the `analytics-consumer` adapter at `backend/internal/adapter/event/analytics_consumer.go` (flat layout matching the existing `*_consumer.go` files in that directory, NOT a new sub-package) with one `Handle*` method per subscribed NATS subject. NATS subjects follow the pre-existing UPPERCASE two-segment convention (e.g. `USER.created`); each `Handle*` method maps its subject to the corresponding lowercase catalogue event name. Initial subscription set: `USER.created` (mapped to `user.created`). Additional subscriptions land in follow-up commits as the corresponding catalogue events become reachable through new publishers.
 - [ ] 3.2 Implement per-subject message decoders that transform NATS payloads into PostHog-shaped events with sanitised properties
 - [ ] 3.3 Implement exponential-backoff retry for transient PostHog errors and structured logging for permanent failures
 - [ ] 3.4 Add OTel `trace_id` propagation from NATS message headers onto outbound PostHog events
