@@ -5,8 +5,8 @@
 ### 1.1 Overview
 
 The onboarding state machine guides new users through a linear multi-step introduction flow.
-Each step advances strictly forward via the `onboarding/advance` action. The flow completes
-when the user sets a hype level on the My Artists screen.
+Each step advances strictly forward. The flow completes when the user arrives at the My Artists
+screen (no hype change is required).
 
 ### 1.2 States
 
@@ -14,8 +14,7 @@ when the user sets a hype level on the My Artists screen.
 |-------------|------------------------------------------|
 | `lp`        | Landing page (initial state)             |
 | `discovery` | Artist discovery screen                  |
-| `dashboard` | Dashboard with lane intro sequence       |
-| `detail`    | Concert detail view (card tapped)        |
+| `dashboard` | Personal timetable dashboard             |
 | `my-artists`| User's followed-artists list             |
 | `completed` | Onboarding finished (terminal state)     |
 
@@ -24,13 +23,11 @@ when the user sets a hype level on the My Artists screen.
 | Trigger                  | From          | To            | Where                          |
 |--------------------------|---------------|---------------|--------------------------------|
 | Get Started button       | `lp`          | `discovery`   | welcome-route                  |
-| Generate Dashboard CTA   | `discovery`   | `dashboard`   | discovery-route                |
-| Dashboard nav tap ¹      | `discovery`   | `dashboard`   | auth-hook (spotlight shortcut) |
-| Onboarding card tapped   | `dashboard`   | `detail`      | dashboard-route                |
-| My Artists tab tapped     | `detail`      | `my-artists`  | dashboard-route                |
-| Hype level set           | `my-artists`  | `completed`   | my-artists-route               |
+| Dashboard nav tap ¹      | `discovery`   | `dashboard`   | auth-hook (coach-mark / readyForDashboard) |
+| Dashboard arrival        | `dashboard`   | `my-artists`  | dashboard-route (`attached`)   |
+| My Artists arrival       | `my-artists`  | `completed`   | my-artists-route (`attached`)  |
 
-¹ Special case: user taps Dashboard in bottom-nav while the discovery spotlight is active.
+¹ User taps the Dashboard nav tab once the progression condition is met (coach-mark spotlight or `readyForDashboard`). There is no longer a separate "Generate Dashboard" CTA, and no `detail` step.
 
 ### 1.4 Spotlight Sub-States
 
@@ -49,12 +46,10 @@ stateDiagram-v2
     [*] --> lp
 
     lp --> discovery : Get Started
-    discovery --> dashboard : Generate Dashboard
-    discovery --> dashboard : Dashboard nav tap (spotlight shortcut)
-    dashboard --> detail : Card tapped
+    discovery --> dashboard : Dashboard nav tap (coach-mark / readyForDashboard)
     state "my-artists" as my_artists
-    detail --> my_artists : My Artists tab
-    my_artists --> completed : Hype level set
+    dashboard --> my_artists : dashboard .attached() (Lane Intro removed)
+    my_artists --> completed : my-artists .attached() (was: hype change)
 
     completed --> [*]
 
