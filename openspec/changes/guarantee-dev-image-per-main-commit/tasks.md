@@ -1,6 +1,6 @@
 ## 1. Specification (this change)
 
-- [ ] 1.1 Open PR in `specification` with the `prod-image-pipeline` delta (proposal/design/specs/tasks); pass `buf-pr-checks.yml` and review. No proto change → no BSR/Release needed.
+- [x] 1.1 Open PR in `specification` with the `prod-image-pipeline` delta (proposal/design/specs/tasks); pass `buf-pr-checks.yml` and review. No proto change → no BSR/Release needed.
 - [ ] 1.2 After all implementation PRs (sections 2–4) merge and verify (section 5), run the openspec sync + archive for this change.
 
 ## 2. Backend pipeline (`backend/.github/workflows/deploy.yml`)
@@ -9,16 +9,18 @@
 - [x] 2.2 Add a build-vs-inherit decision step: compute changed files over `${{ github.event.before }}..${{ github.sha }}` and match against the build glob set (`**.go`, `go.mod`, `go.sum`, `Dockerfile`, `.github/workflows/deploy.yml`); expose a boolean output (`build` vs `inherit`).
 - [x] 2.3 Gate the existing build-and-push steps on the `build` decision (push-event only), preserving `:latest,:main,:<sha>` to dev AR for all 4 matrix images.
 - [x] 2.4 Add the inherit path (push-event + `inherit` decision): per matrix image, resolve the dev-AR digest of `<image>:${{ github.event.before }}` and `crane copy` it to `<image>:${{ github.sha }}`, then re-point `:main` and `:latest`; no `docker build`.
-- [x] 2.5 Add the parent-resolution fallback (zero `before` SHA / gap): try `:main` digest or `HEAD^1`'s `:<sha>`; if unresolvable, fail non-zero with an explicit "seed via a build-relevant file" message; never write `:<sha>` at a wrong digest.
+- [x] 2.5 Route force-push (`github.event.forced`) and branch-creation (`github.event.created` / zero `before`) to the BUILD path — never inherit from an orphaned/non-ancestor tip. For a normal-push inherit whose parent `:<sha>` is transiently unresolvable, fall back to the `:main` digest **only** (never `HEAD^1`); if unresolvable, fail non-zero with a "seed via a build-relevant file" message; never write `:<sha>` at a wrong digest.
 - [x] 2.6 Update the release `Resolve dev AR digest` final error message and the `Verify release commit is on main` message: drop the "filtered-out / non-main commit" attribution and the "re-target to an earlier commit" / "main HEAD only" wording; state the invariant (a `main` HEAD always resolves; missing `:<sha>` means in-flight or a failed build/inherit). Keep the 6×60s retry.
+- [x] 2.7 Confirm the job's `concurrency` block is `group: <workflow>-<ref>`, `cancel-in-progress: false` (serializes consecutive `main` pushes → preserves the inherit chain), and use `set -euo pipefail` in the inherit step's `crane copy` sequence.
 
 ## 3. Frontend pipeline (`frontend/.github/workflows/push-image.yaml`)
 
 - [x] 3.1 Remove `paths:` from the `push` trigger (keep `release: [published]` and existing `workflow_dispatch`).
 - [x] 3.2 Add the build-vs-inherit decision over `${{ github.event.before }}..${{ github.sha }}` against the frontend build glob set (`src/**`, `public/**`, `scripts/**`, `package.json`, `package-lock.json`, `vite.config.ts`, `Dockerfile`, `Caddyfile`, `.github/workflows/push-image.yaml`).
 - [x] 3.3 Gate the existing build-and-push (incl. the `verify:build-templates` assertion) on the `build` decision.
-- [x] 3.4 Add the inherit path for `web-app`: resolve `web-app:${{ github.event.before }}` digest and `crane copy` to `web-app:${{ github.sha }}`, re-point `:main`/`:latest`; no build; same fallback as 2.5.
+- [x] 3.4 Add the inherit path for `web-app`: resolve `web-app:${{ github.event.before }}` digest and `crane copy` to `web-app:${{ github.sha }}`, re-point `:main`/`:latest`; no build; force-push/branch-creation → BUILD, `:main`-only transient fallback (same rules as 2.5).
 - [x] 3.5 Update the release digest-resolve error message symmetrically with task 2.6.
+- [x] 3.6 Confirm the `concurrency` block (`group: <workflow>-<ref>`, `cancel-in-progress: false`) is present, and use `set -euo pipefail` in the inherit step's `crane copy` sequence.
 
 ## 4. Runbook (`cloud-provisioning/docs/runbooks/prod-image-tag-pinning.md`)
 

@@ -9,6 +9,10 @@ For both the backend (`deploy.yml`, 4-image matrix) and frontend (`push-image.ya
 
 This makes "any `main` commit is releasable" a true invariant: the release path's digest-resolve (`<image>:${GITHUB_SHA}`) always succeeds for a `main` HEAD. The invariant is maintained inductively; it is self-seeding because the commit that introduces this behavior edits the workflow file, which is inside the build glob set and therefore takes the build path.
 
+The inductive chain depends on consecutive `main` pushes being processed in order: the workflow SHALL declare `concurrency: { group: <workflow>-<ref>, cancel-in-progress: false }` so push N+1's inherit step cannot start before push N's build/inherit step has finished writing `<image>:<push-N-sha>`. Without this, a merge train (back-to-back merges) could leave push N+1 unable to resolve its parent, breaking the chain.
+
+A force-push or branch-creation push SHALL take the BUILD path, never the inherit path: on a force-push `github.event.before` is the **previous (now-orphaned) tip**, not the zero SHA, and that tip is not necessarily an ancestor of the new tip — inheriting its digest would pin `<image>:${GITHUB_SHA}` to non-equivalent bytes. The zero `before` SHA (true branch creation) likewise has no valid ancestor image to inherit. Both are routed to build.
+
 #### Scenario: Build-relevant push produces a built image
 
 - **WHEN** a push to `main` changes at least one file matching the build glob set (backend: `**.go`, `go.mod`, `go.sum`, `Dockerfile`, `.github/workflows/deploy.yml`; frontend: `src/**`, `public/**`, `scripts/**`, `package.json`, `package-lock.json`, `vite.config.ts`, `Dockerfile`, `Caddyfile`, `.github/workflows/push-image.yaml`) anywhere in `${{ github.event.before }}..${GITHUB_SHA}`
@@ -16,7 +20,7 @@ This makes "any `main` commit is releasable" a true invariant: the release path'
 
 #### Scenario: Build-irrelevant push inherits the parent digest
 
-- **WHEN** a push to `main` changes no file matching the build glob set across `${{ github.event.before }}..${GITHUB_SHA}` (e.g., a CI-config- or docs-only commit)
+- **WHEN** a normal (non-forced, non-creation) push to `main` changes no file matching the build glob set across `${{ github.event.before }}..${GITHUB_SHA}` (e.g., a CI-config- or docs-only commit)
 - **THEN** the workflow SHALL NOT invoke `docker build`
 - **AND** for every image in the pipeline it SHALL resolve the dev-AR digest of `<image>:${{ github.event.before }}` and `crane copy` it to `<image>:${GITHUB_SHA}`
 - **AND** the resulting `<image>:${GITHUB_SHA}` digest SHALL equal the `<image>:${{ github.event.before }}` digest
@@ -26,12 +30,23 @@ This makes "any `main` commit is releasable" a true invariant: the release path'
 - **WHEN** a GitHub Release is published on the current `main` HEAD, regardless of whether HEAD was a build-relevant or build-irrelevant commit
 - **THEN** the release path's digest-resolve for `<image>:${GITHUB_SHA}` SHALL succeed for every image (the failure mode "HEAD is a filtered-out commit with no image" no longer occurs)
 
+#### Scenario: Force-push or branch-creation takes the build path
+
+- **WHEN** a push to `main` is a force-push (`github.event.forced == true`) or a branch creation (`github.event.created == true`, i.e. `github.event.before` is the zero SHA)
+- **THEN** the workflow SHALL take the BUILD path and SHALL NOT take the inherit path
+- **AND** it SHALL NOT inherit a digest from `github.event.before` (which on a force-push is an orphaned, non-ancestor tip whose bytes are not equivalent to the new commit's tree)
+
 #### Scenario: Missing parent image fails loudly rather than silently breaking the chain
 
-- **WHEN** the inherit path runs and the parent digest `<image>:${{ github.event.before }}` cannot be resolved (e.g., `github.event.before` is the zero SHA on branch creation / force-push, or an earlier run left a gap)
-- **THEN** the workflow SHALL attempt a fallback resolution (the `:main` tag's current digest, or `HEAD^1`'s `:<sha>`)
+- **WHEN** the inherit path runs (a normal, non-forced push that changed no build-relevant file) and the parent digest `<image>:${{ github.event.before }}` cannot be resolved (e.g., an earlier run left a gap)
+- **THEN** the workflow SHALL attempt a single fallback resolution to the `:main` tag's current digest (which, in linear history, points at the prior tip's image)
 - **AND** if no parent image is resolvable, the workflow SHALL fail with a non-zero exit and an explicit message instructing the operator to seed the chain by touching a build-relevant file
-- **AND** the workflow SHALL NOT publish a `<image>:${GITHUB_SHA}` tag pointing at an incorrect digest
+- **AND** the workflow SHALL NOT publish a `<image>:${GITHUB_SHA}` tag pointing at an incorrect digest (in particular it SHALL NOT fall back to `HEAD^1`, which on a multi-commit push is an intermediate commit inside the pushed range, not a prior `main` tip)
+
+#### Scenario: Consecutive main pushes are serialized to preserve the chain
+
+- **WHEN** two pushes to `main` occur in rapid succession (e.g., a merge train)
+- **THEN** the workflow's `concurrency` group (`<workflow>-<ref>`, `cancel-in-progress: false`) SHALL serialize them so the second run's parent-digest resolution observes the first run's completed `<image>:<sha>` write
 
 ## MODIFIED Requirements
 
