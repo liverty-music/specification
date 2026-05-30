@@ -2,6 +2,8 @@
 
 The system SHALL enforce a guided progression through onboarding steps. During the Lane Intro phase of DASHBOARD, user interaction outside the spotlighted element is blocked via blocker divs and scroll lock. After Celebration dismissal, the user explores freely and navigates to My Artists at their own pace.
 
+> **Note on Step numbering**: The "Step N" labels in the scenario titles below mirror the existing `onboardingStep` state-machine values (`'lp'` = Step 0, `'discovery'` = Step 1, `'dashboard'` = Step 3, `'my-artists'` = Step 5, `'completed'` = Step 6). Steps 2 and 4 correspond to in-flight transitions handled by other specs (`onboarding-popover-guide` and the EventDetailSheet open-during-onboarding flow in `concert-detail`) and so are intentionally absent from this spec's scenario list.
+
 #### Scenario: Step 0 - Landing Page entry
 
 - **WHEN** a user is at Step `'lp'`
@@ -13,7 +15,8 @@ The system SHALL enforce a guided progression through onboarding steps. During t
 
 - **WHEN** a user is at Step `'discovery'`
 - **AND** the progression condition is met (5 follows OR 3 artists with concerts)
-- **THEN** the system SHALL activate the coach mark spotlight on the Dashboard icon for 2 seconds, then deactivate it
+- **THEN** the system SHALL activate the coach mark spotlight on the Dashboard icon and SHALL keep it active until the user taps the highlighted target
+- **AND** the spotlight SHALL NOT auto-dismiss based on elapsed time
 - **AND** when the user taps the Home/Dashboard icon, the system SHALL advance `onboardingStep` to `'dashboard'`
 - **AND** the system SHALL navigate to `/dashboard`
 
@@ -56,6 +59,13 @@ The system SHALL enforce a guided progression through onboarding steps. During t
 - **WHEN** a user at Step `'my-artists'` changes a hype level
 - **THEN** the system SHALL persist the hype change (no revert)
 - **AND** the system SHALL advance `onboardingStep` to `'completed'`
+
+#### Scenario: Step 1 spotlight persists across route changes only via cleanup
+
+- **WHEN** the Step 1 coach mark spotlight is active on the Dashboard icon
+- **AND** the user navigates away from the Discovery route by means other than tapping the spotlighted target (e.g., browser back, direct nav-tab tap to a different tab)
+- **THEN** the spotlight SHALL be deactivated via the route's `detaching()` lifecycle hook (per `onboarding-spotlight` "Route Detach Spotlight Cleanup")
+- **AND** no time-based fade timer SHALL be involved in the cleanup path
 
 ### Requirement: Non-spotlighted Nav Tabs Visually Disabled During Lane Intro
 

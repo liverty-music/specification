@@ -34,18 +34,22 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 
 - **WHEN** the concert detail view is open
 - **THEN** it SHALL render a tappable link that opens Google Maps with a query composed of venue name and admin area
+- **AND** the link's visible label SHALL be sourced from the `eventDetail.openInGoogleMaps` i18n key
 
 #### Scenario: Ticket / official info link
 
 - **WHEN** the concert detail view is open and `source_url` is present
-- **THEN** it SHALL render a "View Official Info" button linking to `source_url` in a new tab
+- **THEN** it SHALL render a button linking to `source_url` in a new tab
+- **AND** the button's visible label SHALL be sourced from the `eventDetail.viewOfficialInfo` i18n key
 
 #### Scenario: Display ticket journey status
 
 - **WHEN** the concert detail view is open
 - **AND** the user has a ticket journey for this event
 - **THEN** the sheet SHALL display the current ticket journey status
+- **AND** the displayed status text SHALL be sourced from `eventDetail.journeyStatus.<value>` (not the raw enum string)
 - **AND** the sheet SHALL provide controls to change the status to any valid `TicketJourneyStatus` value
+- **AND** each control's label SHALL also be sourced from `eventDetail.journeyStatus.<value>`
 
 #### Scenario: Set ticket journey status from detail view
 
@@ -64,6 +68,7 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 - **WHEN** the user removes the journey status from the detail view controls
 - **THEN** the system SHALL call `TicketJourneyService.Delete` with the event_id
 - **AND** the status display SHALL revert to the untracked state
+- **AND** the remove control's label SHALL be sourced from the `eventDetail.stopTracking` i18n key
 
 #### Scenario: Dismiss sheet via light dismiss (non-onboarding)
 
@@ -90,6 +95,42 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 - **WHEN** the user is at onboarding Step 4
 - **THEN** the sheet SHALL NOT be dismissible (no swipe-down, no outside tap, no escape key)
 - **AND** the coach mark overlay SHALL appear above the sheet in the top layer, targeting `[data-nav-my-artists]`
+
+### Requirement: Localized Concert Detail Sheet Copy
+
+The frontend SHALL render all user-facing text in the concert detail sheet via i18n keys under a dedicated `eventDetail.*` namespace, with parallel JA and EN translations in `frontend/src/locales/<locale>/translation.json`. No literal English (or any other language) text SHALL be embedded directly in the `event-detail-sheet.html` template.
+
+#### Scenario: Static labels are i18n-keyed
+
+- **WHEN** the concert detail sheet renders any static label (date/time row prefix, action button text, ticket-status section heading, removal button)
+- **THEN** the label SHALL be sourced from an `eventDetail.*` i18n key
+- **AND** the JA and EN translation files SHALL both contain a value for that key
+- **AND** the displayed string SHALL match the locale resolved by `@aurelia/i18n`
+
+#### Scenario: Required i18n keys
+
+- **WHEN** the concert detail sheet is implemented
+- **THEN** the following `eventDetail.*` keys SHALL be defined in both JA and EN translation files:
+  - `eventDetail.ariaLabel` — the sheet's `aria-label`
+  - `eventDetail.openStart` — the open/start time line with `{{open}}` and `{{start}}` interpolation placeholders. When the open time is unknown, the `{{open}}` slot SHALL be filled with the em-dash character `—` (U+2014) supplied directly by the component (locale-invariant; not routed through an i18n key).
+  - `eventDetail.openInGoogleMaps` — the Google Maps link label
+  - `eventDetail.ticketStatus` — the ticket-status section heading
+  - `eventDetail.stopTracking` — the "remove ticket journey" button label
+  - `eventDetail.viewOfficialInfo` — the official info link label
+  - `eventDetail.addToCalendar` — the add-to-calendar link label
+
+#### Scenario: Journey status enum values are i18n-keyed
+
+- **WHEN** the concert detail sheet renders a `TicketJourneyStatus` value as a button label or as the currently-displayed status
+- **THEN** the surface form SHALL be sourced from a sub-namespace `eventDetail.journeyStatus.<value>` rather than the raw enum string
+- **AND** the JA and EN translation files SHALL both contain values for every supported `TicketJourneyStatus` value (currently `tracking`, `applied`, `lost`, `unpaid`, `paid`)
+- **AND** the raw enum string SHALL NOT appear in the rendered UI
+
+#### Scenario: Adding a new TicketJourneyStatus value
+
+- **WHEN** a new value is added to the `TicketJourneyStatus` type
+- **THEN** the change SHALL add a corresponding `eventDetail.journeyStatus.<newValue>` entry to both the JA and EN translation files
+- **AND** the absence of either locale value SHALL be a defect
 
 ### Requirement: Dashboard Lane Assignment
 
