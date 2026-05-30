@@ -196,9 +196,11 @@ For both the backend (`deploy.yml`, 4-image matrix) and frontend (`push-image.ya
 - On the **build** path the workflow builds and pushes `<image>:latest,:main,:<sha>` to dev AR (unchanged from prior behavior).
 - On the **inherit** path the workflow SHALL `crane copy` the parent push tip's dev-AR digest (`<image>:${{ github.event.before }}`, by digest) onto `<image>:${GITHUB_SHA}` (and re-point `:main` and `:latest` at that digest), with no `docker build`. This is byte-exact: a commit that changed no build-relevant file produces bytes identical to its parent.
 
-This makes "any `main` commit is releasable" a true invariant: the release path's digest-resolve (`<image>:${GITHUB_SHA}`) always succeeds for a `main` HEAD. The invariant is maintained inductively; it is self-seeding because the commit that introduces this behavior edits the workflow file, which is inside the build glob set and therefore takes the build path.
+This makes "any `main` commit is releasable" the intended invariant: the release path's digest-resolve (`<image>:${GITHUB_SHA}`) succeeds for a `main` HEAD once that HEAD's push-path run has completed (subject to the merge-train limitation noted below). The invariant is maintained inductively; it is self-seeding because the commit that introduces this behavior edits the workflow file, which is inside the build glob set and therefore takes the build path.
 
-The inductive chain depends on consecutive `main` pushes being processed in order: the workflow SHALL declare `concurrency: { group: <workflow>-<ref>, cancel-in-progress: false }` so push N+1's inherit step cannot start before push N's build/inherit step has finished writing `<image>:<push-N-sha>`. Without this, a merge train (back-to-back merges) could leave push N+1 unable to resolve its parent, breaking the chain.
+The inductive chain depends on a push's parent already carrying its image when that push's run starts. The workflow SHALL declare `concurrency: { group: <workflow>-<ref>, cancel-in-progress: false }` so a run is not started while another run for the same ref is in progress.
+
+**Known limitation (merge train).** `cancel-in-progress: false` protects the *in-progress* run but does NOT fully serialize three or more rapid pushes: GitHub Actions keeps at most one *pending* run per concurrency group, so when a newer run queues, an already-pending run is cancelled. Three or more `main` pushes landing within a single run's duration can therefore leave an intermediate push's run cancelled, and that commit without a `<image>:<sha>` image. This does not corrupt anything — a later inherit whose parent is the cancelled commit fails loudly (per "Missing parent image") rather than pinning a wrong digest, and the latest push tip (the only commit a release targets) still runs. Recovery: re-run the cancelled push's workflow, or push a build-relevant seed. Under the current branch protection (no auto-merge; required up-to-date + review checks) merges are spaced far wider than a run's duration, so this is not expected in normal operation; adopting a merge queue would raise the likelihood and should prompt revisiting this (e.g., a parent-digest walk-back over build-irrelevant ancestors, or a serializing queue action).
 
 A force-push or branch-creation push SHALL take the BUILD path, never the inherit path: on a force-push `github.event.before` is the **previous (now-orphaned) tip**, not the zero SHA, and that tip is not necessarily an ancestor of the new tip — inheriting its digest would pin `<image>:${GITHUB_SHA}` to non-equivalent bytes. The zero `before` SHA (true branch creation) likewise has no valid ancestor image to inherit. Both are routed to build.
 
@@ -232,8 +234,12 @@ A force-push or branch-creation push SHALL take the BUILD path, never the inheri
 - **AND** the workflow SHALL NOT fall back to any other tag (`:main`, `HEAD^1`, or otherwise) to obtain a digest — when `<image>:${{ github.event.before }}` is missing the chain has a gap, so any other tag may resolve to a commit whose tree differs, and inheriting it would pin non-equivalent bytes
 - **AND** the workflow SHALL NOT publish a `<image>:${GITHUB_SHA}` tag pointing at an incorrect digest
 
-#### Scenario: Consecutive main pushes are serialized to preserve the chain
+#### Scenario: Concurrency protects the in-progress run; a merge-train intermediate run may be cancelled
 
-- **WHEN** two pushes to `main` occur in rapid succession (e.g., a merge train)
-- **THEN** the workflow's `concurrency` group (`<workflow>-<ref>`, `cancel-in-progress: false`) SHALL serialize them so the second run's parent-digest resolution observes the first run's completed `<image>:<sha>` write
+- **WHEN** two pushes to `main` occur in rapid succession (the second queues while the first is in progress)
+- **THEN** the workflow's `concurrency` group (`<workflow>-<ref>`, `cancel-in-progress: false`) SHALL NOT cancel the in-progress run, so the second run starts only after the first has written its `<image>:<sha>`
+- **WHEN** three or more pushes to `main` land within a single run's duration
+- **THEN** the in-progress run SHALL NOT be cancelled and the latest push's run SHALL eventually run
+- **AND** an intermediate *pending* run MAY be cancelled by GitHub's one-pending-per-group rule, leaving that commit without a `<image>:<sha>` image
+- **AND** this SHALL NOT publish an incorrect digest — a subsequent inherit whose parent is the cancelled commit fails loudly per "Missing parent image"; recovery is to re-run the cancelled push's workflow or push a build-relevant seed
 
