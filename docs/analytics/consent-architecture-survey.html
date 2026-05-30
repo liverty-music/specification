@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>同意管理アーキテクチャ — 法制度の基礎から実装まで</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --border:#30363d;
+    --ink:#e6edf3; --muted:#9da7b3; --accent:#58a6ff; --green:#3fb950;
+    --amber:#d29922; --red:#f85149; --purple:#bc8cff;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Sans","Yu Gothic",sans-serif;}
+  .wrap{max-width:1000px;margin:0 auto;padding:48px 24px 96px;}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--muted);margin:0 0 36px;font-size:15px}
+  h2{font-size:21px;margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border);letter-spacing:-.01em}
+  h3{font-size:16px;margin:24px 0 8px}
+  p{margin:10px 0}
+  a{color:var(--accent)}
+  code{font-family:var(--mono);font-size:.88em;background:#262c36;padding:1px 6px;border-radius:5px;color:#c9d1d9}
+  pre code{display:block;padding:14px 16px;overflow-x:auto;line-height:1.5}
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 22px;margin:14px 0;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:14px 0}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px}
+  .stat .n{font-size:30px;font-weight:700;letter-spacing:-.02em}
+  .stat .l{color:var(--muted);font-size:13px;margin-top:2px}
+  .stat.good .n{color:var(--green)} .stat.warn .n{color:var(--amber)}
+  .stat.acc .n{color:var(--accent)} .stat.bad .n{color:var(--red)}
+
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  tr:last-child td{border-bottom:none}
+
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
+  .pill.acc{background:rgba(88,166,255,.15);color:var(--accent)}
+  .pill.good{background:rgba(63,185,80,.15);color:var(--green)}
+  .pill.warn{background:rgba(210,153,34,.15);color:var(--amber)}
+  .pill.bad{background:rgba(248,81,73,.15);color:var(--red)}
+  .pill.muted{background:rgba(157,167,179,.15);color:var(--muted)}
+
+  .callout{border-left:3px solid var(--border);border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;background:var(--panel)}
+  .callout.info{border-color:var(--accent);background:rgba(88,166,255,.07)}
+  .callout.warn{border-color:var(--amber);background:rgba(210,153,34,.07)}
+  .callout.danger{border-color:var(--red);background:rgba(248,81,73,.07)}
+  .callout.success{border-color:var(--green);background:rgba(63,185,80,.07)}
+  .callout b{display:block;margin-bottom:4px}
+
+  .mermaid{margin:18px 0;text-align:center}
+
+  .diagram{font-family:var(--mono);font-size:13px;line-height:1.5;background:var(--panel2);
+    border:1px solid var(--border);border-radius:10px;padding:18px 20px;white-space:pre;overflow-x:auto;color:#cdd6e0}
+
+  .step{display:flex;gap:14px;margin:14px 0;align-items:flex-start}
+  .step .num{flex:0 0 28px;height:28px;border-radius:50%;background:var(--panel2);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--accent)}
+
+  .muted{color:var(--muted)}
+  ul,ol{margin:8px 0;padding-left:22px} li{margin:5px 0}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px} @media(max-width:720px){.two{grid-template-columns:1fr}}
+  .label{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;font-weight:700}
+  footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>同意管理アーキテクチャ — 法制度の基礎から実装まで</h1>
+<p class="sub">なぜ Liverty Music の現在の spec は不十分か、業界はどう解決しているか。法令テキスト → 業界フレームワーク → 各ベンダー実装の順で網羅</p>
+
+<h2>1 行サマリ</h2>
+
+<div class="callout info">
+<b>結論</b>
+個人情報の越境提供を伴う分析ツール利用には、<strong>サーバーサイドに同意状態を永続化し、データ送信前に同意確認する</strong>のが世界の標準パターン。ブラウザ localStorage だけでは GDPR Article 7 / APPI 28条が要求する「実効的な同意」を満たせず、また「いつでも撤回可能」の要件も BE 経路で破綻する。
+</div>
+
+<h2>1. 法制度の基礎</h2>
+
+<h3>1.1 GDPR Article 7 — 同意の 4 つの柱</h3>
+
+<p>EU 一般データ保護規則 Article 7 は同意の有効性を 4 条件で定義しています。これは世界の個人情報保護法 (CCPA, LGPD, APPI 等) の事実上のモデルになっています。</p>
+
+<table>
+<thead><tr><th>原則</th><th>意味</th><th>UI/UX への含意</th></tr></thead>
+<tbody>
+<tr><td><strong>Freely given<br>(自由意志)</strong></td><td>サービス利用と引き換えに同意を強要されてはならない</td><td>同意拒否でも基本機能は使える設計</td></tr>
+<tr><td><strong>Specific<br>(具体的)</strong></td><td>目的ごとに別個の同意が必要</td><td>「分析」「マーケ」を別トグルにする (1つの「全部 OK」は不可)</td></tr>
+<tr><td><strong>Informed<br>(情報提供あり)</strong></td><td>誰に何の目的でデータが渡るか開示する</td><td>受信者 (PostHog 等)、国名、保存期間、撤回方法を明示</td></tr>
+<tr><td><strong>Unambiguous<br>(明確な意思表示)</strong></td><td>"clear affirmative act" — 積極的な行為のみ有効</td><td>pre-checked box (opt-out) は <span class="pill bad">NG</span>、未操作の continue も NG</td></tr>
+</tbody>
+</table>
+
+<div class="callout warn">
+<b>Article 7(3) の重要規定</b>
+「同意を撤回するのは与えるのと同程度に容易でなければならない」。つまり <em>workflow の 4 ステップ先で見つかる settings &gt; advanced</em> ではダメ。
+<br><br>
+さらに <strong>撤回は遅滞なく反映</strong>される必要がある。フロントエンドだけ stop して BE は送り続ける構成は Article 7(3) 違反の典型例。
+</div>
+
+<h3>1.2 GDPR Article 25 — Privacy by Design and by Default</h3>
+
+<div class="card">
+<div class="label">条文の要点</div>
+<p>製品設計の段階から、デフォルトでプライバシー保護的になるよう実装する義務。「同意したらデフォルトで全部 ON」ではなく、「同意なしならデフォルトで全部 OFF」が要求される。</p>
+<p>これが「opt-in (default OFF) が業界デフォルト」「opt-out (default ON) は legal risk」と言われる根拠条文。</p>
+</div>
+
+<h3>1.3 APPI (日本) 第28条 — 越境移転の特則</h3>
+
+<p>日本の個人情報保護法第28条は、<strong>「外国にある第三者」</strong>への個人データ提供に関する特則です。Liverty Music は PostHog Cloud EU (オランダ) を使うため、毎回の data transfer がこの条文の対象になります。</p>
+
+<table>
+<thead><tr><th>論点</th><th>APPI 28条の要件</th></tr></thead>
+<tbody>
+<tr><td>原則</td><td>越境提供前に <strong>本人の事前同意</strong>が必要 (= opt-in)</td></tr>
+<tr><td>同意取得時の提供情報</td><td>(a) 当該国名<br>(b) 当該国の個人情報保護制度<br>(c) 受領者の保護措置</td></tr>
+<tr><td>例外 1: 適切性認定国</td><td>2019/01 から <strong>EU と英国</strong>が "Japan と同等" として認定 → 本人同意不要</td></tr>
+<tr><td>例外 2: 同等水準の保護措置を講じる事業者</td><td>毎年の certification 取得が必要</td></tr>
+<tr><td>2026年改正</td><td>統計目的・非識別化処理は同意不要に → ただし「非識別化の技術的・組織的措置」を文書化する義務</td></tr>
+</tbody>
+</table>
+
+<div class="callout info">
+<b>EU が例外 (a) で認定されているのに、なぜ Liverty Music で 28条が問題になるのか?</b>
+<br><br>
+PostHog は EU 内のデータセンターを使っているが、<strong>運営会社 Klant Solutions B.V. はオランダ法人で、データの実際の処理者 (controller/processor)</strong> です。APPI 28条が対象とするのは「外国にある第三者」であり、EU の場合は「適切性認定により事前同意は不要、ただし提供主体 (Liverty) は受領者の保護措置の継続的確保義務がある」となります。
+<br><br>
+つまり <strong>本人同意は法的には必須ではない</strong>けれど、Liverty Music が "Article 28 explicit consent" を design.md に書いている以上、それは <strong>自社の commitment</strong> として実装上守る必要がある (commitment を破る spec を出版することの reputation/audit リスク)。
+</div>
+
+<h3>1.4 三法の対応関係まとめ</h3>
+
+<div class="diagram">
+  GDPR Article 7       APPI 28条             Liverty Music の現状
+  ────────────         ────────             ────────────────────
+
+  Freely given         自由意志               ✅ "Set up later" あり
+  Specific             目的別                 ✅ 2 トグル分離 (Round 1+2)
+  Informed             国名/受領者明示         ⚠️ PostHog 名前あるが
+                                              監査 trail なし
+  Unambiguous          積極的意思表示          ✅ opt-in (Round 1+2)
+
+  Article 7(3) 撤回    継続的保護義務          ❌ FE 撤回が BE 経路に
+                                              伝播しない (Round 4 の発見)
+
+  Article 25           Privacy by Design       ⚠️ BE が同意を構造的に
+  Privacy by Default                          知らない設計
+</div>
+
+<h2>2. 業界フレームワーク</h2>
+
+<h3>2.1 IAB TCF v2.2 (Transparency &amp; Consent Framework)</h3>
+
+<p>IAB (Interactive Advertising Bureau) が策定した、複数のベンダー間で同意状態を共有するためのデファクト規格。EU で広告/分析ツールを使う事業者の 90% 以上が採用しています。</p>
+
+<div class="grid">
+<div class="stat acc"><div class="n">11</div><div class="l">Purposes (利用目的)</div></div>
+<div class="stat acc"><div class="n">~1000</div><div class="l">Vendors (登録ベンダー)</div></div>
+<div class="stat acc"><div class="n">1</div><div class="l">TC String (共通形式)</div></div>
+</div>
+
+<p>仕組み:</p>
+
+<pre class="mermaid">
+flowchart LR
+  U[User] --> CMP[Consent Management Platform<br/>OneTrust / Didomi など]
+  CMP --> TCS["TC String<br/>(base64 encoded)"]
+  TCS --> V1[PostHog]
+  TCS --> V2[Mixpanel]
+  TCS --> V3[GA4]
+  TCS --> V4[広告ネットワーク...]
+</pre>
+
+<table>
+<thead><tr><th>Purpose</th><th>意味</th><th>Liverty Music で該当</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>デバイス情報の保存・アクセス (Cookie)</td><td>該当</td></tr>
+<tr><td>2-4</td><td>広告選定・配信・測定</td><td>非該当 (現状)</td></tr>
+<tr><td>7</td><td>分析・ユーザー行動測定</td><td><strong>該当 (PostHog)</strong></td></tr>
+<tr><td>8</td><td>コンテンツ評価測定</td><td>該当</td></tr>
+<tr><td>9-10</td><td>市場調査・サービス改善</td><td>該当</td></tr>
+</tbody>
+</table>
+
+<div class="callout info">
+<b>Liverty Music 視点</b>
+今すぐ IAB TCF に準拠する必要はないが、Purpose 7 (分析) として将来 CMP を導入する際の receiving format が決まっているため、今の spec で「purpose-specific consent」と書いておくことで将来の CMP 統合がスムーズになる。
+</div>
+
+<h3>2.2 Google Consent Mode v2</h3>
+
+<p>Google が 2024年3月から導入した同意管理規格。EEA (EU + 英国) ユーザー向けに Google サービスを使う場合は事実上必須。</p>
+
+<table>
+<thead><tr><th>Consent Type</th><th>意味</th></tr></thead>
+<tbody>
+<tr><td><code>ad_storage</code></td><td>広告関連 Cookie の保存</td></tr>
+<tr><td><code>analytics_storage</code></td><td>分析 Cookie の保存</td></tr>
+<tr><td><code>ad_user_data</code></td><td>ユーザーデータの Google 広告への送信</td></tr>
+<tr><td><code>ad_personalization</code></td><td>パーソナライズ広告</td></tr>
+</tbody>
+</table>
+
+<h3>2.3 サーバーサイド Consent Mode の核心</h3>
+
+<p>2024年 Google のサーバーサイド GTM ガイダンスより:</p>
+
+<div class="callout warn">
+<b>Google 公式の引用</b><br>
+"Consent is no longer automatic — the server has no idea what the user chose unless you explicitly send it. When an event fires, the request must include the current consent state — in the payload, headers, or a first-party cookie. The server reads consent and maps the incoming consent into a variable."
+</div>
+
+<p>これは Liverty Music の Round 4 で bot が指摘した問題そのもの。NATS event → analytics-consumer → PostHog の経路で、event payload に consent 情報が乗っていない (or BE 側に DB がない) ため、server が同意を知る術がない。</p>
+
+<pre class="mermaid">
+flowchart TB
+  subgraph "業界標準パターン"
+    A1[FE: consent screen] --> A2[FE: capture event]
+    A2 --> A3["event payload に<br/>consent state を載せる"]
+    A3 --> A4[Server]
+    A4 --> A5{consent OK?}
+    A5 -->|yes| A6[Forward to PostHog]
+    A5 -->|no| A7[Drop]
+  end
+
+  subgraph "Liverty Music の現状"
+    B1[FE: consent screen] --> B2[localStorage]
+    B3[BE: business handler] --> B4[NATS event<br/>consent 情報なし]
+    B4 --> B5[analytics-consumer]
+    B5 --> B6["Forward to PostHog<br/>(同意確認なし)"]
+  end
+</pre>
+
+<h2>3. 各ベンダーの公式ガイドライン</h2>
+
+<h3>3.1 PostHog (Liverty Music 採用ベンダー)</h3>
+
+<div class="card">
+
+<h4>3.1.1 公式ドキュメントの抜粋</h4>
+
+<div class="callout warn">
+<b>PostHog 公式 (privacy/data-collection)</b><br>
+"If a user opts out then <strong>you must stop all data capturing and processing</strong>. It is up to you to ensure that your application logic either does not load PostHog SDKs or disables data capturing when a user opts out."
+</div>
+
+<div class="callout warn">
+<b>PostHog 公式 (privacy/gdpr-compliance)</b><br>
+"Always gate user-data captures on a consent check. <strong>If you forget to gate, you're processing personal data without a legal basis</strong>, which is the kind of thing GDPR and CCPA enforcement actions tend to focus on."
+</div>
+
+<h4>3.1.2 PostHog が提供する API</h4>
+
+<table>
+<thead><tr><th>API</th><th>用途</th><th>Liverty Music で使う場面</th></tr></thead>
+<tbody>
+<tr><td><code>opt_out_capturing_by_default: true</code></td><td>SDK 初期化時にデフォルト OFF</td><td><span class="pill good">必須</span> Decision 7 の opt-in 方針と一致</td></tr>
+<tr><td><code>cookieless_mode: 'on_reject'</code></td><td>同意拒否時は Cookie を一切セットしない</td><td><span class="pill good">必須</span> pre-consent allowlist の実装</td></tr>
+<tr><td><code>posthog.opt_in_capturing()</code></td><td>同意後に SDK を有効化</td><td>consent screen の OK ボタン</td></tr>
+<tr><td><code>posthog.opt_out_capturing()</code></td><td>撤回時に SDK を無効化</td><td>settings の OFF</td></tr>
+<tr><td><code>posthog.has_opted_in_capturing()</code></td><td>同意状態を check</td><td><strong>すべての capture() の前で確認</strong></td></tr>
+<tr><td><code>posthog.identify()</code></td><td>ユーザー識別</td><td><span class="pill bad">同意前は呼ぶな</span> identify は PII 生成行為と見なされる</td></tr>
+</tbody>
+</table>
+
+<h4>3.1.3 PostHog が "serverside で必要" と明示する事項</h4>
+
+<div class="callout danger">
+<b>PostHog 公式 (privacy/data-collection)</b><br>
+"For server-side implementations, you need to manage the opt-out process manually. <strong>The server is responsible for generating IDs, maintaining ID persistence, and managing the opt-out state of users.</strong>"
+</div>
+
+<p>つまり PostHog 自身が「サーバーサイドでは opt-out 状態を管理する責任は実装側にある」と明記している。Liverty Music の analytics-consumer はこの責任を果たす必要がある。</p>
+
+</div>
+
+<h3>3.2 RudderStack (CDP デファクト) のパターン</h3>
+
+<div class="card">
+
+<p>RudderStack はイベント駆動分析の業界標準的な実装を提供しており、その consent 管理方式は多くの組織が参考にしています。</p>
+
+<h4>3.2.1 consentManagement object をイベントペイロードに埋め込む</h4>
+
+<pre><code>// RudderStack のイベントフォーマット
+{
+  "event": "ticket.purchase.completed",
+  "userId": "uuid-...",
+  "properties": { ... },
+  "context": {
+    "consentManagement": {
+      "allowedConsentIds": ["analytics", "marketing"],
+      "deniedConsentIds": []
+    }
+  }
+}</code></pre>
+
+<h4>3.2.2 Destination 側でフィルタリング</h4>
+
+<div class="callout info">
+<b>RudderStack 公式</b><br>
+"You may want to send data to a marketing tool only if a user has opted in to advertising and marketing tracking. In this case, you would configure your marketing destination to require allowedConsentIds for both analytics and marketing. If event payloads do not include these consent IDs, RudderStack will drop them, ensuring you don't send non-compliant user data."
+</div>
+
+<p>Liverty Music への含意: NATS event 自体に同意 ID を埋め込む方式 vs analytics-consumer が DB を見に行く方式の <strong>二択</strong>がある。前者は event payload が大きくなる、後者は DB ラウンドトリップが増える。</p>
+
+</div>
+
+<h3>3.3 Segment (Twilio)</h3>
+
+<div class="card">
+
+<p>Segment はサーバーサイド分析の老舗。Liverty Music の analytics-consumer に最も近いアーキテクチャ。</p>
+
+<h4>同等パターン</h4>
+<ul>
+<li><strong>Privacy / Consent Settings</strong>: ワークスペース単位で「どの categories の consent が必要か」を destination ごとに設定</li>
+<li><strong>Event-level consent</strong>: track() / identify() の calls に consent context を渡せる</li>
+<li><strong>サーバーサイド SDK</strong>: Node.js / Python / Go の各 SDK で同等の API 提供</li>
+</ul>
+
+<p>Segment が公式に推奨するパターン: <em>"Consent should be persisted to your application database, not relied on browser storage alone, for server-side analytics paths."</em></p>
+
+</div>
+
+<h3>3.4 Mixpanel</h3>
+
+<div class="card">
+
+<table>
+<thead><tr><th>API</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>mixpanel.opt_out_tracking()</code></td><td>SDK レベルで送信停止</td></tr>
+<tr><td><code>mixpanel.has_opted_out_tracking()</code></td><td>同意状態 check</td></tr>
+<tr><td><code>opt_out_tracking_by_default: true</code></td><td>デフォルト opt-out</td></tr>
+<tr><td>サーバー側 API</td><td>各 SDK で同等の opt-out 管理 API</td></tr>
+</tbody>
+</table>
+
+<p>Mixpanel は <strong>ユーザー単位の opt-out リスト</strong>を Mixpanel 側で管理する仕組みも提供 (Service Accounts API)。これにより BE が opt-out ユーザーを Mixpanel に登録すると、それ以降の事故的送信もブロックされる二重化が可能。</p>
+
+</div>
+
+<h2>4. Liverty Music の現状 vs 業界標準</h2>
+
+<table>
+<thead><tr><th>観点</th><th>業界標準</th><th>Liverty Music 現 spec</th><th>判定</th></tr></thead>
+<tbody>
+<tr><td>同意の保存場所</td><td>ブラウザ <em>かつ</em> サーバー DB</td><td>ブラウザ localStorage のみ</td><td><span class="pill bad">違反</span></td></tr>
+<tr><td>BE での同意確認</td><td>送信前に必須</td><td>なし</td><td><span class="pill bad">違反</span></td></tr>
+<tr><td>クロスデバイス同期</td><td>認証アカウント単位で同期</td><td>不可</td><td><span class="pill warn">未対応</span></td></tr>
+<tr><td>BE 監査ログ</td><td>同意取得時刻・撤回時刻を記録</td><td>なし</td><td><span class="pill warn">未対応</span></td></tr>
+<tr><td>撤回の即時性</td><td>FE と BE 両方で即時停止</td><td>FE のみ即時、BE は反映されない</td><td><span class="pill bad">GDPR Article 7(3) 違反</span></td></tr>
+<tr><td>pre-consent event 処理</td><td>queue + replay (or drop)</td><td>未定義 (BE が送ってしまう)</td><td><span class="pill bad">違反</span></td></tr>
+<tr><td>SDK 初期化</td><td>opt_out_by_default: true</td><td>未指定 (=デフォルト ON)</td><td><span class="pill warn">未対応</span></td></tr>
+<tr><td>identify() のタイミング</td><td>同意取得後のみ</td><td>明文化されていない</td><td><span class="pill warn">未対応</span></td></tr>
+</tbody>
+</table>
+
+<h2>5. 業界標準に準拠した推奨アーキテクチャ</h2>
+
+<pre class="mermaid">
+sequenceDiagram
+    participant U as User (Browser)
+    participant FE as Frontend (Aurelia 2)
+    participant BE as Backend (Connect-RPC)
+    participant DB as PostgreSQL
+    participant N as NATS Event Bus
+    participant C as analytics-consumer
+    participant P as PostHog Cloud EU
+
+    U->>FE: アクセス
+    FE->>FE: 同意画面表示 (default OFF)
+    U->>FE: トグル ON → "同意する"
+    FE->>BE: ConsentService.Update(analytics=true)
+    BE->>DB: INSERT INTO user_consents
+    BE-->>FE: OK
+    FE->>FE: localStorage に書き込み (cache)
+    FE->>P: posthog.opt_in_capturing()
+
+    Note over BE: 別経路: BE 業務処理
+    U->>FE: チケット購入
+    FE->>BE: TicketService.Purchase()
+    BE->>N: NATS publish "ticket.purchase.completed"
+    N->>C: deliver
+    C->>DB: SELECT analytics_consent FROM user_consents
+    alt 同意あり
+        C->>P: forward event
+    else 同意なし
+        C->>DB: INSERT INTO audit_log_dropped
+    end
+
+    Note over U: 後日、撤回
+    U->>FE: settings で OFF
+    FE->>BE: ConsentService.Revoke()
+    BE->>DB: UPDATE user_consents SET analytics=false, revoked_at=NOW()
+    FE->>P: posthog.opt_out_capturing()
+    BE->>P: Public API で過去データ削除 request (optional)
+</pre>
+
+<h2>6. spec に追加すべき要件 (推奨)</h2>
+
+<div class="step"><div class="num">1</div>
+<div><strong>analytics-consent capability に新規 Requirement 追加</strong><br>
+<em>"Consent state SHALL be persisted to the backend database via a dedicated RPC."</em><br>
+理由: GDPR Article 7 (Informed/Unambiguous) + APPI 28条 commitment</div>
+</div>
+
+<div class="step"><div class="num">2</div>
+<div><strong>analytics-consent capability に撤回の BE 即時反映 Requirement 追加</strong><br>
+<em>"Revoking consent SHALL update the backend consent record within the same RPC call. analytics-consumer SHALL observe the revocation on its next event."</em><br>
+理由: GDPR Article 7(3) "撤回の容易性"</div>
+</div>
+
+<div class="step"><div class="num">3</div>
+<div><strong>product-analytics capability に consumer 側の同意確認 Requirement 追加</strong><br>
+<em>"The analytics-consumer SHALL consult the backend consent record before forwarding any event with a non-empty distinct_id. Events for users without analytics consent SHALL be dropped (and optionally logged for audit)."</em><br>
+理由: PostHog 公式の "Always gate user-data captures on a consent check"</div>
+</div>
+
+<div class="step"><div class="num">4</div>
+<div><strong>pre-consent BE event (user.created 等) の deferred 処理</strong><br>
+<em>"BE events emitted before the user reaches the consent screen (user.created, account.signup.completed) SHALL be queued. On consent grant, the queued events SHALL be flushed to PostHog. On decline, dropped."</em><br>
+理由: Google Consent Mode v2 (2024/10 から導入された deferred replay) を参考</div>
+</div>
+
+<div class="step"><div class="num">5</div>
+<div><strong>Decision 7 / Open Question 3 の更新</strong><br>
+「BE-local consent persistence は 2026年業界標準 (Transcend, PostHog 公式, RudderStack デファクト) および CNIL 多デバイスガイダンスに準拠した選択である」と明記</div>
+</div>
+
+<div class="step"><div class="num">6</div>
+<div><strong>tasks.md に Batch 2b/3 タスク追加</strong><br>
+DB migration (user_consents テーブル), ConsentRepository, analytics-consumer 側の consent check, 撤回の RPC, deferred event の queue</div>
+</div>
+
+<h2>7. 工数見積</h2>
+
+<div class="grid">
+<div class="stat acc"><div class="n">~30分</div><div class="l">spec 編集</div></div>
+<div class="stat acc"><div class="n">5</div><div class="l">追加 Requirement</div></div>
+<div class="stat acc"><div class="n">4</div><div class="l">追加 Scenario</div></div>
+<div class="stat warn"><div class="n">~6</div><div class="l">追加 tasks (Batch 2b/3)</div></div>
+</div>
+
+<h2>8. 推奨</h2>
+
+<div class="callout success">
+<b>業界標準に準拠した spec 修正を強く推奨</b>
+<br><br>
+理由:
+<ul>
+<li>PostHog 公式が "Always gate" を明文化しており、これを spec で守らないと vendor の使用契約上も問題</li>
+<li>APPI 28条を framing として使うなら "industry standard alignment" は法的にも最強</li>
+<li>2026年は server-side consent architecture が industry default に。今ここを正しくしないと Batch 3 で同じ議論を再度することになる</li>
+<li>Round 5 で bot がさらに何か見つける可能性は残るが、ここまでの finding 性質を見ると規模は小さくなる傾向 (cascading propagation の最終段階に近い)</li>
+</ul>
+</div>
+
+<h2>参考情報源</h2>
+
+<div class="card">
+<h3>法令テキスト</h3>
+<ul>
+<li><a href="https://gdpr-text.com/read/article-7/">GDPR Article 7 — Conditions for consent</a></li>
+<li><a href="https://gdpr-info.eu/issues/consent/">GDPR.eu — Consent overview</a></li>
+<li><a href="https://www.dlapiperdataprotection.com/?t=transfer&c=JP">DLA Piper — Japan Cross-border Transfer (APPI 28条)</a></li>
+<li><a href="https://iapp.org/news/a/practical-notes-for-japans-important-updates-of-the-appi-guidelines-and-qas">IAPP — APPI Guidelines Updates 2026</a></li>
+<li><a href="https://captaincompliance.com/education/japan-appi-cross-border-transfer/">Captain Compliance — APPI Cross-Border Transfer Guide</a></li>
+</ul>
+
+<h3>業界フレームワーク</h3>
+<ul>
+<li><a href="https://iabeurope.eu/transparency-consent-framework/">IAB Europe — TCF v2.2</a></li>
+<li><a href="https://developers.google.com/tag-platform/tag-manager/server-side/consent-mode">Google — Server-side Consent Mode</a></li>
+<li><a href="https://transcend.io/blog/why-you-need-server-side-consent-architecture">Transcend — Why you need server-side consent architecture in 2026</a></li>
+<li><a href="https://securiti.ai/cnil-guidance-on-multi-device-consent/">CNIL — Multi-Device Consent Guidance</a></li>
+</ul>
+
+<h3>ベンダー公式ドキュメント</h3>
+<ul>
+<li><a href="https://posthog.com/docs/privacy/data-collection">PostHog — Controlling data collection</a></li>
+<li><a href="https://posthog.com/docs/privacy/gdpr-compliance">PostHog — GDPR compliance</a></li>
+<li><a href="https://posthog.com/docs/product-analytics/privacy">PostHog — Privacy controls</a></li>
+<li><a href="https://posthog.com/tutorials/cookieless-tracking">PostHog — Cookieless tracking tutorial</a></li>
+<li><a href="https://www.rudderstack.com/docs/data-governance/consent-management/overview/">RudderStack — Consent Management Overview</a></li>
+<li><a href="https://www.rudderstack.com/docs/data-governance/consent-management/passing-consent/">RudderStack — Add Consent Object to Event Payloads</a></li>
+</ul>
+</div>
+
+<footer>
+作成: 2026-05-29 / Round 4 の APPI gap 指摘に対する徹底調査<br>
+対象 PR: liverty-music/specification#533
+</footer>
+
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose',
+    themeVariables: { fontSize: '14px', fontFamily: 'ui-sans-serif, system-ui, sans-serif' } });
+</script>
+</body>
+</html>
