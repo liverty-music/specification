@@ -1,3 +1,9 @@
+## Purpose
+
+Define the user's home area capability end to end: the structured `Home` data model (proto, database, Go entity, centroid resolution), the RPCs that create and update it, and the unified `user-home-selector` frontend component and its `userHome.*` i18n namespace used in both onboarding and Settings.
+
+## Requirements
+
 ### Requirement: User Home Area Data Model
 
 The system SHALL support a structured `home` field on the User entity representing the user's home area — the geographic area where the user regularly attends live events without considering it a "trip" (遠征). The value is a structured geographic location expressed through a hierarchy of internationally standardized codes, with centroid coordinates for proximity calculations.
