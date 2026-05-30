@@ -119,7 +119,8 @@ Move the `setStep(COMPLETED)` from `onHypeInput()` to `my-artists-route.attached
 
 ### D6. Celebration is one component, two tiers, gated by `maybeCelebrate()` (scope B)
 Revive `celebration-overlay` with a new `@bindable confetti = true`; the confetti container renders `if.bind="confetti"`. A single `maybeCelebrate()` is the only fire point, called from **both** `dashboard-route.attached()` (when `!needsRegion`, data ready) and `onHomeSelected()` (after `loadData` resolves) so it always fires once the timetable is real, guarded by a localStorage "shown" flag.
-- Z-light (`confetti=false`) = guest's first dashboard; Z-full (`confetti=true`) = post-signup (`postSignupShown==='pending'`), and on dismiss it opens PostSignupDialog (emotion → setup).
+- Z-light (`confetti=false`) = guest's first dashboard **while still in the onboarding flow** (`isOnboarding` true); a completed guest revisiting the dashboard does NOT get it. Z-full (`confetti=true`) = post-signup (`postSignupShown==='pending'`), and on dismiss it opens PostSignupDialog (emotion → setup).
+- The light tier's shown-once flag reuses the existing `onboarding.celebrationShown` localStorage key, which the E2E suite already seeds/removes to control the celebration overlay's visibility.
 - *Why gated on home-selector*: the timetable is `data-blurred` while `needsRegion`; celebrating "your timetable is complete" before a region is chosen would celebrate an empty, blurred board.
 - *Why two tiers*: this completes an emotional escalation the funnel already implies — **light ack (created) → signup banner (nudge) → confetti (welcome member)** — without a hard gate.
 - *Optional interaction differentiation*: Z-light may auto-dismiss briefly while Z-full is tap-to-dismiss (left to implementation).

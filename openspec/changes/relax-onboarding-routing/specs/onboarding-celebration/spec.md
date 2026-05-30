@@ -17,11 +17,17 @@ The system SHALL present a celebration overlay (`celebration-overlay`) at two di
 #### Scenario: Guest light celebration on first dashboard
 
 - **WHEN** an unauthenticated user reaches the dashboard for the first time
+- **AND** the user is still in the onboarding flow (`isOnboarding` is true) — the celebration is the onboarding creation payoff, not a surprise for a completed guest revisiting the dashboard
 - **AND** the region is set and timetable data has loaded
-- **AND** the light celebration has not been shown this session
+- **AND** the light celebration has not been shown this session (the `onboarding.celebrationShown` localStorage flag is unset)
 - **THEN** the system SHALL display the celebration overlay with `confetti = false`
-- **AND** the system SHALL record that the light celebration has been shown
+- **AND** the system SHALL record that the light celebration has been shown via the `onboarding.celebrationShown` flag
 - **AND** the overlay SHALL be dismissible by tap
+
+#### Scenario: No light celebration for a completed guest revisiting the dashboard
+
+- **WHEN** an unauthenticated user whose onboarding is already completed navigates to the dashboard
+- **THEN** the system SHALL NOT display the light celebration overlay
 
 #### Scenario: Post-signup full celebration then dialog
 
