@@ -41,7 +41,9 @@ capability), not by an in-flight retry barrier.
 
 - **WHEN** the data merge is in progress
 - **THEN** the system SHALL display a loading indicator on the SignUp modal
-- **AND** the system SHALL NOT navigate away until the merge completes or all retries are exhausted
+- **AND** the system SHALL NOT navigate away until the merge attempt completes
+- **AND** any items that failed the best-effort attempt SHALL be left for boot
+  reconciliation rather than retried in-flight
 
 ### Requirement: Guest Data Cleanup
 
