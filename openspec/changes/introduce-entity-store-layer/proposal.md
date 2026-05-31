@@ -92,8 +92,6 @@ into this store layer.
 
 ### Modified Capabilities
 
-- `guest-mode-access` — guest state ownership moves from a single `GuestService`
-  to per-entity stores.
 - `guest-data-merge` — the signup transition is per-store self-handling
   (home/language at Create-time, follows via `UserCreated`), with boot
   reconciliation replacing in-flight retry coordination; clarifies merge scope

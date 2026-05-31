@@ -34,7 +34,7 @@ authenticated `User` entity) internally; callers SHALL read home from
 
 - **WHEN** the settings page loads
 - **THEN** the My Home Area display SHALL read from `UserStore`
-- **AND** SHALL NOT read `I18N.getLocale()` or branch on auth state at the call site
+- **AND** SHALL NOT branch on `auth.isAuthenticated` at the call site
 
 #### Scenario: Guest home sourced from store-backed localStorage
 
