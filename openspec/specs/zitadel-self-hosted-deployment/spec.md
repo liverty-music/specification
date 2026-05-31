@@ -496,9 +496,13 @@ The Zitadel API and Login V2 UI Deployments, Services, ServiceAccounts, PodDisru
 
 ### Requirement: Login V2 UI Routes Outbound Calls Via Cluster-Internal Service Using CUSTOM_REQUEST_HEADERS
 
-The Login UI container (chart-rendered Deployment `zitadel-api-login`) SHALL connect to the API via `ZITADEL_API_URL` pointed at the cluster-internal Service URL (`http://zitadel-api:80`, the chart's auto-generated default given `fullnameOverride: zitadel-api` and `service.port: 80`) AND SHALL carry `CUSTOM_REQUEST_HEADERS=Host:<ExternalDomain>,X-Zitadel-Public-Host:<ExternalDomain>` so that Connect-RPC traffic stays in-cluster while presenting the public issuer hostname as the `Host` header.
+The Login UI container (chart-rendered Deployment `zitadel-api-login`) SHALL connect to the API via `ZITADEL_API_URL` pointed at the cluster-internal Service URL (`http://zitadel-api:80`, the chart's auto-generated default given `fullnameOverride: zitadel-api` and `service.port: 80`) AND SHALL carry the chart-auto-generated `CUSTOM_REQUEST_HEADERS=Host:<ExternalDomain>,X-Zitadel-Public-Host:<ExternalDomain>` so that Connect-RPC traffic stays in-cluster while presenting the public issuer hostname.
 
-**Rationale**: This is the canonical upstream pattern, documented in `zitadel/zitadel-charts/charts/zitadel/values.yaml` and `zitadel/zitadel/deploy/compose/docker-compose.yml`. The Login V2 UI's `apps/login/src/lib/custom-headers.ts` parses `CUSTOM_REQUEST_HEADERS` and merges those headers into every outbound Connect-RPC call. The API's `internal/api/grpc/server/connect_middleware/instance_interceptor.go` resolves the instance by the `Host` header, matching it against `InstanceDomains` (which already contains the public ExternalDomain). No per-instance domain registration, no System User, no JWT signing pipeline, and no instance-id discovery are required. Eliminates the entire `route-login-v2-via-internal-zitadel-api` apparatus (Pulumi Dynamic Resource + System User + GSM Secrets) by replacing it with two env values delivered via chart configuration. Simultaneously eliminates the prod GCP HTTPS LB hairpin that caused the original 30s timeout on `/ui/v2/login/login?authRequest=...`.
+Because the API Service is HTTP/2 (`appProtocol: kubernetes.io/h2c`, `service.protocol: http2`), the on-the-wire `:authority` of a cluster-internal call equals the dial target `zitadel-api`; the `Host:<ExternalDomain>` custom header does NOT survive as `:authority` over h2c. Zitadel v4.7.1+ resolves the instance from `InstanceHostHeaders` (default `[x-zitadel-instance-host]`), NOT from the `Host` header, and the Login UI does not send `x-zitadel-instance-host`. Instance lookup therefore falls back to `:authority` = `zitadel-api`, which matches no `InstanceDomain` and fails with `Errors.Instance.NotFound`.
+
+To resolve cluster-internal Login V2 calls to the correct virtual instance, the API config (`zitadel.configmapConfig`) SHALL set `InstanceHostHeaders` to include `x-zitadel-public-host` — the header the Login UI already sends with the public `<ExternalDomain>` value — ahead of or alongside the `x-zitadel-instance-host` default. The setting is domain-independent and SHALL live in the Helm base values so it applies to both environments. Browser→Gateway traffic, which sends neither `x-zitadel-instance-host` nor `x-zitadel-public-host`, SHALL remain unaffected and continue to resolve via the `:authority` fallback equal to `<ExternalDomain>`.
+
+**Rationale**: Connecting to the cluster-internal Service keeps Login V2 traffic in-cluster and eliminates the prod GCP HTTPS LB hairpin that caused the original 30s timeout on `/ui/v2/login/login?authRequest=...`, replacing the prior `route-login-v2-via-internal-zitadel-api` apparatus (Pulumi Dynamic Resource + System User + GSM Secrets) with chart-delivered env values. However, the original assumption that the chart-generated `Host` + `X-Zitadel-Public-Host` pair is sufficient for instance resolution was incorrect for Zitadel v4.7.1+: a 504 incident on prod (`auth.liverty-music.app`, error ID `QUERY-1kIjX`, `instance_interceptor.go:100`, `instanceDomain zitadel-api, publicHostname auth.liverty-music.app`) showed instance lookup keying off `:authority` = `zitadel-api` over h2c rather than the `Host`/public-host header. Reusing the already-present `X-Zitadel-Public-Host` signal via `InstanceHostHeaders` fixes resolution with a single declarative key, no per-instance domain registration, no System User, and no setup re-run.
 
 #### Scenario: Login UI Pod reaches the API via cluster-internal Service DNS
 
@@ -506,16 +510,35 @@ The Login UI container (chart-rendered Deployment `zitadel-api-login`) SHALL con
 - **THEN** the connection target SHALL be the cluster-internal Service DNS name of the chart-rendered API Service (resolvable as `zitadel-api.zitadel.svc.cluster.local`)
 - **AND** the request SHALL NOT egress to the GKE Gateway external IP
 
-#### Scenario: Outbound calls carry the public Host header
+#### Scenario: API resolves the instance from the public-host header for internal calls
 
-- **WHEN** the Zitadel API Pod receives a request from the Login UI Pod
-- **THEN** the `Host` header SHALL be the configured `ExternalDomain` (`auth.dev.liverty-music.app` in dev, `auth.liverty-music.app` in prod)
-- **AND** the API's `instance_interceptor` SHALL resolve the request to the correct virtual instance
+- **WHEN** the Zitadel API Pod receives a cluster-internal Login UI request whose `:authority` is `zitadel-api` and whose `X-Zitadel-Public-Host` header is the configured `<ExternalDomain>`
+- **THEN** the API's `InstanceHostHeaders` SHALL include `x-zitadel-public-host`
+- **AND** the `instance_interceptor` SHALL resolve the request to the virtual instance whose `InstanceDomain` equals `<ExternalDomain>`
+- **AND** the API SHALL NOT log `unable to set instance` / `Errors.Instance.NotFound` for that call
+
+#### Scenario: Browser traffic still resolves via the authority fallback
+
+- **WHEN** a browser request arrives at the API through the GKE Gateway with `:authority` = `<ExternalDomain>` and no `x-zitadel-instance-host` or `x-zitadel-public-host` header
+- **THEN** the `instance_interceptor` SHALL resolve the instance via the `:authority` fallback equal to `<ExternalDomain>`
+- **AND** the resolution behavior SHALL be unchanged from before `InstanceHostHeaders` was set
+
+#### Scenario: InstanceHostHeaders is set in the Helm base values
+
+- **WHEN** the rendered `zitadel-api-config-yaml` ConfigMap is inspected in either environment
+- **THEN** `InstanceHostHeaders` SHALL list `x-zitadel-public-host` (in addition to the `x-zitadel-instance-host` default)
+- **AND** the setting SHALL originate from `k8s/namespaces/zitadel/base/values.yaml` (domain-independent, shared by dev and prod overlays)
 
 #### Scenario: CUSTOM_REQUEST_HEADERS is auto-generated by the chart, not overridden
 
 - **WHEN** the Login UI container env is inspected
 - **THEN** the `CUSTOM_REQUEST_HEADERS` env var SHALL be sourced from the chart-rendered `login-config-dotenv` ConfigMap, which the chart auto-populates from `zitadel.configmapConfig.ExternalDomain` as `Host:<ExternalDomain>,X-Zitadel-Public-Host:<ExternalDomain>`
-- **AND** `login.env` SHALL NOT carry a manual `CUSTOM_REQUEST_HEADERS` override (overriding inline drops the `X-Zitadel-Public-Host` half that Zitadel's `PublicHostHeaders` default reads for instance discovery from cluster-internal callers)
+- **AND** `login.env` SHALL NOT carry a manual `CUSTOM_REQUEST_HEADERS` override (overriding inline drops the `X-Zitadel-Public-Host` half that the API's `InstanceHostHeaders` now reads for instance discovery from cluster-internal callers)
 - **AND** there SHALL NOT be a Kustomize patch overriding `ZITADEL_API_URL` to a public hostname
+
+#### Scenario: Interactive sign-in renders without a Gateway 504
+
+- **WHEN** a user loads `https://auth.liverty-music.app/ui/v2/login/login?authRequest=...` after the change is deployed
+- **THEN** the Gateway SHALL return a successful (non-5xx) response served by the Login UI SSR render
+- **AND** the Login UI SHALL NOT log `Failed to fetch security settings from API`
 
