@@ -10,10 +10,11 @@ omits `min-block-size: 0`. As a grid item in the `1fr` content track its default
 `min-block-size: auto` prevents it from shrinking below its content height, so
 the track grows past the route's `100%` box, the grid overflows, and the content
 slides under the header. Every sibling route (my-artists, dashboard, tickets,
-discovery) sets `min-block-size: 0` on `main` and keeps `main` as an
-`overflow: hidden` shell with an inner scroll child — Settings is the only route
-that diverged. That divergence also left CUBE CSS drift in the page (composition
-re-implemented in the block layer; misused bracket grouping).
+discovery) keeps `main` as an `overflow: hidden` shell with an inner scroll
+child (using `min-block-size: 0` or a `block-size: 100%` child to bound the
+track) — Settings is the only route that diverged. That divergence also left
+CUBE CSS drift in the page (composition re-implemented in the block layer;
+misused bracket grouping).
 
 > Out of scope: the guest language-selector reactivity defect (the selector
 > highlight not following the active locale) is tracked separately and will be
