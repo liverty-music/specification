@@ -77,22 +77,62 @@ authenticated and guest data remains in localStorage, re-run the migration
 pattern of `user-hydration-task` (boot backfill + session flag) and the settings
 push self-heal.
 
-### Design risk to resolve: reconcile must not resurrect reverted state
+### Deterministic mechanism: a per-account guest-merge receipt
 
-Edge: migrate succeeds → clear fails → user changes the authed state (e.g.
-unfollows an artist) → reboot → naive reconcile re-migrates the stale guest item
-and **resurrects** it.
+Edge: migrate succeeds → clear fails → user reverts the authed state (e.g.
+unfollows an artist) → reboot → a naive "migrate whatever guest data is present"
+reconcile would **resurrect** the reverted item. Window-narrowing alone
+(early boot, session guard, prompt drain) is probabilistic and does not close
+this edge.
 
-Mitigations (to specify):
-- Run reconcile in the **earliest boot phase, before the UI is interactive**,
-  guarded by a per-session flag (as `user-hydration-task` does).
-- Treat guest localStorage as a **pending-migration queue** that is drained
-  (cleared) promptly and atomically with a successful migrate, so the
-  migrated-but-not-cleared window is minimal.
-- Reconcile only fires when a leftover queue is actually present.
+The deterministic fix: **a successful migration writes a persistent per-account
+receipt; the receipt, not the presence of guest data, decides whether to
+migrate.**
 
-This edge does not invalidate the approach; it is the one detail the
-reconciliation requirement must nail.
+- On first authenticated boot for an account, if there is **no receipt**, the
+  store migrates the guest queue (idempotent), then writes the receipt
+  (`liverty:guestMerged:<userId>`), then clears the guest queue.
+- On any later boot where the **receipt already exists**, residual guest data is
+  treated as stale and is **cleared without re-migrating** — so reverted state
+  is never resurrected, regardless of an earlier clear failure.
+
+The receipt makes migration exactly-once per account at the queue level; backend
+idempotency covers the create-then-write window. Guest follows additionally use
+per-item drain (remove each artist from the queue as its `Follow` succeeds), so
+even a single migration pass only ever retries genuinely failed items.
+
+### Sign-out also evicts user-specific caches
+
+`clearAll()` on the old `GuestService` path is replaced by per-store
+`SignedOut` handling. To avoid a privacy regression on a shared browser, **any
+store that caches user-specific data (e.g. `FollowStore`'s followed-artist
+projections) MUST evict it on `SignedOut`.** The cache-only `ConcertStore` /
+`ArtistStore` hold only non-user-specific public resources (e.g. ListTop) and so
+need not participate in migration, but still evict on `SignedOut` if they ever
+hold anything user-scoped.
+
+### Returning user with a pre-existing account (`ALREADY_EXISTS`)
+
+When `UserService.Create` returns `ALREADY_EXISTS`, the guest's onboarding
+home/language are **not** applied — a returning user's saved account preferences
+win (overwriting them with throwaway guest-session choices would be wrong). Only
+**follows** merge into the existing account (they are additive). This is a
+deliberate decision, not a silent drop.
+
+### NULL `preferred_language` on an existing account
+
+Independent of guest data: an authenticated user whose backend
+`preferred_language` is NULL (historical rows) has nothing in any guest queue,
+so reconcile does not fire for them. `UserStore` SHALL handle this by surfacing
+`I18N.getLocale()` and backfilling via `UpdatePreferredLanguage`, preserving the
+current `user-hydration-task` behavior.
+
+### Modal blocks on creation only, not on follow migration
+
+The SignUp modal awaits **user creation** (the awaited Create call) and then
+navigates. Follow migration runs in the background (best-effort, via
+`UserCreated`); the modal does not await it, and there is no completion barrier.
+Failed follows are healed by boot reconciliation.
 
 ## Reactivity cleanup
 
@@ -117,12 +157,15 @@ are included in this change only for layer-naming consistency
 ## Phasing (one change, multiple PRs)
 
 1. Store-layer scaffold + **UserStore** (absorb GuestService.home + guest
-   language + UserService) → **fixes the guest locale-selector bug**.
-2. **FollowStore** + `UserCreated` / `SignedOut` events + boot-reconcile
-   (absorb GuestService.follows + FollowServiceClient + GuestDataMergeService).
+   language + UserService) → **fixes the guest locale-selector bug**. Keep
+   `GuestDataMergeService.merge()` working by adapting it to `UserStore.create()`
+   so signups during phase 1 still migrate follows (its removal is deferred).
+2. **FollowStore** + `UserCreated` / `SignedOut` events + receipt-based
+   boot-reconcile (absorb GuestService.follows + FollowServiceClient; supersede
+   GuestDataMergeService).
 3. **ConcertStore / ArtistStore** cache renames.
 4. Consumer migration (11 sites) + removal of locale mirrors + delete
-   `GuestService`.
+   `GuestService` and `GuestDataMergeService`.
 
 ## Decisions captured
 
@@ -133,8 +176,12 @@ are included in this change only for layer-naming consistency
 | Scope | one change incl. cache-only Concert/Artist stores; phased PRs |
 | Boundary coordination | EA self-handling (`UserCreated`/`SignedOut`) + boot reconcile; **no orchestrator, no barrier** |
 | home/lang transition | Create-time inputs (no event) |
-| follows transition | post-`UserCreated`, idempotent, self-clear |
-| Failure handling | idempotent app-boot reconcile (not in-flight retry) |
+| follows transition | post-`UserCreated`, idempotent, per-item drain, self-clear |
+| Failure handling | app-boot reconcile keyed on a **per-account guest-merge receipt** (deterministic; no resurrection) |
+| `ALREADY_EXISTS` | existing account preferences win — guest home/lang NOT applied; only follows merge |
+| NULL server `preferred_language` | surface `I18N.getLocale()` + backfill via `UpdatePreferredLanguage` |
+| Sign-out | each store self-clears AND evicts user-specific caches |
+| SignUp modal | blocks on user creation only; follow migration is background |
 
 ## Out of scope
 

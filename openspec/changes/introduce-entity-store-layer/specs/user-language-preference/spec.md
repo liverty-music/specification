@@ -21,3 +21,18 @@ store's observable value.
 - **THEN** `UserStore` SHALL surface `User.preferredLanguage` for an
   authenticated user and the anonymous-period language for a guest
 - **AND** callers SHALL NOT branch on `auth.isAuthenticated` to choose the source
+
+### Requirement: UserStore Handles NULL Server Preferred Language
+
+`UserStore` SHALL handle an authenticated user whose backend
+`preferred_language` is NULL (historical rows not yet backfilled). This path is
+independent of the guest-data reconciliation, which only fires when guest data
+is present in localStorage.
+
+#### Scenario: NULL preferred_language surfaced and backfilled
+- **WHEN** the authenticated user's `User.preferredLanguage` is NULL
+- **THEN** `UserStore` SHALL surface `I18N.getLocale()` as the effective language
+- **AND** `UserStore` SHALL backfill the server value via
+  `UpdatePreferredLanguage`, preserving the current `user-hydration-task`
+  behavior
+- **AND** this SHALL occur whether or not any guest data exists in localStorage

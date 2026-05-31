@@ -60,25 +60,44 @@ completes.
 - **AND** each store SHALL clear its own state independently
 - **AND** clearing SHALL be idempotent and order-independent across stores
 
+#### Scenario: Sign-out evicts user-specific caches
+- **WHEN** the user signs out
+- **THEN** any store that caches user-specific data (e.g. the follow store's
+  followed-artist projections) SHALL evict that cache
+- **AND** a subsequent visitor on the same browser SHALL NOT see the previous
+  user's cached data
+- **AND** cache-only stores holding only non-user-specific public resources
+  (e.g. a top-artists list) MAY retain their cache
+
 ### Requirement: Boot Reconciliation of Unmerged Guest Data
 
 Each store SHALL reconcile leftover guest data at application start to heal
-partial-migration failures, without in-flight retry coordination. The
-reconciliation SHALL be idempotent and SHALL NOT resurrect state the user has
-already changed after signup.
+partial-migration failures, without in-flight retry coordination. A successful
+migration SHALL write a persistent per-account **guest-merge receipt**; the
+receipt — not the mere presence of guest data — SHALL decide whether a
+reconcile migrates, so reverted state is never resurrected.
 
-#### Scenario: Leftover guest data reconciled on authenticated boot
+#### Scenario: Leftover guest data migrated on first authenticated boot
 - **WHEN** the application starts
 - **AND** the user is authenticated
-- **AND** a store finds leftover guest data in localStorage that should have
-  migrated
-- **THEN** the store SHALL re-run its idempotent migration and then clear the
+- **AND** no guest-merge receipt exists for the account
+- **AND** a store finds leftover guest data in localStorage
+- **THEN** the store SHALL run its idempotent migration, then write the
+  per-account receipt (e.g. `liverty:guestMerged:<userId>`), then clear the
   leftover guest data
 
 #### Scenario: Reconciliation does not resurrect reverted state
-- **WHEN** boot reconciliation runs
-- **THEN** it SHALL run in the earliest boot phase, before the UI is interactive
-- **AND** it SHALL be guarded so it runs at most once per session
-- **AND** guest localStorage SHALL be treated as a pending-migration queue that
-  is drained promptly on a successful migrate, minimizing the
-  migrated-but-not-cleared window
+- **WHEN** the application starts
+- **AND** a guest-merge receipt already exists for the account
+- **AND** residual guest data is still present (a prior clear failed)
+- **THEN** the store SHALL clear the residual guest data WITHOUT re-running the
+  migration
+- **AND** state the user changed after signup SHALL NOT be resurrected
+
+#### Scenario: Per-item drain for the follow queue
+- **WHEN** the follow store migrates the guest follow queue
+- **THEN** it SHALL remove each artist from `guest.followedArtists` as that
+  artist's `Follow` call succeeds
+- **AND** the leftover queue SHALL therefore contain only items that failed
+- **AND** a subsequent reconcile SHALL retry only those failed items, never
+  re-following an already-migrated artist

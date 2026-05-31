@@ -27,6 +27,9 @@ capability), not by an in-flight retry barrier.
 - **WHEN** `UserService.Create` returns `ALREADY_EXISTS`
 - **THEN** the system SHALL treat this as success and continue with the follow
   migration
+- **AND** the guest-chosen home and preferred language SHALL NOT be applied to
+  the pre-existing account — the returning user's saved account preferences win
+  (only follows merge, as they are additive)
 
 #### Scenario: Follow call fails during merge
 
@@ -34,16 +37,19 @@ capability), not by an in-flight retry barrier.
 - **THEN** the system SHALL log the error
 - **AND** the system SHALL continue with remaining calls (best-effort)
 - **AND** the system SHALL still set `onboardingStep` to COMPLETED
-- **AND** the leftover guest follow data SHALL remain in localStorage for boot
+- **AND** each artist SHALL be removed from `guest.followedArtists` as its
+  `Follow` succeeds, so only the failed items remain in localStorage for boot
   reconciliation to retry idempotently on the next authenticated start
 
 #### Scenario: Merge progress indication
 
-- **WHEN** the data merge is in progress
+- **WHEN** sign-up is in progress
 - **THEN** the system SHALL display a loading indicator on the SignUp modal
-- **AND** the system SHALL NOT navigate away until the merge attempt completes
-- **AND** any items that failed the best-effort attempt SHALL be left for boot
-  reconciliation rather than retried in-flight
+- **AND** the system SHALL NOT navigate away until **user creation** completes
+  (the awaited Create call)
+- **AND** the system SHALL NOT block navigation on follow migration, which runs
+  in the background via `UserCreated` (best-effort); failed items are healed by
+  boot reconciliation rather than retried in-flight
 
 ### Requirement: Guest Data Cleanup
 

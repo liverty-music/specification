@@ -13,7 +13,14 @@ One change, delivered in phased PRs. Each phase ships independently to prod.
       (guest = localStorage-backed synthesized view; authed = `User` entity).
 - [ ] 1.3 `UserStore.create(email, locale, home)`: persist Create-time inputs,
       switch `current` to the authed entity, clear own guest localStorage,
-      publish `UserCreated`.
+      publish `UserCreated`. On `ALREADY_EXISTS`, do NOT apply guest home/language
+      (existing account wins). Handle a NULL server `preferred_language` by
+      surfacing `I18N.getLocale()` and backfilling via `UpdatePreferredLanguage`.
+- [ ] 1.3a Keep `GuestDataMergeService.merge()` functional by adapting it to call
+      the new `UserStore.create()` for the user-creation step, so guest follows
+      continue to migrate at signup throughout phase 1. Defer its REMOVAL to
+      phase 4 (after `FollowStore` + boot-reconcile land) — no signup between
+      deploys may strand guest follows.
 - [ ] 1.4 Migrate `SettingsRoute` to read home/language from `UserStore`; remove
       the `currentLocale` / `currentHome` auth-branching getters and the
       render-time `I18N.getLocale()` read. Remove `welcome-route`'s
@@ -26,15 +33,18 @@ One change, delivered in phased PRs. Each phase ships independently to prod.
 
 - [ ] 2.1 Introduce `FollowStore`: absorb `GuestService.follows`/hype and
       `FollowServiceClient`; cache followed artists; expose observable follow set.
-- [ ] 2.2 Subscribe `UserCreated` → migrate follows + hype (idempotent), then
-      self-clear guest follow localStorage (best-effort). Replaces
-      `GuestDataMergeService.merge()`.
+- [ ] 2.2 Subscribe `UserCreated` → migrate follows + hype (idempotent),
+      removing each artist from `guest.followedArtists` as its `Follow` succeeds
+      (per-item drain; only failures remain). Write the per-account guest-merge
+      receipt on success.
 - [ ] 2.3 Publish/subscribe `SignedOut` → each store self-clears (idempotent,
-      order-independent). Replace `GuestService.clearAll()` call sites.
-- [ ] 2.4 Implement boot reconciliation: on init, if authenticated and leftover
-      guest data remains, re-run idempotent migration + clear; run in the
-      earliest boot phase, session-guarded, treating guest localStorage as a
-      promptly-drained pending queue (no resurrection of reverted state).
+      order-independent) AND evicts user-specific caches (e.g. followed-artist
+      projections), preserving the privacy guarantee of the old
+      `GuestService.clearAll()` sign-out path.
+- [ ] 2.4 Implement boot reconciliation keyed on the **guest-merge receipt**:
+      no receipt + leftover queue → migrate, write receipt, clear; receipt
+      already present + residual queue → clear WITHOUT re-migrating (no
+      resurrection). Run early, session-guarded.
 - [ ] 2.5 Tests: migration on `UserCreated`, self-clear, sign-out clear,
       boot-reconcile (incl. the no-resurrect guard). `make check` green.
 - [ ] 2.6 Open PR 2, CI green, merge, release, ship to prod.
