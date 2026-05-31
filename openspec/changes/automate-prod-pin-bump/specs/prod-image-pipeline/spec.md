@@ -90,15 +90,17 @@ To permit `bump-prod-pin.yml` to push directly to `cloud-provisioning:main`, the
 
 ### Requirement: The manual pin-bump fallback SHALL be admin-gated
 
-`bump-prod-pin.yml` SHALL provide a `workflow_dispatch` fallback (manual `component` + `tag` + `sha` inputs) for dropped-dispatch recovery. Because `workflow_dispatch` runs as `github-actions[bot]` — the branch-protection bypass actor — and is reachable by any contributor with `actions: write`, the workflow SHALL be bound to a GitHub Environment (e.g. `prod-pin`) configured with a required-reviewer protection rule, so a manual run requires admin approval before its job executes. The `repository_dispatch` release path SHALL remain unattended. This fallback SHALL be documented as a privileged admin-only recovery operation, not a routine path. The provenance gate (see "A cloud-provisioning workflow SHALL apply the prod pin-bump on dispatch") applies to the fallback identically, so even an approved manual run cannot pin a tag whose prod image does not exist.
+`bump-prod-pin.yml` SHALL provide a `workflow_dispatch` fallback (manual `component` + `tag` + `sha` inputs) for dropped-dispatch recovery. Because `workflow_dispatch` runs as `github-actions[bot]` — the branch-protection bypass actor — and is reachable by any contributor with `actions: write`, the bump job SHALL require admin approval via a GitHub Environment (e.g. `prod-pin`) with a required-reviewer rule **on the manual trigger only**. Since Environment protection rules have no trigger-type filter (they apply to every job referencing the environment), the workflow SHALL bind the environment conditionally — `environment: ${{ github.event_name == 'workflow_dispatch' && 'prod-pin' || '' }}` (or an equivalent two-workflow split) — so that `repository_dispatch` runs do NOT enter `prod-pin` and proceed unattended, while `workflow_dispatch` runs enter `prod-pin` and pause for approval. This fallback SHALL be documented as a privileged admin-only recovery operation, not a routine path. The provenance gate (see "A cloud-provisioning workflow SHALL apply the prod pin-bump on dispatch") applies to the fallback identically, so even an approved manual run cannot pin a tag whose prod image does not exist.
 
 #### Scenario: Manual fallback requires admin approval
 
 - **WHEN** a contributor triggers `bump-prod-pin.yml` via `workflow_dispatch`
-- **THEN** the run SHALL pause for the `prod-pin` Environment's required-reviewer approval before the bump job executes
+- **THEN** the bump job's `environment:` SHALL resolve to `prod-pin` (because `github.event_name == 'workflow_dispatch'`)
+- **AND** the run SHALL pause for the `prod-pin` Environment's required-reviewer approval before the bump job executes
 - **AND** an unapproved run SHALL NOT edit or push any change to `main`
 
 #### Scenario: Release path is not gated by the reviewer rule
 
 - **WHEN** the workflow is triggered by a `repository_dispatch` of type `bump-prod-pin` from the release path
-- **THEN** the bump SHALL proceed unattended (no manual approval), subject to the payload-validation and provenance gates
+- **THEN** the bump job's `environment:` SHALL resolve to empty (not `prod-pin`), so no required-reviewer rule applies
+- **AND** the bump SHALL proceed unattended (no manual approval), subject to the payload-validation and provenance gates

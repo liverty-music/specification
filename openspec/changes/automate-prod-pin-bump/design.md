@@ -77,7 +77,13 @@ for every image of the component (4 for backend, 1 for frontend). A missing mani
 
 The bump workflow provides a `workflow_dispatch` manual trigger for dropped-dispatch recovery (tasks 1.1). But `workflow_dispatch` is **human-reachable**: it runs as `github-actions[bot]` (the branch-protection bypass actor), so without restriction *any* contributor with `actions: write` on `cloud-provisioning` could push an arbitrary semver-shaped tag straight to `main`, defeating the "Release is the single human gate" thesis. The provenance gate (D7) already blocks bogus tags, but a contributor could still force an unreviewed *real*-tag change (e.g. a downgrade).
 
-Mitigation: bind the bump workflow to a GitHub **Environment** (e.g. `prod-pin`) with a **required-reviewer** protection rule. `repository_dispatch` from the legitimate release path passes through unattended (the reviewer rule gates the *deployment*, and we configure the env so the automated path is permitted), while the `workflow_dispatch` fallback requires an admin approval before the job runs. The fallback is documented as a privileged admin-only recovery operation, not a routine path.
+Mitigation: gate the bump job behind a GitHub **Environment** (e.g. `prod-pin`) with a **required-reviewer** protection rule — but apply that environment **only on the manual trigger**. GitHub Environment protection rules fire for every job that references the environment, with no built-in trigger-type filter, so an unconditional `environment: prod-pin` would also stall the automated `repository_dispatch` path on admin approval (defeating the goal). The fix is a conditional `environment:` expression:
+
+```yaml
+environment: ${{ github.event_name == 'workflow_dispatch' && 'prod-pin' || '' }}
+```
+
+`repository_dispatch` runs resolve the environment to the empty string and never enter `prod-pin`, so the required-reviewer rule is skipped and the release path stays unattended; `workflow_dispatch` runs enter `prod-pin` and pause for admin approval. (Alternatives considered: splitting into two single-trigger workflows — cleaner isolation but two files to keep in sync; or a job-level `if:` actor-allowlist guard — less auditable than an Environment gate. The conditional-environment expression is the minimal change that satisfies both requirements.) The fallback is documented as a privileged admin-only recovery operation, not a routine path.
 
 ## Risks / Trade-offs
 
