@@ -2,7 +2,7 @@
 
 ### Requirement: Prod kustomize pin-bumps SHALL be automated via repository_dispatch
 
-After a release path successfully promotes images to prod AR, the originating workflow SHALL trigger an automated update of the prod kustomize pin in `cloud-provisioning` rather than relying on a manually-authored pull request. The backend `deploy.yml` and frontend `push-image.yaml` release paths SHALL emit a GitHub `repository_dispatch` event to `liverty-music/cloud-provisioning` with `event_type: bump-prod-pin` and a `client_payload` of `{ component, tag, sha }`, where `component` is `backend` or `frontend`, `tag` is the release tag (`vX.Y.Z`), and `sha` is `${GITHUB_SHA}`. The release workflows SHALL NOT hold any credential that can write to `cloud-provisioning`'s contents directly — the dispatch trigger is the only cross-repo action they perform.
+After a release path successfully promotes images to prod AR, the originating workflow SHALL trigger an automated update of the prod kustomize pin in `cloud-provisioning` rather than relying on a manually-authored pull request. The backend `deploy.yml` and frontend `push-image.yaml` release paths SHALL emit a GitHub `repository_dispatch` event to `liverty-music/cloud-provisioning` with `event_type: bump-prod-pin` and a `client_payload` of `{ component, tag, sha }`, where `component` is `backend` or `frontend`, `tag` is the release tag (`vX.Y.Z`), and `sha` is `${GITHUB_SHA}`. The dispatch trigger SHALL be the only cross-repo action the release workflows perform. The dispatch credential requires `Contents: write` on `cloud-provisioning` (the documented minimum for `repository_dispatch`); the release workflows therefore SHALL NOT be able to push to `cloud-provisioning:main` — that protection rests on branch protection (bypass scoped to `github-actions[bot]` only, see "cloud-provisioning branch protection SHALL allow the bot to bypass"), not on the token's content scope. Because ArgoCD tracks `main` only, a dispatch credential limited to non-`main` refs cannot move prod.
 
 The dispatch step SHALL run only after the prod-AR retag for that component has succeeded. For the backend's 4-image `fail-fast: false` matrix, the dispatch SHALL be a job gated on the retag job completing successfully (`needs` + `if: <retag>.result == 'success'`), so a partially-failed retag never bumps the pin to a release tag whose prod images are incomplete.
 
@@ -22,10 +22,11 @@ The dispatch step SHALL run only after the prod-AR retag for that component has 
 - **THEN** the dispatch step SHALL NOT run
 - **AND** no `bump-prod-pin` event SHALL be emitted to `cloud-provisioning`
 
-#### Scenario: Release workflows hold no cloud-provisioning write credential
+#### Scenario: Release workflows cannot push to cloud-provisioning main
 
 - **WHEN** inspecting the secrets/permissions used by the dispatch step in `deploy.yml` and `push-image.yaml`
-- **THEN** the credential SHALL be limited to triggering the `repository_dispatch` (it SHALL NOT grant direct write to `cloud-provisioning`'s `contents` such that the release job itself could push manifests)
+- **THEN** the credential SHALL be limited to the `repository_dispatch` trigger (a fine-grained PAT or GitHub App token; `Contents: write` is the documented minimum for the dispatches API)
+- **AND** branch protection on `cloud-provisioning:main` SHALL deny that credential a push to `main` (bypass scoped to `github-actions[bot]` only), so the release job cannot directly push a manifest change that ArgoCD would sync
 
 ### Requirement: A cloud-provisioning workflow SHALL apply the prod pin-bump on dispatch
 

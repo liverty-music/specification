@@ -13,7 +13,7 @@
 
 - [ ] 2.1 Add `github-actions[bot]` as a bypass actor on the `cloud-provisioning` `main` ruleset/branch protection (covering the PR requirement and the require-up-to-date check). Confirm no human/PAT actor is added.
 - [ ] 2.2 If this is Pulumi-managed (GitHubRepositoryComponent in `cloud-provisioning/src/github/`), encode the bypass actor in IaC rather than the GitHub UI; otherwise document the manual setting in the runbook.
-- [ ] 2.3 Provision the cross-repo dispatch credential for backend/frontend: a fine-grained PAT or GitHub App installation token scoped to `cloud-provisioning` with only the access needed to POST a `repository_dispatch`. Store as a repo/org secret; confirm it cannot write `cloud-provisioning` contents on its own.
+- [ ] 2.3 Provision the cross-repo dispatch credential for backend/frontend: prefer a GitHub App installation token (short-lived, auditable) over a long-lived fine-grained PAT, scoped to `cloud-provisioning`. Note `repository_dispatch` requires `Contents: write` (no narrower scope exists), so the security boundary is branch protection — verify the token CANNOT push to `cloud-provisioning:main` (only `github-actions[bot]` bypasses), confirming its reach is limited to non-`main` refs ArgoCD does not track. Store as a repo/org secret.
 - [ ] 2.4 Create the `prod-pin` GitHub Environment on `cloud-provisioning` with a required-reviewer protection rule (admin) so the `workflow_dispatch` fallback (1.1) pauses for approval; confirm the `repository_dispatch` release path runs unattended. Encode in Pulumi IaC if environments are IaC-managed, else document the manual setting in the runbook (5.1).
 
 ## 3. Backend release path: emit dispatch
