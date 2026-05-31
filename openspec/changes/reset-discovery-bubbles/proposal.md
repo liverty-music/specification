@@ -5,7 +5,7 @@ On the Discover tab, following an artist spawns similar-artist bubbles and may a
 ## What Changes
 
 - Add a **Reset control** to the Discover tab that restores the bubble field to the **global Top 50** artists (independent of the user's follows), clearing any active genre filter and the accumulated similar-artist bubbles.
-- The control is an **icon-only (⟳) button** pinned as the leading, sticky item of the genre-chips row, so it stays visible while the chips scroll horizontally.
+- The control is an **icon-only (⟳) button** at the leading edge of the genre row, a fixed sibling beside the horizontally-scrollable genre chips, so it stays visible while the chips scroll.
 - Raise the type-scale minimum floor (`--step--2`) from **10px → 11px** (min-only), restoring min-end curve purity.
 - Migrate the ~22 non-compact `--step--2` consumers to `--step--1` (13.3–16px), leaving `--step--2` as a documented exception used only by two intentionally-compact classes (`bottom-nav-bar`, `.hype-col-header`).
 

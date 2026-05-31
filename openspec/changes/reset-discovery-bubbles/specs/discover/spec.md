@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Reset to Top 50 control
-The Discover tab SHALL provide a Reset control that returns the bubble field to the global Top 50 artists, independent of the user's followed artists. The control SHALL be an icon-only (refresh/reset) button rendered as the leading item of the genre-chips row, pinned with `position: sticky` so it remains visible while the genre chips scroll horizontally. The control SHALL expose an accessible label.
+The Discover tab SHALL provide a Reset control that returns the bubble field to the global Top 50 artists, independent of the user's followed artists. The control SHALL be an icon-only (refresh/reset) button placed at the leading edge of the genre row as a fixed sibling beside the horizontally-scrollable genre chips, so it remains visible while the chips scroll. The control SHALL expose an accessible label.
 
 #### Scenario: Reset restores global Top 50
 - **WHEN** the user activates the Reset control
@@ -15,9 +15,9 @@ The Discover tab SHALL provide a Reset control that returns the bubble field to 
 - **AND** no genre chip SHALL remain in the active state after reset
 
 #### Scenario: Reset control stays visible while chips scroll
-- **WHEN** the genre-chips row is scrolled horizontally
-- **THEN** the Reset control SHALL remain pinned and visible at the leading edge of the row
-- **AND** the genre chips SHALL scroll underneath without obscuring the control
+- **WHEN** the genre chips are scrolled horizontally
+- **THEN** the Reset control SHALL remain visible at the leading edge of the genre row
+- **AND** the genre chips SHALL scroll within their own container beside the control, never overlapping or obscuring it
 
 #### Scenario: Reset control is accessible
 - **WHEN** assistive technology inspects the Reset control
