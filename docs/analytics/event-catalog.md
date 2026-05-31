@@ -58,11 +58,11 @@ Conversion-critical events MAY include a `trace_id` property carrying the active
 | `entry.checkin.attempted` | FE | entry | `event_id`, `trace_id?` | Entry funnel |
 | `entry.zk_proof.verified` | BE | entry | `event_id`, `trace_id?` | **Operations KPI**, entry funnel |
 | `entry.zk_proof.rejected` | BE | entry | `event_id`, `reason`, `trace_id?` | Entry rejection reasons |
-| `push.subscription.requested` | FE | push | `source`, `trace_id?` | Notification opt-in funnel (paired) |
-| `push.subscription.completed` | BE | push | `device_type`, `trace_id?` | Notification opt-in funnel (paired) |
-| `push.notification.delivered` | BE | push | `notification_id`, `concert_id?`, `artist_id?`, `trace_id?` | Notification reach |
-| `push.notification.opened` | FE | push | `notification_id`, `concert_id?`, `artist_id?`, `trace_id?` | Notification CTR |
-| `push.notification.dismissed` | FE | push | `notification_id`, `trace_id?` | Notification fatigue |
+| `notification.requested` | FE | notification | `source`, `trace_id?` | Notification opt-in funnel (paired) |
+| `notification.subscribed` | BE | notification | `device_type`, `trace_id?` | Notification opt-in funnel (paired) |
+| `notification.delivered` | BE | notification | `notification_id`, `concert_id?`, `artist_id?`, `trace_id?` | Notification reach |
+| `notification.opened` | FE | notification | `notification_id`, `concert_id?`, `artist_id?`, `trace_id?` | Notification CTR |
+| `notification.dismissed` | FE | notification | `notification_id`, `trace_id?` | Notification fatigue |
 
 ## Funnels and dashboards
 
