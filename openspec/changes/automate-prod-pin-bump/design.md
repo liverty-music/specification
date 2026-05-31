@@ -42,6 +42,8 @@ The project is solo-developer; gate #2's human review adds no value because the 
 
 The bump workflow runs `kustomize build k8s/namespaces/<component>/overlays/prod` after the yq edit and **before** `git push`. A non-zero build aborts with no push. This replaces the implicit validation the manual PR got from `cloud-provisioning`'s `ci.yml` (kube-linter / kustomize). Pushing an unbuildable overlay to `main` would make ArgoCD's target state un-renderable; failing closed keeps `main` always-syncable.
 
+Note `kustomize build` validates YAML/kustomize syntax **only** — it does not contact Artifact Registry, so it cannot tell whether the target tag's image actually exists. That gap is closed separately by D7 (provenance gate), which runs *before* the edit.
+
 ### D3: Edit via `yq`, lock-step `newTag` + version label
 
 For `backend`: rewrite all 4 `images[].newTag` (`server`, `consumer`, `concert-discovery`, `artist-image-sync`) and the inline `# commit <sha>` trailer, plus the `labels[].pairs.app.kubernetes.io/version` (bare semver, no leading `v`). For `frontend`: the single `web-app` entry + its label. The spec already mandates these move in lock-step; the workflow encodes that so they can never drift. `yq` (mikefarah) edits YAML structurally rather than `sed` line-munging, avoiding whitespace/quote breakage.
@@ -59,11 +61,30 @@ The dispatch step is the **last** step of the release path and is gated on retag
 
 `frontend/push-image.yaml` already has a `workflow_dispatch` smoke job against a prod URL. As a follow-on, the bump workflow (or a chained job) MAY, after pushing, poll ArgoCD/`liverty-music.app` for the new bundle hash and trigger that smoke automatically. Marked optional so the core automation can ship first.
 
+### D7: Provenance gate — the target image MUST exist before the pin moves
+
+Payload-shape validation (component enum + semver regex, D-level task 1.2) proves the request is *well-formed*, not that it is *real*. A well-formed-but-bogus tag (`v9.9.9` that was never released, a typo, a redelivered dispatch for a tag whose retag later got cleaned up) would otherwise edit `cloud-provisioning:main` to point at a non-existent prod image. `kustomize build` (D2) would still pass — it never touches AR — so the corruption would only surface later as an ArgoCD sync failure. Worse, with no provenance check the manual fallback (D8) could *silently downgrade* prod to an older real tag with no visible error at all.
+
+So **before** the yq edit, the bump workflow SHALL verify the target image actually exists in prod AR, fail-closed exactly like D2:
+
+```
+crane manifest asia-northeast2-docker.pkg.dev/liverty-music-prod/<component>/<img>:<tag>
+```
+
+for every image of the component (4 for backend, 1 for frontend). A missing manifest aborts the run before any edit. Because the prod image only exists if the release retag actually wrote it, this single check simultaneously: (a) confirms `tag` names a genuine release, (b) confirms the retag for *this* component completed (re-establishing D5's invariant even for non-release-path triggers), and (c) removes the "silent downgrade to a bogus tag" failure mode. A GitHub Release-existence check (`gh release view`) was considered but the prod-AR manifest check is strictly stronger — it asserts the *deployable artifact* exists, not merely that a Release object was created.
+
+### D8: The `workflow_dispatch` fallback is admin-only
+
+D4 provides a `workflow_dispatch` manual trigger for dropped-dispatch recovery. But `workflow_dispatch` is **human-reachable**: it runs as `github-actions[bot]` (the branch-protection bypass actor), so without restriction *any* contributor with `actions: write` on `cloud-provisioning` could push an arbitrary semver-shaped tag straight to `main`, defeating the "Release is the single human gate" thesis. The provenance gate (D7) already blocks bogus tags, but a contributor could still force an unreviewed *real*-tag change (e.g. a downgrade).
+
+Mitigation: bind the bump workflow to a GitHub **Environment** (e.g. `prod-pin`) with a **required-reviewer** protection rule. `repository_dispatch` from the legitimate release path passes through unattended (the reviewer rule gates the *deployment*, and we configure the env so the automated path is permitted), while the `workflow_dispatch` fallback requires an admin approval before the job runs. The fallback is documented as a privileged admin-only recovery operation, not a routine path.
+
 ## Risks / Trade-offs
 
-- **A bad manifest edit reaches prod** → Mitigated by D2 (`kustomize build` fail-closed) + D4 idempotency. ArgoCD self-heal/prune is unchanged, so a structurally-valid-but-wrong tag is still caught by the immutable-tag pull (missing prod image ⇒ visible sync failure, not silent).
+- **A bad/bogus tag corrupts `cloud-provisioning:main`** → Mitigated by D7 (prod-AR manifest existence check, fail-closed, *before* the edit) + D2 (`kustomize build`) + D4 idempotency. A non-existent tag is rejected before any commit; a structurally-valid-but-wrong real tag is still caught by ArgoCD at sync, and the bogus-tag *silent* path is eliminated.
+- **`workflow_dispatch` fallback as a human-reachable bypass** → Mitigated by D8: the workflow is bound to a `prod-pin` Environment with a required-reviewer rule, so the manual fallback needs admin approval. D7 additionally blocks any bogus-tag input regardless of caller.
 - **Direct `main` push widens write access on `cloud-provisioning`** → Bypass is scoped to the single `github-actions[bot]` actor on that repo only; no human/PAT bypass added. The dispatch-trigger token in backend/frontend cannot write manifests on its own.
 - **Loss of pre-merge human eyes on prod** → Accepted: solo-dev, and the Release act is the retained gate. Reversal is one `git revert` away; the bump is a normal, signed-off-by-bot commit in history.
 - **backend + frontend release race** → D4 rebase-retry + `concurrency` serialization; bumps touch disjoint files so no merge conflict.
-- **Dispatch lost / redelivered** → Idempotency (D4) makes redelivery a no-op; a dropped dispatch is recoverable by re-running the bump workflow manually with the same payload (a `workflow_dispatch` fallback input SHOULD be provided).
+- **Dispatch lost / redelivered** → Idempotency (D4) makes redelivery a no-op; a dropped dispatch is recoverable via the admin-gated `workflow_dispatch` fallback (D8) with the same payload. Redelivery for a since-removed tag is rejected by D7.
 - **Up-to-date requirement bypassed for the bot** → Intended side effect; the bot pushes straight to `main`. Human PRs still obey the rule.

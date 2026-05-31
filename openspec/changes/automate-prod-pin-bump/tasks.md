@@ -1,7 +1,8 @@
 ## 1. Cloud-provisioning: bump-prod-pin workflow
 
-- [ ] 1.1 Add `.github/workflows/bump-prod-pin.yml` triggered by `repository_dispatch` (type `bump-prod-pin`) plus a `workflow_dispatch` fallback (manual `component` + `tag` + `sha` inputs) for dropped-dispatch recovery.
+- [ ] 1.1 Add `.github/workflows/bump-prod-pin.yml` triggered by `repository_dispatch` (type `bump-prod-pin`) plus a `workflow_dispatch` fallback (manual `component` + `tag` + `sha` inputs) for dropped-dispatch recovery. Bind the job to a `prod-pin` GitHub Environment (see 2.4) so the manual fallback is admin-gated while the dispatch path stays unattended.
 - [ ] 1.2 Parse `client_payload.{component,tag,sha}`; validate `component ∈ {backend, frontend}` and `tag` matches `^v[0-9]+\.[0-9]+\.[0-9]+$` (fail fast on a malformed payload).
+- [ ] 1.2a Provenance gate (before any edit, fail-closed): for every image of the component, run `crane manifest asia-northeast2-docker.pkg.dev/liverty-music-prod/<component>/<img>:<tag>` and abort if any is not-found. Authenticate `crane` to prod AR first. This rejects bogus/stale tags and the silent-downgrade path; it applies to both the dispatch and the `workflow_dispatch` fallback.
 - [ ] 1.3 Implement the `yq` edit step: for `backend` rewrite all 4 `images[].newTag` + inline `# commit <sha>` trailers; for `frontend` the single `web-app` entry. Update `labels[].pairs."app.kubernetes.io/version"` to the bare semver (strip leading `v`). Edit both fields in lock-step.
 - [ ] 1.4 Add the idempotency guard: if every target `newTag` already equals `tag`, exit 0 without committing.
 - [ ] 1.5 Add the validation gate: run `kustomize build k8s/namespaces/<component>/overlays/prod` after the edit; abort (no push) on non-zero exit.
@@ -13,6 +14,7 @@
 - [ ] 2.1 Add `github-actions[bot]` as a bypass actor on the `cloud-provisioning` `main` ruleset/branch protection (covering the PR requirement and the require-up-to-date check). Confirm no human/PAT actor is added.
 - [ ] 2.2 If this is Pulumi-managed (GitHubRepositoryComponent in `cloud-provisioning/src/github/`), encode the bypass actor in IaC rather than the GitHub UI; otherwise document the manual setting in the runbook.
 - [ ] 2.3 Provision the cross-repo dispatch credential for backend/frontend: a fine-grained PAT or GitHub App installation token scoped to `cloud-provisioning` with only the access needed to POST a `repository_dispatch`. Store as a repo/org secret; confirm it cannot write `cloud-provisioning` contents on its own.
+- [ ] 2.4 Create the `prod-pin` GitHub Environment on `cloud-provisioning` with a required-reviewer protection rule (admin) so the `workflow_dispatch` fallback (1.1) pauses for approval; confirm the `repository_dispatch` release path runs unattended. Encode in Pulumi IaC if environments are IaC-managed, else document the manual setting in the runbook (5.1).
 
 ## 3. Backend release path: emit dispatch
 
