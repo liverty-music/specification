@@ -42,7 +42,7 @@ settings → Billing → Spending controls):
 
 | Product | Hard cap | Rationale |
 | --- | --- | --- |
-| Product Analytics | **$20/month** (prod) | Only actively-used product. $20 covers ~80M events above the 1M free tier — generous headroom while bounding runaway-bug cost. Dev / staging billing caps can be lazier; dev typically has negligible traffic. |
+| Product Analytics | **$20/month** | Only actively-used product. $20 covers ~80M events above the 1M free tier — generous headroom while bounding runaway-bug cost. This is an org-level cap sized for prod traffic; dev and staging have negligible traffic and will naturally stay within it. |
 | Session Replay | **$0** | Disabled at SDK level and project level (see §4). Cap-at-zero locks accidental enablement out. |
 | Feature Flags | **$0** | `IAnalyticsService.getFeatureFlag` is wired but no flags are evaluated yet. Bump only when an actual flag goes into rollout. |
 | Experiments | **$0** | Not used. |
