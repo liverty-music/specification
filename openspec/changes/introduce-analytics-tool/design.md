@@ -87,7 +87,7 @@ Events are named as dot-separated hierarchies of domain, action, and (where appl
 Event emission is partitioned by trust requirement:
 
 - **Frontend-only**: UI exploration, user intent, perceived quality (`page_view`, `artist.search`, `ticket.lottery.entry.submitted`, `recommendation.clicked`). The backend cannot observe these without explicit reporting.
-- **Backend-only (trust-critical)**: events whose accuracy must survive client tampering or absence (`ticket.purchase.completed`, `entry.zk_proof.verified`, `push.notification.delivered`, `user.created`). Emitting these from the client would create both fraud risk and ad-blocker fragility.
+- **Backend-only (trust-critical)**: events whose accuracy must survive client tampering or absence (`ticket.purchase.completed`, `entry.zk_proof.verified`, `notification.delivered`, `user.created`). Emitting these from the client would create both fraud risk and ad-blocker fragility.
 - **Paired events for major conversion steps**: a small set of high-value actions emit both an FE `*.requested` / `*.submitted` event and a BE `*.completed` event so that the gap between user intent and successful server-side outcome is measurable. Scope is limited to artist follow, lottery entry, and ticket purchase; expanding the pattern further introduces noise without product value.
 
 **Alternatives considered:**

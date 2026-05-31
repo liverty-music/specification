@@ -40,7 +40,7 @@
 - [ ] 5.4 Instrument the ticket-lottery flow (`ticket.lottery.entry.submitted`)
 - [ ] 5.5 Instrument the ticket-purchase flow (`ticket.purchase.initiated`)
 - [ ] 5.6 Instrument the entry/check-in flow (`entry.checkin.attempted`)
-- [ ] 5.7 Instrument push subscription opt-in (`push.subscription.requested`) and notification interaction (`push.notification.opened`, `push.notification.dismissed`)
+- [ ] 5.7 Instrument push subscription opt-in (`notification.requested`) and notification interaction (`notification.opened`, `notification.dismissed`)
 - [ ] 5.8 Tag PII-sensitive DOM elements with `data-pii` and high-risk regions with `.ph-no-capture`
 
 ## 6. Consent integration
