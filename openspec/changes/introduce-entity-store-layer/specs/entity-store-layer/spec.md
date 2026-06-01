@@ -45,11 +45,14 @@ completes.
   authenticated entity, and clear its own guest localStorage for those fields
 - **AND** no post-creation event SHALL be required to migrate home or language
 
-#### Scenario: Follows migrate after the user exists
-- **WHEN** the authenticated user has been created
-- **THEN** a `UserCreated` event SHALL be published
+#### Scenario: Follows migrate after a guest authenticates
+- **WHEN** a guest authenticates (sign-up OR returning sign-in)
+- **THEN** a `GuestMigrationRequested` event SHALL be published on every
+  successful authentication (not gated on sign-up), so guest follows are not
+  lost when a returning user signs in
 - **AND** the follow store SHALL migrate guest follows and hype to the backend
-  using idempotent calls now that a user id exists
+  using idempotent calls now that a user id exists (a no-op when the queue is
+  empty; the per-account receipt guards against double-migration)
 - **AND** the follow store SHALL clear its own guest localStorage on success
 - **AND** follow migration SHALL be best-effort (a failed item SHALL be logged
   and SHALL NOT block the remaining items)

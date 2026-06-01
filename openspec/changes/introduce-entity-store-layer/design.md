@@ -20,7 +20,7 @@ honestly than either `Service` or `Repository`.
 | Store | guest/authed dual ownership | Responsibilities | Boundary participation |
 |---|---|---|---|
 | **UserStore** | yes (`home`, `preferredLanguage`) | User entity state; guest = synthesized "current user" view (Null Object) from localStorage; identity when authed | create (home/lang at Create-time), self-clear |
-| **FollowStore** | yes (`follows` + `hype`) | follow set state + followed-artist cache | migrate on `UserCreated`, self-clear |
+| **FollowStore** | yes (`follows` + `hype`) | follow set state + followed-artist cache | migrate on `GuestMigrationRequested`, self-clear |
 | **ConcertStore** | no | cache read-only resources (e.g. ListTop 50) | none (cache-only) |
 | **ArtistStore** | no | artist query cache | none (cache-only) |
 
@@ -34,26 +34,31 @@ The earlier proposal posited a saga/orchestrator for atomicity + ordering.
 That requirement **dissolves** once state is per-store, because there is no
 cross-store dependency that needs a global barrier:
 
-- **home / language are Create-time inputs, not post-event migrations.**
-  `auth-callback` reads the guest view and calls
-  `userStore.create(email, locale, home)`. They are baked into the Create RPC
-  atomically; nothing migrates them afterward. `UserStore.create()` clears its
-  own guest localStorage on success.
-- **follows are the only post-create migration**, and only `FollowStore` cares.
-  The single ordering edge is "create before follow-migrate" (follows need a
-  `user_id`). Expressed as: `UserStore.create()` publishes `UserCreated` →
-  `FollowStore` subscribes, migrates (idempotent), clears its own localStorage.
+- **home / language are Create-time inputs (sign-up), not post-event
+  migrations.** On sign-up, `auth-callback` reads the guest view and calls
+  `userStore.create(email, locale, home)`; they are baked into the Create RPC
+  atomically and `UserStore.create()` clears its own guest localStorage on
+  success. On a returning sign-in there is no Create — guest home/language are
+  simply cleared (the existing account's saved values win).
+- **follows are the only post-authentication migration**, and only `FollowStore`
+  cares. The single ordering edge is "the user exists before follow-migrate"
+  (follows need a `user_id`). Expressed as: `auth-callback` publishes
+  `GuestMigrationRequested` on EVERY successful authentication (sign-up AND
+  returning sign-in) once the user is provisioned — NOT gated on sign-up, so a
+  returning user who browsed as a guest does not lose follows → `FollowStore`
+  subscribes, migrates (idempotent, no-op on an empty queue), clears its own
+  localStorage.
 - **No completion barrier** is needed: each store clears its own data when its
   own migration completes; stores are mutually independent.
 
 ```
-sign-up
+authentication (sign-up OR returning sign-in)
   auth-callback
-    └─ userStore.create(email, locale, home)        # home/lang = Create inputs
-         ├─ persist + current = authed user
-         ├─ clear own guest localStorage (home/lang)
-         └─ publish UserCreated ─────────────► FollowStore (subscribe)
-                                                  ├─ migrate follows+hype (idempotent)
+    ├─ [SIGN-UP] userStore.create(email, locale, home)  # home/lang persisted to backend; current = authed
+    ├─ [SIGN-IN] userStore.ensureLoaded()               # load existing user (no Create)
+    ├─ [EVERY AUTH] userStore.clearGuest()              # discard guest home/lang localStorage (existing account wins)
+    └─ [EVERY AUTH] publish GuestMigrationRequested ─► FollowStore (subscribe)
+                                                  ├─ migrate follows+hype (idempotent, no-op if empty)
                                                   └─ clear own guest localStorage
 
 sign-out
@@ -64,7 +69,7 @@ app boot (safety net)
 ```
 
 EA fits here precisely because the barrier requirement is gone: the boundary
-signals (`UserCreated`, `SignedOut`) are decoupled, and each store self-handles
+signals (`GuestMigrationRequested`, `SignedOut`) are decoupled, and each store self-handles
 its own slice. This matches the codebase's existing EA usage
 (`i18n:locale:changed`, `ConsentChanged`, `Snack`).
 
@@ -131,7 +136,7 @@ current `user-hydration-task` behavior.
 
 The SignUp modal awaits **user creation** (the awaited Create call) and then
 navigates. Follow migration runs in the background (best-effort, via
-`UserCreated`); the modal does not await it, and there is no completion barrier.
+`GuestMigrationRequested`); the modal does not await it, and there is no completion barrier.
 Failed follows are healed by boot reconciliation.
 
 ## Reactivity cleanup
@@ -150,22 +155,27 @@ exposes the active language as observable state for both guest and authed paths.
 Read-only resources (ListTop 50, followed-artist projections) are cached in
 their store. These stores have no guest/authed ownership duality (a guest may
 hit a different RPC variant, but the data is fetched, not owned), so they do not
-subscribe to `UserCreated` / `SignedOut` and are excluded from reconcile. They
+subscribe to `GuestMigrationRequested` / `SignedOut` and are excluded from reconcile. They
 are included in this change only for layer-naming consistency
 (`*Service` → `*Store`).
 
 ## Phasing (one change, multiple PRs)
 
-1. Store-layer scaffold + **UserStore** (absorb GuestService.home + guest
-   language + UserService) → **fixes the guest locale-selector bug**. Keep
-   `GuestDataMergeService.merge()` working by adapting it to `UserStore.create()`
-   so signups during phase 1 still migrate follows (its removal is deferred).
-2. **FollowStore** + `UserCreated` / `SignedOut` events + receipt-based
+1. Store-layer scaffold + **UserStore** (compose UserService; absorb
+   GuestService.home + guest language) → **fixes the guest locale-selector bug**.
+   `GuestDataMergeService.merge()` stays untouched (still using
+   `UserService.create`) so signups during phase 1 still migrate follows; full
+   UserService absorption is deferred to 5b, merge() removal to phase 4.
+2. **FollowStore** + `GuestMigrationRequested` / `SignedOut` events + receipt-based
    boot-reconcile (absorb GuestService.follows + FollowServiceClient; supersede
    GuestDataMergeService).
 3. **ConcertStore / ArtistStore** cache renames.
-4. Consumer migration (11 sites) + removal of locale mirrors + delete
-   `GuestService` and `GuestDataMergeService`.
+4. Consumer migration (11 sites) + removal of the settings locale mirrors +
+   delete `GuestService` and `GuestDataMergeService`.
+5. Absorption completion: **5a** `FollowServiceClient` → `FollowStore` +
+   `welcome-route` locale-mirror removal; **5b** `UserService` → `UserStore`
+   (delete `UserServiceClient`).
+6. Close-out: prod ship + in-app verification, then archive.
 
 ## Decisions captured
 
@@ -174,9 +184,9 @@ are included in this change only for layer-naming consistency
 | Layer name | **store** (not repository) |
 | Granularity | per-entity/aggregate (UserStore owns home+lang+identity), not per-field |
 | Scope | one change incl. cache-only Concert/Artist stores; phased PRs |
-| Boundary coordination | EA self-handling (`UserCreated`/`SignedOut`) + boot reconcile; **no orchestrator, no barrier** |
+| Boundary coordination | EA self-handling (`GuestMigrationRequested`/`SignedOut`) + boot reconcile; **no orchestrator, no barrier** |
 | home/lang transition | Create-time inputs (no event) |
-| follows transition | post-`UserCreated`, idempotent, per-item drain, self-clear |
+| follows transition | post-`GuestMigrationRequested`, idempotent, per-item drain, self-clear |
 | Failure handling | app-boot reconcile keyed on a **per-account guest-merge receipt** (deterministic; no resurrection) |
 | `ALREADY_EXISTS` | existing account preferences win — guest home/lang NOT applied; only follows merge |
 | NULL server `preferred_language` | surface `I18N.getLocale()` + backfill via `UpdatePreferredLanguage` |
