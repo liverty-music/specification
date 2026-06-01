@@ -35,5 +35,5 @@
 
 ## 6. Ship
 
-- [ ] 6.1 Open frontend PR, get CI green, address review, merge to main (dev deploy)
-- [ ] 6.2 Verify on dev, then cut the frontend prod release (GH Release retag) and bump the cloud-provisioning prod pin so the change ships to prod
+- [x] 6.1 Open frontend PR, get CI green, address review, merge to main — frontend#394 merged (CI green after refreshing the visual baselines for the intentional font diff); spec change in specification#556
+- [x] 6.2 Cut the frontend prod release and bump the cloud-provisioning prod pin so the change ships to prod — GH Release v1.4.0 (retag dev→prod AR), cloud-provisioning#338 (prod pin v1.3.4→v1.4.0 + version label), ArgoCD synced prod to web-app:v1.4.0 (Healthy), verified live at liverty-music.app. (Dev verification skipped — dev env intentionally stopped; verified directly on prod.)
