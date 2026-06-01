@@ -12,7 +12,7 @@ One change, delivered in phased PRs. Each phase ships independently to prod.
       `GuestService`). Expose a single resolved observable for home and for
       preferred language (guest = localStorage-backed; authed = `User` entity).
       De-risk: `UserServiceClient`'s auth logic is NOT rewritten here; full
-      absorption is deferred (see 1.3 / Phase 2).
+      absorption is deferred (see 1.3b / Phase 5b).
 - [x] 1.3 Handle a NULL server `preferred_language` by surfacing the (observable,
       i18n-event-mirrored) active locale and backfilling once via
       `UpdatePreferredLanguage` (session-guarded, shared with the hydration task).
@@ -28,8 +28,8 @@ One change, delivered in phased PRs. Each phase ships independently to prod.
       deferred to phase 4; no signup between deploys strands guest follows.
 - [x] 1.4 Migrate `SettingsRoute` to read home/language from `UserStore`; remove
       the `currentLocale` / `currentHome` auth-branching getters and the
-      render-time `I18N.getLocale()` read. Remove `welcome-route`'s
-      `currentLocale` mirror.
+      render-time `I18N.getLocale()` read. (`welcome-route`'s `currentLocale`
+      mirror removal was deferred from here to 5a.2.)
 - [x] 1.5 Verify the guest language-selector highlight is reactive (change en→ja
       as a guest, reopen selector → reflects ja). Unit + component tests.
 - [ ] 1.6 `make check` green. Open PR 1, CI green, merge, release, ship to prod.
