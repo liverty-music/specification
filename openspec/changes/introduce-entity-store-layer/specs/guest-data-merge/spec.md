@@ -19,6 +19,10 @@ capability), not by an in-flight retry barrier.
   account already exists
 - **AND** on sign-up `UserStore` SHALL switch to the authenticated entity and
   clear its own guest home/language localStorage
+- **AND** on a returning sign-in `UserStore` SHALL also switch to the
+  authenticated entity (via `ensureLoaded`, no `Create` call) and clear its own
+  guest home/language localStorage — guest preferences are discarded, the
+  existing account's saved values win
 - **AND** on **every** successful authentication (sign-up AND returning sign-in)
   the system SHALL publish a `GuestMigrationRequested` event
 - **AND** the follow store SHALL call `ArtistService.Follow` (and `SetHype` for
