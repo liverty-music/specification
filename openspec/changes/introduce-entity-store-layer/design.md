@@ -54,9 +54,9 @@ cross-store dependency that needs a global barrier:
 ```
 authentication (sign-up OR returning sign-in)
   auth-callback
-    ├─ [SIGN-UP ONLY] userStore.create(email, locale, home)  # home/lang = Create inputs
-    │    ├─ persist + current = authed user
-    │    └─ clear own guest localStorage (home/lang)
+    ├─ [SIGN-UP] userStore.create(email, locale, home)  # home/lang persisted to backend; current = authed
+    ├─ [SIGN-IN] userStore.ensureLoaded()               # load existing user (no Create)
+    ├─ [EVERY AUTH] userStore.clearGuest()              # discard guest home/lang localStorage (existing account wins)
     └─ [EVERY AUTH] publish GuestMigrationRequested ─► FollowStore (subscribe)
                                                   ├─ migrate follows+hype (idempotent, no-op if empty)
                                                   └─ clear own guest localStorage
@@ -170,8 +170,12 @@ are included in this change only for layer-naming consistency
    boot-reconcile (absorb GuestService.follows + FollowServiceClient; supersede
    GuestDataMergeService).
 3. **ConcertStore / ArtistStore** cache renames.
-4. Consumer migration (11 sites) + removal of locale mirrors + delete
-   `GuestService` and `GuestDataMergeService`.
+4. Consumer migration (11 sites) + removal of the settings locale mirrors +
+   delete `GuestService` and `GuestDataMergeService`.
+5. Absorption completion: **5a** `FollowServiceClient` → `FollowStore` +
+   `welcome-route` locale-mirror removal; **5b** `UserService` → `UserStore`
+   (delete `UserServiceClient`).
+6. Close-out: prod ship + in-app verification, then archive.
 
 ## Decisions captured
 
