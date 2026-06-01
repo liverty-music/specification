@@ -7,10 +7,10 @@ Promoting a release to prod today is a two-gate process: cutting the GitHub Rele
 - The backend (`deploy.yml`) and frontend (`push-image.yaml`) release paths SHALL, **after** the prod-AR retag succeeds, emit a GitHub `repository_dispatch` event to `liverty-music/cloud-provisioning` carrying `{ component, tag, sha }` (component ∈ `backend | frontend`).
 - A **new** `cloud-provisioning` workflow (`bump-prod-pin.yml`) SHALL receive that dispatch and, for the named component, rewrite the prod overlay's `images[].newTag` (all 4 entries for backend, the single `web-app` entry for frontend) and the `app.kubernetes.io/version` label to the new release version, in lock-step.
 - The bump workflow SHALL **validate** `kustomize build` of the affected prod overlay before committing; a build failure aborts the push (replacing the CI gate the manual PR used to provide).
-- The bump workflow SHALL commit and push **directly to `cloud-provisioning:main`** using its own `GITHUB_TOKEN` (the `github-actions[bot]` actor), bypassing the manual-PR step. ArgoCD's existing auto-sync then rolls the change out.
+- The bump workflow SHALL commit and push **directly to `cloud-provisioning:main`** as the org-owned `liverty-music-ci-bot` App (minting an installation token), bypassing the manual-PR step. ArgoCD's existing auto-sync then rolls the change out. (The built-in `GITHUB_TOKEN` / `github-actions[bot]` cannot be a repo-ruleset bypass actor — see design D9.)
 - The bump SHALL be **idempotent** (no-op if `newTag` already equals the target) and SHALL **rebase-retry** on push rejection to tolerate a backend+frontend release landing close together.
 - The manual pin-bump PR ceases to be the rollout gate. The Release act becomes the single human gate; the dispatch → validate → push chain is fully automated.
-- Cross-repo auth uses `repository_dispatch` specifically so the release workflows hold **no** write credential to `cloud-provisioning` — the bump workflow pushes to *its own* repo with the built-in token. No long-lived PAT is introduced.
+- Cross-repo auth uses a short-lived `liverty-music-ci-bot` GitHub App installation token (no long-lived PAT). The same App is the `main` ruleset bypass actor, so — unlike the original intent (design D1) — the release-held credential CAN push `cloud-provisioning:main`; this relaxed boundary is mitigated by prod-environment secret scoping, the provenance gate, and Release-as-gate (design D9).
 
 ## Capabilities
 
@@ -25,6 +25,6 @@ Promoting a release to prod today is a two-gate process: cutting the GitHub Rele
 - **`liverty-music/backend`** — `deploy.yml`: append a `repository_dispatch`-emitting step to the release path, gated on all 4 retag matrix entries succeeding.
 - **`liverty-music/frontend`** — `push-image.yaml`: append the same dispatch step to the release path; optionally chain the existing prod smoke (`workflow_dispatch` → automatic) after rollout.
 - **`liverty-music/cloud-provisioning`** — new `.github/workflows/bump-prod-pin.yml`; the prod overlays under `k8s/namespaces/{backend,frontend}/overlays/prod/kustomization.yaml` become CI-written for the `newTag` + version-label fields.
-- **GitHub settings** — `cloud-provisioning` branch protection / ruleset MUST add `github-actions[bot]` as a bypass actor for direct `main` push (and thereby the up-to-date requirement). No new secrets.
+- **GitHub settings** — `cloud-provisioning:main` is governed by a repository ruleset whose sole bypass actor is the `liverty-music-ci-bot` App (covering the PR + up-to-date requirements). The ci-bot App credential is provisioned as backend/frontend `prod` environment secrets (dispatch) and cloud-provisioning repository secrets (push).
 - **Operational** — prod rollout latency drops from "manual PR + rebase + merge" to "dispatch + kustomize validate + push" (seconds). Rollback remains `git revert` of the bump commit. ArgoCD auto-sync behavior is unchanged.
 - **Risk surface** — a buggy edit could push a broken manifest to prod; mitigated by the mandatory `kustomize build` validation gate and idempotency. ArgoCD still self-heals/prunes as before.
