@@ -1,6 +1,6 @@
 # Tasks
 
-One change, delivered in phased PRs. Each phase ships independently to prod.
+One change, delivered in phased PRs that each merge to main independently; the prod release is consolidated for all phases in close-out (6.1).
 
 ## 1. Store-layer scaffold + UserStore (PR 1 — also fixes the guest locale bug)
 
@@ -32,7 +32,7 @@ One change, delivered in phased PRs. Each phase ships independently to prod.
       mirror removal was deferred from here to 5a.2.)
 - [x] 1.5 Verify the guest language-selector highlight is reactive (change en→ja
       as a guest, reopen selector → reflects ja). Unit + component tests.
-- [ ] 1.6 `make check` green. Open PR 1, CI green, merge, release, ship to prod.
+- [x] 1.6 `make check` green; Open PR 1, CI green, merge — DONE. (Prod release + ship consolidated in close-out 6.1.)
 
 ## 2. FollowStore + boundary events + boot reconcile (PR 2)
 
@@ -52,7 +52,7 @@ One change, delivered in phased PRs. Each phase ships independently to prod.
       resurrection). Run early, session-guarded.
 - [x] 2.5 Tests: migration on `GuestMigrationRequested`, self-clear, sign-out clear,
       boot-reconcile (incl. the no-resurrect guard). `make check` green.
-- [ ] 2.6 Open PR 2, CI green, merge, release, ship to prod.
+- [x] 2.6 Open PR 2, CI green, merge — DONE. (Prod ship in 6.1.)
 
 ## 3. Cache-only stores (PR 3)
 
@@ -60,7 +60,7 @@ One change, delivered in phased PRs. Each phase ships independently to prod.
       `ArtistStore`; keep their resource caches (e.g. ListTop 50). No guest/authed
       ownership; no boundary-event participation.
 - [x] 3.2 Update consumers of the renamed stores. `make check` green.
-- [ ] 3.3 Open PR 3, CI green, merge, release, ship to prod.
+- [x] 3.3 Open PR 3, CI green, merge — DONE. (Prod ship in 6.1.)
 
 ## 4. Consumer migration + GuestService removal (PR 4)
 
@@ -70,8 +70,7 @@ One change, delivered in phased PRs. Each phase ships independently to prod.
       `auth.isAuthenticated` source-selection branching at call sites.
 - [x] 4.2 Delete `GuestService` and `GuestDataMergeService` once no references
       remain.
-- [ ] 4.3 Tests + `make check` green. Open PR 4, CI green, merge, release, ship
-      to prod.
+- [x] 4.3 Tests + `make check` green; Open PR 4, CI green, merge — DONE. (Prod ship in 6.1.)
 
 ## 5. Absorption completion + dead-code (PR 5a / 5b)
 

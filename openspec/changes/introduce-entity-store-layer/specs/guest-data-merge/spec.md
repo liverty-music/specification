@@ -13,12 +13,14 @@ capability), not by an in-flight retry barrier.
 #### Scenario: Successful data merge
 
 - **WHEN** authentication completes successfully for a guest who has onboarding data
-- **THEN** the system SHALL call `UserService.Create` with the user's email,
-  home, and preferred language (home/language read from `UserStore`'s guest view)
-- **AND** `UserStore` SHALL switch to the authenticated entity and clear its own
-  guest home/language localStorage
-- **AND** upon successful authentication the system SHALL publish a
-  `GuestMigrationRequested` event (on sign-up AND returning sign-in)
+- **THEN** **on sign-up** the system SHALL call `UserService.Create` with the
+  user's email, home, and preferred language (home/language read from
+  `UserStore`'s guest view) — a returning sign-in skips `Create` because the
+  account already exists
+- **AND** on sign-up `UserStore` SHALL switch to the authenticated entity and
+  clear its own guest home/language localStorage
+- **AND** on **every** successful authentication (sign-up AND returning sign-in)
+  the system SHALL publish a `GuestMigrationRequested` event
 - **AND** the follow store SHALL call `ArtistService.Follow` (and `SetHype` for
   non-default hype) for each artist in `guest.followedArtists`, then clear its
   own guest follow localStorage on success

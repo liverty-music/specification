@@ -53,10 +53,10 @@ cross-store dependency that needs a global barrier:
 ```
 authentication (sign-up OR returning sign-in)
   auth-callback
-    ├─ userStore.create(email, locale, home)   # sign-up: home/lang = Create inputs
+    ├─ [SIGN-UP ONLY] userStore.create(email, locale, home)  # home/lang = Create inputs
     │    ├─ persist + current = authed user
     │    └─ clear own guest localStorage (home/lang)
-    └─ publish GuestMigrationRequested ────────► FollowStore (subscribe)
+    └─ [EVERY AUTH] publish GuestMigrationRequested ─► FollowStore (subscribe)
                                                   ├─ migrate follows+hype (idempotent, no-op if empty)
                                                   └─ clear own guest localStorage
 
