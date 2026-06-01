@@ -65,7 +65,8 @@ into this store layer.
     read from the guest view). `UserStore.create()` persists them, switches
     `current` to the authed entity, and clears its own guest localStorage. No
     event needed for these fields.
-  - **follows**: `UserStore.create()` publishes `GuestMigrationRequested`; `FollowStore`
+  - **follows**: `auth-callback` publishes `GuestMigrationRequested` on every
+    successful authentication (sign-up AND returning sign-in); `FollowStore`
     subscribes and migrates follows/hype (idempotent backend calls, now that a
     `user_id` exists), then clears its own guest localStorage. Best-effort.
   - **sign-out**: a `SignedOut` event is published; each store self-clears its

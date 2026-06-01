@@ -160,10 +160,11 @@ are included in this change only for layer-naming consistency
 
 ## Phasing (one change, multiple PRs)
 
-1. Store-layer scaffold + **UserStore** (absorb GuestService.home + guest
-   language + UserService) → **fixes the guest locale-selector bug**. Keep
-   `GuestDataMergeService.merge()` working by adapting it to `UserStore.create()`
-   so signups during phase 1 still migrate follows (its removal is deferred).
+1. Store-layer scaffold + **UserStore** (compose UserService; absorb
+   GuestService.home + guest language) → **fixes the guest locale-selector bug**.
+   `GuestDataMergeService.merge()` stays untouched (still using
+   `UserService.create`) so signups during phase 1 still migrate follows; full
+   UserService absorption is deferred to 5b, merge() removal to phase 4.
 2. **FollowStore** + `GuestMigrationRequested` / `SignedOut` events + receipt-based
    boot-reconcile (absorb GuestService.follows + FollowServiceClient; supersede
    GuestDataMergeService).

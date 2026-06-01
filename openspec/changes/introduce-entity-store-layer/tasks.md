@@ -16,11 +16,13 @@ One change, delivered in phased PRs. Each phase ships independently to prod.
 - [x] 1.3 Handle a NULL server `preferred_language` by surfacing the (observable,
       i18n-event-mirrored) active locale and backfilling once via
       `UpdatePreferredLanguage` (session-guarded, shared with the hydration task).
-- [x] 1.3b (DONE in Phase 5b) Absorb `UserService` into `UserStore.create()`
-      (persist Create-time home/language inputs, publish `GuestMigrationRequested`, clear own
-      guest localStorage; `ALREADY_EXISTS` → existing account wins, guest
-      home/language not applied). Until then `UserService.create()` /
-      `GuestDataMergeService.merge()` remain the create+migrate path.
+- [x] 1.3b (DONE in Phase 5b) Absorb `UserService` into `UserStore` (persist
+      Create-time home/language inputs in `UserStore.create()`, clear own guest
+      localStorage; `ALREADY_EXISTS` → existing account wins, guest home/language
+      not applied). The `GuestMigrationRequested` publish is owned by
+      `auth-callback` on every successful auth, NOT by `UserStore.create()`.
+      Until 5b, `UserServiceClient` remained the create engine composed by
+      `UserStore`.
 - [x] 1.3a `GuestDataMergeService.merge()` remains functional in Phase 1
       (untouched — it still owns the Create + follow migration). Its REMOVAL is
       deferred to phase 4; no signup between deploys strands guest follows.
@@ -92,6 +94,6 @@ One change, delivered in phased PRs. Each phase ships independently to prod.
 
 ## 6. Close-out
 
-- [ ] 5.1 Confirm all phases live in prod; verify the guest language selector and
+- [ ] 6.1 Confirm all phases live in prod; verify the guest language selector and
       home flows in the running app.
-- [ ] 5.2 Archive this OpenSpec change.
+- [ ] 6.2 Archive this OpenSpec change.

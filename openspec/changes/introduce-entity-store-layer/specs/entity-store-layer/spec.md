@@ -46,8 +46,7 @@ completes.
 - **AND** no post-creation event SHALL be required to migrate home or language
 
 #### Scenario: Follows migrate after a guest authenticates
-- **WHEN** a guest with onboarding data authenticates (sign-up OR returning
-  sign-in)
+- **WHEN** a guest authenticates (sign-up OR returning sign-in)
 - **THEN** a `GuestMigrationRequested` event SHALL be published on every
   successful authentication (not gated on sign-up), so guest follows are not
   lost when a returning user signs in
