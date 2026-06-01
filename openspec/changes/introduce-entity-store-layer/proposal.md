@@ -65,7 +65,7 @@ into this store layer.
     read from the guest view). `UserStore.create()` persists them, switches
     `current` to the authed entity, and clears its own guest localStorage. No
     event needed for these fields.
-  - **follows**: `UserStore.create()` publishes `UserCreated`; `FollowStore`
+  - **follows**: `UserStore.create()` publishes `GuestMigrationRequested`; `FollowStore`
     subscribes and migrates follows/hype (idempotent backend calls, now that a
     `user_id` exists), then clears its own guest localStorage. Best-effort.
   - **sign-out**: a `SignedOut` event is published; each store self-clears its
@@ -87,13 +87,13 @@ into this store layer.
 - `entity-store-layer` — defines the store-layer pattern: one observable store
   per entity/aggregate owning state + source selection (guest localStorage /
   authed backend) + resource caching; the event-driven, per-store self-handling
-  auth-boundary transitions (`UserCreated` / `SignedOut`); and the app-boot
+  auth-boundary transitions (`GuestMigrationRequested` / `SignedOut`); and the app-boot
   reconciliation safety net. (Name TBD in design.)
 
 ### Modified Capabilities
 
 - `guest-data-merge` — the signup transition is per-store self-handling
-  (home/language at Create-time, follows via `UserCreated`), with boot
+  (home/language at Create-time, follows via `GuestMigrationRequested`), with boot
   reconciliation replacing in-flight retry coordination; clarifies merge scope
   and the idempotency contract.
 - `user-home` — home preference resolution (guest storage vs `User.home`) moves
