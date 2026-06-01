@@ -25,7 +25,6 @@
 ## 4. Frontend release path: emit dispatch
 
 - [x] 4.1 In `frontend/.github/workflows/push-image.yaml`, add the same dispatch step to the release path, gated on the retag job succeeding (`component: "frontend"`).
-- [ ] 4.2 (Optional, follow-on) After the bump, poll `https://liverty-music.app` for the new bundle hash and auto-trigger the existing prod smoke (`workflow_dispatch` with `smoke_url`). Gate behind a flag so the core automation can ship without it.
 
 ## 5. Specification: documentation
 
@@ -34,7 +33,7 @@
 
 ## 6. End-to-end verification (dev/staging first, then prod)
 
-- [ ] 6.1 Dry-run the bump workflow via `workflow_dispatch` with a known-good `{component, tag, sha}` against a throwaway branch; confirm the yq edit + `kustomize build` validate + idempotency behave correctly without touching `main`.
-- [ ] 6.2 Cut a real backend release and a real frontend release; confirm each dispatches, the bump lands on `cloud-provisioning:main`, and ArgoCD auto-syncs the prod overlay to the new tag.
-- [ ] 6.3 Confirm the rollout in prod: new Pods carry the expected `app.kubernetes.io/version` label and pull the `:vX.Y.Z` prod-AR image; run the frontend prod smoke against `https://liverty-music.app`.
-- [ ] 6.4 Confirm rollback path: `git revert` the bump commit on `cloud-provisioning:main` and verify ArgoCD rolls prod back to the prior tag.
+- [x] 6.1 Dry-run the bump workflow via `workflow_dispatch` with a known-good `{component, tag, sha}` against a throwaway branch; confirm the yq edit + `kustomize build` validate + idempotency behave correctly without touching `main`.
+- [x] 6.2 Cut a real backend release and a real frontend release; confirm each dispatches, the bump lands on `cloud-provisioning:main`, and ArgoCD auto-syncs the prod overlay to the new tag.
+- [x] 6.3 Confirm the rollout in prod: new Pods carry the expected `app.kubernetes.io/version` label and pull the `:vX.Y.Z` prod-AR image; run the frontend prod smoke against `https://liverty-music.app`.
+- [x] 6.4 Confirm rollback path: `git revert` the bump commit on `cloud-provisioning:main` and verify ArgoCD rolls prod back to the prior tag.
