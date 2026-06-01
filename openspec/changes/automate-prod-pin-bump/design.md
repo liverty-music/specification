@@ -85,6 +85,17 @@ environment: ${{ github.event_name == 'workflow_dispatch' && 'prod-pin' || '' }}
 
 `repository_dispatch` runs resolve the environment to the empty string and never enter `prod-pin`, so the required-reviewer rule is skipped and the release path stays unattended; `workflow_dispatch` runs enter `prod-pin` and pause for admin approval. (Alternatives considered: splitting into two single-trigger workflows — cleaner isolation but two files to keep in sync; or a job-level `if:` actor-allowlist guard — less auditable than an Environment gate. The conditional-environment expression is the minimal change that satisfies both requirements.) The fallback is documented as a privileged admin-only recovery operation, not a routine path.
 
+### D9: The `main` bypass actor is the org-owned ci-bot App, not `github-actions[bot]` (revises D1)
+
+**Discovered during prod rollout.** D1/D8 assumed the bump push would be done by the built-in `GITHUB_TOKEN` (`github-actions[bot]`), with the `main` bypass scoped to that actor — keeping the cross-repo dispatch credential unable to push `main`. Applying that hit two hard GitHub limits:
+
+1. **Repository ruleset + `github-actions` bypass → `422`:** *"Actor GitHub Actions integration must be part of the ruleset source or owner organization."* The global `github-actions` app is GitHub-owned, so it cannot be a bypass actor on a *repository* ruleset (only org-owned or repo-installed Apps qualify).
+2. **Organization ruleset (which *does* accept the `github-actions` integration) → `403`:** *"Upgrade to GitHub Team to enable this feature."* Org rulesets require a paid plan; the org is on Free. (Classic `BranchProtection` was also ruled out: it has no per-actor bypass for the strict up-to-date status check.)
+
+**Chosen:** a **repository ruleset** whose sole bypass actor is the **org-owned `liverty-music-ci-bot` App** (org-owned Apps pass the repo-ruleset validation). `bump-prod-pin.yml` mints a ci-bot installation token and pushes `main` as the App.
+
+**Consequence — relaxes the D1 boundary:** ci-bot is also the dispatch credential held on the backend/frontend `prod` environments, so a compromised prod release workflow *can* now push `cloud-provisioning:main` (move prod) directly — exactly what D1's "Auth blast radius" argument sought to prevent. Accepted for a solo-dev org because: (a) the ci-bot secrets are scoped to the `prod` GitHub Environment (release events only, not arbitrary workflows), (b) the provenance gate (D7) still blocks bogus-tag pins, and (c) cutting the GitHub Release remains the human gate. **Open question / future hardening:** restore the strict boundary by introducing a dedicated push-only App (installed and keyed only on `cloud-provisioning`) as the bypass actor, distinct from the dispatch credential — at the cost of a second App to manage.
+
 ## Risks / Trade-offs
 
 - **A bad/bogus tag corrupts `cloud-provisioning:main`** → Mitigated by D7 (prod-AR manifest existence check, fail-closed, *before* the edit) + D2 (`kustomize build`) + D4 idempotency. A non-existent tag is rejected before any commit; a structurally-valid-but-wrong real tag is still caught by ArgoCD at sync, and the bogus-tag *silent* path is eliminated.
