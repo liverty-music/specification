@@ -16,6 +16,9 @@ One change, delivered in phased PRs that each merge to main independently; the p
 - [x] 1.3 Handle a NULL server `preferred_language` by surfacing the (observable,
       i18n-event-mirrored) active locale and backfilling once via
       `UpdatePreferredLanguage` (session-guarded, shared with the hydration task).
+- [x] 1.3a `GuestDataMergeService.merge()` remains functional in Phase 1
+      (untouched — it still owns the Create + follow migration). Its REMOVAL is
+      deferred to phase 4; no signup between deploys strands guest follows.
 - [x] 1.3b (DONE in Phase 5b) Absorb `UserService` into `UserStore` (persist
       Create-time home/language inputs in `UserStore.create()`, clear own guest
       localStorage; `ALREADY_EXISTS` → existing account wins, guest home/language
@@ -23,9 +26,6 @@ One change, delivered in phased PRs that each merge to main independently; the p
       `auth-callback` on every successful auth, NOT by `UserStore.create()`.
       Until 5b, `UserServiceClient` remained the create engine composed by
       `UserStore`.
-- [x] 1.3a `GuestDataMergeService.merge()` remains functional in Phase 1
-      (untouched — it still owns the Create + follow migration). Its REMOVAL is
-      deferred to phase 4; no signup between deploys strands guest follows.
 - [x] 1.4 Migrate `SettingsRoute` to read home/language from `UserStore`; remove
       the `currentLocale` / `currentHome` auth-branching getters and the
       render-time `I18N.getLocale()` read. (`welcome-route`'s `currentLocale`

@@ -34,11 +34,12 @@ The earlier proposal posited a saga/orchestrator for atomicity + ordering.
 That requirement **dissolves** once state is per-store, because there is no
 cross-store dependency that needs a global barrier:
 
-- **home / language are Create-time inputs, not post-event migrations.**
-  `auth-callback` reads the guest view and calls
-  `userStore.create(email, locale, home)`. They are baked into the Create RPC
-  atomically; nothing migrates them afterward. `UserStore.create()` clears its
-  own guest localStorage on success.
+- **home / language are Create-time inputs (sign-up), not post-event
+  migrations.** On sign-up, `auth-callback` reads the guest view and calls
+  `userStore.create(email, locale, home)`; they are baked into the Create RPC
+  atomically and `UserStore.create()` clears its own guest localStorage on
+  success. On a returning sign-in there is no Create — guest home/language are
+  simply cleared (the existing account's saved values win).
 - **follows are the only post-authentication migration**, and only `FollowStore`
   cares. The single ordering edge is "the user exists before follow-migrate"
   (follows need a `user_id`). Expressed as: `auth-callback` publishes
