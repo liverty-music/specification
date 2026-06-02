@@ -1,10 +1,5 @@
-# Bottom Sheet Custom Element
+## MODIFIED Requirements
 
-## Purpose
-
-Provides a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, using a native `<dialog>` element opened via `showModal()` with CSS scroll-snap dismiss via an internal scroll container.
-
-## Requirements
 ### Requirement: Bottom Sheet Custom Element
 The system SHALL provide a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, using a native `<dialog>` element opened via `showModal()` (promoted to the Top Layer with native focus-trap, `inert` background, and close-request handling) with CSS scroll-snap dismiss via an internal scroll container. The CE host (`<bottom-sheet>`) SHALL wrap an inner `<dialog>` element; the scroll container, dismiss zone, and sheet body SHALL live inside that `<dialog>`.
 
@@ -70,7 +65,7 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 - **WHEN** the sheet is open and `dismissable` is `true`
 - **AND** the user taps/clicks the dimmed area above the sheet body (the `.dismiss-zone`)
 - **THEN** the CE SHALL set `open` to `false`, call `close()`, and dispatch `sheet-closed`
-- **NOTE** Tap-outside is implemented as a `click` handler on the `.dismiss-zone` element, NOT via `::backdrop` and NOT via `closedby`: under full-viewport coverage the dialog box occludes the backdrop, so every tap targets a `<dialog>` descendant and neither the `::backdrop` (the `event.target === dialog` light-dismiss pattern) nor `closedby` native light-dismiss ever fires. (The `[popover]::backdrop { pointer-events: none }` UA rule applies to popovers, not `<dialog>::backdrop`, so it is not the reason here.)
+- **NOTE** Tap-outside is implemented as a `click` handler on the `.dismiss-zone` element, NOT via `::backdrop` (the UA stylesheet forces `pointer-events: none` on `::backdrop`) and NOT via `closedby` (under full-viewport coverage every tap targets a `<dialog>` descendant, so native light-dismiss never fires)
 - **WHEN** `dismissable` is `false`
 - **THEN** the `.dismiss-zone` tap SHALL NOT close the sheet
 
@@ -137,4 +132,3 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 - **THEN** all event listeners (`cancel`/`close`, `.dismiss-zone` click, scroll detection) SHALL be removed
 - **AND** `close()` SHALL be called on the inner `<dialog>`
 - **AND** no memory leaks SHALL occur
-
