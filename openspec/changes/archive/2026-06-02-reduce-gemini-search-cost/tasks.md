@@ -36,8 +36,8 @@
 
 ## 6. Ship to prod
 
-- [ ] 6.1 Open + merge the backend PR (CI green) per cross-repo workflow
-- [ ] 6.2 Cut a backend GitHub Release `vX.Y.Z`; confirm prod AR images pushed
-- [ ] 6.3 Open + merge the cloud-provisioning PR (prod image pin bump to `vX.Y.Z` + TTL configmap)
-- [ ] 6.4 Confirm Atlas Operator applies the `last_found_at` migration ahead of the backend/CronJob rollout
-- [ ] 6.5 Verify in prod: a CronJob run logs the new skip branch firing, and `latest_search_logs.last_found_at` is populated after a discovery
+- [x] 6.1 Open + merge the backend PR (CI green) per cross-repo workflow
+- [x] 6.2 Cut a backend GitHub Release `vX.Y.Z`; confirm prod AR images pushed
+- [x] 6.3 Open + merge the cloud-provisioning PR (prod image pin bump to `vX.Y.Z` + TTL configmap)
+- [x] 6.4 Confirm Atlas Operator applies the `last_found_at` migration ahead of the backend/CronJob rollout
+- [x] 6.5 Verify in prod: a CronJob run logs the new skip branch firing, and `latest_search_logs.last_found_at` is populated after a discovery
