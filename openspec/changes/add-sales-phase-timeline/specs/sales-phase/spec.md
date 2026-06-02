@@ -1,0 +1,95 @@
+## ADDED Requirements
+
+### Requirement: SalesPhase Entity
+
+The system SHALL define a `SalesPhase` entity representing one ticket-sales opportunity for a tour/series. Each sales phase is Series-scoped because sales phases are announced per tour and apply to all of its dates.
+
+#### Scenario: SalesPhase data model
+
+- **WHEN** a sales phase is represented
+- **THEN** it SHALL include `id` (SalesPhaseId), `series_id` (SeriesId), `method` (SalesMethod), `channel` (SalesChannel), `provider_name` (string), and `sequence` (int32)
+- **AND** it SHALL include nullable timeline fields: `apply_start_time`, `apply_end_time`, `lottery_result_time`, `payment_deadline_time` (each a Timestamp)
+- **AND** it SHALL include a nullable `url` field reusing the `Url` value object
+- **AND** `series_id` SHALL be the only required reference
+
+#### Scenario: Series-scoped relationship
+
+- **WHEN** a series has multiple events (tour dates)
+- **THEN** a single `SalesPhase` SHALL apply to the whole series
+- **AND** a standalone concert (series of one event) SHALL be represented the same way
+
+### Requirement: SalesPhase Identity
+
+The system SHALL identify each sales phase with a `SalesPhaseId` value object wrapping a UUID.
+
+#### Scenario: SalesPhaseId format
+
+- **WHEN** a `SalesPhaseId` is represented
+- **THEN** its `value` SHALL be a valid UUID string
+
+### Requirement: Sales Method and Channel Classification
+
+The system SHALL classify each sales phase by `method` and `channel` as orthogonal dimensions, plus an ordinal `sequence`, rather than a single conflated tier enum.
+
+#### Scenario: SalesMethod values
+
+- **WHEN** a sales method is represented
+- **THEN** it SHALL be one of `UNSPECIFIED`, `LOTTERY`, or `FIRST_COME`
+- **AND** `UNSPECIFIED` SHALL be permitted to mean "not yet determined"
+
+#### Scenario: SalesChannel values
+
+- **WHEN** a sales channel is represented
+- **THEN** it SHALL be one of `UNSPECIFIED`, `FAN_CLUB`, `OFFICIAL`, `PLAYGUIDE`, `CREDIT_CARD`, `MOBILE_CARRIER`, or `GENERAL`
+
+#### Scenario: Sequence captures round ordinal
+
+- **WHEN** a series has multiple rounds (earliest, first, second, …)
+- **THEN** the round ordering SHALL be expressed via `sequence` (0=earliest, 1=first, 2=second, …)
+- **AND** adding further rounds SHALL NOT require any schema change
+
+### Requirement: Timeline Fields Are Nullable and Existence Signals Confirmation
+
+The system SHALL treat the existence of a `SalesPhase` row as the signal that the phase is happening, and a null timeline field as "date not yet announced". No separate to-be-determined flag is required.
+
+#### Scenario: Announced phase with unknown dates
+
+- **WHEN** a sales phase is known to occur but its dates are not yet announced
+- **THEN** the `SalesPhase` SHALL exist with the relevant timeline fields left null
+
+### Requirement: Stable, Collision-Free Phase Identity
+
+The system SHALL assign each sales phase a stable upsert identity that (a) resolves to the same row when the same real phase is re-extracted, and (b) never collapses two distinct real phases of a series into one row. The identity SHALL NOT depend solely on `(series_id, channel, sequence)`, because both `channel` and `sequence` may take their default values (`channel = UNSPECIFIED`, `sequence = 0`) for phases the searcher cannot classify; keying on those alone would let one real phase overwrite another (silent data loss).
+
+#### Scenario: Re-extraction converges to one row
+
+- **WHEN** the same real sales phase is extracted again with updated details
+- **THEN** it SHALL resolve to the same identity and update the existing row
+- **AND** later writes of `apply_start_time`, `apply_end_time`, `lottery_result_time`, `payment_deadline_time`, `provider_name`, and `url` SHALL take precedence (last-write-wins)
+
+#### Scenario: Two unclassifiable phases do not collide
+
+- **WHEN** a series has two distinct sales phases that both carry `channel = UNSPECIFIED`
+- **THEN** they SHALL receive distinct identities, disambiguated by a further distinguishing extracted attribute (e.g., `apply_start_time`, else `provider_name`, else extraction order)
+- **AND** both SHALL be persisted as separate rows rather than one overwriting the other
+
+### Requirement: Persist Only Actionable Phases
+
+The system SHALL persist a `SalesPhase` only when it carries actionable information, to avoid empty-phase noise.
+
+#### Scenario: Phase has no actionable data
+
+- **WHEN** an extracted phase has neither any timeline timestamp nor both a determinable method and URL
+- **THEN** the system SHALL NOT persist a `SalesPhase` for it
+
+### Requirement: SalesPhase Database Schema
+
+The system SHALL store sales phases in a `sales_phases` table.
+
+#### Scenario: Table structure
+
+- **WHEN** the `sales_phases` table is created
+- **THEN** it SHALL have an `id` UUID primary key and a `series_id` foreign key referencing series
+- **AND** it SHALL store method, channel, provider_name, sequence, the four nullable timestamps, and url
+- **AND** it SHALL enforce uniqueness on the derived phase identity defined by the Stable, Collision-Free Phase Identity requirement (not on `(series_id, channel, sequence)` when `channel`/`sequence` are defaulted)
+- **AND** the existing `ticket_emails` table SHALL NOT be modified by this change
