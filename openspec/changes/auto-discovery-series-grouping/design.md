@@ -31,7 +31,7 @@ Carry a tour-group identity and a tour/standalone marker from `parseStep1Envelop
 - **Alternative considered**: Re-cluster flat `EventDraft`s by `(Title, SourceURL)` in concert creation. Rejected — `(Title, SourceURL)` is a weaker signal than the explicit block boundary, and standalones can share neither, so the block marker is needed regardless.
 
 ### Decision 2: Tour-scoped deterministic seriesID for tours; unchanged (venue,date) for standalones
-- **Tour events**: all events in one `<tour>` group share one `seriesID`, derived deterministically so re-discovery is idempotent — `UUIDv5(namespace, normalized tour key)` where the tour key is the tour's `source_url` (falling back to artist-scoped normalized title when `source_url` is absent). `SeriesType = TOUR`.
+- **Tour events**: all events in one `<tour>` group share one `seriesID`, derived deterministically so re-discovery is idempotent — `UUIDv5(namespace, normalized tour key)` where the tour key is the tour's `source_url` **only when that URL is a tour-specific page**, falling back to the artist-scoped normalized title when `source_url` is absent **or resolves to a generic index page** (an artist `/live` or `/news` root, or a shared label / agency / promoter page). This keeps the key artist-independent for genuine co-headline tours (both sites cite the same tour page) while preventing unrelated tours that merely share a generic URL from collapsing into one `Series`. `SeriesType = TOUR`.
 - **Standalone events**: keep `seriesID = UUIDv5(venueID|local_date)`, `SeriesType = SINGLE` — preserving the artist-independent cross-artist dedup the current code relies on.
 - **Alternative considered**: Use the tour title alone as the key. Rejected — titles vary across runs/sites; `source_url` is the stabler tour identity, and the existing envelope already carries it per tour.
 
@@ -47,6 +47,7 @@ The natural key `(series_id, local_event_date, venue_id)` and the `ON CONFLICT` 
 - **Same physical event classified as a tour stop by artist A and a standalone co-bill by artist B** → two event rows (tour `series_id` vs venue|date `series_id`). Mitigation: rare; accepted, logged. Hardening (venue+date reconciliation) is out of scope.
 - **Gemini misclassifies a one-off as a `<tour>`** → a TOUR series with one event. Low harm (still a valid series); SINGLE vs TOUR is cosmetic for a single date.
 - **`source_url` missing on a tour block** → fall back to artist-scoped normalized title for the key; slightly less stable but still deterministic per run.
+- **Generic shared `source_url` merges unrelated tours** → if Gemini cites a generic index (artist `/live`/`/news`, or a shared label/agency/promoter page) instead of a tour-specific page, two unrelated per-artist tours could derive the same `UUIDv5(source_url)` and collapse into one `Series`, silently merging events and breaking the "one Series = one tour" premise that `add-sales-phase-timeline` depends on. Mitigation: treat non-tour-specific URLs as absent and fall back to the artist-scoped title key (above); additionally monitor for anomalously large series (many distinct artists in `event_performers` under one `series_id`).
 
 ## Migration Plan
 

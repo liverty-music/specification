@@ -63,11 +63,19 @@ The system SHALL treat the existence of a `SalesPhase` row as the signal that th
 
 The system SHALL assign each sales phase a stable upsert identity that (a) resolves to the same row when the same real phase is re-extracted, and (b) never collapses two distinct real phases of a series into one row. The identity SHALL NOT depend solely on `(series_id, channel, sequence)`, because both `channel` and `sequence` may take their default values (`channel = UNSPECIFIED`, `sequence = 0`) for phases the searcher cannot classify; keying on those alone would let one real phase overwrite another (silent data loss).
 
+To stay stable across re-discovery, the identity SHALL be frozen at first insert as an immutable `stable_key`, computed once from the best-available distinguishing attributes. The upsert SHALL match on this frozen `stable_key`, and the last-write-wins updates to mutable fields (`apply_start_time`, `apply_end_time`, `lottery_result_time`, `payment_deadline_time`, `provider_name`, `url`) SHALL NOT recompute or mutate it. This prevents a phase first stored with a null field from being re-keyed into a new row once that field is later confirmed.
+
 #### Scenario: Re-extraction converges to one row
 
 - **WHEN** the same real sales phase is extracted again with updated details
-- **THEN** it SHALL resolve to the same identity and update the existing row
-- **AND** later writes of `apply_start_time`, `apply_end_time`, `lottery_result_time`, `payment_deadline_time`, `provider_name`, and `url` SHALL take precedence (last-write-wins)
+- **THEN** it SHALL resolve to the existing row via its frozen `stable_key`
+- **AND** later writes of `apply_start_time`, `apply_end_time`, `lottery_result_time`, `payment_deadline_time`, `provider_name`, and `url` SHALL take precedence (last-write-wins) without changing `stable_key`
+
+#### Scenario: Confirming a previously-null field does not duplicate
+
+- **WHEN** a phase first persisted with a null `apply_start_time` is re-discovered with a confirmed `apply_start_time`
+- **THEN** it SHALL match the existing row via its frozen `stable_key` and update it in place
+- **AND** it SHALL NOT insert a new row or re-fire the `SALES_PHASE.discovered` announcement
 
 #### Scenario: Two unclassifiable phases do not collide
 
@@ -93,6 +101,6 @@ The system SHALL store sales phases in a `sales_phases` table.
 - **WHEN** the `sales_phases` table is created
 - **THEN** it SHALL have an `id` UUID primary key and a `series_id` foreign key referencing series
 - **AND** it SHALL store method, channel, provider_name, sequence, the four nullable timestamps, and url
-- **AND** it SHALL enforce uniqueness on the derived phase identity defined by the Stable, Collision-Free Phase Identity requirement (not on `(series_id, channel, sequence)` when `channel`/`sequence` are defaulted)
+- **AND** it SHALL store an immutable `stable_key` (set once at insert, never updated) and enforce uniqueness on `(series_id, stable_key)`, per the Stable, Collision-Free Phase Identity requirement (not on `(series_id, channel, sequence)` when `channel`/`sequence` are defaulted)
 - **AND** the covered-events relationship SHALL be stored in an `event_sales_phases` join table keyed by `(sales_phase_id, event_id)`, each `event_id` referencing an event of the phase's series
 - **AND** the existing `ticket_emails` table SHALL NOT be modified by this change

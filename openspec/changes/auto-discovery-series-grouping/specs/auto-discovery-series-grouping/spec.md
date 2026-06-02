@@ -27,11 +27,17 @@ The system SHALL derive a tour's `seriesID` deterministically so that re-discove
 - **THEN** the derived `seriesID` SHALL be identical to the previous run's
 - **AND** no duplicate `Series` row SHALL be created for that tour
 
-#### Scenario: Tour identity derived from source URL with title fallback
+#### Scenario: Tour identity derived from a tour-specific source URL with title fallback
 
-- **WHEN** a tour group has a non-empty `source_url`
+- **WHEN** a tour group has a non-empty `source_url` that is a tour-specific page
 - **THEN** the `seriesID` SHALL be derived deterministically from that `source_url`
 - **AND** when `source_url` is absent, it SHALL be derived from the artist-scoped normalized tour title
+
+#### Scenario: Generic (non-tour-specific) source URL is treated as absent
+
+- **WHEN** a tour group's `source_url` resolves to a generic index page (e.g. an artist `/live` or `/news` root, or a shared label / agency / promoter page) rather than a tour-specific page
+- **THEN** the system SHALL treat the `source_url` as absent for identity purposes
+- **AND** SHALL fall back to the artist-scoped normalized tour title, so that unrelated tours sharing a generic URL are not merged into a single `Series`
 
 ### Requirement: Standalone Concerts Retain Per-Venue-Date Series
 

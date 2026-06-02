@@ -16,7 +16,7 @@
 ## 2. Database Migration (backend)
 
 - [ ] 2.1 Create Atlas migration for `sales_phases` table (id UUID PK, series_id FK→series, method SMALLINT, channel SMALLINT, provider_name TEXT, sequence INT, apply_start_at/apply_end_at/lottery_result_at/payment_deadline_at TIMESTAMPTZ nullable, url TEXT nullable)
-- [ ] 2.2 Enforce uniqueness on the derived phase identity (stable + collision-free; must NOT collapse two UNSPECIFIED-channel/default-sequence phases — disambiguate via apply_start_at, else provider_name, else extraction order)
+- [ ] 2.2 Add an immutable `stable_key` column (set once at insert, never updated) and a unique constraint on `(series_id, stable_key)`; the key is frozen from the best-available distinguishing attribute (apply_start_at, else provider_name, else extraction order) so a later null→confirmed update never re-keys the phase into a duplicate
 - [ ] 2.3 Create `event_sales_phases` join table (`sales_phase_id`, `event_id`) for the covered-events M:N relationship; each `event_id` references an event of the phase's series
 - [ ] 2.4 Create `sales_phase_reminders` sent-log table with unique `(user_id, sales_phase_id, stage)` (reference the phase surrogate id, not series_id+sequence)
 - [ ] 2.5 Apply migration locally and verify with `atlas migrate apply --env local`; confirm `ticket_emails` is unchanged
@@ -25,7 +25,7 @@
 
 - [ ] 3.1 Define `SalesPhase` entity struct, `SalesMethod`/`SalesChannel` constants in `internal/entity/sales_phase.go`
 - [ ] 3.2 Define `SalesPhaseRepository` interface (Upsert by stable logical identity, ListUpcomingByDueWindow, GetBySeries, replace covered `event_ids`)
-- [ ] 3.3 Implement pgx-based `SalesPhaseRepository`: upsert via the collision-free stable identity (not raw `(series_id, channel, sequence)`), last-write-wins on timeline/url/provider_name, and replace the `event_sales_phases` rows for the phase
+- [ ] 3.3 Implement pgx-based `SalesPhaseRepository`: upsert by matching the frozen immutable `stable_key` (not raw `(series_id, channel, sequence)`; never recompute the key on update), last-write-wins on timeline/url/provider_name, and replace the `event_sales_phases` rows for the phase
 - [ ] 3.4 Add the actionable-data guard (skip persistence when no timestamp and no method+url)
 - [ ] 3.5 Write repository integration tests (upsert idempotency, last-write-wins, guard)
 
