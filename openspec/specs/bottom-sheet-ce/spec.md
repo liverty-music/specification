@@ -70,7 +70,7 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 - **WHEN** the sheet is open and `dismissable` is `true`
 - **AND** the user taps/clicks the dimmed area above the sheet body (the `.dismiss-zone`)
 - **THEN** the CE SHALL set `open` to `false`, call `close()`, and dispatch `sheet-closed`
-- **NOTE** Tap-outside is implemented as a `click` handler on the `.dismiss-zone` element, NOT via `::backdrop` (the UA stylesheet forces `pointer-events: none` on `::backdrop`) and NOT via `closedby` (under full-viewport coverage every tap targets a `<dialog>` descendant, so native light-dismiss never fires)
+- **NOTE** Tap-outside is implemented as a `click` handler on the `.dismiss-zone` element, NOT via `::backdrop` and NOT via `closedby`: under full-viewport coverage the dialog box occludes the backdrop, so every tap targets a `<dialog>` descendant and neither the `::backdrop` (the `event.target === dialog` light-dismiss pattern) nor `closedby` native light-dismiss ever fires. (The `[popover]::backdrop { pointer-events: none }` UA rule applies to popovers, not `<dialog>::backdrop`, so it is not the reason here.)
 - **WHEN** `dismissable` is `false`
 - **THEN** the `.dismiss-zone` tap SHALL NOT close the sheet
 
