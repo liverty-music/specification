@@ -2,21 +2,23 @@
 
 ### Requirement: SalesPhase Entity
 
-The system SHALL define a `SalesPhase` entity representing one ticket-sales opportunity for a tour/series. Each sales phase is Series-scoped because sales phases are announced per tour and apply to all of its dates.
+The system SHALL define a `SalesPhase` entity representing one ticket-sales opportunity. Each sales phase belongs to a `Series` (the tour) and covers a specific subset of that series' events, because a tour can announce distinct phases for different legs (e.g. first-half dates vs. second-half dates) rather than one phase applying uniformly to every date.
 
 #### Scenario: SalesPhase data model
 
 - **WHEN** a sales phase is represented
 - **THEN** it SHALL include `id` (SalesPhaseId), `series_id` (SeriesId), `method` (SalesMethod), `channel` (SalesChannel), `provider_name` (string), and `sequence` (int32)
+- **AND** it SHALL include the set of events it covers as `event_ids` (repeated EventId), all belonging to `series_id`
 - **AND** it SHALL include nullable timeline fields: `apply_start_time`, `apply_end_time`, `lottery_result_time`, `payment_deadline_time` (each a Timestamp)
 - **AND** it SHALL include a nullable `url` field reusing the `Url` value object
 - **AND** `series_id` SHALL be the only required reference
 
-#### Scenario: Series-scoped relationship
+#### Scenario: Phase covers a subset of the series' events
 
-- **WHEN** a series has multiple events (tour dates)
-- **THEN** a single `SalesPhase` SHALL apply to the whole series
-- **AND** a standalone concert (series of one event) SHALL be represented the same way
+- **WHEN** a tour announces separate sales phases for different legs (e.g. first-half and second-half dates)
+- **THEN** each `SalesPhase` SHALL cover only the events of its leg via `event_ids`
+- **AND** an `Event` SHALL be resolvable to the phases that cover it
+- **AND** a standalone concert (series of one event) SHALL have its phases cover that single event
 
 ### Requirement: SalesPhase Identity
 
@@ -92,4 +94,5 @@ The system SHALL store sales phases in a `sales_phases` table.
 - **THEN** it SHALL have an `id` UUID primary key and a `series_id` foreign key referencing series
 - **AND** it SHALL store method, channel, provider_name, sequence, the four nullable timestamps, and url
 - **AND** it SHALL enforce uniqueness on the derived phase identity defined by the Stable, Collision-Free Phase Identity requirement (not on `(series_id, channel, sequence)` when `channel`/`sequence` are defaulted)
+- **AND** the covered-events relationship SHALL be stored in an `event_sales_phases` join table keyed by `(sales_phase_id, event_id)`, each `event_id` referencing an event of the phase's series
 - **AND** the existing `ticket_emails` table SHALL NOT be modified by this change

@@ -10,6 +10,13 @@ The system SHALL provide a sales-phase searcher that is separate from the concer
 - **THEN** it SHALL issue a Gemini call grounded to find that series' ticket sales information
 - **AND** it SHALL return the extracted sales phases for that series
 
+#### Scenario: Extract the events each phase covers
+
+- **WHEN** the searcher extracts a sales phase for a series
+- **THEN** it SHALL determine which of the series' dates that phase covers (e.g. a first-half leg)
+- **AND** resolve those dates to the series' known `event_id`s, recording them as the phase's covered events
+- **AND** dates that cannot be resolved to a known event SHALL be dropped rather than guessed
+
 #### Scenario: One call per series
 
 - **WHEN** discovery processes multiple series
@@ -47,3 +54,18 @@ The system SHALL run a scheduled job that discovers sales phases for the upcomin
 - **WHEN** the discovery job runs again over the same series
 - **THEN** previously discovered phases SHALL converge to the same rows via the upsert key
 - **AND** no duplicate sales phases SHALL be created
+
+### Requirement: Event-Driven Announcement on New Phase
+
+The system SHALL push an announcement when a newly discovered sales phase is persisted, reusing the existing discovery→event→push pipeline. This announcement is event-driven and distinct from the time-based reminders.
+
+#### Scenario: New phase announced
+
+- **WHEN** the discovery job persists a sales phase that did not previously exist
+- **THEN** it SHALL publish a sales-phase-discovered event
+- **AND** a consumer SHALL push an announcement to the followers of the performers of the phase's covered events, applying the existing hype-level filter
+
+#### Scenario: Re-discovered phase is not re-announced
+
+- **WHEN** the discovery job re-encounters an already-known phase (only updating its fields)
+- **THEN** it SHALL NOT publish a new announcement for that phase

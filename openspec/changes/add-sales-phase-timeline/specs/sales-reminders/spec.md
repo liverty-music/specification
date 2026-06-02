@@ -19,16 +19,27 @@ The system SHALL run a scheduled job that scans sales phases for approaching mil
 - **WHEN** a sales phase has a null timestamp for a given stage
 - **THEN** no reminder SHALL be emitted for that stage
 
+#### Scenario: Payment deadline is not a reminder stage
+
+- **WHEN** a sales phase has a non-null `payment_deadline_time`
+- **THEN** the scan SHALL NOT emit a payment-deadline reminder in this capability
+- **AND** payment reminders SHALL remain deferred until lottery win/loss gating exists, because only winners owe payment
+
 ### Requirement: Reminder Audience
 
-The system SHALL target reminders to the followers of the performing artists of the sales phase's series, applying the existing hype-level filtering used for new-concert notifications.
+The system SHALL target reminders to the followers of the performing artists of the events the sales phase covers (its `event_ids`), applying the existing hype-level filtering used for new-concert notifications. Resolving via covered events (not the whole series) ensures a leg-specific phase notifies only followers relevant to that leg's dates.
 
-#### Scenario: Resolve audience from series
+#### Scenario: Resolve audience from covered events
 
 - **WHEN** a sales-phase reminder is due
-- **THEN** the system SHALL resolve the series' events and their performing artists
+- **THEN** the system SHALL resolve the phase's covered events (`event_ids`) and their performing artists
 - **AND** select followers of those artists according to their hype level
 - **AND** deliver the reminder only to the selected followers' push subscriptions
+
+#### Scenario: First-half phase does not notify second-half-only followers
+
+- **WHEN** a phase covers only the first-half dates of a tour
+- **THEN** its reminders SHALL resolve audience from those first-half events only
 
 ### Requirement: Once-Only Delivery
 

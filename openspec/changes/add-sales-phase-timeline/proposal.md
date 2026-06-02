@@ -4,16 +4,16 @@ Fans who refuse to miss a live show currently get notified when a new concert is
 
 ## What Changes
 
-- Introduce a `SalesPhase` entity that models one ticket-sales opportunity for a tour/series (method, channel, sequence, application window, lottery-result time, payment deadline, application URL). It is **Series-scoped**, because sales phases are announced per tour, not per individual date. **This depends on `auto-discovery-series-grouping`**: only once a `Series` represents a whole tour does Series-scoping avoid per-date duplication — without it the current per-`(venue, date)` SINGLE fallback would fragment a tour and duplicate each phase per date.
-- Add a dedicated Gemini-grounded **sales-phase searcher**, separate from the concert searcher, that takes an artist name + series title as input and extracts that series' sales phases. A new scheduled discovery job loops over known series and upserts `SalesPhase` rows idempotently.
-- Add a **multi-stage reminder** job that scans upcoming sales phases and pushes notifications at: application open, 24h before close, 1h before close, and lottery-result day. Reminders target performers' followers, reusing the existing hype-filtered Web Push pipeline.
+- Introduce a `SalesPhase` entity that models one ticket-sales opportunity (method, channel, sequence, application window, lottery-result time, payment deadline, application URL). It **belongs to a `Series` (tour)** and **covers a subset of that tour's events** via an `event_sales_phases` join, so a tour can have distinct phases per leg (e.g. first-half vs. second-half dates) rather than one phase applying to every date. **This depends on `auto-discovery-series-grouping`**: only once a `Series` represents a whole tour (multiple events) does the per-leg subset model hold — without it the current per-`(venue, date)` SINGLE fallback gives each Series a single event and the subset degenerates.
+- Add a dedicated Gemini-grounded **sales-phase searcher**, separate from the concert searcher, that takes an artist name + series title as input and extracts that series' sales phases **and the dates each phase covers**. A new scheduled discovery job loops over known series and upserts `SalesPhase` rows idempotently.
+- **Two notification paths**: (1) an **event-driven announcement** when the discovery job finds a new phase (reusing the existing discovery→event→push pipeline), and (2) **time-based reminders** scanned at: application open, 24h before close, 1h before close, and lottery-result day. Both target the followers of the performers of each phase's **covered events**, reusing the existing hype-filtered Web Push pipeline.
 - **Disable the ticket-email-import entry point.** Android Gmail removed its share action, so the PWA Share Target ingestion path no longer works. The feature code/proto/DB is left in place (frozen) but its frontend entry is made unavailable and the dead `share_target` manifest entry is removed.
 
 ## Capabilities
 
 ### New Capabilities
-- `sales-phase`: The `SalesPhase` entity model (method/channel/sequence/timeline fields), its Series-scoped persistence, and the idempotent upsert key that lets repeated discovery runs converge without duplicates.
-- `sales-phase-discovery`: The dedicated Gemini searcher (series-scoped input, verbatim-extract + JSON-coerce discipline to suppress hallucinated dates) and the scheduled discovery job that refreshes sales phases for followed artists' upcoming series.
+- `sales-phase`: The `SalesPhase` entity model (method/channel/sequence/timeline fields), its Series ownership plus the covered-events M:N relationship (`event_sales_phases`), and the collision-free stable identity that lets repeated discovery runs converge without duplicates or overwrites.
+- `sales-phase-discovery`: The dedicated Gemini searcher (series-scoped input, verbatim-extract + JSON-coerce discipline, covered-event resolution) and the scheduled discovery job that refreshes sales phases for followed artists' upcoming series, including an event-driven announcement push when a new phase is found.
 - `sales-reminders`: The scheduled scan that fires multi-stage push reminders for approaching sales-phase milestones, with a sent-log for idempotent once-only delivery, reusing the existing follower hype-filter and Web Push sender.
 
 ### Modified Capabilities
