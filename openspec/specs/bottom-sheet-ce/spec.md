@@ -2,7 +2,8 @@
 
 ## Purpose
 
-Provides a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, using the Popover API on the CE host element with CSS scroll-snap dismiss via an internal scroll container.
+Provides a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, using a native `<dialog>` element opened via `showModal()` with CSS scroll-snap dismiss via an internal scroll container.
+
 ## Requirements
 ### Requirement: Bottom Sheet Custom Element
 The system SHALL provide a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, using a native `<dialog>` element opened via `showModal()` (promoted to the Top Layer with native focus-trap, `inert` background, and close-request handling) with CSS scroll-snap dismiss via an internal scroll container. The CE host (`<bottom-sheet>`) SHALL wrap an inner `<dialog>` element; the scroll container, dismiss zone, and sheet body SHALL live inside that `<dialog>`.
