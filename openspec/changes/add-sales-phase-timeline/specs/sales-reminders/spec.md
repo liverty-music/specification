@@ -63,11 +63,11 @@ The system SHALL guarantee that each reminder is delivered to a given user at mo
 
 ### Requirement: Quiet Hours
 
-The system SHALL avoid waking users at night. A reminder due during a user's quiet window (22:00–08:00 in the user's `time_zone`, falling back to `Asia/Tokyo` when `time_zone` is unset) SHALL be shifted rather than sent in the window. The shift SHALL never push a deadline-relative reminder past its deadline.
+The system SHALL avoid waking users at night for the time-based reminder scan. A reminder due during a user's quiet window (22:00–08:00 in the user's `time_zone`, falling back to `Asia/Tokyo` when `time_zone` is unset) SHALL be shifted rather than sent in the window. The shift SHALL never push a deadline-relative reminder past its deadline. (The event-driven discovery announcement is out of scope here — it fires from the daily daytime discovery job, not the scan, so it is not subject to this deferral.)
 
 #### Scenario: Non-deadline reminder defers to morning
 
-- **WHEN** a reminder whose stage is not deadline-relative (application open, lottery result, or the discovery announcement) is due inside the quiet window
+- **WHEN** a reminder whose stage is not deadline-relative (application open or lottery result) is due inside the quiet window
 - **THEN** it SHALL be deferred to the window end (08:00 in the user's timezone)
 
 #### Scenario: Deadline reminder shifts but never past the deadline
@@ -76,7 +76,8 @@ The system SHALL avoid waking users at night. A reminder due during a user's qui
 - **AND** the window end (08:00) is strictly before `apply_end_time`
 - **THEN** it SHALL be deferred to 08:00
 - **WHEN** instead `apply_end_time` is at or before the window end (i.e. falls within the quiet window or exactly at 08:00)
-- **THEN** the reminder SHALL be brought forward to the window start (22:00 the prior evening) as the last pre-quiet alert, rather than waking the user or firing at/after the deadline
+- **THEN** the scan SHALL look ahead and emit the reminder on its last run before the quiet window begins (a pre-quiet alert), since a periodic scan cannot send at a past time once the window has started
+- **AND** it SHALL never wake the user during the window nor fire at/after the deadline
 
 #### Scenario: Timezone fallback
 

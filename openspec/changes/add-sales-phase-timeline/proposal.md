@@ -12,7 +12,7 @@ Fans who refuse to miss a live show currently get notified when a new concert is
 ## Capabilities
 
 ### New Capabilities
-- `sales-phase`: The `SalesPhase` entity model (method/channel/sequence/timeline fields), its Series ownership plus the covered-events M:N relationship (`event_sales_phases`), and the collision-free stable identity that lets repeated discovery runs converge without duplicates or overwrites.
+- `sales-phase`: The `SalesPhase` entity model (method/channel/sequence/timeline fields), its Series ownership plus the covered-events M:N relationship (`event_sales_phases`), and a surrogate id with best-effort overlap matching — `(series_id, channel, sequence)` + covered-event overlap — that converges repeated discovery runs without collapsing genuinely distinct (e.g. per-leg) phases.
 - `sales-phase-discovery`: The dedicated Gemini searcher (series-scoped input, verbatim-extract + JSON-coerce discipline, covered-event resolution) and the scheduled discovery job that refreshes sales phases for followed artists' upcoming series, including an event-driven announcement push when a new phase is found.
 - `sales-reminders`: The scheduled scan that fires multi-stage push reminders for approaching sales-phase milestones, with a sent-log for idempotent once-only delivery, reusing the existing follower hype-filter and Web Push sender.
 
