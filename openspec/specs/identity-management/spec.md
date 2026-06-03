@@ -762,6 +762,70 @@ in Dev Infrastructure" requirement; the same operational pattern
 - **THEN** the secret SHALL NOT appear in any committed file in
   `cloud-provisioning`, `specification`, `backend`, or `frontend`
 
+### Requirement: Configure Login UI Branding
+
+The system SHALL configure Liverty Music brand colors for the hosted Login UI v2 of the `liverty-music` product application, so its login flow presents product branding instead of the default Zitadel appearance. Because Zitadel defines branding only at instance or organization level (there is no application-level label policy), the system SHALL define an org-level label policy on the product org AND enforce it for the product application via the project's private-labeling setting. Branding SHALL be provisioned declaratively via the Zitadel Pulumi provider and activated.
+
+#### Scenario: Brand colors on the product org label policy
+
+- **WHEN** the Zitadel resources for the `liverty-music` product org are provisioned
+- **THEN** a label policy SHALL be applied to that org with the Liverty Music brand colors (primary, background, font, warn — including dark variants) sourced from the product's brand palette
+- **AND** the policy SHALL set `disableWatermark` so no Zitadel watermark is shown
+- **AND** the policy SHALL be activated (set active) so the hosted Login UI v2 renders it
+
+#### Scenario: Enforce product branding per application
+
+- **WHEN** the product `Project` is provisioned
+- **THEN** its private-labeling setting SHALL be `ENFORCE_PROJECT_RESOURCE_OWNER_POLICY`
+- **AND** the product application's login flow SHALL render the product org's label policy regardless of the logging-in user's organization
+- **AND** the separate admin/console org login SHALL remain unaffected (it is a different org)
+
+#### Scenario: Hosted Login UI v2 reflects the brand colors
+
+- **WHEN** an end user reaches the hosted login screen (`/ui/v2/login/*`) through the product OIDC flow
+- **THEN** the screen SHALL display the Liverty Music brand colors (buttons, links, background, text)
+- **AND** it SHALL NOT display the default unbranded Zitadel colors or watermark
+
+#### Scenario: Light and dark themes are branded
+
+- **WHEN** the login screen is rendered in either light or dark mode
+- **THEN** the corresponding brand colors SHALL be applied for that theme
+
+#### Scenario: Logo and login text remain out of scope
+
+- **WHEN** the login branding is applied
+- **THEN** only brand colors and theme SHALL be customized
+- **AND** no login logo SHALL be set (deferred until a brand logo asset exists)
+- **AND** login interface text strings SHALL remain the Zitadel Login UI v2 defaults except where a later capability (Localize Login UI Text for the Product) provisions a translation override
+
+### Requirement: Localize Login UI Text for the Product
+
+The system SHALL ensure the hosted Login UI v2 for the `liverty-music` product application presents its interface text in Japanese for end users whose login language is Japanese, instead of falling back to English. Because Zitadel's built-in hosted-login default translations omit Japanese (so the Settings API returns English for the `ja` locale and that English overrides the login app's bundled Japanese), the system SHALL provision a Zitadel **Hosted Login Translation** override for the `ja` locale, declaratively via the Settings v2 API, carrying the complete Japanese key set.
+
+#### Scenario: Japanese hosted login translation is provisioned
+
+- **WHEN** the Zitadel resources for the `liverty-music` product org are provisioned
+- **THEN** a Hosted Login Translation for the `ja` locale SHALL be applied (Settings v2 `SetHostedLoginTranslation`) scoped to the product org
+- **AND** it SHALL contain the complete Japanese key set (no key left to English fallback), sourced from the deployed Zitadel login version's Japanese translations
+
+#### Scenario: Japanese login screen renders Japanese
+
+- **WHEN** an end user reaches the hosted login screen (`/ui/v2/login/*`) through the product OIDC flow with a Japanese language preference (browser `accept-language` or the in-login language selector set to 日本語)
+- **THEN** the login interface text (titles, labels, buttons) SHALL be displayed in Japanese
+- **AND** it SHALL NOT fall back to English
+
+#### Scenario: Other languages and the default are unaffected
+
+- **WHEN** the Japanese override is applied
+- **THEN** users with non-Japanese language preferences (e.g. English, German) SHALL continue to see their existing language unchanged
+- **AND** the admin/console org login SHALL remain unaffected (the override is scoped to the product org)
+
+#### Scenario: Override is retired once upstream ships Japanese defaults
+
+- **WHEN** a future Zitadel version includes Japanese in its hosted-login default translations
+- **THEN** the product MAY remove the Japanese override
+- **AND** the Japanese login SHALL still render Japanese from the upstream defaults
+
 #### Scenario: Client recreation runbook covers prod
 
 - **WHEN** the prod OAuth client is accidentally deleted in the Google
