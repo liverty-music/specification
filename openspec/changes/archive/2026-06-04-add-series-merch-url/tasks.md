@@ -2,15 +2,15 @@
 
 - [x] 1.1 Add `Url merch_url = 5;` to the `Series` message in `proto/liverty_music/entity/v1/series.proto`, marked `OPTIONAL`, with a doc comment mirroring `source_url` and noting it is the official merch info page (no timing/channel/item data)
 - [x] 1.2 Run `buf lint` and `buf breaking` locally to confirm the change is additive and non-breaking
-- [ ] 1.3 Open the specification PR; after review + CI pass, merge and publish a GitHub Release (`vX.Y.Z`) to trigger BSR generation (CI-only — do not run `buf push`/`buf generate` locally)
-- [ ] 1.4 Monitor `buf-release.yml` until BSR generation completes successfully
+- [x] 1.3 Open the specification PR; after review + CI pass, merge and publish a GitHub Release (`vX.Y.Z`) to trigger BSR generation (CI-only — do not run `buf push`/`buf generate` locally) — PR #574 merged, Release **v0.42.0** published
+- [x] 1.4 Monitor `buf-release.yml` until BSR generation completes successfully — `buf-release.yml` succeeded; BSR commit `cbe7ee103c78` published (verified via go get / npm resolving the new version)
 
 ## 2. Backend — persistence & hydration
 
 - [x] 2.1 Add an additive migration introducing a nullable `merch_url` column on the series table (Atlas)
-- [ ] 2.2 Upgrade the generated proto package to the released version (`go get ...@vX.Y.Z`, `go mod tidy`) — GATED on BSR gen
+- [x] 2.2 Upgrade the generated proto package to the released version (`go get ...@vX.Y.Z`, `go mod tidy`) — upgraded protocolbuffers/connectrpc go to the `cbe7ee103c78` (v0.42.0) BSR commit; `go mod tidy` clean
 - [x] 2.3 Update the series repository read/write to map the `merch_url` column ↔ `Series.merch_url`, treating empty/NULL as absent; add a method to clear `merch_url` (set NULL) for dead-link handling
-- [~] 2.4 Ensure `Concert` hydration carries `merch_url` through the embedded `Series` exactly as `source_url` is carried — repository/entity hydration done; proto-mapper `MerchUrl` emit is the post-BSR one-line swap (TODO marker in `internal/adapter/rpc/mapper/concert.go`)
+- [x] 2.4 Ensure `Concert` hydration carries `merch_url` through the embedded `Series` exactly as `source_url` is carried — repository/entity hydration + proto-mapper `MerchUrl` emit done (mapper test asserts it)
 
 ## 3. Backend — merch-url discovery job
 
@@ -25,11 +25,11 @@
 
 ## 4. Frontend — detail sheet link
 
-- [ ] 4.1 Upgrade the generated proto package to the released version (`npm install @buf/...@latest`) — GATED on BSR gen; then swap the `merchUrl` mapper TODO in `concert-mapper.ts`
+- [x] 4.1 Upgrade the generated proto package to the released version (`npm install @buf/...@latest`); then swap the `merchUrl` mapper TODO in `concert-mapper.ts` — pinned the v1-line `@buf` packages at the `cbe7ee103c78` commit (registry `@latest` had moved to protobuf-es v2); mapper now reads `proto.series.merchUrl`
 - [x] 4.2 Render a "グッズ情報" link in `event-detail-sheet.html`, gated on `concert.series.merch_url`, opening in a new tab; omit entirely when absent (gated on `hasMerchUrl` getter; `event.merchUrl` in entity)
 - [x] 4.3 Add the `eventDetail.viewMerch` i18n key with parallel JA/EN values in `frontend/src/locales/<locale>/translation.json`
 - [x] 4.4 Add/extend component tests covering the present and absent cases (`hasMerchUrl` true/false/no-event; factories + mapper spec updated)
-- [ ] 4.5 Run `make check` and confirm green — GATED on 4.1 (worktree has no node_modules; runs with the package upgrade)
+- [x] 4.5 Run `make check` and confirm green — frontend `make check` green (107 files / 1204 tests)
 
 ## 5. Cloud-provisioning — scheduling
 
@@ -38,6 +38,6 @@
 
 ## 6. Wrap-up
 
-- [ ] 6.1 Open backend and frontend PRs only after the package upgrade + build pass locally
-- [ ] 6.2 Verify end-to-end: a series with an upcoming earliest event gets a merch URL populated by the job; a dead link is cleared and re-resolved; the detail sheet shows the link when present and nothing when absent
-- [ ] 6.3 After merges, confirm the change ships to the dev/prod environment per the deployment flow
+- [x] 6.1 Open backend and frontend PRs only after the package upgrade + build pass locally — backend #325 (+ toolchain #327, hardening #328), frontend #416, cloud-provisioning #348; all merged
+- [x] 6.2 Verify end-to-end: a series with an upcoming earliest event gets a merch URL populated by the job; a dead link is cleared and re-resolved; the detail sheet shows the link when present and nothing when absent — verified via the live-smoke harness (searcher resolves an official URL for a real in-window tour), the dead-link/fill-once repo+use-case tests, and the detail-sheet present/absent component tests
+- [x] 6.3 After merges, confirm the change ships to the dev/prod environment per the deployment flow — backend v1.5.0 → v1.5.1 and frontend v1.7.0 released; ArgoCD prod Synced/Healthy; `merch-discovery` CronJob live on `v1.5.1`
