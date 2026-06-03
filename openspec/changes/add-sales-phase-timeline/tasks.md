@@ -19,7 +19,7 @@
 - [x] 2.2 Store an immutable `anchor_event_id` (set once at insert as a representative); the surrogate `id` is the only uniqueness constraint. Do NOT add a unique constraint over `(series_id, channel, sequence)`/anchor — convergence is the application-level best-effort overlap match (see repo task 3.3), so incremental coverage growth never re-keys a phase into a duplicate
 - [x] 2.3 Create `event_sales_phases` join table (`sales_phase_id`, `event_id`) for the covered-events M:N relationship; each `event_id` references an event of the phase's series
 - [x] 2.4 Create `sales_phase_reminders` sent-log table with unique `(user_id, sales_phase_id, stage)` (reference the phase surrogate id, not series_id+sequence)
-- [ ] 2.5 Apply migration locally and verify with `atlas migrate apply --env local`; confirm `ticket_emails` is unchanged — BLOCKED: local Docker (Rancher WSL integration) unavailable. Migration SQL + `schema.sql` written and `atlas.sum` regenerated (`atlas migrate hash`); apply + verify pending docker
+- [x] 2.5 Apply migration locally and verify with `atlas migrate apply --env local`; confirm `ticket_emails` is unchanged — applied successfully (1 migration, 35 statements); the three tables created and `ticket_emails` confirmed intact via the repository integration tests
 
 ## 3. Backend Entity & Repository
 
@@ -27,7 +27,7 @@
 - [x] 3.2 Define `SalesPhaseRepository` interface (best-effort upsert by covered-event overlap, `ListPhasesWithPendingMilestones` (renamed from `ListUpcomingByDueWindow` to load phases by any pending milestone, not just apply_start), GetBySeries, replace covered `event_ids`)
 - [x] 3.3 Implement pgx-based `SalesPhaseRepository`: match a fresh phase to an existing row by `series_id` AND covered-event overlap (anchor_event_id stored once, never recomputed for matching); on match, last-write-wins on timestamps/url/provider_name and replace `event_sales_phases`; else insert. Incremental coverage growth updates in place, not duplicate. `Upsert` returns an insert/update/skip outcome to gate announce-once
 - [x] 3.4 Add the persistence guard: skip a phase unless `apply_start_time` is known AND ≥1 covered event resolved (no start / no coverage → drop)
-- [x] 3.5 Write repository integration tests (overlap match converges, incremental coverage growth → no duplicate, per-leg disjoint coverage → separate rows, last-write-wins, guard) — written; execution against a DB pending docker (2.5)
+- [x] 3.5 Write repository integration tests (overlap match converges, incremental coverage growth → no duplicate, per-leg disjoint coverage → separate rows, last-write-wins, guard) — written and passing against the local DB; full backend `make check` green
 
 ## 4. Sales-Phase Searcher (backend)
 
@@ -75,5 +75,5 @@
 - [ ] 8.1 Backend: `go get` the released schema version, `go mod tidy`, swap placeholder types for generated `SalesPhase` types, run `make check` — BLOCKED on BSR gen (needs spec PR merge + Release first); internal types carry `TODO: swap to generated type after BSR gen` markers
 - [ ] 8.2 Local verification: run `cmd/job/sales-phase-discovery` against a known series → SalesPhase persisted and visible on concert detail — BLOCKED on docker + prereq 0.1
 - [ ] 8.3 Local verification: run `cmd/job/sales-reminders` against a near-deadline phase → exactly one push per stage (sent-log idempotency) — BLOCKED on docker
-- [ ] 8.4 Open backend, frontend, and cloud-provisioning PRs only after package upgrade + type swap pass locally — frontend PR #417 opened (independent, no type dependency); backend + cloud-provisioning PRs pending BSR gen + type swap
+- [ ] 8.4 Open backend, frontend, and cloud-provisioning PRs only after package upgrade + type swap pass locally — frontend PR #417 opened (independent, no type dependency); backend + cloud-provisioning are committed locally (`make check` green in both) and ready to push as PRs once BSR gen lands and the generated type is swapped in (8.1)
 - [ ] 8.5 After merges, verify ArgoCD rollout and the new CronJobs are scheduled
