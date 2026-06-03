@@ -73,10 +73,10 @@ The system SHALL avoid waking users at night. A reminder due during a user's qui
 #### Scenario: Deadline reminder shifts but never past the deadline
 
 - **WHEN** a deadline-relative reminder (24h-before or 1h-before close) is due inside the quiet window
-- **AND** the window end (08:00) is still before `apply_end_time`
+- **AND** the window end (08:00) is strictly before `apply_end_time`
 - **THEN** it SHALL be deferred to 08:00
-- **WHEN** instead `apply_end_time` itself falls within the quiet window
-- **THEN** the reminder SHALL be brought forward to the window start (22:00 the prior evening) as the last pre-quiet alert, rather than waking the user or firing after the deadline
+- **WHEN** instead `apply_end_time` is at or before the window end (i.e. falls within the quiet window or exactly at 08:00)
+- **THEN** the reminder SHALL be brought forward to the window start (22:00 the prior evening) as the last pre-quiet alert, rather than waking the user or firing at/after the deadline
 
 #### Scenario: Timezone fallback
 
