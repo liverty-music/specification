@@ -5,12 +5,12 @@
 
 ## 1. Proto Definitions (specification)
 
-- [ ] 1.1 Define `SalesPhaseId` wrapper message (UUID) in `entity/v1/sales_phase.proto`
-- [ ] 1.2 Define `SalesMethod` enum (`UNSPECIFIED`, `LOTTERY`, `FIRST_COME`) in `entity/v1/sales_phase.proto`
-- [ ] 1.3 Define `SalesChannel` enum (`UNSPECIFIED`, `FAN_CLUB`, `OFFICIAL`, `PLAYGUIDE`, `CREDIT_CARD`, `MOBILE_CARRIER`, `GENERAL`)
-- [ ] 1.4 Define `SalesPhase` message: `id`, `series_id` (required), `repeated EventId event_ids` (covered events), `method`, `channel`, `provider_name`, `sequence`, nullable `apply_start_time`/`apply_end_time`/`lottery_result_time`/`payment_deadline_time`, nullable `url` (reuse `Url` VO); use `_time` naming, no `_at`
-- [ ] 1.5 (Optional) Add a reference RPC / compose `repeated SalesPhase` on the concert-detail response if surfacing on concert detail this phase
-- [ ] 1.6 Run `buf lint` and `buf format -w`; verify no breaking changes (additive only; `ticket_email.proto` untouched)
+- [x] 1.1 Define `SalesPhaseId` wrapper message (UUID) in `entity/v1/sales_phase.proto`
+- [x] 1.2 Define `SalesMethod` enum (`UNSPECIFIED`, `LOTTERY`, `FIRST_COME`) in `entity/v1/sales_phase.proto`
+- [x] 1.3 Define `SalesChannel` enum (`UNSPECIFIED`, `FAN_CLUB`, `OFFICIAL`, `PLAYGUIDE`, `CREDIT_CARD`, `MOBILE_CARRIER`, `GENERAL`)
+- [x] 1.4 Define `SalesPhase` message: `id`, `series_id` (required), `repeated EventId event_ids` (covered events), `method`, `channel`, `provider_name`, `sequence`, nullable `apply_start_time`/`apply_end_time`/`lottery_result_time`/`payment_deadline_time`, nullable `url` (reuse `Url` VO); use `_time` naming, no `_at`
+- [ ] 1.5 (Optional) Add a reference RPC / compose `repeated SalesPhase` on the concert-detail response if surfacing on concert detail this phase — deferred (design Open Question: surfacing on concert detail is not decided for this phase)
+- [x] 1.6 Run `buf lint` and `buf format -w`; verify no breaking changes (additive only; `ticket_email.proto` untouched)
 - [ ] 1.7 Open specification PR; after review + CI, merge and publish a GitHub Release to trigger BSR gen (CI-only; do not run `buf push`/`buf generate` locally)
 
 ## 2. Database Migration (backend)
