@@ -76,4 +76,14 @@ message Series {
   // semantics (Ignore.IGNORE_UNSPECIFIED), so callers omitting the
   // field never hit the Url.value min_len / uri rules.
   Url source_url = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // The official merchandise information page shared across the series
+  // (an official site page or official social media post). Optional and
+  // populated asynchronously by the merch-url discovery job, so most
+  // series carry a nil wrapper until their earliest event nears. Stores
+  // only the link: no sale timing, channel, price, or item data — those
+  // remain on the linked page. Same optionality semantics as source_url:
+  // a nil wrapper skips inner-Url validation, while a present wrapper
+  // SHALL satisfy the Url.value min_len / uri rules.
+  Url merch_url = 5 [(google.api.field_behavior) = OPTIONAL];
 }
