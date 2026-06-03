@@ -61,27 +61,29 @@ The system SHALL require `apply_start_time` on every persisted phase (see Persis
 
 ### Requirement: Best-Effort Stable Phase Identity
 
-The system SHALL give each sales phase a surrogate `id` (UUID) as its only hard identity (the handle referenced by reminders), and SHALL converge re-extractions of the same real phase to the same row on a best-effort basis while keeping genuinely distinct phases — notably per-leg phases — in separate rows. It SHALL NOT rely on a unique key over `(series_id, channel, sequence)` alone, because `channel` and `sequence` may default (`UNSPECIFIED`, `0`) for unclassifiable phases, which would let one phase overwrite another.
+The system SHALL give each sales phase a surrogate `id` (UUID) as its only hard identity (the handle referenced by reminders). Re-extractions of the same real phase SHALL converge to the same row on a best-effort basis. Because the source data is LLM-extracted and incrementally resolved — coverage grows over runs and `channel`/`sequence` may reclassify (e.g. `UNSPECIFIED`/`0` → `FAN_CLUB`/`1`) — no field is perfectly stable.
 
-The upsert SHALL match a freshly extracted phase to an existing row by `(series_id, channel, sequence)` **and covered-event overlap**. A frozen `anchor_event_id` (the earliest covered event recorded at first insert) MAY be stored as a representative but SHALL NOT be recomputed for matching: because coverage is resolved incrementally, recomputing an "earliest event" would drift and re-key the phase into a duplicate, so covered-event overlap (not a recomputed anchor) is what holds re-discovery stable. All non-key fields — `apply_start_time`, `apply_end_time`, `lottery_result_time`, `payment_deadline_time`, `provider_name`, `url`, and the covered-event set — are last-write-wins on a matched row.
+The primary match signal SHALL be **same `series_id` + covered-event overlap**. Event IDs are immutable and overlap survives both incremental coverage growth and `channel`/`sequence` reclassification, so a reclassified or coverage-grown phase converges to its existing row instead of re-keying into a duplicate. `channel`, `sequence`, and a frozen `anchor_event_id` are recorded for display and used **only** to keep clearly-different sales (e.g. distinct rounds) separate when their coverage overlaps; they SHALL NOT be hard-equality match keys. All non-key fields — `apply_start_time`, the other timestamps, `provider_name`, `url`, and the covered-event set — are last-write-wins on a matched row.
+
+This stance favors robust convergence; the accepted residual is the rare case of two genuinely distinct phases that share covered events and are indistinguishable by `channel`/`sequence`. Such a pair would be **conflated — one phase's data silently overwritten via last-write-wins (data loss)**, not merely duplicated. This is accepted as a known limitation of fuzzy extracted data and minimized by `channel`/`sequence` disambiguation.
 
 #### Scenario: Re-extraction converges to one row
 
-- **WHEN** the same real sales phase is extracted again with updated details
-- **THEN** it SHALL resolve to the existing row by matching `(series_id, channel, sequence)` and overlapping covered events
-- **AND** later writes of `apply_start_time`, `apply_end_time`, `lottery_result_time`, `payment_deadline_time`, `provider_name`, `url`, and the covered-event set SHALL take precedence (last-write-wins)
+- **WHEN** the same real sales phase is extracted again with updated details (possibly reclassified channel/sequence or grown coverage)
+- **THEN** it SHALL match the existing row by same `series_id` and covered-event overlap
+- **AND** its fields (`apply_start_time`, the other timestamps, `provider_name`, `url`, covered-event set) SHALL be updated last-write-wins without inserting a duplicate or re-firing the announcement
 
-#### Scenario: Incremental coverage growth does not duplicate
+#### Scenario: Reclassification does not duplicate
 
-- **WHEN** a phase first persisted covering later dates is re-discovered with an additional earlier date now resolved
-- **THEN** the still-overlapping coverage SHALL match the existing row and update it in place
-- **AND** it SHALL NOT insert a new row (the stored `anchor_event_id` is not recomputed) or re-fire the `SALES_PHASE.discovered` announcement
+- **WHEN** a phase first persisted as `(channel = UNSPECIFIED, sequence = 0)` is re-extracted as `(FAN_CLUB, 1)` with overlapping coverage
+- **THEN** covered-event overlap SHALL still match the existing row (channel/sequence are not hard-equality keys)
+- **AND** it SHALL update in place rather than insert a duplicate or re-fire `SALES_PHASE.discovered`
 
 #### Scenario: Per-leg phases stay separate
 
 - **WHEN** a series has a first-half phase and a second-half phase with disjoint covered events
 - **THEN** their non-overlapping coverage SHALL keep them as separate rows
-- **AND** the rare case of two genuinely distinct same-`(series, channel, sequence)` phases with overlapping coverage is accepted best-effort (at worst a redundant row)
+- **AND** the residual risk is over-matching two genuinely distinct phases that share coverage and channel/sequence — accepted as a rare known limitation whose failure is silent conflation (data loss), minimized by channel/sequence disambiguation
 
 ### Requirement: Persist Only Phases With a Known Start and Coverage
 
@@ -110,7 +112,7 @@ The system SHALL store sales phases in a `sales_phases` table.
 
 - **WHEN** the `sales_phases` table is created
 - **THEN** it SHALL have an `id` UUID primary key and a `series_id` foreign key referencing series
-- **AND** it SHALL store method, channel, provider_name, sequence, the four nullable timestamps, and url
+- **AND** it SHALL store method, channel, provider_name, sequence, `apply_start_at` (NOT NULL), the three nullable timestamps (`apply_end_at`, `lottery_result_at`, `payment_deadline_at`), and url
 - **AND** the surrogate `id` SHALL be the only uniqueness constraint; it SHALL store an immutable `anchor_event_id` (set once at insert as a representative, never recomputed) but SHALL NOT impose a unique constraint over `(series_id, channel, sequence)` or the anchor, since convergence is the application-level best-effort overlap match defined in Best-Effort Stable Phase Identity
 - **AND** the covered-events relationship SHALL be stored in an `event_sales_phases` join table keyed by `(sales_phase_id, event_id)`, each `event_id` referencing an event of the phase's series
 - **AND** the existing `ticket_emails` table SHALL NOT be modified by this change

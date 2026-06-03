@@ -53,7 +53,7 @@ The system SHALL target reminders to the followers of the performing artists of 
 
 ### Requirement: Once-Only Delivery
 
-The system SHALL guarantee that each reminder is delivered to a given user at most once, despite overlapping scans, by recording sent reminders keyed by the sales phase's stable id.
+The system SHALL guarantee that each reminder is delivered to a given user at most once, despite overlapping scans, by recording sent reminders keyed by the sales phase's surrogate id.
 
 #### Scenario: Duplicate scan does not resend
 
