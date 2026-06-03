@@ -98,6 +98,22 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 - **THEN** the sheet SHALL NOT be dismissible (no swipe-down, no outside tap, no escape key)
 - **AND** the coach mark overlay SHALL appear above the sheet in the top layer, targeting `[data-nav-my-artists]`
 
+### Requirement: Merch Info Link in Concert Detail
+
+The concert detail sheet SHALL render a merchandise information link when the concert's embedded series carries a `merch_url`, as a sibling to the existing official-info link. The link SHALL be omitted entirely when `merch_url` is absent, with no placeholder or disabled state.
+
+#### Scenario: Merch link rendered when merch_url is present
+
+- **WHEN** the concert detail view is open and `concert.series.merch_url` is present
+- **THEN** it SHALL render a button linking to `merch_url` in a new tab
+- **AND** the button's visible label SHALL be sourced from the `eventDetail.viewMerch` i18n key
+
+#### Scenario: Merch link omitted when merch_url is absent
+
+- **WHEN** the concert detail view is open and `concert.series.merch_url` is absent
+- **THEN** no merch information button SHALL be rendered
+- **AND** the absence SHALL NOT affect rendering of the official-info link or any other control
+
 ### Requirement: Localized Concert Detail Sheet Copy
 
 The frontend SHALL render all user-facing text in the concert detail sheet via i18n keys under a dedicated `eventDetail.*` namespace, with parallel JA and EN translations in `frontend/src/locales/<locale>/translation.json`. No literal English (or any other language) text SHALL be embedded directly in the `event-detail-sheet.html` template.
@@ -119,6 +135,7 @@ The frontend SHALL render all user-facing text in the concert detail sheet via i
   - `eventDetail.ticketStatus` — the ticket-status section heading
   - `eventDetail.stopTracking` — the "remove ticket journey" button label
   - `eventDetail.viewOfficialInfo` — the official info link label
+  - `eventDetail.viewMerch` — the merchandise info link label
   - `eventDetail.addToCalendar` — the add-to-calendar link label
 
 #### Scenario: Journey status enum values are i18n-keyed
