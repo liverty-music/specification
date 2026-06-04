@@ -39,7 +39,7 @@ The exported `favicon.svg` is a raster wearing an `.svg` extension (1528×1528 P
 The export's `site.webmanifest` is generic boilerplate and would destroy the existing `share_target`, `lang: ja`, and themed configuration. We keep `frontend/public/manifest.webmanifest` and only update its `icons`: remove the two SVG entries (`/favicon.svg`, `/apple-touch-icon.svg`), point apple-touch at the new `/apple-touch-icon.png`, and keep the 192/512 entries (including the maskable 512) by saving the new PWA PNGs under the existing filenames.
 
 **3. Save new PWA PNGs under the existing filenames.**
-`web-app-manifest-192x192.png` → `public/icons/icon-192x192.png`, `web-app-manifest-512x512.png` → `public/icons/icon-512x512.png`. This keeps the manifest's `/icons/icon-*` `src` paths valid with only a byte swap and avoids touching the three 512 entries' paths.
+`web-app-manifest-192x192.png` → `public/icons/icon-192x192.png`, `web-app-manifest-512x512.png` → `public/icons/icon-512x512.png`. This keeps the manifest's `/icons/icon-*` `src` paths valid with only a byte swap and avoids touching the 192 and both 512 entries' paths.
 
 **4. Keep the public-root file layout.**
 The export snippet assumes everything under `/icons/` (including the manifest). We keep root-level placement (`/favicon-96x96.png`, `/favicon.ico`, `/apple-touch-icon.png`, `/manifest.webmanifest`) to minimize edits to `index.html` and avoid a path migration.
