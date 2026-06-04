@@ -11,7 +11,7 @@
 - [x] 1.4 Define `SalesPhase` message: `id`, `series_id` (required), `repeated EventId event_ids` (covered events), `method`, `channel`, `provider_name`, `sequence`, nullable `apply_start_time`/`apply_end_time`/`lottery_result_time`/`payment_deadline_time`, nullable `url` (reuse `Url` VO); use `_time` naming, no `_at`
 - [ ] 1.5 (Optional) Add a reference RPC / compose `repeated SalesPhase` on the concert-detail response if surfacing on concert detail this phase — deferred (design Open Question: surfacing on concert detail is not decided for this phase)
 - [x] 1.6 Run `buf lint` and `buf format -w`; verify no breaking changes (additive only; `ticket_email.proto` untouched)
-- [ ] 1.7 Open specification PR; after review + CI, merge and publish a GitHub Release to trigger BSR gen (CI-only; do not run `buf push`/`buf generate` locally) — PR #578 opened and green/merge-ready; merge + Release pending (gated on user + prereq 0.1 coordination)
+- [x] 1.7 Open specification PR; after review + CI, merge and publish a GitHub Release to trigger BSR gen (CI-only; do not run `buf push`/`buf generate` locally) — PR #578 merged; GitHub Release **v0.43.0** published; `buf-release.yml` BSR gen succeeded
 
 ## 2. Database Migration (backend)
 
@@ -72,8 +72,8 @@
 
 ## 8. Integration & Release
 
-- [ ] 8.1 Backend: `go get` the released schema version, `go mod tidy`, swap placeholder types for generated `SalesPhase` types, run `make check` — BLOCKED on BSR gen (needs spec PR merge + Release first); internal types carry `TODO: swap to generated type after BSR gen` markers
-- [ ] 8.2 Local verification: run `cmd/job/sales-phase-discovery` against a known series → SalesPhase persisted and visible on concert detail — BLOCKED on docker + prereq 0.1
-- [ ] 8.3 Local verification: run `cmd/job/sales-reminders` against a near-deadline phase → exactly one push per stage (sent-log idempotency) — BLOCKED on docker
-- [ ] 8.4 Open backend, frontend, and cloud-provisioning PRs only after package upgrade + type swap pass locally — frontend PR #417 opened (independent, no type dependency); backend + cloud-provisioning are committed locally (`make check` green in both) and ready to push as PRs once BSR gen lands and the generated type is swapped in (8.1)
+- [x] 8.1 Backend: `go get` the released schema version, `go mod tidy`, swap placeholder types for generated `SalesPhase` types, run `make check` — no-op in practice: the backend consumes **internal** entity types end-to-end and never imports the generated `SalesPhase` proto, so no type swap is needed; it builds + `make check` green on the existing schema pin. `TODO: swap to generated type after BSR gen` markers remain for a future RPC surface (task 1.5, deferred)
+- [ ] 8.2 Local verification: run `cmd/job/sales-phase-discovery` against a known series → SalesPhase persisted and visible on concert detail — HELD pending prereq 0.1 (per-leg semantics) and the prod-launch decision (現状維持). The Gemini searcher itself was live-verified against a real prod tour (Vaundy HORO) via the integration test; full discovery-job E2E deferred. NOTE: live runs show the searcher is currently ungrounded (`tool_use=0`, memory-based) — see the searcher PR #331 finding before prod
+- [ ] 8.3 Local verification: run `cmd/job/sales-reminders` against a near-deadline phase → exactly one push per stage (sent-log idempotency) — HELD pending the prod-launch decision (現状維持); repository + use-case logic is integration-tested, full reminder-job E2E deferred
+- [x] 8.4 Open backend, frontend, and cloud-provisioning PRs only after package upgrade + type swap pass locally — frontend **#417 merged**; backend **#329 + #330 merged** (+ searcher hardening **#331 merged**); cloud-provisioning **#351 open and intentionally held** pending prereq 0.1 + a backend prod Release (prod cronjob images). All CI green
 - [ ] 8.5 After merges, verify ArgoCD rollout and the new CronJobs are scheduled
