@@ -21,7 +21,7 @@ Verified during exploration: `guest.language` has exactly one reader (`UserStore
 
 **Non-Goals:**
 - No change to the authenticated locale path (DB-sourced `preferred_language` via `user-profile-hydration` / `user-account-sync`).
-- No change to the i18next detection-chain configuration in `main.ts`.
+- No change to the i18next `detection` block in `main.ts` (`order` / lookup keys / `caches`). NOTE: see Decision 5 — verification revealed that block was inoperative because `@aurelia/i18n` pins `lng: 'en'`, so this change DOES add `initOptions.lng = undefined` to re-enable the existing detection chain. The `detection` block itself stays untouched.
 - No proto / backend / BSR work — frontend only.
 
 ## Decisions
@@ -49,6 +49,18 @@ The anonymous path becomes `i18n.setLocale(lang)` followed by an explicit `local
 This same-session guarantee depends on the migration running before i18next detection. That ordering is a prerequisite the migration relies on, not a change to the detection-chain configuration (the latter is a Non-Goal); the implementation tasks lock it in explicitly.
 
 **Alternative considered — let `language` win / just delete `guest.language`.** Rejected: `guest.language` was only ever written on an explicit user selection, whereas `language` may be an auto-detected navigator value, so deleting `guest.language` outright could silently discard a real preference (exactly the reporter's case).
+
+### Decision 5: Re-enable the i18next detection chain (`lng: undefined`) so the boot locale is actually read from `language`
+
+**Discovered during manual verification, not in the original exploration.** The whole single-source model — and the migration's "renders Japanese in the same session" guarantee — rests on the premise that `localStorage['language']` drives the rendered locale via the i18next detection chain at boot. In-browser testing proved this premise FALSE for the shipped app: a guest with `localStorage['language'] = 'ja'` (and even `?lang=ja`, the top detection tier) still booted English.
+
+Root cause: `@aurelia/i18n` injects a default `lng: 'en'` into the i18next init options (`I18nService._initializeI18next`'s `defaultOptions`), and `main.ts` never set `lng`. In i18next, an explicit `lng` is an override that **bypasses the language detector entirely** — so the `detection` block in `main.ts` (`order: ['querystring', 'localStorage', 'navigator']`, `caches: ['localStorage']`) was dead code at boot. The app always initialized to English and the detector only ever *wrote* `en` back to the cache.
+
+Fix: explicitly set `initOptions.lng = undefined` in `main.ts` (object-spread `{ ...{ lng: 'en' }, ...{ lng: undefined } }` resolves to `lng: undefined`, overriding the Aurelia default), which re-enables the existing detection chain. The `detection` block itself is unchanged — this restores the configuration the change already depended on rather than redefining detection. A load-bearing comment marks the line so it is not "cleaned up" as a no-op.
+
+This revises the original Non-Goal "no change to the i18next detection-chain configuration in `main.ts`": the migration's same-session guarantee was unattainable without it, and the change's headline goal (the affected guest renders Japanese) depends on it. The `detection` *block* is still untouched; only the locale-pinning default that disabled it is removed. Verified in-browser: `language='ja'` → renders Japanese and persists across reload; the bug-repro (`language=en` + `guest.language=ja`) now renders Japanese with the selector highlighting 日本語; the anonymous happy-path and cancelled-login scenarios all hold.
+
+**Alternative considered — pass an explicitly computed `lng` (read `localStorage['language']`, else normalize `navigator.language`).** Rejected: it reimplements detection priority in `main.ts`, drops the `querystring` tier, and duplicates the normalize logic — more code and less faithful than re-enabling the detector that is already configured.
 
 ## Risks / Trade-offs
 
