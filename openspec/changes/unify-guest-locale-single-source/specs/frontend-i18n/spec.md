@@ -28,7 +28,7 @@ This requirement makes the selector's data source explicit: prior to this change
 
 ### Requirement: One-Time Migration of the Legacy `guest.language` Key
 
-The startup storage-migration routine SHALL reconcile and remove the legacy `guest.language` key so existing installs converge to the single-source model. Because `guest.language` was only ever written on an explicit user language choice, its value represents higher intent than the detector cache and SHALL take precedence when the two differ. The migration SHALL be idempotent and safe to run on every startup.
+The startup storage-migration routine SHALL reconcile and remove the legacy `guest.language` key so existing installs converge to the single-source model. Because `guest.language` was only ever written on an explicit user language choice, its value represents higher intent than the detector cache and SHALL take precedence when the two differ. The migration SHALL be idempotent and safe to run on every startup. The migration SHALL run before i18next detection reads `localStorage['language']`, so a promoted value takes effect in the same session (not only on the next reload).
 
 #### Scenario: Legacy explicit choice differs from the detector cache
 

@@ -44,7 +44,9 @@ The anonymous path becomes `i18n.setLocale(lang)` followed by an explicit `local
 
 ### Decision 4: One-time migration in `migrateStorageKeys()`, explicit choice wins
 
-`migrateStorageKeys()` (already the home for idempotent legacy key migrations) gains a step: if `guest.language` exists, copy it into `language` when the two differ (the explicit guest choice outranks the detector cache), then remove `guest.language`. Idempotent and safe on every startup. This converges all existing installs and, for the user who reported the bug, honors their Japanese choice on the next boot before the redundant key is dropped.
+`migrateStorageKeys()` (already the home for idempotent legacy key migrations) gains a step: if `guest.language` exists, copy it into `language` when the two differ (the explicit guest choice outranks the detector cache), then remove `guest.language`. Idempotent and safe on every startup. `migrateStorageKeys()` is already invoked at `main.ts` startup (currently line ~129) BEFORE `new Aurelia()` and the i18next plugin registration, so i18next detection reads the promoted `language` value in the SAME session — the affected guest renders Japanese immediately, not only on the next reload. This converges all existing installs and honors the reporter's explicit Japanese choice on their next app load, after which the redundant key is gone.
+
+This same-session guarantee depends on the migration running before i18next detection. That ordering is a prerequisite the migration relies on, not a change to the detection-chain configuration (the latter is a Non-Goal); the implementation tasks lock it in explicitly.
 
 **Alternative considered — let `language` win / just delete `guest.language`.** Rejected: `guest.language` was only ever written on an explicit user selection, whereas `language` may be an auto-detected navigator value, so deleting `guest.language` outright could silently discard a real preference (exactly the reporter's case).
 

@@ -15,7 +15,7 @@
 ## 4. One-time legacy-key migration
 
 - [ ] 4.1 In `migrateStorageKeys()` (`src/constants/storage-keys.ts`), add an idempotent step: if `localStorage['guest.language']` exists, copy it into `localStorage['language']` when the two differ (explicit guest choice wins), then remove `guest.language`. Document the precedence in a comment.
-- [ ] 4.2 Confirm `migrateStorageKeys()` is invoked at startup before i18next detection runs (check `main.ts` ordering) so the promoted `language` value is what the detector reads.
+- [ ] 4.2 Lock in that `migrateStorageKeys()` runs before i18next detection: confirm the existing `main.ts` ordering (migration call precedes `new Aurelia()` / `I18nConfiguration` registration / `au.start()`), and if it has regressed, move the call earlier so the promoted `language` value is what the detector reads in the same session. The same-session spec guarantee depends on this ordering.
 
 ## 5. Tests
 
