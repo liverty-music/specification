@@ -1,7 +1,7 @@
 ## 0. Prerequisites
 
 - [ ] 0.1 `auto-discovery-series-grouping` is implemented/merged so a `Series` represents a whole tour (the Series-scoped `SalesPhase` model depends on it) — NOT met yet (that change is 0/21); code is built against the assumed tour-level Series and needs no migration once it lands
-- [ ] 0.2 At OpenSpec archive time, ensure the in-flight `ticket-email-import` change is archived first (this change MODIFIES its spec baseline)
+- [x] 0.2 At OpenSpec archive time, ensure the in-flight `ticket-email-import` change is archived first (this change MODIFIES its spec baseline) — satisfied: `ticket-email-import` archived as `openspec/changes/archive/2026-06-04-ticket-email-import`, so the MODIFIED baseline now exists in `openspec/specs/`
 
 ## 1. Proto Definitions (specification)
 
