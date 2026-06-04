@@ -7,7 +7,7 @@
 
 ## 2. Dashboard ViewModel — journey filter and counts
 
-- [ ] 2.1 Add `@observable filteredStatuses: JourneyStatus[]` to `DashboardRoute` and parse the `journey` query param in `loading()`
+- [ ] 2.1 Add `@observable filteredStatuses: JourneyStatus[]` to `DashboardRoute` and parse the `journey` query param in `loading()`; ignore the param entirely for unauthenticated users (guests get the unfiltered view — the param has no effect, never an empty highway)
 - [ ] 2.2 Extend `filteredDateGroups` to a single `keep` predicate combining artist (OR) AND journey (OR), preserving the `!!c.artistId` ghost-card guard
 - [ ] 2.3 Replace the per-array URL sync with a single watcher that writes both `artists` and `journey` params in one `history.replaceState` (avoid double write)
 - [ ] 2.4 Add `@computed('dateGroups','followedArtists') get countedArtists` building counts over the unfiltered `dateGroups`, projecting to `{id,name,count}`, hiding `count === 0`, sorting by count desc then name asc

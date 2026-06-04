@@ -17,6 +17,7 @@ The dashboard SHALL accept a `journey` query parameter containing one or more ti
 
 #### Scenario: Concerts without a journey status are excluded when filtering
 - **WHEN** a `journey` filter is active
+- **AND** the user is authenticated
 - **AND** a concert has no `journeyStatus` set
 - **THEN** that concert SHALL NOT be shown
 
