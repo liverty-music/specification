@@ -27,10 +27,10 @@ The system SHALL store guest session data in LocalStorage under namespaced keys 
 - **THEN** the system SHALL accept those entries and assign `DEFAULT_HYPE` as the hype value
 - **AND** the system SHALL NOT throw or discard those entries
 
-#### Scenario: Region selection stored locally
+#### Scenario: Home area selection stored locally
 
-- **WHEN** a guest user selects a region during Step 3 (Dashboard)
-- **THEN** the system SHALL store the selected region value in LocalStorage under `liverty:guest:region`
+- **WHEN** a guest user selects a home area during Step 3 (Dashboard)
+- **THEN** the system SHALL store the selected value in LocalStorage under `guest.home` (owned by `UserStore`), so the existing per-store cleanup covers it
 
 ### Requirement: Guest hype included in data merge on signup
 
