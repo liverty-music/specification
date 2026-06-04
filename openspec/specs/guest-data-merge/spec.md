@@ -81,7 +81,7 @@ capability), not by an in-flight retry barrier.
   existing account's saved values win
 - **AND** on **every** successful authentication (sign-up AND returning sign-in)
   the system SHALL publish a `GuestMigrationRequested` event
-- **AND** the follow store SHALL call `ArtistService.Follow` (and `SetHype` for
+- **AND** the follow store SHALL call `FollowService.Follow` (and `FollowService.SetHype` for
   non-default hype) for each artist in `guest.followedArtists`, then clear its
   own guest follow localStorage on success
 
@@ -96,7 +96,7 @@ capability), not by an in-flight retry barrier.
 
 #### Scenario: Follow call fails during merge
 
-- **WHEN** any `ArtistService.Follow` or `SetHype` call fails during migration
+- **WHEN** any `FollowService.Follow` or `FollowService.SetHype` call fails during migration
 - **THEN** the system SHALL log the error
 - **AND** the system SHALL continue with remaining calls (best-effort)
 - **AND** the system SHALL still set `onboardingStep` to COMPLETED
