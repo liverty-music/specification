@@ -31,6 +31,6 @@
 
 ## 5. Ship
 
-- [ ] 5.1 Open frontend PR (Conventional Commits, body + `Refs: #<issue>`), drive CI green, merge to main
-- [ ] 5.2 Cut a frontend GitHub Release (retag → prod AR) to trigger the automated prod pin bump → ArgoCD sync
-- [ ] 5.3 Verify the new icons are live on `dev.liverty-music.app` (and prod once rolled out)
+- [x] 5.1 Open frontend PR (Conventional Commits, body + `Refs: #<issue>`), drive CI green, merge to main
+- [x] 5.2 Cut a frontend GitHub Release (retag → prod AR) to trigger the automated prod pin bump → ArgoCD sync
+- [x] 5.3 Verify the new icons are live on `dev.liverty-music.app` (and prod once rolled out)

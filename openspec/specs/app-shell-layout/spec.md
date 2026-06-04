@@ -14,9 +14,14 @@ The system SHALL display proper brand identity elements across the application.
 
 #### Scenario: Favicon and PWA icons
 - **WHEN** the application is loaded
-- **THEN** the system SHALL display a brand favicon in the browser tab
-- **AND** the system SHALL provide apple-touch-icon for iOS home screen
-- **AND** the system SHALL provide a web app manifest with themed icons (including maskable versions) for Android and other PWA-compliant platforms
+- **THEN** the system SHALL display a brand favicon in the browser tab, served as PNG and ICO assets (no SVG favicon is required)
+- **AND** the system SHALL provide an `apple-touch-icon` PNG for the iOS home screen
+- **AND** the system SHALL provide a web app manifest with themed PNG icons (including a maskable variant) for Android and other PWA-compliant platforms
+- **AND** the web app manifest SHALL NOT reference SVG icon assets
+
+#### Scenario: Theme color is consistent across HTML and manifest
+- **WHEN** the application is loaded
+- **THEN** the `theme-color` declared in the HTML `<head>` meta tag SHALL equal the `theme_color` declared in the web app manifest
 
 ---
 
