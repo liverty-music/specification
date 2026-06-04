@@ -22,6 +22,6 @@ A guest (unauthenticated) user sees the Settings/Welcome language selector highl
 ## Impact
 
 - **Frontend only** — no proto, no backend, no BSR generation, no release coordination.
-- Affected code: `src/adapter/storage/guest-storage.ts`, `src/constants/storage-keys.ts` (`migrateStorageKeys`), `src/services/user-store.ts`, `src/util/change-locale.ts`, and the tests `src/util/change-locale.spec.ts`, `src/services/user-store.spec.ts` (and any UserStore guest-language tests).
-- No change to the authenticated locale path (DB-sourced `preferred_language` via `user-profile-hydration` / `user-account-sync`) or to the i18next detection chain config in `main.ts`.
+- Affected code: `src/adapter/storage/guest-storage.ts`, `src/constants/storage-keys.ts` (`migrateStorageKeys`), `src/services/user-store.ts`, `src/util/change-locale.ts`, `src/main.ts` (`initOptions.lng = undefined`, Decision 5), and the tests `src/util/change-locale.spec.ts`, `test/services/user-store.spec.ts`, `src/constants/storage-keys.spec.ts`, plus the affected route specs `test/routes/welcome-route.spec.ts` / `test/routes/settings-route.spec.ts`.
+- No change to the authenticated locale path (DB-sourced `preferred_language` via `user-profile-hydration` / `user-account-sync`). One `main.ts` adjustment is required (see design Decision 5): set `initOptions.lng = undefined` to re-enable the i18next detection chain, which `@aurelia/i18n`'s default `lng: 'en'` was bypassing — without it the promoted `language` value is never read at boot. The `detection` block itself is unchanged.
 - Unwinds the two-key design introduced by the `introduce-entity-store-layer` change; the reactivity goal of that change is retained via the `i18nLocale` observable.
