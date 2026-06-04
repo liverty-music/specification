@@ -21,7 +21,7 @@
 
 - [ ] 5.1 Update `src/util/change-locale.spec.ts`: anonymous path asserts `i18n.setLocale` + `localStorage.setItem('language', lang)` and issues no RPC; remove `setGuestLanguage` assertions.
 - [ ] 5.2 Update `src/services/user-store.spec.ts` (and any UserStore guest-language tests): `currentLanguage` guest branch tracks `i18nLocale`; remove `guestLanguage`/`setGuestLanguage` cases.
-- [ ] 5.3 Add `migrateStorageKeys()` tests covering the three spec scenarios: guest.language differs from language (promote + remove), equals (remove only), absent (no-op).
+- [ ] 5.3 Add `migrateStorageKeys()` tests covering the four spec scenarios: guest.language differs from language (promote + remove), guest.language present while language is absent (promote + remove), equals (remove only), and no guest.language (no-op).
 - [ ] 5.4 Run `make check` (lint + typecheck + unit tests) until green.
 
 ## 6. Manual verification
