@@ -23,7 +23,7 @@ The system SHALL define a `TicketJourney` entity representing a user's personal 
 
 ### Requirement: Set Ticket Journey Status
 
-The system SHALL allow an authenticated user to set (create or update) their ticket journey status for a given event via a single upsert operation.
+The system SHALL allow an authenticated user to set (create or update) their ticket journey status for a given event via a single upsert operation. Status can be set manually by the user or as a side effect of confirming a ticket email import.
 
 #### Scenario: Set status on a new journey
 
@@ -53,6 +53,15 @@ The system SHALL allow an authenticated user to set (create or update) their tic
 
 - **WHEN** a user calls `SetStatus` with a malformed or missing `event_id`
 - **THEN** the system SHALL return an `INVALID_ARGUMENT` error
+
+#### Scenario: Status set via ticket email confirmation
+
+- **WHEN** a user confirms a ticket email import via `UpdateTicketEmail`
+- **THEN** the system SHALL set the `TicketJourney` status for each associated event based on the parsed email content
+- **AND** for `LOTTERY_INFO` emails, the status SHALL be set to `TRACKING`
+- **AND** for `LOTTERY_RESULT` emails with a win and pending payment, the status SHALL be set to `UNPAID`
+- **AND** for `LOTTERY_RESULT` emails with a win and completed payment, the status SHALL be set to `PAID`
+- **AND** for `LOTTERY_RESULT` emails with a loss, the status SHALL be set to `LOST`
 
 ### Requirement: Delete Ticket Journey
 

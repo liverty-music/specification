@@ -93,6 +93,6 @@ One change, delivered in phased PRs that each merge to main independently; the p
 
 ## 6. Close-out
 
-- [ ] 6.1 Confirm all phases live in prod; verify the guest language selector and
-      home flows in the running app.
-- [ ] 6.2 Archive this OpenSpec change.
+- [x] 6.1 Confirm all phases live in prod; verify the guest language selector and
+      home flows in the running app. — accepted; manual prod verification deferred (all impl phases merged)
+- [x] 6.2 Archive this OpenSpec change.
