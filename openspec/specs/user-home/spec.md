@@ -1,9 +1,7 @@
 ## Purpose
 
 Define the user's home area capability end to end: the structured `Home` data model (proto, database, Go entity, centroid resolution), the RPCs that create and update it, and the unified `user-home-selector` frontend component and its `userHome.*` i18n namespace used in both onboarding and Settings.
-
 ## Requirements
-
 ### Requirement: User Home Area Data Model
 
 The system SHALL support a structured `home` field on the User entity representing the user's home area — the geographic area where the user regularly attends live events without considering it a "trip" (遠征). The value is a structured geographic location expressed through a hierarchy of internationally standardized codes, with centroid coordinates for proximity calculations.
@@ -130,14 +128,20 @@ The `User.home` field SHALL be populated in all RPCs that return a `User` entity
 
 ### Requirement: Frontend home area persistence via RPC
 
-The frontend SHALL store the user's home area server-side via RPC, replacing localStorage-based persistence for authenticated users.
+The frontend SHALL store the user's home area server-side via RPC, replacing
+localStorage-based persistence for authenticated users. Home area SHALL be owned
+by `UserStore`, which resolves its source (guest localStorage vs the
+authenticated `User` entity) internally; callers SHALL read home from
+`UserStore` and SHALL NOT branch on `auth.isAuthenticated`.
 
 #### Scenario: Onboarding home area selection persisted at account creation
 
 - **WHEN** a guest user has selected their home area during onboarding
 - **AND** the user subsequently creates an account
-- **THEN** the frontend SHALL include the selected home in the `UserService.Create` request
+- **THEN** the frontend SHALL include the selected home (read from `UserStore`'s
+  guest view) in the `UserService.Create` request
 - **AND** SHALL NOT make a separate `UpdateHome` call for the initial home
+- **AND** `UserStore` SHALL clear its own guest home localStorage on success
 
 #### Scenario: Settings home area change triggers UpdateHome RPC
 
@@ -145,24 +149,25 @@ The frontend SHALL store the user's home area server-side via RPC, replacing loc
 - **THEN** the frontend SHALL call `UserService.UpdateHome` with the new structured home
 - **AND** SHALL NOT write to localStorage for the home area
 
-#### Scenario: Dashboard reads home from hydrated User entity
+#### Scenario: Dashboard reads home from the user store
 
-- **WHEN** the dashboard loads for an authenticated user
-- **THEN** the lane assignment logic SHALL read the user's home area from `UserService.current.home` (the hydrated in-memory User entity)
+- **WHEN** the dashboard loads
+- **THEN** the lane assignment logic SHALL read the home area from `UserStore`
 - **AND** SHALL NOT call `UserService.Get` independently
-- **AND** SHALL NOT read from localStorage
+- **AND** SHALL NOT branch on `auth.isAuthenticated` to choose the source
 
-#### Scenario: Settings reads home from hydrated User entity
+#### Scenario: Settings reads home from the user store
 
-- **WHEN** the settings page loads for an authenticated user
-- **THEN** the My Home Area display SHALL read from `UserService.current.home` (the hydrated in-memory User entity)
-- **AND** SHALL NOT read from localStorage
+- **WHEN** the settings page loads
+- **THEN** the My Home Area display SHALL read from `UserStore`
+- **AND** SHALL NOT branch on `auth.isAuthenticated` at the call site
 
-#### Scenario: Guest fallback to localStorage
+#### Scenario: Guest home sourced from store-backed localStorage
 
 - **WHEN** a guest (unauthenticated) user selects their home area
-- **THEN** the frontend SHALL store the selection in localStorage under `guest.home`
-- **AND** the dashboard and settings SHALL read from localStorage for home area display
+- **THEN** `UserStore` SHALL store the selection in localStorage under `guest.home`
+- **AND** the dashboard and settings SHALL read the home area from `UserStore`'s
+  observable value (which stays reactive when the guest changes it)
 
 #### Scenario: Dashboard reloads data after authenticated home change
 
@@ -238,3 +243,4 @@ The frontend SHALL use a unified `userHome.*` i18n namespace for all home area s
 - **THEN** the `userHome.description` JA value SHALL explain what the selected area controls (the HOME STAGE lane contents) AND ask which area the user resides in, presented as a single string composed of two clearly-separated clauses
 - **AND** the copy SHALL NOT use `あなたの地元` (which inaccurately implies a known home rather than a chosen area)
 - **AND** the canonical JA form SHALL be: `HOME STAGEには選択したエリアのライブが並びます。あなたの居住エリアはどこですか？`
+
