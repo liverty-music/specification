@@ -186,11 +186,23 @@ order, parallelizing per the cross-repo release protocol:
 **Rollback:** purely additive — remove/disable the admin HTTPRoute (or scale the
 admin Deployment to 0). The consumer surface is untouched at every step.
 
-## Open Questions
+## Resolved Questions
 
-- Admin image/serving: a fully separate `admin` Kubernetes namespace, or a second
-  workload inside the existing `frontend` namespace? (Leaning: reuse `frontend`
-  namespace to minimize new RBAC/NetworkPolicy surface; revisit if admin later
-  needs stricter isolation.)
-- Whether the admin console should share the consumer's i18n bundle or ship
-  English-only for the foundation (placeholder likely English-only).
+- **Kubernetes namespace / ArgoCD app → reuse the existing `frontend` namespace
+  (N1).** The admin workload is added as an `admin/` sibling to `web/` in the
+  `frontend` kustomize tree, served by the existing `frontend` ArgoCD
+  Application. *Rationale:* the `frontend` namespace carries no NetworkPolicy /
+  RBAC / ResourceQuota today, so a separate namespace would duplicate boilerplate
+  (a new ArgoCD Application + overlay tree) without an isolation benefit at the
+  policy layer. ③b's isolation that actually matters — separate image, pod,
+  `/config.json`, and release artifact — is preserved regardless of namespace.
+  *Accepted trade-off:* admin and consumer share one ArgoCD Application sync, so a
+  malformed admin manifest can mark the `frontend` app `OutOfSync`/`Degraded`.
+  Mitigation: keep admin manifests as a clean copy of the consumer pattern and
+  rely on the k8s dry-run gate; promote to a dedicated `admin` namespace + ArgoCD
+  app if/when admin needs its own NetworkPolicy, quota, or service account.
+- **i18n → English-only for the foundation.** The admin console ships no
+  `@aurelia/i18n` machinery; the welcome placeholder is English-only. *Rationale:*
+  it is an internal developer tool and i18n would add infrastructure to the admin
+  bundle for no benefit. If admin later needs localization, it can pull i18n
+  through the `shared/` location (D2/D3) at that point.

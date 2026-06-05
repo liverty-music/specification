@@ -23,7 +23,7 @@
 - [ ] 4.1 Implement the admin bootstrap to start OIDC sign-in scoped to the admin org id (`urn:zitadel:iam:org:id:<id>`), reusing the shared `AuthService`.
 - [ ] 4.2 Implement the admin auth callback route (`/auth/callback`) completing the code exchange.
 - [ ] 4.3 Implement an authenticated route guard so all admin routes except the callback require sign-in.
-- [ ] 4.4 Implement the post-login welcome placeholder shell (no business features).
+- [ ] 4.4 Implement the post-login welcome placeholder shell (no business features), English-only (no `@aurelia/i18n` machinery in the admin entry).
 - [ ] 4.5 Add unit tests for the route guard and the org-scoped sign-in; `make check` passes.
 
 ## 5. Frontend — serving image (frontend repo)
@@ -34,7 +34,7 @@
 
 ## 6. Infrastructure — admin workload (cloud-provisioning, k8s)
 
-- [ ] 6.1 Add the admin Deployment + Service (own image, spot nodeSelector, explicit requests/limits, readiness/liveness probes) — decide namespace (reuse `frontend` vs new `admin`) per the design open question.
+- [ ] 6.1 Add the admin Deployment + Service in the existing `frontend` namespace as an `admin/` sibling to `web/` (own image, spot nodeSelector, explicit requests/limits, readiness/liveness probes); the existing `frontend` ArgoCD Application picks it up.
 - [ ] 6.2 Add the admin HTTPRoute binding `admin.{base-domain}` (per-overlay hostname) to the admin Service on the shared external gateway.
 - [ ] 6.3 Add per-env `admin-app-runtime-config` ConfigMap (admin org id + admin client id + apiBaseUrl + issuer) mounted at `/config.json`; annotate the admin Deployment for Reloader.
 - [ ] 6.4 Add the admin image alias to the ArgoCD image-updater config.
