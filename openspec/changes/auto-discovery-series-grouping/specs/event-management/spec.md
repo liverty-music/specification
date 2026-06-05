@@ -10,7 +10,7 @@ This makes event identity artist- and series-independent, so the same physical s
 
 - **WHEN** two discoveries describe the same `(venue_id, local_event_date, start_at)` under different series or source classifications
 - **THEN** the database SHALL hold exactly one `Event` row for that key
-- **AND** a second insert SHALL be rejected by the unique constraint
+- **AND** the second discovery SHALL resolve to the existing row (idempotent UPSERT) rather than inserting a duplicate — the unique constraint serves as a race backstop only
 
 #### Scenario: Same venue and date, different start time, are distinct events
 
