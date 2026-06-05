@@ -117,3 +117,9 @@ The system SHALL treat residual grouping ambiguities as non-fatal and SHALL log 
 - **WHEN** the same physical show is discovered once with a hall name and once without
 - **THEN** it MAY resolve to two `venue_id`s and two `Event` rows
 - **AND** discovery SHALL complete successfully, logging the anomaly
+
+#### Scenario: Cross-source start-time disagreement may split
+
+- **WHEN** the same physical show is discovered via two sources that publish different concrete `start_at` values (e.g. door time vs performance time)
+- **THEN** it MAY resolve to two `Event` rows under two series (a consequence of `start_at` being part of the key)
+- **AND** discovery SHALL complete successfully, logging the anomaly

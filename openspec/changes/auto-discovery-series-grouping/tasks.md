@@ -13,10 +13,11 @@
 
 ## 3. Physical Event Natural Key + Migration (backend)
 
-- [ ] 3.1 Update desired-state schema `internal/infrastructure/database/rdb/schema/schema.sql`: replace `uq_events_natural_key` with `UNIQUE (venue_id, local_event_date, start_at) NULLS NOT DISTINCT`; relax `chk_series_id_uuid_v5_or_v7` to pure `UUIDv7`
-- [ ] 3.2 Generate the Atlas migration (`atlas migrate diff --env local`): dedup existing rows that would violate the new constraint (repoint `event_performers` to the survivor), drop old constraint, add new constraint, adjust series CHECK
-- [ ] 3.3 Add the migration file to `k8s/atlas/base/kustomization.yaml` `configMapGenerator.files`
-- [ ] 3.4 Confirm Cloud SQL PostgreSQL version ≥ 15 (`NULLS NOT DISTINCT`) before relying on it
+- [ ] 3.1 Update desired-state schema `internal/infrastructure/database/rdb/schema/schema.sql`: replace `uq_events_natural_key` with `UNIQUE (venue_id, local_event_date, start_at) NULLS NOT DISTINCT`; replace `chk_series_id_uuid_v5_or_v7` with `chk_series_id_uuidv7` (pure `UUIDv7`)
+- [ ] 3.2 Generate the Atlas migration (`atlas migrate diff --env local`): dedup existing `events` rows that would violate the new constraint (repoint `event_performers` to the survivor), drop old constraint, add new constraint
+- [ ] 3.3 Author the `series.id` backfill as a hand-written migration step (Atlas `diff` emits only schema DDL): re-key any existing v5 `series.id` to a fresh `UUIDv7`, cascading the new id to all FK referencers (`events.series_id`, `sales_phases.series_id`, any other `series` reference) in one transaction; no-op when no v5 rows exist. Order it BEFORE adding `chk_series_id_uuidv7` so the new CHECK validates immediately (no `NOT VALID` needed)
+- [ ] 3.4 Add the migration file(s) to `k8s/atlas/base/kustomization.yaml` `configMapGenerator.files`
+- [ ] 3.5 Confirm Cloud SQL PostgreSQL version ≥ 15 (`NULLS NOT DISTINCT`) before relying on it
 
 ## 4. Application-Layer Event Resolution + Series Adoption (backend)
 

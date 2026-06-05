@@ -31,7 +31,7 @@ This change separates the two concerns: **events deduplicate on their physical i
   - `internal/entity/concert.go` — `ScrapedConcert` carries the same; SeriesType selection.
   - `internal/usecase/concert_creation_uc.go` — application-layer event find-or-create (NULL-start fill vs new session) + series FK adoption (reuse existing `series_id`, else mint `UUIDv7`).
   - `internal/infrastructure/database/rdb/concert_repo.go` — natural-key UPSERT and the `event_performers` JOIN re-keyed to `(venue_id, local_event_date, start_at)`.
-  - schema + **Atlas migration** — drop the old constraint, deduplicate existing rows, add `UNIQUE (venue_id, local_event_date, start_at) NULLS NOT DISTINCT`, relax `series.id` CHECK to pure `UUIDv7`.
+  - schema + **Atlas migration** — drop the old constraint, deduplicate existing rows, add `UNIQUE (venue_id, local_event_date, start_at) NULLS NOT DISTINCT`, backfill any existing v5 `series.id` to `UUIDv7` (cascading FK referencers) and replace the relaxed `series.id` CHECK with a pure `UUIDv7` CHECK.
   - unit + integration tests.
 - **No cross-repo BSR flow** (no proto change) — backend-only PR.
-- **Eliminated risk** (previously "accepted, logged"): divergent-title co-headline tours and tour-stop/standalone collisions no longer duplicate — events collapse on physical identity and the series is adopted, independent of title/URL.
+- **Reduced duplication** (previously "accepted, logged"): divergent-title co-headline tours and tour-stop/standalone collisions no longer duplicate **when their sources agree on `start_at` (or at least one omits it)** — events collapse on physical identity and the series is adopted, independent of title/URL. A residual split remains when two sources publish *different* concrete start times for one physical show (e.g. door vs performance time across two official sites); see design Risks.
