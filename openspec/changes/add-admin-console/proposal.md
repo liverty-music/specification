@@ -68,9 +68,10 @@ requirements.
 - **cloud-provisioning repo**:
   - Pulumi: new `ApplicationOidc` in the admin org (`admin-host/auth/callback`
     redirect URIs); admin hostnames added to certmap + Cloud DNS.
-  - k8s: a new `frontend` (or new `admin`) namespace Deployment/Service/HTTPRoute
-    + per-env ConfigMap (`admin-app-runtime-config`) for the admin pod; ArgoCD
-    image-updater alias for the new admin image.
+  - k8s: an admin Deployment/Service/HTTPRoute added to the existing `frontend`
+    namespace (an `admin/` sibling to `web/`, served by the existing `frontend`
+    ArgoCD app) + per-env ConfigMap (`admin-app-runtime-config`) for the admin
+    pod; ArgoCD image-updater alias for the new admin image.
 - **CI/CD**: a second image build/push in the frontend pipeline; admin and
   consumer release independently.
 - **No changes to**: backend, Connect-RPC contracts, database, the consumer SPA
