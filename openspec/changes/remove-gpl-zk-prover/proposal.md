@@ -4,7 +4,7 @@ The frontend bundle distributed to every fan's browser contains GPL-3.0 code thr
 
 ## What Changes
 
-- Replace the client-side proving runtime `snarkjs` (GPL-3.0) with an `arkworks` / `ark-circom`-based prover (MIT/Apache-2.0) compiled to WASM, reusing the existing circom `.wasm` witness calculator and `.zkey` proving key.
+- Replace the client-side proving runtime `snarkjs` (GPL-3.0) with an `arkworks` / `ark-circom`-based prover (MIT/Apache-2.0) compiled to WASM; the existing `.zkey` proving key is reused only if gate 1 confirms an identical R1CS hash. The witness-calculator `.wasm` is GPL vector ② and is unconditionally recompiled from permissive sources (see the next bullet), never reused as-is.
 - Replace the GPL-3.0 `circomlib` `poseidon.circom` include with a permissively-licensed (MIT) Poseidon source and recompile the circuit artifacts, so the distributed `.wasm` / `.zkey` derive from non-copyleft sources.
 - Preserve the hard invariant that generated proofs remain verifiable by the existing `gnark` + `vocdoni/circom2gnark` backend (BN254 Groth16, snarkjs-compatible proof JSON) — backend verification stays unchanged when the proof format and verification key are preserved.
 - Preserve offline proof generation (Service Worker caching of prover WASM + circuit artifacts) and SHA-256 circuit-integrity verification; regenerate integrity hashes after recompilation.
