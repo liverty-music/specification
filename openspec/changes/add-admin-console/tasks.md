@@ -40,19 +40,18 @@
 - [x] 6.4 Add the admin image alias to the ArgoCD image-updater config.
 - [x] 6.5 `kubectl kustomize` dry-run for the dev overlay (spot nodeSelector + non-empty resources present, patches apply).
 
-## 7. Dev verification
+## 7. Production rollout
 
-- [ ] 7.1 After dev deploys, verify Google Workspace sign-in completes and the welcome placeholder renders at `https://admin.dev.liverty-music.app`.
-- [ ] 7.2 Confirm the consumer SPA is unaffected: bundle output and Lighthouse/Core Web Vitals unchanged, consumer hostname routes and config delivery unchanged.
-- [ ] 7.3 Confirm a non-Workspace account cannot complete sign-in.
+There is no dev environment to verify against (it is intentionally shut down for
+cost and not part of this rollout), so verification happens directly in prod —
+the prod OIDC app, certmap, and Cloud DNS provide the real surface to test the
+Google-Workspace sign-in, welcome render, and access boundary on.
 
-## 8. Production rollout
+- [x] 7.1 Provision the prod admin OIDC app, prod certmap, and prod Cloud DNS; run `pulumi preview` for prod and apply from the Pulumi Cloud console after approval.
+- [ ] 7.2 Release the admin image to prod via the standard frontend release path (GH Release → retag → prod AR → pin-bump → ArgoCD), independently of the consumer SPA. Wire the deferred admin-prod pieces: prod-overlay opt-in (`../../base/admin` + `admin-app-runtime-config` + `admin-app` pin), `bump-prod-pin.yml` per-component image selection, and re-enable the `frontend-admin` dispatch.
+- [ ] 7.3 Verify prod at `https://admin.liverty-music.app`: Google Workspace sign-in completes and the welcome placeholder renders; a non-Workspace account cannot complete sign-in; the consumer prod surface (bundle output, hostname routing, config delivery) is unchanged.
 
-- [ ] 8.1 Provision the prod admin OIDC app, prod certmap, and prod Cloud DNS; run `pulumi preview` for prod and apply from the Pulumi Cloud console after approval.
-- [ ] 8.2 Release the admin image to prod via the standard frontend release path (GH Release → retag → prod AR → pin-bump → ArgoCD), independently of the consumer SPA.
-- [ ] 8.3 Verify prod: admin sign-in works at `https://admin.liverty-music.app`, welcome placeholder renders, consumer prod surface unchanged.
+## 8. Post-merge deployment verification
 
-## 9. Post-merge deployment verification
-
-- [ ] 9.1 Monitor ArgoCD sync for the admin workload in dev and prod; confirm pods are running with the expected config.
-- [x] 9.2 Document the admin release path alongside the consumer's, noting the two are independent artifacts.
+- [ ] 8.1 Monitor ArgoCD sync for the admin workload in prod; confirm pods are running with the expected config.
+- [x] 8.2 Document the admin release path alongside the consumer's, noting the two are independent artifacts.
