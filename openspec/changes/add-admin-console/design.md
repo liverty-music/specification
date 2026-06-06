@@ -179,9 +179,13 @@ order, parallelizing per the cross-repo release protocol:
    Publish the admin image to AR.
 4. **cloud-provisioning (k8s)**: admin Deployment/Service/HTTPRoute + per-env
    `admin-app-runtime-config` ConfigMap; image-updater alias; ArgoCD picks it up.
-5. Verify dev: Google sign-in works, welcome placeholder renders, consumer
-   bundle/Lighthouse unchanged. Then promote to prod via the standard
-   GH-Release/pin-bump path.
+5. Promote to prod via the standard GH-Release/pin-bump path, then verify in
+   prod: Google sign-in works, welcome placeholder renders, a non-Workspace
+   account is rejected, consumer surface unchanged. There is **no dev
+   environment** to verify against first (it is intentionally shut down for cost
+   and not part of this rollout), so prod is the verification surface —
+   confidence before prod comes from the local build/bundle-isolation checks,
+   unit tests, and the `pulumi preview` diffs rather than a live dev sign-in.
 
 **Rollback:** purely additive — remove/disable the admin HTTPRoute (or scale the
 admin Deployment to 0). The consumer surface is untouched at every step.
