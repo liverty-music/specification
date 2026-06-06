@@ -48,10 +48,10 @@ the prod OIDC app, certmap, and Cloud DNS provide the real surface to test the
 Google-Workspace sign-in, welcome render, and access boundary on.
 
 - [x] 7.1 Provision the prod admin OIDC app, prod certmap, and prod Cloud DNS; run `pulumi preview` for prod and apply from the Pulumi Cloud console after approval.
-- [ ] 7.2 Release the admin image to prod via the standard frontend release path (GH Release → retag → prod AR → pin-bump → ArgoCD), independently of the consumer SPA. Wire the deferred admin-prod pieces: prod-overlay opt-in (`../../base/admin` + `admin-app-runtime-config` + `admin-app` pin), `bump-prod-pin.yml` per-component image selection, and re-enable the `frontend-admin` dispatch.
-- [ ] 7.3 Verify prod at `https://admin.liverty-music.app`: Google Workspace sign-in completes and the welcome placeholder renders; a non-Workspace account cannot complete sign-in; the consumer prod surface (bundle output, hostname routing, config delivery) is unchanged.
+- [x] 7.2 Release the admin image to prod via the standard frontend release path (GH Release → retag → prod AR → pin-bump → ArgoCD), independently of the consumer SPA. Wire the deferred admin-prod pieces: prod-overlay opt-in (`../../base/admin` + `admin-app-runtime-config` + `admin-app` pin), `bump-prod-pin.yml` per-component image selection, and re-enable the `frontend-admin` dispatch.
+- [x] 7.3 Verify prod at `https://admin.liverty-music.app`: Google Workspace sign-in completes and the welcome placeholder renders; a non-Workspace account cannot complete sign-in; the consumer prod surface (bundle output, hostname routing, config delivery) is unchanged.
 
 ## 8. Post-merge deployment verification
 
-- [ ] 8.1 Monitor ArgoCD sync for the admin workload in prod; confirm pods are running with the expected config.
+- [x] 8.1 Monitor ArgoCD sync for the admin workload in prod; confirm pods are running with the expected config.
 - [x] 8.2 Document the admin release path alongside the consumer's, noting the two are independent artifacts.
