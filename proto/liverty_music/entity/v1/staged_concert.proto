@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// StagedConcertId uniquely identifies a concert held in the approval queue while
+// it awaits developer review. It is distinct from EventId because a staged
+// concert has not yet been published as an event; the id is assigned when the
+// concert is first staged by the discovery pipeline.
+message StagedConcertId {
+  // A UUID string representing the unique identity of the staged concert.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}

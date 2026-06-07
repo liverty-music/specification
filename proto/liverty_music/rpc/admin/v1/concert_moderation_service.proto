@@ -13,6 +13,7 @@ import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/artist.proto";
 import "liverty_music/entity/v1/coordinates.proto";
 import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/staged_concert.proto";
 import "liverty_music/entity/v1/venue.proto";
 
 // ConcertModerationService lets internal developers review concerts discovered by
@@ -53,14 +54,6 @@ service ConcertModerationService {
   rpc RejectConcert(RejectConcertRequest) returns (RejectConcertResponse);
 }
 
-// StagedConcertId uniquely identifies a concert sitting in the approval queue.
-// It is distinct from EventId because a staged concert has not yet been published
-// as an event; the id is assigned when the concert is first staged.
-message StagedConcertId {
-  // A UUID string representing the unique identity of the staged concert.
-  string value = 1 [(buf.validate.field).string.uuid = true];
-}
-
 // ResolvedVenue is the venue preview produced by resolving the raw scraped venue
 // name against Google Places at staging time. It is shown alongside the raw
 // listed venue name so the reviewer can spot venue mis-resolution. No persisted
@@ -87,7 +80,7 @@ message ResolvedVenue {
 // reviewer has everything needed to judge accuracy without a follow-up fetch.
 message PendingConcert {
   // The unique identifier of this staged concert, used to approve or reject it.
-  StagedConcertId staged_id = 1 [(buf.validate.field).required = true];
+  entity.v1.StagedConcertId staged_id = 1 [(buf.validate.field).required = true];
 
   // The performing artist this concert was discovered for.
   entity.v1.Artist performer = 2 [(buf.validate.field).required = true];
@@ -128,7 +121,7 @@ message ListPendingConcertsResponse {
 // ApproveConcertRequest identifies the staged concert to publish.
 message ApproveConcertRequest {
   // Required. The unique identifier of the staged concert to approve.
-  StagedConcertId staged_id = 1 [(buf.validate.field).required = true];
+  entity.v1.StagedConcertId staged_id = 1 [(buf.validate.field).required = true];
 }
 
 // ApproveConcertResponse is returned upon successful approval.
@@ -137,11 +130,14 @@ message ApproveConcertResponse {}
 // RejectConcertRequest identifies the staged concert to drop and the reason why.
 message RejectConcertRequest {
   // Required. The unique identifier of the staged concert to reject.
-  StagedConcertId staged_id = 1 [(buf.validate.field).required = true];
+  entity.v1.StagedConcertId staged_id = 1 [(buf.validate.field).required = true];
 
   // Required. The reviewer's reason for rejecting the concert, recorded in the
   // rejection log for search-quality analysis.
-  string reason = 2 [(buf.validate.field).required = true];
+  string reason = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.min_len = 1
+  ];
 }
 
 // RejectConcertResponse is returned upon successful rejection.
