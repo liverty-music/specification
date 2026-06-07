@@ -115,65 +115,34 @@ The system SHALL store ticket emails in a `ticket_emails` table.
 
 ### Requirement: PWA Share Target
 
-The frontend PWA SHALL register as a share target so that it appears in the Android share sheet when sharing content from Gmail.
+The frontend PWA SHALL NOT register as a share target. The Android Gmail app no longer offers a share action that can target the PWA, so the share-target ingestion path is non-functional and SHALL be removed to avoid presenting a broken entry point.
 
-#### Scenario: Manifest share_target configuration
+#### Scenario: Manifest has no share_target
 
 - **WHEN** the PWA manifest is configured
-- **THEN** it SHALL include a `share_target` entry with `action` pointing to the email import route
-- **AND** it SHALL use `method: "POST"` and `enctype: "multipart/form-data"`
-- **AND** it SHALL accept `title` and `text` parameters
+- **THEN** it SHALL NOT include a `share_target` entry
 
-#### Scenario: Service Worker intercepts share POST
+#### Scenario: Service Worker does not intercept share POST
 
-- **WHEN** the OS sends a POST request to the share target action URL
-- **THEN** the Service Worker SHALL intercept the request
-- **AND** it SHALL extract the `title` and `text` form fields
-- **AND** it SHALL navigate the client to the import wizard route with the shared data
+- **WHEN** the Service Worker is configured
+- **THEN** it SHALL NOT register a handler that intercepts share-target POST requests
 
 ### Requirement: Email Import Wizard
 
-The frontend SHALL provide a multi-step wizard for importing ticket emails.
+The frontend SHALL retain the email import wizard code but make it unavailable to users. The wizard route SHALL NOT be reachable from navigation and SHALL present an unavailable state if accessed directly, until the email-import ingestion path is revived.
 
-#### Scenario: Step 1 — Email validation
+#### Scenario: Import entry is unavailable
 
-- **WHEN** the import wizard receives shared email text
-- **THEN** the frontend SHALL validate the text against ticket-related keywords using regex
-- **AND** if validation fails, the wizard SHALL display an error message and stop
+- **WHEN** a user browses the application
+- **THEN** there SHALL be no navigation entry leading to the email import wizard
 
-#### Scenario: Step 2 — Artist matching
+#### Scenario: Direct access shows unavailable state
 
-- **WHEN** email validation passes
-- **THEN** the frontend SHALL search the user's followed artists list for names present in the email body
-- **AND** if a match is found, it SHALL be auto-selected in the artist dropdown
+- **WHEN** a user navigates directly to the import wizard route
+- **THEN** the application SHALL present an unavailable state rather than the functional wizard
 
-#### Scenario: Step 3 — Artist selection
+#### Scenario: Wizard code is retained
 
-- **WHEN** artist matching is complete
-- **THEN** the user SHALL select an artist from a dropdown menu of their followed artists
-- **AND** the dropdown SHALL pre-select any auto-matched artist
-
-#### Scenario: Step 4 — Concert selection
-
-- **WHEN** an artist is selected
-- **THEN** the wizard SHALL display the user's concerts for that artist (from dashboard data)
-- **AND** the user SHALL select one or more concerts to associate with the email
-
-#### Scenario: Step 5 — Email body confirmation
-
-- **WHEN** concerts are selected
-- **THEN** the wizard SHALL display the email body that will be sent to the backend
-- **AND** the user SHALL be able to edit the body (e.g., to redact PII) before submission
-
-#### Scenario: Step 6 — Parse and create
-
-- **WHEN** the user confirms the email body
-- **THEN** the frontend SHALL call `CreateTicketEmail` with the email body, detected email type, and selected event IDs
-- **AND** the wizard SHALL display the parse results for user review
-
-#### Scenario: Step 7 — Confirm parsed results
-
-- **WHEN** parse results are displayed
-- **THEN** the user SHALL be able to correct any parsed fields (dates, status, URL)
-- **AND** upon confirmation, the frontend SHALL call `UpdateTicketEmail` with the corrected data
+- **WHEN** the email-import feature is later revived
+- **THEN** the wizard components and RPC client SHALL still exist to be re-enabled without re-implementation
 
