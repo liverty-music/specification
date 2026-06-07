@@ -3,10 +3,7 @@
 ## Purpose
 
 Defines the two-step Gemini call pipeline that powers `ConcertSearcher.Search` in the backend's `internal/infrastructure/gcp/gemini` package. Step 1 runs a `gemini-3.5-flash` call with `GoogleSearch` and `URLContext` enabled together, fans out into three parallel slices (tours_near, tours_far, standalones), and emits a per-field `<extracted>` XML envelope whose verbatim fields are parsed Go-side. Step 2 runs a `gemini-3.1-flash-lite` call with no tools and `responseJSONSchema` set, receives a JSON list of per-event raw fields, and returns coerced `admin_area` plus RFC 3339 date/time values that are merged back with the Step 1 drafts by `index`. Title / source_url / venue / country never enter Step 2's schema, eliminating LLM-side hallucination paths on those fields. The capability also covers the page-context year-inference rule, the `(local_date, venue, start_time)` Go-side dedup key, per-step tool-set invariants, the per-step `SearchMetadata` fields, and the A/B harness raw-response shape.
-
 ## Requirements
-
-
 ### Requirement: ConcertSearcher executes a two-step Gemini call sequence per Search invocation
 
 The `ConcertSearcher.Search` method SHALL execute exactly two Gemini API calls per invocation under the `gemini-grounded-extract-and-coerce` capability: Step 1 (grounded extract) and Step 2 (JSON coerce). Step 1 MAY fan out into multiple parallel sub-calls (slices); regardless of slice count, Step 1 SHALL complete before Step 2 starts. The flattened result of Step 2 SHALL be merged Go-side with the Step 1 verbatim drafts and returned to the caller as `[]*entity.ScrapedConcert`, preserving the public signature.
@@ -361,3 +358,26 @@ This requirement formalises the ad-hoc `jq` + `comm` shell pipelines that were u
 - **WHEN** the smoke artifact records an event whose `local_date` and `venue` match a fixture entry but whose `start_time` differs (e.g. smoke has empty `start_time` while fixture has `2026-10-03T20:00:00+08:00`)
 - **THEN** that event SHALL be classified as `TIME_MISMATCH`, not `MISS` and not `FALSE_POSITIVE`
 - **AND** the breakdown summary SHALL count it under the time-mismatch bucket only
+
+### Requirement: parseStep1Envelope Preserves Tour Grouping On EventDraft
+
+`parseStep1Envelope` SHALL preserve the tour grouping expressed by the Step 1 envelope rather than discarding it during flattening. Each `EventDraft` SHALL carry whether it originated from a `<tour>` or `<standalone>` block, and for tour-origin drafts an **intra-run group handle** that ties together all drafts belonging to the same `<tour>` block. The handle only needs to be unique and stable **within a single parse**; it is NOT a cross-run series key and SHALL NOT be required to derive from `source_url` or title. The existing verbatim fields (`Title`, `SourceURL`, `Venue`, `Country`, `LocalDate`, `StartTime`, `OpenTime`) and the Step-2 merge-by-`index` behavior SHALL be unchanged.
+
+#### Scenario: Tour block drafts share a group handle
+
+- **WHEN** a `<tour>` block with three `<event>` children is parsed
+- **THEN** the three resulting `EventDraft`s SHALL each be marked as tour-origin
+- **AND** the three SHALL carry the same intra-run group handle
+
+#### Scenario: Standalone drafts are marked standalone
+
+- **WHEN** a `<standalone>` block is parsed
+- **THEN** its `EventDraft` SHALL be marked as standalone-origin
+- **AND** it SHALL NOT share a tour-group handle with any other draft
+
+#### Scenario: Two distinct tours produce two group handles
+
+- **WHEN** the envelope contains two separate `<tour>` blocks
+- **THEN** drafts from the first tour SHALL share one group handle
+- **AND** drafts from the second tour SHALL share a different group handle
+

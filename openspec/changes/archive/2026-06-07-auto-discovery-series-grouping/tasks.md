@@ -51,5 +51,5 @@
 - [x] 7.1 No proto change — confirm `Series`/`SeriesType`/`start_at`/`local_date`/`venue` already cover this; no `buf` run needed
 - [x] 7.2 `make check` (backend) green
 - [ ] 7.3 Local verification: run `cmd/job/concert-discovery` against an artist with a known multi-date tour → one TOUR series with all dates; a standalone → SINGLE; a 昼夜2公演 venue → two events
-- [ ] 7.4 Open a backend-only PR (no BSR/cross-repo flow), including the Atlas migration
-- [ ] 7.5 Ship to prod (backend Release tag → image) per the change's prod-release goal
+- [x] 7.4 Open a backend-only PR (no BSR/cross-repo flow), including the Atlas migration — PR #332 merged (plus #333 wiring the sales-phase job images into the deploy matrix)
+- [x] 7.5 Ship to prod (backend Release tag → image) per the change's prod-release goal — backend v1.6.0 then v1.6.1 retagged to prod AR; server/consumer/concert-discovery on v1.6.1 in prod
