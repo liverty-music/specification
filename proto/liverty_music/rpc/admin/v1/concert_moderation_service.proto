@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.admin.v1 provides admin-only gRPC service definitions
+// for internal moderation tooling exposed through the developer admin console.
+//
+// These services are authorized solely for the admin organization and are never
+// reachable by the consumer product. The first capability is concert moderation:
+// reviewing AI-discovered concerts before they are published to fans.
+package liverty_music.rpc.admin.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/coordinates.proto";
+import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/venue.proto";
+
+// ConcertModerationService lets internal developers review concerts discovered by
+// the generative-AI search pipeline before they become visible to fans.
+//
+// Discovered concerts are held in a staging queue in a pending state. A developer
+// approves a concert to publish it (and trigger the new-concert notification) or
+// rejects it to drop it. Rejection is not permanent: a later discovery run may
+// re-surface the same concert for re-review, and every rejection is recorded for
+// search-quality analysis.
+//
+// All RPCs are authorized only for the admin organization; callers outside it are
+// rejected with PERMISSION_DENIED.
+service ConcertModerationService {
+  // ListPendingConcerts returns every concert currently awaiting review, including
+  // the resolved-venue preview so the reviewer can judge venue accuracy.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  rpc ListPendingConcerts(ListPendingConcertsRequest) returns (ListPendingConcertsResponse);
+
+  // ApproveConcert publishes a pending concert to fans and emits the new-concert
+  // notification. The operation is idempotent: approving a staged concert that no
+  // longer exists succeeds without creating a duplicate.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The staged concert id is missing or malformed.
+  rpc ApproveConcert(ApproveConcertRequest) returns (ApproveConcertResponse);
+
+  // RejectConcert drops a pending concert and records the rejection (with reason)
+  // for search-quality analysis. The operation is idempotent: rejecting a staged
+  // concert that no longer exists succeeds.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The staged concert id is missing, or the reason is empty.
+  rpc RejectConcert(RejectConcertRequest) returns (RejectConcertResponse);
+}
+
+// StagedConcertId uniquely identifies a concert sitting in the approval queue.
+// It is distinct from EventId because a staged concert has not yet been published
+// as an event; the id is assigned when the concert is first staged.
+message StagedConcertId {
+  // A UUID string representing the unique identity of the staged concert.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// ResolvedVenue is the venue preview produced by resolving the raw scraped venue
+// name against Google Places at staging time. It is shown alongside the raw
+// listed venue name so the reviewer can spot venue mis-resolution. No persisted
+// Venue (and therefore no VenueId) exists yet — the venue row is created only on
+// approval — so this is a dedicated review DTO rather than entity.v1.Venue.
+message ResolvedVenue {
+  // The canonical venue name as resolved by Google Places.
+  entity.v1.VenueName name = 1;
+
+  // The administrative area (ISO 3166-2) of the resolved venue, when determinable.
+  entity.v1.AdminArea admin_area = 2;
+
+  // The Google Places place id of the resolved venue, used as the stable venue
+  // identity for staging-level deduplication.
+  string place_id = 3;
+
+  // The geographic coordinates of the resolved venue, when available.
+  entity.v1.Coordinates coordinates = 4;
+}
+
+// PendingConcert is one concert awaiting developer review in the approval queue.
+// It carries the raw scraped fields together with the resolved-venue preview so a
+// reviewer has everything needed to judge accuracy without a follow-up fetch.
+message PendingConcert {
+  // The unique identifier of this staged concert, used to approve or reject it.
+  StagedConcertId staged_id = 1 [(buf.validate.field).required = true];
+
+  // The performing artist this concert was discovered for.
+  entity.v1.Artist performer = 2 [(buf.validate.field).required = true];
+
+  // The descriptive title extracted for the concert (e.g., the tour or show name).
+  entity.v1.Title title = 3 [(buf.validate.field).required = true];
+
+  // The scheduled calendar date of the concert in the venue's local timezone.
+  entity.v1.LocalDate local_date = 4 [(buf.validate.field).required = true];
+
+  // The scheduled start time. Optional; omitted when the source did not state one.
+  entity.v1.StartTime start_time = 5;
+
+  // The raw venue name exactly as scraped from the source, preserved for review.
+  entity.v1.ListedVenueName listed_venue_name = 6 [(buf.validate.field).required = true];
+
+  // The resolved-venue preview. Absent when the raw venue name could not be
+  // resolved against Google Places.
+  ResolvedVenue resolved_venue = 7;
+
+  // The source URL where the concert was found.
+  entity.v1.Url source_url = 8;
+
+  // The time at which the discovery pipeline staged this concert.
+  google.protobuf.Timestamp discovered_time = 9 [(buf.validate.field).required = true];
+}
+
+// ListPendingConcertsRequest is the request for retrieving all concerts awaiting
+// review. It takes no parameters; the full pending queue is returned.
+message ListPendingConcertsRequest {}
+
+// ListPendingConcertsResponse contains the concerts currently awaiting review.
+message ListPendingConcertsResponse {
+  // The concerts currently in the approval queue, in discovery order.
+  repeated PendingConcert pending_concerts = 1;
+}
+
+// ApproveConcertRequest identifies the staged concert to publish.
+message ApproveConcertRequest {
+  // Required. The unique identifier of the staged concert to approve.
+  StagedConcertId staged_id = 1 [(buf.validate.field).required = true];
+}
+
+// ApproveConcertResponse is returned upon successful approval.
+message ApproveConcertResponse {}
+
+// RejectConcertRequest identifies the staged concert to drop and the reason why.
+message RejectConcertRequest {
+  // Required. The unique identifier of the staged concert to reject.
+  StagedConcertId staged_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The reviewer's reason for rejecting the concert, recorded in the
+  // rejection log for search-quality analysis.
+  string reason = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+// RejectConcertResponse is returned upon successful rejection.
+message RejectConcertResponse {}
