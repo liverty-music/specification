@@ -18,36 +18,36 @@
 
 ## 3. Backend Entity & Repository
 
-- [ ] 3.1 Define `StagedConcert` entity (`internal/entity/staged_concert.go`) with the scraped + resolved-venue fields and a `pending`-only model
-- [ ] 3.2 Define `StagedConcertRepository` interface: `Upsert(pending)` (refresh-on-conflict by natural key), `ListPending`, `GetByID`, `Delete`, plus a `ListPendingNaturalKeys` (or equivalent) for dedup
-- [ ] 3.3 Implement pgx `StagedConcertRepository` (unnest where bulk; UPSERT refresh on natural key)
-- [ ] 3.4 Define `RejectedConcertLogRepository` interface + pgx impl: `Append(entry)` only
-- [ ] 3.5 Repository integration tests: refresh-on-conflict (no duplicate pending), delete, append-only log, NULL-safe natural key fallback
+- [x] 3.1 Define `StagedConcert` entity (`internal/entity/staged_concert.go`) with the scraped + resolved-venue fields and a `pending`-only model
+- [x] 3.2 Define `StagedConcertRepository` interface: `Upsert(pending)` (refresh-on-conflict by natural key), `ListPending`, `GetByID`, `Delete`, plus a `ListPendingNaturalKeys` (or equivalent) for dedup
+- [x] 3.3 Implement pgx `StagedConcertRepository` (unnest where bulk; UPSERT refresh on natural key)
+- [x] 3.4 Define `RejectedConcertLogRepository` interface + pgx impl: `Append(entry)` only
+- [x] 3.5 Repository integration tests: refresh-on-conflict (no duplicate pending), delete, append-only log, NULL-safe natural key fallback
 
 ## 4. Backend Discovery → Staging Rewrite
 
-- [ ] 4.1 Split `CreateFromDiscovered`: keep venue **resolution** (Google Places) on the discovery path; replace the `events`/`series`/`performers` insert + `CONCERT.created` publish with `StagedConcertRepository.Upsert(pending)`
-- [ ] 4.2 Implement B2 venue handling: resolve via Places, denormalize onto the staged row; do NOT create a `venues` row on the discovery path
-- [ ] 4.3 Extend `FilterNew` dedup to also exclude concerts already `pending` in `staged_concerts`; confirm it does NOT consult `rejected_concerts_log`
-- [ ] 4.4 Unit tests: discovery stages pending and writes no `events`/`venues`; pending refresh; rejected key re-stages
+- [x] 4.1 Split `CreateFromDiscovered`: keep venue **resolution** (Google Places) on the discovery path; replace the `events`/`series`/`performers` insert + `CONCERT.created` publish with `StagedConcertRepository.Upsert(pending)`
+- [x] 4.2 Implement B2 venue handling: resolve via Places, denormalize onto the staged row; do NOT create a `venues` row on the discovery path
+- [x] 4.3 Extend `FilterNew` dedup to also exclude concerts already `pending` in `staged_concerts`; confirm it does NOT consult `rejected_concerts_log`
+- [x] 4.4 Unit tests: discovery stages pending and writes no `events`/`venues`; pending refresh; rejected key re-stages
 
 ## 5. Backend Approve / Reject Use Cases + RPC
 
-- [ ] 5.1 Implement `ApproveConcert` use case: create/reuse `venues` row, run the existing series/event/performer bulk insert (UPSERT), delete the staged row, publish `CONCERT.created`; idempotent when the staged row is gone
-- [ ] 5.2 Implement `RejectConcert` use case: append `rejected_concerts_log` (with reviewer identity + reason), delete the staged row; idempotent when gone
-- [ ] 5.3 Confirm `CONCERT.created` is published ONLY from the approve path (removed from discovery)
-- [ ] 5.4 Implement `ConcertModerationService` handler (`ListPendingConcerts`/`ApproveConcert`/`RejectConcert`) with mappers to `PendingConcert`
-- [ ] 5.5 Apply admin-org authorization per `rpc-auth-scoping`; non-admin callers get PERMISSION_DENIED. Wire reviewer identity (Zitadel subject) into reject logging
-- [ ] 5.6 Register the service in DI / RPC server wiring
-- [ ] 5.7 Use-case + handler tests (approve publishes + notifies; reject logs + drops; idempotency; auth denial); `make check` green
+- [x] 5.1 Implement `ApproveConcert` use case: create/reuse `venues` row, run the existing series/event/performer bulk insert (UPSERT), delete the staged row, publish `CONCERT.created`; idempotent when the staged row is gone
+- [x] 5.2 Implement `RejectConcert` use case: append `rejected_concerts_log` (with reviewer identity + reason), delete the staged row; idempotent when gone
+- [x] 5.3 Confirm `CONCERT.created` is published ONLY from the approve path (removed from discovery)
+- [ ] (BSR-blocked) 5.4 Implement `ConcertModerationService` handler (`ListPendingConcerts`/`ApproveConcert`/`RejectConcert`) with mappers to `PendingConcert`
+- [ ] (BSR-blocked) 5.5 Apply admin-org authorization per `rpc-auth-scoping`; non-admin callers get PERMISSION_DENIED. Wire reviewer identity (Zitadel subject) into reject logging
+- [ ] (BSR-blocked) 5.6 Register the service in DI / RPC server wiring
+- [ ] (BSR-blocked) 5.7 Use-case + handler tests (approve publishes + notifies; reject logs + drops; idempotency; auth denial); `make check` green
 
 ## 6. Frontend Admin Console UI
 
-- [ ] 6.1 Upgrade the frontend to the BSR-published proto version; generate the `ConcertModerationService` client
-- [ ] 6.2 Add an approval-queue route + component in the bundle-isolated `admin/` app (no consumer-SPA import; respect the import-boundary lint)
-- [ ] 6.3 Render the pending list with all reviewable fields (artist, title, date, start time, raw listed venue name, resolved venue name + admin_area, source URL, discovered-at)
-- [ ] 6.4 Wire approve action (`ApproveConcert`) and reject action with a reason prompt (`RejectConcert`); remove the row on success; surface errors
-- [ ] 6.5 Component/unit tests; `make check` green
+- [ ] (BSR-blocked) 6.1 Upgrade the frontend to the BSR-published proto version; generate the `ConcertModerationService` client
+- [ ] (BSR-blocked) 6.2 Add an approval-queue route + component in the bundle-isolated `admin/` app (no consumer-SPA import; respect the import-boundary lint)
+- [ ] (BSR-blocked) 6.3 Render the pending list with all reviewable fields (artist, title, date, start time, raw listed venue name, resolved venue name + admin_area, source URL, discovered-at)
+- [ ] (BSR-blocked) 6.4 Wire approve action (`ApproveConcert`) and reject action with a reason prompt (`RejectConcert`); remove the row on success; surface errors
+- [ ] (BSR-blocked) 6.5 Component/unit tests; `make check` green
 
 ## 7. Ship to Production
 
