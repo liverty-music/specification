@@ -140,7 +140,7 @@ a reason.
 - **WHEN** an authenticated admin-org caller invokes `ListPendingConcerts`
 - **THEN** the response SHALL contain each pending concert's staged id, performing artist, title,
   local date, start time, raw `listed_venue_name`, resolved venue (name, admin_area, place id),
-  source URL, and discovered-at timestamp
+  source URL, and discovered-time timestamp
 
 #### Scenario: Non-admin caller is denied
 

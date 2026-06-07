@@ -33,6 +33,16 @@ message VenueName {
   string value = 1 [(buf.validate.field).string.min_len = 1];
 }
 
+// PlaceId is the external Google Places identifier for a venue location.
+// It is an opaque, third-party string (not a Liverty UUID) used as the stable
+// venue identity for staging-level deduplication and venue resolution, mirroring
+// how Mbid wraps the external MusicBrainz identifier.
+message PlaceId {
+  // The Google Places place id. Opaque and externally assigned; validated only
+  // for non-emptiness since its format is controlled by Google.
+  string value = 1 [(buf.validate.field).string.min_len = 1];
+}
+
 // AdminArea represents the administrative division where a venue is located
 // as an ISO 3166-2 subdivision code (e.g., "JP-13" for Tokyo, "US-CA" for California).
 //

@@ -113,7 +113,7 @@ package leaves room for the future venue-admin service without crowding the cons
 `ConcertService`.
 
 - `ListPendingConcerts` → `PendingConcert[]` (staged id, artist, title, local_date, start_time,
-  listed_venue_name, resolved venue {name, admin_area, place_id}, source_url, discovered_at).
+  listed_venue_name, resolved venue {name, admin_area, place_id}, source_url, discovered_time).
 - `ApproveConcert(staged_id)` → publishes the concert; idempotent if already approved/gone.
 - `RejectConcert(staged_id, reason)` → drops + logs; idempotent if already gone.
 

@@ -1,7 +1,7 @@
 ## 1. Proto Definitions (specification)
 
 - [x] 1.1 Create `rpc/admin/v1/concert_moderation_service.proto` with `service ConcertModerationService`
-- [x] 1.2 Define `PendingConcert` message: `staged_id`, performing `Artist`, `title`, `LocalDate local_date`, optional `StartTime start_time`, `listed_venue_name`, resolved `Venue` (name, admin_area, place id, coordinates), `source_url` (reuse `Url` VO), `discovered_at`
+- [x] 1.2 Define `PendingConcert` message: `staged_id`, performing `Artist`, `title`, `LocalDate local_date`, optional `StartTime start_time`, `listed_venue_name`, resolved `Venue` (name, admin_area, place id, coordinates), `source_url` (reuse `Url` VO), `discovered_time` (proto `_time` suffix; maps to the DB `discovered_at` column)
 - [x] 1.3 Define `ListPendingConcerts` (request/response with `repeated PendingConcert`), `ApproveConcert` (`staged_id`), `RejectConcert` (`staged_id`, required `reason`) RPCs with protovalidate constraints
 - [x] 1.4 Document each RPC's `Possible errors` (PERMISSION_DENIED for non-admin, INVALID_ARGUMENT, NOT_FOUND tolerated as idempotent no-op per design)
 - [x] 1.5 Run `buf lint` and `buf format -w`; confirm additive-only (no breaking change; consumer protos untouched)

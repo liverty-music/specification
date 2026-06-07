@@ -74,8 +74,9 @@ message ResolvedVenue {
   entity.v1.AdminArea admin_area = 2;
 
   // The Google Places place id of the resolved venue, used as the stable venue
-  // identity for staging-level deduplication.
-  string place_id = 3;
+  // identity for staging-level deduplication. Absent when the venue did not
+  // resolve.
+  entity.v1.PlaceId place_id = 3;
 
   // The geographic coordinates of the resolved venue, when available.
   entity.v1.Coordinates coordinates = 4;
@@ -140,7 +141,7 @@ message RejectConcertRequest {
 
   // Required. The reviewer's reason for rejecting the concert, recorded in the
   // rejection log for search-quality analysis.
-  string reason = 2 [(buf.validate.field).string.min_len = 1];
+  string reason = 2 [(buf.validate.field).required = true];
 }
 
 // RejectConcertResponse is returned upon successful rejection.
