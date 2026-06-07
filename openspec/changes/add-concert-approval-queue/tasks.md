@@ -10,11 +10,11 @@
 
 ## 2. Database Migration (backend)
 
-- [ ] 2.1 Atlas migration for `staged_concerts`: `id` UUID PK, `artist_id` FK→artists, `title`, `local_date` DATE, `start_at`/`open_at` TIMESTAMPTZ nullable, `listed_venue_name` TEXT, `admin_area` TEXT nullable, `source_url` TEXT, resolved-venue columns (`resolved_place_id`, `resolved_venue_name`, `resolved_admin_area`, `resolved_lat`, `resolved_lng`) nullable, `discovered_at` TIMESTAMPTZ NOT NULL
-- [ ] 2.2 Add a uniqueness constraint over the staging natural key `(artist_id, local_date, resolved_place_id)` with a NULL-safe fallback path on `listed_venue_name` so re-discovery refreshes the pending row rather than duplicating it
-- [ ] 2.3 Atlas migration for `rejected_concerts_log` (append-only): `id` UUID PK, raw scraped payload columns, resolved-venue preview columns, `reason` TEXT, `reviewed_by` TEXT, `rejected_at` TIMESTAMPTZ NOT NULL; no FK that would cascade-delete history
-- [ ] 2.4 Apply locally with `atlas migrate apply --env local`; confirm `events`/`venues` schemas unchanged
-- [ ] 2.5 Upgrade backend to the BSR-published proto version (`go get ...@vX.Y.Z`, `go mod tidy`); confirm `make check`
+- [x] 2.1 Atlas migration for `staged_concerts`: `id` UUID PK, `artist_id` FK→artists, `title`, `local_date` DATE, `start_at`/`open_at` TIMESTAMPTZ nullable, `listed_venue_name` TEXT, `admin_area` TEXT nullable, `source_url` TEXT, resolved-venue columns (`resolved_place_id`, `resolved_venue_name`, `resolved_admin_area`, `resolved_lat`, `resolved_lng`) nullable, `discovered_at` TIMESTAMPTZ NOT NULL
+- [x] 2.2 Add a uniqueness constraint over the staging natural key `(artist_id, local_date, resolved_place_id)` with a NULL-safe fallback path on `listed_venue_name` so re-discovery refreshes the pending row rather than duplicating it
+- [x] 2.3 Atlas migration for `rejected_concerts_log` (append-only): `id` UUID PK, raw scraped payload columns, resolved-venue preview columns, `reason` TEXT, `reviewed_by` TEXT, `rejected_at` TIMESTAMPTZ NOT NULL; no FK that would cascade-delete history
+- [x] 2.4 Apply locally with `atlas migrate apply --env local`; confirm `events`/`venues` schemas unchanged
+- [ ] 2.5 (BLOCKED on BSR gen) Upgrade backend to the BSR-published proto version (`go get ...@vX.Y.Z`, `go mod tidy`); confirm `make check`
 
 ## 3. Backend Entity & Repository
 
