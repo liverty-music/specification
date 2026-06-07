@@ -1,4 +1,4 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Event Natural Key Reflects Physical Identity
 
@@ -21,6 +21,8 @@ This makes event identity artist- and series-independent, so the same physical s
 
 - **WHEN** two discovered events share `(venue_id, local_event_date)` and both have NULL `start_at`
 - **THEN** the `NULLS NOT DISTINCT` constraint SHALL collapse them to a single `Event` row
+
+## MODIFIED Requirements
 
 ### Requirement: Series as Parent Aggregation
 
@@ -73,3 +75,11 @@ A `Series` SHALL have no content-derived database key and no database-level uniq
 - **THEN** the group SHALL adopt the existing events' `series_id` rather than minting a new one
 - **AND** when no member event exists, a new `UUIDv7` `Series` SHALL be created
 - **AND** the database SHALL NOT enforce any uniqueness on `Series` title or other content
+
+## REMOVED Requirements
+
+### Requirement: Event Natural Key Reflects Series Membership
+
+**Reason**: Replaced by "Event Natural Key Reflects Physical Identity". The events natural key no longer embeds `series_id` — event identity is physical `(venue_id, local_event_date, start_at)`, independent of series grouping.
+
+**Migration**: Backend migration `20260605120000_rework_event_natural_key_and_series_id` swaps the constraint (deduplicating colliding rows first). See the `auto-discovery-series-grouping` change.

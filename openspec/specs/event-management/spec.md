@@ -3,9 +3,7 @@
 ## Purpose
 
 The Event Management capability handles the lifecycle of generic events, providing a foundation for specific event types like concerts. It ensures consistent handling of common event data such as titles, dates, times, and venues.
-
 ## Requirements
-
 ### Requirement: Generic Event Management
 
 The system SHALL support a generic `Event` entity that represents a single performance occurring on a specific date at a specific venue. Each `Event` SHALL encapsulate per-occurrence properties: `EventId`, `SeriesId` (parent reference), `Venue` (embedded message; the DB stores the relationship as a scalar `venue_id` FK and the server hydrates the full `Venue` on read), `local_date` of type `LocalDate` (the DB column is named `local_event_date`), `StartTime`, and `OpenTime`. The `EventId` message SHALL be defined in `event.proto` as the canonical event identifier for the platform.
@@ -68,6 +66,8 @@ The `Series` entity SHALL include: `SeriesId`, `Title`, `SeriesType`, an optiona
 
 The proto-prefixed identifiers above are enforced by `buf lint ENUM_VALUE_PREFIX` and match the generated Go / TS constants; the bare `TOUR` / `SINGLE` / `FESTIVAL` aliases used elsewhere in this spec refer to the same values in prose. The `SeriesType` enum SHALL be designed as additive — new non-zero values MAY be appended without breaking existing consumers.
 
+A `Series` SHALL have no content-derived database key and no database-level uniqueness constraint. Its cross-run identity SHALL be established at the application layer by adopting the `series_id` already carried by its member events (matched on the events' physical natural key), minting a fresh `UUIDv7` `Series` only when no member event yet exists. `series.id` SHALL be a `UUIDv7`.
+
 #### Scenario: Series owns shared metadata
 
 - **WHEN** a tour spans multiple stops on different dates and venues
@@ -98,11 +98,12 @@ The proto-prefixed identifiers above are enforced by `buf lint ENUM_VALUE_PREFIX
 - **THEN** its `type` SHALL be one of `SERIES_TYPE_TOUR`, `SERIES_TYPE_SINGLE`, or `SERIES_TYPE_FESTIVAL`
 - **AND** the `SERIES_TYPE_UNSPECIFIED` value SHALL never be persisted
 
-#### Scenario: Series natural identity is not enforced at the database layer
+#### Scenario: Series identity is derived from member events, not a database key
 
-- **WHEN** two distinct `Series` rows with similar or identical titles are inserted
-- **THEN** the database SHALL accept both writes
-- **AND** deduplication SHALL be performed at the application layer using fuzzy matching on title and related fields
+- **WHEN** a tour group is persisted and at least one of its events already exists
+- **THEN** the group SHALL adopt the existing events' `series_id` rather than minting a new one
+- **AND** when no member event exists, a new `UUIDv7` `Series` SHALL be created
+- **AND** the database SHALL NOT enforce any uniqueness on `Series` title or other content
 
 ### Requirement: Multiple Performers per Event
 
@@ -127,20 +128,6 @@ The `Concert` DTO SHALL expose the resolved performers via a repeated field, ens
 - **WHEN** the `Event` proto message is defined
 - **THEN** it SHALL NOT contain an `ArtistId artist_id` field
 - **AND** the performing artists SHALL be retrieved exclusively via the `event_performers` relationship
-
-### Requirement: Event Natural Key Reflects Series Membership
-
-The natural key of the `events` table SHALL be `(series_id, local_event_date, venue_id)` — this is a database-layer constraint expressed in the storage column names; the corresponding proto fields are `series_id`, `local_date` (note the proto/DB column rename), and the embedded `venue.id`. The previous key `(artist_id, local_event_date)` SHALL be removed because `artist_id` no longer exists on the `events` row (performers live in `event_performers`).
-
-#### Scenario: Same series cannot have two events at the same venue on the same date
-
-- **WHEN** an attempt is made to insert a second `Event` row for the same `series_id`, `local_event_date`, and `venue_id`
-- **THEN** the database SHALL reject the insert with a unique-constraint violation
-
-#### Scenario: Different series at the same venue on the same date are allowed
-
-- **WHEN** two distinct `Series` rows have events at the same venue on the same date
-- **THEN** both events SHALL be persisted successfully
 
 ### Requirement: Concert DTO Embeds Series and Performers
 
@@ -181,3 +168,26 @@ The system SHALL propagate W3C Trace Context (traceparent) from the publisher pr
 
 - **WHEN** the consumer receives a message with trace context in its metadata
 - **THEN** all downstream operations (database queries, nested event publishing) MUST be children of the propagated trace
+
+### Requirement: Event Natural Key Reflects Physical Identity
+
+The natural key of the `events` table SHALL be `(venue_id, local_event_date, start_at)`, enforced as a unique constraint that treats NULL `start_at` as equal (`NULLS NOT DISTINCT`) — a database-layer constraint expressed in storage column names; the corresponding proto fields are the embedded `venue.id`, `local_date` (note the proto/DB column rename), and `start_time`. `series_id` SHALL NOT be part of the key: an event's identity is physical (where and when it happens), independent of how it is grouped into a series. The previous key `(series_id, local_event_date, venue_id)` SHALL be removed.
+
+This makes event identity artist- and series-independent, so the same physical show discovered via different artists, series, or source pages resolves to one row; and it makes two performances at the same venue and date with different start times distinct rows.
+
+#### Scenario: Same venue, date, and start time is one event regardless of series
+
+- **WHEN** two discoveries describe the same `(venue_id, local_event_date, start_at)` under different series or source classifications
+- **THEN** the database SHALL hold exactly one `Event` row for that key
+- **AND** the second discovery SHALL resolve to the existing row (idempotent UPSERT) rather than inserting a duplicate — the unique constraint serves as a race backstop only
+
+#### Scenario: Same venue and date, different start time, are distinct events
+
+- **WHEN** two performances share `(venue_id, local_event_date)` but have different `start_at` values
+- **THEN** both `Event` rows SHALL be persisted successfully
+
+#### Scenario: Same venue and date, both start times unpublished, collapse
+
+- **WHEN** two discovered events share `(venue_id, local_event_date)` and both have NULL `start_at`
+- **THEN** the `NULLS NOT DISTINCT` constraint SHALL collapse them to a single `Event` row
+
