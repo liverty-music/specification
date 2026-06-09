@@ -81,9 +81,10 @@ only by the admin-authorization layer and the CORS allowlist.
 #### Scenario: Both servers share the base interceptor chain
 
 - **WHEN** either server is constructed
-- **THEN** it SHALL apply the same base interceptor ordering (tracing, access log,
-  error handling, panic recovery, claims bridge, validation)
+- **THEN** it SHALL apply the same base interceptor ordering (tracing, rate limiting,
+  access log, error handling, panic recovery, claims bridge, validation)
 - **AND** the admin server SHALL additionally apply the admin-authorization layer
+  (after the claims bridge, before validation)
 
 ### Requirement: Dedicated admin API ingress host
 
