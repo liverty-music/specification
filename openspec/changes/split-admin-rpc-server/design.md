@@ -66,9 +66,14 @@ The admin console already loads a per-host `/config.json` (`admin-console-hostin
 
 ## Migration / sequencing
 
-This moves a live, prod-shipped service. To avoid a window where the admin console can't reach moderation:
-1. Ship backend serving `ConcertModerationService` on **both** the consumer and admin servers temporarily — OR sequence host+frontend so the admin client flips only after `api.admin` is live.
-2. Preferred: stand up `api.admin` (cloud-provisioning) → release backend (admin server live, still also on consumer server) → flip the admin frontend config to `api.admin` → remove the service from the consumer server in a follow-up. Decide at apply time whether the brief dual-serve is worth avoiding a flip-day gap.
+This moves a live, prod-shipped service, so the cutover must never (a) leave an admin RPC **ungated** or (b) **CORS-break** the admin console. The safe order is a coordinated flip with **no ungated dual-serve** and the consumer-CORS removal **last**:
+
+1. **cloud-provisioning**: stand up `api.admin` (Service + route + cert + DNS + health) and the admin CORS config. Keep the admin origin in the consumer CORS for now. The `api.admin` route is unhealthy until step 2 — fine, nothing uses it yet.
+2. **backend release**: the admin server serves `ConcertModerationService` (boundary-gated); the consumer server stops serving it in the **same** release. Until step 3 the admin console (still on the consumer API) gets `unimplemented` for moderation — a brief functional gap on an internal tool, with **no security exposure**.
+3. **frontend release**: flip the admin client to `api.admin` — gap closed.
+4. **cloud-provisioning follow-up**: drop the admin origin from the consumer CORS (the admin console no longer calls the consumer API).
+
+**Why not dual-serve to avoid the step-2→3 gap?** Because task 1.3 deletes the per-method check and the admin-authorization interceptor is admin-server-only, registering the service on the consumer server during the window would leave it **ungated** — any authenticated fan could call it. The only *safe* dual-serve is to additionally attach the admin-authorization interceptor to that handler on the consumer server too, then drop it in the follow-up. Given the admin surface is internal and low-traffic, the simple coordinated flip (accepting a brief moderation gap) is preferred over that added complexity.
 
 ## Open questions
 

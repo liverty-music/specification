@@ -10,7 +10,7 @@
 
 - [ ] 2.1 In DI, build the consumer server (existing services, minus admin) and the admin server (admin services only) via the factory; give the admin server its own health handler
 - [ ] 2.2 Register BOTH servers with the shutdown Drain phase so both drain on signal
-- [ ] 2.3 Move `ConcertModerationService` registration to the admin server; (cutover option) optionally keep it ALSO on the consumer server behind the per-method check during the migration window — decide per design "Migration / sequencing"
+- [ ] 2.3 Move `ConcertModerationService` registration to the admin server ONLY (boundary-gated); the consumer server stops serving it in the SAME release. Do NOT register it on the consumer server as a dual-serve — task 1.3 removed the per-method check and the admin-authorization interceptor is admin-server-only, so a consumer-side registration would be UNGATED. (If a zero-gap cutover is ever required, the only safe dual-serve is to additionally attach the admin-authorization interceptor to that handler on the consumer server too, then drop it in the follow-up — see design "Migration / sequencing".)
 - [ ] 2.4 `make check` green
 
 ## 3. cloud-provisioning — admin API ingress
@@ -19,7 +19,7 @@
 - [ ] 3.2 Add an admin backend `Service` (ClusterIP, `appProtocol: kubernetes.io/h2c`) targeting the admin port
 - [ ] 3.3 Add an `HTTPRoute` for `api.admin.{env}` on the shared external gateway → admin Service; leave the consumer API route unchanged
 - [ ] 3.4 Add certmap + Cloud DNS entries for `api.admin.{env}` and a gRPC `HealthCheckPolicy` for the admin Service
-- [ ] 3.5 Backend config/env: add `ADMIN_SERVER_PORT` + `ADMIN_CORS_ALLOWED_ORIGINS` (admin origins); REMOVE the admin origin from the consumer `CORS_ALLOWED_ORIGINS`
+- [ ] 3.5 Backend config/env: add `ADMIN_SERVER_PORT` + `ADMIN_CORS_ALLOWED_ORIGINS` (admin origins). KEEP the admin origin in the consumer `CORS_ALLOWED_ORIGINS` for now — it is removed only in the follow-up (5.4), AFTER the frontend flips to `api.admin`, so the admin console is never CORS-broken mid-cutover
 - [ ] 3.6 `make lint` / kustomize render green; `pulumi preview` clean for dev and prod
 
 ## 4. Frontend — admin client base URL
@@ -30,8 +30,8 @@
 
 ## 5. Ship to production (coordinated cutover)
 
-- [ ] 5.1 Merge + apply cloud-provisioning so `api.admin.{env}` is live (Service + route + cert + DNS + health) BEFORE the frontend flips
-- [ ] 5.2 Release backend so the admin server is live (per design, optionally still dual-serving on the consumer server during the window)
-- [ ] 5.3 Release frontend so the admin console targets `api.admin`; verify approve/reject works end-to-end against the admin host in prod
-- [ ] 5.4 Follow-up: remove `ConcertModerationService` from the consumer server (if dual-served) and drop the admin origin from the consumer CORS; confirm the consumer API no longer serves admin RPCs
-- [ ] 5.5 Verify a non-admin token is rejected at the admin host, and that the consumer host returns not-found/unimplemented for the moderation procedures
+- [ ] 5.1 Apply cloud-provisioning so `api.admin.{env}` is live (Service + route + cert + DNS + health) and the admin CORS config is in place. The consumer CORS still includes the admin origin. The `api.admin` route is unhealthy until the backend serves the admin port (5.2) — fine, nothing uses it yet
+- [ ] 5.2 Release backend: the admin server serves `ConcertModerationService` (boundary-gated) on the admin port; the consumer server no longer serves it. NOTE: until 5.3, the admin console (still pointed at the consumer API) gets `unimplemented` for moderation — a brief functional gap on an internal tool, with NO security exposure (the consumer API simply no longer hosts those procedures)
+- [ ] 5.3 Release frontend so the admin console targets `api.admin`; the gap closes. Verify approve/reject end-to-end against the admin host in prod
+- [ ] 5.4 Follow-up cloud-provisioning: now that the admin console no longer calls the consumer API, drop the admin origin from the consumer `CORS_ALLOWED_ORIGINS`
+- [ ] 5.5 Verify a non-admin token is rejected at the admin host, and that the consumer host returns `unimplemented` for the moderation procedures
