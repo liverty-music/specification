@@ -1,3 +1,9 @@
+# Onboarding Spotlight
+
+## Purpose
+
+Defines the coach mark spotlight overlay — the visual cutout, tooltip, target-click delegation, and lifecycle. The coach mark is a single, transient, non-blocking hint owned by `CoachMarkService`.
+## Requirements
 ### Requirement: Spotlight Visual Layer via Box-Shadow
 
 The coach mark spotlight SHALL use a CSS Anchor Positioning hybrid approach. A `.visual-spotlight` element SHALL be positioned over the target using `anchor()` functions in `inset` properties, with `box-shadow: 0 0 0 100vmax` to create the dark overlay and a transparent cutout. The element SHALL use `border-radius: var(--spotlight-radius)` for shape control and `pointer-events: none` to allow click-through.
@@ -24,11 +30,11 @@ The coach mark spotlight SHALL use a CSS Anchor Positioning hybrid approach. A `
 
 ### Requirement: Coach Mark Overlay System
 
-The system SHALL provide a reusable coach mark overlay component that highlights a target element. The `aria-label` on the tooltip SHALL be `"Onboarding tip"`. Navigation SHALL be delegated to the target element's native click behavior; the coach mark SHALL NOT call `router.load()`. Target selectors SHALL be scoped to a specific component context (e.g., `concert-highway [data-stage="home"]`) to prevent matching elements in unrelated components.
+The system SHALL provide a reusable coach mark overlay component that highlights a target element as a non-blocking hint. Coach mark state (target selector, message, radius, active flag, and `onTap` callback) SHALL be owned by a dedicated `CoachMarkService`, not by `OnboardingService`. The `aria-label` on the tooltip SHALL be `"Onboarding tip"`. Navigation SHALL be delegated to the target element's native click behavior; the coach mark SHALL NOT call `router.load()`. The `onTap` callback SHALL NOT advance any onboarding step (there is no step machine); it MAY perform incidental non-navigation side effects only. Target selectors SHALL be scoped to a specific component context (e.g., `concert-highway [data-stage="home"]`) to prevent matching elements in unrelated components.
 
-#### Scenario: Spotlight renders for active step
+#### Scenario: Spotlight renders for active coach mark
 
-- **WHEN** an onboarding step requires a coach mark
+- **WHEN** a coach mark is activated via `CoachMarkService`
 - **THEN** the system SHALL display the spotlight overlay with instructional text
 - **AND** the tooltip `aria-label` SHALL be `"Onboarding tip"`
 
@@ -37,62 +43,21 @@ The system SHALL provide a reusable coach mark overlay component that highlights
 - **WHEN** a coach mark spotlight is active on a nav tab element
 - **AND** the user taps the spotlighted element
 - **THEN** the system SHALL call `currentTarget.click()` to fire the element's native click event
-- **AND** the system SHALL call `onTap?.()` callback (for step-advance logic only)
+- **AND** the system SHALL call the `onTap?.()` callback (for incidental side effects only, never step advancement)
 - **AND** the system SHALL NOT call `router.load()` from within the coach mark component or its `onTap` callback
 
-#### Scenario: Blocker divs prevent off-target interaction
+#### Scenario: Off-target interaction is allowed (non-blocking)
 
 - **WHEN** a coach mark spotlight is active
-- **THEN** blocker divs SHALL cover the viewport area outside the spotlight target
-- **AND** taps on blocker divs SHALL be silently ignored (no navigation, no error)
-- **AND** the scroll lock (`overflow: hidden` on `au-viewport`) SHALL remain active while the coach mark is active
+- **AND** the user taps or scrolls an area outside the highlighted target
+- **THEN** the interaction SHALL reach the underlying page (no click-blocker interception)
+- **AND** page scroll SHALL remain enabled
 
 #### Scenario: Target selector is scoped to component context
 
-- **WHEN** `activateSpotlight()` is called with a target selector
+- **WHEN** `CoachMarkService.activate()` is called with a target selector
 - **THEN** the selector SHALL include a component-scoped prefix (e.g., `concert-highway [data-stage="home"]` instead of bare `[data-stage="home"]`)
 - **AND** `document.querySelector()` SHALL NOT match elements in unrelated components (e.g., `page-help` decorative labels)
-
-### Requirement: Click-Blocker Layer via Transparent Anchor-Positioned Divs
-
-The coach mark SHALL use four transparent click-blocker divs (top, right, bottom, left) positioned with CSS `anchor()` functions to block interactions outside the target element.
-
-#### Scenario: Clicks outside spotlight are blocked
-
-- **WHEN** the coach mark overlay is active
-- **AND** the user taps an area covered by a click-blocker div
-- **THEN** the tap SHALL be intercepted by the blocker (`pointer-events: auto`)
-- **AND** the tap SHALL NOT reach the underlying page content
-
-#### Scenario: Clicks inside spotlight reach the target
-
-- **WHEN** the coach mark overlay is active
-- **AND** the user taps inside the spotlight cutout area
-- **THEN** the tap SHALL pass through to the actual target element
-- **AND** the target element SHALL receive the click event natively
-
-#### Scenario: Target interceptor invokes onTap callback
-
-- **WHEN** the coach mark overlay is active with an `onTap` callback registered
-- **AND** the user taps the target interceptor overlay
-- **THEN** the `onTap` callback SHALL be invoked
-- **AND** the caller MAY use the callback to deactivate the spotlight (e.g., `deactivateSpotlight()`)
-
-#### Scenario: Click-blockers cover the entire viewport except target bounds
-
-- **WHEN** the coach mark overlay is active
-- **THEN** `.mask-top` SHALL cover from viewport top to `anchor(target top)`
-- **AND** `.mask-bottom` SHALL cover from `anchor(target bottom)` to viewport bottom
-- **AND** `.mask-left` SHALL cover from viewport left to `anchor(target left)`, between target top and bottom
-- **AND** `.mask-right` SHALL cover from `anchor(target right)` to viewport right, between target top and bottom
-
-#### Scenario: My Artists step provides onTap dismissal callback
-
-- **WHEN** the onboarding step is `my-artists`
-- **AND** `activateSpotlight` is called for the `[data-hype-header]` target
-- **THEN** an `onTap` callback SHALL be provided that calls `deactivateSpotlight()`
-- **AND** after the spotlight is dismissed, the hype sliders SHALL be interactive
-- **AND** the user SHALL be able to change a hype level to complete onboarding
 
 ### Requirement: Spotlight Uses Popover Top Layer
 
@@ -102,7 +67,7 @@ The coach mark overlay container SHALL use `popover="manual"` to render on the b
 
 - **WHEN** the coach mark is activated
 - **THEN** the overlay container SHALL call `showPopover()` to enter the top layer
-- **AND** the spotlight and click-blockers SHALL render above all other content regardless of z-index
+- **AND** the spotlight SHALL render above all other content regardless of z-index
 
 #### Scenario: Popover UA styles are neutralized
 
@@ -110,66 +75,14 @@ The coach mark overlay container SHALL use `popover="manual"` to render on the b
 - **THEN** the container SHALL have `background: transparent`, `border: none`, `padding: 0`, `margin: 0`
 - **AND** `::backdrop` SHALL be set to `display: none`
 
-### Requirement: Continuous Spotlight Persistence
-
-The spotlight SHALL remain continuously active from the moment it first appears (Step 1, Dashboard icon) until the sign-up modal is displayed (Step 6). The popover SHALL NOT be closed and reopened between steps; instead, the target SHALL be updated via anchor-name reassignment while the overlay remains open. This provides uninterrupted visual guidance throughout the entire onboarding tutorial. **Exception**: the Step 1→3 transition (Discovery → Dashboard) SHALL deactivate and reactivate the spotlight — the popover must be cleared before navigation so that Dashboard overlays (celebration, region selector) render above the top layer without being blocked by click-blockers (see `onboarding-tutorial`, "Step 1 - Spotlight deactivation before navigation"). **Additionally**, route components with active spotlights SHALL call `deactivateSpotlight()` in their `detaching()` lifecycle hook to ensure cleanup regardless of navigation trigger.
-
-The `findAndHighlight()` method SHALL validate `targetSelector` before calling `querySelector`. When `targetSelector` is empty or falsy, the method SHALL return immediately without calling `querySelector` or initiating retry logic. This prevents `InvalidSelectorError` caused by non-deterministic Aurelia binding update order when multiple Store properties change simultaneously.
-
-The `findAndHighlight()` method SHALL cancel any pending retry timer before starting a new retry chain. This prevents timer leaks when `targetSelectorChanged` fires while a previous retry is still running (e.g., during the lane introduction sequence where phases advance every 2 seconds but retry chains run up to 5 seconds).
-
-#### Scenario: Spotlight activates at Step 1 and persists through Step 5
-
-- **WHEN** the coach mark first activates at Step 1 (Dashboard icon in discover page)
-- **THEN** the overlay popover SHALL call `showPopover()` once
-- **AND** the popover SHALL remain open through all subsequent steps (Step 3 lane intro, Step 3 card, Step 4 My Artists tab, Step 5 Passion Level)
-- **AND** the target SHALL change by reassigning `anchor-name` to the new target element
-- **AND** the tooltip message SHALL update to match the current step
-
-#### Scenario: Spotlight deactivates at Step 6
-
-- **WHEN** `onboardingStep` advances to 6 (SignUp)
-- **THEN** the overlay popover SHALL call `hidePopover()`
-- **AND** the current target's `anchor-name` SHALL be cleared
-- **AND** the scroll lock on `<au-viewport>` SHALL be released (`overflow` reset)
-- **AND** no orphaned click-blockers or anchor-names SHALL remain in the DOM
-
-#### Scenario: Route detach triggers deactivation
-
-- **WHEN** a route containing an active spotlight detaches
-- **THEN** `deactivateSpotlight()` SHALL be called in the `detaching()` lifecycle hook
-- **AND** the spotlight state SHALL be fully cleaned up before the new route attaches
-
-#### Scenario: App-shell level placement
-
-- **WHEN** the onboarding spotlight is active
-- **THEN** the `<coach-mark>` component SHALL be rendered in the app shell (`my-app.html`), not in individual route page templates
-- **AND** the onboarding service SHALL drive the target selector, message, spotlight radius, and active state
-- **AND** individual route pages SHALL NOT contain their own `<coach-mark>` instances for onboarding steps
-
-#### Scenario: Empty target selector is safely ignored
-
-- **WHEN** the `targetSelector` bindable property is set to an empty string (e.g., via Store `clearSpotlight` dispatch)
-- **AND** `targetSelectorChanged()` fires before `activeChanged()` due to non-deterministic binding update order
-- **THEN** `findAndHighlight()` SHALL return immediately without calling `document.querySelector`
-- **AND** no `InvalidSelectorError` SHALL be thrown
-- **AND** no retry timer SHALL be started
-
-#### Scenario: Retry timer cancelled on new target
-
-- **WHEN** `findAndHighlight()` is called while a previous retry chain is still pending
-- **THEN** the pending retry timer SHALL be cancelled via `cleanup()` before starting the new retry chain
-- **AND** only one retry chain SHALL be active at any time
-
 ### Requirement: Route Detach Spotlight Cleanup
 
-When the dashboard route detaches (user navigates away), the spotlight SHALL be deactivated via the `detaching()` lifecycle hook to prevent orphaned View Transitions and popover state. Note: `unloading()` (router lifecycle) is also a valid placement since it runs earlier in the navigation sequence (`canUnload → canLoad → unloading → loading → detaching`), but `detaching()` is chosen for consistency with existing cleanup code (AbortController, timers, scroll listeners) already in this hook.
+When a route hosting an active coach mark detaches (user navigates away), the spotlight SHALL be deactivated via the `detaching()` lifecycle hook to prevent orphaned View Transitions and popover state. Note: `unloading()` (router lifecycle) is also a valid placement since it runs earlier in the navigation sequence (`canUnload → canLoad → unloading → loading → detaching`), but `detaching()` is chosen for consistency with existing cleanup code (AbortController, timers, scroll listeners) already in this hook.
 
-#### Scenario: Dashboard detaching cleans up spotlight
-- **WHEN** the dashboard route's `detaching()` lifecycle hook fires
-- **THEN** `onboardingService.deactivateSpotlight()` SHALL be called
+#### Scenario: Route detaching cleans up spotlight
+- **WHEN** the host route's `detaching()` lifecycle hook fires
+- **THEN** `CoachMarkService.deactivate()` SHALL be called
 - **AND** any in-progress View Transition SHALL be safely terminated
-- **AND** the scroll lock on `<au-viewport>` SHALL be released
 
 #### Scenario: Navigation during active spotlight does not throw
 - **WHEN** the spotlight is active with a View Transition in progress
@@ -179,21 +92,21 @@ When the dashboard route detaches (user navigates away), the spotlight SHALL be 
 
 ### Requirement: Coach Mark Target Click Delegates Navigation to Aurelia Router
 
-The coach mark's `target-interceptor` div overlays the actual target element. When the user taps the interceptor, it programmatically calls `currentTarget.click()` on the real target element. For navigation targets (e.g., `<a>` with `href`), this `.click()` triggers Aurelia Router's `href` intercept, which handles the route transition declaratively. The `onTap` callback SHALL only perform state updates (e.g., `setStep`), never imperative `router.load()`.
+The coach mark's `target-interceptor` div overlays the actual target element. When the user taps the interceptor, it programmatically calls `currentTarget.click()` on the real target element. For navigation targets (e.g., `<a>` with `href`), this `.click()` triggers Aurelia Router's `href` intercept, which handles the route transition declaratively. The `onTap` callback SHALL only perform incidental application side effects (never onboarding step advancement, which no longer exists) and SHALL never call imperative `router.load()`.
 
 #### Scenario: Nav link target navigates via Aurelia Router href intercept
-- **WHEN** the coach mark target is a navigation link (e.g., `<a data-nav="my-artists" href="my-artists">`)
+- **WHEN** the coach mark target is a navigation link (e.g., `<a data-nav="home" href="dashboard">`)
 - **AND** the user taps the `target-interceptor` overlay
 - **THEN** `currentTarget.click()` SHALL fire on the `<a>` element
 - **AND** Aurelia Router's `useHref` intercept SHALL handle the resulting click event as a declarative route transition
-- **AND** the `onTap` callback SHALL only update onboarding state (e.g., `onboardingService.setStep()`)
+- **AND** the `onTap` callback SHALL NOT advance any onboarding step
 - **AND** `router.load()` SHALL NOT be called imperatively from the `onTap` callback
 
 #### Scenario: Non-nav target triggers onTap callback for application logic
 - **WHEN** the coach mark target is a non-navigation element (e.g., concert card)
 - **AND** the user taps the `target-interceptor` overlay
 - **THEN** `currentTarget.click()` SHALL fire on the target element, triggering its bound event handlers
-- **AND** the `onTap` callback SHALL be invoked for additional application logic (e.g., advancing onboarding step, opening detail sheet)
+- **AND** the `onTap` callback SHALL be invoked for incidental application logic only (e.g., opening a detail sheet), never onboarding step advancement
 
 ### Requirement: Smooth Spotlight Movement via View Transitions API
 
@@ -313,6 +226,30 @@ The `findAndHighlight()` method SHALL reject target elements that are invisible 
 - **AND** the element's bounding rect has zero dimensions
 - **THEN** the system SHALL skip this element
 - **AND** the system SHALL retry until a visible matching element appears or timeout is reached
+
+### Requirement: Single Transient Non-Blocking Coach Mark
+
+With the step machine removed, the coach mark SHALL be a single, transient, non-blocking hint rather than a multi-step blocking overlay. At most one coach mark SHALL be active at a time. It SHALL NOT lock page scroll and SHALL NOT block interaction with the rest of the page; it visually highlights its target and lets the user keep using the app. State and lifecycle are owned by `CoachMarkService` (`activate` / `deactivate`), and the `<coach-mark>` component SHALL be placed once at the app-shell level, driven by `CoachMarkService` (target selector, message, radius, active flag, `onTap`). The coach mark SHALL be dismissed when the user taps its target or when the host route detaches.
+
+#### Scenario: Coach mark does not block the rest of the page
+
+- **WHEN** a coach mark is active
+- **THEN** the page outside the highlighted target SHALL remain interactive (no full-viewport click-blockers)
+- **AND** page scroll SHALL NOT be locked (`<au-viewport>` `overflow` SHALL NOT be forced to `hidden`)
+- **AND** the dashboard is reachable at any time, consistent with the soft gate
+
+#### Scenario: Single coach mark driven from the app shell
+
+- **WHEN** the coach mark is active
+- **THEN** the `<coach-mark>` component SHALL be rendered once in the app shell, not in individual route templates
+- **AND** `CoachMarkService` SHALL drive its target selector, message, spotlight radius, and active state
+- **AND** no more than one coach mark SHALL be active simultaneously
+
+#### Scenario: Coach mark dismissed on tap or route detach
+
+- **WHEN** the user taps the coach mark target, OR the host route's `detaching()` lifecycle hook fires
+- **THEN** `CoachMarkService.deactivate()` SHALL be called
+- **AND** the spotlight, tooltip, and any anchor-name SHALL be fully cleaned up
 
 ## Test Cases
 

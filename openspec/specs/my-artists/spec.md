@@ -3,9 +3,7 @@
 ## Purpose
 
 Display and manage the user's followed artists, providing list and grid views with passion level controls.
-
 ## Requirements
-
 ### Requirement: Artist List Row (REMOVED)
 
 **Reason**: The swipe-to-dismiss unfollow mechanism was abandoned due to `display: table-row` layout constraints that prevented the scroll-snap container from functioning correctly inside the artist list. Replaced by the long-press-to-unfollow flow.
@@ -29,16 +27,23 @@ Display and manage the user's followed artists, providing list and grid views wi
 
 ### Requirement: Hype Change Persisted for Guest Users
 
-The system SHALL persist hype changes made by guest users to localStorage without reverting them, regardless of onboarding step.
+The system SHALL persist hype changes made by guest users to localStorage without reverting them, and SHALL keep hype editing fully decoupled from onboarding state. Changing a hype level SHALL NOT advance, complete, or otherwise mutate onboarding state, and a repeated hype change (second tap onward) SHALL always apply.
 
-#### Scenario: Guest user changes hype during MY_ARTISTS onboarding step
+#### Scenario: Guest user changes hype during onboarding
 
-- **WHEN** a user at Step `'my-artists'` changes a hype level
+- **WHEN** a guest user changes a hype level while `OnboardingService.isOnboarding` is `true`
 - **AND** the user is not authenticated
 - **THEN** the system SHALL persist the hype value in `GuestService` under `liverty:guest:hypes`
 - **AND** the system SHALL NOT revert the hype change in the UI
-- **AND** the system SHALL advance `onboardingStep` to `'completed'`
+- **AND** the system SHALL NOT mutate onboarding state (no step advance, no completion)
 - **AND** the signup-prompt-banner SHALL already have been visible (per the `Signup Banner on My Artists` requirement in the `signup-prompt-banner` capability); no additional banner-visibility mutation is required by this change handler
+
+#### Scenario: Repeated hype change applies every time
+
+- **WHEN** a guest user changes a hype level
+- **AND** then changes a hype level a second (or subsequent) time on the same or another artist
+- **THEN** every change SHALL apply and persist
+- **AND** no change SHALL be reverted due to onboarding state
 
 #### Scenario: Guest user changes hype after onboarding completion
 
@@ -165,3 +170,4 @@ The artists-table column-header cells (`.hype-col-header` in `my-artists-route.h
   - `🔥🔥 Nearby`
   - `🔥🔥🔥 Away`
 - **AND** these surface forms SHALL remain identical across all supported locales
+

@@ -3,41 +3,33 @@
 ## Purpose
 
 Defines the guest onboarding flow: interactive artist discovery, the linear onboarding step sequence (LP → DISCOVERY → DASHBOARD → MY_ARTISTS → … → COMPLETED), and the local-storage-backed progression that precedes account creation.
-
 ## Requirements
-
 ### Requirement: Interactive Artist Discovery (Bubble Network UI)
 
-The system SHALL provide an engaging, gamified interface for users to discover and follow artists using Last.fm API data. During onboarding, followed artists are stored locally (not via backend RPC). The system SHALL trigger a background concert search for each followed artist and track which artists have concerts. The Coach Mark SHALL appear when the progression condition is reached, remain visible for 2 seconds, then fade out. Navigation to the Dashboard is not triggered automatically — the user taps the Home nav tab at their own pace.
+The system SHALL provide an engaging, gamified interface for users to discover and follow artists using Last.fm API data. During onboarding, followed artists are stored locally (not via backend RPC). The system SHALL trigger a background concert search for each followed artist and track which artists have concerts. The Coach Mark SHALL appear when the progression condition is reached and SHALL hint that the personal timetable is ready; it is owned by `CoachMarkService` (see `onboarding-spotlight`). Navigation to the Dashboard is never forced — the dashboard is always reachable and the user taps the Home nav tab at their own pace. Tapping the coach mark target SHALL navigate only; it SHALL NOT advance any onboarding step (there is no step machine).
 
 #### Scenario: Guest user follows artist via bubble tap
 
 - **WHEN** a guest user (in onboarding) taps an artist bubble
 - **THEN** the system SHALL trigger the absorption animation
-- **AND** the system SHALL store the artist in `FollowServiceClient.followedArtists` (which delegates to `GuestService` for guest users)
-- **AND** the system SHALL call `ConcertServiceClient.searchAndTrack(artistId)` to initiate background search and polling
+- **AND** the system SHALL store the artist via `FollowStore` (which routes to the guest queue for unauthenticated users)
+- **AND** the system SHALL initiate a background concert search/track for the artist via `ConcertService`
 - **AND** the system SHALL NOT call any backend RPC for the follow operation itself
 
 #### Scenario: Guest follow default hype level
 
-- **WHEN** a guest user (in onboarding) requests the list of followed artists via `listFollowed()`
+- **WHEN** a guest user (in onboarding) requests the list of followed artists via `FollowStore.listFollowed()`
 - **THEN** the system SHALL return each followed artist with hype level `'watch'` (observation tier)
 
-#### Scenario: Discover to Dashboard transition condition
+#### Scenario: Discover to Dashboard coach-mark trigger
 
-- **WHEN** a user is at Step `'discovery'`
-- **AND** either the user has followed 5 or more artists, OR `ConcertServiceClient.artistsWithConcertsCount` >= 3
-- **THEN** the system SHALL activate a coach mark spotlight on the Dashboard icon for 2 seconds
-- **AND** after 2 seconds the spotlight SHALL fade out automatically
-- **AND** the user MAY tap the Dashboard icon at any time (including after the spotlight fades) to navigate to `/dashboard`
-- **AND** when the user taps the Dashboard icon, the system SHALL advance `onboardingStep` to `'dashboard'`
-
-#### Scenario: Coach Mark fades after 2 seconds
-
-- **WHEN** the progression condition is first met
-- **THEN** the system SHALL display the coach mark spotlight
-- **AND** after 2000ms the system SHALL deactivate the spotlight
-- **AND** the Dashboard nav icon SHALL remain tappable without the spotlight
+- **WHEN** a user is in onboarding (`isOnboarding === true`)
+- **AND** either the user has followed 5 or more artists, OR the live `artistsWithConcertsCount` >= 3
+- **AND** the coach mark has not yet been shown this session
+- **THEN** the system SHALL activate a coach mark spotlight on the Dashboard nav icon via `CoachMarkService`
+- **AND** the trigger SHALL be evaluated from live follow/concert counts in `DiscoveryRoute`, not from a mirrored count cache
+- **AND** the user MAY tap the Dashboard icon at any time (with or without the spotlight) to navigate to `/dashboard`
+- **AND** tapping the Dashboard icon SHALL navigate only and SHALL NOT advance any onboarding step
 
 #### Scenario: Coach Mark does not reappear
 
@@ -47,8 +39,8 @@ The system SHALL provide an engaging, gamified interface for users to discover a
 #### Scenario: Pre-seeded follows on page reload
 
 - **WHEN** the discovery page loads during onboarding
-- **THEN** the system SHALL hydrate follows from `GuestService.follows` into `FollowServiceClient`
-- **AND** the system SHALL call `ConcertServiceClient.searchAndTrack()` for any artists not yet tracked
+- **THEN** the system SHALL hydrate follows from `FollowStore.guestFollows` into the active follow list
+- **AND** the system SHALL initiate a concert search via `ConcertService` for any artists not yet tracked
 
 #### Scenario: Snack notification on concert found
 
@@ -56,19 +48,55 @@ The system SHALL provide an engaging, gamified interface for users to discover a
 - **AND** `listConcerts(artistId)` returns at least one concert
 - **THEN** the system SHALL display a snack notification indicating the artist has upcoming events
 
-### Requirement: Step Sequence
+### Requirement: Single-Flag Onboarding State
 
-The onboarding step sequence SHALL be LP → DISCOVERY → DASHBOARD → MY_ARTISTS → … → COMPLETED. The DETAIL step is removed. The DASHBOARD step SHALL complete on dashboard arrival (no Lane Intro sequence). The MY_ARTISTS → COMPLETED transition is out of scope for this change (owned by the consent-step flow).
+The system SHALL model onboarding state as a single persisted boolean rather than an ordered step machine. `OnboardingService` SHALL expose `isOnboarding` as the primary getter and SHALL retain `isCompleted` as its negation (`isCompleted === !isOnboarding`) for call-site compatibility. The persisted value SHALL use completed-polarity (`onboardingComplete`; an absent key means `false`, i.e. still onboarding) so a brand-new user defaults to `isOnboarding === true`. Completion SHALL be a one-way latch exposed as a single `finish()` mutator; once `isOnboarding` becomes `false` it SHALL NOT return to `true` except via an explicit fresh-onboarding reset. The service SHALL NOT expose step values, step ordering, route maps, or a `readyForDashboard` predicate.
 
-#### Scenario: Step sequence excludes DETAIL
+#### Scenario: Brand-new user defaults to onboarding
 
-- **WHEN** `onboardingStep` is `'dashboard'`
-- **AND** the Dashboard page is attached
-- **THEN** the system SHALL advance `onboardingStep` to `'my-artists'`
-- **AND** the system SHALL NOT pass through any intermediate `'detail'` step
+- **WHEN** a user opens the app for the first time and no onboarding key exists in localStorage
+- **THEN** `OnboardingService.isOnboarding` SHALL be `true`
+- **AND** `OnboardingService.isCompleted` SHALL be `false`
 
-#### Scenario: Legacy localStorage value migration
+#### Scenario: Completion latches on first meaningful dashboard arrival
 
-- **WHEN** the system reads `liverty:onboardingStep` from localStorage
-- **AND** the stored value is `'detail'`
-- **THEN** the system SHALL treat it as `'dashboard'` for routing and step logic
+- **WHEN** an unauthenticated guest reaches the dashboard for the first time
+- **AND** the timetable is real (region is set and concert data has loaded)
+- **AND** the guest has at least one followed artist (`followedCount >= 1`)
+- **THEN** the system SHALL call `finish()` so `isOnboarding` becomes `false`
+- **AND** the latch SHALL be evaluated after the light-celebration decision (so `maybeCelebrate()` observed `isOnboarding === true`), honoring the `needsRegion` deferral
+
+#### Scenario: Latch is independent of whether the celebration is shown
+
+- **WHEN** a guest reaches a meaningful first dashboard (region set, data loaded, `followedCount >= 1`)
+- **AND** the light celebration is suppressed (e.g. `localStorage['onboarding.celebrationShown'] === '1'` from a prior session, or `maybeCelebrate()` otherwise early-returns)
+- **THEN** the system SHALL still call `finish()`
+- **AND** the latch SHALL NOT be gated on the celebration overlay actually rendering
+
+#### Scenario: No latch for a zero-follow dashboard arrival
+
+- **WHEN** an unauthenticated guest with zero followed artists lands on the dashboard (e.g. via deep link, served the empty-state CTA)
+- **THEN** the system SHALL NOT call `finish()`
+- **AND** `isOnboarding` SHALL remain `true` so the discovery coach mark and page-help auto-open still apply until the guest follows an artist or signs up
+
+#### Scenario: Completion latches on sign-up
+
+- **WHEN** a user completes sign-up via the auth callback
+- **THEN** the system SHALL call `finish()` so `isOnboarding` becomes `false`
+- **AND** the call SHALL be idempotent if onboarding was already completed
+
+#### Scenario: Completion is one-way
+
+- **WHEN** `isOnboarding` is already `false`
+- **AND** the user revisits the dashboard or any onboarding-relevant surface
+- **THEN** the system SHALL keep `isOnboarding === false`
+
+#### Scenario: Legacy step value migration
+
+- **WHEN** `OnboardingService` is constructed
+- **AND** the legacy `localStorage['onboardingStep']` key exists
+- **THEN** the system SHALL set `onboardingComplete = true` when the legacy value denotes completion — i.e. it is in the completed set `{'completed', '7'}` (the legacy numeric index `'7'` mapped to `COMPLETED`)
+- **AND** the system SHALL set `onboardingComplete = false` for any other legacy value (e.g. `'discovery'`, `'my-artists'`, `'detail'`)
+- **AND** the system SHALL persist the new value and delete the legacy `onboardingStep` key
+- **AND** the migration SHALL run at most once per client
+
