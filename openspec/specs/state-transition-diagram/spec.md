@@ -1,62 +1,63 @@
 # State Transition Diagram Specification
 
-## 1. Onboarding State Machine
+## 1. Onboarding State
 
 ### 1.1 Overview
 
-The onboarding state machine guides new users through a linear multi-step introduction flow.
-Each step advances strictly forward. The flow completes when the user sets a hype level on the
-My Artists screen.
+Onboarding is a single latched boolean, not an ordered step machine. A brand-new user
+starts in the `onboarding` state and transitions once, irreversibly, to `completed`. There
+is no forced navigation ordering: the dashboard and every route are reachable at any time
+(soft gate), and a guest with no follows is guided by an in-page empty-state CTA rather than
+a guard redirect. The flag is exposed as `OnboardingService.isOnboarding`
+(`isCompleted === !isOnboarding`) and persisted as `onboardingComplete` (absent key =
+still onboarding).
 
 ### 1.2 States
 
-| State       | Description                              |
-|-------------|------------------------------------------|
-| `lp`        | Landing page (initial state)             |
-| `discovery` | Artist discovery screen                  |
-| `dashboard` | Personal timetable dashboard             |
-| `my-artists`| User's followed-artists list             |
-| `completed` | Onboarding finished (terminal state)     |
+| State        | Description                                                |
+|--------------|------------------------------------------------------------|
+| `onboarding` | First-run experience (default for a new user)              |
+| `completed`  | Onboarding finished (terminal; one-way)                    |
 
 ### 1.3 Transitions
 
-| Trigger                  | From          | To            | Where                          |
-|--------------------------|---------------|---------------|--------------------------------|
-| Get Started button       | `lp`          | `discovery`   | welcome-route                  |
-| Dashboard nav tap ¹      | `discovery`   | `dashboard`   | auth-hook (coach-mark / readyForDashboard) |
-| Dashboard arrival        | `dashboard`   | `my-artists`  | dashboard-route (`attached`)   |
-| Hype level set           | `my-artists`  | `completed`   | my-artists-route               |
+| Trigger                              | From         | To          | Where                          |
+|--------------------------------------|--------------|-------------|--------------------------------|
+| Meaningful first dashboard arrival ¹ | `onboarding` | `completed` | dashboard-route (`finish()`)   |
+| Sign-up (idempotent backstop)        | `onboarding` | `completed` | auth-callback-route (`finish()`)|
 
-¹ User taps the Dashboard nav tab once the progression condition is met (coach-mark spotlight or `readyForDashboard`). There is no longer a separate "Generate Dashboard" CTA, and no `detail` step.
+¹ "Meaningful" = the timetable is real (region set + concert data loaded) **and** the guest
+has at least one followed artist (`followedCount >= 1`). The latch is evaluated after the
+light-celebration decision but is driven by the data-ready + engaged condition, not by whether
+the celebration overlay rendered. A zero-follow dashboard arrival does NOT latch. Completion is
+one-way; it never returns to `onboarding` except via an explicit fresh-onboarding reset. The
+legacy `onboardingStep` value is migrated once on load (`'completed'`/`'7'` → completed).
 
-### 1.4 Spotlight Sub-States
+### 1.4 Coach Mark (independent)
 
-Within each onboarding step, a spotlight overlay can be activated to highlight a UI target.
-The spotlight is set and cleared independently of step transitions.
+The coach mark is a single, transient, non-blocking hint owned by `CoachMarkService` — not part
+of the onboarding state. It is activated from `DiscoveryRoute` when `isOnboarding` and the live
+follow/concert counts cross the threshold (`followedCount >= 5` OR `artistsWithConcertsCount >= 3`),
+and dismissed on target tap or route detach. It does not lock scroll or block off-target
+interaction, and tapping it navigates only (no state mutation).
 
-| Action                    | From       | To         |
-|---------------------------|------------|------------|
-| `onboarding/setSpotlight` | `inactive` | `active`   |
-| `onboarding/clearSpotlight`| `active`  | `inactive` |
+| Action                       | From       | To         |
+|------------------------------|------------|------------|
+| `CoachMarkService.activate`  | `inactive` | `active`   |
+| `CoachMarkService.deactivate`| `active`   | `inactive` |
 
 ### 1.5 State Diagram
 
 ```mermaid
 stateDiagram-v2
-    [*] --> lp
-
-    lp --> discovery : Get Started
-    discovery --> dashboard : Dashboard nav tap (coach-mark / readyForDashboard)
-    state "my-artists" as my_artists
-    dashboard --> my_artists : dashboard .attached() (Lane Intro removed)
-    my_artists --> completed : Hype level set
-
+    [*] --> onboarding
+    onboarding --> completed : finish() — meaningful dashboard arrival OR sign-up
     completed --> [*]
 
-    state "Spotlight (per step)" as spotlight {
+    state "Coach mark (independent)" as coachmark {
         [*] --> inactive
-        inactive --> active : setSpotlight
-        active --> inactive : clearSpotlight
+        inactive --> active : activate (isOnboarding & counts threshold)
+        active --> inactive : deactivate (tap / route detach)
     }
 ```
 

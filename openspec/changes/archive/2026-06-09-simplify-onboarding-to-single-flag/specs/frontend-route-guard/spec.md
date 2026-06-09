@@ -1,9 +1,5 @@
-# Frontend Route Guard
+## MODIFIED Requirements
 
-## Purpose
-
-Defines the global authentication / onboarding navigation guard (`AuthHook`) that gates SPA route loads based on auth state and onboarding step — including the contextual feedback shown when navigation is blocked, the routes reachable early by guests (Settings, Welcome), and free roam after the dashboard.
-## Requirements
 ### Requirement: Global Auth Hook
 
 The system SHALL provide a global authentication lifecycle hook (`AuthHook`) that gates SPA route loads based on authentication state only. The hook SHALL NOT enforce onboarding step ordering — there is no step machine and no ordinal `tutorialStep` comparison. For guests (unauthenticated users) the hook SHALL permit free roam across application routes (soft gate); account-only features SHALL be hidden at point of use per `guest-mode-access` rather than blocked by navigation. The dashboard SHALL be reachable at any onboarding state; a guest with no follows SHALL be guided by an in-page empty-state call-to-action toward discovery, not by a guard redirect.
@@ -60,3 +56,10 @@ The system SHALL allow an unauthenticated user in onboarding to navigate back to
 - **AND** merely viewing Welcome SHALL NOT change onboarding state
 - **AND** onboarding state SHALL change only via the completion latch (`finish()`), never by viewing Welcome
 
+## REMOVED Requirements
+
+### Requirement: Onboarding Dashboard Readiness
+
+**Reason**: The `readyForDashboard` predicate existed only to gate the forced discovery→dashboard transition. With the soft gate, the dashboard is always reachable and no readiness predicate is needed; the follow/concert thresholds now drive the coach-mark hint only (computed from live counts in `DiscoveryRoute`).
+
+**Migration**: Delete `OnboardingService.readyForDashboard`, `setDiscoveryCounts`, and the mirrored `followedCount` / `artistsWithConcertsCount` fields. Move `DASHBOARD_FOLLOW_TARGET` / `DASHBOARD_CONCERT_TARGET` to a constants module consumed directly by `DiscoveryRoute` for the coach-mark trigger.
