@@ -46,11 +46,12 @@ The system SHALL provide a reusable coach mark overlay component that highlights
 - **AND** the system SHALL call the `onTap?.()` callback (for incidental side effects only, never step advancement)
 - **AND** the system SHALL NOT call `router.load()` from within the coach mark component or its `onTap` callback
 
-#### Scenario: Off-target interaction is allowed (non-blocking)
+#### Scenario: Off-target tap light-dismisses without blocking the page
 
 - **WHEN** a coach mark spotlight is active
-- **AND** the user taps or scrolls an area outside the highlighted target
-- **THEN** the interaction SHALL reach the underlying page (no click-blocker interception)
+- **AND** the user taps the dimmed area outside the highlighted target
+- **THEN** the coach mark SHALL be light-dismissed
+- **AND** the tap SHALL still reach the underlying page (the dim layer is `pointer-events: none`; there is no full-viewport click-blocker)
 - **AND** page scroll SHALL remain enabled
 
 #### Scenario: Target selector is scoped to component context
@@ -146,7 +147,7 @@ The coach mark tooltip SHALL be positioned using CSS Anchor Positioning relative
 
 ### Requirement: Tooltip Visual Treatment
 
-The coach mark tooltip SHALL render with a transparent background, allowing the handwritten text to float directly on the dark overlay.
+The coach mark tooltip SHALL render with a transparent background, allowing the text to float directly on the dark overlay.
 
 #### Scenario: Tooltip renders without solid background
 
@@ -154,7 +155,7 @@ The coach mark tooltip SHALL render with a transparent background, allowing the 
 - **THEN** `.coach-mark-tooltip` SHALL have `background: transparent`
 - **AND** `.coach-mark-tooltip` SHALL have `filter: none` (no drop-shadow)
 - **AND** the tooltip text color SHALL remain `var(--color-white)`
-- **AND** the font SHALL remain `var(--coach-font-handwritten)` ("Klee One", cursive)
+- **AND** the tooltip message SHALL use the app's base UI font (no bespoke web font)
 - **AND** the tooltip SHALL be visually readable against the 70% black overlay
 
 ### Requirement: Inline SVG Directional Arrow
@@ -187,28 +188,6 @@ The tooltip SHALL include a hand-drawn style directional arrow rendered as inlin
 - **THEN** the drawing animation SHALL be disabled (arrow appears immediately)
 - **AND** the arrow SHALL still be visible in its final drawn state
 
-### Requirement: Handwritten Font for Tooltip Text
-
-The coach mark tooltip message text SHALL use a handwritten-style font to reinforce the personal, friendly tone of the onboarding guidance. The font SHALL support Japanese characters since all tooltip messages are in Japanese.
-
-#### Scenario: Tooltip message renders in handwritten font
-
-- **WHEN** the coach mark tooltip is displayed
-- **THEN** the tooltip message text SHALL use a Japanese-compatible handwritten font (e.g., `Klee One`, `Zen Kurenaido`)
-- **AND** the font SHALL be loaded from Google Fonts
-- **AND** the font SHALL be applied only to the tooltip message element, not to action buttons or other UI elements
-
-#### Scenario: Handwritten font fallback
-
-- **WHEN** the handwritten font fails to load (e.g., offline, network error)
-- **THEN** the tooltip message SHALL fall back to `cursive` generic font family
-- **AND** the tooltip SHALL remain readable and functional
-
-#### Scenario: Handwritten font with reduced motion preference
-
-- **WHEN** the user has `prefers-reduced-motion: reduce` enabled
-- **THEN** the handwritten font SHALL still be applied (it is a visual style, not an animation)
-
 ### Requirement: Invisible Target Rejection
 
 The `findAndHighlight()` method SHALL reject target elements that are invisible (zero dimensions) and continue retry logic as if the element was not found.
@@ -229,7 +208,7 @@ The `findAndHighlight()` method SHALL reject target elements that are invisible 
 
 ### Requirement: Single Transient Non-Blocking Coach Mark
 
-With the step machine removed, the coach mark SHALL be a single, transient, non-blocking hint rather than a multi-step blocking overlay. At most one coach mark SHALL be active at a time. It SHALL NOT lock page scroll and SHALL NOT block interaction with the rest of the page; it visually highlights its target and lets the user keep using the app. State and lifecycle are owned by `CoachMarkService` (`activate` / `deactivate`), and the `<coach-mark>` component SHALL be placed once at the app-shell level, driven by `CoachMarkService` (target selector, message, radius, active flag, `onTap`). The coach mark SHALL be dismissed when the user taps its target or when the host route detaches.
+With the step machine removed, the coach mark SHALL be a single, transient, non-blocking hint rather than a multi-step blocking overlay. At most one coach mark SHALL be active at a time. It SHALL NOT lock page scroll and SHALL NOT block interaction with the rest of the page; it visually highlights its target and lets the user keep using the app. State and lifecycle are owned by `CoachMarkService` (`activate` / `deactivate`), and the `<coach-mark>` component SHALL be placed once at the app-shell level, driven by `CoachMarkService` (target selector, message, radius, active flag, `onTap`). The coach mark SHALL be dismissed when the user taps its target, taps the dimmed area outside the target (light-dismiss, via a document-level `pointerdown` capture listener — not a backdrop or `z-index`), or when the host route detaches.
 
 #### Scenario: Coach mark does not block the rest of the page
 
@@ -245,10 +224,11 @@ With the step machine removed, the coach mark SHALL be a single, transient, non-
 - **AND** `CoachMarkService` SHALL drive its target selector, message, spotlight radius, and active state
 - **AND** no more than one coach mark SHALL be active simultaneously
 
-#### Scenario: Coach mark dismissed on tap or route detach
+#### Scenario: Coach mark dismissed on target tap, outside tap, or route detach
 
-- **WHEN** the user taps the coach mark target, OR the host route's `detaching()` lifecycle hook fires
+- **WHEN** the user taps the coach mark target, OR taps the dimmed area outside it, OR the host route's `detaching()` lifecycle hook fires
 - **THEN** `CoachMarkService.deactivate()` SHALL be called
+- **AND** the document-level `pointerdown` light-dismiss listener SHALL be removed
 - **AND** the spotlight, tooltip, and any anchor-name SHALL be fully cleaned up
 
 ## Test Cases
