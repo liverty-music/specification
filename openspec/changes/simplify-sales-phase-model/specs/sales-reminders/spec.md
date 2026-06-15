@@ -25,3 +25,15 @@ The system SHALL guarantee that each reminder is delivered to a given user at mo
 - **WHEN** a user has already received a reminder for a given sales phase and stage
 - **THEN** a subsequent scan SHALL NOT send that reminder again
 - **AND** the sent record SHALL be keyed by `(user_id, sales_phase_id, stage)`, referencing the phase's surrogate id — which is stable because re-discovery converges in place on the `(series_id, apply_start_time)` match
+
+### Requirement: Notification Content
+
+The system SHALL build each notification (the discovery announcement and every reminder stage) per recipient, formatting times in the recipient's `time_zone` and selecting copy by the recipient's `preferred_language` (default `en`), reusing the existing `NotificationPayload` (`title`, `body`, `url`, `tag`).
+
+#### Scenario: Payload fields per stage
+
+- **WHEN** a notification is built for a phase and stage
+- **THEN** `title` and `body` SHALL identify the artist, the tour (series) title, and the sales channel, and state the relevant time for that stage in the recipient's timezone
+- **AND** when `channel` is `UNSPECIFIED` the copy SHALL use a generic ticket label
+- **AND** `url` SHALL deep-link to the phase's application URL when present, else the series detail (a sales phase is series-level and has no single covered concert to fall back to)
+- **AND** `tag` SHALL be unique per `(sales_phase_id, stage)` to deduplicate on the browser side

@@ -22,7 +22,7 @@ Because the audience is now resolved from an explicit fan signal (a `Tracking` t
 ### Modified Capabilities
 - `sales-phase`: SalesPhase entity drops `event_ids`/`anchor_event_id`; identity/convergence moves from covered-event overlap to `(series_id, apply_start_time)`; persistence guard drops the "at least one covered event" condition (only a known start is required); database schema removes the join table and anchor column.
 - `sales-phase-discovery`: searcher stops extracting/resolving covered dates; discovery upsert matches on `(series_id, apply_start_time)`; announcement audience resolves from `Tracking` ticket journeys on the series' events instead of followers of covered-event performers.
-- `sales-reminders`: reminder audience resolves from `Tracking` ticket journeys on the series' events (drops the covered-event/follower/hype resolution and the per-leg targeting scenario); once-only delivery keyed by `(user_id, sales_phase_id, stage)` is retained.
+- `sales-reminders`: reminder audience resolves from `Tracking` ticket journeys on the series' events (drops the covered-event/follower/hype resolution and the per-leg targeting scenario); once-only delivery keyed by `(user_id, sales_phase_id, stage)` is retained; notification content's `url` fallback changes from the concert detail to the series detail (no single covered concert exists under the series-level model).
 
 ## Impact
 

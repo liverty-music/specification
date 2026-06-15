@@ -7,7 +7,7 @@ The sales-phase feature discovers ticket-sale windows for a series via a grounde
 
 Two product decisions remove the justification for this machinery:
 - **Audience is now an explicit fan signal.** Notifications target users with a `Tracking` ticket journey on the series' events, not followers filtered by covered-event proximity.
-- **Notification content is already generic** (a title plus a `/series/{id}` link); the precise covered-event set is never surfaced to the fan.
+- **Notification content is series-level** (copy identifies the artist/tour/channel/time and links to the series, falling back to the series detail rather than a single concert); the precise covered-event set is never surfaced to the fan.
 
 With targeting and content both series-level, the covered-event refinement has no consumer, while remaining the single largest source of extraction inaccuracy. This design removes it and re-anchors identity on the one mandatory, stable attribute of a sale window: its application start time.
 
