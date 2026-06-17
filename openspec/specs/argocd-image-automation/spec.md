@@ -1,3 +1,11 @@
+# Argo CD Image Automation
+
+## Purpose
+
+Governs Argo CD Image Updater behavior across environments: dev clusters auto-update from new GAR `latest` digests, while prod deploys only via semver pins (image-updater disabled in the prod overlay). Covers parameter-override persistence across Application recreation.
+
+## Requirements
+
 ### Requirement: Image Updater monitors container registry
 The system SHALL continuously monitor Google Artifact Registry (GAR) for new container images tagged with `latest` at a 30-second polling interval.
 
@@ -34,11 +42,10 @@ The system SHALL recover automatically if ArgoCD Application parameter overrides
 - **THEN** the Application SHALL return to the correct image within one polling cycle
 
 ### Requirement: Production deployments remain manual
-The system SHALL NOT automatically update production environment deployments.
+The system SHALL NOT automatically update production environment deployments. The `argocd-image-updater-controller` Deployment SHALL NOT consume cluster resources in the prod cluster (its replicas SHALL be 0), and the prod argocd overlay SHALL NOT contain any ImageUpdater CR. Production image updates SHALL occur exclusively via manual semver-pinned overlay PRs.
 
 #### Scenario: Prod image requires manual update
 - **WHEN** a new image is released with semantic version tag (v1.2.3)
-- **THEN** Image Updater SHALL NOT update prod Application
 - **THEN** developer MUST manually update prod overlay kustomization with new version tag
 - **THEN** production deployment SHALL only occur after manual kustomization commit
 
@@ -46,6 +53,17 @@ The system SHALL NOT automatically update production environment deployments.
 - **WHEN** inspecting prod argocd overlay
 - **THEN** overlay SHALL NOT contain an ImageUpdater CR
 - **THEN** Image Updater SHALL ignore prod Applications entirely
+
+#### Scenario: image-updater-controller is not running in prod cluster
+- **WHEN** inspecting the prod argocd namespace
+- **THEN** the `argocd-image-updater-controller` Deployment SHALL have `replicas: 0`
+- **AND** no `argocd-image-updater-controller` Pod SHALL be running
+- **AND** the Autopilot per-Pod billing for this controller SHALL be eliminated
+
+#### Scenario: dev cluster continues to run image-updater
+- **WHEN** inspecting the dev argocd namespace
+- **THEN** the `argocd-image-updater-controller` Deployment SHALL run with its base replica count (1)
+- **AND** dev Applications SHALL continue to receive automated digest updates
 
 ### Requirement: Image pull policy enforcement
 The system SHALL configure proper image pull policies for dev deployments.
