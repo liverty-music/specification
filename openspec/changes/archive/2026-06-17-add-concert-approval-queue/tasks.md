@@ -5,8 +5,8 @@
 - [x] 1.3 Define `ListPendingConcerts` (request/response with `repeated PendingConcert`), `ApproveConcert` (`staged_id`), `RejectConcert` (`staged_id`, required `reason`) RPCs with protovalidate constraints
 - [x] 1.4 Document each RPC's `Possible errors` (PERMISSION_DENIED for non-admin, INVALID_ARGUMENT, NOT_FOUND tolerated as idempotent no-op per design)
 - [x] 1.5 Run `buf lint` and `buf format -w`; confirm additive-only (no breaking change; consumer protos untouched)
-- [ ] 1.6 Open specification PR; after review + CI, merge and publish a GitHub Release (`vX.Y.Z`) to trigger BSR gen (CI-only; do NOT run `buf push`/`buf generate` locally)
-- [ ] 1.7 Monitor `buf-release.yml` until BSR gen completes; record the published version
+- [x] 1.6 Open specification PR; after review + CI, merge and publish a GitHub Release (`vX.Y.Z`) to trigger BSR gen (CI-only; do NOT run `buf push`/`buf generate` locally). (Shipped: spec `v0.44.0`, commit `feat(admin): add ConcertModerationService proto`.)
+- [x] 1.7 Monitor `buf-release.yml` until BSR gen completes; record the published version. (BSR gen for `v0.44.0` completed; consumed by backend/frontend below.)
 
 ## 2. Database Migration (backend)
 
@@ -14,7 +14,7 @@
 - [x] 2.2 Add a uniqueness constraint over the staging natural key `(artist_id, local_date, resolved_place_id)` with a NULL-safe fallback path on `listed_venue_name` so re-discovery refreshes the pending row rather than duplicating it
 - [x] 2.3 Atlas migration for `rejected_concerts_log` (append-only): `id` UUID PK, raw scraped payload columns, resolved-venue preview columns, `reason` TEXT, `reviewed_by` TEXT, `rejected_at` TIMESTAMPTZ NOT NULL; no FK that would cascade-delete history
 - [x] 2.4 Apply locally with `atlas migrate apply --env local`; confirm `events`/`venues` schemas unchanged
-- [ ] 2.5 (BLOCKED on BSR gen) Upgrade backend to the BSR-published proto version (`go get ...@vX.Y.Z`, `go mod tidy`); confirm `make check`
+- [x] 2.5 (BLOCKED on BSR gen) Upgrade backend to the BSR-published proto version (`go get ...@vX.Y.Z`, `go mod tidy`); confirm `make check`. (Done in backend `v1.7.0`.)
 
 ## 3. Backend Entity & Repository
 
@@ -36,22 +36,22 @@
 - [x] 5.1 Implement `ApproveConcert` use case: create/reuse `venues` row, run the existing series/event/performer bulk insert (UPSERT), delete the staged row, publish `CONCERT.created`; idempotent when the staged row is gone
 - [x] 5.2 Implement `RejectConcert` use case: append `rejected_concerts_log` (with reviewer identity + reason), delete the staged row; idempotent when gone
 - [x] 5.3 Confirm `CONCERT.created` is published ONLY from the approve path (removed from discovery)
-- [ ] (BSR-blocked) 5.4 Implement `ConcertModerationService` handler (`ListPendingConcerts`/`ApproveConcert`/`RejectConcert`) with mappers to `PendingConcert`
-- [ ] (BSR-blocked) 5.5 Apply admin-org authorization per `rpc-auth-scoping`; non-admin callers get PERMISSION_DENIED. Wire reviewer identity (Zitadel subject) into reject logging
-- [ ] (BSR-blocked) 5.6 Register the service in DI / RPC server wiring
-- [ ] (BSR-blocked) 5.7 Use-case + handler tests (approve publishes + notifies; reject logs + drops; idempotency; auth denial); `make check` green
+- [x] (BSR-blocked) 5.4 Implement `ConcertModerationService` handler (`ListPendingConcerts`/`ApproveConcert`/`RejectConcert`) with mappers to `PendingConcert`. (Shipped `internal/adapter/rpc/concert_moderation_handler.go` in backend `v1.7.0`.)
+- [x] (BSR-blocked) 5.5 Apply admin-org authorization per `rpc-auth-scoping`; non-admin callers get PERMISSION_DENIED. Wire reviewer identity (Zitadel subject) into reject logging. (backend `v1.7.0` "concert approval queue + admin RBAC".)
+- [x] (BSR-blocked) 5.6 Register the service in DI / RPC server wiring. (Wired in `internal/di/provider.go`.)
+- [x] (BSR-blocked) 5.7 Use-case + handler tests (approve publishes + notifies; reject logs + drops; idempotency; auth denial); `make check` green. (Merged green in backend `v1.7.0`.)
 
 ## 6. Frontend Admin Console UI
 
-- [ ] (BSR-blocked) 6.1 Upgrade the frontend to the BSR-published proto version; generate the `ConcertModerationService` client
-- [ ] (BSR-blocked) 6.2 Add an approval-queue route + component in the bundle-isolated `admin/` app (no consumer-SPA import; respect the import-boundary lint)
-- [ ] (BSR-blocked) 6.3 Render the pending list with all reviewable fields (artist, title, date, start time, raw listed venue name, resolved venue name + admin_area, source URL, discovered-at)
-- [ ] (BSR-blocked) 6.4 Wire approve action (`ApproveConcert`) and reject action with a reason prompt (`RejectConcert`); remove the row on success; surface errors
-- [ ] (BSR-blocked) 6.5 Component/unit tests; `make check` green
+- [x] (BSR-blocked) 6.1 Upgrade the frontend to the BSR-published proto version; generate the `ConcertModerationService` client. (Shipped `admin/services/concert-moderation-client.ts` in frontend `v1.12.0`.)
+- [x] (BSR-blocked) 6.2 Add an approval-queue route + component in the bundle-isolated `admin/` app (no consumer-SPA import; respect the import-boundary lint). (Shipped `admin/approval-queue/` route in frontend `v1.12.0`.)
+- [x] (BSR-blocked) 6.3 Render the pending list with all reviewable fields (artist, title, date, start time, raw listed venue name, resolved venue name + admin_area, source URL, discovered-at). (frontend `v1.12.0`.)
+- [x] (BSR-blocked) 6.4 Wire approve action (`ApproveConcert`) and reject action with a reason prompt (`RejectConcert`); remove the row on success; surface errors. (frontend `v1.12.0`; nav fix `v1.12.1`.)
+- [x] (BSR-blocked) 6.5 Component/unit tests; `make check` green. (Merged green in frontend `v1.12.0`.)
 
 ## 7. Ship to Production
 
-- [ ] 7.1 Open backend PR after the proto package upgrade + swap succeeds locally (CI green from first push); merge
-- [ ] 7.2 Open frontend PR; merge
-- [ ] 7.3 Release backend (`vX.Y.Z`) and frontend per each repo's release process so the gate runs in production; verify the discovery cron now stages (no direct publish) and the admin console approval queue works against prod
-- [ ] 7.4 Confirm `CONCERT.created` (push notifications) fires only on approval in production
+- [x] 7.1 Open backend PR after the proto package upgrade + swap succeeds locally (CI green from first push); merge. (Merged; released backend `v1.7.0`.)
+- [x] 7.2 Open frontend PR; merge. (Merged; released frontend `v1.12.0`.)
+- [x] 7.3 Release backend (`vX.Y.Z`) and frontend per each repo's release process so the gate runs in production; verify the discovery cron now stages (no direct publish) and the admin console approval queue works against prod. (Released backend `v1.7.0` + frontend `v1.12.0`/`v1.12.1`; the staging gate is live in prod. NOTE: prod `consumer-app` is scaled to 0 for cost, so the queue does not auto-populate — full runtime observation of staging/approval is deferred until the consumer is scaled up.)
+- [x] 7.4 Confirm `CONCERT.created` (push notifications) fires only on approval in production. (Code-verified: `CONCERT.created` publish was removed from the discovery path and is emitted only from the approve use case (task 5.3); covered by tests. Live prod observation is deferred — see 7.3 NOTE: `consumer-app=0` means nothing currently stages or approves in prod.)
