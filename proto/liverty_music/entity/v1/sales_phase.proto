@@ -7,7 +7,6 @@ import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/entity.proto";
-import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/series.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
@@ -67,38 +66,33 @@ enum SalesChannel {
 
 // SalesPhase models one ticket-sales opportunity for a series (tour). A single
 // tour can announce several phases — distinct rounds (fan-club presale, general
-// on-sale) and distinct legs (first-half dates vs. second-half dates) — so each
-// phase belongs to one Series but covers only the subset of that series' events
-// it actually sells, expressed by `event_ids`.
+// on-sale) — and each phase belongs to one Series and applies to that series as
+// a whole. There is no per-event coverage subset: notification targeting is
+// driven by an explicit fan signal (a `Tracking` ticket journey on the series'
+// events) and notification content is generic (a series link), so the precise
+// set of covered events is never consumed.
 //
 // The row's existence signals "this phase is happening"; a null timeline field
 // unambiguously means "that date is not yet announced", so no separate
-// to-be-determined flag is needed. `apply_start_time` and at least one covered
-// event are mandatory because a phase with no known start cannot anchor a
-// reminder and a phase with no resolved event has no audience.
+// to-be-determined flag is needed. `apply_start_time` is mandatory because a
+// phase with no known start cannot anchor a reminder and signals the phase is
+// not yet actionable for a fan.
 message SalesPhase {
   // The unique identifier for this sales phase. Server-generated surrogate id;
-  // it is the phase's only hard identity (re-discovery converges to it via
-  // best-effort covered-event overlap, not via any business-field equality).
+  // it is the phase's only hard identity. Re-discovery converges to it on a
+  // best-effort basis via the `(series_id, apply_start_time)` match, not via any
+  // other business-field equality.
   SalesPhaseId id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
 
   // The series (tour) this phase belongs to. The only required entity reference;
-  // it scopes the phase and bounds the candidate events its coverage resolves to.
+  // a phase applies to its series as a whole, and the phases relevant to an event
+  // are resolved via that event's series (event → series → the series' phases).
   SeriesId series_id = 2 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
-  ];
-
-  // The events this phase sells, all belonging to `series_id`. At least one is
-  // required: coverage is how a per-leg phase notifies only the followers of its
-  // own dates. Immutable event ids are also the primary signal that converges
-  // re-discovery of the same real phase onto one row.
-  repeated EventId event_ids = 3 [
-    (google.api.field_behavior) = REQUIRED,
-    (buf.validate.field).repeated.min_items = 1
   ];
 
   // How tickets are allocated. Optional: UNSPECIFIED means "not yet determined"
@@ -151,6 +145,12 @@ message SalesPhase {
 
   // The application URL fans follow to apply for this phase. Optional: a nil
   // wrapper skips inner-Url validation (matching Series.source_url semantics),
-  // and notifications deep-link here when present, else to the concert detail.
+  // and notifications deep-link here when present, else to the series detail
+  // (a phase is series-level and has no single covered concert to fall back to).
   Url url = 12 [(google.api.field_behavior) = OPTIONAL];
+
+  // Field 3 was `repeated EventId event_ids` (per-event coverage subset),
+  // removed when the phase became series-level. Reserved to prevent reuse.
+  reserved 3;
+  reserved "event_ids";
 }
