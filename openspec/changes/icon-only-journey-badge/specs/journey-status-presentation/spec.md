@@ -17,8 +17,9 @@ Each journey status SHALL have a defined icon, and a meaning-based hue for surfa
 - **AND** where a text label is shown, the label SHALL be sourced from the canonical `eventDetail.journeyStatus.*` i18n key
 
 #### Scenario: Icon-only rendering retains an accessible name
-- **WHEN** a journey status is rendered as an icon without a visible text label
-- **THEN** the rendering SHALL expose the canonical label as its accessible name (e.g. via `aria-label`) so assistive technology announces the status
+- **WHEN** a journey status is rendered as an emoji without a visible text label
+- **THEN** the rendering element SHALL carry a role that permits an accessible name (e.g. `role="img"`) together with the canonical label as that name (e.g. via `aria-label`), so assistive technology announces the status
+- **AND** the canonical label SHALL NOT be exposed via `aria-label` on a bare element with an implicit `generic` role (a naming-prohibited role), since user agents do not reliably announce a name on such elements
 
 ### Requirement: Consistent rendering across components
 A given journey status SHALL render with a consistent identity wherever it appears — the dashboard filter chips, the concert-card journey badge, and the concert-detail status control. The icon SHALL be the same across all surfaces. The hue and the visible text label SHALL appear on the filter chips and the detail control; both MAY be omitted on the concert-card badge, which renders the icon alone.

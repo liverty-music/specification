@@ -1,9 +1,9 @@
 ## 1. Card badge markup (icon-only)
 
 - [x] 1.1 In `frontend/src/components/live-highway/event-card.html`, replace the icon-wrapper + label `<span>` inside `.journey-badge` with the icon emoji only (`${journeyConfig.icon}`)
-- [x] 1.2 Add `aria-label.bind="journeyConfig.labelKey | t"` to the badge so the canonical label is the accessible name
+- [x] 1.2 Add `role="img"` + `aria-label.bind="journeyConfig.labelKey | t"` to the badge so assistive tech announces the canonical label (a bare `<span>` with implicit `generic` role would not reliably expose the name)
 
-## 2. Card badge styling (corner-bleed + square chip)
+## 2. Card badge styling (corner-bleed bare emoji)
 
 - [x] 2.1 In `frontend/src/components/live-highway/event-card.css`, anchor the badge to the top-right corner (`inset-block-start` + `inset-inline-end`) and add `translate: 40% -40%` so it bleeds half outside the card; keep `position: absolute`
 - [x] 2.2 Remove the redundant `overflow: hidden` from `.event-card` so the badge can bleed past the corner without a wrapper (clipping is already handled by `border-radius`, the noise `::after` `border-radius: inherit`, and the matched beam `::before` mask)

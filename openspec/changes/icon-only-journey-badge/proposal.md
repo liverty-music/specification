@@ -22,6 +22,6 @@ The concert-card journey badge renders the status icon plus a full text label (e
 ## Impact
 
 - Frontend only; no proto, backend, or RPC changes.
-- `frontend/src/components/live-highway/event-card.html` — badge markup (icon only, `aria-label` for the accessible name).
+- `frontend/src/components/live-highway/event-card.html` — badge markup (emoji only, `role="img"` + `aria-label` for the accessible name).
 - `frontend/src/components/live-highway/event-card.css` — badge corner-bleed at top-right (`translate`), `overflow: hidden` removed from the card, bare emoji (no background/pill/hue), per-status `--_journey-text` and `--_journey-bg` vars removed.
 - Visual regression baselines for the dashboard/timetable will need regeneration.
