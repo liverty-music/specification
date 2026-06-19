@@ -30,8 +30,8 @@
 
 ## 5. Ship to production (coordinated cutover)
 
-- [ ] 5.1 Apply cloud-provisioning so `api.admin.{env}` is live (Service + route + cert + DNS + health) and the admin CORS config is in place. The consumer CORS still includes the admin origin. The `api.admin` route is unhealthy until the backend serves the admin port (5.2) — fine, nothing uses it yet
-- [ ] 5.2 Release backend: the admin server serves `ConcertModerationService` (boundary-gated) on the admin port; the consumer server no longer serves it. NOTE: until 5.3, the admin console (still pointed at the consumer API) gets `unimplemented` for moderation — a brief functional gap on an internal tool, with NO security exposure (the consumer API simply no longer hosts those procedures)
-- [ ] 5.3 Release frontend so the admin console targets `api.admin`; the gap closes. Verify approve/reject end-to-end against the admin host in prod
-- [ ] 5.4 Follow-up cloud-provisioning: now that the admin console no longer calls the consumer API, drop the admin origin from the consumer `CORS_ALLOWED_ORIGINS`
-- [ ] 5.5 Verify a non-admin token is rejected at the admin host, and that the consumer host returns `unimplemented` for the moderation procedures
+- [x] 5.1 Apply cloud-provisioning so `api.admin.{env}` is live (Service + route + cert + DNS + health) and the admin CORS config is in place. The consumer CORS still includes the admin origin. The `api.admin` route is unhealthy until the backend serves the admin port (5.2) — fine, nothing uses it yet
+- [x] 5.2 Release backend: the admin server serves `ConcertModerationService` (boundary-gated) on the admin port; the consumer server no longer serves it. NOTE: until 5.3, the admin console (still pointed at the consumer API) gets `unimplemented` for moderation — a brief functional gap on an internal tool, with NO security exposure (the consumer API simply no longer hosts those procedures)
+- [x] 5.3 Release frontend so the admin console targets `api.admin`; the gap closes. Verify approve/reject end-to-end against the admin host in prod
+- [x] 5.4 Follow-up cloud-provisioning: now that the admin console no longer calls the consumer API, drop the admin origin from the consumer `CORS_ALLOWED_ORIGINS`
+- [x] 5.5 Verify a non-admin token is rejected at the admin host, and that the consumer host returns `unimplemented` for the moderation procedures
