@@ -1,57 +1,85 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.admin.v1 provides admin-only gRPC service definitions
-// for internal moderation tooling exposed through the developer admin console.
+// for internal tooling exposed through the developer admin console.
 //
 // These services are authorized solely for the admin organization and are never
-// reachable by the consumer product. The first capability is concert moderation:
-// reviewing AI-discovered concerts before they are published to fans.
+// reachable by the consumer product. The first capability is concert management:
+// reviewing AI-discovered concerts before they are published to fans, and
+// managing the published catalog thereafter.
 package liverty_music.rpc.admin.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/concert.proto";
 import "liverty_music/entity/v1/coordinates.proto";
 import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/staged_concert.proto";
 import "liverty_music/entity/v1/venue.proto";
 
-// ConcertModerationService lets internal developers review concerts discovered by
-// the generative-AI search pipeline before they become visible to fans.
+// ConcertService is the admin-side counterpart to the consumer
+// liverty_music.rpc.concert.v1.ConcertService: it manages concerts across their
+// full lifecycle for internal developers. The proto package (admin.v1) conveys
+// the admin audience, so the service name carries no role qualifier and the two
+// ConcertService definitions are distinguished by package alone.
 //
 // Discovered concerts are held in a staging queue in a pending state. A developer
 // approves a concert to publish it (and trigger the new-concert notification) or
 // rejects it to drop it. Rejection is not permanent: a later discovery run may
 // re-surface the same concert for re-review, and every rejection is recorded for
-// search-quality analysis.
+// search-quality analysis. Once published, a concert can be listed and, if it was
+// approved in error, deleted.
 //
 // All RPCs are authorized only for the admin organization; callers outside it are
-// rejected with PERMISSION_DENIED.
-service ConcertModerationService {
-  // ListPendingConcerts returns every concert currently awaiting review, including
-  // the resolved-venue preview so the reviewer can judge venue accuracy.
+// rejected with PERMISSION_DENIED at the admin server boundary.
+service ConcertService {
+  // List returns every published concert, with no follower or proximity
+  // filtering, so an operator can review the full catalog and act on it. Each
+  // concert carries its event id (for deletion) and performing artists (for
+  // client-side grouping).
   //
   // Possible errors:
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
-  rpc ListPendingConcerts(ListPendingConcertsRequest) returns (ListPendingConcertsResponse);
+  rpc List(ListRequest) returns (ListResponse);
 
-  // ApproveConcert publishes a pending concert to fans and emits the new-concert
+  // ListPending returns every concert currently awaiting review, including the
+  // resolved-venue preview so the reviewer can judge venue accuracy.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  rpc ListPending(ListPendingRequest) returns (ListPendingResponse);
+
+  // Approve publishes a pending concert to fans and emits the new-concert
   // notification. The operation is idempotent: approving a staged concert that no
   // longer exists succeeds without creating a duplicate.
   //
   // Possible errors:
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
   // - INVALID_ARGUMENT: The staged concert id is missing or malformed.
-  rpc ApproveConcert(ApproveConcertRequest) returns (ApproveConcertResponse);
+  rpc Approve(ApproveRequest) returns (ApproveResponse);
 
-  // RejectConcert drops a pending concert and records the rejection (with reason)
-  // for search-quality analysis. The operation is idempotent: rejecting a staged
+  // Reject drops a pending concert and records the rejection (with reason) for
+  // search-quality analysis. The operation is idempotent: rejecting a staged
   // concert that no longer exists succeeds.
   //
   // Possible errors:
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
   // - INVALID_ARGUMENT: The staged concert id is missing, or the reason is empty.
-  rpc RejectConcert(RejectConcertRequest) returns (RejectConcertResponse);
+  rpc Reject(RejectRequest) returns (RejectResponse);
+
+  // Delete permanently removes a published concert by its event id. The deletion
+  // cascades through the database's referential integrity to every row that
+  // references the event (performers, tickets, ticket journeys, ticket emails,
+  // merkle tree nodes, and the series' sales phases). It is unconditional: it is
+  // NOT blocked by dependent rows such as minted tickets or fan ticket journeys.
+  // The operation is idempotent: deleting an event that no longer exists succeeds.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The event id is missing or malformed.
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
 }
 
 // ResolvedVenue is the venue preview produced by resolving the raw scraped venue
@@ -108,27 +136,38 @@ message PendingConcert {
   google.protobuf.Timestamp discovered_time = 9 [(buf.validate.field).required = true];
 }
 
-// ListPendingConcertsRequest is the request for retrieving all concerts awaiting
-// review. It takes no parameters; the full pending queue is returned.
-message ListPendingConcertsRequest {}
+// ListRequest is the request for retrieving all published concerts. It takes no
+// parameters; the full published catalog is returned.
+message ListRequest {}
 
-// ListPendingConcertsResponse contains the concerts currently awaiting review.
-message ListPendingConcertsResponse {
+// ListResponse contains the published concerts. Each concert carries its event id
+// and performing artists; the admin console groups by artist client-side.
+message ListResponse {
+  // The published concerts, in catalog order.
+  repeated entity.v1.Concert concerts = 1;
+}
+
+// ListPendingRequest is the request for retrieving all concerts awaiting review.
+// It takes no parameters; the full pending queue is returned.
+message ListPendingRequest {}
+
+// ListPendingResponse contains the concerts currently awaiting review.
+message ListPendingResponse {
   // The concerts currently in the approval queue, in discovery order.
   repeated PendingConcert pending_concerts = 1;
 }
 
-// ApproveConcertRequest identifies the staged concert to publish.
-message ApproveConcertRequest {
+// ApproveRequest identifies the staged concert to publish.
+message ApproveRequest {
   // Required. The unique identifier of the staged concert to approve.
   entity.v1.StagedConcertId staged_id = 1 [(buf.validate.field).required = true];
 }
 
-// ApproveConcertResponse is returned upon successful approval.
-message ApproveConcertResponse {}
+// ApproveResponse is returned upon successful approval.
+message ApproveResponse {}
 
-// RejectConcertRequest identifies the staged concert to drop and the reason why.
-message RejectConcertRequest {
+// RejectRequest identifies the staged concert to drop and the reason why.
+message RejectRequest {
   // Required. The unique identifier of the staged concert to reject.
   entity.v1.StagedConcertId staged_id = 1 [(buf.validate.field).required = true];
 
@@ -140,5 +179,16 @@ message RejectConcertRequest {
   ];
 }
 
-// RejectConcertResponse is returned upon successful rejection.
-message RejectConcertResponse {}
+// RejectResponse is returned upon successful rejection.
+message RejectResponse {}
+
+// DeleteRequest identifies the published concert to delete by its event id.
+message DeleteRequest {
+  // Required. The unique identifier of the published event to delete. The
+  // deletion cascades to all rows referencing this event.
+  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteResponse is returned upon successful deletion (including the idempotent
+// case where the event was already absent).
+message DeleteResponse {}
