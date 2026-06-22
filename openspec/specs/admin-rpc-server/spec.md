@@ -1,9 +1,7 @@
 ## Purpose
 
 A dedicated backend Connect server for admin-scoped RPCs: a separate in-process listener on its own port, serving only admin services, with boundary-level admin-role authorization (replacing per-method checks), an admin-only CORS allowlist, its own ingress host (`api.admin.{env-base-domain}`) / Service / cert / DNS / health, and the consumer server's exclusion of admin services. The admin console's RPC client resolves the admin API host from its runtime config. This isolates the admin surface's governance (origins, limits, host, future IAP) from the public API and makes admin authorization structural rather than per-method discipline.
-
 ## Requirements
-
 ### Requirement: Dedicated admin Connect server
 
 The backend SHALL serve admin-scoped RPCs from a dedicated Connect server bound to
@@ -14,14 +12,16 @@ services, and the consumer server SHALL NOT serve any admin-scoped service.
 #### Scenario: Admin service served only on the admin port
 
 - **WHEN** the backend starts
-- **THEN** `ConcertModerationService` is registered on the admin server's mux
+- **THEN** the admin `liverty_music.rpc.admin.v1.ConcertService` is registered on
+  the admin server's mux
 - **AND** it is NOT registered on the consumer server's mux
 
 #### Scenario: Consumer service served only on the consumer port
 
 - **WHEN** the backend starts
-- **THEN** consumer services (e.g. `UserService`, `ArtistService`, `ConcertService`)
-  are registered on the consumer server
+- **THEN** consumer services (e.g. `UserService`, `ArtistService`, and the consumer
+  `liverty_music.rpc.concert.v1.ConcertService`) are registered on the consumer
+  server
 - **AND** they are NOT registered on the admin server
 
 #### Scenario: Both servers drain on shutdown
@@ -117,9 +117,10 @@ SHALL remain unchanged.
 ### Requirement: Admin console resolves the admin API host from runtime config
 
 The admin console SHALL obtain the admin API base URL from its per-host runtime
-configuration and direct its admin RPC client (e.g. `ConcertModerationService`) to
-`api.admin.{env-base-domain}`. The consumer SPA SHALL continue to call the consumer
-API host. Neither app SHALL conditionally rewrite the other's host.
+configuration and direct its admin RPC client (the admin
+`liverty_music.rpc.admin.v1.ConcertService`) to `api.admin.{env-base-domain}`. The
+consumer SPA SHALL continue to call the consumer API host. Neither app SHALL
+conditionally rewrite the other's host.
 
 #### Scenario: Admin client targets the admin API host
 
@@ -130,3 +131,4 @@ API host. Neither app SHALL conditionally rewrite the other's host.
 
 - **WHEN** the consumer SPA boots
 - **THEN** its RPC client SHALL continue to target the consumer API host
+

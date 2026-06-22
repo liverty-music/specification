@@ -105,6 +105,30 @@ layer stays thin over them.
 model. This keeps the proto minimal (no nested `ArtistGroup` message) and mirrors
 how the existing approval queue maps flat rows.
 
+### D7: Catalog presentation — Artist → Series → events, native disclosure, grid, modal confirm
+
+Enumerating every event inline made the screen unscannable once an artist had many
+dates. The presentation is therefore a two-level grouping computed client-side from
+the flat `List` result: performing artist, then series. Each series is a collapsed
+**native `<details>`/`<summary>`** disclosure whose summary carries the event count
+and date range, so an operator scans the catalog without expanding everything. The
+expanded body lists each event with local date, start time, open time, and venue.
+Start/open time render from the `Timestamp` wrapper (`.value` → `toDate()`); local
+date stays the timezone-free `LocalDate` triple.
+
+Column alignment across the separate sibling series sections uses a **shared CSS
+Grid `grid-template-columns` token** applied to every header and event row, rather
+than per-artist `<table>`s (which size columns independently and drift) or
+`subgrid` (not needed when one token is shared by all rows and avoids the
+Baseline-Newly-Available dependency).
+
+Delete is gated by a **native `<dialog>` modal** opened with `showModal()`. The
+confirm control receives initial focus (autofocus) so the operator confirms with
+Enter and dismisses with Escape (native `<dialog>` cancel) — no `Delete` RPC is
+issued until confirmation. The native dialog is preferred over the Invoker Commands
+API (`command`/`commandfor`), which is Baseline 2025 and would require a polyfill;
+`<dialog>` is widely available and needs none.
+
 ## Risks / Trade-offs
 
 - **Breaking rename leaves a cutover gap** → The admin console's old client calls
