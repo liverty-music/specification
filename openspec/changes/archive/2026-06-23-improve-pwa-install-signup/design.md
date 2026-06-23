@@ -44,9 +44,13 @@ The PostSignupDialog uses `canShowInstallOption` for row visibility; `canShowFab
 
 **Alternative considered**: Relax the `deferredPrompt !== null` requirement inside `canShowFab`. Rejected because `canShowFab` drives the FAB, and a FAB without `deferredPrompt` would silently no-op on tap for non-iOS. The FAB and dialog have legitimately different semantics.
 
-### Decision: Inline instruction expansion, no new bottom-sheet
+### Decision: Inline instruction expansion via native `<details>`, no new bottom-sheet
 
-When the native prompt is unavailable, the install row shows a "How to add" button. Tapping it expands numbered instructions inline (browser menu → Add to Home Screen). No nested bottom-sheet.
+When the native prompt is unavailable, the install row shows a "How to add" disclosure built from a native `<details>`/`<summary>` element: the `<summary>` is styled as a button, and toggling it expands numbered instructions inline (browser menu → Add to Home Screen). No nested bottom-sheet, and no ViewModel open/close state or handler.
+
+**Why native `<details>`**: The disclosure needs no JavaScript state — the browser provides keyboard activation, `aria-expanded` semantics, screen-reader announcements, and re-collapse for free. This is the platform-native pattern for progressive disclosure and keeps the ViewModel free of UI-toggle state. The `<summary>` is styled to match the dialog's other text buttons (display font, no list marker).
+
+**Alternative considered**: A ViewModel boolean (`isInstallGuideOpen`) flipped by a click handler, with `if.bind` toggling a plain button and an `<ol>`. Rejected — it reinvents disclosure semantics the platform already provides, adds state + a handler, lacks `aria-expanded`, and the reveal was one-way (not collapsible).
 
 **Alternative considered**: Reuse `pwa-install-fab`'s iOS instruction sheet. Rejected — the dialog is itself a bottom-sheet; nesting creates z-index complexity. Inline expansion is simpler and consistent with the dialog's visual register.
 
