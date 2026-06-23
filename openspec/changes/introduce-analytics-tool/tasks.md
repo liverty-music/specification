@@ -83,8 +83,8 @@
 
 - [x] 10.1 Unit-test the `AnalyticsClient` interface contract and the `PostHogAnalyticsClient` implementation including PostHog-unreachable degradation (8 test cases covering happy path, empty distinctID/eventName validation, nil properties, SDK error wrapping, Close propagation, and constructor input validation)
 - [ ] 10.2 Unit-test the `analytics-consumer` per-subject decoders including property sanitisation and trace_id propagation
-- [ ] 10.3 Unit-test the frontend `AnalyticsService` deferred initialisation, in-memory queue flushing, identify gating on consent, and feature-flag default fallback
-- [ ] 10.4 Unit-test the `ConsentService` state persistence and revocation behaviour
+- [ ] 10.3 Unit-test the frontend `AnalyticsService` deferred initialisation, in-memory queue flushing, default-on identify (opt-out semantics), and feature-flag default fallback
+- [ ] 10.4 Unit-test the `ConsentService` opt-out/re-enable state persistence, `localStorage` version migration, and session-replay-only toggle
 - [ ] 10.5 Integration-test the paired-event flow for `artist.follow.requested` (FE) and `artist.follow.completed` (BE) producing both events with matching `user_id` and `artist_id`
 - [ ] 10.6 Playwright smoke test for the opt-out model: transparency notice is non-blocking, analytics is on by default, settings Analytics-off stops identified capture, Session-replay-off stops recording only, and anonymous→identified merge connects pre-signup events
 
@@ -105,7 +105,7 @@
 
 ## 13. Backend event-coverage gap (publishers for catalogued-but-unpublished events)
 
-> Gap analysis: 10 of 17 catalogued BE events are defined in `analytics_events.go` but have **no publisher**, so the funnel tail is empty. Closing this is the largest funnel-completeness lever; the `analytics-consumer` (§3) is inert without these upstream signals.
+> Gap analysis: 10 of 17 catalogued BE events are defined in `analytics_events.go` but have **no publisher**, so the funnel tail is empty. Of those, **9 are actionable now** and enumerated below (§13.1–13.5). The 10th, `user.deleted`, has no deletion feature yet and is deferred to the `manage-analytics-data-rights` change. Closing this gap is the largest funnel-completeness lever; the `analytics-consumer` (§3) is inert without these upstream signals.
 
 - [ ] 13.1 Publish `account.signup.completed` and `account.login` — neither is observable today (Zitadel OIDC bypasses the backend). Add a hook (e.g. RPC-context first-seen detection or a Zitadel event) so login/signup become backend-emitted events
 - [ ] 13.2 Emit `notification.delivered` from the push sender (`push_notification_uc.go` `NotifyNewConcerts`) using the send result already in hand
