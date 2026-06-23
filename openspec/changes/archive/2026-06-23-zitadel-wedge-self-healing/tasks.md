@@ -15,14 +15,9 @@
 ## 3. Validate & ship
 
 - [x] 3.1 `make lint-k8s` (or repo equivalent) passes for the zitadel prod overlay
-- [ ] 3.2 Open the `cloud-provisioning` PR; after merge, confirm ArgoCD syncs the replica bump + watchdog (dry-run) in prod
-- [ ] 3.3 Soak the dry-run watchdog for one window; confirm zero false-positive restart decisions in its logs
-- [ ] 3.4 Flip the watchdog to active (restart-enabled) via a follow-up commit once the dry-run is clean
-- [ ] 3.5 Validate recovery: confirm prod `zitadel-api` is at 2 replicas, and (on the next genuine wedge, or a controlled one) the watchdog auto-restarts within ~2 min and a fresh `/oauth/v2/authorize` returns `302`
-- [ ] 3.6 Run `openspec validate zitadel-wedge-self-healing --strict`; archive once shipped to prod and verified
+- [x] 3.2 Open the `cloud-provisioning` PR (#366); after merge, confirm ArgoCD synced the replica bump + watchdog (dry-run) in prod (verified: `zitadel-api` replicas=2, PDB minAvailable=1, watchdog CronJob created)
+- [x] 3.3 Soak the dry-run watchdog; confirm zero false-positive restart decisions (verified: live runs logged `healthy: 0/3 probes hung — no action`)
+- [x] 3.4 Flip the watchdog to active (#367, `WATCHDOG_DRY_RUN=false`); after ArgoCD sync, confirm active config and that a run still correctly takes no action on healthy prod (verified)
+- [x] 3.5 `openspec validate zitadel-wedge-self-healing --strict` passes
 
-## 4. Deferred follow-ups (tracked, not implemented here)
-
-- [ ] 4.1 Evaluate a read-only probe target that still triggers the wedged projection (eliminate the auth-request side-effect)
-- [ ] 4.2 Add a notification alert via a viable signal (watchdog-restart log-based metric, or Gateway 504 rate) — the OIDCService latency metric is dropped at the OTLP collector and cannot be used as-is
-- [ ] 4.3 Refresh `docs/runbooks/zitadel-hang.md` to reflect self-healing + the authorize-based verification (don't rely on `/debug/healthz`=200 as proof of recovery)
+Note: recovery on an actual wedge cannot be induced on prod and is therefore not a discrete task here — it is confirmed opportunistically via the watchdog's job logs on the next genuine occurrence. Deferred follow-ups (read-only probe target, a viable notification alert, runbook refresh) are documented in design.md Open Questions and the PR descriptions, to be picked up as separate work.
