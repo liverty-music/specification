@@ -38,7 +38,11 @@ The pre-opt-out field formerly named `marketingMeasurement` SHALL be renamed `se
 ---
 
 ### Requirement: Full non-PII catalogue is captured anonymously before and without identification
-Before a user is identified — anonymous visitors, and authenticated users who have opted out of analytics — the application SHALL capture the **full non-PII event catalogue** (not a restricted allowlist), subject to: persistence MAY use `localStorage` with an anonymous identifier so anonymous funnels survive page reloads; no property linking the events to a real account SHALL be sent; and the events SHALL carry no `distinct_id` mapped to a user identity. The earlier closed pre-consent allowlist (`page.viewed`, `account.signup.started` only) is removed.
+Before a user is identified — anonymous visitors, and authenticated users who have opted out of analytics — the application SHALL capture the **full non-PII event catalogue** (not a restricted allowlist), subject to: no property linking the events to a real account SHALL be sent, and the events SHALL carry no `distinct_id` mapped to a user identity. The earlier closed pre-consent allowlist (`page.viewed`, `account.signup.started` only) is removed.
+
+Persistence differs by user state, because the two states carry different privacy expectations:
+- **Anonymous visitors** (never identified): persistence MAY use `localStorage` with an anonymous identifier so anonymous funnels survive page reloads.
+- **Opted-out authenticated users**: persistence SHALL be memory-only, consistent with the opt-out behaviour (see the "Anonymous behaviour is merged into the identified profile on login" and "Analytics opt-out state is persisted" requirements). A user who has actively opted out SHALL NOT have an anonymous identifier persisted to `localStorage`.
 
 #### Scenario: Anonymous visitor's full discovery behaviour is captured
 - **WHEN** an unidentified visitor browses the landing page, searches artists, and views artist detail
@@ -50,6 +54,7 @@ Before a user is identified — anonymous visitors, and authenticated users who 
 - **WHEN** an authenticated user has turned the Analytics toggle off
 - **THEN** the application SHALL NOT call `posthog.identify` with the user's `UserId`
 - **AND** any events emitted SHALL use an anonymous identifier
+- **AND** persistence SHALL be memory-only (no anonymous identifier persisted to `localStorage`)
 - **AND** no link SHALL be created between the user's identity and the anonymous PostHog profile
 
 ---
