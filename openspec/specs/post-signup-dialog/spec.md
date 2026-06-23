@@ -3,9 +3,7 @@
 ## Purpose
 
 Consolidates notification permission and PWA install prompts into a single dialog shown after the first successful signup, providing a streamlined post-authentication experience.
-
 ## Requirements
-
 ### Requirement: Post-Signup Dialog on First Authentication
 
 The system SHALL display a dialog after the first successful signup that consolidates a celebration message with optional power-up actions (notification permission, PWA install), without front-loading guidance for features the user has not yet encountered.
@@ -30,20 +28,20 @@ The system SHALL display a dialog after the first successful signup that consoli
 - **THEN** the first content row SHALL be a celebration message acknowledging completion of onboarding
 - **AND** it SHALL offer a notification opt-in action if `notificationManager.permission === 'default'`
 - **AND** it SHALL show a notification denied message if `notificationManager.permission === 'denied'`
-- **AND** it SHALL offer a PWA install action if `PwaInstallService.canShowFab` is `true` AND the platform is not iOS Safari
+- **AND** it SHALL offer a PWA install action if `PwaInstallService.canShowInstallOption` is `true`
 - **AND** it SHALL provide a dismiss/close action in the footer
 
 #### Scenario: Footer button label when all actions are complete
 
 - **WHEN** the PostSignupDialog is displayed
-- **AND** `PwaInstallService.canShowFab` is `false` (PWA already installed or not applicable)
+- **AND** `PwaInstallService.canShowInstallOption` is `false` (PWA already installed or browser not capable)
 - **AND** `notificationManager.permission` is `'granted'`
 - **THEN** the footer button SHALL display the label "Close"
 
 #### Scenario: Footer button label when actions remain
 
 - **WHEN** the PostSignupDialog is displayed
-- **AND** either `PwaInstallService.canShowFab` is `true` OR `notificationManager.permission` is not `'granted'`
+- **AND** either `PwaInstallService.canShowInstallOption` is `true` OR `notificationManager.permission` is not `'granted'`
 - **THEN** the footer button SHALL display the label "Later"
 
 #### Scenario: Notification opt-in from dialog
@@ -55,16 +53,16 @@ The system SHALL display a dialog after the first successful signup that consoli
 - **AND** on failure or denial, the notification row SHALL show an error state
 - **AND** the settings page SHALL subsequently derive the toggle state from the backend via `PushNotificationService.Get` without relying on any `localStorage` flag
 
-#### Scenario: PWA install from dialog (Android/Chrome)
+#### Scenario: PWA install from dialog — native prompt
 
-- **WHEN** the user taps the PWA install button in the PostSignupDialog
-- **AND** `beforeinstallprompt` has fired
+- **WHEN** the user taps the install button in the PostSignupDialog
+- **AND** `PwaInstallService.canShowFab` is `true` (native prompt captured)
 - **THEN** the system SHALL trigger the deferred `beforeinstallprompt` event
 
 #### Scenario: PWA install row hidden on iOS Safari
 
 - **WHEN** the PostSignupDialog is displayed
-- **AND** the platform is iOS Safari (`beforeinstallprompt` never fires)
+- **AND** `PwaInstallService.browserSupportsPwa` is `false` (browser lacks `BeforeInstallPromptEvent`, i.e. iOS Safari)
 - **THEN** the PWA install row SHALL NOT be shown in the dialog
 - **AND** the persistent FAB instruction sheet provides the iOS install path instead
 
@@ -139,3 +137,51 @@ On the post-signup dashboard redirect, the full (confetti) celebration overlay S
 - **AND** `needsRegion` is `true`
 - **THEN** the system SHALL resolve the home-area selection first
 - **AND** only then evaluate the celebration overlay, followed by the PostSignupDialog on dismissal
+
+### Requirement: PWA Install Row Shows Fallback Instructions When Native Prompt Unavailable
+
+When the browser supports PWA install but the native prompt has not been captured, the PostSignupDialog SHALL show a manual install guide rather than hiding the row.
+
+#### Scenario: Install row shows "How to add" disclosure when deferredPrompt is absent
+
+- **WHEN** the PostSignupDialog is displayed
+- **AND** `PwaInstallService.canShowInstallOption` is `true` (browser supports PWA install)
+- **AND** `PwaInstallService.canShowFab` is `false` (native prompt not yet captured)
+- **THEN** the install row SHALL display a "How to add" disclosure control (a native `<details>`/`<summary>` rendered as a button) instead of the native install button
+- **AND** the disclosure SHALL be collapsed by default (the instruction steps hidden)
+
+#### Scenario: Toggling "How to add" reveals inline instructions
+
+- **WHEN** the user activates the "How to add" disclosure (click, or keyboard via the native `<summary>`)
+- **THEN** the install row SHALL expand to show numbered steps for browser-menu-based installation:
+  1. Open the browser menu (⋮)
+  2. Select "Add to Home Screen"
+  3. Tap "Add" to finish
+- **AND** the "How to add" summary SHALL remain visible above the expanded steps and stay toggleable (the native disclosure can be collapsed again)
+
+#### Scenario: Install row reactively upgrades to native button on prompt arrival
+
+- **WHEN** the PostSignupDialog is open
+- **AND** the browser fires `beforeinstallprompt` (native prompt arrives after dialog opened)
+- **THEN** `PwaInstallService.canShowFab` becomes `true`
+- **AND** the install row SHALL update reactively to show the native install button
+- **AND** the "How to add" disclosure SHALL be replaced by the native install button
+
+### Requirement: PwaInstallService Registers beforeinstallprompt Listener Before Routing
+
+The `PwaInstallService` event listener for `beforeinstallprompt` SHALL be registered before any route navigation begins, so that the event is not missed during the OIDC auth-callback page load.
+
+#### Scenario: Listener registered before auth-callback navigation
+
+- **WHEN** the application boots and `AppShell` activates
+- **THEN** `PwaInstallService` SHALL be constructed as part of `AppShell` activation
+- **AND** the `beforeinstallprompt` event listener SHALL be registered before any route transition begins
+- **AND** any `beforeinstallprompt` event fired during the `/auth/callback` route SHALL be captured
+
+#### Scenario: Install row shows native button when prompt captured during auth-callback
+
+- **WHEN** Chrome fires `beforeinstallprompt` during the `/auth/callback` page load
+- **AND** the user completes sign-up and the PostSignupDialog opens on the dashboard
+- **THEN** `PwaInstallService.canShowFab` SHALL be `true`
+- **AND** the PostSignupDialog SHALL display the native install button in the install row
+
