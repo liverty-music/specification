@@ -37,25 +37,24 @@ The pre-opt-out field formerly named `marketingMeasurement` SHALL be renamed `se
 
 ---
 
-### Requirement: Full non-PII catalogue is captured anonymously before and without identification
-Before a user is identified — anonymous visitors, and authenticated users who have opted out of analytics — the application SHALL capture the **full non-PII event catalogue** (not a restricted allowlist), subject to: no property linking the events to a real account SHALL be sent, and the events SHALL carry no `distinct_id` mapped to a user identity. The earlier closed pre-consent allowlist (`page.viewed`, `account.signup.started` only) is removed.
+### Requirement: Full non-PII catalogue is captured anonymously before identification
+Before a user is identified — anonymous visitors who have not opted out — the application SHALL capture the **full non-PII event catalogue** (not a restricted allowlist), subject to: no property linking the events to a real account SHALL be sent, and the events SHALL carry no `distinct_id` mapped to a user identity. Persistence MAY use `localStorage` with an anonymous identifier so anonymous funnels survive page reloads. The earlier closed pre-consent allowlist (`page.viewed`, `account.signup.started` only) is removed.
 
-Persistence differs by user state, because the two states carry different privacy expectations:
-- **Anonymous visitors** (never identified): persistence MAY use `localStorage` with an anonymous identifier so anonymous funnels survive page reloads.
-- **Opted-out authenticated users**: persistence SHALL be memory-only, consistent with the opt-out behaviour (see the "Anonymous behaviour is merged into the identified profile on login" and "Analytics opt-out state is persisted" requirements). A user who has actively opted out SHALL NOT have an anonymous identifier persisted to `localStorage`.
+This requirement covers only the pre-identification anonymous state. A user who has explicitly opted out is a different state: `opt_out_capturing()` suppresses all capture, so an opted-out user emits no telemetry of any kind (see "Analytics opt-out state is persisted and user-controllable from settings").
 
 #### Scenario: Anonymous visitor's full discovery behaviour is captured
-- **WHEN** an unidentified visitor browses the landing page, searches artists, and views artist detail
+- **WHEN** an unidentified visitor who has not opted out browses the landing page, searches artists, and views artist detail
 - **THEN** the application MAY emit `page.viewed`, `artist.search`, `artist.discovery.viewed`, and any other non-PII catalogue event with an anonymous identifier
 - **AND** the application MAY persist the anonymous identifier in `localStorage`
 - **AND** no event SHALL include the user's email, Zitadel `sub`, `UserId`, or any other account-mapped identifier
 
-#### Scenario: Opted-out authenticated user generates only anonymous telemetry
+#### Scenario: Opted-out authenticated user generates no telemetry
 - **WHEN** an authenticated user has turned the Analytics toggle off
-- **THEN** the application SHALL NOT call `posthog.identify` with the user's `UserId`
-- **AND** any events emitted SHALL use an anonymous identifier
+- **THEN** the application SHALL have called `posthog.opt_out_capturing()`, which suppresses all capture
+- **AND** the application SHALL NOT emit any PostHog event — neither identified nor anonymous — while opted out
+- **AND** the application SHALL NOT call `posthog.identify` with the user's `UserId`
 - **AND** persistence SHALL be memory-only (no anonymous identifier persisted to `localStorage`)
-- **AND** no link SHALL be created between the user's identity and the anonymous PostHog profile
+- **AND** no link SHALL be created between the user's identity and any PostHog profile
 
 ---
 
@@ -104,4 +103,5 @@ The application SHALL persist the user's per-purpose opt-out state and SHALL let
 - **THEN** the application SHALL call `posthog.opt_in_capturing()` to clear the persisted opt-out flag (which `identify()` does not clear on its own)
 - **AND** the application SHALL invoke deferred PostHog initialisation if not already initialised
 - **AND** the application SHALL call `posthog.identify(user.id.value, properties)` with the user's `UserId`
+- **AND** because capture was fully suppressed while opted out, the anonymous profile carries no opted-out telemetry, so the `identify` merge cannot link opted-out events to the user's identity (no preceding `reset()` is required)
 - **AND** the application SHALL emit subsequent events normally
