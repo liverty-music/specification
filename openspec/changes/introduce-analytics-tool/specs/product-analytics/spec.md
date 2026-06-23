@@ -124,7 +124,15 @@ The frontend SHALL initialise PostHog with `autocapture: false`, `capture_pagevi
 ---
 
 ### Requirement: Session replay masks PII by default
-Session replay SHALL be enabled with `maskAllInputs: true` so that the contents of every `<input>` and `<textarea>` are masked. Elements containing PII outside form inputs SHALL be marked with `data-pii` to extend masking. Sensitive sections (payment forms, ZK proof entry screens) SHALL be marked with `.ph-no-capture` to suppress recording entirely.
+Session replay SHALL be enabled with `maskAllInputs: true` so that the contents of every `<input>` and `<textarea>` are masked. Elements containing PII outside form inputs SHALL be marked with `data-pii` to extend masking. Sensitive sections (payment forms, ZK proof entry screens) and any 要配慮個人情報 / minor-identifying region SHALL be marked with `.ph-no-capture` to suppress recording entirely.
+
+Session replay SHALL be sampled rather than recorded for every session. The PostHog free tier permits ~5,000 recordings/month, which at 100% capture is exhausted at roughly 600–1,000 monthly active users — far below the ~5,000 MAU the 1M-event tier supports — so the binding free-tier constraint is replay, not event volume. The application SHALL configure a session-recording sample rate (initial target ~10%) so replay coverage scales to a comparable MAU ceiling as event capture.
+
+#### Scenario: Only a sampled fraction of sessions is recorded
+- **WHEN** the configured replay sample rate is below 100% and many sessions occur
+- **THEN** PostHog SHALL record session replays for approximately the configured fraction of sessions
+- **AND** the un-sampled sessions SHALL still emit catalogue events normally
+- **AND** the monthly recording count SHALL be projected to stay within the PostHog tier ceiling
 
 #### Scenario: User types into an email input
 - **WHEN** the user types an email address into any `<input>` element during a recorded session
@@ -165,3 +173,18 @@ The system SHALL maintain `docs/analytics/event-catalog.md` in the specification
 - **WHEN** a pull request introduces a new event constant in `frontend/src/services/analytics-events.ts` or `backend/internal/usecase/analytics_events.go`
 - **THEN** the pull request SHALL also update `docs/analytics/event-catalog.md` with the event's domain, action, outcome (if any), source (FE/BE), required properties, and at least one consuming dashboard or KPI
 - **AND** the pull request SHALL NOT be approved without that update
+
+---
+
+### Requirement: Internal and E2E traffic is excluded from product analytics
+The system SHALL exclude internal traffic — the Pulumi-managed E2E test user and developer/staff sessions — from product-analytics measurement so that funnels, conversion rates, and retention cohorts reflect real users only. Exclusion MAY be implemented at the SDK level (suppress capture for known-internal identities), at the PostHog project level (internal-user filters), or both; production dashboards SHALL apply the filter regardless.
+
+#### Scenario: E2E test user does not pollute funnels
+- **WHEN** the Pulumi-managed E2E user (`e2e-test-password@dev.liverty-music.app`) drives an automated session
+- **THEN** the events from that session SHALL be excluded from production funnel and retention dashboards
+- **AND** the exclusion SHALL be based on a stable internal-identity marker (e.g. the E2E user's `UserId` or an internal-traffic property), not on heuristic guessing
+
+#### Scenario: Developer session is distinguishable from real users
+- **WHEN** a developer or staff member uses the production app while signed in to a known-internal account
+- **THEN** the analytics layer SHALL tag or suppress that session so dashboards can filter it out
+- **AND** the default production dashboards SHALL have the internal filter applied
