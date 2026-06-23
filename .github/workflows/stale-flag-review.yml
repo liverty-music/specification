@@ -1,0 +1,84 @@
+name: Stale Flag Review
+
+# Opens a monthly stale-flag review issue with a checklist so the recurring
+# review mandated by docs/analytics/feature-flag-policy.md is never forgotten.
+# See the "Lifecycle and review" section of that policy for the source of the
+# checklist items below.
+
+on:
+  schedule:
+    # First of every month at 00:00 UTC. GitHub cron cannot express "first
+    # business day", so the issue is opened on the 1st; the assignee triages
+    # it on the next business day per the policy.
+    - cron: "0 0 1 * *"
+  # Allow on-demand creation (e.g. to test the workflow or run an ad-hoc review).
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  open-review-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure the review label exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create feature-flag-review \
+            --repo "${{ github.repository }}" \
+            --color FBCA04 \
+            --description "Monthly stale PostHog feature-flag review" \
+            2>/dev/null || true
+
+      - name: Open the monthly stale-flag review issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          month="$(date -u +'%Y-%m')"
+          title="Feature-flag review — ${month}"
+
+          # Skip if an issue for this month already exists (re-runs / dispatch).
+          existing="$(gh issue list \
+            --repo "${{ github.repository }}" \
+            --label feature-flag-review \
+            --state open \
+            --search "in:title ${title}" \
+            --json number --jq 'length')"
+          if [ "${existing}" -gt 0 ]; then
+            echo "An open review issue for ${month} already exists; skipping."
+            exit 0
+          fi
+
+          body="$(cat <<'EOF'
+          Monthly review of PostHog feature flags per
+          [docs/analytics/feature-flag-policy.md](../blob/main/docs/analytics/feature-flag-policy.md).
+
+          For every flag on the PostHog project, confirm the flag description carries the
+          mandatory `[OWNER] [HYPOTHESIS] [KPI] [KILL_DATE] [ISSUE]` block, then surface flags
+          needing action. **Open a per-flag follow-up issue assigned to that flag's `OWNER`**
+          for anything checked below.
+
+          ## Review checklist
+          - [ ] Flags whose description omits any required field (`OWNER`/`HYPOTHESIS`/`KPI`/`KILL_DATE`/`ISSUE`)
+          - [ ] Flags whose `KILL_DATE` has passed
+          - [ ] Flags at 0% rollout for more than 30 days (removal candidates)
+          - [ ] Flags at 100% rollout for more than 30 days (removal + code-cleanup candidates)
+
+          ## For each flag requiring action
+          - [ ] Opened a per-flag issue assigned to the `OWNER`
+          - [ ] For removals: planned the single PR that drops the evaluation call and the unused
+                code path from frontend and backend (delete the PostHog flag only after it ships)
+
+          ## Sign-off
+          - [ ] All flags reviewed; this issue can be closed.
+          EOF
+          )"
+
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "${title}" \
+            --label feature-flag-review \
+            --assignee pannpers \
+            --body "${body}"
