@@ -101,6 +101,7 @@ The application SHALL persist the user's per-purpose opt-out state and SHALL let
 
 #### Scenario: User re-enables analytics after opting out
 - **WHEN** a user who previously opted out turns Analytics back on
-- **THEN** the application SHALL invoke deferred PostHog initialisation if not already initialised
+- **THEN** the application SHALL call `posthog.opt_in_capturing()` to clear the persisted opt-out flag (which `identify()` does not clear on its own)
+- **AND** the application SHALL invoke deferred PostHog initialisation if not already initialised
 - **AND** the application SHALL call `posthog.identify(user.id.value, properties)` with the user's `UserId`
 - **AND** the application SHALL emit subsequent events normally
