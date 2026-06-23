@@ -1,7 +1,7 @@
 ## 1. ViewModel — grouping logic
 
 - [ ] 1.1 Add `PendingSeriesGroup` and `PendingArtistGroup` interfaces to `approval-queue-route.ts`
-- [ ] 1.2 Implement `groupQueueByArtistAndSeries(concerts: PendingConcert[]): PendingArtistGroup[]` in `approval-queue-route.ts`, grouping by `performer.name` then `title.value`, computing `dateRange` and `unresolvedCount` per series
+- [ ] 1.2 Implement `groupQueueByArtistAndSeries(concerts: PendingConcert[]): PendingArtistGroup[]` in `approval-queue-route.ts`, grouping by `performer.name` then `title.value`, computing `dateCount` and `unresolvedCount` per series
 - [ ] 1.3 Replace `rows: QueueRow[]` with `groups: PendingArtistGroup[]` on `ApprovalQueueRoute`; update `attached()` / `load()` to call the grouping function
 - [ ] 1.4 Update `isEmpty` getter to check `groups.length` instead of `rows.length`
 - [ ] 1.5 Update `approve()`, `startReject()`, `cancelReject()`, `confirmReject()` to remove a row and prune empty series/artist groups (mirrors `removeRow` pattern in `approved-concerts-route.ts`)
