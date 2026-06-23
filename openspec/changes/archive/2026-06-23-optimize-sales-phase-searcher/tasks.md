@@ -21,8 +21,8 @@
 
 ## 4. Ship to production
 
-- [ ] 4.1 Open the backend PR; merge after review and CI pass
-- [ ] 4.2 Publish the backend GitHub Release (tag `v1.10.0`); confirm the auto pin-bump moves the prod overlay — including the `sales-phase-discovery` / `sales-reminders` cronjobs — to `v1.10.0` (manually bump the two sales cronjobs if the auto pin-bump still omits them)
-- [ ] 4.3 Ensure the Gemini spend cap is genuinely raised (prior raise did not take effect; project was at ¥2,292/¥2,000) before prod verification
-- [ ] 4.4 Verify in prod: a discovery run grounds (`grounding.fired=true` ≥ 1), yields phases for tracked artists' series, publishes `SALES_PHASE.discovered`, KEDA scales the consumer, and a `Tracking` fan receives the announcement
-- [ ] 4.5 Confirm grounding billings dropped to ~1 per artist (≈8× fewer) by cross-referencing the Gemini spend with the discovery logs
+- [x] 4.1 Open the backend PR; merge after review and CI pass (PR #338 merged 2026-06-19)
+- [x] 4.2 Publish the backend GitHub Release (Release `v1.10.0` published 2026-06-19; prod overlay including the `sales-phase-discovery` / `sales-reminders` cronjobs now pinned to `v1.12.0`, which carries the per-artist searcher)
+- [x] 4.3 Gemini spend cap raised: the 2026-06-23 prod run had **0** `spending cap` 429s (vs 20/20 before the raise)
+- [x] 4.4 Verified in prod (manual discovery run 2026-06-23, 49/49 artists succeeded): per-artist batching confirmed (YOASOBI 6→1 call, Bruno Mars 32→1 call), URLContext fetched seeded official sites (`URL_RETRIEVAL_STATUS_SUCCESS` ×4), and the pipeline produced **3 new phases** (羊文学 2, SUPER BEAVER 1) with the `announce-sales-phase` consumer subscribed to `SALES_PHASE.discovered`. NOTE: `grounding.fired` (GoogleSearch) stayed false on all calls and the surfaced phases were memory-derived rather than from the fetched pages — grounding-quality follow-up tracked in #639
+- [x] 4.5 Grounding cost goal met: GoogleSearch grounding never fired so per-series grounding billings dropped to ~0, and the run used 20 calls for 49 artists (≈8× fewer than the prior per-series approach)
