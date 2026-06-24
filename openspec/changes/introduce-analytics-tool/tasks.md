@@ -60,7 +60,7 @@
 - [x] 7.1 Document the flag申告 template (`OWNER`, `HYPOTHESIS`, `KPI`, `KILL_DATE`, `ISSUE`) in `specification/docs/analytics/feature-flag-policy.md`
 - [ ] 7.2 Implement frontend `AnalyticsService.getFeatureFlag(key, defaultValue)` with `localStorage` bootstrap of last-known values and asynchronous refresh
 - [x] 7.3 Implement the backend flag evaluation helper that wraps `posthog-go` local evaluation and always requires a default value at the call site. Implemented as the `usecase.FeatureFlagEvaluator` interface plus a `posthog` adapter; placed in `internal/usecase/` + `internal/infrastructure/analytics/posthog/` to match repo convention rather than a new `featureflag/` sub-package. `IsEnabled`/`Variant` require a default and never return an error (a PostHog outage degrades to the default). Merged via backend PR #344; DI wiring deferred until a first flag consumer exists.
-- [ ] 7.4 Add a CI check that fails when any feature-flag evaluation in the frontend or backend codebase omits a default value
+- [~] 7.4 Add a CI check that fails when any feature-flag evaluation in the frontend or backend codebase omits a default value — DESCOPED per Decision 11: defaults are enforced at the **type level** instead (backend `FeatureFlagEvaluator.IsEnabled/Variant` take a required default param; frontend `getFeatureFlag(key, defaultValue)` likewise), which is strictly stronger than a CI lint. Residual gap (bypassing the helper to call the SDK directly) is a within-repo import-restriction lint, deferred until a flag is actually in use.
 - [x] 7.5 Schedule the monthly stale-flag review as a recurring GitHub issue with a checklist template. Implemented as the scheduled workflow `.github/workflows/stale-flag-review.yml` (monthly `cron` + `workflow_dispatch`): it opens a `feature-flag-review`-labelled issue assigned to the OWNER, carrying the four review-checklist items from `docs/analytics/feature-flag-policy.md`.
 
 ## 8. Session replay & PII redaction
@@ -74,7 +74,7 @@
 ## 9. Event catalogue & dashboards
 
 - [x] 9.1 Create `specification/docs/analytics/event-catalog.md` listing every event with its name, domain, action, outcome, source (FE/BE), required properties, and intended consumers
-- [ ] 9.2 Add a CI check that fails when an event constant in `frontend/src/services/analytics-events.ts` or `backend/internal/usecase/analytics_events.go` lacks a matching catalogue entry
+- [~] 9.2 Add a CI check that fails when an event constant in `frontend/src/services/analytics-events.ts` or `backend/internal/usecase/analytics_events.go` lacks a matching catalogue entry — DESCOPED per Decision 11: building a cross-repo drift guard would pay a permanent cost to police a deliberately drift-prone 3-copy structure (locus trilemma: sync vs timing vs coupling). Instead rely on PR review now (Decision 5 mitigation); adopt schema-generation (Paradigm B: one proto source → generated Go/TS constants + catalogue doc, drift impossible by construction) when the taxonomy grows multi-author or a drift bug reaches `main`.
 - [ ] 9.3 Create the discover → follow → lottery → purchase → entry funnel dashboard in PostHog
 - [ ] 9.4 Create the D7 / D30 retention cohort by signup month in PostHog
 - [ ] 9.5 Create per-domain event-volume monitoring dashboard for the first 90 days
