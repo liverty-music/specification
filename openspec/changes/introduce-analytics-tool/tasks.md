@@ -109,7 +109,7 @@
 
 ## 13. Backend event-coverage gap (publishers for catalogued-but-unpublished events)
 
-> Gap analysis: 10 of 17 catalogued BE events are defined in `analytics_events.go` but have **no publisher**, so the funnel tail is empty. Of those, **9 are actionable now** and enumerated below (§13.1–13.5). The 10th, `user.deleted`, has no deletion feature yet and is deferred to the `manage-analytics-data-rights` change. Closing this gap is the largest funnel-completeness lever; the `analytics-consumer` (§3) is inert without these upstream signals.
+> Gap analysis: 10 of 17 catalogued BE events are defined in `analytics_events.go` but have **no publisher**, so the funnel tail is empty. Of those, **4 are actionable now** — §13.1 (`account.signup.completed`, `account.login`), §13.2 (`notification.delivered`), and §13.5 (`concert.recommendation.served`). §13.3–13.4 (5 events: the 3 lottery + 2 purchase events) are **out of scope per Decision 12** (no lottery/purchase feature offered) and re-enter scope with those features. The remaining `user.deleted` has no deletion feature yet and is deferred to the `manage-analytics-data-rights` change. Closing the actionable gap is the largest funnel-completeness lever; the `analytics-consumer` (§3) is inert without these upstream signals.
 
 - [ ] 13.1 Publish `account.signup.completed` and `account.login` — neither is observable today (Zitadel OIDC bypasses the backend). Add a hook (e.g. RPC-context first-seen detection or a Zitadel event) so login/signup become backend-emitted events
 - [ ] 13.2 Emit `notification.delivered` from the push sender (`push_notification_uc.go` `NotifyNewConcerts`) using the send result already in hand
