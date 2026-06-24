@@ -122,7 +122,7 @@
 
 > Domain signals that were entirely uninstrumented; added to the event catalogue in this change.
 
-- [ ] 14.1 `ticket.journey.status.changed` from `ticket_journey_uc.go` `SetStatus` (PENDING→TRACKING→ATTENDING interest-tier progression)
+- [x] 14.1 `ticket.journey.status.changed` from `ticket_journey_uc.go` `SetStatus` (interest-tier progression) — done in backend PR #347: `SetStatus` reads the prior status and, only on change, publishes `TICKET_JOURNEY.status_changed` (non-fatal); the analytics-consumer forwards it to PostHog with `{event_id, from_status, to_status}` per user. New `TicketJourneyRepository.Get` supplies `from_status` (new journey = `UNSPECIFIED`). Establishes the publisher+forwarder template for 14.2–14.6.
 - [ ] 14.2 `ticket.email.parsed` from `ticket_email_uc.go` (email-ingestion data quality: type, parse status, field count)
 - [ ] 14.3 `notification.unsubscribed` from `push_notification_uc.go` `Delete` (churn vs. cache-clear)
 - [ ] 14.4 `sales_reminder.delivered` from `sales_reminder_delivery_uc.go` `DeliverReminder` (sales-phase-timeline KPI)
