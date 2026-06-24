@@ -22,4 +22,4 @@ Users who sign up and install the PWA are signed out when they reopen the app th
 - **frontend**: `shared/services/auth-service.ts` — boot-time silent-renew logic in the `AuthService` constructor (gating the `ready` promise) and the `monitorSession` setting. Associated unit tests (`test/auth-service.spec.ts`).
 - **cloud-provisioning**: Zitadel Pulumi components — add a `DefaultOidcSettings` (instance-level OIDC token-lifetime) resource.
 - **No proto / BSR changes**: This change does not touch the schema; no code generation or release of the `specification` package is required.
-- **Security posture**: Access-token exposure window shrinks from 12h to 30m; refresh-token absolute lifetime is bounded at 90d (was Zitadel default 30d) with a 30d idle window.
+- **Security posture**: Access-token exposure window shrinks from 12h to 30m; refresh-token absolute lifetime is bounded at 90d (same as Zitadel default; now set explicitly) with a 30d idle window.

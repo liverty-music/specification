@@ -65,7 +65,7 @@ This is an **instance-level** (not org-level) setting, applied once per environm
 
 - **[`signinSilent()` adds latency to cold boot]** → It only fires when the access token is expired (the long-gap reopen case), and runs concurrently with app bootstrap behind the existing `ready` barrier that routes already await. The common warm-reopen path (token still valid) skips it entirely.
 - **[Disabling `monitorSession` delays IdP-side logout detection]** → Bounded by the 30m access-token lifetime; the next refresh against a revoked session fails and signs the user out. Acceptable for a consumer notification app.
-- **[Longer refresh-token absolute lifetime (90d) widens the re-auth window]** → Offset by the much shorter 30m access token (was 12h), which is the actually-revocation-relevant exposure; net security posture improves.
+- **[Refresh-token lifetimes (idle 30d / absolute 90d) keep the re-auth window long]** → These match Zitadel's existing defaults, so this change does not widen the window; it only pins the values explicitly. The actual posture change is the much shorter 30m access token (was 12h), which is the revocation-relevant exposure; net security posture improves.
 - **[`idTokenLifetime` left at 12h while access is 30m]** → Harmless: the ID token is reissued on every silent renew; its lifetime only bounds staleness of the cached profile between renewals.
 - **[Changing instance OIDC defaults affects all OIDC apps in the instance (frontend SPA, admin console)]** → Intended; all first-party apps benefit from the same posture. No app currently depends on the 12h access default.
 
