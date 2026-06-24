@@ -78,7 +78,7 @@ The system SHALL run a scheduled job that discovers sales phases for the upcomin
 
 ### Requirement: Event-Driven Announcement on New Phase
 
-The system SHALL push an announcement when a newly discovered sales phase is persisted, reusing the existing discovery→event→push pipeline. This announcement is event-driven and distinct from the time-based reminders.
+The system SHALL push an announcement when a newly discovered sales phase is persisted, reusing the existing discovery→event→push pipeline. This announcement is event-driven and distinct from the time-based reminders. The announcement SHALL be built per recipient and localized to the recipient's `preferred_language` (default `en`), consistent with the `sales-reminders` Notification Content requirement.
 
 #### Scenario: New phase announced
 
@@ -90,4 +90,10 @@ The system SHALL push an announcement when a newly discovered sales phase is per
 
 - **WHEN** the discovery job re-encounters an already-known phase (only updating its fields)
 - **THEN** it SHALL NOT publish a new announcement for that phase
+
+#### Scenario: Announcement copy localized per recipient
+
+- **WHEN** the announcement is built for a recipient
+- **THEN** its `title` and `body` SHALL be rendered in the recipient's `preferred_language`
+- **AND** when the recipient has no `preferred_language` set, the copy SHALL default to `en`
 
