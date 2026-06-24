@@ -126,6 +126,8 @@ The frontend SHALL initialise PostHog with `autocapture: false`, `capture_pagevi
 ### Requirement: Session replay masks PII by default
 Session replay SHALL be enabled with `maskAllInputs: true` so that the contents of every `<input>` and `<textarea>` are masked. Elements containing PII outside form inputs SHALL be marked with `data-pii` to extend masking. Sensitive sections (payment forms, ZK proof entry screens) and any 要配慮個人情報 / minor-identifying region SHALL be marked with `.ph-no-capture` to suppress recording entirely.
 
+> **Deferred — not in current scope (design Decision 12).** The shipped frontend runs with session replay disabled (`disable_session_recording: true`); the requirements in this section apply only once replay is deliberately enabled. Replay sampling is consequently not configured in current scope.
+
 Session replay SHALL be sampled rather than recorded for every session. The PostHog free tier permits ~5,000 recordings/month, which at 100% capture is exhausted at roughly 600–1,000 monthly active users — far below the ~5,000 MAU the 1M-event tier supports — so the binding free-tier constraint is replay, not event volume. The application SHALL configure a session-recording sample rate (initial target ~10%) so replay coverage scales to a comparable MAU ceiling as event capture.
 
 #### Scenario: Only a sampled fraction of sessions is recorded

@@ -179,6 +179,22 @@ This repo already runs the generate-from-one-source pattern for its API: `buf.ge
 
 **Rationale:** The principled options are "delete the drift class" (Paradigm B) or "don't have it yet" (hand-maintained + PR review). The middle ground — building cross-repo CI machinery to guard a deliberately drift-prone structure — is the one option hard to justify on either cost or principle. We take "don't have it yet" now, with Paradigm B pre-analysed so adoption is a small, well-scoped step rather than a redesign.
 
+### Decision 12: Scope is narrowed to live product surface — unoffered ticket flows and session replay are excluded
+
+The original scope instrumented the full envisioned product, including flows that the live service does not yet offer and a session-replay capability that the shipped frontend never enabled. This decision aligns the scope with what is actually in production, verified against `main` and the running prod consumer.
+
+**Excluded — ticket flows not offered as a service:**
+
+- **Ticket lottery** (`ticket.lottery.*`; task 5.4) and **ticket purchase** (`ticket.purchase.*`; task 5.5) have no frontend route and no backend handler on `main`. There is nothing to instrument. These events, their backend constants, and their catalogue rows are out of scope until the corresponding product features exist. The ticket surface that *does* exist — email import, journey tracking, sales-phase, and **entry/ZK-proof verification** — stays in scope (the prod consumer already forwards `ENTRY.zk_proof_verified`/`rejected`).
+- Decision 5's "paired events for major conversion steps" is correspondingly reduced to **artist follow** only (the one paired flow whose endpoints both exist); lottery and purchase pairs are deferred with their features.
+
+**Excluded — session replay (and therefore sampling):**
+
+- The shipped `AnalyticsService` initialises with `disable_session_recording: true` and `autocapture: false`; **session replay is not enabled in production.** Replay sampling (task 8.5) exists only to bound replay's free-tier cost, so with replay off it is moot — sampling is **not needed in current scope**. The replay-dependent work — masking config (8.1), the PII-DOM tagging it would protect (5.8, 8.2, 8.3), and the recording audit runbook (8.4) — is **dormant by consequence** and deferred until replay is deliberately enabled (a separate product + free-tier-cost decision).
+- This reconciles the earlier design wording ("session replay is enabled … but sampled") with the shipped reality (replay disabled). Enabling replay later re-activates this whole cluster as one scoped unit.
+
+**Rationale:** Instrumenting non-existent flows produces dead constants and catalogue entries that read as coverage while emitting nothing; carrying a sampling/PII-masking apparatus for a disabled capability is pure carrying cost. Scope tracks the live surface; deferred items re-enter scope with the feature or capability that makes them real.
+
 ## Risks / Trade-offs
 
 - **[Risk] Opt-out model draws privacy complaints or a higher-than-expected opt-out rate → Mitigation**: per Decision 7 analytics is on by default (cleared by EU adequacy) but the opt-out is always available in settings and surfaced by a non-blocking onboarding transparency notice; 要配慮 data is excluded structurally and minor-user legality is deferred to legal review (task 11.4). Measure post-launch the opt-out rate and complaint volume; if the opt-out rate is high, improve the transparency copy and the perceived value exchange rather than reverting to opt-in.

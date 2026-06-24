@@ -37,11 +37,11 @@
 - [ ] 5.1 Invoke `AnalyticsService.identify(user.id.value, properties)` after `UserService.GetMe()` returns on app start when the user is authenticated and consent is granted
 - [ ] 5.2 Instrument the artist-discovery flow (`artist.discovery.viewed`, `artist.search`, `artist.follow.requested`)
 - [ ] 5.3 Instrument the concert-detail flow (`concert.detail.viewed`, `concert.recommendation.clicked`)
-- [ ] 5.4 Instrument the ticket-lottery flow (`ticket.lottery.entry.submitted`)
-- [ ] 5.5 Instrument the ticket-purchase flow (`ticket.purchase.initiated`)
+- [~] 5.4 Instrument the ticket-lottery flow (`ticket.lottery.entry.submitted`) — OUT OF SCOPE per Decision 12: no lottery feature is offered (no FE route, no BE handler on `main`). Re-enters scope with the feature.
+- [~] 5.5 Instrument the ticket-purchase flow (`ticket.purchase.initiated`) — OUT OF SCOPE per Decision 12: no purchase feature is offered. Re-enters scope with the feature.
 - [ ] 5.6 Instrument the entry/check-in flow (`entry.checkin.attempted`)
 - [ ] 5.7 Instrument push subscription opt-in (`notification.requested`) and notification interaction (`notification.opened`, `notification.dismissed`)
-- [ ] 5.8 Tag PII-sensitive DOM elements with `data-pii` and high-risk regions with `.ph-no-capture`
+- [~] 5.8 Tag PII-sensitive DOM elements with `data-pii` and high-risk regions with `.ph-no-capture` — DEFERRED per Decision 12: only meaningful under session replay/autocapture, both disabled in prod. Re-enters scope when replay is enabled.
 
 ## 6. Opt-out model & consent integration
 
@@ -65,11 +65,13 @@
 
 ## 8. Session replay & PII redaction
 
-- [ ] 8.1 Configure `posthog-js` with `maskAllInputs: true`, `maskTextSelector: '[data-pii]'`, and `blockSelector: '.ph-no-capture'`
-- [ ] 8.2 Audit the existing PWA for elements rendering user-controlled text outside form inputs and tag them `data-pii`
-- [ ] 8.3 Tag the payment-form region, the ZK-proof entry region, and any 要配慮 / minor-identifying region with `.ph-no-capture`
-- [ ] 8.4 Add a monthly recording-audit runbook entry that samples 10 recordings and confirms no PII appears
-- [ ] 8.5 Configure a session-recording **sample rate** (initial ~10%) wired to the Session-replay opt-out toggle. Rationale: free-tier 5,000 recordings/month exhausts at ~600–1,000 MAU at 100% capture vs. ~5,000 MAU for events, so replay is the binding constraint and MUST be sampled from day one
+> **Section deferred per Decision 12.** The shipped `AnalyticsService` runs with `disable_session_recording: true` and `autocapture: false` — session replay is not enabled in production. This whole section re-enters scope as one unit if/when replay is deliberately enabled.
+
+- [~] 8.1 Configure `posthog-js` with `maskAllInputs: true`, `maskTextSelector: '[data-pii]'`, and `blockSelector: '.ph-no-capture'` — DEFERRED (replay not enabled)
+- [~] 8.2 Audit the existing PWA for elements rendering user-controlled text outside form inputs and tag them `data-pii` — DEFERRED (replay not enabled)
+- [~] 8.3 Tag the payment-form region, the ZK-proof entry region, and any 要配慮 / minor-identifying region with `.ph-no-capture` — DEFERRED (replay not enabled)
+- [~] 8.4 Add a monthly recording-audit runbook entry that samples 10 recordings and confirms no PII appears — DEFERRED (no replay to audit)
+- [~] 8.5 Configure a session-recording **sample rate** (initial ~10%) wired to the Session-replay opt-out toggle — NOT NEEDED in current scope per Decision 12: sampling only bounds replay's free-tier cost, and replay is disabled. Re-enters scope with replay.
 
 ## 9. Event catalogue & dashboards
 
