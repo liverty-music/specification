@@ -96,8 +96,8 @@
 
 - [ ] 11.1 Update the privacy policy to enumerate PostHog (Klant Solutions B.V., Netherlands) as a named third party for cross-border data transfer under APPI Article 28
 - [ ] 11.2 Update the privacy policy to enumerate every category of data transferred and the purpose of transfer
-- [ ] 11.3 Update onboarding transparency-notice copy and the settings toggle descriptions to link the relevant privacy-policy anchors
-- [ ] 11.4 Confirm with legal counsel that the opt-out model satisfies APPI: cross-border transfer cleared by EU adequacy, surviving 利用目的の通知・公表 obligation met by privacy policy + opt-out, sensitive-category exclusion enforced, and opt-out (not opt-in-consent) is acceptable for the minor user segment given the adequacy posture
+- [~] 11.3 Update onboarding transparency-notice copy and the settings toggle descriptions to link the relevant privacy-policy anchors — PARTIAL: the in-app side shipped in frontend PR #465 (the transparency notice and the settings "Privacy & Analytics" section both link to the privacy policy + the settings opt-out). The deep anchors to specific privacy-policy sections depend on the external policy page (§11.1/11.2 on liverty.me) and remain pending with it.
+- [~] 11.4 Confirm with legal counsel that the opt-out model satisfies APPI: cross-border transfer cleared by EU adequacy, surviving 利用目的の通知・公表 obligation met by privacy policy + opt-out, sensitive-category exclusion enforced, and opt-out (not opt-in-consent) is acceptable for the minor user segment given the adequacy posture — WAIVED for this change per product direction: legal review was explicitly deemed not required before shipping the opt-out refactor (§6). Risk accepted by the product owner; the minor-user determination noted in design Decision-7 / analytics-consent spec remains a documented open legal question, not a blocker for this change.
 
 ## 12. Rollout & verification
 
