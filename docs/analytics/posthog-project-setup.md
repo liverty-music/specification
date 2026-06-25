@@ -144,3 +144,38 @@ When a new env (e.g. staging) is provisioned later:
 
 Billing limits set in §2 apply to the organisation as a whole — no per-project
 configuration needed.
+
+## 8. Internal & E2E traffic exclusion
+
+Internal sessions (the Pulumi-managed E2E user and developer/staff accounts using
+the production app) must not pollute funnels, conversion rates, or retention
+cohorts. Exclusion is **marker-based, not heuristic**: a session is internal iff
+its platform `UserId` is on a configured allowlist.
+
+**How it works (SDK side, shipped):** the frontend reads `internalTrafficUserIds`
+(a string array of platform `UserId`s) from the runtime `config.json`. When
+`AnalyticsService.identify` runs for a `UserId` on that list, it tags the session
+with `internal_traffic: true` as both a PostHog **person property** and a
+registered **super-property** — so every event from that session carries the flag
+and the person profile is marked. A `UserId` not on the list (and the empty
+default) is untouched. Tagging — not suppression — keeps the data while making it
+filterable.
+
+**Operating the allowlist:**
+
+1. Find the internal account's **platform `UserId`** (the UUID in the `users`
+   table / `GetMe` response — NOT the email or the Zitadel `sub`).
+2. Add it to `internalTrafficUserIds` in that environment's frontend
+   `configmap.yaml` (cloud-provisioning) and open a PR; ArgoCD sync activates it
+   on the next reconciliation. No code change or redeploy of the app is needed.
+   - The dev E2E user (`e2e-test-password@dev.liverty-music.app`) goes in the
+     **dev** project's list; staff accounts that sign in to the **prod** app go in
+     the **prod** list.
+3. In each PostHog project, set the default dashboard/insight filter to exclude
+   `internal_traffic = true` (project → "internal users" filter and/or a saved
+   global filter), so dashboards apply the exclusion regardless of SDK tagging.
+
+**When onboarding a new internal account:** repeat steps 1–2 (add its `UserId` to
+the relevant env list). Because the marker is the `UserId`, no heuristic or email
+matching is involved, and a forgotten account simply appears as a normal user
+until added — it never breaks capture.

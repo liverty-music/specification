@@ -131,6 +131,6 @@
 
 ## 15. Internal & E2E traffic exclusion
 
-- [ ] 15.1 Exclude the Pulumi-managed E2E user (`e2e-test-password@dev.liverty-music.app`) from PostHog capture or production dashboards via a stable internal-identity marker (its `UserId` or an `internal_traffic` property), not heuristics
-- [ ] 15.2 Tag/suppress developer & staff sessions so production funnel/retention dashboards filter them out by default
-- [ ] 15.3 Document the internal-traffic exclusion in the analytics runbook so new internal accounts are added to the filter
+- [x] 15.1 Exclude the Pulumi-managed E2E user (`e2e-test-password@dev.liverty-music.app`) from PostHog capture or production dashboards via a stable internal-identity marker (its `UserId` or an `internal_traffic` property), not heuristics — SDK mechanism shipped in frontend PR #467: a configured `internalTrafficUserIds` allowlist (platform `UserId`s) tags matching sessions `internal_traffic: true` (person + super property). Per-env allowlist population + the PostHog dashboard filter are documented ops (runbook §8).
+- [x] 15.2 Tag/suppress developer & staff sessions so production funnel/retention dashboards filter them out by default — same mechanism (PR #467); staff `UserId`s are added to the prod allowlist per runbook §8, and dashboards filter `internal_traffic = true`.
+- [x] 15.3 Document the internal-traffic exclusion in the analytics runbook so new internal accounts are added to the filter — added §8 "Internal & E2E traffic exclusion" to `docs/analytics/posthog-project-setup.md` (mechanism, allowlist operation via platform `UserId`, dashboard filter, onboarding a new internal account).
