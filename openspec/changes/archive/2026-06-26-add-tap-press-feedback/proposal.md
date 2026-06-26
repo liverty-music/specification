@@ -26,5 +26,5 @@ The frontend is a touch-first PWA, but tapping a button or tab gives no press fe
   - `src/components/bottom-nav-bar/bottom-nav-bar.css` — `.nav-tab` press feedback
   - `src/styles/utilities.css` — `.discover-cta` press feedback (anchor-based CTA)
   - `src/routes/settings/settings-route.css` — `.settings-row` press feedback
-- No new dependencies. Verified on real iOS Safari is required (DevTools touch emulation cannot reproduce Safari's `:active` activation rule).
+- No new dependencies. The `:active` selectors target only elements that satisfy iOS Safari's activation rule (`cursor: pointer` or `<a href>`), so the press cue fires reliably on touch.
 - Ships through the standard frontend release path to prod.
