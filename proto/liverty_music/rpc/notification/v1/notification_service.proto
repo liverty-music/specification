@@ -4,13 +4,15 @@ package liverty_music.rpc.notification.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/notification.proto";
+import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/notification/v1;notificationv1";
 
 // NotificationService lets a fan manage the read/dismiss state of their own
-// notifications. Every operation is scoped to the authenticated caller: the user
-// is taken from the request's auth context, never from the request body, so one
-// user cannot change another user's notification state.
+// notifications. Each request carries an explicit user_id that the backend
+// verifies against the JWT-derived userID (per the rpc-auth-scoping convention),
+// rejecting mismatches with PERMISSION_DENIED — defense-in-depth so one user
+// cannot change another user's notification state.
 //
 // This is the minimal control surface required so that read/dismiss state is
 // user-controllable. A full inbox listing RPC is intentionally deferred to the
@@ -29,8 +31,11 @@ service NotificationService {
 
 // MarkReadRequest identifies the caller's notification to mark as read.
 message MarkReadRequest {
+  // The authenticated caller, verified against the JWT-derived userID.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+
   // The notification to mark as read. Must belong to the authenticated caller.
-  entity.v1.NotificationId notification_id = 1 [(buf.validate.field).required = true];
+  entity.v1.NotificationId notification_id = 2 [(buf.validate.field).required = true];
 }
 
 // MarkReadResponse is returned when the notification has been marked read.
@@ -38,8 +43,11 @@ message MarkReadResponse {}
 
 // MarkDismissedRequest identifies the caller's notification to mark as dismissed.
 message MarkDismissedRequest {
+  // The authenticated caller, verified against the JWT-derived userID.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+
   // The notification to mark as dismissed. Must belong to the authenticated caller.
-  entity.v1.NotificationId notification_id = 1 [(buf.validate.field).required = true];
+  entity.v1.NotificationId notification_id = 2 [(buf.validate.field).required = true];
 }
 
 // MarkDismissedResponse is returned when the notification has been marked dismissed.
