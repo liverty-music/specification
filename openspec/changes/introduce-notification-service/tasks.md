@@ -1,6 +1,6 @@
 ## 1. Schema & migration (backend)
 
-- [ ] 1.1 Add a `notifications` table to `internal/infrastructure/database/rdb/schema/schema.sql`: `id uuid pk`, `user_id`, `type`, `payload jsonb`, `created_at timestamptz`, `delivery_status` (`queued|sent|delivered|failed`), `delivered_at`, `failure_reason`, `read_at`, `dismissed_at`; index `(user_id, created_at desc)`.
+- [ ] 1.1 Add a `notifications` table to `internal/infrastructure/database/rdb/schema/schema.sql`: `id uuid pk`, `user_id`, `type`, `payload jsonb`, `created_at timestamptz`, `delivery_status` (`queued|delivered|failed`), `delivered_at`, `failure_reason`, `read_at`, `dismissed_at`; index `(user_id, created_at desc)`.
 - [ ] 1.2 Generate the Atlas migration (`atlas migrate diff --env local`), add the file to `k8s/atlas/base/kustomization.yaml` `configMapGenerator.files`, and verify with `atlas migrate apply --env local`.
 
 ## 2. Entity & repository (backend)
@@ -13,7 +13,7 @@
 
 - [ ] 3.1 Define `usecase.NotificationUseCase` (`Notify(ctx, userID, type, payload)`, `MarkRead`, `MarkDismissed`) and implement it: create the `queued` record, dispatch via the existing `entity.PushNotificationSender`, then update the row to `delivered`/`failed` with the result in hand.
 - [ ] 3.2 Carry the `notification_id` into the dispatched push payload (`NotificationPayload.data.notification_id`).
-- [ ] 3.3 On record-create failure, fall back to a best-effort send + log rather than dropping the notification (per design Decision 1 risk).
+- [ ] 3.3 On record-create failure, do NOT send blind — surface the error so the producer's existing retry / at-least-once path re-drives it (the "no record ⇒ no send" invariant; per design Decision 2 + Risks). A best-effort send-without-record is explicitly rejected (it re-creates the unobservable silent-delivery hole).
 - [ ] 3.4 Wire the use case in the manual DI graph; unit-test the success / send-failure / record-failure / read-idempotency / cross-user-rejection paths.
 
 ## 4. Route existing producers through the service (backend)

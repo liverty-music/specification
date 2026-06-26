@@ -10,7 +10,7 @@ Because notifications are currently identity-less and stateless, three deferred 
 ## What Changes
 
 - Introduce a **notification** as a first-class persisted entity (a notification log): `id`, `user_id`, `type`, `payload`, `created_at`, plus per-channel delivery state and per-user read/dismiss state.
-- Add an **outbox/dispatcher**: producing a notification creates one logical record, then fans it out to channels (web push now; email / in-app later) and records each channel's outcome (`queued → sent → delivered → failed`).
+- Add an **outbox/dispatcher**: producing a notification creates one logical record, then fans it out to channels (web push now; email / in-app later) and records each channel's outcome (`queued → delivered`, or `failed`).
 - Route the **existing producers** (`NotifyNewConcerts`, sales-reminder delivery) through the notification service instead of sending push directly, so every user-facing notification gets a durable record.
 - Expose **read / dismiss** state transitions (mark-read, mark-dismissed) keyed by `notification_id`.
 - This unblocks (as future follow-ups, not in this change) the deferred analytics lifecycle events and an in-app inbox UI: `delivered` = a channel send succeeded; `opened` / `dismissed` = the service-worker `notificationclick` / `close` handler correlating against the stable `notification_id`.

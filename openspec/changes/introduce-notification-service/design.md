@@ -7,7 +7,7 @@ The backend is Go / Clean Architecture (entity interfaces, usecase business logi
 ## Goals / Non-Goals
 
 **Goals:**
-- A notification is a durable, identified entity (`notification_id`) with a per-channel delivery lifecycle (`queued → sent → delivered → failed`) and a per-user read/dismiss state.
+- A notification is a durable, identified entity (`notification_id`) with a per-channel delivery lifecycle (`queued → delivered`, or `failed`) and a per-user read/dismiss state.
 - Every user-facing notification (new-concert pushes, sales reminders) flows through one notification service, so each produces a record and a delivery outcome.
 - "Did this notification reach the user?" is queryable and alertable (delivery audit), addressing the silent-delivery-failure incident.
 - Read/dismiss can be set against a stable `notification_id`.
@@ -23,7 +23,7 @@ The backend is Go / Clean Architecture (entity interfaces, usecase business logi
 
 ### Decision 1: A `notifications` log table, channel-state on the same row (single-channel now)
 
-Persist one row per logical notification: `id (uuid)`, `user_id`, `type` (enum: `new_concerts`, `sales_reminder`, …), `payload (jsonb)`, `created_at`, and — because web push is the only channel today — the channel delivery state inline (`delivery_status`: `queued|sent|delivered|failed`, `delivered_at`, `failure_reason`) plus read state (`read_at`, `dismissed_at`). A separate `notification_deliveries` table (one row per channel) is the clean multi-channel shape, but is deferred: with one channel it is premature normalization. The migration is written so a later split to a child table is additive. Indexed on `(user_id, created_at desc)` for inbox queries.
+Persist one row per logical notification: `id (uuid)`, `user_id`, `type` (enum: `new_concerts`, `sales_reminder`, …), `payload (jsonb)`, `created_at`, and — because web push is the only channel today — the channel delivery state inline (`delivery_status`: `queued|delivered|failed`, `delivered_at`, `failure_reason`) plus read state (`read_at`, `dismissed_at`). A separate `notification_deliveries` table (one row per channel) is the clean multi-channel shape, but is deferred: with one channel it is premature normalization. The migration is written so a later split to a child table is additive. Indexed on `(user_id, created_at desc)` for inbox queries.
 
 ### Decision 2: Outbox dispatch — create the record first, then send, then record the outcome
 

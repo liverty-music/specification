@@ -9,7 +9,7 @@ Every user-facing notification SHALL be persisted as a durable record with a sta
 - **AND** the record SHALL exist regardless of whether the channel send subsequently succeeds or fails
 
 ### Requirement: Per-notification delivery outcome is recorded
-The service SHALL record the delivery outcome of each notification's channel send, transitioning through `queued → sent → delivered` on success or to `failed` (with a failure reason) on error, so that "did this notification reach the user?" is answerable from stored state.
+The service SHALL record the delivery outcome of each notification's channel send: `queued` on creation, then `delivered` once the channel accepts the send, or `failed` (with a failure reason) on error, so that "did this notification reach the user?" is answerable from stored state. (Web push provides no separate sent-vs-delivered receipt, so `delivered` denotes acceptance by the push service; a distinct `sent` state is not modelled for this channel.)
 
 #### Scenario: Successful web-push send is recorded as delivered
 - **WHEN** the web-push channel send for a notification succeeds
