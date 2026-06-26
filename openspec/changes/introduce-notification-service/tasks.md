@@ -24,7 +24,8 @@
 
 ## 5. Read/dismiss surface
 
-- [ ] 5.1 Expose `MarkRead` / `MarkDismissed` (decide: a small Connect-RPC on a notification service, or reuse an existing surface) — keep the proto/API delta minimal; if a full inbox RPC is warranted, record it as a follow-up rather than building it here.
+- [ ] 5.1 Expose `MarkRead` / `MarkDismissed` as a minimal Connect-RPC (e.g. `NotificationService.MarkRead`/`MarkDismissed`, taking `notification_id`, user-scoped via the auth context) — IN SCOPE, because the spec requirement "Read and dismiss state is user-controllable" cannot be satisfied without a control surface. Keep the proto delta to just these two user-scoped mutations; defer a full inbox `List` RPC to the inbox-UI follow-up.
+- [ ] 5.2 Carry the `notification_id` end-to-end and verify the round-trip: stored id → push payload `data.notification_id` → service worker can read it (the SW *handler* that emits opened/dismissed is the analytics follow-up §7.1; this task only guarantees the id is present and correlatable).
 
 ## 6. Verification
 
