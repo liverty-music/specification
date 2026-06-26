@@ -2,8 +2,8 @@
 
 - [x] 1.1 Remove `event_ids` and `anchor_event_id` from `liverty_music.entity.v1.SalesPhase`; update field documentation to describe a series-level phase
 - [x] 1.2 Run buf lint/format/breaking locally (breaking is expected and intended); confirm the only breaking deltas are the two removed fields
-- [ ] 1.3 Open the specification PR with the proto change + this OpenSpec change; merge after review and CI pass
-- [ ] 1.4 Publish a GitHub Release (tag `vX.Y.Z`) to trigger `buf-release.yml` → BSR push; monitor the workflow to success
+- [x] 1.3 Open the specification PR with the proto change + this OpenSpec change; merge after review and CI pass
+- [x] 1.4 Publish a GitHub Release (tag `vX.Y.Z`) to trigger `buf-release.yml` → BSR push; monitor the workflow to success
 
 ## 2. Backend — entity & repository (prepared in parallel, finalized after BSR gen)
 
@@ -31,13 +31,13 @@
 
 ## 6. Backend — package upgrade, swap, verification
 
-- [ ] 6.1 After BSR gen completes, bump the generated schema package to `vX.Y.Z`; run `go mod tidy`
-- [ ] 6.2 Swap call sites to the generated `SalesPhase` shape (no `event_ids`/`anchor_event_id`) at the TODO markers; resolve compile errors
-- [ ] 6.3 Run `make check` (build, vet, unit tests) until green
-- [ ] 6.4 Open the backend PR only after the package upgrade + swap pass locally; merge after review and CI pass
+- [x] 6.1 After BSR gen completes, bump the generated schema package to `vX.Y.Z`; run `go mod tidy`
+- [x] 6.2 Swap call sites to the generated `SalesPhase` shape (no `event_ids`/`anchor_event_id`) at the TODO markers; resolve compile errors
+- [x] 6.3 Run `make check` (build, vet, unit tests) until green
+- [x] 6.4 Open the backend PR only after the package upgrade + swap pass locally; merge after review and CI pass
 
 ## 7. Ship to production
 
-- [ ] 7.1 Publish the backend GitHub Release (tag `vX.Y.Z`) to retag the dev AR image to prod
-- [ ] 7.2 Confirm ArgoCD syncs the new backend image and the sales-phase-discovery / sales-reminders CronJobs run on the updated code
-- [ ] 7.3 Verify in prod directly: a discovery run upserts series-level phases (no covered-event rows), announcements/reminders reach tracking fans, and no duplicate announcements occur across re-runs
+- [x] 7.1 Publish the backend GitHub Release (tag `vX.Y.Z`) to retag the dev AR image to prod
+- [x] 7.2 Confirm ArgoCD syncs the new backend image and the sales-phase-discovery / sales-reminders CronJobs run on the updated code
+- [x] 7.3 Verify in prod directly: a discovery run upserts series-level phases (no covered-event rows), announcements/reminders reach tracking fans, and no duplicate announcements occur across re-runs
