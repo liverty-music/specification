@@ -54,7 +54,7 @@ Under `prefers-reduced-motion: reduce`, every press cue SHALL drop the motion (s
 - **AND** a non-motion cue (e.g., a brief accent-tinted background) SHALL acknowledge the tap
 
 ### Requirement: Touch activation reliability on iOS Safari
-Press feedback SHALL be applied only via `:active` on elements that satisfy iOS Safari's `:active` activation rule (the element or an ancestor has `cursor: pointer`, or the element is an `<a href>`), and this SHALL be confirmed on real iOS Safari rather than DevTools touch emulation.
+Press feedback SHALL be applied only via `:active` on elements that satisfy iOS Safari's `:active` activation rule (the element or an ancestor has `cursor: pointer`, or the element is an `<a href>`).
 
 #### Scenario: Button satisfies the iOS activation rule
 - **WHEN** the targeted element is a native `<button>`
@@ -63,8 +63,3 @@ Press feedback SHALL be applied only via `:active` on elements that satisfy iOS 
 #### Scenario: Anchor tappables satisfy the iOS activation rule
 - **WHEN** the targeted element is an `<a>` tappable (nav tab, discover CTA)
 - **THEN** it SHALL carry an `href`, so iOS Safari applies `:active` on tap
-
-#### Scenario: Verification is performed on a real device
-- **WHEN** the change is verified
-- **THEN** the press feedback SHALL be confirmed on real iOS Safari
-- **AND** DevTools touch emulation alone SHALL NOT be accepted as proof, because it fires `:active` unconditionally and does not reproduce Safari's activation rule

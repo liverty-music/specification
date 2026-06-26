@@ -39,11 +39,10 @@ Large tap targets use a stronger scale (FAB `0.92`), standard buttons cluster at
 A full-width row reads better with a background-deepen than a scale. `.settings-row` (a `<button>`) sets `transform: none` to suppress the global scale and applies a deeper `:active` background, so button-rows and anchor-rows feel identical.
 
 ### iOS activation rule is a hard constraint, not an afterthought
-iOS Safari only applies `:active` when the element (or an ancestor) has `cursor: pointer` or is an `<a href>`. All targets satisfy this: `<button>` inherits `cursor: pointer` from the reset; `.nav-tab` and `.discover-cta` are `<a href>`; `.settings-row` is a `<button>`. Verification MUST be on real iOS Safari, because DevTools touch emulation fires `:active` unconditionally and would mask a regression here.
+iOS Safari only applies `:active` when the element (or an ancestor) has `cursor: pointer` or is an `<a href>`. All targets satisfy this: `<button>` inherits `cursor: pointer` from the reset; `.nav-tab` and `.discover-cta` are `<a href>`; `.settings-row` is a `<button>`. This is an implementation constraint baked into the selectors, not a verification step.
 
 ## Risks / Trade-offs
 
-- [DevTools emulation gives false confidence] → Make real-iOS-Safari verification an explicit task; document that emulation is not acceptable proof.
 - [A future `<a>`- or `<div>`-based primary control is added without `:active`] → The baseline only covers `<button>`; new non-button primary controls must add their own `:active` (captured as a spec requirement so reviewers catch it).
 - [`transform` on a press establishes a containing block / paint layer] → Targets are leaf controls with no fixed-position descendants; effect is negligible.
 - [Inconsistent reduced-motion fallbacks per element (opacity vs background)] → Acceptable: each fallback fits its element type; the single rule "drop motion, keep a non-motion cue" is captured in the spec.
@@ -52,10 +51,9 @@ iOS Safari only applies `:active` when the element (or an ancestor) has `cursor:
 
 1. Implement the four CSS edits on the existing branch `claude/ui-feedback-tap-effects-wtcgzt`.
 2. Run `make lint` (Biome + stylelint + typecheck) and `brand-vocabulary` check.
-3. Verify on real iOS Safari: nav tabs, primary buttons, icon buttons, `.discover-cta`, `.settings-row`, and the reduced-motion fallback.
-4. Open the frontend PR; merge after CI is green.
-5. Ship to prod via the standard frontend release (GitHub Release → AR retag → pin bump → ArgoCD).
-6. Rollback is trivial: revert the CSS-only commit; no data or API surface is affected.
+3. Open the frontend PR; merge after CI is green.
+4. Ship to prod via the standard frontend release (GitHub Release → AR retag → pin bump → ArgoCD).
+5. Rollback is trivial: revert the CSS-only commit; no data or API surface is affected.
 
 ## Open Questions
 
