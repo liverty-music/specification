@@ -79,9 +79,9 @@
 
 - [x] 9.1 Create `specification/docs/analytics/event-catalog.md` listing every event with its name, domain, action, outcome, source (FE/BE), required properties, and intended consumers
 - [~] 9.2 Add a CI check that fails when an event constant in `frontend/src/services/analytics-events.ts` or `backend/internal/usecase/analytics_events.go` lacks a matching catalogue entry — DESCOPED per Decision 11: building a cross-repo drift guard would pay a permanent cost to police a deliberately drift-prone 3-copy structure (locus trilemma: sync vs timing vs coupling). Instead rely on PR review now (Decision 5 mitigation); adopt schema-generation (Paradigm B: one proto source → generated Go/TS constants + catalogue doc, drift impossible by construction) when the taxonomy grows multi-author or a drift bug reaches `main`.
-- [ ] 9.3 Create the discover → follow → lottery → purchase → entry funnel dashboard in PostHog
-- [ ] 9.4 Create the D7 / D30 retention cohort by signup month in PostHog
-- [ ] 9.5 Create per-domain event-volume monitoring dashboard for the first 90 days
+- [~] 9.3 Create the discover → follow → lottery → purchase → entry funnel dashboard in PostHog — EXTERNAL (PostHog UI, not repo code). Pending real-world ops; buildable once funnel events accumulate. Out of scope for this code change; tracked as an analytics-ops follow-up. (Funnel tail narrows to the live surface per Decision 12 — no lottery/purchase.)
+- [~] 9.4 Create the D7 / D30 retention cohort by signup month in PostHog — EXTERNAL (PostHog UI). Same as 9.3.
+- [~] 9.5 Create per-domain event-volume monitoring dashboard for the first 90 days — EXTERNAL (PostHog UI). Same as 9.3.
 
 ## 10. Testing
 
@@ -94,18 +94,18 @@
 
 ## 11. Privacy policy & legal
 
-- [ ] 11.1 Update the privacy policy to enumerate PostHog (Klant Solutions B.V., Netherlands) as a named third party for cross-border data transfer under APPI Article 28
-- [ ] 11.2 Update the privacy policy to enumerate every category of data transferred and the purpose of transfer
+- [~] 11.1 Update the privacy policy to enumerate PostHog (Klant Solutions B.V., Netherlands) as a named third party for cross-border data transfer under APPI Article 28 — EXTERNAL (the policy lives on liverty.me, not in this repo) and a **genuinely pending real-world compliance action**, not a code task. The in-app side already links to the policy (the consent notice + settings, shipped in FE PR #467). Flagged: this is a live APPI obligation that must be discharged on the policy page; tracked as an ops/legal follow-up outside the code change.
+- [~] 11.2 Update the privacy policy to enumerate every category of data transferred and the purpose of transfer — EXTERNAL, same as 11.1 (liverty.me policy-page edit; pending real-world action).
 - [~] 11.3 Update onboarding transparency-notice copy and the settings toggle descriptions to link the relevant privacy-policy anchors — PARTIAL: the in-app side shipped in frontend PR #465 (the transparency notice and the settings "Privacy & Analytics" section both link to the privacy policy + the settings opt-out). The deep anchors to specific privacy-policy sections depend on the external policy page (§11.1/11.2 on liverty.me) and remain pending with it.
 - [~] 11.4 Confirm with legal counsel that the opt-out model satisfies APPI: cross-border transfer cleared by EU adequacy, surviving 利用目的の通知・公表 obligation met by privacy policy + opt-out, sensitive-category exclusion enforced, and opt-out (not opt-in-consent) is acceptable for the minor user segment given the adequacy posture — WAIVED for this change per product direction: legal review was explicitly deemed not required before shipping the opt-out refactor (§6). Risk accepted by the product owner; the minor-user determination noted in design Decision-7 / analytics-consent spec remains a documented open legal question, not a blocker for this change.
 
 ## 12. Rollout & verification
 
-- [ ] 12.1 Deploy backend `analytics-consumer` to dev environment and confirm events flow to PostHog Cloud EU dev project
-- [ ] 12.2 Deploy frontend analytics initialisation to dev environment and confirm the discover → follow → lottery → purchase → entry funnel populates with seeded test data
-- [ ] 12.3 Promote to staging and run end-to-end smoke covering consent grant, anonymous-to-identified merge, paired-event flows, and PostHog feature-flag bootstrap
-- [ ] 12.4 Roll out the production `analytics-enabled` feature flag from 10% to 50% to 100% over three days, observing INP/LCP metrics and PostHog event volume
-- [ ] 12.5 Confirm post-launch dashboards populate with real-user data and that the 90-day event-volume forecast remains within the PostHog free-tier ceiling
+- [~] 12.1 Deploy backend `analytics-consumer` to dev environment and confirm events flow to PostHog Cloud EU dev project — SUPERSEDED: the dev environment is intentionally stopped (project policy). The analytics consumer shipped directly and is confirmed **Running in prod**, forwarding user/artist/notification/entry-zk/ticket/sales-reminder subjects (verified this session via prod logs).
+- [~] 12.2 Deploy frontend analytics initialisation to dev environment and confirm the funnel populates with seeded test data — SUPERSEDED: dev stopped; FE analytics is live in prod (config keys provisioned, AnalyticsService merged).
+- [~] 12.3 Promote to staging and run end-to-end smoke — SUPERSEDED: there is no dev/staging promotion path in use; the change shipped direct-to-prod. Consent/merge/flag behaviour is covered by the §10 unit specs (and the to-be-added 10.6 opt-out smoke).
+- [~] 12.4 Roll out the production `analytics-enabled` feature flag from 10%→50%→100% — N/A by design: per Decision 7 analytics ships **on by default (opt-out)**, so there is no gradual-rollout `analytics-enabled` flag. Superseded by the opt-out model.
+- [~] 12.5 Confirm post-launch dashboards populate with real-user data and that the 90-day event-volume forecast stays within the free-tier ceiling — depends on the EXTERNAL §9 dashboards; tracked with them as analytics-ops follow-up.
 
 ## 13. Backend event-coverage gap (publishers for catalogued-but-unpublished events)
 
@@ -116,7 +116,7 @@
 - [~] 13.3 Emit the lottery funnel from `ticket_email_uc.go` parse outcomes: `ticket.lottery.entry.accepted` / `.rejected` and `ticket.lottery.result.assigned` — OUT OF SCOPE per Decision 12 (no lottery feature offered). Re-enters scope with the feature.
 - [~] 13.4 Emit the purchase funnel: `ticket.purchase.completed` / `.failed` from the payment-confirmation parse path (and/or mint flow) — OUT OF SCOPE per Decision 12 (no purchase feature offered). Re-enters scope with the feature.
 - [~] 13.5 Emit `concert.recommendation.served` from the concert list/recommendation RPC paths so impressions pair with the FE `.clicked` — DESCOPED per Decision 13: no recommendation engine exists or is planned (verified against `product-roadmap.md` + active changes); `algorithm_version`/`position` describe a feature that doesn't exist. Re-enters scope only if a recommendation feature is proposed.
-- [ ] 13.6 Wire each new publisher's NATS subject into the `analytics-consumer` `Handle*` map (§3.1) and add the catalogue/CI coverage entry
+- [~] 13.6 Wire each new publisher's NATS subject into the `analytics-consumer` `Handle*` map (§3.1) and add the catalogue/CI coverage entry — DONE incrementally + descoped: each shipped event (14.1–14.4, 14.6) added its own `Handle*` + `di/consumer.go` subscription as part of its PR; the catalogue rows already exist; the CI coverage guard (9.2) is descoped per Decision 11. No standalone work remains.
 
 ## 14. New high-value catalogue events (instrumentation)
 
