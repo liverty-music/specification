@@ -7,7 +7,7 @@ The archived `introduce-analytics-tool` change established PostHog Cloud EU as t
 1. Remove the recommendation events, which appeared to describe a recommendation engine that does not exist.
 2. Move `concert.search.completed` out of PostHog because it is user-less pipeline telemetry.
 
-A devil's-advocate review of (1) inspected the actual frontend code. It first considered renaming `concert.recommendation.clicked` (the name implies an engine that does not exist), but found a stronger reason to **delete** it: the event is redundant. A dashboard card tap fires both the click event and `concert.detail.viewed` (the tap dispatches `event-selected`, the dashboard opens the detail sheet, which captures `concert.detail.viewed`). The only datum unique to the click event is `position`, and its CTR denominator is the phantom impression event being deleted — so no real click-through rate is computable. The review also found that both cleanups edit the same four files, so shipping them as separate changes would create a catalogue/spec merge collision. Hence one combined reconciliation.
+A devil's-advocate review of (1) inspected the actual frontend code. It first considered renaming `concert.recommendation.clicked` (the name implies an engine that does not exist), but found a stronger reason to **delete** it: the event is redundant. A dashboard card tap fires both the click event and `concert.detail.viewed` (the tap dispatches `event-selected`, the dashboard opens the detail sheet, which captures `concert.detail.viewed`). The only datum unique to the click event is `position`, and its CTR denominator is the phantom impression event being deleted — so no real click-through rate is computable. The review also found that all of these cleanups edit the same four files, so shipping them as separate changes would create a catalogue/spec merge collision. Hence one combined reconciliation.
 
 Grounding facts from the code:
 
@@ -23,7 +23,7 @@ Grounding facts from the code:
 - Ground the dashboard surface label (`EventSource`) in the real route name rather than an imaginary engine.
 - Remove the genuine phantom (`concert.recommendation.served`) so the BE allowlist matches reality.
 - Keep user-less pipeline health entirely in OTel, and complete that signal with a `zero_results` outcome.
-- Ship both cleanups together so the shared files are edited once, coherently.
+- Ship all cleanups together so the shared files are edited once, coherently.
 
 ## Non-Goals
 
