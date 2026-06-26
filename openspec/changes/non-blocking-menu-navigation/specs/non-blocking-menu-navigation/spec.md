@@ -27,16 +27,17 @@ While a menu-tab route's data is loading, the attached view SHALL present that r
 - **AND** navigation SHALL NOT have been blocked by the failure
 
 ### Requirement: Synchronous prelude remains in loading()
-The synchronous setup a menu-tab route performs before fetching — toggling `isLoading`, creating the request `AbortController`, restoring filters from URL query params, hydrating persisted guest state, and computing banner visibility — SHALL run inside `loading()` before the fetch is dispatched, so this state is correct on the first render.
+The synchronous setup a menu-tab route performs before fetching — toggling `isLoading`, restoring filters from URL query params, hydrating persisted guest state, and computing banner visibility — SHALL run inside `loading()` before the fetch routine is invoked, so this state is correct on the first render. The request `AbortController` is owned by the fetch routine (see "Re-entrant load"), not created separately in the `loading()` body, so there is a single owner and the routine never aborts a controller the `loading()` body just created.
 
 #### Scenario: Prelude state is set before first paint
 - **WHEN** `loading()` runs for a menu-tab route
-- **THEN** `isLoading`, the `AbortController`, URL-derived filters, hydrated guest state, and banner flags SHALL be assigned before the fetch is started
+- **THEN** `isLoading`, URL-derived filters, hydrated guest state, and banner flags SHALL be assigned before the fetch routine is invoked
+- **AND** the fetch routine's `AbortController` SHALL be created synchronously at the head of the routine (before its first await), so it exists before first paint
 - **AND** the first render SHALL reflect that prelude state
 
 #### Scenario: Re-entrant load aborts the prior request first
-- **WHEN** a route's load routine runs while a previous request for that route is still in flight
-- **THEN** the routine SHALL abort the previous `AbortController` before creating a new one
+- **WHEN** a route's fetch routine runs while a previous request for that route is still in flight
+- **THEN** the routine SHALL abort the previous `AbortController` and create a new one, then run the fetch with the new controller's signal (mirroring the existing `loadData()` pattern)
 - **AND** a stale late response SHALL NOT overwrite state from the newer request
 
 ### Requirement: Navigating away cancels the in-flight fetch

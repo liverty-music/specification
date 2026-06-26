@@ -1,8 +1,8 @@
 ## 1. My Artists route — non-blocking load
 
-- [ ] 1.1 Extract the fetch body of `loading()` into `loadArtists(signal): Promise<void>` (mapping followed → `MyArtist[]`, `prevHypes` seed, logging, `isLoading` finally), mirroring `dashboard-route.ts`'s `loadData()` shape.
-- [ ] 1.2 Add abort-first to `loadArtists`: abort any prior `AbortController` before creating a new one; keep `AbortError` swallowed.
-- [ ] 1.3 In `loading()`, keep the synchronous prelude (`isLoading = true`, `new AbortController()`, signup-banner flag) and call `void this.loadArtists(this.abortController.signal)` instead of awaiting.
+- [ ] 1.1 Extract the fetch body of `loading()` into `loadArtists(): Promise<void>` (mapping followed → `MyArtist[]`, `prevHypes` seed, logging, `isLoading` finally), mirroring `dashboard-route.ts`'s `loadData()` shape. The method OWNS the `AbortController`: abort-first then `this.abortController = new AbortController()`, then fetch with `this.abortController.signal`.
+- [ ] 1.2 Confirm abort-first + `AbortError` swallow inside `loadArtists` (the single controller owner — do NOT also create the controller in `loading()`).
+- [ ] 1.3 In `loading()`, keep ONLY the non-controller synchronous prelude (`isLoading = true`, signup-banner flag) and call `void this.loadArtists()` instead of awaiting. Do not create the `AbortController` here, or the routine's abort-first would abort the just-created controller and the first fetch would `AbortError`.
 - [ ] 1.4 Confirm `detaching()` still aborts the in-flight request.
 
 ## 2. Dashboard route — non-blocking load + observation-gated side effects
