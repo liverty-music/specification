@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package liverty_music.rpc.notification.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/notification.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/notification/v1;notificationv1";
+
+// NotificationService lets a fan manage the read/dismiss state of their own
+// notifications. Every operation is scoped to the authenticated caller: the user
+// is taken from the request's auth context, never from the request body, so one
+// user cannot change another user's notification state.
+//
+// This is the minimal control surface required so that read/dismiss state is
+// user-controllable. A full inbox listing RPC is intentionally deferred to the
+// in-app inbox follow-up.
+service NotificationService {
+  // MarkRead marks one of the caller's notifications as read. It is idempotent:
+  // marking an already-read notification succeeds without changing the recorded
+  // read time.
+  rpc MarkRead(MarkReadRequest) returns (MarkReadResponse);
+
+  // MarkDismissed marks one of the caller's notifications as dismissed. It is
+  // idempotent: dismissing an already-dismissed notification succeeds without
+  // changing the recorded dismiss time.
+  rpc MarkDismissed(MarkDismissedRequest) returns (MarkDismissedResponse);
+}
+
+// MarkReadRequest identifies the caller's notification to mark as read.
+message MarkReadRequest {
+  // The notification to mark as read. Must belong to the authenticated caller.
+  entity.v1.NotificationId notification_id = 1 [(buf.validate.field).required = true];
+}
+
+// MarkReadResponse is returned when the notification has been marked read.
+message MarkReadResponse {}
+
+// MarkDismissedRequest identifies the caller's notification to mark as dismissed.
+message MarkDismissedRequest {
+  // The notification to mark as dismissed. Must belong to the authenticated caller.
+  entity.v1.NotificationId notification_id = 1 [(buf.validate.field).required = true];
+}
+
+// MarkDismissedResponse is returned when the notification has been marked dismissed.
+message MarkDismissedResponse {}
