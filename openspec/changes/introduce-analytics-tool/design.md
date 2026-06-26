@@ -212,7 +212,14 @@ The industry-standard maturation is to make a notification a **first-class persi
 
 **Decision:** Do **not** build a notification entity to satisfy an analytics property — that is tail-wagging-dog. The entity should be driven by a **product requirement** (in-app inbox / next-action dashboard, or delivery audit), not by analytics. Until that entity exists, **13.2 and the opened/dismissed half of 5.7 are descoped**; they become natural by-products of the notification-entity change when it lands. A correlation-id stopgap (using the client `Tag` as `notification_id`) is explicitly rejected as migration debt that would collide with a real entity id later.
 
-**Note (task 13.1 — not blocked):** `account.signup.completed` / `account.login` were thought unobservable (Zitadel OIDC bypasses the backend), but a Zitadel Actions v2 webhook touchpoint already exists (`internal/adapter/webhook/pre_access_token_handler.go`, firing on token issuance). These events are implementable via that existing webhook (login) plus first-seen detection (signup) — an integration choice, not a missing capability. Left open as genuinely-doable, not deferred.
+### Decision 15: `account.signup.completed` / `account.login` are descoped (signup is redundant; login has no clean signal)
+
+An initial read held that task 13.1 was implementable via the existing Zitadel `pre_access_token` webhook. Closer inspection reversed that:
+
+- **`account.signup.completed`** fires at the same moment as the already-emitted **`user.created`** (`user_uc.go` publishes `SubjectUserCreated` when the backend creates a User — that *is* signup, and the analytics-consumer already forwards it). A separate `account.signup.completed` would be the same signal under a second name and would double-count signups if summed. `user.created` is the signup signal; the duplicate is descoped.
+- **`account.login`** has no clean backend hook. The `pre_access_token` webhook — the only login-adjacent touchpoint — fires on **every access-token mint, including silent refresh-token grants**, so emitting `account.login` there over-counts logins (a refresh is not a login). A correct event needs a login-specific signal: a Zitadel session-created Action, or refresh-vs-fresh-auth discrimination in the webhook payload. Neither exists today; FE emission is rejected (the catalogue marks `account.login` BE-sourced/trust-critical). Deferred until such a signal exists.
+
+**Rationale:** emitting a redundant signup event or a refresh-inflated login count is worse than not emitting — it produces misleading funnels. Consistent with Decisions 12–14: instrument the live, correctly-attributable surface; defer events whose clean signal the product doesn't yet provide.
 
 ## Risks / Trade-offs
 
