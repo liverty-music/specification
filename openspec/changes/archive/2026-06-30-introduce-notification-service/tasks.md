@@ -34,6 +34,9 @@
 
 ## 7. Documented follow-ups (NOT in this change)
 
-- [x] 7.1 (tracked: #675) Re-open `introduce-analytics-tool` tasks 13.2 (`notification.delivered`) and 5.7 (`notification.opened`/`dismissed`): emit on the `delivered` transition and from the SW `notificationclick`/`close` handler keyed by `notification_id` (Decision 14 of that change).
-- [x] 7.2 (tracked: #676) In-app notification **inbox / next-action** UI (frontend change) consuming `ListByUser` + read/dismiss.
-- [x] 7.3 (tracked: #677) Optional: split inline channel-state into a `notification_deliveries` child table when a second channel (email / in-app) is added.
+Out of scope for this change and handed off to dedicated tracking issues rather
+than implemented here — listed as deferred, not as completed tasks.
+
+- Deferred → #675: Re-open `introduce-analytics-tool` tasks 13.2 (`notification.delivered`) and 5.7 (`notification.opened`/`dismissed`): emit on the `delivered` transition and from the SW `notificationclick`/`close` handler keyed by `notification_id` (Decision 14 of that change).
+- Deferred → #676: In-app notification **inbox / next-action** UI (frontend change) consuming `ListByUser` + read/dismiss.
+- Deferred → #677: Optional — split inline channel-state into a `notification_deliveries` child table when a second channel (email / in-app) is added.
