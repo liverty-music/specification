@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// NotificationId is a globally unique identifier for a stored notification record.
+//
+// The identifier is minted by the backend when the notification is first
+// persisted and is also propagated into the dispatched push payload
+// (data.notification_id), so clients can reference the same notification when
+// marking it read or dismissed.
+message NotificationId {
+  // A UUID string identifying the notification record.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
