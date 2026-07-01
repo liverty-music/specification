@@ -61,7 +61,7 @@ Conversion-critical events MAY include a `trace_id` property carrying the active
 | `notification.requested` | FE | notification | `source`, `trace_id?` | Notification opt-in funnel (paired) |
 | `notification.subscribed` | BE | notification | `device_type`, `trace_id?` | Notification opt-in funnel (paired) |
 | `notification.unsubscribed` | BE | notification | `device_type`, `trace_id?` | Push churn vs. browser cache-clear |
-| `notification.delivered` | BE | notification | `notification_id`, `event_id?`, `artist_id?`, `trace_id?` | Notification reach |
+| `notification.delivered` | BE | notification | `notification_id`, `type`, `event_id?`, `artist_id?`, `trace_id?` | Notification reach |
 | `notification.opened` | FE | notification | `notification_id`, `event_id?`, `artist_id?`, `trace_id?` | Notification CTR |
 | `notification.dismissed` | FE | notification | `notification_id`, `trace_id?` | Notification fatigue |
 | `sales_reminder.delivered` | BE | sales_reminder | `phase_stage`, `delivery_status`, `trace_id?` | Sales-reminder reach (sales-phase-timeline KPI) |
