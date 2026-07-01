@@ -5,8 +5,8 @@
 ## What Changes
 
 - **Backend — `notification.delivered`:** when a notification's channel send reaches `delivered`, the notification service publishes a `NOTIFICATION.delivered` domain event carrying the `notification_id` (+ `user_id`, `type`); the existing analytics-consumer forwards it to PostHog. Reuses the existing `NOTIFICATION.*` JetStream stream (no new stream) and the established non-fatal publish → consumer → `Enqueue` pattern.
-- **Frontend — `notification.opened` / `.dismissed`:** the service worker's `push` handler carries `notification_id` from the payload `data` into the shown notification; the `notificationclick` / `notificationclose` handlers record the interaction keyed by that id and bridge it to the app's `AnalyticsService` (a service worker cannot call `posthog-js` directly).
-- **No proto, no DB migration, no new NATS stream.** The event catalogue already lists all three events; this is emission wiring only.
+- **Frontend — `notification.opened` / `.dismissed`:** the service worker's `push` handler carries `notification_id` (consolidated under the payload `data` alongside `url`) into the shown notification; the `notificationclick` / `notificationclose` handlers report the interaction **at interaction time** via `event.waitUntil(fetch(...))` to PostHog's `/capture` endpoint (a service worker cannot call `posthog-js`), honoring opt-out via a small client-synced `{ distinct_id, opted_out }` snapshot, with Background Sync / a bounded stash as an offline fallback only.
+- **No proto, no DB migration, no new NATS stream.** The event catalogue already lists all three events; this is emission wiring only (plus a small backend `NotificationPayload` reshape to group client passthrough metadata under `data`).
 
 ## Capabilities
 
@@ -19,5 +19,5 @@
 ## Impact
 
 - **backend:** new `NOTIFICATION.delivered` subject + `NotificationDeliveredData`; `analytics_consumer` handler + `di/consumer.go` subscription; a non-fatal emit at the `delivered` transition in `NotificationUseCase`. Reuses the existing NOTIFICATION stream — no crashloop risk from a missing stream.
-- **frontend:** SW `push` handler propagates `notification_id` into `showNotification` `data`; new `notificationclick` interaction capture + `notificationclose` handler; a SW→app analytics bridge (stash + flush-on-load) so opt-out and `trace_id` still flow through `AnalyticsService`.
+- **frontend + backend payload reshape:** consolidate client passthrough metadata under the push payload `data` (`url` joins `notification_id`), leaving `title`/`body`/`tag` top-level; the SW `push` handler maps `data` into `showNotification` `options.data`; new `notificationclick` capture + `notificationclose` handler send via `event.waitUntil(fetch(...))` to PostHog `/capture`, gated by a client-synced opt-out/identity snapshot, with Background Sync / bounded-stash offline fallback. The backend `NotificationPayload` struct moves `URL` into its `Data` map.
 - **out of scope:** enriching events with optional `event_id` / `artist_id` (catalogue marks them optional); the in-app inbox (#676); the `notification_deliveries` child table (#677).

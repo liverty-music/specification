@@ -14,14 +14,14 @@ Backend emission mirrors the live `notification.subscribed`/`.unsubscribed` path
 
 **Goals:**
 - Emit `notification.delivered` (BE) exactly once when a notification's channel send reaches `delivered`, keyed by `notification_id`.
-- Emit `notification.opened` / `notification.dismissed` (FE) from the service-worker `notificationclick` / `notificationclose` handlers, keyed by the `notification_id` carried in the notification payload.
-- Route the frontend events through the app's `AnalyticsService` so opt-out and `trace_id` semantics are preserved.
+- Emit `notification.opened` / `notification.dismissed` (FE) from the service-worker `notificationclick` / `notificationclose` handlers **at interaction time**, keyed by the `notification_id` carried in the notification.
+- Honor the user's analytics opt-out for the frontend events even though the service worker cannot run `posthog-js`.
 - Reuse existing infrastructure — no new NATS stream, no proto, no DB migration.
 
 **Non-Goals:**
 - Enriching events with the optional `event_id` / `artist_id` (catalogue marks them `?`); deferred until a cheap source is threaded through the notification payload.
 - A `notification.failed` analytics event — failures are already auditable in the `notifications` table; the catalogue intentionally has no failed event.
-- Real-time delivery of `opened`/`dismissed` (see Decision 3 — they are flushed on next app open).
+- `trace_id` correlation on `opened` / `dismissed` — the service worker has no active OTel span, so these two events carry no `trace_id` (catalogue-optional); the backend `delivered` event keeps its `trace_id`.
 - The in-app inbox (#676) and `notification_deliveries` child table (#677).
 
 ## Decisions
@@ -32,24 +32,34 @@ The notification service already computes a single terminal outcome per notifica
 ### Decision 2: Reuse the `NOTIFICATION` JetStream stream; add only a handler + subscription
 `NOTIFICATION.delivered` matches the existing `NOTIFICATION.*` stream, so **no new stream is required** — this deliberately avoids the missing-stream consumer crashloop that blocked a prior release. The work is: a `SubjectNotificationDelivered` constant, a `HandleNotificationDelivered` in `analytics_consumer` (same shape as `HandleNotificationSubscribed`: parse → validate `user_id`/`notification_id` → `Enqueue`), and one `router.AddConsumerHandler(...)` line in `di/consumer.go`. Missing the DI line would silently drop the event, so it is an explicit task.
 
-### Decision 3: SW→app analytics bridge = stash-and-flush, not a direct SW→PostHog call
-A service worker cannot use `posthog-js`. Three options:
+### Decision 3: Report `opened`/`dismissed` at interaction time via `event.waitUntil(fetch(...))`, with a stash only as an offline fallback
+A service worker cannot use `posthog-js` (no `window`). But `notificationclick` / `notificationclose` are *extendable events*, so the platform-canonical way to report them is `event.waitUntil(fetch(...))`: the browser keeps the worker alive until the request settles, and it works even when **no client/window is open** — which is always the case for `notificationclose`. This is strictly more reliable and immediate than the alternatives:
 
-| Approach | click | close | opt-out / trace honored | latency |
+| Approach | click | close (no client) | opt-out / identity honored | latency / loss |
 |---|---|---|---|---|
-| `postMessage` to a client | ok if a client is focused | ✗ (no client on close) | via app | low |
-| SW `fetch` → PostHog `/capture` | ok | ok | ✗ (bypasses AnalyticsService) | low |
-| **IndexedDB stash → flush on app load** | ok (click opens/focuses app) | ok (flushed next open) | ✓ (via AnalyticsService) | delayed |
+| `postMessage` to a client | ok if focused | ✗ no client on close | via app | — |
+| IndexedDB stash → flush on next app open | ok | ok | ✓ via `AnalyticsService` | ✗ delayed; lost if never reopened |
+| `fetchLater()` | window-only | ✗ | — | not available in a service worker |
+| **`event.waitUntil(fetch(...))`** | ✅ | ✅ | ✅ via a client-synced snapshot | immediate |
 
-Chosen: **stash-and-flush.** It is the only option that reliably captures *both* `notificationclick` (which may open a fresh client) *and* `notificationclose` (no client at all) while still routing through `AnalyticsService`, so opt-out and `trace_id` are respected. The SW writes `{ event, notification_id, occurred_at }` to a small IndexedDB store; on boot, `AnalyticsService` drains and `capture()`s each with an explicit event `timestamp = occurred_at` (so the interaction isn't misattributed to flush time), then deletes the drained record. If the user is opted out, `capture` no-ops and the record is dropped. `notificationclick` still `openWindow`/focuses as today; the added capture is orthogonal to navigation.
+Chosen: **`event.waitUntil(fetch(...))` from the handlers.** Each handler sends one PostHog `capture` (`event`, `distinct_id`, `properties.notification_id`, explicit `timestamp` = interaction time, and a per-interaction `uuid` for dedup) via `fetch(POSTHOG_CAPTURE_URL, { method: 'POST', keepalive: true, body })`. Targeting PostHog's public `/capture` HTTP endpoint directly keeps the events **frontend-sourced** and needs no new backend surface (the project key is already a public client value).
 
-### Decision 4: Carry `notification_id` into the shown notification's `data`
-The backend already includes `data.notification_id` in the push JSON. The SW `push` handler currently copies only `url` into `showNotification`'s `data` bag; extend it to also copy `notification_id` (and pass through `url`), so `notificationclick`/`close` — which only see `event.notification.data` — can read the id. No backend change needed; this is the FE half of the already-shipped "id propagated end-to-end" requirement.
+Because the worker has no `posthog-js` and does not know the signed-in user, the app writes a tiny **identity snapshot** `{ distinct_id, opted_out }` to a service-worker-readable store (Cache/IndexedDB) and refreshes it on `identify` / opt-out change. The handler reads the snapshot, **skips the send entirely when `opted_out`**, and stamps `distinct_id`. `notificationclick` still `openWindow`/focuses as today — the capture is orthogonal to navigation.
+
+**Offline fallback:** a `fetch` that fails (offline at click/close) is retried via the **Background Sync API** where available (Chromium); on browsers without it (Safari/Firefox) the interaction is written to a small **bounded** IndexedDB stash and flushed on the next service-worker activation / app open. The stash is thus demoted from the primary mechanism to a best-effort offline fallback, not the happy path.
+
+### Decision 4: Consolidate client passthrough metadata under the payload `data`
+`NotificationOptions.data` is the only channel through which `notificationclick`/`close` can read per-notification metadata, so `notification_id` must live there. Today the wire payload is inconsistent: `url` (client passthrough, used by click navigation) sits **top-level** while `notification_id` sits under `data`. Consolidate all client-passthrough metadata under one `data` object — `data: { url, notification_id, … }` — leaving only the native notification fields (`title`, `body`, `tag`) at the top level. The SW maps `payload.data` straight into `showNotification`'s `options.data`, so `notificationclick`/`close` read `event.notification.data.{ url, notification_id }` uniformly, and future `event_id`/`artist_id` slot in additively.
+
+This touches the backend `NotificationPayload` shape (move `URL` into the `data` map alongside `notification_id`) and the SW `push` handler together — a coordinated backend + frontend change. During rollout the SW SHOULD read `url`/`notification_id` from **both** the new nested `data` and the legacy top-level location, so an in-flight old payload (or an old SW against a new payload) still navigates; the compat shim is removed once both sides are deployed.
 
 ## Risks / Trade-offs
 
-- **[Trade-off] Delayed `opened`/`dismissed`** — flushed on next app open, not real-time. Acceptable for product analytics (funnel/fatigue), and the explicit `timestamp` preserves temporal accuracy. If the user never reopens the PWA after a dismiss, that event is lost — best-effort, with a bounded store (cap + drop-oldest) to avoid unbounded growth.
-- **[Risk] Double counting on flush** — a record must be deleted only after a successful `capture` enqueue; the store is keyed so a re-flush of an already-sent record is a no-op. Mirrors the pre-init queue discipline already in `AnalyticsService`.
+- **[Trade-off] Offline loss on non-Background-Sync browsers** — the `waitUntil(fetch)` sends at interaction time, so the delayed/lost window is now only the *offline* case. Where Background Sync exists (Chromium) the send is retried automatically; on Safari/Firefox the bounded stash flushes on next app open, and an interaction whose device never reconnects-then-reopens is lost. Best-effort, and a far smaller loss surface than a stash-always design.
+- **[Risk] Retry double-counting** — a Background-Sync / stash retry could resend an interaction. Each capture carries a stable per-interaction `uuid` (PostHog `$insert_id`) so a resend is de-duplicated server-side; the stash entry is deleted only after a successful send.
+- **[Risk] Direct SW→PostHog coupling** — the worker posts to PostHog's public `/capture` endpoint with the public project key. Only non-PII properties (`notification_id`) and the `distinct_id` are sent; no secret is exposed (the same key already ships in the web client). If PostHog's ingestion contract changes, the SW path must be updated alongside the app SDK.
 - **[Risk] `delivered` event volume** — one event per delivered notification can be high for popular artists (PostHog cost). This is the intended "reach" metric; volume is bounded by real notification volume and is the whole point of the audit. Revisit sampling only if cost warrants.
+- **[Risk] `delivered` double-count on consumer redelivery** — `delivered` fires once per notification *record*; an at-least-once redelivery of the producer event (e.g. `CONCERT.discovered`) creates a new record with a new `notification_id` and thus a second `delivered`. Rare (handler-retry only) and already a property of the notification log; treated as acceptable inflation of the reach count, not corrected here.
+- **[Trade-off] Backend `delivered` does not consult client opt-out** — like the existing `sales_reminder.delivered`, the server-side `delivered` event is emitted regardless of the recipient's client-side analytics opt-out (opt-out is enforced client-side and is not persisted server-side). The FE `opened`/`dismissed` events **do** honor opt-out via the identity snapshot. This asymmetry is deliberate and consistent with the existing backend analytics events.
 - **[Trade-off] No `event_id`/`artist_id`** — reduces slice-ability of reach/CTR by artist/event for now. The properties are catalogue-optional; adding them later is additive (thread the ids through `NotificationDeliveredData` and the payload `data`).
-- **[Risk] distinct_id at flush time, not interaction time** — because `capture()` runs on next app boot (not at the original interaction), the event's `distinct_id` reflects whoever is logged in at that boot, not at the moment the notification was opened/dismissed. A notification interacted with anonymously, followed by a login before the next app open, would be misattributed to the identified user (and vice versa). PostHog merges anon→identified on `identify`, so aggregate funnels still broadly reconcile, but per-event identity attribution should be treated as best-effort, not exact. (Stashing the interaction-time `distinct_id` is not readily available in the service-worker context, so it is not attempted.)
+- **[Risk] Identity snapshot staleness** — `distinct_id`/`opted_out` reflect the app's last-synced snapshot, so there is a brief window right after login/logout/opt-out-toggle before the SW sees the new value. Interactions in that window may attribute to the prior identity; PostHog's anon→identified merge reconciles aggregate funnels. Refresh the snapshot on `identify` and opt-out change to keep the window small.
