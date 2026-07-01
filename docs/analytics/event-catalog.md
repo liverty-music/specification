@@ -35,7 +35,7 @@ Conversion-critical events MAY include a `trace_id` property carrying the active
 | --- | --- | --- | --- | --- |
 | `page.viewed` | FE | page | `path`, `title`, `referrer?`, `trace_id?` | Acquisition funnel, top-of-funnel dashboard |
 | `account.signup.started` | FE | account | `source` (pre-consent: no `trace_id` per `analytics-consent` spec) | Signup funnel |
-| `account.login` | BE | account | `trace_id?` | Active user trends |
+| `account.login` | BE | account | `trace_id?` | Active user trends, returning/active-user retention cohorts |
 | `account.preferred_language.updated` | BE | account | `from_locale`, `to_locale`, `trace_id?` | Locale change rate |
 | `user.created` | BE | user | `signup_month`, `locale`, `home_region?`, `trace_id?` | Acquisition by month, signup funnel, D7/D30 retention cohort |
 | `user.deleted` | BE | user | `account_age_days_bucket`, `trace_id?` | Account-deletion analysis |
@@ -65,6 +65,11 @@ Conversion-critical events MAY include a `trace_id` property carrying the active
 | `notification.opened` | FE | notification | `notification_id`, `event_id?`, `artist_id?`, `trace_id?` | Notification CTR |
 | `notification.dismissed` | FE | notification | `notification_id`, `trace_id?` | Notification fatigue |
 | `sales_reminder.delivered` | BE | sales_reminder | `phase_stage`, `delivery_status`, `trace_id?` | Sales-reminder reach (sales-phase-timeline KPI) |
+
+### Account-event source notes
+
+- `account.login` is sourced from a Zitadel Actions v2 Execution on the `response` side of `/zitadel.session.v2.SessionService/CreateSession` (backend `/create-session` webhook → `ACCOUNT.login` NATS subject → `analytics-consumer`). A session is created once per user-initiated login and never by a silent `refresh_token` grant, so the event is emitted **exactly once per login and never on token refresh** — the login metric is never inflated by refreshes.
+- **Signup is represented by `user.created`, not a separate `account.signup.completed` event.** Signup occurs at the same instant `user.created` is emitted, so a distinct completion event would double-count signups; `account.signup.completed` is therefore an alias of `user.created` and is not emitted. (`account.signup.started` is the FE pre-consent intent event and is unrelated.)
 
 ## Funnels and dashboards
 
