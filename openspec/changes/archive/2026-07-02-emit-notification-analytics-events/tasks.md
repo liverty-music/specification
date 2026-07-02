@@ -19,14 +19,14 @@
 
 - [x] 3.1 Backend `make check` passes (lint + unit + integration).
 - [x] 3.2 Frontend `make check` passes (lint + unit + typecheck).
-- [ ] 3.3 End-to-end: a delivered notification produces one `notification.delivered` in PostHog keyed by `notification_id`; clicking and dismissing a notification produce `notification.opened` / `notification.dismissed` **at interaction time** (offline: after reconnect via Background Sync / stash flush), correlated by the same `notification_id`; an opted-out user produces neither.
+- [x] 3.3 End-to-end: a delivered notification produces one `notification.delivered` in PostHog keyed by `notification_id`; clicking and dismissing a notification produce `notification.opened` / `notification.dismissed` **at interaction time** (offline: after reconnect via Background Sync / stash flush), correlated by the same `notification_id`; an opted-out user produces neither.
 
 ## 4. Ship to production
 
-- [ ] 4.1 Backend release → prod (server + consumer); confirm `notification.delivered` appears in PostHog for a real delivered notification. (No new NATS stream, so no consumer-crashloop risk.)
-- [ ] 4.2 Frontend release → prod; confirm `notification.opened` / `notification.dismissed` land after a real interaction + app reopen.
+- [x] 4.1 Backend release → prod (server + consumer); confirm `notification.delivered` appears in PostHog for a real delivered notification. (No new NATS stream, so no consumer-crashloop risk.)
+- [x] 4.2 Frontend release → prod; confirm `notification.opened` / `notification.dismissed` land after a real interaction + app reopen.
 
 ## 5. Bookkeeping
 
-- [ ] 5.1 This change satisfies the previously-descoped `introduce-analytics-tool` tasks 13.2 (`notification.delivered`) and 5.7 (`notification.opened` / `.dismissed`); note their completion. Closes #675.
+- [x] 5.1 This change satisfies the previously-descoped `introduce-analytics-tool` tasks 13.2 (`notification.delivered`) and 5.7 (`notification.opened` / `.dismissed`); note their completion. Closes #675.
 - [x] 5.2 Event catalogue already lists all three events — verify `specification/docs/analytics/event-catalog.md` still matches the emitted names/properties; update only if drift is found.
