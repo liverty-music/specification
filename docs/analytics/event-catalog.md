@@ -68,7 +68,7 @@ Conversion-critical events MAY include a `trace_id` property carrying the active
 
 ### Account-event source notes
 
-- `account.login` is sourced from a Zitadel Actions v2 Execution on the `response` side of `/zitadel.session.v2.SessionService/CreateSession` (backend `/create-session` webhook → `ACCOUNT.login` NATS subject → `analytics-consumer`). A session is created once per user-initiated login and never by a silent `refresh_token` grant, so the event is emitted **exactly once per login and never on token refresh** — the login metric is never inflated by refreshes.
+- `account.login` is sourced from a Zitadel Actions v2 **event execution** on `session.user.checked` (backend `/account-login-event` webhook → `ACCOUNT.login` NATS subject → `analytics-consumer`). `session.user.checked` is stored once per interactive login through the hosted Login UI; a silent `refresh_token` grant touches only the `oidc_session` aggregate and a machine `jwt_profile` grant never creates a Login-UI session, so the event is emitted **exactly once per interactive login and never on token refresh or machine grant** — the login metric is never inflated. An event execution is fire-and-forget and cannot alter the auth request/response (unlike the reverted `response`-on-`CreateSession` approach, which broke sign-in).
 - **Signup is represented by `user.created`, not a separate `account.signup.completed` event.** Signup occurs at the same instant `user.created` is emitted, so a distinct completion event would double-count signups; `account.signup.completed` is therefore an alias of `user.created` and is not emitted. (`account.signup.started` is the FE pre-consent intent event and is unrelated.)
 
 ## Funnels and dashboards
