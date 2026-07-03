@@ -4,7 +4,7 @@
 
 The system SHALL emit account authentication analytics events from the backend, attributed to the platform-internal `UserId` (UUID), not the Zitadel `sub` claim.
 
-`account.login` SHALL be emitted **once per user-initiated login** and SHALL NOT be emitted on a token refresh (a silent `refresh_token` grant is not a login). The login signal SHALL be derived from a backend source that is login-specific and that structurally cannot alter the authentication request/response. Specifically, it SHALL be derived from a Zitadel Actions v2 **`event` execution** bound to the login event type — a fire-and-forget execution that fires after the login event is persisted, carries the logging-in user's Zitadel `userID`, and cannot manipulate any API request or response. The login event type SHALL be determined empirically (via the Events API) as one that fires once per user-initiated login and not on a `refresh_token` grant; it SHALL NOT be a `request`/`response` (method) execution, because those replace the API payload with the webhook return and can break sign-in. The login metric SHALL never be inflated by refreshes, and the source SHALL NOT rely on any per-request runtime discrimination heuristic.
+`account.login` SHALL be emitted **once per user-initiated login** and SHALL NOT be emitted on a token refresh (a silent `refresh_token` grant is not a login). The login signal SHALL be derived from a backend source that is login-specific and that structurally cannot alter the authentication request/response. Specifically, it SHALL be derived from a Zitadel Actions v2 **`event` execution** bound to the `session.user.checked` event — a fire-and-forget execution that fires after the login event is persisted, carries the logging-in user at `payload.userID`, and cannot manipulate any API request or response. This event type was determined empirically (via the Events API): it fires once per interactive login through the hosted Login UI, does not fire on a `refresh_token` grant, and does not fire for machine (jwt_profile) token grants. The source SHALL NOT be a `request`/`response` (method) execution, because those replace the API payload with the webhook return and can break sign-in. The login metric SHALL never be inflated by refreshes, and the source SHALL NOT rely on any per-request runtime discrimination heuristic.
 
 Account signup SHALL be represented by the existing `user.created` event. The system SHALL NOT emit a separate `account.signup.completed` event, because signup occurs at the same instant as `user.created`; emitting both would double-count signups.
 
@@ -12,8 +12,8 @@ The webhook handler on the login path SHALL NOT call the PostHog SDK directly. I
 
 #### Scenario: A user-initiated login emits `account.login` exactly once
 
-- **WHEN** a user completes an interactive (fresh) authentication and Zitadel stores the corresponding login event, invoking the backend webhook via the `event` execution
-- **THEN** the backend SHALL resolve the Zitadel `userID` (from the event payload) to the platform `UserId` (via the existing user lookup)
+- **WHEN** a user completes an interactive (fresh) authentication and Zitadel stores the `session.user.checked` event, invoking the backend webhook via the `event` execution
+- **THEN** the backend SHALL resolve the Zitadel user (from `payload.userID`) to the platform `UserId` (via the existing user lookup)
 - **AND** the backend SHALL emit exactly one `account.login` event with `distinct_id` set to that `UserId`
 - **AND** the event SHALL NOT carry the Zitadel `sub`, the user's email, or any other PII in its properties
 
