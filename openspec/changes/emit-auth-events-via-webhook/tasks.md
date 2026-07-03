@@ -2,24 +2,24 @@
 
 > **Context:** the first implementation (`response` execution on `CreateSession`) shipped in backend v1.18.0 + specification #684, then broke prod sign-in and was **reverted** (cloud-provisioning #378) on 2026-07-02. The backend messaging plumbing (`ACCOUNT` stream, `SubjectAccountLogin`, `HandleAccountLogin`, its subscription, KEDA trigger) remains **deployed and reusable**; the webhook **handler payload parsing** and the **Zitadel Action** must be redone for the `event`-execution source. Tasks below are marked `[x]` only where the shipped artifact is still valid as-is.
 
-## 1. Discover the login `event_type` empirically (do this FIRST — BLOCKED on prod admin access)
+## 1. Discover the login `event_type` empirically (DONE)
 
-> **Blocker:** the login `event_type` is a placeholder (`<login-event-type>` / `event.event` in Decision 1). Discovery requires the prod Zitadel Admin Events API (dev is intentionally stopped; the eventstore Cloud SQL `postgres-osaka` is private-IP only), which needs the `zitadel-machine-key-for-pulumi-admin` GSM credential — not covered by read-op pre-authorization. Resolve before implementation (task groups 2–3): grant the admin-key read to mint a read-only token, or run `ListEvents` / a login+refresh observation out-of-band and record the type here. This PR ships the redesign *approach*; the concrete event type is filled in before code lands.
+> **Result (2026-07-03, prod Zitadel Events API):** the login event type is **`session.user.checked`**. It fires once per interactive login through the hosted Login UI (`editor = "Zitadel Login V2 Client"`), carries the user at `payload.userID`, does NOT fire on a `refresh_token` grant (that touches only the `oidc_session` aggregate), and does NOT fire for machine `jwt_profile` grants. The rejected alternative `oidc_session.added` also carries `userID` but fires for M2M token grants too. See design.md Decision 1b.
 
-- [ ] 1.1 Using the Zitadel Events API (`ListEvents`, `POST /admin/v1/events/_search`), capture the events produced by (a) a fresh interactive login and (b) a silent `refresh_token` grant. Diff the two lists.
-- [ ] 1.2 Select the `event_type` that fires **once** per user-initiated login, does **NOT** appear on the refresh, and carries the logging-in user's Zitadel `userID` on its aggregate. Record the two event lists + chosen type as the build-time justification (Decision 1b). Do NOT guess the name.
-- [ ] 1.3 Confirm the chosen event's delivered payload shape (`{aggregateID, event_type, userID, event_payload}`) so the handler (task 3) parses the right `userID` field.
+- [x] 1.1 Queried `ListEvents` (`POST /admin/v1/events/_search`) contrasting a fresh interactive login against `refresh_token` renewals: login → `session.added` → `session.user.checked` → `oidc_session.added`; refresh → only `oidc_session.refresh_token.renewed` + `oidc_session.access_token.added` (no `session.*`).
+- [x] 1.2 Selected `session.user.checked` — fires once per interactive login, absent on refresh, carries `payload.userID`. Recorded as Decision 1b.
+- [x] 1.3 Confirmed the delivered payload carries `payload.userID` (raw event inspected); the `editor` is the Login-UI service user, so the handler reads `payload.userID`, not `editor`.
 
 ## 2. Zitadel `event` Execution resources (cloud-provisioning)
 
 - [ ] 2.1 Add a `ZitadelExecutionEvent` dynamic resource in `src/zitadel/dynamic/execution.ts` (condition `{ event: { event } }`), mirroring the existing `ZitadelExecutionRequest`. Remove any residual `ZitadelExecutionResponse` resource left from the reverted attempt.
 - [ ] 2.2 In `src/zitadel/components/actions-v2.ts`, provision the login Target the same way as `pre-access-token-webhook`: `targetType: 'REST_CALL'`, `payloadType: 'PAYLOAD_TYPE_JWT'` (backend verifies via JWKS — no HMAC secret), `interruptOnError: false`. Point its endpoint at the backend login-event webhook path. Ensure the reverted `CreateSession` Target/Execution is not re-created.
-- [ ] 2.3 Bind a `ZitadelExecutionEvent` on the `event_type` from task 1 to that Target.
+- [ ] 2.3 Bind a `ZitadelExecutionEvent` on `event.event = "session.user.checked"` (from task 1) to that Target.
 - [ ] 2.4 Wire the endpoint URL through `src/zitadel/index.ts` / `constants.ts` alongside `PRE_ACCESS_TOKEN_PATH`.
 
 ## 3. Backend webhook handler — parse the `event`-execution payload (adapt the deployed handler)
 
-- [ ] 3.1 Adapt the deployed login webhook handler in `backend/internal/adapter/webhook/` to parse the `event`-execution payload: read the Zitadel `userID` directly from the payload (NOT `request.checks.user.userId`, which does not exist for this source). Keep the `auth.WebhookValidator.ValidateWebhookToken` JWKS verification unchanged.
+- [ ] 3.1 Adapt the deployed login webhook handler in `backend/internal/adapter/webhook/` to parse the `session.user.checked` `event`-execution payload: read the Zitadel user from `payload.userID` (NOT `request.checks.user.userId`, which does not exist for this source; NOT `editor`, which is the Login-UI service user). Keep the `auth.WebhookValidator.ValidateWebhookToken` JWKS verification unchanged.
 - [ ] 3.2 Rename the route/path from the `CreateSession` framing to a login-event path (e.g. `/account-login-event`); update the `server.NewWebhookServer` map in `internal/di/provider.go` and the cloud-provisioning endpoint URL (task 2.4) to match.
 - [ ] 3.3 Resolve the Zitadel `userID` to the platform `UserId` via `UserUseCase.GetByExternalID`. On lookup miss / transient error OR when `userID` is absent, log and skip the analytics emission. The execution is fire-and-forget, so always return a success response; login is unaffected regardless.
 - [ ] 3.4 On a resolved login, publish `entity.SubjectAccountLogin` (`ACCOUNT.login`) carrying the resolved `UserId` (and non-PII `login_method` when the payload exposes it). Best-effort: log and swallow publish failures.
