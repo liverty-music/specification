@@ -1,6 +1,8 @@
 # Tasks
 
 > **Context:** the first implementation (`response` execution on `CreateSession`) shipped in backend v1.18.0 + specification #684, then broke prod sign-in and was **reverted** (cloud-provisioning #378) on 2026-07-02. The backend messaging plumbing (`ACCOUNT` stream, `SubjectAccountLogin`, `HandleAccountLogin`, its subscription, KEDA trigger) remains **deployed and reusable**; the webhook **handler payload parsing** and the **Zitadel Action** must be redone for the `event`-execution source. Tasks below are marked `[x]` only where the shipped artifact is still valid as-is.
+>
+> **Update (2026-07-06):** the redesign shipped (backend v1.19.0, spec #688, CP #379) with a `PAYLOAD_TYPE_JWT` Target. Prod verification (8.5) revealed the event execution fired but the target call failed with `Errors.WebKey.NoActive` — an event-execution JWT target needs an active instance web key this instance lacks. Fixed by switching the Target to `PAYLOAD_TYPE_JSON` + HMAC (design.md Decision 2). Task group 9 below tracks the fix; 8.4/8.5 re-open until it verifies.
 
 ## 1. Discover the login `event_type` empirically (DONE)
 
@@ -58,3 +60,11 @@
 - [x] 8.3 `openspec validate emit-auth-events-via-webhook --strict` passes.
 - [ ] 8.4 Merge the backend PR; cut a backend Release (tag `vX.Y.Z`) so the adapted handler ships to prod. Merge the cloud-provisioning PR (Zitadel `event` Execution) → prod Pulumi up creates the Target/Execution.
 - [ ] 8.5 Post-rollout verification in **prod** (dev is intentionally stopped): perform a real interactive login and confirm exactly one `account.login` appears in PostHog Activity attributed to the platform `UserId`, and that the `analytics-consumer` forwarded it (consumer metrics / logs). Perform a token refresh and confirm NO `account.login` is emitted. **Confirm sign-in still works** (the failure the reverted approach caused). Do NOT author dev-environment verification tasks.
+
+## 9. Fix: `Errors.WebKey.NoActive` → `PAYLOAD_TYPE_JSON` + HMAC (design.md Decision 2)
+
+- [x] 9.1 Backend: rewrite the login-event handler to verify the `ZITADEL-Signature` HMAC header via `actions.ValidateRequestPayload(body, &r.Header, signingKey)` (zitadel-go SDK) instead of JWKS; parse the raw JSON body (no JWT), keep the `event_type` guard + base64 `event_payload` decode. Config: replace `WEBHOOK_LOGIN_EVENT_AUDIENCE` with `WEBHOOK_LOGIN_EVENT_SIGNING_KEY` (secret, optional so a boot before the key syncs degrades gracefully — handler returns 401). Rewrite handler tests to sign with `actions.ComputeSignatureHeader`.
+- [x] 9.2 cloud-provisioning (Pulumi): set the login-event Target `payloadType: 'PAYLOAD_TYPE_JSON'`; capture Zitadel's generated `signingKey` from the Target and store it as GSM secret `webhook-login-event-signing-key` (threaded via `Gcp` → KubernetesComponent secrets list, backend-app + ESO IAM), following the `posthog-public-project-key` pattern.
+- [ ] 9.3 Ship backend (release `v1.19.1`) → prod; run cloud-provisioning prod `pulumi up` (re-creates the Target as JSON, generates the signingKey, writes the GSM secret). MANUAL Pulumi Cloud console.
+- [ ] 9.4 Follow-up (only AFTER 9.3's prod `pulumi up` created the GSM secret): add the `WEBHOOK_LOGIN_EVENT_SIGNING_KEY` → `webhook-login-event-signing-key` entry to `k8s/namespaces/backend/base/server/external-secret.yaml`. Deferred because ESO v1beta1 fails the whole `backend-secrets` bundle when a referenced remote key is absent (same two-phase pattern as `posthog-public-project-key`). ArgoCD sync → ESO mounts the key → backend restart picks it up.
+- [ ] 9.5 Re-verify 8.5 in prod: interactive login → `account.login` in PostHog attributed to the platform `UserId`; refresh → none; sign-in still works; confirm the Zitadel log no longer shows `WebKey.NoActive` for the login-event target.
