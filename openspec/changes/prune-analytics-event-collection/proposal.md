@@ -10,7 +10,7 @@ A ground-truth audit of every emitted analytics event — verified at each call 
 - **BREAKING — rename** `account.login` → `account.signin` for vocabulary consistency with the surviving `account.*` namespace. Safe now because the login event is mid-redesign and has no production history yet.
 - **Delete** `account.preferred_language.updated`: language is durable user *state*, not an action worth an event. The replacement `preferred_language` person property is added in Change 2's identify enrichment, not here, so this change removes the event without adding the property.
 - **Relabel the deferred set as dormant, not deleted** (wired implementations that will fire when their feature ships): `entry.zk_proof.verified`, `entry.zk_proof.rejected`, `ticket.mint.completed`, `ticket.email.parsed` (OS-blocked), and the FE intent events `ticket.purchase.initiated`, `entry.checkin.attempted`.
-- **Add a collection-status column** to the event catalogue (`active` / `dormant` / `deleted`) and re-cut the primary conversion funnel to terminate at `concert.detail.viewed` (the last observable step) instead of `entry.zk_proof.verified`.
+- **Add a collection-status column** to the event catalogue (`active` / `dormant`), record removed events in a separate Removed events section with their reason (rather than a per-row `deleted` status, which would keep dead rows in the live table), and re-cut the primary conversion funnel to terminate at `concert.detail.viewed` (the last observable step) instead of `entry.zk_proof.verified`.
 
 ## Capabilities
 

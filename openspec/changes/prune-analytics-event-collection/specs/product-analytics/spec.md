@@ -36,12 +36,12 @@ The frontend SHALL initialise PostHog with `autocapture: false`, `capture_pagevi
 ## ADDED Requirements
 
 ### Requirement: Every active catalogue event has a verified emission call site
-An event catalogued with collection status `active` SHALL have at least one verified emission call site in the frontend or backend codebase. The catalogue SHALL NOT list an `active` event whose only presence is a name constant or type declaration with no code path that emits it. A defined-but-unemitted event SHALL either be removed from the catalogue or catalogued as `dormant` with a note describing the feature or fix that will activate it.
+An event catalogued with collection status `active` SHALL have at least one verified emission call site in the frontend or backend codebase. The catalogue SHALL NOT list an `active` event whose only presence is a name constant or type declaration with no code path that emits it. An event with no emission call site SHALL be removed from the live catalogue and recorded in the Removed events section; it SHALL NOT be catalogued as `dormant`, because `dormant` is reserved for events that have a real emitter and are inactive only because a feature is deferred or externally blocked.
 
 #### Scenario: A name constant with no emitter is not an active event
 - **WHEN** an event name is declared in `frontend/src/services/analytics-events.ts` or `backend/internal/usecase/analytics_events.go` but no `capture(...)` or `PublishEvent(...)` call site emits it
 - **THEN** the event SHALL NOT be catalogued with status `active`
-- **AND** the event SHALL be either removed or catalogued as `dormant` with an activation note
+- **AND** the event SHALL be removed from the live catalogue and recorded under Removed events, NOT catalogued as `dormant`, because `dormant` requires a real emitter
 
 #### Scenario: Pull-request review checks the call site, not only the catalogue row
 - **WHEN** a pull request adds or changes a catalogued `active` event
@@ -49,7 +49,7 @@ An event catalogued with collection status `active` SHALL have at least one veri
 - **AND** an event whose emitter was removed SHALL be dropped from the catalogue in the same change
 
 ### Requirement: The event catalogue records a per-event collection status
-The event catalogue SHALL record, for every event, a collection status of `active` (currently emitted and consumed), `dormant` (implemented or defined but not currently emitting, pending a deferred feature or an external fix), or `deleted` (removed; retained only as historical note). Dashboards and funnels SHALL be built only on `active` events. The primary conversion funnel SHALL terminate at the last observable step given the current active set — `concert.detail.viewed` — rather than at a `dormant` ticketing or entry event.
+The event catalogue SHALL record, for every listed event, a collection status of `active` (currently emitted and consumed) or `dormant` (has a real emitter but is not currently emitting, pending a deferred feature or an external fix). A removed event SHALL NOT remain in the live catalogue table; it SHALL instead be recorded in a dedicated Removed events section together with the reason for removal, so the deletion is documented without reopening the phantom pattern. Dashboards and funnels SHALL be built only on `active` events. The primary conversion funnel SHALL terminate at the last observable step given the current active set — `concert.detail.viewed` — rather than at a `dormant` ticketing or entry event.
 
 #### Scenario: Dashboard is built only on active events
 - **WHEN** a dashboard or funnel is defined in PostHog
@@ -60,3 +60,8 @@ The event catalogue SHALL record, for every event, a collection status of `activ
 - **WHEN** the catalogue lists an implemented-but-inactive event such as `entry.zk_proof.verified`, `ticket.mint.completed`, or `ticket.email.parsed`
 - **THEN** the event SHALL be catalogued with status `dormant` and an activation note
 - **AND** the event SHALL NOT be counted toward active event volume or listed on any live dashboard
+
+#### Scenario: A removed event is recorded, not silently dropped
+- **WHEN** an event is removed from active collection (phantom, redundant, double-counting, firehose, or wrong-altitude)
+- **THEN** its row SHALL be removed from the live catalogue table
+- **AND** the event SHALL be listed in the Removed events section with the reason for its removal

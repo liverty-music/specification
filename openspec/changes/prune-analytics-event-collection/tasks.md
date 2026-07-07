@@ -1,8 +1,8 @@
 ## 1. Specification: catalogue and spec deltas
 
-- [ ] 1.1 Edit `docs/analytics/event-catalog.md`: remove rows for `page.viewed`, `account.signup.started`, `artist.discovery.viewed`, `artist.follow.requested`, `user.deleted`, `sales_reminder.delivered`, `account.preferred_language.updated`, and the never-wired `ticket.lottery.entry.accepted/.rejected`, `ticket.lottery.result.assigned`, `ticket.purchase.completed/.failed`.
+- [ ] 1.1 In `docs/analytics/event-catalog.md`, remove the following rows from the live catalogue table AND record each in a new "Removed events" section with its removal reason (phantom / redundant / double-count / firehose / wrong-altitude): `page.viewed`, `account.signup.started`, `artist.discovery.viewed`, `artist.follow.requested`, `user.deleted`, `sales_reminder.delivered`, `account.preferred_language.updated`, and the never-wired `ticket.lottery.entry.accepted/.rejected`, `ticket.lottery.result.assigned`, `ticket.purchase.completed/.failed`.
 - [ ] 1.2 Rename the `account.login` row to `account.signin` (keep BE source, `trace_id?` only).
-- [ ] 1.3 Add a `Collection status` column (`active` / `dormant`) and mark `entry.zk_proof.verified/.rejected`, `ticket.mint.completed`, `ticket.email.parsed`, `ticket.purchase.initiated`, `entry.checkin.attempted` as `dormant` with an activation note.
+- [ ] 1.3 Add a `Collection status` column with two values (`active` / `dormant`) to the live table and mark `entry.zk_proof.verified/.rejected`, `ticket.mint.completed`, `ticket.email.parsed`, `ticket.purchase.initiated`, `entry.checkin.attempted` as `dormant` with an activation note (each has a real emitter; removed events live in the Removed events section from 1.1, not as a table status).
 - [ ] 1.4 Re-cut the "Funnels and dashboards" section: primary funnel terminates at `concert.detail.viewed`; note `preferred_language` is now a person property, not an event.
 - [ ] 1.5 Open the specification PR, get review + `buf-pr-checks.yml` green, merge to main.
 
