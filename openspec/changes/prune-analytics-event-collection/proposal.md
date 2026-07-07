@@ -8,7 +8,7 @@ A ground-truth audit of every emitted analytics event — verified at each call 
 - **Delete redundant / low-value events**: `page.viewed` (per-navigation firehose, highest volume, lowest insight), `artist.discovery.viewed` (fires 1:1 with `artist.follow.requested`; measures no impressions), `artist.follow.requested` FE half (redundant with backend `artist.follow.completed`).
 - **Delete the double-counting event** `sales_reminder.delivered`: a successful sales-reminder push already emits `notification.delivered` with `type = "sales_reminder"`, so delivery reach is unified onto `notification.delivered`. Sales-reminder delivery-failure visibility moves to an operational (log-based) metric, not product analytics.
 - **BREAKING — rename** `account.login` → `account.signin` for vocabulary consistency with the surviving `account.*` namespace. Safe now because the login event is mid-redesign and has no production history yet.
-- **Demote** `account.preferred_language.updated` from an event to a PostHog person property (`preferred_language` via `$set`): language is user state, not an action worth an event.
+- **Delete** `account.preferred_language.updated`: language is durable user *state*, not an action worth an event. The replacement `preferred_language` person property is added in Change 2's identify enrichment, not here, so this change removes the event without adding the property.
 - **Relabel the deferred set as dormant, not deleted** (wired implementations that will fire when their feature ships): `entry.zk_proof.verified`, `entry.zk_proof.rejected`, `ticket.mint.completed`, `ticket.email.parsed` (OS-blocked), and the FE intent events `ticket.purchase.initiated`, `entry.checkin.attempted`.
 - **Add a collection-status column** to the event catalogue (`active` / `dormant` / `deleted`) and re-cut the primary conversion funnel to terminate at `concert.detail.viewed` (the last observable step) instead of `entry.zk_proof.verified`.
 
@@ -18,7 +18,7 @@ A ground-truth audit of every emitted analytics event — verified at each call 
 <!-- none -->
 
 ### Modified Capabilities
-- `product-analytics`: the collected event set is pruned to the observable notification-and-discovery loop; requirement examples that reference deleted events (`artist.discovery.viewed`, `page.viewed`, the lottery paired-event example) are updated; the login event is renamed to `account.signin`; `preferred_language` becomes a person property rather than an event; a new requirement forbids catalogued active events without a verified emission call site (anti-phantom); the catalogue gains a per-event collection status and a re-cut primary funnel.
+- `product-analytics`: the collected event set is pruned to the observable notification-and-discovery loop; requirement examples that reference deleted events (`artist.discovery.viewed`, `page.viewed`, the lottery paired-event example) are updated; the login event is renamed to `account.signin`; the `preferred_language` event is removed (its replacement person property is added in Change 2, not here); a new requirement forbids catalogued active events without a verified emission call site (anti-phantom); the catalogue gains a per-event collection status and a re-cut primary funnel.
 - `analytics-consent`: the anonymous pre-identification capture scenarios that name now-deleted events (`page.viewed`, `account.signup.started`, `artist.discovery.viewed`, `ticket.purchase.completed`) are re-illustrated with surviving catalogue events so the consent model examples stay valid.
 
 ## Impact

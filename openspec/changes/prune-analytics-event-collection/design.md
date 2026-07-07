@@ -20,7 +20,7 @@ Constraints: the ticket-sales platform is deferred indefinitely; `ticket.email.p
 - Preserve sales-reminder delivery-failure visibility operationally after removing its analytics event.
 
 **Non-Goals:**
-- Person-property enrichment beyond `preferred_language`, and Group Analytics — deferred to Change 2.
+- Person-property enrichment (including `preferred_language`'s `$set` wiring), and Group Analytics — deferred to Change 2.
 - Dashboard/funnel construction and event-volume governance tooling — Change 3.
 - Any re-enablement of ticket sales, ZK entry, minting, or email import.
 
@@ -32,7 +32,7 @@ Constraints: the ticket-sales platform is deferred indefinitely; `ticket.email.p
 
 **D3 — Rename now, accept the discontinuity as zero.** Renaming `account.login` → `account.signin` is normally a breaking, history-splitting change (PostHog best practice: keep names static). It is free here precisely because the event is mid-redesign and has no production data. Doing it now avoids a permanent `login`/`signup` vocabulary mismatch. *Alternative considered:* keep `account.login` — rejected for lasting inconsistency at no offsetting benefit.
 
-**D4 — `preferred_language` becomes a `$set` person property, not an event.** Language is durable user state; as a person property it powers segmentation (e.g., retention by locale) without per-change event noise. The demotion is wired in Change 2's identify enrichment; this change removes the *event* (`HandleUserPreferredLanguageUpdated` forwarding) and, after confirming no non-analytics consumer subscribes to `USER.preferred_language_updated`, its publish. *Alternative considered:* keep both event and property — rejected as redundant.
+**D4 — Delete the `preferred_language` event here; defer the person property to Change 2.** Language is durable user state, better modelled as a person property that powers segmentation (e.g., retention by locale) than as a per-change event. This change removes only the *event* (`HandleUserPreferredLanguageUpdated` forwarding) and, after confirming no non-analytics consumer subscribes to `USER.preferred_language_updated`, its publish. The replacement `preferred_language` person property is wired in Change 2's identify enrichment, not here, so the language signal is intentionally uncaptured in the interval between the two changes. *Alternative considered:* wire the person property in this same change — rejected to keep Change 1 a pure deletion and all person-property work in one place (Change 2).
 
 **D5 — Prevent recurrence with a verified-call-site requirement.** The audit only found the phantoms because it read call sites. Encode that as a `product-analytics` requirement so future reviews check the emitter, not just the catalogue row.
 
