@@ -9,7 +9,7 @@ Every pull request that adds, removes, or renames an event MUST update this cata
 
 ## Naming conventions
 
-- **Event name**: `<domain>.<action>[.<qualifier>][.<outcome>]`, lowercase, dot-separated, snake_case segments. Matches `^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){1,3}$`. The optional qualifier supports four-segment names like `ticket.lottery.entry.{submitted,accepted,rejected}` and `ticket.lottery.result.assigned`.
+- **Event name**: `<domain>.<action>[.<qualifier>][.<outcome>]`, lowercase, dot-separated, snake_case segments. Matches `^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){1,3}$`. The optional qualifier supports four-segment names like `ticket.lottery.entry.submitted`.
 - **Property keys**: snake_case, lowercase. Matches `^[a-z][a-z0-9_]*$`.
 - **Outcomes**: `requested`, `submitted`, `initiated` (frontend intent); `completed`, `accepted`, `rejected`, `failed`, `verified`, `served`, `assigned`, `delivered`, `dismissed`, `opened` (state-confirming).
 
@@ -31,52 +31,66 @@ Conversion-critical events MAY include a `trace_id` property carrying the active
 
 ## Event catalogue
 
-| Event name | Source | Domain | Properties | Consumers |
-| --- | --- | --- | --- | --- |
-| `page.viewed` | FE | page | `path`, `title`, `referrer?`, `trace_id?` | Acquisition funnel, top-of-funnel dashboard |
-| `account.signup.started` | FE | account | `source` (pre-consent: no `trace_id` per `analytics-consent` spec) | Signup funnel |
-| `account.login` | BE | account | `trace_id?` | Active user trends, returning/active-user retention cohorts |
-| `account.preferred_language.updated` | BE | account | `from_locale`, `to_locale`, `trace_id?` | Locale change rate |
-| `user.created` | BE | user | `signup_month`, `locale`, `home_region?`, `trace_id?` | Acquisition by month, signup funnel, D7/D30 retention cohort |
-| `user.deleted` | BE | user | `account_age_days_bucket`, `trace_id?` | Account-deletion analysis |
-| `artist.discovery.viewed` | FE | artist | `artist_id`, `source`, `trace_id?` | Artist discovery funnel |
-| `artist.search` | FE | artist | `query_length`, `result_count`, `trace_id?` | Search quality |
-| `artist.follow.requested` | FE | artist | `artist_id`, `source`, `trace_id?` | Follow funnel (paired) |
-| `artist.follow.completed` | BE | artist | `artist_id`, `source?`, `trace_id?` | Follow funnel (paired), retention cohort |
-| `artist.unfollow.completed` | BE | artist | `artist_id`, `trace_id?` | Engagement loss |
-| `concert.detail.viewed` | FE | concert | `event_id`, `artist_id`, `source`, `trace_id?` | Concert detail funnel |
-| `ticket.lottery.entry.submitted` | FE | ticket | `event_id`, `lottery_round`, `trace_id?` | Lottery funnel (paired) |
-| `ticket.lottery.entry.accepted` | BE | ticket | `event_id`, `lottery_round`, `trace_id?` | Lottery funnel (paired) |
-| `ticket.lottery.entry.rejected` | BE | ticket | `event_id`, `lottery_round`, `reason`, `trace_id?` | Lottery rejection reasons |
-| `ticket.lottery.result.assigned` | BE | ticket | `event_id`, `lottery_round`, `result` (`WON`/`LOST`), `trace_id?` | Lottery success rate |
-| `ticket.purchase.initiated` | FE | ticket | `ticket_id`, `event_id`, `price_bucket`, `trace_id?` | Purchase funnel (paired) |
-| `ticket.purchase.completed` | BE | ticket | `ticket_id`, `event_id`, `price_bucket`, `trace_id?` | **Revenue KPI**, purchase funnel (paired) |
-| `ticket.purchase.failed` | BE | ticket | `ticket_id`, `event_id`, `reason`, `trace_id?` | Payment failure analysis |
-| `ticket.journey.status.changed` | BE | ticket | `event_id`, `from_status`, `to_status`, `trace_id?` | Interest-tier progression (PENDING→TRACKING→ATTENDING), engagement depth |
-| `ticket.email.parsed` | BE | ticket | `email_type`, `parse_status`, `field_count`, `trace_id?` | Email-ingestion data quality, parser robustness |
-| `ticket.mint.completed` | BE | ticket | `event_id`, `trace_id?` | SBT issuance rate, ticket-activation funnel |
-| `entry.checkin.attempted` | FE | entry | `event_id`, `trace_id?` | Entry funnel |
-| `entry.zk_proof.verified` | BE | entry | `event_id`, `trace_id?` | **Operations KPI**, entry funnel |
-| `entry.zk_proof.rejected` | BE | entry | `event_id`, `reason`, `trace_id?` | Entry rejection reasons |
-| `notification.requested` | FE | notification | `source`, `trace_id?` | Notification opt-in funnel (paired) |
-| `notification.subscribed` | BE | notification | `device_type`, `trace_id?` | Notification opt-in funnel (paired) |
-| `notification.unsubscribed` | BE | notification | `device_type`, `trace_id?` | Push churn vs. browser cache-clear |
-| `notification.delivered` | BE | notification | `notification_id`, `type`, `event_id?`, `artist_id?`, `trace_id?` | Notification reach |
-| `notification.opened` | FE | notification | `notification_id`, `event_id?`, `artist_id?`, `trace_id?` | Notification CTR |
-| `notification.dismissed` | FE | notification | `notification_id`, `trace_id?` | Notification fatigue |
-| `sales_reminder.delivered` | BE | sales_reminder | `phase_stage`, `delivery_status`, `trace_id?` | Sales-reminder reach (sales-phase-timeline KPI) |
+The `Collection status` column records whether an event is currently collected:
+
+- **active** — has a verified emission call site and fires in production today.
+- **dormant** — has a wired (or catalogue-ready) emitter that is inactive only because its feature is deferred or externally blocked; it will begin firing when that feature ships. Dormant rows are NOT collected today but are kept as an honest forward inventory.
+
+Events that were removed (never fired, duplicated another event, or double-counted a signal) are not listed here; they are recorded in the [Removed events](#removed-events) section with the reason for removal.
+
+| Event name | Source | Domain | Collection status | Properties | Consumers |
+| --- | --- | --- | --- | --- | --- |
+| `account.signin` | BE | account | active | `trace_id?` | Active user trends, returning/active-user retention cohorts |
+| `user.created` | BE | user | active | `signup_month`, `locale`, `home_region?`, `trace_id?` | Acquisition by month, signup funnel, D7/D30 retention cohort |
+| `artist.search` | FE | artist | active | `query_length`, `result_count`, `trace_id?` | Search quality |
+| `artist.follow.completed` | BE | artist | active | `artist_id`, `source?`, `trace_id?` | Follow funnel, retention cohort |
+| `artist.unfollow.completed` | BE | artist | active | `artist_id`, `trace_id?` | Engagement loss |
+| `concert.detail.viewed` | FE | concert | active | `event_id`, `artist_id`, `source`, `trace_id?` | Concert detail funnel |
+| `ticket.journey.status.changed` | BE | ticket | active | `event_id`, `from_status`, `to_status`, `trace_id?` | Interest-tier progression (PENDING→TRACKING→ATTENDING), engagement depth |
+| `ticket.lottery.entry.submitted` | FE | ticket | dormant | `event_id`, `lottery_round`, `trace_id?` | Lottery funnel — activates when ticket sales ship |
+| `ticket.purchase.initiated` | FE | ticket | dormant | `ticket_id`, `event_id`, `price_bucket`, `trace_id?` | Purchase funnel — activates when ticket sales ship |
+| `ticket.email.parsed` | BE | ticket | dormant | `email_type`, `parse_status`, `field_count`, `trace_id?` | Email-ingestion data quality — blocked by the OS-side email-import issue |
+| `ticket.mint.completed` | BE | ticket | dormant | `event_id`, `trace_id?` | SBT issuance rate, ticket-activation funnel — activates when minting ships |
+| `entry.checkin.attempted` | FE | entry | dormant | `event_id`, `trace_id?` | Entry funnel — activates when venue entry ships |
+| `entry.zk_proof.verified` | BE | entry | dormant | `event_id`, `trace_id?` | **Operations KPI**, entry funnel — activates when venue entry ships |
+| `entry.zk_proof.rejected` | BE | entry | dormant | `event_id`, `reason`, `trace_id?` | Entry rejection reasons — activates when venue entry ships |
+| `notification.requested` | FE | notification | active | `source`, `trace_id?` | Notification opt-in funnel (paired) |
+| `notification.subscribed` | BE | notification | active | `device_type`, `trace_id?` | Notification opt-in funnel (paired) |
+| `notification.unsubscribed` | BE | notification | active | `device_type`, `trace_id?` | Push churn vs. browser cache-clear |
+| `notification.delivered` | BE | notification | active | `notification_id`, `type`, `event_id?`, `artist_id?`, `trace_id?` | Notification reach (incl. `type = "sales_reminder"` for sales-reminder pushes) |
+| `notification.opened` | FE | notification | active | `notification_id`, `event_id?`, `artist_id?`, `trace_id?` | Notification CTR |
+| `notification.dismissed` | FE | notification | active | `notification_id`, `trace_id?` | Notification fatigue |
+
+### Removed events
+
+The following events were removed from the collected set. Each is recorded here with the reason so a future reviewer can see why the name is intentionally absent (and MUST NOT be silently re-added — see the anti-phantom requirement in the `product-analytics` capability).
+
+| Event name | Source | Removal reason |
+| --- | --- | --- |
+| `page.viewed` | FE | **Firehose** — fired on every navigation; highest volume, lowest insight. The signup form it might have measured lives on the Zitadel hosted-login domain, out of the frontend's reach. |
+| `account.signup.started` | FE | **Phantom** — no emission call site ever existed. |
+| `account.preferred_language.updated` | BE | **Wrong altitude** — models durable user *state* as an *action* event. Replaced by a `preferred_language` person property (added in the follow-up person-property change, not here). |
+| `user.deleted` | BE | **Phantom** — no emission call site ever existed. |
+| `artist.discovery.viewed` | FE | **Redundant** — fired 1:1 with `artist.follow.requested` (same `artist_id`, `source`, instant) and measured no impressions. |
+| `artist.follow.requested` | FE | **Redundant** — duplicated the backend `artist.follow.completed` for a single-tap action; the `source` attribution it carried is a one-off analysis, not a standing metric. |
+| `sales_reminder.delivered` | BE | **Double-count** — a successful sales-reminder push already emits `notification.delivered` with `type = "sales_reminder"`, so reach is recoverable from `notification.delivered`. Delivery-failure visibility (`no_subscription` / `failed`) moves to an operational log-based metric, not product analytics. |
+| `ticket.lottery.entry.accepted` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
+| `ticket.lottery.entry.rejected` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
+| `ticket.lottery.result.assigned` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
+| `ticket.purchase.completed` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
+| `ticket.purchase.failed` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
 
 ### Account-event source notes
 
-- `account.login` is sourced from a Zitadel Actions v2 **event execution** on `session.user.checked` (backend `/account-login-event` webhook → `ACCOUNT.login` NATS subject → `analytics-consumer`). `session.user.checked` is stored once per interactive login through the hosted Login UI; a silent `refresh_token` grant touches only the `oidc_session` aggregate and a machine `jwt_profile` grant never creates a Login-UI session, so the event is emitted **exactly once per interactive login and never on token refresh or machine grant** — the login metric is never inflated. An event execution is fire-and-forget and cannot alter the auth request/response (unlike the reverted `response`-on-`CreateSession` approach, which broke sign-in).
-- **Signup is represented by `user.created`, not a separate `account.signup.completed` event.** Signup occurs at the same instant `user.created` is emitted, so a distinct completion event would double-count signups; `account.signup.completed` is therefore an alias of `user.created` and is not emitted. (`account.signup.started` is the FE pre-consent intent event and is unrelated.)
+- `account.signin` is sourced from a Zitadel Actions v2 **event execution** on `session.user.checked` (backend `/account-login-event` webhook → `ACCOUNT.login` NATS subject → `analytics-consumer`). The NATS transport subject remains `ACCOUNT.login`; the analytics-consumer maps it to the catalogue event name `account.signin`. `session.user.checked` is stored once per interactive login through the hosted Login UI; a silent `refresh_token` grant touches only the `oidc_session` aggregate and a machine `jwt_profile` grant never creates a Login-UI session, so the event is emitted **exactly once per interactive login and never on token refresh or machine grant** — the sign-in metric is never inflated. An event execution is fire-and-forget and cannot alter the auth request/response (unlike the reverted `response`-on-`CreateSession` approach, which broke sign-in). The event was renamed from `account.login` while it had zero production history; see the anti-phantom / naming notes in the `product-analytics` capability.
+- **Signup is represented by `user.created`, not a separate `account.signup.completed` event.** Signup occurs at the same instant `user.created` is emitted, so a distinct completion event would double-count signups; `account.signup.completed` is therefore an alias of `user.created` and is not emitted. (The former FE pre-consent `account.signup.started` intent event was removed — it never fired; see the Removed events section.)
 
 ## Funnels and dashboards
 
 Initial PostHog dashboards built on top of this catalogue:
 
-1. **Live-music conversion funnel** — `artist.discovery.viewed` → `artist.follow.completed` → `ticket.lottery.entry.accepted` → `ticket.purchase.completed` → `entry.zk_proof.verified`.
-2. **D7 / D30 retention by signup month** — cohorted on `user.created.signup_month`.
+1. **Live-music engagement funnel (primary)** — `artist.follow.completed` → `notification.delivered` → `notification.opened` → `concert.detail.viewed`. This is the one loop the current product can actually observe: register artists → deliver notifications → engagement. The funnel terminates at `concert.detail.viewed`, the last observable step; the former downstream steps (`ticket.lottery.entry.accepted`, `ticket.purchase.completed`, `entry.zk_proof.verified`) were removed or are dormant until ticket sales and venue entry ship.
+2. **D7 / D30 retention by signup month** — cohorted on `user.created.signup_month`. Language segmentation uses the `preferred_language` **person property** (added in the follow-up person-property change), not an event.
 3. **Per-domain event volume** — count of events by domain prefix, watched against the PostHog free-tier 1M events/month ceiling.
 
 ## Adding a new event
