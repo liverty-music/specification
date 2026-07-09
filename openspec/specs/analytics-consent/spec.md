@@ -41,13 +41,13 @@ The pre-opt-out field formerly named `marketingMeasurement` SHALL be renamed `se
 ---
 
 ### Requirement: Full non-PII catalogue is captured anonymously before identification
-Before a user is identified — anonymous visitors who have not opted out — the application SHALL capture the **full non-PII event catalogue** (not a restricted allowlist), subject to: no property linking the events to a real account SHALL be sent, and the events SHALL carry no `distinct_id` mapped to a user identity. Persistence MAY use `localStorage` with an anonymous identifier so anonymous funnels survive page reloads. The earlier closed pre-consent allowlist (`page.viewed`, `account.signup.started` only) is removed.
+Before a user is identified — anonymous visitors who have not opted out — the application SHALL capture the **full non-PII event catalogue** (not a restricted allowlist), subject to: no property linking the events to a real account SHALL be sent, and the events SHALL carry no `distinct_id` mapped to a user identity. Persistence MAY use `localStorage` with an anonymous identifier so anonymous funnels survive page reloads. There is no pre-consent allowlist: every `active`, non-PII catalogue event is eligible for anonymous capture.
 
 This requirement covers only the pre-identification anonymous state. A user who has explicitly opted out is a different state: `opt_out_capturing()` suppresses all capture, so an opted-out user emits no telemetry of any kind (see "Analytics opt-out state is persisted and user-controllable from settings").
 
 #### Scenario: Anonymous visitor's full discovery behaviour is captured
-- **WHEN** an unidentified visitor who has not opted out browses the landing page, searches artists, and views artist detail
-- **THEN** the application MAY emit `page.viewed`, `artist.search`, `artist.discovery.viewed`, and any other non-PII catalogue event with an anonymous identifier
+- **WHEN** an unidentified visitor who has not opted out searches artists and opens a concert detail sheet
+- **THEN** the application MAY emit `artist.search`, `concert.detail.viewed`, `notification.requested`, and any other `active` non-PII catalogue event with an anonymous identifier
 - **AND** the application MAY persist the anonymous identifier in `localStorage`
 - **AND** no event SHALL include the user's email, Zitadel `sub`, `UserId`, or any other account-mapped identifier
 
@@ -59,23 +59,13 @@ This requirement covers only the pre-identification anonymous state. A user who 
 - **AND** persistence SHALL be memory-only (no anonymous identifier persisted to `localStorage`)
 - **AND** no link SHALL be created between the user's identity and any PostHog profile
 
----
-
 ### Requirement: Anonymous behaviour is merged into the identified profile on login
 When a previously-anonymous user is identified (login or signup, analytics not opted out), the application SHALL call `posthog.identify(user.id.value, ...)` such that the pre-identification anonymous event history is **merged into** the identified profile, so pre-signup discovery behaviour stays connected to post-signup conversion. The application SHALL NOT call `posthog.reset()` on the normal identify path; `reset()` is reserved for sign-out and for analytics opt-out, where severing the identity link is the intended effect.
 
 #### Scenario: Pre-signup discovery connects to post-signup conversion
-- **WHEN** an anonymous visitor follows artists, then signs up and is identified
+- **WHEN** an anonymous visitor searches and opens concert details, then signs up and is identified
 - **THEN** the anonymous events captured before signup SHALL be attributed to the identified `UserId` profile
-- **AND** a funnel from anonymous `artist.discovery.viewed` to identified `ticket.purchase.completed` SHALL be constructible for that user
-
-#### Scenario: Opt-out severs the link rather than merging
-- **WHEN** an identified user turns the Analytics toggle off
-- **THEN** the application SHALL call `posthog.opt_out_capturing()` and `posthog.reset()`
-- **AND** the application SHALL revert persistence to memory-only
-- **AND** subsequent navigation SHALL NOT emit any identified PostHog event
-
----
+- **AND** a funnel from anonymous `artist.search` / `concert.detail.viewed` to identified `artist.follow.completed` SHALL be constructible for that user
 
 ### Requirement: Sensitive personal information is structurally excluded; minor-user legality is deferred to legal review
 The system SHALL NOT capture APPI 要配慮個人情報 (sensitive personal information: race, creed, social status, medical history, criminal record, history of being a crime victim, physical/mental disability, and the other statutory categories) through any analytics path, including event properties and session replay. Because an opt-out model cannot lawfully cover sensitive categories (which always require explicit opt-in and cannot be acquired via opt-out), this exclusion SHALL be enforced in code — through the event-property allowlist and replay masking — not by relying on consent. As data minimisation, the system SHALL NOT capture precise birth date or age; any age-derived property SHALL be bucketized.
