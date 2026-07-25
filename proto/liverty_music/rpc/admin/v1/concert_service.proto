@@ -55,6 +55,15 @@ service ConcertService {
   // notification. The operation is idempotent: approving a staged concert that no
   // longer exists succeeds without creating a duplicate.
   //
+  // Approve is two-phase for duplicate events. When the staged concert maps onto
+  // an already-published event at the same resolved (venue, date, start time) and
+  // the request's `resolution` is unset, the response carries a
+  // `DuplicateConflict` (the existing event's display fields plus the staged
+  // preview) and NO state is mutated; the reviewer then re-invokes Approve with a
+  // `resolution` of `RESOLUTION_KEEP_EXISTING` or `RESOLUTION_ADOPT_STAGED`. A
+  // non-duplicate approval publishes normally regardless of the `resolution`
+  // value.
+  //
   // Possible errors:
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
   // - INVALID_ARGUMENT: The staged concert id is missing or malformed.
@@ -157,14 +166,81 @@ message ListPendingResponse {
   repeated PendingConcert pending_concerts = 1;
 }
 
-// ApproveRequest identifies the staged concert to publish.
+// Resolution selects how Approve reconciles a staged concert that duplicates an
+// already-published event. It is only consulted when a duplicate is detected; a
+// non-duplicate approval ignores it.
+enum Resolution {
+  // Default: no reconciliation choice. On a duplicate, Approve returns a
+  // DuplicateConflict without mutating state; otherwise it publishes normally.
+  RESOLUTION_UNSPECIFIED = 0;
+
+  // Keep the existing event unchanged: record the staged row in the rejection log
+  // with a duplicate reason (attributed to the calling reviewer) and clear it from
+  // the queue.
+  RESOLUTION_KEEP_EXISTING = 1;
+
+  // Adopt the staged row's display representation: overwrite the existing event's
+  // listed venue name and fill its start/open time only where currently unset,
+  // leaving venue identity (venue_id, place_id) and the shared series title
+  // untouched, then clear the staged row.
+  RESOLUTION_ADOPT_STAGED = 2;
+}
+
+// ExistingEvent is the display-field preview of an already-published event that a
+// staged concert collides with. It carries only what the reviewer needs to choose
+// a resolution; venue identity is intentionally omitted because reconciliation
+// never changes it.
+message ExistingEvent {
+  // The unique identifier of the already-published event.
+  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+
+  // The descriptive title of the existing event (from its shared series).
+  entity.v1.Title title = 2 [(buf.validate.field).required = true];
+
+  // The venue name currently stored on the existing event (its display field,
+  // the one ADOPT_STAGED would overwrite).
+  entity.v1.ListedVenueName listed_venue_name = 3 [(buf.validate.field).required = true];
+
+  // The local calendar date of the existing event.
+  entity.v1.LocalDate local_date = 4 [(buf.validate.field).required = true];
+
+  // The existing event's start time. Absent when the stored start time is unknown.
+  entity.v1.StartTime start_time = 5;
+
+  // The existing event's door-open time. Absent when the stored open time is unknown.
+  entity.v1.OpenTime open_time = 6;
+}
+
+// DuplicateConflict describes a staged concert that maps onto an already-published
+// event, offering the reviewer both records so they can choose a resolution.
+message DuplicateConflict {
+  // The already-published event the staged concert collides with.
+  ExistingEvent existing = 1 [(buf.validate.field).required = true];
+
+  // The staged concert the reviewer proposed to publish.
+  PendingConcert staged = 2 [(buf.validate.field).required = true];
+}
+
+// ApproveRequest identifies the staged concert to publish and, on a second pass,
+// how to reconcile a detected duplicate.
 message ApproveRequest {
   // Required. The unique identifier of the staged concert to approve.
   entity.v1.StagedConcertId staged_id = 1 [(buf.validate.field).required = true];
+
+  // Optional. How to reconcile a duplicate existing event. Left unset on the first
+  // call; set to a concrete choice when re-invoking after a DuplicateConflict.
+  Resolution resolution = 2 [(buf.validate.field).enum.defined_only = true];
 }
 
-// ApproveResponse is returned upon successful approval.
-message ApproveResponse {}
+// ApproveResponse is returned upon successful approval, or carries a
+// DuplicateConflict when the first pass detected an unresolved duplicate.
+message ApproveResponse {
+  // Set only when the staged concert duplicates an existing event and the request
+  // carried `RESOLUTION_UNSPECIFIED`; in that case no state was mutated and the
+  // reviewer must re-invoke Approve with a resolution. Absent on a successful
+  // approval or reconciliation.
+  DuplicateConflict conflict = 1;
+}
 
 // RejectRequest identifies the staged concert to drop and the reason why.
 message RejectRequest {

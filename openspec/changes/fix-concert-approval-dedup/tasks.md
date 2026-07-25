@@ -1,24 +1,24 @@
 ## 1. Backend — venue get-or-create (A-1, no proto, ships first)
 
-- [ ] 1.1 Extract a single `admin_area` derivation helper (`resolved_admin_area ?? admin_area`) and use it for both the `(listed_venue_name, admin_area)` lookup and the insert in `internal/usecase/concert_admin_uc.go`
-- [ ] 1.2 In `resolveOrCreateVenue`, on `GetByPlaceID` miss fall back to `GetByListedName(listed_venue_name, admin_area)` before creating (covers the different-place_id case)
-- [ ] 1.3 Change `VenueRepository.Create` to `INSERT … ON CONFLICT DO NOTHING` (untargeted) with a re-SELECT by `google_place_id` then `(listed_venue_name, admin_area)` on suppressed insert; return the surviving row id in `internal/infrastructure/database/rdb/venue_repo.go` — this changes the method signature to return the id, so update the repo interface and the `createVenueFromStaged` caller
-- [ ] 1.4 Backfill `google_place_id` only when the found venue's value is NULL; never overwrite a non-NULL value. The backfill UPDATE cannot use untargeted `ON CONFLICT`, so catch a unique violation on `idx_venues_google_place_id` and degrade to a no-op (concurrent backfill)
-- [ ] 1.5 Unit/integration tests: different place_id → returns existing venue; concurrent create → single row; admin_area symmetry; NULL-only backfill (follow go-tester conventions, use local docker compose postgres)
+- [x] 1.1 Extract a single `admin_area` derivation helper (`resolved_admin_area ?? admin_area`) and use it for both the `(listed_venue_name, admin_area)` lookup and the insert in `internal/usecase/concert_admin_uc.go`
+- [x] 1.2 In `resolveOrCreateVenue`, on `GetByPlaceID` miss fall back to `GetByListedName(listed_venue_name, admin_area)` before creating (covers the different-place_id case)
+- [x] 1.3 Change `VenueRepository.Create` to `INSERT … ON CONFLICT DO NOTHING` (untargeted) with a re-SELECT by `google_place_id` then `(listed_venue_name, admin_area)` on suppressed insert; return the surviving row id in `internal/infrastructure/database/rdb/venue_repo.go` — this changes the method signature to return the id, so update the repo interface and the `createVenueFromStaged` caller
+- [x] 1.4 Backfill `google_place_id` only when the found venue's value is NULL; never overwrite a non-NULL value. The backfill UPDATE cannot use untargeted `ON CONFLICT`, so catch a unique violation on `idx_venues_google_place_id` and degrade to a no-op (concurrent backfill)
+- [x] 1.5 Unit/integration tests: different place_id → returns existing venue; concurrent create → single row; admin_area symmetry; NULL-only backfill (follow go-tester conventions, use local docker compose postgres)
 - [ ] 1.6 `make check` green; open backend PR for A-1 as a standalone fix
 
 ## 2. Backend — discovery dedup tolerates name drift (B, no proto)
 
-- [ ] 2.1 Add a venue-name normalization function (fold whitespace + full/half-width, strip leading `〈admin_area〉・` / `〈city〉公演 ＠` prefixes) with unit tests over the observed prod drift cases
-- [ ] 2.2 Apply normalization to the `listed_venue_name` component of the dedup key on BOTH sides of the comparison (scraped concert and the existing event/pending-staged name) in `entity.ScrapedConcerts.FilterNew` and the pending-staged dedup in `SearchNewConcerts`, keeping `(local_event_date, start_at)` unchanged
-- [ ] 2.3 Tests: prefixed vs unprefixed name dedups; genuinely different venues stay distinct; drifted name matches a pending staged row
-- [ ] 2.4 Confirm during implementation whether normalization alone clears the prod drift; if not, record the resolve-first-then-dedup fallback decision (design D2b) in this change
+- [x] 2.1 Add a venue-name normalization function (fold whitespace + full/half-width, strip leading `〈admin_area〉・` / `〈city〉公演 ＠` prefixes) with unit tests over the observed prod drift cases
+- [x] 2.2 Apply normalization to the `listed_venue_name` component of the dedup key on BOTH sides of the comparison (scraped concert and the existing event/pending-staged name) in `entity.ScrapedConcerts.FilterNew` and the pending-staged dedup in `SearchNewConcerts`, keeping `(local_event_date, start_at)` unchanged
+- [x] 2.3 Tests: prefixed vs unprefixed name dedups; genuinely different venues stay distinct; drifted name matches a pending staged row
+- [x] 2.4 Confirm during implementation whether normalization alone clears the prod drift; if not, record the resolve-first-then-dedup fallback decision (design D2b) in this change — resolved: normalization (a) is sufficient, D2b deferred (design.md Open Questions)
 - [ ] 2.5 `make check` green; open backend PR for B (may bundle with A-1 or ship separately)
 
 ## 3. Specification — Approve RPC resolution + conflict (A-2 schema)
 
-- [ ] 3.1 Add a `resolution` enum (`RESOLUTION_UNSPECIFIED`, `KEEP_EXISTING`, `ADOPT_STAGED`) to the admin `ConcertService.Approve` request in the `rpc/admin/v1` proto
-- [ ] 3.2 Add a duplicate-conflict result to the `Approve` response carrying the existing event's display fields plus the staged preview; add protovalidate constraints; buf lint/format/breaking clean
+- [x] 3.1 Add a `resolution` enum (`RESOLUTION_UNSPECIFIED`, `KEEP_EXISTING`, `ADOPT_STAGED`) to the admin `ConcertService.Approve` request in the `rpc/admin/v1` proto
+- [x] 3.2 Add a duplicate-conflict result to the `Approve` response carrying the existing event's display fields plus the staged preview; add protovalidate constraints; buf lint/format/breaking clean
 - [ ] 3.3 Open specification PR; after review + CI, merge and publish a GitHub Release to trigger BSR codegen (CI-only — do not run buf push/generate locally)
 - [ ] 3.4 Monitor `buf-release.yml` until BSR codegen completes
 

@@ -179,5 +179,13 @@ discovery/staging pipeline is unaffected by the create-path change.
 
 - D2: confirm during implementation whether name normalization (a) alone clears the
   observed prod drift, or whether resolve-first-then-dedup (b) is needed for a subset.
+  - **Resolved (2026-07-25): normalization (a) alone is sufficient; D2b is NOT taken.**
+    `entity.NormalizeVenueName` (NFKC full/half-width fold, whitespace collapse, and
+    stripping of the `〈admin_area〉・` and `〈city〉公演 ＠` location prefixes) collapses
+    all observed prod-drift cases — including `フェスティバルホール` ⇄
+    `大阪・フェスティバルホール` (16 of 19 collision rows). Resolve-first-then-dedup (b)
+    would add a Places call ahead of dedup for concerts that turn out to be duplicates,
+    so it is deferred; the event natural key remains the DB-level safety net and D3
+    reconciliation catches anything the heuristic misses at approval.
 - Whether to run a one-off cleanup pass over the existing ~19 stale staged rows via the
   new reconciliation path, or let reviewers clear them manually post-deploy.
