@@ -63,25 +63,43 @@ The consumer SHALL reconcile each durable it owns against the desired configurat
 - **WHEN** a durable already matches the desired configuration
 - **THEN** the consumer SHALL bind to it without deleting or recreating it
 
-### Requirement: Durable names carry no consumer-app prefix
+### Requirement: Consumers are named by behavior, with a unique deliver group
 
-Durable and deliver-group names SHALL be derived from the subject alone, per subject, without an app-level prefix (e.g. `CONCERT.created` maps to `CONCERT_created`). Because all event consumption is performed by the single consumer application, an app prefix carries no information.
+Each durable and its deliver group SHALL be named after the **behavior** (the handler / reaction) it performs, not after the subject it consumes — using a `<verb>-<object>` name from the controlled vocabulary `ingest`, `resolve`, `verify`, `notify`, `track`, `log` (e.g. `CONCERT.created` → `notify-concert`). Every consumer's deliver group SHALL equal its own durable name, so no two consumers ever share a deliver group.
 
-#### Scenario: Durable name is derived from the subject only
+#### Scenario: Durable is named for its behavior
 
-- **WHEN** the consumer subscribes to subject `CONCERT.created`
-- **THEN** the durable and deliver-group names SHALL be `CONCERT_created` with no additional prefix
+- **WHEN** the consumer establishes the handler that pushes fans about a new concert (subject `CONCERT.created`)
+- **THEN** its durable and deliver-group names SHALL both be `notify-concert` (the behavior), not the subject
 
-#### Scenario: Each subject keeps a unique deliver group
+#### Scenario: No two consumers share a deliver group
 
-- **WHEN** two different subjects reside in the same stream
-- **THEN** each SHALL use its own per-subject deliver group so their consumers cannot collide
+- **WHEN** any two consumers exist
+- **THEN** each SHALL have a deliver group equal to its own durable name, so they cannot load-balance each other's messages
 
-### Requirement: KEDA triggers reference the live durable names
+### Requirement: Every handler receives every message (fan-out)
 
-The consumer autoscaler (KEDA ScaledObject) triggers SHALL reference the same durable/consumer names the application actually creates, so autoscaling reads the real backlog.
+When two or more handlers react to the same subject, each SHALL be an independent consumer that receives every matching message; handlers on the same subject SHALL NOT share a consumer or deliver group (which would silently load-balance the subject's messages between them).
+
+#### Scenario: Two behaviors on one subject both run
+
+- **WHEN** subject `ARTIST.created` has both a name-resolution handler and an image-resolution handler
+- **THEN** each SHALL have its own consumer (`resolve-artist-name`, `resolve-artist-image`) and both SHALL process every `ARTIST.created` message
+
+### Requirement: Subjects are named as past-tense events
+
+Subjects SHALL be named `<DOMAIN>.<event_past_tense>`, describing what happened. Multi-token event names SHALL use underscores within the trailing token (e.g. `SALES_PHASE.reminder_due`), and an authentication login SHALL be modelled as `USER.logged_in` rather than a separate `ACCOUNT` domain.
+
+#### Scenario: Login is a user event
+
+- **WHEN** a login event is published
+- **THEN** its subject SHALL be `USER.logged_in` on the `USER` stream, and no separate `ACCOUNT` stream SHALL be required
+
+### Requirement: KEDA triggers reference the live behavior-named durables
+
+The consumer autoscaler (KEDA ScaledObject) triggers SHALL reference the same behavior-named durables the application actually creates, so autoscaling reads the real backlog.
 
 #### Scenario: Trigger name matches the live durable
 
-- **WHEN** the consumer creates a durable for a subject
+- **WHEN** the consumer creates a durable for a behavior
 - **THEN** the corresponding KEDA trigger SHALL reference that exact durable name
