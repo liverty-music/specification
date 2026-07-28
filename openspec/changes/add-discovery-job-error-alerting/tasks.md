@@ -16,5 +16,5 @@
 ## 4. Verification & close-out
 
 - [ ] 4.1 Confirm both new Alert Policies exist in prod Cloud Monitoring with the correct filter (`labels.k8s-pod/app` = `sales-phase-discovery` / `merch-discovery`, `severity="ERROR"`, namespace `backend`).
-- [ ] 4.2 Validate the filter against a real ERROR entry (e.g., the 2026-07-28 `sales-phase-discovery` DB-ping failure) or by triggering a controlled ERROR, and confirm an Incident opens and notifies Slack + Google Chat.
+- [ ] 4.2 Validate coverage via ONE of (these are genuine alternatives — a log-based `conditionMatchedLog` policy only evaluates entries ingested AFTER it is created, so a pre-existing historical entry can never retroactively open an Incident): (a) trigger a controlled ERROR (or emit/locate a real one after the policy exists) and confirm an Incident opens and notifies Slack + Google Chat; OR (b) validate the policy filter matches a historical entry (e.g., the 2026-07-28 `sales-phase-discovery` DB-ping failure) in Logs Explorer, WITHOUT requiring a new Incident.
 - [ ] 4.3 Verify the change (`/opsx:verify`) and archive it once all tasks are complete and shipped to prod.
