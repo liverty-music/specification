@@ -44,14 +44,22 @@ Each Alert Policy SHALL filter logs by:
 
 ### Requirement: Discovery CronJob failure observability
 
-Backend discovery CronJobs (`concert-discovery`, `sales-phase-discovery`, `merch-discovery`) exit with status 0 even when a run fails, so that a broken run does not retry into the same persistent fault and exhaust downstream API quota. Because the Kubernetes Job is therefore always reported as succeeded, an ERROR-level log entry is the ONLY failure signal. Every backend discovery CronJob SHALL therefore have ERROR-log alert coverage under "Error log detection per workload". Introducing a new discovery CronJob without a corresponding Alert Policy is a violation of this requirement.
+Backend discovery CronJobs (`concert-discovery`, `sales-phase-discovery`, `merch-discovery`) handle their own errors and exit with status 0 even when a run fails, so that a broken run does not retry into the same persistent fault and exhaust downstream API quota. On this *handled*-failure path the process catches the error, logs it at severity ERROR, and exits 0 — so the Kubernetes Job is reported as succeeded and the ERROR log is the only failure signal. ERROR-log alerting is therefore the correct layer for the handled path, and every backend discovery CronJob SHALL have ERROR-log alert coverage under "Error log detection per workload". Introducing a new discovery CronJob without a corresponding Alert Policy is a violation of this requirement.
 
-#### Scenario: Discovery job fails but exits 0
+This requirement covers ONLY the handled-failure path. Abrupt-termination failures (OOM-kill, image-pull failure, node preemption/eviction) do not reach the handler: the container is killed before it can log an ERROR, and the Job is reported as failed rather than succeeded. Such failures are caught by neither ERROR-log alerting nor (deliberately excluded) Job-level alerting, and remain a separate, currently-uncovered observability gap tracked outside this change.
 
-- **WHEN** a discovery CronJob encounters a fatal error (for example, DI initialization or a database ping timeout)
+#### Scenario: Handled failure — job logs ERROR and exits 0
+
+- **WHEN** a discovery CronJob encounters a handled fatal error (for example, DI initialization or a database ping timeout)
 - **THEN** the process SHALL log the failure at severity ERROR
 - **AND** the process SHALL exit 0 (the Job is reported as succeeded and is NOT retried)
 - **AND** the workload's ERROR-log Alert Policy SHALL open an Incident from that ERROR log
+
+#### Scenario: Abrupt termination is out of scope
+
+- **WHEN** a discovery CronJob is abruptly terminated (OOM-kill, image-pull failure, node preemption) before it can log an ERROR
+- **THEN** the ERROR-log Alert Policy SHALL NOT be expected to fire (no ERROR log exists)
+- **AND** this failure class is acknowledged as a separate, currently-uncovered gap, not addressed by this requirement
 
 #### Scenario: New discovery CronJob is introduced
 

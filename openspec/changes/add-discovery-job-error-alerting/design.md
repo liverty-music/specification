@@ -17,7 +17,7 @@ The pod `app` labels are already correct and consistent: `kubectl get cronjob` s
 - Retrying transient infra faults (e.g., a DB ping timeout) inside the job before giving up. That is a separate reliability improvement, orthogonal to alert coverage, and is deliberately deferred.
 - Changing the exit-0 semantics themselves (they are intentional; this change reinforces them).
 - Grounding-consistency / recall work for the sales-phase searcher (tracked under #639).
-- Job-level Kubernetes failure alerting (e.g., `kube_job_failed`) — the jobs exit 0 by design, so a Job-status alert would never fire; ERROR-log alerting is the correct layer.
+- Job-level Kubernetes failure alerting (e.g., `kube_job_failed`) — on the *handled*-failure path the jobs exit 0 by design, so a Job-status alert would not fire and ERROR-log alerting is the correct layer. NOTE: this holds only for handled failures. Abrupt-termination failures (OOM-kill, image-pull failure, node preemption/eviction) DO report the Job as failed and emit no ERROR log, so they are covered by neither mechanism — a separate, currently-uncovered gap this change deliberately does not close (a future Job-status alert would be the right layer for it).
 
 ## Decisions
 
