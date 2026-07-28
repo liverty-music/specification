@@ -11,9 +11,7 @@ This capability defines the lifecycle management of the artist bubble pool on th
 - Tap → Follow → Fetch Similar → AddToPool → Repeat cycle
 
 ---
-
 ## Requirements
-
 ### Requirement: Bubble pool initialization based on followed-artist count
 The system SHALL initialize the bubble pool differently based on whether the user follows any artists. On page load, the system SHALL hydrate the follow state from the persisted store before initializing the pool.
 
@@ -69,22 +67,20 @@ The system SHALL remove duplicate and already-followed artists from the bubble p
 ---
 
 ### Requirement: Bubble pool cap and eviction on tap
-The system SHALL maintain a maximum pool size of 50 bubbles, evicting oldest entries when new ones are added. Pool mutations SHALL be coordinated through BubbleManager to ensure physics synchronization.
+The system SHALL enforce the 50-bubble cap at **both** the pool layer (`BubblePool`) and the physics engine (`BubblePhysics`). The physics engine SHALL never hold more than 50 active bodies at any time, regardless of the code path that triggered the addition.
 
-#### Scenario: Adding similar artists within capacity
-- **WHEN** the user taps a bubble and similar artists are fetched
-- **AND** the current pool size plus new artists does not exceed 50
-- **THEN** the BubbleManager SHALL add all new artists to both pool and physics
-- **AND** no existing bubbles SHALL be evicted
+#### Scenario: Physics engine enforces the cap on addBubbles
+- **WHEN** `addBubbles` is called with one or more artists
+- **AND** the physics engine already holds 50 or more bodies
+- **THEN** the physics engine SHALL add no further bodies
+- **AND** it SHALL NOT throw — excess entries are silently skipped
 
-#### Scenario: Adding similar artists exceeding capacity
-- **WHEN** the user taps a bubble and similar artists are fetched
-- **AND** the current pool size plus new artists exceeds 50
-- **THEN** the BubbleManager SHALL evict the oldest bubbles first (FIFO)
-- **AND** evicted bubbles SHALL be faded out via physics animation before removal from pool
-- **AND** new bubbles SHALL be spawned from the tapped bubble's position in both pool and physics
-
----
+#### Scenario: Stale bodies removed on artist set replacement
+- **WHEN** the canvas receives a new set of real (non-ghost) artists via `artistsChanged`
+- **AND** the physics engine already holds bodies from a previous artist set
+- **THEN** bodies whose artist ID is not present in the new set SHALL be faded out and removed from the physics engine
+- **AND** only after stale bodies are scheduled for removal SHALL the new artists be added
+- **AND** the total active body count SHALL remain within the 50-bubble cap throughout the transition
 
 ### Requirement: Tap-to-refill flow
 The system SHALL fetch similar artists on each bubble tap and manage the pool lifecycle through BubbleManager.
@@ -119,3 +115,4 @@ The `ArtistService.ListSimilar` and `ArtistService.ListTop` RPCs SHALL accept an
 #### Scenario: Limit parameter omitted or zero
 - **WHEN** a client sends a request with `limit = 0` or omits the field
 - **THEN** the server SHALL use its default limit
+
