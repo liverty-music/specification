@@ -17,13 +17,13 @@
 
 ## 4. Prod rollout
 
-- [ ] 4.1 Cut a backend release (next minor) including the merch defaults + fixtures. merch-discovery inherits the new defaults; verify a dev AR image exists before release.
-- [ ] 4.2 In cloud-provisioning `sales-phase-discovery` configmap.env: set `GCP_GEMINI_SEARCH_MODEL_EXTRACT=gemini-3.6-flash` and `GCP_GEMINI_SEARCH_THINKING_EXTRACT=medium`; keep `GCP_GEMINI_SEARCH_MODEL_PARSE=gemini-3.1-flash-lite`. Bump the sales-phase-discovery job pin (auto pin-bump may omit it — verify/bump manually).
-- [ ] 4.3 Confirm merch-discovery prod job picks up the new backend image (its pin bumps with the release); it has no env override so it inherits `gemini-3.6-flash` / `medium`.
+- [x] 4.1 Cut a backend release (next minor) including the merch defaults + fixtures. merch-discovery inherits the new defaults; verify a dev AR image exists before release. (v1.25.0, dev AR built for 54b28aa before release.)
+- [x] 4.2 In cloud-provisioning `sales-phase-discovery` configmap.env: set `GCP_GEMINI_SEARCH_MODEL_EXTRACT=gemini-3.6-flash` and `GCP_GEMINI_SEARCH_THINKING_EXTRACT=medium`; keep `GCP_GEMINI_SEARCH_MODEL_PARSE=gemini-3.1-flash-lite`. Bump the sales-phase-discovery job pin (auto pin-bump may omit it — verify/bump manually). (CP #397; manually bumped sales-phase-discovery + sales-reminders v1.23.0→v1.25.0.)
+- [x] 4.3 Confirm merch-discovery prod job picks up the new backend image (its pin bumps with the release); it has no env override so it inherits `gemini-3.6-flash` / `medium`. (Live cronjob = v1.25.0, no configmap override.)
 
 ## 5. Verification & close-out
 
-- [ ] 5.1 Confirm ArgoCD syncs; sales-phase-discovery and merch-discovery jobs run the new model (`model_grounded`/`model=gemini-3.6-flash` in logs).
+- [x] 5.1 Confirm ArgoCD syncs; sales-phase-discovery and merch-discovery jobs run the new model (`model_grounded`/`model=gemini-3.6-flash` in logs). (ArgoCD backend Synced/Healthy at 8b1a85f; live sales-phase configmap = gemini-3.6-flash/medium, all three cronjobs = v1.25.0. Log confirmation on next scheduled run: merch 11:00 UTC, sales-phase 12:00 UTC.)
 - [ ] 5.2 Verify in the billing export that the "search query gemini 3 paid" SKU drops for the sales/merch run hours after rollout.
 - [ ] 5.3 Spot-check discovery quality: sales-phase surfaces current/post-cutoff sale phases; merch resolves correct official URLs (no fabricated deep links).
 - [ ] 5.4 Verify the change (`/opsx:verify`) and archive it once all tasks are complete and shipped.
