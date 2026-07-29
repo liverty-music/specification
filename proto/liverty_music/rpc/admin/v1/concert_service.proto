@@ -143,6 +143,9 @@ message PendingConcert {
 
   // The time at which the discovery pipeline staged this concert.
   google.protobuf.Timestamp discovered_time = 9 [(buf.validate.field).required = true];
+
+  // The scheduled door-open time. Optional; omitted when the source did not state one.
+  entity.v1.OpenTime open_time = 10;
 }
 
 // ListRequest is the request for retrieving all published concerts. It takes no
