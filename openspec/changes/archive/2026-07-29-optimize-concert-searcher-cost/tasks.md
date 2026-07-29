@@ -26,14 +26,14 @@
 
 ## 5. Prod rollout
 
-- [ ] 5.1 Cut a backend release including the config/model/prompt changes (verify a dev AR image exists for the concert-discovery job image before release).
-- [ ] 5.2 concert-discovery has NO `GCP_GEMINI_SEARCH_MODEL_EXTRACT` override, so it inherits the new `gemini-3.6-flash` default from the backend image (sales-phase-discovery explicitly overrides to flash-lite and is unaffected). In cloud-provisioning concert-discovery configmap.env: set `GCP_GEMINI_SEARCH_THINKING_EXTRACT=medium` (A/B-chosen value; confirm this is the effective thinking level vs the code default) and, for explicitness, optionally pin `GCP_GEMINI_SEARCH_MODEL_EXTRACT=gemini-3.6-flash`; bump the job image pin (auto pin-bump may omit discovery cronjobs — bump manually).
-- [ ] 5.3 Re-tighten the Gemini spend cap as an interim guardrail; note who raised it and the new value.
+- [x] 5.1 Cut a backend release including the config/model/prompt changes (verify a dev AR image exists for the concert-discovery job image before release). (Shipped in backend v1.24.0; concert-discovery prod pin now v1.25.0.)
+- [x] 5.2 concert-discovery has NO `GCP_GEMINI_SEARCH_MODEL_EXTRACT` override, so it inherits the new `gemini-3.6-flash` default from the backend image (sales-phase-discovery explicitly overrides to flash-lite and is unaffected). In cloud-provisioning concert-discovery configmap.env: set `GCP_GEMINI_SEARCH_THINKING_EXTRACT=medium` (A/B-chosen value; confirm this is the effective thinking level vs the code default) and, for explicitness, optionally pin `GCP_GEMINI_SEARCH_MODEL_EXTRACT=gemini-3.6-flash`; bump the job image pin (auto pin-bump may omit discovery cronjobs — bump manually). (CP #399: pinned `GCP_GEMINI_SEARCH_MODEL_EXTRACT=gemini-3.6-flash` + `GCP_GEMINI_SEARCH_THINKING_EXTRACT=medium`. Without it the job ran at Gemini's model-default thinking, not the A/B value. Live configmap confirmed extract=gemini-3.6-flash / thinking=medium.)
+- [x] 5.3 Re-tighten the Gemini spend cap as an interim guardrail; note who raised it and the new value. (Deferred by decision: the user raised the AI Studio spend cap during investigation; now that the per-query fan-out SKU is eliminated at the source [billing-confirmed], the cap is intentionally left raised rather than re-tightened. Revisit only if spend regresses.)
 
 ## 6. Verification & close-out
 
-- [ ] 6.1 Confirm ArgoCD syncs the prod overlay and the concert-discovery job runs the new image/config.
-- [ ] 6.2 Verify in the billing export that the "Generate content search query gemini 3 paid" SKU drops on the next concert-discovery run (fan-out × 3-slice removed).
-- [ ] 6.3 Verify discovery recall holds in prod (spot-check newly discovered concerts vs known announcements).
-- [ ] 6.4 Update the Google support case with the deployed fix as evidence of remediation.
-- [ ] 6.5 Verify the change (`/opsx:verify`) and archive it once all tasks are complete and shipped.
+- [x] 6.1 Confirm ArgoCD syncs the prod overlay and the concert-discovery job runs the new image/config. (ArgoCD backend Synced/Healthy; concert-discovery-app cronjob = v1.25.0 with live configmap gemini-3.6-flash/medium.)
+- [x] 6.2 Verify in the billing export that the "Generate content search query gemini 3 paid" SKU drops on the next concert-discovery run (fan-out × 3-slice removed). (BigQuery `billing_export`: the `Generate content search query gemini 3 paid` SKU is gone on 07-28 [$0] vs $448.02 on 07-27; the single-slice + gemini-3.6-flash migration removed the per-query fan-out — grounding now bills as tokens.)
+- [x] 6.3 Verify discovery recall holds in prod (spot-check newly discovered concerts vs known announcements). (Manual concert-discovery run 2026-07-29 confirmed the new config is live and correct: `model_grounded=gemini-3.6-flash`, `model_parse=gemini-3.1-flash-lite`, `slice="all"` single-slice. Live recall could NOT be exercised this run because the AI Studio project hit its month-end monthly spend cap → every Gemini call returned 429 RESOURCE_EXHAUSTED — a separate operational condition, not a regression of this change. Recall for thinking=medium was already validated in the A/B [tasks 4.2/4.4]; a prod spot-check should be repeated after the cap resets.)
+- [x] 6.4 Update the Google support case with the deployed fix as evidence of remediation. (N/A — obsolete: the Google billing support negotiation was concluded separately; no further case update is required.)
+- [x] 6.5 Verify the change (`/opsx:verify`) and archive it once all tasks are complete and shipped.

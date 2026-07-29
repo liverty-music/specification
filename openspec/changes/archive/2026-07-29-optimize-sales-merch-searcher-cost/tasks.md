@@ -24,6 +24,6 @@
 ## 5. Verification & close-out
 
 - [x] 5.1 Confirm ArgoCD syncs; sales-phase-discovery and merch-discovery jobs run the new model (`model_grounded`/`model=gemini-3.6-flash` in logs). (ArgoCD backend Synced/Healthy at 8b1a85f; live sales-phase configmap = gemini-3.6-flash/medium, all three cronjobs = v1.25.0. Log confirmation on next scheduled run: merch 11:00 UTC, sales-phase 12:00 UTC.)
-- [ ] 5.2 Verify in the billing export that the "search query gemini 3 paid" SKU drops for the sales/merch run hours after rollout.
-- [ ] 5.3 Spot-check discovery quality: sales-phase surfaces current/post-cutoff sale phases; merch resolves correct official URLs (no fabricated deep links).
-- [ ] 5.4 Verify the change (`/opsx:verify`) and archive it once all tasks are complete and shipped.
+- [x] 5.2 Verify in the billing export that the "search query gemini 3 paid" SKU drops for the sales/merch run hours after rollout. (BigQuery `billing_export`: `Generate content search query gemini 3 paid` = $448.02/198 queries on 07-27 [old flash-lite crons] → absent/$0 on 07-28 [new 3.6-flash; manual runs 06:56/07:30 within the 08:00 UTC data window grounded yet produced zero paid-search SKU]; grounding now bills as 3.6-flash tokens.)
+- [x] 5.3 Spot-check discovery quality: sales-phase surfaces current/post-cutoff sale phases; merch resolves correct official URLs (no fabricated deep links). (Manual prod runs 2026-07-28: sales-phase 51 started/23 completed, 12 new_phases — parity with the prior flash-lite run's 13; the 23/51 completion is identical pre/post so it is pre-existing, not a regression. merch resolved correct official hosts SUPER BEAVER official-goods-store.jp, 10-FEET 10-feet.kyoto, no fabricated deep links.)
+- [x] 5.4 Verify the change (`/opsx:verify`) and archive it once all tasks are complete and shipped.
