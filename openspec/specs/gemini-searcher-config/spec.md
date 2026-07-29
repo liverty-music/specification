@@ -13,15 +13,15 @@ Defines the configuration surface that wires per-step Gemini model selection int
 
 | Field | Env var | Default constant |
 |-------|---------|------------------|
-| `GeminiSearchModelExtract` | `GCP_GEMINI_SEARCH_MODEL_EXTRACT` | `defaultSearchModelExtract = "gemini-3.5-flash"` |
+| `GeminiSearchModelExtract` | `GCP_GEMINI_SEARCH_MODEL_EXTRACT` | `defaultSearchModelExtract = "gemini-3.6-flash"` |
 | `GeminiSearchModelParse` | `GCP_GEMINI_SEARCH_MODEL_PARSE` | `defaultSearchModelParse = "gemini-3.1-flash-lite"` |
 
 No `GeminiSearchModelDiscovery` field SHALL exist on `GCPConfig`. No `defaultSearchModelDiscovery` constant SHALL exist. No `GCP_GEMINI_SEARCH_MODEL_DISCOVERY` env var SHALL be read.
 
 #### Scenario: Field set populated from env
 
-- **WHEN** the environment provides `GCP_GEMINI_SEARCH_MODEL_EXTRACT=gemini-3.5-flash` and `GCP_GEMINI_SEARCH_MODEL_PARSE=gemini-3.1-flash-lite`
-- **THEN** `GCPConfig.GeminiSearchModelExtract` SHALL be `"gemini-3.5-flash"`
+- **WHEN** the environment provides `GCP_GEMINI_SEARCH_MODEL_EXTRACT=gemini-3.6-flash` and `GCP_GEMINI_SEARCH_MODEL_PARSE=gemini-3.1-flash-lite`
+- **THEN** `GCPConfig.GeminiSearchModelExtract` SHALL be `"gemini-3.6-flash"`
 - **AND** `GCPConfig.GeminiSearchModelParse` SHALL be `"gemini-3.1-flash-lite"`
 
 #### Scenario: Discovery env var is unread
@@ -29,6 +29,11 @@ No `GeminiSearchModelDiscovery` field SHALL exist on `GCPConfig`. No `defaultSea
 - **WHEN** the environment provides `GCP_GEMINI_SEARCH_MODEL_DISCOVERY=anything`
 - **THEN** no `GCPConfig` field SHALL be populated from that variable
 - **AND** the variable SHALL be ignored
+
+#### Scenario: Extract-step default is gemini-3.6-flash
+
+- **WHEN** `GeminiSearchModelExtract` is empty and `SearchModelExtract()` is called
+- **THEN** the method SHALL return `"gemini-3.6-flash"`
 
 ### Requirement: Helper methods resolve per-step model with env-var precedence over defaults
 
@@ -130,3 +135,29 @@ The job configuration SHALL expose an environment-configurable discovery-skip wi
 
 - **WHEN** the concert-search use case evaluates discovery recency
 - **THEN** it SHALL use the configured discovery-window value rather than a hard-coded constant
+
+### Requirement: GCPConfig exposes merch-searcher model and thinking fields
+
+`pkg/config.GCPConfig` SHALL expose a merch-searcher model field and a merch-searcher thinking field, each populated from a dedicated environment variable with a fallback to a default constant:
+
+| Field | Env var | Default constant |
+|-------|---------|------------------|
+| `GeminiMerchModel` | `GCP_GEMINI_MERCH_MODEL` | `defaultMerchModel = "gemini-3.6-flash"` |
+| `GeminiMerchThinkingLevel` | `GCP_GEMINI_MERCH_THINKING_LEVEL` | `defaultMerchThinkingLevel = "medium"` |
+
+`GCPConfig` SHALL expose helper methods `MerchModel() string` and `MerchThinking() string` that resolve env override → default. The `MerchSearcher` SHALL read the model and thinking level exclusively via these accessors (threaded through DI into `gemini.MerchConfig`).
+
+#### Scenario: Merch model default applied when env unset
+
+- **WHEN** `GeminiMerchModel` is empty and `MerchModel()` is called
+- **THEN** the method SHALL return `"gemini-3.6-flash"`
+
+#### Scenario: Merch thinking default applied when env unset
+
+- **WHEN** `GeminiMerchThinkingLevel` is empty and `MerchThinking()` is called
+- **THEN** the method SHALL return `"medium"`
+
+#### Scenario: Merch env override honoured
+
+- **WHEN** the environment provides `GCP_GEMINI_MERCH_MODEL=gemini-3.1-flash-lite`
+- **THEN** `MerchModel()` SHALL return `"gemini-3.1-flash-lite"`
