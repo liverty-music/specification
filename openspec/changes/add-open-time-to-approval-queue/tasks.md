@@ -1,7 +1,7 @@
 ## 1. Specification
 
-- [ ] 1.1 Add `open_time = 10` field (type `entity.v1.OpenTime`, optional) to `PendingConcert` in `proto/liverty_music/rpc/admin/v1/concert_service.proto`
-- [ ] 1.2 Run `buf lint`, `buf format -w`, and `buf breaking --against '.git#branch=main'` to verify no proto issues
+- [x] 1.1 Add `open_time = 10` field (type `entity.v1.OpenTime`, optional) to `PendingConcert` in `proto/liverty_music/rpc/admin/v1/concert_service.proto`
+- [x] 1.2 Run `buf lint`, `buf format -w`, and `buf breaking --against '.git#branch=main'` to verify no proto issues
 - [ ] 1.3 Open a PR for the specification change and merge it
 - [ ] 1.4 Create a GitHub Release tag on the specification repo to trigger BSR code generation
 - [ ] 1.5 Confirm `buf-release.yml` CI completes successfully and the new package version is available on BSR
