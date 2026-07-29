@@ -160,8 +160,8 @@ a reason.
 
 - **WHEN** an authenticated admin-org caller invokes `ListPendingConcerts`
 - **THEN** the response SHALL contain each pending concert's staged id, performing artist, title,
-  local date, start time, raw `listed_venue_name`, resolved venue (name, admin_area, place id),
-  source URL, and discovered-time timestamp
+  local date, start time, open time, raw `listed_venue_name`, resolved venue (name, admin_area,
+  place id), source URL, and discovered-time timestamp
 
 #### Scenario: Non-admin caller is denied
 
@@ -186,8 +186,8 @@ from the flat `ListPending` result using the `PendingConcert.performer.name` and
 Each series group SHALL be presented as a collapsible disclosure. The collapsed summary
 SHALL show the series title, the count of pending concerts in the group, and the count
 of concerts with an unresolved venue. Individual concert rows within an expanded group
-SHALL retain the full set of reviewable fields (local date, start time, listed venue
-name, resolved venue, source URL, discovered timestamp) and their per-row approve and
+SHALL retain the full set of reviewable fields (local date, start time, open time, listed
+venue name, resolved venue, source URL, discovered timestamp) and their per-row approve and
 reject controls. The Artist and Title columns SHALL NOT be repeated inside the group
 table; they are conveyed by the group headers.
 
@@ -204,8 +204,8 @@ table; they are conveyed by the group headers.
 
 - **WHEN** the developer expands a series group
 - **THEN** each pending concert in that series SHALL be listed showing local date,
-  start time, listed venue name, resolved venue (or unresolved indicator), source
-  URL, and discovered timestamp
+  start time, open time, listed venue name, resolved venue (or unresolved indicator),
+  source URL, and discovered timestamp
 - **AND** each row SHALL expose Approve and Reject controls
 
 #### Scenario: Reviewer approves an item
@@ -220,6 +220,12 @@ table; they are conveyed by the group headers.
 - **THEN** the UI SHALL call `Reject` with that reason and remove the row from its
   series group on success
 - **AND** if the series group becomes empty it SHALL be removed from the UI
+
+#### Scenario: Conflict dialog shows open time for both staged and existing
+
+- **WHEN** approval detects a duplicate and presents the conflict dialog
+- **THEN** the dialog SHALL show the open time for both the staged and the existing event
+- **AND** absent open time values SHALL be displayed as a dash placeholder
 
 ### Requirement: Approval reconciles a duplicate existing event
 
