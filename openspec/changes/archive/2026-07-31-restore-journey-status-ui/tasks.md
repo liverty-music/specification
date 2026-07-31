@@ -10,5 +10,5 @@
 ## 3. Verify and ship
 
 - [x] 3.1 Run `make check` in the frontend repo — lint, typecheck, and unit tests must all pass
-- [ ] 3.2 Open a PR against `frontend` main with the two template changes
-- [ ] 3.3 Merge PR and create a patch release to ship to prod
+- [x] 3.2 Open a PR against `frontend` main with the two template changes
+- [x] 3.3 Merge PR and create a patch release to ship to prod
