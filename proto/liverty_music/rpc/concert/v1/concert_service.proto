@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/artist.proto";
 import "liverty_music/entity/v1/concert.proto";
 import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/geo_location.proto";
 import "liverty_music/entity/v1/user.proto";
 
 // ConcertService provides operations for managing the catalog of musical concerts.
@@ -25,14 +26,26 @@ service ConcertService {
   // - UNAUTHENTICATED: The user identity could not be verified.
   rpc ListByFollower(ListByFollowerRequest) returns (ListByFollowerResponse);
 
-  // ListWithProximity retrieves concerts for the specified artists, grouped by date
+  // ListByArtists retrieves concerts for the specified artists, grouped by date
   // and classified by geographic proximity to the caller's home area.
   // Authentication is not required; the caller provides artist IDs and home explicitly.
+  // The primary filter axis is artist_ids; proximity grouping is a property of the
+  // response format, not the filter.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The request is missing required fields, contains invalid data,
   //   or exceeds the maximum number of artist IDs (50).
-  rpc ListWithProximity(ListWithProximityRequest) returns (ListWithProximityResponse);
+  rpc ListByArtists(ListByArtistsRequest) returns (ListByArtistsResponse);
+
+  // ListByLocation retrieves all concerts in the catalog whose venues are HOME or NEARBY
+  // relative to a geographic reference point, within a date range, grouped by date and
+  // proximity. Authentication is not required. AWAY-tier concerts (beyond 200 km with a
+  // different admin_area) are excluded from the response.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The request is missing required fields, the location is invalid,
+  //   from is after to, or the date range exceeds 30 days.
+  rpc ListByLocation(ListByLocationRequest) returns (ListByLocationResponse);
 
   // SearchNewConcerts discovers new concerts for a given artist using generative AI.
   // The call blocks until the search completes (up to 60 seconds) and returns any
@@ -93,9 +106,9 @@ message ProximityGroup {
   repeated entity.v1.Concert away = 4;
 }
 
-// ListWithProximityRequest specifies the artists and home area for proximity-grouped
+// ListByArtistsRequest specifies the artists and home area for proximity-grouped
 // concert retrieval. Used during onboarding when the caller is not yet authenticated.
-message ListWithProximityRequest {
+message ListByArtistsRequest {
   // Required. The artists whose concerts are to be listed.
   // Maximum 50 artist IDs per request.
   repeated entity.v1.ArtistId artist_ids = 1 [
@@ -107,12 +120,54 @@ message ListWithProximityRequest {
   entity.v1.Home home = 2 [(buf.validate.field).required = true];
 }
 
-// ListWithProximityResponse contains concerts for the specified artists,
+// ListByArtistsResponse contains concerts for the specified artists,
 // grouped by date and classified by geographic proximity.
-message ListWithProximityResponse {
+message ListByArtistsResponse {
   // Concert groups ordered by date ascending. Each group contains concerts
   // for a single date, classified into home/nearby/away buckets based on
   // the geographic proximity between the provided home area and each venue.
+  repeated ProximityGroup groups = 1;
+}
+
+// ListByLocationRequest specifies a geographic reference point and a date range for
+// discovering all concerts in the catalog near that point. Used by the Dashboard
+// "All Nearby" mode; no authentication is required.
+//
+// The from <= to ordering is enforced here via a message-level CEL constraint. The
+// "to - from <= 30 days" maximum is enforced in the server use-case layer because
+// protovalidate CEL has no calendar-day arithmetic for google.type.Date, and switching
+// the fields to google.protobuf.Timestamp would reintroduce the timezone ambiguity that
+// LocalDate deliberately avoids.
+message ListByLocationRequest {
+  option (buf.validate.message).cel = {
+    id: "list_by_location.from_before_to"
+    message: "from must not be later than to"
+    expression:
+      "this.from.value.year < this.to.value.year"
+      "|| (this.from.value.year == this.to.value.year"
+      "    && (this.from.value.month < this.to.value.month"
+      "        || (this.from.value.month == this.to.value.month"
+      "            && this.from.value.day <= this.to.value.day)))"
+  };
+
+  // Required. The geographic reference point for proximity classification.
+  entity.v1.GeoLocation location = 1 [(buf.validate.field).required = true];
+
+  // Required. The inclusive start of the date range (venue-local calendar date).
+  entity.v1.LocalDate from = 2 [(buf.validate.field).required = true];
+
+  // Required. The inclusive end of the date range (venue-local calendar date).
+  // Must not be earlier than from, and the span must not exceed 30 days.
+  entity.v1.LocalDate to = 3 [(buf.validate.field).required = true];
+}
+
+// ListByLocationResponse contains all concerts near the reference point in the given
+// date range, grouped by date and classified by proximity. The away field of every
+// group is always empty — AWAY-tier concerts are excluded from this response.
+message ListByLocationResponse {
+  // Concert groups ordered by date ascending. Each group contains concerts for a single
+  // date, classified into home/nearby buckets based on the geographic proximity between
+  // the reference point and each venue. Groups with no HOME or NEARBY concerts are omitted.
   repeated ProximityGroup groups = 1;
 }
 

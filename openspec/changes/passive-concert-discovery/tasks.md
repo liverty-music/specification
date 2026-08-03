@@ -1,9 +1,9 @@
 ## 1. Specification — Proto Schema
 
-- [ ] 1.1 Create `proto/liverty_music/entity/v1/geo_location.proto` with `GeoLocation` message (`latitude`, `longitude`, `admin_area`)
-- [ ] 1.2 Add `ListByLocation` RPC to `proto/liverty_music/rpc/concert/v1/concert_service.proto` with `ListByLocationRequest` / `ListByLocationResponse`; add protovalidate constraint `to - from ≤ 30 days`
-- [ ] 1.3 Rename `ListWithProximity` → `ListByArtists` in `concert_service.proto` (update request/response message names to match)
-- [ ] 1.4 Run `buf lint` and `buf format -w`; verify `buf breaking` only flags the intentional rename
+- [x] 1.1 Create `proto/liverty_music/entity/v1/geo_location.proto` with `GeoLocation` message (`latitude`, `longitude`, `admin_area`)
+- [x] 1.2 Add `ListByLocation` RPC to `proto/liverty_music/rpc/concert/v1/concert_service.proto` with `ListByLocationRequest` / `ListByLocationResponse`; add protovalidate constraint `to - from ≤ 30 days`
+- [x] 1.3 Rename `ListWithProximity` → `ListByArtists` in `concert_service.proto` (update request/response message names to match)
+- [x] 1.4 Run `buf lint` and `buf format -w`; verify `buf breaking` only flags the intentional rename
 - [ ] 1.5 Open specification PR, add `buf skip breaking` label for the rename, get review
 
 ## 2. Specification — Release
