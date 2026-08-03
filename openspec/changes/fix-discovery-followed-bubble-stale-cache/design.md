@@ -42,10 +42,13 @@ this.bubbles.pool.replace(filteredCache)
 ### D2: `renderBubble()` の `isFollowed` 分岐を削除する
 
 `isFollowed ? opacity * 0.4` は、本来現れないはずのフォロー済みバブルへのフォールバック描画だった。
-D1 の修正後は到達不能になるため、削除してコードをシンプルにする。
+
+**適用前提**: 実装時に `onFollowFromSearch` がフォロー済みバブルを物理エンジンから除去していることを確認すること（`pool.remove()` 等）。タップによるフォロー（`onArtistSelected`）はバブル吸収アニメーションで除去されるが、検索フォローは別コードパスである。除去できていない場合、この分岐を削除すると該当バブルが dimmed → full opacity になり regression となるため、D2 は適用せず分岐を残すこと。
+
+除去が確認できた場合、D1 の修正後は到達不能になるため削除してコードをシンプルにする。
 `showFollowedIndicator` バインダブルと `followedIds` バインダブルも、他に利用箇所がなくなれば削除対象とする。
 
 ## Risks / Trade-offs
 
 - **[リスク] フィルタ後プールが空になる** → `loadInitialBubbles()` がバックグラウンドで即座に走り新アーティストをロードするため、ゴーストバブル UX で空にならない（`loading()` 内の ghost artist パスが引き続き機能する）
-- **[リスク] `followedIds` が `loading()` 時点で未ロード** → `IFollowStore` は DI シングルトンであり `loading()` より前に初期化されるため問題ない
+- **[リスク] `followedIds` が `loading()` 時点で未ロード** → `FollowStore` は Dashboard 起動時に `loadFollowed()` を完了させており、Discovery の `loading()` が呼ばれる時点では `followedIds` が populated されている。この前提が実装上崩れる場合（初回起動直後に Discovery へ直接遷移するケースなど）は、`loading()` 内で follow データのロード完了を `await` してからフィルタを適用すること

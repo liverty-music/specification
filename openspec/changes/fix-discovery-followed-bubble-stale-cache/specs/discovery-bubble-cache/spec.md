@@ -5,10 +5,18 @@
 
 #### Scenario: Re-entry paints cached artists instantly
 - **WHEN** the user navigates to Discovery after a prior visit
-- **THEN** the bubble pool SHALL be initialized from the cached artists synchronously during `loading()`
+- **AND** at least one cached artist is not yet followed
+- **THEN** the bubble pool SHALL be initialized from the filtered cached artists synchronously during `loading()`
 - **AND** followed artists SHALL be excluded from the cached pool before it is applied
 - **AND** no ghost bubbles SHALL be shown
 - **AND** `loadInitialBubbles()` SHALL run in the background to refresh the pool
+
+#### Scenario: Re-entry with all cached artists already followed
+- **WHEN** the user navigates to Discovery after a prior visit
+- **AND** every artist in the cached pool has since been followed
+- **THEN** `pool.replace([])` SHALL be called with an empty array (no stale bubbles rendered)
+- **AND** `loadInitialBubbles()` SHALL run immediately in the background and replace the empty pool with fresh artists
+- **AND** ghost placeholder bubbles SHALL be shown during the background load (same as cold visit behavior)
 
 #### Scenario: Cache excludes followed artists on re-entry
 - **WHEN** the cached bubble pool contains artists that the user has since followed
