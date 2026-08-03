@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+
+// GeoLocation is a reusable geographic reference point for proximity-based queries.
+//
+// It is semantically neutral: unlike Home, it carries no assumption about whether the
+// coordinates represent a user's home, current GPS position, or any other concept. Any
+// caller may construct a GeoLocation from any source. Servers use latitude/longitude for
+// Haversine distance (NEARBY tier: <= 200 km) and admin_area for exact venue.admin_area
+// matching (HOME tier).
+message GeoLocation {
+  // The WGS 84 latitude in decimal degrees of the reference point.
+  double latitude = 1 [(buf.validate.field).double = {
+    gte: -90.0
+    lte: 90.0
+  }];
+
+  // The WGS 84 longitude in decimal degrees of the reference point.
+  double longitude = 2 [(buf.validate.field).double = {
+    gte: -180.0
+    lte: 180.0
+  }];
+
+  // The ISO 3166-2 subdivision code used for HOME-tier classification (e.g., "JP-13").
+  // An exact match against a venue's admin_area classifies that venue as HOME regardless
+  // of Haversine distance.
+  string admin_area = 3 [(buf.validate.field).string.min_len = 1];
+}
