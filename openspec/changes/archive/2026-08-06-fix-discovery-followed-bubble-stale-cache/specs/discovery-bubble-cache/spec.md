@@ -16,7 +16,7 @@
 - **AND** every artist in the cached pool has since been followed
 - **THEN** `pool.replace([])` SHALL be called with an empty array (no stale bubbles rendered)
 - **AND** `loadInitialBubbles()` SHALL run immediately in the background and replace the empty pool with fresh artists
-- **AND** ghost placeholder bubbles SHALL be shown during the background load (same as cold visit behavior)
+- **AND** the bubble field SHALL remain empty until `loadInitialBubbles()` completes (ghost placeholder bubbles are NOT shown on the cached-but-filtered path, unlike a cold visit)
 
 #### Scenario: Cache excludes followed artists on re-entry
 - **WHEN** the cached bubble pool contains artists that the user has since followed
