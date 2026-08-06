@@ -80,9 +80,9 @@ service ConcertService {
 
   // Delete permanently removes a published concert by its event id. The deletion
   // cascades through the database's referential integrity to every row that
-  // references the event (performers, tickets, ticket journeys, ticket emails,
-  // merkle tree nodes, and the series' sales phases). It is unconditional: it is
-  // NOT blocked by dependent rows such as minted tickets or fan ticket journeys.
+  // references the event (performers, ticket journeys, ticket emails, and the
+  // series' sales phases). It is unconditional: it is NOT blocked by dependent
+  // rows such as fan ticket journeys.
   // The operation is idempotent: deleting an event that no longer exists succeeds.
   //
   // Possible errors:

@@ -50,10 +50,7 @@ Events that were removed (never fired, duplicated another event, or double-count
 | `ticket.lottery.entry.submitted` | FE | ticket | dormant | `event_id`, `lottery_round`, `trace_id?` | Lottery funnel — activates when ticket sales ship |
 | `ticket.purchase.initiated` | FE | ticket | dormant | `ticket_id`, `event_id`, `price_bucket`, `trace_id?` | Purchase funnel — activates when ticket sales ship |
 | `ticket.email.parsed` | BE | ticket | dormant | `email_type`, `parse_status`, `field_count`, `trace_id?` | Email-ingestion data quality — blocked by the OS-side email-import issue |
-| `ticket.mint.completed` | BE | ticket | dormant | `event_id`, `trace_id?` | SBT issuance rate, ticket-activation funnel — activates when minting ships |
 | `entry.checkin.attempted` | FE | entry | dormant | `event_id`, `trace_id?` | Entry funnel — activates when venue entry ships |
-| `entry.zk_proof.verified` | BE | entry | dormant | `event_id`, `trace_id?` | **Operations KPI**, entry funnel — activates when venue entry ships |
-| `entry.zk_proof.rejected` | BE | entry | dormant | `event_id`, `reason`, `trace_id?` | Entry rejection reasons — activates when venue entry ships |
 | `notification.requested` | FE | notification | active | `source`, `trace_id?` | Notification opt-in funnel (paired) |
 | `notification.subscribed` | BE | notification | active | `device_type`, `trace_id?` | Notification opt-in funnel (paired) |
 | `notification.unsubscribed` | BE | notification | active | `device_type`, `trace_id?` | Push churn vs. browser cache-clear |
@@ -79,6 +76,9 @@ The following events were removed from the collected set. Each is recorded here 
 | `ticket.lottery.result.assigned` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
 | `ticket.purchase.completed` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
 | `ticket.purchase.failed` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
+| `ticket.mint.completed` | BE | **Capability removed** — the blockchain ticket (SBT mint) system was removed under the Scenario A walled-garden pivot; the emitter no longer exists. |
+| `entry.zk_proof.verified` | BE | **Capability removed** — the blockchain ZKP entry system was removed under the Scenario A walled-garden pivot; the emitter no longer exists. |
+| `entry.zk_proof.rejected` | BE | **Capability removed** — the blockchain ZKP entry system was removed under the Scenario A walled-garden pivot; the emitter no longer exists. |
 
 ### Account-event source notes
 

@@ -31,6 +31,11 @@ message Event {
   reserved 3;
   reserved "title";
 
+  // Field number 7 was previously occupied by `bytes merkle_root`, used by the
+  // now-removed blockchain ZKP entry system. Reserved to prevent accidental reuse.
+  reserved 7;
+  reserved "merkle_root";
+
   // id is the unique identifier for this event within the Liverty Music platform.
   EventId id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
@@ -55,12 +60,6 @@ message Event {
   // open_time is the timestamp when venue doors open for fan entry.
   // This field is optional and may be omitted when door times have not been announced.
   OpenTime open_time = 6;
-
-  // merkle_root is the root hash of the Merkle tree built from all ticket holders for this event.
-  // It is only set for events that use zero-knowledge proof entry verification. The root is
-  // published on-chain and allows entry validators to verify membership without querying
-  // a central database, preserving fan privacy.
-  optional bytes merkle_root = 7 [(buf.validate.field).bytes.len = 32];
 
   // series_id references the parent Series that aggregates this event with any
   // sibling events sharing the same tour, festival, or multi-day run.
