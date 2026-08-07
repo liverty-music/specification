@@ -17,10 +17,3 @@ breaking:
   ignore:
     - proto/liverty_music/entity/v1/artist.proto
     - proto/liverty_music/rpc/artist/v1/artist_service.proto
-    # Intentional breaking removal of the blockchain ticket/entry system
-    # (remove-blockchain-ticket-system, spec#741). PR carries `buf skip breaking`.
-    # Remove the event.proto entry post-merge; the deleted-file entries are inert.
-    - proto/liverty_music/entity/v1/ticket.proto
-    - proto/liverty_music/rpc/entry/v1/entry_service.proto
-    - proto/liverty_music/rpc/ticket/v1/ticket_service.proto
-    - proto/liverty_music/entity/v1/event.proto
