@@ -1,3 +1,11 @@
+> **⚠️ SUPERSEDED by `remove-blockchain-ticket-system` (2026-08-06, spec#741).**
+> Under the Scenario A walled-garden assessment, the platform will not cross a
+> trust boundary that would make SBT / ZKP / on-chain properties load-bearing,
+> so the shipped-but-dormant blockchain ticket stack was removed rather than
+> completed (72/79). This proposal is retained for history and is NOT to be
+> resumed as designed; a future Web2 ticket system (account-bound tickets +
+> signed rotating QR + Passkey) will be a separate change.
+
 ## Why
 
 Ticket scalping and fraud remain major issues in the ticketing industry. While regulatory frameworks exist in Japan, technical enforcement is lagging. We aim to solve this by introducing a next-generation ticket system that leverages **Soulbound Tokens (SBT)** for resale prevention and **Zero-Knowledge Proofs (ZKP)** for privacy-preserving entry, combined with a **Web2-like UX** using Passkeys and PWA.
