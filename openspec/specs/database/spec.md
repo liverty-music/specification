@@ -3,9 +3,7 @@
 ## Purpose
 
 The `database` capability defines the requirements for reliable, scalable, and secure relational storage. It ensures that critical domain data for users, artists, and concerts is persisted in highly available Cloud SQL instances with appropriate encryption and data integrity guarantees.
-
 ## Requirements
-
 ### Requirement: Schema migrations MUST be applied before serving traffic
 
 The system SHALL ensure that the database schema is up to date before the application begins accepting requests. Migration execution SHALL be performed by the Atlas Kubernetes Operator via `AtlasMigration` CRD, not by the application itself. ArgoCD sync wave ordering SHALL ensure migrations complete before the backend Deployment rolls out.
@@ -56,7 +54,7 @@ All application tables SHALL be created in the `app` schema. The backend applica
 
 ### Requirement: Database tables SHALL NOT include metadata timestamp columns
 
-Application tables SHALL NOT include `created_at` or `updated_at` columns for audit purposes. Business-meaningful timestamps (e.g., `minted_at`, `start_at`, `open_at`, `searched_at`, `scheduled_at`, `sent_at`, `used_at`) SHALL be retained.
+Application tables SHALL NOT include `created_at` or `updated_at` columns for audit purposes. Business-meaningful timestamps (e.g., `start_at`, `open_at`, `searched_at`, `scheduled_at`, `sent_at`) SHALL be retained. (The `tickets.minted_at` and `nullifiers.used_at` columns are removed along with the blockchain ticket schema under the Scenario A pivot.)
 
 #### Scenario: Metadata timestamps removed from all tables
 
@@ -74,8 +72,7 @@ Application tables SHALL NOT include `created_at` or `updated_at` columns for au
 
 - **WHEN** the migration is applied
 - **THEN** the following columns SHALL remain unchanged:
-  - `tickets.minted_at`
   - `events.start_at`, `events.open_at`
   - `latest_search_logs.searched_at`
-  - `nullifiers.used_at`
   - `notifications.scheduled_at`, `notifications.sent_at`
+

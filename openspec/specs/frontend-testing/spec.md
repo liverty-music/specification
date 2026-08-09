@@ -5,9 +5,7 @@
 Establish comprehensive test coverage for the Aurelia 2 frontend application, including test infrastructure, service tests, component tests, and coverage reporting.
 
 This capability ensures code quality, prevents regressions, and enables confident refactoring through automated testing.
-
 ## Requirements
-
 ### Requirement: Test infrastructure provides shared mock factories
 The test suite SHALL provide reusable mock factories for commonly used DI dependencies (`ILogger`, `IAuthService`, `IRouter`, RPC service clients) in `test/helpers/`.
 
@@ -157,8 +155,6 @@ The `DashboardService.loadDashboardEvents` method SHALL fetch followed artists, 
 #### Scenario: RPC call failure for one artist
 - **WHEN** concert fetching fails for one artist but succeeds for another
 - **THEN** the service SHALL return events from the successful artist (using `Promise.allSettled` resilience)
-
-
 
 ### Requirement: Onboarding service routes based on completion status
 The `OnboardingService` SHALL check whether the user has completed onboarding and redirect to the appropriate route.
@@ -323,36 +319,6 @@ The `ArtistDiscoveryService` SHALL manage artist bubbles, track seen artists acr
 - **WHEN** `evictOldest` is called with count N
 - **THEN** it SHALL remove the N oldest bubbles from `availableBubbles`
 
-### Requirement: Proof service utility functions perform correct byte-to-field conversions
-The proof-service pure utility functions SHALL correctly convert between byte arrays, hex strings, decimal strings, and field elements.
-
-#### Scenario: bytesToDecimal converts big-endian bytes to decimal string
-- **WHEN** `bytesToDecimal` is called with `Uint8Array([1, 0])`
-- **THEN** it SHALL return `"256"`
-
-#### Scenario: bytesToDecimal handles single zero byte
-- **WHEN** `bytesToDecimal` is called with `Uint8Array([0])`
-- **THEN** it SHALL return `"0"`
-
-#### Scenario: uuidToFieldElement converts UUID to field element
-- **WHEN** `uuidToFieldElement` is called with a valid UUID string
-- **THEN** it SHALL return a decimal string representing the UUID's bytes as a big-endian integer
-
-#### Scenario: bytesToHex converts bytes to hex string
-- **WHEN** `bytesToHex` is called with `Uint8Array([255, 0, 171])`
-- **THEN** it SHALL return `"ff00ab"`
-
-### Requirement: Proof service verifies circuit file integrity
-The `verifyCircuitIntegrity` method SHALL verify SHA-256 hashes of downloaded circuit files against hardcoded expected hashes.
-
-#### Scenario: Hash matches expected value
-- **WHEN** the SHA-256 digest of a downloaded file matches the hardcoded hash
-- **THEN** verification SHALL succeed without error
-
-#### Scenario: Hash mismatch
-- **WHEN** the SHA-256 digest does not match
-- **THEN** verification SHALL throw an error indicating integrity failure
-
 ### Requirement: gRPC transport injects auth headers
 The `authInterceptor` within `createTransport` SHALL inject a Bearer token into every outgoing gRPC request.
 
@@ -454,27 +420,6 @@ The `ArtistDiscoveryPage` route SHALL auto-dismiss the guidance overlay after 5 
 #### Scenario: Artist selection triggers follow and live event check
 - **WHEN** an artist is selected
 - **THEN** `followArtist` SHALL be called followed by `checkLiveEvents`
-
-### Requirement: Tickets page generates ZK proof entry QR codes
-The `TicketsPage` route SHALL generate ZK proof entry codes and display them as QR code images.
-
-#### Scenario: Successful proof generation
-- **WHEN** `generateEntryCode` is called for a ticket
-- **THEN** it SHALL call `ProofService.generateEntryProof`, encode the result as base64 JSON, generate a QR code, and open the QR modal
-
-#### Scenario: Proof generation error
-- **WHEN** `generateEntryProof` throws an error
-- **THEN** the error SHALL be captured and displayed
-
-#### Scenario: AbortError is silently ignored
-- **WHEN** proof generation is aborted due to navigation
-- **THEN** no error SHALL be shown
-
-#### Scenario: mintDate and formatTokenId are pure formatters
-- **WHEN** `mintDate` is called with a timestamp
-- **THEN** it SHALL return a formatted date string
-- **WHEN** `formatTokenId` is called with a token ID
-- **THEN** it SHALL return a shortened display format
 
 ### Requirement: Event detail sheet computes URLs and handles touch dismiss
 The `EventDetailSheet` component SHALL compute Google Maps and Calendar URLs and support touch drag-to-dismiss with a 100px threshold.
@@ -769,3 +714,4 @@ Value converter test suites SHALL include at least one `createFixture` integrati
 #### Scenario: Date converter renders correctly in template
 - **WHEN** `createFixture` renders `${date | date}` with a known date value
 - **THEN** `fixture.assertText()` SHALL contain the expected formatted date string
+

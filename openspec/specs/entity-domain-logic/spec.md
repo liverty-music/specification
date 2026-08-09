@@ -1,5 +1,10 @@
-## ADDED Requirements
+## Purpose
 
+Defines the pure domain-logic behaviors of core business entities — validation
+rules, value-object constructors, deduplication, serialization, and conversion
+helpers — that must hold consistently across services independent of any
+transport or storage concern.
+## Requirements
 ### Requirement: Home validation
 
 The `Home` entity SHALL provide a `Validate() error` method that enforces structural integrity of geographic home area data. The method SHALL return the first validation error encountered.
@@ -376,82 +381,6 @@ The entity package SHALL provide `GenerateTokenID() (uint64, error)` that produc
 
 ---
 
-### Requirement: ZKP public signal parsing
-
-The entity package SHALL provide a `ParseZKPPublicSignals(publicSignalsJSON string) (*ZKPPublicSignals, error)` function that extracts public signals from a ZKP public signals JSON array.
-
-The `ZKPPublicSignals` type SHALL hold:
-- `MerkleRoot []byte` — 32-byte big-endian representation of the Merkle root field element
-- `EventID *big.Int` — event UUID encoded as BigInt(hex(uuid_without_hyphens))
-- `NullifierHash []byte` — 32-byte big-endian representation of the nullifier hash field element
-
-#### Scenario: Valid proof payload
-
-- **WHEN** ParseZKPPublicSignals receives a valid JSON proof containing public signals
-- **THEN** it returns a non-nil ZKPPublicSignals with correctly parsed byte arrays and nil error
-
-#### Scenario: Invalid JSON
-
-- **WHEN** ParseZKPPublicSignals receives malformed JSON
-- **THEN** it returns nil and a non-nil error
-
-#### Scenario: Missing signals
-
-- **WHEN** ParseZKPPublicSignals receives valid JSON but with insufficient public signal entries
-- **THEN** it returns nil and a non-nil error
-
----
-
-### Requirement: ZKP event ID verification
-
-The `ZKPPublicSignals` type SHALL provide a `VerifyEventID(expectedUUID string) error` method that verifies the event ID signal matches the expected UUID.
-
-The method SHALL:
-1. Parse `expectedUUID` as a UUID.
-2. Convert the UUID bytes to a bytes32 representation.
-3. Compare against the event ID signal in the parsed proof.
-4. Return nil on match, or an error describing the mismatch.
-
-#### Scenario: Matching event ID
-
-- **WHEN** VerifyEventID is called with a UUID that matches the proof's event ID signal
-- **THEN** it returns nil
-
-#### Scenario: Mismatched event ID
-
-- **WHEN** VerifyEventID is called with a UUID that does not match the proof's event ID signal
-- **THEN** it returns an error mentioning "event ID mismatch"
-
-#### Scenario: Invalid UUID format
-
-- **WHEN** VerifyEventID is called with a string that is not a valid UUID
-- **THEN** it returns an error mentioning invalid UUID
-
----
-
-### Requirement: ZKP byte conversion helpers
-
-The entity package SHALL provide:
-- `BigIntToBytes32(n *big.Int, label string) ([]byte, error)` -- converts a big.Int to a left-zero-padded 32-byte big-endian slice. Returns an error if the value exceeds 32 bytes (outside BN254 field). The `label` parameter is included in the error message to identify the overflowing field.
-- `BytesEqual(a, b []byte) bool` -- compares two byte slices for equality.
-
-#### Scenario: BigIntToBytes32 round-trip
-
-- **WHEN** a big.Int value is converted via BigIntToBytes32
-- **THEN** the resulting byte array contains the big-endian representation right-aligned in 32 bytes
-
-#### Scenario: BytesEqual identical arrays
-
-- **WHEN** two identical [32]byte arrays are compared
-- **THEN** BytesEqual returns true
-
-#### Scenario: BytesEqual different arrays
-
-- **WHEN** two different [32]byte arrays are compared
-- **THEN** BytesEqual returns false
-
----
-
 ### Requirement: ScrapedConcert to Concert conversion
 
 The `ScrapedConcert` entity SHALL provide a `ToConcert(artistID, eventID, venueID string) *Concert` method that constructs a `Concert` from the scraped data.
@@ -634,3 +563,4 @@ The function SHALL return nil when the address matches the pattern `^0x[0-9a-fA-
 
 - **WHEN** ValidateEthereumAddress receives "0xZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
 - **THEN** it returns an error mentioning "Ethereum address"
+

@@ -56,9 +56,9 @@
 
 ## 8. Cloud provisioning — secrets
 
-- [ ] 8.1 Remove contract deployer key, Base Sepolia RPC URL, and Bundler API key from Pulumi Secret Manager
+- [x] 8.1 Remove contract deployer key, Base Sepolia RPC URL, and Bundler API key from Pulumi Secret Manager
 - [x] 8.2 Remove the corresponding ExternalSecret mappings from k8s manifests
-- [ ] 8.3 `pulumi preview` → get approval → apply to dev; drop the recorded Base Sepolia contract address
+- [x] 8.3 `pulumi preview` → get approval → apply to dev; drop the recorded Base Sepolia contract address
 
 ## 9. Ship to prod & finalize
 
@@ -68,4 +68,4 @@
 - [x] 9.4 Release frontend → prod pin bump → verify ArgoCD Synced/Healthy
 - [x] 9.5 Verify preserved features (`ticket-journey`, `ticket-email-import`) still work in prod
 - [x] 9.6 Annotate `implement-ticket-system-mvp` and `sbt-formal-verification` as superseded by this change
-- [ ] 9.7 Archive `remove-blockchain-ticket-system` once all PRs are merged and shipped
+- [x] 9.7 Archive `remove-blockchain-ticket-system` once all PRs are merged and shipped
