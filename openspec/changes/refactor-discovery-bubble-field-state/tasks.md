@@ -1,11 +1,11 @@
 ## 1. Phase 0 — Stop-the-bleed: physics render parity (independently shippable)
 
-- [ ] 1.1 `bubble-physics.ts`: add `reconcile(target: Artist[])` that diffs `bubbleMap` vs target (keep matching ids, fade/remove ids not in target, add ids not present)
-- [ ] 1.2 `bubble-physics.ts`: stop counting fading-out bodies against capacity when adding; remove the silent `break` in `addBubbles` cap path (replace with a logged hard safety ceiling that never silently drops a target member)
-- [ ] 1.3 `dna-orb-canvas.ts`: route `artistsChanged` through `physics.reconcile(newVal)` instead of the fade-out + `revealGhostBubbles` + `addBubbles` sequence for the real-artist path
-- [ ] 1.4 Unit tests: reconcile converges body set to target; background-refresh transition ends with body count == field count (covers `bubble-state-management` "Background refresh preserves render parity" + "Physics never silently drops a target member")
-- [ ] 1.5 `make check` green
-- [ ] 1.6 Frontend PR → CI green → merge → Release → prod roll; verify re-entry render parity in prod (pool count == rendered bubble count)
+- [x] 1.1 `bubble-physics.ts`: add `reconcile(target: Artist[])` that diffs `bubbleMap` vs target (keep matching ids, fade/remove ids not in target, add ids not present)
+- [x] 1.2 `bubble-physics.ts`: stop counting fading-out bodies against capacity when adding; remove the silent `break` in `addBubbles` cap path (replace with a logged hard safety ceiling that never silently drops a target member)
+- [x] 1.3 `dna-orb-canvas.ts`: route `artistsChanged` through `physics.reconcile(newVal)` instead of the fade-out + `revealGhostBubbles` + `addBubbles` sequence for the real-artist path
+- [x] 1.4 Unit tests: reconcile converges body set to target; background-refresh transition ends with body count == field count (covers `bubble-state-management` "Background refresh preserves render parity" + "Physics never silently drops a target member"). Also added a revive-on-re-add regression test (mid-fade target member re-added within the fade window) per #514 review.
+- [x] 1.5 `make check` green
+- [x] 1.6 Frontend PR (#514) → CI green → merge → Release (v1.39.2) → prod roll (CP pin 850104b). Prod-verified via the live Aurelia VM: rendered physics bodies == UNIQUE pool artists, `inPoolButNotRendered=0`, no collapse. NOTE: raw `pool.length` > rendered because the pool still holds duplicates (seed-similar top-up dedup gap) — physics dedupes by id so the field is visually correct; the pool-level dedup is fixed by Phase 1 task 2.2 (invariants applied once). Also shipped deps PR #516 (dompurify ^3.4.13 override) to clear the repo-wide Security Audit gate.
 
 ## 2. Phase 1 — Single source of truth (DiscoveryFieldStore)
 
