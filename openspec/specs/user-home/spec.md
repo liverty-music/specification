@@ -177,7 +177,9 @@ authenticated `User` entity) internally; callers SHALL read home from
 
 ### Requirement: Unified Home Area Selector Component
 
-The frontend SHALL provide a single reusable `user-home-selector` component for selecting the user's home area. This component SHALL be used in both the onboarding flow (Dashboard BottomSheet) and the Settings page. The component SHALL implement a consistent 2-step selection flow with an optional quick-select shortcut.
+The frontend SHALL provide a single reusable `user-home-selector` component for selecting the user's home area. This component SHALL be used in the onboarding flow (Dashboard BottomSheet), the Settings page, and the Dashboard All Nearby area selector. The component SHALL implement a consistent 2-step selection flow with an optional quick-select shortcut.
+
+The component SHALL be a pure selection UI: it SHALL NOT call `UserService.updateHome()`, write to localStorage, or resolve `IUserStore` / `IAuthService` internally. All persistence decisions are delegated to the caller via the `onHomeSelected` callback.
 
 #### Scenario: Step 1 displays quick-select cities and regions
 
@@ -207,17 +209,32 @@ The frontend SHALL provide a single reusable `user-home-selector` component for 
 - **THEN** the component SHALL confirm the selection with the prefecture's ISO 3166-2 code
 - **AND** the component SHALL invoke the `onHomeSelected` callback with the code
 
-#### Scenario: Persistence for authenticated users
+#### Scenario: Caller owns persistence — authenticated home save
 
-- **WHEN** an authenticated user selects a home area
-- **THEN** the component SHALL call `UserService.updateHome()` with the structured Home object
-- **AND** the component SHALL NOT write to localStorage
+- **WHEN** the `user-home-selector` is used on the Settings page or onboarding flow
+- **THEN** the caller (Settings page / onboarding handler) SHALL call `UserService.updateHome()` in its `onHomeSelected` handler
+- **AND** the component itself SHALL NOT call any backend RPC
 
-#### Scenario: Persistence for guest users
+#### Scenario: Caller owns persistence — guest home save
 
-- **WHEN** a guest user selects a home area
-- **THEN** the component SHALL store the ISO 3166-2 code in localStorage under `guest.home`
-- **AND** the component SHALL NOT call any backend RPC
+- **WHEN** the `user-home-selector` is used on the Settings page or onboarding flow for a guest user
+- **THEN** the caller SHALL write the ISO 3166-2 code to localStorage under `guest.home`
+- **AND** the component itself SHALL NOT write to localStorage
+
+#### Scenario: Caller owns persistence — session-only override
+
+- **WHEN** the `user-home-selector` is used as the All Nearby area selector
+- **THEN** the caller SHALL update only the route's local state with the selected code
+- **AND** neither `UserService.updateHome()` nor localStorage SHALL be written
+
+#### Scenario: Current selection highlight via bindable prop
+
+- **WHEN** the `user-home-selector` component is opened
+- **THEN** it SHALL accept a `@bindable currentCode: string | null` prop representing the currently active ISO 3166-2 code
+- **AND** the component SHALL use `currentCode` to highlight the matching prefecture or city button
+- **AND** `currentCode` SHALL replace the former `IUserStore`-derived `currentHomeCode` getter; the component SHALL NOT derive the current code from `IUserStore` internally
+- **WHEN** the caller does not provide `currentCode`
+- **THEN** no prefecture SHALL be highlighted
 
 ### Requirement: Home area i18n namespace
 
