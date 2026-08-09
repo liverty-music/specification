@@ -1,3 +1,9 @@
+> **⚠️ SUPERSEDED by `remove-blockchain-ticket-system` (2026-08-06, spec#741).**
+> The `TicketSBT` Solidity contract this change would formally verify was
+> removed under the Scenario A walled-garden pivot (no on-chain ticket system).
+> No code from this change ever landed (0/34); its retirement is
+> documentation-only. NOT to be resumed.
+
 ## Why
 
 Phase 1 (sbt-test-hardening) でテストの穴を塞ぎ Slither を導入した後、mainnet デプロイ前に更に高い保証レベルが必要。Fuzz テストは「ランダムなサンプル」でしかなく、「全ての入力で安全」を証明できない。Halmos による形式検証で SBT の不変条件を数学的に証明し、Invariant テストで状態遷移全体を網羅し、Mutation テストでテストスイート自体の品質を客観的に測定する。

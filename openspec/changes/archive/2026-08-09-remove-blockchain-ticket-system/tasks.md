@@ -45,27 +45,27 @@
 
 - [x] 6.1 Remove `rpc/ticket/v1/ticket_service.proto` and `rpc/entry/v1/entry_service.proto`
 - [x] 6.2 Remove blockchain-only fields/messages from entity protos (e.g., merkle root on event, ticket SBT fields) while preserving `ticket_journey` / `ticket_email` entities
-- [ ] 6.3 Run `buf lint` and `buf format -w`; open PR with the `buf skip breaking` label
-- [ ] 6.4 Merge PR; create GitHub Release (tag) → confirm `buf-release.yml` pushes to BSR
-- [ ] 6.5 Monitor BSR gen completion via `gh run watch`
+- [x] 6.3 Run `buf lint` and `buf format -w`; open PR with the `buf skip breaking` label
+- [x] 6.4 Merge PR; create GitHub Release (tag) → confirm `buf-release.yml` pushes to BSR
+- [x] 6.5 Monitor BSR gen completion via `gh run watch`
 
 ## 7. Downstream dependency bump
 
-- [ ] 7.1 Backend: bump `buf.build/gen/go/liverty-music/schema` to the post-removal version; `go mod tidy`; `make check`
-- [ ] 7.2 Frontend: bump `@buf/liverty-music_schema.*` to the post-removal version; `make check`
+- [x] 7.1 Backend: bump `buf.build/gen/go/liverty-music/schema` to the post-removal version; `go mod tidy`; `make check`
+- [x] 7.2 Frontend: bump `@buf/liverty-music_schema.*` to the post-removal version; `make check`
 
 ## 8. Cloud provisioning — secrets
 
-- [ ] 8.1 Remove contract deployer key, Base Sepolia RPC URL, and Bundler API key from Pulumi Secret Manager
-- [ ] 8.2 Remove the corresponding ExternalSecret mappings from k8s manifests
-- [ ] 8.3 `pulumi preview` → get approval → apply to dev; drop the recorded Base Sepolia contract address
+- [x] 8.1 Remove contract deployer key, Base Sepolia RPC URL, and Bundler API key from Pulumi Secret Manager
+- [x] 8.2 Remove the corresponding ExternalSecret mappings from k8s manifests
+- [x] 8.3 `pulumi preview` → get approval → apply to dev; drop the recorded Base Sepolia contract address
 
 ## 9. Ship to prod & finalize
 
-- [ ] 9.1 Open backend PR (after BSR gen + dep bump), pass CI, merge
-- [ ] 9.2 Open frontend PR (after BSR gen + dep bump), pass CI, merge
-- [ ] 9.3 Release backend → prod pin bump → verify migration applied and pods healthy (ArgoCD Synced/Healthy)
-- [ ] 9.4 Release frontend → prod pin bump → verify ArgoCD Synced/Healthy
-- [ ] 9.5 Verify preserved features (`ticket-journey`, `ticket-email-import`) still work in prod
-- [ ] 9.6 Annotate `implement-ticket-system-mvp` and `sbt-formal-verification` as superseded by this change
-- [ ] 9.7 Archive `remove-blockchain-ticket-system` once all PRs are merged and shipped
+- [x] 9.1 Open backend PR (after BSR gen + dep bump), pass CI, merge
+- [x] 9.2 Open frontend PR (after BSR gen + dep bump), pass CI, merge
+- [x] 9.3 Release backend → prod pin bump → verify migration applied and pods healthy (ArgoCD Synced/Healthy)
+- [x] 9.4 Release frontend → prod pin bump → verify ArgoCD Synced/Healthy
+- [x] 9.5 Verify preserved features (`ticket-journey`, `ticket-email-import`) still work in prod
+- [x] 9.6 Annotate `implement-ticket-system-mvp` and `sbt-formal-verification` as superseded by this change
+- [x] 9.7 Archive `remove-blockchain-ticket-system` once all PRs are merged and shipped

@@ -3,9 +3,7 @@
 ## Purpose
 
 The `live-events` capability defines the core domain entities—Artists, Venues, and Concerts—and the standard interfaces for managing them. It establishes the single source of truth for concert metadata, enabling consistent data representation and access across the platform's crawler, backend services, and frontend applications.
-
 ## Requirements
-
 ### Requirement: Concert Schedue Data Model
 
 The system MUST define standard data structures for core concert entities to ensure consistency across services.
@@ -32,9 +30,10 @@ The system MUST define standard data structures for core concert entities to ens
 
 - **WHEN** an event is represented
 - **THEN** it MUST include a unique ID, an embedded `Venue` object, title, and local date.
-- **AND** it MAY include start time, open time, and merkle root.
+- **AND** it MAY include start time and open time.
 - **AND** all primitive scalar fields SHALL be represented as VO wrapper messages.
 - **AND** it SHALL NOT include `create_time` or `update_time` fields.
+- **AND** it SHALL NOT include a `merkle_root` field (removed with the blockchain ticket system under the Scenario A pivot).
 
 #### Scenario: Concert card displays ticket journey badge
 
@@ -205,3 +204,4 @@ The system SHALL provide a mechanism to check whether an artist has upcoming liv
 - **AND** the `ConcertService/List` RPC call fails
 - **THEN** the system SHALL return `false`
 - **AND** the system SHALL log the error
+
