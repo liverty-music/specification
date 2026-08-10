@@ -1,25 +1,25 @@
 ## 1. Specification
 
-- [ ] 1.1 Land the delta specs for `push-notification-service`, `dashboard-artist-filter`, and `concert-detail`; run `openspec validate --strict`
-- [ ] 1.2 Confirm no proto/schema change is required (payload already carries `data.url`; count is a formatting concern). Only if review concludes otherwise, follow the cross-repo BSR release flow
+- [x] 1.1 Land the delta specs for `push-notification-service`, `dashboard-artist-filter`, and `concert-detail`; run `openspec validate --strict`
+- [x] 1.2 Confirm no proto/schema change is required (payload already carries `data.url`; count is a formatting concern). Only if review concludes otherwise, follow the cross-repo BSR release flow
 - [ ] 1.3 Open the specification PR; merge after review + CI
 
 ## 2. Backend — hype matched-subset + deep-link
 
-- [ ] 2.1 Add a matched-subset selector to the hype types (e.g. `MatchingConcerts(home, concerts) []Concert`) covering `watch` (empty), `home` (in-area), `nearby` (in-range), `away`/`anywhere` (all); keep or delegate `ShouldNotify` as `len(subset) > 0`
-- [ ] 2.2 Unit-test the subset selector: home in/out-of-area, nearby in/out-of-range, away-all, watch-empty
-- [ ] 2.3 In `push_notification_uc.go`, compute the per-recipient subset once; gate delivery on non-empty subset; set the body count to `len(subset)`
-- [ ] 2.4 Select the earliest concert of the subset (local date asc, tie-break start time asc) and set `data.url = "/concerts/<concertId>"`
-- [ ] 2.5 Unit-test earliest selection (date ordering + same-day start-time tie-break) and the home-recipient "in-area, not globally-earliest" case
+- [x] 2.1 Add a matched-subset selector to the hype types (e.g. `MatchingConcerts(home, concerts) []Concert`) covering `watch` (empty), `home` (in-area), `nearby` (in-range), `away`/`anywhere` (all); keep or delegate `ShouldNotify` as `len(subset) > 0`
+- [x] 2.2 Unit-test the subset selector: home in/out-of-area, nearby in/out-of-range, away-all, watch-empty
+- [x] 2.3 In `push_notification_uc.go`, compute the per-recipient subset once; gate delivery on non-empty subset; set the body count to `len(subset)`
+- [x] 2.4 Select the earliest concert of the subset (local date asc, tie-break start time asc) and set `data.url = "/concerts/<concertId>"`
+- [x] 2.5 Unit-test earliest selection (date ordering + same-day start-time tie-break) and the home-recipient "in-area, not globally-earliest" case
 - [ ] 2.6 `make check`; open backend PR; merge after review + CI
 
 ## 3. Frontend — deep-link auto-open
 
-- [ ] 3.1 In `DashboardRoute.loading()`, read the `:id` route param into a `pendingConcertId` field (suppressed during onboarding)
-- [ ] 3.2 After the authoritative `listByFollower` fetch resolves in `loadData()`, resolve `pendingConcertId` against the result — NOT on the cache first-paint; no timer, no optimistic pre-open, no extra RPC
-- [ ] 3.3 On match, call `detailSheet.open(concert)` and derive the filter (`filteredArtistIds = [concert.artistId]`); reconcile with the `syncFilterUrl` `@watch` so the sheet's `/concerts/:id` URL wins while open
-- [ ] 3.4 On no-match (unfollow / zero-date / unresolved-performer), degrade to filter-only: apply the artist filter if derivable, leave the sheet closed, surface no error
-- [ ] 3.5 Unit/e2e tests: auto-open after fetch, filter derived from concert, close reverts via `replaceState` with no dashboard reload, and absent-concert filter-only path
+- [x] 3.1 In `DashboardRoute.loading()`, read the `:id` route param into a `pendingConcertId` field (suppressed during onboarding)
+- [x] 3.2 After the authoritative `listByFollower` fetch resolves in `loadData()`, resolve `pendingConcertId` against the result — NOT on the cache first-paint; no timer, no optimistic pre-open, no extra RPC
+- [x] 3.3 On match, call `detailSheet.open(concert)` and derive the filter (`filteredArtistIds = [concert.artistId]`); reconcile with the `syncFilterUrl` `@watch` so the sheet's `/concerts/:id` URL wins while open
+- [x] 3.4 On no-match (unfollow / zero-date / unresolved-performer), degrade to filter-only: apply the artist filter if derivable, leave the sheet closed, surface no error
+- [x] 3.5 Unit/e2e tests: auto-open after fetch, filter derived from concert, close reverts via `replaceState` with no dashboard reload, and absent-concert filter-only path
 - [ ] 3.6 `make check`; open frontend PR; merge after review + CI
 
 ## 4. Release & prod verification
