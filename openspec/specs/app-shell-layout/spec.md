@@ -19,11 +19,16 @@ The system SHALL display proper brand identity elements across the application.
 - **AND** the system SHALL provide a web app manifest with themed PNG icons (including a maskable variant) for Android and other PWA-compliant platforms
 - **AND** the web app manifest SHALL NOT reference SVG icon assets
 
+#### Scenario: Web app manifest declares the service name
+- **WHEN** the web app manifest is served
+- **THEN** the manifest `name` member SHALL be "Liverty Music"
+- **AND** the manifest `short_name` member SHALL be "LivertyMusic"
+- **AND** the `short_name` SHALL NOT be an abbreviation that omits part of the service name (e.g. "Liverty")
+- **AND** consequently the installed PWA home-screen icon label SHALL present the service name rather than an abbreviation
+
 #### Scenario: Theme color is consistent across HTML and manifest
 - **WHEN** the application is loaded
 - **THEN** the `theme-color` declared in the HTML `<head>` meta tag SHALL equal the `theme_color` declared in the web app manifest
-
----
 
 ### Requirement: Conditional Navigation Display
 The system SHALL conditionally show or hide the navigation bar based on the current route context. The navigation bar SHALL be visible on all pages except the Landing Page and auth callback.
