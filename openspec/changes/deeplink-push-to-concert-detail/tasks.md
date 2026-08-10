@@ -24,6 +24,6 @@
 
 ## 4. Release & prod verification
 
-- [ ] 4.1 Release backend (tag) and bump prod pin; confirm rollout
-- [ ] 4.2 Release frontend (GH Release → automated prod pin bump); confirm ArgoCD sync
-- [ ] 4.3 Verify in prod: tap a real new-concert notification opens the earliest matched concert's detail sheet, dashboard filtered to its artist; confirm `home`-hype count reflects the in-area subset
+- [x] 4.1 Release backend (tag) and bump prod pin; confirm rollout — v1.29.0 released, prod overlay pinned, server-app + consumer-app rolled to v1.29.0 (ArgoCD Synced/Healthy)
+- [x] 4.2 Release frontend (GH Release → automated prod pin bump); confirm ArgoCD sync — v1.41.0 released, prod overlay pinned, web-app rolled to v1.41.0 (ArgoCD Synced)
+- [ ] 4.3 Verify in prod: tap a real new-concert notification opens the earliest matched concert's detail sheet, dashboard filtered to its artist; confirm `home`-hype count reflects the in-area subset — deploy verified (both services live on new versions; `/concerts/:id` serves 200 in prod). Live notification-tap check pending a real `CONCERT.created` event with a subscribed device.
