@@ -32,12 +32,18 @@ The Dashboard SHALL provide a segment toggle control that switches between "My T
 
 ### Requirement: Date Preset Selector
 
-The All Nearby mode SHALL provide four date presets for filtering the concert date range.
+The All Nearby mode SHALL expose its date filter as a single date chip that opens one date-range bottom sheet. The sheet SHALL offer three quick presets (今週末, 7日以内, 30日以内) and a directly-editable custom range (start/end date fields), so a custom range is adjusted without any intermediate menu or drill-down. There is no standalone "カスタム" preset chip; custom selection is simply editing the date fields.
 
-#### Scenario: Available presets
+#### Scenario: Date chip opens the range sheet in one tap
 
-- **WHEN** the date-preset selector is displayed
-- **THEN** it SHALL offer exactly four options: 今週末, 7日以内, 30日以内, カスタム
+- **WHEN** the user taps the date chip
+- **THEN** a date-range bottom sheet SHALL open containing both the quick presets and editable start/end date fields
+
+#### Scenario: Available quick presets
+
+- **WHEN** the date-range sheet is displayed
+- **THEN** it SHALL offer exactly three quick presets: 今週末, 7日以内, 30日以内
+- **AND** it SHALL provide directly-editable start (開始) and end (終了) date fields for a custom range
 
 #### Scenario: 今週末 preset date range
 
@@ -64,28 +70,37 @@ The All Nearby mode SHALL provide four date presets for filtering the concert da
 - **WHEN** the user selects 30日以内
 - **THEN** `from` SHALL be today and `to` SHALL be today + 29 days (inclusive 30-day window)
 
-#### Scenario: カスタム preset shows date inputs
+#### Scenario: Quick preset applies and closes in one tap
 
-- **WHEN** the user selects カスタム
-- **THEN** two date input fields SHALL appear for explicit `from` and `to` selection
-- **AND** the UI SHALL prevent `to` from being set earlier than `from`
-- **AND** the UI SHALL prevent the range from exceeding 30 days
+- **WHEN** the user taps a quick preset in the sheet
+- **THEN** the corresponding range SHALL be applied and the sheet SHALL close without a further confirmation tap
 
----
+#### Scenario: Custom range is edited then applied
+
+- **WHEN** the user edits the start and/or end date fields in the sheet
+- **THEN** the sheet SHALL remain open for adjustment
+- **AND** an apply action SHALL confirm the edited range and close the sheet
+
+#### Scenario: Custom range validation
+
+- **WHEN** the user edits the custom date fields
+- **THEN** the UI SHALL prevent `to` from being earlier than `from`
+- **AND** the UI SHALL prevent the inclusive range from exceeding 30 days
+- **AND** an inline hint SHALL communicate an invalid range and block applying it
 
 ### Requirement: Area Selector in All Nearby Mode
 
-The All Nearby mode SHALL display the current reference area and allow the user to override it for the duration of the session.
+The All Nearby mode SHALL present the current reference area as an **area chip** in the single-row filter bar, and allow the user to override it for the duration of the session by opening the shared `user-home-selector` from that chip.
 
 #### Scenario: Default area is user home
 
 - **WHEN** All Nearby mode activates for an authenticated user who has set a home area
-- **THEN** the area selector SHALL display the user's home area name (prefecture display name)
+- **THEN** the area chip SHALL display the user's home area name (prefecture display name)
 - **AND** the `GeoLocation` passed to `ListByLocation` SHALL use `user.home.centroid.latitude`, `user.home.centroid.longitude`, and `user.home.level_1` as `admin_area` (`centroid` is the nested `Coordinates` sub-message on the `Home` proto; `centroid_latitude`/`centroid_longitude` are reserved field names)
 
 #### Scenario: Area override via UserHomeSelector
 
-- **WHEN** the user taps the area selector
+- **WHEN** the user taps the area chip
 - **THEN** the `user-home-selector` component SHALL open
 - **AND** on selection, the route SHALL update its local area state with the new ISO 3166-2 code
 - **AND** `ListByLocation` SHALL be called with the new area's centroid coordinates and admin_area
@@ -94,17 +109,15 @@ The All Nearby mode SHALL display the current reference area and allow the user 
 #### Scenario: Area override is session-scoped
 
 - **WHEN** the user reloads the page or navigates away and returns
-- **THEN** the area selector SHALL reset to the user's persisted home area
+- **THEN** the area chip SHALL reset to the user's persisted home area
 - **AND** any previous session override SHALL be discarded
 
 #### Scenario: Area override for unauthenticated user
 
 - **WHEN** an unauthenticated user opens All Nearby mode
 - **AND** no guest home is stored in localStorage
-- **THEN** the area selector SHALL prompt the user to choose an area
+- **THEN** the area chip SHALL prompt the user to choose an area
 - **AND** the chosen area SHALL be used for the session without persisting to localStorage
-
----
 
 ### Requirement: All Nearby Concert List
 
@@ -157,4 +170,49 @@ When viewing a concert in All Nearby mode, the `EventDetailSheet` SHALL surface 
 
 - **WHEN** an unauthenticated user taps "Follow this artist" in the `EventDetailSheet`
 - **THEN** the system SHALL surface the sign-up prompt banner instead of calling `ArtistService.Follow`
+
+### Requirement: Compact All Nearby Filter Bar
+
+The All Nearby mode SHALL present its filters as a single, fixed-height row of two chips — an area chip and a date chip — such that selecting or adjusting any filter never changes the height of the filter area and therefore never reduces the concert timetable's height.
+
+#### Scenario: Filter bar is a single row of two chips
+
+- **WHEN** All Nearby mode is active
+- **THEN** the filter area SHALL render exactly two controls on one row: an area chip and a date chip
+- **AND** neither chip SHALL expand the filter area inline when tapped
+
+#### Scenario: Timetable height is unaffected by filter interaction
+
+- **WHEN** the user opens the area sheet, opens the date sheet, or changes any filter
+- **THEN** the height of the `ConcertHighway` timetable SHALL NOT decrease as a result
+- **AND** all complex input SHALL occur in a bottom sheet overlay rather than inline expansion
+
+### Requirement: Localized All Nearby Date Display
+
+Every user-facing date and date-range in the All Nearby filter SHALL be formatted for the Japanese locale via `Intl.DateTimeFormat('ja-JP')`; the browser's native `MM/DD/YYYY` input rendering SHALL NOT be the primary display of the selected range.
+
+#### Scenario: Date chip shows a localized range
+
+- **WHEN** a custom range from 2026-08-12 to 2026-08-20 is applied
+- **THEN** the date chip SHALL display the localized range `8/12〜8/20`
+
+#### Scenario: Single-day range
+
+- **WHEN** the applied range has `from` equal to `to`
+- **THEN** the date chip SHALL display that single localized date (e.g. `8/10`) rather than a `〜`-joined pair
+
+#### Scenario: Preset shows its name
+
+- **WHEN** a quick preset (今週末 / 7日以内 / 30日以内) is applied
+- **THEN** the date chip SHALL display that preset's name rather than a raw date range
+
+### Requirement: Natural Japanese Copy for All Nearby
+
+All user-facing Japanese strings on the All Nearby surface SHALL read as natural, native Japanese; machine-translated or awkward phrasing SHALL be corrected. Japanese and English i18n keys SHALL remain at parity.
+
+#### Scenario: All Nearby strings are natural Japanese
+
+- **WHEN** the All Nearby mode title, mode toggle labels, area prompt, empty-state text, date-preset labels, and range hint are displayed in Japanese
+- **THEN** each SHALL be phrased in natural Japanese
+- **AND** every `allNearby.*` key present in the Japanese bundle SHALL also exist in the English bundle (and vice versa)
 
