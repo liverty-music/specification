@@ -1,9 +1,7 @@
 ## Purpose
 
 Manage the canonical vocabulary used in user-facing copy across Liverty Music while preserving the protobuf entity layer as the authoritative ubiquitous-language source. Classify each term into one of two layers — entity-grounded labels (Layer A, surfaced through a dedicated `entity.*` i18n namespace mirroring protobuf entity names) or brand expressions without entity backing (Layer B, catalogued in this spec) — so terminology drift cannot occur silently and JA/EN locales may legitimately choose asymmetric surface labels for the same entity.
-
 ## Requirements
-
 ### Requirement: Two-Layer Vocabulary Model
 The system SHALL classify every user-facing term into one of two layers based on whether the term corresponds to a protobuf entity definition.
 
@@ -120,6 +118,13 @@ The system SHALL maintain a single registry table in this spec listing every Lay
 #### Scenario: Initial registry contents
 - **WHEN** this spec is interpreted at the current revision
 - **THEN** the registry SHALL include the following Layer B expressions, each with identical JA and EN surface forms unless otherwise noted:
+  - `Product name — full form` — JA: `Liverty Music` / EN: `Liverty Music` (used in the HTML `<title>`, the web app manifest `name` member, and prose)
+  - `Product name — home-screen short form` — JA: `LivertyMusic` / EN: `LivertyMusic` (the web app manifest `short_name` member, chosen without a space to minimize home-screen label truncation)
+  - `Navigation tab — Timetable` — JA: `Timetable` / EN: `Timetable`
+  - `Navigation tab — Discovery` — JA: `Discovery` / EN: `Discovery`
+  - `Navigation tab — My Artists` — JA: `My Artists` / EN: `My Artists`
+  - `Navigation tab — Tickets` — JA: `Tickets` / EN: `Tickets`
+  - `Navigation tab — Settings` — JA: `Settings` / EN: `Settings`
   - `Personal timetable promise` — JA: `あなただけのタイムテーブル` / EN: `your personal timetable`
   - `HOME STAGE lane` — JA: `HOME STAGE` / EN: `HOME STAGE`
   - `NEAR STAGE lane` — JA: `NEAR STAGE` / EN: `NEAR STAGE`
@@ -129,6 +134,11 @@ The system SHALL maintain a single registry table in this spec listing every Lay
   - `Hype tier — Home` — JA: `Home` / EN: `Home`
   - `Hype tier — Nearby` — JA: `Nearby` / EN: `Nearby`
   - `Hype tier — Away` — JA: `Away` / EN: `Away`
+
+#### Scenario: Navigation tab labels are invariant across locales
+- **WHEN** a navigation tab label is rendered in any UI surface (bottom navigation bar or a route's page header)
+- **THEN** the label SHALL be the invariant English form from the registry, identical in JA and EN locales
+- **AND** a route's page header SHALL bind the shared `nav.*` label rather than a separate localized title key
 
 #### Scenario: Adding a new brand expression
 - **WHEN** a new coined phrase is introduced into user-facing copy
@@ -149,8 +159,6 @@ The system SHALL maintain a single registry table in this spec listing every Lay
 - **WHEN** a colloquial JA term (such as `推し`) is identified as deprecated per the Deprecated Colloquial Terms requirement
 - **THEN** the term SHALL NOT be listed in the Layer B brand expression registry
 - **AND** the term SHALL instead be tracked in the deprecated-terms registry with its canonical entity-grounded replacement
-
----
 
 ### Requirement: Hype Tier Surface Labels Are Layer B
 The system SHALL treat the four hype tier surface labels (`Watch`, `Home`, `Nearby`, `Away`) and the Hype concept label itself as Layer B brand expressions rendered invariantly across JA and EN locales, NOT as Layer A entity-grounded labels.
@@ -189,3 +197,4 @@ The system SHALL run the brand-vocabulary lint script as part of the frontend's 
 - **THEN** the lint script SHALL print the violating key path with the offending file
 - **AND** the lint script SHALL exit non-zero
 - **AND** `make lint` SHALL fail
+
