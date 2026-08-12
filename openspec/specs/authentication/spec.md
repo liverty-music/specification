@@ -6,8 +6,6 @@ JWT-based authentication for user-specific operations in the backend. This capab
 
 ## Requirements
 
-### Functional Requirements
-
 ### Requirement: Silent token refresh strategy
 The frontend SHALL use on-demand token refresh only. Proactive background refresh (`automaticSilentRenew`) SHALL be disabled. Token refresh occurs at exactly two points: (1) at boot if the stored access token is already expired, (2) when an RPC returns `Unauthenticated`.
 
@@ -172,8 +170,6 @@ End-user access-token replay against the webhook is mitigated by network isolati
 
 > **Forward compatibility**: If a future Zitadel version adds proper `iss` / `aud` claims to webhook JWTs, the validator can re-introduce these checks without breaking the existing contract — the current implementation silently accepts any value (including missing). When that happens, this requirement should be tightened to enforce them.
 
-### Non-Functional Requirements
-
 ### Requirement: JWKS Caching
 
 The system SHALL cache JWKS keys and auto-refresh them periodically.
@@ -185,6 +181,12 @@ The system SHALL cache JWKS keys and auto-refresh them periodically.
 - Configurable via `JWT_JWKS_REFRESH_INTERVAL` environment variable
 - Initial fetch on startup with validation before server accepts requests
 
+#### Scenario: JWKS cache initialized on startup and refreshed periodically
+
+- **WHEN** the server starts
+- **THEN** the system SHALL fetch and validate JWKS keys before accepting requests
+- **AND** the system SHALL refresh the cached keys on the interval set by `JWT_JWKS_REFRESH_INTERVAL` (default 15 minutes)
+
 ### Requirement: Token Validation Performance
 
 The system SHALL complete token validation within 100ms under normal conditions.
@@ -195,6 +197,12 @@ The system SHALL complete token validation within 100ms under normal conditions.
 - P95 latency for token validation: < 100ms
 - Uses efficient JWT parsing library (`github.com/lestrrat-go/jwx/v2`)
 - JWKS cache minimizes network calls
+
+#### Scenario: Token validation stays within the latency budget
+
+- **WHEN** an authenticated request is validated under normal conditions
+- **THEN** the system SHALL complete token validation within 100ms (P95 < 100ms)
+- **AND** the system SHALL parse the JWT locally using the cached JWKS without a per-request network call
 
 ### Requirement: Authentication Error Handling
 
