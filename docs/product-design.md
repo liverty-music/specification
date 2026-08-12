@@ -116,6 +116,10 @@ graph TD
 - アーティスト向け機能（チケット販売・管理システム）
 - チケット販売によるマネタイズ
 
+> Phase 3 の詳細な分割ロードマップ（審査済み Organizer / Stripe 決済 /
+> 抽選のみ MVP を、独立してリリース可能な複数の OpenSpec change へ分割）は
+> [Ticketing Platform Roadmap](./ticketing-platform-roadmap.md) を参照。
+
 > **チケットシステムの技術方針（決定記録・2026-08）**
 >
 > チケット販売・入場システムを将来構築する場合、**Web2 アーキテクチャ**
