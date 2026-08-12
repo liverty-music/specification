@@ -1,4 +1,10 @@
-## ADDED Requirements
+# GKE Gateway Infrastructure Specification
+
+## Purpose
+
+Defines the GKE Gateway API resources: HTTPRoute routing, GatewayClass selection, cross-namespace routing, and certificate/policy attachment.
+
+## Requirements
 
 ### Requirement: Gateway API Resource Creation
 The system SHALL provide a GKE Gateway API resource that listens on HTTPS (443) and HTTP (80) ports, deployed in the `gateway` namespace.

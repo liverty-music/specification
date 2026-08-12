@@ -4,8 +4,7 @@
 
 Enforces per-layer content restrictions in the CUBE CSS methodology: exception layer selectors must use `data-*` attributes, composition layer must not contain visual properties, utility selectors are limited in property count, and block layer rules must be wrapped in `@scope`.
 
-## ADDED Requirements
-
+## Requirements
 ### Requirement: `cube/exception-data-attr` requires `data-*` selectors in exception layer
 Selectors inside `@layer exception` SHALL contain at least one `[data-*]` attribute selector. CSS-class-only exceptions are prohibited.
 

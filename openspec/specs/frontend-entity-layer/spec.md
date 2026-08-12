@@ -1,3 +1,11 @@
+# Frontend Entity Layer Specification
+
+## Purpose
+
+Defines the frontend entity layer that maps backend proto types (Artist, FollowedArtist, Concert) to a single canonical representation.
+
+## Requirements
+
 ### Requirement: Artist entity
 The frontend SHALL use the BSR-generated proto `Artist` class from `@buf/liverty-music_schema.bufbuild_es/liverty_music/entity/v1/artist_pb.js` as the canonical artist representation across all layers (services, state, components). Custom interfaces (`ArtistBubble`, `GuestFollow`) that duplicate Artist fields SHALL be removed. The `src/entities/artist.ts` file SHALL re-export the proto `Artist` type and provide helper functions for common field access patterns (e.g., best logo URL extraction).
 

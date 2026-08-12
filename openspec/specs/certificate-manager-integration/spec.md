@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Certificate Manager Integration Specification
+
+## Purpose
+
+Defines Google-managed TLS certificate provisioning, DNS validation, gateway binding, automatic renewal, and status monitoring.
+
+## Requirements
 
 ### Requirement: Google-Managed Certificate Provisioning
 The system SHALL obtain TLS certificates from Google Certificate Manager for the domain `api.liverty-music.app`.

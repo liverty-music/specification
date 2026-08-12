@@ -1,3 +1,9 @@
+# LocalStorage Naming Specification
+
+## Purpose
+
+Defines the unified naming convention and centralized registry for localStorage keys.
+
 ## Requirements
 
 ### Requirement: Unified key naming convention

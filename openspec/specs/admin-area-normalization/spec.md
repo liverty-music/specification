@@ -1,3 +1,11 @@
+# Admin Area Normalization Specification
+
+## Purpose
+
+Defines how administrative area strings are normalized (including country-code extraction) so concert discovery matching and stored data stay consistent.
+
+## Requirements
+
 ### Requirement: Admin Area Normalization Function
 
 The system SHALL provide a normalization function that converts free-text administrative area strings into ISO 3166-2 subdivision codes.

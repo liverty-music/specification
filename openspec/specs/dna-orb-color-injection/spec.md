@@ -1,4 +1,10 @@
-## ADDED Requirements
+# DNA Orb Color Injection Specification
+
+## Purpose
+
+Defines how followed-artist bubble hues are injected into discovery orb particles, including the swirl animation triggered on follow.
+
+## Requirements
 
 ### Requirement: Bubble Hue Injection into Orb Particles
 

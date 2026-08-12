@@ -1,4 +1,10 @@
-## ADDED Requirements
+# K8s Service Cross-Namespace Routing Specification
+
+## Purpose
+
+Defines Kubernetes Service configuration that enables cross-namespace routing from an external Gateway while maintaining namespace isolation.
+
+## Requirements
 
 ### Requirement: Backend Service Accessibility from External Gateway
 The system SHALL make the `server` Service (backend namespace) accessible to HTTPRoute resources in the `gateway` namespace.

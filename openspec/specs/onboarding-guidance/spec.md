@@ -1,3 +1,11 @@
+# Onboarding Guidance Specification
+
+## Purpose
+
+Specifies the onboarding guidance experience rendered within the unified DiscoverPage for new and guest users.
+
+## Requirements
+
 ### Requirement: Onboarding guidance rendered within unified DiscoverPage
 The onboarding guidance SHALL be rendered as a Popover API element within `DiscoverPage` at `/discover`, instead of as an inline grid row.
 

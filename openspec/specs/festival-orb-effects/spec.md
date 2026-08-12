@@ -1,5 +1,9 @@
 # Festival Orb Effects
 
+## Purpose
+
+Defines the festival-stage visual escalation effects applied to discovery orbs as users follow more artists.
+
 ## Requirements
 
 ### Requirement: Stage-level escalation system

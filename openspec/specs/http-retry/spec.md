@@ -1,4 +1,10 @@
-## ADDED Requirements
+# HTTP Retry Specification
+
+## Purpose
+
+Defines HTTP client retry behavior for transient errors: Retry-After handling, context cancellation, request-body replay, and backoff limits.
+
+## Requirements
 
 ### Requirement: HTTP retry on transient errors
 The system SHALL automatically retry HTTP requests that fail with transient status codes (408 Request Timeout, 429 Too Many Requests, 500 Internal Server Error, 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout) using exponential backoff with jitter.

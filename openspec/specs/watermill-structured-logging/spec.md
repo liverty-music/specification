@@ -1,3 +1,11 @@
+# Watermill Structured Logging Specification
+
+## Purpose
+
+Defines that Watermill emits structured JSON logs through the shared slog handler so its output is classified consistently with application logs in GCP.
+
+## Requirements
+
 ### Requirement: Watermill logs use structured JSON output
 The backend SHALL output Watermill logs as structured JSON using Watermill's official slog adapter (`watermill.NewSlogLogger`). All Watermill log entries MUST include a `severity` field that GCP Cloud Logging can parse from `jsonPayload`.
 
