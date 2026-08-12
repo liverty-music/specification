@@ -4,26 +4,6 @@
 
 Display and manage the user's followed artists, providing list and grid views with passion level controls.
 ## Requirements
-### Requirement: Artist List Row (REMOVED)
-
-**Reason**: The swipe-to-dismiss unfollow mechanism was abandoned due to `display: table-row` layout constraints that prevented the scroll-snap container from functioning correctly inside the artist list. Replaced by the long-press-to-unfollow flow.
-**Migration**: The horizontal scroll-snap dismiss trigger is removed. Unfollow is initiated by long-pressing an artist row for ~500ms, which opens an `ArtistUnfollowSheet` confirmation bottom sheet. See `long-press-unfollow` capability spec.
-
-#### Scenario: Hype slider replaces passion icon
-
-- **WHEN** the My Artists list view renders
-- **THEN** the system SHALL display the inline dot slider (from `hype-inline-slider` capability) instead of the passion level icon
-- **AND** the bottom sheet selector SHALL NOT be used for hype changes in list view
-
-### Requirement: Tapping passion icon opens selector (REMOVED)
-
-**Reason**: Replaced by inline dot slider that enables 1-tap hype changes directly in the list row. The bottom sheet selector required 2 taps and interrupted the scanning flow.
-**Migration**: Remove bottom sheet component usage from My Artists list view. Hype changes are handled by the inline dot slider component. The bottom sheet MAY be retained for Grid (Festival) view's long-press context menu.
-
-### Requirement: Selecting a passion level (REMOVED)
-
-**Reason**: The bottom sheet selection flow is replaced by inline dot slider interaction. Optimistic update and RPC call behavior moves to the slider component.
-**Migration**: Optimistic update and SetHype RPC logic moves to the `hype-inline-slider` component's authenticated tap handler.
 
 ### Requirement: Hype Change Persisted for Guest Users
 
@@ -51,18 +31,6 @@ The system SHALL persist hype changes made by guest users to localStorage withou
 - **THEN** the system SHALL persist the hype value in `GuestService`
 - **AND** the system SHALL NOT show a modal dialog
 - **AND** the signup-prompt-banner SHALL remain visible (non-modal, persistent per its own capability spec)
-
-### Requirement: Hype change reverted during MY_ARTISTS step (REMOVED)
-
-**Reason**: Reverting the user's explicitly chosen hype value immediately after they set it is confusing and contradicts the "raise your hype" coaching message. Persisting the value and merging on signup is the correct behavior.
-
-**Migration**: Remove `artist.hype = prev` revert line in `my-artists-route.ts` `onHypeInput()`. Remove the `isOnboardingStepMyArtists` branch that triggers revert.
-
-### Requirement: HypeNotificationDialog auto-display on unauthenticated hype change (REMOVED)
-
-**Reason**: The dialog conflated hype explanation with account signup prompts, appearing after the user's action was silently discarded. Hype explanation is now provided upfront via PageHelp auto-open on first visit. Account promotion is handled by the non-modal signup banner.
-
-**Migration**: Remove `showNotificationDialog = true` trigger from `onHypeInput()`. Remove `HypeNotificationDialog` component from `my-artists-route.html`. The `HypeNotificationDialog` component may be deleted.
 
 ### Requirement: View Toggle (List / Grid)
 
