@@ -158,5 +158,9 @@ All popover and dialog elements promoted to the browser's top-layer SHALL inheri
 
 ### Requirement: Help seen flags cleared on onboarding reset
 
+The system SHALL clear all per-page help-seen flags when the user restarts onboarding, so that contextual help auto-opens again for the fresh session.
+
+#### Scenario: Help-seen flags cleared on fresh onboarding
+
 - **WHEN** the user starts a fresh onboarding session (taps [Get Started] on Welcome)
 - **THEN** the system SHALL clear all `liverty:onboarding:helpSeen:*` keys from localStorage
