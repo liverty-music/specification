@@ -4,8 +4,7 @@
 
 Defines the Stylelint plugin architecture for CUBE CSS enforcement: plugin registration under the `cube/` namespace, local ESM package structure, shared utilities (`getLayerContext`), and test coverage requirements.
 
-## ADDED Requirements
-
+## Requirements
 ### Requirement: Plugin registers all rules under the `cube/` namespace
 The plugin SHALL export all rules prefixed with `cube/` so they can be configured individually in `stylelint.config.js`.
 

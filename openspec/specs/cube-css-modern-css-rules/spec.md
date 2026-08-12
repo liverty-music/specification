@@ -4,8 +4,7 @@
 
 Enforces modern CSS best practices within the CUBE CSS methodology: logical viewport units (`vi` over `vw`), named containers (`container-name` required with `container-type`), and `color-mix()`/relative color syntax for derived color tokens.
 
-## ADDED Requirements
-
+## Requirements
 ### Requirement: `cube/prefer-vi-over-vw` recommends `vi` unit over `vw`
 CSS values SHALL use the `vi` (viewport inline) unit instead of `vw` (viewport width) for logical consistency with writing-mode awareness.
 

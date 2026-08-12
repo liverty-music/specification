@@ -4,8 +4,7 @@
 
 Enforces design token usage via `var()` references for spacing, color, typography, and animation properties in consumption layers (composition, utility, block, exception). Token definition layers (reset, tokens, global) are excluded.
 
-## ADDED Requirements
-
+## Requirements
 ### Requirement: `cube/require-token-variables` enforces `var()` for design token properties
 Configured properties in consumption layers (composition, utility, block, exception) SHALL use `var()` references instead of raw literal values.
 

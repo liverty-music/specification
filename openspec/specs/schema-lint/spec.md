@@ -1,3 +1,11 @@
+# Schema Lint Specification
+
+## Purpose
+
+Defines the database schema lint rules (banned column types, audit columns, comment coverage) enforced during checks.
+
+## Requirements
+
 ### Requirement: SERIAL and BIGSERIAL detection
 The schema linter SHALL detect usage of `SERIAL` or `BIGSERIAL` types in `schema.sql` and report an error.
 

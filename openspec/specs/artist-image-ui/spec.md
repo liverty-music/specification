@@ -1,3 +1,11 @@
+# Artist Image UI Specification
+
+## Purpose
+
+Specifies how artist imagery (logos, hero images, fanart) is surfaced across event cards and detail sheets in the frontend.
+
+## Requirements
+
 ### Requirement: Event Card Logo Display
 The dashboard event card SHALL display the artist's transparent logo image instead of the text artist name when a logo URL is available. The system SHALL use `hd_music_logo` as the primary source and fall back to `music_logo` when `hd_music_logo` is unavailable. When neither logo is available, the card SHALL display the existing text artist name.
 

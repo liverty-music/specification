@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Entity Test Coverage Specification
+
+## Purpose
+
+Defines the required unit-test coverage for frontend entity mapping and helper functions.
+
+## Requirements
 
 ### Requirement: isHypeMatched exhaustive coverage
 `isHypeMatched(hype, lane)` SHALL be tested for all 12 combinations of HypeLevel x LaneType using table-driven tests.

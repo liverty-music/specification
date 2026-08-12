@@ -1,5 +1,9 @@
 # App Error Log Alerting
 
+## Purpose
+
+Defines error-log-based alerting across backend workloads and CronJobs, including migration-failure detection, notification routing, and rate limiting.
+
 ## Requirements
 
 ### Requirement: Error log detection per workload

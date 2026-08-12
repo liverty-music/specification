@@ -1,3 +1,11 @@
+# Layout Assertions Specification
+
+## Purpose
+
+Defines the structural and selector conventions that frontend layout E2E tests assert against.
+
+## Requirements
+
 ### Requirement: E2E selectors use data-testid for stability
 All E2E test selectors for elements that are subject to refactoring SHALL use `data-testid` attributes instead of CSS class selectors, per [Playwright locator best practices](https://playwright.dev/docs/locators#locate-by-test-id).
 

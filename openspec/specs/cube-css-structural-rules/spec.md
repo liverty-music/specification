@@ -4,8 +4,7 @@
 
 Enforces structural limits on CUBE CSS block layer: maximum lines per `@scope` block, one block component per file, and `:where()` wrapping in reset/global layers for zero-specificity defaults.
 
-## ADDED Requirements
-
+## Requirements
 ### Requirement: `cube/block-max-lines` limits block size
 Each `@scope` block inside `@layer block` SHALL contain at most the configured number of lines (default: 80).
 

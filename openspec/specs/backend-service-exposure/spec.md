@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+# Backend Service Exposure Specification
+
+## Purpose
+
+Defines how backend services are exposed and discovered, including backend protocol support and health-check integration.
+
+## Requirements
 
 ### Requirement: Backend Service Discoverability
 The backend Service SHALL be discoverable by external load balancers (Gateway) via explicit cross-namespace references.

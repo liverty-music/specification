@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Connect-RPC CORS Specification
+
+## Purpose
+
+Defines CORS handling for Connect-RPC endpoints: allowed origins, required protocol headers, authorization support, and validation at startup.
+
+## Requirements
 
 ### Requirement: CORS Middleware for Connect-RPC
 The system SHALL implement Cross-Origin Resource Sharing (CORS) middleware in the Connect-RPC server using the `connectrpc.com/cors` package.

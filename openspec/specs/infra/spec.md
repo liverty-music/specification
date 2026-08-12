@@ -1,3 +1,11 @@
+# Infrastructure Specification
+
+## Purpose
+
+Defines infrastructure invariants for KEDA-managed Deployments and how ArgoCD reconciles their replica counts.
+
+## Requirements
+
 ### Requirement: KEDA-managed Deployments SHALL NOT declare replicas
 
 Deployments targeted by a KEDA ScaledObject SHALL omit `spec.replicas` from their Kustomize base manifest, delegating replica count management entirely to KEDA.

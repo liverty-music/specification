@@ -1,3 +1,11 @@
+# State Management Specification
+
+## Purpose
+
+Defines the singleton service state owners (Onboarding, Guest) and how their state is persisted to and hydrated from localStorage.
+
+## Requirements
+
 ### Requirement: OnboardingService as singleton state owner
 
 The system SHALL provide an `OnboardingService` registered as `@singleton` via `DI.createInterface<IOnboardingService>()` that owns all onboarding state. Only properties requiring persistence side-effects (`step`) SHALL use `@observable`. Spotlight properties (`spotlightTarget`, `spotlightMessage`, `spotlightRadius`, `spotlightActive`) SHALL be plain class properties — Aurelia's template binding observes them automatically without `@observable`.

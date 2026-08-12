@@ -4,8 +4,7 @@
 
 Defines internal quality requirements for the concert search usecase implementation. These requirements enforce Clean Architecture boundaries, testability, and code structure. They do not affect any external behavior -- all existing concert search functionality remains identical.
 
-## ADDED Requirements
-
+## Requirements
 ### Requirement: Usecase layer SHALL NOT import infrastructure packages
 
 The concert search usecase (`internal/usecase/`) SHALL NOT directly import any package from `internal/infrastructure/`. All infrastructure dependencies SHALL be accessed through interfaces defined in the usecase or entity layer.

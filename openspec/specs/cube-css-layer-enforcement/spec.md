@@ -4,8 +4,7 @@
 
 Enforces that all CSS rules live inside `@layer` blocks and that layer declarations follow the canonical CUBE CSS order (`reset, tokens, global, composition, utility, block, exception`). Prevents cascade conflicts caused by unlayered styles.
 
-## ADDED Requirements
-
+## Requirements
 ### Requirement: `cube/require-layer` rejects CSS rules outside `@layer` blocks
 All CSS rules SHALL be inside an `@layer` block. Unlayered styles override all layers and break the CUBE CSS cascade.
 

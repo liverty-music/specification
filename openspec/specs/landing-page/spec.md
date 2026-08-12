@@ -1,3 +1,9 @@
+# Landing Page Specification
+
+## Purpose
+
+Defines the guest-facing landing page: passkey authentication CTA, welcome copy, language switching, and authenticated-user redirect.
+
 ## Requirements
 
 ### Requirement: Passkey Authentication CTA
