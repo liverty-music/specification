@@ -1,8 +1,8 @@
 ## 1. Frontend
 
 - [ ] 1.1 `organizer.html` Vite/Rollup entry, bundle-isolated (separate chunk graph); reuse shared auth-service + config loader
-- [ ] 1.2 OIDC via the shared `organizer-console` client with email domain discovery (no fixed org id); post-login welcome placeholder
-- [ ] 1.3 Route guard: inspect the `organizer-console` project roles claim, admit only `master`, redirect unauthenticated to sign-in
+- [ ] 1.2 OIDC via the shared `organizer-console` client with org-pinned entry (org handle → `org:id` scope; org code / remembered `org_id` / "email me a link"; no fixed org id, NOT domain discovery); post-login welcome placeholder
+- [ ] 1.3 Route guard: inspect the `organizer-console` project roles claim, admit only `owner`, redirect unauthenticated to sign-in
 - [ ] 1.4 Organizer `/config.json` loader shape (issuer + `organizer-console` client id + `api.organizer` base; no fixed org id)
 - [ ] 1.5 CI assertion: consumer chunk graph contains no organizer module (reuse admin-console bundle-isolation check)
 - [ ] 1.6 `make check` passes
@@ -18,4 +18,4 @@
 
 - [ ] 3.1 Frontend PR merged → release → organizer.html shipped
 - [ ] 3.2 Cloud-provisioning PR merged → ArgoCD synced (host, cert, DNS, config)
-- [ ] 3.3 Verify in prod: `organizer.liverty-music.app` serves the console over TLS; an operator signs in via email domain discovery and (with `master`) sees the placeholder; a non-master account is denied; the consumer bundle is unaffected
+- [ ] 3.3 Verify in prod: `organizer.liverty-music.app` serves the console over TLS; an operator signs in via org-pinned entry and (with `owner`) sees the placeholder; a non-`owner` account is denied; the consumer bundle is unaffected
