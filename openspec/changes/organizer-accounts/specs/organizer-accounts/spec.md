@@ -100,14 +100,16 @@ associate.
 
 ### Requirement: Admin can list and inspect organizers
 
-The system SHALL provide admin-gated `List` and `Get` returning Organizers
-with their associated artists, so the admin console can render the
-organizer-management screen.
+The system SHALL provide admin-gated `List` and `Get` returning Organizers, and
+`ListArtists` returning the artists an Organizer represents, so the admin
+console can render the organizer-management screen.
 
-#### Scenario: Admin lists organizers with their artists
+#### Scenario: Admin lists organizers and inspects an organizer's artists
 
-- **WHEN** an operator with the `admin` role lists organizers
-- **THEN** the system SHALL return each Organizer with its associated artists
+- **WHEN** an operator with the `admin` role lists organizers and then requests
+  a given Organizer's artists
+- **THEN** the system SHALL return the Organizers, and SHALL return the artists
+  that Organizer represents
 
 #### Scenario: Non-admin cannot list organizers
 
