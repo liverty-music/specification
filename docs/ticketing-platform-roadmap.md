@@ -35,7 +35,7 @@ change's `design.md`:
 
   ```
   Organizer (1) ──publishes──▶ (N) Event ──features──▶ (N) Artist   (existing event_performers)
-       └──────── mandate ──────────────▶ (N) Artist                 (label/mgmt case, N:M)
+       └──────── represents ──────────▶ (N) Artist                 (each artist ≤1 organizer)
   ```
 
   In MVP the Organizer role is filled by a vetted party: an **artist**
@@ -47,12 +47,14 @@ change's `design.md`:
   treated as interchangeable; a company owning multiple label brands is
   still one Organizer (label brand is a later display attribute). An
   artist who self-publishes is modeled as an Organizer account associated
-  with that Artist, not a second entity type. "Vetted" is a **`verified`
-  status** on the Organizer. An Organizer is simply associated with the
-  artists it represents (no full/partial mandate concept — keep it
-  simple).
+  with that Artist, not a second entity type. An Organizer **exists only
+  via admin vetting** (existence = vetted); there is no separate `verified`
+  flag (a lifecycle/status can be added later if suspension is ever needed).
+  An Organizer is simply associated with the artists it represents (no
+  full/partial mandate concept — keep it simple), and **each artist is
+  represented by at most one Organizer**.
 
-- **Sellers: vetted organizers only.** Reuse the existing admin approval
+- **Organizers: vetted only.** Reuse the existing admin approval
   pattern to onboard them. Open self-serve submission is out of scope,
   which also removes the fake-event risk.
 - **Sales method: lottery only for MVP.** FCFS, common inventory pool,
@@ -96,14 +98,15 @@ change's `design.md`:
   without consent is prohibited, (2) specify date/venue and
   seat-or-eligible-person, (3) capture **本人確認** (purchaser name +
   contact). Ties to the ④ identity requirement and ⑥ ticket rendering.
-- **First-party data supersedes; verified-organizer artists are excluded
+- **First-party data supersedes; organizer-represented artists are excluded
   from scraping.** When an organizer-published event or issued ticket
   exists it supersedes the inferred/self-reported data for the same
   subject (a published event overrides the scraped
   `staged_concert`/`sales_phase`; issuing a ticket syncs the user's
-  `ticket-journey` to `PAID`). Once an artist is represented by a
-  `verified` Organizer, that artist is simply **excluded from
-  concert-search scraping** (first-party is authoritative; saves cost).
+  `ticket-journey` to `PAID`). Once an artist is represented by an
+  Organizer (which exists only via admin vetting), that artist is simply
+  **excluded from concert-search scraping** (first-party is authoritative;
+  saves cost).
 - **Payments: Stripe, and the platform intermediates.** Liverty receives
   the buyer's payment, takes a fee, and pays out the organizer (required
   to monetize and to control cancellation refunds). Charges happen
@@ -112,14 +115,23 @@ change's `design.md`:
   just wallet presentations of a `card` and need no dedicated fields.
 - **Web First, No Native App** (product constraint): the check-in tool is
   a PWA using the web camera, not a native scanner app.
+- **Organizer identity & RBAC: Zitadel B2B org-per-tenant.** Each Organizer
+  is its own Zitadel Organization; a shared, actor-named `organizer-console`
+  project (owned by the `liverty-music` org) is Project-Granted to each; the
+  backend authorizes from the org-scoped role claim; per-tenant orgs are
+  created at runtime via the Management API from admin vetting. Full model
+  and rationale: [`zitadel-tenancy-model.md`](./zitadel-tenancy-model.md).
 
 ## MVP Decomposition
 
-Six changes, dependency-ordered. Each is independently reviewable and
-releasable.
+Six numbered steps, dependency-ordered — each independently reviewable and
+releasable. Step ① (organizer platform) is itself decomposed into four
+sub-changes (see its row and `organizer-platform-design.md`).
 
 ```
-① organizer-accounts   (organizer identity, vetting, seller entry point)
+① organizer platform  (decomposed into 4 sub-changes — see organizer-platform-design.md)
+     organizer-tenancy ─▶ organizer-accounts ─┬─▶ organizer-console
+                                               └─▶ organizer-rpc-server
      │
      ├──▶ ② organizer-event-authoring   (event page create / publish / private URL)
      │         │
@@ -134,8 +146,8 @@ releasable.
 
 | # | Change | Adds (capabilities / entities) | Depends on | Boundary rationale |
 |---|--------|--------------------------------|------------|--------------------|
-| ① | `organizer-accounts` | Organizer entity (distinct from Artist, `verified` status), Organizer↔Artist association, vetting via admin console, `seller.html` third entry point, `master` role via Zitadel org scope | existing admin only | Every seller-facing feature needs an organizer identity first. Vetting extends the existing admin approval pattern. |
-| ② | `organizer-event-authoring` | Organizer-authored Event/Series/Venue, publish flow, **private visibility via signed tokenized URL**, first-party supersedes scraped concerts, **verified-organizer artists excluded from scraping** | ① | Turns the existing `Series/Event/Venue/event_performers` model from a scrape-reconstruction target into a first-party authoring target. |
+| ① | **organizer platform** (4 sub-changes) | The vetted-seller foundation, split to keep each change reviewable: **`organizer-tenancy`** (identity-management topology delta + Zitadel platform IaC: `organizer-console` project/roles/apps + provisioner machine user + per-org passkey login), **`organizer-accounts`** (Organizer entity + admin vetting RPCs + runtime tenant-provisioning saga + operator bootstrap + `deactivated` hook + analytics), **`organizer-console`** (`organizer.html` entry + hosting `organizer.{base}` + runtime-config delta), **`organizer-rpc-server`** (dedicated `api.organizer.{base}` server + CORS + `OrganizerService.Get` + org-scoped authz). Full design + resolved gap-audit: [`organizer-platform-design.md`](./organizer-platform-design.md). | existing admin only | A completeness audit showed a single change hid ~33 gaps (a dedicated API server, dedicated hosting, provisioning saga, offboarding). Splitting by surface (identity/accounts/console/rpc-server) mirrors the admin precedent and keeps each spec complete. |
+| ② | `organizer-event-authoring` | Organizer-authored Event/Series/Venue, publish flow, **private visibility via signed tokenized URL**, first-party supersedes scraped concerts, **organizer-represented artists excluded from scraping** | ① | Turns the existing `Series/Event/Venue/event_performers` model from a scrape-reconstruction target into a first-party authoring target. |
 | ③ | `follower-event-publish-notification` | Publish trigger → existing `follow` + `Hype.ShouldNotify` + `push` | ② | Ships with zero ticketing code and rides entirely on existing assets. Immediate differentiator: an organizer's event reaches existing followers on publish. |
 | ④ | `lottery-application` | LotterySalesPhase (extends `sales_phase`), `max_tickets_per_application`, TicketApplication, automatic draw, win/loss, payment deadline, **本人確認 identity + 1 account / 1 application** | ② | Draw logic is substantial and stands alone. Couples to payment only through "winning = right to purchase". 本人確認 also makes tickets legally "covered". |
 | ⑤ | `ticket-purchase-and-issuance` | Order (provider/method-agnostic, opaque payment refs), platform-intermediated Stripe payment (card/wallet/**konbini async**), **Web2 account-bound Ticket issuance** (N per order), event-cancellation refund, `ticket-journey` sync to PAID | ④ | Stripe integration is heavy on its own: post-win payment → order → issuance is a single pipeline. |
@@ -218,7 +230,7 @@ the relevant change's `design.md`.
   with a non-camera "tap stamp" fallback (⑥).
 - **D5 — Organizer vetting reuses the existing admin console** (admin
   approves/creates organizer accounts + sets mandate); organizers use
-  `seller.html` (a third entry point, following the proven consumer/admin
+  `organizer.html` (a third entry point, following the proven consumer/admin
   dual-entry pattern) (①).
 
 ## Open Decisions (still to make)
