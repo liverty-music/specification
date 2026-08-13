@@ -56,6 +56,17 @@ user isolates that blast radius; credential in ESC/Secret Manager.
 *Alternative — reuse `backend-app`:* rejected (wrong scope + coupled blast
 radius).
 
+*Scope of the isolation (precise):* the isolation is at the
+**Zitadel-identity / role** level — a distinct machine user with a distinct
+instance role, so a leak of the `backend-app` key cannot create orgs and a
+leak of the provisioner key is a separate credential. It is **not** isolated
+at the GCP secret-access layer in this change: the backend consumes the
+provisioner key at runtime as the `backend-app` GCP service account, so that
+SA is granted read access to it (a `-backend-app-accessor` binding on the GSM
+secret). Isolating GCP-layer read access — a dedicated provisioner *workload*
++ GCP SA bound to only this secret — is a **future hardening** designed
+together with the backend consumption in `organizer-accounts`.
+
 *Credential lifecycle (revised after best-practice review):* the security
 delta over the existing `backend-app` "expires 2099, no rotation" pattern is
 the **root key's own lifecycle**, not the operational tokens. Any machine user
@@ -66,7 +77,10 @@ high-privilege identity MUST additionally satisfy is a **finite root-key
 expiry + rotation runbook** — a year-2099 non-expiring key is prohibited.
 Automated rotation / workload-identity federation is the target end-state
 (future hardening); the rotation runbook is authored in `organizer-accounts`,
-where the key is first consumed.
+where the key is first consumed. Because the finite expiry (currently
+`2027-08-13`) is a hardcoded date with no automated rotation, a **key-expiry
+monitoring alert** (Cloud Monitoring / secret-age) SHALL accompany the runbook
+so the key cannot silently expire and stall runtime provisioning.
 
 **D4 — Tenant-org login policy is set explicitly, never inherited, and is
 passkey-primary with a designed recovery path (not passkey-only).** A new org
@@ -196,8 +210,11 @@ WorkOS/Corbado, Google Cloud workload-identity). Verdicts:
   hardening.
 
 Deferred to `organizer-accounts` (runtime): exact per-org login-policy values,
-per-tenant IdP federation wiring, init-link channel/TTL, and the provisioner
-credential-minting + rotation implementation.
+per-tenant IdP federation wiring, init-link channel/TTL, the provisioner
+credential-minting + rotation implementation, a **dedicated provisioner
+workload + GCP SA** that isolates GCP-layer read access to the provisioner key
+(so `backend-app`'s SA no longer reads it — see D3), and a **key-expiry
+monitoring alert** for the finite provisioner key.
 
 ## Zitadel built-in surface (used vs custom)
 
