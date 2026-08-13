@@ -1,0 +1,100 @@
+## Context
+
+See proposal.md - Why. Builds on `organizer-tenancy` (the shared
+`organizer-console` project, `master` role, apps, and `organizer-provisioner`
+machine user, plus the relaxed topology). Full design, resolved gap-audit,
+and the four-change decomposition are in
+[`docs/organizer-platform-design.md`](../../../docs/organizer-platform-design.md);
+Zitadel mechanics in
+[`docs/zitadel-tenancy-model.md`](../../../docs/zitadel-tenancy-model.md).
+This design references them rather than restating.
+
+## Goals / Non-Goals
+
+**Goals:** the Organizer entity + association, the admin management surface,
+robust runtime tenant provisioning, operator first-sign-in bootstrap, a
+minimal off-switch, and lifecycle analytics.
+
+**Non-Goals:** the organizer-facing `Get` + `api.organizer.*` server +
+org-scoped authz (`organizer-rpc-server`); `organizer.html` + hosting
+(`organizer-console`); sub-owner roles; organizer-side Update/List; full
+offboarding cascade; slug / contact fields.
+
+## Decisions
+
+**D1 — Data model.** `organizers(id UUIDv7, name, zitadel_org_id UNIQUE,
+provisioning_state)` + `organizer_artists(organizer_id, artist_id)` with a
+**partial UNIQUE(artist_id) WHERE provisioning_state != 'deactivated'** so a
+deactivated Organizer frees its artists. Both FKs `ON DELETE CASCADE`.
+`zitadel_org_id` is the token-tenant→Organizer link (DB is source of truth;
+backend-only, not on the consumer proto). `provisioning_state` is an
+operational lifecycle flag (`provisioning`/`active`/`deactivated`) — NOT the
+business `verified` flag the design rejected. `*_at` names per schema-lint.
+
+**D2 — Proto.** `entity/v1/organizer.proto` (Organizer, OrganizerId=uuid,
+OrganizerName min_len=1/max_len=200, matching the `ArtistName` convention);
+`rpc/admin/v1/organizer_service.proto` with **bare-verb** methods
+`Create`, `AssociateArtist`, `DisassociateArtist`, `List`, `Get`. Each RPC
+documents its error matrix (INVALID_ARGUMENT / NOT_FOUND / ALREADY_EXISTS /
+PERMISSION_DENIED). The organizer-facing `Get` service is defined and served
+in `organizer-rpc-server` (4/4), not here.
+
+**D3 — Admin-gated only.** All RPCs ride the existing admin Connect server
+behind `RequireRoleInterceptor(admin)`. There is no organizer-scoped
+authorization in this change (that is the organizer-facing server, 4/4).
+
+**D4 — Provisioning saga (idempotent, compensating), keyed on OrganizerId.**
+Order: (1) insert `organizers` row `provisioning_state=provisioning`; (2)
+Management API create tenant org (name `org-<uuid-short>`, explicit
+passkey-only + domain-discovery login policy); (3) persist `zitadel_org_id`;
+(4) Project-Grant `organizer-console` (role subset incl. `master`); (5)
+create operator human user (no password, init email) + `master` User Grant;
+(6) set `provisioning_state=active`. A reconciler re-enters at the first
+incomplete step (each Zitadel create existence-checked). Uses the
+`organizer-provisioner` credential from ESC/Secret Manager. Wrap the call in
+an OTel span + an `organizer_provisioning_failed` metric.
+
+**D5 — Operator bootstrap.** The operator is created without a password;
+Zitadel's init-email flow lets them register a passkey on first sign-in; the
+tenant org's login policy (set in step 2) is passkey-only with domain
+discovery, so no org picker is needed.
+
+**D6 — Deactivation hook.** `provisioning_state=deactivated` gates the
+backend (reject all organizer ops) and deactivates the Zitadel operators;
+the partial-unique index frees the artists. Full teardown (org/grant
+removal) is Phase 2 — the hook ships now so it is not a later migration.
+
+**D7 — Analytics.** Emit `organizer.created` / `organizer.artist.associated`
+via the existing JetStream→PostHog path, keyed on `organizer_id` (admin-actor
+/ group events, no fan UserId); add them to the event catalog in this change.
+
+## Risks / Trade-offs
+
+- **Two-system saga without 2PC** → the DB-row-first + existence-checked,
+  reconciler-retried design (D4) makes a partial failure recoverable without
+  duplicates; the operator is never left without a `master` grant.
+- **`provisioning_state` looks like reversing "no status column"** → it is an
+  *operational* lifecycle flag, explicitly distinct from the rejected
+  business `verified` flag; called out so review does not read it as a
+  reversal.
+- **Analytics events without a fan UserId** → model as admin-actor / group
+  events keyed on `organizer_id`; confirm they are forwarded despite lacking
+  a person `distinct_id`.
+
+## Migration Plan
+
+1. specification: additive proto → merge → Release → BSR gen.
+2. backend: Atlas migration (`organizers` + `organizer_artists`, partial
+   unique, `zitadel_org_id`, `provisioning_state`); entity/repo/usecases;
+   admin handler; provisioning client + reconciler; analytics; tests
+   (incl. the compensating-retry and double-claim paths).
+3. frontend: admin console organizer-management screen.
+- Rollback: additive tables + additive proto; remove the screen and tables
+  (no tenant orgs exist until Create is used).
+
+## Open Questions
+
+- Whether the initial operator is seeded in the same `Create` call or invited
+  immediately after — resolved as **same call** here (so the E2E "a master
+  signs in" is verifiable); revisit only if invite-later UX is needed (Phase
+  2), which would not change these specs.
