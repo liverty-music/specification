@@ -1,7 +1,7 @@
 ## Context
 
 See proposal.md - Why. Builds on `organizer-tenancy` (the shared
-`organizer-console` project, `master` role, apps, and `organizer-provisioner`
+`organizer-console` project, `owner` role, apps, and `organizer-provisioner`
 machine user, plus the relaxed topology). Full design, resolved gap-audit,
 and the four-change decomposition are in
 [`docs/organizer-platform-design.md`](../../../docs/organizer-platform-design.md);
@@ -46,18 +46,35 @@ authorization in this change (that is the organizer-facing server, 4/4).
 **D4 — Provisioning saga (idempotent, compensating), keyed on OrganizerId.**
 Order: (1) insert `organizers` row `provisioning_state=provisioning`; (2)
 Management API create tenant org (name `org-<uuid-short>`, explicit
-passkey-only + domain-discovery login policy); (3) persist `zitadel_org_id`;
-(4) Project-Grant `organizer-console` (role subset incl. `master`); (5)
-create operator human user (no password, init email) + `master` User Grant;
-(6) set `provisioning_state=active`. A reconciler re-enters at the first
-incomplete step (each Zitadel create existence-checked). Uses the
-`organizer-provisioner` credential from ESC/Secret Manager. Wrap the call in
-an OTel span + an `organizer_provisioning_failed` metric.
+**passkey-primary** login policy per `organizer-tenancy`:
+`passwordlessType=ALLOWED`, `allowUsernamePassword=false`,
+`allowRegister=false`, `allowExternalIDP=true`, `ignoreUnknownUsernames=true`;
+NOT domain-discovery); (3) persist `zitadel_org_id`; (4) Project-Grant
+`organizer-console` (role subset incl. `owner`); (5) create operator human
+user (no password, `request_passwordless_registration` → passkey init link) +
+`owner` User Grant; (6) set `provisioning_state=active`. A reconciler re-enters
+at the first incomplete step (each Zitadel create existence-checked). Uses the
+`organizer-provisioner` credential from ESC/Secret Manager (JWT-profile →
+short-lived tokens). Wrap the call in an OTel span + an
+`organizer_provisioning_failed` metric.
+
+*Provisioner hardening (carried over from the `organizer-tenancy` code-review,
+recorded in its design "deferred" list):* isolate GCP-layer read access to the
+provisioner key with a **dedicated provisioner workload + GCP SA** (so the
+`backend-app` SA no longer reads the `IAM_ORG_MANAGER` key — an IaC /
+cloud-provisioning change alongside this backend work), and add a **key-expiry
+monitoring alert** for the finite provisioner key (expires 2027-08-13) plus the
+rotation runbook.
 
 **D5 — Operator bootstrap.** The operator is created without a password;
-Zitadel's init-email flow lets them register a passkey on first sign-in; the
-tenant org's login policy (set in step 2) is passkey-only with domain
-discovery, so no org picker is needed.
+Zitadel delivers a **passkey-registration init link** so they register a
+passkey on first sign-in. The tenant org's login policy (set in step 2) is
+**passkey-primary** with a mandatory recovery path (admin re-invite via
+re-issued init link; optional step-up magic-link/OTP) and permits workspace-IdP
+federation. **Org resolution is org-pinned** (org-scoped init link → remembered
+`org_id` → org code / "email me a link" → the `org:id` scope), NOT email-domain
+discovery — so no per-tenant domain verification and gmail operators work. (The
+console URL/config carrier is `organizer-console`.)
 
 **D6 — Deactivation hook.** `provisioning_state=deactivated` gates the
 backend (reject all organizer ops) and deactivates the Zitadel operators;
@@ -72,7 +89,7 @@ via the existing JetStream→PostHog path, keyed on `organizer_id` (admin-actor
 
 - **Two-system saga without 2PC** → the DB-row-first + existence-checked,
   reconciler-retried design (D4) makes a partial failure recoverable without
-  duplicates; the operator is never left without a `master` grant.
+  duplicates; the operator is never left without an `owner` grant.
 - **`provisioning_state` looks like reversing "no status column"** → it is an
   *operational* lifecycle flag, explicitly distinct from the rejected
   business `verified` flag; called out so review does not read it as a
@@ -89,12 +106,15 @@ via the existing JetStream→PostHog path, keyed on `organizer_id` (admin-actor
    admin handler; provisioning client + reconciler; analytics; tests
    (incl. the compensating-retry and double-claim paths).
 3. frontend: admin console organizer-management screen.
+4. cloud-provisioning (hardening, from the `organizer-tenancy` code-review):
+   a dedicated provisioner workload + GCP SA for GCP-layer key-access isolation,
+   and a key-expiry monitoring alert for the provisioner key.
 - Rollback: additive tables + additive proto; remove the screen and tables
   (no tenant orgs exist until Create is used).
 
 ## Open Questions
 
 - Whether the initial operator is seeded in the same `Create` call or invited
-  immediately after — resolved as **same call** here (so the E2E "a master
+  immediately after — resolved as **same call** here (so the E2E "an owner
   signs in" is verifiable); revisit only if invite-later UX is needed (Phase
   2), which would not change these specs.
