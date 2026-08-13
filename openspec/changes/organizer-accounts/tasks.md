@@ -13,11 +13,12 @@
 
 ## 3. Backend — tenant provisioning & bootstrap
 
-- [ ] 3.1 Zitadel Management-API client (using the `organizer-provisioner` credential) — create org, set passkey-only + domain-discovery login policy, project-grant `organizer-console`, create operator user + `master` grant
+- [ ] 3.1 Zitadel Management-API client (using the `organizer-provisioner` credential, JWT-profile → short-lived tokens) — create org, set **passkey-primary** login policy (recovery + `allowExternalIDP` + `ignoreUnknownUsernames`; NOT passkey-only/domain-discovery), project-grant `organizer-console`, create operator user + `owner` grant
 - [ ] 3.2 Idempotent/compensating provisioning saga keyed on OrganizerId (DB-row-first, existence-checked steps, reconciler retry); persist `zitadel_org_id`; flip to `active`
-- [ ] 3.3 Operator bootstrap: no-password human user + Zitadel init email (passkey on first sign-in)
+- [ ] 3.3 Operator bootstrap: no-password human user + Zitadel passkey-registration init link (passkey on first sign-in); org resolution is org-pinned (not domain discovery)
 - [ ] 3.4 Deactivation: `deactivated` gate rejects organizer ops + deactivates Zitadel operators + frees artists
 - [ ] 3.5 OTel span + `organizer_provisioning_failed` metric on the provisioning call
+- [ ] 3.6 (hardening, from `organizer-tenancy` code-review) cloud-provisioning: dedicated provisioner workload + GCP SA to isolate GCP-layer read access to the provisioner key (so `backend-app` SA no longer reads the `IAM_ORG_MANAGER` key) + key-expiry monitoring alert for the finite provisioner key
 
 ## 4. Backend — analytics & tests
 
@@ -33,4 +34,4 @@
 
 - [ ] 6.1 Backend PR merged → release → prod pin bump; confirm rollout (depends on `organizer-tenancy` IaC applied in the env first)
 - [ ] 6.2 Frontend PR merged → release
-- [ ] 6.3 Verify in prod: an admin creates an Organizer (name + operator email) → tenant org + project grant + master operator provisioned; the operator completes init-email + passkey and signs into their org; associate/disassociate + deactivate behave per spec; analytics events land
+- [ ] 6.3 Verify in prod: an admin creates an Organizer (name + operator email) → tenant org + project grant + `owner` operator provisioned; the operator completes the passkey init link + passkey and signs into their org (org-pinned); associate/disassociate + deactivate behave per spec; analytics events land

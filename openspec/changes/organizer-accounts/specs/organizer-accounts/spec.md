@@ -14,13 +14,13 @@ Organizer with a name and an initial operator email. Creation is the vetting
 — there is no separate `verified` flag and no self-serve registration. An
 Organizer is distinct from an Artist and has its own OrganizerId. On success
 the Organizer is provisioned an isolated Zitadel tenant (see idempotent
-provisioning) with the initial operator seeded as its `master`.
+provisioning) with the initial operator seeded as its `owner`.
 
 #### Scenario: Admin creates an organizer
 
 - **WHEN** an operator with the `admin` role creates an Organizer with a name
   and an initial operator email
-- **THEN** the Organizer SHALL exist with an isolated tenant and a `master`
+- **THEN** the Organizer SHALL exist with an isolated tenant and a `owner`
   operator, and SHALL become an active organizer
 
 #### Scenario: Non-admin cannot create an organizer
@@ -38,23 +38,33 @@ provisioning) with the initial operator seeded as its `master`.
 ### Requirement: Initial operator bootstraps credentials on first sign-in
 
 The system SHALL create the initial operator as a human user in the
-Organizer's tenant org with no password, and trigger a Zitadel
-initialization email. The operator SHALL complete first sign-in by
-registering a passkey, and SHALL be routed to their own tenant org by email
-domain discovery (no org picker).
+Organizer's tenant org with no password (`request_passwordless_registration`),
+and deliver the Zitadel passkey-registration init link. The operator SHALL
+complete first sign-in by registering a passkey. The tenant org's login policy
+is **passkey-primary** with a mandatory recovery path (admin re-invite via
+re-issued init link) and permits workspace-IdP federation — NOT passkey-only,
+and NOT email-domain discovery. Org resolution is **org-pinned**: the operator
+is returned to their own tenant org via the org-scoped init link on first
+sign-in, and thereafter via an org handle (remembered `org_id`, or an org
+code / "email me a sign-in link") that the console turns into the Zitadel
+`urn:zitadel:iam:org:id:<orgId>` scope. (The login-policy shape + the
+`organizer-console` project/role are provided by `organizer-tenancy`; this
+change applies the policy per org and seeds the operator.)
 
-#### Scenario: Operator completes first sign-in via init email and passkey
+#### Scenario: Operator completes first sign-in via init link and passkey
 
-- **WHEN** an initial operator opens their initialization email and starts
-  first sign-in
+- **WHEN** an initial operator opens their passkey-registration init link and
+  starts first sign-in
 - **THEN** they SHALL register a passkey and be returned authenticated to
   their Organizer tenant org
 
-#### Scenario: Operator is routed to their org by email domain
+#### Scenario: Operator is routed to their org by org-pinned entry
 
-- **WHEN** the operator enters their email at login
-- **THEN** domain discovery SHALL route them to their Organizer tenant org
-  without an org picker
+- **WHEN** the operator returns to sign in
+- **THEN** the org SHALL be resolved by an org-pinned entry (org-scoped init
+  link, remembered `org_id`, or org code / "email me a link") and pinned via
+  the Zitadel `org:id` scope — never by raw email domain
+- **AND** a mismatched org entry SHALL simply fail auth (no cross-org access)
 
 ### Requirement: An artist is represented by at most one organizer
 
@@ -108,9 +118,9 @@ organizer-management screen.
 
 Creating an Organizer SHALL be idempotent and compensating across the
 tenant-provisioning steps (tenant org, login policy, project grant, operator
-+ master grant, and the persisted `zitadel_org_id`). A retry after a partial
++ owner grant, and the persisted `zitadel_org_id`). A retry after a partial
 failure SHALL complete provisioning without creating a duplicate Organizer or
-duplicate tenant org, and SHALL never leave the Organizer without a `master`
+duplicate tenant org, and SHALL never leave the Organizer without a `owner`
 operator.
 
 #### Scenario: Retry after mid-provisioning failure does not duplicate
@@ -119,11 +129,11 @@ operator.
 - **THEN** the system SHALL complete the remaining steps without creating a
   second Organizer or a second tenant org
 
-#### Scenario: Operator is never left without a master grant
+#### Scenario: Operator is never left without an owner grant
 
 - **WHEN** provisioning completes for an Organizer
 - **THEN** the Organizer SHALL have at least one operator holding the
-  `master` role
+  `owner` role
 
 ### Requirement: An organizer can be deactivated
 

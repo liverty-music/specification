@@ -27,14 +27,17 @@ and the console frontend are separate sub-changes (3/4, 4/4).
   already-claimed artists; reassignment = disassociate + associate.
 - Add **runtime tenant provisioning**: on `Create`, the backend calls the
   Zitadel Management API (via the `organizer-provisioner` machine user) to
-  create the Organizer's tenant org, set its passkey-only + domain-discovery
-  login policy, Project-Grant `organizer-console`, and seed the initial
-  operator as `master` — **idempotent/compensating** so a retry never
+  create the Organizer's tenant org, set its **passkey-primary** login policy
+  (mandatory recovery + workspace-IdP federation; NOT passkey-only, NOT
+  domain-discovery), Project-Grant `organizer-console`, and seed the initial
+  operator as `owner` — **idempotent/compensating** so a retry never
   duplicates the org and never leaves the operator without a grant.
 - Add the **operator first-sign-in bootstrap**: the initial operator is a
-  tenant human user with no password; Zitadel sends an init email; the
-  operator registers a **passkey** and signs into their org (resolved by
-  email domain discovery).
+  tenant human user with no password; Zitadel delivers a passkey-registration
+  init link; the operator registers a **passkey** and signs into their org
+  (org resolved by **org-pinned entry** — init link / remembered `org_id` /
+  org code / "email me a link" → the Zitadel `org:id` scope — not email
+  domain).
 - Add a **`deactivated` off-switch hook**: the backend rejects all organizer
   operations for a deactivated Organizer and its operators are deactivated
   in Zitadel; freed artists become re-associable. Full teardown cascade is
