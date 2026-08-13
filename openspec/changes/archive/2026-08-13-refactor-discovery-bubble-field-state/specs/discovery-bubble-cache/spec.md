@@ -11,6 +11,13 @@ The system SHALL cache the last successfully generated bubble field (`Artist[]`)
 - **AND** no ghost bubbles SHALL be shown
 - **AND** any background refresh SHALL reconcile the field via a non-destructive delta (see "Re-entry preserves the in-session bubble field"), NOT a wholesale replacement that recomposes or shrinks the visible field
 
+#### Scenario: Re-entry with all cached artists already followed
+- **WHEN** the user navigates to Discovery after a prior visit
+- **AND** every artist in the cached field has since been followed
+- **THEN** producing the field SHALL exclude all of them, leaving the field empty (no stale bubbles rendered)
+- **AND** the background refresh SHALL run immediately and refill the field with fresh artists
+- **AND** the field SHALL remain empty until the refresh completes (ghost placeholder bubbles are NOT shown on the cached-but-filtered path, unlike a cold visit)
+
 #### Scenario: Cache excludes followed artists on re-entry
 - **WHEN** the cached bubble field contains artists that the user has since followed
 - **THEN** those artists SHALL be excluded when the field is produced
