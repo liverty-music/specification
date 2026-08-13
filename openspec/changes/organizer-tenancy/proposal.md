@@ -16,20 +16,31 @@ tracked by liverty-music/specification#759.
   provisioned Organizer tenant orgs** (one per Organizer) that are NOT
   IaC-managed and NOT treated as drift.
 - Add a shared, **actor-named `organizer-console` Zitadel Project** owned by
-  the `liverty-music` org, with the `master` ProjectRole and access-token
+  the `liverty-music` org, with the `owner` ProjectRole and access-token
   role assertion enabled. Actor-named so a future `venue-console` never
   collides.
 - Register the **`organizer-console` OIDC app** and a **`backend-api` app**
   on that project (the app audience the organizer API server will validate).
-- Provision a dedicated **`organizer-provisioner` machine user** with
-  instance-level org-create + cross-org grant rights (credential in
-  ESC/Secret Manager), isolated from the existing single-org `backend-app`
-  machine user.
+- Provision a dedicated **`organizer-provisioner` machine user** with the
+  `IAM_ORG_MANAGER` instance role (org-create + cross-org grants; narrowest
+  built-in role, less than `IAM_OWNER`), isolated from the existing
+  single-org `backend-app` machine user. Its **root** JWT-profile key lives in
+  ESC/Secret Manager with a **finite expiry + rotation runbook** (no year-2099
+  non-expiring key for this high-privilege identity); operational access
+  tokens are short-lived by default via the standard `jwt-bearer` OAuth flow.
 - Define the **required login policy for Organizer tenant orgs**:
-  passkey-only (`passwordlessType=ALLOWED`, `userLogin=false`,
-  `allowRegister=false`, no Google IdP) with `allowDomainDiscovery=true`,
-  set explicitly at provisioning — tenant orgs MUST NOT inherit the admin
-  default (Google-IdP-only) policy.
+  **passkey-primary** (`passwordlessType=PASSWORDLESS_TYPE_ALLOWED`,
+  `allowUsernamePassword=false`, `allowRegister=false`) with a **designed
+  recovery path** (admin re-invite via re-issued passkey init link; optional
+  magic-link/OTP fallback, step-up protected) — passkey-only-with-no-recovery
+  is prohibited. `allowExternalIDP=true` permits OIDC federation to a
+  tenant's own workspace IdP; `ignoreUnknownUsernames=true` prevents
+  enumeration. **Org resolution is org-pinned** (org-scoped init link →
+  remembered `org_id` → org-code / app-layer "email me a link" → the Zitadel
+  `org:id` scope), NOT email-domain-based, so no per-tenant domain
+  verification is needed; email-domain discovery is a future optional
+  enhancement. Set explicitly at provisioning — tenant orgs MUST NOT inherit
+  the admin default (Google-IdP-only) policy.
 
 Explicit non-goals (later sub-changes): the Organizer domain entity + admin
 vetting + the runtime provisioning saga (`organizer-accounts`),
@@ -40,9 +51,9 @@ server + `OrganizerService.Get` + org-scoped authz (`organizer-rpc-server`).
 
 ### New Capabilities
 - `organizer-tenancy`: the shared `organizer-console` Zitadel project (its
-  `master` role and apps), the `organizer-provisioner` machine user, and the
-  required passkey-only + domain-discovery login policy that Organizer
-  tenant orgs are provisioned with.
+  `owner` role and apps), the `organizer-provisioner` machine user, and the
+  required passkey-primary + recovery + federation + org-pinned-resolution
+  login policy that Organizer tenant orgs are provisioned with.
 
 ### Modified Capabilities
 - `identity-management`: relax the "exactly two top-level orgs" topology to
@@ -54,7 +65,7 @@ server + `OrganizerService.Get` + org-scoped authz (`organizer-rpc-server`).
   `organizer-tenancy` capability spec. **No proto/entity changes** (those
   land in `organizer-accounts`), so this change needs no BSR generation.
 - **cloud-provisioning (IaC / Pulumi)**: the `organizer-console` project +
-  `master` role + `organizer-console`/`backend-api` apps in the
+  `owner` role + `organizer-console`/`backend-api` apps in the
   `liverty-music` org, and the `organizer-provisioner` machine user +
   credential.
 - **backend / frontend**: none in this change.

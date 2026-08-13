@@ -39,9 +39,9 @@ Zitadel Instance
 │           ├── App(OIDC): organizer-console    web console
 │           ├── App(PWA):  reception            check-in (later, ⑥) — same roles
 │           ├── App(API):  backend-api          audience
-│           └── Roles: master [→ editor, viewer, reception (Phase 2)]
+│           └── Roles: owner [→ editor, viewer, reception (Phase 2)]
 │     └── (future) Project: venue-console        venue seat maps / calendar / door lists
-├── Org: organizer-<A>  (runtime)  ── ProjectGrant(organizer-console, roles⊆) + UserGrant(staff→master)
+├── Org: organizer-<A>  (runtime)  ── ProjectGrant(organizer-console, roles⊆) + UserGrant(staff→owner)
 ├── Org: organizer-<B>  (runtime)  ── ProjectGrant(organizer-console, roles⊆) + UserGrant(staff→viewer)
 └── … one org per vetted Organizer
 ```
@@ -60,7 +60,7 @@ own** org, so the owning org's login policy never applies to them.
 
 1. Admin vets Organizer A → runtime provisioning (below) creates Org A, a
    Project Grant of `organizer-console` (role subset), and a User Grant
-   (`master`) for the first operator.
+   (`owner`) for the first operator.
 2. Operator signs into the `organizer-console` OIDC app with the org-scope
    `urn:zitadel:iam:org:id:<A>` (pins login to their org).
 3. Token carries roles as a nested map
