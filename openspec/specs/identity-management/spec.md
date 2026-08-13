@@ -3,15 +3,14 @@
 ## Purpose
 
 Manage identity, authentication, and authorization policies for the Liverty Music platform.
-
 ## Requirements
-
 ### Requirement: Manage Zitadel Organization
 
-The system SHALL manage Zitadel organization topology via Infrastructure as
-Code so that the instance always exposes a clear separation between
-operator (admin) and product identities. The instance SHALL contain
-exactly two top-level organizations:
+The system SHALL manage Zitadel organization topology so that the instance
+always exposes a clear separation between operator (admin), product, and
+Organizer-tenant identities. The instance SHALL contain **two IaC-managed
+platform organizations**, plus **one runtime-provisioned Organizer tenant
+organization per vetted Organizer**:
 
 - An **`admin`** role org, created by Zitadel at first-instance bootstrap
   via the configmap setting `ZITADEL_FIRSTINSTANCE_ORG_NAME=admin`,
@@ -28,7 +27,16 @@ exactly two top-level organizations:
   applications, end-user login policy, and end-user accounts. The
   frontend SPA's `ApplicationOidc` carries an explicit `client_id`
   whose owning org Zitadel resolves to `liverty-music`, so the
-  default-org choice does not affect end-user OIDC routing.
+  default-org choice does not affect end-user OIDC routing. This org also
+  owns the actor-named **`organizer-console`** Project (its roles and
+  apps), which is Project-Granted to each Organizer tenant org.
+
+- **Organizer tenant orgs** — one per vetted Organizer, **provisioned at
+  runtime via the Zitadel Management API** when an admin vets an Organizer
+  (from the admin console → backend, using a machine-user credential), NOT
+  IaC-managed. Each isolates one Organizer's operator identities and
+  receives a Project Grant to the `liverty-music` org's `organizer-console`
+  project. See `docs/zitadel-tenancy-model.md`.
 
 #### Scenario: Provision admin role org via bootstrap + import
 
@@ -52,6 +60,8 @@ exactly two top-level organizations:
   with `isDefault: false`
 - **AND** all product resources (Project, ApplicationOidc, end-user
   LoginPolicy, end-user HumanUsers) SHALL live in this org
+- **AND** the `organizer-console` Project (its roles and apps) SHALL also
+  live in this org
 
 #### Scenario: Console login routes to the admin org's policy
 
@@ -68,9 +78,13 @@ exactly two top-level organizations:
 #### Scenario: No third org
 
 - **WHEN** the instance is fully provisioned
-- **THEN** exactly two orgs SHALL exist (`admin` and `liverty-music`)
-- **AND** any additional org found via `POST /admin/v1/orgs/_search` SHALL
-  be treated as drift and reverted on the next Pulumi apply
+- **THEN** exactly two IaC-managed platform orgs SHALL exist (`admin` and
+  `liverty-music`) — no third *IaC-managed* org
+- **AND** any additional organization SHALL exist only as a
+  runtime-provisioned Organizer tenant org (one per vetted Organizer),
+  created via the Zitadel Management API
+- **AND** such runtime-provisioned Organizer tenant orgs SHALL NOT be
+  treated as Pulumi drift or reverted on apply
 
 #### Scenario: Admin org cannot be accidentally destroyed
 
