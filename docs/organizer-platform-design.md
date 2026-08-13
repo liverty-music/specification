@@ -28,17 +28,28 @@ the Organizer domain, its surfaces, and the resolved audit gaps.
   deactivated Organizer frees its artists for re-association).
 - **Tenancy: Zitadel org-per-Organizer** + a shared, actor-named
   `organizer-console` project (owned by the `liverty-music` org),
-  Project-Granted to each Organizer org; `master` role via User Grant.
+  Project-Granted to each Organizer org; `owner` role via User Grant.
   Actor-named so a future `venue-console` never collides. Full model:
   `zitadel-tenancy-model.md`.
 - **Provisioning:** static platform is IaC; per-Organizer org + grant +
   operator is created **at runtime via the Zitadel Management API** in the
   admin vetting flow.
-- **Login (recommended, pending final confirm):** organizer tenant orgs use
-  a **passkey-only** login policy (no Google IdP), explicitly set at
-  provisioning (never inherit the admin default). Operator org is resolved
-  at login via **email domain discovery** — one OIDC app serves all
-  tenants.
+- **Login (confirmed 2026-08 after best-practice review):** organizer tenant
+  orgs use a **passkey-primary** login policy — `passwordlessType=ALLOWED`,
+  `allowUsernamePassword=false` (no passwords), `allowRegister=false`
+  (backend-provisioned only), `allowExternalIDP=true` (federate to a tenant's
+  own workspace IdP when it has one), `ignoreUnknownUsernames=true` —
+  explicitly set at provisioning (never inherit the admin default). A
+  **recovery path is mandatory** (admin re-invite via re-issued passkey init
+  link; optional step-up-protected magic-link/OTP); passkey-only-with-no-
+  recovery is prohibited (synced passkeys reduce but do not remove single-
+  credential risk; Zitadel hard passkey-only lockdown is fragile —
+  #11682/#8996). **Org resolution is org-pinned, not email-domain-based**
+  (org-scoped init link → remembered `org_id` → org-code/slug or app-layer
+  "email me a link" → the `org:id` scope) — one OIDC app serves all tenants,
+  no per-tenant domain verification; email-domain discovery is a future
+  optional enhancement (`allowDomainDiscovery` off in MVP). Full rationale:
+  the `organizer-tenancy` change design.md "Best-practice review".
 - **Fan ⇄ operator same person:** two **independent identities** (separate
   `sub` per org); never linked/merged; no cross-org SSO between the fan app
   and the organizer console.
@@ -88,18 +99,25 @@ timestamps use domain-specific `*_at` names (schema-lint bans
 Ordered, idempotent, compensating — keyed on `OrganizerId`:
 1. Insert `organizers` row `provisioning_state = provisioning`.
 2. Management API: create tenant org (name `org-<uuid-short>`, not the
-   display name, to avoid collisions); **set an explicit passkey-only login
-   policy + `allowDomainDiscovery`**.
+   display name, to avoid collisions); **set the explicit passkey-primary
+   login policy** (shape above: `passwordlessType=ALLOWED`,
+   `allowUsernamePassword=false`, `allowRegister=false`, `allowExternalIDP=
+   true`, `ignoreUnknownUsernames=true`; `allowDomainDiscovery` off in MVP).
 3. Persist `zitadel_org_id` on the row.
-4. Project-Grant `organizer-console` (role subset incl. `master`) to the
+4. Project-Grant `organizer-console` (role subset incl. `owner`) to the
    org.
-5. Create the operator human user (no password) + User Grant `master`;
-   trigger Zitadel **init email** → operator registers a passkey on first
-   sign-in.
+5. Create the operator human user (no password) with
+   `request_passwordless_registration=true` + User Grant `owner`; deliver the
+   returned Zitadel **passkey-registration init link**
+   (`requestPlatformType=platform`) → operator enrolls a passkey on first
+   sign-in. Recovery = admin re-invite (re-issue the init link after
+   out-of-band verification). Author the provisioner root-key **rotation
+   runbook** here (the key created in `organizer-tenancy` is first consumed at
+   this step).
 6. Set `provisioning_state = active`.
 On failure, a reconciler re-enters at the first incomplete step (each
-Zitadel create is existence-checked). The operator is never left without a
-`master` grant.
+Zitadel create is existence-checked). The operator is never left without an
+`owner` grant.
 
 **Machine user:** a dedicated `organizer-provisioner` (NOT the existing
 single-org `backend-app` user) with the narrowest instance role that
@@ -115,7 +133,8 @@ domain }`; the inner orgId is the tenant. Failure matrix (all
 `PERMISSION_DENIED`, never 500): missing/empty roles claim (require
 `accessTokenRoleAssertion=true`, `projectRoleCheck=false`), `aud` without
 the project id, login-scope org ≠ requested Organizer. A multi-org operator
-is authorized only against the **session's login-scope org**. Zitadel
+is authorized only against the **session's login-scope org**. (The top role
+in the roles claim is `owner`, not `admin`.) Zitadel
 supplies identity + tenant + role; **which artists/events an Organizer may
 touch is Liverty's own data** (`organizer_artists`, event ownership),
 enforced in the backend.
@@ -134,9 +153,18 @@ Mirroring the admin precedent (`admin-rpc-server`, `admin-console-hosting`):
   per-host `/config.json`.
 - **Runtime config:** the organizer `/config.json` carries the issuer + the
   `organizer-console` client id + `apiBaseUrl = api.organizer.{base}`, but
-  **NOT a fixed `zitadelOrgId`** — the org is resolved at login (domain
-  discovery). Requires a `frontend-runtime-config` delta (its AppConfig
-  currently assumes one static org).
+  **NOT a fixed `zitadelOrgId`** (one app serves all tenants). The org is
+  resolved per session by an **org-pinned entry**, not the email domain: the
+  org-scoped passkey init link on first login, then an org handle
+  (org code/slug in the URL or a remembered `org_id`), and on a fresh device an
+  org-code entry or an app-layer "email me a sign-in link" (backend org lookup,
+  works for gmail) — all turned into the Zitadel
+  `urn:zitadel:iam:org:id:<orgId>` scope. **Email-domain discovery is NOT used
+  in the MVP** (a future optional enhancement for verified-custom-domain +
+  enterprise-SSO tenants); **consumer/free-mail domains (gmail) never drive
+  routing** (the common indie-artist case).
+  Requires a `frontend-runtime-config` delta (its AppConfig currently assumes
+  one static org) to carry the org handle.
 
 ## Observability
 
@@ -161,9 +189,9 @@ to the audit themes.
 
 | Change | Scope | Owns (audit) | Depends on |
 |--------|-------|--------------|------------|
-| **`organizer-tenancy`** | `identity-management` topology delta (allow runtime Organizer tenant orgs); Zitadel platform **IaC**: `organizer-console` project + `master` role + OIDC/API apps + `organizer-provisioner` machine user; per-org passkey-only login policy + domain discovery shape | A (login policy), C (machine user), identity topology | existing admin |
+| **`organizer-tenancy`** | `identity-management` topology delta (allow runtime Organizer tenant orgs); Zitadel platform **IaC**: `organizer-console` project + `owner` role + OIDC/API apps + `organizer-provisioner` machine user; per-org passkey-primary + recovery + federation + org-pinned-resolution login policy shape | A (login policy), C (machine user), identity topology | existing admin |
 | **`organizer-accounts`** | Organizer **entity** (`zitadel_org_id`, `provisioning_state`) + Organizer↔Artist (partial-unique); **admin** `OrganizerService` (Create/AssociateArtist/DisassociateArtist/List/Get); **tenant provisioning saga** + operator bootstrap (email + init/passkey); **deactivated** hook; analytics events | A (operator seed/bootstrap), C (saga/linkage/state), D (offboard hook), E (entity/assoc/admin RPCs), G (analytics) | `organizer-tenancy` |
-| **`organizer-console`** | `organizer.html` bundle-isolated entry (OIDC domain discovery, role-claim route guard, placeholder) + **hosting** (`organizer.{base}` DNS/cert/HTTPRoute/config.json) + `frontend-runtime-config` delta | A (route guard), C (login discovery), F (hosting, runtime-config) | `organizer-tenancy` (usable login target after `organizer-accounts`) |
+| **`organizer-console`** | `organizer.html` bundle-isolated entry (org-pinned login: org handle/slug + remembered `org_id` + "email me a link" → `org:id` scope; role-claim route guard; placeholder) + **hosting** (`organizer.{base}` DNS/cert/HTTPRoute/config.json) + `frontend-runtime-config` delta | A (route guard), C (login org-pinned), F (hosting, runtime-config) | `organizer-tenancy` (usable login target after `organizer-accounts`) |
 | **`organizer-rpc-server`** | Dedicated organizer Connect server at `api.organizer.{base}` + CORS/cert/DNS/health; `rpc.organizer.v1.OrganizerService.Get`; **org-scoped role-claim authorization** (the failure matrix) | B (authz matrix), E (Get shape), F (server/CORS) | `organizer-tenancy` + `organizer-accounts` |
 
 ```
@@ -176,9 +204,13 @@ sub-change is created with `/opsx:propose` when its work starts.
 
 ## Open decisions (recommended defaults recorded above; confirm before build)
 
-- Login method: **passkey-only** (recommended) vs password+MFA.
-- Login org discovery: **email domain discovery** (recommended) vs org
-  param/subdomain.
+- ~~Login method~~ **Resolved (2026-08):** passkey-primary + mandatory
+  recovery + optional workspace-IdP federation (not passkey-only, not
+  password+MFA). See the Login bullet above.
+- ~~Login org discovery~~ **Resolved (2026-08):** org-pinned entry (org
+  handle/slug + remembered `org_id` + app-layer "email me a link" → `org:id`
+  scope). Email-domain discovery dropped from MVP → future optional
+  enhancement. See the Login bullet + `organizer-tenancy` design D6.
 - Offboarding: **`deactivated` hook + partial-unique now** (recommended) vs
   fully Phase 2.
 - Fan⇄operator: **two independent identities, no SSO** (recommended,
