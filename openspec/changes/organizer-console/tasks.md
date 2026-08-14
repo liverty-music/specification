@@ -16,6 +16,6 @@
 
 ## 3. Ship to prod
 
-- [ ] 3.1 Frontend PR merged → release → organizer.html shipped
-- [ ] 3.2 Cloud-provisioning PR merged → ArgoCD synced (host, cert, DNS, config)
-- [ ] 3.3 Verify in prod: `organizer.liverty-music.app` serves the console over TLS; an operator signs in via org-pinned entry and (with `owner`) sees the placeholder; a non-`owner` account is denied; the consumer bundle is unaffected
+- [x] 3.1 Frontend PR merged (#528) → release v1.46.0 → organizer.html shipped (organizer-app:v1.46.0 in prod AR)
+- [x] 3.2 Cloud-provisioning PR merged (#402) → ArgoCD synced (pod Running 1/1) + prod `pulumi up` (cert ACTIVE, Cloud DNS, cert-map-entry)
+- [~] 3.3 Verify in prod: `organizer.liverty-music.app` serves the console over TLS ✅; SPA shell + `/config.json` (no fixed org id, `no-store`) ✅; unauthenticated visitor is redirected to Zitadel sign-in via the guard + organizer OIDC client ✅; consumer bundle unaffected (zero organizer refs, `zitadelOrgId` intact) ✅. DEFERRED: the interactive `owner`-sees-placeholder / non-`owner`-denied differentiation needs a real Organizer operator account, which is provisioned by `organizer-accounts` (sub-change 2/4, not yet shipped); the guard/role/org-handle logic is unit-tested.
