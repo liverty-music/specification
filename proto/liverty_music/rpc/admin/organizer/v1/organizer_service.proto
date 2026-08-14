@@ -1,0 +1,186 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.admin.organizer.v1 provides the admin-only
+// OrganizerService for managing Organizers from the developer admin console.
+// It is served by the admin Connect server behind the admin-role gate; the
+// organizer-facing surface lives separately in liverty_music.rpc.organizer.v1.
+package liverty_music.rpc.admin.organizer.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/organizer.proto";
+import "liverty_music/entity/v1/user.proto";
+
+// OrganizerService is the admin surface for managing Organizers — the vetted
+// sellers that represent artists. It creates an Organizer (provisioning an
+// isolated Zitadel tenant with an initial `owner` operator), manages the
+// Organizer↔Artist association (each artist is represented by at most one
+// Organizer), lists organizers and the artists an organizer represents for the
+// admin console, and deactivates an Organizer as a minimal off-switch.
+//
+// All RPCs are authorized only for the admin organization; callers outside it
+// are rejected with PERMISSION_DENIED at the admin server boundary.
+service OrganizerService {
+  // Create registers a new Organizer with a display name and an initial
+  // operator email, then provisions its isolated Zitadel tenant (org,
+  // passkey-primary login policy, organizer-console project grant) and seeds
+  // the initial operator as its `owner`. Provisioning is idempotent and
+  // compensating: retrying a Create that failed partway never creates a
+  // duplicate Organizer or tenant org and never leaves the Organizer without an
+  // `owner` operator. The initial operator is created without a password and
+  // receives a Zitadel passkey-registration init link to register a passkey on
+  // first sign-in.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The name is empty/too long or the operator email is malformed.
+  rpc Create(CreateRequest) returns (CreateResponse);
+
+  // AssociateArtist links an existing Artist to an Organizer. There is no
+  // create-on-demand: an unknown ArtistId is rejected. Each Artist is
+  // represented by at most one Organizer, so an already-claimed Artist is
+  // rejected; reassignment is DisassociateArtist followed by AssociateArtist.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The organizer id or artist id is missing or malformed.
+  // - NOT_FOUND: The organizer or the artist does not exist.
+  // - ALREADY_EXISTS: The artist is already represented by an organizer.
+  rpc AssociateArtist(AssociateArtistRequest) returns (AssociateArtistResponse);
+
+  // DisassociateArtist removes the link between an Artist and its Organizer,
+  // freeing the Artist to be associated with another Organizer. It is
+  // idempotent: disassociating an artist that is not associated succeeds.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The organizer id or artist id is missing or malformed.
+  // - NOT_FOUND: The organizer does not exist.
+  rpc DisassociateArtist(DisassociateArtistRequest) returns (DisassociateArtistResponse);
+
+  // List returns every Organizer so the admin console can render the
+  // organizer-management screen. The artists an Organizer represents are
+  // retrieved separately via ListArtists.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  rpc List(ListRequest) returns (ListResponse);
+
+  // Get returns a single Organizer by id.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The organizer id is missing or malformed.
+  // - NOT_FOUND: The organizer does not exist.
+  rpc Get(GetRequest) returns (GetResponse);
+
+  // ListArtists returns the artists an Organizer currently represents, so the
+  // admin console can inspect an organizer's roster. Empty when it represents
+  // none (or its associations were freed by deactivation).
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The organizer id is missing or malformed.
+  // - NOT_FOUND: The organizer does not exist.
+  rpc ListArtists(ListArtistsRequest) returns (ListArtistsResponse);
+
+  // Deactivate turns an Organizer off: the backend thereafter rejects all
+  // operations targeting it, its operators are deactivated in Zitadel, and its
+  // artist associations are freed so the artists can be re-associated. Full
+  // teardown of the tenant org and grants is out of scope. It is idempotent:
+  // deactivating an already-deactivated Organizer succeeds.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The organizer id is missing or malformed.
+  // - NOT_FOUND: The organizer does not exist.
+  rpc Deactivate(DeactivateRequest) returns (DeactivateResponse);
+}
+
+// CreateRequest carries the new Organizer's name and its initial operator's
+// email.
+message CreateRequest {
+  // Required. The display name of the organizer to create.
+  entity.v1.OrganizerName name = 1 [(buf.validate.field).required = true];
+
+  // Required. The email of the initial operator, seeded as the organizer's
+  // `owner` and sent a Zitadel passkey-registration init link.
+  entity.v1.UserEmail operator_email = 2 [(buf.validate.field).required = true];
+}
+
+// CreateResponse returns the newly created Organizer.
+message CreateResponse {
+  // The created organizer.
+  entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
+}
+
+// AssociateArtistRequest identifies the Organizer and the existing Artist to
+// link.
+message AssociateArtistRequest {
+  // Required. The organizer that will represent the artist.
+  entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The existing artist to associate. Unknown ids are rejected with
+  // NOT_FOUND (no create-on-demand).
+  entity.v1.ArtistId artist_id = 2 [(buf.validate.field).required = true];
+}
+
+// AssociateArtistResponse is returned upon a successful association.
+message AssociateArtistResponse {}
+
+// DisassociateArtistRequest identifies the Organizer and the Artist to unlink.
+message DisassociateArtistRequest {
+  // Required. The organizer to unlink the artist from.
+  entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The artist to disassociate.
+  entity.v1.ArtistId artist_id = 2 [(buf.validate.field).required = true];
+}
+
+// DisassociateArtistResponse is returned upon a successful disassociation
+// (including the idempotent case where the artist was not associated).
+message DisassociateArtistResponse {}
+
+// ListRequest retrieves every Organizer. It takes no parameters.
+message ListRequest {}
+
+// ListResponse contains every Organizer.
+message ListResponse {
+  // The organizers, in catalog order.
+  repeated entity.v1.Organizer organizers = 1;
+}
+
+// GetRequest identifies the Organizer to retrieve.
+message GetRequest {
+  // Required. The unique identifier of the organizer to retrieve.
+  entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
+}
+
+// GetResponse returns the requested Organizer.
+message GetResponse {
+  // The requested organizer.
+  entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
+}
+
+// ListArtistsRequest identifies the Organizer whose represented artists to
+// list.
+message ListArtistsRequest {
+  // Required. The organizer whose represented artists to return.
+  entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
+}
+
+// ListArtistsResponse contains the artists the Organizer currently represents.
+message ListArtistsResponse {
+  // The artists represented by the organizer. Empty when it represents none.
+  repeated entity.v1.Artist artists = 1;
+}
+
+// DeactivateRequest identifies the Organizer to deactivate.
+message DeactivateRequest {
+  // Required. The unique identifier of the organizer to deactivate.
+  entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
+}
+
+// DeactivateResponse is returned upon a successful deactivation (including the
+// idempotent case where the organizer was already deactivated).
+message DeactivateResponse {}

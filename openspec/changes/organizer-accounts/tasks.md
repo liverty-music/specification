@@ -1,12 +1,12 @@
 ## 1. Specification (proto)
 
-- [ ] 1.1 `entity/v1/organizer.proto`: `Organizer` (OrganizerId UUIDv7, OrganizerName), type-safe wrappers + protovalidate (id `uuid`, name `min_len=1/max_len=200`)
-- [ ] 1.2 `rpc/admin/v1/organizer_service.proto`: bare-verb `Create` (name + operator_email), `AssociateArtist`, `DisassociateArtist`, `List`, `Get`; document each RPC's error matrix
+- [x] 1.1 `entity/v1/organizer.proto`: `Organizer` (OrganizerId UUIDv7, OrganizerName), type-safe wrappers + protovalidate (id `uuid`, name `min_len=1/max_len=200`)
+- [x] 1.2 `rpc/admin/organizer/v1/organizer_service.proto` (package `liverty_music.rpc.admin.organizer.v1`, bare message names): bare-verb `Create` (name + operator_email), `AssociateArtist`, `DisassociateArtist`, `List`, `Get`, `ListArtists`, `Deactivate`; responses return the `Organizer` entity (no view DTO / status enum); `ListArtists` returns the roster; document each RPC's error matrix
 - [ ] 1.3 `buf lint`/`format`/`breaking` pass; open specification PR, merge, cut Release, confirm BSR gen succeeds
 
 ## 2. Backend — domain & admin surface
 
-- [ ] 2.1 Atlas migration: `organizers` (id, name, `zitadel_org_id` UNIQUE, `provisioning_state`, `*_at`) + `organizer_artists` (partial UNIQUE(artist_id) WHERE not deactivated; FKs ON DELETE CASCADE)
+- [ ] 2.1 Atlas migration: `organizers` (id, name, `zitadel_org_id` UNIQUE, `status`, `*_at`) + `organizer_artists` (partial UNIQUE(artist_id) WHERE not deactivated; FKs ON DELETE CASCADE)
 - [ ] 2.2 `entity` Organizer + repository interface; rdb repo with error classification
 - [ ] 2.3 Usecases: create, associate/disassociate artist (NOT_FOUND / ALREADY_EXISTS), list, get, deactivate
 - [ ] 2.4 Admin `OrganizerService` handler behind `RequireRoleInterceptor(admin)`

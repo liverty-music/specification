@@ -15,13 +15,15 @@ and the console frontend are separate sub-changes (3/4, 4/4).
   distinct from Artist/Performer. It exists only via admin creation →
   existence is the vetting (no `verified` flag). It carries an internal
   `zitadel_org_id` (the tenant org link, backend-only) and an operational
-  `provisioning_state` (`provisioning`/`active`/`deactivated`).
+  `status` (`provisioning`/`active`/`deactivated`).
 - Add the **Organizer↔Artist association**: an Organizer represents many
   Artists, and **each Artist is represented by at most one Organizer**
   (partial-unique on `artist_id`, excluding deactivated organizers so
   their artists are re-associable).
 - Add an **admin `OrganizerService`** (bare-verb `Create`, `AssociateArtist`,
-  `DisassociateArtist`, `List`, `Get`) behind the existing admin-role gate.
+  `DisassociateArtist`, `List`, `Get`, `ListArtists`, `Deactivate`) behind the
+  existing admin-role gate. Responses return the `Organizer` entity (no view
+  DTO / status enum); an organizer's roster is returned by `ListArtists`.
   `Create` takes an `operator_email`; `AssociateArtist` rejects `NOT_FOUND`
   for unknown artists (no create-on-demand) and `ALREADY_EXISTS` for
   already-claimed artists; reassignment = disassociate + associate.
@@ -65,13 +67,13 @@ organizer-side Update/List; full offboarding cascade; slug/contact fields.
 
 - **specification**: new `entity/v1/organizer.proto` (Organizer, OrganizerId,
   OrganizerName; protovalidate: id uuid, name 1–200) and
-  `rpc/admin/v1/organizer_service.proto` (admin service). Ships via the
+  `rpc/admin/organizer/v1/organizer_service.proto` (admin service). Ships via the
   cross-repo release order (spec merge → Release → BSR gen).
 - **backend**: Organizer entity + repository + usecases; admin handler behind
   `RequireRoleInterceptor(admin)`; the Zitadel Management-API provisioning
   client (using the `organizer-provisioner` credential); `organizers` +
   `organizer_artists` Atlas migration (partial-unique on `artist_id`,
-  `zitadel_org_id` unique, `provisioning_state`); analytics emission.
+  `zitadel_org_id` unique, `status`); analytics emission.
 - **frontend**: admin console gains an organizer-management screen (create /
   associate / disassociate / list) reusing the existing artist search.
 - **cloud-provisioning**: none new (the project/role/apps/machine user were

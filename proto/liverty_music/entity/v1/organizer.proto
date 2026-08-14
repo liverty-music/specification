@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+
+// Organizer represents a vetted seller that an admin creates to manage the
+// artists it represents. Existence is the vetting: an Organizer exists only
+// because an admin created it, so there is no separate `verified` flag and no
+// self-serve registration. An Organizer is distinct from an Artist — an artist
+// self-publishing gets its own Organizer with a distinct OrganizerId — and it
+// runs against its own isolated Zitadel tenant its operators sign into.
+//
+// The internal tenant link (`zitadel_org_id`) and the operational
+// provisioning lifecycle are backend-only concerns and are intentionally not
+// part of this consumer entity.
+message Organizer {
+  // The unique identifier for the organizer.
+  OrganizerId id = 1 [(buf.validate.field).required = true];
+
+  // The display name of the organizer (e.g., the label or promoter name).
+  OrganizerName name = 2 [(buf.validate.field).required = true];
+}
+
+// OrganizerId is a globally unique identifier for an organizer.
+message OrganizerId {
+  // A UUID string mapping to the organizer's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// OrganizerName represents the public display name of an organizer.
+message OrganizerName {
+  // The name string, required to be between 1 and 200 characters.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}

@@ -23,28 +23,47 @@ offboarding cascade; slug / contact fields.
 ## Decisions
 
 **D1 — Data model.** `organizers(id UUIDv7, name, zitadel_org_id UNIQUE,
-provisioning_state)` + `organizer_artists(organizer_id, artist_id)` with a
-**partial UNIQUE(artist_id) WHERE provisioning_state != 'deactivated'** so a
+status)` + `organizer_artists(organizer_id, artist_id)` with a
+**partial UNIQUE(artist_id) WHERE status != 'deactivated'** so a
 deactivated Organizer frees its artists. Both FKs `ON DELETE CASCADE`.
 `zitadel_org_id` is the token-tenant→Organizer link (DB is source of truth;
-backend-only, not on the consumer proto). `provisioning_state` is an
+backend-only, not on the consumer proto). `status` is an
 operational lifecycle flag (`provisioning`/`active`/`deactivated`) — NOT the
 business `verified` flag the design rejected. `*_at` names per schema-lint.
 
 **D2 — Proto.** `entity/v1/organizer.proto` (Organizer, OrganizerId=uuid,
-OrganizerName min_len=1/max_len=200, matching the `ArtistName` convention);
-`rpc/admin/v1/organizer_service.proto` with **bare-verb** methods
-`Create`, `AssociateArtist`, `DisassociateArtist`, `List`, `Get`. Each RPC
-documents its error matrix (INVALID_ARGUMENT / NOT_FOUND / ALREADY_EXISTS /
-PERMISSION_DENIED). The organizer-facing `Get` service is defined and served
-in `organizer-rpc-server` (4/4), not here.
+OrganizerName min_len=1/max_len=200, matching the `ArtistName` convention).
+The admin service is `rpc/admin/organizer/v1/organizer_service.proto`, package
+`liverty_music.rpc.admin.organizer.v1`, with **bare-verb** methods `Create`,
+`AssociateArtist`, `DisassociateArtist`, `List`, `Get`, `ListArtists`, and
+`Deactivate` (the last is the admin-surface trigger for the D6 off-switch — the
+earlier 5-method list under-enumerated it). Each RPC documents its error matrix
+(INVALID_ARGUMENT / NOT_FOUND / ALREADY_EXISTS / PERMISSION_DENIED). `Create`/
+`Get` return the `Organizer` entity and `List` returns `repeated Organizer` —
+**no response-DTO wrapper and no status enum** (existence is the vetting; the
+operational lifecycle stays a backend-only `status` column). The artists an
+Organizer represents are returned by `ListArtists(organizer_id)`, kept in this
+organizer package rather than bundled into the organizer responses or added to
+the consumer `rpc.artist.v1` ArtistService (resource-oriented; no organizer
+coupling leaks into the consumer API).
+
+**Package convention.** Services are laid out uniformly as
+`liverty_music.rpc.<audience>.<domain>.v1` (audience ∈ consumer/admin/organizer;
+one service per package → **bare message names**, no `OrganizerService`-prefix).
+Services are never shared across packages; only the higher-privilege **admin**
+server may additionally mount consumer/organizer handlers as needed (a
+server-wiring concern, not a package one). The organizer-facing `Get` is a
+separate service under `rpc.organizer.organizer.v1`, defined and served in
+`organizer-rpc-server` (4/4), not here. Migrating the existing
+`rpc.admin.v1.ConcertService` and the consumer `rpc.<domain>.v1` packages onto
+this convention is **out of scope** for this change.
 
 **D3 — Admin-gated only.** All RPCs ride the existing admin Connect server
 behind `RequireRoleInterceptor(admin)`. There is no organizer-scoped
 authorization in this change (that is the organizer-facing server, 4/4).
 
 **D4 — Provisioning saga (idempotent, compensating), keyed on OrganizerId.**
-Order: (1) insert `organizers` row `provisioning_state=provisioning`; (2)
+Order: (1) insert `organizers` row `status=provisioning`; (2)
 Management API create tenant org (name `org-<uuid-short>`, explicit
 **passkey-primary** login policy per `organizer-tenancy`:
 `passwordlessType=ALLOWED`, `allowUsernamePassword=false`,
@@ -52,7 +71,7 @@ Management API create tenant org (name `org-<uuid-short>`, explicit
 NOT domain-discovery); (3) persist `zitadel_org_id`; (4) Project-Grant
 `organizer-console` (role subset incl. `owner`); (5) create operator human
 user (no password, `request_passwordless_registration` → passkey init link) +
-`owner` User Grant; (6) set `provisioning_state=active`. A reconciler re-enters
+`owner` User Grant; (6) set `status=active`. A reconciler re-enters
 at the first incomplete step (each Zitadel create existence-checked). Uses the
 `organizer-provisioner` credential from ESC/Secret Manager (JWT-profile →
 short-lived tokens). Wrap the call in an OTel span + an
@@ -76,7 +95,7 @@ federation. **Org resolution is org-pinned** (org-scoped init link → remembere
 discovery — so no per-tenant domain verification and gmail operators work. (The
 console URL/config carrier is `organizer-console`.)
 
-**D6 — Deactivation hook.** `provisioning_state=deactivated` gates the
+**D6 — Deactivation hook.** `status=deactivated` gates the
 backend (reject all organizer ops) and deactivates the Zitadel operators;
 the partial-unique index frees the artists. Full teardown (org/grant
 removal) is Phase 2 — the hook ships now so it is not a later migration.
@@ -90,7 +109,7 @@ via the existing JetStream→PostHog path, keyed on `organizer_id` (admin-actor
 - **Two-system saga without 2PC** → the DB-row-first + existence-checked,
   reconciler-retried design (D4) makes a partial failure recoverable without
   duplicates; the operator is never left without an `owner` grant.
-- **`provisioning_state` looks like reversing "no status column"** → it is an
+- **`status` looks like reversing "no status column"** → it is an
   *operational* lifecycle flag, explicitly distinct from the rejected
   business `verified` flag; called out so review does not read it as a
   reversal.
@@ -102,7 +121,7 @@ via the existing JetStream→PostHog path, keyed on `organizer_id` (admin-actor
 
 1. specification: additive proto → merge → Release → BSR gen.
 2. backend: Atlas migration (`organizers` + `organizer_artists`, partial
-   unique, `zitadel_org_id`, `provisioning_state`); entity/repo/usecases;
+   unique, `zitadel_org_id`, `status`); entity/repo/usecases;
    admin handler; provisioning client + reconciler; analytics; tests
    (incl. the compensating-retry and double-claim paths).
 3. frontend: admin console organizer-management screen.
