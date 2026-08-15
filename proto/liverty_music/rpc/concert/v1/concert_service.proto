@@ -72,9 +72,17 @@ message ListResponse {
 }
 
 // ListByFollowerRequest is the request for retrieving concerts for all artists
-// followed by the authenticated user. No fields are required; the user identity
-// is determined from the authentication context.
-message ListByFollowerRequest {}
+// followed by the authenticated user. The user identity is determined from the
+// authentication context.
+message ListByFollowerRequest {
+  // Optional. The inclusive start of the date range (venue-local calendar date).
+  // When provided, only concerts whose local event date is on or after this date
+  // are returned, including dates in the past when it precedes the current date.
+  // When omitted, the result defaults to concerts on or after the current date
+  // (today onward). Dashboard callers should send the client's local date to
+  // anchor the "today" boundary to the caller's timezone.
+  entity.v1.LocalDate from = 1;
+}
 
 // ListByFollowerResponse contains concerts for all artists followed by the caller,
 // grouped by date and classified by geographic proximity.
