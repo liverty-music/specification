@@ -18,7 +18,7 @@
 - [x] 3.3 Operator bootstrap: no-password human user + Zitadel passkey-registration init link (passkey on first sign-in); org resolution is org-pinned (not domain discovery)
 - [x] 3.4 Deactivation: `deactivated` gate rejects organizer ops + deactivates Zitadel operators + frees artists
 - [x] 3.5 OTel span + `organizer_provisioning_failed` metric on the provisioning call
-- [ ] 3.6 (hardening, from `organizer-tenancy` code-review) cloud-provisioning: dedicated provisioner workload + GCP SA to isolate GCP-layer read access to the provisioner key (so `backend-app` SA no longer reads the `IAM_ORG_MANAGER` key) + key-expiry monitoring alert for the finite provisioner key
+- [x] 3.6 (hardening, from `organizer-tenancy` code-review) cloud-provisioning: dedicated `admin-console-api` workload + GCP SA to isolate GCP-layer read access to the provisioner key (so `backend-app` SA no longer reads the `IAM_ORG_MANAGER` key); make the provisioner key immutable (far-future, like `backend-app`) rather than finite-expiry + manual rotation — Zitadel machine keys have no native rotation, so the long-lived key is contained by the GSA isolation + short-lived operational tokens + instant force-replace revocation (supersedes the earlier key-expiry-alert plan)
 
 ## 4. Backend — analytics & tests
 
