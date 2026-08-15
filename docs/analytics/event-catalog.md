@@ -57,6 +57,8 @@ Events that were removed (never fired, duplicated another event, or double-count
 | `notification.delivered` | BE | notification | active | `notification_id`, `type`, `event_id?`, `artist_id?`, `trace_id?` | Notification reach (incl. `type = "sales_reminder"` for sales-reminder pushes) |
 | `notification.opened` | FE | notification | active | `notification_id`, `event_id?`, `artist_id?`, `trace_id?` | Notification CTR |
 | `notification.dismissed` | FE | notification | active | `notification_id`, `trace_id?` | Notification fatigue |
+| `organizer.created` | BE | organizer | active | `organizer_id`, `trace_id?` | Organizer onboarding — a vetted seller was created and its tenant provisioned. Group/admin-actor event keyed on `organizer_id` (no fan `distinct_id`) |
+| `organizer.artist.associated` | BE | organizer | active | `organizer_id`, `artist_id`, `trace_id?` | Organizer↔artist roster growth. Keyed on `organizer_id` |
 
 ### Removed events
 
