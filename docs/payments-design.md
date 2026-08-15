@@ -87,13 +87,71 @@ EMV-3DS mandate) with MIT-exempt winner charges.
   Guardrails: losers pay nothing; no purchase-scaled free bonus; wording
   "抽選販売", not "prize".
 
+### 収納代行 determination — likely exempt (refined, 2025-2026 legal + market check)
+
+**Why the license question exists at all:** moving other people's money
+between remote parties (為替取引, 最決平成13年) is a licensed monopoly (bank
+or 資金移動業). Operating unlicensed is **criminal** (銀行法 §61: up to 3yr /
+¥3M, corporate 両罰 up to ¥300M) — which is why the boundary must be
+*confirmed*, not assumed. 収納代行 is exempt because the buyer's debt is
+**discharged on payment to the agent** → no protectable "money in flight".
+
+**Our flow most likely sits in the exempt zone**, on two structural facts:
+1. **Payee = business.** The 2020 amendment (施行 2021-05) pulls collection
+   into 資金移動業 only when the **payee (受取人) is an individual acting in a
+   non-business capacity** (割り勘 / C2C). Our Organizers are vetted
+   **事業者** sellers-of-record → outside that trigger, so the traditional
+   exemption holds.
+2. **Domestic-only.** The 2025 amendment (公布 2025-06; 施行 ~2026) that newly
+   regulates **cross-border 収納代行** applies to 国内⇄国外 flows only. A
+   fully domestic buyer/platform/Organizer flow is untouched.
+
+**Market corroboration:** holding buyer funds **until after the event** and
+**charging lottery winners at the draw via a saved card** are the **universal
+JP ticketing norm** (LivePocket, tiget, ZAIKO, Peatix, teket, e+/ぴあ/ローチケ
+— none pays the organizer pre-event). **ZAIKO's terms explicitly operate as
+収納代行 with the Organizer as seller and "immediate charge of the registered
+card at the time of winning"** — essentially our design. So our hold-until-
+event is **not** an anomaly; it is established practice, which supports the
+escrow characterization rather than undermining it. The **only** genuine
+divergence from incumbents is the **PSP rail** (Stripe Connect vs domestic
+GMO/proprietary/イーコンテクスト) — a technology choice, not a business-model
+one; Stripe Connect must be configured (manual payout) to *emulate* the
+held-until-event settlement the incumbents get from delayed acquiring.
+
+**Safe-harbor to stay clearly in exempt 収納代行** (structure in the contract
+stack + T&Cs):
+1. **Payee = 事業者** — contract/vet the Organizer as a business seller;
+   never settle to a private individual.
+2. **Discharge clause (load-bearing)** — buyer ToS: obligation **discharged
+   on payment to the platform**; Organizer grants **代理受領権限**.
+3. **Genuine underlying transaction** — a real ticket sale by the Organizer;
+   platform = collection agent (keep the substance documented).
+4. **Hold = escrow-with-counter-performance** — release gated on the
+   **event occurring / ticket honored**, with evidence retained. (There is
+   **no bright-line safe N-day** in the rules; safety comes from the
+   discharge + counter-performance gate, not the length — this reframes the
+   old "hold-duration" flag.)
+5. **Collection via the licensed PSP** (Stripe).
+6. **Stay domestic** — a foreign Organizer or offshore fund routing crosses
+   into the 2025/2026 cross-border regime → re-analyze.
+
+Points 1/5/6 are self-assessable; **2/3/4 need a written 弁護士 opinion**
+(fact-specific + criminal downside).
+
 ## Counsel flags (confirm before launch)
 
-1. **⚠️ Consumer-payer 収納代行 carve-out** — the buyer is a consumer; FSA
-   2020-2025 rulemaking scrutinizes consumer-facing collection. This most
-   directly determines whether we avoid a 資金移動業 license.
-2. **⚠️ Hold-duration line** — the max defensible "after event, within N
-   business days" before held funds are 預り金 → 資金移動業; plus disclosure.
+1. **⚠️ 収納代行 exemption opinion (highest leverage — closes 資金決済法 +
+   犯収法 together).** Get a written opinion confirming: (i) the discharge
+   clause is effective and the platform is a collection agent (not
+   seller/MoR), (ii) the **hold-until-event** design qualifies as exempt
+   escrow (府令第1条の3, non-為替取引 / not 預り金), and (iii) no cross-border
+   leg exists. Likely exempt (business-payee + domestic; see determination
+   above), but the escrow/discharge boundary is where the FSA applies
+   substance-over-form.
+2. **Seller-of-record ↔ UX alignment** — if marketing/UX makes the *platform*
+   look like the seller, the collection-agent theory weakens. Align the
+   legal structure with the UX (Organizer named as 販売業者 at checkout).
 3. Charge-after-win card-on-file + MIT — confirm no 割賦販売法 / 前払式 issue.
 4. MoR / 特商法 seller-of-record + domestic-fee 課税 (10%) → register as
    適格請求書発行事業者; 媒介者交付特例 only if organizers are registered.
@@ -112,8 +170,10 @@ provider switch (KOMOJU) or added methods.
 ## Open decisions (business / counsel, long lead — start now)
 
 - KOMOJU-vs-Stripe PoC outcome; Stripe Connect account type + KYC/審査 apply.
-- MoR designation + 特商法 seller wording; fee rate; hold-duration N;
-  refund/cancellation policy; 適格請求書発行事業者 registration.
+- MoR designation + 特商法 seller wording; fee rate; payout schedule
+  (event-end-keyed, like the incumbents — the escrow *gate* matters, not a
+  bright-line duration); refund/cancellation policy; 適格請求書発行事業者
+  registration.
 
 ## Regulatory compliance obligations (JP) — beyond the 収納代行 scheme
 
