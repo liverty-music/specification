@@ -16,6 +16,11 @@ Primary source for the ticketing technical direction (Web2, no
 blockchain) is the decision record in `product-design.md` and
 `openspec/changes/archive/2026-08-09-remove-blockchain-ticket-system/`.
 
+Companion durable docs: [`payments-design.md`](./payments-design.md)
+(the ⑤ payment design + legal scheme) and
+[`market-design-notes.md`](./market-design-notes.md) (2025-2026
+competitor/market check + the roadmap calibrations it drove).
+
 ## Guiding Decisions (settled)
 
 These answers scope the entire roadmap and must be carried into each
@@ -107,12 +112,16 @@ change's `design.md`:
   Organizer (which exists only via admin vetting), that artist is simply
   **excluded from concert-search scraping** (first-party is authoritative;
   saves cost).
-- **Payments: Stripe, and the platform intermediates.** Liverty receives
-  the buyer's payment, takes a fee, and pays out the organizer (required
-  to monetize and to control cancellation refunds). Charges happen
-  **after winning** (D1). The domain Order/Payment entity is
-  **provider- and method-agnostic** (see D2); Apple Pay / Google Pay are
-  just wallet presentations of a `card` and need no dedicated fields.
+- **Payments: Stripe Connect, platform-intermediated, card-only MVP.**
+  Liverty collects, takes a fee, pays out the organizer. **Card-only** for
+  MVP (incl. debit/prepaid + Apple/Google Pay; konbini/PayPay deferred).
+  The lottery charges **only winners** — via **`SetupIntent` (save card at
+  application, charge winners at the draw), NOT an authorization hold**
+  (holds tie up credit across parallel applications and break on
+  prepaid/debit; this matches the JP norm). The domain Order/Payment entity
+  is **provider- and method-agnostic** (see D2). Full design + legal scheme
+  (収納代行, Organizer = seller-of-record) + counsel flags:
+  [`payments-design.md`](./payments-design.md) (issue #778).
 - **Web First, No Native App** (product constraint): the check-in tool is
   a PWA using the web camera, not a native scanner app.
 - **Organizer identity & RBAC: Zitadel B2B org-per-tenant.** Each Organizer
@@ -167,7 +176,15 @@ change when picked up:
 
 - `official-resale` — anonymous face-value resale pool (the sanctioned
   cannot-attend / anti-scalp path; reuses lottery losers as the demand
-  pool). **May be pulled earlier — see Open Decisions.**
+  pool). **Calibration (market-design-notes #2): PULL EARLY — now a market
+  default** (post-チケトレ, resale moved in-platform) and the cannot-attend
+  valve → plan it **immediately after the lottery/ticketing MVP (⑥)**, not
+  deep in Phase 2.
+- `face-auth-entry` — anti-scalp **identity tier** on top of ⑥'s rotating-QR
+  + Passkey floor: **photo-bound tickets → live-face-match-to-open**
+  (hardware-free, on-device), with **マイナンバーカード** as an opt-in
+  high-assurance option. Calibration (market-design-notes #3): the leaders'
+  bar moved here (チケプラ 2025-12); without it we look a generation behind.
 - `organizer-rbac-subowners` — full 4-role model (editor / viewer /
   reception staff), sub-owner invites, **audit log** (add audit subjects
   to the existing JetStream analytics pipeline).
@@ -235,11 +252,11 @@ the relevant change's `design.md`.
 
 ## Open Decisions (still to make)
 
-- **Official-resale timing.** MVP minimal return-to-pool/resale vs Phase
-  2. Argument for MVP: the cannot-attend case is a day-one fan need and a
-  legal best-practice, and the lottery losers already form the demand
-  pool, so a minimal version reuses lottery infrastructure. Argument for
-  Phase 2: keeps the MVP small.
+- **Official-resale timing.** ~~MVP vs Phase 2~~ **Leaning EARLY** after the
+  2025-2026 market check: official resale is now a JP market default (post-
+  チケトレ) and the cannot-attend valve, reusing the lottery loser pool →
+  plan it right after the ticketing MVP (⑥), not deep in Phase 2. See
+  `market-design-notes.md` #2. Final MVP-vs-immediately-after sizing TBD.
 - **Separate-time companion entry.** Whether to add pre-registered named
   companions (individual QR bound to a specific account, no open URL) for
   groups who cannot enter together. Deferred by default; revisit if
