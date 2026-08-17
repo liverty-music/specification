@@ -77,23 +77,38 @@ spec; they carry no behavioral change (hostnames/APIs unchanged).
 
 ## Migration Plan
 
-Per audience, additively and one workload at a time (dev first, then prod), so a failure
-is contained to one surface:
+**D7 — Prod-direct cutover (no dev-first).** The dev environment is intentionally
+stopped for cost, so the "dev first, then prod" rehearsal is not available. Instead the
+migration runs **directly in prod**, made safe by the additive create-new → cutover →
+delete-old discipline itself: the new-named resources stand up **alongside** the live
+old ones and carry no traffic/identity until the explicit cutover step, and every step
+before delete-old is reversible by repointing back to the old resources. This trades the
+dev rehearsal for a strictly additive prod rollout with a per-resource rollback at each
+gate. The delete-old step is deferred until the new workload is verified healthy in prod.
+
+Per audience, additively and one workload at a time (prod-direct), so a failure is
+contained to one surface:
 
 1. **cloud-provisioning (identity + infra)**: add new GSA/DB-user/GSM-key/AR-repo/WI +
-   all bindings for the target name (old kept live). `pulumi up`.
+   all bindings for the target name (old kept live). `pulumi up` (prod).
 2. **backend/frontend (images)**: point CI at new AR repos, cut a release to populate
    them (dual-published), run the Cloud SQL grant migration for the new DB user.
 3. **k8s (create-new)**: add new-named Deployment/Service/SA/HTTPRoute/HealthCheckPolicy/
    ExternalSecret/configmap/ScaledObject/PodMonitoring alongside the old; ArgoCD sync.
+   The new workload is running and self-verifiable (health probe, DB connect, auth) while
+   still detached from the external hostname.
 4. **cutover**: repoint each HTTPRoute (hostname unchanged) + DATABASE_USER + secret refs
-   + monitoring labels to the new workload; verify health (200 + DB connect + auth).
-5. **delete-old**: remove old Deployments/Services/routes/secrets/GSA/DB-user/GSM-key/
-   AR-repo; `pulumi up`; confirm no dangling references.
+   + monitoring labels to the new workload; verify health (200 on the live hostname + DB
+   connect + auth). This is the only step with a brief interruption window.
+5. **delete-old**: only after the new workload is confirmed healthy in prod, remove old
+   Deployments/Services/routes/secrets/GSA/DB-user/GSM-key/AR-repo; `pulumi up`; confirm
+   no dangling references.
 6. **spec sweep**: reconcile incidental old-name references in the other specs against the
    `workload-naming-convention` spec.
 - **Rollback**: until step 5, the old-named resources are still live — repoint routes/
-  env back to them; the new resources are additive and removable.
+  env back to them; the new resources are additive and removable. Because there is no dev
+  rehearsal, the new workload's self-verification in step 3 (before cutover) is the
+  primary safety gate: do not proceed to cutover until it passes detached.
 
 ## Open Questions
 

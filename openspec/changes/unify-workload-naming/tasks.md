@@ -1,7 +1,11 @@
+> Migration runs **prod-direct** (dev is intentionally stopped for cost). Safety comes
+> from the additive create-new → cutover → delete-old discipline, with the new workload
+> self-verified in prod while detached before cutover. See design.md D7.
+
 ## 1. Convention + tooling
 
-- [ ] 1.1 Land the `workload-naming-convention` spec (canonical name mapping table as the source of truth) and the `zitadel-self-hosted-deployment` GSM-key delta via a specification PR → merge (no Release; docs/spec only)
-- [ ] 1.2 Add a rename helper/checklist to cloud-provisioning docs capturing the create-new → cutover → delete-old order per resource class (from design.md)
+- [x] 1.1 Land the `workload-naming-convention` spec (canonical name mapping table as the source of truth) and the `zitadel-self-hosted-deployment` GSM-key delta via a specification PR → merge (no Release; docs/spec only) — landed on main via merged PR #800; prod-direct design refinement (D7) follows in a small docs PR
+- [x] 1.2 Add a rename helper/checklist to cloud-provisioning docs capturing the create-new → cutover → delete-old order per resource class (from design.md)
 
 ## 2. fan audience — `web-app`→`fan-web`, `server-app`→`fan-api` (highest blast radius)
 
@@ -9,7 +13,7 @@
 - [ ] 2.1 Add GSA `fan-api` with the FULL binding set replicated from `backend-app` (cloudsql.client + cloudsql.instanceUser + logging/monitoring/cloudtrace/aiplatform/serviceusage + artifact-registry reader), WI binding, and per-secret SecretAccessor bindings; keep `backend-app` live
 - [ ] 2.2 Add Cloud SQL `CLOUD_IAM_SERVICE_ACCOUNT` user `fan-api@<project>.iam` (postgres.ts); keep `backend-app@…` live
 - [ ] 2.3 Re-issue the Zitadel `backend-app` MachineKey under the `fan-api` principal into GSM `zitadel-machine-key-for-fan-api`; keep the old secret live
-- [ ] 2.4 Create AR image repos `backend/fan-api` and `frontend/fan-web`; keep old repos live. `pulumi up` (dev then prod)
+- [ ] 2.4 Create AR image repos `backend/fan-api` and `frontend/fan-web`; keep old repos live. `pulumi up` (prod-direct — dev is stopped; see design.md D7)
 
 ### 2b. Images + DB grants
 - [ ] 2.5 Point backend CI push target to `backend/fan-api` (+ prod retag map) and frontend CI to `frontend/fan-web`; add both to the `bump-prod-pin` image list
@@ -49,4 +53,4 @@
 
 - [ ] 7.1 Apply each audience's migration to prod (pulumi up prod + releases + prod pin bumps + ArgoCD sync), audience-by-audience with health verification between cutovers
 - [ ] 7.2 Prod verification: all workloads render under the new names (`kubectl get deploy` shows only convention names); `api.liverty-music.app` / `admin.liverty-music.app` / `organizer.{base}` all 200; fan-api DB + Zitadel auth OK; event-consumer draining; ArgoCD apps Synced/Healthy
-- [ ] 7.3 Cleanup: confirm no old-named GSAs, DB users, GSM secrets, AR repos, routes, or Deployments remain in dev or prod; no `<unknown>` HPA metrics; no stale monitoring queries
+- [ ] 7.3 Cleanup: confirm no old-named GSAs, DB users, GSM secrets, AR repos, routes, or Deployments remain in prod; no `<unknown>` HPA metrics; no stale monitoring queries
