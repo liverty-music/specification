@@ -64,14 +64,21 @@ authorization in this change (that is the organizer-facing server, 4/4).
 
 **D4 — Provisioning saga (idempotent, compensating), keyed on OrganizerId.**
 Order: (1) insert `organizers` row `status=provisioning`; (2)
-Management API create tenant org (name `org-<uuid-short>`, explicit
+Management API create tenant org (name `org-<full-uuid>` — the full OrganizerId,
+NOT a short prefix: the first 8 hex of a UUIDv7 are its millisecond timestamp, so
+a prefix collides for any two organizers created within the same ~65s window,
+which would resolve the second into the first's tenant [cross-tenant `owner`
+grant]; explicit
 **passkey-primary** login policy per `organizer-tenancy`:
 `passwordlessType=ALLOWED`, `allowUsernamePassword=false`,
 `allowRegister=false`, `allowExternalIDP=true`, `ignoreUnknownUsernames=true`;
 NOT domain-discovery); (3) persist `zitadel_org_id`; (4) Project-Grant
 `organizer-console` (role subset incl. `owner`); (5) create operator human
 user (no password, `request_passwordless_registration` → passkey init link) +
-`owner` User Grant; (6) set `status=active`. A reconciler re-enters
+`owner` User Grant; (6) compare-and-set `status` `provisioning`→`active` (a
+conditional update, NOT an unconditional set: a concurrent `Deactivate` during
+the multi-second saga must not be clobbered by a trailing activation — a
+superseded CAS is a no-op and deactivation wins). A reconciler re-enters
 at the first incomplete step (each Zitadel create existence-checked). Uses the
 `organizer-provisioner` credential from ESC/Secret Manager (JWT-profile →
 short-lived tokens). Wrap the call in an OTel span + an
@@ -79,11 +86,27 @@ short-lived tokens). Wrap the call in an OTel span + an
 
 *Provisioner hardening (carried over from the `organizer-tenancy` code-review,
 recorded in its design "deferred" list):* isolate GCP-layer read access to the
-provisioner key with a **dedicated provisioner workload + GCP SA** (so the
+provisioner key with a **dedicated `admin-console-api` workload + GCP SA** (so the
 `backend-app` SA no longer reads the `IAM_ORG_MANAGER` key — an IaC /
-cloud-provisioning change alongside this backend work), and add a **key-expiry
-monitoring alert** for the finite provisioner key (expires 2027-08-13) plus the
-rotation runbook.
+cloud-provisioning change alongside this backend work), and make the provisioner
+key **immutable (far-future expiry)** rather than finite-expiry + manual rotation:
+Zitadel machine keys have no native rotation, so a finite expiry is a silent
+day-N outage; the long-lived key is instead contained by the GSA isolation +
+short-lived operational tokens + instant force-replace revocation (this
+**supersedes** the earlier key-expiry-alert plan).
+
+*Isolated-workload data access (gap found in prod — the isolated workload runs
+the same backend binary and must reach Postgres):* the `admin-console-api` GSA
+needs its **own** Cloud SQL identity, not `backend-app`'s. It connects via the
+in-process Cloud SQL Go connector under Workload Identity, so grant it BOTH
+`roles/cloudsql.client` (`instances.connect`) **and** `roles/cloudsql.instanceUser`
+(`instances.get`/login), create a dedicated `CLOUD_IAM_SERVICE_ACCOUNT` Postgres
+user (`admin-console-api@<project>.iam`), override `DATABASE_USER` on the
+Deployment to that user (an explicit container `env` wins over the shared
+`server-config` `envFrom`), and grant that IAM user `app`-schema privileges via a
+migration. Cloud SQL IAM auth ties the DB user to the connecting GSA, so the
+isolated workload cannot reuse `backend-app`'s DB user; without this it
+CrashLoopBackOffs. (Shipped as cloud-provisioning #405/#406 + backend #390.)
 
 **D5 — Operator bootstrap.** The operator is created without a password;
 Zitadel delivers a **passkey-registration init link** so they register a
