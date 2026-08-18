@@ -58,13 +58,23 @@ event (performers, tickets, ticket journeys, ticket emails, merkle tree nodes, a
 the series' sales phases). The operation SHALL be unconditional: it SHALL NOT be
 blocked by the presence of dependent rows such as minted tickets or fan ticket
 journeys. This is an operator correction tool; the absence of a guard is
-intentional for the pre-launch internal surface.
+intentional for the pre-launch internal surface. On deletion the system SHALL record
+a suppression entry for the deleted event's natural key (`venue_id`, local event date,
+`start_at` — independent of performing artist), regardless of the concert's origin, so
+that a later discovery run does not re-create it (see the re-discovery suppression
+requirement in `concert-approval-queue`).
 
 #### Scenario: Delete removes the concert and cascades
 
 - **WHEN** an admin calls `Delete` with a published concert's event id
 - **THEN** the event and its concert record SHALL be removed
 - **AND** all rows referencing that event SHALL be removed by database cascade
+
+#### Scenario: Delete records a suppression entry
+
+- **WHEN** an admin calls `Delete` with a published concert's event id
+- **THEN** the system SHALL record a suppression entry for that concert's natural key
+- **AND** a later discovery run producing that natural key SHALL NOT re-create the concert
 
 #### Scenario: Delete is unconditional
 

@@ -14,13 +14,19 @@ It SHALL NOT write a `pending` staged row for a new concert. When a same-slot co
 detected, the consumer SHALL instead persist a `pending` `staged_concert` row (carrying the
 scraped fields and the resolved-venue preview) and SHALL NOT insert any published row or
 publish `CONCERT.created`; that staged row is resolved later through the existing approval
-reconciliation. Each auto-published event SHALL record its origin as auto-published and the
-timestamp at which it was auto-published.
+reconciliation.
 
 A `venues` row SHALL be created only on the auto-publish path. The conflict-staging path
 SHALL NOT create a new `venues` row, because a same-slot conflict necessarily resolves to
 the venue of the already-published event; thus rejected or never-approved concerts SHALL
 NOT create orphan `venues` rows.
+
+Auto-publish requires a resolved venue. When the scraped venue name does NOT resolve against the
+venue provider, the consumer SHALL stage the concert for review rather than auto-publishing it, and
+SHALL NOT create a `venues` row — publishing a venue with no provider identity and no coordinates
+would exclude the concert from proximity matching and publish an unreviewed venue. A resolved venue
+is necessary but not sufficient for auto-publish: a resolved venue that collides with an existing
+event is still staged as a conflict.
 
 #### Scenario: New concert is auto-published without staging
 
@@ -30,7 +36,6 @@ NOT create orphan `venues` rows.
   series and performers)
 - **AND** it SHALL publish `CONCERT.created`
 - **AND** it SHALL NOT write a `pending` staged row
-- **AND** it SHALL record the event's origin as auto-published with the auto-publish timestamp
 
 #### Scenario: Conflicting concert is staged for reconciliation
 
@@ -46,6 +51,13 @@ NOT create orphan `venues` rows.
   that venue and date has an unknown (NULL) start time
 - **THEN** the consumer SHALL treat it as the new/publish path (filling the existing row per the
   established fill behavior) rather than staging it as a conflict
+
+#### Scenario: Unresolved venue is staged, not auto-published
+
+- **WHEN** the `CONCERT.discovered` consumer processes a discovered concert whose scraped venue name
+  cannot be resolved against the venue provider
+- **THEN** it SHALL persist a `pending` `staged_concert` row for review
+- **AND** it SHALL NOT auto-publish the concert and SHALL NOT create a `venues` row
 
 #### Scenario: Pending concerts are not fan-visible
 
