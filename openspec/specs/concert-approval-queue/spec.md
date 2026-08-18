@@ -9,54 +9,6 @@ the concert and notifying followers) or rejects (dropping it and appending to an
 analysis-only log). This gates AI-sourced data quality while keeping rejection
 non-permanent and re-discovery idempotent.
 ## Requirements
-### Requirement: Discovered concerts are staged, not published
-
-A concert discovered by the search pipeline SHALL be written to a staging queue in a `pending`
-state and SHALL NOT be inserted into the published `events`/`series`/`event_performers` tables
-until a developer approves it. The `CONCERT.discovered` consumer SHALL perform venue resolution
-up front and persist a `staged_concert` row; it SHALL NOT publish `CONCERT.created`.
-
-#### Scenario: Discovery writes a pending staged concert
-
-- **WHEN** the `CONCERT.discovered` consumer processes a newly discovered concert
-- **THEN** it SHALL resolve the venue via Google Places
-- **AND** it SHALL persist a `staged_concert` row in `pending` state carrying the scraped fields
-  and the resolved-venue preview
-- **AND** it SHALL NOT insert any row into `events`, `series`, or `event_performers`
-- **AND** it SHALL NOT publish `CONCERT.created`
-
-#### Scenario: Pending concerts are not fan-visible
-
-- **WHEN** a concert is in `pending` state in the approval queue
-- **THEN** it SHALL NOT be returned by any consumer-facing read RPC (`List`, `ListByFollower`,
-  `ListWithProximity`)
-
-### Requirement: Venue resolved at staging time, persisted at approval
-
-The system SHALL resolve the venue (Google Places) when a concert is staged and SHALL denormalize
-the resolved venue fields (place id, canonical name, admin_area, coordinates) onto the
-`staged_concert` row for reviewer display. A `venues` row SHALL be created or looked up only when
-the staged concert is approved, so that rejected or never-approved concerts SHALL NOT create
-orphan `venues` rows.
-
-#### Scenario: Resolved venue stored on the staged row
-
-- **WHEN** a concert is staged and its venue resolves via Google Places
-- **THEN** the resolved canonical venue name, `admin_area`, place id, and coordinates SHALL be
-  stored on the `staged_concert` row
-- **AND** no `venues` row SHALL be created at this point
-
-#### Scenario: Venue row created on approval
-
-- **WHEN** a staged concert is approved
-- **THEN** the system SHALL create or reuse the `venues` row for the resolved venue
-- **AND** associate the published event with it
-
-#### Scenario: Rejected concert leaves no orphan venue
-
-- **WHEN** a staged concert is rejected
-- **THEN** no `venues` row SHALL have been created on its behalf
-
 ### Requirement: Approval publishes the concert
 
 The system SHALL provide an approval operation that, given a `pending` staged concert,
@@ -279,4 +231,115 @@ choice SHALL make no mutation and SHALL report the conflict.
   reconciliation choice
 - **THEN** the system SHALL NOT mutate the event or the staged row
 - **AND** SHALL report the duplicate conflict with the existing event's fields for review
+
+### Requirement: Discovery auto-publishes new concerts and stages only conflicts
+
+The `CONCERT.discovered` consumer SHALL resolve the venue and evaluate the discovered
+concert for a same-slot conflict against the published catalog BEFORE deciding how to
+persist it. When the discovered concert is genuinely new — no existing published event at
+the resolved `(venue_id, local_event_date, start_at)` (the known-start "fill" of an
+existing unknown-start row counts as new, not a conflict) — the consumer SHALL publish it
+directly: create or reuse the `venues` row, insert the published
+`series`/`events`/`event_performers` rows (reusing the existing bulk-insert and natural-key
+UPSERT behavior), and publish `CONCERT.created` so follower notifications fire immediately.
+It SHALL NOT write a `pending` staged row for a new concert. When a same-slot conflict IS
+detected, the consumer SHALL instead persist a `pending` `staged_concert` row (carrying the
+scraped fields and the resolved-venue preview) and SHALL NOT insert any published row or
+publish `CONCERT.created`; that staged row is resolved later through the existing approval
+reconciliation.
+
+A `venues` row SHALL be created only on the auto-publish path. The conflict-staging path
+SHALL NOT create a new `venues` row, because a same-slot conflict necessarily resolves to
+the venue of the already-published event; thus rejected or never-approved concerts SHALL
+NOT create orphan `venues` rows.
+
+Auto-publish requires a resolved venue. When the scraped venue name does NOT resolve against the
+venue provider, the consumer SHALL stage the concert for review rather than auto-publishing it, and
+SHALL NOT create a `venues` row — publishing a venue with no provider identity and no coordinates
+would exclude the concert from proximity matching and publish an unreviewed venue. A resolved venue
+is necessary but not sufficient for auto-publish: a resolved venue that collides with an existing
+event is still staged as a conflict.
+
+#### Scenario: New concert is auto-published without staging
+
+- **WHEN** the `CONCERT.discovered` consumer processes a discovered concert whose resolved
+  `(venue_id, local_event_date, start_at)` has no existing published event
+- **THEN** it SHALL create or reuse the `venues` row and insert the published event (with its
+  series and performers)
+- **AND** it SHALL publish `CONCERT.created`
+- **AND** it SHALL NOT write a `pending` staged row
+
+#### Scenario: Conflicting concert is staged for reconciliation
+
+- **WHEN** the `CONCERT.discovered` consumer processes a discovered concert that maps onto an
+  existing published event at the resolved `(venue_id, local_event_date, start_at)`
+- **THEN** it SHALL persist a `pending` `staged_concert` row carrying the scraped fields and
+  resolved-venue preview
+- **AND** it SHALL NOT insert any published row and SHALL NOT publish `CONCERT.created`
+
+#### Scenario: Known-start fill is treated as new, not a conflict
+
+- **WHEN** a discovered concert has a known start time and the only existing published event at
+  that venue and date has an unknown (NULL) start time
+- **THEN** the consumer SHALL treat it as the new/publish path (filling the existing row per the
+  established fill behavior) rather than staging it as a conflict
+
+#### Scenario: Unresolved venue is staged, not auto-published
+
+- **WHEN** the `CONCERT.discovered` consumer processes a discovered concert whose scraped venue name
+  cannot be resolved against the venue provider
+- **THEN** it SHALL persist a `pending` `staged_concert` row for review
+- **AND** it SHALL NOT auto-publish the concert and SHALL NOT create a `venues` row
+
+#### Scenario: Pending concerts are not fan-visible
+
+- **WHEN** a concert is in `pending` state in the approval queue
+- **THEN** it SHALL NOT be returned by any consumer-facing read RPC (`List`, `ListByFollower`,
+  `ListWithProximity`)
+
+### Requirement: Deleting a published concert suppresses re-discovery
+
+Deleting a published concert (via the admin `Delete` operation) SHALL record a suppression
+entry keyed by the deleted event's natural key (resolved venue, local event date, and start
+time) — the same `(venue_id, local_event_date, start_at)` identity the event is stored under,
+independent of performing artist, so the suppression granularity matches the event-level
+deletion. Suppression applies regardless of the deleted concert's origin (auto-published or
+developer-approved): a deleted concert SHALL NOT silently return via auto-publish. Suppression
+is a distinct, persistent concept from the analysis-only `rejected_concerts_log`: it exists
+specifically to stop a concert an operator judged wrong from being auto-published or re-staged
+again by a later discovery run. Suppression SHALL be reversible only through a deliberate
+un-suppress path, not by ordinary re-discovery.
+
+#### Scenario: Delete records a suppression entry
+
+- **WHEN** an operator deletes a published concert
+- **THEN** the system SHALL record a suppression entry for that concert's natural key
+
+#### Scenario: Suppression is separate from the rejection log
+
+- **WHEN** a suppression entry is recorded
+- **THEN** it SHALL NOT be written to or read from the `rejected_concerts_log`
+- **AND** the `rejected_concerts_log` SHALL remain analysis-only and non-suppressing
+
+### Requirement: Re-discovery skips suppressed concerts
+
+When the search pipeline filters newly discovered concerts, it SHALL exclude any concert
+whose natural key matches a suppression entry, in addition to the existing exclusions for
+published events and `pending` staged rows. A suppressed natural key SHALL NOT be
+auto-published and SHALL NOT be re-staged as `pending`, so an operator's deletion of a bad
+auto-published concert is not undone by the next discovery run.
+
+#### Scenario: Suppressed concert is not re-created
+
+- **WHEN** a discovered concert's natural key matches a suppression entry
+- **THEN** the concert SHALL NOT be auto-published
+- **AND** SHALL NOT be staged as `pending`
+
+#### Scenario: Un-suppressed concert can be discovered again
+
+- **WHEN** a suppression entry for a natural key has been removed through the deliberate
+  un-suppress path
+- **AND** a later discovery run produces that natural key
+- **AND** that natural key is absent from `events` and `pending` staging
+- **THEN** the concert SHALL be eligible for auto-publish or conflict staging as normal
 
