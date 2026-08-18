@@ -13,9 +13,9 @@
 
 ## 3. Ship + remediate the live prod instance
 
-- [ ] 3.1 Open cloud-provisioning PR; CI green; merge to main.
-- [ ] 3.2 Trigger prod ArgoCD sync (automatic on merge) and confirm the updated CronJob is applied (`kubectl get cronjob zitadel-wedge-watchdog -o yaml` shows `WATCHDOG_SLOW_SEC` + `--max-time 12`).
-- [ ] 3.3 Confirm the next natural wedge (or a controlled reproduction) now triggers an auto-restart: watchdog Job logs show `→ hang` on slow-5xx probes and `restarting deployment/zitadel-api`.
+- [x] 3.1 Open cloud-provisioning PR; CI green; merge to main. (PR #415 merged 2026-08-18; spec delta #805 merged)
+- [x] 3.2 Trigger prod ArgoCD sync (automatic on merge) and confirm the updated CronJob is applied. (ArgoCD synced `f7422bc`, Healthy; live CronJob shows `WATCHDOG_SLOW_SEC=8` + `--max-time 12` + `time_total`)
+- [x] 3.3 Confirm the next natural wedge (or a controlled reproduction) now triggers an auto-restart. (Observed live minutes after sync: `zitadel-wedge-watchdog-29783839` logged 3/3 `→ hang` while healthz=200 and ran `rollout restart deployment/zitadel-api`; rollout succeeded to 2/2 fresh pods; next cycle healthy `200 @0.36s`, and a fast `503 @0.97s` was correctly NOT counted as a hang)
 
 ## 4. Follow-up
 
