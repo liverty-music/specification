@@ -18,6 +18,5 @@
 
 ## 4. Verify in prod
 
-- [ ] 4.1 Trigger a Zitadel email (e.g. re-issue an operator passkey link, or an org create in `organizer-accounts`) → prod Postmark server `Liverty Music [prod]` Activity shows the message **Sent/Delivered**. (Deferred: Google SSO only in prod console; passkey email trigger depends on organizer-accounts 6.3 which requires Zitadel console access.)
+- [x] 4.1 Trigger a Zitadel email (e.g. re-issue an operator passkey link, or an org create in `organizer-accounts`) → prod Postmark server `Liverty Music [prod]` Activity shows the message **Sent/Delivered**. (Confirmed 2026-08-19: SMTP test from Zitadel console delivered to inbox from `noreply@mail.liverty-music.app`.)
 - [x] 4.2 `curl -sL auth.liverty-music.app/ui/login/` (or a browser) no longer redirects to `auth.dev.liverty-music.app`; it lands on the prod console. (Confirmed 2026-08-18: `GET /` → 302 → `auth.liverty-music.app/ui/login`; Pulumi state shows `defaultRedirectUri=https://auth.liverty-music.app/ui/console` for both policies.)
-- [ ] 5.2 Unblock `organizer-accounts` 6.3: complete the operator passkey-link step once prod email delivery is confirmed (4.1).
