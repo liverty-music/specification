@@ -17,6 +17,15 @@
 - [x] 3.2 Trigger prod ArgoCD sync (automatic on merge) and confirm the updated CronJob is applied. (ArgoCD synced `f7422bc`, Healthy; live CronJob shows `WATCHDOG_SLOW_SEC=8` + `--max-time 12` + `time_total`)
 - [x] 3.3 Confirm the next natural wedge (or a controlled reproduction) now triggers an auto-restart. (Observed live minutes after sync: `zitadel-wedge-watchdog-29783839` logged 3/3 `→ hang` while healthz=200 and ran `rollout restart deployment/zitadel-api`; rollout succeeded to 2/2 fresh pods; next cycle healthy `200 @0.36s`, and a fast `503 @0.97s` was correctly NOT counted as a hang)
 
-## 4. Follow-up
+## 5. Replace CronJob watchdog with per-pod liveness probe sidecar (cloud-provisioning)
 
-- [ ] 4.1 Once upstream zitadel/zitadel#10103 ships a fix and prod is pinned to it, remove the watchdog CronJob and its RBAC/ExternalSecret (all carry `liverty-music.app/temporary: until-upstream-zitadel-10103-fix`).
+- [ ] 5.1 Add `curl`-capable sidecar container to `zitadel-api` Helm values / overlay patch (`image: alpine/curl` or equivalent; `command: ["sleep","infinity"]`; hardened `securityContext`; resource requests/limits).
+- [ ] 5.2 Add `exec` liveness probe on the sidecar: same `ListProjectRoles` check with `WATCHDOG_SLOW_SEC=8`, `--max-time 12`, `failureThreshold=3`, `periodSeconds=20`, `initialDelaySeconds=60`.
+- [ ] 5.3 Mount the watchdog PAT secret into the sidecar (retarget the existing GSM secret + ExternalSecret to the `zitadel-api` pod instead of the CronJob pod).
+- [ ] 5.4 Remove `cronjob-watchdog-zitadel.yaml` (CronJob + ServiceAccount + Role + RoleBinding) from the prod overlay; remove standalone `external-secret-watchdog-probe-pat.yaml` if it is no longer needed separately.
+- [ ] 5.5 Kustomize dry-run clean; kube-linter no new findings; open cloud-provisioning PR; CI green; merge; ArgoCD sync confirmed.
+- [ ] 5.6 Verify: observe two `zitadel-api` pod restarts triggered by liveness probe failures on different schedules (not simultaneous); confirm no full-outage window during the wedge cycle.
+
+## 6. Follow-up
+
+- [ ] 6.1 Once upstream zitadel/zitadel#10103 ships a fix and prod is pinned to it, remove the liveness probe sidecar, the PAT secret mount, and the GSM secret / ExternalSecret entirely (all carry `liverty-music.app/temporary: until-upstream-zitadel-10103-fix`).
