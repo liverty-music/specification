@@ -1,65 +1,59 @@
-# Fix the Zitadel wedge watchdog: time-based detection + per-pod liveness probe sidecar
+# Fix Zitadel wedge: time-based detection, watchdog removal, root cause resolved
 
 ## Why
 
-The self-healing watchdog (`zitadel-self-hosted-deployment` capability) exists
-to auto-restart a `zitadel-api` pod caught in the projection-trigger wedge
-(zitadel/zitadel#10103, still OPEN upstream as of v4.17.x — no fix shipped).
-It detects the wedge by probing `ProjectService/ListProjectRoles` and treating
-a probe that "hangs past the gateway timeout" as the wedge signal.
+The prod `zitadel-api` deployment periodically entered a projection-trigger wedge
+(zitadel/zitadel#10103): `Trigger(WithAwaitRunning())` blocked on a projection
+handler that was occupied, causing logins to hang and return HTTP 500. The
+`/debug/healthz` and `/debug/ready` endpoints kept returning 200 throughout, so
+neither the kubelet nor the existing watchdog CronJob detected the wedge.
 
-**Problem 1 — detection gap:** The prod manifest implemented "hang" too narrowly:
-it counted a probe as hung **only when `curl` returned `http_code=000`** (a full
-client-side timeout at `--max-time 10`). But the wedge does not always time the
-client out. When the projection trigger blocks, Zitadel's own internal ~10s
-deadline frequently fires **first**, returning a **slow HTTP 500 at ~9.9s** —
-just under the old `--max-time 10`. That is a real wedge, yet `http_code=000`
-never matched, so `hangs` stayed at 0 and the watchdog **never restarted the
-pod**. This was observed directly (test-organizer Deactivate; RemoveUser wedged;
-ListProjectRoles returned slow 500s; healthz stayed 200; watchdog took no action).
+Investigation revealed the immediate cause was compounded:
+1. **SMTP was INACTIVE for an extended period** → notification events accumulated
+   as failures in the `projections.notifications` handler retry queue.
+2. **A DB position rollback** (`current_states.position` for
+   `projections.notifications` was set to a past value) caused the handler to
+   re-scan ~5,994 eventstore events, monopolising `MaxOpenConns: 3` for
+   extended periods.
+3. **Login triggers (`Trigger(WithAwaitRunning())`)** needed a DB connection, but
+   the pool was exhausted by the notifications handler → connection timeout →
+   QUERY-5Ngd9 → HTTP 500 → wedge.
 
-**Problem 2 — structural availability gap:** The CronJob-based watchdog issues
-`kubectl rollout restart`, which replaces **both replicas simultaneously**. The
-~90s rollout window leaves the service fully unavailable. Worse, because both
-replicas restart in lockstep they also re-wedge in lockstep (~3 min after each
-restart), causing repeated complete outages. Post-deployment observation confirmed
-this: Cloud Logging showed `http_code=000` at 180/180 probes per hour (100% wedge)
-from 2026-08-17T13:00 through 2026-08-18T05:00 with **zero restarts** (old 000-only
-check never fired), then ~20 CronJob-triggered restarts/hour after the detection
-fix — improving availability from 0% to ~50%, but still with periodic full-outage
-windows from the synchronised restart pattern.
+## What Changed
 
-A per-pod liveness probe restarts each replica **independently**, naturally
-desynchronising them so at least one replica is always in its healthy post-startup
-window while the other restarts.
+**Phase 1 — time-based hang detection (shipped then superseded):**
+The CronJob watchdog's hang classifier was widened from `http_code=000`-only to
+time-based (`000` OR `time_total >= WATCHDOG_SLOW_SEC` (8s)). This correctly
+detected the wedge but the CronJob still issued `rollout restart` on both
+replicas simultaneously, producing full-outage windows every restart cycle.
 
-## What Changes
+**Phase 2 — per-pod liveness probe sidecar (attempted, then reverted):**
+The CronJob was replaced with a `watchdog-probe` sidecar container carrying an
+exec liveness probe using the same time-based check. Discovered in prod that a
+K8s exec liveness probe failure restarts **only the container that owns the
+probe**, not the other containers in the pod — so `watchdog-probe` entered
+CrashLoopBackOff while the wedged `zitadel` container ran on unaffected. The
+sidecar was reverted (cp#429). Both the CronJob and sidecar are removed.
 
-**Phase 1 (shipped 2026-08-18):** Time-based hang detection in the existing CronJob.
-- **MODIFIED** `zitadel-self-hosted-deployment` — redefine "hang" as time-based:
-  a probe counts as hung when its total time crosses `WATCHDOG_SLOW_SEC` (8s) OR
-  it times out entirely (`http_code=000`). Client `--max-time` raised to 12s (above
-  the server's ~10s internal deadline) so a slow error is captured with its timing.
-  Fast responses are still NOT hangs (conservative-against-false-restarts preserved).
-
-**Phase 2 (planned):** Replace the CronJob watchdog with a per-pod liveness probe sidecar.
-- A `curl`-capable sidecar container is added to the `zitadel-api` pod spec. A K8s
-  `exec` liveness probe on that sidecar runs the same time-based `ListProjectRoles`
-  check (same WATCHDOG_SLOW_SEC threshold, same PAT credential). Each pod restarts
-  **independently** on wedge detection, eliminating the synchronised restart window
-  and keeping at least one replica healthy at all times.
-- The CronJob, its ServiceAccount, RoleBinding, Role, and standalone ExternalSecret
-  are removed. The PAT secret is retargeted to the `zitadel-api` pod itself.
+**Phase 3 — root cause resolved (final state):**
+- SMTP was reactivated (cloud-provisioning pulumi up v221), stopping the
+  accumulation of failed notification events.
+- The `projections.notifications` position was advanced to the current eventstore
+  head (`position = 1787110216`), releasing the handler from its backlog and
+  freeing the DB connection pool.
+- Wedge stopped immediately and did not recur (5-minute clean window confirmed).
+- No automated watchdog is needed: under normal operation (SMTP active, no
+  projection position rollback) the wedge does not occur.
 
 ## Impact
 
-- Affected capability: `zitadel-self-hosted-deployment` (watchdog requirement).
-- Affected code (Phase 1, complete):
-  - `cloud-provisioning/k8s/namespaces/zitadel/overlays/prod/cronjob-watchdog-zitadel.yaml`
-    (probe loop reads `%{time_total}`; `--max-time 10 → 12`; `sleep 5 → 3`;
-    new `WATCHDOG_SLOW_SEC` env).
-- Affected code (Phase 2, planned):
-  - Add liveness probe sidecar to `zitadel-api` Deployment (Helm values / overlay patch).
-  - Remove `cronjob-watchdog-zitadel.yaml` and standalone `external-secret-watchdog-probe-pat.yaml`.
-- Prod-only; the wedge and the watchdog are prod concerns.
-- Temporary: removed entirely when upstream zitadel/zitadel#10103 ships and is pinned.
+- **REMOVED** from `zitadel-self-hosted-deployment`: "Self-healing watchdog
+  auto-restarts a wedged Zitadel API" — the requirement is removed because
+  (a) no watchdog implementation was viable within K8s constraints, and
+  (b) the root cause is resolved.
+- **cloud-provisioning**: `cronjob-watchdog-zitadel.yaml`,
+  `external-secret-watchdog-probe-pat.yaml`, `zitadel-api-liveness-sidecar-patch.yaml`
+  all removed (cp#415 → cp#425 → cp#429).
+- Recovery if wedge ever recurs: `kubectl -n zitadel rollout restart deploy/zitadel-api`.
+  Check `projections.notifications` position vs latest eventstore position; if far
+  behind, advance position rather than rolling back.
