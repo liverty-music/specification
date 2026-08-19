@@ -11,21 +11,23 @@
 - [x] 2.2 Unit-check the shell classifier against representative cases: healthy fast 200, slow 5xx (~9.9s), curl timeout 000, slow 503 at threshold, fast transient 500, 401, slow 200, empty output. All classify correctly.
 - [x] 2.3 kube-linter introduces no new findings on the watchdog CronJob (pre-existing chart-Job findings unaffected).
 
-## 3. Ship + remediate the live prod instance
+## 3. Ship time-based detection
 
 - [x] 3.1 Open cloud-provisioning PR; CI green; merge to main. (PR #415 merged 2026-08-18; spec delta #805 merged)
-- [x] 3.2 Trigger prod ArgoCD sync (automatic on merge) and confirm the updated CronJob is applied. (ArgoCD synced `f7422bc`, Healthy; live CronJob shows `WATCHDOG_SLOW_SEC=8` + `--max-time 12` + `time_total`)
-- [x] 3.3 Confirm the next natural wedge (or a controlled reproduction) now triggers an auto-restart. (Observed live minutes after sync: `zitadel-wedge-watchdog-29783839` logged 3/3 `→ hang` while healthz=200 and ran `rollout restart deployment/zitadel-api`; rollout succeeded to 2/2 fresh pods; next cycle healthy `200 @0.36s`, and a fast `503 @0.97s` was correctly NOT counted as a hang)
+- [x] 3.2 Trigger prod ArgoCD sync and confirm the updated CronJob is applied. (ArgoCD synced `f7422bc`; live CronJob shows `WATCHDOG_SLOW_SEC=8` + `--max-time 12` + `time_total`)
+- [x] 3.3 Confirm the next natural wedge triggers an auto-restart. (Watchdog fired on a live wedge; rollout succeeded 2/2 fresh pods; next cycle healthy `200 @0.36s`)
 
-## 5. Replace CronJob watchdog with per-pod liveness probe sidecar (cloud-provisioning)
+## 4. Attempt per-pod liveness probe sidecar — reverted
 
-- [x] 5.1 Add `curl`-capable sidecar container to `zitadel-api` Helm values / overlay patch (`image: alpine/curl:8.21.0`; `command: ["sleep","infinity"]`; hardened `securityContext`; resource requests/limits). Implemented via Kustomize strategic-merge patch `zitadel-api-liveness-sidecar-patch.yaml`.
-- [x] 5.2 Add `exec` liveness probe on the sidecar: same `ListProjectRoles` check with `WATCHDOG_SLOW_SEC=8`, `--max-time 12`, `failureThreshold=3`, `periodSeconds=20`, `initialDelaySeconds=60`.
-- [x] 5.3 Mount the watchdog PAT secret into the sidecar (ExternalSecret `zitadel-watchdog-probe-pat` retained; Secret mounted into `zitadel-api` pod at `/var/run/watchdog/token`).
-- [x] 5.4 Remove `cronjob-watchdog-zitadel.yaml` from `kustomization.yaml` resources; ExternalSecret retained (Secret now used by sidecar).
-- [ ] 5.5 Kustomize dry-run clean ✓; kube-linter no new findings ✓; open cloud-provisioning PR; CI green; merge; ArgoCD sync confirmed.
-- [ ] 5.6 Verify: observe two `zitadel-api` pod restarts triggered by liveness probe failures on different schedules (not simultaneous); confirm no full-outage window during the wedge cycle.
+- [x] 4.1 Implement `zitadel-api-liveness-sidecar-patch.yaml` with `watchdog-probe` sidecar and exec liveness probe (PR #425 merged 2026-08-19).
+- [x] 4.2 Discover K8s design constraint: exec liveness probe failure restarts only the container owning the probe, not other pod containers. `watchdog-probe` entered CrashLoopBackOff (restart count 12); `zitadel` container restart count remained 0. Wedge continued unabated.
+- [x] 4.3 Revert: remove CronJob, sidecar, and ExternalSecret from prod overlay (PR #429 merged 2026-08-19). Recovery is manual `kubectl -n zitadel rollout restart deploy/zitadel-api`.
 
-## 6. Follow-up
+## 5. Investigate and resolve root cause
 
-- [ ] 6.1 Once upstream zitadel/zitadel#10103 ships a fix and prod is pinned to it, remove the liveness probe sidecar, the PAT secret mount, and the GSM secret / ExternalSecret entirely (all carry `liverty-music.app/temporary: until-upstream-zitadel-10103-fix`).
+- [x] 5.1 Identify wedge pattern: `projections.notifications` handler occupied DB connections continuously; `MaxOpenConns: 3` left zero connections for login `Trigger(WithAwaitRunning())` → QUERY-5Ngd9 → wedge at ~4-minute intervals.
+- [x] 5.2 Confirm `projections.failed_events2` is empty (no poison events). Root cause is position backlog, not failed events.
+- [x] 5.3 Identify backlog source: `projections.notifications.position` was rolled back to `1782101700`; eventstore latest is `1787110216`; handler needed to scan 5,994 events (4,586 `auth_request.added`) — useless re-scan monopolising the connection pool.
+- [x] 5.4 Fix SMTP: pulumi up v221 activated `smtp-activation`; no new notification failures will accumulate.
+- [x] 5.5 Advance `projections.notifications` position to current eventstore head (`1787110216`) via DB UPDATE; handler released from backlog.
+- [x] 5.6 Confirm wedge resolved: 5-minute monitoring window showed QUERY-5Ngd9 = 0, pod RESTARTS = 0. Wedge has not recurred.
