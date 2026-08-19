@@ -19,11 +19,11 @@
 
 ## 5. Replace CronJob watchdog with per-pod liveness probe sidecar (cloud-provisioning)
 
-- [ ] 5.1 Add `curl`-capable sidecar container to `zitadel-api` Helm values / overlay patch (`image: alpine/curl` or equivalent; `command: ["sleep","infinity"]`; hardened `securityContext`; resource requests/limits).
-- [ ] 5.2 Add `exec` liveness probe on the sidecar: same `ListProjectRoles` check with `WATCHDOG_SLOW_SEC=8`, `--max-time 12`, `failureThreshold=3`, `periodSeconds=20`, `initialDelaySeconds=60`.
-- [ ] 5.3 Mount the watchdog PAT secret into the sidecar (retarget the existing GSM secret + ExternalSecret to the `zitadel-api` pod instead of the CronJob pod).
-- [ ] 5.4 Remove `cronjob-watchdog-zitadel.yaml` (CronJob + ServiceAccount + Role + RoleBinding) from the prod overlay; remove standalone `external-secret-watchdog-probe-pat.yaml` if it is no longer needed separately.
-- [ ] 5.5 Kustomize dry-run clean; kube-linter no new findings; open cloud-provisioning PR; CI green; merge; ArgoCD sync confirmed.
+- [x] 5.1 Add `curl`-capable sidecar container to `zitadel-api` Helm values / overlay patch (`image: alpine/curl:8.21.0`; `command: ["sleep","infinity"]`; hardened `securityContext`; resource requests/limits). Implemented via Kustomize strategic-merge patch `zitadel-api-liveness-sidecar-patch.yaml`.
+- [x] 5.2 Add `exec` liveness probe on the sidecar: same `ListProjectRoles` check with `WATCHDOG_SLOW_SEC=8`, `--max-time 12`, `failureThreshold=3`, `periodSeconds=20`, `initialDelaySeconds=60`.
+- [x] 5.3 Mount the watchdog PAT secret into the sidecar (ExternalSecret `zitadel-watchdog-probe-pat` retained; Secret mounted into `zitadel-api` pod at `/var/run/watchdog/token`).
+- [x] 5.4 Remove `cronjob-watchdog-zitadel.yaml` from `kustomization.yaml` resources; ExternalSecret retained (Secret now used by sidecar).
+- [ ] 5.5 Kustomize dry-run clean ✓; kube-linter no new findings ✓; open cloud-provisioning PR; CI green; merge; ArgoCD sync confirmed.
 - [ ] 5.6 Verify: observe two `zitadel-api` pod restarts triggered by liveness probe failures on different schedules (not simultaneous); confirm no full-outage window during the wedge cycle.
 
 ## 6. Follow-up
