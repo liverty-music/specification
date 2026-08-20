@@ -169,27 +169,27 @@ The Caddy web server in the frontend container SHALL serve `/config.json` from t
 
 ### Requirement: Frontend Deployment SHALL mount a per-environment runtime-config ConfigMap
 
-The Kubernetes Deployment for the `web-app` container SHALL mount a ConfigMap volume at `/srv/config.json` using a `subPath` mount, sourced from a ConfigMap named `web-app-runtime-config` in the same namespace. Each environment overlay under `cloud-provisioning/k8s/namespaces/frontend/overlays/<env>/` SHALL define this ConfigMap with the values appropriate for that environment. The Deployment SHALL carry a Reloader annotation so that ConfigMap changes trigger a rolling restart.
+The Kubernetes Deployment for the `fan-web-app` container SHALL mount a ConfigMap volume at `/srv/config.json` using a `subPath` mount, sourced from a ConfigMap named `fan-web-runtime-config` in the same namespace. Each environment overlay under `cloud-provisioning/k8s/namespaces/frontend/overlays/<env>/` SHALL define this ConfigMap with the values appropriate for that environment. The Deployment SHALL carry a Reloader annotation so that ConfigMap changes trigger a rolling restart.
 
 #### Scenario: Base Deployment declares the volume and volumeMount
 
 - **WHEN** inspecting `cloud-provisioning/k8s/namespaces/frontend/base/web/deployment.yaml` (or an equivalent base patch)
 - **THEN** the `caddy` container SHALL declare a `volumeMounts` entry with `name: runtime-config`, `mountPath: /srv/config.json`, and `subPath: config.json`
-- **AND** the pod template SHALL declare a `volumes` entry with `name: runtime-config` sourced from a ConfigMap with `name: web-app-runtime-config`
+- **AND** the pod template SHALL declare a `volumes` entry with `name: runtime-config` sourced from a ConfigMap with `name: fan-web-runtime-config`
 
 #### Scenario: Per-environment overlay defines the ConfigMap
 
 - **WHEN** inspecting `cloud-provisioning/k8s/namespaces/frontend/overlays/<env>/` for each env in `{dev, prod}` (and `staging` if/when introduced)
-- **THEN** a ConfigMap named `web-app-runtime-config` SHALL exist (defined inline in `configmap.yaml` or via `configMapGenerator`)
+- **THEN** a ConfigMap named `fan-web-runtime-config` SHALL exist (defined inline in `configmap.yaml` or via `configMapGenerator`)
 - **AND** the ConfigMap SHALL have a `config.json` key whose value parses as JSON
 - **AND** the parsed JSON SHALL conform to the AppConfig schema declared in the `frontend-runtime-config` capability
 - **AND** the `environment` field SHALL match the overlay's environment identifier (`dev` → `dev`, `prod` → `prod`)
 
 #### Scenario: Reloader annotation triggers rollout on ConfigMap change
 
-- **WHEN** inspecting the rendered `web-app` Deployment in any environment overlay
+- **WHEN** inspecting the rendered `fan-web-app` Deployment in any environment overlay
 - **THEN** the Deployment metadata SHALL include the annotation `reloader.stakater.com/auto: "true"`
-- **AND** the cluster's deployed Reloader operator SHALL be responsible for issuing the rolling restart when `web-app-runtime-config` changes. Precise rollout latency is determined by the operator's configured reconciliation interval (typically tens of seconds) and is an operational expectation rather than a CI-testable assertion. See `Risks / Trade-offs` in the proposing change for the live-update caveat behind this mechanism.
+- **AND** the cluster's deployed Reloader operator SHALL be responsible for issuing the rolling restart when `fan-web-runtime-config` changes. Precise rollout latency is determined by the operator's configured reconciliation interval (typically tens of seconds) and is an operational expectation rather than a CI-testable assertion. See `Risks / Trade-offs` in the proposing change for the live-update caveat behind this mechanism.
 
 #### Scenario: Pod is healthy with the mounted config
 

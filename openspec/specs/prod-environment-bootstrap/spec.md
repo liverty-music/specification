@@ -246,7 +246,7 @@ This invariant prevents the silent-failure mode where Web Push subscriptions sig
 
 #### Scenario: Frontend bundle public key matches GSM private key
 
-- **WHEN** an operator extracts `VITE_VAPID_PUBLIC_KEY` from the prod-built `web-app` static assets
+- **WHEN** an operator extracts `VITE_VAPID_PUBLIC_KEY` from the prod-built `fan-web` static assets
 - **AND** derives the public key from GSM `vapid-private-key`
 - **THEN** the two values SHALL be byte-equal
 

@@ -23,12 +23,12 @@ All dev environment workloads SHALL set CPU request to 10m (Standard GKE minimum
 
 #### Scenario: Backend server resource requests
 - **WHEN** rendering the backend dev overlay manifests
-- **THEN** server-app CPU request SHALL be 10m with memory request of 60MiB
-- **AND** consumer-app CPU request SHALL be 10m with memory request of 20MiB
+- **THEN** fan-api CPU request SHALL be 10m with memory request of 60MiB
+- **AND** event-consumer CPU request SHALL be 10m with memory request of 20MiB
 
-#### Scenario: Frontend web-app resource requests
+#### Scenario: Frontend fan-web-app resource requests
 - **WHEN** rendering the frontend dev overlay manifests
-- **THEN** web-app CPU request SHALL be 10m with memory request of 52MiB
+- **THEN** fan-web-app CPU request SHALL be 10m with memory request of 52MiB
 
 #### Scenario: Reloader resource requests
 - **WHEN** rendering the reloader dev overlay manifests
@@ -53,7 +53,7 @@ All dev environment workloads SHALL set CPU request to 10m (Standard GKE minimum
 ### Requirement: KEDA ScaledObjects in dev SHALL cap at maxReplicaCount 1
 Consumer workload ScaledObjects in the dev environment SHALL set `maxReplicaCount: 1` to prevent horizontal scale-out in a low-traffic environment.
 
-#### Scenario: consumer-app ScaledObject maxReplicaCount
+#### Scenario: event-consumer ScaledObject maxReplicaCount
 - **WHEN** rendering the backend dev overlay manifests
-- **THEN** the consumer-app ScaledObject `maxReplicaCount` SHALL be 1
+- **THEN** the event-consumer ScaledObject `maxReplicaCount` SHALL be 1
 - **AND** `minReplicaCount` SHALL remain 0 (zero-scale on idle is preserved)

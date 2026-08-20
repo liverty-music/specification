@@ -102,7 +102,7 @@ The backend server deployment in the dev environment SHALL run with 1 replica. P
 #### Scenario: Dev backend replica count
 
 - **WHEN** rendering the backend dev overlay manifests
-- **THEN** the server-app Deployment SHALL have replicas set to 1
+- **THEN** the fan-api Deployment SHALL have replicas set to 1
 
 ### Requirement: All dev workload kinds use Spot VM scheduling
 

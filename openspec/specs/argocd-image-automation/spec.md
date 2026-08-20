@@ -80,8 +80,8 @@ The system SHALL support automated updates for all dev container images.
 - **WHEN** a new backend server image is pushed to GAR
 - **THEN** Image Updater SHALL update the backend ArgoCD Application
 
-#### Scenario: Frontend web-app image auto-update
-- **WHEN** a new frontend web-app image is pushed to GAR
+#### Scenario: Frontend fan-web image auto-update
+- **WHEN** a new frontend fan-web image is pushed to GAR
 - **THEN** Image Updater SHALL update the frontend ArgoCD Application
 
 ### Requirement: Rollback capability

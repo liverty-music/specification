@@ -123,7 +123,7 @@ end-user authentication.
 - **AND** the application Type SHALL be "SPA"
 - **AND** the Auth Method Type SHALL be "NONE"
 - **AND** the application's `client_id` SHALL be committed to the
-  per-environment `web-app-runtime-config` ConfigMap under
+  per-environment `fan-web-runtime-config` ConfigMap under
   `cloud-provisioning/k8s/namespaces/frontend/overlays/<env>/configmap.yaml`
   (`zitadelClientId` field) alongside the owning org's id
   (`zitadelOrgId` field), so each env's pod serves its own identifiers

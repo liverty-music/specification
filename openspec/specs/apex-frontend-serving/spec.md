@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines the contract for serving the apex domain `liverty-music.app` via GKE Gateway with Google-managed TLS. Cloudflare is the authoritative DNS provider, with an A record (DNS-only, `proxied: false`) pointing to the shared `api-gateway-static-ip`. All prod-stack apex resources (A record, DnsAuthorization, Certificate, CertificateMapEntry) carry Pulumi `protect: true`. Routing is handled by a pre-existing HTTPRoute (from the `prod-k8s-manifests` change) that targets the `web-app` Service in the `frontend` namespace.
+Defines the contract for serving the apex domain `liverty-music.app` via GKE Gateway with Google-managed TLS. Cloudflare is the authoritative DNS provider, with an A record (DNS-only, `proxied: false`) pointing to the shared `api-gateway-static-ip`. All prod-stack apex resources (A record, DnsAuthorization, Certificate, CertificateMapEntry) carry Pulumi `protect: true`. Routing is handled by a pre-existing HTTPRoute (from the `prod-k8s-manifests` change) that targets the `fan-web-app` Service in the `frontend` namespace.
 
 ## Requirements
 ### Requirement: Apex hostname SHALL be served end-to-end via the GKE Gateway with a Google-managed TLS certificate
@@ -33,8 +33,8 @@ The production apex hostname `liverty-music.app` SHALL serve the Aurelia fronten
 - **AND** Google's ACME validator SHALL resolve the challenge via Cloudflare's authoritative nameservers
 - **AND** the Cert SHALL reach `state: ACTIVE` within 60 minutes of DnsAuthorization creation
 
-### Requirement: Apex serving SHALL route to the `web-app` frontend Service via HTTPRoute hostname matching
-The Kubernetes HTTPRoute that serves the apex SHALL match on `hostnames: ['liverty-music.app']` and route to the `web-app` Service in the `frontend` namespace. This HTTPRoute SHALL share the same Gateway as the HTTPRoutes for `api.liverty-music.app` (routing to backend) and `auth.liverty-music.app` (routing to Zitadel) — differentiation is by HTTPRoute hostname, not by Gateway listener.
+### Requirement: Apex serving SHALL route to the `fan-web-app` frontend Service via HTTPRoute hostname matching
+The Kubernetes HTTPRoute that serves the apex SHALL match on `hostnames: ['liverty-music.app']` and route to the `fan-web-app` Service in the `frontend` namespace. This HTTPRoute SHALL share the same Gateway as the HTTPRoutes for `api.liverty-music.app` (routing to backend) and `auth.liverty-music.app` (routing to Zitadel) — differentiation is by HTTPRoute hostname, not by Gateway listener.
 
 > **Note**: The HTTPRoute hostname binding is pre-existing — configured by the prior `prod-k8s-manifests` change (archived 2026-05-14) in `cloud-provisioning/k8s/namespaces/frontend/overlays/prod/kustomization.yaml`. The `consolidate-public-dns-on-cloudflare` change consumes the existing binding and verifies it via a pre-flight task; it does not author or modify any HTTPRoute YAML. The requirement is documented here because the apex-frontend-serving capability collects the end-to-end serving contract regardless of which change first satisfied each piece.
 
@@ -42,7 +42,7 @@ The Kubernetes HTTPRoute that serves the apex SHALL match on `hostnames: ['liver
 - **WHEN** rendering `cloud-provisioning/k8s/namespaces/frontend/overlays/prod/`
 - **THEN** an `HTTPRoute` resource SHALL exist with `spec.hostnames` containing `liverty-music.app`
 - **AND** the HTTPRoute SHALL reference the shared prod Gateway via `spec.parentRefs`
-- **AND** the HTTPRoute SHALL route to the `web-app` Service via `spec.rules[].backendRefs`
+- **AND** the HTTPRoute SHALL route to the `fan-web-app` Service via `spec.rules[].backendRefs`
 
 #### Scenario: Apex traffic reaches the frontend SPA
 - **WHEN** an end user requests `https://liverty-music.app/` after the prod cutover completes
