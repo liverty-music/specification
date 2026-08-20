@@ -6,9 +6,9 @@ Small-screen mobile devices (iPhone SE and similar, 375px wide / 667px tall) ren
 
 - **Discovery search bar**: Reduce `padding-block` on short screens (`height ≤ 700px`) from `var(--space-2xs)` (8px) to `var(--space-3xs)` (4px), recovering ~8px of vertical space.
 - **Page header**: Reduce `padding-block` on short screens, recovering ~8px of vertical space in the header row.
-- **DNA Orb radius**: Cap `MAX_RADIUS` at ~70px (down from 90px) when canvas width is < 390px, keeping the orb diameter under 38% of screen width.
+- **DNA Orb radius**: Cap `MAX_RADIUS` at ~70px (down from 90px) when canvas width is < 390px, reducing orb dominance on small screens.
 - **Bubble count**: Cap the number of artist bubbles rendered in physics at ~30 when canvas width is < 390px (instead of the unconditional maximum of 50), reducing canvas area saturation while preserving visual richness.
-- **Coach Mark tooltip**: Change `max-inline-size` from the fixed `320px` to `min(320px, calc(100vw - 2 * var(--space-s)))` so the tooltip cannot overflow on 320px-wide devices.
+- **Coach Mark tooltip**: Change `max-inline-size` from the fixed `320px` to `min(320px, calc(100dvw - 2 * var(--space-s)))` so the tooltip cannot overflow on 320px-wide devices.
 
 ## Capabilities
 

@@ -14,7 +14,7 @@ On narrow canvases (width < 390px), the system SHALL limit the number of simulta
 
 #### Scenario: DNA Orb radius is constrained on narrow screens
 - **WHEN** the Discovery canvas width is less than 390px
-- **THEN** the DNA Orb rendered radius SHALL NOT exceed 70px (diameter 140px, ≤ 37% of canvas width)
+- **THEN** the DNA Orb rendered radius SHALL NOT exceed 70px
 
 #### Scenario: DNA Orb radius follows follow-count on wider screens
 - **WHEN** the Discovery canvas width is 390px or greater

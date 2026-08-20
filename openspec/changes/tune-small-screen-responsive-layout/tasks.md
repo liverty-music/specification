@@ -1,7 +1,7 @@
 ## 1. CSS: Discovery search bar vertical compression
 
 - [ ] 1.1 In `src/routes/discovery/discovery-route.css`, add `@media (height <= 700px)` block that sets `.search-bar` `padding-block` to `var(--space-3xs)` and `margin-block-start` to `var(--space-3xs)`
-- [ ] 1.2 Confirm search bar renders ~8px shorter per side at 375×667 viewport in browser DevTools
+- [ ] 1.2 Confirm search bar renders ~8px shorter overall (4px per side) at 375×667 viewport in browser DevTools
 
 ## 2. CSS: Page header vertical compression
 
