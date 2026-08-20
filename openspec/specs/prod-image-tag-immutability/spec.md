@@ -36,7 +36,7 @@ Today only `liverty-music-dev` and `liverty-music-prod` projects exist; the prod
 #### Scenario: Attempting to re-point a post-enablement prod tag SHALL fail with 409 Conflict
 
 - **GIVEN** a tag `:vX.Y.Z` that was first written to the prod AR repository AFTER `dockerConfig.immutableTags = true` was applied (i.e., the first release cut after this change merged, OR any subsequent release tag)
-- **WHEN** an operator runs `gcloud artifacts docker tags add asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/server@sha256:<other-digest> asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/server:vX.Y.Z` (attempts to re-point that tag to a different digest)
+- **WHEN** an operator runs `gcloud artifacts docker tags add asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/api@sha256:<other-digest> asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/api:vX.Y.Z` (attempts to re-point that tag to a different digest)
 - **THEN** the command SHALL fail with an error referencing HTTP 409 / "tag already exists" / "immutable tags" semantics
 - **AND** the tag SHALL continue to resolve to its originally-written digest
 
@@ -58,7 +58,7 @@ Every kustomize `images:` transformation entry inside `cloud-provisioning/k8s/na
 #### Scenario: Frontend prod overlay uses semver tags only
 
 - **WHEN** reading `cloud-provisioning/k8s/namespaces/frontend/overlays/prod/kustomization.yaml`
-- **THEN** the `web-app` `images:` entry SHALL have `newTag:` matching the regex `^v\d+\.\d+\.\d+(-[A-Za-z0-9.-]+)?$`
+- **THEN** the `fan-web` `images:` entry SHALL have `newTag:` matching the regex `^v\d+\.\d+\.\d+(-[A-Za-z0-9.-]+)?$`
 - **AND** the `newTag:` value SHALL NOT match a 40-character hex string
 - **AND** the `newTag:` value SHALL NOT equal `latest`
 
@@ -72,7 +72,7 @@ Every kustomize `images:` transformation entry inside `cloud-provisioning/k8s/na
 
 - **WHEN** running `kubectl kustomize cloud-provisioning/k8s/namespaces/backend/overlays/prod` and extracting `.spec.template.spec.containers[*].image` from all rendered Deployments + CronJobs
 - **THEN** every rendered image URI SHALL end with `:vX.Y.Z` matching the semver regex
-- **AND** the same SHALL hold for `cloud-provisioning/k8s/namespaces/frontend/overlays/prod` (the rendered `web-app` Deployment image)
+- **AND** the same SHALL hold for `cloud-provisioning/k8s/namespaces/frontend/overlays/prod` (the rendered `fan-web-app` Deployment image)
 
 ### Requirement: Prod workload Deployments and CronJobs SHALL carry the app.kubernetes.io/version Recommended Label, propagated to the Pod template
 
@@ -110,9 +110,9 @@ The kustomize `labels:` block with `includeTemplates: true` (Kustomize v4.5+) co
 
 #### Scenario: Frontend prod Deployment carries the version label at both Deployment and Pod-template levels
 
-- **WHEN** running `kubectl --context=prod -n frontend get deploy web-app -o jsonpath='{.metadata.labels.app\.kubernetes\.io/version}'`
+- **WHEN** running `kubectl --context=prod -n frontend get deploy fan-web-app -o jsonpath='{.metadata.labels.app\.kubernetes\.io/version}'`
 - **THEN** the output SHALL be a non-empty semver string matching the regex
-- **AND** running `kubectl --context=prod -n frontend get deploy web-app -o jsonpath='{.spec.template.metadata.labels.app\.kubernetes\.io/version}'`
+- **AND** running `kubectl --context=prod -n frontend get deploy fan-web-app -o jsonpath='{.spec.template.metadata.labels.app\.kubernetes\.io/version}'`
 - **THEN** the output SHALL be a non-empty semver string matching the regex
 
 #### Scenario: Dev manifests SHALL NOT carry the version label

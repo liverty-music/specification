@@ -41,7 +41,7 @@ The latency signal SHALL be sourced from Zitadel v4's native OpenTelemetry SDK (
 
 The system SHALL provision a Cloud Monitoring `AlertPolicy` that fires when the rate of backend JWT validation ERROR-level log entries exceeds 10 events per minute, evaluated over a 5-minute window. The alert SHALL route to the same notification channel as the latency alert.
 
-The signal SHALL be a Cloud Logging log-based metric `backend_jwt_validation_zitadel_errors` scoped to the `backend/server` workload's `severity=ERROR` entries whose `jsonPayload.msg` OR `jsonPayload.error` field matches the case-insensitive regex `jwt|jwks|token|authn|invalid token|failed to validate`. No new application code is required; the alert reads existing structured `slog` ERROR entries that the backend's `JWTValidator` already emits.
+The signal SHALL be a Cloud Logging log-based metric `backend_jwt_validation_zitadel_errors` scoped to the `backend/api` workload's `severity=ERROR` entries whose `jsonPayload.msg` OR `jsonPayload.error` field matches the case-insensitive regex `jwt|jwks|token|authn|invalid token|failed to validate`. No new application code is required; the alert reads existing structured `slog` ERROR entries that the backend's `JWTValidator` already emits.
 
 The filter is intentionally broad-then-tight: scoped tightly by namespace + workload + severity (the only place that validates Zitadel-issued JWTs), then keyword-filtered. False positives are tolerable in dev — the 10/min threshold is well above steady-state JWT validation noise.
 

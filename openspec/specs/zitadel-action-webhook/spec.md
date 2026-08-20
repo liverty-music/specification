@@ -66,25 +66,25 @@ The upstream community Go reference implementation ([xianyu-one/zitadel-mapping]
 
 ### Requirement: Webhook Reachable Only Within Cluster
 
-The webhook endpoints SHALL be served on a dedicated backend port (`:9090`) behind a dedicated in-cluster `Service` (`server-webhook-svc`), distinct from the public Connect-RPC port (`:8080` / `server-svc`). The existing GKE Gateway / `HTTPRoute` SHALL continue to reference only `server-svc`. The webhook **handler** SHALL therefore be unreachable from the public hostname because no handler is registered on the `:8080` listener for webhook paths; the public `:8080` listener's `authn.Middleware` provides defense-in-depth by rejecting any unauthenticated request before the request mux dispatches.
+The webhook endpoints SHALL be served on a dedicated backend port (`:9090`) behind a dedicated in-cluster `Service` (`fan-api-webhook-svc`), distinct from the public Connect-RPC port (`:8080` / `fan-api-svc`). The existing GKE Gateway / `HTTPRoute` SHALL continue to reference only `fan-api-svc`. The webhook **handler** SHALL therefore be unreachable from the public hostname because no handler is registered on the `:8080` listener for webhook paths; the public `:8080` listener's `authn.Middleware` provides defense-in-depth by rejecting any unauthenticated request before the request mux dispatches.
 
 **Rationale**: With `iss` and `aud` checks removed (per `Webhook Authentication via Zitadel-Issued JWT Signature`), the listener separation rises in importance — it's now the second of three security layers, not a redundant defense. Webhook traffic is internal service-to-service communication; exposing it to the public internet broadens the attack surface for no functional benefit.
 
 #### Scenario: In-cluster call from Zitadel succeeds
 
-- **WHEN** the Zitadel pod POSTs to `http://server-webhook-svc.backend.svc.cluster.local:9090/pre-access-token`
+- **WHEN** the Zitadel pod POSTs to `http://fan-api-webhook-svc.backend.svc.cluster.local:9090/pre-access-token`
 - **THEN** the call SHALL reach the backend webhook handler on port `9090`
 
 #### Scenario: External call from the internet is blocked
 
 - **WHEN** a request arrives at the backend's public Gateway hostname for path `/pre-access-token`
 - **THEN** the request SHALL NOT reach any webhook handler
-- **AND** the request SHALL receive a 401 from `authn.Middleware` (the existing `server-route` `/*` catch-all forwards the request to `server-svc:80`, where `authn.Middleware` rejects unauthenticated requests before the mux dispatches; the public `:8080` listener has no handler registered for webhook paths)
+- **AND** the request SHALL receive a 401 from `authn.Middleware` (the existing `fan-api-route` `/*` catch-all forwards the request to `fan-api-svc:80`, where `authn.Middleware` rejects unauthenticated requests before the mux dispatches; the public `:8080` listener has no handler registered for webhook paths)
 
-> **Note**: A future follow-up MAY tighten the `server-route` HTTPRoute to enumerate only public paths, at which point the rejection upgrades to a Gateway-level 404 without changing the security outcome (external requests cannot reach the webhook handler in either case).
+> **Note**: A future follow-up MAY tighten the `fan-api-route` HTTPRoute to enumerate only public paths, at which point the rejection upgrades to a Gateway-level 404 without changing the security outcome (external requests cannot reach the webhook handler in either case).
 
 #### Scenario: Public Connect-RPC listener does not serve webhooks
 
-- **WHEN** an in-cluster client POSTs to `http://server-svc.backend.svc.cluster.local/pre-access-token` on port `80`
+- **WHEN** an in-cluster client POSTs to `http://fan-api-svc.backend.svc.cluster.local/pre-access-token` on port `80`
 - **THEN** the public Connect-RPC listener on port `8080` SHALL NOT expose webhook routes
 - **AND** the request SHALL receive a 404

@@ -10,12 +10,12 @@ Every container image referenced by a workload in the `liverty-music-prod` GKE c
 
 #### Scenario: Backend prod images come from prod AR
 
-- **WHEN** inspecting any backend Deployment in the prod cluster (`server-app`, `consumer-app`, `concert-discovery-app`, `artist-image-sync-app`)
+- **WHEN** inspecting any backend Deployment in the prod cluster (`fan-api`, `event-consumer`, `concert-discovery-app`, `artist-image-sync-app`)
 - **THEN** the container `image` field SHALL match the prefix `asia-northeast2-docker.pkg.dev/liverty-music-prod/backend/`
 
 #### Scenario: Frontend prod image comes from prod AR
 
-- **WHEN** inspecting the frontend `web-app` Deployment in the prod cluster
+- **WHEN** inspecting the frontend `fan-web-app` Deployment in the prod cluster
 - **THEN** the container `image` field SHALL match the prefix `asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/`
 
 #### Scenario: No cross-project image references in prod kustomize overlays
@@ -135,31 +135,31 @@ The backend `deploy.yml` workflow SHALL publish to `liverty-music-prod/backend/{
 
 ### Requirement: Frontend prod image SHALL be promoted to prod AR on GitHub Release tags
 
-The frontend `push-image.yaml` workflow SHALL publish to `liverty-music-prod/frontend/web-app` Artifact Registry only when triggered by a published GitHub Release. On the release path, the workflow SHALL **promote the dev AR image via cross-repository copy** rather than rebuild — it resolves the dev AR digest for `github.sha`, then invokes `crane copy` (from `google/go-containerregistry`, installed via `imjasonh/setup-crane`) twice to copy that exact digest to `liverty-music-prod/frontend/web-app:<release-tag>` and `:<sha>`. No `docker build` SHALL run on the release path. The dev path (push-to-`main`) SHALL guarantee a resolvable `liverty-music-dev/frontend/web-app:<sha>` for every `main` commit — by build or by parent-digest inheritance (see "Every main commit SHALL have a resolvable dev AR image") — so a release cut on `main` HEAD always resolves. This ensures prod runs byte-identical bytes to dev: the digest tested in dev is the digest deployed to prod.
+The frontend `push-image.yaml` workflow SHALL publish to `liverty-music-prod/frontend/fan-web` Artifact Registry only when triggered by a published GitHub Release. On the release path, the workflow SHALL **promote the dev AR image via cross-repository copy** rather than rebuild — it resolves the dev AR digest for `github.sha`, then invokes `crane copy` (from `google/go-containerregistry`, installed via `imjasonh/setup-crane`) twice to copy that exact digest to `liverty-music-prod/frontend/fan-web:<release-tag>` and `:<sha>`. No `docker build` SHALL run on the release path. The dev path (push-to-`main`) SHALL guarantee a resolvable `liverty-music-dev/frontend/fan-web:<sha>` for every `main` commit — by build or by parent-digest inheritance (see "Every main commit SHALL have a resolvable dev AR image") — so a release cut on `main` HEAD always resolves. This ensures prod runs byte-identical bytes to dev: the digest tested in dev is the digest deployed to prod.
 
 #### Scenario: Push to main triggers dev-only frontend build or inherit
 
 - **WHEN** a commit is pushed to `liverty-music/frontend:main`
-- **THEN** the workflow SHALL publish (by build or by parent-digest inheritance) only to `liverty-music-dev/frontend/web-app`
-- **AND** SHALL NOT push to `liverty-music-prod/frontend/web-app`
+- **THEN** the workflow SHALL publish (by build or by parent-digest inheritance) only to `liverty-music-dev/frontend/fan-web`
+- **AND** SHALL NOT push to `liverty-music-prod/frontend/fan-web`
 
 #### Scenario: GitHub Release publish promotes the dev AR digest
 
 - **WHEN** a GitHub Release is published in `liverty-music/frontend` with tag `vX.Y.Z`
 - **THEN** the workflow SHALL NOT invoke `docker build` or `docker/build-push-action` on the release path
-- **AND** the workflow SHALL resolve the dev AR digest for `asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app:${GITHUB_SHA}` via `gcloud artifacts docker images describe`
-- **AND** the workflow SHALL run `crane copy asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app@<digest> asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/web-app:vX.Y.Z`
-- **AND** the workflow SHALL run `crane copy asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app@<digest> asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/web-app:${GITHUB_SHA}`
+- **AND** the workflow SHALL resolve the dev AR digest for `asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/fan-web:${GITHUB_SHA}` via `gcloud artifacts docker images describe`
+- **AND** the workflow SHALL run `crane copy asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/fan-web@<digest> asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/fan-web:vX.Y.Z`
+- **AND** the workflow SHALL run `crane copy asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/fan-web@<digest> asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/fan-web:${GITHUB_SHA}`
 - **AND** the workflow SHALL invoke `gcloud auth configure-docker asia-northeast2-docker.pkg.dev` before the copy steps so `crane`'s authentication (which reads `~/.docker/config.json` credential helpers, not `GOOGLE_APPLICATION_CREDENTIALS` directly) resolves to the prod CI service account's WIF token
 
 #### Scenario: Prod and dev images share the same digest after promotion
 
-- **WHEN** comparing `gcloud artifacts docker images describe asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app:<sha>` against `gcloud artifacts docker images describe asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/web-app:vX.Y.Z` after a release event for that SHA
+- **WHEN** comparing `gcloud artifacts docker images describe asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/fan-web:<sha>` against `gcloud artifacts docker images describe asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/fan-web:vX.Y.Z` after a release event for that SHA
 - **THEN** the `image_summary.digest` field SHALL be identical between the two outputs
 
 #### Scenario: Release CI SHALL refuse if dev AR :<sha> is missing
 
-- **WHEN** a GitHub Release is published with a `github.sha` for which no `asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/web-app:<sha>` tag exists — which, given the "every main commit has a resolvable dev AR image" invariant, can only mean the build/inherit job for that commit is still in-flight (release cut seconds after the push) or that job failed
+- **WHEN** a GitHub Release is published with a `github.sha` for which no `asia-northeast2-docker.pkg.dev/liverty-music-dev/frontend/fan-web:<sha>` tag exists — which, given the "every main commit has a resolvable dev AR image" invariant, can only mean the build/inherit job for that commit is still in-flight (release cut seconds after the push) or that job failed
 - **THEN** the release workflow SHALL fail at the digest-resolve step with an explicit error referencing the recovery runbook section
 - **AND** the workflow SHALL NOT publish any tag to prod AR
 - **AND** the digest-resolve step SHALL retry up to 5 additional times after the initial attempt (6 total attempts) with 60-second waits between attempts, for a maximum total wait of approximately 5 minutes — to absorb the race window where a release is cut seconds after a push and the dev build/inherit is still in-flight
@@ -185,13 +185,13 @@ Each prod overlay under `cloud-provisioning/k8s/namespaces/<ns>/overlays/prod/` 
 #### Scenario: Frontend prod overlay rewrites image URIs
 
 - **WHEN** running `kustomize build k8s/namespaces/frontend/overlays/prod`
-- **THEN** the rendered `web-app` Deployment's `image:` SHALL begin with `asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/`
+- **THEN** the rendered `fan-web-app` Deployment's `image:` SHALL begin with `asia-northeast2-docker.pkg.dev/liverty-music-prod/frontend/`
 
 > **Historical note**: the "Image tags are explicit, never `:latest`" scenario that previously lived under this requirement was removed during the archive of `promote-prod-image-via-retag` — it was superseded by `prod-image-tag-immutability`'s strictly stricter "Prod kustomize overlays SHALL pin image URIs to semantic version tags" requirement (which forbids `:<sha>`-only tags and `:latest`).
 
 ### Requirement: Every main commit SHALL have a resolvable dev AR image
 
-For both the backend (`deploy.yml`, 4-image matrix) and frontend (`push-image.yaml`, `web-app`) pipelines, every commit observed by the push-to-`main` workflow as `${GITHUB_SHA}` SHALL have a resolvable dev-AR `<image>:${GITHUB_SHA}` tag after that workflow run completes. The workflow SHALL trigger on **every** push to `main` (the `paths:` trigger gate SHALL NOT be used to skip the workflow). The workflow SHALL decide, by diffing the pushed range `${{ github.event.before }}..${GITHUB_SHA}` against the build-relevant glob set, whether to **build** (any matched file) or **inherit** (no matched file):
+For both the backend (`deploy.yml`, 4-image matrix) and frontend (`push-image.yaml`, `fan-web`) pipelines, every commit observed by the push-to-`main` workflow as `${GITHUB_SHA}` SHALL have a resolvable dev-AR `<image>:${GITHUB_SHA}` tag after that workflow run completes. The workflow SHALL trigger on **every** push to `main` (the `paths:` trigger gate SHALL NOT be used to skip the workflow). The workflow SHALL decide, by diffing the pushed range `${{ github.event.before }}..${GITHUB_SHA}` against the build-relevant glob set, whether to **build** (any matched file) or **inherit** (no matched file):
 
 - On the **build** path the workflow builds and pushes `<image>:latest,:main,:<sha>` to dev AR (unchanged from prior behavior).
 - On the **inherit** path the workflow SHALL `crane copy` the parent push tip's dev-AR digest (`<image>:${{ github.event.before }}`, by digest) onto `<image>:${GITHUB_SHA}` (and re-point `:main` and `:latest` at that digest), with no `docker build`. This is byte-exact: a commit that changed no build-relevant file produces bytes identical to its parent.
@@ -207,7 +207,7 @@ A force-push or branch-creation push SHALL take the BUILD path, never the inheri
 #### Scenario: Build-relevant push produces a built image
 
 - **WHEN** a push to `main` changes at least one file matching the build glob set (backend: `**.go`, `go.mod`, `go.sum`, `Dockerfile`, `.github/workflows/deploy.yml`; frontend: `src/**`, `public/**`, `scripts/**`, `package.json`, `package-lock.json`, `vite.config.ts`, `Dockerfile`, `Caddyfile`, `.github/workflows/push-image.yaml`) anywhere in `${{ github.event.before }}..${GITHUB_SHA}`
-- **THEN** the workflow SHALL build and push `<image>:${GITHUB_SHA}` (and `:latest`, `:main`) to the dev AR for every image in the pipeline (the 4 backend matrix images, or frontend `web-app`)
+- **THEN** the workflow SHALL build and push `<image>:${GITHUB_SHA}` (and `:latest`, `:main`) to the dev AR for every image in the pipeline (the 4 backend matrix images, or frontend `fan-web`)
 
 #### Scenario: Build-irrelevant push inherits the parent digest
 
@@ -277,9 +277,9 @@ The dispatch step SHALL run only after the prod-AR retag for that component has 
 
 ### Requirement: A cloud-provisioning workflow SHALL apply the prod pin-bump on dispatch
 
-`cloud-provisioning` SHALL contain a workflow (`bump-prod-pin.yml`) triggered by `repository_dispatch` of type `bump-prod-pin`. On receipt, for the `component` named in the payload it SHALL rewrite, in `k8s/namespaces/<component>/overlays/prod/kustomization.yaml`, every `images[].newTag` (all 4 entries for `backend`, the single `web-app` entry for `frontend`) and the `labels[].pairs."app.kubernetes.io/version"` value, in lock-step, to the release version. The `newTag` SHALL be the `vX.Y.Z` form; the version label SHALL be the bare semver (no leading `v`). The inline source-commit trailer comment after each `newTag` SHALL be updated to the payload `sha`.
+`cloud-provisioning` SHALL contain a workflow (`bump-prod-pin.yml`) triggered by `repository_dispatch` of type `bump-prod-pin`. On receipt, for the `component` named in the payload it SHALL rewrite, in `k8s/namespaces/<component>/overlays/prod/kustomization.yaml`, every `images[].newTag` (all 4 entries for `backend`, the single `fan-web` entry for `frontend`) and the `labels[].pairs."app.kubernetes.io/version"` value, in lock-step, to the release version. The `newTag` SHALL be the `vX.Y.Z` form; the version label SHALL be the bare semver (no leading `v`). The inline source-commit trailer comment after each `newTag` SHALL be updated to the payload `sha`.
 
-Before editing, the workflow SHALL validate the payload: `component` SHALL be one of `backend | frontend` and `tag` SHALL match `^v[0-9]+\.[0-9]+\.[0-9]+$`. Shape validation alone is insufficient — the workflow SHALL ALSO verify **image provenance** before any edit: for every image of the component (the 4 backend images, or the single `web-app` image) it SHALL confirm the prod-AR image at the target tag exists via `crane manifest asia-northeast2-docker.pkg.dev/liverty-music-prod/<component>/<img>:<tag>`. A missing manifest for any image SHALL abort the run before any file is edited (fail-closed). Because a prod-AR image at `:<tag>` exists only if the release retag wrote it, this provenance gate confirms the tag names a genuine release whose retag completed, and prevents a well-formed-but-bogus or stale tag from corrupting `main` (including the silent-downgrade-to-bogus-tag case).
+Before editing, the workflow SHALL validate the payload: `component` SHALL be one of `backend | frontend` and `tag` SHALL match `^v[0-9]+\.[0-9]+\.[0-9]+$`. Shape validation alone is insufficient — the workflow SHALL ALSO verify **image provenance** before any edit: for every image of the component (the 4 backend images, or the single `fan-web` image) it SHALL confirm the prod-AR image at the target tag exists via `crane manifest asia-northeast2-docker.pkg.dev/liverty-music-prod/<component>/<img>:<tag>`. A missing manifest for any image SHALL abort the run before any file is edited (fail-closed). Because a prod-AR image at `:<tag>` exists only if the release retag wrote it, this provenance gate confirms the tag names a genuine release whose retag completed, and prevents a well-formed-but-bogus or stale tag from corrupting `main` (including the silent-downgrade-to-bogus-tag case).
 
 The workflow SHALL then validate the edited overlay with `kustomize build k8s/namespaces/<component>/overlays/prod` BEFORE committing; a non-zero build SHALL abort the run without pushing. On success it SHALL commit and push directly to `cloud-provisioning:main` using a `liverty-music-ci-bot` GitHub App installation token (the App is the `main` ruleset bypass actor — see design D9; the built-in `GITHUB_TOKEN` / `github-actions[bot]` cannot be a repo-ruleset bypass actor). ArgoCD's existing auto-sync rolls the change out — the workflow SHALL NOT open a pull request.
 
