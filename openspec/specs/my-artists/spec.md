@@ -66,21 +66,22 @@ The Grid view SHALL display followed artists as poster-style tiles in a responsi
 
 ### Requirement: My Artists page help content documents all available gestures
 
-The My Artists page help content SHALL explain all available interactions for managing followed
-artists, including the long-press-to-unfollow gesture for touch devices. The help text SHALL
-communicate that long-pressing an artist row for approximately half a second opens an unfollow
-confirmation dialog. Desktop-specific interactions (trash icon) need not be documented in help
-as they are visually self-evident.
+The My Artists page help content SHALL explain how to unfollow an artist via the Edit-mode
+toggle. The help text SHALL communicate that activating "Edit" in the page header reveals a
+per-row remove control that unfollows immediately (with Undo). The help content SHALL NOT
+reference a long-press-to-unfollow gesture (that interaction is retired). Desktop-specific
+interactions need not be documented in help as they are visually self-evident.
 
 #### Scenario: Help text visible to touch device users
 
-- **WHEN** user opens the My Artists page help on a touch device
-- **THEN** help content includes an explanation that long-pressing an artist row opens an unfollow confirmation
+- **WHEN** the user opens the My Artists page help (on any device, including touch)
+- **THEN** help content includes an explanation that entering Edit mode reveals a per-row remove control to unfollow an artist
+- **AND** the help content SHALL NOT mention a long-press unfollow gesture
 
 #### Scenario: Help text available in all supported locales
 
 - **WHEN** the app is displayed in any supported locale (Japanese, English)
-- **THEN** the long-press unfollow help text is translated and rendered correctly
+- **THEN** the Edit-mode unfollow help text is translated and rendered correctly
 
 ### Requirement: Default hype tier for new follows is Nearby
 
