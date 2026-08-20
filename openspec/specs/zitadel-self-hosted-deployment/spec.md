@@ -180,7 +180,25 @@ The unified `Zitadel` class refactor (`refactor-unify-env-dispatch`) deletes the
 
 ### Requirement: Backend MachineKey Lifecycle Tied to Zitadel-Side Identity
 
-The backend's machine-user JWT private key (`zitadel-machine-key-for-backend-app` in GSM) SHALL track the `MachineKey` Pulumi resource's `keyDetails` output one-to-one. State drift between the Zitadel DB, the GSM SecretVersion, and the Pulumi state SHALL be treated as a critical incident — backend → Zitadel API auth fails with `Errors.AuthNKey.NotFound` whenever the kid in the GSM-mounted JSON key does not have a matching row in Zitadel's AuthNKey table. This lifecycle SHALL apply identically in dev and prod; both stacks SHALL produce a `MachineKey` resource and a corresponding GSM SecretVersion (`zitadel-machine-key-for-backend-app` in their respective GCP projects).
+The fan-facing API's Zitadel MachineKey SHALL be stored in a GSM secret named
+`zitadel-machine-key-for-fan-api`, following the platform-wide convention
+`zitadel-machine-key-for-<principal>` where `<principal>` is the workload name from
+the `workload-naming-convention` capability. The `fan-api` principal is the renamed
+`backend-app` workload (see `workload-naming-convention`); the legacy GSM name
+`zitadel-machine-key-for-backend-app` (itself a prior rename from the ambiguous
+`zitadel-machine-key`) SHALL be migrated to the new principal name via the additive
+create-new → cutover → delete-old sequence, re-issuing the MachineKey so the GSM
+`keyDetails` and the Zitadel AuthNKey stay consistent across the rename.
+
+The name encodes which Zitadel principal owns the key so the platform's multiple
+`MachineKey`s (`pulumi-admin`, `fan-api`) remain distinguishable at a glance — the
+ambiguity of the original `zitadel-machine-key` directly cost triage time in the
+§13.15 incident chain.
+
+**Note**: The `unify-workload-naming` change accepted `backend-app` as a neutral
+shared identity for the `fan-api` MachineKey (event-consumer + 5 cronjobs share the
+same Zitadel Management API capability). Migration of the GSM secret name to
+`zitadel-machine-key-for-fan-api` is deferred to a subsequent change.
 
 **Rationale**: Discovered post-cutover when `ResendEmailVerification` returned `Errors.Internal (OIDC-AhX2u) parent: invalid signature (error fetching keys: Errors.AuthNKey.NotFound)`. The cause was a three-way drift after the cutover incident chain:
 
@@ -191,25 +209,28 @@ The backend's machine-user JWT private key (`zitadel-machine-key-for-backend-app
 
 The fix (cloud-provisioning#216) was to force-replace the `MachineKey` resource by changing `expirationDate` from the magic upstream-example value `2519-04-01T08:45:00Z` to a clean `2099-01-01T00:00:00Z`. Replacement re-runs the create flow, which produces a fresh `keyDetails` value that propagates through the dependency graph.
 
-The GSM name `zitadel-machine-key-for-backend-app` follows the platform-wide convention `zitadel-machine-key-for-<principal>`. The legacy name `zitadel-machine-key` was renamed because (1) it did not encode which Zitadel principal owned the key, ambiguity that directly cost triage time in the §13.15 incident chain, and (2) the platform now manages two Zitadel `MachineKey`s (`pulumi-admin` and `backend-app`) that need to be distinguishable at a glance.
-
 #### Scenario: keyId in GSM matches Zitadel DB
 
 - **WHEN** Pulumi state contains a `MachineKey` for a given user
 - **THEN** the `keyId` in the GSM SecretVersion's JSON SHALL match a row in Zitadel's AuthNKey table for that user
-- **AND** backend → Zitadel API JWT bearer auth SHALL succeed
+- **AND** the fan-api → Zitadel API JWT bearer auth SHALL succeed
 
 #### Scenario: Force-replace on detected drift
 
-- **WHEN** the operator detects keyId drift (e.g., via `Errors.AuthNKey.NotFound` in backend logs)
+- **WHEN** the operator detects keyId drift (e.g., via `Errors.AuthNKey.NotFound` in fan-api logs)
 - **THEN** the operator SHALL force-replace the Pulumi `MachineKey` resource by changing a non-cosmetic property (e.g., bumping `expirationDate` to a different valid value)
-- **AND** the resulting Pulumi apply SHALL produce a new `keyDetails` value, propagate it through the dependency graph, replace the GSM SecretVersion, sync ESO, and trigger Reloader-driven backend Pod restart
+- **AND** the resulting Pulumi apply SHALL produce a new `keyDetails` value, propagate it through the dependency graph, replace the GSM SecretVersion, sync ESO, and trigger Reloader-driven fan-api Pod restart
 
 #### Scenario: Both dev and prod produce a Backend MachineKey
 
 - **WHEN** `pulumi up` runs for the `dev` stack and again for the `prod` stack
-- **THEN** each stack's resulting Pulumi state SHALL contain exactly one `MachineKey` resource for the `backend-app` machine user
-- **AND** each stack's GSM project (`liverty-music-dev` and `liverty-music-prod` respectively) SHALL contain a Secret named `zitadel-machine-key-for-backend-app` with at least one enabled SecretVersion
+- **THEN** each stack's resulting Pulumi state SHALL contain exactly one `MachineKey` resource for the `fan-api` machine user
+- **AND** each stack's GSM project (`liverty-music-dev` and `liverty-music-prod` respectively) SHALL contain a Secret named `zitadel-machine-key-for-fan-api` with at least one enabled SecretVersion
+
+#### Scenario: The legacy backend-app key name is retired after migration
+
+- **WHEN** the rename migration has completed in an environment
+- **THEN** no GSM secret named `zitadel-machine-key-for-backend-app` SHALL remain, and the fan-api workload SHALL read only `zitadel-machine-key-for-fan-api`
 
 ### Requirement: Masterkey Generated Once and Stored Immutably
 
