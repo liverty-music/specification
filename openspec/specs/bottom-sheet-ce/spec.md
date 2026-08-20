@@ -6,7 +6,7 @@ Provides a `<bottom-sheet>` custom element as the single dialog primitive for al
 
 ## Requirements
 ### Requirement: Bottom Sheet Custom Element
-The system SHALL provide a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, using a native `<dialog>` element opened via `showModal()` (promoted to the Top Layer with native focus-trap, `inert` background, and close-request handling) with CSS scroll-snap dismiss via an internal scroll container. The CE host (`<bottom-sheet>`) SHALL wrap an inner `<dialog>` element; the scroll container, dismiss zone, and sheet body SHALL live inside that `<dialog>`.
+The system SHALL provide a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, using a native `<dialog>` element opened via `showModal()` (promoted to the Top Layer with native focus-trap, `inert` background, and close-request handling) with CSS scroll-snap dismiss via an internal scroll container. User-initiated swipe-to-dismiss SHALL be detected via the `scrollsnapchange` event, which by specification fires only for a user scroll gesture and not for programmatic or initial-layout snap changes. The CE host (`<bottom-sheet>`) SHALL wrap an inner `<dialog>` element; the scroll container, dismiss zone, and sheet body SHALL live inside that `<dialog>`.
 
 #### Scenario: Basic open/close via bindable
 - **WHEN** `<bottom-sheet open.bind="isOpen">` has `open` set to `true`
@@ -61,24 +61,40 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 - **AND** swiping down (physical gesture: finger moves downward, scrollTop decreases) SHALL scroll toward the dismiss zone at the top
 
 #### Scenario: Responsive swipe-down dismiss detection
-- **WHEN** the user swipes down (finger moves downward), decreasing scrollTop toward the dismiss zone
-- **AND** the dismiss zone becomes the snapped target (detected via the scroll-snap change / a scroll-position threshold, not requiring full `scrollend` settle)
-- **THEN** the CE SHALL set `open` to `false`, call `close()`, and dispatch `sheet-closed`
-- **AND** the close SHALL NOT be gated on the native scroll-snap settle completing, so dismiss does not wait on UA-controlled settle latency
+- **WHEN** the user swipes down (finger moves downward), and the user's scroll gesture rests on the dismiss zone as the new snap target
+- **THEN** the CE SHALL detect the dismiss via the `scrollsnapchange` event (whose `snapTargetBlock` is the dismiss zone)
+- **AND** the CE SHALL set `open` to `false`, call `close()`, and dispatch `sheet-closed`
+- **AND** the close SHALL NOT be gated on any `scrollend` settle, so dismiss does not wait on UA-controlled settle latency
+- **NOTE** `scrollsnapchange` fires only for a user scroll gesture (per the CSS Scroll Snap module), so a programmatic or initial-layout re-snap to the dismiss zone SHALL NOT trigger dismiss. This replaces the prior scroll-ratio threshold detection.
+
+#### Scenario: Early close on pointerup at dismiss threshold
+- **WHEN** the user lifts their pointer (`pointerup`) while the scroll position is near the dismiss zone but no user-gesture snap change to the dismiss zone has occurred
+- **THEN** the CE SHALL NOT close the sheet based on a `scrollTop / maxScroll` ratio threshold
+- **AND** the prior `pointerup` (`scrollTop/max < 0.25`) and `scrollend` (`scrollRatio < 0.1`) early-close heuristics SHALL be removed, because they fire on the programmatic initial re-snap and caused the iOS/WebKit "flash then close" defect
+- **NOTE** Dismiss is now driven by `scrollsnapchange` (user-gesture-only) with an `IntersectionObserver` fallback; there is no scroll-ratio early-close path. (Title retained for spec-delta continuity; behavior is the removal of the heuristic.)
+
+#### Scenario: Dismiss detection ignores programmatic and initial-snap scroll
+- **WHEN** the sheet opens and the `initial-snap` sequence (or any programmatic scroll) momentarily rests the scroll position on the dismiss zone before settling on `.sheet-body`
+- **THEN** the CE SHALL NOT dismiss the sheet
+- **AND** dismiss SHALL be honored only for a user-initiated scroll gesture (as signalled by `scrollsnapchange` or, on non-supporting engines, by the fallback described below combined with a just-opened guard)
+- **NOTE** This prevents the iOS/WebKit "flash then close" defect, where the programmatic re-snap trace (scroll ratio `1 → 0`) was previously misread as a user swipe-to-dismiss by scroll-ratio heuristics.
+
+#### Scenario: Fallback dismiss detection where scrollsnapchange is unsupported
+- **WHEN** the engine does not support `scrollsnapchange` (e.g., Firefox)
+- **THEN** the CE SHALL detect a user swipe-to-dismiss via an `IntersectionObserver` that observes the dismiss zone / sheet-body crossing the viewport, rather than via `scrollend`/`pointerup` scroll-ratio heuristics
+- **AND** the fallback SHALL be armed only after the sheet has opened and settled on `.sheet-body`, so the initial snap does not trigger dismiss
+
+#### Scenario: Just-opened dismiss guard
+- **WHEN** the sheet has just been opened (during the open transition / before it has settled on `.sheet-body`)
+- **THEN** the CE SHALL suppress any dismiss signal, so the sheet cannot close itself before the user interacts
+- **AND** the guard SHALL release once the sheet has settled on `.sheet-body`
 
 #### Scenario: Bounce-back prevention after dismiss-zone snap
-- **WHEN** the scroll-snap target changes to the dismiss zone (detected via `scrollsnapchange` event)
+- **WHEN** a user scroll gesture changes the scroll-snap target to the dismiss zone (detected via `scrollsnapchange`)
 - **THEN** the CE SHALL immediately set `pointer-events: none` on `.scroll-area`
 - **AND** any subsequent upward swipe input SHALL be ignored by the scroll container
 - **AND** the sheet SHALL NOT re-snap to `.sheet-body` after the dismiss-zone snap is detected
 - **AND** `pointer-events` SHALL be restored to its default value in `onClose()`
-
-#### Scenario: Early close on pointerup at dismiss threshold
-- **WHEN** the user lifts their pointer (`pointerup`)
-- **AND** `scrollTop / maxScroll < 0.25` (scroll position is within 25% of the dismiss zone)
-- **AND** `dismissable` is `true`
-- **THEN** the CE SHALL call `requestClose()` immediately without waiting for `scrollend` or `scrollsnapchange`
-- **AND** this SHALL apply on browsers that do not support `scrollsnapchange` (e.g., Safari)
 
 #### Scenario: Close animation completes within 160ms
 - **WHEN** the sheet is dismissed by any mechanism (swipe, tap-outside, ESC)
@@ -153,7 +169,7 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 
 #### Scenario: Detach cleanup
 - **WHEN** the CE is detached from the DOM while the sheet is open
-- **THEN** all event listeners (`cancel`/`close`, `.dismiss-zone` click, scroll detection) SHALL be removed
+- **THEN** all event listeners (`cancel`/`close`, `.dismiss-zone` click, `scrollsnapchange`, and any `IntersectionObserver`) SHALL be removed / disconnected
 - **AND** `close()` SHALL be called on the inner `<dialog>`
 - **AND** `pointer-events` on `.scroll-area` SHALL be restored to its default value
 - **AND** no memory leaks SHALL occur
