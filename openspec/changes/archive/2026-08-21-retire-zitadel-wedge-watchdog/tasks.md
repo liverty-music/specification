@@ -12,6 +12,6 @@
 
 ## 4. Release & Ship
 
-- [ ] 4.1 Open a specification PR with the spec sync (1.1) + stale dir removal (3.1); open a cloud-provisioning PR for the comment fix (2.1). Neither touches proto, so no BSR release needed.
-- [ ] 4.2 Confirm `openspec validate --strict` passes after the spec sync.
-- [ ] 4.3 Merge both PRs; verify there are no references to the watchdog in `openspec/specs/zitadel-self-hosted-deployment/spec.md` or the active `openspec/changes/` directory.
+- [x] 4.1 Open a specification PR with the spec sync (1.1) + stale dir removal (3.1); open a cloud-provisioning PR for the comment fix (2.1). Neither touches proto, so no BSR release needed.
+- [x] 4.2 Confirm `openspec validate --strict` passes after the spec sync.
+- [x] 4.3 Merge both PRs; verify there are no references to the watchdog in `openspec/specs/zitadel-self-hosted-deployment/spec.md` or the active `openspec/changes/` directory.
