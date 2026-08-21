@@ -80,70 +80,43 @@ Verified live (2026-08-21, hosted Login v2 on Zitadel v4.14.0, prod):
 
 The backend provisioner (organizer-accounts) SHALL therefore:
 - remove the `CreatePasskeyRegistrationLink` call (the broken dead-end email),
-- call `CreateInviteCode` with **`ReturnCode`** (NOT `SendCode`) so Login v2 can
-  drive first-auth-method setup for the invited operator. `ReturnCode` creates
-  the invited state WITHOUT Zitadel sending its own "Invitation to Zitadel Login"
-  email — which would be a redundant third email whose link dead-ends anyway.
-  The returned code is **discarded**: the backend needs only the invite to
-  *exist*; Login v2 delivers the redemption OTP to the operator's verified email
-  at onboarding time (see D6). And
-- send a custom invitation email (via the existing Postmark notification
-  infrastructure) whose link is the **console** URL with
-  `?org_id=<id>&login_hint=<email>` — never a Zitadel setup-page URL.
+  and
+- call `CreateInviteCode` (v2 User API) with **`SendInviteCode`** and a
+  `url_template` that points at the **console** —
+  `https://organizer.{base}/?org_id={{.OrgID}}` — and an `application_name` of
+  `Liverty Organizer`. Zitadel then sends the "Invitation to Zitadel Login"
+  email via its own SMTP (Postmark), whose "Accept invite" link opens the
+  console (starting the OIDC flow), never a Zitadel setup page. This is the
+  same email/flow the earlier org-test-7 onboarding succeeded with, made
+  explicit and console-pointed.
 
-The `login_hint` is passed through the OIDC authorization request to pre-fill
-the operator's email in Zitadel's login page, eliminating one manual input step.
+**Why `SendInviteCode` (Zitadel-sent), not `ReturnCode` + a custom backend
+email (correcting an earlier assumption):** the backend has **no direct email /
+Postmark infrastructure** — its only email path is *through* Zitadel (the
+Management API), and `notification_uc` is Web Push, not email. So a custom
+backend invitation email is not available without new infrastructure. Letting
+Zitadel send the invite via `SendInviteCode` + `url_template` reuses Zitadel's
+configured SMTP and requires no new backend email code.
+
+**`login_hint` trade-off:** the Zitadel `SendInviteCode.url_template` exposes
+only `UserID`, `OrgID`, `Code` — **no email placeholder** — so the
+Zitadel-sent invite link cannot carry `login_hint`. The operator therefore
+enters their email once at the Login v2 loginname step, after which Login v2
+detects the pending invite and drives passkey setup. The frontend `login_hint`
+support (tasks 4.1/4.2, already shipped) is retained as a UX aid for *re-issued*
+console links (e.g. a future "email me a sign-in link" or an admin-copied link
+that includes `&login_hint=<email>`), not the first Zitadel invite email.
+
+**Confirmed working shape** (verified with the equivalent flow for org-test-7):
+invite email → "Accept invite" → console → OIDC (`requestId` preserved through
+the redirect) → Login v2 detects the invited user → verification code + passkey
+ceremony → finalises the in-flight auth request → `/auth/callback` → `/welcome`.
 
 **Open validation (positive path):** the empty-form dead-end (no invite) is
-confirmed; the positive path (invite code present → onboarding completes →
-`/welcome`) will be confirmed end-to-end once task 4.3 lands `CreateInviteCode`
-and a fresh org is driven through. The design is grounded on the confirmed
-negative result + the Zitadel docs (CreateInviteCode is the canonical B2B
-invite API) + the earlier org-test-7 completion.
-
-**D6 — Onboarding secret handling: IdP-owned redemption; the invite secret
-never enters an app URL (security).** The invite code grants first-auth-method
-setup — whoever holds it can register the owner passkey — so it is an
-account-takeover-grade secret, handled like a password-reset token. Three shapes
-were considered:
-
-- **A (CHOSEN) — console-first, IdP-owned redemption.** The invitation email
-  carries only the console URL (`?org_id=&login_hint=`) with NO secret; the
-  operator enters via OIDC; Login v2 sends the redemption OTP to the verified
-  email and consumes it on the IdP surface (`auth.{base}`). The app never sees
-  the secret.
-- **B (REJECTED) — `SendCode` url_template → console, code in the URL.** Puts
-  the secret in a public-SPA URL → leaks via browser history, the `Referer`
-  header (to the console's third-party loads: fonts, analytics), and
-  access/CDN logs. Also non-functional: no standard channel hands a URL-borne
-  code to hosted Login v2.
-- **C (REJECTED) — console calls `VerifyInviteCode` client-side with the URL
-  code.** Same secret-in-URL leak, PLUS a client-side redemption that opens a
-  "verified-invite / no-passkey" window: an attacker who captured the leaked
-  code could register *their* passkey (account takeover). It also forces the
-  console into a custom-login-UI role, widening the frontend attack surface.
-
-Consequence: **two emails, by design.** Email 1 = our custom invitation (console
-URL, no secret). Email 2 = Login v2's redemption OTP (IdP-side; the app never
-touches it). The OTP is NOT a redundant re-verification of the already-verified
-email — it is a *fresh possession check at credential binding* (only whoever
-controls the mailbox at onboarding time can register the passkey), consistent
-with the mailbox being the account's root of trust. Aligns with the OAuth 2.0
-Security BCP (the RP does not handle end-user credentials), OWASP ASVS (no
-secrets in URLs; single-use short-TTL, server-side verification), NIST 800-63B
-(authenticator enrollment in a verified session), and WebAuthn credential
-binding. B/C trade these guarantees for one fewer email — a bad trade.
-
-**D7 — Invite lifecycle & idempotency.** The invite code is short-lived
-(observed TTL ~1h) and single-use. If the operator does not onboard before it
-expires, Login v2's "Resend code" reissues one, and the provisioner's reconcile
-loop (re-running `ensureOperatorUser`) re-creates the invite on the next pass —
-so a stale invite self-heals. `CreateInviteCode` MUST be idempotent-safe in the
-provisioning saga: re-invoking for an already-invited, still-uninitialized
-operator is acceptable (the new pending invite supersedes the old). Once the
-operator has registered a passkey they are *initialized*; subsequent sign-ins
-need no invite and no OTP (returning-operator path), so the provisioner MUST NOT
-re-invite an initialized operator.
+confirmed, and the org-test-7 completion confirms the invite-driven onboarding
+shape. The exact `CreateInviteCode(SendInviteCode, url_template→console)`
+combination will be confirmed end-to-end once task 4.3 lands and a fresh org is
+driven through in prod.
 
 ## Risks / Trade-offs
 

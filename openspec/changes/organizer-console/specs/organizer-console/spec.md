@@ -98,50 +98,48 @@ email domain.
 
 The organizer console SHALL accept a `login_hint` query parameter on entry and
 pass it to the OIDC authorization request so Zitadel pre-fills the operator's
-email address in the login form. This is the first-time sign-in mechanism: the
-provisioning backend (organizer-accounts) sends an invitation email to the
-operator containing a link of the form
-`organizer.{base}/?org_id=<tenantOrgId>&login_hint=<email>`. Clicking it:
+email address in the login form.
 
-1. pins the tenant org via the `org:id` scope (existing org-handle logic);
-2. pre-fills the email via `login_hint` so the operator skips the email entry
-   step in Zitadel's login UI;
-3. for uninitialized operators (no passkey registered), Zitadel's Login v2
-   guides passkey registration **within the OIDC auth-request context** —
-   provided the backend has created a pending **invite code** for the operator
-   (Zitadel `CreateInviteCode`). Login v2 detects the invited user, sends a
-   verification-code email, and after the code + passkey ceremony finalises the
-   in-flight OIDC auth request, redirecting to `/auth/callback` → `/welcome`
-   with no dead-end. Without an invite code, Login v2 has no auth method to
-   offer a passwordless-only operator and renders an empty login form (verified
-   dead-end, 2026-08-21); provisioning MUST therefore create the invite code.
+**First-time sign-in.** The provisioning backend (organizer-accounts) creates a
+pending Zitadel **invite** for the operator (`CreateInviteCode` with
+`SendInviteCode`) whose `url_template` points at the console
+(`https://organizer.{base}/?org_id={{.OrgID}}`). Zitadel sends the "Invitation
+to Zitadel Login" email via its own SMTP; the operator clicks "Accept invite",
+which opens the console (org pinned via the `org:id` scope from `org_id`) →
+OIDC → Login v2. Because the invite is pending, Login v2 detects the invited
+operator, and after the operator enters their email once (the Zitadel-sent
+invite link cannot carry `login_hint` — its `url_template` exposes no email
+placeholder) it drives the verification-code + passkey ceremony **within the
+OIDC auth-request context**, finalising the in-flight request →
+`/auth/callback` → `/welcome`. Without a pending invite, Login v2 has no auth
+method to offer a passwordless-only operator and renders an empty login form
+(verified dead-end, 2026-08-21); provisioning MUST therefore create the invite.
 
-The `login_hint` is a first-sign-in UX aid only; the console does not require
-it to be present (returning operators sign in without it). The invite-code and
-email-delivery responsibilities belong to the backend provisioner — see the
-design D5/D6/D7 notes and task 4.3.
+**`login_hint` role.** `login_hint` is a UX aid that pre-fills (and, per
+Zitadel behavior, auto-submits) the email step; it applies to any console entry
+whose URL carries `&login_hint=<email>` — e.g. an admin-copied or re-issued
+sign-in link — not the first Zitadel-sent invite email (which omits it). The
+console does not require `login_hint` to be present (returning operators sign
+in without it). Invite creation and email delivery are backend responsibilities
+— see design D5 and task 4.3.
 
-The onboarding entry URL SHALL carry only `org_id` and `login_hint` (a
-non-secret email hint) — **never** the invite code or any other credential. The
-invite is redeemed on the Zitadel surface (`auth.{base}`), not passed through
-the console, because a secret in a public-SPA URL leaks via browser history,
-the `Referer` header, and access logs (design D6). Consequently first-time
-onboarding involves **two emails**: the custom invitation (console URL, no
-secret) and Zitadel's redemption OTP (IdP-side; the app never touches it). The
-OTP is a fresh mailbox-possession check at credential binding, not a redundant
-re-verification of the already-verified email.
+#### Scenario: Invited operator onboards via the console
 
-#### Scenario: Invitation link pre-fills the operator's email on first sign-in
+- **WHEN** an operator follows the Zitadel invite email's "Accept invite" link
+  (which opens `organizer.{base}/?org_id=<id>`)
+- **THEN** the console SHALL pin the org via the `org:id` scope and start the OIDC flow
+- **AND** because a pending invite exists, Zitadel Login v2 SHALL guide passkey
+  registration within the OIDC flow and redirect to `/auth/callback` on completion
+- **AND** for an uninitialized operator **with no pending invite**, Zitadel SHALL
+  render an empty login form (no auth method to offer) — so provisioning MUST
+  create the invite before inviting the operator
 
-- **WHEN** an operator follows an invitation link containing `?org_id=<id>&login_hint=<email>`
+#### Scenario: login_hint pre-fills the email when present on the console URL
+
+- **WHEN** the console is opened with `?org_id=<id>&login_hint=<email>` (e.g. a
+  re-issued or admin-copied link)
 - **THEN** the console SHALL pass `login_hint` to the OIDC authorization request
 - **AND** Zitadel SHALL display the login form with the operator's email pre-filled
-- **AND** for an uninitialized operator **who has a pending invite code**, Zitadel
-  SHALL guide passkey registration within the OIDC flow and redirect to
-  `/auth/callback` on completion
-- **AND** for an uninitialized operator **with no invite code**, Zitadel SHALL
-  render an empty login form (no auth method to offer) — so provisioning MUST
-  create the invite code before inviting the operator
 
 #### Scenario: Returning operator signs in without login_hint
 
@@ -149,11 +147,3 @@ re-verification of the already-verified email.
   (no `login_hint`)
 - **THEN** the console SHALL initiate the OIDC flow with the `org:id` scope only
 - **AND** Zitadel SHALL authenticate the operator using their existing passkey
-
-#### Scenario: The onboarding entry URL carries no credential
-
-- **WHEN** the backend provisioner builds the operator's invitation link
-- **THEN** the link SHALL contain only `org_id` and `login_hint`
-- **AND** it SHALL NOT contain the invite code or any other credential
-- **AND** the invite SHALL be redeemed on the Zitadel surface, not passed
-  through the console
