@@ -64,31 +64,52 @@ Verified live (2026-08-21, hosted Login v2 on Zitadel v4.14.0, prod):
   request and dead-ends on the `signedin` page with no way back to the console.
   The onboarding email MUST therefore link to the **console** (which starts the
   OIDC flow), NOT to a Zitadel setup page.
-- **An invite code is REQUIRED for Login v2 to onboard a passwordless-only
-  operator.** Driving the clean console → OIDC path for a bare operator
-  (`AddHumanUser`, verified email, no passkey, **no invite code**) renders an
-  **empty Login v2 loginname form** — no input, no button, no way to proceed
-  (reproduced with and without `login_hint`). With `allow_username_password=false`
-  and `allow_register=false`, Login v2 has no auth method to offer and no invite
-  to redeem. `CreatePasskeyRegistrationLink` is NOT an invite; its code is
-  single-use-on-failure (`#12499`) and it dead-ends via the email path above.
-- **Confirmed working shape:** the console → OIDC (`requestId` preserved through
-  the redirect, verified) → Login v2 detects the **invited** user → sends a
-  verification-code email → code + passkey ceremony → finalises the in-flight
-  auth request → `/auth/callback` → `/welcome`. `login_hint` pre-fills the email
-  and auto-submits the loginname step (verified: `loginName=<email>&submit=true`).
+- **Login v2 AUTO-onboards a no-auth-method operator with a verified email — no
+  pre-created invite is functionally required** (source-verified against the
+  Login v2 app, `apps/login/src` @ `v4.14.0`). In
+  [`lib/server/loginname.ts`](https://github.com/zitadel/zitadel/blob/v4.14.0/apps/login/src/lib/server/loginname.ts),
+  after the loginName is submitted, when the user has no PASSWORD/PASSKEY/IDP
+  method it redirects into the invite flow itself:
+
+  ```ts
+  const hasPrimaryMethod = methods.authMethodTypes?.some(
+    (m) => m === PASSWORD || m === PASSKEY || m === IDP) ?? false;
+  if (!hasPrimaryMethod) {
+    const shouldSend = humanUser?.email?.isVerified === true;   // AddHumanUser sets isVerified=true
+    return { redirect: `/verify?loginName=…&send=${shouldSend}&invite=true` };
+  }
+  ```
+
+  Then [`lib/server/verify.ts`](https://github.com/zitadel/zitadel/blob/v4.14.0/apps/login/src/lib/server/verify.ts)
+  runs `verifyInviteCode` → `redirect: /authenticator/set` (passkey) →
+  `completeFlowOrGetUrl({ sessionId, requestId, … })`, and the **`requestId`
+  threads through every step**, so the flow resumes the originating OIDC request
+  and returns to the console. Since `AddHumanUser` already sets
+  `email.isVerified=true`, `send=true` and Login v2 sends the verification code
+  automatically. This is exactly the org-test-7 onboarding.
+- **Correction of an earlier misread:** an initial live test on `org-test-1`
+  showed an *empty* Login v2 loginname form, which this design previously
+  interpreted as "no invite ⇒ dead-end, so an invite is required." The source
+  shows a valid no-auth user is routed to `/verify`, NOT to an empty form — the
+  empty form is the *no-user-found* branch (`loginName` matched 0 users; with
+  `allow_register=false` no registration UI renders). `org-test-1`'s operator
+  had almost certainly been deleted/torn down by earlier cleanup. The invite is
+  NOT a functional prerequisite; `CreateInviteCode` below is used purely as the
+  **email transport** (the backend has no SMTP of its own — see next section).
 
 The backend provisioner (organizer-accounts) SHALL therefore:
 - remove the `CreatePasskeyRegistrationLink` call (the broken dead-end email),
   and
-- call `CreateInviteCode` (v2 User API) with **`SendInviteCode`** and a
-  `url_template` that points at the **console** —
-  `https://organizer.{base}/?org_id={{.OrgID}}` — and an `application_name` of
-  `Liverty Organizer`. Zitadel then sends the "Invitation to Zitadel Login"
-  email via its own SMTP (Postmark), whose "Accept invite" link opens the
-  console (starting the OIDC flow), never a Zitadel setup page. This is the
-  same email/flow the earlier org-test-7 onboarding succeeded with, made
-  explicit and console-pointed.
+- call `CreateInviteCode` (v2 User API) with **`SendInviteCode`** — used purely
+  as the **email transport** (the backend has no SMTP; Login v2 auto-onboards
+  regardless) — and a `url_template` that points at the **console** with the
+  org id and email baked in and the code omitted:
+  `https://organizer.{base}/?org_id=<zitadelOrgID>&login_hint=<operatorEmail>`,
+  plus an `application_name` of `Liverty Organizer`. Zitadel then sends the
+  "Invitation to Zitadel Login" email via its own SMTP (Postmark), whose
+  "Accept invite" link opens the console (starting the OIDC flow), never a
+  Zitadel setup page. This is the same onboarding path the earlier org-test-7
+  completion exercised, made explicit and console-pointed.
 
 **Why `SendInviteCode` (Zitadel-sent), not `ReturnCode` + a custom backend
 email (correcting an earlier assumption):** the backend has **no direct email /
@@ -98,25 +119,43 @@ backend invitation email is not available without new infrastructure. Letting
 Zitadel send the invite via `SendInviteCode` + `url_template` reuses Zitadel's
 configured SMTP and requires no new backend email code.
 
-**`login_hint` trade-off:** the Zitadel `SendInviteCode.url_template` exposes
-only `UserID`, `OrgID`, `Code` — **no email placeholder** — so the
-Zitadel-sent invite link cannot carry `login_hint`. The operator therefore
-enters their email once at the Login v2 loginname step, after which Login v2
-detects the pending invite and drives passkey setup. The frontend `login_hint`
-support (tasks 4.1/4.2, already shipped) is retained as a UX aid for *re-issued*
-console links (e.g. a future "email me a sign-in link" or an admin-copied link
-that includes `&login_hint=<email>`), not the first Zitadel invite email.
+**`login_hint` CAN be carried** — the `url_template` is a free-form string, and
+the operator's email is known at provisioning time, so it is baked in
+**statically** (not via a Zitadel placeholder):
+`https://organizer.{base}/?org_id=<zitadelOrgID>&login_hint=<operatorEmail>`
+(with `<zitadelOrgID>`/`<operatorEmail>` substituted in Go before the call, and
+`{{.Code}}` deliberately **omitted** so no credential appears in the link — see
+the security note). The frontend `login_hint` support (tasks 4.1/4.2, shipped)
+then pre-fills the email and auto-submits the loginname step
+(`loginName=<email>&submit=true`, verified in prod v1.57.0), so the operator
+skips the email-entry step entirely.
 
-**Confirmed working shape** (verified with the equivalent flow for org-test-7):
+**Security invariant (why `{{.Code}}` is omitted).** The invite/verification
+code is an account-takeover-grade secret (whoever redeems it registers the owner
+passkey). It MUST stay IdP-side: the console link carries only `org_id` +
+`login_hint` (a non-secret email hint), never a code. Login v2 delivers and
+consumes the code on the Zitadel surface (`auth.{base}`); the console (a public
+SPA) never sees it, so it can't leak via browser history, the `Referer` header,
+or access logs. The passkey is registered inside a verified Login v2 session.
+This follows the OAuth 2.0 Security BCP (the RP handles no end-user
+credentials), OWASP ASVS (no secrets in URLs), NIST 800-63B (authenticator
+enrollment in a verified session), and WebAuthn credential binding. Putting the
+code in the console URL to save an email was rejected for this reason.
+
+**Confirmed working shape** (org-test-7 completion + the v4.14.0 source trace):
 invite email → "Accept invite" → console → OIDC (`requestId` preserved through
-the redirect) → Login v2 detects the invited user → verification code + passkey
-ceremony → finalises the in-flight auth request → `/auth/callback` → `/welcome`.
+the redirect, verified) → Login v2 routes the no-auth operator into `/verify`
+→ verification code + passkey → `completeFlowOrGetUrl(requestId)` finalises the
+in-flight auth request → `/auth/callback` → `/welcome`.
 
-**Open validation (positive path):** the empty-form dead-end (no invite) is
-confirmed, and the org-test-7 completion confirms the invite-driven onboarding
-shape. The exact `CreateInviteCode(SendInviteCode, url_template→console)`
-combination will be confirmed end-to-end once task 4.3 lands and a fresh org is
-driven through in prod.
+**Open validation (positive path):** the onboarding routing is source-confirmed
+and org-test-7 completed end-to-end. What remains to confirm in prod is the
+specific `CreateInviteCode(SendInviteCode, url_template→console, login_hint
+baked, code omitted)` call — the email renders the expected console link and a
+fresh, genuinely-uninitialized operator lands on `/welcome` — once task 4.3
+lands. (An earlier `org-test-1` "empty form" was NOT evidence of an
+invite-required dead-end; per the source it is the no-user-found branch, i.e. a
+deleted operator — see the loginname note above.)
 
 ## Risks / Trade-offs
 

@@ -100,39 +100,43 @@ The organizer console SHALL accept a `login_hint` query parameter on entry and
 pass it to the OIDC authorization request so Zitadel pre-fills the operator's
 email address in the login form.
 
-**First-time sign-in.** The provisioning backend (organizer-accounts) creates a
-pending Zitadel **invite** for the operator (`CreateInviteCode` with
-`SendInviteCode`) whose `url_template` points at the console
-(`https://organizer.{base}/?org_id={{.OrgID}}`). Zitadel sends the "Invitation
-to Zitadel Login" email via its own SMTP; the operator clicks "Accept invite",
-which opens the console (org pinned via the `org:id` scope from `org_id`) →
-OIDC → Login v2. Because the invite is pending, Login v2 detects the invited
-operator, and after the operator enters their email once (the Zitadel-sent
-invite link cannot carry `login_hint` — its `url_template` exposes no email
-placeholder) it drives the verification-code + passkey ceremony **within the
-OIDC auth-request context**, finalising the in-flight request →
-`/auth/callback` → `/welcome`. Without a pending invite, Login v2 has no auth
-method to offer a passwordless-only operator and renders an empty login form
-(verified dead-end, 2026-08-21); provisioning MUST therefore create the invite.
+**First-time sign-in.** The provisioning backend (organizer-accounts) sends the
+operator an invitation email whose link opens the **console**
+(`https://organizer.{base}/?org_id=<id>&login_hint=<email>`). Delivery is via
+`CreateInviteCode` with `SendInviteCode` and a console `url_template`, used as
+the **email transport** — the backend has no SMTP of its own, so Zitadel's SMTP
+sends the branded "Invitation to Zitadel Login" mail. The operator clicks
+"Accept invite" → console (org pinned via the `org:id` scope) → OIDC → Login v2.
+Zitadel Login v2 then **auto-onboards** a no-auth-method operator whose email is
+verified: it routes the loginname step into `/verify` (invite flow), sends the
+verification code, and after code + passkey the `requestId` threads through and
+finalises the in-flight OIDC request → `/auth/callback` → `/welcome`
+(source-verified against `apps/login/src` @ `v4.14.0`; see design D5). A
+pre-created invite is therefore NOT a functional prerequisite for Login v2 — it
+is only the mail transport. The invitation link carries **no credential**
+(`{{.Code}}` is omitted from the `url_template`); the code stays IdP-side and is
+delivered and consumed on the Zitadel surface.
 
-**`login_hint` role.** `login_hint` is a UX aid that pre-fills (and, per
-Zitadel behavior, auto-submits) the email step; it applies to any console entry
-whose URL carries `&login_hint=<email>` — e.g. an admin-copied or re-issued
-sign-in link — not the first Zitadel-sent invite email (which omits it). The
-console does not require `login_hint` to be present (returning operators sign
-in without it). Invite creation and email delivery are backend responsibilities
-— see design D5 and task 4.3.
+**`login_hint` role.** `login_hint` is a UX aid that pre-fills (and, per Zitadel
+behavior, auto-submits) the email step. Because the operator's email is known at
+provisioning time, it is baked **statically** into the invite `url_template`
+(`…&login_hint=<email>`), so even the first Zitadel-sent invitation link carries
+it — the operator skips the email-entry step entirely. The console does not
+require `login_hint` to be present (returning operators sign in without it).
+Invite-email delivery is a backend responsibility — see design D5 and task 4.3.
 
 #### Scenario: Invited operator onboards via the console
 
-- **WHEN** an operator follows the Zitadel invite email's "Accept invite" link
-  (which opens `organizer.{base}/?org_id=<id>`)
-- **THEN** the console SHALL pin the org via the `org:id` scope and start the OIDC flow
-- **AND** because a pending invite exists, Zitadel Login v2 SHALL guide passkey
-  registration within the OIDC flow and redirect to `/auth/callback` on completion
-- **AND** for an uninitialized operator **with no pending invite**, Zitadel SHALL
-  render an empty login form (no auth method to offer) — so provisioning MUST
-  create the invite before inviting the operator
+- **WHEN** an operator follows the invitation email's link
+  (`organizer.{base}/?org_id=<id>&login_hint=<email>`)
+- **THEN** the console SHALL pin the org via the `org:id` scope, pass `login_hint`,
+  and start the OIDC flow
+- **AND** for a no-auth-method operator whose email is verified, Zitadel Login v2
+  SHALL route into its `/verify` invite flow, send the verification code, guide
+  passkey registration within the OIDC auth-request context, and redirect to
+  `/auth/callback` → `/welcome` on completion
+- **AND** the invitation link SHALL carry no credential (the code is delivered and
+  consumed on the Zitadel surface, never in the console URL)
 
 #### Scenario: login_hint pre-fills the email when present on the console URL
 
