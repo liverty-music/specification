@@ -6,6 +6,7 @@ On narrow canvases (width < 390px), the system SHALL limit the number of simulta
 #### Scenario: Bubble count is capped on narrow screens
 - **WHEN** the Discovery canvas width is less than 390px
 - **THEN** the number of artist bubbles simultaneously rendered in the physics layer SHALL NOT exceed 30
+- **AND** this cap SHALL apply both on initial render and when the bubble set is reconciled after the user follows an artist
 - **AND** bubble size SHALL remain unchanged to preserve label readability
 
 #### Scenario: Bubble count is uncapped on wider screens
@@ -19,3 +20,7 @@ On narrow canvases (width < 390px), the system SHALL limit the number of simulta
 #### Scenario: DNA Orb radius follows follow-count on wider screens
 - **WHEN** the Discovery canvas width is 390px or greater
 - **THEN** the DNA Orb radius SHALL follow the existing follow-count-driven stage escalation (up to 90px)
+
+#### Scenario: Bubble area top edge fades gracefully
+- **WHEN** artist bubbles are rendered near the top boundary of the Discovery canvas
+- **THEN** the bubble area SHALL apply a fade-out at its top edge so that bubbles dissolve toward the genre-chip bar rather than being hard-clipped at the boundary
