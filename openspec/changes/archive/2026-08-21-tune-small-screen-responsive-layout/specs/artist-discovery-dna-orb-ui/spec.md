@@ -24,3 +24,14 @@ On narrow canvases (width < 390px), the system SHALL limit the number of simulta
 #### Scenario: Bubble area top edge fades gracefully
 - **WHEN** artist bubbles are rendered near the top boundary of the Discovery canvas
 - **THEN** the bubble area SHALL apply a fade-out at its top edge so that bubbles dissolve toward the genre-chip bar rather than being hard-clipped at the boundary
+
+#### Scenario: DNA Orb grows from a fixed bottom baseline on narrow screens
+- **WHEN** the Discovery canvas width is less than 390px
+- **THEN** the DNA Orb SHALL be anchored to a fixed baseline near the bottom of the canvas so its bottom stays at a constant offset from the canvas floor regardless of follow count
+- **AND** as the user follows more artists the orb SHALL grow upward from that baseline rather than expanding around a fixed center
+- **AND** the orb SHALL start from a small seed radius and remain unobtrusive at zero follows
+
+#### Scenario: Bubble field fills toward the orb on narrow screens
+- **WHEN** the Discovery canvas width is less than 390px
+- **THEN** artist bubbles SHALL be distributed down the canvas toward the orb so that no large empty gap remains between the bubble cluster and the orb
+- **AND** on wider screens the existing bubble distribution SHALL be preserved

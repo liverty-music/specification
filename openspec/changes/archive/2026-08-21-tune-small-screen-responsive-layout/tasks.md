@@ -36,6 +36,13 @@
 
 - [x] 7.1 Open PR in frontend with all changes and pass CI
 - [x] 7.2 Sync delta spec to main spec (`openspec sync-specs` or manual merge of `artist-discovery-dna-orb-ui`)
-- [ ] 7.3 Open specification PR for the delta-to-main sync
-- [ ] 7.4 Merge frontend PR and create a patch release
-- [ ] 7.5 Merge specification PR
+- [x] 7.3 Open specification PR for the delta-to-main sync
+- [x] 7.4 Merge frontend PR and create a patch release
+- [x] 7.5 Merge specification PR
+
+## 8. Bug fixes (post-ship)
+
+- [x] 8.1 Fix media query threshold: `@media (height <= 640px)` did not fire at iPhone SE Chrome DevTools (667px); corrected to `@media (height <= 700px) and (width < 390px)` — v1.55.2 (PR #545)
+- [x] 8.2 Apply `displayLimit` in reconcile path of `artistsChanged` so bubble cap holds after following artists — v1.55.3 (PR #546)
+- [x] 8.3 Add `mask-image` fade to `.bubble-area` top edge to prevent hard-clipping at genre-chip bar — v1.55.3 (PR #546)
+- [x] 8.4 Update delta spec and main spec (`artist-discovery-dna-orb-ui`) to reflect reconcile cap and top-edge fade — spec PR #827
