@@ -119,7 +119,17 @@ operator containing a link of the form
 The `login_hint` is a first-sign-in UX aid only; the console does not require
 it to be present (returning operators sign in without it). The invite-code and
 email-delivery responsibilities belong to the backend provisioner — see the
-design D5 note and task 4.3.
+design D5/D6/D7 notes and task 4.3.
+
+The onboarding entry URL SHALL carry only `org_id` and `login_hint` (a
+non-secret email hint) — **never** the invite code or any other credential. The
+invite is redeemed on the Zitadel surface (`auth.{base}`), not passed through
+the console, because a secret in a public-SPA URL leaks via browser history,
+the `Referer` header, and access logs (design D6). Consequently first-time
+onboarding involves **two emails**: the custom invitation (console URL, no
+secret) and Zitadel's redemption OTP (IdP-side; the app never touches it). The
+OTP is a fresh mailbox-possession check at credential binding, not a redundant
+re-verification of the already-verified email.
 
 #### Scenario: Invitation link pre-fills the operator's email on first sign-in
 
@@ -139,3 +149,11 @@ design D5 note and task 4.3.
   (no `login_hint`)
 - **THEN** the console SHALL initiate the OIDC flow with the `org:id` scope only
 - **AND** Zitadel SHALL authenticate the operator using their existing passkey
+
+#### Scenario: The onboarding entry URL carries no credential
+
+- **WHEN** the backend provisioner builds the operator's invitation link
+- **THEN** the link SHALL contain only `org_id` and `login_hint`
+- **AND** it SHALL NOT contain the invite code or any other credential
+- **AND** the invite SHALL be redeemed on the Zitadel surface, not passed
+  through the console
