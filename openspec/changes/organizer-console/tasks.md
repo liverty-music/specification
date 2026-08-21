@@ -24,6 +24,10 @@
 
 - [x] 4.1 `shared/services/auth-service.ts`: add optional `loginHint` to `signIn(options?)` and pass to `signinRedirect({ login_hint })`
 - [x] 4.2 `organizer/main.ts`: read `login_hint` URL param → store alongside `org_id` → pass to `signIn()` on first guard redirect
-- [ ] 4.3 `organizer-accounts` backend: remove `CreatePasskeyRegistrationLink`; send custom Postmark invitation email with `organizer.{base}/?org_id=<tenantOrgId>&login_hint=<email>` (separate PR in backend repo)
+- [ ] 4.3 `organizer-accounts` backend provisioner (separate PR in backend repo), per design D5:
+  - [ ] 4.3.1 remove the `CreatePasskeyRegistrationLink(SendLink)` call (the broken dead-end email)
+  - [ ] 4.3.2 add `CreateInviteCode(ReturnCode)` for the operator so Login v2 can drive first-auth-method setup (WITHOUT it the invited operator hits an empty Login v2 form — verified 2026-08-21)
+  - [ ] 4.3.3 send a custom Postmark invitation email whose link is the console URL `organizer.{base}/?org_id=<tenantOrgId>&login_hint=<email>` (NOT a Zitadel setup-page URL — those cannot carry an authRequest and dead-end at `signedin`)
+  - [ ] 4.3.4 keep the init-link (re)send FATAL on failure (provisioning must not report success if the operator can't be onboarded)
 - [x] 4.4 `make check` passes for frontend changes
 - [x] 4.5 E2E verify: invitation email → console → Zitadel invite flow → passkey → `/welcome`. login_hint confirmed live in prod (v1.57.0, 2026-08-21): `?org_id=387082387839779151&login_hint=pannpers%2Borg-test-7%40pannpers.dev` → Zitadel redirect carries `loginName=<email>&submit=true&organization=<id>` — email pre-filled AND auto-submitted by Zitadel (operator skips the email entry step entirely, goes directly to passkey auth). Exceeds the spec requirement.

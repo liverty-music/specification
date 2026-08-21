@@ -106,23 +106,32 @@ operator containing a link of the form
 1. pins the tenant org via the `org:id` scope (existing org-handle logic);
 2. pre-fills the email via `login_hint` so the operator skips the email entry
    step in Zitadel's login UI;
-3. for uninitialized operators (no passkey registered), Zitadel's login v2
-   automatically detects the absence of authentication methods and sends an
-   "Invitation to Zitadel Login" email; clicking "Accept invite" guides the
-   operator through passkey registration **within the OIDC auth-request
-   context**, so the flow completes with a redirect to `/auth/callback` →
-   `/welcome` with no dead-end.
+3. for uninitialized operators (no passkey registered), Zitadel's Login v2
+   guides passkey registration **within the OIDC auth-request context** —
+   provided the backend has created a pending **invite code** for the operator
+   (Zitadel `CreateInviteCode`). Login v2 detects the invited user, sends a
+   verification-code email, and after the code + passkey ceremony finalises the
+   in-flight OIDC auth request, redirecting to `/auth/callback` → `/welcome`
+   with no dead-end. Without an invite code, Login v2 has no auth method to
+   offer a passwordless-only operator and renders an empty login form (verified
+   dead-end, 2026-08-21); provisioning MUST therefore create the invite code.
 
 The `login_hint` is a first-sign-in UX aid only; the console does not require
-it to be present (returning operators sign in without it).
+it to be present (returning operators sign in without it). The invite-code and
+email-delivery responsibilities belong to the backend provisioner — see the
+design D5 note and task 4.3.
 
 #### Scenario: Invitation link pre-fills the operator's email on first sign-in
 
 - **WHEN** an operator follows an invitation link containing `?org_id=<id>&login_hint=<email>`
 - **THEN** the console SHALL pass `login_hint` to the OIDC authorization request
 - **AND** Zitadel SHALL display the login form with the operator's email pre-filled
-- **AND** for an uninitialized operator, Zitadel SHALL guide passkey registration
-  within the OIDC flow and redirect to `/auth/callback` on completion
+- **AND** for an uninitialized operator **who has a pending invite code**, Zitadel
+  SHALL guide passkey registration within the OIDC flow and redirect to
+  `/auth/callback` on completion
+- **AND** for an uninitialized operator **with no invite code**, Zitadel SHALL
+  render an empty login form (no auth method to offer) — so provisioning MUST
+  create the invite code before inviting the operator
 
 #### Scenario: Returning operator signs in without login_hint
 

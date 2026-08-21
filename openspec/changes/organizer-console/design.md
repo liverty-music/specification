@@ -54,23 +54,48 @@ Zitadel v4.14.0 — code marked consumed on first click regardless of whether th
 passkey ceremony succeeds), making retries impossible and leaving the operator
 stranded on a Zitadel error page with no path back to the console.
 
-Verified live (2026-08-21): sending the operator to
-`organizer.{base}/?org_id=<tenantOrgId>&login_hint=<email>` initiates a normal
-OIDC flow. Zitadel's login v2 detects the uninitialized user (no passkeys
-registered in a passwordless-only org) and automatically sends an "Invitation to
-Zitadel Login" email (branded as Liverty Music, from our domain). The operator
-clicks "Accept invite", completes the passkey ceremony, and Zitadel finalises
-the in-flight OIDC auth request, redirecting to `/auth/callback` → `/welcome`.
-No dead-end; retries are possible at any step; the `#12499` bug is avoided
-entirely because `passkey/set` is never used.
+Verified live (2026-08-21, hosted Login v2 on Zitadel v4.14.0, prod):
+
+- **The invite EMAIL cannot carry an OIDC auth request.** Neither
+  `SendPasskeyRegistrationLink.url_template` nor `SendInviteCode.url_template`
+  exposes an `authRequestId` placeholder (only `UserID`, `OrgID`, `Code`,
+  `CodeID`). So any email whose link lands on a Zitadel setup page (`passkey/set`
+  or the invite-verify page) completes auth-method setup **outside** any auth
+  request and dead-ends on the `signedin` page with no way back to the console.
+  The onboarding email MUST therefore link to the **console** (which starts the
+  OIDC flow), NOT to a Zitadel setup page.
+- **An invite code is REQUIRED for Login v2 to onboard a passwordless-only
+  operator.** Driving the clean console → OIDC path for a bare operator
+  (`AddHumanUser`, verified email, no passkey, **no invite code**) renders an
+  **empty Login v2 loginname form** — no input, no button, no way to proceed
+  (reproduced with and without `login_hint`). With `allow_username_password=false`
+  and `allow_register=false`, Login v2 has no auth method to offer and no invite
+  to redeem. `CreatePasskeyRegistrationLink` is NOT an invite; its code is
+  single-use-on-failure (`#12499`) and it dead-ends via the email path above.
+- **Confirmed working shape:** the console → OIDC (`requestId` preserved through
+  the redirect, verified) → Login v2 detects the **invited** user → sends a
+  verification-code email → code + passkey ceremony → finalises the in-flight
+  auth request → `/auth/callback` → `/welcome`. `login_hint` pre-fills the email
+  and auto-submits the loginname step (verified: `loginName=<email>&submit=true`).
 
 The backend provisioner (organizer-accounts) SHALL therefore:
-- remove the `CreatePasskeyRegistrationLink` call, and
+- remove the `CreatePasskeyRegistrationLink` call (the broken dead-end email),
+- call `CreateInviteCode` (v2 User API, `ReturnCode` — we deliver the entry
+  point ourselves) so Login v2 can drive first-auth-method setup for the
+  invited operator, and
 - send a custom invitation email (via the existing Postmark notification
-  infrastructure) containing the console URL with `?org_id=<id>&login_hint=<email>`.
+  infrastructure) whose link is the **console** URL with
+  `?org_id=<id>&login_hint=<email>` — never a Zitadel setup-page URL.
 
 The `login_hint` is passed through the OIDC authorization request to pre-fill
 the operator's email in Zitadel's login page, eliminating one manual input step.
+
+**Open validation (positive path):** the empty-form dead-end (no invite) is
+confirmed; the positive path (invite code present → onboarding completes →
+`/welcome`) will be confirmed end-to-end once task 4.3 lands `CreateInviteCode`
+and a fresh org is driven through. The design is grounded on the confirmed
+negative result + the Zitadel docs (CreateInviteCode is the canonical B2B
+invite API) + the earlier org-test-7 completion.
 
 ## Risks / Trade-offs
 
