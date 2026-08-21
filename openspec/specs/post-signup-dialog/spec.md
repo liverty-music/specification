@@ -64,14 +64,14 @@ The system SHALL display a dialog after the first successful signup that consoli
 - **WHEN** the PostSignupDialog is displayed
 - **AND** `PwaInstallService.browserSupportsPwa` is `false` (browser lacks `BeforeInstallPromptEvent`, i.e. iOS Safari)
 - **THEN** the PWA install row SHALL NOT be shown in the dialog
-- **AND** the persistent FAB instruction sheet provides the iOS install path instead
+- **AND** the persistent `pwa-install-banner` provides the iOS install path instead
 
 #### Scenario: Dialog dismissed
 
 - **WHEN** the user taps the dismiss button
 - **THEN** the PostSignupDialog SHALL close
 - **AND** the notification prompt SHALL NOT be shown again in the same session (coordinated via `IPromptCoordinator`)
-- **AND** the PWA install FAB SHALL remain visible (it is not affected by PostSignupDialog dismissal)
+- **AND** the `pwa-install-banner` SHALL become visible (it is not suppressed by PostSignupDialog dismissal)
 
 ### Requirement: Dialog reliably opens when active is true at creation time
 The PostSignupDialog SHALL reliably open when `active` is bound to `true` at component creation time, not only when `active` transitions from `false` to `true` after the component is attached.
