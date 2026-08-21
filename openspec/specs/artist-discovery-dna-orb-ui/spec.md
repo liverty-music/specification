@@ -265,7 +265,10 @@ On narrow canvases (width < 390px), the system SHALL limit the number of simulta
 #### Scenario: Bubble field fills toward the orb on narrow screens
 - **WHEN** the Discovery canvas width is less than 390px
 - **THEN** artist bubbles SHALL be distributed down the canvas toward the orb so that no large empty gap remains between the bubble cluster and the orb
-- **AND** on wider screens the existing bubble distribution SHALL be preserved
+
+#### Scenario: Bubble distribution is unchanged on wider screens
+- **WHEN** the Discovery canvas width is 390px or greater
+- **THEN** the existing bubble distribution SHALL be preserved
 
 ---
 
