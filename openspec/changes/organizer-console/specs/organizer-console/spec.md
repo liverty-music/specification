@@ -26,14 +26,14 @@ the consumer SPA's downloaded bundle size or regress its Core Web Vitals.
 The organizer console SHALL authenticate operators through Zitadel OIDC
 (PKCE, no client secret) using the shared `organizer-console` client, with
 the operator's tenant org resolved by **org-pinned entry** — NOT by email
-domain. The org is fixed by *where the operator enters*: the org-scoped
-passkey init link on first sign-in, then an **org handle** (an org code/slug
-in the URL, or a remembered `org_id`, or an app-level "email me a sign-in
-link"), which the console turns into the Zitadel
-`urn:zitadel:iam:org:id:<orgId>` scope on the OIDC request. There is no fixed
-org id at build time and no org picker. (Email-domain discovery is a future
-optional enhancement per `organizer-tenancy`, not used here — so consumer /
-free-mail operators work without per-tenant domain verification.)
+domain. The org is fixed by *where the operator enters*: an **invitation link**
+on first sign-in (see `login_hint` requirement below), then an **org handle**
+(an `org_id` carried in the URL, or a remembered `org_id`), which the console
+turns into the Zitadel `urn:zitadel:iam:org:id:<orgId>` scope on the OIDC
+request. There is no fixed org id at build time and no org picker.
+(Email-domain discovery is a future optional enhancement per
+`organizer-tenancy`, not used here — so consumer / free-mail operators work
+without per-tenant domain verification.)
 
 #### Scenario: Operator signs in and is routed to their org by org-pinned entry
 
@@ -93,3 +93,40 @@ email domain.
   id, and the organizer `apiBaseUrl`
 - **AND** it SHALL NOT require a fixed organization id (the org is resolved
   per session by org-pinned entry)
+
+### Requirement: login_hint pre-fill for first-time sign-in
+
+The organizer console SHALL accept a `login_hint` query parameter on entry and
+pass it to the OIDC authorization request so Zitadel pre-fills the operator's
+email address in the login form. This is the first-time sign-in mechanism: the
+provisioning backend (organizer-accounts) sends an invitation email to the
+operator containing a link of the form
+`organizer.{base}/?org_id=<tenantOrgId>&login_hint=<email>`. Clicking it:
+
+1. pins the tenant org via the `org:id` scope (existing org-handle logic);
+2. pre-fills the email via `login_hint` so the operator skips the email entry
+   step in Zitadel's login UI;
+3. for uninitialized operators (no passkey registered), Zitadel's login v2
+   automatically detects the absence of authentication methods and sends an
+   "Invitation to Zitadel Login" email; clicking "Accept invite" guides the
+   operator through passkey registration **within the OIDC auth-request
+   context**, so the flow completes with a redirect to `/auth/callback` →
+   `/welcome` with no dead-end.
+
+The `login_hint` is a first-sign-in UX aid only; the console does not require
+it to be present (returning operators sign in without it).
+
+#### Scenario: Invitation link pre-fills the operator's email on first sign-in
+
+- **WHEN** an operator follows an invitation link containing `?org_id=<id>&login_hint=<email>`
+- **THEN** the console SHALL pass `login_hint` to the OIDC authorization request
+- **AND** Zitadel SHALL display the login form with the operator's email pre-filled
+- **AND** for an uninitialized operator, Zitadel SHALL guide passkey registration
+  within the OIDC flow and redirect to `/auth/callback` on completion
+
+#### Scenario: Returning operator signs in without login_hint
+
+- **WHEN** a returning operator navigates to the console with only `?org_id=<id>`
+  (no `login_hint`)
+- **THEN** the console SHALL initiate the OIDC flow with the `org:id` scope only
+- **AND** Zitadel SHALL authenticate the operator using their existing passkey
