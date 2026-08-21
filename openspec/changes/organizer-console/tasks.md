@@ -22,8 +22,8 @@
 
 ## 4. Onboarding UX — login_hint + invitation email (remaining work)
 
-- [ ] 4.1 `shared/services/auth-service.ts`: add optional `loginHint` to `signIn(options?)` and pass to `signinRedirect({ login_hint })`
-- [ ] 4.2 `organizer/main.ts`: read `login_hint` URL param → store alongside `org_id` → pass to `signIn()` on first guard redirect
+- [x] 4.1 `shared/services/auth-service.ts`: add optional `loginHint` to `signIn(options?)` and pass to `signinRedirect({ login_hint })`
+- [x] 4.2 `organizer/main.ts`: read `login_hint` URL param → store alongside `org_id` → pass to `signIn()` on first guard redirect
 - [ ] 4.3 `organizer-accounts` backend: remove `CreatePasskeyRegistrationLink`; send custom Postmark invitation email with `organizer.{base}/?org_id=<tenantOrgId>&login_hint=<email>` (separate PR in backend repo)
-- [ ] 4.4 `make check` passes for frontend changes
-- [ ] 4.5 E2E verify: invitation email → console → Zitadel invite flow → passkey → `/welcome`
+- [x] 4.4 `make check` passes for frontend changes
+- [x] 4.5 E2E verify: invitation email → console → Zitadel invite flow → passkey → `/welcome` — confirmed live 2026-08-21 with `pannpers+org-test-7@pannpers.dev` (org `387082387839779151`): `?org_id=<id>` → OIDC → Zitadel "Invitation to Zitadel Login" email → "Accept invite" → passkey ceremony → `/welcome`. The `login_hint` pre-fill improvement remains pending the backend email change (4.3).
