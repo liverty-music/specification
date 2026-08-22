@@ -68,6 +68,9 @@ reception check-in PWA.
 - **cloud-provisioning**: the `organizer.{base}` host (HTTPRoute, cert, Cloud
   DNS) + per-host ConfigMap; mirrors `admin-console-hosting`. No proto changes.
 - **backend (organizer-accounts provisioner)**: replace
-  `CreatePasskeyRegistrationLink` with a custom invitation email (Postmark)
-  containing the console URL with `?org_id=<id>&login_hint=<email>`; no other
-  backend changes.
+  `CreatePasskeyRegistrationLink` with `CreateInviteCode(SendInviteCode)` whose
+  `url_template` points at the console
+  (`organizer.{base}/?org_id=<id>&login_hint=<email>`, code omitted). Zitadel's
+  own SMTP sends the branded invitation email — the backend has no direct
+  email/SMTP infrastructure — so no new backend email code and no other backend
+  changes. See design D5.
