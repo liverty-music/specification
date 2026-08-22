@@ -87,15 +87,18 @@ Verified live (2026-08-21, hosted Login v2 on Zitadel v4.14.0, prod):
   and returns to the console. Since `AddHumanUser` already sets
   `email.isVerified=true`, `send=true` and Login v2 sends the verification code
   automatically. This is exactly the org-test-7 onboarding.
-- **Correction of an earlier misread:** an initial live test on `org-test-1`
-  showed an *empty* Login v2 loginname form, which this design previously
-  interpreted as "no invite ⇒ dead-end, so an invite is required." The source
-  shows a valid no-auth user is routed to `/verify`, NOT to an empty form — the
-  empty form is the *no-user-found* branch (`loginName` matched 0 users; with
-  `allow_register=false` no registration UI renders). `org-test-1`'s operator
-  had almost certainly been deleted/torn down by earlier cleanup. The invite is
-  NOT a functional prerequisite; `CreateInviteCode` below is used purely as the
-  **email transport** (the backend has no SMTP of its own — see next section).
+- **Correction of an earlier misread (the empty loginname card was a login-policy
+  bug, NOT a deleted user).** Two live tests showed an *empty* Login v2 loginname
+  card. This design previously guessed it was the *no-user-found* branch (a
+  deleted operator). That was WRONG — see decision **D6**: the tenant login policy
+  set `allow_username_password=false`, which disables the username-entry form
+  entirely (that field gates ALL local authentication — username + passkey OR
+  password — not just passwords), so with no external IdP configured the operator
+  had nothing to click. The empty card was the policy, reproducibly, for a
+  perfectly valid operator. Fixed in backend **v1.39.0** (D6). The invite itself
+  is still NOT a functional prerequisite; `CreateInviteCode` below is used purely
+  as the **email transport** (the backend has no SMTP of its own — see next
+  section).
 
 The backend provisioner (organizer-accounts) SHALL therefore:
 - remove the `CreatePasskeyRegistrationLink` call (the broken dead-end email),
@@ -148,14 +151,70 @@ the redirect, verified) → Login v2 routes the no-auth operator into `/verify`
 → verification code + passkey → `completeFlowOrGetUrl(requestId)` finalises the
 in-flight auth request → `/auth/callback` → `/welcome`.
 
-**Open validation (positive path):** the onboarding routing is source-confirmed
-and org-test-7 completed end-to-end. What remains to confirm in prod is the
-specific `CreateInviteCode(SendInviteCode, url_template→console, login_hint
-baked, code omitted)` call — the email renders the expected console link and a
-fresh, genuinely-uninitialized operator lands on `/welcome` — once task 4.3
-lands. (An earlier `org-test-1` "empty form" was NOT evidence of an
-invite-required dead-end; per the source it is the no-user-found branch, i.e. a
-deleted operator — see the loginname note above.)
+**VERIFIED end-to-end in prod (2026-08-22, backend v1.39.0 + frontend v1.57.5).**
+A fresh, genuinely-uninitialized operator (`org-test-21`) completed the full
+path: `CreateInviteCode(SendInviteCode, url_template→console, login_hint baked,
+code omitted)` rendered the expected console link → "Accept invite" → console
+(org pinned via `org:id` scope, `login_hint` auto-submits the loginname step) →
+Login v2 `/verify` (code) → passkey registration → `/auth/callback` →
+**`/welcome`** (owner-gated placeholder showing the operator email). Confirmed at
+the identity layer too: the tenant login policy read back
+`allowUsernamePassword=true` and the operator's only auth method is a passkey.
+
+## D6 — Tenant login policy MUST enable local authentication (`allow_username_password=true`)
+
+**The provisioner originally set `allow_username_password=false`, which broke
+onboarding.** Despite its name, that Management-API field (the deprecated alias
+of `allow_local_authentication`) gates ALL *local* authentication — logging in
+with a username plus a **passkey** OR a password — not just passwords. Zitadel's
+own field doc: *"If enabled, users can log in locally with their username and
+passkeys or password. Disabling this option will require users to log in with an
+external identity provider."* With it `false`, hosted Login v2's loginname page
+renders no username-entry form (it gates `<UsernameForm>` on
+`allowLocalAuthentication`), and since the tenant org has no external IdP, the
+invited operator lands on an empty login card — the onboarding entry point is
+gone. This stayed latent until the console-first flow (v1.38.0) exercised the
+loginname step directly; an earlier "success" had bypassed loginname via the
+pre-v1.38.0 email-direct path.
+
+**Fix (backend v1.39.0):** `ensureLoginPolicy` sets `allow_username_password=true`.
+Passkey-primary is achieved by `PasswordlessType=ALLOWED` **plus never setting a
+password on the operator** (already the case) — NOT by disabling local auth; with
+no password on file the operator's only usable local method remains the passkey,
+while the username form renders so they can enter the invite flow.
+`AddCustomLoginPolicy` is create-only, so orgs provisioned with the old policy are
+converged in place via `UpdateCustomLoginPolicy` on the AlreadyExists path
+(idempotent saga). Proven in prod: `org-test-20` (pre-fix) read back
+`allowUsernamePassword=false`, `org-test-21` (v1.39.0) read back `true`.
+
+## D7 — Console callback self-heals a cross-context OIDC `state` miss (frontend v1.57.5)
+
+During prod verification, an operator hit a dead-end
+`Login failed: No matching state found in storage` after a **successful** passkey
+ceremony. Root cause: oidc-client-ts stores the transient signin `state` in the
+originating context's `localStorage`; when the callback carries a `state` whose
+`signinRedirect` ran in a **different browsing context** (a duplicate
+Zitadel-sent invitation opened elsewhere / a second tab — see the duplicate-email
+note below), this context never held that state and `signinCallback` throws. The
+console rendered a terminal error with no path forward. This is not a systemic
+bug — a clean single-context sign-in reaches `/welcome`.
+
+**Fix:** `AuthCallbackRoute` treats that specific error as recoverable and
+restarts the OIDC flow **once** from this context (fresh `signinRedirect` writes a
+state here; the operator still holds a Zitadel session so it round-trips without
+re-auth). Bounded by a one-shot `sessionStorage` flag (fails closed if storage is
+unavailable, clears on success) so a genuinely broken store cannot loop.
+
+**Duplicate invitation emails (upstream Zitadel, tracked separately).** Postmark
+showed the operator receiving two identical "Invitation to Zitadel Login" emails.
+Root cause (confirmed in Zitadel logs): the **backend sends exactly one**
+`CreateInviteCode` (`application_name="Liverty Organizer"`); the duplicates are
+issued by the **hosted Login v2 app itself**, which re-fires `CreateInviteCode`
+(default app name → "Zitadel Login") on every render of `/verify?invite=true`
+without a session — the operator's browser loaded that page twice. Not fixable in
+our code; filed as an upstream/tracking issue. Harmless (identical links, no code
+in the link), and it is the trigger for the multi-context `state` miss that D7
+now self-heals.
 
 ## Risks / Trade-offs
 

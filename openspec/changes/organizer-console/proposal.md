@@ -67,10 +67,16 @@ reception check-in PWA.
   organizer module.
 - **cloud-provisioning**: the `organizer.{base}` host (HTTPRoute, cert, Cloud
   DNS) + per-host ConfigMap; mirrors `admin-console-hosting`. No proto changes.
-- **backend (organizer-accounts provisioner)**: replace
+- **backend (organizer-accounts provisioner)**: (a) replace
   `CreatePasskeyRegistrationLink` with `CreateInviteCode(SendInviteCode)` whose
   `url_template` points at the console
   (`organizer.{base}/?org_id=<id>&login_hint=<email>`, code omitted). Zitadel's
   own SMTP sends the branded invitation email — the backend has no direct
-  email/SMTP infrastructure — so no new backend email code and no other backend
-  changes. See design D5.
+  email/SMTP infrastructure. See design D5. (b) **v1.39.0 fix (D6):** set the
+  tenant login policy's `allow_username_password=true` (it gates the loginname
+  username form + all local/passkey auth, not just passwords) and converge
+  existing orgs via `UpdateCustomLoginPolicy`; `false` left invited operators on
+  an empty login card.
+- **frontend (v1.57.5 fix, D7):** `AuthCallbackRoute` self-heals a cross-context
+  `No matching state found in storage` (duplicate-invite / multi-context) by
+  restarting the OIDC flow once (one-shot guard).
