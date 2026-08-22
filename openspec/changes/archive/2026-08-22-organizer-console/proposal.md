@@ -15,10 +15,17 @@ Depends on `organizer-tenancy` (the `organizer-console` OIDC app).
   bundle-isolated from the consumer SPA and the admin console (no organizer
   code in the consumer chunk graph).
 - Authenticate via Zitadel OIDC using the shared `organizer-console` client;
-  the operator's tenant org is resolved by **org-pinned entry** (an org
-  handle — org code/slug, remembered `org_id`, or re-issued sign-in link →
-  the `org:id` scope), NOT email domain (no fixed org id at build time, no
-  org picker).
+  the operator's tenant org is resolved by **org-pinned entry** (an `org_id`
+  in the URL or a remembered `org_id` → the `org:id` scope), NOT email domain
+  (no fixed org id at build time, no org picker).
+- Add **`login_hint` URL parameter support**: the console reads the
+  `login_hint` query parameter on entry and passes it to the OIDC
+  authorization request so Zitadel pre-fills the operator's email. Combined
+  with `org_id`, this is the first-time sign-in mechanism: the provisioning
+  backend sends one invitation email with a link of the form
+  `organizer.{base}/?org_id=<id>&login_hint=<email>`; for uninitialized
+  operators Zitadel's login v2 then handles passkey registration within the
+  OIDC auth-request context and redirects to the console on completion.
 - Add a **route guard** that inspects the token's `organizer-console` project
   roles and admits only operators holding `owner`; unauthenticated visitors
   are sent to sign-in; authenticated operators land on a post-login welcome
@@ -55,8 +62,21 @@ reception check-in PWA.
 ## Impact
 
 - **frontend**: new `organizer.html` entry (bundle-isolated), OIDC via the
-  shared client with org-pinned entry, role-claim route guard, placeholder;
-  a CI assertion that the consumer chunk graph contains no organizer module.
+  shared client with org-pinned entry + `login_hint` support, role-claim route
+  guard, placeholder; a CI assertion that the consumer chunk graph contains no
+  organizer module.
 - **cloud-provisioning**: the `organizer.{base}` host (HTTPRoute, cert, Cloud
-  DNS) + per-host ConfigMap; mirrors `admin-console-hosting`. No proto
-  changes.
+  DNS) + per-host ConfigMap; mirrors `admin-console-hosting`. No proto changes.
+- **backend (organizer-accounts provisioner)**: (a) replace
+  `CreatePasskeyRegistrationLink` with `CreateInviteCode(SendInviteCode)` whose
+  `url_template` points at the console
+  (`organizer.{base}/?org_id=<id>&login_hint=<email>`, code omitted). Zitadel's
+  own SMTP sends the branded invitation email — the backend has no direct
+  email/SMTP infrastructure. See design D5. (b) **v1.39.0 fix (D6):** set the
+  tenant login policy's `allow_username_password=true` (it gates the loginname
+  username form + all local/passkey auth, not just passwords) and converge
+  existing orgs via `UpdateCustomLoginPolicy`; `false` left invited operators on
+  an empty login card.
+- **frontend (v1.57.5 fix, D7):** `AuthCallbackRoute` self-heals a cross-context
+  `No matching state found in storage` (duplicate-invite / multi-context) by
+  restarting the OIDC flow once (one-shot guard).
