@@ -19,21 +19,21 @@
 
 ## 4. Prod rollout (approval-gated — dev is stopped, so prod-direct)
 
-- [ ] 4.1 Confirm a current prod Cloud SQL automated backup exists for `liverty-music-prod:asia-northeast2:postgres-osaka` (or take an on-demand backup) BEFORE rollout
-- [ ] 4.2 **[operator approval]** Merge the cloud-provisioning PR → ArgoCD syncs the prod overlay (operator performs the merge; do not trigger unattended)
-- [ ] 4.3 Watch the chart init/setup **schema-migration job** to success against prod Cloud SQL; confirm `zitadel-api` becomes ready only after it completes
-- [ ] 4.4 Confirm the `zitadel-api` and `zitadel-api-login` Deployments roll to `v4.17.1` (pods Running, images updated)
+- [x] 4.1 Pre-upgrade **on-demand Cloud SQL backup taken** for `postgres-osaka` (backup id `1787455349519`, 2026-08-23T03:22:29Z, SUCCESSFUL; latest automated 2026-08-22T18:00 also present)
+- [x] 4.2 Merged cloud-provisioning **PR #444** (`568c899`) after operator approval → ArgoCD (auto-sync) synced the prod overlay to `568c899`
+- [x] 4.3 The chart `zitadel-api-setup` **schema-migration job re-ran and completed** (13s; log `setup completed version=v4.17.1`) before `zitadel-api` became ready; `zitadel-api-init` + `zitadel-db-grant` also Complete
+- [x] 4.4 `zitadel-api` (2/2) and `zitadel-api-login` (1/1) Deployments rolled to **`v4.17.1`**, pods Running, old pods terminated; `rollout status` successful
 
 ## 5. Post-upgrade verification (prod)
 
-- [ ] 5.1 `https://auth.liverty-music.app/.well-known/openid-configuration` returns the discovery document with `issuer=https://auth.liverty-music.app`
-- [ ] 5.2 Hosted Login V2 real end-to-end sign-in succeeds for the **consumer** app
-- [ ] 5.3 Hosted Login V2 real end-to-end sign-in succeeds for the **organizer console** (org-pinned passkey login → `/welcome`)
-- [ ] 5.4 API logs show NO `Errors.Instance.NotFound` for cluster-internal Login V2 calls (the `InstanceHostHeaders` / `x-zitadel-public-host` resolution still holds on v4.17.1)
-- [ ] 5.5 Confirm the upgrade did not reintroduce the (previously-removed) `#10103` watchdog CronJob; the documented wedge recovery remains `kubectl rollout restart deploy/zitadel-api`
-- [ ] 5.6 Rollback path validated on paper: re-pin v4.14.0 (+ restore-from-backup only if the schema advanced and v4.14.0 will not boot)
+- [x] 5.1 `…/.well-known/openid-configuration` returns `issuer=https://auth.liverty-music.app` ✅; `/debug/healthz` HTTP 200
+- [x] 5.2 Hosted Login V2 real end-to-end sign-in **confirmed** for the **consumer** app (user-verified 2026-08-23 on v4.17.1)
+- [x] 5.3 Hosted Login V2 real end-to-end sign-in **confirmed** for the **organizer console** (org-pinned passkey → `/welcome`, user-verified 2026-08-23 on v4.17.1)
+- [x] 5.4 API logs show **0** `Errors.Instance.NotFound` for cluster-internal Login V2 calls on the new pods (the `x-zitadel-public-host` resolution holds on v4.17.1 — the old prod-504 risk is clear)
+- [x] 5.5 Confirmed the upgrade did **not** reintroduce the `#10103` watchdog CronJob (none present); wedge recovery remains `kubectl rollout restart deploy/zitadel-api`
+- [x] 5.6 Rollback path validated on paper: re-pin v4.14.0 (+ restore from backup `1787455349519` only if the schema advanced and v4.14.0 will not boot)
 
 ## 6. Close-out
 
-- [ ] 6.1 Update memory / notes with the shipped version + any config deltas found
-- [ ] 6.2 Archive the change once prod is verified (verify-before-archive → `/opsx:archive`)
+- [x] 6.1 Updated memory: prod upgraded v4.14.0→v4.17.1 2026-08-23; corrected the stale "watchdog stays" index line (watchdog was removed cp#429, not retained)
+- [x] 6.2 Archive the change once prod is verified (verify-before-archive → `/opsx:archive`)
