@@ -2,42 +2,50 @@
 
 ## Purpose
 
-Provides a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, using a native `<dialog>` element opened via `showModal()` with CSS scroll-snap dismiss via an internal scroll container.
+Provides a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, promoted to the Top Layer via a non-modal `popover` (`<dialog popover="manual">` shown with `showPopover()`), with CSS scroll-snap dismiss driven by an `IntersectionObserver` on the sheet body; focus-trap, background `inert`, and Escape are managed by the component.
 
 ## Requirements
 ### Requirement: Bottom Sheet Custom Element
-The system SHALL provide a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, using a native `<dialog>` element opened via `showModal()` (promoted to the Top Layer with native focus-trap, `inert` background, and close-request handling) with CSS scroll-snap dismiss via an internal scroll container. User-initiated swipe-to-dismiss SHALL be detected via the `scrollsnapchange` event, which by specification fires only for a user scroll gesture and not for programmatic or initial-layout snap changes. The CE host (`<bottom-sheet>`) SHALL wrap an inner `<dialog>` element; the scroll container, dismiss zone, and sheet body SHALL live inside that `<dialog>`.
+The system SHALL provide a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, promoted to the Top Layer via a **non-modal `popover="manual"`** element (NOT `<dialog>.showModal()`), with CSS scroll-snap dismiss via an internal scroll container. The open/closed lifecycle SHALL be driven by an `IntersectionObserver` on the sheet body as the single source of truth: all dismiss paths (swipe, tap-outside, ESC, Android back, programmatic) converge in its callback. Dismissing SHALL be performed by scrolling the container to the closed snap stop; the popover SHALL be hidden (`hidePopover()`) only after the observer confirms the sheet has left the viewport, so the dismiss scroll itself is the (native, momentum-driven, interruptible) close animation. Because a `popover` is non-modal, the CE SHALL manage focus-trap, background `inert`, and the Escape close request itself.
 
 #### Scenario: Basic open/close via bindable
 - **WHEN** `<bottom-sheet open.bind="isOpen">` has `open` set to `true`
-- **THEN** the CE SHALL call `showModal()` on the inner `<dialog>` element (via `ref`)
-- **AND** the `<dialog>` SHALL be promoted to the Top Layer with the rest of the document made `inert`
-- **AND** the sheet-body SHALL be visible at the bottom of the viewport via CSS `initial-snap` animation (no JS `scrollTo` required)
+- **THEN** the CE SHALL call `showPopover()` on the popover element (via `ref`)
+- **AND** the popover SHALL be promoted to the Top Layer
+- **AND** the CE SHALL set the rest of the document `inert` and move focus into the sheet body
+- **AND** the sheet-body SHALL be visible at the bottom of the viewport via the CSS `initial-snap` animation (no JS `scrollTo` required on open)
 - **WHEN** `open` is set to `false`
-- **THEN** the CE SHALL call `close()` on the inner `<dialog>` and the sheet SHALL animate out within 160ms
+- **THEN** the CE SHALL scroll `.scroll-area` to the closed snap stop (the dismiss zone) and SHALL call `hidePopover()` only after the `IntersectionObserver` reports the sheet body has left the viewport
 
 #### Scenario: Open bound to true at component creation time
 - **WHEN** `open` is bound to `true` at initial bind time (before `attached()`)
 - **AND** `openChanged(true)` is called during the `binding` phase
-- **THEN** `showModal()` SHALL be called but MAY fail silently if the inner `<dialog>` ref is not yet resolved
-- **AND** the error SHALL be caught and suppressed (matching the existing `close()` try-catch pattern)
-- **AND** the `attached()` lifecycle hook SHALL retry via `if (this.open) this.openChanged(true)` after the `<dialog>` ref is initialized
+- **THEN** `showPopover()` SHALL be called but MAY fail silently if the popover ref is not yet resolved
+- **AND** the error SHALL be caught and suppressed (matching the existing `hidePopover()` try-catch pattern)
+- **AND** the `attached()` lifecycle hook SHALL retry via `if (this.open) this.openChanged(true)` after the popover ref is initialized
 - **AND** the sheet SHALL open successfully at `attached()` time
 
 #### Scenario: DOM structure
 - **WHEN** the sheet is rendered
-- **THEN** the CE host (`<bottom-sheet>`) SHALL contain an inner `<dialog>` element as the Top-Layer / modal host
-- **AND** the `<dialog>` SHALL have an accessible name (`aria-label` or `aria-labelledby`) and SHALL NOT require a manually-set `role` (the native `<dialog>` role suffices)
-- **AND** the internal DOM SHALL be `dialog > .scroll-area > .dismiss-zone + section.sheet-body`
-- **AND** `.scroll-area` SHALL be a `<div>` element serving as the scroll-snap container (`overflow-y: auto`, `scroll-snap-type: y mandatory`, `block-size: 100dvh`)
-- **NOTE** `.scroll-area` MUST use `100dvh` (not `100%`) because percentage block-size does not resolve against the `<dialog>`'s fixed-position height inside the Top Layer — the scroll container would expand to content size, preventing overflow and disabling scroll-snap
+- **THEN** the CE host (`<bottom-sheet>`) SHALL contain a popover element (`popover="manual"`) as the Top-Layer host
+- **AND** the popover host SHALL have an accessible name (`aria-label` or `aria-labelledby`) and SHALL carry `role="dialog"` and `aria-modal="true"` (a `popover` has no implicit dialog semantics, so these SHALL be set explicitly)
+- **AND** the internal DOM SHALL be `[popover] > .scroll-area > .dismiss-zone + section.sheet-body`
+- **AND** `.scroll-area` SHALL be a `<div>` element serving as the scroll-snap container (`overflow-y: auto`, `scroll-snap-type: y mandatory`, `block-size: 100svh`, `overscroll-behavior: none`)
+- **NOTE** `.scroll-area` MUST use viewport-relative height (`100svh`, not `100%`) because percentage block-size does not resolve against the popover's fixed-position height inside the Top Layer — the scroll container would expand to content size, preventing overflow and disabling scroll-snap. `svh` (not `dvh`/`vh`) is used so the height does not jump when the iOS Safari address bar resizes mid-swipe.
 - **AND** `.sheet-body` SHALL be a `<section>` element (semantic content container) with `contain: layout`
-- **AND** the `::backdrop` pseudo-element SHALL belong to the inner `<dialog>`
+- **AND** the `::backdrop` pseudo-element SHALL belong to the popover host
 
 #### Scenario: Background inert and focus trap
-- **WHEN** the sheet is open (`showModal()`)
-- **THEN** all content outside the `<dialog>` SHALL be `inert` (not focusable, not reachable by Tab or assistive technology)
-- **AND** keyboard focus SHALL be trapped within the `<dialog>` until it closes
+- **WHEN** the sheet is open
+- **THEN** the CE SHALL make all content outside the popover `inert` (not focusable, not reachable by Tab or assistive technology)
+- **AND** keyboard focus SHALL be trapped within the sheet until it closes
+- **NOTE** Because `popover` (unlike `<dialog>.showModal()`) does not provide `inert` or a focus trap natively, the CE SHALL apply `inert` to the document (or the app shell root) while open and remove it on close.
+
+#### Scenario: Background interactive during the close animation
+- **WHEN** the user dismisses the sheet and the close scroll begins
+- **THEN** the CE SHALL lift the background `inert` as soon as the dismiss is underway (not only after the popover is fully hidden)
+- **AND** the user SHALL be able to interact with background content (e.g. tap another concert card) during the close animation without waiting for the sheet to fully close
+- **NOTE** This removes the prior "operation lock", where the modal `<dialog>` `::backdrop` plus `overlay ... allow-discrete` blocked all background pointer events for the entire close animation.
 
 #### Scenario: Layout stability with dynamic sheet content
 - **WHEN** content inside `.sheet-body` changes layout (e.g., a checkbox is checked, an element toggles `display`)
@@ -46,43 +54,47 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 - **NOTE** This is enforced by `contain: layout` on `.sheet-body`. Without it, Chromium's scroll-snap re-evaluation inside a Top-Layer container incorrectly offsets `.scroll-area` by `-scrollTop` pixels when a child layout change triggers a re-snap. This is a Chromium rendering bug. `contain: layout` prevents child layout changes from propagating to `.scroll-area`. When Chromium fixes this bug, `contain: layout` MAY be removed — the regression guard is the artist-filter chip-check E2E test.
 
 #### Scenario: Initial snap animation
-- **WHEN** the `<dialog>` opens (`showModal()`)
+- **WHEN** the popover opens (`showPopover()`)
 - **THEN** `.scroll-area` SHALL run an `initial-snap` CSS animation (`0.01s`, `animation-fill-mode: backwards`)
 - **AND** during the animation, `--_snap-align` SHALL be `none`, disabling dismiss-zone's scroll-snap-align
 - **AND** `.sheet-body` (`scroll-snap-align: end`) SHALL be the only active snap target
 - **AND** the browser SHALL snap to `.sheet-body` on open
 - **AND** after the animation completes, dismiss-zone snap SHALL restore to its CSS-determined value
-- **AND** no JavaScript `scrollTo()` or `requestAnimationFrame` SHALL be required
+- **AND** no JavaScript `scrollTo()` or `requestAnimationFrame` SHALL be required on open in browsers that support the keyframe hack
+- **NOTE** The cross-browser `initial-snap` keyframe hack is retained deliberately. The declarative `scroll-initial-target: nearest` alternative is Chromium-only (unsupported in Safari and Firefox as of 2026-08) and not Baseline; it SHALL replace the keyframe hack only after it reaches Baseline.
 
 #### Scenario: Scroll-snap dismiss
 - **WHEN** the sheet is open and `dismissable` is `true`
 - **THEN** `.scroll-area` SHALL have `data-dismissable="true"`
-- **AND** the dismiss zone SHALL have `scroll-snap-align: var(--_snap-align, start)` (active after initial-snap animation)
+- **AND** the dismiss zone SHALL have `scroll-snap-align: var(--_snap-align, start)` (active after the initial-snap animation)
 - **AND** swiping down (physical gesture: finger moves downward, scrollTop decreases) SHALL scroll toward the dismiss zone at the top
+- **AND** `overscroll-behavior: none` SHALL prevent the dismiss swipe from chaining into page scroll
 
 #### Scenario: Responsive swipe-down dismiss detection
-- **WHEN** the user swipes down (finger moves downward), and the user's scroll gesture rests on the dismiss zone as the new snap target
-- **THEN** the CE SHALL detect the dismiss via the `scrollsnapchange` event (whose `snapTargetBlock` is the dismiss zone)
-- **AND** the CE SHALL set `open` to `false`, call `close()`, and dispatch `sheet-closed`
-- **AND** the close SHALL NOT be gated on any `scrollend` settle, so dismiss does not wait on UA-controlled settle latency
-- **NOTE** `scrollsnapchange` fires only for a user scroll gesture (per the CSS Scroll Snap module), so a programmatic or initial-layout re-snap to the dismiss zone SHALL NOT trigger dismiss. This replaces the prior scroll-ratio threshold detection.
+- **WHEN** the user swipes the sheet down so the sheet body scrolls off the viewport (the dismiss zone becomes the settled snap target)
+- **THEN** the CE SHALL detect the dismiss via an `IntersectionObserver` observing the sheet body's visibility within the popover
+- **AND** on the sheet body leaving the viewport the CE SHALL call `hidePopover()`, set `open` to `false`, and dispatch `sheet-closed`
+- **AND** dismiss detection SHALL NOT depend on any `scrollTop / maxScroll` ratio threshold, nor on committing `close()` on the `scrollsnapchange` event
+- **NOTE** The `IntersectionObserver` fires regardless of how the sheet moved (user swipe, programmatic close scroll, or snap settle), so every dismiss path converges in one callback. This replaces the prior `scrollsnapchange` + scroll-ratio detection.
 
 #### Scenario: Early close on pointerup at dismiss threshold
-- **WHEN** the user lifts their pointer (`pointerup`) while the scroll position is near the dismiss zone but no user-gesture snap change to the dismiss zone has occurred
+- **WHEN** the user lifts their pointer (`pointerup`) at any scroll position
 - **THEN** the CE SHALL NOT close the sheet based on a `scrollTop / maxScroll` ratio threshold
-- **AND** the prior `pointerup` (`scrollTop/max < 0.25`) and `scrollend` (`scrollRatio < 0.1`) early-close heuristics SHALL be removed, because they fire on the programmatic initial re-snap and caused the iOS/WebKit "flash then close" defect
-- **NOTE** Dismiss is now driven by `scrollsnapchange` (user-gesture-only) with an `IntersectionObserver` fallback; there is no scroll-ratio early-close path. (Title retained for spec-delta continuity; behavior is the removal of the heuristic.)
+- **AND** the prior `pointerup` (`scrollTop/max < 0.25`) and `scrollend` (`scrollRatio < 0.1`) early-close heuristics SHALL be removed
+- **AND** the CE SHALL NOT set `pointer-events: none` on `.scroll-area` to prevent bounce-back
+- **NOTE** These heuristics and the pointer-events lock are unnecessary under the scroll-to-closed-stop + `IntersectionObserver` model: the dismiss is the scroll itself and no premature `close()`/`hidePopover()` is committed mid-gesture, so there is nothing to lock against. (Title retained for spec-delta continuity; behavior is the removal of the heuristic.)
 
 #### Scenario: Dismiss detection ignores programmatic and initial-snap scroll
 - **WHEN** the sheet opens and the `initial-snap` sequence (or any programmatic scroll) momentarily rests the scroll position on the dismiss zone before settling on `.sheet-body`
 - **THEN** the CE SHALL NOT dismiss the sheet
-- **AND** dismiss SHALL be honored only for a user-initiated scroll gesture (as signalled by `scrollsnapchange` or, on non-supporting engines, by the fallback described below combined with a just-opened guard)
+- **AND** dismiss SHALL be honored only once the sheet has settled on `.sheet-body` and the sheet body subsequently leaves the viewport (guarded by the just-opened guard)
 - **NOTE** This prevents the iOS/WebKit "flash then close" defect, where the programmatic re-snap trace (scroll ratio `1 → 0`) was previously misread as a user swipe-to-dismiss by scroll-ratio heuristics.
 
 #### Scenario: Fallback dismiss detection where scrollsnapchange is unsupported
 - **WHEN** the engine does not support `scrollsnapchange` (e.g., Firefox)
-- **THEN** the CE SHALL detect a user swipe-to-dismiss via an `IntersectionObserver` that observes the dismiss zone / sheet-body crossing the viewport, rather than via `scrollend`/`pointerup` scroll-ratio heuristics
-- **AND** the fallback SHALL be armed only after the sheet has opened and settled on `.sheet-body`, so the initial snap does not trigger dismiss
+- **THEN** dismiss detection SHALL still function unchanged, because the `IntersectionObserver` (not `scrollsnapchange`) is the single primary detection mechanism across all engines
+- **AND** no `scrollend`/`pointerup` scroll-ratio fallback SHALL be required
+- **NOTE** By making `IntersectionObserver` the primary path rather than a fallback, the CE removes the engine-specific detection branching that previously distinguished Chromium (`scrollsnapchange`) from other engines.
 
 #### Scenario: Just-opened dismiss guard
 - **WHEN** the sheet has just been opened (during the open transition / before it has settled on `.sheet-body`)
@@ -90,22 +102,24 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 - **AND** the guard SHALL release once the sheet has settled on `.sheet-body`
 
 #### Scenario: Bounce-back prevention after dismiss-zone snap
-- **WHEN** a user scroll gesture changes the scroll-snap target to the dismiss zone (detected via `scrollsnapchange`)
-- **THEN** the CE SHALL immediately set `pointer-events: none` on `.scroll-area`
-- **AND** any subsequent upward swipe input SHALL be ignored by the scroll container
-- **AND** the sheet SHALL NOT re-snap to `.sheet-body` after the dismiss-zone snap is detected
-- **AND** `pointer-events` SHALL be restored to its default value in `onClose()`
+- **WHEN** the user begins a swipe-down dismiss and then reverses direction (scrolls the sheet back up) before it leaves the viewport
+- **THEN** the sheet SHALL settle back to `.sheet-body` and remain open, with no `hidePopover()` call and no `sheet-closed` event
+- **AND** after a genuine dismiss, a subsequent upward page scroll SHALL NOT cause the sheet to reappear
+- **AND** the CE SHALL achieve this WITHOUT setting `pointer-events: none` on `.scroll-area`
+- **NOTE** Because no `close()` is committed mid-gesture and there is no separate opacity/`overlay` fade competing with the scroll, reversing the gesture is honored as ordinary direct manipulation rather than being overridden — eliminating the prior bounce-back defect. (Title retained for spec-delta continuity; the mechanism changes from a pointer-events lock to not committing a premature close.)
 
 #### Scenario: Close animation completes within 160ms
-- **WHEN** the sheet is dismissed by any mechanism (swipe, tap-outside, ESC)
-- **THEN** the close transition (opacity + overlay + display) SHALL complete within 160ms
-- **NOTE** This replaces the prior 240ms duration; the shorter duration reduces perceived latency after the swipe gesture
+- **WHEN** the sheet is dismissed by any mechanism (swipe, tap-outside, ESC, Android back, programmatic)
+- **THEN** the visible close SHALL be the scroll of `.scroll-area` to the closed snap stop, coupled with the scroll-driven backdrop fade
+- **AND** `hidePopover()` SHALL be called only after the `IntersectionObserver` confirms the sheet body has left the viewport, so the slide-out is fully visible
+- **AND** the CE SHALL NOT rely on a fixed-duration opacity/`overlay allow-discrete` fade decoupled from the scroll to perform the close
+- **NOTE** Title retained for spec-delta continuity; the close is now the dismiss scroll (native momentum, honoring `prefers-reduced-motion`), not a fixed 160ms fade. The prior 160ms `--_duration` fade is removed.
 
 #### Scenario: Tap-outside dismiss
 - **WHEN** the sheet is open and `dismissable` is `true`
 - **AND** the user taps/clicks the dimmed area above the sheet body (the `.dismiss-zone`)
-- **THEN** the CE SHALL set `open` to `false`, call `close()`, and dispatch `sheet-closed`
-- **NOTE** Tap-outside is implemented as a `click` handler on the `.dismiss-zone` element, NOT via `::backdrop` and NOT via `closedby`: under full-viewport coverage the dialog box occludes the backdrop, so every tap targets a `<dialog>` descendant and neither the `::backdrop` (the `event.target === dialog` light-dismiss pattern) nor `closedby` native light-dismiss ever fires. (The `[popover]::backdrop { pointer-events: none }` UA rule applies to popovers, not `<dialog>::backdrop`, so it is not the reason here.)
+- **THEN** the CE SHALL scroll to the closed snap stop, and on the resulting off-screen detection set `open` to `false`, call `hidePopover()`, and dispatch `sheet-closed`
+- **NOTE** Tap-outside is implemented as a `click` handler on the `.dismiss-zone` element. Native popover light-dismiss is intentionally disabled by using `popover="manual"` (auto light-dismiss would also fire mid-swipe). Under full-viewport coverage the sheet-body occludes most of the surface, so the explicit `.dismiss-zone` click handler is the reliable tap-outside path.
 - **WHEN** `dismissable` is `false`
 - **THEN** the `.dismiss-zone` tap SHALL NOT close the sheet
 
@@ -117,7 +131,8 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 
 #### Scenario: Non-dismissable mode
 - **WHEN** `dismissable` is `false`
-- **THEN** the inner `<dialog>` SHALL be opened with `showModal()` and SHALL suppress close requests (the `cancel` event SHALL be `preventDefault()`-ed so ESC / Android back do NOT close it)
+- **THEN** the popover SHALL be opened with `showPopover()` and the CE SHALL keep the background `inert` for the sheet's whole lifetime (modal-like blocking)
+- **AND** the CE SHALL suppress the Escape close request (the `keydown` Escape handler SHALL NOT close it), and there SHALL be no tap-outside close
 - **AND** `.scroll-area` SHALL have `data-dismissable="false"`
 - **AND** the dismiss zone SHALL remain in the DOM with `aria-hidden="true"` (required for the `initial-snap` animation pattern)
 - **AND** CSS SHALL set `.dismiss-zone` to `scroll-snap-align: none` and `pointer-events: none` via `.scroll-area:not([data-dismissable="true"]) .dismiss-zone`
@@ -125,8 +140,16 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 
 #### Scenario: Dismissable mode with close-request dismiss (ESC / Android back)
 - **WHEN** `dismissable` is `true` (default)
-- **THEN** pressing Escape (desktop) or the Android back gesture/button SHALL close the sheet via the `<dialog>`'s native close request
-- **AND** the CE SHALL handle the `cancel` (and/or `close`) event on the inner `<dialog>` to set `open` to `false` and dispatch `sheet-closed`
+- **THEN** pressing Escape (desktop) SHALL close the sheet, handled by a CE `keydown` listener (a `popover="manual"` does not emit a native `cancel`/close request), which SHALL initiate the scroll-to-closed-stop dismiss
+- **AND** the Android back gesture/button SHALL close the sheet via the consumer's `popstate` handling (history-driven), which sets `open` to `false` and triggers the programmatic close path
+- **AND** each SHALL result in `open` being set to `false` and a `sheet-closed` event being dispatched
+
+#### Scenario: Close animation completes within 160ms (legacy duration removed)
+- **WHEN** `prefers-reduced-motion: reduce` is NOT active
+- **THEN** the dismiss scroll SHALL use `scroll-behavior: smooth` for the slide-out
+- **WHEN** `prefers-reduced-motion: reduce` is active
+- **THEN** the close SHALL resolve instantly (jump-scroll), with no smooth animation
+- **NOTE** This scenario documents the replacement of the fixed 160ms `--_duration` close fade; the perceived close latency is now bounded by the native smooth-scroll settle, not a CSS transition duration.
 
 #### Scenario: Sheet closed event
 - **WHEN** the sheet is closed by any mechanism (ESC / Android back, tap-outside, scroll-snap swipe, programmatic)
@@ -143,7 +166,7 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 - **THEN** the sheet body (`<section>`) SHALL have `border-radius: var(--radius-sheet)` on top corners
 - **AND** background SHALL be `var(--color-surface-raised)`
 - **AND** box-shadow SHALL be `var(--shadow-sheet)`
-- **AND** `max-block-size` SHALL be `90dvh`
+- **AND** `max-block-size` SHALL be `90svh`
 - **AND** overflow-y SHALL be `auto` for scrollable content
 - **AND** `contain` SHALL be `layout` (layout containment boundary — see layout stability scenario)
 
@@ -153,7 +176,7 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 
 #### Scenario: Focus management
 - **WHEN** the sheet opens
-- **THEN** `showModal()` SHALL move focus into the `<dialog>` and trap it there
+- **THEN** the CE SHALL move focus into the sheet body and trap it there while open (CE-managed, since `popover` provides no native focus trap)
 - **WHEN** the sheet closes
 - **THEN** focus SHALL return to the element that was focused before the sheet opened
 
@@ -164,13 +187,13 @@ The system SHALL provide a `<bottom-sheet>` custom element as the single dialog 
 
 #### Scenario: Reduced motion
 - **WHEN** `prefers-reduced-motion: reduce` is active
-- **THEN** all transition durations SHALL be reduced to `var(--_duration-reduced)`
+- **THEN** the open/close SHALL resolve to an instant (or near-instant) transition with no smooth dismiss scroll animation
 - **AND** the scroll-driven backdrop fade SHALL likewise resolve to an instant open/close
 
 #### Scenario: Detach cleanup
 - **WHEN** the CE is detached from the DOM while the sheet is open
-- **THEN** all event listeners (`cancel`/`close`, `.dismiss-zone` click, `scrollsnapchange`, and any `IntersectionObserver`) SHALL be removed / disconnected
-- **AND** `close()` SHALL be called on the inner `<dialog>`
-- **AND** `pointer-events` on `.scroll-area` SHALL be restored to its default value
+- **THEN** all event listeners and observers (`.dismiss-zone` click, the Escape `keydown` listener, and the `IntersectionObserver`) SHALL be removed / disconnected
+- **AND** `hidePopover()` SHALL be called on the popover
+- **AND** any background `inert` applied by the CE SHALL be removed
 - **AND** no memory leaks SHALL occur
 
