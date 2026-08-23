@@ -6,13 +6,15 @@ Consolidates notification permission and PWA install prompts into a single dialo
 ## Requirements
 ### Requirement: Post-Signup Dialog on First Authentication
 
-The system SHALL display a dialog after the first successful signup that consolidates a celebration message with optional power-up actions (notification permission, PWA install), without front-loading guidance for features the user has not yet encountered.
+The system SHALL display a dialog after the first successful **sign-up** that consolidates a celebration message with optional power-up actions (notification permission, PWA install), without front-loading guidance for features the user has not yet encountered.
+
+Whether an authenticated callback is treated as a first sign-up SHALL be determined by the **flow the user initiated** — the sign-up flow versus the sign-in flow — carried as a signal that round-trips through the OIDC authorization request and back to the auth-callback. It SHALL NOT be inferred solely from the absence of a locally cached user identifier, because a returning user can arrive with an empty local cache (new browser or device, cleared storage, or a prior anonymous/guest session that never cached an identifier) and MUST NOT be treated as a new sign-up.
 
 #### Scenario: Dialog shown after first signup
 
-- **WHEN** the auth-callback route completes `provisionUser()` for a new user
+- **WHEN** the auth-callback route completes an authenticated callback whose originating flow is the **sign-up** flow
 - **AND** `localStorage['liverty:postSignup:shown']` is not set
-- **THEN** the system SHALL set `localStorage['liverty:postSignup:shown']` to `'1'`
+- **THEN** the system SHALL set `localStorage['liverty:postSignup:shown']` to the pending marker
 - **AND** the system SHALL navigate to `/dashboard`
 - **AND** the Dashboard SHALL display the `PostSignupDialog` on load
 
@@ -21,6 +23,14 @@ The system SHALL display a dialog after the first successful signup that consoli
 - **WHEN** the auth-callback route completes for a returning user
 - **AND** `localStorage['liverty:postSignup:shown']` is already set
 - **THEN** the system SHALL NOT show the `PostSignupDialog`
+
+#### Scenario: Sign-in with an empty local cache does not trigger the dialog
+
+- **WHEN** the auth-callback route completes an authenticated callback whose originating flow is the **sign-in** flow
+- **AND** no user identifier is cached locally (e.g. a new browser/device, cleared storage, or a prior guest session)
+- **THEN** the system SHALL NOT set `localStorage['liverty:postSignup:shown']` to the pending marker
+- **AND** the system SHALL NOT display the celebration overlay or the `PostSignupDialog`
+- **AND** the user SHALL be navigated to `/dashboard` without a first-run payoff
 
 #### Scenario: Dialog content leads with celebration
 
