@@ -1,51 +1,66 @@
-## 1. Scroll narrative + reveal foundation
+## 1. Reset the prior iteration
 
-- [ ] 1.1 Convert `welcome-route` layout from two-`100svh`-snap to hero (`100svh`, keeps snap) + continuous value-section column with a consistent vertical rhythm (`--space-*`), preserving the hero markup/copy/CSS unchanged (D1, D7)
-- [ ] 1.2 Add a shared `IntersectionObserver`-based scroll-reveal utility that toggles a "revealed" state on first entry and unobserves after (D2)
-- [ ] 1.3 Author entrance-only reveal CSS (fade + short upward slide, `transform`/`opacity` only); ensure the un-revealed state keeps content readable/reachable if the observer never fires (spec: "Content is present without motion")
-- [ ] 1.4 Disable all reveal + arrival motion under `prefers-reduced-motion: reduce`, rendering final state immediately (reuse existing reduced-motion pattern)
+- [x] 1.1 Remove the `EventDetailContent` component (`event-detail-content.ts/.html/.css`) and its `main.ts` registration (superseded by opening the real `event-detail-sheet`) (D3)
+- [x] 1.2 Remove the standalone §3 detail section and §4 notification section markup/CSS from the prior stacked-sections layout; keep the notification mock card component (reused as demo step S0)
+- [x] 1.3 Restore the timetable to its full composed height (undo the `60svh` compression) (D7)
 
-## 2. §2 Timetable value section
+## 2. Hero kinetic brand + ambient background (always-on life)
 
-- [ ] 2.1 Render the read-only `concert-highway` preview as a complete composed frame (no cropped half-peek), reusing the existing `dateGroups` preview path unchanged
-- [ ] 2.2 Add section copy communicating "auto-collected from your followed artists" to `translation.json` (JA/EN); do not touch `welcome.hero.*`
-- [ ] 2.3 Ensure the section renders only when preview data is available and disappears with the rest of the stack in the no-preview fallback
+- [x] 2.1 Add a gradient-clipped spotlight shimmer to the `LIVERTY MUSIC` wordmark using the existing festival-spotlight palette; compositor-only (`background-position`), disabled under `prefers-reduced-motion` (falls back to the current static glow) (D6)
+- [x] 2.2 Add a fixed, full-page, `pointer-events: none`, `mix-blend-mode: screen` canvas rendering a sparse drifting particle glow behind all content (brand-accent palette); cap particle count/DPR, pause when hidden/offscreen, disable under reduced motion (D6)
+- [x] 2.3 Verify the ambient background never intercepts pointer input and keeps foreground content legible
 
-## 3. §3 Ticket/goods value section
+## 3. Interactive timetable + detail sheet
 
-- [ ] 3.1 Extract the `event-detail-sheet` inner content (`sheet-content`) into a shared read-only content view usable outside `bottom-sheet` (D3); keep the existing sheet + its tests green
-- [ ] 3.2 Embed the read-only detail view in §3 surfacing official-info (`sourceUrl`), merch (`merchUrl`), venue + map, and calendar; confirm the `isAuthenticated`-gated ticket-journey stays hidden for the anonymous visitor
-- [ ] 3.3 Implement Lv2 arrival motion: the detail view rises once into place on section entry (one-shot, layered on reveal, reduced-motion disabled)
-- [ ] 3.4 Add §3 section copy (JA/EN)
+- [x] 3.1 Drop `is-readonly` on the Welcome `concert-highway` and wire its `event-selected` → the real `event-detail-sheet.open(event)` (D3)
+- [x] 3.2 Render `event-detail-sheet` on the Welcome route; confirm the `isAuthenticated`-gated ticket-journey stays hidden for the anonymous visitor and merch/official/venue/calendar surface
+- [x] 3.3 Resolve the sheet's `history.pushState('/concerts/:id')` on the Welcome route — verify the route tolerates the pushed URL + `popstate` close, or suppress `pushState` in the LP context (D3, Risks)
+- [x] 3.4 Present the timetable as a complete composed frame (no cropped peek); communicate "auto-collected from your followed artists"
 
-## 4. §4 New-concert notification value section
+## 4. Guided demo sequence (state machine)
 
-- [ ] 4.1 Create a notification mock card component styled as a Liverty new-concert alert (bell, brand, sample artist line) (D5)
-- [ ] 4.2 Implement Lv2 arrival motion: the card drops in with a single brief bell nudge on entry (one-shot, reduced-motion disabled)
-- [ ] 4.3 Add §4 section copy (JA/EN)
+- [x] 4.1 Build the demo state machine S0→S3 with a one-shot IntersectionObserver trigger on scroll-into-view (D2)
+- [x] 4.2 S0: mock new-concert notification (real-OS-push-style card with the PWA icon) drops in with an attention-drawing entrance (overshoot); a pulsing hint invites the tap (D2)
+- [x] 4.3 S0→S1 advance: tap advances immediately; auto-advance after a short interval if untouched (auto-advance-with-interrupt) (D2)
+- [x] 4.4 S1 transition: sequential dismiss → appear — a `demoExiting` flag plays the notification's exit, and only after it fully leaves (`NOTIF_EXIT_MS`, aligned to the CSS exit duration) does the view-model swap to the timetable; the two never overlap. (Supersedes the originally-planned View Transitions morph — the cross-fade overlapped exit + entrance; a clean hand-off reads better and needs no feature-detect/fallback.) (D5)
+- [x] 4.5 S2: once the timetable is interactive, show a `coach-mark` on the first concert card ("tap to see tickets, goods, venue"); light-dismiss preserved; no hover dependency (D4)
+- [x] 4.6 Mobile-first affordance: convey card tappability via the coach-mark + a touch `:active` press state (no hover glow) (D4)
 
-## 5. §5 Final CTA + value-pillar scope
+## 5. Reduced-motion / no-JS / fallback
 
-- [ ] 5.1 Place the commit CTAs (`Get Started` / `Log In`) in a final CTA section after the value content, preserving the two-layer intent (no commit CTAs on the hero when preview exists) and the guest-friendly copy proximity (D6)
-- [ ] 5.2 Verify the no-preview fallback (inline hero CTAs, no scroll-affordance) is unchanged
-- [ ] 5.3 Confirm no capability beyond the three real pillars is advertised, and no phone-frame chrome / stats / social proof is introduced
+- [x] 5.1 Under `prefers-reduced-motion` (or script failure): skip the notification, its entrance cue, and the transition — present the interactive timetable directly with a static "tap a card" hint; keep it fully usable (spec: reduced-motion + content-present-without-motion)
+- [x] 5.2 Preserve the no-preview fallback: when preview data is unavailable, render neither the demo nor the timetable; the hero shows inline `[Get Started]` / `[Log In]` CTAs and no scroll-affordance
 
-## 6. Tests
+## 6. Copy + scope
 
-- [ ] 6.1 Update/extend `welcome-route.stories.ts` for the new sections (data-present and data-absent states)
-- [ ] 6.2 Add/adjust unit tests for reveal behavior, reduced-motion no-op, and the no-preview fallback path
-- [ ] 6.3 Run `make check` (lint + typecheck + unit tests) and fix issues
+- [x] 6.1 Add/adjust demo copy (notification text, coach-mark guidance, section framing) in `translation.json` (JA/EN); do not touch `welcome.hero.*`
+- [x] 6.2 Confirm no capability beyond the three real pillars is advertised, and no phone-frame chrome / stats / social proof / name marquee is introduced (D1, scope requirement)
+- [x] 6.3 Fix the dev-only `?devPreview=1` mock data to distribute concerts across HOME / NEAR / AWAY lanes like real data (never ships) (D8)
 
-## 7. Post-implementation localhost verification (manual, required)
+## 7. Tests
 
-- [ ] 7.1 `npm start` and open the Welcome page (`/`) on localhost as an unauthenticated visitor
-- [ ] 7.2 Scroll §1→§5 and visually confirm section scroll-reveal fires cleanly on entry
-- [ ] 7.3 Visually confirm §3 (detail view rises once) and §4 (card drop-in + bell nudge) Lv2 arrival motions
-- [ ] 7.4 Confirm the preview shows real curated data; then exercise the no-preview state (e.g., empty/insufficient `previewArtistIds`) and confirm graceful degradation to the hero inline-CTA fallback
-- [ ] 7.5 Enable `prefers-reduced-motion` and confirm all reveal/arrival motion stops while content stays fully readable
-- [ ] 7.6 Check mobile width (real device or DevTools) for layout integrity and readability (no phone-frame; UI renders full-bleed/native size)
+- [x] 7.1 Update/extend `welcome-route.stories.ts` for the data-present (demo) and data-absent (fallback) states
+- [x] 7.2 Add/adjust unit tests: demo state transitions (S0→S1 tap and auto-advance), sequential dismiss → appear timing (`demoExiting` held for `NOTIF_EXIT_MS` before the timetable swaps in), reduced-motion skip path, card-tap → sheet-open wiring, no-preview fallback
+- [x] 7.3 Run `make check` (lint + typecheck + unit tests) and fix issues
 
-## 8. Ship
+## 8. Post-implementation localhost verification (manual, required)
 
-- [ ] 8.1 Open the frontend PR (Conventional Commits, mandatory body + `Refs: #<issue>`), pass CI
-- [ ] 8.2 Merge and cut the frontend release to prod; confirm the prod pin-bump reaches ArgoCD and the change is live
+- [x] 8.1 `npm start` and open the Welcome page (`/`) on localhost as an unauthenticated visitor (`?devPreview=1` for demo data without a backend)
+- [x] 8.2 Verify the full demo: notification drops in → tap (and separately, auto-advance) → notification dismisses → interactive timetable → coach-mark → card tap opens the real detail sheet
+- [x] 8.3 Verify the hero kinetic shimmer and the ambient background read as alive but calm, and content stays legible
+- [x] 8.4 Confirm real curated data distributes across lanes; then exercise the no-preview state and confirm graceful degradation to the hero inline-CTA fallback
+- [x] 8.5 Enable `prefers-reduced-motion` and confirm the demo is skipped, the interactive timetable is shown directly, and all ambient/kinetic motion stops while content stays readable
+- [x] 8.6 Check mobile width (real device or DevTools): tappability is clear without hover, canvas stays smooth, layout holds (no phone-frame; native/full-bleed)
+
+## 9. Ship
+
+- [x] 9.1 Open the frontend PR (Conventional Commits, mandatory body + `Refs: #<issue>`), pass CI (PR #561)
+- [x] 9.2 Merge and cut the frontend release to prod; confirm the prod pin-bump reaches ArgoCD and the change is live (v1.58.0; fan-web prod pin + ArgoCD rollout verified live)
+
+## 10. Follow-up: bound the demo screen so the CTA stays visible (D7)
+
+- [x] 10.1 Give `.welcome-demo` a *definite* block-size (`block-size`/`max-block-size: 100svh`, not just `min-block-size`) so the `flex: 1` → grid `1fr` → `concert-highway { block-size: 100% }` chain resolves; the timetable then fills the demo screen with `concert-highway`'s internal scroll and the CTA footer stays pinned on-screen (D7)
+- [x] 10.2 Add `overflow: hidden` to `.welcome-preview` so the internally-scrolled timetable is clipped at the bottom fade mask and never spills past the demo screen (D7)
+- [x] 10.3 Localhost verify (`?devPreview=1`, incl. 390px mobile): the demo section is exactly one snap screen, the CTA footer (`Get Started` / `Log In`) is visible without scrolling past the demo, and `concert-highway` scrolls internally to reveal later dates; re-check the coach-mark still anchors the first card and reduced-motion still shows the timetable directly
+
+  Measured (412px width): demo `clientHeight == innerHeight` (915→915, was ~3797px); CTA footer bottom 866 ≤ 915 (visible); `document` no longer overflows (scrollHeight == 915). At a short 560px viewport (forces overflow): `.concert-scroll` becomes scrollable (clientH 192 / scrollH 502) and `scrollTop` moves 0→310 — later dates stay reachable, not clipped; CTA still visible (bottom 511 ≤ 560); `[data-live-card]` present for the coach-mark. Preview `overflow: hidden` confirmed; reduced-motion block untouched.
