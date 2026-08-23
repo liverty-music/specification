@@ -12,8 +12,9 @@ See proposal.md — Why. The orb spans an Aurelia component (`dna-orb-canvas.ts`
 ## Goals / Non-Goals
 
 **Goals:**
-- Make stage level a silent, idempotent function of the current count, applied on entry and on every change.
-- Make the celebration a one-shot fired only from a real follow absorption.
+- Make the orb gesture-driven: enter dormant regardless of total follow count; advance the stage only from a real follow absorption.
+- Drive the stage from a session-scoped activation level (follows completed this visit), not the bound total count, so non-gesture count changes never move the orb.
+- Make the celebration a one-shot fired only from a real follow absorption, on the same frame as the stage advance.
 - Ease stage transitions on the render loop; stop resetting transient state on a level apply.
 
 **Non-Goals:**
@@ -25,20 +26,21 @@ See proposal.md — Why. The orb spans an Aurelia component (`dna-orb-canvas.ts`
 
 ### D1: Split `setFollowCount` into a silent, idempotent `applyLevel`
 
-Rename `setFollowCount(n)` → `applyLevel(n)`. It recomputes `stageParams = getStageParams(n)`, sets **target** values for continuous quantities (`baseIntensity`, `orbRadius`), and folds in the currently-in-`followedCountChanged` physics calls (`updateOrbZone`, `cometTrailEnabled`). It MUST NOT wipe particle trails (the current trail reset is transient-state destruction and breaks idempotency). `followedCountChanged(n)` becomes exactly `applyLevel(n)` — no `pulse()`.
+Rename `setFollowCount(n)` → `applyLevel(n)`. It recomputes `stageParams = getStageParams(n)`, sets **target** values for continuous quantities (`baseIntensity`, `orbRadius`), and folds in the physics calls (`updateOrbZone`, `cometTrailEnabled`). It MUST NOT wipe particle trails (the current trail reset is transient-state destruction and breaks idempotency). `applyLevel` is called with the session `activationLevel` (0 on entry, incremented per genuine follow in `onAbsorbComplete`) — NOT with the bound total `followedCount`. The total-count observer (`followedCountChanged`) no longer drives the orb, so non-gesture count changes (hydration/migration/unfollow/rollback) leave the orb untouched.
 
 - **Alternative — keep snap writes:** rejected; snapping plus trail-wipe is what couples transient and persistent state and causes visible hitches on rapid follows.
 
-### D2: Seed the stage level after async size-init, reading the latest count
+### D2: Seed the orb dormant on entry; drive the stage from a session activation level
 
-Insert `this.applyLevel(this.followedCount)` in `attached()` **after** `await this.initWhenSized()` and the `if (this.detached) return` guard, immediately before `physics.addBubbles(...)`. This is the async-safe analogue of Aurelia's documented "manual initial call" idiom (`bound() { this.xChanged(this.x, undefined) }`), relocated because the renderer is not initialized until after the size wait. Reading `this.followedCount` **after** the await captures any change that landed during the wait; idempotency makes a later `followedCountChanged` apply harmless.
+Insert `this.applyLevel(this.activationLevel)` in `attached()` **after** `await this.initWhenSized()` and the `if (this.detached) return` guard, immediately before `physics.addBubbles(...)`. `activationLevel` starts at 0, so the orb enters dormant (level-0 look) regardless of the user's total follow count. A fresh component/renderer is created per Discovery mount, so `activationLevel` resets on every re-entry. `onAbsorbComplete` increments `activationLevel` and re-applies it, so a genuine follow advances the orb one stage.
 
+- **Alternative — seed to `this.followedCount` (the historical total):** rejected; this is what made the orb read as "activated" on entry before any genuine follow (the original bug: activation before a follow). The orb must reflect this session's follow gestures, not the accumulated total.
 - **Alternative — seed in `bound()`/`binding()`:** rejected; runs before `orbRenderer.init()`, writing into an uninitialized renderer.
 - **Alternative — a bindable `set:`/coercion:** rejected; abusing a setter for side effects is an anti-pattern and does not solve initial application.
 
 ### D3: Keep the celebration canvas-internal, fired from `onAbsorbComplete`
 
-Add a private `celebrate(hue)` unifying `pulse()` (made private) + `injectColor` + gated `spawnShockwave` + `playLanding` on one frame; call it only from `onAbsorbComplete`. This co-locates the whole same-frame burst at the true "gesture landed" moment and structurally eliminates the misfire: unfollow/migrate/hydrate/rollback provably never reach `onAbsorbComplete` (only the tap and search-follow absorption paths do). It also fixes today's timing skew — `follow()` flips the count immediately (optimistic) while absorption lands later, so a count-observer flash preceded the bubble's arrival.
+Add a `celebrate(hue)` on the renderer unifying `pulse()` (made private) + `injectColor` + gated `spawnShockwave`; call it (plus `playLanding`) only from `onAbsorbComplete`, which also advances `activationLevel`. This co-locates the whole same-frame burst AND the stage advance at the true "gesture landed" moment and structurally eliminates the misfire: unfollow/migrate/hydrate/rollback provably never reach `onAbsorbComplete` (only the tap and search-follow absorption paths do). It also fixes today's timing skew — `follow()` flips the count immediately (optimistic) while absorption lands later, so a count-observer flash preceded the bubble's arrival.
 
 - **Alternative — a route-level `@bindable` gesture callback from `discovery-route`:** rejected; the route would have to re-derive absorption-completion timing the canvas already owns.
 
