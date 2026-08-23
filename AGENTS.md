@@ -23,8 +23,12 @@
     ├── backend can now build with new proto types
     └── frontend can now build with new proto types
 
-    Backend/frontend PRs may be created as drafts before BSR gen,
-    but CI will fail until new types are published.
+    Backend/frontend PRs must NOT be opened (even as drafts) before BSR gen
+    completes — CI would fail on the missing types and create review noise.
+    Prepare branches locally; push only after the generated package is
+    upgraded and the placeholder types are swapped (see downstream-implementation).
+    EXCEPTION: open a draft early only when the user explicitly requests
+    parallel review, annotating the description with "Depends on BSR gen for vX.Y.Z".
   </dependency-order>
 
   <release-process>
@@ -34,6 +38,23 @@
     4. BSR publishes generated code for downstream consumers
     5. Backend/frontend update deps to consume new types
   </release-process>
+
+  <downstream-implementation>
+    Parallelize aggressively — the specification review/CI cycle is long; do
+    not let backend/frontend idle. As soon as the proto surface is agreed (an
+    approved OpenSpec change or an open specification PR), start downstream work:
+    - Write handler/service/UI code against the *planned* type shape, using local
+      type aliases or placeholder shapes where the generated types will slot in.
+    - Build repository layers, use cases, business logic, and unit tests with
+      mocks — none of these depend on the generated types.
+    - Mark each consumption site with a clear `TODO: swap to generated type
+      after BSR gen` comment.
+    After the specification Release triggers BSR gen, monitor it until success:
+      gh run list --repo liverty-music/specification --workflow buf-release.yml --limit 3
+      gh run watch   # if a run is in progress
+    Then upgrade the generated package and swap the placeholders per each repo's
+    own AGENTS.md, run `make check`, and only then push and open the PR.
+  </downstream-implementation>
 
   <constraints>
     <forbidden repo="specification">buf push — CI-only via buf-release.yml on Release publish</forbidden>
