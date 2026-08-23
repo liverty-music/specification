@@ -11,8 +11,8 @@ intentionally stopped, so this is prod-direct.
 
 **Goals:** move the pinned Zitadel version to v4.17.1 (API + Login V2 images +
 OTEL label together), run the boot-time schema migration safely against prod
-Cloud SQL, verify the OIDC + Login V2 surface end-to-end, retain the `#10103`
-watchdog, with a clear rollback.
+Cloud SQL, verify the OIDC + Login V2 surface end-to-end, leave the `#10103`
+posture unchanged (the watchdog is already removed), with a clear rollback.
 
 **Non-Goals:** no chart-architecture change; no proto/backend/frontend change; no
 fix for the organizer loginname bug (already fixed in be v1.39.0); no re-enabling
@@ -54,10 +54,14 @@ OIDC discovery + a real hosted Login V2 sign-in (consumer AND organizer console)
 `InstanceHostHeaders`/`x-zitadel-public-host` resolution from the existing spec
 must still hold on v4.17.1). A green pod is necessary but not sufficient.
 
-**D5 — Retain the `#10103` watchdog.** The notification/projection deadlock is
-still unfixed upstream at v4.17.1, so `overlays/prod/cronjob-watchdog-zitadel.yaml`
-stays. Only its comment's version reference is updated. Re-evaluate removal in a
-future change if/when upstream ships a fix.
+**D5 — The `#10103` watchdog is already gone; do not reintroduce it.** Contrary
+to this change's initial assumption, `main` already removed the watchdog CronJob
++ liveness-probe sidecar (commit `c29837f`) because it was ineffective (restarted
+both replicas at once; the sidecar liveness probe restarted the wrong container).
+Recovery from the projection-trigger wedge is now the manual
+`kubectl rollout restart deploy/zitadel-api`. `#10103` is still unfixed at
+v4.17.1, so that manual posture carries forward — the upgrade neither restores
+nor changes it. (This corrected a stale assumption carried from an older branch.)
 
 ## Risks / Trade-offs
 
@@ -88,6 +92,6 @@ future change if/when upstream ships a fix.
    Watch the setup/migration job to success, then the `zitadel-api` /
    `zitadel-api-login` rollout.
 7. Verify (D4): OIDC discovery, hosted Login V2 sign-in (consumer + organizer),
-   no `Errors.Instance.NotFound`; watchdog still active.
+   no `Errors.Instance.NotFound`; confirm no watchdog was reintroduced.
 8. Rollback if needed: re-pin v4.14.0; restore from backup only if the migration
    advanced the schema and v4.14.0 will not boot.

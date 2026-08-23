@@ -10,8 +10,11 @@ target version in a single pull request. On rollout the new image SHALL run its
 boot-time Cloud SQL schema migration (the chart `init`/`setup` job) to
 completion before the `zitadel-api` Deployment reports ready, and the upgrade
 SHALL be verified against the live OIDC + Login V2 surface before it is
-considered done. While the `#10103` notification-deadlock upstream bug remains
-unfixed, the watchdog cronjob SHALL be retained across the upgrade.
+considered done. The upgrade SHALL NOT change the existing `#10103`
+notification-deadlock posture: the watchdog CronJob was already removed as
+ineffective (recovery is manual `kubectl rollout restart deploy/zitadel-api`),
+and `#10103` remains unfixed at the target version, so that posture carries
+forward unchanged.
 
 The current pinned version is **v4.17.1** (was v4.14.0). Because the dev
 environment is intentionally stopped, this upgrade is applied **prod-direct**,
@@ -52,9 +55,11 @@ edit procedure applies to dev when it is next started.
   Login V2 calls (the `InstanceHostHeaders` / `x-zitadel-public-host` resolution
   is intact)
 
-#### Scenario: Notification-deadlock watchdog retained while upstream bug unfixed
+#### Scenario: Notification-deadlock posture unchanged by the upgrade
 
 - **WHEN** the upgraded version still carries the unfixed `#10103`
   notification/projection deadlock
-- **THEN** the prod `cronjob-watchdog-zitadel` SHALL remain deployed and active
-  after the upgrade
+- **THEN** the upgrade SHALL NOT reintroduce the previously-removed watchdog
+  CronJob
+- **AND** the documented recovery for a projection-trigger wedge SHALL remain
+  `kubectl rollout restart deploy/zitadel-api`

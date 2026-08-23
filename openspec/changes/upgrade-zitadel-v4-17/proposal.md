@@ -29,8 +29,12 @@ rollout gated on explicit approval.
   job) against the prod `POSTGRES_18` instance on first boot of the new image —
   ensure the migration job completes before the API Deployment becomes ready,
   with a documented rollback (re-pin v4.14.0) path.
-- **Retain** the `#10103` notification-deadlock watchdog cronjob — that upstream
-  bug is still unfixed in v4.17.1, so the workaround stays.
+- The `#10103` notification-deadlock watchdog cronjob was **already removed** on
+  `main` (commit `c29837f`, deemed ineffective — the CronJob restarted both
+  replicas at once and the sidecar liveness probe restarted the wrong
+  container); recovery is now `kubectl rollout restart deploy/zitadel-api`. This
+  upgrade does **not** reintroduce it. `#10103` remains unfixed in v4.17.1, so
+  the manual-restart posture carries forward.
 - Post-upgrade **verification** in prod: OIDC discovery document, hosted Login V2
   UI, and a real end-to-end sign-in (consumer + organizer console) succeed on the
   new image; the instance-host-header resolution and health endpoints are intact.

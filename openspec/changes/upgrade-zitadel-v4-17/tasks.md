@@ -8,7 +8,7 @@
 - [x] 2.1 `base/values.yaml`: API server image `tag` v4.14.0 → **v4.17.1** (line 15)
 - [x] 2.2 Same file: Login V2 UI `login.image.tag` → **v4.17.1** (line 219)
 - [x] 2.3 Same file: OTEL `service.version` → **v4.17.1** (line 203)
-- [x] 2.4 Refreshed version-reference comments (OTEL capability/404 notes, login-image build note in base; watchdog + kustomization headers in prod overlay) — restamped to v4.17.1 as version-range/current-pin notes, keeping empirical-on-v4.14.0 facts honest
+- [x] 2.4 Refreshed version-reference comments (OTEL capability/404 notes + login-image build note in base; OTEL-404 note in prod `kustomization.yaml`) — restamped to v4.17.1 as version-range/current-pin notes, keeping empirical-on-v4.14.0 facts honest. NOTE: the `#10103` watchdog CronJob was already removed on `main` (c29837f), so there is no watchdog file/comment to edit — the upgrade does not reintroduce it
 - [x] 2.5 `kubectl kustomize --enable-helm` renders **prod AND dev** cleanly; both `zitadel` and `zitadel-login` images render at `v4.17.1`, OTEL label `service.version=v4.17.1`. No chart change required
 
 ## 3. Local validation
@@ -30,7 +30,7 @@
 - [ ] 5.2 Hosted Login V2 real end-to-end sign-in succeeds for the **consumer** app
 - [ ] 5.3 Hosted Login V2 real end-to-end sign-in succeeds for the **organizer console** (org-pinned passkey login → `/welcome`)
 - [ ] 5.4 API logs show NO `Errors.Instance.NotFound` for cluster-internal Login V2 calls (the `InstanceHostHeaders` / `x-zitadel-public-host` resolution still holds on v4.17.1)
-- [ ] 5.5 The `#10103` watchdog cronjob is still deployed and active post-upgrade
+- [ ] 5.5 Confirm the upgrade did not reintroduce the (previously-removed) `#10103` watchdog CronJob; the documented wedge recovery remains `kubectl rollout restart deploy/zitadel-api`
 - [ ] 5.6 Rollback path validated on paper: re-pin v4.14.0 (+ restore-from-backup only if the schema advanced and v4.14.0 will not boot)
 
 ## 6. Close-out
