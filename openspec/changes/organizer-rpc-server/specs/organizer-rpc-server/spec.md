@@ -33,24 +33,19 @@ services, and this server SHALL NOT serve fan or admin services.
 ### Requirement: OrganizerService.Get returns the caller's own organizer
 
 The system SHALL expose a bare-verb `Get` returning the caller's own
-Organizer's identity (id, name). The request SHALL carry an `OrganizerId` that
-MUST resolve to the caller's own Organizer — the Organizer whose
-`zitadel_org_id` equals the Zitadel org the token is scoped to; any other
-`OrganizerId` SHALL be rejected. The roster of represented artists is returned
-by a separate `ListArtists` RPC, not embedded in the `Get` response —
-consistent with the admin `OrganizerService` and the fan `UserService.Get`.
+Organizer's identity (id, name), resolved from the authenticated token (the
+Zitadel org it is scoped to) — NOT from a client-supplied id. `GetRequest`
+carries no fields: the organizer console holds no `OrganizerId` before this
+call, so `Get` is the sanctioned bootstrap that yields it, mirroring the fan
+`UserService.Create` resolve-from-token exception. The roster of represented
+artists is returned by a separate `ListArtists` RPC, not embedded in the `Get`
+response.
 
 #### Scenario: Operator reads their own organizer
 
-- **WHEN** an operator calls `Get` with the `OrganizerId` of their own
-  Organizer
-- **THEN** the system SHALL return that Organizer's id and name
-
-#### Scenario: Operator cannot read a different organizer
-
-- **WHEN** an operator calls `Get` with an `OrganizerId` that does not resolve
-  to their own Organizer
-- **THEN** the system SHALL reject it with a permission-denied error
+- **WHEN** an authenticated operator calls `Get`
+- **THEN** the system SHALL resolve their Organizer from the token and return
+  its id and name
 
 ### Requirement: OrganizerService.ListArtists returns the caller's roster
 
@@ -62,7 +57,9 @@ Organizer represents no artists. The artists SHALL be returned in a stable
 order, ascending by artist id — a UUID v7, so effectively artist-creation order
 — giving a deterministic, unique ordering a later pagination phase can page
 over. (This orders by when the artist was created, not when it was added to the
-roster; a roster-add ordinal is a future concern.)
+roster; a roster-add ordinal is a future concern.) The roster is unbounded on
+the wire; pagination is deferred to a later phase, acceptable because an
+Organizer's roster is admin-curated and small.
 
 #### Scenario: Operator lists their own roster
 
@@ -88,18 +85,26 @@ roster; a roster-add ordinal is a future concern.)
 The system SHALL authorize organizer requests from the token. It SHALL
 validate the JWT, require the organizer-console project id in the token `aud`,
 and read the roles claim (`role → { orgId → domain }`, where each `orgId` is a
-Zitadel org id). The caller's Zitadel org SHALL be the org id that appears
-BOTH in the session's login-scope scope (`urn:zitadel:iam:org:id:<orgId>`) AND
-as an `orgId` under which the operator holds a role. A request SHALL be
-authorized only when the requested `OrganizerId` resolves (via `zitadel_org_id`)
-to that same Zitadel org and that Organizer is active; holding any role for the
-org is sufficient (the top role is `owner`; no specific role is required in
-this phase).
+Zitadel org id). The caller's Zitadel org SHALL be the org id that appears BOTH
+in the session's login-scope scope (`urn:zitadel:iam:org:id:<orgId>`) — of
+which exactly one SHALL be present — AND as an `orgId` under which the operator
+holds a role; the two SHALL agree. Holding any role for that org is sufficient
+(the top role is `owner`; no specific role is required in this phase). The
+system SHALL resolve the caller's Organizer via the `zitadel_org_id` link to
+that Zitadel org; for `ListArtists`, the supplied `OrganizerId` MUST equal that
+resolved Organizer.
 
-All authorization failures SHALL return `PERMISSION_DENIED`, SHALL NOT execute
-handler business logic, and SHALL NOT reveal whether the requested Organizer
-exists or is active. An absent or invalid token SHALL return `UNAUTHENTICATED`.
-A missing or malformed `OrganizerId` SHALL return `INVALID_ARGUMENT` via
+A request against an `active` resolved Organizer SHALL be served. If the
+caller's own resolved Organizer is `deactivated`, the system SHALL reject with
+`FAILED_PRECONDITION` and MAY state that it is deactivated — this is the
+caller's own org, so its state is not concealed. All other authorization
+failures — no role for the org, `aud` without the project id, login-scope and
+role-claim orgs disagreeing, zero or multiple login-scope orgs, a supplied
+`OrganizerId` resolving to a different org, or no Organizer linked to the
+caller's Zitadel org — SHALL return `PERMISSION_DENIED`, SHALL NOT execute
+handler business logic, and SHALL NOT reveal whether such an Organizer exists.
+An absent or invalid token SHALL return `UNAUTHENTICATED`. A missing or
+malformed `OrganizerId` on `ListArtists` SHALL return `INVALID_ARGUMENT` via
 protovalidate.
 
 #### Scenario: Missing or empty roles claim is denied
@@ -119,22 +124,30 @@ protovalidate.
   holds a role are not the same Zitadel org
 - **THEN** the system SHALL reject it with `PERMISSION_DENIED`
 
-#### Scenario: Deactivated organizer is denied
+#### Scenario: Absent or ambiguous login-scope org is denied
+
+- **WHEN** the token carries no `urn:zitadel:iam:org:id:<orgId>` scope, or more
+  than one
+- **THEN** the system SHALL reject it with `PERMISSION_DENIED`
+
+#### Scenario: Deactivated own organizer returns a precondition failure
 
 - **WHEN** the Organizer resolved for the caller's Zitadel org is deactivated
-- **THEN** the system SHALL reject the request with `PERMISSION_DENIED`
-- **AND** the response SHALL NOT reveal that the Organizer is deactivated
+- **THEN** the system SHALL reject the request with `FAILED_PRECONDITION`
+- **AND** the response MAY state that the Organizer is deactivated (it is the
+  caller's own org, so the state is not concealed)
 
 #### Scenario: Caller's Zitadel org has no linked Organizer
 
-- **WHEN** no active Organizer has a `zitadel_org_id` matching the caller's
-  Zitadel org (e.g. the link is not yet established)
+- **WHEN** no Organizer has a `zitadel_org_id` matching the caller's Zitadel
+  org (e.g. the link is not yet established)
 - **THEN** the system SHALL reject the request with `PERMISSION_DENIED`
 - **AND** the response SHALL NOT reveal whether an Organizer exists
 
-#### Scenario: Missing or malformed OrganizerId is rejected
+#### Scenario: Missing or malformed OrganizerId on ListArtists is rejected
 
-- **WHEN** a request omits `OrganizerId` or supplies a malformed value
+- **WHEN** a `ListArtists` request omits `OrganizerId` or supplies a malformed
+  value
 - **THEN** the system SHALL reject it with `INVALID_ARGUMENT` via protovalidate
 
 #### Scenario: Unauthenticated request is rejected

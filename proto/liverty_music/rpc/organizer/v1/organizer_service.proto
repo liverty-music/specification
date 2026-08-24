@@ -12,46 +12,50 @@ import "liverty_music/entity/v1/artist.proto";
 import "liverty_music/entity/v1/organizer.proto";
 
 // OrganizerService is the organizer-facing surface: an authenticated operator
-// reads their own Organizer and the artists it represents. Every request
-// carries an organizer_id that MUST resolve to the caller's own Organizer — the
-// one whose Zitadel org (the org the token is scoped to) it matches; any other
-// organizer_id is rejected. Authorization is org-scoped from the token's role
-// claim, and failures never reveal whether another Organizer exists.
+// reads their own Organizer and the artists it represents. The caller's
+// Organizer is resolved from the token (the Zitadel org the token is scoped
+// to). Authorization is org-scoped from the token's role claim, and failures
+// that would concern another org never reveal whether such an Organizer exists.
 service OrganizerService {
-  // Get returns the caller's own Organizer identity (id and name). The roster
-  // of represented artists is retrieved separately via ListArtists, mirroring
-  // the admin OrganizerService and the fan UserService.Get.
+  // Get returns the caller's own Organizer identity (id, name), resolved from
+  // the authenticated token. The console holds no OrganizerId before this call
+  // (its only pre-call identity is the Zitadel org), so Get is the sanctioned
+  // bootstrap that yields the OrganizerId — mirroring UserService.Create, the
+  // resolve-from-token exception. The roster of represented artists is
+  // retrieved separately via ListArtists.
   //
   // Possible errors:
-  // - INVALID_ARGUMENT: The organizer_id is missing or malformed.
-  // - PERMISSION_DENIED: The organizer_id does not resolve to the caller's own
-  //   Organizer, the caller holds no role for that Zitadel org, the token
-  //   audience lacks the organizer-console project id, or the Organizer is
-  //   deactivated. The response never reveals whether the Organizer exists.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  //   Because this is the caller's own org, the state is not concealed (unlike
+  //   the non-revealing PERMISSION_DENIED cases below).
+  // - PERMISSION_DENIED: The token carries no organizer-console role, its
+  //   audience lacks the organizer-console project id, its login-scope org and
+  //   role-claim org disagree, or no Organizer is linked to the caller's
+  //   Zitadel org. The response never reveals whether such an Organizer exists.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Get(GetRequest) returns (GetResponse);
 
-  // ListArtists returns the artists the caller's own Organizer represents, in a
-  // stable order ascending by artist id, so the organizer console can render
-  // the roster. Empty when it represents none.
+  // ListArtists returns the artists the caller's own Organizer represents,
+  // ascending by artist id (stable), so the organizer console can render the
+  // roster. Empty when it represents none. The organizer_id is the caller's
+  // own, obtained from Get. The roster is unbounded on the wire: pagination is
+  // deferred to a later phase, which is acceptable because an Organizer's
+  // roster is admin-curated and small.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The organizer_id is missing or malformed.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated (see
+  //   Get).
   // - PERMISSION_DENIED: The organizer_id does not resolve to the caller's own
-  //   Organizer, the caller holds no role for that Zitadel org, the token
-  //   audience lacks the organizer-console project id, or the Organizer is
-  //   deactivated. The response never reveals whether the Organizer exists.
+  //   Organizer, or any authorization failure listed for Get. Non-revealing.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc ListArtists(ListArtistsRequest) returns (ListArtistsResponse);
 }
 
-// GetRequest identifies the Organizer to retrieve. The organizer_id MUST
-// resolve to the caller's own Organizer; any other value is rejected with
-// PERMISSION_DENIED.
-message GetRequest {
-  // Required. The caller's own organizer identifier.
-  entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
-}
+// GetRequest is empty: the caller's Organizer is resolved from the token, not
+// supplied by the client, which holds no OrganizerId before this bootstrap
+// call.
+message GetRequest {}
 
 // GetResponse returns the caller's Organizer identity.
 message GetResponse {
@@ -59,11 +63,11 @@ message GetResponse {
   entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
 }
 
-// ListArtistsRequest identifies the Organizer whose represented artists to
-// list. The organizer_id MUST resolve to the caller's own Organizer; any other
-// value is rejected with PERMISSION_DENIED.
+// ListArtistsRequest carries the caller's own organizer_id, as returned by Get.
 message ListArtistsRequest {
-  // Required. The caller's own organizer identifier.
+  // Required. The caller's own organizer identifier, as returned by Get. It
+  // MUST resolve to the caller's own Organizer; any other value is rejected
+  // with PERMISSION_DENIED.
   entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
 }
 

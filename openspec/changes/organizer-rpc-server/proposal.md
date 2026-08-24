@@ -17,11 +17,14 @@ project + audience).
 - Add `rpc/organizer/v1/organizer_service.proto` with two bare-verb read RPCs,
   mirroring the admin `OrganizerService`'s separation of entity-get from
   roster-list (the organizer entity intentionally carries no artist field):
-  - **`Get`** returns the authenticated Organizer's identity (id, name).
-  - **`ListArtists`** returns the artists the Organizer represents.
-  Each request carries an `OrganizerId` that MUST resolve to the caller's own
-  Organizer — the one whose `zitadel_org_id` equals the Zitadel org the token
-  is scoped to — and both RPCs pass the same org-scoped authorization.
+  - **`Get`** returns the caller's own Organizer identity (id, name), resolved
+    from the token — `GetRequest` is empty. The console has no `OrganizerId`
+    before this call, so `Get` is the sanctioned bootstrap that yields it,
+    mirroring the fan `UserService.Create` resolve-from-token exception.
+  - **`ListArtists`** returns the artists the Organizer represents; it carries
+    the `OrganizerId` obtained from `Get`, verified to resolve to the caller's
+    own Organizer (`rpc-auth-scoping`).
+  Both RPCs pass the same org-scoped authorization.
 - Serve them on a **dedicated organizer Connect server** at
   `api.organizer.{base-domain}` with its own CORS allowlist (only the
   `organizer.{base}` origin), TLS cert, Cloud DNS, and health check. The
@@ -31,17 +34,23 @@ project + audience).
   the organizer-console project id in the token `aud`, and read the roles claim
   (`role → { orgId → domain }`, where each `orgId` is a Zitadel org id and the
   top role is `owner`). The caller's Zitadel org is fixed by two token-derived
-  ids that MUST agree — the login-scope scope (`urn:zitadel:iam:org:id:<orgId>`)
-  and the `orgId` under which the operator holds a role — and the requested
-  `OrganizerId` MUST resolve (via `zitadel_org_id`) to that same Zitadel org.
-  Reject with `PERMISSION_DENIED` on a missing/empty roles claim, an `aud`
-  without the project id, or any disagreement among those three org ids;
-  `UNAUTHENTICATED` when the token is absent/invalid.
+  ids that MUST agree — exactly one login-scope scope
+  (`urn:zitadel:iam:org:id:<orgId>`) and the `orgId` under which the operator
+  holds a role — and its `Organizer` is resolved via the `zitadel_org_id` link;
+  `ListArtists`'s `OrganizerId` MUST equal that resolved Organizer. Reject with
+  `PERMISSION_DENIED` (non-revealing) on a missing/empty roles claim, an `aud`
+  without the project id, zero/multiple login-scope orgs, org-id disagreement,
+  or no linked Organizer; `FAILED_PRECONDITION` when the caller's own Organizer
+  is deactivated (own org — not concealed); `UNAUTHENTICATED` when the token is
+  absent/invalid.
 
 Explicit non-goals: organizer-side `Update` and any write/business or
 association-mutation RPCs (later changes); managing the roster
 (`AssociateArtist`/`DisassociateArtist`) stays admin-only in
-`organizer-accounts`; the admin surface itself (in `organizer-accounts`).
+`organizer-accounts`; the admin surface itself (in `organizer-accounts`); an
+operator identity/profile RPC — the console reads the operator's email/name
+from the OIDC token, so no server RPC is needed this phase; roster pagination
+(deferred — rosters are admin-curated and small).
 
 ## Capabilities
 
