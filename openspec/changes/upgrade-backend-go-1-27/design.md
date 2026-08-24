@@ -5,14 +5,14 @@ See proposal.md — Why. Current state that shapes the approach:
 - `backend/go.mod` is on `go 1.26` with the toolchain pinned to `1.26.6` for stdlib CVE fixes.
 - All UUIDs come from `github.com/google/uuid v1.6.0`: 14 call sites across ~11 files, all `NewV7()` for IDs plus one `Parse()` in `internal/infrastructure/analytics/posthog/posthog_client.go`. A central helper `internal/entity` (`newID()` → `uuid.Must(uuid.NewV7()).String()`) exists but most repositories/usecases call `uuid.NewV7()` directly, so the abstraction is leaky.
 - **No pprof/debug HTTP endpoint is currently mounted anywhere** in the backend.
-- Monitoring is metric-based: Google Managed Prometheus (`PodMonitoring`) + Cloud Monitoring `AlertPolicy` provisioned via Pulumi in `cloud-provisioning`. Application metrics already flow through an OTel SDK/metric pipeline (`backend-otel-instrumentation`). Existing consumer health is alerted on `nats_consumer_num_pending` backlog and liveness.
+- Monitoring is metric-based, with two distinct metric paths, both alerted on via Cloud Monitoring `AlertPolicy` (Pulumi, `cloud-provisioning`): (a) the backend's OTel SDK metrics flow OTLP → in-cluster otel-collector → `googlecloud` exporter, landing in **Cloud Monitoring** as `workload.googleapis.com/*` custom metrics; (b) Google Managed Prometheus (GMP, `PodMonitoring`) scrapes the prometheus-nats-exporter sidecar. Existing consumer health is alerted on `nats_consumer_num_pending` backlog (the GMP path) and liveness.
 - Go 1.27 promotes the `goroutineleak` profile to GA (no `GOEXPERIMENT` needed) and makes the stdlib `uuid` package available; `go test` now runs the `stdversion` vet check by default.
 
 ## Goals / Non-Goals
 
 **Goals:**
 - Land the toolchain + `go` directive bump to 1.27 cleanly, including the one-time `go fix` modernizer diff.
-- Detect silent goroutine wedges through an alertable metric, reusing the existing OTel-metric → GMP → AlertPolicy path rather than inventing a new monitoring channel.
+- Detect silent goroutine wedges through an alertable metric, reusing the existing OTel-metric → Cloud Monitoring (`workload.googleapis.com`, via the otel-collector `googlecloud` exporter) → AlertPolicy path rather than inventing a new monitoring channel.
 - Remove the `github.com/google/uuid` direct dependency with zero change to ID format or behavior.
 
 **Non-Goals:**
@@ -33,7 +33,7 @@ Two complementary surfaces:
 - **Alerting path (primary):** a periodic in-process sampler looks up the `goroutineleak` profile, counts leaked goroutines, and publishes it as an OTel gauge (e.g. `backend_goroutine_leak_count`) with a workload label. A Cloud Monitoring `AlertPolicy` (Pulumi, alongside existing consumer alerts) fires when the value stays `> 0` beyond an evaluation window and auto-closes on recovery.
 - **Debug path (secondary):** mount `net/http/pprof` (including the `goroutineleak` profile) on an **internal-only** listener (separate port, not the public Connect-RPC/ingress surface) so operators can pull a full profile with stacks on demand.
 
-Rationale: their alerting is metric-driven (GMP/PromQL), so a metric is the idiomatic escalation path and satisfies the spec's "alert without a user report"; the raw pprof endpoint satisfies the spec's "stack to identify the blocking site" for investigation. Alternative (log-based alert) rejected: memory notes GMP notificationRateLimit issues with log-based policies and the team already standardizes on metric AlertPolicies. Alternative (public pprof) rejected on security grounds (spec forbids public unauthenticated exposure).
+Rationale: their alerting is metric-driven, so a metric is the idiomatic escalation path and satisfies the spec's "alert without a user report"; the raw pprof endpoint satisfies the spec's "stack to identify the blocking site" for investigation. The gauge reaches **Cloud Monitoring** as a `workload.googleapis.com/backend_goroutine_leak_count` custom metric (OTLP → otel-collector `googlecloud` exporter — NOT Google Managed Prometheus, which only scrapes the nats exporter), so the AlertPolicy uses a **threshold** condition on it rather than a PromQL/GMP query. Alternative (log-based alert) rejected: log-based policies hit notificationRateLimit constraints and the team already standardizes on metric AlertPolicies. Alternative (public pprof) rejected on security grounds (spec forbids public unauthenticated exposure).
 
 ### D4: Sampling cadence is conservative and configurable
 The `goroutineleak` profile analysis is not free (it inspects the runtime's goroutine set). Sample on a slow interval (order of minutes, env-configurable) rather than per-request or per-scrape. Rationale: leak detection is a slow-moving condition; a wedge that matters persists for minutes, so a coarse interval catches it while keeping overhead negligible. The evaluation window in the AlertPolicy — not the sampler — provides the transient-vs-sustained distinction the spec requires.
