@@ -36,34 +36,58 @@ provisioning) with the initial operator seeded as its `owner`.
 
 ### Requirement: Initial operator bootstraps credentials on first sign-in
 
-The system SHALL create the initial operator as a human user in the
-Organizer's tenant org with no password (`request_passwordless_registration`),
-and deliver the Zitadel passkey-registration init link. The operator SHALL
-complete first sign-in by registering a passkey. The tenant org's login policy
-is **passkey-primary** with a mandatory recovery path (admin re-invite via
-re-issued init link) and permits workspace-IdP federation — NOT passkey-only,
-and NOT email-domain discovery. Org resolution is **org-pinned**: the operator
-is returned to their own tenant org via the org-scoped init link on first
-sign-in, and thereafter via an org handle (remembered `org_id`, or an org
-code / "email me a sign-in link") that the console turns into the Zitadel
-`urn:zitadel:iam:org:id:<orgId>` scope. (The login-policy shape + the
-`organizer-console` project/role are provided by `organizer-tenancy`; this
-change applies the policy per org and seeds the operator.)
+The system SHALL create the initial operator as a human user in the Organizer's
+tenant org with a **verified email and no password**, and onboard them using
+Zitadel's **standard invitation flow**: the system creates an invite code for
+the operator and has Zitadel send **one** branded invitation email whose
+"accept" link opens the identity provider's own credential-setup page with the
+code already carried in the link. The operator SHALL complete first sign-in by
+**clicking that link** (never by transcribing a code) and registering a passkey.
+On completion the operator SHALL be returned to the organizer console
+authenticated (the tenant login policy's post-setup redirect targets the
+console — see `organizer-tenancy`), landing on the owner-gated placeholder.
+
+The invitation email SHALL be the **only** message the operator must act on for
+first sign-in (no separate "transport" email, and no second code email under the
+normal single-entry flow). The credential (invite/verification code) SHALL
+remain on the identity-provider surface and SHALL NOT be exposed in a
+console/application URL.
+
+Recovery SHALL be an **admin-initiated re-invite** (the system re-issues the
+operator's invitation), consistent with the tenant org's passkey-primary policy
+and its recovery path in `organizer-tenancy`. Org resolution is bound to the
+operator's account by the invitation itself — the operator cannot be routed to a
+different org by supplying a different email (no cross-org access).
 
 #### Scenario: Operator completes first sign-in via init link and passkey
 
-- **WHEN** an initial operator opens their passkey-registration init link and
+- **WHEN** an initial operator opens their invitation ("accept invite") link and
   starts first sign-in
-- **THEN** they SHALL register a passkey and be returned authenticated to
-  their Organizer tenant org
+- **THEN** they SHALL register a passkey without transcribing any code, and be
+  returned to the organizer console authenticated to their own Organizer tenant
+  org
 
 #### Scenario: Operator is routed to their org by org-pinned entry
 
-- **WHEN** the operator returns to sign in
-- **THEN** the org SHALL be resolved by an org-pinned entry (org-scoped init
-  link, remembered `org_id`, or org code / "email me a link") and pinned via
-  the Zitadel `org:id` scope — never by raw email domain
-- **AND** a mismatched org entry SHALL simply fail auth (no cross-org access)
+- **WHEN** an operator signs in (first-time via the invitation, or thereafter
+  with their passkey)
+- **THEN** the org SHALL be resolved from the operator's own account/token — the
+  invitation binds the operator to exactly one tenant org — never by raw email
+  domain
+- **AND** supplying a different email SHALL NOT route them into a different org
+  (no cross-org access)
+
+#### Scenario: The invitation credential is never placed in a console URL
+
+- **WHEN** the invitation email and its link are generated
+- **THEN** the invite/verification code SHALL appear only on the identity
+  provider surface and SHALL NOT appear in any console/application URL
+
+#### Scenario: Recovery is an admin re-invite
+
+- **WHEN** an operator cannot sign in (e.g. lost all authenticators)
+- **THEN** recovery SHALL be an admin-initiated re-invite that re-issues the
+  operator's invitation, not a weaker password/self-registration lane
 
 ### Requirement: An artist is represented by at most one organizer
 

@@ -9,7 +9,7 @@
 
 ## 2. Frontend — enforce the authenticated org, land via default redirect (organizer-console)
 
-- [x] 2.1 After the OIDC callback, enforce the token's org equals the URL `org_id` (carried by `default_redirect_uri`, design D-D Option 2); on match proceed to `/welcome`, on mismatch sign the stale session out and re-sign-in with `prompt=login` (+ `org:id` pin) so the operator authenticates as the correct tenant
+- [x] 2.1 In the **route guard** (not only the callback), enforce the token's org equals the intended tenant `org_id` (carried by `default_redirect_uri`, design D-D Option 2). The guard runs on every authenticated route, so it also covers the path where a pre-existing console session is admitted without a fresh OIDC exchange. On a different-org (reused) session, re-authenticate once with `prompt=login` so the operator authenticates as the correct tenant, then fail closed to `/denied`; a no-grant session defers to the owner-role gate. (Shipped fe v1.59.0, corrected to the guard in v1.59.1 after a prod repro where the callback-only check was bypassed.)
 - [x] 2.2 Handle the `default_redirect_uri` landing: read `org_id` from the URL, pin the `org:id` scope on the OIDC request, and complete sign-in to `/welcome`
 - [x] 2.3 Retire the now-optional `login_hint` first-time onboarding handling (no operator flow depends on it); keep only if useful as a plain pre-fill
 - [x] 2.4 Unit tests for the org-enforcement branch (match → welcome; mismatch → re-auth/sign-out) and the default-redirect landing
@@ -17,12 +17,12 @@
 
 ## 3. Ship + verify end-to-end (clean session, fresh operator)
 
-- [ ] 3.1 Release backend and frontend to prod
-- [ ] 3.2 E2E on a fresh operator in a clean (incognito) session: exactly ONE "Accept invite" email → click → passkey → `/welcome`; confirm from Zitadel logs that the login-app `CreateInviteCode` fired once (no second email) — validates the design's not-yet-verified single-email claim
-- [ ] 3.3 Security check: enter the console with a pre-existing DIFFERENT-org Zitadel session in the browser → confirm the operator is NOT silently onboarded as the other org (forced re-auth / rejection)
-- [ ] 3.4 Confirm the console origin passes Login v2 `isSafeRedirectUri` for `default_redirect_uri` (else fall back to the `DEFAULT_REDIRECT_URI` env override)
+- [x] 3.1 Release backend and frontend to prod
+- [x] 3.2 E2E on a fresh operator in a clean (incognito) session: exactly ONE "Accept invite" email → click → passkey → `/welcome`; confirm from Zitadel logs that the login-app `CreateInviteCode` fired once (no second email) — validates the design's not-yet-verified single-email claim
+- [x] 3.3 Security check: enter the console with a pre-existing DIFFERENT-org Zitadel session in the browser → confirm the operator is NOT silently onboarded as the other org (forced re-auth / rejection)
+- [x] 3.4 Confirm the console origin passes Login v2 `isSafeRedirectUri` for `default_redirect_uri` (else fall back to the `DEFAULT_REDIRECT_URI` env override)
 
 ## 4. Reconcile prior records
 
-- [ ] 4.1 Correct the archived organizer-console design D7 and tracking issue liverty-music/specification#843: the duplicate invite emails were caused by TWO OIDC authorize flows (each sending one invite), NOT by "/verify re-firing on every render"
-- [ ] 4.2 File/track the independent Zitadel notification defect (`could not set notification event on aggregate: Errors.User.NotFound` for tenant-org operators) separately — out of scope for this change
+- [x] 4.1 Correct the archived organizer-console design D7 and tracking issue liverty-music/specification#843: the duplicate invite emails were caused by TWO OIDC authorize flows (each sending one invite), NOT by "/verify re-firing on every render"
+- [x] 4.2 File/track the independent Zitadel notification defect (`could not set notification event on aggregate: Errors.User.NotFound` for tenant-org operators) separately — out of scope for this change
