@@ -22,32 +22,55 @@ the consumer SPA's downloaded bundle size or regress its Core Web Vitals.
 
 ### Requirement: Authenticate operators via org-pinned entry, one client for all tenants
 
-The organizer console SHALL authenticate operators through Zitadel OIDC
-(PKCE, no client secret) using the shared `organizer-console` client, with
-the operator's tenant org resolved by **org-pinned entry** — NOT by email
-domain. The org is fixed by *where the operator enters*: an **invitation link**
-on first sign-in (see `login_hint` requirement below), then an **org handle**
-(an `org_id` carried in the URL, or a remembered `org_id`), which the console
-turns into the Zitadel `urn:zitadel:iam:org:id:<orgId>` scope on the OIDC
-request. There is no fixed org id at build time and no org picker.
-(Email-domain discovery is a future optional enhancement per
-`organizer-tenancy`, not used here — so consumer / free-mail operators work
-without per-tenant domain verification.)
+The organizer console SHALL authenticate operators through Zitadel OIDC (PKCE,
+no client secret) using the shared `organizer-console` client. The operator's
+tenant org is **bound to their account** — NOT to a URL parameter and NOT to
+email domain:
+
+- **First sign-in** happens through the identity provider's standard invitation
+  flow (the invite links to the IdP, not the console). After the operator sets
+  up a passkey, the tenant login policy's default redirect returns them to the
+  console (see `organizer-tenancy` / `organizer-accounts`); the console then
+  completes OIDC using the operator's freshly established session.
+- **Returning sign-in** is initiated from the console and authenticated with the
+  operator's existing passkey.
+
+The console SHALL **enforce that the authenticated token's org is the intended
+tenant org**. A session belonging to a different org (e.g. an unrelated Zitadel
+SSO session already present in the browser) SHALL NOT be silently accepted for a
+different operator/tenant: the console SHALL detect the mismatch and force
+re-authentication (or sign the stale session out) rather than admitting the
+wrong operator. There is no fixed org id at build time and no org picker.
 
 #### Scenario: Operator signs in and is routed to their org by org-pinned entry
 
-- **WHEN** an operator opens the console with an org handle (org code/slug or
-  a remembered `org_id`) and completes sign-in
-- **THEN** the console SHALL pin the org via the `org:id` scope and return
-  them authenticated to their own Organizer tenant org — never routing by raw
-  email domain
-- **AND** a mismatched org handle SHALL simply fail auth (no cross-org access)
+- **WHEN** an operator completes sign-in
+- **THEN** the console SHALL return them to their own Organizer tenant org,
+  resolved from their authenticated account/token (the org is bound to the
+  operator) — never by raw email domain
+- **AND** a session or entry that does not resolve to the operator's own org
+  SHALL fail auth (no cross-org access)
 
 #### Scenario: One OIDC client serves all tenants
 
 - **WHEN** operators of different Organizer tenant orgs sign in
 - **THEN** the same `organizer-console` OIDC client SHALL serve them all (no
   per-tenant client, no build-time org id)
+
+#### Scenario: Invited operator lands on the console after accepting the invite
+
+- **WHEN** an invited operator completes credential setup via the identity
+  provider's invitation flow
+- **THEN** they SHALL be returned to the organizer console and, after the console
+  completes OIDC, land authenticated on their own Organizer tenant org
+
+#### Scenario: A reused or mismatched session does not silently onboard the wrong operator
+
+- **WHEN** the console is entered while a Zitadel session for a different org
+  already exists in the browser
+- **THEN** the console SHALL NOT admit that session as the intended operator; it
+  SHALL force re-authentication (or sign the stale session out) so the operator
+  is authenticated as the correct tenant — never routed into another org
 
 ### Requirement: Route guard admits only owner-role operators
 
@@ -92,62 +115,4 @@ email domain.
   id, and the organizer `apiBaseUrl`
 - **AND** it SHALL NOT require a fixed organization id (the org is resolved
   per session by org-pinned entry)
-
-### Requirement: login_hint pre-fill for first-time sign-in
-
-The organizer console SHALL accept a `login_hint` query parameter on entry and
-pass it to the OIDC authorization request so Zitadel pre-fills the operator's
-email address in the login form.
-
-**First-time sign-in.** The provisioning backend (organizer-accounts) sends the
-operator an invitation email whose link opens the **console**
-(`https://organizer.{base}/?org_id=<id>&login_hint=<email>`). Delivery is via
-`CreateInviteCode` with `SendInviteCode` and a console `url_template`, used as
-the **email transport** — the backend has no SMTP of its own, so Zitadel's SMTP
-sends the branded "Invitation to Zitadel Login" mail. The operator clicks
-"Accept invite" → console (org pinned via the `org:id` scope) → OIDC → Login v2.
-Zitadel Login v2 then **auto-onboards** a no-auth-method operator whose email is
-verified: it routes the loginname step into `/verify` (invite flow), sends the
-verification code, and after code + passkey the `requestId` threads through and
-finalises the in-flight OIDC request → `/auth/callback` → `/welcome`
-(source-verified against `apps/login/src` @ `v4.14.0`; see design D5). A
-pre-created invite is therefore NOT a functional prerequisite for Login v2 — it
-is only the mail transport. The invitation link carries **no credential**
-(`{{.Code}}` is omitted from the `url_template`); the code stays IdP-side and is
-delivered and consumed on the Zitadel surface.
-
-**`login_hint` role.** `login_hint` is a UX aid that pre-fills (and, per Zitadel
-behavior, auto-submits) the email step. Because the operator's email is known at
-provisioning time, it is baked **statically** into the invite `url_template`
-(`…&login_hint=<email>`), so even the first Zitadel-sent invitation link carries
-it — the operator skips the email-entry step entirely. The console does not
-require `login_hint` to be present (returning operators sign in without it).
-Invite-email delivery is a backend responsibility — see design D5 and task 4.3.
-
-#### Scenario: Invited operator onboards via the console
-
-- **WHEN** an operator follows the invitation email's link
-  (`organizer.{base}/?org_id=<id>&login_hint=<email>`)
-- **THEN** the console SHALL pin the org via the `org:id` scope, pass `login_hint`,
-  and start the OIDC flow
-- **AND** for a no-auth-method operator whose email is verified, Zitadel Login v2
-  SHALL route into its `/verify` invite flow, send the verification code, guide
-  passkey registration within the OIDC auth-request context, and redirect to
-  `/auth/callback` → `/welcome` on completion
-- **AND** the invitation link SHALL carry no credential (the code is delivered and
-  consumed on the Zitadel surface, never in the console URL)
-
-#### Scenario: login_hint pre-fills the email when present on the console URL
-
-- **WHEN** the console is opened with `?org_id=<id>&login_hint=<email>` (e.g. a
-  re-issued or admin-copied link)
-- **THEN** the console SHALL pass `login_hint` to the OIDC authorization request
-- **AND** Zitadel SHALL display the login form with the operator's email pre-filled
-
-#### Scenario: Returning operator signs in without login_hint
-
-- **WHEN** a returning operator navigates to the console with only `?org_id=<id>`
-  (no `login_hint`)
-- **THEN** the console SHALL initiate the OIDC flow with the `org:id` scope only
-- **AND** Zitadel SHALL authenticate the operator using their existing passkey
 

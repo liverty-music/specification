@@ -71,13 +71,26 @@ Already shipped in v1.39.0 and required: the field gates ALL local auth
 ends onboarding. Passkey-primary = `PASSWORDLESS_TYPE_ALLOWED` + no password on
 the operator. This delta brings `organizer-tenancy` in line with prod.
 
-**D-D — Console enforces the authenticated org (session-reuse fix).** After the
-callback, the console SHALL check the token's org (the `owner` grant's org in the
-`urn:zitadel:iam:org:project:roles` claim / resource owner) against the intended
-tenant. On mismatch it forces re-authentication (`prompt=login`) or signs the
-stale session out, rather than admitting the wrong operator. This closes the
-reproduced bug where an existing org-test-21 session satisfied org-test-30's
-entry.
+**D-D — Console enforces the authenticated org (session-reuse fix).** The console
+SHALL check the token's org (the org ids in the `urn:zitadel:iam:org:project:roles`
+claim) against the intended tenant. On a different-org session it forces
+re-authentication (`prompt=login`), rather than admitting the wrong operator. This
+closes the reproduced bug where an existing org-test-21 session satisfied
+org-test-30's entry.
+
+**The enforcement lives in the route GUARD, not only the callback (corrected after
+a prod repro).** The first implementation (fe v1.59.0) put the check only in the
+OIDC callback. That was bypassed when a pre-existing console session is admitted
+WITHOUT a fresh OIDC exchange: onboarding `org-test-40` with a leftover
+`org-test-21` session landed as org-test-21, and Zitadel logs showed **zero console
+`/authorize` after the passkey** — the guard admitted the stale session and the
+callback (where the check lived) never ran. Fixed in fe **v1.59.1** by moving the
+check into the guard (`OrganizerAuthHook`), which runs on every authenticated
+route. Verified in prod: the guard now logs "Authenticated org is not the intended
+tenant; forcing re-authentication" and redirects to the correct org's login
+(`organization=<intended>`). The org signal is the token's org *membership* (any
+project-role grant), kept separate from the owner-role gate; a no-grant session
+defers to the owner-role gate (→ `/denied`) rather than a re-auth.
 
 **The "intended tenant" signal (resolved — Option 2).** The tenant login policy
 `default_redirect_uri` carries this tenant's org id
