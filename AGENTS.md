@@ -124,4 +124,9 @@ Before modifying `.proto` files, read:
 1. `docs/product-design.md` — domain concepts and product vision
 2. This file — project rules and core design constraints
 
+## Review criteria (flag violations)
+
+- Domain concepts are wrapper messages with protovalidate (`UserId`, `VenueName`…), never bare `string`/`int` (cf. `entity/v1/*.proto`).
+- `entity/v1/` holds pure data types (no service logic); `rpc/*/v1/` imports entities and follows Google AIP.
+
 </agent-rules>
