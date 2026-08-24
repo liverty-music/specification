@@ -1,6 +1,6 @@
 ## 1. Specification (proto)
 
-- [ ] 1.1 `rpc/organizer/v1/organizer_service.proto`: bare-verb `Get` (request carries `OrganizerId`; `GetResponse` wraps the `Organizer` entity — identity only) and bare-verb `ListArtists` (request carries `OrganizerId`; `ListArtistsResponse` carries `repeated Artist artists`), mirroring the admin `OrganizerService` split; import the `Organizer` and `Artist` entities from `organizer-accounts`; document the per-RPC error matrix as INVALID_ARGUMENT (missing/malformed `OrganizerId`) / PERMISSION_DENIED (any authz failure, non-revealing — deliberately no `NOT_FOUND`, unlike the admin surface) / UNAUTHENTICATED (absent/invalid token)
+- [x] 1.1 `rpc/organizer/v1/organizer_service.proto`: bare-verb `Get` (request carries `OrganizerId`; `GetResponse` wraps the `Organizer` entity — identity only) and bare-verb `ListArtists` (request carries `OrganizerId`; `ListArtistsResponse` carries `repeated Artist artists`), mirroring the admin `OrganizerService` split; import the `Organizer` and `Artist` entities from `organizer-accounts`; document the per-RPC error matrix as INVALID_ARGUMENT (missing/malformed `OrganizerId`) / PERMISSION_DENIED (any authz failure, non-revealing — deliberately no `NOT_FOUND`, unlike the admin surface) / UNAUTHENTICATED (absent/invalid token)
 - [ ] 1.2 `buf lint`/`format`/`breaking` pass; open specification PR, merge, cut Release, confirm BSR gen succeeds
 
 ## 2. Backend — server & authorization
