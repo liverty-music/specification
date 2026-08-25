@@ -167,7 +167,7 @@ When preview data is available, the landing page SHALL present a single guided p
 
 ### Requirement: Interactive Timetable Detail
 
-The landing page SHALL present the concert auto-collection pillar as the product's own timetable, rendered as a complete composed frame, and SHALL make its concert cards interactive so that activating a card opens the product's real concert detail view. The detail view SHALL surface the official-information link, the merchandise link, venue information, and the calendar affordance. Controls that require authentication (such as the ticket-journey tracker) SHALL NOT be shown to the anonymous visitor. The landing page SHALL guide the visitor to this interaction rather than relying on a hover-only affordance.
+The landing page SHALL present the concert auto-collection pillar as the product's own timetable, rendered as a complete composed frame, and SHALL make its concert cards interactive so that activating a card opens the product's real concert detail view. The detail view SHALL surface the official-information link, venue information, and the calendar affordance. Controls that require authentication (such as the ticket-journey tracker) SHALL NOT be shown to the anonymous visitor. The landing page SHALL guide the visitor to this interaction rather than relying on a hover-only affordance.
 
 #### Scenario: Timetable shown as a composed frame
 
@@ -185,7 +185,7 @@ The landing page SHALL present the concert auto-collection pillar as the product
 
 - **WHEN** the unauthenticated user activates a concert card
 - **THEN** the system SHALL open the product's real concert detail view for that concert
-- **AND** the view SHALL surface official-information, merchandise, venue, and calendar affordances
+- **AND** the view SHALL surface official-information, venue, and calendar affordances
 - **AND** the system SHALL NOT display authentication-gated controls such as the ticket-journey tracker
 
 #### Scenario: Timetable absent without preview data
