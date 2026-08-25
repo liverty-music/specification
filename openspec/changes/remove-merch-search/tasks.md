@@ -1,15 +1,15 @@
 ## 1. cloud-provisioning — stop the workload first
 
-- [ ] 1.1 Delete the CronJob dirs `k8s/namespaces/backend/{base,overlays/dev,overlays/prod}/cronjob/merch-discovery/`
-- [ ] 1.2 Remove `- cronjob/merch-discovery` from `base/kustomization.yaml` and the merch entries from `overlays/dev/kustomization.yaml` (schedule patch + `merch-discovery-job-config` generator) and `overlays/prod/kustomization.yaml` (config generator + images pin lines)
-- [ ] 1.3 Remove the `Merch Discovery` workload entry from `src/gcp/components/monitoring.ts` (drops the `alert-error-log-merch-discovery` AlertPolicy)
-- [ ] 1.4 Remove `merch-discovery` from the `IMAGES` list in `.github/workflows/bump-prod-pin.yml`
+- [x] 1.1 Delete the CronJob dirs `k8s/namespaces/backend/{base,overlays/dev,overlays/prod}/cronjob/merch-discovery/`
+- [x] 1.2 Remove `- cronjob/merch-discovery` from `base/kustomization.yaml` and the merch entries from `overlays/dev/kustomization.yaml` (schedule patch + `merch-discovery-job-config` generator) and `overlays/prod/kustomization.yaml` (config generator + images pin lines)
+- [x] 1.3 Remove the `Merch Discovery` workload entry from `src/gcp/components/monitoring.ts` (drops the `alert-error-log-merch-discovery` AlertPolicy)
+- [x] 1.4 Remove `merch-discovery` from the `IMAGES` list in `.github/workflows/bump-prod-pin.yml`
 - [ ] 1.5 Deploy: dev ArgoCD/Pulumi sync + prod `pulumi up` (AlertPolicy deletion) and ArgoCD sync; confirm no merch-discovery CronJob remains and nothing repopulates `merch_url`
 
 ## 2. specification — proto + BSR release
 
-- [ ] 2.1 In `proto/liverty_music/entity/v1/series.proto` delete `Url merch_url = 5;` and add `reserved 5; reserved "merch_url";`; remove its doc comment
-- [ ] 2.2 Run `buf lint` + `buf breaking`; if `FIELD_NO_DELETE` still flags despite the reserve, add the `buf skip breaking` PR label
+- [x] 2.1 In `proto/liverty_music/entity/v1/series.proto` delete `Url merch_url = 5;` and add `reserved 5; reserved "merch_url";`; remove its doc comment
+- [x] 2.2 Run `buf lint` + `buf breaking`; if `FIELD_NO_DELETE` still flags despite the reserve, add the `buf skip breaking` PR label
 - [ ] 2.3 Merge the specification PR, cut a GitHub Release (tag `vX.Y.Z`), and watch `buf-release.yml` until BSR gen succeeds (spec-sync + tombstone deletion happen at archive — see section 6)
 
 ## 3. backend release A — remove code and read/write path (column stays)
