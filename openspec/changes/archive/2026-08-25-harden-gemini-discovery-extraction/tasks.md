@@ -32,4 +32,4 @@
 
 - [x] 6.1 Re-run the A/B harness with the hardened concert prompt and confirm `field_accuracy.source_url` improves
 - [x] 6.2 `make check` (lint + unit tests) green
-- [ ] 6.3 Open the PR for the backend branch and merge after CI passes
+- [x] 6.3 Open the PR for the backend branch and merge after CI passes
