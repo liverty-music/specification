@@ -1,0 +1,41 @@
+# Tasks
+
+## 1. Measurement — resolve the migration approach (read-only prod SELECT) — DONE 2026-08-25
+
+- [x] 1.1 Measured series-count-per-`(artist, title, type)` in prod: 382 series → 58 groups (43 multi-series groups cover 367 series; worst 28) — exact-title consolidation is clean
+- [x] 1.2 Counted user-data events: 6 `ticket_journeys` events, 0 `ticket_emails`
+- [x] 1.3 DECIDED: in-place consolidation (folded into design.md → Migration; concretized in section 5)
+
+## 2. Series-grouped discovery model
+
+- [x] 2.1 Define `DiscoveredSeries` / `DiscoveredEvent` entities; reshape `ConcertDiscoveredData` to carry `Series[]`; remove `IsTour` / `TourGroup`
+- [x] 2.2 Emit series-grouped output from the Gemini searcher (map `<tour>` / `<standalone>` → `SeriesType`; `source_url` at the series level)
+- [x] 2.3 Update the publisher (`concert_uc`) to publish the grouped payload
+- [x] 2.4 Update the discovery consumer (`concert_consumer.go`) to deserialize the grouped payload, and update the searcher test that asserts the old `TourGroup` shape (`searcher_test.go` `TestParseStep1Envelope_TourGrouping`) to the series-grouped shape
+
+## 3. Per-series persistence (discovery)
+
+- [x] 3.1 Add `ConcertRepository.FindEventsByArtistAndDate(ctx, artistID, dates)` (join `event_performers` → `events`, project `series_id` / `venue_id` / `local_event_date` / `start_at`) and extract ONE shared helper `resolveSeriesForGroup(ctx, artistID, dates, seriesType) (series_id, existed bool)` — adopt the `series_id` of any event this artist already performs on one of the dates (a true re-discovery), else mint a `UUIDv7`; NO Places API. Reuse it in discovery and any approval-time path so the two cannot drift
+- [x] 3.2 Call the helper ONCE per group and **upsert the `series` row now** (title / type / source_url) so it exists before any event references it. Then resolve venues via Places API **only for uncovered dates** (dates with no existing `(artist, date)` event) — a covered date is a re-discovery: skip Places API (optionally fill a known start from the existing row's `venue_id`). Insert every publishable uncovered event under the group `series_id`; the natural-key upsert links this artist onto a co-headliner's existing event and adopts that event's series (a provisional group mint left empty is swept by §4.4 cleanup)
+- [x] 3.3 Carry ONLY `series_id` onto staged events (both the unresolved-venue and same-slot-conflict staging paths); `type` / `title` / `source_url` live on the already-created series row, not duplicated on staged
+- [x] 3.4 Preserve the Step 1 XML tour grouping (`<tour>`/`<standalone>` → `EventDraft.TourGroup`) end-to-end into `DiscoveredSeries`; do not re-derive grouping downstream
+
+## 4. Series-aware staging & approval
+
+- [x] 4.1 Add `series_id` to `staged_concerts` as a **real foreign key** (schema + entity, Atlas migration) — the series row always exists by staging time (§3.2); do NOT add `series_type` / `source_url` / `title` (derivable from the series row), and it has no `is_tour`/`tour_group` columns to remove
+- [x] 4.2 Approval simply inserts the event under the carried `series_id` — no materialize/adopt branching and no idempotency guard (the series row already exists); keep per-event approval granularity
+- [x] 4.3 Publish ONE `CONCERT.created` per discovered series with all newly-inserted event ids (`ConcertIDs` is already a list), from BOTH the auto-publish and approval paths — not one message per event — so a multi-date tour wakes the notification consumer once
+- [x] 4.4 Add a lightweight cleanup that deletes any series with no events AND no pending staged rows (sweeps the transient/rejected zero-event series that eager creation allows)
+
+## 5. Data migration — in-place consolidation (Atlas)
+
+- [x] 5.1 Group fragmented series by `(source_url, type)` where `source_url` is present (stable tour page — survives title re-branding), falling back to `(normalized title, type)` only when empty; NOT by artist (a co-headline tour spans artists but is one series); mint one canonical TOUR series per group (keep the earliest `UUIDv7`); re-point `events.series_id` and `sales_phases.series_id` to it
+- [x] 5.2 Dedup `sales_phases` on the FULL phase tuple `(series_id, apply_start_at, method, channel, provider_name)` keeping the earliest `discovered_at` (208 → ~70 rows) — do NOT dedup on `(series_id, apply_start_at)` alone or distinct same-start phases (FC lottery vs general on-sale) are lost; set `type = TOUR` for consolidated multi-event groups; delete the emptied fragmented series
+- [x] 5.3 Sequence the migration to run AHEAD of the new per-series backend Deployment (Atlas operator sync-wave, so consolidated data exists before the new code deploys); make it re-runnable and snapshot `(series/events/sales_phases.series_id)` for rollback before mutating
+- [x] 5.4 Verify post-migration with SQL (VERIFIED in prod 2026-08-25 after v1.44.0 deploy: series 382→51, one-event-series 381→6, sales_phases 208→70, types TOUR 40 / SINGLE 11, ticket_journeys distinct event_id = 6 unchanged, rollback snapshot 956 rows): 1-event-series count collapses (~382 → ~58), `sales_phases` ~208 → ~70 rows, consolidated multi-event groups typed TOUR, and `count(distinct event_id)` in `ticket_journeys` unchanged (= 6, none lost)
+
+## 6. Tests & guardrails
+
+- [x] 6.1 Unit tests: a multi-date tour yields ONE series (discovery); a staged tour event joins the tour series on approval; `SeriesType` preserved through approval
+- [x] 6.2 Add a regression guard in `concert_creation_uc_test.go` asserting a multi-date discovered tour persists as exactly ONE `series_id` typed TOUR — the invariant the archived spec required but was never enforced
+- [x] 6.3 `make check` (lint + tests) green
