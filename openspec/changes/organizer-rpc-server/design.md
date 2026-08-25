@@ -19,7 +19,9 @@ authorization with an explicit failure matrix.
 
 **Non-Goals:** organizer-side `Update` and write/business or association-
 mutation RPCs (later); roster mutation (`AssociateArtist`/`DisassociateArtist`)
-stays admin-only; the admin surface (`organizer-accounts`).
+stays admin-only; the admin surface (`organizer-accounts`); an operator
+identity/profile RPC — the console reads the operator's email/name from the
+OIDC token (JWT claims), so no server RPC is needed this phase.
 
 ## Decisions
 
@@ -44,30 +46,42 @@ agree. A multi-org operator is authorized only against their login-scope org.
 Holding any role for that org is sufficient (no specific-role gate this phase).
 The existing backend role extraction flattens the claim to a `[]string` of role
 names and discards the inner `orgId` — the org-scoped interceptor MUST preserve
-`role → orgId` so the caller's Zitadel org can be derived. Applies uniformly to
-`Get` and `ListArtists`. Analogous to `rpc-auth-scoping` (body id vs token),
-here the requested `OrganizerId` (resolved via `zitadel_org_id`) vs the caller's
-Zitadel org.
+`role → orgId` so the caller's Zitadel org can be derived. Exactly one
+`urn:zitadel:iam:org:id:<orgId>` login-scope scope SHALL be present (zero or
+several → denied). The caller's Zitadel org is derived identically for `Get`
+and `ListArtists`; only `ListArtists` additionally carries an `OrganizerId`,
+verified against it (analogous to `rpc-auth-scoping`, body id vs token).
 
-**D3 — Authorization failures are PERMISSION_DENIED / UNAUTHENTICATED, never
-500; existence is never revealed.** Missing/empty roles claim (require
-`accessTokenRoleAssertion=true` on the app), `aud` without the project id,
-login-scope↔role-claim org disagreement, requested `OrganizerId` resolving to a
-different org, the caller's Organizer being **deactivated** (per
-`organizer-accounts`, which mandates rejecting operations on a deactivated
-Organizer), or **no Organizer linked** to the caller's Zitadel org → all
-`PERMISSION_DENIED`, non-revealing (unlike the admin surface, which returns
-`NOT_FOUND`, because the organizer surface is external and org-scoped, matching
-`rpc-auth-scoping`'s "SHALL NOT reveal whether the resource exists"). Absent or
-invalid token → `UNAUTHENTICATED`. The one non-authz exception: a missing or
-malformed `OrganizerId` fails validation first → `INVALID_ARGUMENT` via
-protovalidate.
+**D3 — Failures are PERMISSION_DENIED / UNAUTHENTICATED, never 500; another
+org's existence is never revealed, but the caller's OWN deactivated org is
+distinguishable.** A request against an `active` resolved Organizer is served.
+If the caller's own resolved Organizer is `deactivated` (per `organizer-accounts`,
+which mandates rejecting operations on a deactivated Organizer) →
+`FAILED_PRECONDITION`, optionally stating so: it is the caller's own org,
+already known to them, so non-revealing gains nothing and a clear signal is
+better UX (an operator can act on "your organizer is deactivated"). Everything
+else — missing/empty roles claim (require `accessTokenRoleAssertion=true`),
+`aud` without the project id, login-scope↔role-claim disagreement, zero or
+multiple login-scope orgs, a supplied `OrganizerId` resolving to a different
+org, or no Organizer linked to the caller's Zitadel org → `PERMISSION_DENIED`,
+non-revealing (unlike the admin surface's `NOT_FOUND`; matches `rpc-auth-scoping`'s
+"SHALL NOT reveal whether the resource exists"). Absent/invalid token →
+`UNAUTHENTICATED`. A missing or malformed `OrganizerId` on `ListArtists` fails
+validation first → `INVALID_ARGUMENT`. (`provisioning` is an admin-Create-saga
+internal state, unreachable on this read surface — an operator cannot
+authenticate until the same saga has created their passkey and set the org
+`active` — so it needs no clause here.)
 
-**D4 — `Get` / `ListArtists` request shape.** Each request carries an explicit
-`OrganizerId` verified to resolve to the caller's own Organizer (its
-`zitadel_org_id` equals the caller's Zitadel org), consistent with
-`rpc-auth-scoping`, rejecting any other value. `GetResponse` wraps the
-`Organizer` entity; `ListArtistsResponse` carries `repeated Artist artists`.
+**D4 — `Get` is a token-only bootstrap; `ListArtists` carries the id.**
+`GetRequest` is empty: the console holds no `OrganizerId` before the first call,
+so `Get` resolves the caller's Organizer from the token and returns it,
+mirroring the fan `UserService.Create` resolve-from-token exception.
+`ListArtists` then carries the `OrganizerId` the console obtained from `Get`,
+verified to resolve to the caller's own Organizer (consistent with
+`rpc-auth-scoping`). `GetResponse` wraps the `Organizer` entity;
+`ListArtistsResponse` carries `repeated Artist artists`. Fan precedent mapping:
+`UserService.Create` (token-only bootstrap) : `Get`(id) ∷ organizer `Get`
+(token-only bootstrap) : `ListArtists`(id).
 
 **D5 — Roster is a separate RPC, not embedded in `Get`.** The `Organizer`
 entity intentionally carries no artist field, and the admin `OrganizerService`

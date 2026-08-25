@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.v1 provides the organizer-facing
+// OrganizerService that an operator uses to read their own Organizer from the
+// organizer console. It is served by the dedicated organizer Connect server
+// behind org-scoped role-claim authorization; the admin-facing surface for
+// managing Organizers lives separately in liverty_music.rpc.admin.organizer.v1.
+package liverty_music.rpc.organizer.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/organizer.proto";
+
+// OrganizerService is the organizer-facing surface: an authenticated operator
+// reads their own Organizer and the artists it represents. The caller's
+// Organizer is resolved from the token (the Zitadel org the token is scoped
+// to). Authorization is org-scoped from the token's role claim, and failures
+// that would concern another org never reveal whether such an Organizer exists.
+service OrganizerService {
+  // Get returns the caller's own Organizer identity (id, name), resolved from
+  // the authenticated token. The console holds no OrganizerId before this call
+  // (its only pre-call identity is the Zitadel org), so Get is the sanctioned
+  // bootstrap that yields the OrganizerId — mirroring UserService.Create, the
+  // resolve-from-token exception. The roster of represented artists is
+  // retrieved separately via ListArtists.
+  //
+  // Possible errors:
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  //   Because this is the caller's own org, the state is not concealed (unlike
+  //   the non-revealing PERMISSION_DENIED cases below).
+  // - PERMISSION_DENIED: The token carries no organizer-console role, its
+  //   audience lacks the organizer-console project id, its login-scope org and
+  //   role-claim org disagree, or no Organizer is linked to the caller's
+  //   Zitadel org. The response never reveals whether such an Organizer exists.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Get(GetRequest) returns (GetResponse);
+
+  // ListArtists returns the artists the caller's own Organizer represents,
+  // ascending by artist id (stable), so the organizer console can render the
+  // roster. Empty when it represents none. The organizer_id is the caller's
+  // own, obtained from Get. The roster is unbounded on the wire: pagination is
+  // deferred to a later phase, which is acceptable because an Organizer's
+  // roster is admin-curated and small.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The organizer_id is missing or malformed.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated (see
+  //   Get).
+  // - PERMISSION_DENIED: The organizer_id does not resolve to the caller's own
+  //   Organizer, or any authorization failure listed for Get. Non-revealing.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc ListArtists(ListArtistsRequest) returns (ListArtistsResponse);
+}
+
+// GetRequest is empty: the caller's Organizer is resolved from the token, not
+// supplied by the client, which holds no OrganizerId before this bootstrap
+// call.
+message GetRequest {}
+
+// GetResponse returns the caller's Organizer identity.
+message GetResponse {
+  // The caller's organizer (id and name).
+  entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
+}
+
+// ListArtistsRequest carries the caller's own organizer_id, as returned by Get.
+message ListArtistsRequest {
+  // Required. The caller's own organizer identifier, as returned by Get. It
+  // MUST resolve to the caller's own Organizer; any other value is rejected
+  // with PERMISSION_DENIED.
+  entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
+}
+
+// ListArtistsResponse contains the artists the caller's Organizer represents,
+// ascending by artist id (stable). Empty when it represents none.
+message ListArtistsResponse {
+  // The artists represented by the organizer, ascending by artist id. Empty
+  // when it represents none.
+  repeated entity.v1.Artist artists = 1;
+}
