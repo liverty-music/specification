@@ -3,12 +3,10 @@
 ## Purpose
 
 Defines error-log-based alerting across backend workloads and CronJobs, including migration-failure detection, notification routing, and rate limiting.
-
 ## Requirements
-
 ### Requirement: Error log detection per workload
 
-The system SHALL detect ERROR-level log entries from each backend workload (server, consumer, concert-discovery, sales-phase-discovery, merch-discovery) independently using Cloud Monitoring Log-Based Alert Policies.
+The system SHALL detect ERROR-level log entries from each backend workload (server, consumer, concert-discovery, sales-phase-discovery) independently using Cloud Monitoring Log-Based Alert Policies.
 
 Each Alert Policy SHALL filter logs by:
 - `resource.type = "k8s_container"`
@@ -36,11 +34,6 @@ Each Alert Policy SHALL filter logs by:
 - **WHEN** the sales-phase-discovery CronJob emits a log entry with severity ERROR (for example, a startup database ping failure or a per-artist searcher failure)
 - **THEN** the sales-phase-discovery-specific Alert Policy detects the log entry and opens an Incident
 
-#### Scenario: Merch-discovery CronJob emits an ERROR log
-
-- **WHEN** the merch-discovery CronJob emits a log entry with severity ERROR
-- **THEN** the merch-discovery-specific Alert Policy detects the log entry and opens an Incident
-
 #### Scenario: WARN-level log does not trigger alert
 
 - **WHEN** any workload emits a log entry with severity WARNING
@@ -48,7 +41,7 @@ Each Alert Policy SHALL filter logs by:
 
 ### Requirement: Discovery CronJob failure observability
 
-Backend discovery CronJobs (`concert-discovery`, `sales-phase-discovery`, `merch-discovery`) handle their own errors and exit with status 0 even when a run fails, so that a broken run does not retry into the same persistent fault and exhaust downstream API quota. On this *handled*-failure path the process catches the error, logs it at severity ERROR, and exits 0 — so the Kubernetes Job is reported as succeeded and the ERROR log is the only failure signal. ERROR-log alerting is therefore the correct layer for the handled path, and every backend discovery CronJob SHALL have ERROR-log alert coverage under "Error log detection per workload". Introducing a new discovery CronJob without a corresponding Alert Policy is a violation of this requirement.
+Backend discovery CronJobs (`concert-discovery`, `sales-phase-discovery`) handle their own errors and exit with status 0 even when a run fails, so that a broken run does not retry into the same persistent fault and exhaust downstream API quota. On this *handled*-failure path the process catches the error, logs it at severity ERROR, and exits 0 — so the Kubernetes Job is reported as succeeded and the ERROR log is the only failure signal. ERROR-log alerting is therefore the correct layer for the handled path, and every backend discovery CronJob SHALL have ERROR-log alert coverage under "Error log detection per workload". Introducing a new discovery CronJob without a corresponding Alert Policy is a violation of this requirement.
 
 This requirement covers ONLY the handled-failure path. Abrupt-termination failures (OOM-kill, image-pull failure, node preemption/eviction) do not reach the handler: the container is killed before it can log an ERROR, and the Job is reported as failed rather than succeeded. Such failures are caught by neither ERROR-log alerting nor (deliberately excluded) Job-level alerting, and remain a separate, currently-uncovered observability gap tracked outside this change.
 
@@ -270,3 +263,4 @@ This prevents the GKE logging agent from misclassifying INFO/WARN logs written t
 - **WHEN** the NATS client successfully connects after retries
 - **AND** emits an INFO log via the standard `slog` package
 - **THEN** the log entry SHALL appear as `severity=INFO` in Cloud Logging (not ERROR)
+
