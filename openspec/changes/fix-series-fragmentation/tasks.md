@@ -15,8 +15,8 @@
 
 ## 3. Per-series persistence (discovery)
 
-- [ ] 3.1 Extract ONE shared helper `resolveSeriesForGroup(ctx, venueIDs, dates, seriesType) (series_id, existed bool)` — adopt from the group's existing events across all venue/dates, else mint a `UUIDv7`; reuse it in discovery and any approval-time path so the two cannot drift
-- [ ] 3.2 Resolve all group venues FIRST (Places API, per-batch cache), THEN call the helper ONCE per group and **upsert the `series` row now** (title / type / source_url) — so the series row exists before any event references it; insert every publishable event under that `series_id`
+- [ ] 3.1 Add `ConcertRepository.FindEventsByArtistAndDate(ctx, artistID, dates)` (join `event_performers` → `events`, project `series_id` / `venue_id` / `local_event_date` / `start_at`) and extract ONE shared helper `resolveSeriesForGroup(ctx, artistID, dates, seriesType) (series_id, existed bool)` — adopt the `series_id` of any event this artist already performs on one of the dates (a true re-discovery), else mint a `UUIDv7`; NO Places API. Reuse it in discovery and any approval-time path so the two cannot drift
+- [ ] 3.2 Call the helper ONCE per group and **upsert the `series` row now** (title / type / source_url) so it exists before any event references it. Then resolve venues via Places API **only for uncovered dates** (dates with no existing `(artist, date)` event) — a covered date is a re-discovery: skip Places API (optionally fill a known start from the existing row's `venue_id`). Insert every publishable uncovered event under the group `series_id`; the natural-key upsert links this artist onto a co-headliner's existing event and adopts that event's series (a provisional group mint left empty is swept by §4.4 cleanup)
 - [ ] 3.3 Carry ONLY `series_id` onto staged events (both the unresolved-venue and same-slot-conflict staging paths); `type` / `title` / `source_url` live on the already-created series row, not duplicated on staged
 - [ ] 3.4 Preserve the Step 1 XML tour grouping (`<tour>`/`<standalone>` → `EventDraft.TourGroup`) end-to-end into `DiscoveredSeries`; do not re-derive grouping downstream
 
