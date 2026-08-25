@@ -1,8 +1,8 @@
 ## 1. Specification (proto)
 
-- [ ] 1.1 `entity/v1/series.proto` (additive, wrapper VOs per convention): `description` (`Description` VO, protovalidate length), `cover_image` (`Url` VO), `Visibility` enum (`UNSPECIFIED`/`PUBLIC`/`UNLISTED`; reserve `PASSWORD`), `PublishState` enum (`UNSPECIFIED`/`DRAFT`/`PUBLISHED`/`CANCELLED`; reserve `SCHEDULED`), `organizer_id`; unlisted token backend-only (not on read DTO)
-- [ ] 1.2 New `rpc/organizer/v1/concert_service.proto` — `ConcertService` (bare verbs) `Create`, `Update`, `Cancel`, `Publish`, `UploadCoverImage`, `RegenerateToken`, `List` + messages + error docs; keep identity `OrganizerService` unchanged
-- [ ] 1.3 `buf lint`/`format`/`breaking`; spec PR merge → Release → BSR gen
+- [x] 1.1 `entity/v1/series.proto` (additive, wrapper VOs per convention): `description` (`Description` VO, protovalidate length), `cover_image` (`Url` VO), `Visibility` enum (`UNSPECIFIED`/`PUBLIC`/`UNLISTED`; reserve `PASSWORD`), `PublishState` enum (`UNSPECIFIED`/`DRAFT`/`PUBLISHED`/`CANCELLED`; reserve `SCHEDULED`), `organizer_id`; unlisted token backend-only (not on read DTO)
+- [x] 1.2 New `rpc/organizer/v1/concert_service.proto` — `ConcertService` (bare verbs) `Create`, `Update`, `Cancel`, `Publish`, `UploadCoverImage`, `RegenerateToken`, `List` + messages + error docs; keep identity `OrganizerService` unchanged
+- [ ] 1.3 `buf lint`/`format`/`breaking` (✅ pass locally); spec PR merge → Release → BSR gen (pending)
 
 ## 2. Cloud-provisioning
 
