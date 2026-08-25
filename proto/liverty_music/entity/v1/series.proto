@@ -5,6 +5,7 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/organizer.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
@@ -33,6 +34,50 @@ enum SeriesType {
   // A multi-performer event such as a music festival
   // (e.g. "FUJI ROCK FESTIVAL 2026").
   SERIES_TYPE_FESTIVAL = 3;
+}
+
+// Visibility controls who can reach a first-party (organizer-authored) series.
+// It is meaningful only for series that carry an `organizer_id`; discovered
+// series leave it VISIBILITY_UNSPECIFIED. The final shape is declared now so
+// that later authoring extensions are purely additive. New values may be
+// appended; existing values must not be renumbered.
+enum Visibility {
+  // Default value. Applies to discovered (non-first-party) series, which have
+  // no organizer-controlled visibility; must not be persisted for a first-party
+  // series.
+  VISIBILITY_UNSPECIFIED = 0;
+  // The series appears in normal discovery, lists, and follower notifications.
+  VISIBILITY_PUBLIC = 1;
+  // The series is reachable only through a signed tokenized share URL and is
+  // excluded from discovery, lists, and notifications.
+  VISIBILITY_UNLISTED = 2;
+  // Field 3 is reserved for a future password-protected visibility introduced
+  // by organizer-event-authoring-extensions.
+  reserved 3;
+  reserved "VISIBILITY_PASSWORD";
+}
+
+// PublishState is the authoring lifecycle of a first-party series. It is
+// meaningful only for series that carry an `organizer_id`; discovered series
+// leave it PUBLISH_STATE_UNSPECIFIED. The final shape is declared now so that
+// later authoring extensions are purely additive. New values may be appended;
+// existing values must not be renumbered.
+enum PublishState {
+  // Default value. Applies to discovered (non-first-party) series, which do not
+  // pass through the organizer authoring lifecycle; must not be persisted for a
+  // first-party series.
+  PUBLISH_STATE_UNSPECIFIED = 0;
+  // The series is being authored and is not visible on any fan surface.
+  PUBLISH_STATE_DRAFT = 1;
+  // The series has been published; PUBLIC series are announced to followers.
+  PUBLISH_STATE_PUBLISHED = 2;
+  // The series has been cancelled. This is terminal: it is dropped from fan
+  // surfaces and never re-published.
+  PUBLISH_STATE_CANCELLED = 3;
+  // Field 4 is reserved for a future scheduled-publish state introduced by
+  // organizer-event-authoring-extensions.
+  reserved 4;
+  reserved "PUBLISH_STATE_SCHEDULED";
 }
 
 // Series is the parent aggregation above Event. It owns metadata that is
@@ -82,4 +127,33 @@ message Series {
   // regeneration stays wire-safe.
   reserved 5;
   reserved "merch_url";
+
+  // The free-form body text of the series page, authored by an organizer.
+  // Optional: discovered series and organizer series without a write-up leave
+  // it unset. A nil wrapper skips inner-Description validation by protovalidate's
+  // default presence semantics.
+  Description description = 6 [(google.api.field_behavior) = OPTIONAL];
+
+  // The cover image shown on the series page, authored by an organizer and
+  // served from object storage. Optional: absent for discovered series and for
+  // organizer series without an uploaded image. A nil wrapper skips inner-Url
+  // validation by protovalidate's default presence semantics.
+  Url cover_image = 7 [(google.api.field_behavior) = OPTIONAL];
+
+  // Who can reach this series. Set only for first-party (organizer-authored)
+  // series; discovered series leave it VISIBILITY_UNSPECIFIED. Not constrained
+  // to a non-zero value because this entity also represents discovered series.
+  Visibility visibility = 8 [(google.api.field_behavior) = OPTIONAL];
+
+  // The authoring lifecycle state of this series. Set only for first-party
+  // series; discovered series leave it PUBLISH_STATE_UNSPECIFIED. Not
+  // constrained to a non-zero value because this entity also represents
+  // discovered series.
+  PublishState publish_state = 9 [(google.api.field_behavior) = OPTIONAL];
+
+  // The organizer that authored this series. Present marks the series as
+  // first-party; absent means the series originated from the discovery
+  // pipeline. Optional for that reason. The unlisted share token is a
+  // backend-only concern and is intentionally absent from this read entity.
+  OrganizerId organizer_id = 10 [(google.api.field_behavior) = OPTIONAL];
 }

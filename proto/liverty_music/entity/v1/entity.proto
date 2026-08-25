@@ -48,6 +48,21 @@ message Title {
   }];
 }
 
+// Description represents the free-form body text of a concert page, authored by
+// an organizer. It holds the informational write-up shown on the event page
+// (set list notes, guest details, admission notes, and similar prose). A nil
+// wrapper skips inner validation by protovalidate's default presence semantics
+// (Ignore.IGNORE_UNSPECIFIED), so a series without a description never hits the
+// length rules; when present, the text is bounded to keep page rendering and
+// storage predictable.
+message Description {
+  // The body text. Must be between 1 and 10000 characters when present.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 10000
+  }];
+}
+
 // Url represents a validated web address.
 // Used for any URI field across entities (source links, image URLs, official sites).
 message Url {

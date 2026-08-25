@@ -1,0 +1,332 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.v1 provides the organizer-facing
+// services an operator uses from the organizer console. Beyond the identity
+// OrganizerService (Get + ListArtists), this file adds ConcertService, the
+// authoring surface an organizer uses to create and publish first-party
+// concerts for the artists it represents. Both services are served by the
+// dedicated organizer Connect server behind org-scoped role-claim
+// authorization; the admin-facing catalog management lives separately in
+// liverty_music.rpc.admin.v1.ConcertService.
+package liverty_music.rpc.organizer.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/series.proto";
+import "liverty_music/entity/v1/venue.proto";
+
+// ConcertService is the organizer-facing authoring surface: an authenticated
+// operator creates a first-party concert as an informational event page,
+// edits it while it is a draft, publishes it to fans, and manages its
+// lifecycle thereafter. A first-party concert is modelled as a Series (a
+// single show, a multi-day run, or a tour) with one or more Events; times live
+// on the Event, so a 2部制 day is two Events under one Series.
+//
+// The caller's Organizer is resolved from the token (the Zitadel org the token
+// is scoped to), so requests never carry an organizer_id; a series is
+// addressed by its SeriesId. An organizer may author only for artists it
+// represents (the same represented-artists set returned by
+// OrganizerService.ListArtists). Authorization is org-scoped from the token's
+// role claim, and failures that would concern another org's series never
+// reveal whether such a series exists.
+//
+// Publishing a PUBLIC series emits exactly one CONCERT.created per series
+// (carrying the newly-published event ids), which drives the existing follower
+// push; DRAFT and UNLISTED series never emit. UNLISTED series are reachable
+// only through a signed tokenized share URL and are excluded from discovery,
+// lists, and notifications.
+service ConcertService {
+  // Create authors a new first-party concert in the DRAFT state: it mints a
+  // Series (title, type, visibility, optional description) with its
+  // performers and one or more Events (venue, date, optional start/open
+  // times). Nothing is announced to fans — a draft is visible only in the
+  // organizer console until Publish. The venue of each event is resolved via
+  // the Places get-or-create helper.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: A required field is missing or malformed, the event
+  //   list is empty, or a time is inconsistent (e.g. open time after start
+  //   time, or a date in the past).
+  // - PERMISSION_DENIED: The caller lacks the organizer-console role, or a
+  //   requested performer is not among the artists the caller's Organizer
+  //   represents. Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Create(CreateRequest) returns (CreateResponse);
+
+  // Update edits an existing series. While the series is a DRAFT this may
+  // change any authored field, add events, or change performers. Once
+  // PUBLISHED it is a correction: it revises the page in place and does NOT
+  // re-notify followers. The whole authoring payload is supplied and replaces
+  // the prior draft content.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: A required field is missing or malformed, or a time is
+  //   inconsistent.
+  // - PERMISSION_DENIED: The series is not owned by the caller's Organizer, or
+  //   a requested performer is not represented. Non-revealing.
+  // - FAILED_PRECONDITION: The series has been CANCELLED (terminal).
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Update(UpdateRequest) returns (UpdateResponse);
+
+  // Publish transitions a DRAFT series to PUBLISHED. For a PUBLIC series this
+  // emits exactly one CONCERT.created carrying the newly-published event ids,
+  // which notifies followers; publishing a further event under an
+  // already-published series emits once for only the new event id(s). UNLISTED
+  // series publish without emitting. On publish the natural-key upsert
+  // supersedes any matching discovered slot: a pending staged concert is
+  // dropped and an already-published discovered event is claimed (re-pointed to
+  // this series, kept by id, marked organizer-owned) without re-notifying.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The series is not owned by the caller's Organizer.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The series is already PUBLISHED with no new events,
+  //   is CANCELLED, or a target (venue, date, start time) slot is suppressed or
+  //   owned by a different organizer — the latter is routed to admin
+  //   reconciliation rather than taken over.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Publish(PublishRequest) returns (PublishResponse);
+
+  // Cancel marks a series CANCELLED. This is terminal: the series is dropped
+  // from every fan surface and cannot be re-published. A CONCERT.cancelled
+  // event is emitted so downstream consumers and caches can drop it.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The series is not owned by the caller's Organizer.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The series is already CANCELLED.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Cancel(CancelRequest) returns (CancelResponse);
+
+  // UploadCoverImage stores the cover image for a series in object storage and
+  // returns the stable served URL, which is persisted on the Series. The image
+  // is validated server-side for content type and size. MVP supports one image
+  // per series; a subsequent upload replaces the previous one.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The image is empty, exceeds the size limit, or is not
+  //   an accepted image type.
+  // - PERMISSION_DENIED: The series is not owned by the caller's Organizer.
+  //   Non-revealing.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc UploadCoverImage(UploadCoverImageRequest) returns (UploadCoverImageResponse);
+
+  // RegenerateToken issues a fresh signed share token for an UNLISTED series,
+  // invalidating the previous share URL, and returns the new URL. It applies
+  // only to UNLISTED series.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The series is not owned by the caller's Organizer.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The series is not UNLISTED, so it has no share token.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc RegenerateToken(RegenerateTokenRequest) returns (RegenerateTokenResponse);
+
+  // List returns the concerts authored by the caller's own Organizer, both
+  // drafts and published, so the console can render the authoring dashboard.
+  // The Organizer is resolved from the token; the list is unbounded on the
+  // wire because an organizer's own catalog is small.
+  //
+  // Possible errors:
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - PERMISSION_DENIED: The caller lacks the organizer-console role.
+  //   Non-revealing.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc List(ListRequest) returns (ListResponse);
+}
+
+// EventDraft is one performance being authored under a series: its calendar
+// date, optional start and open times, and the venue to resolve. The venue is
+// supplied by name (resolved via the Places get-or-create helper); a Google
+// place id may accompany it for precise resolution when the console captured
+// one from autocomplete.
+message EventDraft {
+  // Required. The venue name, resolved against Google Places to a canonical
+  // Venue on write.
+  entity.v1.VenueName venue_name = 1 [(buf.validate.field).required = true];
+
+  // Optional. The Google Places place id captured by the console, used to
+  // resolve the venue precisely instead of by name alone.
+  entity.v1.PlaceId place_id = 2;
+
+  // Required. The calendar date of this performance in the venue's local
+  // timezone.
+  entity.v1.LocalDate local_date = 3 [(buf.validate.field).required = true];
+
+  // Optional. The scheduled start time; omitted when not yet confirmed.
+  entity.v1.StartTime start_time = 4;
+
+  // Optional. The door-open time; omitted when not yet announced.
+  entity.v1.OpenTime open_time = 5;
+}
+
+// SeriesDraft is the authoring payload for a first-party series, shared by
+// Create and Update. It carries the series-level metadata, the performers, and
+// the events being authored. Cover image and unlisted share token are managed
+// out of band (UploadCoverImage and the publish/RegenerateToken flow), so they
+// are not part of this payload.
+message SeriesDraft {
+  // Required. The title shared by every event in the series.
+  entity.v1.Title title = 1 [(buf.validate.field).required = true];
+
+  // Required. The classification of the series (single, tour, or festival).
+  // The unspecified zero value is rejected at the boundary.
+  entity.v1.SeriesType type = 2 [(buf.validate.field) = {
+    required: true
+    enum: {
+      defined_only: true
+      not_in: [0]
+    }
+  }];
+
+  // Required. Who can reach the series once published (PUBLIC or UNLISTED).
+  // The unspecified zero value is rejected at the boundary.
+  entity.v1.Visibility visibility = 3 [(buf.validate.field) = {
+    required: true
+    enum: {
+      defined_only: true
+      not_in: [0]
+    }
+  }];
+
+  // Optional. The free-form body text shown on the series page.
+  entity.v1.Description description = 4;
+
+  // Optional. The official source URL for series-level information.
+  entity.v1.Url source_url = 5;
+
+  // Required. The performing artists, each of which MUST be among the artists
+  // the caller's Organizer represents. At least one performer is required.
+  repeated entity.v1.ArtistId artist_ids = 6 [(buf.validate.field).repeated.min_items = 1];
+
+  // Required. The events (performances) under this series. At least one event
+  // is required.
+  repeated EventDraft events = 7 [(buf.validate.field).repeated.min_items = 1];
+}
+
+// AuthoredConcert is the organizer-console read projection of a first-party
+// concert: the authored Series together with its Events and performing
+// artists. One AuthoredConcert corresponds to one Series, so the console
+// renders the whole page from a single response.
+message AuthoredConcert {
+  // The authored series, including its authoring fields (description, cover
+  // image, visibility, publish state, organizer id).
+  entity.v1.Series series = 1 [(buf.validate.field).required = true];
+
+  // The events under the series, in date order. Always contains at least one
+  // event.
+  repeated entity.v1.Event events = 2 [(buf.validate.field).repeated.min_items = 1];
+
+  // The performing artists, in display order. Always contains at least one
+  // performer.
+  repeated entity.v1.Artist performers = 3 [(buf.validate.field).repeated.min_items = 1];
+}
+
+// CreateRequest carries the authoring payload for a new draft series.
+message CreateRequest {
+  // Required. The series to author. It is created in the DRAFT state.
+  SeriesDraft draft = 1 [(buf.validate.field).required = true];
+}
+
+// CreateResponse returns the newly-created draft concert.
+message CreateResponse {
+  // The created concert, in the DRAFT state.
+  AuthoredConcert concert = 1 [(buf.validate.field).required = true];
+}
+
+// UpdateRequest identifies the series to edit and supplies the full authoring
+// payload that replaces its prior content.
+message UpdateRequest {
+  // Required. The series to edit. It MUST be owned by the caller's Organizer.
+  entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The authoring payload that replaces the series' prior content.
+  SeriesDraft draft = 2 [(buf.validate.field).required = true];
+}
+
+// UpdateResponse returns the updated concert.
+message UpdateResponse {
+  // The updated concert.
+  AuthoredConcert concert = 1 [(buf.validate.field).required = true];
+}
+
+// PublishRequest identifies the series to publish.
+message PublishRequest {
+  // Required. The series to publish. It MUST be owned by the caller's
+  // Organizer.
+  entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
+}
+
+// PublishResponse returns the published concert.
+message PublishResponse {
+  // The published concert.
+  AuthoredConcert concert = 1 [(buf.validate.field).required = true];
+}
+
+// CancelRequest identifies the series to cancel.
+message CancelRequest {
+  // Required. The series to cancel. It MUST be owned by the caller's
+  // Organizer.
+  entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
+}
+
+// CancelResponse is returned upon successful cancellation.
+message CancelResponse {}
+
+// UploadCoverImageRequest carries the series to attach the image to and the
+// image bytes with their content type.
+message UploadCoverImageRequest {
+  // Required. The series whose cover image is being uploaded. It MUST be owned
+  // by the caller's Organizer.
+  entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The raw image bytes. Bounded to 10 MiB; validated server-side.
+  bytes image_data = 2 [(buf.validate.field).bytes = {
+    min_len: 1
+    max_len: 10485760
+  }];
+
+  // Required. The IANA media type of the image. Only common web image types
+  // are accepted.
+  string content_type = 3 [(buf.validate.field).string = {
+    in: [
+      "image/jpeg",
+      "image/png",
+      "image/webp"
+    ]
+  }];
+}
+
+// UploadCoverImageResponse returns the stable served URL of the stored image.
+message UploadCoverImageResponse {
+  // The served URL of the stored cover image, now persisted on the series.
+  entity.v1.Url cover_image = 1 [(buf.validate.field).required = true];
+}
+
+// RegenerateTokenRequest identifies the UNLISTED series whose share token is
+// being rotated.
+message RegenerateTokenRequest {
+  // Required. The UNLISTED series to rotate the share token for. It MUST be
+  // owned by the caller's Organizer.
+  entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
+}
+
+// RegenerateTokenResponse returns the new signed share URL; the previous URL is
+// invalidated.
+message RegenerateTokenResponse {
+  // The new signed share URL for the UNLISTED series.
+  entity.v1.Url share_url = 1 [(buf.validate.field).required = true];
+}
+
+// ListRequest is empty: the caller's Organizer is resolved from the token, and
+// the full own catalog (drafts and published) is returned.
+message ListRequest {}
+
+// ListResponse contains the concerts authored by the caller's Organizer.
+message ListResponse {
+  // The concerts authored by the caller's Organizer, drafts and published.
+  repeated AuthoredConcert concerts = 1;
+}
