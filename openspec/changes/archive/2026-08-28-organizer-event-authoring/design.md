@@ -47,9 +47,12 @@ showtimes). The "one page, multiple showtimes" UX is the `Series` page
 listing its `Event`s.
 
 **D2 — Minimal fields on `Series`; origin derived from `organizer_id`.**
-Add to `Series`: `description`, `cover_image`, `visibility`
+Add to `Series` (DB columns): `description`, `visibility`
 (`PUBLIC`/`UNLISTED`), `publish_state` (`DRAFT`/`PUBLISHED`/`CANCELLED`),
-`organizer_id` (owner). A non-null `organizer_id` marks first-party. `Event`,
+`organizer_id` (owner). The **cover image is NOT a `Series` column** — it is a
+`media` row linked via `series_media` (see D8); the read DTO's `cover_image`
+`Url` VO is **derived from the object key at read time**, never persisted.
+A non-null `organizer_id` marks first-party. `Event`,
 `Venue`, `event_performers` reused unchanged. **A first-party concert is a
 `Series` authored via the fix-series-fragmentation series-resolution path**,
 so an organizer-authored tour is one `Series` with its `Event`s — grouping is
@@ -112,9 +115,61 @@ it (constant-time) and is excluded from all list/discovery/notify queries.
 The owning organizer can regenerate the token (invalidating the old URL). No
 referrer control.
 
-**D7 — Cover image hosting (the one new infra).** Organizer upload →
-type/size validation → GCS → served via a stable URL persisted on the
-Series. MVP: one image. Bucket provisioned in cloud-provisioning.
+**D7 — Media hosting & serving: private bucket behind Cloud CDN (DRS-safe). [revised]**
+The org enforces **Domain Restricted Sharing** (`iam.allowedPolicyMemberDomains`),
+so granting `allUsers`/`allAuthenticatedUsers` object-viewer is rejected
+(`Error 412`, verified: no bucket in the org is public) — and public GCS via
+`allUsers` is against GCS best practice anyway. So serve from a **private**
+bucket through an external HTTPS LB + **Cloud CDN backend bucket**; the LB
+service account (`service-<num>@https-lb.iam.gserviceaccount.com`, a real org
+member → DRS-safe) gets `roles/storage.objectViewer`, `cache-mode=FORCE_CACHE_ALL`.
+The bucket stays private; no public IAM member is ever added.
+- **One bucket** `liverty-music-{env}-organizer-media`. The URL map routes
+  `/cdn/*` to the CDN backend bucket. **MVP places ALL covers (DRAFT, PUBLIC,
+  UNLISTED) under `cdn/{organizer_id}/{media_id}`** — there is no upload-time
+  `internal/` staging, no signed-URL preview, and no publish-time copy. Upload
+  writes straight to `cdn/`; the served URL is the same in every state.
+- **DRAFT protection is by obscurity** (the `media_id` is an unguessable
+  UUIDv7 key that never appears in any public response until the organizer
+  renders it) — **accepted for MVP** because cover images are low-sensitivity
+  promotional art. The hardened form (an `internal/` prefix that the URL map
+  does NOT route + V4 signed-URL preview + a publish-time `internal/ → cdn/`
+  copy, giving a hard non-routing boundary instead of obscurity) is **deferred**
+  to `organizer-event-authoring-extensions`; the key scheme keeps the `cdn/`
+  prefix so that hardening is purely additive.
+- **The DB stores the object-key basis, never the served URL.** The key is
+  derived `cdn/{organizer_id}/{media_id}` (no file extension — Content-Type
+  comes from the GCS object metadata); the URL is composed at read time.
+- Server-side type/size validation on upload; moderation deferred.
+
+**D8 — First-party media data model: generic `media` + per-relationship join. [new]**
+- `media(id UUIDv7 PK, organizer_id FK, kind, attributes JSONB)`. `id` is the
+  repo-standard **UUIDv7** (`entity.NewID`) — it is BOTH the object-key basename
+  AND the creation-time source (v7 embeds ms), so there is **no stored
+  `object_key` and no `created_at` column** (both are derivable). A new upload
+  mints a new `id` = cache-busting version token. `organizer_id` is the stable
+  tenant that makes the key derivable from the row alone (no join) and enables
+  per-org IAM-condition scoping / offboarding / cost attribution.
+- `kind` (`media_kind` enum) is the discriminator the Go typed codec dispatches
+  on; `content_type` cannot substitute (URL-only kinds — youtube/link — have
+  none). **MVP enum = `IMAGE` only**; VIDEO/YOUTUBE/LINK added later via
+  `ALTER TYPE ... ADD VALUE` (cheap) when extensions land.
+- Type-specific fields live in `attributes` JSONB (image: `width`/`height`/
+  `content_type`; future embed: `provider`/`url`). Promote a field to a real
+  column only when it becomes queried/indexed; graduate a whole kind to a CTI
+  detail table only if its attributes grow — both are localized migrations.
+- **References are per-relationship join tables, not a polymorphic
+  `media_reference`:** `series_media(series_id FK, media_id FK, display_order,
+  PK(series_id, media_id))`; future `artist_media(...)`. Rationale: real FK
+  integrity + cascade on both sides (a polymorphic `ref_id` cannot be
+  FK-constrained), per-relationship attributes (`display_order`, later `role`),
+  and alignment with the repo's FK/cascade convention. `display_order` lives on
+  the join so one media reused across parents orders independently. A new parent
+  type = a new table (rare, explicit).
+- **Supersedes the current `series_media`** (which combines the media entity +
+  link + a `series_id`-scoped key + a denormalized `series.cover_image_url`):
+  split into `media` + `series_media`; the key drops `series_id`; the
+  `cover_image_url` denormalization is removed (URL derived from the key).
 
 ## Relationship to fix-series-fragmentation (#869) and to ③
 
@@ -141,18 +196,36 @@ Series. MVP: one image. Bucket provisioned in cloud-provisioning.
   automatic `organizer_id` overwrite.
 - **Draft/unlisted/cancelled leakage** → a shared guard excludes them from
   every public/follower/notify query; test explicitly.
+- **Public exposure blocked by org DRS** (D7) → `allUsers` is rejected
+  org-wide; served via a private bucket + Cloud CDN backend bucket (LB service
+  account, not `allUsers`), so no policy change is needed.
+- **Draft image reachable via the CDN by key** (D7) → **MVP accepts obscurity**:
+  a draft cover sits under `cdn/` and is fetchable by anyone who knows its
+  unguessable UUIDv7 key, which never leaks until the organizer renders it.
+  Accepted for low-sensitivity cover art; hardening (non-routed `internal/` +
+  signed URL) is deferred to extensions.
+- **`organizer_id` visible in public CDN URLs** (D7/D8) → accepted: the id is an
+  opaque UUIDv7. If correlation must be avoided later, map only the public
+  (`cdn/`) key to a non-correlating token (additive; the private side is
+  unaffected).
 - **Exclusion coverage gap** (D5) → accepted; reversible via disassociate.
 - **Image abuse** → server-side type/size validation; moderation deferred.
 
 ## Migration Plan
 
 1. spec: additive `Series` fields + authoring RPCs → Release → BSR gen.
-2. cloud-provisioning: GCS bucket + access.
-3. backend: migration; authoring usecase reusing the fix-series-fragmentation
-   series-resolution helper; publish (per-series gated emit + natural-key
-   supersede + suppression/cross-org handling); association-keyed discovery
-   exclusion in the cron; token sign/verify/regenerate; image upload;
-   edit/cancel; `organizer.concert.published` analytics.
+2. cloud-provisioning: **private** GCS bucket `…-organizer-media` + external
+   HTTPS LB + Cloud CDN backend bucket + URL-map `/cdn/*` path matcher; grant
+   the LB service account `storage.objectViewer` and the backend GSA
+   `objectAdmin` (no `allUsers`).
+3. backend: migrations for `media` + `series_media` (split from the current
+   combined `series_media`; drop `series.cover_image_url`); authoring usecase
+   reusing the fix-series-fragmentation series-resolution helper; publish
+   (per-series gated emit + natural-key supersede + suppression/cross-org
+   handling); association-keyed discovery exclusion in the cron; token
+   sign/verify/regenerate; image upload straight to `cdn/{org}/{media_id}` +
+   key-derived read URL (MVP: drafts also under `cdn/`); edit/cancel;
+   `organizer.concert.published` analytics.
 4. frontend: console authoring screens; unlisted route token validation.
 - Rollback: additive; drafts/unlisted/cancelled inert; new columns nullable.
 
@@ -161,3 +234,7 @@ Series. MVP: one image. Bucket provisioned in cloud-provisioning.
 - Per-`Event` (date-specific) description — deferred to extensions.
 - RPC naming/placement + field VO-wrapping — resolve per the code review
   before the proto lands.
+- `content_type` as a promoted `media` column vs. inside `attributes` (D8) —
+  starts in `attributes`; promote if it becomes queried/indexed.
+- Whether `/cdn/` should be stripped from public URLs at the LB (cosmetic) —
+  MVP keeps it in the path.
