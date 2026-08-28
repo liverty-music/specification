@@ -1,10 +1,12 @@
+# organizer-event-authoring Specification
+
 ## Purpose
 
 Lets a vetted organizer author and publish first-party concert event pages
 for the artists it represents, as informational pages that supersede
 scraped data and take those artists out of the discovery pipeline.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Organizer authors a concert as a draft
 
@@ -203,27 +205,23 @@ scraping.
 
 A published concert SHALL have a visibility of `PUBLIC` or `UNLISTED`.
 `PUBLIC` concerts appear in normal discovery and follower lists. `UNLISTED`
-concerts SHALL be reachable only via a signed tokenized URL and SHALL be
-excluded from discovery, follower lists, and notifications. The owning
-organizer SHALL be able to regenerate the token (invalidating the old URL)
-if it leaks.
+concerts SHALL be excluded from discovery, follower lists, and notifications,
+and SHALL carry a regenerable signed token (the owning organizer can
+regenerate it). The fan-facing read path that resolves that token to view an
+`UNLISTED` concert (a public `GetUnlisted` RPC + route) is a follow-up and is
+NOT part of this change's MVP.
 
 #### Scenario: Public concert appears in discovery
 
 - **WHEN** a `PUBLIC` concert is published
 - **THEN** it SHALL appear in discovery and to followers per existing rules
 
-#### Scenario: Unlisted concert is reachable only by token
+#### Scenario: Unlisted concert is excluded from fan-facing surfaces
 
 - **WHEN** an `UNLISTED` concert is published
 - **THEN** it SHALL NOT appear in discovery, lists, or notifications
-- **AND** it SHALL be viewable only via its signed tokenized URL, which the
-  system verifies before serving the concert
-
-#### Scenario: Regenerating a leaked token
-
-- **WHEN** the owning organizer regenerates an unlisted concert's token
-- **THEN** the previous tokenized URL SHALL stop resolving
+- **AND** its signed token SHALL be stored and regenerable by the owning
+  organizer (the token-resolving public read path ships in a follow-up)
 
 ### Requirement: Organizer uploads a cover image
 
