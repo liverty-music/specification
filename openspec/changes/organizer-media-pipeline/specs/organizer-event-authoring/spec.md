@@ -23,7 +23,9 @@ type, the client uploads the original bytes directly to object storage, and the
 client then notifies the system to record the image and begin processing. The
 system SHALL validate the declared content type and enforce a maximum byte size
 at authorization time. A concert MAY be published without an image. The uploaded
-original is retained only until processing completes.
+original is retained only until processing finishes — it is reclaimed on both
+successful processing and permanent failure; an upload that is authorized but
+never attached is a rare orphan (no automatic cleanup at MVP).
 
 #### Scenario: Image is stored and served
 
@@ -41,10 +43,13 @@ original is retained only until processing completes.
 - **THEN** the system SHALL reject it (invalid-argument at authorization; the
   storage upload itself SHALL reject an over-size object)
 
-#### Scenario: Only the owning organizer can attach an image
+#### Scenario: Only the owning organizer can attach an image to a concert
 
-- **WHEN** an organizer requests an image upload for a concert they do not own
-- **THEN** the system SHALL deny it without revealing the concert's existence
+- **WHEN** an organizer attempts to attach an uploaded image to a concert they
+  do not own (the attach step carries the concert; the upload-authorization step
+  does not)
+- **THEN** the system SHALL deny the attach without revealing the concert's
+  existence
 
 ### Requirement: Uploaded images are processed into safe, responsive variants
 
@@ -82,12 +87,13 @@ The system SHALL NOT serve the unprocessed original.
 ### Requirement: Replacing an image reclaims the previous one
 
 The system SHALL let an organizer replace a concert's image by uploading a new
-one; when a new image becomes the concert's image, the previously served
-variants SHALL be reclaimed (deleted) so stale objects do not accumulate.
+one; the previously served variants SHALL be reclaimed (deleted) so stale objects
+do not accumulate, but ONLY after the replacement's variants exist, so an
+already-published concert never serves a broken image during a replace.
 
-#### Scenario: New image supersedes and reclaims the old
+#### Scenario: New image supersedes and reclaims the old without a gap
 
-- **WHEN** an organizer uploads a replacement image for a concert that already
-  has one
-- **THEN** the concert SHALL reference the new image's variants and the previous
-  image's served variants SHALL be deleted
+- **WHEN** an organizer replaces the image of an already-published concert
+- **THEN** the concert SHALL keep serving the old variants until the new variants
+  are ready, then reference the new variants, and only then SHALL the previous
+  variants be deleted

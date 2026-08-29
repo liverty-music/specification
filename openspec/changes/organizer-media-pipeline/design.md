@@ -48,8 +48,9 @@ adds schema, DTO, and client machinery for a distinction MVP does not need;
 deferred until failures are common or active failure notification is required.
 
 **D4 — Async via a behavior-named JetStream consumer on a KEDA ScaledJob. [★D]**
-`AttachMedia` publishes `MEDIA.uploaded { mediaId }` (keys are derived from
-`mediaId` + the row's `organizer_id`, so the message carries only `mediaId`). A
+`AttachMedia` publishes `MEDIA.uploaded { media_id }` (snake_case wire contract;
+keys are derived from the media id + the row's `organizer_id`, so the message
+carries only `media_id`). A
 durable pull consumer `media_uploaded` (behavior-named per repo convention) is
 run as a **KEDA `ScaledJob`** in the `cmd/job` deployable — isolating libvips
 (CGO) from the API and the always-on consumer, and scaling to zero for rare
@@ -80,12 +81,19 @@ table + org ownership, generalizes to gallery/video), named after the entity —
 `Series.media` is a single `Media` now; extensions generalizes it to
 `repeated Media`.
 
-**D7 — Cleanup: worker-delete original, prefix-delete on replace, no lifecycle. [★F]**
-The consumer deletes `internal/{org}/{mediaId}` on success. Replacing an image
-deletes the previous media's `cdn/{org}/{old}/` prefix (restore a prefix-delete
-on the storer — it was removed in the media rework). No bucket lifecycle rule:
-abandoned-upload orphans are rare and tiny; add a rule later if needed. `Cancel`
-does not touch GCS (the shared visibility guard already excludes cancelled from
+**D7 — Cleanup: consumer-driven, no lifecycle. [★F]**
+The consumer deletes the `internal/{org}/{mediaId}` original once it is done with
+it — on **both** success **and** permanent failure (`term`) — so a failed upload
+does not linger. On a **replace**, the consumer deletes the *previous* media's
+`cdn/{org}/{old}/` prefix **only after** it has written the new variants — NOT
+synchronously in `AttachMedia` — so the live variants of an already-published
+concert stay served until the replacement is ready (no 404 window; this keeps
+D3's "no processing-window gap" true for replaces too). Restore a prefix-delete
+on the storer (removed in the media rework). No bucket lifecycle rule: only
+truly abandoned uploads (a signed `PUT` that is never followed by `AttachMedia`,
+so the consumer never sees it) can orphan, and those are rare and tiny — add a
+rule later if needed. `Cancel` does not touch GCS (the shared visibility guard
+already excludes cancelled from
 fan surfaces).
 
 **D8 — Two-layer input safety. [★H]**

@@ -17,11 +17,11 @@
 ## 3. Backend — API (upload/attach)
 
 - [ ] 3.1 GCS storer: add `SignedPutURL(bucket, key, contentType, maxBytes, ttl)` (V4, keyless via IAM SignBlob; `x-goog-content-length-range` condition) and **restore** a prefix-delete (`DeletePrefix`) for reclaim
-- [ ] 3.2 `CreateMediaUploadURL` usecase + handler: validate content type (JPEG/PNG/WebP), ownership vs represented artists, mint `mediaId` (UUIDv7), return signed `PUT` URL for `internal/{org}/{mediaId}` (15-min TTL) + `mediaId`
-- [ ] 3.3 `AttachMedia` usecase + handler: create/replace the `media` + `series_media` rows (idempotent per `mediaId`), reclaim the previous image's `cdn/{org}/{old}/` prefix, publish `MEDIA.uploaded { mediaId }`; org-scoped auth
+- [ ] 3.2 `CreateMediaUploadURL` usecase + handler: **org-scoped auth** (caller is an organizer; no series is referenced yet), validate content type (JPEG/PNG/WebP), mint `mediaId` (UUIDv7), return signed `PUT` URL for `internal/{org}/{mediaId}` (15-min TTL) + `mediaId`
+- [ ] 3.3 `AttachMedia(series_id, media_id)` usecase + handler: **verify the caller OWNS `series_id`** (represented-artist ownership, not merely org-scoped — deny non-owners without revealing existence), create/replace the `media` + `series_media` rows (idempotent per `media_id`), publish `MEDIA.uploaded { media_id }`. Do NOT delete the previous image's prefix here — the consumer reclaims it after writing the new variants (see 4.5)
 - [ ] 3.4 Remove `UploadMedia` handler/usecase/mapper path; mapper returns `Media { thumb, large }` (URLs derived per exposure from the media/series_media join)
 - [ ] 3.5 `MEDIA` stream in `streams.go` (+ KEDA trigger already in 2.4); DI wiring
-- [ ] 3.6 Unit tests: signed-URL issuance (type/size constraints), ownership reject, attach idempotency + replace-reclaim, mapper variant URLs; `make check` with upgraded BSR
+- [ ] 3.6 Unit tests: signed-URL issuance (type/size constraints), `AttachMedia` series-ownership reject (non-owner denied), attach idempotency, mapper variant URLs; `make check` with upgraded BSR
 
 ## 4. Backend — media-processor consumer (`cmd/job`)
 
@@ -29,8 +29,8 @@
 - [ ] 4.2 `MediaConsumer` (behavior `media_uploaded`): pull message → load `media` row → read `internal/{org}/{mediaId}`
 - [ ] 4.3 Safety: magic-byte validation + header-first pixel/edge limit (≈50 MP / 8000 px) rejected **before** full decode; reject SVG/other
 - [ ] 4.4 Processing: strip EXIF, encode WebP `thumb` (~800w) + `large` (~1920w), aspect preserved (no crop), immutable `Cache-Control`; write `cdn/{org}/{mediaId}/{variant}.webp`
-- [ ] 4.5 Success = delete `internal/` original + ack; transient failure = nak (`max_deliver=3`); permanent failure (invalid image) = `term` + log/metric (reuse poison-consumer pattern); idempotent overwrite on redelivery
-- [ ] 4.6 Unit/integration tests: valid image → variants + EXIF removed; oversized-dimension rejected pre-decode; invalid bytes → no variants + term; idempotent reprocess
+- [ ] 4.5 On success: write new variants → **then** reclaim the previous image's `cdn/{org}/{old}/` prefix (deferred here so an already-published concert keeps serving its old variants until the replacement is ready) → delete the `internal/` original → ack. Transient failure = nak (`max_deliver=3`). Permanent failure (invalid image) = `term` + **delete the `internal/` original** (so failed uploads do not linger) + log/metric (reuse poison-consumer pattern). Idempotent overwrite on redelivery
+- [ ] 4.6 Unit/integration tests: valid image → variants + EXIF removed; oversized-dimension rejected pre-decode; invalid bytes → no variants + term + original deleted; replace = new variants written **before** old prefix reclaimed (no 404 window); idempotent reprocess
 
 ## 5. Frontend (organizer console)
 
