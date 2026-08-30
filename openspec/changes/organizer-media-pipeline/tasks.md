@@ -8,9 +8,9 @@
 
 ## 2. Cloud-provisioning
 
-- [ ] 2.1 `organizer-media` bucket: CORS allow `PUT` from the organizer Web App origin (dev localhost + prod), response headers `Content-Type`, `x-goog-content-length-range`; document the `internal/` (private, PUT target) vs `cdn/` (served) prefix convention
+- [ ] 2.1 New `organizer-media-internal` bucket (PRIVATE, no LB/CDN, uniform bucket-level access) for uploaded originals at `{org}/{mediaId}`: CORS allow `PUT` from the organizer Web App origin (dev localhost:9100 + `organizer.dev.…`; prod `organizer.…`), response headers `Content-Type`, `x-goog-content-length-range`. The served `organizer-media` bucket is unchanged (keeps `cdn/` prefix + LB). Two-bucket split (not an `internal/` prefix) so the served bucket's URL map never exposes originals — see design D5
 - [ ] 2.2 media-processor image: Artifact Registry repo/entry for the new consumer image (backend `cmd/job`), prod immutable-tag policy consistent with existing repos
-- [ ] 2.3 Workload Identity: `media-processor` GSA + WI binding — bucket-scoped `objectAdmin` on `organizer-media` (read/delete `internal/`, write `cdn/`); no project-level storage role
+- [ ] 2.3 Workload Identity: `media-processor` GSA + WI binding — bucket-scoped `objectAdmin` on **both** buckets: read/delete on `organizer-media-internal` (originals) + write on `organizer-media` (`cdn/` variants); no project-level storage role
 - [ ] 2.4 KEDA `ScaledJob` (`scaledobject.yaml`) triggered on JetStream `MEDIA.uploaded` (durable `media_uploaded`): resource requests/limits sized for libvips, `maxReplicaCount`, `backoffLimit`, spot nodeSelector (dev), `restartPolicy: Never`
 - [ ] 2.5 `kubectl kustomize` dry-run for the new Job overlay(s) (dev + prod) — resources set, spot nodeSelector, no empty `resources: {}`
 

@@ -25,9 +25,11 @@ before the authoring UI goes live in prod, so users never see the raw path.
   (scale-to-zero) validates magic bytes, enforces pixel/dimension limits
   (decompression-bomb defense), strips EXIF, and encodes **WebP** responsive
   variants into `cdn/{org}/{media_id}/{variant}.webp`.
-- **Single bucket, two prefixes**: reuse the existing `organizer-media` bucket —
-  add a private `internal/` prefix (CORS `PUT` target, not CDN-routed) for the
-  uploaded original; keep `cdn/` for served variants.
+- **Two buckets**: a new PRIVATE `organizer-media-internal` bucket (no LB/CDN,
+  CORS `PUT` target) holds the uploaded original at `{org}/{mediaId}`; the
+  existing `organizer-media` served bucket (LB + Cloud CDN) keeps `cdn/` for
+  served variants. A dedicated originals bucket (not an `internal/` prefix in the
+  served bucket) avoids the served bucket's URL map publicly exposing originals.
 - **Cleanup**: the processor deletes the original on success; replacing an image
   deletes the previous media's `cdn/{org}/{old}/` prefix (restore a
   prefix-delete on the storer).
@@ -59,10 +61,11 @@ before the authoring UI goes live in prod, so users never see the raw path.
   storer + restore prefix-delete; new `MediaConsumer` (govips/libvips image
   processing) wired in the consumer/`cmd/job` deployable; `MEDIA` stream in
   `streams.go`; remove the old `UploadCoverImage` path; mapper returns `Media`.
-- **cloud-provisioning**: `organizer-media` bucket CORS (`PUT` from the organizer
-  Web App origin) + the `internal/` prefix convention; new `media-processor`
-  image (Artifact Registry) + Workload Identity SA (read/delete `internal/`,
-  write `cdn/`); KEDA `ScaledJob` trigger on `MEDIA.uploaded`.
+- **cloud-provisioning**: new private `organizer-media-internal` bucket (no LB)
+  with CORS (`PUT` from the organizer Web App origin); new `media-processor`
+  image (Artifact Registry) + Workload Identity SA (read/delete the originals
+  bucket, write `cdn/` in the served bucket); KEDA `ScaledJob` trigger on
+  `MEDIA.uploaded`.
 - **frontend**: image upload reworked to `CreateMediaUploadURL` → direct `PUT` →
   `AttachMedia`, optimistic local preview, `thumb`/`large` variant rendering.
 - **Non-Goals**: content moderation (NSFW/abuse detection); multiple images /

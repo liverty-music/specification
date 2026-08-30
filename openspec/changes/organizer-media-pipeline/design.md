@@ -67,14 +67,25 @@ redelivery overwrites harmlessly; `AttachMedia` is a no-op for an already-attach
 (`scaledobject.yaml`) MUST land in the same change (a new subject without its
 stream/trigger crashloops in prod).
 
-**D5 — Single bucket, `internal/` + `cdn/` prefixes; 2 variants, aspect-preserved. [★E]**
-Reuse the deployed `organizer-media` bucket:
-`internal/{org}/{mediaId}` (private, not CDN-routed, CORS `PUT` target for the
-signed upload) and `cdn/{org}/{mediaId}/{variant}.webp` (CDN-served). Two
-width-bounded variants — `thumb` (~800w) and `large` (~1920w) — **aspect
-preserved, no crop** (concert posters are portrait/square/landscape; the
-frontend crops visually via `object-fit`). *Alternative (separate staging
-bucket)* adds infra for no MVP benefit; rejected.
+**D5 — Two buckets (uploads + served); 2 variants, aspect-preserved. [★E]**
+A dedicated **originals bucket** (`organizer-media-internal`, PRIVATE, **not
+fronted by any LB/CDN**) holds the original at key `{org}/{mediaId}` and is the
+CORS `PUT` target for the signed upload; the existing **served bucket**
+(`organizer-media`, unchanged — LB + Cloud CDN, `cdn/` key prefix retained) holds
+`cdn/{org}/{mediaId}/{variant}.webp`. Two width-bounded
+variants — `thumb` (~800w) and `large` (~1920w) — **aspect preserved, no crop**
+(concert posters are portrait/square/landscape; the frontend crops visually via
+`object-fit`). *Note:* references elsewhere in this doc/tasks to
+`internal/{org}/{mediaId}` denote the uploads-bucket object `{org}/{mediaId}`.
+*Rejected (single bucket, `internal/` prefix):* the served bucket's URL map
+routes its `defaultService` to the bucket, so an `internal/` prefix in the same
+bucket would be **publicly served via CDN** (the component docstring warns of
+exactly this); the GCP LB has no native static-404, so hardening it would need an
+extra blackhole bucket + backend anyway, and the CDN's private-origin SA would
+still hold read on the originals. A separate uploads bucket with **no LB** gives
+a foolproof isolation (the CDN SA cannot reach originals at all) for equal-or-less
+infra — the original D5 "separate bucket adds infra for no benefit" reasoning
+missed this serving-leak cost.
 
 **D6 — `entity.v1.Media` mirrors the DB's open polymorphism (`kind` + `attributes`); variant URLs are server-composed, not stored. [★E/naming]**
 The exposed media entity mirrors the shipped `media(id, organizer_id, kind,
@@ -170,9 +181,10 @@ SA), so DRS is not involved (own-SA, own-domain).
    `cover_image`) + `MEDIA.uploaded { media_id, series_id }`
    + `concert_service` (remove `UploadCoverImage`, add `CreateMediaUploadURL` +
    `AttachMedia`) → Release → BSR gen.
-2. cloud-provisioning: `organizer-media` CORS (`PUT` from organizer Web origin);
-   media-processor image repo (Artifact Registry) + WI SA (read/delete
-   `internal/`, write `cdn/`); KEDA `ScaledJob` trigger on `MEDIA.uploaded`.
+2. cloud-provisioning: new private `organizer-media-internal` bucket + CORS
+   (`PUT` from organizer Web origin); media-processor image repo (Artifact
+   Registry) + WI SA (read/delete originals bucket, write `cdn/` in served
+   bucket); KEDA `ScaledJob` trigger on `MEDIA.uploaded`.
 3. backend: `SignedPutURL` + restore prefix-delete on the GCS storer; upload/
    attach usecase + handlers; `MediaConsumer` (govips: magic-byte, header pixel
    limit, EXIF strip, WebP thumb/large, write `cdn/`, delete original);
