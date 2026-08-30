@@ -48,9 +48,13 @@ adds schema, DTO, and client machinery for a distinction MVP does not need;
 deferred until failures are common or active failure notification is required.
 
 **D4 — Async via a behavior-named JetStream consumer on a KEDA ScaledJob. [★D]**
-`AttachMedia` publishes `MEDIA.uploaded { media_id }` (snake_case wire contract;
-keys are derived from the media id + the row's `organizer_id`, so the message
-carries only `media_id`). A
+`AttachMedia` publishes `MEDIA.uploaded { media_id, series_id }` (snake_case wire
+contract). The object keys are derived from the media id + the row's
+`organizer_id` (looked up from the `media` row), so `media_id` alone would locate
+the original and the variant prefix; `series_id` is carried **because the
+consumer owns the `series_media` cut-over** (D7) — on a replace it must find the
+series' currently-attached (old) media, which is no longer reachable from the new
+`media_id` once processing begins. A
 durable pull consumer `media_uploaded` (behavior-named per repo convention) is
 run as a **KEDA `ScaledJob`** in the `cmd/job` deployable — isolating libvips
 (CGO) from the API and the always-on consumer, and scaling to zero for rare
@@ -72,23 +76,51 @@ preserved, no crop** (concert posters are portrait/square/landscape; the
 frontend crops visually via `object-fit`). *Alternative (separate staging
 bucket)* adds infra for no MVP benefit; rejected.
 
-**D6 — `entity.v1.Media` carries the variants; `Series.media: Media`. [★E/naming]**
-The variant-bearing type is the **generic media entity** (matches the `media`
-table + org ownership, generalizes to gallery/video), named after the entity —
-**not** after a role (a per-use `…Image`) nor the series relationship (a
-`SeriesImage`, which would misstate the org-owned/joined ownership).
-`Media { MediaId id; Url thumb; Url large; (future kind/attributes) }`.
-`Series.media` is a single `Media` now; extensions generalizes it to
-`repeated Media`.
+**D6 — `entity.v1.Media` mirrors the DB's open polymorphism (`kind` + `attributes`); variant URLs are server-composed, not stored. [★E/naming]**
+The exposed media entity mirrors the shipped `media(id, organizer_id, kind,
+attributes)` row rather than being a role-named type:
+`Media { MediaId id; MediaKind kind; MediaAttributes attributes }`.
+- `MediaKind` is a proto enum **1:1 with the PG `media_kind` ENUM** (`IMAGE` only
+  at MVP). A new kind is additive on both sides — `ALTER TYPE media_kind ADD
+  VALUE` + an appended enum value.
+- `MediaAttributes` is a flat, **all-optional read projection** of the row (NOT a
+  literal copy of the JSONB column): for `IMAGE` it carries `Url thumb` (~800w)
+  and `Url large` (~1920w); extensions append `poster`/`stream`/`duration`
+  (VIDEO) and `youtube_video_id` (YOUTUBE) as further optional fields — purely
+  additive, no structural change. The open bag's type-safety is recovered with a
+  **kind-gated protovalidate CEL** (e.g. `kind == IMAGE ⇒ thumb, large set`).
+- *Rejected: a closed `oneof`* — type-safe but it fights the DB's deliberately
+  open enum+JSONB model (every `media_kind` value would also have to be added to
+  the oneof), creating a second source of polymorphism truth.
 
-**D7 — Cleanup: consumer-driven, no lifecycle. [★F]**
-The consumer deletes the `internal/{org}/{mediaId}` original once it is done with
-it — on **both** success **and** permanent failure (`term`) — so a failed upload
-does not linger. On a **replace**, the consumer deletes the *previous* media's
-`cdn/{org}/{old}/` prefix **only after** it has written the new variants — NOT
-synchronously in `AttachMedia` — so the live variants of an already-published
-concert stay served until the replacement is ready (no 404 window; this keeps
-D3's "no processing-window gap" true for replaces too). Restore a prefix-delete
+The variant URLs are **derived, not persisted**: the DB stores no URL
+(`cover_image_url` was dropped); the read mapper composes
+`{ORGANIZER_MEDIA_CDN_BASE}/cdn/{org}/{mediaId}/{variant}.webp` at read time and
+exposes it as a field. They are *derivable* but MUST NOT be reduced to an
+id-only response — the CDN base, key layout, variant names, and extension stay
+server-side so the client never hardcodes the storage convention (env-specific
+base and future variants stay additive server-side). No existence check on
+compose: the client is 404-graceful until processing finishes (D3).
+
+`Series.media` is a single `Media` (field 7, **renamed from `cover_image`**,
+retyped `Url` → `Media`); extensions generalizes it to `repeated Media`.
+
+**D7 — Consumer owns the cut-over and cleanup; no lifecycle. [★F]**
+`AttachMedia` does **not** re-point `series_media`: it inserts the new `media`
+row and publishes `MEDIA.uploaded { media_id, series_id }`, leaving the series
+pointing at whatever it pointed at before (the old media on a replace, nothing on
+a first upload). The **consumer** performs the atomic cut-over after it has
+written the new variants: in one transaction it upserts `series_media(series_id)`
+→ the new `media_id`, and — if an old row existed — captures the old `media_id`
+first. This makes the consumer the single owner of the "an image becomes live"
+transition, which is exactly what keeps the no-404 invariant true (D3): the old
+variants stay served until the new ones exist. Only **after** the cut-over does
+the consumer delete the *previous* media's `cdn/{org}/{old}/` prefix (and the old
+`media` row). It also deletes the `internal/{org}/{mediaId}` original once it is
+done with it — on **both** success **and** permanent failure (`term`) — so a
+failed upload does not linger. Everything is idempotent on redelivery: the
+variant keys are deterministic, the upsert is a no-op if already cut over, and
+the prefix/original deletes are no-ops if already gone. Restore a prefix-delete
 on the storer (removed in the media rework). No bucket lifecycle rule: only
 truly abandoned uploads (a signed `PUT` that is never followed by `AttachMedia`,
 so the consumer never sees it) can orphan, and those are rare and tiny — add a
@@ -104,10 +136,13 @@ rejects images over a pixel/edge limit (≈50 MP / 8000 px) — cheap, no bomb
 allocation. Accept only JPEG/PNG/WebP (signed-URL content type **and**
 magic-byte re-check); SVG excluded (XSS). Moderation is a non-goal.
 
-**D9 — Replace `UploadMedia`; no data migration; pipeline-first. [★K/★M]**
-Remove `UploadMedia`; add `CreateMediaUploadURL` (mints `mediaId`, returns a
+**D9 — Replace the shipped `UploadCoverImage`; no data migration; pipeline-first. [★K/★M]**
+Remove the shipped `ConcertService.UploadCoverImage` (bytes-through-the-API);
+add `CreateMediaUploadURL` (mints `mediaId`, returns a
 V4 signed `PUT` URL for `internal/{org}/{mediaId}`) + `AttachMedia(seriesId,
-mediaId)`. No prod media data exists (frontend not released), so **no data
+mediaId)`. The series field `cover_image` (`Url`, field 7) is **renamed to
+`media` and retyped to `Media`** in the same break (D6). No prod media data
+exists (frontend not released), so **no data
 migration**. Ship the pipeline **before** the authoring media UI goes live so
 users never see the raw path. Output is **WebP only** (Baseline); no JPEG/AVIF
 fallback; original not retained (D7). Signing is keyless via IAM SignBlob (WI
@@ -131,8 +166,9 @@ SA), so DRS is not involved (own-SA, own-domain).
 
 ## Migration Plan
 
-1. spec: `entity/v1/media.proto` + `Series.media: Media` + `MEDIA.uploaded`
-   + `concert_service` (remove `UploadMedia`, add `CreateMediaUploadURL` +
+1. spec: `entity/v1/media.proto` + `Series.media: Media` (field 7 renamed from
+   `cover_image`) + `MEDIA.uploaded { media_id, series_id }`
+   + `concert_service` (remove `UploadCoverImage`, add `CreateMediaUploadURL` +
    `AttachMedia`) → Release → BSR gen.
 2. cloud-provisioning: `organizer-media` CORS (`PUT` from organizer Web origin);
    media-processor image repo (Artifact Registry) + WI SA (read/delete
@@ -140,7 +176,7 @@ SA), so DRS is not involved (own-SA, own-domain).
 3. backend: `SignedPutURL` + restore prefix-delete on the GCS storer; upload/
    attach usecase + handlers; `MediaConsumer` (govips: magic-byte, header pixel
    limit, EXIF strip, WebP thumb/large, write `cdn/`, delete original);
-   `MEDIA` stream in `streams.go`; remove `UploadMedia`; mapper → `Media`.
+   `MEDIA` stream in `streams.go`; remove `UploadCoverImage`; mapper → `Media`.
 4. frontend: image upload → `CreateMediaUploadURL` → direct `PUT` → `AttachMedia`,
    optimistic local preview, `thumb`/`large` rendering.
 5. release → prod verify (upload → processed WebP variants served via CDN;

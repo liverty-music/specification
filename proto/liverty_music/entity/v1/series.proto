@@ -5,6 +5,7 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/media.proto";
 import "liverty_music/entity/v1/organizer.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
@@ -134,11 +135,18 @@ message Series {
   // default presence semantics.
   Description description = 6 [(google.api.field_behavior) = OPTIONAL];
 
-  // The cover image shown on the series page, authored by an organizer and
-  // served from object storage. Optional: absent for discovered series and for
-  // organizer series without an uploaded image. A nil wrapper skips inner-Url
-  // validation by protovalidate's default presence semantics.
-  Url cover_image = 7 [(google.api.field_behavior) = OPTIONAL];
+  // The image shown on the series page, authored by an organizer and served
+  // from the CDN as responsive WebP variants. Optional: absent for discovered
+  // series and for organizer series without an uploaded image. A nil wrapper
+  // skips inner-Media validation by protovalidate's default presence semantics.
+  // Field 7 previously held a single served Url named `cover_image`; it was
+  // renamed and retyped to Media by the organizer-media-pipeline change (the
+  // variant URLs now live inside Media.attributes). A later authoring extension
+  // generalizes this to a repeated Media gallery.
+  Media media = 7 [(google.api.field_behavior) = OPTIONAL];
+
+  // Field 7's former name, retired when the single served Url became a Media.
+  reserved "cover_image";
 
   // Who can reach this series. Set only for first-party (organizer-authored)
   // series; discovered series leave it VISIBILITY_UNSPECIFIED. Not constrained

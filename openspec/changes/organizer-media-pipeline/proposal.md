@@ -10,12 +10,16 @@ before the authoring UI goes live in prod, so users never see the raw path.
 
 ## What Changes
 
-- **BREAKING** Replace `ConcertService.UploadMedia` (backend receives
-  bytes) with two RPCs: `CreateMediaUploadURL` (returns a short-lived GCS **V4
-  signed PUT URL** + a minted `MediaId`) and `AttachMedia` (records the media
-  and enqueues processing). The Web App uploads the original **directly to GCS**.
-- **BREAKING** `entity.v1.Series.media` changes from a single `Url` to an
-  `entity.v1.Media` message carrying responsive variant URLs (`thumb`, `large`).
+- **BREAKING** Replace the shipped `ConcertService.UploadCoverImage` (backend
+  receives bytes) with two RPCs: `CreateMediaUploadURL` (returns a short-lived
+  GCS **V4 signed PUT URL** + a minted `MediaId`) and `AttachMedia` (records the
+  media and enqueues processing). The Web App uploads the original **directly to
+  GCS**.
+- **BREAKING** The series image field `cover_image` (`Url`, field 7) is renamed
+  to `media` and retyped to an `entity.v1.Media` message. `Media` mirrors the DB
+  `media` row (`MediaId id`, `MediaKind kind`, `MediaAttributes attributes`); the
+  responsive variant URLs (`thumb`, `large`) live in `MediaAttributes` and are
+  server-composed at read time, not persisted (see design D6).
 - **Async processing** off the API: a behavior-named JetStream consumer
   (`MEDIA.uploaded`, durable `media_uploaded`) run as a KEDA `ScaledJob`
   (scale-to-zero) validates magic bytes, enforces pixel/dimension limits
@@ -46,14 +50,15 @@ before the authoring UI goes live in prod, so users never see the raw path.
 
 ## Impact
 
-- **specification (proto)**: `entity/v1/media.proto` (new `Media`, `MediaId`);
-  `entity/v1/series.proto` (`media`: `Url` → `Media`); new
-  `MEDIA.uploaded` event; `rpc/organizer/v1/concert_service.proto` — remove
-  `UploadMedia`, add `CreateMediaUploadURL` + `AttachMedia`. New BSR release.
+- **specification (proto)**: `entity/v1/media.proto` (new `Media`, `MediaKind`,
+  `MediaAttributes`, `MediaId`); `entity/v1/series.proto` (field 7
+  `cover_image: Url` → `media: Media`); new `MEDIA.uploaded { media_id,
+  series_id }` event; `rpc/organizer/v1/concert_service.proto` — remove
+  `UploadCoverImage`, add `CreateMediaUploadURL` + `AttachMedia`. New BSR release.
 - **backend**: new upload/attach usecase + handlers; `SignedPutURL` on the GCS
   storer + restore prefix-delete; new `MediaConsumer` (govips/libvips image
   processing) wired in the consumer/`cmd/job` deployable; `MEDIA` stream in
-  `streams.go`; remove the old `UploadMedia` path; mapper returns `Media`.
+  `streams.go`; remove the old `UploadCoverImage` path; mapper returns `Media`.
 - **cloud-provisioning**: `organizer-media` bucket CORS (`PUT` from the organizer
   Web App origin) + the `internal/` prefix convention; new `media-processor`
   image (Artifact Registry) + Workload Identity SA (read/delete `internal/`,

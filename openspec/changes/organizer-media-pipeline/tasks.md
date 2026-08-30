@@ -1,9 +1,9 @@
 ## 1. Specification (proto)
 
-- [ ] 1.1 `entity/v1/media.proto`: new `Media` (`MediaId id`, `Url thumb`, `Url large`; reserve fields for future `kind`/`attributes`) + `MediaId` wrapper VO (UUIDv7 protovalidate)
-- [ ] 1.2 `entity/v1/series.proto` (**BREAKING**): `media` type `Url` → `entity.v1.Media`
-- [ ] 1.3 `rpc/organizer/v1/concert_service.proto` (**BREAKING**): remove `UploadMedia`; add `CreateMediaUploadURL` (req: content_type → resp: upload_url `Url`, media_id `MediaId`) + `AttachMedia` (req: series_id, media_id) with protovalidate + error docs; keep other verbs
-- [ ] 1.4 `MEDIA.uploaded` event payload contract (`{ media_id }`) documented alongside existing event data
+- [x] 1.1 `entity/v1/media.proto`: new `Media` (`MediaId id`, `MediaKind kind`, `MediaAttributes attributes`) mirroring the DB `media` row; `MediaKind` enum 1:1 with the PG `media_kind` ENUM (`IMAGE` only); `MediaAttributes` = flat all-optional **read projection** carrying `Url thumb` + `Url large` for IMAGE (future `poster`/`stream`/`duration`/`youtube_video_id` appended); kind-gated protovalidate CEL (`kind == IMAGE ⇒ thumb, large set`); `MediaId` wrapper VO (UUID-format protovalidate; UUIDv7 is a server-minting convention, not a proto rule). Variant URLs are server-composed at read time, NOT persisted (design D6)
+- [x] 1.2 `entity/v1/series.proto` (**BREAKING**): rename field 7 `cover_image` → `media`, retype `Url` → `entity.v1.Media`, `reserved "cover_image"` for the old name
+- [x] 1.3 `rpc/organizer/v1/concert_service.proto` (**BREAKING**): remove the shipped `UploadCoverImage`; add `CreateMediaUploadURL` (req: content_type → resp: upload_url `Url`, media_id `MediaId`, max_bytes) + `AttachMedia` (req: series_id, media_id → empty resp: the image is not yet live, so nothing meaningful to return) with protovalidate + error docs; keep other verbs
+- [x] 1.4 `MEDIA.uploaded` event payload contract (`{ media_id, series_id }` — `series_id` lets the consumer own the `series_media` cut-over, see 4.5) documented alongside existing event data
 - [ ] 1.5 `buf lint`/`format`/`breaking` (add `buf skip breaking` label for the intentional break); spec PR merge → Release → BSR gen
 
 ## 2. Cloud-provisioning
@@ -17,9 +17,9 @@
 ## 3. Backend — API (upload/attach)
 
 - [ ] 3.1 GCS storer: add `SignedPutURL(bucket, key, contentType, maxBytes, ttl)` (V4, keyless via IAM SignBlob; `x-goog-content-length-range` condition) and **restore** a prefix-delete (`DeletePrefix`) for reclaim
-- [ ] 3.2 `CreateMediaUploadURL` usecase + handler: **org-scoped auth** (caller is an organizer; no series is referenced yet), validate content type (JPEG/PNG/WebP), mint `mediaId` (UUIDv7), return signed `PUT` URL for `internal/{org}/{mediaId}` (15-min TTL) + `mediaId`
-- [ ] 3.3 `AttachMedia(series_id, media_id)` usecase + handler: **verify the caller OWNS `series_id`** (represented-artist ownership, not merely org-scoped — deny non-owners without revealing existence), create/replace the `media` + `series_media` rows (idempotent per `media_id`), publish `MEDIA.uploaded { media_id }`. Do NOT delete the previous image's prefix here — the consumer reclaims it after writing the new variants (see 4.5)
-- [ ] 3.4 Remove `UploadMedia` handler/usecase/mapper path; mapper returns `Media { thumb, large }` (URLs derived per exposure from the media/series_media join)
+- [ ] 3.2 `CreateMediaUploadURL` usecase + handler: **org-scoped auth** (caller is an organizer; no series is referenced yet), validate content type (JPEG/PNG/WebP), mint `mediaId` (UUIDv7), return signed `PUT` URL for `internal/{org}/{mediaId}` (15-min TTL) + `mediaId` + `max_bytes` (the single-source byte limit the client echoes as `x-goog-content-length-range`; matches the signed-URL condition)
+- [ ] 3.3 `AttachMedia(series_id, media_id)` usecase + handler: **verify the caller OWNS `series_id`** (represented-artist ownership, not merely org-scoped — deny non-owners without revealing existence), INSERT the `media` row (idempotent per `media_id`), publish `MEDIA.uploaded { media_id, series_id }`, return empty. Do NOT re-point `series_media` here and do NOT delete the previous image's prefix — the **consumer owns the `series_media` cut-over** and reclaims the old prefix after writing the new variants (see 4.5), so an already-published concert keeps serving its old image with no 404 window
+- [ ] 3.4 Remove the shipped `UploadCoverImage` handler/usecase/mapper path; mapper returns `Media { kind, attributes }` where `attributes.thumb`/`attributes.large` are composed per exposure from `{ORGANIZER_MEDIA_CDN_BASE}/cdn/{org}/{mediaId}/{variant}.webp` (via the media/series_media join)
 - [ ] 3.5 `MEDIA` stream in `streams.go` (+ KEDA trigger already in 2.4); DI wiring
 - [ ] 3.6 Unit tests: signed-URL issuance (type/size constraints), `AttachMedia` series-ownership reject (non-owner denied), attach idempotency, mapper variant URLs; `make check` with upgraded BSR
 
@@ -29,8 +29,8 @@
 - [ ] 4.2 `MediaConsumer` (behavior `media_uploaded`): pull message → load `media` row → read `internal/{org}/{mediaId}`
 - [ ] 4.3 Safety: magic-byte validation + header-first pixel/edge limit (≈50 MP / 8000 px) rejected **before** full decode; reject SVG/other
 - [ ] 4.4 Processing: strip EXIF, encode WebP `thumb` (~800w) + `large` (~1920w), aspect preserved (no crop), immutable `Cache-Control`; write `cdn/{org}/{mediaId}/{variant}.webp`
-- [ ] 4.5 On success: write new variants → **then** reclaim the previous image's `cdn/{org}/{old}/` prefix (deferred here so an already-published concert keeps serving its old variants until the replacement is ready) → delete the `internal/` original → ack. Transient failure = nak (`max_deliver=3`). Permanent failure (invalid image) = `term` + **delete the `internal/` original** (so failed uploads do not linger) + log/metric (reuse poison-consumer pattern). Idempotent overwrite on redelivery
-- [ ] 4.6 Unit/integration tests: valid image → variants + EXIF removed; oversized-dimension rejected pre-decode; invalid bytes → no variants + term + original deleted; replace = new variants written **before** old prefix reclaimed (no 404 window); idempotent reprocess
+- [ ] 4.5 On success: write new variants → **cut over in one transaction**: upsert `series_media(series_id)` → the new `media_id`, capturing the old `media_id` first if a row existed → **then** reclaim the previous image's `cdn/{org}/{old}/` prefix + delete the old `media` row (deferred until here so an already-published concert keeps serving its old variants until the replacement is ready) → delete the `internal/` original → ack. Transient failure = nak (`max_deliver=3`). Permanent failure (invalid image) = `term` + **delete the `internal/` original** (so failed uploads do not linger) + log/metric (reuse poison-consumer pattern). Idempotent on redelivery: deterministic variant overwrite, cut-over upsert is a no-op if already done, old-prefix/original deletes are no-ops if already gone
+- [ ] 4.6 Unit/integration tests: valid image → variants + EXIF removed; oversized-dimension rejected pre-decode; invalid bytes → no variants + term + original deleted; replace = new variants written **and** `series_media` cut over to the new media **before** the old prefix/row are reclaimed (no 404 window); first upload = `series_media` inserted by the consumer; idempotent reprocess
 
 ## 5. Frontend (organizer console)
 
