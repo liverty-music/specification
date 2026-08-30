@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "liverty_music/entity/v1/entity.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// MediaId is a globally unique identifier for a media object owned by an
+// organizer (a cover image today; a gallery image, video, or embed later).
+// The value doubles as the object-key basename in storage and, being a
+// time-ordered UUIDv7, as the creation-time source and the cache-busting
+// version token: a new upload mints a new MediaId and therefore a new URL.
+message MediaId {
+  // A UUID string mapping to the media object's unique identity. Applications
+  // mint a UUIDv7 so the id is time-ordered; only the UUID format is validated
+  // here (protovalidate has no version-specific rule).
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// MediaKind classifies what a Media object holds so that consumers can select
+// the right fields from MediaAttributes and the right presentation. It mirrors
+// the persisted media_kind enum one-to-one. New values may be appended (an
+// additive change on both the proto and the database); existing values must
+// not be renumbered.
+enum MediaKind {
+  // Default value; must not be used in API requests or persisted.
+  MEDIA_KIND_UNSPECIFIED = 0;
+  // A still image, such as a concert cover photo. Exposes the responsive
+  // thumb/large variant URLs in MediaAttributes.
+  MEDIA_KIND_IMAGE = 1;
+}
+
+// MediaAttributes carries the kind-specific, all-optional presentation data for
+// a Media object. It is a read projection composed at serve time, not a literal
+// copy of any stored column: for MEDIA_KIND_IMAGE the responsive variant URLs
+// are derived from the object-key convention and are therefore never persisted.
+// Later kinds append their own optional fields (for example a video poster and
+// stream URL, or an embed id) so the message generalizes without a structural
+// change.
+message MediaAttributes {
+  // The small responsive variant of an image (roughly thumbnail width), served
+  // as WebP from the CDN. Set only for MEDIA_KIND_IMAGE. A nil wrapper skips
+  // inner-Url validation by protovalidate's default presence semantics.
+  Url thumb = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // The large responsive variant of an image (roughly full-width), served as
+  // WebP from the CDN. Set only for MEDIA_KIND_IMAGE. A nil wrapper skips
+  // inner-Url validation by protovalidate's default presence semantics.
+  Url large = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Media is a media object owned by an organizer and attached to a series. It
+// mirrors the persisted media row (identity, kind, and kind-specific
+// attributes) rather than being named after a single role, so the same type
+// serves a cover image today and a gallery image, video, or embed later. The
+// served variant URLs are composed at read time from the id and owning
+// organizer and are not stored.
+message Media {
+  // For an image, both responsive variants must be present. The check is keyed
+  // on the kind so that later kinds (which leave thumb/large unset) are not
+  // rejected. `this.kind` compares against the MEDIA_KIND_IMAGE numeric value.
+  option (buf.validate.message).cel = {
+    id: "media.image_variants_present"
+    message: "an IMAGE media must expose both thumb and large variant URLs"
+    expression: "this.kind != 1 || (has(this.attributes.thumb) && has(this.attributes.large))"
+  };
+
+  // The unique identifier for this media object.
+  MediaId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The kind of media this object holds. `not_in: [0]` rejects the
+  // MEDIA_KIND_UNSPECIFIED zero value at the proto boundary; `defined_only`
+  // alone would accept 0 because it is a declared enum value.
+  MediaKind kind = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field) = {
+      required: true
+      enum: {
+        defined_only: true
+        not_in: [0]
+      }
+    }
+  ];
+
+  // The kind-specific presentation data (for an image, the responsive variant
+  // URLs). Always set; its populated fields depend on `kind`.
+  MediaAttributes attributes = 3 [(buf.validate.field).required = true];
+}

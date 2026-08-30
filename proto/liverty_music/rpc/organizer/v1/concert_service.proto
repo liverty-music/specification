@@ -14,6 +14,7 @@ import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/artist.proto";
 import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/media.proto";
 import "liverty_music/entity/v1/series.proto";
 import "liverty_music/entity/v1/venue.proto";
 
@@ -101,18 +102,41 @@ service ConcertService {
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Cancel(CancelRequest) returns (CancelResponse);
 
-  // UploadCoverImage stores the cover image for a series in object storage and
-  // returns the stable served URL, which is persisted on the Series. The image
-  // is validated server-side for content type and size. MVP supports one image
-  // per series; a subsequent upload replaces the previous one.
+  // CreateMediaUploadURL authorizes a direct-to-storage upload: it mints a new
+  // MediaId and returns a short-lived signed URL the client PUTs the original
+  // image bytes to, without the bytes ever passing through this service. The
+  // authorization is scoped to the caller's Organizer and to a fixed content
+  // type and maximum byte size; it does not reference a series yet, so ownership
+  // of the target series is enforced later by AttachMedia. The client MUST send
+  // the same Content-Type it declared here and a body within max_bytes; the
+  // storage upload itself rejects a mismatching or over-size object.
   //
   // Possible errors:
-  // - INVALID_ARGUMENT: The image is empty, exceeds the size limit, or is not
-  //   an accepted image type.
+  // - INVALID_ARGUMENT: The content type is not an accepted image type.
+  // - PERMISSION_DENIED: The caller lacks the organizer-console role.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc CreateMediaUploadURL(CreateMediaUploadURLRequest) returns (CreateMediaUploadURLResponse);
+
+  // AttachMedia records a previously uploaded media object as belonging to a
+  // series the caller owns and enqueues asynchronous processing. It records the
+  // media and publishes a MEDIA.uploaded event carrying { media_id, series_id };
+  // an off-service consumer then validates and processes the original into
+  // responsive WebP variants, atomically re-points the series to the new media
+  // once the variants exist, and reclaims any previous image. Because the
+  // consumer owns that cut-over, AttachMedia does not itself re-point the series
+  // or return the media, and the image is not yet servable when it returns.
+  // Attaching is idempotent per media_id; a subsequent AttachMedia for the same
+  // series replaces the image without a serving gap.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: A required field is missing or malformed.
   // - PERMISSION_DENIED: The series is not owned by the caller's Organizer.
   //   Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  rpc UploadCoverImage(UploadCoverImageRequest) returns (UploadCoverImageResponse);
+  rpc AttachMedia(AttachMediaRequest) returns (AttachMediaResponse);
 
   // RegenerateToken issues a fresh signed share token for an UNLISTED series,
   // invalidating the previous share URL, and returns the new URL. It applies
@@ -165,9 +189,9 @@ message EventDraft {
 
 // SeriesDraft is the authoring payload for a first-party series, shared by
 // Create and Update. It carries the series-level metadata, the performers, and
-// the events being authored. Cover image and unlisted share token are managed
-// out of band (UploadCoverImage and the publish/RegenerateToken flow), so they
-// are not part of this payload.
+// the events being authored. The image and unlisted share token are managed
+// out of band (the CreateMediaUploadURL/AttachMedia flow and the
+// publish/RegenerateToken flow), so they are not part of this payload.
 message SeriesDraft {
   // Required. The title shared by every event in the series.
   entity.v1.Title title = 1 [(buf.validate.field).required = true];
@@ -276,22 +300,12 @@ message CancelRequest {
 // CancelResponse is returned upon successful cancellation.
 message CancelResponse {}
 
-// UploadCoverImageRequest carries the series to attach the image to and the
-// image bytes with their content type.
-message UploadCoverImageRequest {
-  // Required. The series whose cover image is being uploaded. It MUST be owned
-  // by the caller's Organizer.
-  entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
-
-  // Required. The raw image bytes. Bounded to 10 MiB; validated server-side.
-  bytes image_data = 2 [(buf.validate.field).bytes = {
-    min_len: 1
-    max_len: 10485760
-  }];
-
-  // Required. The IANA media type of the image. Only common web image types
-  // are accepted.
-  string content_type = 3 [(buf.validate.field).string = {
+// CreateMediaUploadURLRequest declares the content type of the image the client
+// intends to upload directly to storage.
+message CreateMediaUploadURLRequest {
+  // Required. The IANA media type of the image the client will upload. Only
+  // common web image types are accepted; the signed URL is bound to this type.
+  string content_type = 1 [(buf.validate.field).string = {
     in: [
       "image/jpeg",
       "image/png",
@@ -300,11 +314,39 @@ message UploadCoverImageRequest {
   }];
 }
 
-// UploadCoverImageResponse returns the stable served URL of the stored image.
-message UploadCoverImageResponse {
-  // The served URL of the stored cover image, now persisted on the series.
-  entity.v1.Url cover_image = 1 [(buf.validate.field).required = true];
+// CreateMediaUploadURLResponse returns everything the client needs to upload the
+// original bytes directly to storage and later attach them.
+message CreateMediaUploadURLResponse {
+  // The short-lived signed URL the client PUTs the original image bytes to.
+  entity.v1.Url upload_url = 1 [(buf.validate.field).required = true];
+
+  // The identifier minted for this upload, passed back to AttachMedia once the
+  // client has uploaded the bytes.
+  entity.v1.MediaId media_id = 2 [(buf.validate.field).required = true];
+
+  // The maximum size, in bytes, the uploaded object may be. The client MUST
+  // keep its body within this bound (the signed URL enforces the same limit);
+  // it is the single source of truth for the size cap.
+  int64 max_bytes = 3 [(buf.validate.field).int64.gt = 0];
 }
+
+// AttachMediaRequest records an uploaded media object as the image of a series
+// the caller owns.
+message AttachMediaRequest {
+  // Required. The series to attach the image to. It MUST be owned by the
+  // caller's Organizer.
+  entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The media object previously minted by CreateMediaUploadURL and
+  // uploaded by the client.
+  entity.v1.MediaId media_id = 2 [(buf.validate.field).required = true];
+}
+
+// AttachMediaResponse is empty: the image is not yet processed or servable when
+// AttachMedia returns, so there is nothing meaningful to return. The console
+// shows an optimistic local preview until the processed variants become
+// available.
+message AttachMediaResponse {}
 
 // RegenerateTokenRequest identifies the UNLISTED series whose share token is
 // being rotated.
