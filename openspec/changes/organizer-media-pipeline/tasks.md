@@ -4,48 +4,56 @@
 - [x] 1.2 `entity/v1/series.proto` (**BREAKING**): rename field 7 `cover_image` → `media`, retype `Url` → `entity.v1.Media`, `reserved "cover_image"` for the old name
 - [x] 1.3 `rpc/organizer/v1/concert_service.proto` (**BREAKING**): remove the shipped `UploadCoverImage`; add `CreateMediaUploadURL` (req: content_type → resp: upload_url `Url`, media_id `MediaId`, max_bytes) + `AttachMedia` (req: series_id, media_id → empty resp: the image is not yet live, so nothing meaningful to return) with protovalidate + error docs; keep other verbs
 - [x] 1.4 `MEDIA.uploaded` event payload contract (`{ media_id, series_id }` — `series_id` lets the consumer own the `series_media` cut-over, see 4.5) documented alongside existing event data
-- [ ] 1.5 `buf lint`/`format`/`breaking` (add `buf skip breaking` label for the intentional break); spec PR merge → Release → BSR gen
+- [x] 1.5 `buf lint`/`format`/`breaking` (add `buf skip breaking` label for the intentional break); spec PR merge → Release → BSR gen
 
 ## 2. Cloud-provisioning
 
-- [ ] 2.1 New `organizer-media-internal` bucket (PRIVATE, no LB/CDN, uniform bucket-level access) for uploaded originals at `{org}/{mediaId}`: CORS allow `PUT` from the organizer Web App origin (dev localhost:9100 + `organizer.dev.…`; prod `organizer.…`), response headers `Content-Type`, `x-goog-content-length-range`. The served `organizer-media` bucket is unchanged (keeps `cdn/` prefix + LB). Two-bucket split (not an `internal/` prefix) so the served bucket's URL map never exposes originals — see design D5
-- [ ] 2.2 media-processor image: Artifact Registry repo/entry for the new consumer image (backend `cmd/job`), prod immutable-tag policy consistent with existing repos
-- [ ] 2.3 Workload Identity: `media-processor` GSA + WI binding — bucket-scoped `objectAdmin` on **both** buckets: read/delete on `organizer-media-internal` (originals) + write on `organizer-media` (`cdn/` variants); no project-level storage role
-- [ ] 2.4 KEDA `ScaledJob` (`scaledobject.yaml`) triggered on JetStream `MEDIA.uploaded` (durable `media_uploaded`): resource requests/limits sized for libvips, `maxReplicaCount`, `backoffLimit`, spot nodeSelector (dev), `restartPolicy: Never`
-- [ ] 2.5 `kubectl kustomize` dry-run for the new Job overlay(s) (dev + prod) — resources set, spot nodeSelector, no empty `resources: {}`
+- [x] 2.1 New `organizer-media-internal` bucket (PRIVATE, no LB/CDN, uniform bucket-level access) for uploaded originals at `{org}/{mediaId}`: CORS allow `PUT` from the organizer Web App origin (dev localhost:9100 + `organizer.dev.…`; prod `organizer.…`), response headers `Content-Type`, `x-goog-content-length-range`. The served `organizer-media` bucket is unchanged (keeps `cdn/` prefix + LB). Two-bucket split (not an `internal/` prefix) so the served bucket's URL map never exposes originals — see design D5
+- [x] 2.2 media-processor image: Artifact Registry repo/entry for the new consumer image (backend `cmd/job`), prod immutable-tag policy consistent with existing repos
+- [x] 2.3 Workload Identity: `media-processor` GSA + WI binding — bucket-scoped `objectAdmin` on **both** buckets: read/delete on `organizer-media-internal` (originals) + write on `organizer-media` (`cdn/` variants); no project-level storage role
+- [x] 2.4 KEDA `ScaledJob` (`scaledobject.yaml`) triggered on JetStream `MEDIA.uploaded` (durable `media_uploaded`): resource requests/limits sized for libvips, `maxReplicaCount`, `backoffLimit`, spot nodeSelector (dev), `restartPolicy: Never`
+- [x] 2.5 `kubectl kustomize` dry-run for the new Job overlay(s) (dev + prod) — resources set, spot nodeSelector, no empty `resources: {}`
 
 ## 3. Backend — API (upload/attach)
 
-- [ ] 3.1 GCS storer: add `SignedPutURL(bucket, key, contentType, maxBytes, ttl)` (V4, keyless via IAM SignBlob; `x-goog-content-length-range` condition) and **restore** a prefix-delete (`DeletePrefix`) for reclaim
-- [ ] 3.2 `CreateMediaUploadURL` usecase + handler: **org-scoped auth** (caller is an organizer; no series is referenced yet), validate content type (JPEG/PNG/WebP), mint `mediaId` (UUIDv7), return signed `PUT` URL for `internal/{org}/{mediaId}` (15-min TTL) + `mediaId` + `max_bytes` (the single-source byte limit the client echoes as `x-goog-content-length-range`; matches the signed-URL condition)
-- [ ] 3.3 `AttachMedia(series_id, media_id)` usecase + handler: **verify the caller OWNS `series_id`** (represented-artist ownership, not merely org-scoped — deny non-owners without revealing existence), INSERT the `media` row (idempotent per `media_id`), publish `MEDIA.uploaded { media_id, series_id }`, return empty. Do NOT re-point `series_media` here and do NOT delete the previous image's prefix — the **consumer owns the `series_media` cut-over** and reclaims the old prefix after writing the new variants (see 4.5), so an already-published concert keeps serving its old image with no 404 window
-- [ ] 3.4 Remove the shipped `UploadCoverImage` handler/usecase/mapper path; mapper returns `Media { kind, attributes }` where `attributes.thumb`/`attributes.large` are composed per exposure from `{ORGANIZER_MEDIA_CDN_BASE}/cdn/{org}/{mediaId}/{variant}.webp` (via the media/series_media join)
-- [ ] 3.5 `MEDIA` stream in `streams.go` (+ KEDA trigger already in 2.4); DI wiring
-- [ ] 3.6 Unit tests: signed-URL issuance (type/size constraints), `AttachMedia` series-ownership reject (non-owner denied), attach idempotency, mapper variant URLs; `make check` with upgraded BSR
+- [x] 3.1 GCS storer: add `SignedPutURL(bucket, key, contentType, maxBytes, ttl)` (V4, keyless via IAM SignBlob; `x-goog-content-length-range` condition) and **restore** a prefix-delete (`DeletePrefix`) for reclaim
+- [x] 3.2 `CreateMediaUploadURL` usecase + handler: **org-scoped auth** (caller is an organizer; no series is referenced yet), validate content type (JPEG/PNG/WebP), mint `mediaId` (UUIDv7), return signed `PUT` URL for `internal/{org}/{mediaId}` (15-min TTL) + `mediaId` + `max_bytes` (the single-source byte limit the client echoes as `x-goog-content-length-range`; matches the signed-URL condition)
+- [x] 3.3 `AttachMedia(series_id, media_id)` usecase + handler: **verify the caller OWNS `series_id`** (represented-artist ownership, not merely org-scoped — deny non-owners without revealing existence), INSERT the `media` row (idempotent per `media_id`), publish `MEDIA.uploaded { media_id, series_id }`, return empty. Do NOT re-point `series_media` here and do NOT delete the previous image's prefix — the **consumer owns the `series_media` cut-over** and reclaims the old prefix after writing the new variants (see 4.5), so an already-published concert keeps serving its old image with no 404 window
+- [x] 3.4 Remove the shipped `UploadCoverImage` handler/usecase/mapper path; mapper returns `Media { kind, attributes }` where `attributes.thumb`/`attributes.large` are composed per exposure from `{ORGANIZER_MEDIA_CDN_BASE}/cdn/{org}/{mediaId}/{variant}.webp` (via the media/series_media join)
+- [x] 3.5 `MEDIA` stream in `streams.go` (+ KEDA trigger already in 2.4); DI wiring
+- [x] 3.6 Unit tests: signed-URL issuance (type/size constraints), `AttachMedia` series-ownership reject (non-owner denied), attach idempotency, mapper variant URLs; `make check` with upgraded BSR
 
 ## 4. Backend — media-processor consumer (`cmd/job`)
 
-- [ ] 4.1 Introduce libvips (govips) dependency; `cmd/job` build target + Dockerfile for the media-processor image
-- [ ] 4.2 `MediaConsumer` (behavior `media_uploaded`): pull message → load `media` row → read `internal/{org}/{mediaId}`
-- [ ] 4.3 Safety: magic-byte validation + header-first pixel/edge limit (≈50 MP / 8000 px) rejected **before** full decode; reject SVG/other
-- [ ] 4.4 Processing: strip EXIF, encode WebP `thumb` (~800w) + `large` (~1920w), aspect preserved (no crop), immutable `Cache-Control`; write `cdn/{org}/{mediaId}/{variant}.webp`
-- [ ] 4.5 On success: write new variants → **cut over in one transaction**: upsert `series_media(series_id)` → the new `media_id`, capturing the old `media_id` first if a row existed → **then** reclaim the previous image's `cdn/{org}/{old}/` prefix + delete the old `media` row (deferred until here so an already-published concert keeps serving its old variants until the replacement is ready) → delete the `internal/` original → ack. Transient failure = nak (`max_deliver=3`). Permanent failure (invalid image) = `term` + **delete the `internal/` original** (so failed uploads do not linger) + log/metric (reuse poison-consumer pattern). Idempotent on redelivery: deterministic variant overwrite, cut-over upsert is a no-op if already done, old-prefix/original deletes are no-ops if already gone
-- [ ] 4.6 Unit/integration tests: valid image → variants + EXIF removed; oversized-dimension rejected pre-decode; invalid bytes → no variants + term + original deleted; replace = new variants written **and** `series_media` cut over to the new media **before** the old prefix/row are reclaimed (no 404 window); first upload = `series_media` inserted by the consumer; idempotent reprocess
+- [x] 4.1 Introduce libvips (govips) dependency; `cmd/job` build target + Dockerfile for the media-processor image
+- [x] 4.2 `MediaConsumer` (behavior `media_uploaded`): pull message → load `media` row → read `internal/{org}/{mediaId}`
+- [x] 4.3 Safety: magic-byte validation + header-first pixel/edge limit (≈50 MP / 8000 px) rejected **before** full decode; reject SVG/other
+- [x] 4.4 Processing: strip EXIF, encode WebP `thumb` (~800w) + `large` (~1920w), aspect preserved (no crop), immutable `Cache-Control`; write `cdn/{org}/{mediaId}/{variant}.webp`
+- [x] 4.5 On success: write new variants → **cut over in one transaction**: upsert `series_media(series_id)` → the new `media_id`, capturing the old `media_id` first if a row existed → **then** reclaim the previous image's `cdn/{org}/{old}/` prefix + delete the old `media` row (deferred until here so an already-published concert keeps serving its old variants until the replacement is ready) → delete the `internal/` original → ack. Transient failure = nak (`max_deliver=3`). Permanent failure (invalid image) = `term` + **delete the `internal/` original** (so failed uploads do not linger) + log/metric (reuse poison-consumer pattern). Idempotent on redelivery: deterministic variant overwrite, cut-over upsert is a no-op if already done, old-prefix/original deletes are no-ops if already gone
+- [x] 4.6 Unit/integration tests: valid image → variants + EXIF removed; oversized-dimension rejected pre-decode; invalid bytes → no variants + term + original deleted; replace = new variants written **and** `series_media` cut over to the new media **before** the old prefix/row are reclaimed (no 404 window); first upload = `series_media` inserted by the consumer; idempotent reprocess
 
-## 5. Frontend (organizer console)
+## 5. Frontend (organizer console) — DEFERRED
 
-- [ ] 5.1 Image upload rework: `CreateMediaUploadURL` → direct `PUT` to GCS (Content-Type + `x-goog-content-length-range` headers) → `AttachMedia`
-- [ ] 5.2 Client-side pre-check (type/size/dimensions) for UX (not security); optimistic **local blob** preview during/after upload
-- [ ] 5.3 Render `media` as `Media` variants (thumb in lists, large in detail); 404-graceful until processed; re-upload path when an image never appears
-- [ ] 5.4 `make check` with upgraded BSR
+**DEFERRED out of this change.** The organizer console authoring app (which would
+host the image-upload UI) is not built yet, and the fan PWA has no first-party
+concert page rendering `Series.media`. There is no existing frontend flow to
+rework. This pipeline ships backend + infra first (the proposal's premise: "so
+users never see the raw path"); the frontend below is adopted when the organizer
+console authoring UI is built, matching organizer-event-authoring's own deferral
+of the image pipeline UI.
+
+- [ ] 5.1 (DEFERRED) Image upload rework: `CreateMediaUploadURL` → direct `PUT` to GCS (Content-Type + `x-goog-content-length-range` headers) → `AttachMedia`
+- [ ] 5.2 (DEFERRED) Client-side pre-check (type/size/dimensions) for UX (not security); optimistic **local blob** preview during/after upload
+- [ ] 5.3 (DEFERRED) Render `media` as `Media` variants (thumb in lists, large in detail); 404-graceful until processed; re-upload path when an image never appears
+- [ ] 5.4 (DEFERRED) `make check` with upgraded BSR
 
 ## 6. Observability
 
-- [ ] 6.1 Metrics: processing latency, success/failure counts, JetStream `MEDIA.uploaded` pending/lag; alert on sustained failures or queue backlog (GMP/PromQL AlertPolicy consistent with existing consumer alerts)
+- [x] 6.1 Alerting: added a `media-processor` ERROR-log AlertPolicy (system failures page; invalid uploads log WARN, not ERROR); queue backlog for the `media_uploaded` durable is already covered by the existing unfiltered `Consumer JetStream Backlog Stall` policy (`nats_consumer_num_pending`). Bespoke processing-latency/success-count **metric emission is deferred** (thresholds tune post-launch; the ERROR-log + backlog signals cover the incident classes at MVP)
 
 ## 7. Release & ship to prod
 
 - [ ] 7.1 Backend PR merged → release → prod pin bump (API + media-processor image)
 - [ ] 7.2 Cloud-provisioning PR merged → dev auto `pulumi up`; prod `pulumi up` (Console) — CORS, WI SA, KEDA ScaledJob, media-processor
-- [ ] 7.3 Frontend PR merged → release (this is the first prod release of the authoring media UI — see organizer-event-authoring 5.2, which now ships via this pipeline)
+- [ ] 7.3 (DEFERRED with Section 5) Frontend release — no organizer console authoring UI exists yet; the pipeline ships backend + infra only. Adopted when the organizer console is built.
 - [ ] 7.4 Verify in prod: organizer uploads an image for an owned draft → processed WebP `thumb`/`large` served over `https://media.…/cdn/{org}/{mediaId}/…` (EXIF removed); replace reclaims old variants; a malformed/oversized-dimension image yields no variants; publish is independent of processing
