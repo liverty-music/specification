@@ -71,4 +71,7 @@ before the authoring UI goes live in prod, so users never see the raw path.
 - **Non-Goals**: content moderation (NSFW/abuse detection); multiple images /
   gallery, video, and YouTube embeds (deferred to
   `organizer-event-authoring-extensions`, which reuses this pipeline);
-  password-protected visibility.
+  password-protected visibility. **Frontend adoption is also deferred** (Section 5):
+  the organizer console authoring UI is not built yet, so this change ships the
+  backend + infra pipeline only; the console consumes `CreateMediaUploadURL`/
+  `AttachMedia` and renders `Series.media` variants when it is built.
