@@ -179,7 +179,9 @@ change when picked up:
   pool). **Calibration (market-design-notes #2): PULL EARLY — now a market
   default** (post-チケトレ, resale moved in-platform) and the cannot-attend
   valve → plan it **immediately after the lottery/ticketing MVP (⑥)**, not
-  deep in Phase 2.
+  deep in Phase 2. Full design (money model = refund-seller + fresh-sale, no
+  individual payee; legal must-haves; lifecycle; counsel brief):
+  [`resale-design.md`](./resale-design.md).
 - `face-auth-entry` — anti-scalp **identity tier** on top of ⑥'s rotating-QR
   + Passkey floor: **photo-bound tickets → live-face-match-to-open**
   (hardware-free, on-device), with **マイナンバーカード** as an opt-in
@@ -266,10 +268,16 @@ the relevant change's `design.md`.
 
 Behind the opaque payment reference; changeable without schema breaks:
 Stripe charge model (destination vs separate charges & transfers) and
-merchant-of-record; payout timing (immediate vs held past the event for
-refunds); platform fee rate; tax/currency (JPY tax-inclusive, インボイス);
-特定商取引法 seller-of-record disclosure and refund-policy wording;
-official-resale price cap.
+merchant-of-record; **primary** payout timing (immediate vs held past the
+event); platform fee rate; tax/currency (JPY tax-inclusive, インボイス);
+特定商取引法 seller-of-record disclosure and refund-policy wording.
+
+Note: the **official-resale** money decisions are now SETTLED in
+[`resale-design.md`](./resale-design.md) — price is locked to 券面代金
+(face-value only, no cap knob), and the reselling **seller refund is
+triggered on resale completion with a short hold-back, NOT held to the
+event** (ぴあ/ticket board/e+/tiget-aligned). Only the *primary* buyer→Organizer
+payout timing above remains a ⑤ decision (and resale does not depend on it).
 
 Note: merchant-of-record / 特商法 / refund policy, Stripe Connect account
 type & onboarding, and the fee rate are business/legal decisions with
