@@ -27,17 +27,17 @@ the competitor/market research in `market-design-notes.md`.
   entity is provider- and method-agnostic, so they can be added later
   without a proto break. Trade-off: card-only excludes some cardless
   students/minors — accepted for a vetted-partner MVP, revisit on demand.
-- **Lottery charge mechanism: `SetupIntent`-primary, NOT auth-hold.** This
-  is the load-bearing correction (see Why below). At application, save the
-  card via a `SetupIntent` (`usage=off_session`) — **no hold on the buyer's
-  credit**. At the draw, charge **only winners** via an off-session
-  `PaymentIntent` (MIT). A full-amount authorization hold is a narrow
-  exception (high-value / extreme-scarcity where a funds guarantee matters).
-- **Winner-charge-failure flow (required):** a saved card can fail at draw
-  (expiry / insufficient funds / authentication_required). Grace + a
-  re-auth link with a deadline → else **当選無効 → 繰上げ (waitlist)** — the
-  JP "unpaid-by-deadline → void" convention. Do not collect CVC at draw
-  (would reclassify as CIT).
+- **Lottery charge mechanism: authorization hold (Stripe manual-capture) —
+  SUPERSEDES the earlier SetupIntent decision (see Why, updated).** At application,
+  **authorize (hold) the ticket amount** via a manual-capture `PaymentIntent`
+  (`capture_method=manual`, 3DS once). At the draw, **capture winners / cancel
+  (release) losers**. ④ owns authorize+capture; ⑤ takes the captured payment →
+  Order + Ticket. **JPY cards only, American Express excluded** — a **JP-based
+  Stripe account holds JPY card authorizations up to 30 days**, ≫ the 1–14-day
+  lottery window, so the hold survives to the draw. **No payment deadline, no
+  off-session charge, no re-auth/grace, no 繰上げ** — a held authorization captured
+  at the draw effectively does not fail (a rare failed capture → seat unfilled,
+  manual follow-up).
 - **Payout: hold to event + dispute window.** Organizer accounts on
   **manual payout**; release via Payouts API **after the event AND a
   dispute-safety buffer** (chargebacks arrive days-to-weeks later — "after
@@ -50,20 +50,26 @@ the competitor/market research in `market-design-notes.md`.
   ¥220+¥99 draws complaints). Buyer-pass-through toggle → organizer cost can
   be ¥0. Exact rate is a business decision (#778).
 
-### Why SetupIntent, not an authorization hold (the correction)
+### Why authorization hold (updated — reverses the earlier SetupIntent reasoning)
 
-JP competitors (ぴあ / ローチケ / LivePocket / 楽天チケット) do **not** hold the
-full amount at application — only a ¥1 validity check; the full 与信枠 hold
-lands at **draw** time, and winners' cards are **auto-charged** after
-results. Holding the full amount at application:
-- ties up credit across the **many** lotteries a fan applies to (they win
-  1–2), the exact 与信枠圧迫 JP platforms avoid; and
-- **breaks on prepaid/debit** (the cardless-fan substitute), which release
-  holds in 1–8 days — the reservation silently vanishes before the draw.
+The earlier design chose SetupIntent because a **full-amount hold was assumed too
+short-lived** (the standard **~7-day** authorization) to survive a lottery window,
+and holding across the many lotteries a fan enters would 与信枠圧迫. That premise was
+**wrong for our case**: a **JP-based Stripe account holds JPY-card authorizations
+for up to 30 days** (Visa/Mastercard/JCB/Diners/Discover), and the lottery window is
+bounded to **1–14 days** (④, default 10), comfortably inside 30. So a manual-capture
+hold **does** survive to the draw, and it **removes the machinery SetupIntent
+needed**: no off-session charge that can fail, no payment deadline, no re-auth/grace
+link, no **当選無効 → 繰上げ**. Trade-offs accepted: (a) the fan's funds are held for
+the window (bounded ≤14 days; the ローチケ norm), and (b) **American Express + non-JPY
+cards are excluded** (they fall back to the ~7-day window, too short) — rejected at
+application in ④. This is the model ④ `lottery-application` implements; ⑤ consumes
+the **captured** payment.
 
-`SetupIntent` (save at apply, charge winners) matches the JP norm, avoids
-credit lock-up, works with prepaid/debit, and does 3DS once at setup (JP
-EMV-3DS mandate) with MIT-exempt winner charges.
+> Historical note: the original "Why SetupIntent" argument (¥1 validity check at
+> apply, auto-charge winners at draw, prepaid/debit hold-release in 1–8 days) applied
+> to the **non-JPY / generic** hold; the JPY-30-day window is the specific fact that
+> reversed it. Prepaid/debit that cannot hold 14 days are excluded like Amex.
 
 ## Legal / money scheme (収納代行) — not legal advice
 

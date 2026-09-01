@@ -143,12 +143,15 @@ change's `design.md`:
 - **Payments: Stripe Connect, platform-intermediated, card-only MVP.**
   Liverty collects, takes a fee, pays out the organizer. **Card-only** for
   MVP (incl. debit/prepaid + Apple/Google Pay; konbini/PayPay deferred).
-  The lottery charges **only winners** — via **`SetupIntent` (save card at
-  application, charge winners at the draw), NOT an authorization hold**
-  (holds tie up credit across parallel applications and break on
-  prepaid/debit; this matches the JP norm). The domain Order/Payment entity
-  is **provider- and method-agnostic** (see D2). Full design + legal scheme
-  (収納代行, Organizer = seller-of-record) + counsel flags:
+  The lottery charges **only winners** — via a **Stripe manual-capture
+  authorization hold**: **authorize (hold) the ticket amount at application,
+  capture winners at the draw, release losers** (④ owns authorize+capture; ⑤ takes
+  the captured payment → Order + Ticket). **JPY cards only (Amex excluded)** — the
+  30-day JPY authorization window ≫ the 1–14-day lottery window, which is what makes
+  the hold viable (this **supersedes** the earlier SetupIntent-not-hold decision,
+  whose "holds too short-lived" premise assumed the ~7-day non-JPY window). The
+  domain Order/Payment entity is **provider- and method-agnostic** (see D2). Full
+  design + legal scheme (収納代行, Organizer = seller-of-record) + counsel flags:
   [`payments-design.md`](./payments-design.md) (issue #778).
 - **Web First, No Native App** (product constraint): the check-in tool is
   a PWA using the web camera, not a native scanner app.
@@ -186,7 +189,7 @@ sub-changes (see its row and `organizer-platform-design.md`).
 | ① | **organizer platform** (4 sub-changes) | The vetted-seller foundation, split to keep each change reviewable: **`organizer-tenancy`** (identity-management topology delta + Zitadel platform IaC: `organizer-console` project/roles/apps + provisioner machine user + per-org passkey login), **`organizer-accounts`** (Organizer entity + admin vetting RPCs + runtime tenant-provisioning saga + operator bootstrap + `deactivated` hook + analytics), **`organizer-console`** (`organizer.html` entry + hosting `organizer.{base}` + runtime-config delta), **`organizer-rpc-server`** (dedicated `api.organizer.{base}` server + CORS + `OrganizerService.Get` + org-scoped authz). Full design + resolved gap-audit: [`organizer-platform-design.md`](./organizer-platform-design.md). | existing admin only | A completeness audit showed a single change hid ~33 gaps (a dedicated API server, dedicated hosting, provisioning saga, offboarding). Splitting by surface (identity/accounts/console/rpc-server) mirrors the admin precedent and keeps each spec complete. |
 | ② | `organizer-event-authoring` | Organizer-authored Event/Series/Venue, publish flow, **private visibility via signed tokenized URL**, first-party supersedes scraped concerts, **organizer-represented artists excluded from scraping** | ① | Turns the existing `Series/Event/Venue/event_performers` model from a scrape-reconstruction target into a first-party authoring target. |
 | ③ | `follower-event-publish-notification` — **largely absorbed by ②** | ② `Publish` emits `CONCERT.created`, which the **existing `notify-concert` consumer already turns into follower push** (verified in code). So ③ is mostly delivered for free by ②. **Re-scoped to at most a thin change** (organizer-specific message copy / deeplink; UNLISTED/DRAFT never notify is handled in ②) and may be dropped. | ② | Confirmed during ② design: `CONCERT.created` → `NotifyNewConcerts` already notifies artist followers, so a separate publish→notify build is redundant. |
-| ④ | `lottery-application` | LotterySalesPhase (**first-party; distinct from the scraped `sales_phase`, no merge**), `max_tickets_per_application`, TicketApplication, automatic draw, win/loss, payment deadline (owned by ④), **本人確認 identity + 1 account / 1 application** | ② | Draw logic is substantial and stands alone. Couples to payment only through "winning = right to purchase". 本人確認 also makes tickets legally "covered". Organizer sets phase capacity (no venue-capacity field exists upstream). |
+| ④ | `lottery-application` | LotterySalesPhase (**first-party; distinct from the scraped `sales_phase`, no merge**), `max_tickets_per_application`, TicketApplication, **card authorize (hold) at apply → capture winners / release losers at draw** (Stripe manual-capture, JPY-only), automatic draw, win/loss, **本人確認 identity + 1 account / 1 application** | ② | Draw logic is substantial and stands alone. Couples to payment via authorize-at-apply/capture-at-draw (no payment deadline / 繰上げ). 本人確認 also makes tickets legally "covered". Organizer sets phase capacity (no venue-capacity field exists upstream). |
 | ⑤ | `ticket-purchase-and-issuance` | Order (provider/method-agnostic, opaque payment refs), platform-intermediated Stripe payment (card/wallet/**konbini async**), **Web2 account-bound Ticket issuance** (N per order), event-cancellation refund, `ticket-journey` sync to PAID | ④ | Stripe integration is heavy on its own: post-win payment → order → issuance is a single pipeline. |
 | ⑥ | `ticket-wallet-and-checkin` | Ticket wallet UI (renders the **covered-ticket face**), **in-app dynamic QR = server-signed short-TTL token**, **signature+freshness then online atomic duplicate-check** at admit, **same-time group entry**, **reception PWA (web-camera, no NFC)**, entry status | ⑤ | Requires an issued ticket. App-first credential (cross-platform, not OS-shareable). **No gate-time passkey step-up** (rejected). **OS Wallet passes, NFC tap, offline scanning, per-event 顔認証 are deferred (future).** PWA honors No-Native-App. |
 
@@ -262,10 +265,14 @@ change when picked up:
 Recorded here so they are not lost; each is formalized (or superseded) in
 the relevant change's `design.md`.
 
-- **D1 — Lottery charges after winning.** No charge at application.
-  Stripe authorization holds are too short-lived for lottery windows;
-  present winners a payment deadline instead (matches the existing
-  `payment_deadline_at` model and Japanese lottery UX).
+- **D1 — Lottery charges winners at the draw via an authorization hold
+  (updated).** **Authorize (hold) at application, capture winners at the draw,
+  release losers** (Stripe manual-capture; ④ owns authorize+capture, ⑤ issues from
+  the captured payment). **JPY cards only (Amex excluded):** the **30-day JPY
+  authorization window ≫ the 1–14-day lottery window**, so the hold survives — this
+  **reverses** the earlier "holds too short-lived → SetupIntent + payment deadline"
+  reasoning (that assumed the ~7-day non-JPY hold). No payment deadline / off-session
+  charge / 繰上げ needed (a held authorization captured at the draw does not fail).
 - **D2 — Payment entity is provider- and method-agnostic.** Stripe
   intermediates (platform collects, takes a fee, pays out organizers).
   Apple Pay / Google Pay are **not** distinct methods — they settle as

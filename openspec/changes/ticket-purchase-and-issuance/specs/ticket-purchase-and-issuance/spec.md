@@ -1,30 +1,40 @@
 ## Purpose
 
-This capability turns a lottery **win** into money and tickets: it charges the
-winner's saved card off-session, records an Order, and issues Web2 account-bound
-tickets — under the 収納代行 scheme with the Organizer as seller-of-record. It is
-the primary payment + issuance pipeline for the ticketing MVP.
+This capability turns a **captured** lottery win into an Order and issued tickets:
+④ **authorizes (holds) the card at application and captures the winner's
+authorization at the draw**; ⑤ takes that **captured winning payment** and records
+an Order + issues Web2 account-bound tickets — under the 収納代行 scheme with the
+Organizer as seller-of-record. It is the primary Order + issuance pipeline for the
+ticketing MVP.
 
 ## ADDED Requirements
 
-### Requirement: Charge a winner off-session
+### Requirement: Issue from ④'s captured winning payment
 
-On a ④ **win**, the system SHALL charge the winner's **saved payment method**
-(captured by ④'s SetupIntent) off-session via the provider, as a **destination
-charge on behalf of the Organizer with a platform application fee**. It SHALL NOT
-request CVC (so the charge remains a merchant-initiated transaction). The charge
-SHALL be attempted within the winner's **payment deadline**. **Card-only** for
-MVP (incl. debit/prepaid and wallet cards); other methods are out of scope.
+The charge is performed by **④** (a Stripe **manual-capture** authorization held at
+application and **captured at the draw** for winners — destination charge on behalf
+of the Organizer with a platform application fee, JPY card only). ⑤ SHALL **NOT**
+perform a separate off-session charge; on ④'s **captured winning payment**
+(webhook-confirmed capture), ⑤ SHALL create the **Order** referencing that payment
+and proceed to issuance. There is **no ⑤-side payment deadline, off-session charge,
+re-auth, or 繰上げ** — the hold-and-capture model removes them (④ releases losers'
+holds; a rare failed capture leaves the seat unfilled for manual follow-up, ④'s
+concern).
 
-#### Scenario: Winner is charged off-session
+#### Scenario: Order created from the captured winning payment
 
-- **WHEN** an application wins and its payment deadline has not passed
-- **THEN** the system charges the saved payment method off-session as a destination charge on behalf of the Organizer with the platform application fee, without requesting CVC
+- **WHEN** ④ captures a winning application's held authorization (webhook-confirmed capture)
+- **THEN** ⑤ creates an Order referencing that captured payment and proceeds to issuance
 
-#### Scenario: Non-card method is not offered
+#### Scenario: ⑤ performs no separate charge
 
-- **WHEN** a purchase is initiated for MVP
-- **THEN** only card (incl. debit/prepaid/wallet) is available; konbini/PayPay are not offered
+- **WHEN** a winner is being processed
+- **THEN** ⑤ does not run an off-session charge / SetupIntent / payment-deadline / 繰上げ flow — the charge is ④'s capture of the held authorization
+
+#### Scenario: Failed capture yields no Order
+
+- **WHEN** ④'s capture of a winning authorization fails
+- **THEN** ⑤ creates no Order and issues no ticket (the seat is left for ④'s manual follow-up; no ⑤-side retry/繰上げ)
 
 ### Requirement: Order record
 
@@ -81,28 +91,12 @@ double-refund, or double-charge).
 - **WHEN** the same capture webhook is delivered more than once
 - **THEN** tickets are issued exactly once
 
-### Requirement: Charge outcome reporting (grace before void)
-
-The system SHALL report each off-session charge attempt's outcome to ④:
-**succeeded**, **failed** (hard decline), or **needs re-authentication**
-(`authentication_required` — a 3DS step-up, which occurs even for MIT under the JP
-EMV-3DS regime). On **failed** or **needs-re-authentication** and while the
-winner's payment deadline (owned by ④) **has not lapsed**, the system SHALL
-surface a **re-auth / retry link** (a grace window) so the winner can complete the
-step-up or fix their card — it MUST NOT immediately void the win. Only when ④
-signals the deadline lapsed without success SHALL the Order be marked `failed` and
-no ticket issued; ④ then runs 繰上げ. No ticket is issued for a non-succeeded
-charge.
-
-#### Scenario: Step-up gets a re-auth link within the deadline
-
-- **WHEN** a charge returns needs-re-authentication (or a soft failure) before the deadline lapses
-- **THEN** a re-auth/retry link is surfaced to the winner and the win is not voided yet
-
-#### Scenario: Deadline lapse without success finalizes failure
-
-- **WHEN** ④ signals the payment deadline lapsed with no successful charge
-- **THEN** no ticket is issued, the Order is marked failed, and ④ runs 繰上げ
+<!-- The former "Charge outcome reporting (grace before void)" requirement is
+     REMOVED: ④'s authorization-hold model (authorize at apply, capture on win,
+     release on loss) has no off-session charge, no payment deadline, no
+     re-auth/grace, and no 繰上げ — a held authorization captured at the draw
+     effectively does not fail; a rare failed capture is ④'s manual-follow-up
+     concern (see "Issue from ④'s captured winning payment"). -->
 
 ### Requirement: Payout held to event plus dispute buffer
 
