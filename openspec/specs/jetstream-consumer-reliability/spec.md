@@ -52,20 +52,6 @@ The consumer's liveness and readiness probes SHALL report unhealthy when the mes
 - **WHEN** the router is running and all expected durables are bound
 - **THEN** the liveness and readiness probes SHALL report healthy
 
-### Requirement: Durable configuration is reconciled on startup
-
-The consumer SHALL reconcile each durable it owns against the desired configuration at startup. When a durable's server-stored configuration (name, deliver group, or delivery policy) has drifted from the desired configuration, the consumer SHALL recreate the durable so that a configuration or naming change cannot wedge on a stale pre-existing durable.
-
-#### Scenario: A pre-existing durable has drifted configuration
-
-- **WHEN** a durable exists on the server with a configuration that differs from the consumer's desired configuration
-- **THEN** the consumer SHALL delete and recreate that durable to match the desired configuration before consuming
-
-#### Scenario: An already-correct durable is left untouched
-
-- **WHEN** a durable already matches the desired configuration
-- **THEN** the consumer SHALL bind to it without deleting or recreating it
-
 ### Requirement: Consumers are named by behavior, with a unique deliver group
 
 Each durable and its deliver group SHALL be named after the **behavior** (the handler / reaction) it performs, not after the subject it consumes — using a `<verb>-<object>` name from the controlled vocabulary `ingest`, `resolve`, `verify`, `notify`, `track`, `log` (e.g. `CONCERT.created` → `notify-concert`). Every consumer's deliver group SHALL equal its own durable name, so no two consumers ever share a deliver group.
@@ -106,4 +92,62 @@ The consumer autoscaler (KEDA ScaledObject) triggers SHALL reference the same be
 
 - **WHEN** the consumer creates a durable for a behavior
 - **THEN** the corresponding KEDA trigger SHALL reference that exact durable name
+
+### Requirement: Stream and durable configuration is managed declaratively by a single owner
+
+JetStream stream and consumer (durable) configuration SHALL be managed
+**declaratively by a single in-cluster controller that exclusively owns those
+resources**. The declared configuration SHALL be the source of truth, and the
+controller SHALL correct drift (recreating a durable whose server-stored
+configuration — name, deliver group, or delivery policy — differs from the
+declared one) so a configuration or naming change cannot wedge on a stale
+pre-existing durable. Application workloads SHALL NOT create streams, and SHALL
+NOT run a global reconcile that deletes durables; a consumer workload SHALL
+**bind** to the pre-existing declared durable rather than create it. This removes
+the failure mode where a second consumer application, reconciling only its own
+subset of durables, deletes the durables owned by another application.
+
+#### Scenario: A pre-existing durable has drifted configuration
+
+- **WHEN** a durable exists on the server with a configuration that differs from
+  the declared configuration
+- **THEN** the controller SHALL recreate that durable to match the declared
+  configuration, and consumers SHALL bind to the corrected durable
+
+#### Scenario: An already-correct durable is left untouched
+
+- **WHEN** a durable already matches the declared configuration
+- **THEN** the controller SHALL leave it untouched (no delete/recreate, no cursor
+  reset, no deliver-group change) and consumer workloads SHALL bind to it
+
+#### Scenario: One consumer application never deletes another's durables
+
+- **WHEN** multiple consumer workloads exist, each consuming a different subset of
+  durables
+- **THEN** no workload SHALL delete a durable it does not consume; durable
+  lifecycle SHALL be governed only by the declared configuration and its owning
+  controller
+
+### Requirement: A consumer may scale to zero without losing its durable
+
+A JetStream consumer workload MAY scale to **zero replicas** while its durable
+continues to exist independently of the workload. The autoscaler SHALL still
+observe the durable's backlog while the workload is at zero and SHALL wake the
+workload when messages arrive; messages published while the workload is at zero
+SHALL be retained and delivered once it wakes.
+
+#### Scenario: A message published while idle wakes the workload and is processed
+
+- **WHEN** a consumer workload is at zero replicas and a message is published to
+  its stream
+- **THEN** the durable SHALL retain the message, the autoscaler SHALL observe the
+  pending backlog and scale the workload up, and the workload SHALL process the
+  message
+
+#### Scenario: No replicas run while there is no work
+
+- **WHEN** a scale-to-zero consumer workload has no pending messages for its
+  cooldown window
+- **THEN** the workload SHALL run zero replicas, while its durable remains present
+  for the autoscaler to observe
 

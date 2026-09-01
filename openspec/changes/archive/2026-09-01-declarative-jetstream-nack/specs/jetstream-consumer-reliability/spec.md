@@ -1,3 +1,8 @@
+## RENAMED Requirements
+
+- FROM: `### Requirement: Durable configuration is reconciled on startup`
+- TO: `### Requirement: Stream and durable configuration is managed declaratively by a single owner`
+
 ## MODIFIED Requirements
 
 ### Requirement: Stream and durable configuration is managed declaratively by a single owner
@@ -21,7 +26,7 @@ subset of durables, deletes the durables owned by another application.
 - **THEN** the controller SHALL recreate that durable to match the declared
   configuration, and consumers SHALL bind to the corrected durable
 
-#### Scenario: An already-correct durable is adopted as a no-op
+#### Scenario: An already-correct durable is left untouched
 
 - **WHEN** a durable already matches the declared configuration
 - **THEN** the controller SHALL leave it untouched (no delete/recreate, no cursor
