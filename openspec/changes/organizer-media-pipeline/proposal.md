@@ -20,9 +20,10 @@ before the authoring UI goes live in prod, so users never see the raw path.
   `media` row (`MediaId id`, `MediaKind kind`, `MediaAttributes attributes`); the
   responsive variant URLs (`thumb`, `large`) live in `MediaAttributes` and are
   server-composed at read time, not persisted (see design D6).
-- **Async processing** off the API: a behavior-named JetStream consumer
-  (`MEDIA.uploaded`, durable `media_uploaded`) run as a KEDA `ScaledJob`
-  (scale-to-zero) validates magic bytes, enforces pixel/dimension limits
+- **Async processing** off the API: a behavior-named JetStream **pull** consumer
+  (`MEDIA.uploaded`, durable `media_uploaded`) run as a long-running
+  `media-consumer` Deployment behind a KEDA `ScaledObject` (scale-to-zero)
+  validates magic bytes, enforces pixel/dimension limits
   (decompression-bomb defense), strips EXIF, and encodes **WebP** responsive
   variants into `cdn/{org}/{media_id}/{variant}.webp`.
 - **Two buckets**: a new PRIVATE `organizer-media-internal` bucket (no LB/CDN,
@@ -59,19 +60,23 @@ before the authoring UI goes live in prod, so users never see the raw path.
   `UploadCoverImage`, add `CreateMediaUploadURL` + `AttachMedia`. New BSR release.
 - **backend**: new upload/attach usecase + handlers; `SignedPutURL` on the GCS
   storer + restore prefix-delete; new `MediaConsumer` (govips/libvips image
-  processing) wired in the consumer/`cmd/job` deployable; `MEDIA` stream in
-  `streams.go`; remove the old `UploadCoverImage` path; mapper returns `Media`.
+  processing) wired in the long-running `cmd/consumer/media-consumer` deployable;
+  `MEDIA` stream; remove the old `UploadCoverImage` path; mapper returns `Media`.
 - **cloud-provisioning**: new private `organizer-media-internal` bucket (no LB)
-  with CORS (`PUT` from the organizer Web App origin); new `media-processor`
-  image (Artifact Registry) + Workload Identity SA (read/delete the originals
-  bucket, write `cdn/` in the served bucket); KEDA `ScaledJob` trigger on
-  `MEDIA.uploaded`.
+  with CORS (`PUT` from the organizer Web App origin); `media-consumer` image
+  (shared `backend` Artifact Registry) + Workload Identity SA (read/delete the
+  originals bucket, write `cdn/` in the served bucket) + IAM DB user & cloudsql
+  roles for the `series_media` cut-over; KEDA `ScaledObject` (scale-to-zero) on
+  the NACK-owned `media_uploaded` durable. *(As-built: `media-processor`/`ScaledJob`
+  were superseded by `media-consumer`/`ScaledObject` via `declarative-jetstream-nack`.)*
 - **frontend**: image upload reworked to `CreateMediaUploadURL` → direct `PUT` →
   `AttachMedia`, optimistic local preview, `thumb`/`large` variant rendering.
 - **Non-Goals**: content moderation (NSFW/abuse detection); multiple images /
   gallery, video, and YouTube embeds (deferred to
   `organizer-event-authoring-extensions`, which reuses this pipeline);
-  password-protected visibility. **Frontend adoption is also deferred** (Section 5):
-  the organizer console authoring UI is not built yet, so this change ships the
-  backend + infra pipeline only; the console consumes `CreateMediaUploadURL`/
-  `AttachMedia` and renders `Series.media` variants when it is built.
+  password-protected visibility. **Frontend adoption is still pending** (Section 5):
+  the organizer console authoring UI shipped (#573) with the *synchronous*
+  `UploadCoverImage` path, which this change removed on the backend. Migrating the
+  console to consume `CreateMediaUploadURL` / `AttachMedia` and render
+  `Series.media` variants is the remaining work of this change (§5, §7.3, §7.4) —
+  until it lands, the console's cover-upload calls a removed RPC and is broken.
