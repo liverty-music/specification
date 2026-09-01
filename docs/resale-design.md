@@ -10,8 +10,9 @@ counsel brief must be confirmed before launch.**
 
 Feeds the future `official-resale` OpenSpec change. **Depends on ④
 `lottery-application` (the loser demand pool), ⑤ `ticket-purchase-and-issuance`
-(Order/Payment/Ticket + 収納代行 + refunds), and ⑥ `ticket-wallet-and-checkin`
-(issue / void / rotating-QR / 本人確認 binding).** Roadmap timing: **leaning
+(Order/Payment/Ticket + issuance + 本人確認 + covered-ticket face + 収納代行 +
+refunds), and ⑥ `ticket-wallet-and-checkin` (void→invalidate credential + the
+signed-token / in-app dynamic-QR entry credential).** Roadmap timing: **leaning
 EARLY** — official resale is now a JP market default (post-チケトレ).
 
 ## The core model (settled)
@@ -115,8 +116,9 @@ primary platform running **its own official resale on its own issuance base**
 - **Match-time (atomic).** When a listed seat matches a buyer, do — in one
   transaction — three things: (1) the buyer's fresh face-value payment settles
   (webhook `payment_intent.succeeded`), (2) the seller's original ticket is
-  **voided** (rotating QR invalidated so the seller cannot also enter), (3) a
-  **new ticket is issued** to the buyer with 本人確認 re-bound. This prevents
+  **voided** (⑥'s void→invalidate hook: the credential stops validating at admit,
+  so the seller cannot also enter), (3) a **new ticket is issued** to the buyer
+  with 本人確認 re-bound. This prevents
   the seller entering on a seat already resold and never issues a ticket for a
   payment that failed.
 - **Seller refund is triggered on resale completion, NOT held to the event (D1).**

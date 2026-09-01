@@ -26,9 +26,32 @@ competitor/market check + the roadmap calibrations it drove).
 These answers scope the entire roadmap and must be carried into each
 change's `design.md`:
 
-- **Issuance/entry architecture: Web2.** Account-bound tickets +
-  server-signed rotating QR + Passkey identity. No blockchain. (Already
-  recorded in `product-design.md`.)
+- **Issuance/entry architecture: Web2.** Account-bound tickets; entry credential =
+  an **in-app dynamic QR backed by a server-signed short-TTL token** (cross-platform,
+  app-controlled, not OS-shareable), validated by **signature + freshness then an
+  online atomic duplicate-check** at admit (camera scan, no NFC hardware). **OS
+  Wallet passes are a deferred convenience tier** (not the MVP credential — Apple
+  has no self-serve rotating barcode → iOS static; OS passes are shareable → weaker
+  anti-scalp; issuing them is a 個情法 §28 越境移転 to Apple/Google). Passkey is the
+  **account login** identity — **NOT** a gate-time re-auth (a gate-time passkey
+  step-up was explored and **rejected**; see the anti-scalp decision below). No
+  blockchain. (Base recorded in `product-design.md`.)
+- **Anti-scalp is a TIERED platform model, not a gate re-auth (settled after
+  the ⑥ step-up exploration).** Layers, lightest→heaviest: (1) **account passkey**
+  login (phishing-resistant); (2) **JPKI eKYC (マイナンバーカード) high-assurance
+  lane** binding 1 person = 1 verified account — kills bulk/industrial scalping
+  (what 不正転売禁止法 targets); JPKI certs only (never the 個人番号 → outside 番号法;
+  via a 認定PF事業者, no self-certification); a **lane, not mandatory** (card
+  penetration ~81% + drop-off → fallback required); a **new backlog change**;
+  (3) **signed short-TTL credential + online atomic dedup** (signature/TTL defeats
+  forgery/screenshot; dedup resolves the concurrent-admit race);
+  (4) **official resale (⑦)** demand valve; (5) **per-event 顔認証/ID at entry**
+  (`face-auth-entry`) — the ONLY layer that closes the 1:1 device-transfer /
+  "escort" hand-off, for top-demand shows. **Rejected: gate-time passkey step-up**
+  — WebAuthn proves phishing-resistance, **not anti-collusion**, so it cannot stop
+  a holder handing over an unlocked device/pass; it only dents an already
+  non-scaling residual at a disproportionate UX/auth-server cost. The strong-control
+  budget goes to (5), not a gate re-auth.
 - **Seller entity: `Organizer` — a role, not a company category** (name
   chosen over "Partner", which in platform contexts usually means an
   integration/affiliate partner). The Organizer is the account authorized
@@ -80,9 +103,14 @@ change's `design.md`:
   the share URL, and collect a high price **off-platform** while the
   system only sees a free hand-off. Same-time entry defeats this because a
   stranger cannot enter without the lead physically present, which does
-  not scale. Backstops: rotating QR + login (a sold screenshot is
-  useless) and covered-ticket legality (off-platform purchases are
-  invalid at entry). Residual risk (small-scale physical escort) is
+  not scale. Backstops: signed short-TTL credential + online atomic dedup (a sold
+  screenshot is stale / admits at most once) and covered-ticket legality
+  (off-platform purchases are invalid at entry). **Note:** if OS Wallet passes are
+  later added (convenience tier), the OS can share/transfer them outside our
+  control — that
+  residual is the same non-scaling 1:1 hand-off, **accepted** here and closed for
+  top-demand shows by the per-event `face-auth-entry` tier (not by a gate re-auth,
+  which can't close it). Residual risk (small-scale physical escort) is
   accepted. Separate-time companion entry, if ever needed, is solved later
   by **pre-registered** named companions (not an open URL) — see Open
   Decisions. The cannot-attend case is handled by official resale, not by
@@ -150,7 +178,7 @@ sub-changes (see its row and `organizer-platform-design.md`).
      │                    │
      │                    └──▶ ⑤ ticket-purchase-and-issuance   (Stripe → order → issued ticket)
      │                                 │
-     │                                 └──▶ ⑥ ticket-wallet-and-checkin   (wallet + same-time entry + rotating QR + check-in PWA)
+     │                                 └──▶ ⑥ ticket-wallet-and-checkin   (wallet + OS Wallet/rotating-barcode + online atomic dedup + check-in PWA)
 ```
 
 | # | Change | Adds (capabilities / entities) | Depends on | Boundary rationale |
@@ -160,7 +188,7 @@ sub-changes (see its row and `organizer-platform-design.md`).
 | ③ | `follower-event-publish-notification` — **largely absorbed by ②** | ② `Publish` emits `CONCERT.created`, which the **existing `notify-concert` consumer already turns into follower push** (verified in code). So ③ is mostly delivered for free by ②. **Re-scoped to at most a thin change** (organizer-specific message copy / deeplink; UNLISTED/DRAFT never notify is handled in ②) and may be dropped. | ② | Confirmed during ② design: `CONCERT.created` → `NotifyNewConcerts` already notifies artist followers, so a separate publish→notify build is redundant. |
 | ④ | `lottery-application` | LotterySalesPhase (**first-party; distinct from the scraped `sales_phase`, no merge**), `max_tickets_per_application`, TicketApplication, automatic draw, win/loss, payment deadline (owned by ④), **本人確認 identity + 1 account / 1 application** | ② | Draw logic is substantial and stands alone. Couples to payment only through "winning = right to purchase". 本人確認 also makes tickets legally "covered". Organizer sets phase capacity (no venue-capacity field exists upstream). |
 | ⑤ | `ticket-purchase-and-issuance` | Order (provider/method-agnostic, opaque payment refs), platform-intermediated Stripe payment (card/wallet/**konbini async**), **Web2 account-bound Ticket issuance** (N per order), event-cancellation refund, `ticket-journey` sync to PAID | ④ | Stripe integration is heavy on its own: post-win payment → order → issuance is a single pipeline. |
-| ⑥ | `ticket-wallet-and-checkin` | Ticket wallet UI, **same-time group entry (all tickets on lead's device)**, **server-signed rotating QR + Passkey re-auth**, **reception PWA (web-camera QR via getUserMedia)**, real-time entry status | ⑤ | Requires an issued ticket. Same-time entry is how a multi-ticket win is used (no distribution); check-in as a PWA honors No-Native-App. |
+| ⑥ | `ticket-wallet-and-checkin` | Ticket wallet UI (renders the **covered-ticket face**), **in-app dynamic QR = server-signed short-TTL token**, **signature+freshness then online atomic duplicate-check** at admit, **same-time group entry**, **reception PWA (web-camera, no NFC)**, entry status | ⑤ | Requires an issued ticket. App-first credential (cross-platform, not OS-shareable). **No gate-time passkey step-up** (rejected). **OS Wallet passes, NFC tap, offline scanning, per-event 顔認証 are deferred (future).** PWA honors No-Native-App. |
 
 ### Recommended sequencing note
 
@@ -182,11 +210,31 @@ change when picked up:
   deep in Phase 2. Full design (money model = refund-seller + fresh-sale, no
   individual payee; legal must-haves; lifecycle; counsel brief):
   [`resale-design.md`](./resale-design.md).
-- `face-auth-entry` — anti-scalp **identity tier** on top of ⑥'s rotating-QR
-  + Passkey floor: **photo-bound tickets → live-face-match-to-open**
-  (hardware-free, on-device), with **マイナンバーカード** as an opt-in
-  high-assurance option. Calibration (market-design-notes #3): the leaders'
-  bar moved here (チケプラ 2025-12); without it we look a generation behind.
+- `face-auth-entry` — the **per-event high-assurance entry tier** on top of ⑥'s
+  signed-credential + online-dedup base: **photo-bound tickets →
+  live-face-match-to-open** (hardware-free, on-device). This is the anti-scalp
+  layer that **actually closes the 1:1 device-transfer / escort hand-off** (which
+  a gate-time passkey step-up cannot — see the Guiding anti-scalp decision), so it
+  is where the "strong control" budget goes for top-demand shows. Enabled
+  per-event (not universal). **⚠️ Privacy: face-feature templates are 個人識別符号
+  and, under the 令和8年 個情法改正, a new 特定生体情報 category (mandatory pre-notice,
+  strengthened 利用停止/消去 rights, opt-out-provision ban) — NOT 要配慮個人情報.**
+  This change MUST design purpose-notice, consent, retention/deletion, and 委託先
+  監督 (vendor, e.g. Playground/MOALA) — not a one-liner. Calibration
+  (market-design-notes #3): leaders' bar moved here (チケプラ 2025-12,
+  デジタル庁×Playground PoC = zero resale with face auth); without it we look a
+  generation behind.
+- `identity-ekyc-jpki` — **JPKI eKYC (マイナンバーカード) high-assurance account
+  lane**: bind 1 person = 1 verified account to kill bulk/industrial scalping.
+  Uses **公的個人認証 (JPKI) certificates only — never the 個人番号** (stays outside
+  番号法), via a **認定プラットフォーム事業者** (e.g. TRUSTDOCK) so no self-certification;
+  ticketing is not a 犯収法 特定事業者 so a lightweight JPKI binding is proportionate
+  (犯収法-grade not required). **⚠️ "Outside 番号法" ≠ light footprint:** the
+  **基本4情報 (氏名/住所/性別/生年月日) + cert serial** returned from the 署名用電子証明書
+  are **fully 個情法 personal data** (利用目的特定・取得通知・安全管理・保持最小化); the
+  persistent serial is a linkage key → retain only for the verification purpose. A
+  **lane, not mandatory** (card penetration ~81% + drop-off → non-card fallback
+  required). Feeds the tiered anti-scalp model.
 - `organizer-rbac-subowners` — full 4-role model (editor / viewer /
   reception staff), sub-owner invites, **audit log** (add audit subjects
   to the existing JetStream analytics pipeline).
@@ -292,8 +340,8 @@ long lead times — start them on a separate track before ⑤ begins.
   PWA infrastructure (⑥).
 - **Net new:** organizer accounts, tokenized private URLs,
   lottery application/draw, Stripe integration, Order, account-bound
-  ticket issuance, same-time group entry, rotating-QR signing, reception
-  check-in PWA.
+  ticket issuance, same-time group entry, **signed short-TTL entry-token
+  issuance/validation (in-app dynamic QR)**, reception check-in PWA.
 
 ## Operating Notes
 
