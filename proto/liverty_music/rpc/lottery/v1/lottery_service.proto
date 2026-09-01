@@ -1,78 +1,82 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.lottery.v1 provides the fan-facing lottery service:
-// the surface a music fan uses to apply to an organizer's lottery sale, save a
-// payment method at application time, withdraw before the draw, and see their
+// the surface a music fan uses to apply to an organizer's lottery sale (card
+// authorized/held at application), withdraw before the draw, and see their
 // result. It imports entity types and follows Google AIP resource-oriented
 // conventions. The organizer-facing configuration surface lives separately in
-// liverty_music.rpc.organizer.v1.LotteryService, and the draw and 繰上げ run as
-// internal backend jobs, not RPCs here.
+// liverty_music.rpc.organizer.v1.LotteryService, and the draw (which captures
+// winners and cancels losers) runs as an internal backend job, not an RPC here.
 package liverty_music.rpc.lottery.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/lottery_application.proto";
 
 // LotteryService is the fan-facing lottery-application surface. An authenticated
-// fan saves a card (via a Stripe SetupIntent, no charge), submits one
-// application for 1..N tickets to an open phase, may withdraw it before the
-// draw, and reads their application and result afterwards. The caller is
-// resolved from the token; a fan holds at most one active application per phase.
-// No money moves here — a win is charged off-session by ⑤ after the draw.
+// fan authorizes (holds) the ticket amount on a card, submits one application for
+// 1..N tickets to an open phase, may withdraw it before the draw (releasing the
+// hold), and reads their result afterwards. The caller is resolved from the
+// token; a fan holds at most one active application per phase. No money is
+// captured here — a winner's hold is captured by the draw job, a loser's is
+// released.
 service LotteryService {
-  // CreateSetupIntent starts the thin Stripe card-capture touchpoint: it
-  // provisions (or reuses) the caller's payment customer and a SetupIntent
-  // (usage=off_session, no authorization hold) and returns the client secret the
-  // frontend confirms with Stripe Elements, completing 3DS once. It saves a
-  // card; it does not create an application or move money. The confirmed
-  // payment-method reference is then supplied to Apply.
+  // CreateAuthorization starts the card hold: it computes the amount
+  // (phase ticket_price × requested_ticket_count) and creates a Stripe
+  // manual-capture PaymentIntent (`capture_method=manual`, JPY), returning the
+  // client secret the frontend confirms with Stripe Elements (3DS once). It
+  // authorizes/holds funds; it does not capture them and does not yet create an
+  // application. The confirmed PaymentIntent reference is then supplied to Apply.
   //
   // Possible errors:
   // - FAILED_PRECONDITION: The phase's application window is not open.
+  // - INVALID_ARGUMENT: requested_ticket_count is out of range for the phase.
   // - NOT_FOUND: No such lottery phase.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  rpc CreateSetupIntent(CreateSetupIntentRequest) returns (CreateSetupIntentResponse);
+  rpc CreateAuthorization(CreateAuthorizationRequest) returns (CreateAuthorizationResponse);
 
   // Apply submits the caller's application to an open phase: 1..N tickets
   // (N ≤ the phase's max_tickets_per_application), the 本人確認 (name + contact),
-  // and the payment method saved via CreateSetupIntent. No charge occurs. At
-  // most one active application per account per phase is allowed.
+  // and the card authorization created via CreateAuthorization and confirmed with
+  // Elements. The server verifies the authorization is held for the correct
+  // amount on an accepted card (JPY; American Express rejected). No money is
+  // captured. At most one active application per account per phase is allowed.
   //
   // Possible errors:
-  // - INVALID_ARGUMENT: A required field is missing or malformed.
+  // - INVALID_ARGUMENT: A required field is missing/malformed, or the card is
+  //   American Express / non-JPY (its authorization cannot be held to the draw).
   // - FAILED_PRECONDITION: The window is not open (before open_time or at/after
-  //   close_time), the requested count exceeds max_tickets_per_application, or
-  //   the caller already has an active application for this phase.
+  //   close_time), the requested count exceeds max_tickets_per_application, the
+  //   authorization is not validly held for the expected amount, or the caller
+  //   already has an active application for this phase.
   // - NOT_FOUND: No such lottery phase.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Apply(ApplyRequest) returns (ApplyResponse);
 
-  // WithdrawApplication withdraws the caller's application before the draw. The
-  // application is removed from the draw and the fan may re-apply while the
-  // window is still open. A winner declining before being charged uses this same
-  // path (the win is voided and 繰上げ promotes the next waitlisted application);
-  // once tickets are issued the application is no longer withdrawable here (the
-  // sanctioned exit is ⑦ official resale).
+  // WithdrawApplication withdraws the caller's application before the draw,
+  // releasing (cancelling) the card authorization. The fan may re-apply while the
+  // window is still open. There is no post-draw winner decline; once tickets are
+  // issued the application is no longer withdrawable here (the sanctioned exit is
+  // ⑦ official resale).
   //
   // Possible errors:
-  // - FAILED_PRECONDITION: The application's tickets are already issued, so it
-  //   cannot be withdrawn via this service.
+  // - FAILED_PRECONDITION: The draw has already run (or tickets are issued), so
+  //   the application can no longer be withdrawn.
   // - NOT_FOUND: The caller has no application for this phase. Non-revealing.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc WithdrawApplication(WithdrawApplicationRequest) returns (WithdrawApplicationResponse);
 
   // GetMyApplication returns the caller's own application for a phase in full:
-  // requested count, saved-payment status, current state, and (for a winner) the
-  // payment deadline. It serves the "my application" view both before and after
-  // the draw.
+  // requested count, authorization status, and current state. It serves the
+  // "my application" view both before and after the draw.
   //
   // Possible errors:
   // - NOT_FOUND: The caller has no application for this phase. Non-revealing.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc GetMyApplication(GetMyApplicationRequest) returns (GetMyApplicationResponse);
 
-  // GetResult returns the caller's post-draw result for a phase — won, lost,
-  // promoted, or withdrawn — and, for a winner, the payment deadline. It is the
-  // focused result view; before the draw has run no result is available.
+  // GetResult returns the caller's post-draw result for a phase — won, lost, or
+  // withdrawn. It is the focused result view; before the draw has run no result
+  // is available.
   //
   // Possible errors:
   // - FAILED_PRECONDITION: The draw has not yet run for this phase.
@@ -81,49 +85,51 @@ service LotteryService {
   rpc GetResult(GetResultRequest) returns (GetResultResponse);
 }
 
-// CreateSetupIntentRequest identifies the phase the caller intends to apply to.
-// The card is saved before the application is submitted, so the request carries
-// only the phase (the caller is resolved from the token).
-message CreateSetupIntentRequest {
+// CreateAuthorizationRequest identifies the phase and the number of tickets to
+// hold funds for. The caller is resolved from the token.
+message CreateAuthorizationRequest {
   // Required. The phase the caller intends to apply to; its window must be open.
   entity.v1.LotterySalesPhaseId phase_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The tickets to authorize for (1..max_tickets_per_application). The
+  // held amount is the phase's ticket_price × this count.
+  int32 requested_ticket_count = 2 [(buf.validate.field).int32.gt = 0];
 }
 
-// CreateSetupIntentResponse returns what the frontend needs to confirm the card
-// with Stripe Elements and complete 3DS once. The confirmed payment-method
+// CreateAuthorizationResponse returns what the frontend needs to confirm the
+// card hold with Stripe Elements (3DS once). The confirmed PaymentIntent
 // reference is then passed to Apply.
-message CreateSetupIntentResponse {
-  // The Stripe SetupIntent client secret the frontend confirms with Elements.
+message CreateAuthorizationResponse {
+  // The Stripe PaymentIntent client secret the frontend confirms with Elements.
   // Opaque and short-lived; never persisted by the client beyond the confirm.
   string client_secret = 1 [(buf.validate.field).string.min_len = 1];
 
-  // The provider customer reference the saved method attaches to, echoed back so
-  // Apply can carry the completed SavedPaymentMethod refs.
-  string customer_ref = 2 [(buf.validate.field).string.min_len = 1];
+  // The provider PaymentIntent reference (e.g. a Stripe "pi_..." id) for the
+  // manual-capture authorization, echoed back so Apply can carry it.
+  string payment_intent_ref = 2 [(buf.validate.field).string.min_len = 1];
 }
 
 // ApplyRequest is one fan's application to a phase: the ticket count, the 本人確認,
-// and the payment method saved via CreateSetupIntent.
+// and the confirmed card authorization created via CreateAuthorization.
 message ApplyRequest {
   // Required. The phase to apply to; its window must be open.
   entity.v1.LotterySalesPhaseId phase_id = 1 [(buf.validate.field).required = true];
 
   // Required. The tickets requested (the companion group), at least one and at
-  // most the phase's max_tickets_per_application (the ceiling is enforced
-  // server-side against the phase).
+  // most the phase's max_tickets_per_application (enforced server-side).
   int32 requested_ticket_count = 2 [(buf.validate.field).int32.gt = 0];
 
   // Required. The 本人確認 bound to the account (name + contact).
   entity.v1.ApplicantIdentity identity = 3 [(buf.validate.field).required = true];
 
-  // Required. The payment method saved via CreateSetupIntent and confirmed with
-  // Elements. Stored for the off-session charge on a win; not charged here.
-  entity.v1.SavedPaymentMethod payment_method = 4 [(buf.validate.field).required = true];
+  // Required. The confirmed card authorization (hold) from CreateAuthorization.
+  entity.v1.PaymentAuthorization authorization = 4 [(buf.validate.field).required = true];
 }
 
 // ApplyResponse returns the recorded application.
 message ApplyResponse {
-  // The recorded application, in the APPLIED state with no charge taken.
+  // The recorded application, in the APPLIED state with the card held and no
+  // money captured.
   entity.v1.TicketApplication application = 1 [(buf.validate.field).required = true];
 }
 
@@ -147,8 +153,7 @@ message GetMyApplicationRequest {
 
 // GetMyApplicationResponse returns the caller's application in full.
 message GetMyApplicationResponse {
-  // The caller's application, including its current state and (for a winner) the
-  // payment deadline.
+  // The caller's application, including its current state.
   entity.v1.TicketApplication application = 1 [(buf.validate.field).required = true];
 }
 
@@ -160,9 +165,7 @@ message GetResultRequest {
 
 // GetResultResponse is the caller's focused post-draw result.
 message GetResultResponse {
-  // The caller's result state: WON, PROMOTED, LOST, or WITHDRAWN.
-  entity.v1.TicketApplicationState state = 1 [(buf.validate.field).enum.defined_only = true];
-
-  // For a winner (WON or PROMOTED), the payment deadline; unset otherwise.
-  entity.v1.TicketApplication application = 2 [(buf.validate.field).required = true];
+  // The caller's full application, whose state is the result: WON, LOST, or
+  // WITHDRAWN.
+  entity.v1.TicketApplication application = 1 [(buf.validate.field).required = true];
 }

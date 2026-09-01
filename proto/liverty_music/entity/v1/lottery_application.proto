@@ -5,7 +5,6 @@ package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
-import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/user.proto";
@@ -22,55 +21,29 @@ message LotterySalesPhaseId {
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
-// PaymentDeadlinePolicy declares how each winner's payment deadline is computed
-// at the draw. ④ owns the deadline clock, so the policy is set on the phase and
-// applied to every winner (and every 繰上げ promotion gets a fresh deadline from
-// the same policy). Exactly one form is set: either a fixed duration measured
-// from the draw, or an absolute wall-clock instant shared by all winners.
-message PaymentDeadlinePolicy {
-  // Exactly one deadline form must be set; the boundary rejects an empty policy.
-  option (buf.validate.message).cel = {
-    id: "payment_deadline_policy.one_form_required"
-    message: "a payment deadline policy must set either duration_after_draw or absolute_time"
-    expression: "has(this.duration_after_draw) || has(this.absolute_time)"
-  };
-
-  // The deadline form. A duration is the common case (e.g. "72h after the
-  // draw"); an absolute time pins every winner to one shared instant.
-  oneof form {
-    // A fixed duration measured from the moment the draw runs. Each winner's
-    // deadline is draw_time + this duration, so a later 繰上げ promotion still
-    // gets the full window from its own promotion moment.
-    google.protobuf.Duration duration_after_draw = 1;
-
-    // An absolute instant shared by all winners, regardless of when they were
-    // drawn or promoted. Used when the organizer wants a single hard cut-off.
-    google.protobuf.Timestamp absolute_time = 2;
-  }
-}
-
 // LotterySalesPhase is a first-party lottery selling opportunity an Organizer
 // attaches to one published Event of theirs. Fans apply within an application
-// window; after the window closes an automatic draw allocates a fixed capacity
-// (accounted in tickets, not applications) and confers on winners the right to
-// be charged. It is the MVP sales method: drawing against a fixed capacity after
-// close removes real-time oversell from the MVP and matches the JP norm for
-// high-demand concerts.
+// window with their card authorized (held) at application; after the window
+// closes an automatic draw allocates a fixed capacity (accounted in tickets, not
+// applications), then each winner's authorization is captured and each loser's is
+// released. It is the MVP sales method: drawing against a fixed capacity after
+// close removes real-time oversell, and the held-at-apply / charge-on-win /
+// release-on-loss flow matches the JP norm for high-demand concerts.
 //
-// Capacity is a value the Organizer sets, sized by their own knowledge of the
-// venue — no upstream venue-capacity field exists to read. The phase attaches to
-// an Event, but publish/visibility lives on the concert/Series, so the phase is
-// only offerable while that concert is PUBLISHED (enforced server-side, not on
-// this message). The saved payment method and the charge itself are not on this
-// phase; they live on each TicketApplication and on ⑤ respectively.
+// Capacity and price are values the Organizer sets — no upstream venue-capacity
+// or price field exists to read. The phase attaches to an Event, but
+// publish/visibility lives on the concert/Series, so the phase is only offerable
+// while that concert is PUBLISHED (enforced server-side, not on this message).
 message LotterySalesPhase {
-  // The application window must be a positive interval, and no application may
-  // request more tickets than the whole phase holds.
+  // The application window must be between 1 and 14 days long, and no application
+  // may request more tickets than the whole phase holds. (CEL has no day unit, so
+  // 1 day = 24h and 14 days = 336h.)
   option (buf.validate.message).cel = {
     id: "lottery_sales_phase.window_and_capacity"
-    message: "close_time must be after open_time and max_tickets_per_application must not exceed ticket_capacity"
+    message: "the application window must be 1 to 14 days long (close after open) and max_tickets_per_application must not exceed ticket_capacity"
     expression:
-      "this.close_time > this.open_time"
+      "this.close_time - this.open_time >= duration('24h')"
+      "&& this.close_time - this.open_time <= duration('336h')"
       "&& this.max_tickets_per_application <= this.ticket_capacity"
   };
 
@@ -96,8 +69,10 @@ message LotterySalesPhase {
     (buf.validate.field).required = true
   ];
 
-  // When the application window closes (受付終了). Required, and strictly after
-  // open_time. The automatic draw runs at this instant, never before.
+  // When the application window closes (受付終了). Required, and 1–14 days after
+  // open_time (see the message-level constraint). The automatic draw runs at this
+  // instant, never before. The 14-day ceiling keeps every applicant's card
+  // authorization within the JP 30-day hold window.
   google.protobuf.Timestamp close_time = 4 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
@@ -120,11 +95,14 @@ message LotterySalesPhase {
     (buf.validate.field).int32.gt = 0
   ];
 
-  // How each winner's payment deadline is computed at the draw. Required: ④ owns
-  // the deadline clock and cannot mark a winner without a deadline to watch.
-  PaymentDeadlinePolicy payment_deadline_policy = 7 [
+  // The price of one ticket, in JPY (yen — a whole number, JPY has no minor
+  // unit). Required and positive: ④ authorizes ticket_price × requested_ticket_count
+  // on the fan's card at application, so the amount must be known up front. The
+  // currency is fixed to JPY for the MVP (only JPY cards are accepted so the
+  // authorization can be held for the window).
+  int64 ticket_price = 7 [
     (google.api.field_behavior) = REQUIRED,
-    (buf.validate.field).required = true
+    (buf.validate.field).int64.gt = 0
   ];
 }
 
@@ -157,24 +135,16 @@ message ApplicantIdentity {
   }];
 }
 
-// SavedPaymentMethod holds the opaque provider references to a payment method
-// the applicant saved at application time via a Stripe SetupIntent
-// (usage=off_session, 3DS completed once, no authorization hold). ④ stores only
-// these tokens — never raw card data — and hands them to ⑤, which performs the
-// actual off-session charge when the application wins. The values are opaque to
+// PaymentAuthorization holds the opaque provider reference to the card
+// authorization (hold) placed at application time via a Stripe manual-capture
+// PaymentIntent (`capture_method=manual`, 3DS completed once, JPY only). ④ stores
+// only this token — never raw card data. At the draw the authorization is
+// captured (winners) or cancelled (losers/withdrawn). The value is opaque to
 // this platform and meaningful only to the payment provider.
-message SavedPaymentMethod {
-  // The provider's saved payment-method reference (e.g. a Stripe "pm_..."
-  // token). Opaque; ⑤ charges against it off-session on a win.
-  string payment_method_ref = 1 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 255
-  }];
-
-  // The provider's customer reference (e.g. a Stripe "cus_..." id) the saved
-  // method is attached to. Opaque; required by the provider to charge a saved
-  // off-session method.
-  string customer_ref = 2 [(buf.validate.field).string = {
+message PaymentAuthorization {
+  // The provider's PaymentIntent reference (e.g. a Stripe "pi_..." id) for the
+  // manual-capture authorization. Opaque; captured on a win, cancelled on a loss.
+  string payment_intent_ref = 1 [(buf.validate.field).string = {
     min_len: 1
     max_len: 255
   }];
@@ -187,43 +157,32 @@ enum TicketApplicationState {
   // a concrete state.
   TICKET_APPLICATION_STATE_UNSPECIFIED = 0;
 
-  // Submitted and awaiting the draw. The saved payment method is captured but no
-  // money has moved. Withdrawable while the window is open.
+  // Submitted and awaiting the draw. The card is authorized (held) but no money
+  // is captured. Withdrawable while the window is open (which releases the hold).
   TICKET_APPLICATION_STATE_APPLIED = 1;
 
-  // Selected in the draw: confers the right to be charged. A payment_deadline is
-  // set and the win is handed to ⑤ for the off-session charge.
+  // Selected in the draw: the authorization was captured (charged) and the
+  // captured payment handed to ⑤ for Order + Ticket issuance.
   TICKET_APPLICATION_STATE_WON = 2;
 
-  // Not selected in the draw. Persisted on the ordered waitlist in draw order,
-  // the demand pool 繰上げ, 二次抽選, and ⑦ official-resale consume.
+  // Not selected in the draw: the authorization was released. Persisted on the
+  // ordered waitlist in draw order as the demand pool ⑦ official-resale consumes.
   TICKET_APPLICATION_STATE_LOST = 3;
 
-  // Promoted off the waitlist (繰上げ) after an earlier win was voided. Carries
-  // the same right-to-be-charged and a fresh payment_deadline.
-  TICKET_APPLICATION_STATE_PROMOTED = 4;
-
-  // Withdrawn by the fan before the draw (or a winner's pre-charge decline). A
-  // withdrawn application is skipped by promotion.
-  TICKET_APPLICATION_STATE_WITHDRAWN = 5;
-
-  // A win voided without a successful charge — the payment deadline lapsed, or
-  // the winner declined before being charged. Voiding triggers 繰上げ of the next
-  // eligible waitlisted application.
-  TICKET_APPLICATION_STATE_VOIDED = 6;
+  // Withdrawn by the fan before the draw; the authorization was released.
+  TICKET_APPLICATION_STATE_WITHDRAWN = 4;
 }
 
 // TicketApplication is one account's application to a lottery phase: a request
 // for 1..N tickets (the companion group, drawn all-or-nothing), the 本人確認
-// bound to the account, and the payment method saved at apply for an
-// off-session charge on a win. At most one active application exists per account
-// per phase (anti-scalp).
+// bound to the account, and the card authorization placed at apply. At most one
+// active application exists per account per phase (anti-scalp).
 //
-// It REFERENCES but does not define the ⑤ Order/Payment/Ticket entities: ④ owns
-// the application, the saved payment-method token, the draw outcome, and the
-// payment deadline; ⑤ owns the charge, Order, Ticket issuance, and refunds. The
-// win→charge→issue handoff is expressed here purely as application state plus a
-// deadline, keeping ④ decoupled from ⑤'s (not-yet-specced) internals.
+// It REFERENCES but does not define the ⑤ Order/Ticket entities: ④ owns the
+// application, the payment authorization (and its capture/cancel at the draw),
+// and the draw outcome; ⑤ owns the Order, Ticket issuance from the captured
+// payment, and refunds. The handoff is expressed here as application state plus
+// the captured payment, keeping ④ decoupled from ⑤'s (not-yet-specced) internals.
 message TicketApplication {
   // The unique identifier for this application. Server-generated surrogate id.
   TicketApplicationId id = 1 [
@@ -259,9 +218,9 @@ message TicketApplication {
     (buf.validate.field).required = true
   ];
 
-  // The payment method saved at application via SetupIntent (no charge yet). ⑤
-  // charges it off-session on a win.
-  SavedPaymentMethod payment_method = 6 [
+  // The card authorization (hold) placed at application. Captured on a win,
+  // cancelled on a loss.
+  PaymentAuthorization authorization = 6 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
@@ -273,15 +232,9 @@ message TicketApplication {
     (buf.validate.field).enum.defined_only = true
   ];
 
-  // For a winner (WON or PROMOTED), the deadline by which the off-session charge
-  // must succeed, computed from the phase's PaymentDeadlinePolicy. A lapse
-  // without a successful charge voids the win and triggers 繰上げ. Unset for
-  // non-winners.
-  google.protobuf.Timestamp payment_deadline = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
-
   // The application's position in the uniformly-random draw order, assigned when
   // the draw runs. For losing applications this ordinal IS the persisted
-  // waitlist order: 繰上げ, 二次抽選, and ⑦ official-resale promote in ascending
+  // waitlist order: ⑦ official-resale derives its demand candidates in ascending
   // draw_sequence. Unset until the draw has run.
-  int64 draw_sequence = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  int64 draw_sequence = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

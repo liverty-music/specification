@@ -24,18 +24,20 @@ import "liverty_music/entity/v1/lottery_application.proto";
 //
 // This service owns only configuration and read-back. Fans apply through the
 // separate fan-facing liverty_music.rpc.lottery.v1.LotteryService, and the draw
-// and 繰上げ run as internal backend jobs (not RPCs on this surface).
+// (which captures winners and cancels losers) runs as an internal backend job,
+// not an RPC on this surface.
 service LotteryService {
   // ConfigureLotteryPhase attaches a new lottery sales phase to a published
-  // event the caller owns: an application window, a ticket capacity, a
-  // max-tickets-per-application, and a payment-deadline policy. The phase is not
-  // yet open unless its open_time has passed; fans can apply only once it opens.
+  // event the caller owns: an application window (1–14 days long), a ticket
+  // capacity, a max-tickets-per-application, and a per-ticket price in JPY. The
+  // phase is not yet open unless its open_time has passed; fans can apply only
+  // once it opens.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: A required field is missing or malformed, the window is
-  //   not a positive interval (close_time not after open_time), capacity or
-  //   max-tickets-per-application is not positive, max exceeds capacity, or the
-  //   deadline policy is missing.
+  //   not 1–14 days long (or close_time is not after open_time), capacity /
+  //   max-tickets-per-application / ticket_price is not positive, or max exceeds
+  //   capacity.
   // - PERMISSION_DENIED: The event's concert is not owned by the caller's
   //   Organizer, or the caller lacks the organizer-console role. Non-revealing.
   // - FAILED_PRECONDITION: The event's concert is still a DRAFT (must be
@@ -58,7 +60,8 @@ service LotteryService {
 // ConfigureLotteryPhaseRequest carries the configuration for a new lottery phase
 // on one of the caller's published events. The phase's identity is
 // server-minted; the caller supplies only the event target and the sale
-// parameters.
+// parameters. The console defaults the window duration to 10 days; the accepted
+// range (1–14 days) is enforced here.
 message ConfigureLotteryPhaseRequest {
   // Required. The published event to put on sale. Its concert MUST be owned by
   // the caller's Organizer and already PUBLISHED.
@@ -68,7 +71,7 @@ message ConfigureLotteryPhaseRequest {
   google.protobuf.Timestamp open_time = 2 [(buf.validate.field).required = true];
 
   // Required. When the application window closes and the draw runs. Must be
-  // after open_time.
+  // 1–14 days after open_time.
   google.protobuf.Timestamp close_time = 3 [(buf.validate.field).required = true];
 
   // Required. The capacity in tickets to draw for, a positive integer sized to
@@ -79,8 +82,9 @@ message ConfigureLotteryPhaseRequest {
   // integer not exceeding ticket_capacity.
   int32 max_tickets_per_application = 5 [(buf.validate.field).int32.gt = 0];
 
-  // Required. How each winner's payment deadline is computed at the draw.
-  entity.v1.PaymentDeadlinePolicy payment_deadline_policy = 6 [(buf.validate.field).required = true];
+  // Required. The price of one ticket in JPY (yen, whole number), a positive
+  // integer. ④ authorizes ticket_price × requested_ticket_count at application.
+  int64 ticket_price = 6 [(buf.validate.field).int64.gt = 0];
 }
 
 // ConfigureLotteryPhaseResponse returns the newly-created phase.
@@ -114,12 +118,11 @@ message GetLotteryPhaseStatusResponse {
   // against the phase's ticket_capacity, this is the demand-vs-supply headline.
   int32 requested_ticket_count = 4;
 
-  // The number of winning applications (WON plus PROMOTED). Zero until the draw
-  // has run.
+  // The number of winning applications. Zero until the draw has run.
   int32 winning_application_count = 5;
 
-  // The number of tickets allocated to winners. Never exceeds the phase's
-  // ticket_capacity. Zero until the draw has run.
+  // The number of tickets allocated (captured) to winners. Never exceeds the
+  // phase's ticket_capacity. Zero until the draw has run.
   int32 won_ticket_count = 6;
 
   // The number of applications on the ordered loser waitlist. Zero until the
