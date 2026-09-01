@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.v1 provides the organizer-facing services
+// an operator uses from the organizer console. Alongside the identity
+// OrganizerService and the authoring ConcertService, this file adds
+// LotteryService, the surface an organizer uses to put a published event on sale
+// by lottery and to watch the draw outcome. It is served by the dedicated
+// organizer Connect server behind org-scoped role-claim authorization.
+package liverty_music.rpc.organizer.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/lottery_application.proto";
+
+// LotteryService is the organizer-facing lottery-sale surface: an authenticated
+// operator configures a lottery sales phase on one of its own published events,
+// then monitors the phase and its draw outcome. The caller's Organizer is
+// resolved from the token (never carried in the request); an organizer may
+// configure a phase only on an event whose concert it owns and which is already
+// PUBLISHED. Authorization is org-scoped from the token's role claim, and
+// failures that would concern another org's event never reveal whether it
+// exists.
+//
+// This service owns only configuration and read-back. Fans apply through the
+// separate fan-facing liverty_music.rpc.lottery.v1.LotteryService, and the draw
+// and 繰上げ run as internal backend jobs (not RPCs on this surface).
+service LotteryService {
+  // ConfigureLotteryPhase attaches a new lottery sales phase to a published
+  // event the caller owns: an application window, a ticket capacity, a
+  // max-tickets-per-application, and a payment-deadline policy. The phase is not
+  // yet open unless its open_time has passed; fans can apply only once it opens.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: A required field is missing or malformed, the window is
+  //   not a positive interval (close_time not after open_time), capacity or
+  //   max-tickets-per-application is not positive, max exceeds capacity, or the
+  //   deadline policy is missing.
+  // - PERMISSION_DENIED: The event's concert is not owned by the caller's
+  //   Organizer, or the caller lacks the organizer-console role. Non-revealing.
+  // - FAILED_PRECONDITION: The event's concert is still a DRAFT (must be
+  //   published first), or the caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc ConfigureLotteryPhase(ConfigureLotteryPhaseRequest) returns (ConfigureLotteryPhaseResponse);
+
+  // GetLotteryPhaseStatus returns the phase together with a summary of where it
+  // stands: whether the window is open or closed and, once the draw has run, the
+  // outcome tallies (applications, tickets requested, winners, waitlisted). It
+  // lets the console render the sale dashboard and the post-draw summary.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The phase's event is not owned by the caller's
+  //   Organizer. Non-revealing.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc GetLotteryPhaseStatus(GetLotteryPhaseStatusRequest) returns (GetLotteryPhaseStatusResponse);
+}
+
+// ConfigureLotteryPhaseRequest carries the configuration for a new lottery phase
+// on one of the caller's published events. The phase's identity is
+// server-minted; the caller supplies only the event target and the sale
+// parameters.
+message ConfigureLotteryPhaseRequest {
+  // Required. The published event to put on sale. Its concert MUST be owned by
+  // the caller's Organizer and already PUBLISHED.
+  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+
+  // Required. When the application window opens.
+  google.protobuf.Timestamp open_time = 2 [(buf.validate.field).required = true];
+
+  // Required. When the application window closes and the draw runs. Must be
+  // after open_time.
+  google.protobuf.Timestamp close_time = 3 [(buf.validate.field).required = true];
+
+  // Required. The capacity in tickets to draw for, a positive integer sized to
+  // the venue by the organizer.
+  int32 ticket_capacity = 4 [(buf.validate.field).int32.gt = 0];
+
+  // Required. The maximum tickets one application may request, a positive
+  // integer not exceeding ticket_capacity.
+  int32 max_tickets_per_application = 5 [(buf.validate.field).int32.gt = 0];
+
+  // Required. How each winner's payment deadline is computed at the draw.
+  entity.v1.PaymentDeadlinePolicy payment_deadline_policy = 6 [(buf.validate.field).required = true];
+}
+
+// ConfigureLotteryPhaseResponse returns the newly-created phase.
+message ConfigureLotteryPhaseResponse {
+  // The created lottery sales phase, with its server-minted id.
+  entity.v1.LotterySalesPhase phase = 1 [(buf.validate.field).required = true];
+}
+
+// GetLotteryPhaseStatusRequest identifies the phase to inspect.
+message GetLotteryPhaseStatusRequest {
+  // Required. The lottery phase to inspect. Its event MUST be owned by the
+  // caller's Organizer.
+  entity.v1.LotterySalesPhaseId phase_id = 1 [(buf.validate.field).required = true];
+}
+
+// GetLotteryPhaseStatusResponse returns the phase and a summary of its progress.
+// The outcome tallies are populated only once the draw has run.
+message GetLotteryPhaseStatusResponse {
+  // The lottery phase.
+  entity.v1.LotterySalesPhase phase = 1 [(buf.validate.field).required = true];
+
+  // Whether the application window has closed and the draw has run. While false,
+  // the outcome tallies below are zero and not yet meaningful.
+  bool draw_completed = 2;
+
+  // The number of applications received (all states). Meaningful both before and
+  // after the draw.
+  int32 application_count = 3;
+
+  // The total tickets requested across all non-withdrawn applications. Compared
+  // against the phase's ticket_capacity, this is the demand-vs-supply headline.
+  int32 requested_ticket_count = 4;
+
+  // The number of winning applications (WON plus PROMOTED). Zero until the draw
+  // has run.
+  int32 winning_application_count = 5;
+
+  // The number of tickets allocated to winners. Never exceeds the phase's
+  // ticket_capacity. Zero until the draw has run.
+  int32 won_ticket_count = 6;
+
+  // The number of applications on the ordered loser waitlist. Zero until the
+  // draw has run, and zero when demand did not exceed capacity.
+  int32 waitlisted_application_count = 7;
+}

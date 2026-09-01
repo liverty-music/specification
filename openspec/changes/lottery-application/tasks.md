@@ -6,11 +6,11 @@
 
 ## 1. Proto / entity (specification → BSR)
 
-- [ ] 1.1 Define `LotterySalesPhase` (event ref, open_time, close_time, ticket capacity, max_tickets_per_application) on an organizer Event
-- [ ] 1.2 Define `TicketApplication` (applicant/account, requested_ticket_count, 本人確認 name+contact, saved payment_method ref (pm_/customer), state: applied/won/lost/promoted/withdrawn/voided, payment_deadline) referencing ② Event
-- [ ] 1.3 Persisted ordered waitlist (draw order) representation for losers
-- [ ] 1.4 RPCs: organizer configure-lottery-phase; fan Apply / WithdrawApplication / GetMyApplication / GetResult; internal draw + 繰上げ
-- [ ] 1.5 protovalidate (positive capacity, N ≤ max, window open<close, one-active-per-account invariants surfaced); buf lint/breaking; merge PR → Release → BSR gen
+- [x] 1.1 Define `LotterySalesPhase` (event ref, open_time, close_time, ticket capacity, max_tickets_per_application) on an organizer Event
+- [x] 1.2 Define `TicketApplication` (applicant/account, requested_ticket_count, 本人確認 name+contact, saved payment_method ref (pm_/customer), state: applied/won/lost/promoted/withdrawn/voided, payment_deadline) referencing ② Event
+- [x] 1.3 Persisted ordered waitlist (draw order) representation for losers — `TicketApplication.draw_sequence` (int64, OUTPUT_ONLY); losers ordered by ascending draw_sequence
+- [x] 1.4 RPCs: organizer configure-lottery-phase; fan Apply / WithdrawApplication / GetMyApplication / GetResult — internal draw + 繰上げ deferred to backend jobs (design: draw scheduling is an impl detail, not a spec surface)
+- [ ] 1.5 protovalidate (positive capacity, N ≤ max, window open<close, one-active-per-account invariants surfaced); buf lint/breaking; merge PR → Release → BSR gen — protovalidate + buf lint/format/breaking pass locally; merge PR → Release → BSR gen remain (CI-only)
 
 ## 2. Backend — phase + application
 
