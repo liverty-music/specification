@@ -1,8 +1,8 @@
 ## 1. NACK controller (cloud-provisioning)
 
-- [x] 1.1 Add the `nats/nack` Helm release (control-loop mode) to the `nats` namespace overlays (dev + prod), pointed at the in-cluster NATS URL; sane resource requests + single replica (revisit HA later). Passive — manages no resources yet
-- [x] 1.2 `kubectl kustomize --enable-helm` dry-run (dev + prod) renders the controller + its CRDs cleanly; ArgoCD app wiring for the CRDs
-- [ ] 1.3 Deploy to dev; verify the controller is healthy and the `jetstream.nats.io/v1beta2` CRDs (Stream/Consumer) are installed
+- [x] 1.1 Add the `nats/nack` Helm release (control-loop mode) to the `nats` namespace overlay (prod), pointed at the in-cluster NATS URL; sane resource requests + single replica (revisit HA later). Passive — manages no resources yet
+- [x] 1.2 `kubectl kustomize --enable-helm` dry-run (prod) renders the controller + its CRDs cleanly; ArgoCD app wiring for the CRDs
+  - Note: dev is decommissioned (`workloadEnabled=false`); the controller's first in-cluster deploy + health verification is prod §6.1
 
 ## 2. Declarative Stream + Consumer CRDs (config parity)
 
@@ -46,4 +46,4 @@
 
 ## 7. Rollback readiness (each stage)
 
-- [ ] 7.1 Document + rehearse per-stage **non-destructive** rollback: re-enable app-side stream/consumer management (revert §4) and remove the CRDs — which **orphan (do NOT delete) the live resources because `preventDelete` is set** (design D6); revert the media workload manifest. In dev, confirm CR removal leaves the live stream/durable intact (verify `preventDelete` actually orphans) **before** any prod §6 step
+- [ ] 7.1 Document per-stage **non-destructive** rollback (dev is decommissioned, so there is no dev rehearsal gate; safety rests on the local NATS+nack proof §3 and the `preventDelete` design D6): re-enable app-side stream/consumer management (revert §4) and remove the CRDs — which **orphan (do NOT delete) the live resources because `preventDelete` is set**; revert the media workload manifest. First prod CRD apply (§6.1) is done in a low-traffic window and watched closely, with the `nats consumer info` before/after diff as the live no-op proof.
