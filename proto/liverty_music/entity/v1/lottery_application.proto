@@ -1,0 +1,240 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/user.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// LotterySalesPhaseId is a globally unique identifier for a single first-party
+// lottery sales phase. It is a NEW first-party concept, deliberately distinct
+// from SalesPhaseId (which identifies an *inferred, scraped* external sales
+// window): the two never merge, so a first-party lottery phase and a scraped
+// phase for the same show carry separate identities.
+message LotterySalesPhaseId {
+  // A UUID string mapping to the lottery sales phase's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// LotterySalesPhase is a first-party lottery selling opportunity an Organizer
+// attaches to one published Event of theirs. Fans apply within an application
+// window with their card authorized (held) at application; after the window
+// closes an automatic draw allocates a fixed capacity (accounted in tickets, not
+// applications), then each winner's authorization is captured and each loser's is
+// released. It is the MVP sales method: drawing against a fixed capacity after
+// close removes real-time oversell, and the held-at-apply / charge-on-win /
+// release-on-loss flow matches the JP norm for high-demand concerts.
+//
+// Capacity and price are values the Organizer sets — no upstream venue-capacity
+// or price field exists to read. The phase attaches to an Event, but
+// publish/visibility lives on the concert/Series, so the phase is only offerable
+// while that concert is PUBLISHED (enforced server-side, not on this message).
+message LotterySalesPhase {
+  // The application window must be between 1 and 14 days long, and no application
+  // may request more tickets than the whole phase holds. (CEL has no day unit, so
+  // 1 day = 24h and 14 days = 336h.)
+  option (buf.validate.message).cel = {
+    id: "lottery_sales_phase.window_and_capacity"
+    message: "the application window must be 1 to 14 days long (close after open) and max_tickets_per_application must not exceed ticket_capacity"
+    expression:
+      "this.close_time - this.open_time >= duration('24h')"
+      "&& this.close_time - this.open_time <= duration('336h')"
+      "&& this.max_tickets_per_application <= this.ticket_capacity"
+  };
+
+  // The unique identifier for this lottery phase. Server-generated surrogate id;
+  // it is the phase's only hard identity.
+  LotterySalesPhaseId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The published Event this phase sells tickets for. Required: a phase always
+  // targets exactly one organizer-authored Event, and the phase is unavailable
+  // while that event's concert/Series is still a draft.
+  EventId event_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // When the application window opens (受付開始). Required — fans may apply only
+  // at or after this instant.
+  google.protobuf.Timestamp open_time = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // When the application window closes (受付終了). Required, and 1–14 days after
+  // open_time (see the message-level constraint). The automatic draw runs at this
+  // instant, never before. The 14-day ceiling keeps every applicant's card
+  // authorization within the JP 30-day hold window.
+  google.protobuf.Timestamp close_time = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The capacity in TICKETS the draw fills, a positive integer the Organizer
+  // sets (sized to the venue by their own knowledge). Capacity is accounted in
+  // tickets, not applications: a winning application consumes its whole ticket
+  // count against this pool, and the draw never oversells it.
+  int32 ticket_capacity = 5 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).int32.gt = 0
+  ];
+
+  // The maximum tickets a single application may request (the companion-group
+  // ceiling), a positive integer that must not exceed ticket_capacity. A fan
+  // applies for 1..max_tickets_per_application tickets in one application.
+  int32 max_tickets_per_application = 6 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).int32.gt = 0
+  ];
+
+  // The price of one ticket, in JPY (yen — a whole number, JPY has no minor
+  // unit). Required and positive: ④ authorizes ticket_price × requested_ticket_count
+  // on the fan's card at application, so the amount must be known up front. The
+  // currency is fixed to JPY for the MVP (only JPY cards are accepted so the
+  // authorization can be held for the window).
+  int64 ticket_price = 7 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).int64.gt = 0
+  ];
+}
+
+// TicketApplicationId is a globally unique identifier for a single fan's
+// application to a lottery phase.
+message TicketApplicationId {
+  // A UUID string mapping to the application's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// ApplicantIdentity captures the 本人確認 an applicant provides at application
+// time: the real name and contact bound to the account. Capturing it is what
+// makes the eventual issued ticket a covered ticket (特定興行入場券) — the
+// identity is carried through to ⑤'s issuance so the ticket can be bound to a
+// verified holder. It is a value object embedded in the application, not a
+// standalone addressable entity.
+message ApplicantIdentity {
+  // The applicant's real full name (氏名) as it will bind to the covered ticket.
+  string full_name = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+
+  // A contact phone number (連絡先) for the applicant, in E.164 form. Bound to
+  // the account alongside the name; used for covered-ticket contactability, not
+  // as a login identity.
+  string phone_number = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 20
+  }];
+}
+
+// PaymentAuthorization holds the opaque provider reference to the card
+// authorization (hold) placed at application time via a Stripe manual-capture
+// PaymentIntent (`capture_method=manual`, 3DS completed once, JPY only). ④ stores
+// only this token — never raw card data. At the draw the authorization is
+// captured (winners) or cancelled (losers/withdrawn). The value is opaque to
+// this platform and meaningful only to the payment provider.
+message PaymentAuthorization {
+  // The provider's PaymentIntent reference (e.g. a Stripe "pi_..." id) for the
+  // manual-capture authorization. Opaque; captured on a win, cancelled on a loss.
+  string payment_intent_ref = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+}
+
+// TicketApplicationState is the lifecycle of a single application. New values
+// may be appended; existing values must not be renumbered.
+enum TicketApplicationState {
+  // Default value, rejected at the boundary: a persisted application always has
+  // a concrete state.
+  TICKET_APPLICATION_STATE_UNSPECIFIED = 0;
+
+  // Submitted and awaiting the draw. The card is authorized (held) but no money
+  // is captured. Withdrawable while the window is open (which releases the hold).
+  TICKET_APPLICATION_STATE_APPLIED = 1;
+
+  // Selected in the draw: the authorization was captured (charged) and the
+  // captured payment handed to ⑤ for Order + Ticket issuance.
+  TICKET_APPLICATION_STATE_WON = 2;
+
+  // Not selected in the draw: the authorization was released. Persisted on the
+  // ordered waitlist in draw order as the demand pool ⑦ official-resale consumes.
+  TICKET_APPLICATION_STATE_LOST = 3;
+
+  // Withdrawn by the fan before the draw; the authorization was released.
+  TICKET_APPLICATION_STATE_WITHDRAWN = 4;
+}
+
+// TicketApplication is one account's application to a lottery phase: a request
+// for 1..N tickets (the companion group, drawn all-or-nothing), the 本人確認
+// bound to the account, and the card authorization placed at apply. At most one
+// active application exists per account per phase (anti-scalp).
+//
+// It REFERENCES but does not define the ⑤ Order/Ticket entities: ④ owns the
+// application, the payment authorization (and its capture/cancel at the draw),
+// and the draw outcome; ⑤ owns the Order, Ticket issuance from the captured
+// payment, and refunds. The handoff is expressed here as application state plus
+// the captured payment, keeping ④ decoupled from ⑤'s (not-yet-specced) internals.
+message TicketApplication {
+  // The unique identifier for this application. Server-generated surrogate id.
+  TicketApplicationId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The lottery phase this application competes in.
+  LotterySalesPhaseId phase_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The account that applied. The one-application-per-account-per-phase
+  // invariant is keyed on (phase_id, applicant_id) and enforced server-side.
+  UserId applicant_id = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // How many tickets this application requests (the companion group size). Must
+  // be positive; the server additionally rejects any value exceeding the phase's
+  // max_tickets_per_application. A winning application wins all of them or none.
+  int32 requested_ticket_count = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).int32.gt = 0
+  ];
+
+  // The 本人確認 captured at application, bound to the account and carried to ⑤
+  // issuance so the ticket can be a covered ticket (特定興行入場券).
+  ApplicantIdentity identity = 5 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The card authorization (hold) placed at application. Captured on a win,
+  // cancelled on a loss.
+  PaymentAuthorization authorization = 6 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The application's current lifecycle state (its result once the draw has
+  // run). Server-owned.
+  TicketApplicationState state = 7 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // The application's position in the uniformly-random draw order, assigned when
+  // the draw runs. For losing applications this ordinal IS the persisted
+  // waitlist order: ⑦ official-resale derives its demand candidates in ascending
+  // draw_sequence. Unset until the draw has run.
+  int64 draw_sequence = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

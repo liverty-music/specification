@@ -1,10 +1,12 @@
 ## Purpose
 
 The lottery-application capability lets an Organizer sell a published event's
-tickets by lottery: fans apply within a window, a fair draw runs against a fixed
-capacity after applications close, and winners gain the right to be charged. It
-is the MVP sales method — it removes real-time oversell from the MVP and matches
-the JP norm for high-demand concerts.
+tickets by lottery: fans apply within a window with their card **authorized (held)
+at application**, a fair draw runs against a fixed capacity after applications
+close, and at the draw each **winner's hold is captured** while each **loser's
+hold is released**. It is the MVP sales method — it removes real-time oversell
+from the MVP and matches the JP norm (held at apply, charged on win, released on
+loss) for high-demand concerts.
 
 ## ADDED Requirements
 
@@ -13,17 +15,19 @@ the JP norm for high-demand concerts.
 The system SHALL allow an Organizer to add a **lottery sales phase** to a
 **published** event of theirs (an Event whose concert/Series is `PUBLISHED` per
 organizer-event-authoring — the phase is unavailable while the concert is DRAFT),
-specifying an **application window** (open time and close time, open < close), a
-**capacity in tickets** (a positive integer the **Organizer sets** for the phase,
-sized by the Organizer to the venue — ④ does not read a venue-capacity field, none
-exists upstream), a **`max_tickets_per_application`** (a positive integer ≤
-capacity), and a **`payment_deadline` policy** for winners (e.g. a fixed duration
-after the draw, or an absolute time; see "Winner payment deadline"). Capacity
-SHALL be accounted in **tickets**, not applications.
+specifying an **application window** (open time and close time) whose **duration
+is between 1 and 14 days inclusive** (the organizer console SHALL default the
+duration to **10 days**), a **capacity in tickets** (a positive integer the
+**Organizer sets**, sized by the Organizer to the venue — ④ does not read a
+venue-capacity field, none exists upstream), a **`max_tickets_per_application`**
+(a positive integer ≤ capacity), and a **per-ticket price in JPY** (a positive
+whole number of yen). Capacity SHALL be accounted in **tickets**, not
+applications. The price is required because ④ authorizes **price × requested
+ticket count** on the fan's card at application.
 
 #### Scenario: Organizer configures a lottery phase
 
-- **WHEN** an Organizer adds a lottery phase to a published event with a valid window, ticket capacity, max-tickets-per-application, and payment-deadline policy
+- **WHEN** an Organizer adds a lottery phase to a published event with a valid window (duration 1–14 days), ticket capacity, max-tickets-per-application, and a positive JPY ticket price
 - **THEN** the phase is created and fans can apply once it opens
 
 #### Scenario: Phase on an unpublished concert is rejected
@@ -33,7 +37,7 @@ SHALL be accounted in **tickets**, not applications.
 
 #### Scenario: Invalid phase configuration is rejected
 
-- **WHEN** the close time is not after the open time, or capacity / max-tickets-per-application is not a positive integer, or max-tickets-per-application exceeds capacity, or the payment-deadline policy is missing
+- **WHEN** the close time is not after the open time, or the window duration is shorter than 1 day or longer than 14 days, or capacity / max-tickets-per-application / ticket price is not a positive integer, or max-tickets-per-application exceeds capacity
 - **THEN** the system rejects the configuration
 
 ### Requirement: Apply to a lottery phase
@@ -41,15 +45,18 @@ SHALL be accounted in **tickets**, not applications.
 The system SHALL allow an authenticated fan to submit a **`TicketApplication`**
 for **1..N tickets** where **N ≤ `max_tickets_per_application`**, only while the
 application window is **open**. The application SHALL capture **本人確認**
-(applicant name + contact) bound to the account, and SHALL **save a payment
-method via a Stripe `SetupIntent`** (`usage=off_session`, 3DS completed once at
-setup, **no authorization hold**) storing only the returned token references. No
-charge occurs at application time.
+(applicant name + contact) bound to the account, and SHALL **authorize (hold) the
+ticket amount** on the fan's card via a Stripe manual-capture payment
+(`capture_method=manual`, 3DS completed once at application). The card MUST be a
+**JPY** card of an accepted brand (Visa/Mastercard/JCB/Diners/Discover);
+**American Express and non-JPY cards SHALL be rejected** (their authorization
+cannot be held for the window). **No money is captured at application** — only
+authorized.
 
 #### Scenario: Fan applies within the window
 
-- **WHEN** an authenticated fan applies for N ≤ max tickets while the window is open, provides 本人確認, and completes the SetupIntent
-- **THEN** a TicketApplication is recorded with the saved payment-method reference and no money is charged
+- **WHEN** an authenticated fan applies for N ≤ max tickets while the window is open, provides 本人確認, and completes the card authorization (3DS once)
+- **THEN** a TicketApplication is recorded with the payment authorization held and no money captured
 
 #### Scenario: Application outside the window is rejected
 
@@ -61,36 +68,35 @@ charge occurs at application time.
 - **WHEN** a fan requests more than `max_tickets_per_application` tickets
 - **THEN** the system rejects the application
 
-#### Scenario: No authorization hold at application
+#### Scenario: Unsupported card is rejected
 
-- **WHEN** the payment method is saved at application
-- **THEN** it uses a SetupIntent with no hold on the fan's balance (so prepaid/debit cards work and parallel applications do not tie up credit)
+- **WHEN** a fan attempts to apply with an American Express card or a non-JPY card
+- **THEN** the system rejects the application (only JPY Visa/Mastercard/JCB/Diners/Discover are accepted, so the authorization can be held until the draw)
+
+#### Scenario: No capture at application
+
+- **WHEN** the card is authorized at application
+- **THEN** the ticket amount is only held (authorized), not captured, so a losing fan is never charged
 
 ### Requirement: One application per account per phase
 
 The system SHALL allow **at most one** active `TicketApplication` per account per
 lottery phase (anti-scalp). A fan MAY **withdraw** their application **before the
-draw**; after withdrawal they may re-apply while the window is still open. A
-**won** applicant MAY **decline before being charged** (before the off-session
-charge succeeds); a decline SHALL be treated like a charge failure — the win is
-voided and the next waitlisted application is promoted (繰上げ). Once tickets are
-**issued** (charged), the application is no longer withdrawable via ④ (the
-cannot-attend path is then ⑦ official resale).
+draw**, which **releases (cancels) the authorization**; after withdrawal they may
+re-apply while the window is still open. There is **no post-draw winner decline**
+(the card is captured at the draw with no intervening step); once tickets are
+**issued** the application is no longer withdrawable via ④ (the cannot-attend path
+is then ⑦ official resale).
 
 #### Scenario: Second application is rejected
 
 - **WHEN** a fan who already has an active application for the phase applies again
 - **THEN** the system rejects the second application
 
-#### Scenario: Withdraw before the draw
+#### Scenario: Withdraw before the draw releases the hold
 
 - **WHEN** a fan withdraws their application before the draw
-- **THEN** the application is removed from the draw and the fan may re-apply while the window is open
-
-#### Scenario: Winner declines before being charged
-
-- **WHEN** a won applicant declines before the off-session charge has succeeded
-- **THEN** the win is voided and the next waitlisted application is promoted (繰上げ)
+- **THEN** the application is removed from the draw, its authorization is released, and the fan may re-apply while the window is open
 
 #### Scenario: Issued ticket is not withdrawable in ④
 
@@ -135,75 +141,54 @@ order.
 - **WHEN** the window closes with total requested tickets ≤ capacity (including zero applications)
 - **THEN** every application wins and the waitlist is empty (no losers)
 
+### Requirement: Capture winners and release losers at the draw
+
+At the draw, the system SHALL **capture** the authorization of each **winning**
+application (this is the charge) and **release/cancel** the authorization of each
+**losing** application. A captured winning application SHALL be handed off to
+purchase/issuance (⑤) to create the **Order** and issue the **Tickets**. ④ SHALL
+NOT create the Order or issue Tickets itself. If a winner's capture fails (an
+edge case — e.g. the card was closed between application and the draw), that
+application's seat SHALL be left **unfilled** and the failure recorded for manual
+follow-up; the MVP SHALL NOT automatically promote a waitlisted application.
+
+#### Scenario: Winner's hold is captured and handed off
+
+- **WHEN** an application wins the draw
+- **THEN** its authorization is captured and the captured payment is handed off to purchase/issuance (⑤) to create the Order and issue the Tickets
+
+#### Scenario: Loser's hold is released
+
+- **WHEN** an application loses the draw
+- **THEN** its authorization is released (cancelled) so the fan is never charged
+
+#### Scenario: Capture failure leaves the seat unfilled
+
+- **WHEN** a winning application's capture fails at the draw
+- **THEN** the seat is left unfilled and the failure is recorded for manual follow-up (no automatic 繰上げ occurs)
+
 ### Requirement: Application results
 
 The system SHALL let each applicant see their **result** (won / lost /
-promoted / withdrawn) after the draw, and winners SHALL see their **payment
-deadline**.
+withdrawn) after the draw.
 
 #### Scenario: Applicant sees their result
 
 - **WHEN** the draw has completed
-- **THEN** each applicant can see whether they won or lost, and a winner can see their payment deadline
+- **THEN** each applicant can see whether they won or lost
 
-### Requirement: Winning confers the right to be charged
+### Requirement: Persisted loser waitlist for resale
 
-A **won** application SHALL confer the **right to be charged** for its tickets and
-SHALL be handed off to purchase/issuance (⑤) for an **off-session charge of the
-saved payment method**. ④ SHALL NOT perform the charge itself; it SHALL record
-the win, set the **payment deadline** (per the phase's deadline policy), and hand
-off. (⑤ owns the charge, Order, and Ticket issuance.)
+The draw SHALL persist the ordered list of **losing applications** in random draw
+order as the demand pool consumed by ⑦ `official-resale` (and any future 二次抽選).
+Each losing application maps to **one demand candidate (that account)** in draw
+order. The MVP ④ SHALL NOT itself promote from this waitlist (no automatic 繰上げ);
+it only persists the ordering for downstream consumers.
 
-#### Scenario: Win is handed off for charging
+#### Scenario: Losing applications are the resale demand pool
 
-- **WHEN** an application wins
-- **THEN** it is marked won with a payment deadline and handed off to the purchase/issuance flow for an off-session charge of the saved payment method
-
-### Requirement: Winner payment deadline (owned by ④)
-
-④ SHALL **own the payment-deadline clock**: it sets each winner's deadline from
-the phase policy and **detects lapse**. ⑤ reports each charge attempt's outcome
-(**succeeded** / **failed** / **needs re-authentication**); it does **not** own
-the deadline. **Before** the deadline, a `failed` or `needs-re-authentication`
-outcome SHALL keep the win alive with a **grace window + a re-auth link** so the
-winner can fix their card / complete a 3DS step-up (payments-design "winner-
-charge-failure flow"). Only when the **deadline lapses without a successful
-charge** SHALL ④ void the win.
-
-#### Scenario: Transient failure keeps the win alive until the deadline
-
-- **WHEN** ⑤ reports a charge `failed` or `needs re-authentication` and the deadline has not lapsed
-- **THEN** ④ keeps the win and surfaces a re-auth link + grace window; it does not void the win yet
-
-#### Scenario: Deadline lapse without success voids the win
-
-- **WHEN** the payment deadline lapses with no successful charge
-- **THEN** ④ voids the win and triggers 繰上げ
-
-### Requirement: Waitlist promotion (繰上げ)
-
-On a **voided win** (deadline lapsed without success, or a pre-charge decline),
-the system SHALL **promote the next eligible application on the ordered waitlist**
-(繰上げ) in persisted draw order, granting it the same right-to-be-charged and a
-**fresh payment deadline**, without oversell. Promotion SHALL **skip** any
-application that has been **withdrawn** or is otherwise ineligible, and continue
-down the list. A promoted application whose own charge then fails past its
-deadline SHALL cascade to the **next** eligible application.
-
-#### Scenario: Next eligible application is promoted
-
-- **WHEN** a win is voided and the waitlist has eligible applications
-- **THEN** the next eligible application in draw order is promoted with a fresh deadline, skipping any withdrawn/ineligible ones, without exceeding capacity
-
-#### Scenario: Promotion cascades on repeated failure
-
-- **WHEN** a promoted application also fails past its fresh deadline
-- **THEN** the next eligible application is promoted (the cascade continues down the ordered waitlist)
-
-#### Scenario: Promotion stops when no eligible application remains
-
-- **WHEN** no eligible applications remain on the waitlist
-- **THEN** the freed capacity is left unfilled (no promotion occurs)
+- **WHEN** the draw completes with losing applications
+- **THEN** they are persisted as an ordered waitlist (random draw order), each account as one demand candidate, available to ⑦ official-resale
 
 ### Requirement: 本人確認 binding carried to issuance
 
