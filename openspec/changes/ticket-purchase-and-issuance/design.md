@@ -12,24 +12,30 @@ forward contracts.
 ## Goals / Non-Goals
 
 **Goals:**
-- A correct post-win pipeline: off-session charge → webhook-confirmed issuance →
-  account-bound covered tickets, idempotent end-to-end.
+- A correct post-capture pipeline: ④'s captured winning payment → webhook-confirmed
+  Order + issuance → account-bound covered tickets, idempotent end-to-end.
 - A **provider-agnostic** `Order`/`Ticket`/payment model so a KOMOJU switch or an
   added method is a no-proto-break.
 - Stay clearly in the exempt **収納代行** zone (Organizer = business seller-of-
   record; buyer debt discharged on payment; hold-to-event escrow).
 
 **Non-Goals (design-level):**
-- The application/draw/SetupIntent (④); the wallet/QR/check-in (⑥).
+- The application/draw AND the **card authorization + capture** (④ — Stripe
+  manual-capture: authorize at apply, capture winners / release losers at draw);
+  the wallet/QR/check-in (⑥). ⑤ has **no off-session charge / SetupIntent / payment
+  deadline / 繰上げ**.
 - Non-card methods (konbini/PayPay), seat maps, dynamic pricing.
 - ⑦ resale's seller-refund leg (different timing/theory; see resale-design.md).
 
 ## Decisions
 
-- **Off-session charge = destination charge + `on_behalf_of=<organizer>` +
-  `application_fee_amount`** (payments-design, settled). The Organizer is the
-  settlement merchant (matches seller-of-record); the platform takes the fee.
-  MIT/off-session using ④'s saved `pm_`, no CVC.
+- **Charge = ④'s capture of the held authorization** (Stripe manual-capture,
+  destination charge + `on_behalf_of=<organizer>` + `application_fee_amount`, JPY
+  card only). The Organizer is the settlement merchant (matches seller-of-record);
+  the platform takes the fee. ⑤ does **not** perform a separate charge — it consumes
+  ④'s captured payment. (This supersedes the prior SetupIntent/off-session model;
+  ④'s auth-hold is enabled by the 30-day JPY authorization window ≫ the ≤14-day
+  lottery window — see payments-design.)
 - **Issue only on a webhook-confirmed capture, idempotently.** The client
   confirm is never trusted. Idempotency keyed on the provider event id so
   redelivery never double-issues/refunds. Prevents the classic "issued on client
@@ -51,8 +57,10 @@ forward contracts.
   (ticket stays valid for the new date). Keep the processor fee (JP norm). This
   is the "normal cancellation-refund path" ⑦ resale defers to — and note ⑦'s
   seller-refund leg is a **different** structure (post-sale, not hold-to-event).
-- **Charge-failure → ④ 繰上げ signal** is the reverse half of ④'s handoff
-  contract ("win → charge → issued | failed → 繰上げ"). ⑤ emits; ④ consumes.
+- **No charge-failure/繰上げ path in ⑤.** ④'s hold-and-capture model has no payment
+  deadline or off-session failure → no 繰上げ; a rare failed capture leaves the seat
+  unfilled (④'s manual follow-up). The ④→⑤ contract is "win captured → ⑤ Order +
+  Ticket | capture failed → no Order".
 - **ticket-journey → PAID on issuance** as the first-party authoritative status.
   Expressed as a requirement of this capability (⑤ writes ticket-journey); the
   formal ticket-journey capability delta, if warranted, is folded in at apply.

@@ -1,10 +1,11 @@
 ## Why
 
-Phase 3 step ⑤. ④ `lottery-application` produces **winners** (a right to be
-charged, with a saved card) but no money moves and no ticket exists. This change
-is the **money + issuance pipeline**: charge the winner off-session, record an
-Order, and issue **Web2 account-bound Tickets**. It is the heaviest single
-integration (Stripe Connect + the 収納代行 legal scheme), so it stands alone.
+Phase 3 step ⑤. ④ `lottery-application` **authorizes (holds) the card at
+application and captures each winner's authorization at the draw** (Stripe
+manual-capture; releases losers). This change is the **Order + issuance pipeline**:
+take ④'s **captured winning payment**, record an Order, and issue **Web2
+account-bound Tickets**, plus payouts/refunds under the 収納代行 scheme. It stands
+alone (issuance + payout + refund + compliance are heavy).
 
 Full money design + legal scheme + counsel flags:
 [`payments-design.md`](../../../docs/payments-design.md) (issue #778). Roadmap:
@@ -16,16 +17,20 @@ Full money design + legal scheme + counsel flags:
   references `pi_`/`pm_`, own `status`, `amount`+`currency`, `paid_at`, display
   facets). One Order = **N tickets** (the companion group, ≤
   `max_tickets_per_application`).
-- **Off-session winner charge.** Consume a ④ **win** → charge the **saved
-  payment method** (from ④'s SetupIntent) via a Stripe **`PaymentIntent`**
-  (**destination charge + `on_behalf_of=<organizer>` + `application_fee_amount`**),
-  MIT/off-session (no CVC → stays a MIT). **Card-only MVP** (incl. debit/prepaid
-  + Apple/Google Pay wallets); konbini/PayPay deferred (async settlement).
-- **Web2 account-bound Ticket issuance.** On a **webhook-confirmed** capture,
-  issue **N account-bound Tickets** with the applicant's **本人確認** bound so
-  each is a **covered ticket (特定興行入場券)**. Never issue on the client confirm.
-- **Charge-failure / deadline handoff back to ④.** On failure or a lapsed
-  deadline, **no ticket is issued** and ⑤ signals ④ to run **繰上げ**.
+- **Charge is ④'s capture, not a ⑤ off-session charge.** ④ authorizes at apply and
+  **captures the winner's held authorization at the draw** (Stripe manual-capture,
+  **destination charge + `on_behalf_of=<organizer>` + `application_fee_amount`**,
+  **JPY card only**). ⑤ consumes the **captured winning payment**. **No ⑤-side
+  SetupIntent / off-session charge / payment deadline / 繰上げ** — the hold-and-
+  capture model removes them.
+- **`Order`** — a provider/method-agnostic record (opaque `pi_`/`pm_`, own
+  `status`, `amount`+`currency`, `paid_at`, facets), one Order = **N tickets**,
+  referencing ④'s captured payment.
+- **Web2 account-bound Ticket issuance.** On the **webhook-confirmed capture**,
+  issue **N account-bound Tickets** with the applicant's **本人確認** bound so each
+  is a **covered ticket (特定興行入場券)**. Never issue on the client confirm.
+- **Failed capture → no Order/ticket** (the seat is ④'s manual-follow-up concern;
+  no ⑤-side retry/繰上げ).
 - **Payout: hold to event + dispute buffer.** Organizer accounts on **manual
   payout**; release after the event AND a dispute-safety window. This is the
   **primary** buyer→Organizer leg (distinct from ⑦ resale's post-sale seller
@@ -49,12 +54,12 @@ challenger, swappable behind the opaque `provider`); no seat maps.
 ## Capabilities
 
 ### New Capabilities
-- `ticket-purchase-and-issuance`: the post-win money + issuance pipeline —
-  `Order`, off-session winner charge via Stripe Connect (destination charge +
-  `on_behalf_of` + `application_fee`), webhook-confirmed **account-bound Ticket
-  issuance** (N per order, 本人確認-bound covered tickets), charge-failure
-  handoff to ④'s 繰上げ, hold-to-event payout, and the cancellation/postponement
-  refund taxonomy under the 収納代行 scheme.
+- `ticket-purchase-and-issuance`: the post-capture Order + issuance pipeline —
+  `Order` referencing ④'s **captured** winning payment (Stripe Connect destination
+  charge + `on_behalf_of` + `application_fee`, the capture done by ④), webhook-
+  confirmed **account-bound Ticket issuance** (N per order, 本人確認-bound covered
+  tickets), hold-to-event payout, and the cancellation/postponement refund taxonomy
+  under the 収納代行 scheme. (No ⑤-side off-session charge / 繰上げ — ④'s hold model.)
 
 ### Modified Capabilities
 - `ticket-journey`: issuance adds a **first-party authoritative side-effect
@@ -65,10 +70,11 @@ challenger, swappable behind the opaque `provider`); no seat maps.
 
 ## Impact
 
-- **Depends on:** ④ `lottery-application` (the win + saved payment method + 本人確認
-  + payment deadline). Hard dependency — ⑤ is un-testable end-to-end without ④.
-- **Hands off to:** ⑥ `ticket-wallet-and-checkin` (wallet, rotating QR, same-time
-  entry, check-in) operates on the **Ticket** entity defined here.
+- **Depends on:** ④ `lottery-application` (the **captured winning payment** from ④'s
+  authorize-at-apply/capture-at-draw + 本人確認 + covered-ticket face). Hard
+  dependency — ⑤ is un-testable end-to-end without ④.
+- **Hands off to:** ⑥ `ticket-wallet-and-checkin` (wallet + in-app dynamic QR +
+  check-in) operates on the **Ticket** entity defined here.
 - **New entities:** `Order`, `Ticket` (account-bound, 本人確認-bound), Payment
   references (opaque). Defined provider-agnostic so a KOMOJU switch is a
   no-proto-break.

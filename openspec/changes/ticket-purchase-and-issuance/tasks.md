@@ -4,21 +4,21 @@
 - [ ] 0.2 収納代行 counsel opinion (#778 flag 1): discharge clause + hold-to-event escrow + no cross-border
 - [ ] 0.3 適格請求書発行事業者 registration; 媒介者交付特例 stance
 - [ ] 0.4 KOMOJU-vs-Stripe PoC outcome (confirm provider before locking the adapter)
-- [ ] 0.5 Confirm the ④ handoff contract (win → charge → issued | failed → 繰上げ) and the saved-pm/本人確認 shape
+- [ ] 0.5 Confirm the ④→⑤ handoff contract: **win captured (Stripe manual-capture at draw) → ⑤ Order + Ticket | capture failed → no Order** (no off-session charge / deadline / 繰上げ in ⑤); + the captured-payment ref + 本人確認/covered-ticket shape
 
 ## 1. Proto / entity (specification → BSR)
 
-- [ ] 1.1 Define `Order` (provider, opaque pi_/pm_, status pending/paid/failed/refunded, amount+currency, paid_at, display facets) — never PAN/CVC
+- [ ] 1.1 Define `Order` (provider, opaque pi_/pm_ of ④'s captured payment, status pending/paid/failed/refunded, amount+currency, paid_at, display facets) — never PAN/CVC
 - [ ] 1.2 Define account-bound `Ticket` (buyer account, event ref, 本人確認 binding, covered-ticket face fields, order ref)
-- [ ] 1.3 RPCs: internal charge-on-win + issuance; buyer GetOrder/GetMyTickets; admin refund/payout ops
+- [ ] 1.3 RPCs: internal create-Order-from-captured-payment + issuance; buyer GetOrder/GetMyTickets; admin refund/payout ops
 - [ ] 1.4 protovalidate; buf lint/breaking; merge PR → Release → BSR gen
 
-## 2. Backend — charge (Stripe Connect)
+## 2. Backend — Order from ④'s captured payment (Stripe Connect)
 
-- [ ] 2.1 Off-session charge adapter: destination charge + on_behalf_of + application_fee, MIT (no CVC), using ④'s saved pm
-- [ ] 2.2 Card-only guard (debit/prepaid/wallet ok; konbini/PayPay excluded)
-- [ ] 2.3 Batch charge at draw close with per-Order idempotency keys + provider rate-limit + safe retries
-- [ ] 2.4 Charge-failure/deadline-lapse → mark Order failed + emit ④ 繰上げ signal (no issuance)
+- [ ] 2.1 On ④'s captured winning payment (destination charge + on_behalf_of + application_fee, JPY-only; the capture is ④'s), create the Order referencing that PaymentIntent — ⑤ runs NO separate off-session charge
+- [ ] 2.2 Card-only context (④ enforces JPY/Amex-excluded at authorization)
+- [ ] 2.3 Idempotent handling keyed on the capture/provider event id (redelivery-safe)
+- [ ] 2.4 Failed capture → no Order, no issuance (surfaced for ④'s manual follow-up; no ⑤-side retry/繰上げ)
 
 ## 3. Backend — issuance (webhook-driven)
 
@@ -48,5 +48,5 @@
 ## 7. Release & verification
 
 - [ ] 7.1 Cross-repo release order: spec → BSR → backend → frontend/console; provision webhook + charge/payout jobs
-- [ ] 7.2 End-to-end verify (Stripe test): win → off-session charge → webhook → issue N covered tickets → ticket-journey PAID; failure → 繰上げ; cancellation refund; postponement keeps valid; duplicate-webhook idempotency
+- [ ] 7.2 End-to-end verify (Stripe test): ④ captures winner → webhook → ⑤ Order + issue N covered tickets → ticket-journey PAID; failed capture → no Order; cancellation refund; postponement keeps valid; duplicate-webhook idempotency
 - [ ] 7.3 Sync delta specs to main specs and archive the change
