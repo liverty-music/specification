@@ -1,3 +1,11 @@
+> **As-built note (`declarative-jetstream-nack`, shipped 2026-09-01).** The
+> completed §2–§4 tasks below say `media-processor` / KEDA `ScaledJob` / `cmd/job`
+> — the form originally shipped. That was reworked by `declarative-jetstream-nack`:
+> `media-processor` → a long-running **`media-consumer`** Deployment behind a
+> scale-to-zero **`ScaledObject`**, consuming the **NACK-owned pull** durable
+> `media_uploaded` (the app no longer creates durables). Those task texts are kept
+> as the historical record; the design/proposal reflect the current end state.
+
 ## 1. Specification (proto)
 
 - [x] 1.1 `entity/v1/media.proto`: new `Media` (`MediaId id`, `MediaKind kind`, `MediaAttributes attributes`) mirroring the DB `media` row; `MediaKind` enum 1:1 with the PG `media_kind` ENUM (`IMAGE` only); `MediaAttributes` = flat all-optional **read projection** carrying `Url thumb` + `Url large` for IMAGE (future `poster`/`stream`/`duration`/`youtube_video_id` appended); kind-gated protovalidate CEL (`kind == IMAGE ⇒ thumb, large set`); `MediaId` wrapper VO (UUID-format protovalidate; UUIDv7 is a server-minting convention, not a proto rule). Variant URLs are server-composed at read time, NOT persisted (design D6)
@@ -13,6 +21,7 @@
 - [x] 2.3 Workload Identity: `media-processor` GSA + WI binding — bucket-scoped `objectAdmin` on **both** buckets: read/delete on `organizer-media-internal` (originals) + write on `organizer-media` (`cdn/` variants); no project-level storage role
 - [x] 2.4 KEDA `ScaledJob` (`scaledobject.yaml`) triggered on JetStream `MEDIA.uploaded` (durable `media_uploaded`): resource requests/limits sized for libvips, `maxReplicaCount`, `backoffLimit`, spot nodeSelector (dev), `restartPolicy: Never`
 - [x] 2.5 `kubectl kustomize` dry-run for the new Job overlay(s) (dev + prod) — resources set, spot nodeSelector, no empty `resources: {}`
+- [x] 2.6 media-consumer DB access (surfaced post-cut-over; design D10): the consumer owns the `series_media` cut-over (`FindMediaByID` + transactional upsert), so it needs Cloud SQL — a `media-consumer@<project>.iam` IAM DB user (Pulumi `gcp.sql.User`), `roles/cloudsql.client` + `roles/cloudsql.instanceUser` on the media-consumer GSA, the `DATABASE_*` ConfigMap block (PSC-direct, in-process connector, IAM auth), and an app-schema grant migration — with `pulumi up` (creates the user) ordered **before** the grant migration. Shipped as a follow-up (cloud-provisioning#470 + backend#424)
 
 ## 3. Backend — API (upload/attach)
 
@@ -32,20 +41,19 @@
 - [x] 4.5 On success: write new variants → **cut over in one transaction**: upsert `series_media(series_id)` → the new `media_id`, capturing the old `media_id` first if a row existed → **then** reclaim the previous image's `cdn/{org}/{old}/` prefix + delete the old `media` row (deferred until here so an already-published concert keeps serving its old variants until the replacement is ready) → delete the `internal/` original → ack. Transient failure = nak (`max_deliver=3`). Permanent failure (invalid image) = `term` + **delete the `internal/` original** (so failed uploads do not linger) + log/metric (reuse poison-consumer pattern). Idempotent on redelivery: deterministic variant overwrite, cut-over upsert is a no-op if already done, old-prefix/original deletes are no-ops if already gone
 - [x] 4.6 Unit/integration tests: valid image → variants + EXIF removed; oversized-dimension rejected pre-decode; invalid bytes → no variants + term + original deleted; replace = new variants written **and** `series_media` cut over to the new media **before** the old prefix/row are reclaimed (no 404 window); first upload = `series_media` inserted by the consumer; idempotent reprocess
 
-## 5. Frontend (organizer console) — DEFERRED
+## 5. Frontend (organizer console) — REMAINING WORK
 
-**DEFERRED out of this change.** The organizer console authoring app (which would
-host the image-upload UI) is not built yet, and the fan PWA has no first-party
-concert page rendering `Series.media`. There is no existing frontend flow to
-rework. This pipeline ships backend + infra first (the proposal's premise: "so
-users never see the raw path"); the frontend below is adopted when the organizer
-console authoring UI is built, matching organizer-event-authoring's own deferral
-of the image pipeline UI.
+The organizer console authoring app **now exists** (#573, organizer-event-authoring)
+and shipped the cover-image UI against the **synchronous** `uploadCoverImage(bytes)`
+RPC. This change removed that RPC on the backend (§1.3, §3.4) **without** migrating
+the console, so the console's cover-upload currently calls a removed RPC and is
+broken. This section migrates it to the async pipeline. This is the change's
+remaining active work.
 
-- [ ] 5.1 (DEFERRED) Image upload rework: `CreateMediaUploadURL` → direct `PUT` to GCS (Content-Type + `x-goog-content-length-range` headers) → `AttachMedia`
-- [ ] 5.2 (DEFERRED) Client-side pre-check (type/size/dimensions) for UX (not security); optimistic **local blob** preview during/after upload
-- [ ] 5.3 (DEFERRED) Render `media` as `Media` variants (thumb in lists, large in detail); 404-graceful until processed; re-upload path when an image never appears
-- [ ] 5.4 (DEFERRED) `make check` with upgraded BSR
+- [x] 5.1 Upgrade the frontend BSR schema to the release that removed `UploadCoverImage` and added `CreateMediaUploadURL` + `AttachMedia` + `Series.media: Media` (current pin predates it); pin the 1.x protobuf-es build per the consumer-upgrade gotchas
+- [x] 5.2 Replace `concert-editor` cover upload: `CreateMediaUploadURL` → direct `PUT` to GCS (Content-Type + `x-goog-content-length-range` headers) → `AttachMedia`; keep the existing client-side type/size pre-check (`cover-image.ts`), retype `readFileBytes`-based flow to the signed-URL flow
+- [x] 5.3 Optimistic **local blob** preview during/after upload; render `Series.media` as `Media` variants (thumb/large), 404-graceful until processed, with a re-upload path when an image never appears
+- [x] 5.4 `make check` with the upgraded BSR (biome + tsc + tests)
 
 ## 6. Observability
 
@@ -53,7 +61,7 @@ of the image pipeline UI.
 
 ## 7. Release & ship to prod
 
-- [ ] 7.1 Backend PR merged → release → prod pin bump (API + media-processor image)
-- [ ] 7.2 Cloud-provisioning PR merged → dev auto `pulumi up`; prod `pulumi up` (Console) — CORS, WI SA, KEDA ScaledJob, media-processor
-- [ ] 7.3 (DEFERRED with Section 5) Frontend release — no organizer console authoring UI exists yet; the pipeline ships backend + infra only. Adopted when the organizer console is built.
-- [ ] 7.4 Verify in prod: organizer uploads an image for an owned draft → processed WebP `thumb`/`large` served over `https://media.…/cdn/{org}/{mediaId}/…` (EXIF removed); replace reclaims old variants; a malformed/oversized-dimension image yields no variants; publish is independent of processing
+- [x] 7.1 Backend PR merged → release → prod pin bump (API + media image). Shipped v1.49.0 (pipeline) then v1.50.0 (declarative-jetstream-nack rework: media-consumer image) + the DB grant migration (backend#424).
+- [x] 7.2 Cloud-provisioning PR merged → prod `pulumi up` (Console) — CORS, originals bucket, media-consumer WI SA + IAM DB user + cloudsql roles, KEDA `ScaledObject` on the NACK-owned durable. (dev auto-`pulumi up` is moot — dev decommissioned.)
+- [ ] 7.3 Frontend release: migrate the organizer console cover-upload (§5) to the async pipeline, upgrade BSR, ship (organizer-console-web). Coordinate the prod-pin bump.
+- [ ] 7.4 Verify in prod: organizer uploads an image for an owned draft **via the console** → processed WebP `thumb`/`large` served over `https://media.…/cdn/{org}/{mediaId}/…` (EXIF removed); replace reclaims old variants; a malformed/oversized-dimension image yields no variants; publish is independent of processing. *(Backend/infra path — wake-from-zero, bind, DB connect, ack — already prod-verified with a synthetic event; §7.4 confirms the full real-upload path once §5 ships.)*
