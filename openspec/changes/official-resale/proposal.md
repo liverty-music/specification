@@ -75,8 +75,9 @@ buyer-side markup. Provider/payment mechanics reuse ⑤'s Stripe Connect /
 
 - **Depends on (not yet specced/built):** ④ `lottery-application` (the
   loser demand pool), ⑤ `ticket-purchase-and-issuance` (Order/Payment/Ticket +
-  収納代行 + refunds), ⑥ `ticket-wallet-and-checkin` (issue / void / rotating-QR
-  / 本人確認 binding). This change is **authored ahead** to lock the design; its
+  **issuance + 本人確認 + covered-ticket face** + 収納代行 + refunds), ⑥
+  `ticket-wallet-and-checkin` (**void→invalidate credential** + the signed-token /
+  in-app dynamic-QR entry credential). This change is **authored ahead** to lock the design; its
   `tasks.md` is gated on ④⑤⑥ shipping first.
 - **New domain entity:** `ResaleListing` (references the seller's original
   `Payment` and the buyer's new `Order` — no new money primitive).

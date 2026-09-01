@@ -1,115 +1,122 @@
 ## Purpose
 
-This capability lets a fan hold and use an issued ticket: a wallet to view it, a
-tamper-resistant server-signed rotating QR (gated by a Passkey re-auth) to enter,
-same-time companion group entry, and a web-camera reception PWA that validates
-the QR and admits attendees — with double-entry prevention.
+This capability lets a fan hold and use an issued ticket: an in-app wallet that
+renders the ticket (incl. its covered-ticket face) and an **entry credential = an
+in-app dynamic QR backed by a server-signed, short-TTL token**, validated by
+**signature + freshness verification and then an online atomic
+duplicate-check** at admit, scanned by a web-camera **reception PWA**. Anti-scalp
+is NOT enforced by a gate-time re-authentication; it rests on the platform's
+tiered model (see design). OS Wallet passes are a deferred convenience tier.
 
 ## ADDED Requirements
 
-### Requirement: Ticket wallet
+### Requirement: Ticket wallet renders the ticket and its covered-ticket face
 
 The system SHALL let an authenticated fan view the **tickets issued to their
-account** (from ⑤), including event details and each ticket's **entry status**
-(not-yet-entered / entered).
+account** (from ⑤): event details, each ticket's **entry status** (not-yet-entered
+/ entered), and the **covered-ticket (特定興行入場券) face conditions** defined by ⑤
+— (i) the resale-without-organizer-consent-prohibited statement, (ii) date/venue +
+seat-or-eligible-person, (iii) the 本人確認 (name) — rendered on the presented
+credential so the ticket satisfies the "stated on its face" test where the holder
+actually presents it. ⑤ owns the face **content**; ⑥ owns **rendering** it.
 
-#### Scenario: Fan views their tickets
+#### Scenario: Fan views their ticket with the covered-ticket face
 
-- **WHEN** an authenticated fan opens their wallet
-- **THEN** they see the tickets issued to their account with event details and each ticket's entry status
+- **WHEN** an authenticated fan opens a ticket in their wallet
+- **THEN** they see event details, entry status, and the covered-ticket face conditions (resale-prohibited notice + date/venue/seat-or-eligible-person + 本人確認) rendered on the presented credential
 
-### Requirement: Server-signed rotating QR entry credential
+### Requirement: Entry credential is an in-app dynamic QR from a signed short-TTL token
 
-The entry credential SHALL be a **server-signed, short-lived token that rotates**
-on an interval, bound to the specific ticket and holder. Validity SHALL be
-determined **server-side**; a captured/screenshotted code SHALL become invalid
-once it rotates. The raw credential MUST NOT be forgeable client-side. The
-**rotation interval SHALL be short enough that a shared screenshot is unusable
-in practice** (target on the order of ~30 seconds — a tunable operational
-parameter with a small server-side validation skew window; it MUST NOT be so
-long that a captured code stays valid for minutes).
+The entry credential SHALL be an **in-app dynamic QR** rendered live inside the
+fan's **authenticated** wallet session, encoding a **server-signed, short-TTL
+bearer token** (signed over a claims set: ticket id, event id, holder reference,
+and a rotating epoch; TTL on the order of ~30 seconds; the signing secret lives
+**server-side only**). It SHALL work **cross-platform** (no dependence on any OS
+Wallet capability) and MUST NOT be a shareable OS pass. The system SHALL require
+**no gate-time re-authentication** (no passkey step-up) to display it. The token
+claims SHALL be a structured claims set (to preserve a future SD-JWT-VC / mdoc
+migration path), not an opaque blob.
 
-#### Scenario: QR rotates and stale codes are rejected
+#### Scenario: Screenshot is stale after the TTL
 
-- **WHEN** a QR code is captured and then the rotation interval elapses
-- **THEN** the captured code no longer validates and only the current server-signed code is accepted
+- **WHEN** a QR is captured/screenshotted and the TTL elapses
+- **THEN** the captured token no longer verifies (only a current-epoch signed token is accepted)
 
-#### Scenario: Credential is server-validated
+#### Scenario: A forged or leaked ticket id cannot mint a valid credential
 
-- **WHEN** a QR is presented at the gate
-- **THEN** the server verifies its signature, ticket binding, and freshness before admitting
+- **WHEN** an attacker knows a ticket id but not the server signing secret
+- **THEN** they cannot produce a token that passes signature verification, so no valid credential can be forged
 
-### Requirement: Passkey re-auth to reveal the entry QR
+#### Scenario: No gate-time re-auth to show the credential
 
-The system SHALL require a **fresh Passkey re-authentication (a WebAuthn step-up
-assertion)** before revealing/opening a ticket's entry QR, so a shared screen or a
-handed-off device cannot be used to enter. **Dependency:** the shipped
-identity-management surface currently specs Passkey only as a *login* policy and
-re-auth only as the 90-day refresh expiry — there is **no per-action step-up
-primitive yet**. This capability therefore **requires a new WebAuthn step-up /
-fresh-assertion capability** in identity-management (a prerequisite delta, tracked
-in tasks §0); it MUST NOT be silently downgraded to an ordinary session check
-(which would not deliver the shared-screen-cannot-enter guarantee).
+- **WHEN** a fan opens their entry credential at the gate
+- **THEN** no fresh passkey / step-up re-authentication is required to display it
 
-#### Scenario: QR requires a fresh Passkey step-up
+### Requirement: Validate signature + freshness, then atomic duplicate-check at admit
 
-- **WHEN** a fan opens the entry QR for a ticket
-- **THEN** the system requires a fresh WebAuthn step-up assertion before showing the current code (not merely an existing session)
+On each scan the reception SHALL send the token to the **server**, which SHALL
+**(1) verify the signature and TTL/epoch freshness** (rejecting forged or stale
+tokens) and **(2) perform an atomic check-and-set** on the ticket's entry state
+(conditional update / unique constraint / row lock, keyed **per ticket** — never a
+table-level lock), returning **allow or deny BEFORE the attendee is admitted**.
+Signature+freshness is the forgery/screenshot control; the atomic check-and-set
+resolves the 1:1 concurrency race. Two concurrent scans of the same ticket — at
+the same or different gates — MUST result in **exactly one admit**. If the server
+is unreachable the reception SHALL **fail closed** (show a retry), not admit
+blindly.
 
-### Requirement: Same-time companion group entry
+#### Scenario: First scan wins, duplicate is denied
 
-For a multi-ticket order, the system SHALL support **same-time group entry**: the
-**lead holds all N tickets on their own device** and the lead + companions enter
-**together**. The system SHALL NOT provide any **distribution URL** or per-
-companion transferable code (deliberately rejected as a scalping loophole). The
-lead MAY admit a **subset (M of N)** in one scan when only part of the group has
-arrived; the **remaining N−M stay valid (not-yet-entered)** for a later scan on
-the same lead device, and each ticket is marked entered **only when actually
-admitted** (so a subset scan never burns an absent companion's ticket, and the
-no-double-entry rule applies per-ticket).
+- **WHEN** the same ticket is scanned twice (same or different gates), even simultaneously
+- **THEN** the server verifies the token then admits exactly one (the atomic check-and-set succeeds once) and denies the other as already-entered
 
-#### Scenario: Lead admits the whole group together
+#### Scenario: Stale or forged token is rejected before dedup
 
-- **WHEN** the lead presents their device holding N companion tickets and all N are being admitted
-- **THEN** the N tickets are admitted together in one same-time entry
+- **WHEN** a token fails signature or freshness verification
+- **THEN** it is rejected without consuming the ticket's entry state
 
-#### Scenario: Partial group arrival admits only those present
+#### Scenario: Server unreachable fails closed
 
-- **WHEN** only M of N companions are present and the lead admits M
-- **THEN** exactly M tickets are marked entered and the remaining N−M stay valid for a later scan (no companion ticket is burned while absent)
-
-#### Scenario: No companion distribution mechanism
-
-- **WHEN** a lead wants to hand a companion ticket to another person off-platform
-- **THEN** the system offers no distribution URL or transferable per-companion code (the sanctioned hand-off is ⑦ official resale)
+- **WHEN** the reception cannot reach the server
+- **THEN** it shows a retry and does not admit (no blind offline admit in MVP)
 
 ### Requirement: Reception check-in PWA (web camera)
 
-The system SHALL provide a **reception PWA** that scans the rotating QR using the
-**web camera (`getUserMedia`)** — no native app. On a scan the server SHALL
-validate signature + freshness + ticket binding + **not-already-used**, and admit
-or reject accordingly.
-
-#### Scenario: Staff scans and admits a valid ticket
-
-- **WHEN** staff scan a valid current QR with the reception PWA
-- **THEN** the server validates it and the ticket is admitted
+The system SHALL provide a **reception PWA** that scans the QR using the **web
+camera (`getUserMedia`)** — no native app, no NFC reader hardware — and performs
+the server validation + atomic duplicate-check above.
 
 #### Scenario: Reception runs in the browser
 
 - **WHEN** reception is opened
-- **THEN** it captures the camera via getUserMedia in a PWA with no native app install
+- **THEN** it captures the camera via getUserMedia in a PWA with no native app install and no NFC reader hardware
 
-### Requirement: Real-time entry status and no double-entry
+### Requirement: Same-time companion group entry
 
-On a successful scan the system SHALL mark the ticket **entered** in real time. A
-subsequent scan of an **already-entered** ticket SHALL be **rejected** (no double
-entry).
+For a multi-ticket order, the fan's authenticated wallet session SHALL present the
+group's credentials together for **same-time group entry**, and the system SHALL
+build **no first-party distribution URL** or transferable per-companion code (the
+sanctioned hand-off is ⑦ official resale). Admitting a **subset (M of N)** SHALL
+mark entered **only the M actually scanned**; the remaining N−M stay valid for a
+later scan (per-ticket atomic dedup applies). Because the credentials live only in
+the lead's authenticated in-app session (not OS-shareable passes), the group is
+not an off-platform distribution vector.
 
-#### Scenario: Entry status updates on admit
+#### Scenario: Partial group arrival admits only those present
 
-- **WHEN** a ticket is admitted
-- **THEN** its status becomes entered in real time and is visible in the wallet and reception
+- **WHEN** only M of N companions are present and M credentials are scanned
+- **THEN** exactly M tickets are marked entered and the remaining N−M stay valid for a later scan
+
+#### Scenario: No first-party distribution mechanism
+
+- **WHEN** a holder wants to hand a ticket to another person
+- **THEN** the system offers no first-party distribution URL or transferable per-companion code (the sanctioned path is ⑦ official resale)
+
+### Requirement: Entry status and no double-entry
+
+On a successful admit the system SHALL mark the ticket **entered** and surface the
+status in the wallet and reception. A subsequent scan of an **already-entered**
+ticket SHALL be **rejected**.
 
 #### Scenario: Re-scan is rejected
 
@@ -119,10 +126,11 @@ entry).
 ### Requirement: Void invalidates the entry credential
 
 When a ticket is **voided** (e.g. ⑦ official-resale reissues the seat to a new
-buyer, or an admin action), the system SHALL immediately **invalidate its
-rotating QR** so the voided ticket can no longer enter.
+buyer, or an admin action), the **server-side validation SHALL reject** the voided
+ticket's token at admit (regardless of what the device still renders), so the
+voided ticket can no longer be admitted.
 
 #### Scenario: Voided ticket cannot enter
 
 - **WHEN** a ticket is voided
-- **THEN** its rotating QR stops validating and it cannot be admitted at the gate
+- **THEN** its token no longer validates at admission and it cannot be admitted at the gate
