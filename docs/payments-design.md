@@ -157,6 +157,56 @@ Points 1/5/6 are self-assessable; **2/3/4 need a written 弁護士 opinion**
    適格請求書発行事業者; 媒介者交付特例 only if organizers are registered.
 5. 消費者契約法 enforceability of refund/cancellation clauses.
 
+### Official-resale counsel addenda (from `resale-design.md`)
+
+Resale-specific items for the same #778 legal track. Full design +
+research: [`resale-design.md`](./resale-design.md). "Δ" marks where the
+resale analysis differs from or extends the primary-sale analysis above.
+
+1. **⚠️ 資金移動業 for the resale money legs (highest leverage).** Resale is
+   **two decoupled legs**: (a) buyer→Organizer fresh face-value sale =
+   the same 収納代行/事業者-payee scheme as the primary sale (may hold to
+   event); (b) seller refund = a **refund of the seller's own payment**.
+   Confirm leg (b) avoids 資金移動業 via **both** grounds: it is a refund
+   (not a payee transfer) AND, if the seller is nonetheless viewed as an
+   individual payee, it fits the **資金決済法 2条の2第2号 escrow exclusion**
+   (funds received before/with counter-performance, moved to the payee
+   **after counter-performance = the seller's ticket delivery via
+   void+reissue**). **Δ vs primary:** the seller-refund leg is **settled
+   ~days-to-3-weeks after the resale completes, NOT held to the event** (ぴあ
+   /ticket board/e+/tiget norm) — so the primary "hold-until-event" escrow
+   framing does **not** govern this leg; confirm the "refund of own money"
+   vs "代金交付" framing given the buyer funds the balance.
+2. **古物営業法** — confirm **no 古物商許可** for a **no-inventory,
+   organizer-consigned, electronic-ticket** resale (void-original + reissue,
+   platform never buys/stocks); and the boundary if physical tickets are ever
+   handled (→ 金券類 古物商許可).
+3. **不正転売禁止法 — blanket organizer consent.** Confirm the **standing
+   consent** in the vetted-Organizer platform agreement satisfies the
+   興行主の同意 requirement for **all** that Organizer's events (no per-event
+   re-consent needed), so mandatory-by-default resale is not "unauthorized".
+   Flag the **artist/promoter no-resale rider** edge — an Organizer bound
+   upstream cannot consent; confirm the **admin-exception** carve-out suffices.
+4. **本人確認 re-bind keeps 特定興行入場券.** Confirm reissuing with the new
+   holder's 本人確認 (name+contact) + the 3 face conditions preserves the
+   covered-ticket protection for the new owner.
+5. **特商法 §12-6 返品特約 on the buyer's 最終確認画面 (Δ: distinct from the
+   fee disclosure)** — the resale buyer's fresh purchase is a 通信販売;
+   displaying 返品不可 defeats the §15-3 8-day return right. **Frame the
+   resale fee as 役務提供の対価 (not 違約金/キャンセル料)** to lower 消費者契約法
+   §9/§10 risk on the "non-refundable / not-guaranteed-if-unsold" terms.
+   (Extends counsel flag #5 and obligations-table #2 to the resale leg.)
+6. **個人情報保護法 — 本人確認 lifecycle (Δ).** Define 利用目的 (resale as a
+   purpose), retention through the hold-back/dispute window, then **deletion**
+   of the voided seller's 本人確認; both-party anonymity avoids §27 第三者提供.
+   (Beyond the Stripe 越境移転 item in obligations-table #4.)
+7. **消費税 / インボイス on the resale fee (Δ).** The seller-side ~10% fee is
+   課税取引 under 総額表示; decide **税抜 vs 税込** — if 税込, effective take is
+   ~9.1% after consumption tax, which affects the fee-band choice.
+8. **令和7年 (2025) 資金決済法改正 (施行 ~令和8年6月).** Confirm the narrowed
+   收納代行 / cross-border rules do **not** pull this domestic resale flow into
+   為替取引; this brief predates the amendment.
+
 ## Domain entity (provider-agnostic)
 
 Order/Payment carries only: `provider` (stripe), opaque `payment_intent_id`
