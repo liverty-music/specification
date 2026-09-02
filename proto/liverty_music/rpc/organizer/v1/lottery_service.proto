@@ -12,6 +12,7 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/lottery_application.proto";
+import "liverty_music/entity/v1/verified_identity.proto";
 
 // LotteryService is the organizer-facing lottery-sale surface: an authenticated
 // operator configures a lottery sales phase on one of its own published events,
@@ -55,6 +56,22 @@ service LotteryService {
   //   Organizer. Non-revealing.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc GetLotteryPhaseStatus(GetLotteryPhaseStatusRequest) returns (GetLotteryPhaseStatusResponse);
+
+  // SetPhaseVerificationRequirement sets or changes the identity-verification
+  // gate on a phase the caller owns (identity-ekyc): none (the default),
+  // verified-any (admits the driver's-licence fallback), or JPKI-only (admits
+  // only STRONG-dedupe accounts). It lets an organizer raise the bar on a
+  // high-demand phase after configuring it, without recreating the phase. The
+  // requirement may also be set at ConfigureLotteryPhase.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: phase_id is missing/malformed or the requirement is not
+  //   a defined enum value.
+  // - PERMISSION_DENIED: The phase's event is not owned by the caller's
+  //   Organizer, or the caller lacks the organizer-console role. Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc SetPhaseVerificationRequirement(SetPhaseVerificationRequirementRequest) returns (SetPhaseVerificationRequirementResponse);
 }
 
 // ConfigureLotteryPhaseRequest carries the configuration for a new lottery phase
@@ -85,6 +102,13 @@ message ConfigureLotteryPhaseRequest {
   // Required. The price of one ticket in JPY (yen, whole number), a positive
   // integer. ④ authorizes ticket_price × requested_ticket_count at application.
   int64 ticket_price = 6 [(buf.validate.field).int64.gt = 0];
+
+  // Optional. The identity-verification gate for this phase (identity-ekyc).
+  // UNSPECIFIED (the default) means no verification is required; VERIFIED_ANY
+  // admits any verified person (including the driver's-licence fallback);
+  // JPKI_ONLY admits only STRONG-dedupe accounts. May be changed later via
+  // SetPhaseVerificationRequirement.
+  entity.v1.VerificationRequirement verification_requirement = 7 [(buf.validate.field).enum.defined_only = true];
 }
 
 // ConfigureLotteryPhaseResponse returns the newly-created phase.
@@ -128,4 +152,23 @@ message GetLotteryPhaseStatusResponse {
   // The number of applications on the ordered loser waitlist. Zero until the
   // draw has run, and zero when demand did not exceed capacity.
   int32 waitlisted_application_count = 7;
+}
+
+// SetPhaseVerificationRequirementRequest identifies the phase to gate and the
+// requirement to apply.
+message SetPhaseVerificationRequirementRequest {
+  // Required. The lottery phase to gate. Its event MUST be owned by the caller's
+  // Organizer.
+  entity.v1.LotterySalesPhaseId phase_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The verification requirement to set. UNSPECIFIED clears the gate
+  // (no verification required); VERIFIED_ANY or JPKI_ONLY raise it.
+  entity.v1.VerificationRequirement verification_requirement = 2 [(buf.validate.field).enum.defined_only = true];
+}
+
+// SetPhaseVerificationRequirementResponse returns the phase with its updated
+// verification requirement applied.
+message SetPhaseVerificationRequirementResponse {
+  // The updated lottery phase.
+  entity.v1.LotterySalesPhase phase = 1 [(buf.validate.field).required = true];
 }

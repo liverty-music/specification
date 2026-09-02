@@ -3,6 +3,7 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/coordinates.proto";
 
 // UserId is a globally unique identifier for a platform user.
@@ -22,6 +23,26 @@ message UserExternalId {
 message UserEmail {
   // The email address string, validated against standard email formats.
   string value = 1 [(buf.validate.field).string.email = true];
+}
+
+// VerificationLevel is the account-level identity assurance that ④
+// lottery-application and ⑤ ticket-purchase consumers read to gate an
+// apply/purchase. It is derived from whether an active VerifiedIdentity (see
+// verified_identity.proto) backs the account. Verification is a lane, not a
+// universal mandate, so most accounts sit at UNVERIFIED. New values may be
+// appended; existing values must not be renumbered.
+enum VerificationLevel {
+  // Default value, rejected at the boundary: the server always sets a concrete
+  // level (this OUTPUT_ONLY field is never persisted unset).
+  VERIFICATION_LEVEL_UNSPECIFIED = 0;
+
+  // The account has no active identity verification — the ordinary state until a
+  // fan opts into verification.
+  VERIFICATION_LEVEL_UNVERIFIED = 1;
+
+  // The account is bound to a verified real person (an active VerifiedIdentity
+  // exists). Surfaced to ④/⑤ so verification-required events admit it.
+  VERIFICATION_LEVEL_IDENTITY_VERIFIED = 2;
 }
 
 // User represents a registered person on the Liverty Music platform.
@@ -63,6 +84,17 @@ message User {
     min_len: 2
     pattern: "^[a-z]{2}$"
   }];
+
+  // The account's identity-verification assurance level, derived server-side
+  // from whether an active VerifiedIdentity backs this account (see
+  // identity-ekyc). Surfaced here so ④ lottery-application and ⑤ ticket-purchase
+  // consumers can gate a verification-required event without a second lookup.
+  // OUTPUT_ONLY: clients never set it; the server always populates a concrete
+  // value (UNVERIFIED for accounts that have not verified).
+  VerificationLevel verification_level = 8 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
 }
 
 // Home represents the user's home area as a structured geographic location,

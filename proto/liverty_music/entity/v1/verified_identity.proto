@@ -1,0 +1,185 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/user.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// VerifiedIdentityId is a globally unique identifier for a single account-level
+// identity verification record. It is the platform's own surrogate id for the
+// VerifiedIdentity (distinct from the person key, which is the Pocket Sign
+// User.id); it never encodes any personal data.
+message VerifiedIdentityId {
+  // A UUID string mapping to the verified-identity record's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// PocketSignUserId is the person key returned by Pocket Sign (PocketSign Verify)
+// for a verified person — a tenant-scoped identifier that is the SAME for the
+// same person within our tenant and DIFFERENT across tenants (a service-scoped
+// pairwise id), and crucially the SAME value across card renewal, re-issue,
+// certificate generation, and certificate type. It is the only person key the
+// platform stores: never the certificate 発行番号/serial, never the 個人番号.
+// Because it is tenant-scoped it does NOT enable cross-platform scalper
+// detection (an accepted limitation).
+//
+// Validation is deliberately kept a bounded opaque string rather than a strict
+// UUID: the exact wire format of the Pocket Sign `User.id` is pending spike S6
+// (proto field mapping against `pocketsign.verify.v2`), so the platform treats
+// it as an opaque token. The current Pocket Sign contract states it is a
+// tenant-scoped UUID.
+message PocketSignUserId {
+  // The opaque tenant-scoped person key as returned by Pocket Sign. Stored
+  // verbatim as the dedupe key; the platform does not parse or interpret it.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+}
+
+// VerificationMethod records how a person proved their identity. It drives the
+// dedupe guarantee (see DedupeStrength) and whether a JPKI-only event admits the
+// verification. New values may be appended; existing values must not be
+// renumbered.
+enum VerificationMethod {
+  // Default value, rejected at the boundary: a persisted VerifiedIdentity always
+  // records a concrete method.
+  VERIFICATION_METHOD_UNSPECIFIED = 0;
+
+  // マイナンバーカード 公的個人認証 (JPKI) via Pocket Sign — the high-assurance
+  // method. Yields a stable per-person key (Pocket Sign User.id), so it carries
+  // the STRONG dedupe guarantee.
+  VERIFICATION_METHOD_JPKI = 1;
+
+  // 運転免許証 IC (Pocket Sign Verify CardInfo) — the fallback for non-card fans.
+  // Proves identity but yields NO equivalent stable per-person key (only a
+  // document number that can change), so it carries the WEAK dedupe guarantee.
+  VERIFICATION_METHOD_DRIVER_LICENCE = 2;
+}
+
+// DedupeStrength states how strong the "one person = one account" guarantee is
+// for a given VerifiedIdentity. It follows from the method: JPKI yields a stable
+// per-person key (STRONG); the driver's-licence fallback does not (WEAK). ④/⑤
+// consume this to decide whether an account may satisfy a JPKI-only requirement.
+// New values may be appended; existing values must not be renumbered.
+enum DedupeStrength {
+  // Default value, rejected at the boundary: a persisted VerifiedIdentity always
+  // records a concrete dedupe strength.
+  DEDUPE_STRENGTH_UNSPECIFIED = 0;
+
+  // Backed by a stable per-person key (Pocket Sign User.id) that survives card
+  // renewal/re-issue — the JPKI path. One person maps to one account reliably.
+  DEDUPE_STRENGTH_STRONG = 1;
+
+  // Backed only by a document-scoped identifier that can change (the driver's
+  // licence fallback). The one-person guarantee is weaker; such accounts are
+  // flagged and may be limited, and are excluded from JPKI-only events.
+  DEDUPE_STRENGTH_WEAK = 2;
+}
+
+// VerificationStatus is the freshness lifecycle of a VerifiedIdentity, driven by
+// the periodic 現況確認 (liveness) re-check. A revoked/changed result flags the
+// record for re-verification rather than hard-locking the account. New values
+// may be appended; existing values must not be renumbered.
+enum VerificationStatus {
+  // Default value, rejected at the boundary: a persisted VerifiedIdentity always
+  // records a concrete status.
+  VERIFICATION_STATUS_UNSPECIFIED = 0;
+
+  // The verification is current: the most recent 現況確認 found the certificate
+  // valid (not revoked, 基本4情報 unchanged, not expired).
+  VERIFICATION_STATUS_ACTIVE = 1;
+
+  // A 現況確認 reported the certificate revoked, or the 基本4情報 changed
+  // (move/name change), or it expired. The account is flagged to re-verify; it
+  // is not silently kept verified and not hard-locked.
+  VERIFICATION_STATUS_NEEDS_REVERIFICATION = 2;
+}
+
+// VerificationRequirement is the per-event / per-phase gate an organizer or
+// administrator sets: whether applying/purchasing requires a verified identity,
+// and if so whether the weaker driver's-licence fallback is admitted. The zero
+// value means "no requirement" — the valid default. New values may be appended;
+// existing values must not be renumbered.
+enum VerificationRequirement {
+  // No verification is required (the valid default). Anyone may apply/purchase;
+  // only per-account limits apply and bulk-account resistance is not guaranteed.
+  VERIFICATION_REQUIREMENT_UNSPECIFIED = 0;
+
+  // Verification is required and any method is accepted, including the driver's
+  // licence fallback (weaker dedupe). Fallback accounts are admitted but flagged.
+  VERIFICATION_REQUIREMENT_VERIFIED_ANY = 1;
+
+  // Verification is required and ONLY JPKI (STRONG dedupe) is accepted — the
+  // weaker licence fallback is not offered. For the highest-demand shows,
+  // accepting card-holder exclusion as a deliberate trade-off.
+  VERIFICATION_REQUIREMENT_JPKI_ONLY = 2;
+}
+
+// VerifiedIdentity binds one account to a verified real person, established via
+// Pocket Sign (PocketSign Verify). It retains ONLY the result of a verification
+// — never the raw certificate/response (deleted promptly after the Verify API
+// call), never the 個人番号, never the certificate 発行番号/serial, and no 基本4情報
+// by default (retrieved only if a specific justified use case, e.g. an age gate,
+// requires it). The person key is the Pocket Sign User.id, on which the platform
+// enforces "at most one active IDENTITY_VERIFIED account per person".
+message VerifiedIdentity {
+  // The unique identifier for this verification record. Server-generated
+  // surrogate id; it never encodes personal data.
+  VerifiedIdentityId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The account this verification is bound to. The one-person-one-account
+  // invariant is keyed on pocket_sign_user_id, not on this reference.
+  UserId account_ref = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // How the person proved their identity (JPKI or the driver's-licence
+  // fallback). Determines dedupe_strength and JPKI-only admissibility.
+  VerificationMethod method = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }
+  ];
+
+  // The Pocket Sign person key — the tenant-scoped identifier stored as the
+  // dedupe key. The platform stores only this; never the serial or 個人番号.
+  PocketSignUserId pocket_sign_user_id = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The strength of the one-person guarantee this record carries, derived from
+  // `method` (STRONG for JPKI, WEAK for the licence fallback).
+  DedupeStrength dedupe_strength = 5 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }
+  ];
+
+  // When the verification was established. Server-owned.
+  google.protobuf.Timestamp verified_at = 6 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The freshness lifecycle of the verification, maintained by the periodic
+  // 現況確認 re-check. Server-owned.
+  VerificationStatus status = 7 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+}
