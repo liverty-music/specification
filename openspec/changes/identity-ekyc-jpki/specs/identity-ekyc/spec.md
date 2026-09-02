@@ -14,11 +14,16 @@ stop a verified buyer reselling/lending a ticket (that is the separate per-event
 ### Requirement: JPKI account verification via Pocket Sign Verify
 
 The system SHALL let an authenticated fan verify their identity with their
-**マイナンバーカード 公的個人認証 (JPKI)** using **Pocket Sign's Verify SDK (in our
-app) + Verify API (our backend)** via a **challenge–response** (backend issues a
-Nonce → the SDK produces a signature from the card → the Verify API validates the
-certificate authenticity). Verification SHALL accept both a **physical card
-(NFC + PIN)** and the **スマホJPKI (phone-embedded credential)**. The system SHALL use
+**マイナンバーカード 公的個人認証 (JPKI)** using **Pocket Sign Stamp** (the fan reads and
+signs their card in the separately-installed **PocketSign app**; our PWA opens a
+Stamp session — `CreateSession` → the app via the returned `redirectUrl` → callback
+→ our backend `FinalizeSession` — which rides on Pocket Sign's Verify API to
+validate certificate authenticity and return the person key). Verification SHALL
+accept both a **physical card (NFC + PIN)** and the **スマホJPKI (phone-embedded
+credential)**.
+<!-- Corrected 2026-09-02: a PWA uses Stamp + the PocketSign app, not an embedded
+     Verify SDK in our own app, and not the government デジタル認証アプリ path. -->
+ The system SHALL use
 **only JPKI verification data — never the 個人番号 (My Number)**, and SHALL **delete
 the raw certificate/response promptly** after the Verify API call (retaining only
 the result — see the dedupe + privacy requirements). On success the account's
@@ -102,45 +107,53 @@ non-requiring events).
 
 Verification SHALL be **optional by default** (`UNVERIFIED`). An
 Organizer/administrator MAY mark an **event or lottery phase as requiring a verified
-identity**. Because マイナンバーカード possession is 任意 (~penetration gaps), a
-verification-required event SHALL offer a **fallback** for non-card fans via Pocket
-Sign's **運転免許証 IC (Verify CardInfo)** path, which SHALL be **substantively
-non-disadvantaging** (equivalent standing/odds). **Honest limitation:** the driver's
-licence path provides identity proofing but **does not yield an equivalent stable
-per-person dedupe key** (only a document number, which can change) — so a
-licence-fallback account has a **weaker 1-person guarantee**. Therefore, per event,
-the organizer SHALL choose either (a) accept the fallback with its weaker dedupe
-(flag/limit such accounts), or (b) for the highest-demand shows **require JPKI**
-(no licence fallback), accepting the card-holder exclusion as a deliberate trade-off.
-Unverified fans SHALL be **clearly informed** of the requirement and how to satisfy it.
+identity**. **MVP scope (2026-09-02): verification-required events are JPKI-only** —
+only JPKI-verified (strong-dedupe) fans may apply, and non-card-holders are excluded
+by design (the 任意/平等 fairness of this is a legal-review item). Unverified fans
+SHALL be **clearly informed** of the requirement and how to satisfy it (JPKI).
 
-#### Scenario: JPKI-required event has no weaker fallback
+**POST-MVP:** a **運転免許証 IC fallback** (Pocket Sign's separate **Verify CardInfo**
+product) for non-card fans, which would be **substantively non-disadvantaging**.
+**Honest limitation (why it is deferred, not free):** the driver's licence path
+proves identity but **does not yield an equivalent stable per-person dedupe key**
+(only a document number, which can change) — so a licence-fallback account has a
+**weaker 1-person guarantee** and does not advance the anti-scalp core. When added,
+each organizer would choose per event to accept the fallback (flag/limit such
+accounts) or require JPKI-only. The proto keeps the `DRIVER_LICENCE`/`WEAK`/
+`VERIFIED_ANY` values for this forward-compat.
 
-- **WHEN** an organizer sets a high-demand phase to require JPKI specifically
-- **THEN** only JPKI-verified (strong dedupe) fans may apply, and the weaker licence fallback is not offered for that phase
+#### Scenario: A verification-required event is JPKI-only (MVP)
 
-#### Scenario: Licence fallback is offered with a weaker-dedupe flag
+- **WHEN** an organizer marks a phase as requiring verification
+- **THEN** only JPKI-verified (strong-dedupe) fans may apply, and no weaker fallback is offered (MVP is JPKI-only)
 
-- **WHEN** an event allows the 運転免許証 fallback and a non-card fan uses it
+#### Scenario: Licence fallback is offered with a weaker-dedupe flag (POST-MVP)
+
+- **WHEN** (post-MVP) an event allows the 運転免許証 fallback and a non-card fan uses it
 - **THEN** they gain verified standing for that event without material disadvantage, and the account is flagged as having a weaker (document-scoped) dedupe
 
 #### Scenario: Unverified fan is clearly informed
 
 - **WHEN** an `UNVERIFIED` fan encounters an event that requires verification
-- **THEN** the system clearly informs them of the requirement and how to complete verification (JPKI or the allowed fallback) before applying
+- **THEN** the system clearly informs them of the requirement and how to complete JPKI verification before applying
 
 ### Requirement: Relationship to the ④ covered-ticket identity
 
-Where an event requires verification, the **verified identity is authoritative** for
-the covered ticket: ④'s apply-time **本人確認 (name + contact)** SHALL be
-**consistent with the verified identity**, and the system MUST NOT bind a ticket to
-a self-entered name that conflicts with the verified 基本4情報. Where an event does
-not require verification, ④'s 本人確認 alone binds the covered ticket (unchanged).
+**MVP:** the covered ticket is bound by ④ lottery-application's apply-time **本人確認
+(self-declared name + contact)** (`ApplicantIdentity`); the verified identity supplies
+the **per-person dedupe key (`User.id`)** but **not a verified name** in the MVP. This
+satisfies the 特定興行入場券 requirement (チケット不正転売禁止法 does not mandate JPKI-level
+name verification).
 
-#### Scenario: Verified identity binds the covered ticket
+**POST-MVP:** where an event requires verification, the **verified 基本4情報 name**
+(retrieved via the JPKI 署名用証明書 + Pocket Sign ConsentService) becomes authoritative
+and ④'s self-declared name MUST be **consistent** with it (no conflicting name bound).
+Its exact legal sufficiency is a legal-review item.
+
+#### Scenario: Covered ticket is bound by ④'s self-declared identity (MVP)
 
 - **WHEN** a verified person applies to a verification-required event
-- **THEN** the covered ticket is bound to the verified identity and ④'s captured 本人確認 name is consistent with it (no conflicting name is bound)
+- **THEN** the covered ticket is bound by ④'s captured self-declared 本人確認 (name + contact), and the verified identity contributes the per-person dedupe key (`User.id`); verified-`基本4情報`-name consistency is a post-MVP enhancement
 
 ### Requirement: Privacy — data minimization and deletion
 
