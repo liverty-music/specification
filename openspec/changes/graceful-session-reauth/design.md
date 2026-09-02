@@ -73,6 +73,42 @@ entries) so consumer/admin/organizer get identical behavior. The consumer's
 `resume-revalidator` (data revalidation) is orthogonal and remains; the new
 resume refresh operates at the auth layer, below it.
 
+**D5 — The single-flight lock lives in `AuthService`, not the interceptor.**
+Today the reactive interceptors hold their own module-level `refreshPromise`
+(`connect-error-router.ts:5`, `admin-auth-retry-interceptor.ts`), and
+`restoreSession()` calls `signinSilent()` independently — so a boot restore and
+an early-RPC 401 can run two concurrent `signinSilent()` calls (the exact
+rotation race). Move the single-flight promise INTO `AuthService` as one
+`ensureFreshToken()`-style method that all callers (boot restore, resume hook,
+both interceptors) go through. One lock, one home. The interceptors stop owning a
+`refreshPromise` and delegate to the service.
+
+**D6 — Reactive refresh contract is explicit and bounded to one retry.** Codify
+what the interceptors already do (`signinSilent()` → set the new bearer token →
+retry the original request) as the contract, and add the missing guard: retry at
+most once per request. If the retried request still returns `Unauthenticated`,
+treat the session as unrecoverable (D7) rather than looping. Guest/no-session
+callers pass the `Unauthenticated` through unchanged (the consumer already does
+this via `if (!auth.user) throw`; keep it, and make the admin path consistent —
+admin always has a session so it is a no-op there).
+
+**D7 — Forced logout reuses the voluntary sign-out cleanup + preserves return-to.**
+The forced-logout path today does `removeUser()` + `window.location.href` (or
+`signIn()`) WITHOUT publishing `SignedOut`, so user-specific stores keep stale
+data — unlike the voluntary `signOut()` which publishes it. Route the forced
+logout through the same cleanup: publish `SignedOut` (stores self-clear), then
+re-authenticate. Preserve the pre-logout location (e.g. capture
+`window.location` and restore after the OIDC callback, or pass it through the
+re-auth redirect) so the user returns where they were. Keep the consumer's
+`window.location.href = '/welcome'` semantics where a full re-auth is required,
+but add the missing `SignedOut` publish + return-to.
+
+**D8 — No raw transport text at any surface.** The interceptor failure branch and
+every route/error mapper (e.g. the admin organizers route `toUserMessage` default
+case that returns `err.rawMessage`) must map `Code.Unauthenticated` to the
+neutral "session expired" state, never the raw string. This is enforced at both
+layers so a code path that bypasses the interceptor still cannot leak the text.
+
 ## Risks / Trade-offs
 
 - **Double-fire on resume + first RPC.** If the user resumes and immediately
