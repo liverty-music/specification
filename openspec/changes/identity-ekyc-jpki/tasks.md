@@ -6,11 +6,16 @@
 
 ## 1. Proto / entity (specification → BSR)
 
-- [ ] 1.1 Define `VerifiedIdentity` (account_ref, method enum JPKI/DRIVER_LICENCE, `pocket_sign_user_id` = tenant-scoped UUID person key, dedupe_strength enum STRONG/WEAK, verified_at, status) — type-safe IDs, protovalidate, **no 基本4情報 field by default**
-- [ ] 1.2 Add account **verification level** (UNVERIFIED / IDENTITY_VERIFIED) surfaced to ④/⑤
-- [ ] 1.3 Add a per-event/phase **verification requirement** (none / verified-any / JPKI-only) settable by organizer/admin
-- [ ] 1.4 RPCs: StartVerify / CompleteVerify (challenge–response via Pocket Sign), 現況確認 ReCheck, GetMyVerificationStatus; admin/organizer SetEventVerificationRequirement
-- [ ] 1.5 protovalidate; buf lint/breaking; merge PR → Release → BSR gen
+- [x] 1.1 Define `VerifiedIdentity` (account_ref, method enum JPKI/DRIVER_LICENCE, `pocket_sign_user_id` = tenant-scoped UUID person key, dedupe_strength enum STRONG/WEAK, verified_at, status) — type-safe IDs, protovalidate, **no 基本4情報 field by default**
+- [x] 1.2 Add account **verification level** (UNVERIFIED / IDENTITY_VERIFIED) surfaced to ④/⑤
+- [x] 1.3 Add a per-event/phase **verification requirement** (none / verified-any / JPKI-only) settable by organizer/admin
+- [x] 1.4 RPCs: StartVerify / CompleteVerify (challenge–response via Pocket Sign), 現況確認 ReCheck, GetMyVerificationStatus; admin/organizer SetEventVerificationRequirement
+- [ ] 1.5 protovalidate; buf lint/breaking; merge PR → Release → BSR gen <!-- Local validation done: buf lint + format clean, buf breaking clean for this change (the 6 pre-existing breaking lines are from bcd42c9 organizer-media-pipeline, unrelated). Remaining: open the specification PR, wait for CI, merge, cut the Release → BSR gen. Process step (requires human review/CI/release). -->
+<!-- NOTE: SetEventVerificationRequirement (1.4) realized as SetPhaseVerificationRequirement on the organizer LotteryService, since the first-party apply gate is the LotterySalesPhase (there is no separate first-party Event-level sale config). The requirement is also settable at ConfigureLotteryPhase. -->
+<!-- Proto surface added: entity/v1/verified_identity.proto (VerifiedIdentityId, PocketSignUserId, VerificationMethod, DedupeStrength, VerificationStatus, VerificationRequirement enums + VerifiedIdentity); entity/v1/user.proto (VerificationLevel enum + User.verification_level field 8, OUTPUT_ONLY); entity/v1/lottery_application.proto (LotterySalesPhase.verification_requirement field 8); rpc/identity/v1/identity_verification_service.proto (StartVerify/CompleteVerify/ReCheck/GetMyVerificationStatus); rpc/organizer/v1/lottery_service.proto (SetPhaseVerificationRequirement + ConfigureLotteryPhaseRequest.verification_requirement). -->
+<!-- Design note: PocketSignUserId validation kept a bounded opaque string (not strict UUID) pending spike S6 (proto field mapping vs pocketsign.verify.v2). -->
+<!-- Cycle avoided: VerificationLevel defined in user.proto (not verified_identity.proto) so user.proto need not import verified_identity.proto (which imports user.proto for UserId). -->
+
 
 ## 2. Backend — Pocket Sign verification
 

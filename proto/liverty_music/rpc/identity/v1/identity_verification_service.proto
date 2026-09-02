@@ -1,0 +1,193 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.identity.v1 provides the fan-facing identity
+// verification surface (identity-ekyc). A fan verifies their real identity with
+// their マイナンバーカード 公的個人認証 (JPKI) — or the 運転免許証 IC fallback — via
+// Pocket Sign (PocketSign Verify): the backend issues a challenge (Nonce), the
+// Pocket Sign Verify SDK reads the card and signs it, and the backend validates
+// the signature through the Verify API. The raw certificate/response is deleted
+// promptly after that call; only the result (a VerifiedIdentity keyed on the
+// Pocket Sign User.id) is retained. The service also exposes the periodic
+// 現況確認 re-check and a status read for the client.
+package liverty_music.rpc.identity.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/user.proto";
+import "liverty_music/entity/v1/verified_identity.proto";
+
+// IdentityVerificationService is the authenticated fan's surface for binding
+// their account to a verified real person and reading that status. It is a
+// challenge–response flow: StartVerify issues a Nonce, the Pocket Sign Verify
+// SDK signs it against the card, and CompleteVerify validates the signed
+// response through the Verify API and, on success, upgrades the account to
+// IDENTITY_VERIFIED. Every RPC follows the rpc-auth-scoping convention: the
+// request carries an explicit user_id verified against the JWT-derived caller,
+// and mismatches are rejected with PERMISSION_DENIED.
+service IdentityVerificationService {
+  // StartVerify opens a verification attempt and returns a challenge (Nonce) for
+  // the Pocket Sign Verify SDK to sign against the card. The chosen method
+  // (JPKI or the driver's-licence fallback) determines which credential the SDK
+  // reads and the resulting dedupe strength. The challenge is short-lived and is
+  // consumed by exactly one CompleteVerify call.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: user_id is missing/malformed, or method is UNSPECIFIED
+  //   or not a defined enum value.
+  // - PERMISSION_DENIED: The supplied user_id does not match the authenticated
+  //   caller.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - UNAVAILABLE: The Pocket Sign Verify service is not reachable.
+  rpc StartVerify(StartVerifyRequest) returns (StartVerifyResponse);
+
+  // CompleteVerify submits the SDK-signed response for validation via the Pocket
+  // Sign Verify API. On success the backend records a VerifiedIdentity (keyed on
+  // the returned Pocket Sign User.id), sets the account's verification_level to
+  // IDENTITY_VERIFIED, and deletes the raw certificate/response immediately. On
+  // failure or abandonment the account stays UNVERIFIED. If the returned
+  // User.id already backs another active verified account, the call is rejected
+  // (one person maps to one verified account) with a recovery path.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: user_id/session_id/signed_response is missing or
+  //   malformed.
+  // - PERMISSION_DENIED: The supplied user_id does not match the authenticated
+  //   caller.
+  // - FAILED_PRECONDITION: The signed response failed Verify API validation
+  //   (invalid/revoked certificate), or the session expired.
+  // - ALREADY_EXISTS: The verified person (Pocket Sign User.id) already has an
+  //   active IDENTITY_VERIFIED account; use account recovery instead of creating
+  //   a second identity.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - UNAVAILABLE: The Pocket Sign Verify service is not reachable.
+  rpc CompleteVerify(CompleteVerifyRequest) returns (CompleteVerifyResponse);
+
+  // ReCheck runs a 現況確認 (liveness) check for the caller's verified identity to
+  // detect certificate revocation, a 基本4情報 change (move/name change), or
+  // expiry. On a revoked/changed result it flags the identity as
+  // NEEDS_REVERIFICATION (prompting re-verification) rather than hard-locking the
+  // account. This mirrors the periodic backend re-check but lets the client
+  // refresh on demand.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: user_id is missing or malformed.
+  // - PERMISSION_DENIED: The supplied user_id does not match the authenticated
+  //   caller.
+  // - FAILED_PRECONDITION: The account has no verified identity to re-check.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - UNAVAILABLE: The Pocket Sign Verify service is not reachable.
+  rpc ReCheck(ReCheckRequest) returns (ReCheckResponse);
+
+  // GetMyVerificationStatus returns the caller's current verification level and,
+  // when verified, the VerifiedIdentity backing the account (method, dedupe
+  // strength, freshness status). The client uses it to render verification state
+  // and to decide whether a verification-required event is satisfiable.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: user_id is missing or malformed.
+  // - PERMISSION_DENIED: The supplied user_id does not match the authenticated
+  //   caller.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc GetMyVerificationStatus(GetMyVerificationStatusRequest) returns (GetMyVerificationStatusResponse);
+}
+
+// StartVerifyRequest opens a verification attempt for the authenticated caller.
+message StartVerifyRequest {
+  // The caller's user identifier. Must match the userID derived from the
+  // authenticated session; mismatches are rejected with PERMISSION_DENIED.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+
+  // Which credential the fan will present: JPKI (high assurance, strong dedupe)
+  // or the 運転免許証 IC fallback (weaker dedupe). UNSPECIFIED is rejected.
+  entity.v1.VerificationMethod method = 2 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+}
+
+// StartVerifyResponse carries the challenge the Pocket Sign Verify SDK signs
+// against the card.
+message StartVerifyResponse {
+  // An opaque handle correlating this attempt with the eventual CompleteVerify
+  // call. Short-lived; consumed by exactly one CompleteVerify.
+  string session_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+
+  // The challenge (Nonce) the SDK signs against the card. Opaque to the client;
+  // passed to the SDK verbatim. Bounded to a small nonce payload.
+  bytes challenge = 2 [(buf.validate.field).bytes = {
+    min_len: 1
+    max_len: 4096
+  }];
+}
+
+// CompleteVerifyRequest submits the SDK-signed response for validation.
+message CompleteVerifyRequest {
+  // The caller's user identifier. Must match the userID derived from the
+  // authenticated session; mismatches are rejected with PERMISSION_DENIED.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+
+  // The opaque handle returned by StartVerify identifying the challenge this
+  // response answers.
+  string session_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+
+  // The SDK-produced signed response (certificate + signature over the
+  // challenge). Validated through the Pocket Sign Verify API, then deleted
+  // immediately — never persisted. Bounded to accommodate a certificate chain
+  // plus signature.
+  bytes signed_response = 3 [(buf.validate.field).bytes = {
+    min_len: 1
+    max_len: 65536
+  }];
+}
+
+// CompleteVerifyResponse returns the established verification.
+message CompleteVerifyResponse {
+  // The verification record created on success. Retains only the result (person
+  // key, method, dedupe strength, status) — no raw certificate, no 個人番号.
+  entity.v1.VerifiedIdentity verified_identity = 1 [(buf.validate.field).required = true];
+
+  // The account's verification level after this call (IDENTITY_VERIFIED on
+  // success). Echoed so the client need not re-read it.
+  entity.v1.VerificationLevel verification_level = 2 [(buf.validate.field).enum.defined_only = true];
+}
+
+// ReCheckRequest requests a 現況確認 (liveness) re-check for the caller.
+message ReCheckRequest {
+  // The caller's user identifier. Must match the userID derived from the
+  // authenticated session; mismatches are rejected with PERMISSION_DENIED.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+}
+
+// ReCheckResponse returns the freshness outcome of the re-check.
+message ReCheckResponse {
+  // The verified identity's freshness status after the re-check
+  // (ACTIVE, or NEEDS_REVERIFICATION when revoked/changed/expired).
+  entity.v1.VerificationStatus status = 1 [(buf.validate.field).enum.defined_only = true];
+
+  // The account's verification level after the re-check. A revoked/changed
+  // result does not hard-lock the account; the level reflects the current state.
+  entity.v1.VerificationLevel verification_level = 2 [(buf.validate.field).enum.defined_only = true];
+}
+
+// GetMyVerificationStatusRequest reads the caller's verification status.
+message GetMyVerificationStatusRequest {
+  // The caller's user identifier. Must match the userID derived from the
+  // authenticated session; mismatches are rejected with PERMISSION_DENIED.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+}
+
+// GetMyVerificationStatusResponse returns the caller's verification level and,
+// when verified, the backing identity.
+message GetMyVerificationStatusResponse {
+  // The account's current verification level (UNVERIFIED or IDENTITY_VERIFIED).
+  entity.v1.VerificationLevel verification_level = 1 [(buf.validate.field).enum.defined_only = true];
+
+  // The verification record backing the account. Absent when the account is
+  // UNVERIFIED.
+  entity.v1.VerifiedIdentity verified_identity = 2;
+}

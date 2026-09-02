@@ -8,6 +8,7 @@ import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/user.proto";
+import "liverty_music/entity/v1/verified_identity.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
@@ -103,6 +104,19 @@ message LotterySalesPhase {
   int64 ticket_price = 7 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).int64.gt = 0
+  ];
+
+  // The identity-verification gate for applying to this phase (identity-ekyc).
+  // UNSPECIFIED (the default) means no verification is required — anyone may
+  // apply and only per-account limits hold. VERIFIED_ANY admits any verified
+  // person (including the weaker driver's-licence fallback); JPKI_ONLY admits
+  // only STRONG-dedupe (JPKI) accounts for the highest-demand shows. ④ enforces
+  // this at apply time, evaluating per-verified-person limits via the account's
+  // Pocket Sign User.id when a requirement is set. The Organizer sets it at
+  // ConfigureLotteryPhase and may change it via SetPhaseVerificationRequirement.
+  VerificationRequirement verification_requirement = 8 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).enum.defined_only = true
   ];
 }
 
