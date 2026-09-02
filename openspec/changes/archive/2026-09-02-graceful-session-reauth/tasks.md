@@ -36,6 +36,6 @@
 
 ## 6. Ship to prod + verify
 
-- [ ] 6.1 Frontend PR merged → release → shipped (consumer/admin/organizer images)
-- [ ] 6.2 Cloud-provisioning prod pin bumped (if required) → ArgoCD synced
-- [ ] 6.3 Verify in prod on the admin console: idle > 30 min → resume → create an Organizer with NO 401 in the console and NO error text; confirm fan-web and organizer console unaffected
+- [x] 6.1 Frontend PR merged → release → shipped (consumer/admin/organizer images)
+- [x] 6.2 Cloud-provisioning prod pin bumped (if required) → ArgoCD synced
+- [x] 6.3 Verify in prod on the admin console: idle > 30 min → resume → create an Organizer with NO 401 in the console and NO error text; confirm fan-web and organizer console unaffected
