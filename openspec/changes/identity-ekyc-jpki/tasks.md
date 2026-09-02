@@ -1,3 +1,11 @@
+<!-- MVP SCOPE (2026-09-02, see design.md "MVP scope & corrections"):
+     - Client path = PocketSign **Stamp** (stamp.v1.SessionService: CreateSession →
+       PocketSign **app** via redirectUrl → FinalizeSession), riding on Verify.
+       NOT an embedded SDK, NOT the デジタル認証アプリ path.
+     - MVP = **JPKI-only**. 運転免許証 (Verify CardInfo) fallback = POST-MVP (task 5.3).
+     - MVP stores **only User.id**; verified-name (基本4情報 via 署名用証明書 + Consent)
+       = POST-MVP. Covered-ticket 本人確認 in MVP = ④ self-declared name+contact. -->
+
 ## 0. Prerequisites (long-lead — start in parallel, non-code)
 
 - [ ] 0.1 **Onboard Pocket Sign (PocketSign Verify)**: 加盟契約 (ride their 認定PF status — no own 主務大臣認定), register on PocketSign Platform, ¥300k init + per-verify fees, use the free sandbox for PoC (~2-3mo Verify integration lead time)
@@ -20,7 +28,7 @@
 
 ## 2. Backend — Pocket Sign verification
 
-- [x] 2.1 Integrate the **Verify SDK (app) + Verify API (backend)** challenge–response: issue Nonce → validate signed response → accept physical card AND スマホJPKI; **delete the raw certificate/response immediately** after the API call <!-- PocketSignVerifier interface (IssueChallenge/ValidateResponse/Recheck) + StubVerifier (UNAVAILABLE; TODO after onboarding). signedResponse zeroed immediately in CompleteVerify. -->
+- [ ] 2.1 Integrate **PocketSign Stamp** (`stamp.v1.SessionService`: `CreateSession` → PocketSign app via `redirectUrl` → `FinalizeSession`, riding on Verify) to verify the fan and obtain the `User.id`; accept physical card AND スマホJPKI; **delete the raw certificate/response immediately** after the call <!-- REOPENED 2026-09-02: the shipped VerifyClient (backend #428/#429) targets verify.v2 VerifyForDigitalIdentificationApp (デジタル認証アプリ path) = WRONG for our PWA plan; it is inert (config-gated) but MUST be rewritten to the Stamp SessionService path. The hand-rolled Nonce + `data` approach is dissolved by Stamp (the Session manages the challenge/callback). Interim scaffolding retained: PocketSignVerifier interface + StubVerifier (UNAVAILABLE), config gate, dedupe/privacy usecase (2.2-4.2) are path-agnostic and stay. -->
 - [x] 2.2 On success: create `VerifiedIdentity` with `pocket_sign_user_id`, set account verification_level=IDENTITY_VERIFIED; never store the 個人番号 or raw serial <!-- CompleteVerify usecase: only PocketSignUserID stored. VerifiedIdentityLevel derived from status. -->
 - [x] 2.3 **現況確認** periodic re-check (revocation / 基本4情報 change / expiry) → flag for re-verification (not hard-lock) <!-- ReCheck usecase: flags NEEDS_REVERIFICATION, does not hard-lock. -->
 
@@ -37,19 +45,22 @@
 
 ## 5. Frontend
 
-- [ ] 5.1 Verification flow via the Pocket Sign Verify SDK (physical card NFC + スマホJPKI) in our app; show verification status <!-- PARTIAL 2026-09-02 (frontend PR #578 merged→dev): verification STATUS display + verify entry point DONE (Settings, calls GetMyVerificationStatus); the Pocket Sign Verify SDK card-read is STUBBED behind IPocketSignVerifyClient (isAvailable=false → "coming soon"), pending Section 0 onboarding. See pocket-sign-integration-notes.md "Integration seams". -->
+- [ ] 5.1 Verification flow via **PocketSign Stamp** (PWA → backend `CreateSession` → open the PocketSign app via `redirectUrl` → card read+sign there → callback → backend `FinalizeSession`); show verification status <!-- PARTIAL 2026-09-02 (frontend PR #578 merged→dev): verification STATUS display + verify entry point DONE (Settings, calls GetMyVerificationStatus); the actual card-read is STUBBED behind IPocketSignVerifyClient (isAvailable=false → "coming soon"). NOTE: rework the stub to the Stamp app-handoff (redirect + callback), NOT an embedded SDK, when backend 2.1 lands. -->
 
-- [ ] 5.2 When an event requires verification, prompt UNVERIFIED fans to verify (or use the allowed fallback) before applying; **clearly inform** them of the requirement
-- [ ] 5.3 運転免許証 fallback flow (Verify CardInfo) where the event allows it; surface the weaker-dedupe/limit where applicable
+- [ ] 5.2 When an event requires verification, prompt UNVERIFIED fans to verify (JPKI) before applying; **clearly inform** them of the requirement <!-- MVP = JPKI-only, no fallback option to offer here. -->
+- [ ] 5.3 運転免許証 fallback flow (Verify CardInfo) where the event allows it; surface the weaker-dedupe/limit where applicable <!-- POST-MVP (2026-09-02): dropped from MVP scope; MVP is JPKI-only. Requires the separate pocketsign.cardinfo product. Revisit if real card-holder-exclusion data + legal (0.2) warrant it. -->
+
+<!-- POST-MVP (verified-name binding): retrieve 基本4情報 (氏名) via the JPKI 署名用証明書 + PocketSign ConsentService and bind the *verified* name to the covered ticket. MVP uses ④ self-declared name (see 6.2); this is a stronger optional enhancement, legal sufficiency = task 0.2. -->
 
 ## 6. Consumer wiring (④/⑤)
 
 - [ ] 6.1 ④ lottery-application: enforce per-**verified-person** limit (via `User.id`) where an event requires verification (extends "1 account / 1 application"); non-requiring events stay per-account
-- [ ] 6.2 ⑤ ticket-purchase-and-issuance: gate on verification_level where required; where required, the **verified identity binds the covered ticket** (④'s 本人確認 name consistent with it)
-- [ ] 6.3 Per-event requirement (none / verified-any / JPKI-only) enforced at apply/purchase, with the fallback honored
+- [ ] 6.2 ⑤ ticket-purchase-and-issuance: gate on verification_level where required <!-- MVP: the covered ticket is bound by ④'s self-declared name+contact (ApplicantIdentity); the verified identity supplies the per-person dedupe (User.id) but NOT a verified name in MVP. Binding a *verified* 基本4情報 name (署名用+Consent) is POST-MVP. -->
+- [ ] 6.3 Per-event requirement enforced at apply/purchase <!-- MVP: none vs JPKI-only (VERIFIED_ANY behaves as JPKI-only since no fallback ships); the licence fallback is POST-MVP. -->
 
 ## 7. Release & verification
 
 - [ ] 7.1 Cross-repo release order: spec → BSR → backend → frontend; wire ④/⑤ consumers
-- [ ] 7.2 End-to-end (Pocket Sign sandbox): verify (card + スマホJPKI) upgrades account; **same User.id after a simulated renewal**; second User.id → rejected; per-person limit spans two accounts of one person; event-requires-verification prompts + fallback; JPKI-only event excludes licence fallback; no 個人番号/serial stored; 現況確認 flags a revoked cert; deletion works
+- [ ] 7.2 End-to-end (Pocket Sign sandbox, via Stamp + PocketSign app): verify (card + スマホJPKI) upgrades account; **same User.id after a simulated renewal**; second User.id → rejected; per-person limit spans two accounts of one person; event-requires-verification prompts (JPKI-only); no 個人番号/serial/基本4情報 stored (only User.id); 現況確認 flags a revoked cert; deletion works <!-- MVP JPKI-only: fallback/licence E2E dropped (POST-MVP). -->
+<!-- Also confirm on the live sandbox: the Stamp Session flow (CreateSession redirectUrl → PocketSign app → FinalizeSession), and that identify_user resolves the User.id (cert must be >90min old, else ERROR_REASON_IDENTIFY_USER_TOO_EARLY). -->
 - [ ] 7.3 Sync delta specs to main specs and archive the change

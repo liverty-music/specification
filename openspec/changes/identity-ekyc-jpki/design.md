@@ -28,17 +28,50 @@ in when this lands.
 - Running our own JPKI 署名検証者 認定 — ride on Pocket Sign's 認定 (see decision).
 - 券面事項 read (マイナンバー / 顔写真 / card-face images) — never requested (番号法).
 
+## MVP scope & corrections (2026-09-02)
+
+These decisions were refined after grounding the design against the public Pocket
+Sign schema and product line. Where they conflict with an older bullet below, **these
+win**.
+
+- **Client path = PocketSign Stamp + the user-installed PocketSign app (NOT an
+  embedded SDK, NOT the デジタル認証アプリ).** Our client is a **PWA**, so it uses
+  **PocketSign Stamp** (`pocketsign.stamp.v1.SessionService`): the backend
+  `CreateSession` → the fan opens the returned `redirectUrl` in the **PocketSign
+  app** (installed separately), reads their card and signs there → returns to the
+  PWA → the backend `FinalizeSession` gets the result. Stamp **rides on PocketSign
+  Verify** as its backend, so the person key (`User.id`), dedupe, and 現況確認 come
+  from Verify. This replaces the earlier "Verify **SDK** embedded in our app +
+  our own Nonce challenge–response" framing (that fits a native app we are not
+  building). The government **デジタル認証アプリ** (`VerifyForDigitalIdentificationApp`)
+  is a **separate, unused path** — do not treat it as ours.
+- **MVP = JPKI-only; the 運転免許証 (Verify CardInfo) fallback is POST-MVP.** In the
+  MVP a verification-required event admits only JPKI (card-holders). The 任意/平等
+  fairness concern of excluding non-card-holders is a **legal-review (task 0.2)**
+  item and is already the sanctioned per-event "JPKI-only" option below. The proto
+  keeps `DRIVER_LICENCE`/`WEAK`/`VERIFIED_ANY` for forward-compat, but no
+  `pocketsign.cardinfo` integration and no fallback UI ship in the MVP.
+- **MVP stores only `User.id`; verified-name (基本4情報) binding is POST-MVP.** The
+  MVP retains only the dedupe key and does **not** retrieve/verify 基本4情報 (氏名).
+  The covered-ticket 本人確認 in the MVP is ④ lottery-application's **self-declared
+  name+contact** (`ApplicantIdentity`), which already satisfies the 特定興行入場券
+  requirement — **チケット不正転売禁止法 does not mandate JPKI-level name verification**
+  (entry 本人確認 is largely 努力義務). Retrieving 基本4情報 via the JPKI **署名用証明書 +
+  PocketSign ConsentService** to bind a *verified* name is a stronger post-MVP
+  enhancement; its exact legal sufficiency is a task 0.2 item.
+
 ## Decisions
 
-- **Vendor = Pocket Sign (PocketSign Verify); integration = Verify SDK (in our app)
-  + Verify API (our backend), challenge–response.** Backend issues a Nonce → the
-  Verify SDK reads the card (NFC **or スマホJPKI**) and signs → PocketSign Verify API
-  validates certificate authenticity and returns the result. Raw certificate/response
-  is **deleted promptly** after the API call. Pocket Sign is a 公的個人認証法
-  **主務大臣認定プラットフォーム事業者** (since 2023; uses デジタル庁's デジタル認証アプリ
-  署名API under the hood), so we integrate as a **加盟事業者 with NO own 主務大臣認定**.
-  Envs: mock → test → prod. Rejected: self-認定 (overkill), a redirect to a Pocket
-  Sign consumer app (the eKYC path is SDK+API in our own app).
+- **Vendor = Pocket Sign (PocketSign Verify); MVP client path = PocketSign Stamp +
+  the PocketSign app (see the MVP-scope section above, which supersedes the
+  embedded-SDK framing).** The backend calls `pocketsign.stamp.v1.SessionService`
+  (CreateSession → redirect to the PocketSign app → FinalizeSession); Stamp rides on
+  the PocketSign Verify API, which validates certificate authenticity and returns
+  the person key. Raw certificate/response is **deleted promptly** after the call.
+  Pocket Sign is a 公的個人認証法 **主務大臣認定プラットフォーム事業者** (since 2023), so we
+  integrate as a **加盟事業者 with NO own 主務大臣認定**. Envs: mock → test → prod.
+  Rejected: self-認定 (overkill); running our own native app just to embed the Verify
+  SDK (Stamp lets a PWA delegate to the PocketSign app instead).
 - **Never the 個人番号 → outside 番号法.** Use the 利用者証明用 (auth, PIN4) and/or
   署名用 (signature, PIN 6-16, carries 基本4情報) 電子証明書. The 個人番号 is heavily
   restricted (番号法, 法定事務限定) — collecting it would pull us into that regime, so

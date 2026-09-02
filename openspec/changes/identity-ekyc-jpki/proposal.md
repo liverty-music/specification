@@ -20,11 +20,15 @@ vs ~300 on paper). Companion to
 ## What Changes
 
 - Introduce a **`VerifiedIdentity`** account-level verification via **JPKI using
-  Pocket Sign** — the fan reads their マイナンバーカード (**physical NFC or スマホJPKI**)
-  in our app via the **Verify SDK**, our backend validates via the **Verify API**
-  (challenge–response), and we **delete the raw certificate promptly**. Only JPKI
-  data — **never the 個人番号** (outside 番号法). We ride on Pocket Sign's 認定 as a
-  加盟事業者 (no own 主務大臣認定).
+  Pocket Sign** — because our client is a **PWA**, the fan reads their マイナンバーカード
+  (**physical NFC or スマホJPKI**) in the **PocketSign app** (installed separately) via
+  **PocketSign Stamp** (our backend opens a Stamp session and the app returns the
+  signed result, which the backend validates through Stamp's Verify backend), and we
+  **delete the raw certificate promptly**. Only JPKI data — **never the 個人番号**
+  (outside 番号法). We ride on Pocket Sign's 認定 as a 加盟事業者 (no own 主務大臣認定).
+  <!-- Corrected 2026-09-02: earlier drafts said "Verify SDK embedded in our app";
+       a PWA uses Stamp + the PocketSign app instead. The デジタル認証アプリ is a
+       separate, unused path. See design.md "MVP scope & corrections". -->
 - **1 person = 1 verified account (anti-scalp core).** Use Pocket Sign's **`User.id`**
   (a **tenant-scoped UUID**, stable across card renewal/re-issue/cert-type) as the
   person key — **store only this UUID** (never the serial, never the 個人番号) — and
@@ -32,12 +36,14 @@ vs ~300 on paper). Companion to
   limit** that ④/⑤ enforce across accounts sharing it. Because it is tenant-scoped,
   cross-platform detection is out of scope.
 - **A lane, NOT mandatory.** Default `UNVERIFIED`; verification → `IDENTITY_VERIFIED`.
-  An **event/phase MAY require a verified identity**; a **fallback** for non-card
-  fans uses Pocket Sign's **運転免許証 IC (Verify CardInfo)**, which MUST be
-  **substantively non-disadvantaging**. **Honest caveat:** the licence path proves
-  identity but yields **no equivalent stable per-person key** (weaker dedupe) — so
-  per event the organizer either allows it (flag/limit those accounts) or, for
-  the highest-demand shows, **requires JPKI** (no weaker fallback).
+  An **event/phase MAY require a verified identity**. **MVP is JPKI-only** — a
+  verification-required event admits only card-holders. A **運転免許証 IC fallback**
+  (Pocket Sign's separate **Verify CardInfo**) for non-card fans is **POST-MVP**
+  (deferred 2026-09-02): it proves identity but yields **no equivalent stable
+  per-person key** (weaker dedupe), so it does not advance the anti-scalp core and
+  is not worth the extra product integration for the MVP. The 任意/平等 fairness of a
+  JPKI-only requirement is a legal-review item. (Proto keeps the fallback enums for
+  forward-compat.)
 - **現況確認 for freshness.** Periodically re-check revocation / 基本4情報 change /
   expiry via Pocket Sign 現況確認 and prompt re-verification (not a hard lock).
 - **Privacy by design.** "Outside 番号法" ≠ light 個情法 footprint: specify 利用目的
@@ -45,10 +51,13 @@ vs ~300 on paper). Companion to
   only if a use case justifies it), honor JPKI 目的外利用禁止 (every check is logged/
   reported to J-LIS), and a **deletion** policy.
 
-Scope guardrails (MVP): JPKI via Pocket Sign as the high-assurance method; **lane,
-not mandatory**; 運転免許証 fallback (weaker dedupe, per-event choice); account-level,
-consumed by ④/⑤ as a "verified person + per-person limit" signal. **Not** a 犯収法
-obligor flow (ticketing is not a 特定事業者) — lightweight JPKI binding, not 取引時確認.
+Scope guardrails (MVP): **JPKI-only** via Pocket Sign (client path = **Stamp + the
+PocketSign app**) as the high-assurance method; **lane, not mandatory**; account-level,
+consumed by ④/⑤ as a "verified person + per-person limit" signal, storing **only
+`User.id`**. **POST-MVP:** the 運転免許証 (Verify CardInfo) fallback and verified-name
+(基本4情報 via 署名用証明書 + Consent) binding. **Not** a 犯収法 obligor flow (ticketing is
+not a 特定事業者) — lightweight JPKI binding, not 取引時確認; and **not required by
+チケット不正転売禁止法** (④'s self-declared 本人確認 satisfies the 特定興行入場券 requirement).
 
 ## Capabilities
 
