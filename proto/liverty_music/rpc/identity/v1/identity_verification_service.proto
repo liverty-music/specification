@@ -2,33 +2,40 @@ syntax = "proto3";
 
 // Package liverty_music.rpc.identity.v1 provides the fan-facing identity
 // verification surface (identity-ekyc). A fan verifies their real identity with
-// their マイナンバーカード 公的個人認証 (JPKI) — or the 運転免許証 IC fallback — via
-// Pocket Sign (PocketSign Verify): the backend issues a challenge (Nonce), the
-// Pocket Sign Verify SDK reads the card and signs it, and the backend validates
-// the signature through the Verify API. The raw certificate/response is deleted
-// promptly after that call; only the result (a VerifiedIdentity keyed on the
-// Pocket Sign User.id) is retained. The service also exposes the periodic
-// 現況確認 re-check and a status read for the client.
+// their マイナンバーカード 公的個人認証 (JPKI) via **PocketSign Stamp**: StartVerify opens
+// a Stamp session and returns a redirect URL; the fan reads and signs their card
+// in the **PocketSign app** (installed separately) — the platform never reads the
+// card itself — and is returned to the platform's callback, which calls
+// CompleteVerify to finalize the session. Stamp rides on PocketSign Verify, so
+// the result is a stable tenant-scoped person id (利用者ID via 当人認証) with NO
+// 基本4情報 requested (MVP). The raw certificate/response is validated vendor-side
+// and never persisted here; only the result (a VerifiedIdentity keyed on that
+// person id) is retained. The service also exposes the periodic 現況確認 re-check
+// and a status read for the client. (MVP is JPKI-only; the 運転免許証 fallback is
+// post-MVP.)
 package liverty_music.rpc.identity.v1;
 
 import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/user.proto";
 import "liverty_music/entity/v1/verified_identity.proto";
 
 // IdentityVerificationService is the authenticated fan's surface for binding
 // their account to a verified real person and reading that status. It is a
-// challenge–response flow: StartVerify issues a Nonce, the Pocket Sign Verify
-// SDK signs it against the card, and CompleteVerify validates the signed
-// response through the Verify API and, on success, upgrades the account to
-// IDENTITY_VERIFIED. Every RPC follows the rpc-auth-scoping convention: the
-// request carries an explicit user_id verified against the JWT-derived caller,
-// and mismatches are rejected with PERMISSION_DENIED.
+// redirect flow via PocketSign Stamp: StartVerify opens a Stamp session and
+// returns a redirect URL; the fan signs in the PocketSign app and is returned to
+// the platform's callback; CompleteVerify finalizes the session and, on success,
+// upgrades the account to IDENTITY_VERIFIED. Every RPC follows the
+// rpc-auth-scoping convention: the request carries an explicit user_id verified
+// against the JWT-derived caller, and mismatches are rejected with
+// PERMISSION_DENIED.
 service IdentityVerificationService {
-  // StartVerify opens a verification attempt and returns a challenge (Nonce) for
-  // the Pocket Sign Verify SDK to sign against the card. The chosen method
-  // (JPKI or the driver's-licence fallback) determines which credential the SDK
-  // reads and the resulting dedupe strength. The challenge is short-lived and is
-  // consumed by exactly one CompleteVerify call.
+  // StartVerify opens a verification attempt (a PocketSign Stamp session) and
+  // returns a **redirect URL** the client MUST open so the fan can read and sign
+  // their card in the PocketSign app. The chosen method selects the credential
+  // (MVP: JPKI 当人認証 → a stable 利用者ID, no 基本4情報). The session is short-lived
+  // and is finalized by exactly one CompleteVerify call. An anti-redirect nonce is
+  // bound to the caller's session server-side and validated at CompleteVerify.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: user_id is missing/malformed, or method is UNSPECIFIED
@@ -36,29 +43,29 @@ service IdentityVerificationService {
   // - PERMISSION_DENIED: The supplied user_id does not match the authenticated
   //   caller.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  // - UNAVAILABLE: The Pocket Sign Verify service is not reachable.
+  // - UNAVAILABLE: The PocketSign service is not reachable.
   rpc StartVerify(StartVerifyRequest) returns (StartVerifyResponse);
 
-  // CompleteVerify submits the SDK-signed response for validation via the Pocket
-  // Sign Verify API. On success the backend records a VerifiedIdentity (keyed on
-  // the returned Pocket Sign User.id), sets the account's verification_level to
-  // IDENTITY_VERIFIED, and deletes the raw certificate/response immediately. On
-  // failure or abandonment the account stays UNVERIFIED. If the returned
-  // User.id already backs another active verified account, the call is rejected
-  // (one person maps to one verified account) with a recovery path.
+  // CompleteVerify finalizes the Stamp session identified by session_id (received
+  // on the PocketSign callback). On success the backend records a VerifiedIdentity
+  // (keyed on the returned 利用者ID / person id), sets the account's
+  // verification_level to IDENTITY_VERIFIED, and retains only the result (raw
+  // certificate/response validated vendor-side, never persisted here). On failure
+  // or abandonment the account stays UNVERIFIED. If the returned person id already
+  // backs another active verified account, the call is rejected (one person maps
+  // to one verified account) with a recovery path. The server also validates the
+  // anti-redirect nonce bound at StartVerify.
   //
   // Possible errors:
-  // - INVALID_ARGUMENT: user_id/session_id/signed_response is missing or
-  //   malformed.
+  // - INVALID_ARGUMENT: user_id or session_id is missing or malformed.
   // - PERMISSION_DENIED: The supplied user_id does not match the authenticated
-  //   caller.
-  // - FAILED_PRECONDITION: The signed response failed Verify API validation
-  //   (invalid/revoked certificate), or the session expired.
-  // - ALREADY_EXISTS: The verified person (Pocket Sign User.id) already has an
-  //   active IDENTITY_VERIFIED account; use account recovery instead of creating
-  //   a second identity.
+  //   caller, or the session's anti-redirect nonce does not match the caller's.
+  // - FAILED_PRECONDITION: The session is not yet completed, expired, or its
+  //   verification result was not OK (e.g. signature mismatch / revoked / expired).
+  // - ALREADY_EXISTS: The verified person already has an active IDENTITY_VERIFIED
+  //   account; use account recovery instead of creating a second identity.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  // - UNAVAILABLE: The Pocket Sign Verify service is not reachable.
+  // - UNAVAILABLE: The PocketSign service is not reachable.
   rpc CompleteVerify(CompleteVerifyRequest) returns (CompleteVerifyResponse);
 
   // ReCheck runs a 現況確認 (liveness) check for the caller's verified identity to
@@ -107,19 +114,19 @@ message StartVerifyRequest {
 // StartVerifyResponse carries the challenge the Pocket Sign Verify SDK signs
 // against the card.
 message StartVerifyResponse {
-  // An opaque handle correlating this attempt with the eventual CompleteVerify
-  // call. Short-lived; consumed by exactly one CompleteVerify.
+  // An opaque handle for this verification attempt, correlating it with the
+  // eventual CompleteVerify call. Short-lived; consumed by exactly one
+  // CompleteVerify. (Backed by a PocketSign Stamp session.)
   string session_id = 1 [(buf.validate.field).string = {
     min_len: 1
     max_len: 255
   }];
 
-  // The challenge (Nonce) the SDK signs against the card. Opaque to the client;
-  // passed to the SDK verbatim. Bounded to a small nonce payload.
-  bytes challenge = 2 [(buf.validate.field).bytes = {
-    min_len: 1
-    max_len: 4096
-  }];
+  // The URL the client MUST open so the fan can read and sign their card in the
+  // PocketSign app. On completion the app returns the fan to the platform's
+  // callback with this attempt's session id; the client then calls
+  // CompleteVerify. The client does NOT read the card itself.
+  entity.v1.Url redirect_url = 2 [(buf.validate.field).required = true];
 }
 
 // CompleteVerifyRequest submits the SDK-signed response for validation.
@@ -128,21 +135,23 @@ message CompleteVerifyRequest {
   // authenticated session; mismatches are rejected with PERMISSION_DENIED.
   entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
 
-  // The opaque handle returned by StartVerify identifying the challenge this
-  // response answers.
+  // The opaque handle returned by StartVerify (the session id the platform
+  // received on the PocketSign callback). The backend finalizes this session
+  // with Pocket Sign to obtain the verified result; the raw certificate/
+  // response is validated vendor-side and never persisted here. The card
+  // signature happens in the PocketSign app, so no signed payload is sent on
+  // this request.
   string session_id = 2 [(buf.validate.field).string = {
     min_len: 1
     max_len: 255
   }];
 
-  // The SDK-produced signed response (certificate + signature over the
-  // challenge). Validated through the Pocket Sign Verify API, then deleted
-  // immediately — never persisted. Bounded to accommodate a certificate chain
-  // plus signature.
-  bytes signed_response = 3 [(buf.validate.field).bytes = {
-    min_len: 1
-    max_len: 65536
-  }];
+  // Field 3 was `bytes signed_response` (the SDK-signed payload in the old
+  // embedded-SDK challenge–response flow), removed when the flow moved to the
+  // PocketSign Stamp redirect model (the app signs; the backend finalizes by
+  // session_id). Reserved to prevent reuse.
+  reserved 3;
+  reserved "signed_response";
 }
 
 // CompleteVerifyResponse returns the established verification.
