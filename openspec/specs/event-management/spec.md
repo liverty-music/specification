@@ -57,7 +57,7 @@ The system SHALL support extending the base `Event` entity with domain-specific 
 
 The system SHALL support a `Series` entity that aggregates one or more `Event` rows representing a tour, a multi-day single-venue run, or a festival. Each `Event` SHALL belong to exactly one `Series`. A `Series` SHALL own the metadata that is common across all its events.
 
-The `Series` entity SHALL include: `SeriesId`, `Title`, `SeriesType`, an optional `source_url`, and — for organizer-authored series — an optional `description`, an optional `cover_image`, a `visibility`, a `publish_state`, and an `organizer_id`. `source_url` and `cover_image` are of type `Url` and follow these optionality semantics: a nil wrapper is valid and skips inner-`Url` validation, while a present wrapper SHALL satisfy the `Url` value-object constraints. `description` is a `Description` value object with protovalidate length bounds. `organizer_id` is non-null exactly when the series is organizer-authored (first-party); a null `organizer_id` denotes a discovery-created series. The `SeriesType` enum SHALL declare:
+The `Series` entity SHALL include: `SeriesId`, `Title`, `SeriesType`, an optional `source_url`, and — for organizer-authored series — an optional `description`, an optional `media`, a `visibility`, a `publish_state`, and an `organizer_id`. `source_url` is of type `Url`; `media` is of type `Media` (series.proto field 7, renamed and retyped from the former `cover_image`/`Url` by the organizer-media-pipeline change — the responsive CDN variant URLs now live inside `Media.attributes`, and `cover_image` is reserved). Both `source_url` and `media` follow nil-wrapper optionality: a nil wrapper is valid and skips inner value-object validation, while a present wrapper SHALL satisfy its value-object constraints. `description` is a `Description` value object with protovalidate length bounds. `organizer_id` is non-null exactly when the series is organizer-authored (first-party); a null `organizer_id` denotes a discovery-created series. The `SeriesType` enum SHALL declare:
 
 - `SERIES_TYPE_UNSPECIFIED = 0` — the proto3-mandated zero-value sentinel; rejected at the proto boundary by `(buf.validate.field).enum.not_in = [0]` so it can never be persisted.
 - `SERIES_TYPE_TOUR = 1` — a series of events at multiple venues by the same set of performers, typically branded with a tour name.
@@ -97,7 +97,7 @@ A `Series` SHALL have no content-derived database key and no database-level uniq
 #### Scenario: Organizer-authored series carry authoring metadata and lifecycle
 
 - **WHEN** an organizer authors a first-party series
-- **THEN** the `Series` SHALL carry a non-null `organizer_id`, its `visibility`, its `publish_state`, and any `description` / `cover_image`
+- **THEN** the `Series` SHALL carry a non-null `organizer_id`, its `visibility`, its `publish_state`, and any `description` / `media`
 - **AND** the series SHALL surface to fans only while `PUBLISHED` + `PUBLIC`
 
 ### Requirement: Multiple Performers per Event

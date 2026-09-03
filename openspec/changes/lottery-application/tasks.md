@@ -55,6 +55,7 @@
 
 - [x] 5.1 Configure a lottery phase on a published event (window: **default 10 days, range 1–14 days**; ticket capacity; max-per-application) — `organizer/lottery-phase-editor/*` + `services/lottery-phase-client.ts`, org-scoped transport, validation; entry-point deep-link deferred (dashboard exposes no event ids yet)
 - [x] 5.2 View phase status / draw outcome summary — `organizer/lottery-status/*`, window state + draw-completed + pre/post-draw tallies, tested
+- [ ] 5.3 **Organizer console navigation entry point to lottery configuration** — surface a "Configure lottery" action on each of the Organizer's **PUBLISHED** events in the console (concert/event listing) that deep-links to `lottery/configure/:eventId` carrying the eventId automatically; absent/disabled for DRAFT events. Closes the deferred entry-point gap from 5.1 (the route was reachable only by direct URL / knowing the eventId). Frontend-only (organizer console); no proto/backend change (the org-scoped ListArtists/console data already yields the organizer's events — wire the eventId into the action).
 
 ## 6. Compliance / anti-scalp
 
