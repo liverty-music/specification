@@ -80,9 +80,12 @@ not a 特定事業者) — lightweight JPKI binding, not 取引時確認; and **
 ## Impact
 
 - **Depends on:** `identity-management` (the Zitadel account) + **Pocket Sign
-  (PocketSign Verify)** — 加盟契約, Verify SDK/API, ¥300k init + per-verify fees,
-  ~2-3mo integration; free sandbox for PoC. Counsel review of the Pocket Sign
-  利用規約 + data flow.
+  (PocketSign Stamp on Verify)**. The **MVP ships on the free sandbox (mock env)
+  in every environment, including prod** — no upfront cost. The **加盟契約 (¥300k
+  init + per-verify fees, ~2-3mo integration) is POST-MVP**, needed only to flip
+  to the production 認定PF endpoint after the MVP is proven (see design.md "MVP
+  scope & corrections"). Counsel review of the Pocket Sign 利用規約 + data flow
+  (task 0.2) still precedes handling real cards.
 - **Feeds:** ④ `lottery-application` (per-verified-person limit), ⑤
   `ticket-purchase-and-issuance` (verification level + covered-ticket identity),
   and the tiered anti-scalp model. Complements ⑥'s per-scan controls, ⑦ resale.
