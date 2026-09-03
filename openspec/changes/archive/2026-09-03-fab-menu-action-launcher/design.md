@@ -88,11 +88,14 @@ inline in the panel and reflects `isOn()` via `aria-pressed`.
 ### D4 — Top-layer Popover + CSS shape-morph + spring (no JS animation)
 Panel is `popover="auto"` (top layer, native light-dismiss + Esc). Entry/exit use
 `@starting-style` + `transition-behavior: allow-discrete` + `overlay` in the
-transition list. Morph = animate `border-radius` + `scale` with
-`transform-origin` at the FAB corner (M3 says border-radius morph covers this;
-`clip-path` not needed). `+`→`×` is a `rotate`. New spring tokens
-(spatial/effects families) added to `tokens.css`; **spatial** springs (bouncy) for
-transform/scale/radius, **effects** (non-bouncy) for opacity/color.
+transition list. The panel grows from the FAB corner via `scale` +
+`transform-origin`; the `+`→`×` glyph is a `rotate`. Per the official M3 menu
+(`md-menu`), the **corner shape is FIXED and never animated** — only size (scale)
+and opacity animate (plus the staggered items). An earlier build animated
+`border-radius` from the round FAB (9999px) to the panel radius, which read as an
+unnatural blobby morph and was removed. New spring tokens (spatial/effects
+families) added to `tokens.css`; **spatial** springs (bouncy) for transform/scale,
+**effects** (non-bouncy) for opacity/color.
 - **Why**: Matches the app's established top-layer convention and needs no
   animation library. `linear()` and `cubic-bezier` springs are Baseline; `overlay`
   degrades to an instant swap on Firefox/Safari (acceptable). Alternative:
@@ -107,15 +110,15 @@ transform/scale/radius, **effects** (non-bouncy) for opacity/color.
   - `--md-spring-effects: cubic-bezier(0.34,0.80,0.34,1.00)` @ **200ms** — opacity
     and color (non-bouncy; a bouncing opacity looks broken).
   - **Assignment rule**: spatial (bouncy) for anything that moves/resizes
-    (transform, scale, `border-radius`); effects (no overshoot) for opacity/color.
-    Mixing them is the most common spring mistake.
+    (transform, scale); effects (no overshoot) for opacity/color. Mixing them is
+    the most common spring mistake. (Corner shape is not animated — see above.)
 - **Item entrance stagger** (requirement §5.1 "delightful transitions"): items rise
   in sequence, not all at once — per-item delay via `sibling-index()` (fallback
   `:nth-child` steps), ~30–50ms apart, on the effects curve. Closing reverses with
   a shorter stagger.
-- **Shape scale** (morph endpoints, from the M3 shape scale): FAB closed =
-  `--radius-full` (56px circle); expanded panel = `--radius-card` (≈`corner-large`,
-  1rem). Animate `border-radius` between these two on the spatial curve.
+- **Shape scale** (from the M3 shape scale): FAB = `--radius-full` (56px circle);
+  panel = `--radius-card` (≈`corner-large`, 1rem), applied as a FIXED corner (not
+  animated — the panel simply scales up from the FAB corner at that radius).
 - **Backdrop / contrast** (requirement §3.1 "strong contrast"): the panel takes
   `--md-color-menu-surface` (a raised surface tier) over an animated `::backdrop`
   scrim (`--md-color-scrim` at low alpha), transitioned with `display`/`overlay`
