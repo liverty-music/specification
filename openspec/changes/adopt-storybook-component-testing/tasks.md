@@ -33,14 +33,14 @@
 ## 5. Component-level visual regression (Vitest toMatchScreenshot)
 
 - [ ] 5.1 Add `toMatchScreenshot()` assertions for the design-system subset within the `storybook` browser project; set an initial pixel tolerance (OQ2)
-- [ ] 5.2 Establish committed/artifact baselines with a first-run generation path (spec: "First run establishes baselines")
-- [ ] 5.3 Confirm an intentional visual change is adoptable by updating the baseline and an unintended one fails with a diff artifact (spec: "Visual drift fails the run")
+- [ ] 5.2 Commit baselines to git next to the stories (the `toMatchScreenshot` default) with a first-run generation path; do NOT store baselines as a CI artifact, so baseline changes are reviewable in the PR diff and never expire (design D4 / spec: "First run establishes baselines")
+- [ ] 5.3 Confirm an intentional visual change is adoptable by regenerating and committing the baseline, and an unintended one fails with a diff image uploaded as a failure artifact (spec: "Visual drift fails the run")
 
 ## 6. CI integration
 
 - [ ] 6.1 Add a `storybook-test` job to `.github/workflows/ci.yaml` reusing the cached Playwright Chromium (`playwright-chromium-*` key); run `vitest --project=storybook`
-- [ ] 6.2 Wire the visual baseline download/upload + diff-on-failure artifact steps for the component visual run (mirror the existing `visual` job pattern)
-- [ ] 6.3 Extend `changes` `paths-filter` with `.storybook/**`, `**/*.stories.*`; add `storybook-test` (+ `storybook-test-skip`) to the `ci-success` `needs`/`allowed-skips` (spec: "Component tests are skipped when no relevant files change" / "CI gate blocks on component-test failure")
+- [ ] 6.2 In the `storybook-test` job, run committed-baseline comparison (no artifact download/upload); on failure upload only the diff image as a failure artifact for inspection (design D4)
+- [ ] 6.3 Extend `changes` `paths-filter` for the `storybook-test` job to cover every file category that can change a component's rendered output — `src/components/**`, `**/*.stories.*`, `.storybook/**`, and the test config (`vitest.config.ts`, `.storybook/vitest.setup.ts`) — so a component `.ts`/`.html`/`.css` edit without a story change still triggers the job; add `storybook-test` (+ `storybook-test-skip`) to the `ci-success` `needs`/`allowed-skips` (spec: "Component tests are skipped when no relevant files change" / "CI gate blocks on component-test failure")
 - [ ] 6.4 Verify a deliberately failing story (render, interaction, a11y, or visual) turns the `ci-success` gate red
 
 ## 7. Retire the duplicate visual pipeline
