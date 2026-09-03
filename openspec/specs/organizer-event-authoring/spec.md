@@ -131,6 +131,43 @@ organizer may publish.
   concert
 - **THEN** the system SHALL reject it with a permission-denied error
 
+### Requirement: Publish enforces the complete required-field set
+
+Publish SHALL be the **final server-side gate** on a concert going live: the
+system SHALL validate the complete required-field set at publish time and
+reject an incomplete concert regardless of how the draft reached its current
+state (author, edit, or partial data). Creation validates a subset for an
+early-feedback draft, but a draft MAY still be missing later-required data;
+publish SHALL re-validate the whole set so no `PUBLISHED` concert is ever
+surfaced with a missing required field. The required set is:
+
+- a non-empty **title**;
+- **at least one performing artist**;
+- **at least one event**, and **every** event SHALL have a **non-empty venue**
+  and a **valid local date**.
+
+`description` and `media` remain **optional** and SHALL NOT block publish. On a
+failed check the concert SHALL remain `DRAFT` (the state is unchanged, no
+`CONCERT.created` is emitted) and the system SHALL reject the request with a
+failed-precondition error naming the missing requirement. This gate is
+independent of ownership and slot-conflict checks (those still apply).
+
+#### Scenario: Publish rejects a concert missing a required field
+
+- **WHEN** the owning organizer publishes a `DRAFT` concert that has no
+  performing artist, or an event with no venue, or is otherwise missing a
+  required field
+- **THEN** the system SHALL reject the publish with a failed-precondition error
+  naming the missing requirement, the concert SHALL remain `DRAFT`, and no
+  `CONCERT.created` SHALL be emitted
+
+#### Scenario: Publish succeeds when the required set is complete
+
+- **WHEN** the owning organizer publishes a `DRAFT` concert with a title, at
+  least one performer, and at least one event that has a venue and a valid date
+- **THEN** the system SHALL publish it (subject to the ownership and
+  slot-conflict rules), even when `description` and `media` are absent
+
 ### Requirement: First-party publish supersedes scraped data without harm
 
 Organizer-authored events insert under the organizer's own `series_id`
