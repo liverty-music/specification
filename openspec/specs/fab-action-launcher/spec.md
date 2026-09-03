@@ -115,20 +115,22 @@ is active at a time.
 - **AND** the item SHALL reflect the new state (pressed/selected) to assistive technology
 - **AND** the panel SHALL remain open
 
-### Requirement: Material 3 Expressive shape morph and spring motion
+### Requirement: Material 3 Expressive expansion and spring motion
 
 Opening and closing the launcher SHALL use physics-based (spring) motion rather than
-a fixed linear ease, with the FAB shape morphing between a rounded button and the
-rounded-rectangle panel and the glyph rotating between the open and close states.
-Action items SHALL enter in a brief staggered sequence. All motion SHALL respect the
-`prefers-reduced-motion: reduce` user preference by landing the same end state
-without overshoot or staggered movement. The expanded panel SHALL maintain strong
-contrast against its items and against the dimmed page behind it.
+a fixed linear ease: the panel SHALL expand (scale up) from the FAB corner with a
+springy, slightly overshooting motion while its opacity fades in, and the glyph
+SHALL rotate between the open and close states. Per the official Material 3 menu,
+the panel's corner shape is FIXED and SHALL NOT be animated (no border-radius
+morph). Action items SHALL enter in a brief staggered sequence. All motion SHALL
+respect the `prefers-reduced-motion: reduce` user preference by landing the same
+end state without overshoot or staggered movement. The expanded panel SHALL
+maintain strong contrast against its items and against the dimmed page behind it.
 
-#### Scenario: Expansion uses spring motion with shape morph
+#### Scenario: Expansion uses spring motion
 
 - **WHEN** the user opens the launcher
-- **THEN** the FAB SHALL morph toward the panel shape with a springy (overshooting) motion
+- **THEN** the panel SHALL expand from the FAB with a springy (overshooting) scale-and-fade motion, its corner shape remaining fixed (no border-radius morph)
 - **AND** the glyph SHALL rotate from the open glyph to the close affordance
 - **AND** the action items SHALL enter in a short staggered sequence
 
