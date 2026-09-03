@@ -87,4 +87,5 @@ The existing unit test suite and the browser-mode component/story test suite SHA
 
 #### Scenario: Unit coverage thresholds are preserved
 - **WHEN** the unit suite runs after the test-runner upgrade
-- **THEN** coverage SHALL continue to be enforced at the previously configured thresholds
+- **THEN** coverage SHALL continue to be enforced with statements/functions/lines thresholds unchanged
+- **AND** the branch threshold MAY be recalibrated to the new runner's branch-counting basis where the runner changes how branches are measured (Vitest 4 AST-aware remapping), so long as enforcement is not removed (see design D8)
