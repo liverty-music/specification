@@ -59,6 +59,18 @@ win**.
   (entry 本人確認 is largely 努力義務). Retrieving 基本4情報 via the JPKI **署名用証明書 +
   PocketSign ConsentService** to bind a *verified* name is a stronger post-MVP
   enhancement; its exact legal sufficiency is a task 0.2 item.
+- **MVP runs against the Pocket Sign SANDBOX (mock env) in EVERY environment,
+  including prod; the paid 加盟契約 is POST-MVP.** The MVP is exercised end-to-end
+  on the live prod deployment by pointing prod `fan-api` at the mock host
+  `verify.mock.p8n.app` with the sandbox Bearer token + tenant — no commercial
+  contract required. Flipping to the production 認定PF endpoint `verify.p8n.app`
+  (which requires the ¥300k 加盟契約, task 0.1) is a **single config change**
+  deferred until the MVP is proven. Consequence: prod E2E validates the
+  **integration and flow** (CreateSession → PocketSign app → callback →
+  FinalizeSession → dedupe), NOT a genuine 公的個人認証 — mock cards are used, so
+  real-card assurance and the renewal-stable `User.id` confirmation (spike S1)
+  wait for the sandbox→prod-tenant cutover. The `PocketSignConfig.Validate` host
+  allowlist already admits any `*.p8n.app` host, so mock-in-prod passes validation.
 
 ## Decisions
 
