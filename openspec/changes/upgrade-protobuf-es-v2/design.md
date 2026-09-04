@@ -6,7 +6,7 @@ Current relevant state (frontend repo):
 - `@bufbuild/protobuf@^1.10.1`, `@connectrpc/connect@^1.7`, `@connectrpc/connect-web@^1.7`, `@buf/*_es` v1 BSR builds.
 - Generated `@buf/*` types are imported by 12 files: 10 inside `adapter/rpc/{client,mapper}` (intended boundary) and 2 outside it (`services/ticket-email-service.ts`, `routes/import-ticket-email/import-ticket-email-route.ts`) — a layering violation.
 - No app code calls `toBinary`/`fromBinary`/`toJson`/`fromJson` directly (0 sites); (de)serialization happens inside the Connect-Web transport.
-- Mixed Connect client-factory usage already exists: 4 files use v1's `createPromiseClient`, 10 use `createClient`.
+- Mixed Connect client-factory usage already exists: 2 files use v1's `createPromiseClient` (`artist-client`, `follow-client`), 5 use `createClient` (`concert-client`, `push-client`, `ticket-journey-client`, `user-client`, `services/ticket-email-service`) — 7 client-factory files total, a subset of the 12 `@buf/*`-importing files.
 - BSR publishes v2.14.x `bufbuild_es` builds of our schema, keyed per commit; upstream `@connectrpc/connect{,-web}` is at v2.
 
 ## Goals / Non-Goals
@@ -19,7 +19,7 @@ Current relevant state (frontend repo):
 **Non-Goals:**
 - No backend change (Go uses a different protobuf implementation).
 - No `.proto` schema change; wire format and RPC contracts are untouched.
-- Not chasing the binary-path speedups — Connect-Web uses JSON transport in the browser, so those do not apply.
+- Not committing to binary transport in this change — JSON stays the default; whether to enable `useBinaryFormat` (which is where the binary-path speedups would apply) is measured and decided separately (see D5), not assumed.
 - No integer-type (`int64`→`bigint`) redesign; that is a separate consideration.
 
 ## Decisions
@@ -58,7 +58,7 @@ Field access on messages is largely unchanged; the churn is construction (`new X
 
 ### D4 — BSR pin strategy on v2
 
-Repin both `@buf/*_es` packages to the v2 build at the current schema commit, and update `.npmrc`/docs so future bumps stay on the v2 major (v2 becomes the default expectation; `@latest` no longer conflicts once the app is `@bufbuild/protobuf@^2`). Record the exact v2 pin strings in the change so the upgrade is reproducible.
+Repin `@buf/*bufbuild_es` to the v2 build at the current schema commit, and **drop** `@buf/*connectrpc_es`: Connect-ES v2 removes the separate connect codegen (see D3), so service definitions come from the `bufbuild_es` `*_pb.js` output and there is no v2 `connectrpc_es` build to pin to. Keeping the v1 `connectrpc_es` pin would drag in its `@connectrpc/connect@^1` peer and reintroduce the exact ERESOLVE conflict this migration removes. Update `.npmrc`/docs so future bumps stay on the v2 major (v2 becomes the default expectation; `@latest` no longer conflicts once the app is `@bufbuild/protobuf@^2`). Record the exact v2 pin string in the change so the upgrade is reproducible.
 
 ### D5 — Evaluate switching the browser transport to binary format (measure, then decide)
 
