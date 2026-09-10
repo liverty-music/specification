@@ -155,7 +155,7 @@ is deliberately skipped.
 ## Risks / Trade-offs
 
 - **Connect-ES v2 restructures service definitions** (connect codegen folded into `protoc-gen-es` v2) → import paths for services change and may not be a pure find-replace. Mitigation: migrate one client end-to-end first (e.g. ticket-journey), confirm it compiles and the RPC round-trips, then apply the pattern to the rest.
-- **Perceived payoff may be modest** — browser JSON transport means the visible win is JSON (de)serialize + ~5% bundle, not binary 2–5×. Mitigation: frame success as "current + de-risked + bundle", and optionally capture a before/after bundle-size and INP number to confirm.
+- **Perceived payoff may be modest** — browser JSON transport means the visible win is JSON (de)serialize, not binary 2–5×. **Measured outcome:** the hoped-for ~5% bundle reduction did not materialize (v1 136.24 → v2 139.78 KB gzip `main`, ~+2.6%; see task 4.4), so the payoff is de-risking future schema bumps (no v1-pin dance) + ~2.2× faster decode (D5), not bundle size.
 - **Vite `date-impl` alias / build integration** could interact with the dependency bump. Mitigation: run the full Vite build + existing build-template/smoke checks in Phase 2.
 - **Enum representation drift** between v1 and v2 could silently change mapper output. Mitigation: mapper unit tests assert entity output for representative fixtures before and after.
 - **Regression surfaces as (de)serialization failure**, not a compile error, if a construction site is missed. Mitigation: E2E/Visual across all RPC paths must be green before merge.

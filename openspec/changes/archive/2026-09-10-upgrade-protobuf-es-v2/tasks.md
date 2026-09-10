@@ -36,7 +36,7 @@
 - [x] 4.1 Full Vite build green, including the `date-impl` alias and build-template/smoke checks
 - [x] 4.2 Unit tests green; mapper tests from 1.6 still assert identical entity output (no enum/representation drift)
 - [x] 4.3 E2E/Visual green across all RPC paths (artist, concert, follow, push, user, ticket-journey, ticket-email) — full CI (E2E/Smoke/Storybook-visual/review) green on the Phase 2 PR before merge
-- [ ] 4.4 Record before/after gzipped bundle size (and optionally an INP sample) to confirm the ~5% reduction — v2 build (fan-web `main`) is **139 KB gzip**; capture the pre-merge v1 `main` gzip from CI to compute the delta
+- [x] 4.4 Record before/after gzipped bundle size — measured `main` chunk: **v1 136.24 KB gzip → v2 139.78 KB gzip** (+3.5 KB, ~+2.6%). The proposal's hoped-for ~5% *reduction* **did not materialize** — protobuf-es v2 + connect-web v2 are not smaller for this app's usage; the bundle is roughly flat-to-slightly-larger. (Approximate: intervening `main` commits between the two builds mean it is not a perfectly isolated diff, but it clearly refutes a 5% drop.) The change's real payoff is de-risking future schema bumps (no v1-pin dance) + faster decode, not bundle size — see design D5 / Risks.
 - [x] 4.5 Open Phase 2 PR; merge once CI + E2E/Visual are green — frontend Phase 2 PR merged (green CI); spec design/tasks updated via the paired specification PR
 
 ## 5. Phase 2 (optional) — Binary transport evaluation (D5)
@@ -48,5 +48,5 @@
 
 ## 6. Close-out
 
-- [ ] 6.1 Sync any doc updates (BSR pin workflow) and confirm no `@buf/*` leaks reintroduced
-- [ ] 6.2 Verify implementation matches the design, then archive the change
+- [x] 6.1 Sync any doc updates (BSR pin workflow) and confirm no `@buf/*` leaks reintroduced — frontend `AGENTS.md`/`CLAUDE.md` updated to v2 conventions (shipped in the Phase 2 PR); `src/` `@buf/*` imports remain confined to `adapter/rpc/{client,mapper}`; no stray `connectrpc_es` / `createPromiseClient` / `.toDate()` anywhere
+- [x] 6.2 Verify implementation matches the design, then archive the change — verified via verify-before-archive gate (validate --strict, tasks complete, deltas match, shipping evidence: frontend #594 + spec #923/#924 merged green)
