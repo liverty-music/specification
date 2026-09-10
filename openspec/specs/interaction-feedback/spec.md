@@ -1,12 +1,11 @@
-## Purpose
+# interaction-feedback Specification
 
+## Purpose
 Defines the app's interaction-feedback contract: every interaction acknowledges immediately, communicates
 in-progress state, and confirms its outcome, using shared feedback primitives (ripple, press-morph, skeleton,
 haptic, list transitions, selection morph) applied consistently across all primary screens rather than
 siloed in discovery.
-
-## ADDED Requirements
-
+## Requirements
 ### Requirement: Immediate tactile acknowledgement on press
 
 Tappable controls (buttons and interactive cards) across the app SHALL acknowledge a press within the short
@@ -91,19 +90,27 @@ DOM instantly, using discrete-transition primitives with a reduced-motion fallba
 
 ### Requirement: Animated selection state
 
-Selection controls (bottom-nav tabs, filter chips) SHALL animate the transition into the selected state with
-a spatial spring — including a shape morph where the selected element becomes rounder — driven by a real
-selection attribute, not hover, with a reduced-motion fallback.
+Selection controls (bottom-nav tabs, filter chips) SHALL animate into the selected state driven by a real
+selection attribute (not hover), with a reduced-motion fallback. A shape morph SHALL be used only where it
+reads as intentional: the bottom-nav tab morphs rounder with a spatial spring. Pill-shaped filter chips SHALL
+NOT shape-morph — their corner roundness already saturates, so a radius tween is visually inert/janky;
+instead a chip signals selection with color + a persistent selected state layer.
 
 #### Scenario: Selecting a nav tab springs into state
 
-- **WHEN** a user selects a navigation tab or filter chip
-- **THEN** the selected element animates into its selected treatment (color plus a spring shape morph) rather
-  than switching statically
+- **WHEN** a user selects a navigation tab
+- **THEN** the selected tab animates into its selected treatment — color plus a spatial-spring shape morph
+  (rounder) — rather than switching statically
+
+#### Scenario: Selecting a filter chip is clearly signalled without a shape morph
+
+- **WHEN** a user selects a filter chip
+- **THEN** the chip takes its selected treatment via color + a persistent selected state layer (the pill shape
+  is unchanged), avoiding an inert radius tween
 
 #### Scenario: Selection is driven by state, not hover
 
-- **WHEN** the selection morph is evaluated
+- **WHEN** the selected treatment is evaluated
 - **THEN** it reflects the actual selected/`aria`-state attribute and does not trigger on hover alone
 
 ### Requirement: Expression budget and accessibility guarantees
@@ -123,3 +130,4 @@ high-contrast/forced-colors survivability.
 - **WHEN** a feedback primitive is applied to a control
 - **THEN** text labels remain, contrast targets hold, the touch target stays ≥ 44–48px, and the control
   remains operable under `forced-colors: active`
+
