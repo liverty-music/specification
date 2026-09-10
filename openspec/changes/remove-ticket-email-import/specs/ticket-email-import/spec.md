@@ -21,7 +21,7 @@ The system SHALL define a `TicketEmail` entity representing a parsed ticket-rela
 
 ### Requirement: TicketEmail ID
 **Reason**: Retired together with the `TicketEmail` entity.
-**Migration**: None. The vacated proto message and its field numbers are reserved.
+**Migration**: None. The `TicketEmailId` proto message is deleted along with its file; no `reserved` applies (whole-file deletion).
 
 The system SHALL define a `TicketEmailId` wrapper message with UUID string validation, following the existing type-safe ID pattern.
 
@@ -33,7 +33,7 @@ The system SHALL define a `TicketEmailId` wrapper message with UUID string valid
 
 ### Requirement: Create Ticket Email
 **Reason**: The `CreateTicketEmail` RPC has no reachable entry point after the share-target ingestion path was removed, and the Gemini parser is intentionally unwired.
-**Migration**: None. The `TicketEmailService` RPC is removed and its numbers reserved for breaking-change review.
+**Migration**: None. The `TicketEmailService` RPC is removed by deleting its `.proto` file, gated by the `buf skip breaking` label for breaking-change review.
 
 The system SHALL allow an authenticated user to create a ticket email record by submitting email text for parsing. The system persists the raw email, invokes Gemini Flash to parse it, and stores the structured result.
 

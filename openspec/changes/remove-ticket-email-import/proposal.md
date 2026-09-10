@@ -4,7 +4,7 @@ The ticket-email-import feature depended on the Android Gmail app's "share" acti
 
 ## What Changes
 
-- **BREAKING** Remove the `TicketEmailService` RPC (`CreateTicketEmail`, `UpdateTicketEmail`) and the `TicketEmail` / `TicketEmailId` / `TicketEmailType` proto definitions. Reserve the vacated field/enum numbers and push through Buf breaking-change review.
+- **BREAKING** Remove the `TicketEmailService` RPC (`CreateTicketEmail`, `UpdateTicketEmail`) and the `TicketEmail` / `TicketEmailId` / `TicketEmailType` proto definitions by deleting their `.proto` files, and push through Buf breaking-change review with the `buf skip breaking` label.
 - Remove the frontend import wizard route, its RPC client service, DI registration, route registration, build-template marker, and tests. Remove the disabled Service Worker share-target comment block.
 - Remove the backend `TicketEmail` entity, parser interface, use case, RPC handler, mapper, repository, and the Gemini `EmailParser` infrastructure (ticket-email only).
 - Remove the `ticket.email.parsed` analytics event: the NATS subject, published payload, catalogue entry, and the analytics consumer handler/registration.
@@ -27,7 +27,7 @@ _None._
 
 ## Impact
 
-- **Proto / BSR**: `entity/v1/ticket_email.proto`, `rpc/ticket_email/v1/ticket_email_service.proto` deleted. Breaking change → requires the `buf skip breaking` label and reserved numbers. The `@buf` generated code the frontend client imports disappears in lockstep.
+- **Proto / BSR**: `entity/v1/ticket_email.proto`, `rpc/ticket_email/v1/ticket_email_service.proto` deleted. Breaking change → requires the `buf skip breaking` label. (No number reservation: the whole files are deleted, so there is no surviving `message`/`enum` in which to write `reserved`.) The `@buf` generated code the frontend client imports disappears in lockstep.
 - **Backend**: `entity/ticket_email.go`, `entity/ticket_email_parser.go`, `usecase/ticket_email_uc.go`, `adapter/rpc/ticket_email_handler.go`, `adapter/rpc/mapper/ticket_email.go`, `infrastructure/database/rdb/ticket_email_repo.go`, `infrastructure/gcp/gemini/email_parser.go`, `entity/mocks/mock_TicketEmailRepository.go` deleted. Surgical edits to `di/provider.go`, `di/consumer.go`, `entity/event_data.go`, `usecase/analytics_events.go`, `adapter/event/analytics_consumer.go`.
 - **Frontend (fan-web)**: `routes/import-ticket-email/`, `services/ticket-email-service.ts`, and route tests deleted. Edits to `app-shell.ts`, `main.ts`, `scripts/verify-build-templates.lib.ts`, `test/app-shell.spec.ts`, `sw.ts`.
 - **Database**: `DROP TABLE ticket_emails` (no inbound FK references; applied via ArgoCD main-tracking as a follow-up release). `ticket_journeys` retained.

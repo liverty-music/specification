@@ -27,9 +27,10 @@
 
 ## 4. Database
 
-- [ ] 4.1 Add an Atlas migration `DROP TABLE ticket_emails` (and its index), sorted after all applied migrations so `atlas.sum` stays consistent
-- [ ] 4.2 Remove the `ticket_emails` table, comments, and `idx_ticket_emails_user_event` from `schema/schema.sql`
-- [ ] 4.3 Run the local migrate check (`make check`; if it fails on a stale DB, `docker compose down -v` first)
+- [ ] 4.1 Add a new Atlas migration `DROP TABLE ticket_emails` (and its index) as a file that sorts after all applied migrations (do NOT edit historical migrations; the migration-rebase-guard enforces this)
+- [ ] 4.2 Register the new migration file in `k8s/atlas/base/kustomization.yaml` and run `atlas migrate hash` to regenerate `atlas.sum`
+- [ ] 4.3 Remove the `ticket_emails` table, comments, and `idx_ticket_emails_user_event` from `schema/schema.sql`
+- [ ] 4.4 Run the local migrate check (`make check`; if it fails on a stale DB, `docker compose down -v` first)
 
 ## 5. Frontend (fan-web)
 
