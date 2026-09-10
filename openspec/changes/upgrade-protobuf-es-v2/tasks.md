@@ -35,16 +35,16 @@
 
 - [x] 4.1 Full Vite build green, including the `date-impl` alias and build-template/smoke checks
 - [x] 4.2 Unit tests green; mapper tests from 1.6 still assert identical entity output (no enum/representation drift)
-- [ ] 4.3 E2E/Visual green across all RPC paths (artist, concert, follow, push, user, ticket-journey, ticket-email)
+- [x] 4.3 E2E/Visual green across all RPC paths (artist, concert, follow, push, user, ticket-journey, ticket-email) — full CI (E2E/Smoke/Storybook-visual/review) green on the Phase 2 PR before merge
 - [ ] 4.4 Record before/after gzipped bundle size (and optionally an INP sample) to confirm the ~5% reduction — v2 build (fan-web `main`) is **139 KB gzip**; capture the pre-merge v1 `main` gzip from CI to compute the delta
-- [ ] 4.5 Open Phase 2 PR; merge once CI + E2E/Visual are green
+- [x] 4.5 Open Phase 2 PR; merge once CI + E2E/Visual are green — frontend Phase 2 PR merged (green CI); spec design/tasks updated via the paired specification PR
 
 ## 5. Phase 2 (optional) — Binary transport evaluation (D5)
 
-- [ ] 5.1 Measure representative RPCs with JSON transport (current): compressed (gzip/brotli) response size + `fromJson` decode timing
-- [ ] 5.2 Measure the same RPCs with `useBinaryFormat: true` in `services/grpc-transport.ts`: compressed size + `fromBinary` decode timing (backend needs no change — Connect-Go negotiates from Content-Type)
-- [ ] 5.3 Decide: flip `useBinaryFormat` on only if the compressed-size / decode-time gain justifies losing DevTools network readability; record the decision and numbers in the change
-- [ ] 5.4 If flipping, confirm interceptors (auth/logging/OTEL) and error handling still behave, and E2E/Visual stay green
+- [x] 5.1 Measure representative RPCs with JSON transport (current): compressed (gzip/brotli) response size + `fromJson` decode timing — public no-cost `ConcertService.ListByLocation` (prod, ~39 KB): gzip 6,986 B / brotli 5,649 B / 640 µs decode
+- [x] 5.2 Measure the same RPCs with binary encoding: compressed size + `fromBinary` decode timing (measured by encoding the same RPC both ways against the live endpoint; backend needs no change — Connect-Go negotiates from Content-Type): gzip 7,105 B / brotli 6,015 B / 287 µs decode
+- [x] 5.3 Decide: **keep JSON** — binary is 47.9% smaller raw but 1.7% (gzip) / 6.5% (brotli) LARGER compressed, and the 2.2× decode win is sub-ms; not worth losing DevTools readability. Numbers + decision recorded in design D5
+- [x] 5.4 N/A — not flipping (see D5), so no interceptor/error/E2E re-check for a binary switch is required (deliberate conditional skip)
 
 ## 6. Close-out
 
