@@ -41,6 +41,32 @@ The service keeps its public interface but delegates to the new client. `routes/
 
 *Alternative considered:* leave the service as-is and only re-type the route. Rejected — it would keep a generated-type leak in the service layer and leave the ticket-email path asymmetric with ticket-journey.
 
+### D2.1 — Phase 1 scope also covers lottery-application (discovered during apply)
+
+Since this change was drafted, the `lottery-application` and `identity-verification`
+features shipped, adding new generated-type leaks outside the adapter boundary that
+the original two-file estimate (`ticket-email-service`, `import-ticket-email-route`)
+did not anticipate. To keep task 1.7's invariant ("no `@buf/*` import outside
+`adapter/rpc/{client,mapper}`") actually satisfiable, Phase 1 now also isolates the
+lottery path:
+- `entities/lottery.ts` — domain `TicketApplication` + `TicketApplicationState`
+  union (+ `ApplicantIdentity` value), so the route stops importing the proto enum.
+- `adapter/rpc/mapper/lottery-mapper.ts` — proto ⇄ entity.
+- `adapter/rpc/client/lottery-client.ts` returns the domain `TicketApplication`
+  (was returning the proto message); `routes/lottery-application/*` (route + spec)
+  consume the domain union. `lottery-apply-route` already ignores `apply()`'s
+  return, so widening the client to domain types does not touch it.
+
+*Note on the import-ticket-email route's Concert dependency:* the route's template
+reads the **proto** `Concert` shape (`concert.series.title.value`,
+`concert.localDate?.value`) and `IConcertStore.listConcerts` returns `ProtoConcert`,
+so the flattened domain `entities/concert.ts` `Concert` is the wrong shape here.
+Rather than build a new proto→domain Concert mapper (out of scope), the route
+imports the `ProtoConcert` type **re-exported by `adapter/rpc/client/concert-client.ts`**.
+That removes the direct `@buf/*` import (satisfying task 1.7) while keeping the
+proto shape the template needs — the type crosses the boundary through the adapter,
+not straight from `@buf/*`.
+
 ### D3 — v1→v2 API migration mapping
 
 The core generated-API changes, all confined to `adapter/rpc` after Phase 1:

@@ -1,12 +1,15 @@
 ## 1. Phase 1 — Isolate the RPC adapter boundary (still on v1, non-breaking)
 
-- [ ] 1.1 Add `entities/ticket-email.ts`: domain `TicketEmail` type + TS-union equivalents for `TicketEmailType` and the journey-status values consumed by the ticket-email path
-- [ ] 1.2 Add `adapter/rpc/mapper/ticket-email-mapper.ts` (proto ⇄ entity), following `ticket-journey-mapper.ts`/`artist-mapper.ts`
-- [ ] 1.3 Add `adapter/rpc/client/ticket-email-client.ts` owning the Connect client + generated request types; expose an interface returning domain entities
-- [ ] 1.4 Refactor `services/ticket-email-service.ts` to delegate to the new client and drop all `@buf/*` imports (keep its public interface stable)
-- [ ] 1.5 Refactor `routes/import-ticket-email/import-ticket-email-route.ts` to consume `entities/concert.ts`, `entities/ticket-email.ts`, and the domain journey-status union instead of proto types
-- [ ] 1.6 Add/extend mapper unit tests asserting entity output for representative ticket-email fixtures (baseline before the upgrade)
-- [ ] 1.7 Verify no `@buf/*` import exists outside `adapter/rpc/{client,mapper}` (`grep -rlE "from ['\"]@buf" src` → only adapter/rpc paths)
+- [x] 1.1 Add `entities/ticket-email.ts`: domain `TicketEmail` type + TS-union equivalents for `TicketEmailType` and the journey-status values consumed by the ticket-email path
+- [x] 1.2 Add `adapter/rpc/mapper/ticket-email-mapper.ts` (proto ⇄ entity), following `ticket-journey-mapper.ts`/`artist-mapper.ts`
+- [x] 1.3 Add `adapter/rpc/client/ticket-email-client.ts` owning the Connect client + generated request types; expose an interface returning domain entities
+- [x] 1.4 Refactor `services/ticket-email-service.ts` to delegate to the new client and drop all `@buf/*` imports (keep its public interface stable)
+- [x] 1.5 Refactor `routes/import-ticket-email/import-ticket-email-route.ts` (+ its `.html`) to consume `entities/ticket-email.ts`, the domain journey-status union, and the `ProtoConcert` type re-exported by `adapter/rpc/client/concert-client.ts` (the template needs the proto Concert shape; the flattened domain `entities/concert.ts` Concert does not fit — see design D2.1) instead of direct `@buf/*` imports
+- [x] 1.5.1 Add `entities/lottery.ts`: domain `TicketApplication` + `TicketApplicationState` union (+ `ApplicantIdentity`) — see design D2.1
+- [x] 1.5.2 Add `adapter/rpc/mapper/lottery-mapper.ts` (proto ⇄ entity); widen `adapter/rpc/client/lottery-client.ts` to return the domain `TicketApplication`
+- [x] 1.5.3 Refactor `routes/lottery-application/lottery-application-route.ts` (+ its `.spec.ts`) to consume the domain `TicketApplicationState` union instead of the proto enum
+- [x] 1.6 Add/extend mapper unit tests asserting entity output for representative ticket-email AND lottery fixtures (baseline before the upgrade)
+- [x] 1.7 Verify no `@buf/*` import exists outside `adapter/rpc/{client,mapper}` (`grep -rlE "from ['\"]@buf" src` → only adapter/rpc paths)
 - [ ] 1.8 `npm run` lint + unit tests + build green; open Phase 1 PR and land it with E2E/Visual green
 
 ## 2. Phase 2 — Dependency bump to v2 (BREAKING)
