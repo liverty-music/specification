@@ -80,11 +80,44 @@ The core generated-API changes, all confined to `adapter/rpc` after Phase 1:
 | service from `*_service_connect.js` (`connectrpc_es`) | service exported from `*_pb.js` (`protoc-gen-es` v2) |
 | enums as TS `enum` | v2 enums (verify import path / value shape in mapper) |
 
-Field access on messages is largely unchanged; the churn is construction (`new X` → `create(XSchema, …)`) and imports (`X` → `XSchema`). ~23 construction sites.
+Field access on messages is largely unchanged; the churn is construction (`new X` → `create(XSchema, …)`) and imports (`X` → `XSchema`).
+
+**Refinements found during Phase 2 implementation:**
+- **Scope was larger than "~23 sites in `adapter/rpc`".** Since the change was
+  drafted, the `admin/` and `organizer/` apps (each its own Vite entry, consuming
+  generated types *directly*, not via the `src/adapter/rpc` boundary) and their
+  `test/` fixtures shipped. The v2 dependency bump is repo-wide, so they had to
+  migrate too — not optional. Final surface: `src/adapter/rpc/*`, all of `admin/`
+  and `organizer/` services/routes, plus 8 `test/**` fixture files. `src`+`admin`
+  are covered by `tsc` (tsconfig `include`); `organizer` is not in `tsc` but is
+  built by `vite build` (3 entries) and its fixtures run under Vitest — so the
+  build + unit suite are the real green gate for it.
+- **Request construction uses plain init, not `create()`.** For a message passed
+  *as a client method argument or a nested field*, v2 accepts the plain init
+  object directly, so `new EventId({ value: id })` became `{ value: id }` (not
+  `create(EventIdSchema, …)`) — fewer imports, idiomatic v2. `create(XSchema, …)`
+  is used only where a *standalone* message value is needed (test fixtures, the
+  organizer draft marshallers).
+- **Well-known `Timestamp` lost its methods.** v1 `ts.toDate()` /
+  `Timestamp.fromDate(d)` → v2 `timestampDate(ts)` / `timestampFromDate(d)` from
+  `@bufbuild/protobuf/wkt`. This hit `ticket-email-mapper` and several admin/
+  organizer date formatters/fixtures. Enums are unchanged (still TS `enum`).
 
 ### D4 — BSR pin strategy on v2
 
-Repin `@buf/*bufbuild_es` to the v2 build at the current schema commit, and **drop** `@buf/*connectrpc_es`: Connect-ES v2 removes the separate connect codegen (see D3), so service definitions come from the `bufbuild_es` `*_pb.js` output and there is no v2 `connectrpc_es` build to pin to. Keeping the v1 `connectrpc_es` pin would drag in its `@connectrpc/connect@^1` peer and reintroduce the exact ERESOLVE conflict this migration removes. Update `.npmrc`/docs so future bumps stay on the v2 major (v2 becomes the default expectation; `@latest` no longer conflicts once the app is `@bufbuild/protobuf@^2`). Record the exact v2 pin string in the change so the upgrade is reproducible.
+Repin `@buf/*bufbuild_es` to the v2 build at the current schema commit, and **drop** `@buf/*connectrpc_es`: Connect-ES v2 removes the separate connect codegen (see D3), so service definitions come from the `bufbuild_es` `*_pb.js` output and there is no v2 `connectrpc_es` build to pin to. Keeping the v1 `connectrpc_es` pin would drag in its `@connectrpc/connect@^1` peer and reintroduce the exact ERESOLVE conflict this migration removes. Update `.npmrc`/docs so future bumps stay on the v2 major (v2 becomes the default expectation; `@latest` no longer conflicts once the app is `@bufbuild/protobuf@^2`).
+
+**Pins applied (reproducible):** `@buf/liverty-music_schema.bufbuild_es` →
+`2.14.1-20260902095528-98cf6c870a23.3` (v2 build at the *same* schema commit
+`98cf6c870a23` as the outgoing v1 pin `1.10.0-…`); `@bufbuild/protobuf` `^1`→`^2`
+(resolved 2.14.1), `@connectrpc/connect` and `@connectrpc/connect-web` `^1`→`^2`;
+`@buf/*connectrpc_es` removed. `package-lock.json` was regenerated from scratch
+(a plain `npm install` kept the stale `connectrpc_es` lock entry and its
+`bufbuild_es@1` peer, which reproduced the ERESOLVE — deleting the lock +
+`node_modules` and reinstalling resolved cleanly). `.npmrc` needed no change (it
+only sets the BSR registry). The frontend `AGENTS.md` "Consuming New Proto Types"
+section was rewritten for the v2 major (install `bufbuild_es@latest`, no v1-pin
+dance) plus a v2 codegen-conventions block.
 
 ### D5 — Evaluate switching the browser transport to binary format (measure, then decide)
 
