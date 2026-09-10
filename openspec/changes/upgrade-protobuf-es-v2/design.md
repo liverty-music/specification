@@ -127,6 +127,29 @@ Binary is where protobuf-es v2.14's headline gains actually land: `toBinary` up 
 
 Decision: **do not hard-code binary in this change.** Keep JSON as the default through Phase 2, then in the verification phase measure JSON vs. binary on *compressed* wire size (gzip/brotli narrows the raw-byte gap) and on (de)serialize timing, and flip `useBinaryFormat` only if the data justifies it. Deciding by measurement avoids trading away DevTools observability for a win that HTTP compression may have already captured.
 
+**Measured outcome (Phase 2 verification — keep JSON).** Measured against the
+public, no-cost `ConcertService.ListByLocation` RPC (prod, a representative ~39 KB
+JSON list response of real data), comparing the two encodings of the *same*
+response:
+
+| encoding | raw | gzip | brotli | decode (incl. `JSON.parse`) |
+|---|---|---|---|---|
+| JSON | 39,234 B | 6,986 B | 5,649 B | 640 µs/op |
+| binary | 20,442 B | 7,105 B | 6,015 B | 287 µs/op |
+
+Binary is 47.9 % smaller **raw**, but after HTTP compression it is **1.7 % larger
+gzipped and 6.5 % larger brotli'd** — JSON's repetitive field names compress away,
+while protobuf's already-dense varints have higher entropy and compress less. The
+raw-size advantage inverts under the compression every production response already
+uses. Binary decodes ~2.2× faster, but the absolute saving is sub-millisecond
+(~0.35 ms per response, off the interaction critical path). Since the compressed
+wire size is a (small) regression and the decode win is negligible in absolute
+terms, the data does **not** justify losing DevTools network-tab readability.
+**Final decision: keep JSON (`useBinaryFormat` stays off).** This confirms the
+hypothesis that HTTP compression already captured the payload win. Task 5.4 (the
+interceptor/E2E re-check that a flip would require) is therefore not applicable and
+is deliberately skipped.
+
 *Alternatives considered:* (a) flip to binary immediately with v2 — rejected, couples an unmeasured perf bet to the breaking upgrade and removes network-tab readability with no data. (b) never consider binary — rejected, it forgoes v2's biggest lever without evidence.
 
 ## Risks / Trade-offs
