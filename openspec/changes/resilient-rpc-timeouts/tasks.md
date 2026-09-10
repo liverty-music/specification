@@ -2,7 +2,8 @@
 
 - [ ] 1.1 Add optional `rpcTimeoutMs` to the `AppConfig` type in `shared/config/app-config.ts`, validated as an optional positive number
 - [ ] 1.2 Default `rpcTimeoutMs` to `10_000` when absent/invalid during validation (define a named constant, e.g. `DEFAULT_RPC_TIMEOUT_MS`); ensure a malformed value falls back rather than failing bootstrap
-- [ ] 1.3 Add the optional `rpcTimeoutMs` field to the tracked `config.json` (and note the additive field for per-environment ConfigMaps in `cloud-provisioning`)
+- [ ] 1.3 Add the optional `rpcTimeoutMs` field to the tracked `config.json` (default 10 s applies when absent)
+- [ ] 1.4 (Optional follow-up, not required) Add the per-environment `rpcTimeoutMs` override to `cloud-provisioning` ConfigMaps if per-env tuning is desired
 
 ## 2. Apply the default RPC timeout
 

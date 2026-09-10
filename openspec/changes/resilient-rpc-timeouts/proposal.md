@@ -27,11 +27,11 @@ No breaking changes. All modifications are additive resilience behavior within t
 
 ## Impact
 
-- **Repository**: `frontend/` only.
+- **Repository**: `frontend/` for all required work. An optional per-environment override adds a field to `cloud-provisioning` ConfigMaps, but this is not required — the field defaults to 10 s when absent, so the change is functionally complete within `frontend/` alone.
 - **Code**:
   - `src/services/grpc-transport.ts` — set `defaultTimeoutMs` on `createConnectTransport`, sourced from `AppConfig`.
   - `shared/config/app-config.ts` — add optional `rpcTimeoutMs` to the config type + validation, defaulting to 10 s.
-  - `config.json` (and per-environment ConfigMaps under `cloud-provisioning`) — optional additive field.
+  - `config.json` — optional additive field. Per-environment ConfigMaps under `cloud-provisioning` are an optional follow-up, not required for the change to function.
   - `src/lib/analytics/notification-interaction.ts` — bound `sendInteraction` fetch.
   - `src/lib/push/push-renewal.ts` — bound `readVapidPublicKeyCacheFirst` cache-miss fetch.
 - **Behavior**: RPC calls now reject with `Code.DeadlineExceeded` after 10 s (already NOT retried by the generic-retry interceptor). The shared deadline still covers the auth-retry silent-refresh + generic-retry backoff; 10 s is accepted with the understanding that a rare re-auth-tail false timeout may occur, in exchange for crisp UX.
