@@ -1,0 +1,59 @@
+## 1. Proto / BSR
+
+- [ ] 1.1 Delete `specification/proto/liverty_music/entity/v1/ticket_email.proto`
+- [ ] 1.2 Delete `specification/proto/liverty_music/rpc/ticket_email/v1/ticket_email_service.proto`
+- [ ] 1.3 Run `buf lint` / `buf breaking` locally and confirm the only breaking findings are the two removed files
+- [ ] 1.4 Open the proto PR with the `buf skip breaking` label; merge and cut a BSR release
+
+## 2. Backend — delete ticket-email-only files
+
+- [ ] 2.1 Delete `backend/internal/entity/ticket_email.go` and `backend/internal/entity/ticket_email_parser.go`
+- [ ] 2.2 Delete `backend/internal/usecase/ticket_email_uc.go`
+- [ ] 2.3 Delete `backend/internal/adapter/rpc/ticket_email_handler.go` and `backend/internal/adapter/rpc/mapper/ticket_email.go`
+- [ ] 2.4 Delete `backend/internal/infrastructure/database/rdb/ticket_email_repo.go`
+- [ ] 2.5 Delete `backend/internal/infrastructure/gcp/gemini/email_parser.go`
+- [ ] 2.6 Delete `backend/internal/entity/mocks/mock_TicketEmailRepository.go` (by hand — do not rely on mockery regen, which can fail with `image without types`)
+- [ ] 2.7 Delete `backend/internal/adapter/rpc/ticket_email_handler_test.go` and any other `*ticket_email*_test.go` files
+
+## 3. Backend — surgical edits to shared files
+
+- [ ] 3.1 `di/provider.go`: remove the `emailParser` declaration/comment block, the `ticketEmailRepo`, `ticketEmailUC` and its nil-guard, and the guarded `TicketEmailService` handler registration
+- [ ] 3.2 `di/consumer.go`: remove the `track-ticket-email` consumer registration (line ~231)
+- [ ] 3.3 `entity/event_data.go`: remove `SubjectTicketEmailParsed`, `TicketEmailParsedData`, and the subject-list entry
+- [ ] 3.4 `usecase/analytics_events.go`: remove `EventTicketEmailParsed` and its catalogue map entry
+- [ ] 3.5 `adapter/event/analytics_consumer.go`: remove `HandleTicketEmailParsed`
+- [ ] 3.6 Grep the backend for residual `TicketEmail` references (excluding `TicketJourney`) and confirm none remain
+- [ ] 3.7 Run `make check` (build + lint + test) and fix fallout
+
+## 4. Database
+
+- [ ] 4.1 Add an Atlas migration `DROP TABLE ticket_emails` (and its index), sorted after all applied migrations so `atlas.sum` stays consistent
+- [ ] 4.2 Remove the `ticket_emails` table, comments, and `idx_ticket_emails_user_event` from `schema/schema.sql`
+- [ ] 4.3 Run the local migrate check (`make check`; if it fails on a stale DB, `docker compose down -v` first)
+
+## 5. Frontend (fan-web)
+
+- [ ] 5.1 Delete `frontend/src/routes/import-ticket-email/` (route.ts + route.html)
+- [ ] 5.2 Delete `frontend/src/services/ticket-email-service.ts`
+- [ ] 5.3 `app-shell.ts`: remove the import-ticket-email route registration
+- [ ] 5.4 `main.ts`: remove the `ITicketEmailService` import and `au.register(ITicketEmailService)`
+- [ ] 5.5 `scripts/verify-build-templates.lib.ts`: remove the `import-ticket-email` marker entry
+- [ ] 5.6 `sw.ts`: remove the disabled share-target handler comment block
+- [ ] 5.7 Delete `frontend/test/routes/import-ticket-email-route.spec.ts` and remove the `ImportTicketEmailRoute` mock from `test/app-shell.spec.ts`
+- [ ] 5.8 Run the frontend build + tests and confirm green
+
+## 6. Analytics catalogue
+
+- [ ] 6.1 Move `ticket.email.parsed` from the dormant/live catalogue to the Removed events section with reason "ticket-email import capability removed"
+
+## 7. ticket-journey main-spec cleanup (direct edit, not a delta)
+
+- [ ] 7.1 In `openspec/specs/ticket-journey/spec.md`, remove the "or as a side effect of confirming a ticket email import" clause from the `Set Ticket Journey Status` requirement description
+- [ ] 7.2 In the same file, remove the orphaned `#### Scenario: Status set via ticket email confirmation` block
+
+## 8. Spec sync & release
+
+- [ ] 8.1 Run `openspec validate remove-ticket-email-import --strict` and resolve any findings
+- [ ] 8.2 Land backend + frontend PRs (proto/BSR merged first); cut releases
+- [ ] 8.3 Deploy the DB `DROP TABLE` migration as a follow-up release after the code that read/wrote the table is gone
+- [ ] 8.4 Sync delta specs to main specs, then archive the change
