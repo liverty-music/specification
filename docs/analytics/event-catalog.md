@@ -49,7 +49,6 @@ Events that were removed (never fired, duplicated another event, or double-count
 | `ticket.journey.status.changed` | BE | ticket | active | `event_id`, `from_status`, `to_status`, `trace_id?` | Interest-tier progression (PENDING→TRACKING→ATTENDING), engagement depth |
 | `ticket.lottery.entry.submitted` | FE | ticket | dormant | `event_id`, `lottery_round`, `trace_id?` | Lottery funnel — activates when ticket sales ship |
 | `ticket.purchase.initiated` | FE | ticket | dormant | `ticket_id`, `event_id`, `price_bucket`, `trace_id?` | Purchase funnel — activates when ticket sales ship |
-| `ticket.email.parsed` | BE | ticket | dormant | `email_type`, `parse_status`, `field_count`, `trace_id?` | Email-ingestion data quality — blocked by the OS-side email-import issue |
 | `entry.checkin.attempted` | FE | entry | dormant | `event_id`, `trace_id?` | Entry funnel — activates when venue entry ships |
 | `notification.requested` | FE | notification | active | `source`, `trace_id?` | Notification opt-in funnel (paired) |
 | `notification.subscribed` | BE | notification | active | `device_type`, `trace_id?` | Notification opt-in funnel (paired) |
@@ -78,6 +77,7 @@ The following events were removed from the collected set. Each is recorded here 
 | `ticket.lottery.result.assigned` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
 | `ticket.purchase.completed` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
 | `ticket.purchase.failed` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
+| `ticket.email.parsed` | BE | **Capability removed** — the ticket-email import capability was removed; the OS/Gmail share action that fed its ingestion path no longer exists and the emitter no longer exists. |
 | `ticket.mint.completed` | BE | **Capability removed** — the blockchain ticket (SBT mint) system was removed under the Scenario A walled-garden pivot; the emitter no longer exists. |
 | `entry.zk_proof.verified` | BE | **Capability removed** — the blockchain ZKP entry system was removed under the Scenario A walled-garden pivot; the emitter no longer exists. |
 | `entry.zk_proof.rejected` | BE | **Capability removed** — the blockchain ZKP entry system was removed under the Scenario A walled-garden pivot; the emitter no longer exists. |
