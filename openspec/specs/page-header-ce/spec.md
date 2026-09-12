@@ -3,9 +3,7 @@
 ## Purpose
 
 The Page Header capability provides a reusable custom element that renders a consistent header across route pages, supporting i18n titles, optional trailing actions via slots, and automatic grid layout integration.
-
 ## Requirements
-
 ### Requirement: Page header renders i18n title
 The `page-header` CE SHALL render a `<header>` element containing an `<h1>` whose text content is resolved from the `title-key` bindable via the i18n `t` binding.
 
@@ -36,28 +34,12 @@ The `page-header` CE SHALL encapsulate the shared header styles: padding, bottom
 - **THEN** all three headers share identical padding (`--space-xs`), border (`1px solid` at 10% white), background (`--color-surface-raised`), and `<h1>` typography
 
 ### Requirement: Page header participates in route grid layout
-The `page-header` CE host element SHALL set `grid-area: header` so it integrates with the route's `grid-template-areas` without additional route-level CSS.
+The `page-header` CE host element SHALL set `grid-area: header` so it integrates with the app shell's `grid-template-areas` without additional route-level CSS.
 
 #### Scenario: Header placed in grid area
-- **WHEN** a route defines `grid-template-areas: "header" "content"`
-- **THEN** the `page-header` CE occupies the `header` grid area automatically
-
-### Requirement: All routes using page-header SHALL define grid-template-areas
-
-Every route that renders `<page-header>` SHALL define `grid-template-areas` including a `"header"` area in its route-level CSS, so that the page-header's `grid-area: header` declaration resolves correctly.
-
-#### Scenario: Dashboard route defines header grid area
-
-- **WHEN** the dashboard-route renders `<page-header>`
-- **THEN** the dashboard-route CSS SHALL include `grid-template-areas: "header" "content"`
-- **AND** the page-header SHALL stretch to fill the full width of the grid container
-- **AND** content elements (concert-highway, loading, error, empty) SHALL be placed in the `"content"` area
-
-#### Scenario: Page header width matches viewport
-
-- **WHEN** the dashboard is rendered on any viewport width
-- **THEN** the page-header inner `<header>` element SHALL have the same inline-size as the grid container
-- **AND** the header SHALL NOT shrink to fit its content width
+- **WHEN** the app shell defines `grid-template-areas: "header" "viewport" "nav"`
+- **THEN** the `page-header` CE SHALL occupy the `header` grid area of the shell automatically
+- **AND** no route-level CSS SHALL be required to position the header
 
 ### Requirement: Page header is globally registered
 The `PageHeader` class SHALL be registered globally in `main.ts` so all routes can use `<page-header>` without per-route `<import>` statements.
@@ -65,3 +47,21 @@ The `PageHeader` class SHALL be registered globally in `main.ts` so all routes c
 #### Scenario: Usage without explicit import
 - **WHEN** a route template uses `<page-header title-key="...">` without an `<import>` tag
 - **THEN** the component resolves and renders correctly
+
+### Requirement: Page header is a single shell-hosted instance bound to shared state
+The `page-header` CE SHALL be rendered as a single persistent instance owned by the app shell (not one instance per route), and its `title-key` and `morph-title` bindables SHALL be bound to the shared page-identity state rather than authored per route. As the shared state changes, the header SHALL update in place without being unmounted and remounted across route changes.
+
+#### Scenario: Single shell-hosted instance across route changes
+- **WHEN** the user navigates between routes that show the navigation bar
+- **THEN** the same `page-header` instance SHALL remain mounted in the shell
+- **AND** its `<h1>` text SHALL update from the shared state's current title key without the element being destroyed and recreated
+
+#### Scenario: Title bound to shared state, not per-route markup
+- **WHEN** a route becomes active
+- **THEN** the header title SHALL be sourced from the shared page-identity state
+- **AND** no route template SHALL author its own `<page-header>` element to supply the title
+
+#### Scenario: Title morph preserved for in-place title swaps
+- **WHEN** the shared state's title changes while the header stays mounted and `morph-title` is enabled (e.g. the dashboard My Timetable ↔ All Nearby swap)
+- **THEN** the `<h1>` SHALL carry the stable `view-transition-name` so the title text can morph across a same-document View Transition
+
