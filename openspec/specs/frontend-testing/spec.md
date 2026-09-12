@@ -652,17 +652,6 @@ The `SettingsRoute` component SHALL have integration tests verifying conditional
 - **WHEN** the PWA install service reports `canShow: true`
 - **THEN** the install section SHALL be visible in the DOM
 
-### Requirement: Import ticket email route has component integration tests
-The `ImportTicketEmailRoute` component SHALL have integration tests verifying multi-step wizard rendering and state transitions.
-
-#### Scenario: Initial step renders input form
-- **WHEN** the route is rendered in the initial step
-- **THEN** the DOM SHALL contain the email input form
-
-#### Scenario: Step advancement renders next step content
-- **WHEN** the user completes the current step
-- **THEN** the DOM SHALL transition to show the next step's content
-
 ### Requirement: Concert highway CE has component integration tests
 The `ConcertHighway` component (extracted from dashboard-route) SHALL have integration tests verifying bindable rendering, beam index mapping, and lifecycle cleanup.
 

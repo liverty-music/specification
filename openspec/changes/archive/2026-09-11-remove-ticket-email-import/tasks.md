@@ -3,7 +3,7 @@
 - [x] 1.1 Delete `specification/proto/liverty_music/entity/v1/ticket_email.proto`
 - [x] 1.2 Delete `specification/proto/liverty_music/rpc/ticket_email/v1/ticket_email_service.proto`
 - [x] 1.3 Run `buf lint` / `buf breaking` locally and confirm the only breaking findings are the two removed files
-- [ ] 1.4 Open the proto PR with the `buf skip breaking` label; merge and cut a BSR release
+- [x] 1.4 Open the proto PR with the `buf skip breaking` label; merge and cut a BSR release
 
 ## 2. Backend — delete ticket-email-only files
 
@@ -55,6 +55,6 @@
 ## 8. Spec sync & release
 
 - [x] 8.1 Run `openspec validate remove-ticket-email-import --strict` and resolve any findings
-- [ ] 8.2 Land backend + frontend PRs (proto/BSR merged first); cut releases
-- [ ] 8.3 Deploy the DB `DROP TABLE` migration as a follow-up release after the code that read/wrote the table is gone
-- [ ] 8.4 Sync delta specs to main specs, then archive the change
+- [x] 8.2 Land backend + frontend PRs (proto/BSR merged first); cut releases
+- [x] 8.3 Deploy the DB `DROP TABLE` migration as a follow-up release after the code that read/wrote the table is gone
+- [x] 8.4 Sync delta specs to main specs, then archive the change
