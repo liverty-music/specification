@@ -53,9 +53,9 @@ The system SHALL conditionally show or hide the navigation bar based on the curr
 - **THEN** the root container SHALL use CSS Grid with `grid-template-areas: "header" "viewport" "nav"` and `grid-template-rows: auto 1fr auto`
 - **AND** the container height SHALL be `100dvh` (dynamic viewport height)
 - **AND** the shell-hosted `<page-header>` SHALL occupy the `header` area
-- **AND** `<au-viewport>` SHALL be a direct child of the root container (no intermediate wrapper div) and SHALL occupy the `viewport` area
-- **AND** `<au-viewport>` SHALL NOT receive any layout styling from `app-shell.css` — its block-size is determined by grid stretch (blockification of grid items)
-- **AND** `<bottom-nav-bar>` SHALL occupy the `nav` area as a normal flow child
+- **AND** `<au-viewport>` SHALL be a direct child of the root container (no intermediate wrapper div) and SHALL be explicitly assigned `grid-area: viewport`
+- **AND** `<au-viewport>` SHALL receive ONLY grid-area placement from `app-shell.css` (no other layout styling) — its block-size is determined by the `viewport` row's grid stretch. The explicit placement is required so the viewport never auto-places into the `auto` `header` row when the header/nav are hidden (which would collapse the route to zero block-size)
+- **AND** `<bottom-nav-bar>` SHALL be explicitly assigned `grid-area: nav`
 - **AND** the navigation bar SHALL NOT use `position: fixed`, `position: absolute`, or the Popover API
 
 #### Scenario: Navigation hidden on Landing Page and auth callback only
@@ -118,5 +118,5 @@ Each route component SHALL define its own HTML document structure using semantic
 
 #### Scenario: App-shell does not style child custom elements
 - **WHEN** `app-shell.css` is loaded
-- **THEN** the file SHALL NOT contain selectors targeting `au-viewport`, `live-highway`, or any route component custom element
+- **THEN** the file MAY assign `grid-area` to `<au-viewport>` to place it in the shell grid, but SHALL NOT otherwise style `<au-viewport>` and SHALL NOT contain selectors targeting `live-highway` or any route component custom element
 - **AND** the shell's own direct children — the shared `<page-header>`, `<bottom-nav-bar>`, and overlay elements (`pwa-install-prompt`, `toast-notification`, `error-banner`, `coach-mark`) — MAY be styled in `app-shell.css`
