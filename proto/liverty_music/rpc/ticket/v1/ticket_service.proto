@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.ticket.v1 provides the fan-facing ticket service:
+// the read surface a buyer uses to see an Order's payment result and the
+// account-bound tickets issued from their captured lottery win. Issuance itself
+// is not an RPC here — it is an internal process keyed on ④'s Won-captured signal
+// (see liverty_music.rpc.issuance.v1). Refund/payout operations live in the
+// admin surface (liverty_music.rpc.admin.v1). It imports entity types and follows
+// Google AIP resource-oriented conventions.
+package liverty_music.rpc.ticket.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/order.proto";
+import "liverty_music/entity/v1/ticket.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/ticket/v1;ticketv1";
+
+// TicketService is the fan-facing read surface over a buyer's own Orders and
+// issued Tickets. The caller is resolved from the token; a buyer can read only
+// their own Order and their own tickets. No money movement happens here —
+// issuance is internal (keyed on ④'s captured win) and refunds are admin ops.
+service TicketService {
+  // GetOrder returns one of the caller's own Orders — its payment result
+  // (status, amount, capture time, display facets). The Order is created already
+  // `paid` from ④'s captured winning payment.
+  //
+  // Possible errors:
+  // - NOT_FOUND: No such Order for this caller. Non-revealing (an Order belonging
+  //   to another account is reported the same as a missing one).
+  // - INVALID_ARGUMENT: The order_id is missing or malformed.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+
+  // GetMyTickets returns all account-bound tickets issued to the caller — the
+  // covered tickets from their captured lottery wins. Wallet / rotating-QR /
+  // check-in behavior on these tickets is added by ⑥ ticket-wallet-and-checkin.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc GetMyTickets(GetMyTicketsRequest) returns (GetMyTicketsResponse);
+}
+
+// GetOrderRequest identifies the Order to return; it must belong to the caller.
+message GetOrderRequest {
+  // Required. The Order to return; resolved against the caller's account.
+  entity.v1.OrderId order_id = 1 [(buf.validate.field).required = true];
+}
+
+// GetOrderResponse returns the caller's Order.
+message GetOrderResponse {
+  // The requested Order, including its payment result.
+  entity.v1.Order order = 1 [(buf.validate.field).required = true];
+}
+
+// GetMyTicketsRequest carries no fields: the caller is resolved from the token
+// and all of that account's issued tickets are returned.
+message GetMyTicketsRequest {}
+
+// GetMyTicketsResponse returns the caller's issued tickets.
+message GetMyTicketsResponse {
+  // The caller's account-bound covered tickets. Empty when the caller has none.
+  repeated entity.v1.Ticket tickets = 1;
+}

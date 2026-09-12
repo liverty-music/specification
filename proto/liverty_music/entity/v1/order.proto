@@ -1,0 +1,186 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/lottery_application.proto";
+import "liverty_music/entity/v1/user.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// OrderId is a globally unique identifier for a single Order — one winning
+// lottery application's purchase record. Server-generated surrogate id; it never
+// encodes any payment data.
+message OrderId {
+  // A UUID string mapping to the order's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// PaymentProvider names which payment provider backs an Order's captured payment.
+// The Order is deliberately provider-agnostic (it stores only opaque references),
+// so switching provider is a config/adapter change, not a proto break. New values
+// may be appended; existing values must not be renumbered.
+enum PaymentProvider {
+  // Default value, rejected at the boundary: a persisted Order always records a
+  // concrete provider.
+  PAYMENT_PROVIDER_UNSPECIFIED = 0;
+
+  // Stripe Connect (separate charges & transfers, platform-held) — the MVP
+  // provider. ④ owns the PaymentIntent (manual-capture authorize/capture); ⑤
+  // records only the opaque references to it.
+  PAYMENT_PROVIDER_STRIPE = 1;
+
+  // KOMOJU — a PoC challenger kept swappable behind the opaque references (#778).
+  // Reserved so adopting it is a no-proto-break provider switch.
+  PAYMENT_PROVIDER_KOMOJU = 2;
+}
+
+// Payment is the opaque, provider-agnostic reference to ④'s captured winning
+// payment, plus the display-only facets safe to retain. It holds only tokens
+// meaningful to the provider and never raw card data: NEVER a PAN, CVC, or
+// expiry. ⑤ records this from ④'s captured PaymentIntent — it performs no
+// separate charge of its own. It is a value object embedded in an Order, not a
+// standalone addressable entity.
+message Payment {
+  // Which provider backs the captured payment. Drives which adapter interprets
+  // the opaque references below.
+  PaymentProvider provider = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }
+  ];
+
+  // The provider's PaymentIntent reference (e.g. a Stripe "pi_..." id) for ④'s
+  // captured manual-capture authorization. Opaque; meaningful only to the
+  // provider. This is ④'s PaymentIntent — ⑤ references, never re-charges, it.
+  string payment_intent_ref = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+
+  // The provider's PaymentMethod reference (e.g. a Stripe "pm_..." id), when the
+  // provider exposes one distinct from the PaymentIntent. Opaque and optional.
+  string payment_method_ref = 3 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).string.max_len = 255
+  ];
+
+  // Display-only card brand facet (e.g. "visa", "mastercard"), safe to show the
+  // buyer. Optional, never used for authorization. American Express is rejected
+  // upstream at ④'s authorization, not here.
+  string card_brand = 4 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).string.max_len = 40
+  ];
+
+  // Display-only last four digits of the card, safe to show the buyer. Optional;
+  // this is NOT the PAN (only the trailing four, which providers permit storing).
+  string card_last4 = 5 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).string = {pattern: "^([0-9]{4})?$"}
+  ];
+}
+
+// OrderStatus is the lifecycle of an Order. There is deliberately NO `pending`
+// state: ⑤ creates the Order from an already-captured payment, so it is `paid`
+// on creation (the pre-capture authorize/hold state lives on ④'s
+// TicketApplication, not here). New values may be appended; existing values must
+// not be renumbered.
+enum OrderStatus {
+  // Default value, rejected at the boundary: a persisted Order always records a
+  // concrete status.
+  ORDER_STATUS_UNSPECIFIED = 0;
+
+  // Paid — the normal state on creation. The Order is built from ④'s captured
+  // winning payment, so funds are already captured (held on the platform
+  // balance) when the Order exists.
+  ORDER_STATUS_PAID = 1;
+
+  // Refunded — the captured payment was refunded (event cancellation 中止, a
+  // postponement holder-initiated refund, or dispute) via a provider Refund plus
+  // transfer_reversal clawback of the Organizer's share.
+  ORDER_STATUS_REFUNDED = 2;
+
+  // Failed — the capture-succeeded-but-issuance-refunded edge: the capture
+  // succeeded but ⑤ could not complete issuance, so it refunded the captured
+  // payment to avoid money-captured-with-no-ticket. Distinct from `refunded`,
+  // which follows a successfully issued Order.
+  ORDER_STATUS_FAILED = 3;
+}
+
+// Order is a provider- and method-agnostic purchase record for one winning
+// lottery application: the opaque reference to ④'s captured winning payment, the
+// Order's own status, its total amount and currency, the capture time, and
+// display-only facets. ONE Order covers the N tickets of the winning application
+// (the companion group, ≤ the phase's max_tickets_per_application).
+//
+// It is created only from ④'s Won-captured signal (④ owns the PaymentIntent and
+// its authorize/capture/cancel webhooks); ⑤ performs no separate off-session
+// charge. The Order NEVER stores a PAN, CVC, or expiry — only opaque provider
+// tokens and safe display facets (PCI SAQ A).
+message Order {
+  // The unique identifier for this order. Server-generated surrogate id.
+  OrderId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The account that bought — the winning applicant. The tickets this Order
+  // issues are bound to this account.
+  UserId buyer_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The winning application this Order derives from (④'s Won-captured record).
+  // The one-Order-per-captured-application invariant (issuance idempotency) is
+  // keyed on this reference server-side.
+  TicketApplicationId application_id = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The opaque reference to ④'s captured winning payment plus safe display
+  // facets. Never raw card data.
+  Payment payment = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The order's own status — `paid` on creation (see OrderStatus: no `pending`).
+  OrderStatus status = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // The total captured amount, a positive whole number in the currency's
+  // smallest unit. For the MVP (JPY) this is yen, which has no minor unit, so the
+  // value is the yen total (ticket_price × ticket count).
+  int64 amount = 6 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).int64.gt = 0
+  ];
+
+  // The ISO 4217 currency code of `amount`, fixed to JPY for the MVP but carried
+  // as a field so the record stays currency-agnostic. Three upper-case letters.
+  string currency = 7 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string = {
+      len: 3
+      pattern: "^[A-Z]{3}$"
+    }
+  ];
+
+  // When the payment was captured (= ④'s capture time at the draw). Because the
+  // Order is created already paid, this is effectively its creation time.
+  // Server-owned.
+  google.protobuf.Timestamp paid_at = 8 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+}

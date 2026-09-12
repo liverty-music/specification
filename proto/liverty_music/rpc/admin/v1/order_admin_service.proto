@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.admin.v1 provides admin-only gRPC service definitions
+// for internal tooling exposed through the developer admin console.
+package liverty_music.rpc.admin.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/order.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/admin/v1;adminv1";
+
+// OrderAdminService is the admin-only operations surface over ⑤'s Orders: the
+// refund / dispute-clawback path. It is authorized solely for the admin
+// organization and never reachable by the consumer product.
+//
+// The Organizer PAYOUT is deliberately NOT an RPC here: buyer funds are held on
+// the platform balance (separate charges & transfers) and the Organizer's net
+// share is transferred by an INTERNAL SCHEDULED platform job only after the
+// event's occurrence AND a dispute-safety window (and re-gated on the new date on
+// a postponement) — it is never a manual admin/organizer action, mirroring the
+// lottery draw-job precedent.
+service OrderAdminService {
+  // RefundOrder refunds the ticket's current holder the face value + system/発券
+  // fee (retaining the payment-processor fee, the JP norm) via a provider Refund,
+  // and claws back the Organizer's share via transfer_reversal. It covers event
+  // cancellation (中止), a postponement (延期) holder-initiated refund within the
+  // refund window, and dispute/chargeback handling (see RefundReason). It is
+  // idempotent: a replay records the refund once (no double-refund). On a
+  // cancellation while the ticket is listed for ⑦ resale, the listing is
+  // cancelled and this path refunds the holder (the resale fresh-sale leg does
+  // not run).
+  //
+  // Possible errors:
+  // - FAILED_PRECONDITION: The Order is not refundable in its current state
+  //   (e.g. already refunded), or a postponement-window refund is requested
+  //   outside the window.
+  // - INVALID_ARGUMENT: The order_id is missing/malformed or the reason is
+  //   UNSPECIFIED.
+  // - NOT_FOUND: No such Order.
+  // - UNAUTHENTICATED: The request lacks valid admin credentials.
+  rpc RefundOrder(RefundOrderRequest) returns (RefundOrderResponse);
+}
+
+// RefundReason classifies why an Order is being refunded — it selects the refund
+// policy and the operational audit trail. New values may be appended; existing
+// values must not be renumbered.
+enum RefundReason {
+  // Default value, rejected at the boundary.
+  REFUND_REASON_UNSPECIFIED = 0;
+
+  // Event cancellation (中止): the holder is refunded face + system/発券 fee and
+  // the Organizer's share is clawed back. Any live ⑦ resale listing is cancelled.
+  REFUND_REASON_CANCELLATION = 1;
+
+  // A postponement (延期) holder-initiated refund within the bounded refund
+  // window, for a holder who cannot attend the rescheduled date. Same amount as a
+  // cancellation (face + system/発券 fee, processor fee retained).
+  REFUND_REASON_POSTPONEMENT_WINDOW = 2;
+
+  // A chargeback / dispute: the captured payment is reversed and the Organizer's
+  // share clawed back via transfer_reversal.
+  REFUND_REASON_DISPUTE = 3;
+}
+
+// RefundOrderRequest identifies the Order to refund and why.
+message RefundOrderRequest {
+  // Required. The Order to refund. Its tickets are voided and the holder is
+  // refunded per the reason's policy.
+  entity.v1.OrderId order_id = 1 [(buf.validate.field).required = true];
+
+  // Required. Why the Order is being refunded — selects the refund policy.
+  RefundReason reason = 2 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+}
+
+// RefundOrderResponse returns the refunded Order.
+message RefundOrderResponse {
+  // The Order after the refund, with status `refunded`.
+  entity.v1.Order order = 1 [(buf.validate.field).required = true];
+}
