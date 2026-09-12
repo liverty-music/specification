@@ -43,15 +43,20 @@ transfers". This design records only the ④-specific technical shape.
   controller), not double-implemented in ④. ④'s responsibility ends at the
   platform-held capture + handoff.
 - **`allocated_funds` (funds segregation) NOT adopted now — JP is ineligible.**
-  Stripe docs list only BE/CH/DE/DK/ES/FR/GB/NL/SE/US; **Japan is not a supported
-  market**, and it is a **private preview** with no published JP timeline. Plain
-  separate charges & transfers (funds sit in the general platform balance until the
-  Transfer) is fully supported in JP and is the MVP mechanism. `allocated_funds`
-  (which would isolate held funds from platform payouts / other refunds / fee
-  draw-down) is a **Stripe-account-manager conversation**, tracked as an open item,
-  not a dependency. (Docs imply single manual-capture is compatible — allocation
-  happens at capture; only multicapture/overcapture/incremental-auth are excluded —
-  but confirm when requesting access.)
+  Availability is gated on **three separate conditions**, so the preview API version
+  alone does **not** unlock it: (1) opt into the preview surface (`Stripe-Version:
+  2026-08-26.preview; allocated_funds_preview=v1` header) — necessary, not
+  sufficient; (2) **access grant** — a *private* preview (not self-serve), so Stripe
+  must **allowlist the platform account** (account-manager request); (3) **market
+  eligibility** — supported markets are **BE/CH/DE/DK/ES/FR/GB/NL/SE/US only; Japan
+  is not among them**, with no published JP timeline. Therefore, even on the preview
+  version, a JP platform cannot use it today. Plain separate charges & transfers
+  (funds sit in the general platform balance until the Transfer) is fully GA in JP
+  and is the MVP mechanism. `allocated_funds` — which would isolate held funds from
+  platform payouts / other refunds / fee draw-down — is a **Stripe-account-manager
+  conversation** (tracked in tasks §5), not a dependency. (Docs imply single
+  manual-capture is compatible — allocation happens at capture; only multicapture/
+  overcapture/incremental-auth are excluded — confirm when requesting access.)
 - **Statement descriptor design (platform account, GA in JP).** Set once on the
   platform account: a Latin static **prefix** (2–10 chars, must be alphabetic, e.g.
   `LIVERTY`) + **kanji and kana** static prefixes so JP-issued Visa/Mastercard

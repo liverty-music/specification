@@ -46,8 +46,11 @@
 ## 5. Stripe-contact items (not answerable from docs — track, don't block MVP)
 
 - [ ] 5.1 Ask the Stripe account manager whether/when **`allocated_funds` (funds
-      segregation) will be available for JP** (Japan is NOT in the current eligible
-      markets: BE/CH/DE/DK/ES/FR/GB/NL/SE/US; private preview, no published timeline).
+      segregation) will be available for JP** — clarifying BOTH gates: (a) **access
+      grant** for the platform account (private preview = allowlist, not self-serve;
+      the preview header alone is insufficient) and (b) **market eligibility** (Japan
+      is NOT in the current markets: BE/CH/DE/DK/ES/FR/GB/NL/SE/US; no published
+      timeline).
 - [ ] 5.2 Confirm **single manual-capture is supported under `allocated_funds`** (docs
       imply yes — allocation at capture; only multicapture/overcapture/incremental-auth
       excluded) when requesting preview access.

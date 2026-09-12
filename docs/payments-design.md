@@ -122,10 +122,20 @@ destination charges:
   prerequisite for funds segregation). Chargeback/negative-balance liability lands on
   the platform under **either** model, so this axis is not a differentiator.
 - **Stripe funds segregation (`allocated_funds`)** is the purpose-built primitive to
-  isolate held separate-charge funds from platform payouts / other refunds / fees; it
-  is a **private preview** and **JP is not yet on its listed markets** — ship plain
-  separate charges & transfers first, layer `allocated_funds` when GA + JP-eligible
-  (confirm with Stripe).
+  isolate held separate-charge funds from platform payouts / other refunds / fees.
+  Availability is gated on **three separate conditions**, not just an API version:
+  (1) opt into the preview API surface (`Stripe-Version: 2026-08-26.preview;
+  allocated_funds_preview=v1` on every request) — necessary but **not** sufficient;
+  (2) **access grant** — it is a *private* preview (not self-serve), so Stripe must
+  **allowlist the platform account** (contact the account manager); (3) **market
+  eligibility** — the platform account's market must be supported, and the listed
+  markets are **BE/CH/DE/DK/ES/FR/GB/NL/SE/US only — JP is not among them**. So the
+  preview header alone does **not** unlock it for a JP platform. **Ship plain separate
+  charges & transfers first** (fully GA in JP; funds sit in the general platform
+  balance until the Transfer); adopt `allocated_funds` only if Stripe grants JP access
+  + the market opens (confirm timeline + that single manual-capture is supported —
+  docs imply yes, only multicapture/overcapture/incremental-auth are excluded — with
+  the account manager).
 
 > **⚠️ ④ follow-up (④ `lottery-application` is SHIPPED on the destination-charge
 > model).** ④ implemented authorize-at-apply / capture-at-draw as a **destination
