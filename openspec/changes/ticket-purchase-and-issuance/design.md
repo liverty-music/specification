@@ -1,19 +1,20 @@
 ## Context
 
-See [proposal.md](./proposal.md) for motivation. ⑤ is the money + issuance
-pipeline between ④ `lottery-application` (win + saved card + 本人確認 + deadline)
-and ⑥ `ticket-wallet-and-checkin` (wallet/QR/check-in on the issued Ticket). The
-full money design, 収納代行 legal scheme, counsel flags, and regulatory
+See [proposal.md](./proposal.md) for motivation. ⑤ is the Order + issuance pipeline
+between ④ `lottery-application` (**authorize-at-apply → capture-at-draw** + 本人確認,
+now SHIPPED) and ⑥ `ticket-wallet-and-checkin` (wallet/QR/check-in on the issued
+Ticket). The full money design, 収納代行 legal scheme, counsel flags, and regulatory
 obligations table live in [`payments-design.md`](../../../docs/payments-design.md)
-(#778) — this design records only the ⑤-specific technical shape, not the
-research. ④ is proposed-not-built and ⑥ is not yet specced, so both handoffs are
-forward contracts.
+(#778) — this design records only the ⑤-specific technical shape, not the research.
+**④ is shipped**; the ④→⑤ handoff is ④'s **Won-captured** signal (④ owns the
+PaymentIntent + its webhooks; MVP handoff = the Won-captured record, no event).
+identity-ekyc adds a `verification_level` ⑤ consumes; ⑥ is not yet built.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- A correct post-capture pipeline: ④'s captured winning payment → webhook-confirmed
-  Order + issuance → account-bound covered tickets, idempotent end-to-end.
+- A correct post-capture pipeline: ④'s **Won-captured** signal → Order + issuance
+  → account-bound covered tickets, idempotent end-to-end.
 - A **provider-agnostic** `Order`/`Ticket`/payment model so a KOMOJU switch or an
   added method is a no-proto-break.
 - Stay clearly in the exempt **収納代行** zone (Organizer = business seller-of-
@@ -29,17 +30,46 @@ forward contracts.
 
 ## Decisions
 
-- **Charge = ④'s capture of the held authorization** (Stripe manual-capture,
-  destination charge + `on_behalf_of=<organizer>` + `application_fee_amount`, JPY
-  card only). The Organizer is the settlement merchant (matches seller-of-record);
-  the platform takes the fee. ⑤ does **not** perform a separate charge — it consumes
-  ④'s captured payment. (This supersedes the prior SetupIntent/off-session model;
-  ④'s auth-hold is enabled by the 30-day JPY authorization window ≫ the ≤14-day
-  lottery window — see payments-design.)
-- **Issue only on a webhook-confirmed capture, idempotently.** The client
-  confirm is never trusted. Idempotency keyed on the provider event id so
-  redelivery never double-issues/refunds. Prevents the classic "issued on client
-  success, capture later failed" bug.
+- **Charge = ④'s capture of the held authorization** (Stripe manual-capture, JPY
+  card only). ⑤ does **not** perform a separate charge — it consumes ④'s captured
+  payment. (This supersedes the prior SetupIntent/off-session model; ④'s auth-hold
+  is enabled by the 30-day JPY authorization window ≫ the ≤14-day lottery window —
+  see payments-design.)
+- **Escrow mechanism = separate charges & transfers (platform-held), NOT a
+  destination charge.** Captured funds sit on the **platform** balance; ⑤ `Transfer`s
+  the Organizer's net share post-event (the platform takes its fee as the retained
+  portion). A destination charge + `on_behalf_of` would settle to the Organizer at
+  capture and therefore **not** hold funds — so it cannot back the hold-to-event
+  escrow this design assumes. The three roles stay separate: seller-of-record =
+  Organizer (収納代行 contract + 特商法 表記), money-handling = platform 収納代行 agent,
+  Stripe MoR = platform. See payments-design "Why separate charges & transfers".
+  **⚠️ ④ is SHIPPED on the destination-charge model → a ④ follow-up change must move
+  its PaymentIntent to separate charges & transfers; until then the hold-to-event
+  escrow is not actually in effect even though ⑤'s payout leg assumes platform-held
+  funds.**
+- **Trigger = ④'s Won-captured signal, NOT a ⑤-owned capture webhook (corrected).**
+  ④ owns the Stripe PaymentIntent lifecycle (authorize/capture/cancel) and its
+  webhooks; on capture success ④ marks the application **Won-captured**. ⑤ keys
+  issuance on that signal (MVP: the Won-captured record; a later event is additive).
+  The earlier "issue on a ⑤-owned capture webhook / webhooks are the source of
+  truth for capture" wording was a leftover from the off-session-charge model and
+  is corrected — ⑤ owns only the **refund/dispute** webhooks (from its own refund
+  calls) + **issuance idempotency**.
+- **Capture-succeeded / issuance-failed reconciliation.** ④ delegated post-capture
+  issuance-failure to ⑤: retry issuance idempotently; if it still can't complete,
+  **refund the captured payment** (Refund + `transfer_reversal`) and flag for
+  follow-up — never money-captured-with-no-ticket, never double-issue.
+- **Covered-ticket 本人確認 source depends on the phase verification requirement.**
+  Where the phase required identity verification (identity-ekyc), the **verified
+  identity is authoritative** (bound name = verified 本人確認, no conflicting
+  self-declared name); otherwise ④'s self-declared name+contact binds. Resolves the
+  identity-ekyc "fold-in" for ⑤.
+- **No `pending` Order.** ⑤ creates the Order from an already-captured payment, so
+  it is `paid` on creation (pre-capture authorize/hold state lives on ④'s
+  `TicketApplication`). Order states: `paid` → `refunded` (or `failed` for the
+  capture-succeeded-but-issuance-refunded edge).
+- **Postponement offers a holder-initiated refund window** (JP norm) in addition to
+  "ticket stays valid for the new date"; cancellation refunds the current holder.
 - **⑤ DEFINES the `Ticket` entity** (account-bound, 本人確認-bound, covered);
   ⑥ adds wallet/rotating-QR/check-in behavior on it. Avoids two capabilities
   each defining a Ticket.
@@ -50,9 +80,13 @@ forward contracts.
   `TicketId`, a `PaymentRef` wrapper) and an **enum** for `Order.status`, with
   protovalidate constraints — the spec's status names (`pending`/`paid`/...) are
   logical values, not proto bare-string literals.
-- **Payout hold-to-event + dispute buffer** via manual payout — the escrow-with-
-  counter-performance gate that supports the 収納代行 characterization (the gate
-  matters, not a bright-line N-day; see payments-design determination).
+- **Payout hold-to-event + dispute buffer** — funds are held on the **platform**
+  balance (separate charges & transfers) and ⑤'s scheduled process `Transfer`s the
+  Organizer's net share only after the event + dispute buffer (the escrow-with-
+  counter-performance gate that supports the 収納代行 characterization; the gate
+  matters, not a bright-line N-day). This is a platform-held Transfer, **not** a
+  manual payout of destination-charge funds (which would not hold; see
+  payments-design determination).
 - **Refund taxonomy: cancellation (中止) refunds; postponement (延期) does not**
   (ticket stays valid for the new date). Keep the processor fee (JP norm). This
   is the "normal cancellation-refund path" ⑦ resale defers to — and note ⑦'s
@@ -67,9 +101,9 @@ forward contracts.
 
 ## Risks / Trade-offs
 
-- **Authored ahead of ④ (not built) and ⑥ (not specced).** *→* Reference, do not
-  redefine, ④'s win/saved-pm and keep ⑥'s wallet/QR out of scope; express both
-  handoffs as states + signals. Reconcile shapes when ④ builds / ⑥ specs.
+- **④ is shipped; ⑥ not yet built.** *→* Bind ⑤ to ④'s actual **Won-captured**
+  handoff (not a saved-card/off-session charge); keep ⑥'s wallet/QR out of scope
+  and reconcile the Ticket shape when ⑥ builds.
 - **Auto-charge burst at draw close** (many winners charged at once). *→* Batch
   with per-Order idempotency keys; rate-limit to the provider; retries safe.
 - **Chargebacks land after payout window.** *→* Hold a reserve past the dispute

@@ -12,84 +12,124 @@ ticketing MVP.
 ### Requirement: Issue from ④'s captured winning payment
 
 The charge is performed by **④** (a Stripe **manual-capture** authorization held at
-application and **captured at the draw** for winners — destination charge on behalf
-of the Organizer with a platform application fee, JPY card only). ⑤ SHALL **NOT**
-perform a separate off-session charge; on ④'s **captured winning payment**
-(webhook-confirmed capture), ⑤ SHALL create the **Order** referencing that payment
-and proceed to issuance. There is **no ⑤-side payment deadline, off-session charge,
+application and **captured at the draw** for winners, JPY card only). The captured
+funds are **held on the platform balance** (separate charges & transfers) under the
+収納代行 scheme — the platform later transfers the Organizer's net share (see
+"Payout held to event"). **④ owns the PaymentIntent lifecycle and its provider
+webhooks (authorize / capture / cancel)**;
+on a successful capture ④ marks the application **Won-captured**. **⑤ is triggered
+by ④'s confirmed-captured signal (the Won-captured application), NOT by a
+⑤-owned capture webhook** (in the MVP the handoff is ④'s Won-captured record, not
+an event). On that signal ⑤ SHALL create the **Order** referencing ④'s captured
+PaymentIntent and proceed to issuance. ⑤ SHALL **NOT** perform a separate
+off-session charge; there is **no ⑤-side payment deadline, off-session charge,
 re-auth, or 繰上げ** — the hold-and-capture model removes them (④ releases losers'
-holds; a rare failed capture leaves the seat unfilled for manual follow-up, ④'s
-concern).
+holds; a capture that never succeeds leaves the seat unfilled for ④'s manual
+follow-up).
 
 #### Scenario: Order created from the captured winning payment
 
-- **WHEN** ④ captures a winning application's held authorization (webhook-confirmed capture)
-- **THEN** ⑤ creates an Order referencing that captured payment and proceeds to issuance
+- **WHEN** ④ marks a winning application Won-captured (its held authorization captured at the draw)
+- **THEN** ⑤ creates an Order referencing that captured PaymentIntent and proceeds to issuance
 
-#### Scenario: ⑤ performs no separate charge
+#### Scenario: ⑤ performs no separate charge and does not own the capture webhook
 
 - **WHEN** a winner is being processed
-- **THEN** ⑤ does not run an off-session charge / SetupIntent / payment-deadline / 繰上げ flow — the charge is ④'s capture of the held authorization
+- **THEN** ⑤ does not run an off-session charge / SetupIntent / payment-deadline / 繰上げ flow, and does not depend on a ⑤-owned capture webhook — the charge, capture, and its webhooks are ④'s; ⑤ keys on the Won-captured signal
 
-#### Scenario: Failed capture yields no Order
+#### Scenario: No Won-captured, no Order
 
-- **WHEN** ④'s capture of a winning authorization fails
-- **THEN** ⑤ creates no Order and issues no ticket (the seat is left for ④'s manual follow-up; no ⑤-side retry/繰上げ)
+- **WHEN** an application is not Won-captured by ④ (lost, or its capture never succeeded)
+- **THEN** ⑤ creates no Order and issues no ticket (no ⑤-side retry/繰上げ)
 
 ### Requirement: Order record
 
 The system SHALL create an **`Order`** for each purchase that is **provider- and
 method-agnostic**: it stores opaque provider references (e.g. `pi_`/`pm_`), its
-own `status` (`pending`/`paid`/`failed`/`refunded`), `amount`+`currency`,
-`paid_at`, and optional display facets (card brand/last4) — **never** PAN, CVC,
-or expiry. One Order SHALL cover the **N tickets** of the winning application.
+own `status` (**`paid`** on creation — the Order is created from an already-captured
+payment — then `refunded`, or `failed` for the capture-succeeded-but-issuance-
+refunded edge), `amount`+`currency`, `paid_at` (= the capture time), and optional
+display facets (card brand/last4) — **never** PAN, CVC, or expiry. There is **no
+`pending` Order** (the pre-capture authorize/hold state lives on ④'s
+`TicketApplication`, not on ⑤'s Order). One Order SHALL cover the **N tickets** of
+the winning application.
 
-#### Scenario: Order captures only opaque references
+#### Scenario: Order is created already paid, referencing the captured payment
 
-- **WHEN** an Order is created
-- **THEN** it stores opaque provider token references and its own status/amount, and never stores PAN/CVC/expiry
+- **WHEN** an Order is created from ④'s captured winning payment
+- **THEN** its status is `paid` with `paid_at` = the capture time, it stores only opaque provider token references, and never stores PAN/CVC/expiry
 
 #### Scenario: One Order spans the companion group
 
-- **WHEN** a winning application for N tickets is charged
+- **WHEN** a winning application for N tickets is captured
 - **THEN** a single Order covers all N tickets
 
-### Requirement: Issue account-bound tickets on confirmed capture
+### Requirement: Issue account-bound covered tickets on the captured win
 
-On a **webhook-confirmed** successful capture, the system SHALL issue **N
-account-bound Tickets**. Each SHALL be a **covered ticket (特定興行入場券)** carrying
-**all three** legal conditions: (i) the face states **resale without organizer
-consent is prohibited**, (ii) the face specifies **date/venue + seat-or-eligible-
-person**, and (iii) the **本人確認** (name + contact) is captured and noted on the
-face, bound to the buyer's account. Tickets MUST NOT be issued on a client-side
-confirmation alone.
+On ④'s **Won-captured** signal the system SHALL issue **N account-bound Tickets**.
+Each SHALL be a **covered ticket (特定興行入場券)** carrying **all three** legal
+conditions: (i) the face states **resale without organizer consent is prohibited**,
+(ii) the face specifies **date/venue + eligible-person** (the lottery is a common
+pool with **no seat map** — the eligible-person is the bound holder, seat is
+general-admission/none), and (iii) the **本人確認** is captured and noted on the
+face, bound to the buyer's account. **本人確認 source depends on the phase's
+verification requirement:** where the phase **required identity verification**
+(identity-ekyc), the **verified identity is authoritative** and the bound name
+MUST match the verified 本人確認 (no conflicting self-declared name); otherwise ④'s
+**self-declared name + contact** is bound. Tickets MUST NOT be issued on a
+client-side confirmation alone (issuance keys on ④'s captured-win signal).
 
-#### Scenario: Tickets issued after webhook confirmation
+#### Scenario: Tickets issued on the captured win
 
-- **WHEN** the provider webhook confirms the capture succeeded
-- **THEN** N account-bound tickets are issued to the buyer
+- **WHEN** ④ marks a winning application Won-captured
+- **THEN** N account-bound covered tickets are issued to the buyer
 
 #### Scenario: Issued ticket carries all three covered-ticket conditions
 
 - **WHEN** a ticket is issued
-- **THEN** its face states resale-without-consent is prohibited, specifies date/venue + seat-or-eligible-person, and records the holder's 本人確認 (so it qualifies as a 特定興行入場券)
+- **THEN** its face states resale-without-consent is prohibited, specifies date/venue + eligible-person, and records the holder's 本人確認 (so it qualifies as a 特定興行入場券)
 
-#### Scenario: No issuance on client confirm alone
+#### Scenario: Verified identity binds the covered ticket where required
 
-- **WHEN** only the client reports success but no confirming webhook has arrived
+- **WHEN** the phase required identity verification and a verified person's win is issued
+- **THEN** the covered-ticket 本人確認 is the verified identity (a conflicting self-declared name is not bound)
+
+#### Scenario: No issuance without the captured-win signal
+
+- **WHEN** no ④ Won-captured signal exists for an application
 - **THEN** no ticket is issued
 
-### Requirement: Webhooks are the source of truth and idempotent
+### Requirement: Idempotent issuance; ⑤ owns refund/dispute webhooks
 
-The system SHALL treat **provider webhooks** as the authoritative source for
-capture / refund / dispute state, verify their signatures, and process them
-**idempotently** (a redelivered or duplicated webhook MUST NOT double-issue,
-double-refund, or double-charge).
+**Capture** and its provider webhooks belong to ④. ⑤ SHALL make **issuance
+idempotent**: replaying the Won-captured signal (or retrying issuance) MUST NOT
+double-issue tickets or double-create an Order for the same application. ⑤ SHALL
+own the **refund and dispute** provider webhooks (from its own refund calls),
+verify their signatures, and process them idempotently (no double-refund).
 
-#### Scenario: Duplicate webhook is idempotent
+#### Scenario: Replayed captured-win signal issues exactly once
 
-- **WHEN** the same capture webhook is delivered more than once
-- **THEN** tickets are issued exactly once
+- **WHEN** ④'s Won-captured signal for an application is observed/retried more than once
+- **THEN** the Order is created once and tickets are issued exactly once
+
+#### Scenario: Refund webhook is idempotent
+
+- **WHEN** a refund/dispute webhook (from ⑤'s refund) is delivered more than once
+- **THEN** the refund is recorded once (no double-refund)
+
+### Requirement: Capture succeeded but issuance failed
+
+If ④'s capture **succeeded** but ⑤ **cannot complete issuance** (e.g. a persistence
+error after capture), ⑤ MUST NOT leave money captured with no ticket. ⑤ SHALL
+**retry issuance idempotently**; if issuance still cannot complete within a bounded
+window it SHALL **refund/void the captured payment** (release the funds via
+`Refund` + `transfer_reversal`) and surface the case for operator follow-up. It
+MUST never double-issue on a later retry.
+
+#### Scenario: Post-capture issuance failure is reconciled
+
+- **WHEN** the capture succeeded but ticket issuance fails
+- **THEN** ⑤ retries issuance idempotently, and if it still cannot complete it refunds the captured payment and flags the case (money is never captured with no ticket, and no double issuance occurs)
 
 <!-- The former "Charge outcome reporting (grace before void)" requirement is
      REMOVED: ④'s authorization-hold model (authorize at apply, capture on win,
@@ -100,13 +140,15 @@ double-refund, or double-charge).
 
 ### Requirement: Payout held to event plus dispute buffer
 
-Organizer payouts SHALL be on **manual payout**, released by a **scheduled
+Buyer funds SHALL be **held on the platform balance** (separate charges &
+transfers — **not** a destination charge, which would settle to the Organizer at
+capture) and the Organizer's net share SHALL be **transferred** by a **scheduled
 platform process** (not the Organizer) only after **the event's occurrence AND a
 dispute-safety window**. "The event has occurred" SHALL be defined as **the
 event's `start_time` (of its currently-scheduled date) having passed**; on a
 **postponement (延期)** the release clock SHALL **reset to the new date** (never
-release on a stale original date). The buyer's payment funds this held balance
-under the 収納代行 scheme.
+release on a stale original date). The held platform balance funds this under the
+収納代行 scheme.
 
 #### Scenario: Payout not released before the event + buffer
 
@@ -143,7 +185,15 @@ refund and claw back the Organizer's share (`transfer_reversal`). If the ticket 
 listing/offer** and refund the holder (the resale fresh-sale leg MUST NOT run) —
 this is the "normal cancellation-refund path" ⑦ defers to. On **postponement
 (延期)** the system SHALL **not** auto-refund; the ticket stays valid for the new
-date.
+date, **but SHALL offer a holder-initiated refund window** — a bounded period in
+which a holder who cannot attend the rescheduled date may request a refund
+(refunded like a cancellation: face + system/発券 fee, processor fee retained) —
+the JP norm for postponed events.
+
+#### Scenario: Postponement offers a holder-initiated refund window
+
+- **WHEN** an event is postponed and a holder cannot attend the new date, within the refund window
+- **THEN** the holder may request a refund (face + system/発券 fee, processor fee retained); outside the window the ticket simply stays valid for the new date
 
 #### Scenario: Cancellation refunds the current holder
 
