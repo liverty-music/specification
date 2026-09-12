@@ -17,9 +17,21 @@ the competitor/market research in `market-design-notes.md`.
   fit for a JP lottery (authorize→split-at-capture, deepest JP methods) —
   run a serious PoC before locking in. Adyen for Platforms is the
   enterprise-scale "graduation" target.
-- **Connect charge model:** **destination charges + `on_behalf_of=<organizer>`
-  + `application_fee_amount`.** The Organizer is the settlement merchant on
-  the buyer's statement (matches "Organizer = seller-of-record", below).
+- **Connect charge model: separate charges & transfers (platform-held escrow) —
+  SUPERSEDES the earlier destination-charge decision (see "Why separate charges
+  & transfers" below).** The platform charges the buyer (funds sit on the
+  **platform** balance), then **`Transfer`s the Organizer's net share after the
+  event** (`source_transaction` links each transfer to its charge); losers' holds
+  are released and refunds come from the platform balance. This is what actually
+  realizes **hold-to-event escrow** — a destination charge settles to the
+  Organizer's balance immediately at capture (manual payout only delays the
+  Organizer's *bank* withdrawal, not platform custody). **Three axes stay separate**
+  (do not conflate): legal seller-of-record = **Organizer** (via 収納代行 contract +
+  特商法 表記); money-handling role = **platform as 収納代行 collection agent**
+  (代理受領権限); Stripe settlement-merchant/MoR = **platform** (statement descriptor
+  carries a per-event dynamic suffix to keep dispute rates low). Adopt Stripe
+  **funds segregation (`allocated_funds`)** to isolate held funds when it is GA +
+  JP-eligible.
 - **Methods: card-only for MVP** (incl. **debit / prepaid** cards — the
   cardless-fan substitute — and Apple Pay / Google Pay, which are just
   `card` wallets). **Konbini / PayPay are out of scope** for MVP (async
@@ -38,11 +50,15 @@ the competitor/market research in `market-design-notes.md`.
   off-session charge, no re-auth/grace, no 繰上げ** — a held authorization captured
   at the draw effectively does not fail (a rare failed capture → seat unfilled,
   manual follow-up).
-- **Payout: hold to event + dispute window.** Organizer accounts on
-  **manual payout**; release via Payouts API **after the event AND a
-  dispute-safety buffer** (chargebacks arrive days-to-weeks later — "after
-  event" alone is too early). Refunds via `Refund` (platform balance) +
-  `transfer_reversal` to claw the Organizer's share.
+- **Payout: hold to event + dispute window (platform-held via separate charges
+  & transfers).** Buyer funds sit on the **platform** balance from capture; a
+  **scheduled platform process** `Transfer`s the Organizer's net share only
+  **after the event AND a dispute-safety buffer** (chargebacks arrive
+  days-to-weeks later — "after event" alone is too early). Refunds/releases come
+  from the platform balance (`Refund`; `transfer_reversal` claws back a share
+  already transferred). This genuinely holds funds until counter-performance —
+  unlike a destination charge + manual payout, which only delays the Organizer's
+  bank withdrawal of funds already in its own balance.
 - **Webhooks are the source of truth** for capture / refund / dispute — never
   issue tickets on the client confirm alone. Idempotent handlers.
 - **Fee model: a flat percentage, buyer-shiftable.** A single clean % (like
@@ -70,6 +86,57 @@ the **captured** payment.
 > apply, auto-charge winners at draw, prepaid/debit hold-release in 1–8 days) applied
 > to the **non-JPY / generic** hold; the JPY-30-day window is the specific fact that
 > reversed it. Prepaid/debit that cannot hold 14 days are excluded like Amex.
+
+### Why separate charges & transfers (escrow mechanism) — hold-to-event custody
+
+The **hold mechanism** (manual-capture authorization, above) and the **escrow
+mechanism** (who custodies the captured funds until the event) are different axes.
+For the escrow mechanism, **separate charges & transfers** is correct — **not**
+destination charges:
+
+- **Destination charges settle to the Organizer immediately at capture.** Stripe
+  moves the full amount to the connected account's balance the moment the charge is
+  captured; manual payout only delays the Organizer's *bank* withdrawal. So a
+  destination charge does **not** give the platform custody and cannot back a
+  "hold-to-event escrow" claim.
+- **Separate charges & transfers holds funds on the platform balance** until a
+  scheduled post-event `Transfer` to the Organizer (`source_transaction` ties each
+  transfer to its charge). This is Stripe's documented pattern for "create the
+  charge before you're ready to move the funds", and it is what genuinely realizes
+  hold-to-event escrow, ⑦ resale re-routing, and loser refunds from a pooled
+  balance.
+- **Competitor corroboration.** Every JP incumbent (Peatix / ぴあ / TIGET / ZAIKO /
+  LivePocket) and the clearest global Stripe example (Eventbrite) operate as
+  *platform collects → holds until after the event → post-event settlement to the
+  organizer* — the separate-charges shape, under a 収納代行 / 委託販売 wrapper.
+- **The "収納代行 vs true escrow" framing is a false dichotomy.** Platform-held funds
+  (separate C&T) are compatible with the Organizer remaining the legal
+  seller-of-record: 代理受領権限 discharges the buyer's obligation at payment, so the
+  platform holding those collected funds until the event is normal collection-agency
+  behaviour. Keep the three axes separate (seller-of-record = Organizer;
+  money-handling = platform 収納代行 agent; Stripe MoR = platform).
+- **Trade-offs accepted.** Statement descriptor is the platform by default (add a
+  per-event dynamic suffix to lower "unrecognized charge" disputes); higher ops
+  complexity (manage charge → hold → per-winner `Transfer` → reversals; the platform
+  must accept connected-account **negative-balance responsibility** — also a
+  prerequisite for funds segregation). Chargeback/negative-balance liability lands on
+  the platform under **either** model, so this axis is not a differentiator.
+- **Stripe funds segregation (`allocated_funds`)** is the purpose-built primitive to
+  isolate held separate-charge funds from platform payouts / other refunds / fees; it
+  is a **private preview** and **JP is not yet on its listed markets** — ship plain
+  separate charges & transfers first, layer `allocated_funds` when GA + JP-eligible
+  (confirm with Stripe).
+
+> **⚠️ ④ follow-up (④ `lottery-application` is SHIPPED on the destination-charge
+> model).** ④ implemented authorize-at-apply / capture-at-draw as a **destination
+> charge + `on_behalf_of` + `application_fee`**, which settles to the Organizer at
+> capture and does **not** platform-hold funds. Realizing this escrow decision needs a
+> **④ follow-up change** to move the PaymentIntent to **separate charges & transfers**
+> (charge on the platform, no `transfer_data[destination]` / `on_behalf_of` at
+> capture; platform takes its fee as the retained portion; ⑤ `Transfer`s the
+> Organizer post-event). Until that lands, the **hold-to-event escrow property is not
+> actually in effect** even though ⑤'s payout leg assumes platform-held funds. Gate
+> before a live paid sale; track alongside the counsel opinion (flag 1).
 
 ## Legal / money scheme (収納代行) — not legal advice
 
@@ -122,8 +189,11 @@ event is **not** an anomaly; it is established practice, which supports the
 escrow characterization rather than undermining it. The **only** genuine
 divergence from incumbents is the **PSP rail** (Stripe Connect vs domestic
 GMO/proprietary/イーコンテクスト) — a technology choice, not a business-model
-one; Stripe Connect must be configured (manual payout) to *emulate* the
-held-until-event settlement the incumbents get from delayed acquiring.
+one; Stripe Connect realizes the held-until-event settlement the incumbents get
+from delayed acquiring via **separate charges & transfers** (funds held on the
+platform balance, transferred post-event) — a destination charge + manual payout
+would **not** hold funds (it only delays the Organizer's bank withdrawal), so
+separate charges & transfers is the correct rail for this model.
 
 **Safe-harbor to stay clearly in exempt 収納代行** (structure in the contract
 stack + T&Cs):
@@ -217,8 +287,10 @@ resale analysis differs from or extends the primary-sale analysis above.
 
 Order/Payment carries only: `provider` (stripe), opaque `payment_intent_id`
 (`pi_…`) + `payment_method_id` (`pm_…`), `payment_method_type` (card now;
-konbini/paypay later), own `status` (`pending`/`paid`/`failed`/`refunded` —
-no `awaiting_payment` now that konbini is out), `amount`+`currency`,
+konbini/paypay later), own `status` (`paid` on creation → `refunded`, or
+`failed` for the capture-succeeded-but-issuance-refunded edge — **no `pending`**:
+⑤ creates the Order from ④'s already-captured payment, and no `awaiting_payment`
+now that konbini is out), `amount`+`currency`,
 `paid_at`, optional display facets (`card_brand`/`card_last4`). Never store
 PAN/CVC/expiry or Stripe's raw status. This keeps ⑤'s proto stable across a
 provider switch (KOMOJU) or added methods.

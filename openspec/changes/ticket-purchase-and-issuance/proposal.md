@@ -19,10 +19,16 @@ Full money design + legal scheme + counsel flags:
   `max_tickets_per_application`).
 - **Charge is ④'s capture, not a ⑤ off-session charge.** ④ authorizes at apply and
   **captures the winner's held authorization at the draw** (Stripe manual-capture,
-  **destination charge + `on_behalf_of=<organizer>` + `application_fee_amount`**,
   **JPY card only**). ⑤ consumes the **captured winning payment**. **No ⑤-side
   SetupIntent / off-session charge / payment deadline / 繰上げ** — the hold-and-
   capture model removes them.
+- **Escrow = separate charges & transfers (platform-held), not a destination
+  charge.** Captured funds sit on the **platform** balance and are `Transfer`red to
+  the Organizer post-event (a destination charge would settle at capture and not
+  hold). Roles stay separate: Organizer = seller-of-record, platform = 収納代行
+  agent + Stripe MoR. **⚠️ ④ is shipped on the destination-charge model → a ④
+  follow-up is needed to switch to separate charges & transfers** (see
+  payments-design).
 - **`Order`** — a provider/method-agnostic record (opaque `pi_`/`pm_`, own
   `status`, `amount`+`currency`, `paid_at`, facets), one Order = **N tickets**,
   referencing ④'s captured payment.
@@ -31,10 +37,10 @@ Full money design + legal scheme + counsel flags:
   is a **covered ticket (特定興行入場券)**. Never issue on the client confirm.
 - **Failed capture → no Order/ticket** (the seat is ④'s manual-follow-up concern;
   no ⑤-side retry/繰上げ).
-- **Payout: hold to event + dispute buffer.** Organizer accounts on **manual
-  payout**; release after the event AND a dispute-safety window. This is the
-  **primary** buyer→Organizer leg (distinct from ⑦ resale's post-sale seller
-  refund).
+- **Payout: hold to event + dispute buffer.** Funds held on the **platform**
+  balance; a scheduled platform process `Transfer`s the Organizer's net share after
+  the event AND a dispute-safety window. This is the **primary** buyer→Organizer leg
+  (distinct from ⑦ resale's post-sale seller refund).
 - **Refund taxonomy.** **Cancellation (中止)** → refund (face + system/発券 fee;
   keep the payment-processor fee, JP norm) via `Refund` + `transfer_reversal`.
   **Postponement (延期)** → no auto-refund; the ticket stays valid for the new
@@ -55,11 +61,13 @@ challenger, swappable behind the opaque `provider`); no seat maps.
 
 ### New Capabilities
 - `ticket-purchase-and-issuance`: the post-capture Order + issuance pipeline —
-  `Order` referencing ④'s **captured** winning payment (Stripe Connect destination
-  charge + `on_behalf_of` + `application_fee`, the capture done by ④), webhook-
-  confirmed **account-bound Ticket issuance** (N per order, 本人確認-bound covered
-  tickets), hold-to-event payout, and the cancellation/postponement refund taxonomy
-  under the 収納代行 scheme. (No ⑤-side off-session charge / 繰上げ — ④'s hold model.)
+  `Order` referencing ④'s **captured** winning payment (Stripe Connect **separate
+  charges & transfers** — platform-held, the capture done by ④; a ④ follow-up moves
+  ④ off its shipped destination-charge model), webhook-confirmed **account-bound
+  Ticket issuance** (N per order, 本人確認-bound covered tickets), hold-to-event
+  payout (post-event `Transfer` to the Organizer), and the cancellation/postponement
+  refund taxonomy under the 収納代行 scheme. (No ⑤-side off-session charge / 繰上げ —
+  ④'s hold model.)
 
 ### Modified Capabilities
 - `ticket-journey`: issuance adds a **first-party authoritative side-effect
@@ -78,8 +86,9 @@ challenger, swappable behind the opaque `provider`); no seat maps.
 - **New entities:** `Order`, `Ticket` (account-bound, 本人確認-bound), Payment
   references (opaque). Defined provider-agnostic so a KOMOJU switch is a
   no-proto-break.
-- **External:** Stripe Connect (destination charges, Connect accounts, webhooks,
-  manual payout, Refund/`transfer_reversal`). **Long-lead prerequisites** (start
+- **External:** Stripe Connect (separate charges & transfers, Connect accounts,
+  webhooks, post-event `Transfer`, Refund/`transfer_reversal`; `allocated_funds`
+  when GA + JP-eligible). **Long-lead prerequisites** (start
   now): Stripe KYC/審査, 収納代行 counsel opinion, 適格請求書発行事業者 registration,
   KOMOJU-vs-Stripe PoC (#778).
 - **Legal/compliance (payments-design obligations table):** 総額表示, 特商法
