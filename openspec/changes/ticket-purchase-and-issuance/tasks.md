@@ -10,20 +10,20 @@
 - [x] 1.1 Define `Order` (provider, opaque pi_/pm_ of ④'s captured payment, status paid→refunded/failed — **no pending**, amount+currency, paid_at, display facets) — never PAN/CVC
 - [x] 1.2 Define account-bound `Ticket` (buyer account, event ref, 本人確認 binding, covered-ticket face fields, order ref)
 - [x] 1.3 RPCs: internal create-Order-from-captured-payment + issuance; buyer GetOrder/GetMyTickets; admin refund/payout ops
-- [ ] 1.4 protovalidate; buf lint/breaking; merge PR → Release → BSR gen (protovalidate + buf lint/breaking PASS locally; PR merge → Release → BSR gen still pending)
+- [x] 1.4 protovalidate; buf lint/breaking; merge PR → Release → BSR gen (spec #938 merged → Release v0.62.0 → BSR gen succeeded)
 
 ## 2. Backend — Order from ④'s captured payment
 
-- [ ] 2.1 On ④'s captured winning payment (a plain platform-account charge by ④; funds already platform-held; JPY-only), create the Order referencing that PaymentIntent — ⑤ runs NO separate off-session charge
-- [ ] 2.2 Card-only context (④ enforces JPY/Amex-excluded at authorization)
-- [ ] 2.3 Idempotent handling keyed on the capture/provider event id (redelivery-safe)
-- [ ] 2.4 Failed capture → no Order, no issuance (surfaced for ④'s manual follow-up; no ⑤-side retry/繰上げ)
+- [x] 2.1 On ④'s captured winning payment (a plain platform-account charge by ④; funds already platform-held; JPY-only), create the Order referencing that PaymentIntent — ⑤ runs NO separate off-session charge (be #445: IssuanceUseCase.IssueFromCapturedWin)
+- [x] 2.2 Card-only context (④ enforces JPY/Amex-excluded at authorization) (⑤ consumes ④'s captured card payment; enforcement shipped in ④)
+- [x] 2.3 Idempotent handling keyed on the capture/provider event id (redelivery-safe) (be #445: one Order per application via unique index → AlreadyExists re-read)
+- [x] 2.4 Failed capture → no Order, no issuance (surfaced for ④'s manual follow-up; no ⑤-side retry/繰上げ) (be #445: not-Won guard → FailedPrecondition, no Order)
 
 ## 3. Backend — issuance (Won-captured-driven)
 
-- [ ] 3.1 Issuance idempotency keyed on ④'s Won-captured signal (redelivery-safe; no double-Order/double-issue). Refund/dispute webhook ingest belongs to `ticket-settlement-and-payout`.
-- [ ] 3.2 Issue N account-bound covered Tickets on the captured-win signal only (never on client confirm); bind 本人確認
-- [ ] 3.3 Set the buyer's ticket-journey to PAID on issuance (first-party authoritative)
+- [x] 3.1 Issuance idempotency keyed on ④'s Won-captured signal (redelivery-safe; no double-Order/double-issue). Refund/dispute webhook ingest belongs to `ticket-settlement-and-payout`. (be #445: sweeper + idempotent IssueFromCapturedWin)
+- [x] 3.2 Issue N account-bound covered Tickets on the captured-win signal only (never on client confirm); bind 本人確認 (be #445: transactional Issue; verified-identity bound when phase required it)
+- [x] 3.3 Set the buyer's ticket-journey to PAID on issuance (first-party authoritative) (be #445)
 
 ## 4. Refund policy (execution owned by ticket-settlement-and-payout)
 
@@ -31,8 +31,8 @@
 
 ## 5. Frontend (Aurelia PWA)
 
-- [ ] 5.1 Order/payment result + issued-ticket confirmation surfaces (checkout card capture lives in ④'s apply)
-- [ ] 5.2 Refund/cancellation status surfacing
+- [x] 5.1 Order/payment result + issued-ticket confirmation surfaces (checkout card capture lives in ④'s apply) (fe #608 My Tickets + #609 Order detail)
+- [x] 5.2 Refund/cancellation status surfacing (fe #609/#610: Order detail 返金済み/失敗 banner + voided tickets)
 
 ## 6. Compliance (payments-design obligations table)
 
