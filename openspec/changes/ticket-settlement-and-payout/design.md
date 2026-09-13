@@ -52,23 +52,46 @@ money-movement behind `RefundOrder`; it does **not** modify #938's proto, and th
   `source_transaction` as long as their total ≤ the charge; the transfer waits until the
   charge's funds are available. Liverty keeps its fee simply by **not** transferring it
   (no self-transfer). `source_transaction` is set at creation and cannot be updated.
-- **`on_behalf_of` = the Organizer (single seller-of-record).** `on_behalf_of` names
-  exactly one account and sets the settlement merchant / statement descriptor / settlement
-  country — so it must be the Organizer. The platform stays the 収納代行 agent + holds
-  funds; the three axes (seller-of-record = Organizer, money-handling = platform agent,
-  Stripe MoR here = Organizer via on_behalf_of) are kept explicit. *(Trade-off: with
-  on_behalf_of the descriptor/settlement follow the Organizer; without it the platform is
-  MoR. For a single Organizer seller-of-record, on_behalf_of = Organizer is the cleaner
-  fit and matches "the Organizer sells the ticket." Revisit if the platform must be MoR.)*
-- **Statement descriptor.** Platform static prefix (Latin 2–10, + kanji/kana on the
-  platform account) + per-event `statement_descriptor_suffix` (+ `_kanji`/`_kana`)
-  naming the event/organizer. Budgets: Latin total 22, kanji 17, kana 22; no
-  `< > \ ' " *`. JCB/Diners/Discover show the account default during the pre-capture
-  window, so the default must itself be recognizable.
-- **Loss-liable controller / negative-balance responsibility on the platform.** Required
-  for separate charges & transfers and for any future `allocated_funds`. Refunds/disputes
-  debit the platform balance; reserve past the dispute window; `transfer_reversal` per
-  split claws back transferred shares.
+  **`source_transaction` needs the charge id (`ch_`), which ⑤'s `Payment` stores only as a
+  PaymentIntent ref (`pi_`).** The payout job therefore resolves `pi_` → `ch_` at Transfer
+  time (retrieve the PaymentIntent with `latest_charge` expanded) and records the `ch_` on
+  the settlement/payout row so the reversal path reuses it.
+- **No `on_behalf_of` — the platform is the Stripe settlement merchant (MVP).** Stripe's
+  Connect guidance lists `on_behalf_of` as a trap for standard separate-charges flows, and
+  the mechanics confirm why: to put the Organizer's name on the statement, `on_behalf_of`
+  requires the Organizer's connected account to hold the **`card_payments` capability**
+  ("連結アカウントから静的コンポーネントを使用するには card_payments ケイパビリティが必要"),
+  and that capability must be **active before the charge is created** — i.e. before the
+  lottery authorization at application time. That would gate ticket sale on full merchant
+  KYB, directly contradicting "onboarding never blocks sale," and would force a heavier
+  merchant account instead of a lightweight `transfers`-only recipient. The three axes stay
+  separate but decoupled from the Stripe flag: **seller-of-record = Organizer (contractual:
+  代理受領権限 + 特商法 表記), money-handling = platform 収納代行 agent, Stripe settlement
+  merchant = the platform (no on_behalf_of).** Dropping `on_behalf_of` costs only the
+  statement *prefix name* (platform vs Organizer); recognizability, kanji/kana, chargeback
+  liability (platform under either model), and all transfer mechanics are unchanged. This
+  matches the JP incumbents cited elsewhere (Peatix/ZAIKO show the platform on the statement
+  and operate as 収納代行). Organizer-named statement (on_behalf_of + merchant onboarding +
+  pre-sale gating) is a **future change** if counsel requires it.
+- **Statement descriptor (platform account).** Platform static prefix (Latin 2–10, +
+  kanji/kana on the **platform** account) + a per-event `statement_descriptor_suffix`
+  (+ `payment_method_options.card.statement_descriptor_suffix_kanji`/`_kana`) set on the
+  charge — all without `on_behalf_of`, since the platform is the settlement merchant.
+  Budgets: Latin total 22, kanji 17, kana 22; no `< > \ ' " *`. JCB/Diners/Discover show
+  the account default during the pre-capture window, so the platform default must itself be
+  recognizable. NOTE: the per-event suffix is a charge-creation-time param (④); the MVP may
+  ship with the platform static descriptor alone and add the suffix as a small, optional ④
+  enhancement — it is independent of this capability's Transfer logic.
+- **Accounts v2 recipient / loss-liable / negative-balance responsibility on the platform.**
+  Organizer accounts are created via **Accounts v2** as **payout recipients** — requesting
+  the **`transfers` capability on `stripe_balance`** only, NOT `card_payments` (unnecessary
+  for a recipient and slows onboarding). `losses_collector = application` (platform absorbs
+  negative balances) — required for separate charges & transfers, transfer reversals, and
+  any future `allocated_funds`. Payout eligibility gate =
+  `recipient.capabilities.stripe_balance.stripe_transfers.status == "active"` (v2 capability
+  status, NOT the deprecated v1 `payouts_enabled`). Refunds/disputes debit the platform
+  balance; reserve past the dispute window; `transfer_reversal` per split claws back
+  transferred shares.
 - **`allocated_funds` NOT adopted — JP ineligible.** Three gates (preview header opt-in;
   private-preview access grant; market eligibility) and JP is not in the market list
   (BE/CH/DE/DK/ES/FR/GB/NL/SE/US). Held funds sit in the general platform balance until
@@ -91,10 +114,12 @@ money-movement behind `RefundOrder`; it does **not** modify #938's proto, and th
   trodden JP path; multi-party splitting would raise the risk. *→* MVP single-payee;
   counsel opinion (payments-design flag 1) gates launch. Multi-payee re-analysis before
   any venue payee.
-- **`on_behalf_of` vs platform-MoR.** Choosing Organizer-as-MoR ties descriptor/
-  settlement to the Organizer's connected account; if the platform later needs to be MoR
-  (e.g. for a unified descriptor), that flips. *→* Decide with payment ops; both are
-  supported by the same separate-charges topology.
+- **Statement shows the platform, not the Organizer (no `on_behalf_of`).** The buyer's
+  statement prefix is the platform brand. *→* Accepted: it is the JP-incumbent norm
+  (Peatix/ZAIKO), the per-event suffix keeps it recognizable, and seller-of-record is
+  carried contractually + in 特商法 表記. If counsel later requires the Organizer's name on
+  the statement, that is a future change (merchant onboarding + pre-sale gating), not a flag
+  flip — it changes the sales-gating model.
 - **No fund isolation (no `allocated_funds`).** Held funds mix with the general platform
   balance. *→* Careful balance monitoring + reserve; revisit with Stripe if JP opens.
 
@@ -110,8 +135,11 @@ gate launch.
 
 ## Open Questions
 
-- **`on_behalf_of` = Organizer vs platform-MoR** — final call with payment ops/counsel
-  (statement-descriptor + settlement-country + tax implications).
+- **Organizer-named statement (future `on_behalf_of` change)** — MVP is decided as
+  platform-MoR (no on_behalf_of). Only if counsel requires the Organizer's name on the
+  buyer's statement does this reopen — as a separate change (merchant onboarding +
+  card_payments + pre-sale gating), with the tax/settlement-country implications assessed
+  then.
 - **Exact dispute-buffer / release length** — tunable op parameter (the gate, not the
   duration, is load-bearing).
 - **`allocated_funds` JP availability + manual-capture support** — Stripe account-manager

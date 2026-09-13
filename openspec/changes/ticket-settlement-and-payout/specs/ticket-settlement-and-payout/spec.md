@@ -10,13 +10,15 @@ clawbacks — all under the 収納代行 scheme with the Organizer as seller-of-
 
 ### Requirement: Organizer Connect onboarding and payout eligibility
 
-Each Organizer that receives payouts SHALL have a **Stripe connected account**, and a
-payout SHALL be **blocked until that account has cleared identity verification
-(KYC/KYB)**. The platform SHALL be **responsible for connected-account negative
-balances** (loss-liable controller configuration), which is required for the
-separate-charges-&-transfers model and for any later fund-isolation feature. An
-Organizer whose account is not payout-ready SHALL NOT block ticket sale or issuance;
-only the **payout** waits.
+Each Organizer that receives payouts SHALL have a **Stripe connected account provisioned
+as a payout recipient** (Accounts v2, requesting the **`transfers` capability** on
+`stripe_balance`; the platform SHALL NOT request `card_payments` for it). A payout SHALL be
+**blocked until that account's transfers capability is active** (identity verification /
+KYC/KYB cleared). The platform SHALL be **responsible for connected-account negative
+balances** (`losses_collector = application`), which is required for the
+separate-charges-&-transfers model, for transfer reversals, and for any later
+fund-isolation feature. An Organizer whose account is not payout-ready SHALL NOT block
+ticket sale or issuance; only the **payout** waits.
 
 #### Scenario: Payout blocked until KYC clears
 
@@ -25,7 +27,7 @@ only the **payout** waits.
 
 #### Scenario: Verified Organizer is payout-eligible
 
-- **WHEN** an Organizer's connected account has cleared KYC/KYB
+- **WHEN** an Organizer's connected account has its transfers capability active (KYC/KYB cleared)
 - **THEN** the Organizer is eligible to receive the scheduled post-event Transfer
 
 ### Requirement: Hold-to-event payout via separate charges and transfers
@@ -86,19 +88,21 @@ characterization (the gate matters, not a bright-line N-day).
 - **WHEN** an event is postponed to a later date
 - **THEN** the payout release is re-gated on the new date (the original date does not trigger release)
 
-### Requirement: Organizer is seller-of-record with a recognizable statement descriptor
+### Requirement: Contractual seller-of-record with a recognizable statement descriptor
 
-The Organizer SHALL be the **single seller-of-record**: the charge SHALL carry
-**`on_behalf_of` = the Organizer's connected account** (the one Stripe settlement
-merchant), while the platform remains the 収納代行 collection agent and holds the funds.
-The buyer's card statement SHALL show a **recognizable descriptor** — the platform's
-static prefix plus a **per-event dynamic suffix** (Latin, and JP kanji/kana for
-JP-issued cards) naming the event/organizer — to reduce "unrecognized charge" disputes.
+The Organizer SHALL be the **single seller-of-record contractually** (代理受領権限 grant +
+特商法 表記 naming the Organizer as 販売業者), while the **platform is the Stripe settlement
+merchant** and the 収納代行 collection agent holding the funds. The charge SHALL NOT use
+`on_behalf_of` (which would require the Organizer's connected account to hold the
+`card_payments` capability active before the charge, gating ticket sale on merchant KYB).
+The buyer's card statement SHALL show a **recognizable descriptor** — the platform's static
+prefix plus a **per-event dynamic suffix** (Latin, and JP kanji/kana for JP-issued cards)
+identifying the event/organizer — to reduce "unrecognized charge" disputes.
 
-#### Scenario: Charge names the Organizer as settlement merchant
+#### Scenario: Platform is the settlement merchant; Organizer is contractual seller
 
 - **WHEN** a charge is created for a ticket
-- **THEN** on_behalf_of is the Organizer's connected account (single seller-of-record), and the platform is the collection agent holding the funds
+- **THEN** the charge does not set on_behalf_of (the platform is the Stripe settlement merchant), while the Organizer remains the contractual seller-of-record and the platform holds the funds as collection agent
 
 #### Scenario: Statement descriptor identifies the event
 

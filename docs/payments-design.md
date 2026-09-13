@@ -30,12 +30,15 @@ the competitor/market research in `market-design-notes.md`.
   Organizer's cost, not a platform payee — the ticketing norm). **Three axes stay
   separate** (do not conflate): legal seller-of-record = **Organizer** (via 収納代行
   contract + 特商法 表記); money-handling role = **platform as 収納代行 collection
-  agent** (代理受領権限); Stripe settlement-merchant/MoR = **the Organizer via
-  `on_behalf_of`** (which sets the statement descriptor + settlement country to the
-  Organizer while the platform still holds the funds; a per-event dynamic suffix keeps
-  the descriptor recognizable). The full settlement mechanics are specified in the
-  **`ticket-settlement-and-payout`** change. `allocated_funds` fund isolation is **not
-  adopted** (JP-ineligible — see below).
+  agent** (代理受領権限); Stripe settlement-merchant/MoR = **the platform** (MVP: **no
+  `on_behalf_of`**). Naming the Organizer via `on_behalf_of` would require its connected
+  account to hold the `card_payments` capability active **before** the charge, gating
+  ticket sale on merchant KYB — so MVP keeps the platform as the Stripe merchant and carries
+  seller-of-record contractually. The statement stays recognizable via the platform static
+  prefix + a per-event dynamic suffix (kanji/kana); Organizer-named statement is a future
+  `on_behalf_of` change if counsel requires it. The full settlement mechanics are specified
+  in the **`ticket-settlement-and-payout`** change. `allocated_funds` fund isolation is
+  **not adopted** (JP-ineligible — see below).
 - **Methods: card-only for MVP** (incl. **debit / prepaid** cards — the
   cardless-fan substitute — and Apple Pay / Google Pay, which are just
   `card` wallets). **Konbini / PayPay are out of scope** for MVP (async
@@ -117,18 +120,28 @@ destination charges:
   (separate C&T) are compatible with the Organizer remaining the legal
   seller-of-record: 代理受領権限 discharges the buyer's obligation at payment, so the
   platform holding those collected funds until the event is normal collection-agency
-  behaviour. Keep the three axes separate (seller-of-record = Organizer;
-  money-handling = platform 収納代行 agent; Stripe MoR = **Organizer via
-  `on_behalf_of`**, which the settlement change adopts so the descriptor/settlement
-  follow the seller-of-record while the platform still holds the funds).
-- **Trade-offs accepted.** With `on_behalf_of` = Organizer the statement descriptor +
-  settlement country follow the Organizer (a per-event dynamic suffix keeps it
-  recognizable); omitting it would make the platform the MoR instead — a revisitable
-  call in `ticket-settlement-and-payout`. Higher ops complexity (manage charge → hold
-  → per-split `Transfer` → reversals; the platform must accept connected-account
-  **negative-balance responsibility** — also a prerequisite for funds segregation).
-  Chargeback/negative-balance liability lands on the platform under **either** model,
-  so that axis is not a differentiator.
+  behaviour. Keep the three axes separate but decoupled from any Stripe flag
+  (seller-of-record = Organizer *contractually*; money-handling = platform 収納代行 agent;
+  Stripe settlement-merchant = **the platform**, no `on_behalf_of`).
+- **Stripe settlement merchant = platform; NO `on_behalf_of` (updated).** The earlier plan
+  adopted `on_behalf_of` = Organizer so the descriptor/settlement would follow the seller.
+  Stripe's mechanics make that unworkable for MVP: putting the Organizer's name on the
+  statement requires its connected account to hold the **`card_payments` capability active
+  before the charge** ("連結アカウントから静的コンポーネントを使用するには card_payments
+  ケイパビリティが必要") — i.e. before the lottery authorization at application time — which
+  would gate ticket sale on full merchant KYB and contradict "onboarding never blocks sale."
+  Stripe's own Connect guidance also lists `on_behalf_of` as a trap for standard
+  separate-charges flows and says NOT to request `card_payments` for a recipient account.
+  So MVP uses a lightweight `transfers`-only recipient and keeps the platform as the Stripe
+  merchant. Cost of dropping `on_behalf_of` = only the statement *prefix name* (platform vs
+  Organizer); recognizability (per-event suffix incl. kanji/kana), settlement country (all
+  domestic → identical), fees (all-JP → identical), and **chargeback liability (on the
+  platform under either model)** are unchanged. This matches the JP incumbents (Peatix/ZAIKO
+  show the platform on the statement and operate as 収納代行). Organizer-named statement =
+  future change (merchant onboarding + pre-sale gating) if counsel requires it.
+- **Trade-offs accepted.** Higher ops complexity (manage charge → hold → per-split
+  `Transfer` → reversals; the platform must accept connected-account **negative-balance
+  responsibility** — also a prerequisite for funds segregation).
 - **Stripe funds segregation (`allocated_funds`)** is the purpose-built primitive to
   isolate held separate-charge funds from platform payouts / other refunds / fees.
   Availability is gated on **three separate conditions**, not just an API version:
