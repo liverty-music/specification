@@ -25,13 +25,17 @@ the competitor/market research in `market-design-notes.md`.
   are released and refunds come from the platform balance. This is what actually
   realizes **hold-to-event escrow** — a destination charge settles to the
   Organizer's balance immediately at capture (manual payout only delays the
-  Organizer's *bank* withdrawal, not platform custody). **Three axes stay separate**
-  (do not conflate): legal seller-of-record = **Organizer** (via 収納代行 contract +
-  特商法 表記); money-handling role = **platform as 収納代行 collection agent**
-  (代理受領権限); Stripe settlement-merchant/MoR = **platform** (statement descriptor
-  carries a per-event dynamic suffix to keep dispute rates low). Adopt Stripe
-  **funds segregation (`allocated_funds`)** to isolate held funds when it is GA +
-  JP-eligible.
+  Organizer's *bank* withdrawal, not platform custody). **Payee model = single
+  Organizer + retained platform fee**, modelled as extensible splits (venue is the
+  Organizer's cost, not a platform payee — the ticketing norm). **Three axes stay
+  separate** (do not conflate): legal seller-of-record = **Organizer** (via 収納代行
+  contract + 特商法 表記); money-handling role = **platform as 収納代行 collection
+  agent** (代理受領権限); Stripe settlement-merchant/MoR = **the Organizer via
+  `on_behalf_of`** (which sets the statement descriptor + settlement country to the
+  Organizer while the platform still holds the funds; a per-event dynamic suffix keeps
+  the descriptor recognizable). The full settlement mechanics are specified in the
+  **`ticket-settlement-and-payout`** change. `allocated_funds` fund isolation is **not
+  adopted** (JP-ineligible — see below).
 - **Methods: card-only for MVP** (incl. **debit / prepaid** cards — the
   cardless-fan substitute — and Apple Pay / Google Pay, which are just
   `card` wallets). **Konbini / PayPay are out of scope** for MVP (async
@@ -114,13 +118,17 @@ destination charges:
   seller-of-record: 代理受領権限 discharges the buyer's obligation at payment, so the
   platform holding those collected funds until the event is normal collection-agency
   behaviour. Keep the three axes separate (seller-of-record = Organizer;
-  money-handling = platform 収納代行 agent; Stripe MoR = platform).
-- **Trade-offs accepted.** Statement descriptor is the platform by default (add a
-  per-event dynamic suffix to lower "unrecognized charge" disputes); higher ops
-  complexity (manage charge → hold → per-winner `Transfer` → reversals; the platform
-  must accept connected-account **negative-balance responsibility** — also a
-  prerequisite for funds segregation). Chargeback/negative-balance liability lands on
-  the platform under **either** model, so this axis is not a differentiator.
+  money-handling = platform 収納代行 agent; Stripe MoR = **Organizer via
+  `on_behalf_of`**, which the settlement change adopts so the descriptor/settlement
+  follow the seller-of-record while the platform still holds the funds).
+- **Trade-offs accepted.** With `on_behalf_of` = Organizer the statement descriptor +
+  settlement country follow the Organizer (a per-event dynamic suffix keeps it
+  recognizable); omitting it would make the platform the MoR instead — a revisitable
+  call in `ticket-settlement-and-payout`. Higher ops complexity (manage charge → hold
+  → per-split `Transfer` → reversals; the platform must accept connected-account
+  **negative-balance responsibility** — also a prerequisite for funds segregation).
+  Chargeback/negative-balance liability lands on the platform under **either** model,
+  so that axis is not a differentiator.
 - **Stripe funds segregation (`allocated_funds`)** is the purpose-built primitive to
   isolate held separate-charge funds from platform payouts / other refunds / fees.
   Availability is gated on **three separate conditions**, not just an API version:
@@ -137,16 +145,18 @@ destination charges:
   docs imply yes, only multicapture/overcapture/incremental-auth are excluded — with
   the account manager).
 
-> **⚠️ ④ follow-up (④ `lottery-application` is SHIPPED on the destination-charge
-> model).** ④ implemented authorize-at-apply / capture-at-draw as a **destination
-> charge + `on_behalf_of` + `application_fee`**, which settles to the Organizer at
-> capture and does **not** platform-hold funds. Realizing this escrow decision needs a
-> **④ follow-up change** to move the PaymentIntent to **separate charges & transfers**
-> (charge on the platform, no `transfer_data[destination]` / `on_behalf_of` at
-> capture; platform takes its fee as the retained portion; ⑤ `Transfer`s the
-> Organizer post-event). Until that lands, the **hold-to-event escrow property is not
-> actually in effect** even though ⑤'s payout leg assumes platform-held funds. Gate
-> before a live paid sale; track alongside the counsel opinion (flag 1).
+> **✅ ④ reality check (corrected — no follow-up needed).** A read of the shipped
+> backend (`internal/infrastructure/payment/stripe_authorization.go`) confirms ④
+> `lottery-application` charges with a **plain platform-account** manual-capture
+> `PaymentIntent` — **no `TransferData` / `OnBehalfOf` / `ApplicationFee`**, i.e. **not**
+> a destination charge. So captured funds **already land on the platform balance** (the
+> "charge" half of separate charges & transfers is already correct); there is **nothing
+> to migrate in ④**. The earlier "④ shipped a destination charge → migrate" note was
+> **factually wrong** and is withdrawn. What is genuinely **unbuilt** is the "transfers"
+> half — Organizer Connect onboarding, the post-event `Transfer` (single-Organizer split
+> + retained platform fee), refund/`transfer_reversal` — now specified as the
+> **`ticket-settlement-and-payout`** capability. Gate before a live paid sale alongside
+> the counsel opinion (flag 1).
 
 ## Legal / money scheme (収納代行) — not legal advice
 

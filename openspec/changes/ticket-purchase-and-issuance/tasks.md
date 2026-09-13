@@ -1,10 +1,9 @@
 ## 0. Prerequisites (long-lead — start in parallel, gate launch not spec)
 
-- [ ] 0.1 Stripe Connect account type + KYC/審査 application; Connect onboarding for Organizers
-- [ ] 0.2 収納代行 counsel opinion (#778 flag 1): discharge clause + hold-to-event escrow + no cross-border
-- [ ] 0.3 適格請求書発行事業者 registration; 媒介者交付特例 stance
-- [ ] 0.4 KOMOJU-vs-Stripe PoC outcome (confirm provider before locking the adapter)
-- [ ] 0.5 Confirm the ④→⑤ handoff contract: **win captured (Stripe manual-capture at draw) → ⑤ Order + Ticket | capture failed → no Order** (no off-session charge / deadline / 繰上げ in ⑤); + the captured-payment ref + 本人確認/covered-ticket shape
+- [ ] 0.1 収納代行 counsel opinion (#778 flag 1): discharge clause + hold-to-event escrow + no cross-border (Stripe Connect onboarding itself is owned by `ticket-settlement-and-payout`)
+- [ ] 0.2 適格請求書発行事業者 registration; 媒介者交付特例 stance
+- [ ] 0.3 KOMOJU-vs-Stripe PoC outcome (confirm provider before locking the adapter)
+- [ ] 0.4 Confirm the ④→⑤ handoff contract: **win captured (Stripe manual-capture at draw) → ⑤ Order + Ticket | capture failed → no Order** (no off-session charge / deadline / 繰上げ in ⑤); + the captured-payment ref + 本人確認/covered-ticket shape
 
 ## 1. Proto / entity (specification → BSR)
 
@@ -13,25 +12,22 @@
 - [x] 1.3 RPCs: internal create-Order-from-captured-payment + issuance; buyer GetOrder/GetMyTickets; admin refund/payout ops
 - [ ] 1.4 protovalidate; buf lint/breaking; merge PR → Release → BSR gen (protovalidate + buf lint/breaking PASS locally; PR merge → Release → BSR gen still pending)
 
-## 2. Backend — Order from ④'s captured payment (Stripe Connect)
+## 2. Backend — Order from ④'s captured payment
 
-- [ ] 2.1 On ④'s captured winning payment (separate charges & transfers, platform-held, JPY-only; the capture is ④'s), create the Order referencing that PaymentIntent — ⑤ runs NO separate off-session charge. (⚠️ ④ follow-up: ④ ships on destination-charge → switch ④ to separate charges & transfers for real platform custody)
+- [ ] 2.1 On ④'s captured winning payment (a plain platform-account charge by ④; funds already platform-held; JPY-only), create the Order referencing that PaymentIntent — ⑤ runs NO separate off-session charge
 - [ ] 2.2 Card-only context (④ enforces JPY/Amex-excluded at authorization)
 - [ ] 2.3 Idempotent handling keyed on the capture/provider event id (redelivery-safe)
 - [ ] 2.4 Failed capture → no Order, no issuance (surfaced for ④'s manual follow-up; no ⑤-side retry/繰上げ)
 
-## 3. Backend — issuance (webhook-driven)
+## 3. Backend — issuance (Won-captured-driven)
 
-- [ ] 3.1 Webhook ingest: signature verification + idempotent handlers (capture/refund/dispute)
-- [ ] 3.2 Issue N account-bound covered Tickets on confirmed capture only (never on client confirm); bind 本人確認
+- [ ] 3.1 Issuance idempotency keyed on ④'s Won-captured signal (redelivery-safe; no double-Order/double-issue). Refund/dispute webhook ingest belongs to `ticket-settlement-and-payout`.
+- [ ] 3.2 Issue N account-bound covered Tickets on the captured-win signal only (never on client confirm); bind 本人確認
 - [ ] 3.3 Set the buyer's ticket-journey to PAID on issuance (first-party authoritative)
 
-## 4. Backend — payout & refunds
+## 4. Refund policy (execution owned by ticket-settlement-and-payout)
 
-- [ ] 4.1 Post-event `Transfer` controller (funds held on platform balance via separate charges & transfers); release Organizer share after event + dispute buffer; adopt `allocated_funds` (funds segregation) when GA + JP-eligible
-- [ ] 4.2 Cancellation (中止) refund: face + system/発券 fee (keep processor fee) via Refund + transfer_reversal
-- [ ] 4.3 Postponement (延期): no auto-refund; tickets stay valid for the new date
-- [ ] 4.4 Chargeback/dispute ops: reserve past dispute window, representment evidence, transfer_reversal clawback
+- [ ] 4.1 Define the refund **policy** ⑤ owns: cancellation (中止) → refund current holder (face + system/発券 fee, keep processor fee); postponement (延期) → no auto-refund + holder-initiated window; issuance-failure → refund. The `Refund` + `transfer_reversal` execution + reserve/chargeback ops live in `ticket-settlement-and-payout`.
 
 ## 5. Frontend (Aurelia PWA)
 

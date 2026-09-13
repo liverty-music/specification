@@ -35,18 +35,17 @@ identity-ekyc adds a `verification_level` ⑤ consumes; ⑥ is not yet built.
   payment. (This supersedes the prior SetupIntent/off-session model; ④'s auth-hold
   is enabled by the 30-day JPY authorization window ≫ the ≤14-day lottery window —
   see payments-design.)
-- **Escrow mechanism = separate charges & transfers (platform-held), NOT a
-  destination charge.** Captured funds sit on the **platform** balance; ⑤ `Transfer`s
-  the Organizer's net share post-event (the platform takes its fee as the retained
-  portion). A destination charge + `on_behalf_of` would settle to the Organizer at
-  capture and therefore **not** hold funds — so it cannot back the hold-to-event
-  escrow this design assumes. The three roles stay separate: seller-of-record =
-  Organizer (収納代行 contract + 特商法 表記), money-handling = platform 収納代行 agent,
-  Stripe MoR = platform. See payments-design "Why separate charges & transfers".
-  **⚠️ ④ is SHIPPED on the destination-charge model → a ④ follow-up change must move
-  its PaymentIntent to separate charges & transfers; until then the hold-to-event
-  escrow is not actually in effect even though ⑤'s payout leg assumes platform-held
-  funds.**
+- **Money-out (settlement/payout) is owned by `ticket-settlement-and-payout`, not ⑤.**
+  ④'s charge is a **plain platform-account** manual-capture PaymentIntent (verified in
+  backend: no `TransferData`/`OnBehalfOf`/`ApplicationFee`), so captured funds **already
+  land on the platform balance** — the "charge" half of separate charges & transfers is
+  already correct. The missing "transfers" half (Organizer Connect onboarding, post-event
+  `Transfer` of the Organizer's net share with the platform fee retained, hold-to-event
+  gate, refund/`transfer_reversal`) is the new **`ticket-settlement-and-payout`**
+  capability. ⑤ records the Order that settlement settles against; it does **not** perform
+  the payout. *(The earlier "④ shipped a destination charge → ⑤/④ follow-up must migrate
+  to separate charges & transfers" premise was **factually wrong** and is withdrawn — ④
+  never used a destination charge.)*
 - **Trigger = ④'s Won-captured signal, NOT a ⑤-owned capture webhook (corrected).**
   ④ owns the Stripe PaymentIntent lifecycle (authorize/capture/cancel) and its
   webhooks; on capture success ④ marks the application **Won-captured**. ⑤ keys
@@ -80,13 +79,11 @@ identity-ekyc adds a `verification_level` ⑤ consumes; ⑥ is not yet built.
   `TicketId`, a `PaymentRef` wrapper) and an **enum** for `Order.status`, with
   protovalidate constraints — the spec's status names (`pending`/`paid`/...) are
   logical values, not proto bare-string literals.
-- **Payout hold-to-event + dispute buffer** — funds are held on the **platform**
-  balance (separate charges & transfers) and ⑤'s scheduled process `Transfer`s the
-  Organizer's net share only after the event + dispute buffer (the escrow-with-
-  counter-performance gate that supports the 収納代行 characterization; the gate
-  matters, not a bright-line N-day). This is a platform-held Transfer, **not** a
-  manual payout of destination-charge funds (which would not hold; see
-  payments-design determination).
+- **Payout hold-to-event + dispute buffer — relocated to `ticket-settlement-and-payout`.**
+  The hold-to-event gate, the post-event `Transfer`, and the single-Organizer-payee +
+  platform-fee split all live in the settlement capability. ⑤ only needs the Order to
+  reference ④'s captured charge so settlement can `Transfer` against it
+  (`source_transaction`).
 - **Refund taxonomy: cancellation (中止) refunds; postponement (延期) does not**
   (ticket stays valid for the new date). Keep the processor fee (JP norm). This
   is the "normal cancellation-refund path" ⑦ resale defers to — and note ⑦'s
