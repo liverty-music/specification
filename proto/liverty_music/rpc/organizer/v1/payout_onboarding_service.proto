@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.v1 provides the organizer-facing services an
+// operator uses from the organizer console. This file adds the payout-onboarding
+// surface; the Organizer identity surface lives in organizer_service.proto.
+package liverty_music.rpc.organizer.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "liverty_music/entity/v1/settlement.proto";
+
+// PayoutOnboardingService is the organizer-facing surface for Stripe Connect payout
+// onboarding: an authenticated operator reads its own payout-recipient account's
+// status. The caller's Organizer is resolved from the token (org-scoped from the
+// role claim; failures that would concern another org never reveal whether such an
+// Organizer exists), mirroring OrganizerService.
+service PayoutOnboardingService {
+  // GetPayoutOnboarding returns the caller's own payout-recipient account and its
+  // onboarding status, plus a provider-hosted URL to (re)start or complete
+  // verification when action is still required. Onboarding status never blocks
+  // ticket sale or issuance; only the payout waits until the account is active.
+  //
+  // Possible errors:
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated. Because
+  //   this is the caller's own org, the state is not concealed.
+  // - PERMISSION_DENIED: The token carries no organizer-console role, its audience
+  //   lacks the organizer-console project id, or its login-scope org and role-claim
+  //   org disagree. The response never reveals whether such an Organizer exists.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc GetPayoutOnboarding(GetPayoutOnboardingRequest) returns (GetPayoutOnboardingResponse);
+}
+
+// GetPayoutOnboardingRequest is empty: the caller's Organizer, and its connected
+// account, are resolved from the authenticated token.
+message GetPayoutOnboardingRequest {}
+
+// GetPayoutOnboardingResponse returns the caller's payout-recipient account plus an
+// optional onboarding-continuation URL.
+message GetPayoutOnboardingResponse {
+  // The caller's payout-recipient account and its onboarding status.
+  entity.v1.OrganizerConnectedAccount account = 1 [(buf.validate.field).required = true];
+
+  // A provider-hosted onboarding URL to (re)start or complete verification, present
+  // only when action is still required (status is not ACTIVE). Empty once the
+  // account is active.
+  string onboarding_url = 2 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).string.max_len = 2048
+  ];
+}

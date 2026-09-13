@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.admin.v1 provides admin-only gRPC service definitions
+// for internal tooling exposed through the developer admin console.
+package liverty_music.rpc.admin.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/order.proto";
+import "liverty_music/entity/v1/settlement.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/admin/v1;adminv1";
+
+// SettlementAdminService is the admin-only, read-only observability surface over
+// Order payouts (Settlements). It is authorized solely for the admin organization
+// and never reachable by the consumer product.
+//
+// Releasing funds is deliberately NOT an RPC here: the Organizer payout is created
+// by an INTERNAL SCHEDULED platform job only after the event's occurrence AND a
+// dispute-safety window (re-gated on the new date on a postponement), never a manual
+// admin action — mirroring the lottery draw-job precedent and OrderAdminService. The
+// refund/clawback entry point is ⑤'s OrderAdminService.RefundOrder. This service only
+// reads settlement state for support and reconciliation.
+service SettlementAdminService {
+  // GetSettlement returns the Settlement for one Order — its payout status, splits,
+  // and opaque transfer/reversal references — for support and reconciliation.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The order_id is missing or malformed.
+  // - NOT_FOUND: No Settlement exists for the Order yet.
+  // - UNAUTHENTICATED: The request lacks valid admin credentials.
+  rpc GetSettlement(GetSettlementRequest) returns (GetSettlementResponse);
+
+  // ListSettlements returns Settlements filtered by payout status, so the admin
+  // console can review held / released / reversed payouts. The list is unbounded on
+  // the wire: pagination is deferred to a later phase.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The status filter is malformed.
+  // - UNAUTHENTICATED: The request lacks valid admin credentials.
+  rpc ListSettlements(ListSettlementsRequest) returns (ListSettlementsResponse);
+}
+
+// GetSettlementRequest identifies the Order whose Settlement to read.
+message GetSettlementRequest {
+  // Required. The Order whose payout record is being read.
+  entity.v1.OrderId order_id = 1 [(buf.validate.field).required = true];
+}
+
+// GetSettlementResponse returns the Order's Settlement.
+message GetSettlementResponse {
+  // The Order's payout record.
+  entity.v1.Settlement settlement = 1 [(buf.validate.field).required = true];
+}
+
+// ListSettlementsRequest filters Settlements by payout status.
+message ListSettlementsRequest {
+  // Optional. When set to a concrete status, returns only Settlements in that
+  // status; UNSPECIFIED (the default) returns all statuses.
+  entity.v1.SettlementStatus status_filter = 1 [(buf.validate.field).enum.defined_only = true];
+}
+
+// ListSettlementsResponse contains the matching Settlements.
+message ListSettlementsResponse {
+  // The Settlements matching the status filter.
+  repeated entity.v1.Settlement settlements = 1;
+}
