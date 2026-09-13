@@ -41,7 +41,7 @@ The MVP targets **Base Sepolia** (testnet) and extends the existing backend on *
 
 **Choice**: Connect RPC with Protocol Buffers (proto3) over HTTP
 
-**Rationale**: Consistent with the existing Liverty architecture. Connect is compatible with gRPC and JSON clients, supports both browser and server. Protovalidate provides declarative field validation in the same proto files as the schema.
+**Rationale**: Consistent with the existing Liverty Music architecture. Connect is compatible with gRPC and JSON clients, supports both browser and server. Protovalidate provides declarative field validation in the same proto files as the schema.
 
 **Alternatives considered**:
 - *REST + OpenAPI*: Rejected; less type-safe end-to-end, duplicates schema definition

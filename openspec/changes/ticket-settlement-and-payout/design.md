@@ -50,7 +50,7 @@ money-movement behind `RefundOrder`; it does **not** modify #938's proto, and th
 - **Payout = `Transfer` with `source_transaction` = charge; platform fee = retained
   remainder.** Per Stripe docs, multiple transfers may reference one charge via
   `source_transaction` as long as their total ≤ the charge; the transfer waits until the
-  charge's funds are available. Liverty keeps its fee simply by **not** transferring it
+  charge's funds are available. Liverty Music keeps its fee simply by **not** transferring it
   (no self-transfer). `source_transaction` is set at creation and cannot be updated.
   **`source_transaction` needs the charge id (`ch_`), which ⑤'s `Payment` stores only as a
   PaymentIntent ref (`pi_`).** The payout job therefore resolves `pi_` → `ch_` at Transfer

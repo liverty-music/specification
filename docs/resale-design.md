@@ -109,7 +109,7 @@ Confirmed against 文化庁 / 警察庁 / 古物営業法 / 消費者庁 (2024-2
 
 Market tailwind: after **チケトレ shut down 2025-06-30**, the JP norm is each
 primary platform running **its own official resale on its own issuance base**
-— exactly Liverty's position (self-issuance + self-resale).
+— exactly Liverty Music's position (self-issuance + self-resale).
 
 ## Money flow detail (ties to ⑤ payments)
 

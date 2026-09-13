@@ -141,7 +141,7 @@ change's `design.md`:
   **excluded from concert-search scraping** (first-party is authoritative;
   saves cost).
 - **Payments: Stripe Connect, platform-intermediated, card-only MVP.**
-  Liverty collects, takes a fee, pays out the organizer. **Card-only** for
+  Liverty Music collects, takes a fee, pays out the organizer. **Card-only** for
   MVP (incl. debit/prepaid + Apple/Google Pay; konbini/PayPay deferred).
   The lottery charges **only winners** — via a **Stripe manual-capture
   authorization hold**: **authorize (hold) the ticket amount at application,

@@ -13,7 +13,7 @@
 
 ## 3. Ship to Production
 
-- [x] 3.1 Open the `frontend` PR (commit per Liverty convention with `Refs: #<issue>`); drive CI green and merge. (PR #466 — merged 2026-06-25, all checks green incl. review bot.)
+- [x] 3.1 Open the `frontend` PR (commit per Liverty Music convention with `Refs: #<issue>`); drive CI green and merge. (PR #466 — merged 2026-06-25, all checks green incl. review bot.)
 - [x] 3.2 Open the `cloud-provisioning` PR; drive CI green and merge (ArgoCD / Pulumi applies the `DefaultOidcSettings` to prod). (PR #371 — merged 2026-06-25; prod `pulumi up` is a manual console step, see 3.4.)
 - [x] 3.3 Cut the `frontend` GitHub Release (SemVer tag) to retag the prod image and trigger the automated prod-pin bump. (Released v1.18.0 — minor bump because the range also carried #465 `feat(analytics)`; ships #466 auth fix + #465 to prod.)
 - [x] 3.4 Verify `DefaultOidcSettings` applied to the prod Zitadel instance: `GET /admin/v1/settings/oidc` (or `pulumi stack` output) reflects access 30m / idle 30d / absolute 90d. Confirmed via `pulumi stack export --stack prod`: 307 resources (+1), accessTokenLifetime=0h30m0s, idTokenLifetime=12h0m0s, refreshTokenExpiration=2160h0m0s, refreshTokenIdleExpiration=720h0m0s.

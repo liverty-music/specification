@@ -37,7 +37,7 @@ writer, ownership, visibility, lifecycle, and image hosting.
 tiget puts 開場/開演 at the *ticket-type* level because it has no separate
 performance or discovery entity and its sellable unit collapses
 (showtime × price × capacity) — a small-seller simplification at the cost of
-normalization. Liverty is the opposite: **`Event` = a concert performance is
+normalization. Liverty Music is the opposite: **`Event` = a concert performance is
 load-bearing across the shipped product** (discovery, followers, proximity,
 `CONCERT.created`→notify), and the industry model (eplus 公演/席種, ぴあ,
 Ticketmaster) separates performance from price. So times stay on `Event`; ④

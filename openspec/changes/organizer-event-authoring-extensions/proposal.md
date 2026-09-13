@@ -16,7 +16,7 @@ Extends the `organizer-event-authoring` capability with:
 - **Media**: multiple cover images / gallery; YouTube (video) embed;
   external links (official site / SNS).
 - **Streaming as a first-class mode**: `venue` / `online` / `hybrid`, with a
-  stream method/URL (Liverty-attendable-concert MVP was venue-only).
+  stream method/URL (Liverty Music-attendable-concert MVP was venue-only).
 - **Discovery metadata**: category/genre + search keywords.
 - **JP-idiomatic structured fields**: 注意事項 (notices/terms), 問い合わせ先
   (contact: built-in form or email/phone/URL), 年齢制限 (age restriction).

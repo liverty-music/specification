@@ -72,9 +72,9 @@ own** org, so the owning org's login policy never applies to them.
    `aud`, then reads `{tenant, role}` from the roles claim and authorizes
    the RPC — rejecting any request whose target Organizer the caller has no
    role for. Zitadel holds identity + tenant + role; **which artists/events
-   an Organizer may touch is Liverty's own data** (`organizer_artists`,
+   an Organizer may touch is Liverty Music's own data** (`organizer_artists`,
    event ownership), enforced in the backend.
-5. (Optional) A stable business `organizer-id` (Liverty's own PK) can be
+5. (Optional) A stable business `organizer-id` (Liverty Music's own PK) can be
    stamped into the token via org metadata + an Action, if keying off the
    Zitadel org id is undesirable.
 

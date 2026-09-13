@@ -5,7 +5,7 @@ invite flow, producing a confusing UX and a tenant-isolation bug. A live
 re-verification (2026-08-23, backend v1.39.0 / frontend v1.57.5 / Zitadel
 v4.17.1) established, with logs and source, three problems:
 
-1. **UX mismatch.** The backend sends its own "Liverty Organizer" transport
+1. **UX mismatch.** The backend sends its own "Liverty Music Organizer" transport
    invite pointing at the **console**, which starts OIDC and lands the operator
    on Zitadel's `/verify` **without the code**, so they see an empty "enter the
    code" screen. Hosted Login v2 then sends a **second** "Invitation to Zitadel

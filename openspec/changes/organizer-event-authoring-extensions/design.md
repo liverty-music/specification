@@ -30,7 +30,7 @@ blocklist).
 - **Scheduled publish** runs the same publish transaction (supersede +
   `CONCERT.created`) from a timer instead of the manual action.
 - **Streaming mode** relaxes the venue requirement for `online`; discovery
-  treatment of online concerts is decided when this ships (Liverty is
+  treatment of online concerts is decided when this ships (Liverty Music is
   attendable-concert-first).
 
 ## Risks / Trade-offs

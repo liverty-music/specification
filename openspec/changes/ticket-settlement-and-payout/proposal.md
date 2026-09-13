@@ -12,7 +12,7 @@ layer: **hold buyer funds on the platform balance until the event, then `Transfe
 the Organizer's net share (platform keeps its fee), with refund/dispute clawback** —
 i.e. **separate charges & transfers**, which is essential and currently unbuilt.
 
-Payee model is **single Organizer + Liverty platform fee** (the venue is the
+Payee model is **single Organizer + Liverty Music platform fee** (the venue is the
 Organizer's cost, paid by the Organizer — the universal ticketing norm; ぴあ/ローチケ/
 e+/Peatix/tiget/ZAIKO and DICE/AXS/Eventbrite all settle to one payee, and DICE's
 T&Cs make the Vendor responsible for the venue fee). Payout is modelled as an
@@ -34,7 +34,7 @@ Rationale, competitor + Stripe grounding: [`payments-design.md`](../../../docs/p
   **platform balance** (no ④ change needed). After the event + dispute buffer, a
   **scheduled platform process** creates a **`Transfer` (with `source_transaction`
   = the charge) to the Organizer's connected account** for the Organizer's net share;
-  **Liverty keeps its platform fee by retaining the remainder** (no self-transfer).
+  **Liverty Music keeps its platform fee by retaining the remainder** (no self-transfer).
 - **Extensible settlement splits.** The payout is a set of **splits**; MVP = one
   Organizer split + the retained platform fee. The model admits N payees (venue,
   artist) later; adding one is onboarding + a split row, **not** a proto break.

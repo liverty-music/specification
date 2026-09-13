@@ -5,7 +5,7 @@ on. Ad-hoc refunds do not scale and person-to-person resale is both a scalping
 loophole and a legal hazard (為替取引 / 資金移動業, 不正転売禁止法, 古物営業法).
 The JP market default — reinforced after チケトレ shut down 2025-06-30 — is that
 each primary platform runs its **own official, face-value resale on its own
-issuance base**. Liverty issues its own account-bound tickets, so it is exactly
+issuance base**. Liverty Music issues its own account-bound tickets, so it is exactly
 positioned to offer this. Official face-value resale is the anti-scalp gold
 standard (ローチケ/ぴあ), the legally favored path, and a real day-one need
 ("the buyer got sick").
