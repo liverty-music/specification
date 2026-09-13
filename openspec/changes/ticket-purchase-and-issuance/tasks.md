@@ -8,10 +8,10 @@
 
 ## 1. Proto / entity (specification → BSR)
 
-- [ ] 1.1 Define `Order` (provider, opaque pi_/pm_ of ④'s captured payment, status paid→refunded/failed — **no pending**, amount+currency, paid_at, display facets) — never PAN/CVC
-- [ ] 1.2 Define account-bound `Ticket` (buyer account, event ref, 本人確認 binding, covered-ticket face fields, order ref)
-- [ ] 1.3 RPCs: internal create-Order-from-captured-payment + issuance; buyer GetOrder/GetMyTickets; admin refund/payout ops
-- [ ] 1.4 protovalidate; buf lint/breaking; merge PR → Release → BSR gen
+- [x] 1.1 Define `Order` (provider, opaque pi_/pm_ of ④'s captured payment, status paid→refunded/failed — **no pending**, amount+currency, paid_at, display facets) — never PAN/CVC
+- [x] 1.2 Define account-bound `Ticket` (buyer account, event ref, 本人確認 binding, covered-ticket face fields, order ref)
+- [x] 1.3 RPCs: internal create-Order-from-captured-payment + issuance; buyer GetOrder/GetMyTickets; admin refund/payout ops
+- [ ] 1.4 protovalidate; buf lint/breaking; merge PR → Release → BSR gen (protovalidate + buf lint/breaking PASS locally; PR merge → Release → BSR gen still pending)
 
 ## 2. Backend — Order from ④'s captured payment (Stripe Connect)
 

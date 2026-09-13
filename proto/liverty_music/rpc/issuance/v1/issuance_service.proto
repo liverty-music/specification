@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.issuance.v1 provides the INTERNAL issuance service:
+// the server-to-server surface that turns ④'s Won-captured winning application
+// into an Order and N account-bound covered tickets. It is not reachable by the
+// consumer product — the fan-facing read surface is liverty_music.rpc.ticket.v1.
+// It imports entity types and follows Google AIP resource-oriented conventions.
+package liverty_music.rpc.issuance.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/lottery_application.proto";
+import "liverty_music/entity/v1/order.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/issuance/v1;issuancev1";
+
+// IssuanceService is the internal, idempotent pipeline from ④'s captured win to
+// ⑤'s Order + issued tickets. It is triggered by ④'s Won-captured signal (the
+// MVP handoff is ④'s Won-captured application record, not an event). ⑤ performs
+// NO separate charge: it consumes ④'s already-captured PaymentIntent. Capture and
+// its provider webhooks belong to ④; ⑤ owns only issuance idempotency plus the
+// refund/dispute webhooks from its own refund calls (see the admin surface).
+service IssuanceService {
+  // IssueFromCapturedWin creates the Order from ④'s captured winning payment and
+  // issues the N account-bound covered tickets for the winning application, then
+  // sets the buyer's ticket-journey for the event to PAID. It is IDEMPOTENT: a
+  // replayed Won-captured signal (or a retry) creates the Order once and issues
+  // tickets exactly once for the same application. If the capture succeeded but
+  // issuance cannot complete within a bounded window, the caller reconciles by
+  // refunding the captured payment (never money-captured-with-no-ticket, never a
+  // double issue).
+  //
+  // Possible errors:
+  // - FAILED_PRECONDITION: The referenced application is not Won-captured (lost,
+  //   withdrawn, or its capture never succeeded), so no Order/ticket is created.
+  // - INVALID_ARGUMENT: The application_id is missing or malformed.
+  // - NOT_FOUND: No such application.
+  rpc IssueFromCapturedWin(IssueFromCapturedWinRequest) returns (IssueFromCapturedWinResponse);
+}
+
+// IssueFromCapturedWinRequest identifies the Won-captured winning application to
+// issue from. Issuance keys on this application (never on a client-side confirm).
+message IssueFromCapturedWinRequest {
+  // Required. The winning application whose captured payment the Order references
+  // and whose companion group the tickets are issued for. Must be Won-captured.
+  entity.v1.TicketApplicationId application_id = 1 [(buf.validate.field).required = true];
+}
+
+// IssueFromCapturedWinResponse returns the created (or already-existing, on a
+// replay) Order. The issued tickets are read via the fan-facing TicketService.
+message IssueFromCapturedWinResponse {
+  // The Order for this winning application — created once, returned again
+  // unchanged on an idempotent replay.
+  entity.v1.Order order = 1 [(buf.validate.field).required = true];
+}

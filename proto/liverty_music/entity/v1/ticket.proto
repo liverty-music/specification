@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/lottery_application.proto";
+import "liverty_music/entity/v1/order.proto";
+import "liverty_music/entity/v1/user.proto";
+import "liverty_music/entity/v1/verified_identity.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// TicketId is a globally unique identifier for a single issued Ticket.
+// Server-generated surrogate id.
+message TicketId {
+  // A UUID string mapping to the ticket's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// TicketStatus is the lifecycle of an issued Ticket as owned by ⑤. ⑤ issues a
+// ticket as ISSUED and voids it when its Order is refunded (event cancellation,
+// a postponement holder-initiated refund, or dispute). ⑥ ticket-wallet-and-checkin
+// appends wallet / check-in states (e.g. CHECKED_IN) on top of this — so new
+// values may be appended and existing values must not be renumbered.
+enum TicketStatus {
+  // Default value, rejected at the boundary: a persisted Ticket always records a
+  // concrete status.
+  TICKET_STATUS_UNSPECIFIED = 0;
+
+  // Issued and valid — the normal state on issuance from a captured win.
+  TICKET_STATUS_ISSUED = 1;
+
+  // Voided — the ticket's Order was refunded (cancellation / postponement refund
+  // window / dispute), so the ticket is no longer valid for entry.
+  TICKET_STATUS_VOIDED = 2;
+}
+
+// Ticket is a Web2, account-bound admission right issued from a captured lottery
+// win. ⑤ DEFINES this entity; ⑥ ticket-wallet-and-checkin later adds the
+// wallet / rotating-QR / check-in behavior on top of it (hence the minimal
+// surface here).
+//
+// Every issued Ticket is a covered ticket (特定興行入場券) carrying ALL THREE legal
+// conditions:
+//   (i)   the face states resale without the organizer's consent is prohibited
+//         (`resale_without_consent_prohibited`, always true);
+//   (ii)  the face specifies date/venue (via `event_id`) + the eligible person
+//         (the bound `holder_identity`; the lottery is a common pool with no seat
+//         map, so admission is general and the eligible person is the holder);
+//   (iii) the holder's 本人確認 is captured and bound to the account
+//         (`holder_identity`, with `verified_identity_ref` set where the phase
+//         required identity verification — then the verified identity is
+//         authoritative over any self-declared name).
+message Ticket {
+  // The unique identifier for this ticket. Server-generated surrogate id.
+  TicketId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The Order that issued this ticket. One Order issues the N tickets of the
+  // winning companion group, each referencing that Order here.
+  OrderId order_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The account the ticket is bound to — the current holder. At issuance this is
+  // the winning buyer; ⑦ official resale is the sanctioned path that reassigns it.
+  UserId holder_id = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The event this ticket admits to. Supplies the covered-ticket face's
+  // date/venue (condition ii); the event's currently-scheduled date also gates
+  // the Organizer payout and survives a postponement reschedule.
+  EventId event_id = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The holder's 本人確認 (name + contact) noted on the face and bound to the
+  // account — covered-ticket condition (iii), and the eligible person of
+  // condition (ii). Carried through from ④'s application. Where the phase
+  // required identity verification, this MUST match the verified 本人確認
+  // (see verified_identity_ref).
+  ApplicantIdentity holder_identity = 5 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The authoritative verified identity this ticket is bound to, set only when
+  // the phase required identity verification (identity-ekyc). When set, the
+  // verified identity is authoritative and `holder_identity` reflects it (no
+  // conflicting self-declared name). Unset when the phase required no
+  // verification (then `holder_identity` is ④'s self-declared name + contact).
+  VerifiedIdentityId verified_identity_ref = 6 [(google.api.field_behavior) = OPTIONAL];
+
+  // Covered-ticket condition (i): the face states resale without the organizer's
+  // consent is prohibited. Constrained to true — every issued ticket asserts this
+  // so it qualifies as a 特定興行入場券.
+  bool resale_without_consent_prohibited = 7 [(buf.validate.field).bool.const = true];
+
+  // The ticket's lifecycle status (ISSUED on issuance; VOIDED on refund).
+  // Server-owned.
+  TicketStatus status = 8 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // When the ticket was issued (= the Order's capture/issuance time). Server-owned.
+  google.protobuf.Timestamp issued_at = 9 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+}
