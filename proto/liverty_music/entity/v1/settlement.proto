@@ -1,0 +1,176 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/order.proto";
+import "liverty_music/entity/v1/organizer.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// PayoutOnboardingStatus is the Organizer's readiness to RECEIVE payouts, derived
+// from its Stripe connected account's transfers capability. It is deliberately
+// provider-agnostic (the platform's own status, never a raw provider status
+// string), so switching provider is an adapter change, not a proto break. An
+// Organizer that is not payout-ready never blocks ticket sale or issuance — only
+// the payout waits. New values may be appended; existing values must not be
+// renumbered.
+enum PayoutOnboardingStatus {
+  // Default value, rejected at the boundary: a persisted account always records a
+  // concrete status.
+  PAYOUT_ONBOARDING_STATUS_UNSPECIFIED = 0;
+
+  // Pending — the connected account exists but its transfers capability is not yet
+  // active (identity verification / KYC-KYB outstanding). Payouts are withheld
+  // (not failed) until it becomes active.
+  PAYOUT_ONBOARDING_STATUS_PENDING = 1;
+
+  // Active — the transfers capability is active; the Organizer is payout-eligible
+  // and the scheduled post-event Transfer may settle to it.
+  PAYOUT_ONBOARDING_STATUS_ACTIVE = 2;
+
+  // Restricted — the account is disabled or rejected and requires remediation
+  // before payouts can resume. Payouts stay withheld.
+  PAYOUT_ONBOARDING_STATUS_RESTRICTED = 3;
+}
+
+// OrganizerConnectedAccount is the opaque, provider-agnostic reference to an
+// Organizer's payout-recipient account plus its onboarding status. The account is
+// provisioned as a RECIPIENT (it holds only the transfers capability, never
+// card_payments): the platform is the settlement merchant and holds buyer funds,
+// while this account only receives the post-event Transfer. It stores only a token
+// meaningful to the provider (a Stripe "acct_..." id), never bank or identity data.
+message OrganizerConnectedAccount {
+  // The Organizer that owns this payout-recipient account.
+  OrganizerId organizer_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The provider's connected-account reference (e.g. a Stripe "acct_..." id).
+  // Opaque; meaningful only to the provider.
+  string account_ref = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+
+  // The account's payout-onboarding status. Payout eligibility is exactly
+  // `status == ACTIVE` (the transfers capability is active). Server-owned.
+  PayoutOnboardingStatus status = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+}
+
+// SettlementId is a globally unique identifier for a single Settlement — one
+// Order's payout record. Server-generated surrogate id.
+message SettlementId {
+  // A UUID string mapping to the settlement's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// SettlementStatus is the lifecycle of a Settlement (an Order's payout). New values
+// may be appended; existing values must not be renumbered.
+enum SettlementStatus {
+  // Default value, rejected at the boundary: a persisted Settlement always records
+  // a concrete status.
+  SETTLEMENT_STATUS_UNSPECIFIED = 0;
+
+  // Held — the captured funds sit on the platform balance and the release gate
+  // (event occurrence + dispute buffer) has not passed; no Transfer has been made.
+  SETTLEMENT_STATUS_HELD = 1;
+
+  // Released — the payee split(s) have been transferred to the Organizer's
+  // connected account (the platform retains its fee as the un-transferred remainder).
+  SETTLEMENT_STATUS_RELEASED = 2;
+
+  // Reversed — a refund or dispute reversed the transferred split(s) via
+  // transfer_reversal (event cancellation, postponement refund, or chargeback).
+  SETTLEMENT_STATUS_REVERSED = 3;
+}
+
+// SettlementSplit is one payee's share of a Settlement, plus the opaque references
+// to the Transfer that pays it and any reversal that claws it back. The payout is
+// modelled as a SET of splits so additional payees (venue, artist) can be added
+// later without a schema break; the MVP has exactly one split — the Organizer — and
+// the platform fee is the retained remainder, never a split. Each split is realized
+// as its own Transfer with source_transaction = the Settlement's charge, and the
+// sum of all splits never exceeds the charge amount.
+message SettlementSplit {
+  // The payee that receives this split. For the MVP this is always the Organizer.
+  OrganizerId payee_organizer_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The payee's net share, a positive whole number in the Order currency's smallest
+  // unit (yen for the JPY MVP). The sum of all splits must not exceed the charge.
+  int64 amount = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).int64.gt = 0
+  ];
+
+  // The provider's Transfer reference (e.g. a Stripe "tr_..." id) that paid this
+  // split. Opaque; empty until the split is released. Server-owned.
+  string transfer_ref = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).string.max_len = 255
+  ];
+
+  // The provider's transfer-reversal reference (e.g. a Stripe "trr_..." id) that
+  // clawed this split back on a refund or dispute. Opaque; empty unless reversed.
+  // Server-owned.
+  string transfer_reversal_ref = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).string.max_len = 255
+  ];
+}
+
+// Settlement is the payout record that settles one Order's captured funds out to
+// the Organizer. ④'s captured charge lands on the PLATFORM balance (separate
+// charges & transfers); after the release gate this record's split(s) are
+// transferred to the Organizer's connected account (source_transaction = the
+// charge) and the platform retains its fee as the un-transferred remainder. It is
+// provider-agnostic: it stores only opaque provider tokens and its own status,
+// never raw provider status.
+message Settlement {
+  // The unique identifier for this settlement. Server-generated surrogate id.
+  SettlementId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The Order this settlement pays out. One Settlement per Order.
+  OrderId order_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The provider's Charge reference (e.g. a Stripe "ch_..." id) for ④'s captured
+  // payment, used as each Transfer's source_transaction. Resolved from the Order's
+  // PaymentIntent at payout time (⑤'s Payment stores only the PaymentIntent ref).
+  // Opaque; empty until resolved. Server-owned.
+  string charge_ref = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).string.max_len = 255
+  ];
+
+  // The payout splits. Exactly one (the Organizer) in the MVP; the platform fee is
+  // the retained remainder, not a split. The sum of split amounts never exceeds the
+  // Order's captured amount.
+  repeated SettlementSplit splits = 4 [(buf.validate.field).repeated.min_items = 1];
+
+  // The settlement's own status — `held` until the release gate passes, then
+  // `released`, or `reversed` after a refund/dispute clawback.
+  SettlementStatus status = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // When the payout was released (the split Transfers were created). Empty while the
+  // settlement is still held. Server-owned.
+  google.protobuf.Timestamp released_at = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

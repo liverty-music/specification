@@ -12,16 +12,16 @@
 
 ## 1. Proto / entity (specification → BSR)
 
-- [ ] 1.1 Organizer **connected-account ref + recipient/transfers status** (opaque `acct_`),
+- [x] 1.1 Organizer **connected-account ref + recipient/transfers status** (opaque `acct_`),
       payout-eligibility from `stripe_balance.stripe_transfers.status == active`
       (v2 capability, not v1 `payouts_enabled`)
-- [ ] 1.2 **`SettlementSplit`** (payee ref + amount or share) as a set; MVP = 1 Organizer
+- [x] 1.2 **`SettlementSplit`** (payee ref + amount or share) as a set; MVP = 1 Organizer
       split; extensible to N payees (venue/artist) without a breaking change
-- [ ] 1.3 **Payout / transfer** state (opaque `tr_`/reversal refs + the captured-charge ref
+- [x] 1.3 **Payout / transfer** state (opaque `tr_`/reversal refs + the captured-charge ref
       `ch_` for `source_transaction`, own enums, no raw provider status), linked to ⑤'s
       Order. **Refund RPC is ⑤'s `OrderAdminService.RefundOrder` (#938) — NOT redefined
       here**; settlement records the transfer/reversal state behind it.
-- [ ] 1.4 RPCs: admin/console **payout** ops + organizer **onboarding-status** read
+- [x] 1.4 RPCs: admin/console **payout** ops + organizer **onboarding-status** read
       (refund op is ⑤'s RefundOrder)
 - [ ] 1.5 protovalidate; buf lint/breaking; merge → Release → BSR gen (purely additive —
       does not touch #938's order/ticket/issuance/order_admin proto)
