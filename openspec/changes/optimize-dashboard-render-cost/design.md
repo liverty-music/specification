@@ -42,34 +42,51 @@ See proposal.md — Why. Constraints that shape this design:
   (one big change P1–P4) rejected: the earlier mis-attribution shows we must
   re-measure before assuming the next lever is needed.
 
-- **Decision: Remove the continuous `--hue-drift` animation rather than optimize
-  it.** Animating a CSS custom property cannot be composited and forces
-  full-subtree style recalc per frame; there is no "cheap" version. Replace with a
-  static treatment. Alternative (animate a compositor-only property like
-  `transform`/`opacity`, or a fixed gradient) is acceptable if the visual must
-  keep some motion — but it MUST NOT re-introduce per-frame Style/Layout. The
-  exact CSS is owned by cube-css / web-design-specialist.
+- **Decision: Delete the `--hue-drift` animation outright — it drives a dead
+  variable.** `--hue-drift` only feeds `--artist-color` / `--artist-color-dim` (via
+  the `[artist-color]` rule), and `var(--artist-color)` has ZERO consumers in the
+  codebase — the matched card's border/gradient/box-shadow are built from the raw
+  `--artist-hue`. So the animation forces a full-subtree style recalc per frame for
+  no visible output. The fix is therefore a **pure deletion** (animation,
+  `@property --hue-drift`, and the dead `--artist-color`/`--artist-color-dim`
+  derivations), NOT a "static replacement" — there is no animated visual identity
+  to preserve. A before/after screenshot confirms no visual change. (Even if some
+  motion were later wanted, it MUST use a compositor-only property like
+  `transform`/`opacity`, never a custom property.)
 
-- **Decision: Use `content-visibility: auto` + `contain-intrinsic-size` for
-  viewport-scoped layout, not virtualization.** Rationale: it is a per-element CSS
-  attribute needing no structural change, whereas `virtual-repeat` requires
-  flattening the nested group → lane → card structure. Ship containment first;
-  escalate to `virtual-repeat` (P4) only if measurement shows containment is
-  insufficient for large timetables. (When P4 is actually scoped, confirm
+- **Decision: Apply `content-visibility: auto` + `contain-intrinsic-size: auto
+  <fallback>` to the date-group `<li>`, not per event-card or per virtualization.**
+  Rationale: the date-group `<li>` is the natural scroll chunk (a whole day's lanes
+  enter/leave the viewport together); per-card is too granular (containment
+  bookkeeping overhead on many small cells that also sit in a subgrid). Use the
+  `auto` keyword on `contain-intrinsic-size` so the browser caches each group's
+  real rendered height and reuses it on re-reveal — the literal fallback only
+  covers the first paint before a group has ever rendered, so a slightly-off
+  fallback cannot cause a persistent scrollbar jump. `content-visibility` is a
+  per-element CSS attribute needing no structural change, whereas `virtual-repeat`
+  requires flattening the nested group → lane → card structure; ship containment
+  first and escalate to `virtual-repeat` (P4) only if measurement shows containment
+  is insufficient for large timetables. (When P4 is actually scoped, confirm
   `@aurelia/ui-virtualization` is installable at the repo's pinned `@aurelia`
   version — the API is documented for Aurelia 2, but package availability per
   release must be verified then, not assumed now.)
 
-- **Decision: Gate any retained motion on `prefers-reduced-motion`.** Matches the
-  spec's motion requirement and the existing reduced-motion handling in the card
-  CSS.
+- **Decision: Applying size containment to the subgrid group `<li>` is safe
+  because the parent columns are content-independent.** The `<li>` participates in
+  `grid-template-columns: subgrid`, and size containment normally risks breaking a
+  subgrid item's track contribution — but the parent grid defines fixed
+  `1fr 1fr 1fr` columns at `:scope`, so the column line positions do not depend on
+  any group's content. Skipping an off-screen group's rendering therefore cannot
+  shift the columns. (Verified by task 3.2 — confirm no column drift.)
 
 ## Risks / Trade-offs
 
-- **`content-visibility: auto` needs a good `contain-intrinsic-size`** →
+- **`content-visibility: auto` needs a sane `contain-intrinsic-size`** →
   a wrong estimate causes scrollbar jump / layout shift (CLS is currently 0 —
-  must stay 0). Mitigation: set intrinsic size from the real card height; verify
-  CLS in the after-trace.
+  must stay 0). Mitigation: use `contain-intrinsic-size: auto <fallback>` so the
+  browser caches each group's real rendered height after first paint; pick the
+  literal fallback from a typical group height (it only affects the never-rendered
+  first paint). Verify CLS in the after-trace.
 - **Removing the hue drift is a visible change** → Mitigation: it is intentional
   and called out in the proposal; confirm the static/gradient treatment still
   reads as on-brand with the design owners.
@@ -97,5 +114,15 @@ See proposal.md — Why. Constraints that shape this design:
 
 ## Open Questions
 
-- None that block P1+P2. The scope of any follow-up (P3 beam reflow, P4
+- **`position: sticky` × containment.** `content-visibility: auto` implies
+  `contain: layout paint`, which makes the date-group `<li>` a containing block and
+  confines the `.date-separator` (`position: sticky; inset-block-start: 0`) to its
+  own group's box. This changes sticky behavior: the date header would hand off at
+  each group boundary (section-style sticky) rather than persisting across the
+  whole scroll. Whether that matches the intended UX must be confirmed against the
+  current behavior and on the reference profile (task 3.3 / the new spec scenario).
+  If it is a regression, the mitigation is to lift `content-visibility` off the
+  `<li>` and onto an inner wrapper below the sticky header — but that wrapper must
+  not itself be a subgrid participant, so it needs checking before adopting.
+- The scope of any follow-up (P3 beam `getBoundingClientRect()` cost, P4
   virtualization) is deliberately decided AFTER the P1+P2 re-measurement.

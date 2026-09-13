@@ -48,6 +48,15 @@ absolute thresholds in one step.
 - **THEN** style and layout work for cards outside the viewport does not contribute
   to the entry/re-entry main-thread cost
 
+#### Scenario: Viewport-scoping off-screen content does not regress sticky headers or shift layout
+
+- **WHEN** a fan scrolls across multiple date groups whose off-screen content is
+  viewport-scoped (skipped when off-screen)
+- **THEN** the date separator's sticky behavior is intentional and consistent
+  across groups (either it persists at the top or it hands off at each group
+  boundary — not a mix), and no cumulative layout shift is introduced (CLS stays 0)
+  as groups scroll in and out
+
 ### Requirement: Highlighted card visuals must not drive continuous rendering work
 
 A concert card's visual treatment MUST NOT force the browser to recompute style or
