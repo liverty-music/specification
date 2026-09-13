@@ -57,7 +57,7 @@ GA4 is not adopted. With no paid acquisition or SEO-driven growth planned for th
 
 **Rationale:** Simplicity, smaller consent burden, and absence of meaningful incremental capability for the planned launch. GA4 remains a 30-minute integration if the business introduces paid advertising or SEO-driven acquisition.
 
-### Decision 3: `distinct_id` is the Liverty `UserId`, not the Zitadel `sub`
+### Decision 3: `distinct_id` is the Liverty Music `UserId`, not the Zitadel `sub`
 
 PostHog `distinct_id` and equivalent identifiers MUST be the platform-internal `UserId` (UUID). The Zitadel `sub` claim is stored only on the `User` record as `UserExternalId` for IdP linkage and is not used as an analytics identifier.
 

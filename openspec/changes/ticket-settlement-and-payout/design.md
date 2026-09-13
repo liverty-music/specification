@@ -50,7 +50,7 @@ money-movement behind `RefundOrder`; it does **not** modify #938's proto, and th
 - **Payout = `Transfer` with `source_transaction` = charge; platform fee = retained
   remainder.** Per Stripe docs, multiple transfers may reference one charge via
   `source_transaction` as long as their total ≤ the charge; the transfer waits until the
-  charge's funds are available. Liverty keeps its fee simply by **not** transferring it
+  charge's funds are available. Liverty Music keeps its fee simply by **not** transferring it
   (no self-transfer). `source_transaction` is set at creation and cannot be updated.
 - **`on_behalf_of` = the Organizer (single seller-of-record).** `on_behalf_of` names
   exactly one account and sets the settlement merchant / statement descriptor / settlement

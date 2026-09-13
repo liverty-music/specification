@@ -12,7 +12,7 @@ the competitor/market research in `market-design-notes.md`.
 ## Decisions (settled)
 
 - **Provider: Stripe Connect.** Chosen for breadth + DX. Money is
-  **platform-intermediated** (Liverty collects, takes a fee, pays out the
+  **platform-intermediated** (Liverty Music collects, takes a fee, pays out the
   Organizer). *Challenger to PoC:* **KOMOJU (Degica)** is arguably a better
   fit for a JP lottery (authorize→split-at-capture, deepest JP methods) —
   run a serious PoC before locking in. Adyen for Platforms is the

@@ -18,6 +18,6 @@
 
 ## 4. Ship to production
 
-- [ ] 4.1 Open the frontend PR (commit per Liverty convention with `Refs: #<issue>`), get CI green, address review, merge to `main`
+- [ ] 4.1 Open the frontend PR (commit per Liverty Music convention with `Refs: #<issue>`), get CI green, address review, merge to `main`
 - [ ] 4.2 Cut the frontend GitHub Release (retag → prod AR); the automated repository_dispatch pin-bump updates cloud-provisioning and ArgoCD auto-syncs
 - [ ] 4.3 Verify in production directly (no dev env): on the live app, trigger the celebration and confirm the timetable shows through with legible text

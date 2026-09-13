@@ -34,7 +34,7 @@ message VenueName {
 }
 
 // PlaceId is the external Google Places identifier for a venue location.
-// It is an opaque, third-party string (not a Liverty UUID) used as the stable
+// It is an opaque, third-party string (not a Liverty Music UUID) used as the stable
 // venue identity for staging-level deduplication and venue resolution, mirroring
 // how Mbid wraps the external MusicBrainz identifier.
 message PlaceId {

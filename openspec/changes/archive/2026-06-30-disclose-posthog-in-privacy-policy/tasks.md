@@ -20,4 +20,4 @@
 ## 4. Review
 
 - [x] 4.1 Policy owner reviewed and signed off on the legal copy (en + ja) for release. For this individual-operator service the operator is the policy owner; no external legal counsel review is engaged.
-- [x] 4.2 Policy owner confirmed the PostHog (Klant Solutions B.V.) classification as *processor acting on Liverty's behalf* (entrustment of handling), not an independent third-party recipient — the cross-border copy was finalized accordingly (en/ja section 6).
+- [x] 4.2 Policy owner confirmed the PostHog (Klant Solutions B.V.) classification as *processor acting on Liverty Music's behalf* (entrustment of handling), not an independent third-party recipient — the cross-border copy was finalized accordingly (en/ja section 6).

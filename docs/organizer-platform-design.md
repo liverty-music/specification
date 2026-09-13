@@ -136,7 +136,7 @@ the project id, login-scope org ≠ requested Organizer. A multi-org operator
 is authorized only against the **session's login-scope org**. (The top role
 in the roles claim is `owner`, not `admin`.) Zitadel
 supplies identity + tenant + role; **which artists/events an Organizer may
-touch is Liverty's own data** (`organizer_artists`, event ownership),
+touch is Liverty Music's own data** (`organizer_artists`, event ownership),
 enforced in the backend.
 
 ## Delivery surfaces (the audit's deepest blind spot)

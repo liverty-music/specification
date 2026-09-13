@@ -108,7 +108,7 @@ The backend provisioner (organizer-accounts) SHALL therefore:
   regardless) — and a `url_template` that points at the **console** with the
   org id and email baked in and the code omitted:
   `https://organizer.{base}/?org_id=<zitadelOrgID>&login_hint=<operatorEmail>`,
-  plus an `application_name` of `Liverty Organizer`. Zitadel then sends the
+  plus an `application_name` of `Liverty Music Organizer`. Zitadel then sends the
   "Invitation to Zitadel Login" email via its own SMTP (Postmark), whose
   "Accept invite" link opens the console (starting the OIDC flow), never a
   Zitadel setup page. This is the same onboarding path the earlier org-test-7
@@ -208,7 +208,7 @@ unavailable, clears on success) so a genuinely broken store cannot loop.
 **Duplicate invitation emails (upstream Zitadel, tracked separately).** Postmark
 showed the operator receiving two identical "Invitation to Zitadel Login" emails.
 Root cause (confirmed in Zitadel logs): the **backend sends exactly one**
-`CreateInviteCode` (`application_name="Liverty Organizer"`); the duplicates are
+`CreateInviteCode` (`application_name="Liverty Music Organizer"`); the duplicates are
 issued by the **hosted Login v2 app itself**, which re-fires `CreateInviteCode`
 (default app name → "Zitadel Login") on every render of `/verify?invite=true`
 without a session — the operator's browser loaded that page twice. Not fixable in

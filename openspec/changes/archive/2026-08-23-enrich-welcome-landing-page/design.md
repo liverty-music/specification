@@ -10,7 +10,7 @@ See proposal.md — Why. Current state (verified against `frontend/src/routes/we
 - `coach-mark` is a built component (`targetSelector`, `message`, `active`, `onTap`, `onDismiss`) that spotlights a target element via CSS anchor positioning and light-dismisses on outside tap. It is currently driven app-shell-wide by `CoachMarkService` for onboarding.
 - Styling follows CUBE CSS (`@layer` / `@scope`) with design tokens (`--step-*`, `--space-*`) and a "festival-spotlight glow" brand vocabulary (brand-accent `text-shadow`) already used by the hero and event cards. The stack already uses canvas (dna-orb).
 
-Reference analysis (Designship 2026, measured): its "alive" quality comes from **ambient, always-on motion**, not entrance reveals — kinetic gradient-clipped display type (`background-position` shimmer), a fixed full-page `mix-blend-mode: screen` particle canvas, radar-ping dots, and pervasive micro-interactions — over a dark surface (`rgb(27,29,39)`) nearly identical to Liverty's. The prior iteration of this change under-delivered because it relied on subtle entrance reveals over a flat, centered layout with no ambient motion.
+Reference analysis (Designship 2026, measured): its "alive" quality comes from **ambient, always-on motion**, not entrance reveals — kinetic gradient-clipped display type (`background-position` shimmer), a fixed full-page `mix-blend-mode: screen` particle canvas, radar-ping dots, and pervasive micro-interactions — over a dark surface (`rgb(27,29,39)`) nearly identical to Liverty Music's. The prior iteration of this change under-delivered because it relied on subtle entrance reveals over a flat, centered layout with no ambient motion.
 
 ## Goals / Non-Goals
 
@@ -64,7 +64,7 @@ This replaces the originally-planned View Transitions morph (`document.startView
 ### D6. Kinetic brand + ambient background = always-on life
 
 - **Kinetic brand:** the "LIVERTY MUSIC" wordmark gets a gradient-clipped spotlight shimmer (animated `background-position`), extending the existing festival-spotlight vocabulary. Compositor-only; disabled under reduced motion (falls back to the current static glow).
-- **Ambient background:** a fixed, full-page, `pointer-events: none`, `mix-blend-mode: screen` canvas renders a sparse drifting particle glow (Designship-faithful technique; Liverty brand-accent palette, not Designship's colors). It sits behind all content, adds depth, and reinforces the "signals in the air" discovery theme. Disabled/frozen under reduced motion.
+- **Ambient background:** a fixed, full-page, `pointer-events: none`, `mix-blend-mode: screen` canvas renders a sparse drifting particle glow (Designship-faithful technique; Liverty Music brand-accent palette, not Designship's colors). It sits behind all content, adds depth, and reinforces the "signals in the air" discovery theme. Disabled/frozen under reduced motion.
 
 Rationale: the reference's aliveness is ambient, not entrance-based. These two always-on effects carry the "living product" feel; entrance reveals become garnish, not the main event.
 

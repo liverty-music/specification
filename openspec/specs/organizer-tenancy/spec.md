@@ -20,7 +20,7 @@ now. The project name is actor-qualified so a future `venue-console` project
 does not collide.
 
 The top role is named **`owner`**, NOT `admin`: `admin` already denotes the
-Liverty-internal operator role on the separate `admin-console` project, so
+Liverty Music-internal operator role on the separate `admin-console` project, so
 reusing it would overload the roles claim and collide with Zitadel's own
 admin concepts. The Organizer's principal operator owns their own tenant —
 they are the tenant **owner**, not a platform administrator — so `owner` is
