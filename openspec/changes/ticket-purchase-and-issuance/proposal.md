@@ -4,8 +4,9 @@ Phase 3 step ⑤. ④ `lottery-application` **authorizes (holds) the card at
 application and captures each winner's authorization at the draw** (Stripe
 manual-capture; releases losers). This change is the **Order + issuance pipeline**:
 take ④'s **captured winning payment**, record an Order, and issue **Web2
-account-bound Tickets**, plus payouts/refunds under the 収納代行 scheme. It stands
-alone (issuance + payout + refund + compliance are heavy).
+account-bound Tickets**. The **money-out layer** (Organizer payout, refund
+execution) is a separate capability, **`ticket-settlement-and-payout`**; ⑤ owns the
+Order/Ticket + the refund *policy*, settlement owns the money movement.
 
 Full money design + legal scheme + counsel flags:
 [`payments-design.md`](../../../docs/payments-design.md) (issue #778). Roadmap:
@@ -22,13 +23,12 @@ Full money design + legal scheme + counsel flags:
   **JPY card only**). ⑤ consumes the **captured winning payment**. **No ⑤-side
   SetupIntent / off-session charge / payment deadline / 繰上げ** — the hold-and-
   capture model removes them.
-- **Escrow = separate charges & transfers (platform-held), not a destination
-  charge.** Captured funds sit on the **platform** balance and are `Transfer`red to
-  the Organizer post-event (a destination charge would settle at capture and not
-  hold). Roles stay separate: Organizer = seller-of-record, platform = 収納代行
-  agent + Stripe MoR. **⚠️ ④ is shipped on the destination-charge model → a ④
-  follow-up is needed to switch to separate charges & transfers** (see
-  payments-design).
+- **Captured funds already sit on the platform balance.** ④'s charge is a **plain
+  platform-account** manual-capture PaymentIntent (no destination charge / no
+  `on_behalf_of`), so funds are already held by the platform. The post-event
+  `Transfer` of the Organizer's net share (separate charges & transfers) is owned by
+  **`ticket-settlement-and-payout`**, not ⑤. *(No ④ migration is needed — the earlier
+  "④ shipped a destination charge" premise was wrong.)*
 - **`Order`** — a provider/method-agnostic record (opaque `pi_`/`pm_`, own
   `status`, `amount`+`currency`, `paid_at`, facets), one Order = **N tickets**,
   referencing ④'s captured payment.
@@ -37,14 +37,14 @@ Full money design + legal scheme + counsel flags:
   is a **covered ticket (特定興行入場券)**. Never issue on the client confirm.
 - **Failed capture → no Order/ticket** (the seat is ④'s manual-follow-up concern;
   no ⑤-side retry/繰上げ).
-- **Payout: hold to event + dispute buffer.** Funds held on the **platform**
-  balance; a scheduled platform process `Transfer`s the Organizer's net share after
-  the event AND a dispute-safety window. This is the **primary** buyer→Organizer leg
-  (distinct from ⑦ resale's post-sale seller refund).
-- **Refund taxonomy.** **Cancellation (中止)** → refund (face + system/発券 fee;
-  keep the payment-processor fee, JP norm) via `Refund` + `transfer_reversal`.
-  **Postponement (延期)** → no auto-refund; the ticket stays valid for the new
-  date. This is the "normal cancellation-refund path" ⑦ official-resale defers to.
+- **Payout: owned by `ticket-settlement-and-payout`.** The hold-to-event Transfer of
+  the Organizer's net share (single-Organizer payee + platform fee) lives in the
+  settlement capability; ⑤ only records the Order it settles against.
+- **Refund taxonomy (⑤ owns the policy; settlement executes).** **Cancellation (中止)**
+  → refund (face + system/発券 fee; keep the payment-processor fee, JP norm);
+  **postponement (延期)** → no auto-refund, ticket stays valid + a holder-initiated
+  window. The `Refund` + `transfer_reversal` **execution** is `ticket-settlement-and-
+  payout`. This is the "normal cancellation-refund path" ⑦ official-resale defers to.
 - **`ticket-journey` sync.** On issuance, set the user's ticket-journey for the
   event to **PAID** (first-party supersedes the scraped/self-report status).
 - **收納代行 scheme.** Organizer = **seller-of-record**; the buyer's obligation is
@@ -61,13 +61,12 @@ challenger, swappable behind the opaque `provider`); no seat maps.
 
 ### New Capabilities
 - `ticket-purchase-and-issuance`: the post-capture Order + issuance pipeline —
-  `Order` referencing ④'s **captured** winning payment (Stripe Connect **separate
-  charges & transfers** — platform-held, the capture done by ④; a ④ follow-up moves
-  ④ off its shipped destination-charge model), webhook-confirmed **account-bound
-  Ticket issuance** (N per order, 本人確認-bound covered tickets), hold-to-event
-  payout (post-event `Transfer` to the Organizer), and the cancellation/postponement
-  refund taxonomy under the 収納代行 scheme. (No ⑤-side off-session charge / 繰上げ —
-  ④'s hold model.)
+  `Order` referencing ④'s **captured** winning payment (a plain platform-account
+  charge by ④; funds already platform-held), webhook-confirmed **account-bound Ticket
+  issuance** (N per order, 本人確認-bound covered tickets), and the cancellation/
+  postponement refund **policy** under the 収納代行 scheme. The payout Transfer + refund
+  execution are owned by **`ticket-settlement-and-payout`**. (No ⑤-side off-session
+  charge / 繰上げ — ④'s hold model.)
 
 ### Modified Capabilities
 - `ticket-journey`: issuance adds a **first-party authoritative side-effect
@@ -86,11 +85,12 @@ challenger, swappable behind the opaque `provider`); no seat maps.
 - **New entities:** `Order`, `Ticket` (account-bound, 本人確認-bound), Payment
   references (opaque). Defined provider-agnostic so a KOMOJU switch is a
   no-proto-break.
-- **External:** Stripe Connect (separate charges & transfers, Connect accounts,
-  webhooks, post-event `Transfer`, Refund/`transfer_reversal`; `allocated_funds`
-  when GA + JP-eligible). **Long-lead prerequisites** (start
-  now): Stripe KYC/審査, 収納代行 counsel opinion, 適格請求書発行事業者 registration,
-  KOMOJU-vs-Stripe PoC (#778).
+- **Hands off to:** `ticket-settlement-and-payout` (Organizer Connect onboarding,
+  post-event `Transfer`, refund/`transfer_reversal` execution) for all money-out.
+- **External:** Stripe (Elements for the hold; the Order references ④'s captured
+  `pi_`). Settlement's Stripe Connect surface lives in that capability. **Long-lead
+  prerequisites** (start now): Stripe KYC/審査, 収納代行 counsel opinion,
+  適格請求書発行事業者 registration, KOMOJU-vs-Stripe PoC (#778).
 - **Legal/compliance (payments-design obligations table):** 総額表示, 特商法
   最終確認画面 + 返品特約, 割賦販売法/PCI SAQ A, 個人情報 越境移転 (Stripe US),
   犯収法 determination, 電子帳簿保存法, 領収書/適格請求書.

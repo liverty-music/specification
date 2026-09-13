@@ -13,9 +13,10 @@ ticketing MVP.
 
 The charge is performed by **④** (a Stripe **manual-capture** authorization held at
 application and **captured at the draw** for winners, JPY card only). The captured
-funds are **held on the platform balance** (separate charges & transfers) under the
-収納代行 scheme — the platform later transfers the Organizer's net share (see
-"Payout held to event"). **④ owns the PaymentIntent lifecycle and its provider
+funds land on the **platform balance** (④'s charge is a plain platform charge, so it
+already holds funds under the 収納代行 scheme); the post-event settlement of the
+Organizer's net share is owned by **`ticket-settlement-and-payout`** (see the
+delegation requirement below). **④ owns the PaymentIntent lifecycle and its provider
 webhooks (authorize / capture / cancel)**;
 on a successful capture ④ marks the application **Won-captured**. **⑤ is triggered
 by ④'s confirmed-captured signal (the Won-captured application), NOT by a
@@ -99,32 +100,27 @@ client-side confirmation alone (issuance keys on ④'s captured-win signal).
 - **WHEN** no ④ Won-captured signal exists for an application
 - **THEN** no ticket is issued
 
-### Requirement: Idempotent issuance; ⑤ owns refund/dispute webhooks
+### Requirement: Idempotent issuance
 
-**Capture** and its provider webhooks belong to ④. ⑤ SHALL make **issuance
-idempotent**: replaying the Won-captured signal (or retrying issuance) MUST NOT
-double-issue tickets or double-create an Order for the same application. ⑤ SHALL
-own the **refund and dispute** provider webhooks (from its own refund calls),
-verify their signatures, and process them idempotently (no double-refund).
+**Capture** and its provider webhooks belong to ④; **refund/dispute** provider
+webhooks and their idempotency belong to **`ticket-settlement-and-payout`** (which
+makes the refund calls). ⑤ SHALL make **issuance idempotent**: replaying the
+Won-captured signal (or retrying issuance) MUST NOT double-issue tickets or
+double-create an Order for the same application.
 
 #### Scenario: Replayed captured-win signal issues exactly once
 
 - **WHEN** ④'s Won-captured signal for an application is observed/retried more than once
 - **THEN** the Order is created once and tickets are issued exactly once
 
-#### Scenario: Refund webhook is idempotent
-
-- **WHEN** a refund/dispute webhook (from ⑤'s refund) is delivered more than once
-- **THEN** the refund is recorded once (no double-refund)
-
 ### Requirement: Capture succeeded but issuance failed
 
 If ④'s capture **succeeded** but ⑤ **cannot complete issuance** (e.g. a persistence
 error after capture), ⑤ MUST NOT leave money captured with no ticket. ⑤ SHALL
 **retry issuance idempotently**; if issuance still cannot complete within a bounded
-window it SHALL **refund/void the captured payment** (release the funds via
-`Refund` + `transfer_reversal`) and surface the case for operator follow-up. It
-MUST never double-issue on a later retry.
+window it SHALL **refund/void the captured payment** (the refund executed via
+`ticket-settlement-and-payout`: `Refund` + `transfer_reversal`) and surface the case
+for operator follow-up. It MUST never double-issue on a later retry.
 
 #### Scenario: Post-capture issuance failure is reconciled
 
@@ -138,27 +134,21 @@ MUST never double-issue on a later retry.
      effectively does not fail; a rare failed capture is ④'s manual-follow-up
      concern (see "Issue from ④'s captured winning payment"). -->
 
-### Requirement: Payout held to event plus dispute buffer
+### Requirement: Settlement and payout are delegated to ticket-settlement-and-payout
 
-Buyer funds SHALL be **held on the platform balance** (separate charges &
-transfers — **not** a destination charge, which would settle to the Organizer at
-capture) and the Organizer's net share SHALL be **transferred** by a **scheduled
-platform process** (not the Organizer) only after **the event's occurrence AND a
-dispute-safety window**. "The event has occurred" SHALL be defined as **the
-event's `start_time` (of its currently-scheduled date) having passed**; on a
-**postponement (延期)** the release clock SHALL **reset to the new date** (never
-release on a stale original date). The held platform balance funds this under the
-収納代行 scheme.
+⑤ issues the Order + Tickets from ④'s captured payment and owns the refund
+**policy** (cancellation/postponement taxonomy, below). The **money-out layer** —
+holding funds on the platform balance until the event, the post-event `Transfer` of
+the Organizer's net share (platform fee retained) via separate charges & transfers,
+Organizer Stripe Connect onboarding, the hold-to-event + dispute-buffer release gate,
+and refund/dispute `transfer_reversal` **execution** — is owned by the
+**`ticket-settlement-and-payout`** capability. ⑤ SHALL NOT itself perform the payout
+Transfer; it records the Order that settlement settles against.
 
-#### Scenario: Payout not released before the event + buffer
+#### Scenario: ⑤ does not perform the payout
 
-- **WHEN** the event's current start_time has not passed, or the dispute buffer has not elapsed
-- **THEN** the Organizer payout for that sale is not released
-
-#### Scenario: Postponement resets the release clock
-
-- **WHEN** an event is postponed to a later date
-- **THEN** the payout release is re-gated on the new date's occurrence (the original date does not trigger release)
+- **WHEN** an Order is created and its tickets issued
+- **THEN** the post-event Organizer payout (and any refund clawback) is performed by ticket-settlement-and-payout, not by ⑤
 
 ### Requirement: 収納代行 scheme — discharge on payment + 代理受領権限
 
@@ -180,7 +170,9 @@ On event **cancellation (中止)** the system SHALL refund the ticket's **curren
 holder** (which, for a ticket that changed hands via ⑦ official resale, is the
 resale buyer — not necessarily the original purchaser) the **face value +
 system/発券 fee** (retaining the payment-processor fee, JP norm) via a provider
-refund and claw back the Organizer's share (`transfer_reversal`). If the ticket is
+refund and claw back the Organizer's share (`transfer_reversal`) — this refund/
+clawback is **executed by `ticket-settlement-and-payout`**; ⑤ owns the policy (who
+is refunded, what amount). If the ticket is
 **listed/offered for resale** at cancellation time, the system SHALL **cancel that
 listing/offer** and refund the holder (the resale fresh-sale leg MUST NOT run) —
 this is the "normal cancellation-refund path" ⑦ defers to. On **postponement
