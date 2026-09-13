@@ -18,6 +18,12 @@ Two root causes account for the measured 78% (Layout + Recalculate Style):
    declared via `@property`). Animating a custom property is not
    compositor-friendly and forces a full-subtree style recalculation every frame,
    for every matched card, forever. (Unmatched cards do not carry this animation.)
+   Worse, this cost buys nothing visible: `--hue-drift` only feeds `--artist-color`
+   / `--artist-color-dim` (via the `[artist-color]` rule's `calc()`), and
+   `var(--artist-color)` has **zero consumers** anywhere in the codebase — the
+   matched card's border, gradient, and box-shadow are all built from the raw
+   `--artist-hue`. So `color-drift` pays a full-subtree style recalc every frame
+   while producing **no visible output**; it is pure waste.
 2. **Layout (46%)** — the timetable renders a large DOM with **no CSS
    containment** (`content-visibility` / `contain` are absent), so any style or
    layout invalidation recomputes layout over the entire tree. The DevTools
@@ -25,18 +31,21 @@ Two root causes account for the measured 78% (Layout + Recalculate Style):
 
 ## What Changes
 
-- **P1 — Stop the per-frame style-recalc driver.** Remove (or gate behind
-  `prefers-reduced-motion`) the `color-drift` infinite animation of the
-  `--hue-drift` custom property on the matched card (`.event-card[data-matched]`).
-  Separately, delete the `contact-glow` / `pulse-glow` keyframes, which are
-  currently DEAD (defined but applied to no element) — removing them prevents the
-  same continuous-invalidation pattern from being reintroduced. Matched cards keep
-  their gradient/glow visual identity as a static (or reduced-motion-respecting)
-  treatment.
+- **P1 — Stop the per-frame style-recalc driver (pure deletion).** Delete the
+  `color-drift` animation, the `@property --hue-drift` declaration, and the
+  now-dead `--artist-color` / `--artist-color-dim` derivations in the
+  `[artist-color]` rule (they have zero consumers). Separately, delete the
+  `contact-glow` / `pulse-glow` keyframes, which are also DEAD (defined but applied
+  to no element). No static replacement is needed: because the animated custom
+  property fed no visible output, the matched card keeps its full neon identity
+  from its existing static gradient / border / box-shadow. A before/after
+  screenshot of a matched card confirms the deletion is visually a no-op.
 - **P2 — Scope layout and style to the viewport.** Apply
-  `content-visibility: auto` + `contain-intrinsic-size` (and `contain` where
-  appropriate) to the concert card / lane / date-group elements so off-screen
-  cards skip style and layout work.
+  `content-visibility: auto` + `contain-intrinsic-size: auto <fallback>` to the
+  **date-group `<li>`** (the natural scroll chunk), not per event-card, so
+  off-screen groups skip style and layout work. The `auto` keyword lets the
+  browser cache each group's real rendered height, eliminating re-reveal layout
+  shift; the literal fallback only applies before a group has ever rendered.
 - **Measurement gate.** Re-run the DevTools performance trace and PostHog
   `web.vitals` (route `/dashboard`) after P1, then after P2, to confirm the
   Layout + Recalculate Style reduction before deciding whether the deferred
@@ -44,8 +53,12 @@ Two root causes account for the measured 78% (Layout + Recalculate Style):
 
 Out of scope (deferred to a follow-up change once P1+P2 are measured):
 
-- **P3** — removing the laser-beam `getBoundingClientRect()` per-frame forced
-  reflow (throttle / IntersectionObserver / CSS-only beams).
+- **P3** — the laser-beam JS is ALREADY scroll-driven (not per-frame), ALREADY
+  read/write-phase-separated (reads all `getBoundingClientRect()` before any style
+  write, so no forced reflow), and caches its element lookups. The residual P3
+  concern is the `getBoundingClientRect()` cost during large scrolls, NOT a
+  forced-reflow loop — a follow-up must be scoped against the real measured
+  residual, not the original (now-inaccurate) "per-frame forced reflow" framing.
 - **P4** — `virtual-repeat` (`@aurelia/ui-virtualization`) list virtualization and
   batching/skip-on-unchanged for the `dateGroups` reassignment. This needs the
   nested group → lane → card structure flattened and is a larger refactor.
@@ -71,9 +84,10 @@ Out of scope (deferred to a follow-up change once P1+P2 are measured):
     P2: containment)
   - `frontend/src/components/live-highway/concert-highway.css` (P2: containment;
     beam animations audit)
-- **Behavior change**: highlighted (matched) concert cards no longer continuously
-  drift hue; the visual becomes static (or motion is gated on
-  `prefers-reduced-motion`).
+- **Behavior change**: none visible. The removed `color-drift` animated a custom
+  property with no consumer, so deleting it leaves the matched card's appearance
+  unchanged (confirmed by before/after screenshot). The change is purely a
+  render-cost reduction.
 - **Interaction to verify (P2 × existing beam JS)**: `content-visibility: auto`
   skips rendering of off-screen subtrees. The laser-beam positioning
   (`concert-highway.ts` — `getBoundingClientRect()` / `querySelectorAll(
