@@ -27,7 +27,9 @@
 
 ## 4. Refund policy (execution owned by ticket-settlement-and-payout)
 
-- [ ] 4.1 Define the refund **policy** ⑤ owns: cancellation (中止) → refund current holder (face + system/発券 fee, keep processor fee); postponement (延期) → no auto-refund + holder-initiated window; issuance-failure → refund. The `Refund` + `transfer_reversal` execution + reserve/chargeback ops live in `ticket-settlement-and-payout`.
+- [x] 4.1 Define the refund **policy** ⑤ owns: cancellation (中止) → refund current holder (face + system/発券 fee, keep processor fee); postponement (延期) → no auto-refund + holder-initiated window; issuance-failure → refund. The `Refund` + `transfer_reversal` execution + reserve/chargeback ops live in `ticket-settlement-and-payout`.
+      [Implemented via OrderAdminService.RefundOrder handler + RefundOrderUseCase. CAVEAT: the postponement holder-initiated window is NOT time-enforced in code — no reschedule/announcement timestamp is modeled; the admin call is authoritative. See 4.2 follow-up + design "Window-start caveat".]
+- [ ] 4.2 **Follow-up: model the postponement window-start.** Add a reschedule/announcement timestamp (Event entity, or a window-start on `RefundOrderRequest`) so the holder-initiated window can be time-gated correctly. Proto/spec change; until then the window is admin-authoritative (not code-enforced). Also fold in the processor-fee retention math (currently full-amount refund + TODO).
 
 ## 5. Frontend (Aurelia PWA)
 
