@@ -76,8 +76,10 @@ identity-ekyc adds a `verification_level` ⑤ consumes; ⑥ is not yet built.
   every advance-purchase refund. So the MVP does **NOT** time-enforce the window in code —
   the admin `RefundOrder(POSTPONEMENT_WINDOW)` call is authoritative (the platform enforces
   the window operationally). Correct time-gating is a **proto/spec follow-up**: add a
-  reschedule/announcement timestamp to the Event entity (or a window-start to the RPC),
-  then gate against it.
+  **server-owned reschedule/announcement timestamp to the Event entity**, stamped when the
+  organizer reschedules (independent of the refund caller), and gate against it. *(A
+  window-start supplied on `RefundOrderRequest` is NOT sufficient — it would be set by the
+  same admin caller the window is meant to constrain, giving no independent check.)*
 - **⑤ DEFINES the `Ticket` entity** (account-bound, 本人確認-bound, covered);
   ⑥ adds wallet/rotating-QR/check-in behavior on it. Avoids two capabilities
   each defining a Ticket.
