@@ -73,4 +73,14 @@ message Event {
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
+
+  // rescheduled_time is the server-owned timestamp marking when this event was
+  // rescheduled (postponed) and that reschedule was announced. It is absent for
+  // events that have never been postponed. When present it starts the holder-
+  // initiated refund window offered on postponement (延期): a holder who cannot
+  // attend the new date may request a refund within a bounded period measured
+  // from this instant. Stamped by the platform on reschedule (independent of the
+  // refund caller) so the window can be time-gated against an authoritative,
+  // caller-independent value.
+  RescheduledTime rescheduled_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

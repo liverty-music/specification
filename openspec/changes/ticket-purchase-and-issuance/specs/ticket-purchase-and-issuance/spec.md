@@ -180,11 +180,16 @@ this is the "normal cancellation-refund path" ⑦ defers to. On **postponement
 date, **but SHALL offer a holder-initiated refund window** — a bounded period in
 which a holder who cannot attend the rescheduled date may request a refund
 (refunded like a cancellation: face + system/発券 fee, processor fee retained) —
-the JP norm for postponed events.
+the JP norm for postponed events. The window SHALL be measured from a
+**server-owned reschedule/announcement timestamp** (`Event.rescheduled_time`),
+stamped by the platform when the organizer reschedules — independent of the
+refund caller — so the window cannot be measured from the purchase/capture time
+(which would reject every advance-purchase refund) nor set by the same admin
+caller it constrains.
 
 #### Scenario: Postponement offers a holder-initiated refund window
 
-- **WHEN** an event is postponed and a holder cannot attend the new date, within the refund window
+- **WHEN** an event is postponed and a holder cannot attend the new date, within the window measured from `Event.rescheduled_time`
 - **THEN** the holder may request a refund (face + system/発券 fee, processor fee retained); outside the window the ticket simply stays valid for the new date
 
 #### Scenario: Cancellation refunds the current holder
