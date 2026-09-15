@@ -17,11 +17,15 @@ Aurelia facts this design relies on (confirmed against Context7 `/aurelia/aureli
   before the component renders.
 - `attached()` runs bottom-up after the subtree is mounted but is **still inside
   the activation task, before the browser's first paint**. So moving work to
-  `attached()` alone does NOT push a *synchronous* assignment past the paint — a
-  `queueAsyncTask` (Task Queue) or `requestAnimationFrame` is required to yield a
-  frame.
+  `attached()` alone does NOT push a *synchronous* assignment past the paint.
+- To actually land the assignment on a LATER frame you need a **macrotask hop**
+  (`queueAsyncTask`, `setTimeout`) or a **double** `requestAnimationFrame`. A
+  SINGLE `requestAnimationFrame` is NOT sufficient — its callback runs just
+  before that same frame's paint, so a synchronous `dateGroups` assignment inside
+  one rAF would still coalesce the heavy render into the same paint as the shell
+  update (reproducing this bug). Do not treat a single rAF as equivalent.
 - `queueAsyncTask` (from `aurelia`) is the idiomatic deferral primitive and
-  returns an awaitable/cancelable Task.
+  returns an awaitable/cancelable Task; it is the one used below.
 
 ## Goals / Non-Goals
 
@@ -45,12 +49,20 @@ Aurelia facts this design relies on (confirmed against Context7 `/aurelia/aureli
   it never blocks the shell paint. Only the fast-path assigns render state
   synchronously in `loading()`. Scope the change to that branch.
 
-- **Decision: Yield the frame with `queueAsyncTask`, and keep the fetch kickoff
-  idiomatic.** Relocate the data-load trigger per Aurelia guidance so the render
-  driver runs after activation, and wrap the cached-timetable assignment in
-  `queueAsyncTask(() => { … })` so it lands on the frame AFTER the shell's first
-  paint. `attached()` alone is insufficient (pre-paint); the Task Queue hop is
-  the load-bearing part.
+- **Decision: Yield only the cached-assignment branch with `queueAsyncTask`; do
+  NOT relocate the whole load trigger.** `loading()`'s single call is
+  `void this.loadData()`, and `loadData()` is the one entry point for BOTH the
+  cache fast-path and the cold fetch. Moving that trigger to `attached()` would
+  also delay the cold-path fetch kickoff — violating the Non-Goal / Decision 1
+  ("leave the cold path alone"). So keep `loading() → void this.loadData()` as-is,
+  and inside `loadData()` wrap ONLY the cache fast-path's synchronous
+  `this.dateGroups = cachedDateGroups` (and its `timetableLoaded` flip) in
+  `queueAsyncTask(() => { … })`, so that render lands on the frame AFTER the
+  shell's first paint. The Task Queue macrotask hop is the load-bearing part;
+  `attached()` alone would not help (it is pre-paint), and relocating the trigger
+  is neither necessary nor in scope. The cold path is untouched — its awaited
+  fetch already yields, and its `isLoading` skeleton already separates the shell
+  paint from the timetable fill.
 
 - **Decision: Cover the one-frame gap with the skeleton, not the empty state.**
   Between the shell paint and the deferred cached render there is one frame with

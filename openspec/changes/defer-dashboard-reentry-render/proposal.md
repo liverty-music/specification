@@ -57,19 +57,25 @@ Out of scope:
 
 ## Capabilities
 
-### Modified Capabilities
+### New Capabilities
 
-- `dashboard-timetable-rendering`: tighten the existing "Tab-switch re-entry does
-  not freeze on rendering" requirement so that the page identity (header title +
-  active nav tab) is painted at navigation intent **independent of** the
-  timetable render — i.e. the re-entry render must not be driven from a
-  pre-first-paint lifecycle hook.
+- `dashboard-timetable-rendering`: this capability does not yet exist under
+  `openspec/specs/` — it is created by the in-flight `optimize-dashboard-render-cost`
+  change (still unmerged; "Tab-switch re-entry does not freeze on rendering" is a
+  *scenario* there, not a requirement). This change layers an ADDED requirement
+  onto it: page identity (header title + active nav tab) is painted at navigation
+  intent **independent of** the timetable render — i.e. the re-entry render must
+  not be driven from a pre-first-paint lifecycle hook. Ordering: `openspec sync`
+  (tasks 5.1) depends on the sibling change syncing this capability into
+  `openspec/specs/` first (or on the two deltas being reconciled at sync time).
 
 ## Impact
 
 - **Frontend only**, one file: `frontend/src/routes/dashboard/dashboard-route.ts`
-  (the `loading()` / `loadData()` cache fast-path and the `attached()` hook).
-  Possibly a small template/skeleton tweak if needed to avoid the empty flash.
+  (only `loadData()`'s cache fast-path branch — wrap its synchronous assignment in
+  `queueAsyncTask`; `loading()` keeps calling `loadData()` unchanged, and the cold
+  path is untouched). Possibly a small template/skeleton tweak if needed to avoid
+  the empty flash.
 - **Behavior change**: re-entry now paints header/nav + a brief skeleton
   immediately, then the cached timetable (previously: instant cached timetable
   but a multi-second header/nav freeze). Net UX win; the "instant cached paint"
