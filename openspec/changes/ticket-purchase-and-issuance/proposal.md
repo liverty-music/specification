@@ -88,9 +88,10 @@ swappable behind the opaque `provider` if ever needed); no seat maps.
 - **Hands off to:** `ticket-settlement-and-payout` (Organizer Connect onboarding,
   post-event `Transfer`, refund/`transfer_reversal` execution) for all money-out.
 - **External:** Stripe (Elements for the hold; the Order references ④'s captured
-  `pi_`). Settlement's Stripe Connect surface lives in that capability. **Long-lead
-  prerequisites** (start now): Stripe KYC/審査, 収納代行 counsel opinion,
-  適格請求書発行事業者 registration (#778). Provider is decided (Stripe Connect).
-- **Legal/compliance (payments-design obligations table):** 総額表示, 特商法
-  最終確認画面 + 返品特約, 割賦販売法/PCI SAQ A, 個人情報 越境移転 (Stripe US),
-  犯収法 determination, 電子帳簿保存法, 領収書/適格請求書.
+  `pi_`). Settlement's Stripe Connect surface lives in that capability. Provider
+  is decided (Stripe Connect).
+- **Legal/compliance:** the livemode launch gate — Stripe KYC/審査, 収納代行
+  counsel opinion, 適格請求書発行事業者 registration (#778), 総額表示, 特商法
+  最終確認画面 + 返品特約, PCI SAQ A, 個人情報 越境移転 (Stripe US), 電子帳簿保存法,
+  領収書/適格請求書 — is owned by the separate `payments-legal-compliance` change,
+  so ⑤ can archive on its implementation without it.

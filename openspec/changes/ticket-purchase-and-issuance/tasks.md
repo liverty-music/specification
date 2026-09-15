@@ -1,7 +1,7 @@
 ## 0. Prerequisites (long-lead — start in parallel, gate launch not spec)
 
-- [ ] 0.1 収納代行 counsel opinion (#778 flag 1): discharge clause + hold-to-event escrow + no cross-border (Stripe Connect onboarding itself is owned by `ticket-settlement-and-payout`)
-- [ ] 0.2 適格請求書発行事業者 registration; 媒介者交付特例 stance
+> Moved out: the go-live legal/tax prerequisites (収納代行 counsel opinion; 適格請求書発行事業者 registration + 媒介者交付特例) now live in the `payments-legal-compliance` change (§1). They gate the livemode launch, not ⑤'s spec/implementation. The provider-selection task 0.3 was dropped (Stripe decided).
+
 - [x] 0.4 Confirm the ④→⑤ handoff contract: **win captured (Stripe manual-capture at draw) → ⑤ Order + Ticket | capture failed → no Order** (no off-session charge / deadline / 繰上げ in ⑤); + the captured-payment ref + 本人確認/covered-ticket shape (locked in delta spec + design; implemented be #445 IssueFromCapturedWin — not-Won → FailedPrecondition/no Order, GetCapturedPayment reads pi.AmountReceived/currency/card facets)
 
 ## 1. Proto / entity (specification → BSR)
@@ -38,10 +38,7 @@
 
 ## 6. Compliance (payments-design obligations table)
 
-- [ ] 6.1 総額表示 (税込 lines + grand total) on all consumer-facing prices
-- [ ] 6.2 特商法 最終確認画面 + 返品特約 (no returns except cancellation/postponement) + per-Organizer 事業者情報
-- [ ] 6.3 PCI SAQ A (Stripe Elements, no PAN); EMV 3DS on file
-- [ ] 6.4 個人情報 越境移転 (Stripe US 委託) privacy disclosure + DPA; 電子帳簿保存法 record retention; 領収書/適格請求書 (クレカ決済表記, 登録番号)
+> Moved out to the `payments-legal-compliance` change: 総額表示 (§2.1), 特商法 最終確認画面 + 返品特約 + 事業者情報 (§2.2), PCI SAQ A + EMV 3DS (§2.3), and 個人情報 越境移転 + DPA + 電子帳簿保存法 + 領収書/適格請求書 (§3). These are livemode launch gates (external legal/tax + consumer-disclosure copy spanning ④/⑤ surfaces), not ⑤ spec requirements — so ⑤ can archive on its implementation without them.
 
 ## 7. Release & verification
 
