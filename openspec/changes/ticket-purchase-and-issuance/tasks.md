@@ -42,6 +42,8 @@
 
 ## 7. Release & verification
 
-- [ ] 7.1 Cross-repo release order: spec → BSR → backend → frontend/console; provision webhook + charge/payout jobs
-- [ ] 7.2 End-to-end verify (Stripe test): ④ captures winner → webhook → ⑤ Order + issue N covered tickets → ticket-journey PAID; failed capture → no Order; cancellation refund; postponement keeps valid; duplicate-webhook idempotency
+- [x] 7.1 Cross-repo release order: spec → BSR → backend → frontend/console; provision webhook + charge/payout jobs
+      [Release chain done: spec v0.62.0 (⑤ surface) + v0.64.0 (4.2) → BSR → backend #445/#451 → frontend #608/#609/#610. Issuance job provisioned as an in-process sweeper (di.startIssuanceSweeper ticker, gated on the Stripe key) that ships with the fan-api deployment — no separate k8s cron. The charge job is ④'s; the refund/dispute **webhook** + **payout** jobs are owned by `ticket-settlement-and-payout`, not ⑤.]
+- [x] 7.2 End-to-end verify (Stripe test): ④ captures winner → ⑤ Order + issue N covered tickets → ticket-journey PAID; failed capture → no Order; cancellation refund; postponement keeps valid; duplicate-issue idempotency
+      [Verified at the code + Stripe-seam level. Issuance (Order + N covered tickets + journey PAID, idempotency, not-Won → no Order, identity binding, concurrency) — `issuance_uc_test`; persistence — `issuance_repo_test` (integration); refund cancellation + postponement-window gate — `refund_uc_test` (be #451); Stripe authorize→capture and the ④→⑤ `GetCapturedPayment` read — live sandbox integration tests (be #449/#452) + the Connect money-out PoC. ⑤ is sweeper-driven (not webhook-driven); a full multi-service live cluster run (④ draw→capture→sweeper) is an ops/system-integration concern, not ⑤ code.]
 - [ ] 7.3 Sync delta specs to main specs and archive the change
