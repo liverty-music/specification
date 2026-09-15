@@ -4,8 +4,8 @@ P2 (`content-visibility` viewport-scoping) was implemented, measured (the −30%
 forced-reflow win below is real), then **reverted** in frontend#612 (shipped in
 prod v1.72.3): its paint containment disabled the `<li>` subgrid (cards overflowed
 their lane) and, when moved to `.lane`, clipped the matched card's spotlight glow;
-no cross-browser un-clip exists (`overflow-clip-margin` is Firefox-only + conflicts
-with the sticky header). P2's viewport-scoping is **deferred to P4** (group→lane→
+no viable un-clip exists (`overflow-clip-margin` requires `overflow: clip`, which
+disables the sticky header, and is unsupported in Safari). P2's viewport-scoping is **deferred to P4** (group→lane→
 card flatten). See design.md → the SUPERSEDING revert decision. The P2/§3 tasks
 below are kept for the record but reflect reverted work.
 
@@ -28,7 +28,7 @@ present)** — confirms the P1 win directly:
 | Scenario | Result |
 | --- | --- |
 | Idle 3 s with matched cards (task 2.4) | No continuous Recalculate Style; matched cards static → **P1 (color-drift removal) confirmed** |
-| Nav-tab re-entry INP (task 4.1a) | **2536 ms** vs the 7419 ms baseline (**−66%**), CLS 0 — substantial, but Rendering (2622 ms) still dominates → residual is P3/P4 |
+| Nav-tab re-entry INP (task 4.1a) | **2536 ms** vs the 7419 ms baseline (**−66%**), CLS 0 — substantial. The trace's Rendering category totals 2622 ms across the whole ~9 s capture window (not within the 2536 ms interaction), so Layout/Style still dominate the session → residual is P3/P4 |
 
 The −66% re-entry improvement is attributable to P1 (the perpetual per-frame
 style-recalc is gone); the remaining ~2.5 s is the synchronous DOM build of the
@@ -60,7 +60,7 @@ win is moot in prod (reverted).
 
 - [x] 3.1 Attempt P2 (`content-visibility: auto` + `contain-intrinsic-block-size`) — implemented on the date-group `<li>`, then on `.lane`, then **REVERTED**. Root cause: containment disables subgrid (li) / clips glow (lane). Correct viewport-scoping needs the P4 flatten. Not in shipped prod.
 - [x] 3.2 CLS stays 0 — CONFIRMED (0.00 on render + scroll, prod). The column-drift risk is moot now that P2 is reverted (subgrid intact, cards confined — reverified on prod v1.72.3: `grid-template-columns: subgrid`, lane 121 px / card 103 px).
-- [x] 3.3 (SUPERSEDED by the revert — no longer applicable) Sticky/beam-under-containment verification is moot: with P2 reverted there is no containment, so `.date-separator` sticky and the laser beams behave exactly as before this change. Re-opens only if P2 is re-attempted under P4. Sticky: `content-visibility`'s implied `contain: layout paint` confines the sticky header to its group's box — scroll across multiple date groups and confirm the behavior is intentional and consistent (per the new spec scenario). Beams: scroll and confirm beams still position correctly and do not vanish for off-screen-then-revealed cards (the beam JS reads `getBoundingClientRect()` on cards now under `content-visibility: auto`). If either regresses, capture the repro; route a beam issue to the P3 follow-up, and for sticky apply the design's mitigation (lift containment onto a non-subgrid inner wrapper below the header) rather than silently expanding this change. NOTE: the STATIC contract is already Storybook-verified (`concert-highway.stories.ts` → `PopulatedTimetable`): each date-group `<li>` computes `content-visibility: auto` + `contain-intrinsic-block-size` with the 160px fallback (retuned from 320px in frontend#607 after the prod measurement), `.date-separator` stays `position: sticky`, three lanes render, and one `.laser-beam` is generated per matched card. What remains for the reference profile is the RUNTIME behavior a static story can't assert — beam positioning while scrolling, the sticky hand-off/persist UX, and CLS staying 0.
+- [x] 3.3 (SUPERSEDED by the revert — no longer applicable) Sticky/beam-under-containment verification is moot: with P2 reverted there is no containment, so `.date-separator` sticky and the laser beams behave exactly as before this change (reverified on prod v1.72.3). Re-opens only if P2 is re-attempted under P4.
 - [x] 3.4 After-P2 Layout measured: forced reflow 751 ms → 528 ms (−30%) on the welcome-sample proxy (Measurement results A). NOTE: this win is NOT in shipped prod — P2 was reverted. It stands as the evidence that the P4 approach is worth pursuing.
 
 ## 4. Validation & acceptance

@@ -44,8 +44,9 @@ See proposal.md — Why. Constraints that shape this design:
   further down are SUPERSEDED.
 
 - **Decision (SUPERSEDING): Revert P2 (`content-visibility`) — it is incompatible
-  with this component.** `content-visibility: auto` ALWAYS establishes paint (and,
-  when off-screen, size) containment, which conflicts two ways here:
+  with this component.** `content-visibility: auto` ALWAYS establishes layout,
+  paint, and style (and, when off-screen, size) containment, which conflicts two
+  ways here:
   1. On the date-group `<li>` (`grid-template-columns: subgrid`), the containment
      **disables the subgrid** — computed `grid-template-columns` collapses to
      `none`, so the three lane columns lose their tracks and every card spans the
@@ -54,9 +55,9 @@ See proposal.md — Why. Constraints that shape this design:
   2. Moving it to `.lane` (a plain grid item) keeps the subgrid intact, but paint
      containment then **clips the matched card's spotlight `box-shadow`** (up to
      `0 0 80px`) at each lane's ~8 px-padded box.
-  The only cross-content un-clip mechanism, `overflow-clip-margin`, is **Firefox-
-  only** (unsupported in Chrome/Edge/Safari) and requires `overflow: clip`, which
-  disables the sticky date-separator — so there is no viable placement. A correct
+  The only cross-content un-clip mechanism, `overflow-clip-margin`, requires
+  `overflow: clip`, which disables the sticky date-separator (its layout context) —
+  and it is not supported in Safari — so there is no viable placement. A correct
   viewport-scoping needs the **P4 group→lane→card flatten** so containment can
   live on a non-subgrid, full-row element that does not clip the glow. P2 is
   therefore deferred to P4 (a separate change).
@@ -158,8 +159,9 @@ See proposal.md — Why. Constraints that shape this design:
   instant-page-switch updates the header/nav STATE at navigation-start, but the
   dashboard's cache fast-path sets `dateGroups` synchronously in `loading()`, so
   Aurelia flushes the header-binding update and the heavy 23-group timetable render
-  in the same task → a single paint after the render (INP 2536 ms on the reference
-  profile). The header/nav therefore appear to wait for the render even though the
+  in the same task → a single paint after the render (INP 2536 ms on the
+  authenticated real-device capture, Measurement B). The header/nav therefore
+  appear to wait for the render even though the
   state is decoupled. Fix candidate: yield a frame before the heavy render (defer
   the cache-paint out of the synchronous `loading()` path) and/or the P4 flatten +
   virtualization. Belongs with P3/P4, not this change.
