@@ -3,7 +3,7 @@
 - [ ] 0.1 収納代行 counsel opinion (#778 flag 1): discharge clause + hold-to-event escrow + no cross-border (Stripe Connect onboarding itself is owned by `ticket-settlement-and-payout`)
 - [ ] 0.2 適格請求書発行事業者 registration; 媒介者交付特例 stance
 - [ ] 0.3 KOMOJU-vs-Stripe PoC outcome (confirm provider before locking the adapter)
-- [ ] 0.4 Confirm the ④→⑤ handoff contract: **win captured (Stripe manual-capture at draw) → ⑤ Order + Ticket | capture failed → no Order** (no off-session charge / deadline / 繰上げ in ⑤); + the captured-payment ref + 本人確認/covered-ticket shape
+- [x] 0.4 Confirm the ④→⑤ handoff contract: **win captured (Stripe manual-capture at draw) → ⑤ Order + Ticket | capture failed → no Order** (no off-session charge / deadline / 繰上げ in ⑤); + the captured-payment ref + 本人確認/covered-ticket shape (locked in delta spec + design; implemented be #445 IssueFromCapturedWin — not-Won → FailedPrecondition/no Order, GetCapturedPayment reads pi.AmountReceived/currency/card facets)
 
 ## 1. Proto / entity (specification → BSR)
 
