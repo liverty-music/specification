@@ -207,25 +207,10 @@ caller it constrains.
 - **WHEN** an event is postponed
 - **THEN** no automatic refund is issued and issued tickets remain valid for the new date
 
-### Requirement: Consumer-price and return-policy disclosure (blocking)
-
-The system SHALL render **all consumer-facing prices tax-inclusive (総額表示)** —
-ticket and each fee as its own 税込 line plus a clear grand total — and SHALL show
-a compliant **特商法 最終確認画面** before order confirmation that states 分量・
-価格(税込)・**支払時期/方法** (incl. the **charge-only-if-you-win, at-the-draw,
-via-saved-card** timing), 引渡時期, a **返品特約** ("no returns except event
-cancellation/postponement" — omitting it triggers the 8-day statutory return
-right), and per-Organizer **事業者情報**.
-
-#### Scenario: Prices are tax-inclusive with a grand total
-
-- **WHEN** any price is shown to a consumer
-- **THEN** it is displayed tax-inclusive (each fee as a 税込 line) with a clear grand total
-
-#### Scenario: Final confirmation screen states charge timing and 返品特約
-
-- **WHEN** a buyer reaches the final confirmation screen
-- **THEN** it states the charge-on-win timing/amount, 引渡時期, a 返品特約 (no returns except cancellation/postponement), and the Organizer's 事業者情報
+<!-- The consumer-price (総額表示) and 特商法 最終確認画面 disclosure requirement
+     moved to the `payments-legal-compliance` capability (its "Total-price display"
+     and "特定商取引法 final confirmation" requirements). It is a livemode launch
+     gate spanning ④/⑤ checkout surfaces, not an ⑤ issuance behavior. -->
 
 <!-- Issuance also sets the buyer's ticket-journey to PAID. Because that changes
      the behavior of the EXISTING ticket-journey capability (adding a first-party
