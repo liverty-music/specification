@@ -119,8 +119,10 @@ identity-ekyc adds a `verification_level` ⑤ consumes; ⑥ is not yet built.
 - **收納代行 boundary is substance-over-form.** *→* Keep the discharge clause +
   counter-performance gate + business-payee; the counsel opinion (#778 flag 1) is
   a launch prerequisite, not a spec blocker.
-- **Long-lead externals** (Stripe KYC, counsel, 適格請求書 registration, KOMOJU
-  PoC) gate **launch**, not spec authoring. *→* Start now in parallel (tasks §0).
+- **Long-lead externals** (Stripe KYC, counsel, 適格請求書 registration) gate
+  **launch**, not spec authoring. *→* Start now in parallel (tasks §0). (Provider
+  is decided: Stripe Connect — no KOMOJU PoC; the opaque `provider` keeps a future
+  swap an adapter change.)
 - **Provider lock-in.** *→* The opaque provider-agnostic Order/Payment keeps the
   KOMOJU switch a config/adapter change, not a proto break.
 
