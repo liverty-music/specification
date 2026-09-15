@@ -54,8 +54,8 @@ Full money design + legal scheme + counsel flags:
   ever touches our systems (Stripe Elements, PCI **SAQ A**).
 - **Fee: a single clean %**, buyer-shiftable (organizer cost can be ¥0).
 
-Scope guardrails (MVP): card-only; provider = Stripe Connect (KOMOJU a PoC
-challenger, swappable behind the opaque `provider`); no seat maps.
+Scope guardrails (MVP): card-only; provider = Stripe Connect (decided; still
+swappable behind the opaque `provider` if ever needed); no seat maps.
 
 ## Capabilities
 
@@ -90,7 +90,7 @@ challenger, swappable behind the opaque `provider`); no seat maps.
 - **External:** Stripe (Elements for the hold; the Order references ④'s captured
   `pi_`). Settlement's Stripe Connect surface lives in that capability. **Long-lead
   prerequisites** (start now): Stripe KYC/審査, 収納代行 counsel opinion,
-  適格請求書発行事業者 registration, KOMOJU-vs-Stripe PoC (#778).
+  適格請求書発行事業者 registration (#778). Provider is decided (Stripe Connect).
 - **Legal/compliance (payments-design obligations table):** 総額表示, 特商法
   最終確認画面 + 返品特約, 割賦販売法/PCI SAQ A, 個人情報 越境移転 (Stripe US),
   犯収法 determination, 電子帳簿保存法, 領収書/適格請求書.
