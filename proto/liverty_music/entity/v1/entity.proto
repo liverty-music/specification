@@ -39,6 +39,18 @@ message OpenTime {
   google.protobuf.Timestamp value = 1 [(buf.validate.field).required = true];
 }
 
+// RescheduledTime represents the moment an event was rescheduled (postponed) and
+// that reschedule was announced. It is server-owned: stamped by the platform when
+// the organizer reschedules the event, independent of any refund caller. It marks
+// the START of the holder-initiated refund window offered on postponement (延期),
+// so the bounded window can be time-gated against an authoritative, caller-
+// independent instant rather than a value supplied by the party the window
+// constrains.
+message RescheduledTime {
+  // The reschedule/announcement timestamp. Must be present when the message itself is set.
+  google.protobuf.Timestamp value = 1 [(buf.validate.field).required = true];
+}
+
 // Title represents the human-readable name of a concert or event.
 message Title {
   // The title string. Must be between 1 and 255 characters.

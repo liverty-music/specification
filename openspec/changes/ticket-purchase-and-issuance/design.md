@@ -69,17 +69,17 @@ identity-ekyc adds a `verification_level` ⑤ consumes; ⑥ is not yet built.
   capture-succeeded-but-issuance-refunded edge).
 - **Postponement offers a holder-initiated refund window** (JP norm) in addition to
   "ticket stays valid for the new date"; cancellation refunds the current holder.
-  *Window-start caveat (surfaced during implementation):* the bounded window must be
-  measured from the **reschedule/announcement date**, which is **not yet modeled** —
-  neither the Event entity nor `RefundOrderRequest` (#938) carries such a timestamp.
-  Measuring it from the purchase/capture time (`Order.paid_at`) is wrong: it would reject
-  every advance-purchase refund. So the MVP does **NOT** time-enforce the window in code —
-  the admin `RefundOrder(POSTPONEMENT_WINDOW)` call is authoritative (the platform enforces
-  the window operationally). Correct time-gating is a **proto/spec follow-up**: add a
-  **server-owned reschedule/announcement timestamp to the Event entity**, stamped when the
-  organizer reschedules (independent of the refund caller), and gate against it. *(A
-  window-start supplied on `RefundOrderRequest` is NOT sufficient — it would be set by the
-  same admin caller the window is meant to constrain, giving no independent check.)*
+  *Window-start (modeled in follow-up 4.2):* the bounded window is measured from the
+  **reschedule/announcement date**, now carried by a **server-owned
+  `Event.rescheduled_time`** (`RescheduledTime`, OUTPUT_ONLY) — stamped by the platform
+  when the organizer reschedules, independent of the refund caller. Measuring the window
+  from the purchase/capture time (`Order.paid_at`) would be wrong (it would reject every
+  advance-purchase refund), and a window-start supplied on `RefundOrderRequest` (#938) is
+  NOT sufficient — it would be set by the same admin caller the window is meant to
+  constrain, giving no independent check. Remaining backend follow-up: stamp
+  `rescheduled_time` on the organizer reschedule flow and gate `RefundOrder(POSTPONEMENT_WINDOW)`
+  against `now ≤ rescheduled_time + window`. Until that lands the admin call stays
+  authoritative (the platform enforces the window operationally).
 - **⑤ DEFINES the `Ticket` entity** (account-bound, 本人確認-bound, covered);
   ⑥ adds wallet/rotating-QR/check-in behavior on it. Avoids two capabilities
   each defining a Ticket.
