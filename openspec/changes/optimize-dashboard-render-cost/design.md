@@ -35,12 +35,32 @@ See proposal.md — Why. Constraints that shape this design:
 
 ## Decisions
 
-- **Decision: Ship P1 and P2 as one CSS change, but measure after each.**
-  Rationale: both are small and CSS-only, but they attack different trace
-  segments (Style vs Layout), so measuring after P1 alone tells us how much of
-  the 32% Style cost it removed before P2 muddies attribution. Alternative
-  (one big change P1–P4) rejected: the earlier mis-attribution shows we must
-  re-measure before assuming the next lever is needed.
+- **Decision (UPDATED): Ship P1 only; P2 was implemented, measured, then
+  reverted.** P1 and P2 were originally shipped together (measure-after-each), and
+  the prod measurement confirmed P2's Layout win (forced reflow 751 ms → 528 ms,
+  −30%). But P2 then caused two prod regressions and was reverted (see the
+  superseding decision below). The change as shipped is **P1 only**. The earlier
+  per-lever measurement rationale still stands historically, but the P2 decisions
+  further down are SUPERSEDED.
+
+- **Decision (SUPERSEDING): Revert P2 (`content-visibility`) — it is incompatible
+  with this component.** `content-visibility: auto` ALWAYS establishes layout,
+  paint, and style (and, when off-screen, size) containment, which conflicts two
+  ways here:
+  1. On the date-group `<li>` (`grid-template-columns: subgrid`), the containment
+     **disables the subgrid** — computed `grid-template-columns` collapses to
+     `none`, so the three lane columns lose their tracks and every card spans the
+     full row (measured on prod: lane 363 px / card 345 px vs the correct
+     121 px / 103 px).
+  2. Moving it to `.lane` (a plain grid item) keeps the subgrid intact, but paint
+     containment then **clips the matched card's spotlight `box-shadow`** (up to
+     `0 0 80px`) at each lane's ~8 px-padded box.
+  The only cross-content un-clip mechanism, `overflow-clip-margin`, requires
+  `overflow: clip`, which disables the sticky date-separator (its layout context) —
+  and it is not supported in Safari — so there is no viable placement. A correct
+  viewport-scoping needs the **P4 group→lane→card flatten** so containment can
+  live on a non-subgrid, full-row element that does not clip the glow. P2 is
+  therefore deferred to P4 (a separate change).
 
 - **Decision: Delete the `--hue-drift` animation outright — it drives a dead
   variable.** `--hue-drift` only feeds `--artist-color` / `--artist-color-dim` (via
@@ -54,8 +74,9 @@ See proposal.md — Why. Constraints that shape this design:
   motion were later wanted, it MUST use a compositor-only property like
   `transform`/`opacity`, never a custom property.)
 
-- **Decision: Apply `content-visibility: auto` + `contain-intrinsic-size: auto
-  <fallback>` to the date-group `<li>`, not per event-card or per virtualization.**
+- **Decision (SUPERSEDED — see the revert decision above): Apply
+  `content-visibility: auto` + `contain-intrinsic-size: auto <fallback>` to the
+  date-group `<li>`, not per event-card or per virtualization.**
   Rationale: the date-group `<li>` is the natural scroll chunk (a whole day's lanes
   enter/leave the viewport together); per-card is too granular (containment
   bookkeeping overhead on many small cells that also sit in a subgrid). Use the
@@ -71,13 +92,17 @@ See proposal.md — Why. Constraints that shape this design:
   version — the API is documented for Aurelia 2, but package availability per
   release must be verified then, not assumed now.)
 
-- **Decision: Applying size containment to the subgrid group `<li>` is safe
-  because the parent columns are content-independent.** The `<li>` participates in
-  `grid-template-columns: subgrid`, and size containment normally risks breaking a
-  subgrid item's track contribution — but the parent grid defines fixed
-  `1fr 1fr 1fr` columns at `:scope`, so the column line positions do not depend on
-  any group's content. Skipping an off-screen group's rendering therefore cannot
-  shift the columns. (Verified by task 3.2 — confirm no column drift.)
+- **Decision (SUPERSEDED — this reasoning was WRONG): Applying size containment to
+  the subgrid group `<li>` is safe because the parent columns are
+  content-independent.** This assumed only *size* containment mattered and only
+  when off-screen. In reality `content-visibility: auto` also applies *layout* and
+  *paint* containment while on-screen, and that **disables subgrid entirely**
+  (computed `grid-template-columns: none`), collapsing the columns regardless of
+  the parent's fixed `1fr 1fr 1fr`. This is the root cause of the shipped
+  lane-overflow bug; it is why P2 was reverted. (The `1fr 1fr 1fr` columns are
+  fixed, so with NO containment the subgrid is not needed for alignment per se, but
+  the `hideAway` collapse relies on subgrid propagation — so the subgrid must
+  stay, and containment must not sit on it.)
 
 ## Risks / Trade-offs
 
@@ -114,15 +139,29 @@ See proposal.md — Why. Constraints that shape this design:
 
 ## Open Questions
 
-- **`position: sticky` × containment.** `content-visibility: auto` implies
-  `contain: layout paint`, which makes the date-group `<li>` a containing block and
-  confines the `.date-separator` (`position: sticky; inset-block-start: 0`) to its
-  own group's box. This changes sticky behavior: the date header would hand off at
-  each group boundary (section-style sticky) rather than persisting across the
-  whole scroll. Whether that matches the intended UX must be confirmed against the
-  current behavior and on the reference profile (task 3.3 / the new spec scenario).
-  If it is a regression, the mitigation is to lift `content-visibility` off the
-  `<li>` and onto an inner wrapper below the sticky header — but that wrapper must
-  not itself be a subgrid participant, so it needs checking before adopting.
-- The scope of any follow-up (P3 beam `getBoundingClientRect()` cost, P4
-  virtualization) is deliberately decided AFTER the P1+P2 re-measurement.
+- **RESOLVED — `position: sticky` × containment** is moot now that P2 is reverted:
+  with no `content-visibility` on the `<li>`, the date-separator sticky behavior is
+  unchanged from before this change. (This interaction resurfaces only if P2 is
+  re-attempted under P4.)
+
+## Follow-ups (separate changes — NOT this change)
+
+- **P4 — viewport-scoping done right.** Flatten group → lane → card so
+  `content-visibility` can live on a non-subgrid, full-row element that neither
+  disables subgrid nor clips the matched card's glow; then re-measure the Layout
+  win P2 demonstrated (751 ms → 528 ms forced reflow). Also confirm
+  `@aurelia/ui-virtualization` is installable at the repo's pinned `@aurelia`
+  version if virtualization is chosen.
+- **P3 — beam `getBoundingClientRect()` scroll cost** (the beam JS is already
+  scroll-driven and read/write-phase-separated, so this is gBCR cost, not a
+  forced-reflow loop).
+- **Header/nav paint starvation on re-entry (discovered during verification).**
+  instant-page-switch updates the header/nav STATE at navigation-start, but the
+  dashboard's cache fast-path sets `dateGroups` synchronously in `loading()`, so
+  Aurelia flushes the header-binding update and the heavy 23-group timetable render
+  in the same task → a single paint after the render (INP 2536 ms on the
+  authenticated real-device capture, Measurement B). The header/nav therefore
+  appear to wait for the render even though the
+  state is decoupled. Fix candidate: yield a frame before the heavy render (defer
+  the cache-paint out of the synchronous `loading()` path) and/or the P4 flatten +
+  virtualization. Belongs with P3/P4, not this change.

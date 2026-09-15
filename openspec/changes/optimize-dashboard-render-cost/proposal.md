@@ -31,6 +31,14 @@ Two root causes account for the measured 78% (Layout + Recalculate Style):
 
 ## What Changes
 
+> **Scope update:** this change ships **P1 only**. **P2 was implemented, measured
+> (−30% forced reflow), then reverted** (frontend#612, prod v1.72.3):
+> `content-visibility`'s paint/layout containment disables the `<li>` subgrid
+> (cards overflow their lane) and, on `.lane`, clips the matched card's glow, with
+> no cross-browser fix. P2's viewport-scoping is deferred to **P4** (group→lane→
+> card flatten). See design.md → the SUPERSEDING revert decision. The P2 bullet
+> below is kept for the record.
+
 - **P1 — Stop the per-frame style-recalc driver (pure deletion).** Delete the
   `color-drift` animation, the `@property --hue-drift` declaration, and the
   now-dead `--artist-color` / `--artist-color-dim` derivations in the
