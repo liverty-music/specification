@@ -50,23 +50,33 @@ Each enumerated gap SHALL name the control that addresses it. Automated merge po
 
 ### Requirement: cloud-provisioning CI previews infrastructure changes
 
-The `cloud-provisioning` CI workflow SHALL run an infrastructure preview on every pull request and SHALL report whether the change would alter any live resource. A type check alone SHALL NOT be treated as sufficient verification for a change to infrastructure code or to a provider dependency.
+The `cloud-provisioning` CI workflow SHALL run an infrastructure preview on pull requests that a member of the project authored, and SHALL report whether the change would alter any live resource. A type check alone SHALL NOT be treated as sufficient verification for a change to infrastructure code.
 
-The preview job SHALL execute only the preview operation and SHALL contain no path that applies changes. Its safety derives from the operation rather than from the scope of its credentials: a preview computes a plan and never enacts one, which holds regardless of what the credentials would permit. Constraining the credential scope instead is not required, and SHALL NOT be relied upon, because the stack resolves its provider credentials from a shared secrets environment that cannot be narrowed per job.
+Running a preview requires installing the stack's dependencies and executing its program, so whatever code those dependencies contain runs with the credentials the preview resolves. Those credentials cannot be narrowed per job — the stack resolves its providers from a shared secrets environment — so the exposure is governed by controlling *which pull requests* reach the job, not by scoping what the job may do.
 
-The job SHALL be triggered by events that run the workflow definition from the pull request's own repository, and SHALL NOT be triggered by events that expose repository secrets to code originating from a fork.
+The preview job SHALL NOT run on a pull request whose content was proposed by automation rather than written by a project member. An automated dependency-update pull request introduces third-party code that has not been read by anyone, and running the preview on it would execute that code with production infrastructure credentials before any review. Pull requests originating from a fork SHALL likewise be excluded.
 
-Its result SHALL be available as a distinct signal so that an automated merge decision can depend on whether the preview reported changes.
+Consequently, infrastructure provider updates SHALL NOT be automatically merged. They SHALL be reviewed by a person, who obtains the preview by running it themselves — which is the workflow the repository's pull request template and runbooks already describe.
 
-#### Scenario: A provider upgrade would replace a live resource
+The preview job SHALL execute only the preview operation and SHALL contain no path that applies changes.
 
-- **WHEN** a pull request upgrades a Pulumi provider in a way that would replace or destroy an existing resource
-- **THEN** the preview SHALL report that resource change
-- **AND** the pull request SHALL NOT be eligible for automated merge
+Its result SHALL be reported on the pull request so a reviewer can act on it.
+
+#### Scenario: An automated dependency update touches the infrastructure stack
+
+- **WHEN** an automated pull request proposes a new version of a dependency of the infrastructure stack
+- **THEN** the preview job SHALL NOT run on that pull request
+- **AND** the proposed dependency's code SHALL NOT execute with infrastructure credentials
+- **AND** the pull request SHALL NOT be automatically merged
+
+#### Scenario: A project member changes infrastructure code
+
+- **WHEN** a project member opens a pull request changing the infrastructure stack
+- **THEN** the preview SHALL run and report whether any live resource would change
 
 #### Scenario: A change is infrastructure-inert
 
-- **WHEN** a pull request's preview reports no resource changes
+- **WHEN** a project member's pull request preview reports no resource changes
 - **THEN** that result SHALL be distinguishable from a preview that reported changes
 
 #### Scenario: The preview job is inspected for an apply path

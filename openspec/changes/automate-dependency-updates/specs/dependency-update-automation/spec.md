@@ -98,11 +98,13 @@ An update SHALL be merged without human review when its repository's `CI Success
 
 Where the gate does not exercise that behavior, the update SHALL be withheld from automerge only when a human reviewer can observe something the pipeline cannot. Human review is not a general-purpose substitute for missing coverage: for a dependency whose pull request contains only a version and a lock file, a reviewer sees strictly less than the pipeline does, and requiring their approval produces ceremony rather than verification. Where no reviewer can evaluate the risk, the correct response is to extend the pipeline's coverage, not to route the update through a person.
 
-Minor and patch updates SHALL automerge by default, including the Aurelia release-candidate to general-availability transition and the external `pocketsign` schema SDK. Major updates SHALL NOT automerge.
+Minor and patch updates SHALL automerge by default, including the external `pocketsign` schema SDK. Major updates SHALL NOT automerge.
+
+A dependency whose current version is a prerelease SHALL continue to track the release channel its registry marks as current, and SHALL NOT be advanced onto a less stable channel merely because that channel carries a higher version number. This is the tool's default behaviour and SHALL be verified rather than reimplemented.
 
 The following SHALL be withheld from automerge regardless of version increment. Each qualifies because a reviewer holds information, judgement or agency the pipeline lacks:
 
-- **Pulumi provider updates** that produce a non-empty infrastructure preview — the preview output states exactly which resources would change, which is information the gate reduces to pass or fail.
+- **Infrastructure provider updates** — the pipeline cannot preview them, because doing so would execute the proposed third-party code with production credentials (see the `ci-optimization` capability). A reviewer obtains the preview by running it themselves, which is information no gate can supply.
 - **`@playwright/test` updates** — a reviewer can regenerate visual baselines and inspect the resulting diff, which automation cannot do.
 - **Changes to npm `overrides` entries** — these encode a human judgement about a transitive advisory, and their correct resolution is often removal rather than upgrade.
 
@@ -123,22 +125,21 @@ The following SHALL be withheld from automerge regardless of version increment. 
 - **WHEN** a major update's pull request reaches a passing `CI Success` gate
 - **THEN** it SHALL remain open for human review
 
-#### Scenario: A Pulumi provider upgrade would alter live infrastructure
+#### Scenario: An infrastructure provider upgrade is proposed
 
-- **WHEN** a Pulumi provider update is proposed and the infrastructure preview reports any resource change
-- **THEN** the pull request SHALL NOT be automerged
+- **WHEN** an update to an infrastructure provider dependency is proposed
+- **THEN** it SHALL NOT be automerged regardless of the gate's result
 
-#### Scenario: A Pulumi provider upgrade is inert
+#### Scenario: A prerelease dependency's channel advances
 
-- **WHEN** a Pulumi provider update is proposed and the infrastructure preview reports no resource changes
-- **AND** the `CI Success` gate passes
-- **THEN** the pull request MAY be automerged
+- **WHEN** a dependency tracked on a prerelease channel has a higher-numbered version available on a less stable channel
+- **THEN** no update proposal onto that channel SHALL be raised
 
 ### Requirement: Releases are not adopted until they have aged
 
 A newly published release SHALL NOT be proposed until a minimum period has elapsed since its publication. Automated merging removes the human pause during which a compromised release would ordinarily be noticed, so the delay is what replaces it: it gives registries, maintainers and scanners time to withdraw or flag a malicious publication before it reaches a repository.
 
-The requirement applies with most force to npm, whose publication model allows a compromised maintainer account to ship arbitrary code to a large dependent base within minutes. It SHALL apply to every axis where the registry supports a publication timestamp.
+The requirement applies with most force to npm, whose publication model allows a compromised maintainer account to ship arbitrary code to a large dependent base within minutes. It SHALL also apply to every other axis whose registry exposes a publication timestamp, including Go modules, container images and GitHub Actions — each of which is likewise reachable by a compromised maintainer account, and each of which this project automerges.
 
 A release whose publication timestamp cannot be determined SHALL be treated as not having aged, rather than as having aged.
 
