@@ -148,6 +148,14 @@ money-movement behind `RefundOrder`; it does **not** modify #938's proto, and th
   closed (503). Consequently there is **no dev webhook endpoint to register** — the only
   endpoint ever registered with Stripe is prod's, at launch. Webhook behaviour is verified
   locally by forwarding events with the Stripe CLI (§6), not by registering a deployed URL.
+- **The prod webhook endpoint is registered from IaC, not the Dashboard.**
+  `POST /v1/webhook_endpoints` returns the `whsec_…` signing secret in its creation response,
+  so a Pulumi Dynamic Resource — the pattern already used in `src/zitadel/dynamic/` for APIs
+  no provider covers — can hand it directly to the GSM secret that ESO syncs. That removes
+  the manual copy of a credential between two consoles, and puts the subscribed event list
+  under review in version control rather than in Dashboard state. Scoped to the prod stack:
+  per the environment decision above there is no dev Stripe environment and therefore no dev
+  endpoint.
 - **No fund isolation (no `allocated_funds`).** Held funds mix with the general platform
   balance. *→* Careful balance monitoring + reserve; revisit with Stripe if JP opens.
 
@@ -175,4 +183,11 @@ Stripe 審査.
   duration, is load-bearing).
 - **`allocated_funds` JP availability + manual-capture support** — Stripe account-manager
   question (not answerable from docs).
+- **Whether Pulumi should hold a Stripe secret key, and whether the webhook endpoint's
+  `delete` should really delete.** Registering the endpoint from IaC means the prod stack
+  authenticates to Stripe with a payments credential, which widens what a compromised Pulumi
+  run can reach. And a Dynamic Resource whose `delete` removes the endpoint lets a state
+  change silently stop production webhook delivery — the dispute/refund path. Both are
+  settled when 5.1 is implemented; a `delete` that only logs, or a restricted key scoped to
+  webhook endpoints, are the obvious candidates.
 - **Fee rate + buyer-pass-through** — business decision (#778).

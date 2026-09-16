@@ -99,12 +99,22 @@
 ## 5. cloud-provisioning
 
 - [ ] 5.1 cloud-provisioning plumbing: transfer/payout/dispute webhook endpoint +
-      signing secret (GSM/ESO) for fan-api
-      [PARTIAL: PR #489 is merged — the Pulumi-provisioned GSM secret, the `/stripe-webhook`
-      HTTPRoute exact-path rule, and the optional `envFrom` are on main and applied to dev.
-      The isolated `ExternalSecret` for `fan-api-stripe-webhook-secret` follows once the
-      **prod** Stripe webhook endpoint is registered and the GSM key exists — a launch-time
-      item, since prod is the only environment whose endpoint is ever registered]
+      signing secret (GSM/ESO) for fan-api, with the **Stripe endpoint registration itself
+      in IaC**
+      [DONE so far (PR #489, merged and applied to dev): the GSM secret plumbing, the
+      `/stripe-webhook` HTTPRoute exact-path rule, and the optional `envFrom`.
+      REMAINING: register the prod webhook endpoint from Pulumi rather than the Dashboard.
+      `POST /v1/webhook_endpoints` exists and **returns the `whsec_…` signing secret in the
+      creation response**, so a Pulumi Dynamic Resource can feed it straight into the GSM
+      secret — the manual "copy the secret out of the Dashboard into ESC" step disappears
+      entirely, and the subscribed event list becomes reviewable in version control instead
+      of living in Dashboard state. `gcpConfig.stripeWebhookSigningSecret` already accepts a
+      `pulumi.Output<string>`, so the wiring is a drop-in.
+      Follows the established `src/zitadel/dynamic/` pattern (a Dynamic Resource for an API
+      no Pulumi provider covers) rather than adding a Stripe provider. Scoped to the **prod**
+      stack only: per §0 there is no dev Stripe environment, so there is no dev endpoint to
+      register. Then the isolated `ExternalSecret` for `fan-api-stripe-webhook-secret` can
+      land, since the GSM key will exist.]
       (Stripe-account-side config is not cloud's: `losses_collector = application` is
       done under 0.1, and the statement-descriptor prefix strings are 0.2.)
 
