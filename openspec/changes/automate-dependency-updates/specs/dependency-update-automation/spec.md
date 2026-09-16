@@ -28,7 +28,7 @@ An axis whose declared versions are unresolvable floating references — for exa
 
 #### Scenario: A dependency axis receives an upstream release
 
-- **WHEN** a new version is published for a dependency in any of the nine covered axes
+- **WHEN** a new version is published for a dependency in any of the twelve covered axes
 - **THEN** an update proposal SHALL be raised for it, unless that dependency is excluded by another requirement in this specification
 
 #### Scenario: A repository needs a rule the others do not
@@ -94,15 +94,23 @@ The `@playwright/test` version SHALL be recorded as an exact version rather than
 
 ### Requirement: Updates automerge only when the CI gate covers their risk
 
-An update SHALL be merged without human review when its repository's `CI Success` gate passes, provided the gate actually exercises the behavior the update could break. An update SHALL require human review when its risk is not observable to the pipeline.
+An update SHALL be merged without human review when its repository's `CI Success` gate passes, provided the gate actually exercises the behavior the update could break.
+
+Where the gate does not exercise that behavior, the update SHALL be withheld from automerge only when a human reviewer can observe something the pipeline cannot. Human review is not a general-purpose substitute for missing coverage: for a dependency whose pull request contains only a version and a lock file, a reviewer sees strictly less than the pipeline does, and requiring their approval produces ceremony rather than verification. Where no reviewer can evaluate the risk, the correct response is to extend the pipeline's coverage, not to route the update through a person.
 
 Minor and patch updates SHALL automerge by default, including the Aurelia release-candidate to general-availability transition and the external `pocketsign` schema SDK. Major updates SHALL NOT automerge.
 
-The following SHALL be withheld from automerge regardless of version increment, for the stated reasons:
+The following SHALL be withheld from automerge regardless of version increment. Each qualifies because a reviewer holds information, judgement or agency the pipeline lacks:
 
-- **Pulumi provider updates** that produce a non-empty infrastructure preview — a type check cannot reveal that a provider upgrade would replace a live resource.
-- **`@playwright/test` updates** — visual baselines require regeneration, which automation cannot perform.
-- **Changes to npm `overrides` entries** — these encode a human judgment about a transitive advisory, and their correct resolution is often removal rather than upgrade.
+- **Pulumi provider updates** that produce a non-empty infrastructure preview — the preview output states exactly which resources would change, which is information the gate reduces to pass or fail.
+- **`@playwright/test` updates** — a reviewer can regenerate visual baselines and inspect the resulting diff, which automation cannot do.
+- **Changes to npm `overrides` entries** — these encode a human judgement about a transitive advisory, and their correct resolution is often removal rather than upgrade.
+
+#### Scenario: Coverage is missing and no reviewer could evaluate the risk
+
+- **WHEN** an update's risk is not observable to the pipeline, and a reviewer inspecting the pull request would see only a version change and a lock file
+- **THEN** routing the update through human review SHALL NOT be treated as a compensating control
+- **AND** the gap SHALL be addressed by extending pipeline coverage
 
 #### Scenario: A minor update passes CI
 
@@ -125,6 +133,78 @@ The following SHALL be withheld from automerge regardless of version increment, 
 - **WHEN** a Pulumi provider update is proposed and the infrastructure preview reports no resource changes
 - **AND** the `CI Success` gate passes
 - **THEN** the pull request MAY be automerged
+
+### Requirement: Releases are not adopted until they have aged
+
+A newly published release SHALL NOT be proposed until a minimum period has elapsed since its publication. Automated merging removes the human pause during which a compromised release would ordinarily be noticed, so the delay is what replaces it: it gives registries, maintainers and scanners time to withdraw or flag a malicious publication before it reaches a repository.
+
+The requirement applies with most force to npm, whose publication model allows a compromised maintainer account to ship arbitrary code to a large dependent base within minutes. It SHALL apply to every axis where the registry supports a publication timestamp.
+
+A release whose publication timestamp cannot be determined SHALL be treated as not having aged, rather than as having aged.
+
+Exempting an update from the waiting period SHALL require a stated reason recorded in the configuration, and SHALL NOT be the default for any axis.
+
+#### Scenario: A release is published and immediately proposed
+
+- **WHEN** a dependency publishes a release less than the configured minimum age ago
+- **THEN** no update proposal SHALL be raised for it yet
+
+#### Scenario: A release has aged
+
+- **WHEN** a release reaches the configured minimum age and its update is otherwise eligible
+- **THEN** the update SHALL be proposed on the next scheduled run
+- **AND** it SHALL be eligible for automerge under the normal policy
+
+#### Scenario: A release carries no publication timestamp
+
+- **WHEN** a release's publication time cannot be determined
+- **THEN** it SHALL be treated as not yet aged
+
+### Requirement: Maintained upstream configuration is reused rather than reimplemented
+
+The automation configuration SHALL be built by extending the tool's maintained recommended configuration, adding only rules that express something specific to these repositories. A grouping, pinning or safety rule that the tool already maintains SHALL NOT be reimplemented locally.
+
+The reason is drift: a locally copied group does not learn about packages added to the upstream family later, so it silently narrows over time while continuing to look correct. Local rules SHALL be reserved for package families the upstream configuration does not cover, for the version fan-outs described above, and for the automerge and exclusion policy, which are judgements about this project rather than facts about a package.
+
+Where a local rule duplicates upstream coverage, the local rule SHALL be removed in favour of the upstream one.
+
+#### Scenario: An upstream family gains a new package
+
+- **WHEN** a package is added to a dependency family that the tool's maintained configuration groups
+- **THEN** that package SHALL be grouped without any change to this project's configuration
+
+#### Scenario: A local rule overlaps maintained configuration
+
+- **WHEN** a local grouping rule covers a family the maintained configuration already groups
+- **THEN** the local rule SHALL be considered non-conforming and removed
+
+#### Scenario: A family has no upstream coverage
+
+- **WHEN** a version-coupled family is not covered by any maintained group
+- **THEN** a local rule for it SHALL be permitted
+
+### Requirement: Third-party GitHub Actions are pinned to immutable references
+
+Every third-party GitHub Action referenced by a workflow in any liverty-music repository SHALL be pinned to a full-length commit SHA rather than a mutable tag or branch. A tag can be repointed by its owner at any time, so a tag reference grants the action's owner the ability to change what executes in CI — including in the workflows that hold deployment and infrastructure credentials.
+
+The pinned reference SHALL carry the human-readable version alongside it so the intended version remains legible, and SHALL be advanced by the same automation that proposes other updates.
+
+Actions published from within the liverty-music organization are exempt, as their contents are already under this project's control.
+
+#### Scenario: A workflow references an action by tag
+
+- **WHEN** a workflow references a third-party action by a tag or branch
+- **THEN** that reference SHALL be considered non-conforming to this requirement
+
+#### Scenario: An upstream tag is repointed
+
+- **WHEN** a third-party action's maintainer moves an existing tag to a different commit
+- **THEN** the pinned workflows SHALL continue to execute the previously reviewed commit
+
+#### Scenario: A pinned action publishes a new version
+
+- **WHEN** a pinned third-party action publishes a release
+- **THEN** an update proposal SHALL be raised that advances both the SHA and its accompanying version comment
 
 ### Requirement: The liverty-music schema SDK is excluded from automated updates
 

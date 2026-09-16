@@ -39,9 +39,21 @@ Renovate auto-detects `renovate-config.json` in an organization's `.github` repo
 
 *Alternative considered:* a dedicated `renovate-config` repository (also auto-detected). Rejected because `.github` already exists, is already Pulumi-managed, and already serves this exact role for `claude-review.yml`. A second configuration repository would split the same concern across two places.
 
-### D3: Grouping by version-coupled family
+### D3: Grouping by version-coupled family, upstream first
 
-The `dependency-update-automation` spec requires that version-coupled sets move as a unit. The concrete groups, derived from inspecting the manifests:
+The `dependency-update-automation` spec requires that version-coupled sets move as a unit, and separately that maintained upstream configuration is reused rather than reimplemented. Most of these families are already grouped by Renovate's own presets, which `config:best-practices` pulls in via `config:recommended` (D14). Local rules are written only where no upstream group exists.
+
+**Covered upstream — no local rule:**
+
+| Family | Preset |
+|---|---|
+| Storybook | `group:storybookMonorepo` |
+| Vitest | `group:vitestMonorepo` |
+| OpenTelemetry JS | `group:opentelemetry-jsMonorepo` |
+| stylelint | `group:stylelint` |
+| Pulumi | `group:pulumi` |
+
+**Local rules — no upstream coverage:**
 
 | Group | Members | Automerge |
 |---|---|---|
@@ -49,18 +61,14 @@ The `dependency-update-automation` spec requires that version-coupled sets move 
 | `connectrpc-go` | `connectrpc.com/{connect,authn,cors,grpchealth,otelconnect,validate}` | yes |
 | `go-tools` | `tool` directive entries: buf, delve, mockery, gofumpt | yes |
 | `aurelia` | `aurelia`, `@aurelia/{i18n,router,testing,vite-plugin,storybook}` | yes, incl. RC→GA |
-| `vitest` | `vitest`, `@vitest/{browser,browser-playwright,coverage-v8,ui}` | yes |
-| `storybook` | `storybook`, `@storybook/{addon-a11y,addon-docs,addon-vitest,builder-vite}` | yes |
-| `vite` | `vite`, `vite-plugin-node-polyfills`, `vite-plugin-pwa` | yes |
-| `otel-js` | the five `@opentelemetry/*` packages | yes |
-| `connectrpc-js` | `@connectrpc/connect{,-web}`, `@bufbuild/protobuf` | yes |
-| `stylelint` | `stylelint` and its four config/plugin packages | yes |
-| `workbox` | the four `workbox-*` packages across `dependencies` and `devDependencies` | yes |
-| `pulumi` | `@pulumi/*`, `@pulumiverse/zitadel` | only on an empty preview |
 
-Core-versus-contrib version skew (OpenTelemetry Go pairs `v1.44.x` core with `v0.6x` contrib) is why these are grouped by family rather than by matching version number.
+`group:opentelemetry-go` exists but matches `github.com/open-telemetry/**`; `backend` imports `go.opentelemetry.io/*`, so it does not apply and the local `otel-go` group is required. Core-versus-contrib version skew (`v1.44.x` core against `v0.6x` contrib) is why that group matches by family rather than by version. No upstream group covers `connectrpc.com` or Aurelia.
+
+`vite`, `workbox` and `connectrpc-js` are left to upstream coverage pending verification during the observation phase (D10); a local rule is added only if the observed PRs show them ungrouped.
 
 `@biomejs/biome` is pinned to the same exact version in `frontend` and `cloud-provisioning`. Renovate cannot group across repositories, so the two are placed on the same schedule; they will be proposed as two PRs that land close together. Accepting brief skew is cheaper than the alternatives (a shared config package, or a custom cross-repo bump workflow) for a formatter.
+
+*Ordering caveat:* preset rules are evaluated before `packageRules`, and once a preset sets a `groupSlug` a later rule cannot override it. Local rules must therefore target families the presets do not claim, rather than attempting to re-group ones they do.
 
 ### D4: Custom managers for the three version fan-outs
 
@@ -148,10 +156,45 @@ The interaction with the prod `RepositoryRuleset` matters: its sole bypass actor
 
 *Alternative considered:* removing `requireUpToDateBranch`. Rejected outright — it exists to prevent a specific, documented class of infrastructure accident.
 
+### D14: `config:best-practices` is the baseline, not a blank sheet
+
+The configuration extends Renovate's maintained `config:best-practices` preset rather than being assembled from scratch. That preset supplies, without local maintenance:
+
+| Included preset | What it gives us |
+|---|---|
+| `config:recommended` | the maintained monorepo and family groupings D3 now defers to |
+| `security:minimumReleaseAgeNpm` | a publication-age delay before npm releases are proposed |
+| `helpers:pinGitHubActionDigests` | SHA pinning for third-party Actions (D15) |
+| `docker:pinDigests` | digest pinning for container images |
+| `:pinDevDependencies` | exact versions for dev tooling |
+| `:maintainLockFilesWeekly` | scheduled lock file refresh |
+| `abandonments:recommended` | flags dependencies that have stopped receiving releases |
+| `:configMigration` | rewrites our own config when options are deprecated |
+
+The release-age delay is the part this change most needed and did not have. Broad automerge removes the interval during which a human would ordinarily notice a compromised release; without a delay, a malicious npm publish could be proposed and merged the same day. Published analyses of supply-chain incidents put most windows of opportunity under a week, so a delay of a few days intercepts the majority. The weekly schedule (D10) already introduces an incidental lag, but incidental is not a control — and the vulnerability-remediation path that bypasses the schedule would bypass that lag too. The delay is configured explicitly so it survives a schedule change.
+
+`:pinDevDependencies` generalises what D5 concluded for `@playwright/test`: a floating dev-tool version can drift without a pull request. Applying it repository-wide is the same reasoning, applied consistently.
+
+*Alternative considered:* `config:recommended` alone. Rejected because the security-relevant additions — release age, digest pinning, SHA pinning — are exactly the ones this change needs, and they are the parts hardest to justify reimplementing locally.
+
+*Consequence:* several decisions recorded earlier in this document became redundant when the preset was adopted, and D3 was rewritten to remove the duplicated groups rather than keep both.
+
+### D15: Third-party Actions are pinned to SHAs, in this change
+
+`helpers:pinGitHubActionDigests` is the one part of D14 with a large visible diff: 105 third-party `uses:` references across 21 workflow files in five repositories, of which exactly one is SHA-pinned today (`imjasonh/setup-crane@31b88efe…# v0.4` — so the practice is already understood here, just not applied).
+
+A mutable tag means the action's owner can change what executes in CI at any time. These workflows hold GCP Workload Identity credentials, the ci-bot App credential, and — after D6 — a Pulumi token. Tag references are the weakest link in that set.
+
+The pinning is not hand-written: enabling the preset makes Renovate raise the pinning pull requests itself, one per repository. The work is reviewing and merging them, not editing 105 lines. They are also a useful first exercise of the pipeline before automerge is enabled.
+
+The CI run on this change's own pull request makes the case unprompted — it warns that `actions/checkout@v4` and `dorny/paths-filter@v3` target a deprecated Node 20 runtime, which is a stale-Action problem surfacing at exactly the moment we are deciding whether to automate Action updates.
+
+*Alternative considered:* deferring pinning to a follow-up. Rejected on the operator's instruction to include it, and because enabling the preset without accepting its pinning PRs would leave the configuration claiming a practice the repositories do not follow.
+
 ## Risks / Trade-offs
 
 - **A custom manager's regex silently stops matching** after a workflow is reformatted, so one location of a fan-out is quietly left behind — the exact failure the grouping exists to prevent. → Add an assertion that fails CI when the Go-version locations disagree with `go.mod`, so drift is caught by the pipeline rather than by a regex that matched nothing.
-- **Automerge lands a green-but-wrong change** in an area CI does not observe. The audit found three such areas; two are closed here (WebKit, Pulumi preview) and one is not: `workbox` and `vite-plugin-pwa` remain automerged while the PWA offline-cache and install-prompt specs stay excluded from CI as unavailable in headless runs. → Accepted knowingly and recorded in the spec as a known gap rather than assumed coverage; PWA behavior is confirmed manually before release.
+- **Automerge lands a green-but-wrong change** in an area CI does not observe. The audit found four such areas; three are closed here (WebKit, Pulumi preview, `cloud-provisioning` tests). The fourth was the PWA specs excluded from CI, which would leave `workbox` and `vite-plugin-pwa` unverified. → Withholding them from automerge was considered and rejected: a reviewer opening a `workbox` bump sees a version and a lock file and cannot evaluate Service Worker behavior, so that route produces ceremony, not verification. The gap is closed instead. `pwa-offline-cache.spec.ts` drives offline through `context.setOffline()`, a core Playwright API that works in headless Chromium, so its recorded exclusion reason ("not available in CI headless") appears stale and is re-verified in task 2.5. `pwa-install-prompt.spec.ts` genuinely cannot run — `beforeinstallprompt` depends on browser install heuristics — and remains an enumerated gap, but it constrains `vite-plugin-pwa` manifest behavior rather than workbox caching.
 - **Grouped PRs are harder to bisect.** A ten-package OpenTelemetry PR that breaks a test gives a coarser signal than ten separate PRs. → Accepted: the packages cannot be upgraded separately anyway, so the finer signal was never actually available.
 - **A Pulumi token reaching PR CI resolves write-capable provider credentials through ESC** (D6). → Mitigated by operation rather than scope: the workflow contains no apply path, and it triggers on `pull_request` rather than `pull_request_target`, so fork code never runs with the secret. Residual risk is a malicious commit pushed directly to a branch in the repository, which already implies write access.
 - **Renovate's own configuration is unversioned policy.** A careless edit to the org preset silently changes behavior in four repositories. → It lives in a Pulumi-managed repository under the same review requirements as any other change.

@@ -8,7 +8,11 @@ In particular, the frontend CI SHALL exercise the WebKit engine. Specs excluded 
 
 The same obligation applies at spec granularity. A spec excluded from every project that would otherwise run it — whether by being omitted from all `testMatch` patterns or by appearing in a `testIgnore` list without a project that claims it — is uncovered, and SHALL be treated identically to an unexecuted project.
 
-Where a project or an individual spec cannot run in CI — for example because it requires an authenticated storage state, or a browser capability such as Service Worker registration or an install prompt that is unavailable in headless CI — the configuration SHALL record that reason at the point of exclusion, and the resulting coverage gap SHALL be enumerated as a known gap rather than assumed covered. Automated merge policy SHALL treat a dependency whose behavior falls into an enumerated gap as unverified by the pipeline, regardless of the gate's result.
+Where a project or an individual spec cannot run in CI — for example because it requires an authenticated storage state, or a browser capability genuinely unavailable in headless CI — the configuration SHALL record that reason at the point of exclusion, and the resulting coverage gap SHALL be enumerated as a known gap rather than assumed covered.
+
+A recorded reason SHALL state a capability the CI environment actually lacks, and SHALL be re-verified rather than inherited. An exclusion justified by a claim that the tooling has since gained support for is a coverage gap with no cause, and the spec SHALL be returned to CI.
+
+Each enumerated gap SHALL name the control that addresses it. Automated merge policy SHALL treat a dependency whose behavior falls into an enumerated gap as unverified by the pipeline, regardless of the gate's result; the named control, not the gate, is what permits such an update to proceed. Human review SHALL NOT be named as that control where the reviewer cannot observe the risk — for a version bump this leaves the gap uncovered while appearing to close it.
 
 #### Scenario: A spec is excluded from one project as covered by another
 
@@ -29,14 +33,30 @@ Where a project or an individual spec cannot run in CI — for example because i
 #### Scenario: A spec is excluded from every project that could run it
 
 - **WHEN** a spec appears in a project's `testIgnore` and no other executed project matches it
-- **THEN** it SHALL be recorded as a known coverage gap with its reason
+- **THEN** it SHALL be recorded as a known coverage gap with its reason and its named control
 - **AND** dependencies governing the behavior it would have exercised SHALL NOT be treated as pipeline-verified
+
+#### Scenario: An exclusion reason no longer holds
+
+- **WHEN** a spec is excluded on the grounds that CI lacks a capability, and the test tooling supports that capability in headless CI
+- **THEN** the exclusion SHALL be removed and the spec returned to CI
+- **AND** it SHALL NOT remain an enumerated gap
+
+#### Scenario: A gap names human review as its control
+
+- **WHEN** an enumerated gap names human review as the control addressing it, and the reviewable artefact is a version and lock file change
+- **THEN** that control SHALL be considered insufficient
+- **AND** the gap SHALL be addressed by restoring pipeline coverage
 
 ### Requirement: cloud-provisioning CI previews infrastructure changes
 
 The `cloud-provisioning` CI workflow SHALL run an infrastructure preview on every pull request and SHALL report whether the change would alter any live resource. A type check alone SHALL NOT be treated as sufficient verification for a change to infrastructure code or to a provider dependency.
 
-The preview SHALL run with read-only credentials and SHALL NOT apply changes. Its result SHALL be available as a distinct signal so that an automated merge decision can depend on whether the preview reported changes.
+The preview job SHALL execute only the preview operation and SHALL contain no path that applies changes. Its safety derives from the operation rather than from the scope of its credentials: a preview computes a plan and never enacts one, which holds regardless of what the credentials would permit. Constraining the credential scope instead is not required, and SHALL NOT be relied upon, because the stack resolves its provider credentials from a shared secrets environment that cannot be narrowed per job.
+
+The job SHALL be triggered by events that run the workflow definition from the pull request's own repository, and SHALL NOT be triggered by events that expose repository secrets to code originating from a fork.
+
+Its result SHALL be available as a distinct signal so that an automated merge decision can depend on whether the preview reported changes.
 
 #### Scenario: A provider upgrade would replace a live resource
 
@@ -49,11 +69,15 @@ The preview SHALL run with read-only credentials and SHALL NOT apply changes. It
 - **WHEN** a pull request's preview reports no resource changes
 - **THEN** that result SHALL be distinguishable from a preview that reported changes
 
-#### Scenario: Preview credentials are constrained
+#### Scenario: The preview job is inspected for an apply path
 
-- **WHEN** the preview job runs
-- **THEN** its credentials SHALL permit reading infrastructure state only
-- **AND** SHALL NOT permit applying changes
+- **WHEN** the preview workflow is inspected
+- **THEN** it SHALL contain no step that applies infrastructure changes
+
+#### Scenario: A pull request originates from a fork
+
+- **WHEN** a pull request is opened from a fork
+- **THEN** the preview job SHALL NOT run with repository secrets available to the fork's code
 
 ### Requirement: cloud-provisioning CI runs its test suite
 
