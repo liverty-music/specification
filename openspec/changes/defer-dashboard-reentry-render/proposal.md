@@ -175,11 +175,10 @@ Out of scope:
   interacting with the sticky date separator and the scroll-driven laser beams,
   suppressing motion on re-entry without suppressing it on cold load, and
   restoring a scroll offset against a not-yet-rendered list.
-- **Verification**: a trace on a populated account must show INP for the nav-tab
-  tap down from the 64,472 ms baseline to an interactive figure, the frame on
-  screen while data loads, no empty-state flash, and lane alignment unchanged.
-  Passkey sign-in cannot be driven headlessly, but the repo has a password-based
-  E2E user (`npm run auth:capture:password`) that can, so the before/after
-  comparison can be automated against the dev environment — noting that the dev
-  test account does not carry the 225-group data volume, so the production trace
-  remains the authoritative baseline.
+- **Verification**: a production trace on a populated account must show INP for
+  the nav-tab tap down from the 64,472 ms baseline to an interactive figure, the
+  frame on screen while data loads, no empty-state flash, and lane alignment
+  unchanged. It has to be production: the dev environment is stopped, and the
+  225-group data volume that makes this change necessary only exists on a real
+  account anyway. Promotion is a release publish, which retags the digest `main`
+  already built, so what is measured is byte-identical to what was merged.
