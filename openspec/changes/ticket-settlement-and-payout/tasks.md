@@ -47,18 +47,19 @@
 
 ## 2. Backend — Connect onboarding
 
-- [ ] 2.1 Create Organizer connected account; onboarding link; **KYC/KYB status gate**
+- [x] 2.1 Create Organizer connected account; onboarding link; **KYC/KYB status gate**
       (payout blocked until verified; sales/issuance unaffected)
-      [PARTIAL: code + port + status-gate + onboarding-link done. The blocker is no longer
-      0.1 (platform enablement + recipient config are verified) but the production wiring
-      itself: `StripeSettlementPort.CreateConnectedAccount` does nothing today — it logs a
-      warning and returns Unavailable. Its in-code TODO ("when the Stripe SDK ... available")
-      is stale: stripe-go v86.4.2 already ships `V2CoreAccountCreateParams`, and the PoC test
-      (`stripe_connect_poc_test.go`) creates a recipient with it against a real sandbox, so
-      both the SDK and the API path are proven. Remaining work is the single
-      `/v2/core/accounts` call plus correcting that TODO and the `settlement_port.go` doc,
-      which wrongly claims the adapter "creates the account via the v1 accounts API as a
-      temporary stand-in"]
+      [`StripeSettlementPort.CreateConnectedAccount` now provisions a real Accounts v2
+      recipient (POST /v2/core/accounts): `dashboard = none`, JPY/ja-JP defaults,
+      fees+losses collector `application`, `stripe_balance.stripe_transfers` requested,
+      `card_payments` NOT requested, `configuration.merchant.mcc = 7922` (a JP recipient's
+      transfers capability will not activate without an MCC), organizer id in metadata and
+      as the idempotency-key seed. Verified end-to-end against the `local` sandbox by
+      `TestStripeSettlementPort_CreateConnectedAccount_Integration`, which provisions an
+      account through the production adapter and asserts the returned shape, that it is
+      created NOT payout-ready, that the port's status mapping agrees, and that the hosted
+      onboarding link issues. The stale TODO and the `settlement_port.go` doc claiming a v1
+      stand-in are corrected.]
 - [x] 2.2 Persist connected-account ref + status; surface onboarding status to organizers
       [OrganizerConnectedAccount repo + OnboardingUseCase + PayoutOnboardingService handler]
 

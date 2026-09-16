@@ -93,9 +93,15 @@ money-movement behind `RefundOrder`; it does **not** modify #938's proto, and th
   balance; reserve past the dispute window; `transfer_reversal` per split claws back
   transferred shares.
 - **KYC/KYB identity is collected by Stripe, never by us.** `CreateConnectedAccount` sends
-  only the account *shape* — country, entity type, currency/locale, `dashboard = none`, the
-  requested `stripe_transfers` capability, and the fees/losses collector responsibilities.
-  It sends **no** personal data. The Organizer supplies their name, date of birth, address
+  the account *shape* — country, currency/locale, `dashboard = none`, the requested
+  `stripe_transfers` capability, and the fees/losses collector responsibilities — plus the
+  Organizer's business **contact email**, which Stripe requires whenever a recipient
+  configuration is supplied ("If configuration.recipient is supplied, the Account must have
+  a contact email"); it is sourced from the Organizer record, not collected anew. A JP
+  recipient additionally needs `configuration.merchant.mcc`, without which the transfers
+  capability never activates — declaring the MCC does not make the account
+  merchant-of-record, since no merchant capabilities are requested. Beyond the contact
+  email the request carries **no** personal data. The Organizer supplies their name, date of birth, address
   and documents directly to Stripe through the hosted onboarding link
   (`CreateOnboardingLink` → Stripe AccountLink), so no PII transits or rests in our systems
   and the platform's compliance surface stays minimal. The account is created in `Pending`
