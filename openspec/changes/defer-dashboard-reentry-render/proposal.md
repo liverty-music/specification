@@ -59,18 +59,22 @@ did not survive; see design.md → Spike evidence.
 - **Scope rendering to the viewport.** With the chain flattened, apply
   containment to the date group so off-screen groups skip style, layout and
   paint. Scrolling reveals subsequent dates.
-- **Motion belongs to cold load, not re-entry.** Cards animate in on a genuine
-  first load. On re-entry the user has already seen this content, so the
-  timetable is restored instantly — no entrance animation — and the scroll
-  position is preserved. Scroll position is lost today: a new route instance is
+- **Reveal progressively, in CSS.** Today every card runs the same entrance
+  animation simultaneously. Instead the date group becomes the motion unit, with
+  two triggers that cannot collide: a `sibling-index()` stagger reveals the
+  groups in view top-to-bottom as data arrives, and a view timeline reveals
+  groups as they are scrolled into view. Both are pure CSS, compositor-only, and
+  fully suppressed under `prefers-reduced-motion`. On re-entry the fan has
+  already seen this content, so it is restored instantly with no motion and at
+  the previous scroll position — lost today, because a new route instance is
   created on every navigation and nothing persists the offset.
-- **Place each concern on the lifecycle that owns it.** Starting the fetch stays
-  in the route lifecycle (`loading()` + `void`, earliest and blocking nothing).
-  Reflecting render state — including the cached fast path — moves to the
-  component lifecycle, so the component's first render contains the frame and
-  skeleton only. A spike measured that this relocation alone is **not enough**:
-  the paint yield has to come from `attaching()` returning a promise that settles
-  off the microtask queue, which on cold load is the entrance animation itself.
+- **Place each concern on the lifecycle that owns it, and schedule nothing.**
+  Starting the fetch stays in the route lifecycle (`loading()` + `void`, earliest
+  and blocking nothing); reflecting render state moves to the component
+  lifecycle, as the non-blocking contract requires. No scheduling primitive is
+  used: spikes measured that the earlier `queueAsyncTask` idea, and yielding from
+  `attaching()`, were both treating a symptom — once containment bounds the
+  render to the viewport (177.7 ms → 44.2 ms at 4× CPU), a single paint is fast.
   See design.md → Spike evidence.
 
 **Cross-route — bring the non-blocking contract up to date**

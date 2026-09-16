@@ -48,21 +48,54 @@ card of where the fan left.
 - **THEN** its lane columns SHALL align with the stage header's columns
 - **AND** this SHALL hold in both the three-lane and the two-lane presentations
 
-### Requirement: Entrance motion is limited to first load
+### Requirement: Date groups reveal progressively, never all at once
 
-Cards SHALL animate into view only on a genuine first load of the timetable. On
-re-entry to a timetable the fan has already seen, the cached content SHALL be
-restored without entrance motion and at the scroll position it had when the fan
+Timetable content SHALL reveal progressively rather than appearing in a single
+simultaneous transition. On a genuine first load, the groups visible when data
+arrives SHALL reveal in top-to-bottom order. As the fan scrolls, groups entering
+the viewport SHALL reveal as they arrive rather than being already settled.
+Reveal motion SHALL be presentational: it SHALL NOT delay content becoming
+visible or interactive, and SHALL NOT be required for the timetable to be usable.
+When the fan prefers reduced motion, reveal motion SHALL be suppressed entirely,
+and suppressing it SHALL NOT change what content is shown or when.
+
+#### Scenario: Visible groups reveal in order on first load
+
+- **WHEN** the timetable's data arrives on a genuine first load
+- **THEN** the date groups in view SHALL reveal in top-to-bottom order rather
+  than all at the same instant
+
+#### Scenario: Scrolled-to groups reveal as they arrive
+
+- **WHEN** the fan scrolls toward date groups that were outside the viewport
+- **THEN** those groups SHALL reveal as they enter the viewport
+- **AND** they SHALL NOT appear already-settled as though their reveal had been
+  consumed while they were off screen
+
+#### Scenario: Reduced motion removes the motion only
+
+- **WHEN** the fan prefers reduced motion
+- **THEN** no reveal motion SHALL play
+- **AND** the same content SHALL be shown, at the same time, as it would be with
+  motion enabled
+
+#### Scenario: Motion is unavailable without loss of function
+
+- **WHEN** the reveal cannot be presented in the fan's browser
+- **THEN** the timetable SHALL render and behave identically apart from the
+  missing motion
+
+### Requirement: Re-entry restores without motion and at the previous position
+
+On re-entry to a timetable the fan has already seen, the cached content SHALL be
+restored without reveal motion and at the scroll position it had when the fan
 left. Restoring a scroll position SHALL be clamped to the restored content's
-extent. When the fan prefers reduced motion, entrance animation SHALL be
-suppressed without reintroducing a blocking render.
+extent.
 
-#### Scenario: Cold load animates, re-entry does not
+#### Scenario: Re-entry does not replay the reveal
 
-- **WHEN** a fan opens the dashboard for the first time in a session
-- **THEN** the cards SHALL animate in as the data arrives
-- **WHEN** the same fan leaves and returns to the dashboard
-- **THEN** the cached timetable SHALL appear without entrance motion
+- **WHEN** a fan leaves the dashboard and returns while the timetable is cached
+- **THEN** the cached timetable SHALL appear without reveal motion
 
 #### Scenario: Re-entry restores the previous scroll position
 
@@ -76,26 +109,26 @@ suppressed without reintroducing a blocking render.
 ### Requirement: Page identity paints independent of the timetable render
 
 On dashboard tab-switch re-entry, the page identity — the shell header title and
-the active bottom-nav tab — SHALL be painted at navigation intent, independent of
-and ahead of the timetable's render. Reflecting timetable render state SHALL NOT
-be performed in a pre-activation route lifecycle hook, so it cannot be folded
-into the component's first render and starve the page-identity paint. Deferring
-the timetable render SHALL NOT lose the background refresh, the data-ready
-celebration/onboarding latch, or an in-flight deep-link resolution.
+the active bottom-nav tab — SHALL NOT be held hostage to the timetable's render.
+The re-entry render SHALL be bounded by what is visible, so that page identity
+and timetable arrive together within an interaction budget rather than the shell
+waiting on an unbounded render. Reflecting timetable render state SHALL NOT be
+performed in a pre-activation route lifecycle hook. Re-entry SHALL NOT lose the
+background refresh, the data-ready celebration/onboarding latch, or an in-flight
+deep-link resolution.
 
 #### Scenario: Header and nav switch before the timetable renders
 
 - **WHEN** an authenticated fan with a populated, previously-cached timetable taps
   the dashboard navigation tab from another tab
-- **THEN** the shell header title and the active bottom-nav tab SHALL switch to
-  the dashboard's identity before the timetable's render work runs
-- **AND** the tap's Interaction to Next Paint SHALL be substantially lower than
-  the pre-change baseline, with the shell interactive while the timetable fills
+- **THEN** the tap's Interaction to Next Paint SHALL be substantially lower than
+  the pre-change baseline
+- **AND** the render work for that interaction SHALL be bounded by the visible
+  portion of the timetable, not by the full set of loaded date groups
 
 #### Scenario: Deferring the render preserves load-path side effects
 
-- **WHEN** the re-entry cached render is reflected after the component's first
-  render
+- **WHEN** the re-entry cached render is reflected from the component lifecycle
 - **THEN** the background refresh SHALL still fetch and swap in fresh data
 - **AND** the data-ready celebration / onboarding-completion latch SHALL still
   fire once when due, and a pending `/concerts/:id` deep-link SHALL still open

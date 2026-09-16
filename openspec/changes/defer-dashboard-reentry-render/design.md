@@ -18,9 +18,11 @@ and then verified by measurement):
   - **Component lifecycle** (`binding` → `bound` → `attaching` → `attached` →
     `detaching` → `unbinding`) knows about the DOM: `bound` is where refs become
     available, `attached` is where the element is in the DOM.
-- `attaching()` and `detaching()` **may return a Promise, which Aurelia awaits**;
-  the docs present this as the mechanism for enter/leave animations, and state
-  that `attached()` runs only after `attaching()`'s promise resolves.
+- `attaching()` and `detaching()` **may return a Promise, which Aurelia awaits**,
+  and `attached()` runs only after `attaching()`'s promise resolves. This change
+  does not use that facility — entrance motion is CSS and blocks nothing — but it
+  is recorded because it is what made "let the animation be the yield" look
+  plausible before it was measured.
 - Official guidance on async data (`components/lifecycle-diagrams.md`) ranks the
   options by what they block: `async binding()` blocks all children and is wrong;
   `async loading()` blocks the view swap; `attached()` + `void` blocks nothing.
@@ -65,16 +67,38 @@ where the App Shell frame was on screen while the heavy list was still empty:
 | `attached()` | `setTimeout(0)` promise | 1 | 180 ms |
 | `attached()` | `element.animate(…).finished` | **5** | **277 ms** |
 
-Three conclusions follow, and they overturn earlier assumptions in this change:
+Conclusions, which overturn earlier assumptions in this change:
 
-1. Moving the assignment to `attached()` is **necessary but not sufficient** —
-   on its own it produced zero shell-only frames. `attached()` is inside the
-   activation task, before the browser's first paint.
+1. Moving the assignment to `attached()` is **not sufficient** — on its own it
+   produced zero shell-only frames. `attached()` is inside the activation task,
+   before the browser's first paint.
 2. **Returning a Promise from `attaching()` is not automatically a yield.**
    `Promise.resolve()` is a microtask and produced zero frames. Only promises
-   that settle on a macrotask or an animation frame create a paint opportunity.
-3. `element.animate(…).finished` — the officially documented animation
-   mechanism — **is** a real yield, and the best performing one measured.
+   settling on a macrotask or an animation frame create a paint opportunity.
+
+A second run then measured the render block against list size, which reframed
+the whole question:
+
+| Rows rendered | Render block | Navigation |
+| --- | --- | --- |
+| 1500 (≈ today's unwindowed timetable) | 177.7 ms | 219 ms |
+| 400 | 76.8 ms | 112 ms |
+| 120 (≈ one windowed viewport) | **44.2 ms** | 82 ms |
+| 60 | 16.3 ms | 49 ms |
+
+3. **The yield was treating a symptom.** Once containment bounds the render to
+   the viewport, a single paint is fast, so no scheduling primitive is needed on
+   any path — and forcing a frame-only paint on re-entry would cost a frame and
+   flash an empty frame over content the fan has already seen.
+
+**Spike 3 — `content-visibility` × CSS animation** (Chromium, same harness
+style). An off-screen date group under `content-visibility: auto` had its CSS
+animation **running on schedule** (`currentTime` 633 ms sampled at t=600 ms,
+against 600 ms with containment off). Containment does not defer animations.
+Two consequences the motion design depends on: a time-based stagger consumes
+itself off screen, so it is visible only for content in view at first render;
+and it has always finished before a group is scrolled into view, so the
+time-based and view-timeline triggers never animate the same element at once.
 
 ## Goals / Non-Goals
 
@@ -82,8 +106,9 @@ Three conclusions follow, and they overturn earlier assumptions in this change:
 
 - The timetable frame (stage header + lanes) paints at tab-switch without data.
 - Off-screen date groups skip style, layout and paint.
-- Cold load animates cards in; re-entry restores instantly at the previous
-  scroll position with no entrance animation.
+- Date groups reveal top-to-bottom as data arrives and as they are scrolled into
+  view; re-entry restores instantly at the previous scroll position with no
+  entrance animation.
 - Every bottom-nav tab honours the non-blocking contract.
 
 **Non-Goals:**
@@ -125,24 +150,57 @@ Three conclusions follow, and they overturn earlier assumptions in this change:
   - Reflecting render state (including the cached fast path) moves to the
     component lifecycle, so the first render contains the frame and skeleton only.
 
-- **Decision: Take the paint yield from `attaching()`, and let the entrance
-  animation be that yield.** Spike 1 shows the assignment alone changes nothing,
-  and that the yield must not be a microtask. On cold load, `attaching()` returns
-  the entrance animation's `finished` promise: the frame paints, the animation
-  plays, then `attached()` fills in the data — one mechanism serving both the
-  motion requirement and the paint requirement. This replaces the
-  `queueAsyncTask` approach previously recorded in this change, which reached
-  around the framework to manufacture the same yield.
+- **Decision: Do not schedule a paint. Bound the render instead.** The earlier
+  `queueAsyncTask`, and its replacement of yielding from `attaching()`, both
+  treated a symptom. Spike 1 (rerun) measured the render block against list size
+  at 4x CPU throttle: 1500 rows 177.7 ms, 400 rows 76.8 ms, 120 rows (about one
+  windowed viewport) **44.2 ms**, 60 rows 16.3 ms. Once containment bounds the
+  work to the viewport, a single paint is fast, and forcing an earlier
+  frame-only paint would cost an extra frame and flash an empty frame over
+  content the fan has already seen. `attaching()` therefore returns nothing and
+  no scheduling primitive is used anywhere. If a yield were ever needed, the
+  standards primitive is `scheduler.yield()`, not `setTimeout(0)` -- but the
+  simpler answer is to not need one.
 
-- **Decision: Re-entry has no animation, therefore no yield — so re-entry
-  correctness depends on the render being cheap.** The agreed behavior is
-  instant restore, so `attaching()` returns nothing on the cached path and Spike
-  1 predicts zero shell-only frames. That is acceptable **only because**
-  containment makes the restored render small: with off-screen groups skipped,
-  the work in a single paint is bounded by the viewport, not by ~23 groups. This
-  couples the two halves of the change — if the flatten or the containment does
-  not land, re-entry regresses to a single late paint and a minimal
-  non-microtask yield must be added as a fallback.
+- **Decision: Cold load needs no yield either.** With no cached data there is
+  nothing to render but the frame and skeleton, and the fetch's own await is the
+  natural yield. This is already how the cold path behaves today, which is why it
+  never froze; only the cache fast path did.
+
+- **Decision: Keep render-state reflection off the pre-activation hook, for
+  contract reasons, not paint reasons.** The broadened
+  `non-blocking-menu-navigation` forbids synchronous render-state assignment in
+  `loading()`. The relocation stands on that rule. It does **not** by itself
+  produce an earlier paint -- Spike 1 measured zero frame-only paints from the
+  relocation alone.
+
+- **Decision: Entrance motion is CSS on the date group, with two triggers that
+  cannot collide.** The motion unit is the date group, so one keyframe set serves
+  both cases:
+  - *Initial reveal* uses a time-based stagger via `sibling-index()`
+    (Baseline newly available, 2026-08-18; Chrome 138, Firefox 154, Safari 26.2).
+    A `--sibling-index` custom-property fallback declaration precedes it for
+    browsers below that Baseline, set by a short guarded script.
+  - *Scroll reveal* uses a view timeline (`animation-timeline: view()` with
+    `animation-range: entry`), feature-detected with
+    `@supports ((animation-timeline: view()) and (animation-range: entry))` --
+    the `animation-range` term is required to exclude partial implementations.
+    Scroll-driven animations are limited availability (Chrome 115, Safari 26, not
+    Firefox); the effect is decorative, so this is progressive enhancement with
+    no fallback and explicitly **no** `scroll-timeline-polyfill`.
+  Spike 3 measured that `content-visibility: auto` does **not** defer animations
+  in skipped subtrees (an off-screen group's animation ran on schedule:
+  `currentTime` 633 ms at t=600 ms, against 600 ms with containment off). The
+  time-based stagger therefore consumes itself off screen and is visible only for
+  content in view at first render -- exactly the intended behavior -- and it has
+  always finished before a group is scrolled into view, so the two triggers never
+  animate the same element at once and need no gating.
+
+- **Decision: Re-entry restores in one cheap paint.** Entrance motion is
+  suppressed on the cached path. With the view timeline this is partly
+  structural: a group already in view sits past its `entry` range and renders in
+  its final state without animating. Re-entry correctness is a render-cost
+  property, bounded by containment, not a paint-ordering property.
 
 - **Decision: The App Shell frame is gated on "settled and empty", not on
   `dateGroups.length`.** The stage header and lane columns render whenever the
@@ -200,13 +258,15 @@ revert of the CSS plus the template gate.
 On the reference profile (Pixel 8 or emulation + 4× CPU), signed in with a
 populated timetable:
 
-1. Cold load: the stage header and lane columns paint before any card; cards
-   animate in; no empty-state flash.
-2. Re-entry from another tab: header/nav and the timetable frame paint ahead of
-   the timetable render block; the cached timetable appears without an entrance
-   animation, at the previous scroll position; INP substantially below the
-   pre-change baseline.
-3. Scrolling reveals subsequent dates without a scrollbar jump.
+1. Cold load: the stage header and lane columns paint while the fetch is in
+   flight; date groups reveal top-to-bottom as the data arrives; no empty-state
+   flash.
+2. Re-entry from another tab: the restored timetable paints in a single frame
+   whose render block is bounded by the viewport, with the header/nav and the
+   timetable arriving together and INP substantially below the pre-change
+   baseline. No entrance animation, restored at the previous scroll position.
+3. Scrolling reveals subsequent dates, animated where supported, without a
+   scrollbar jump.
 4. Background refresh still swaps fresh data; the celebration fires once when
    due; a `/concerts/:id` deep-link still opens the detail sheet.
 5. Settings: tapping the tab swaps the view immediately; the previous screen is
