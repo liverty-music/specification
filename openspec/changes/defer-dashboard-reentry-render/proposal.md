@@ -4,8 +4,14 @@ The fan-web dashboard timetable is the app's slowest surface, and three findings
 converge on one cause: **it renders everything, eagerly, inside the navigation's
 pre-paint window.**
 
-1. **Re-entry freeze.** A real-device trace showed a dashboard tab-switch
-   re-entry as a single ~2.6 s Rendering block (INP 2,536 ms). The shell already
+1. **Re-entry freeze.** Production traces on a populated account measured a
+   dashboard tab-switch re-entry at **INP 64,472 ms** — over a minute of
+   unresponsiveness — with 24,556 ms of Rendering in the first 31 s alone, and
+   the interaction still running when the recording was stopped. Cold load on
+   the same account: 21,352 ms Rendering, 31.6 s total. **Both were recorded
+   with CPU throttling off**, so a mid-range phone is worse again. (An earlier
+   trace on a smaller account read ~2.6 s / INP 2,536 ms; that figure
+   understated the problem by roughly 25x and is superseded.) The shell already
    switches page identity optimistically at `au:router:navigation-start`, but the
    re-entry cache fast-path assigns `dateGroups` synchronously inside the
    pre-render `loading()` hook. The header/nav binding update and the whole
@@ -13,8 +19,10 @@ pre-paint window.**
    once — after the render. The optimistic switch is decoupled at the state
    level but not at the paint level.
 
-2. **Nothing is scoped to the viewport.** The timetable renders all ~23 date
-   groups unconditionally; there is no virtualization anywhere in the frontend.
+2. **Nothing is scoped to the viewport.** The timetable renders every date group
+   unconditionally — **225 of them** on the measured account, roughly seven
+   months of concerts, because the query has a lower date bound and no upper
+   one. There is no virtualization anywhere in the frontend.
    The sibling `optimize-dashboard-render-cost` change measured the cost as
    **Layout 46% + Recalculate Style 32%** — dominated by work done for content
    the user cannot see. Its P2 (`content-visibility: auto`) measured a real win
@@ -77,6 +85,19 @@ did not survive; see design.md → Spike evidence.
   render to the viewport (177.7 ms → 44.2 ms at 4× CPU), a single paint is fast.
   See design.md → Spike evidence.
 
+**Decouple the laser beam from card rendering**
+
+- The beam overlay is positioned by JavaScript that reads every matched card's
+  geometry on every frame. That is the `Forced reflow while executing JavaScript
+  took 58194ms` in the cold-load trace, and it would force layout of every
+  off-screen group once containment lands, cancelling it. Drive the beams from
+  their anchor concert's scroll position in CSS instead, deleting the scroll
+  listener, the rAF loop and the geometry reads.
+- Scroll-driven animations are unavailable in Firefox, so beams are absent there.
+  The `beam-effect-toggle` capability defines the beam as a visual effect that is
+  off by default and user-toggled, so this is a decorative degradation — and it
+  buys every user the removal of a per-frame layout cost.
+
 **Cross-route — bring the non-blocking contract up to date**
 
 - Broaden `non-blocking-menu-navigation` from the three originally named routes
@@ -89,6 +110,11 @@ Out of scope:
 - `@aurelia/ui-virtualization` / `virtual-repeat`. Containment on a flattened
   group is the smaller step, and the existing measurement already supports it.
   Revisit only if the post-change trace still shows a multi-second block.
+- **Bounding what is fetched**, as opposed to what is rendered. 225 groups is
+  ~7 months of concerts for one view; an upper date bound or paging may be the
+  better fix for the fetch side. Rendering-side containment is what this change
+  can deliver on its own, and the post-change measurement will show how much of
+  the residual is fetch scope.
 - The CSS render-cost work (P1 shipped, P2 reverted) in
   `optimize-dashboard-render-cost`.
 - Loading skeletons for Tickets / Order / Discovery. These are real gaps, but
@@ -114,6 +140,10 @@ Out of scope:
 
 ### Modified Capabilities
 
+- `beam-effect-toggle`: the beam becomes presentational in the literal sense —
+  driven by scroll position in CSS, reading no card geometry and costing no
+  per-frame scripting — and absent where the platform cannot drive it, with the
+  toggle, the persisted preference and the timetable otherwise unchanged.
 - `non-blocking-menu-navigation`: broaden the route scope from three named routes
   to every bottom-nav menu tab, and extend the contract to cover the cached
   fast path (a synchronous render-state assignment is as blocking as an `await`)
@@ -145,7 +175,11 @@ Out of scope:
   interacting with the sticky date separator and the scroll-driven laser beams,
   suppressing motion on re-entry without suppressing it on cold load, and
   restoring a scroll offset against a not-yet-rendered list.
-- **Verification**: device-only (headless passkey auth is infeasible) — a
-  reference-profile trace must show the shell and frame painting ahead of the
-  timetable render, INP substantially below the pre-change baseline, no
-  empty-state flash, and lane alignment unchanged.
+- **Verification**: a trace on a populated account must show INP for the nav-tab
+  tap down from the 64,472 ms baseline to an interactive figure, the frame on
+  screen while data loads, no empty-state flash, and lane alignment unchanged.
+  Passkey sign-in cannot be driven headlessly, but the repo has a password-based
+  E2E user (`npm run auth:capture:password`) that can, so the before/after
+  comparison can be automated against the dev environment — noting that the dev
+  test account does not carry the 225-group data volume, so the production trace
+  remains the authoritative baseline.

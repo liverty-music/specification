@@ -100,6 +100,27 @@ itself off screen, so it is visible only for content in view at first render;
 and it has always finished before a group is scrolled into view, so the
 time-based and view-timeline triggers never animate the same element at once.
 
+**Production baseline** (own account, Chrome device emulation 412x915, **CPU
+throttling off**). Captured after the spikes, and it moved the problem by an
+order of magnitude:
+
+| | Cold load | Tab-switch re-entry |
+| --- | --- | --- |
+| INP | — | **64,472 ms** |
+| Rendering | 21,352 ms | 24,556 ms (first 31 s; recording stopped early) |
+| Total captured | 31,625 ms | 31,253 ms |
+| Date groups | **225** | 225 |
+
+Two things follow. First, the figures this change was originally scoped against
+(~23 groups, ~2.6 s, INP 2,536 ms) came from a smaller account and understated
+the problem by roughly 25x; every decision below is now sized against 225
+groups. Second, 225 groups is about seven months of concerts, because the query
+is bounded below (today onward) and not above — so part of the residual is fetch
+scope, not render scope, and this change can only address the latter.
+
+The cold-load trace also reported `Forced reflow while executing JavaScript took
+58194ms`, which is what surfaced the beam-loop decision below.
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -131,6 +152,47 @@ time-based and view-timeline triggers never animate the same element at once.
   Spike 2 V3 shows containment engaging (off-screen groups fall back to the
   intrinsic size while the on-screen group renders naturally) with alignment,
   sticky behavior and the matched-card glow all preserved.
+
+- **Decision: Decouple the laser beam from card rendering entirely; drive it from
+  CSS.** `updateBeamPositions()` read `getBoundingClientRect()` on every matched
+  card each frame and only then decided whether that card was visible. That is
+  the `Forced reflow while executing JavaScript took 58194ms` in the cold-load
+  trace, and it would also force layout of every skipped group once containment
+  lands — cancelling the containment win.
+
+  Gating those reads on `contentvisibilityautostatechange` was implemented first
+  and works, but it patches a coupling that should not exist: the beam is a
+  decorative overlay whose only input is where its concert sits on screen. That
+  is the scrollytelling pattern — a target element animated from the scrollport
+  position of a different element — so it belongs in CSS:
+  - each matched card declares a named `view-timeline` (the name is generated per
+    beam and set inline, since the set is dynamic);
+  - the scroll container carries `timeline-scope` listing those names, because the
+    beams live in a viewport-fixed overlay and are not descendants of the cards;
+  - each beam binds `animation-timeline` to its card's timeline over `cover`.
+
+  Animate `transform: scaleY()`, never a registered custom property: animating one
+  forces a full-subtree style recalc every frame, which is exactly the cost P1
+  deleted from this component.
+
+  Spike 4 measured the whole mechanism in Chromium: runtime-generated timeline
+  names resolve (`ViewTimeline`), a fixed-overlay beam tracks its card's scroll
+  position (progress 0 → 0.741 → 1, `scaleY` 1 → 0.259 → 0), and the values are
+  **identical with `content-visibility: auto` applied to the groups** — containment
+  and the timeline coexist.
+
+  This deletes the scroll listener, the rAF loop, the geometry reads and the
+  anchor→element map: about 47 of `concert-highway.ts`'s 242 lines, and the
+  forced-reflow root cause with them.
+
+- **Decision: Accept no beams where scroll-driven animations are unavailable.**
+  Scroll-driven animations are limited availability (Chrome/Edge 115, Safari 26,
+  not Firefox). The `beam-effect-toggle` capability defines the beam as a visual
+  effect that is **off by default** and user-toggled, so it is decorative by its
+  own specification and the platform guidance's progressive-enhancement path
+  applies: feature-detect, no fallback, and explicitly no `scroll-timeline-polyfill`.
+  The trade is deliberate — Firefox users lose a decorative effect that is off
+  unless they turn it on, and every user stops paying a per-frame layout cost.
 
 - **Decision: Treat `contain-intrinsic-size` drift as a scroll-restoration
   problem, not a cosmetic one.** Spike 2 measured +416px of scroll-height error
@@ -253,7 +315,13 @@ Ships in the normal frontend release. The flatten and the containment land
 together — containment without the flatten is the reverted P2 bug. Rollback is a
 revert of the CSS plus the template gate.
 
-## Verification (device-only — headless passkey auth is infeasible)
+## Verification
+
+Passkey sign-in cannot be driven headlessly, but the repo ships a password-based
+E2E user (`npm run auth:capture:password`) that can, so before/after traces can
+be automated against dev. The dev account does not carry the 225-group volume,
+so it measures the delta, not the baseline; the production trace above stays
+authoritative.
 
 On the reference profile (Pixel 8 or emulation + 4× CPU), signed in with a
 populated timetable:
