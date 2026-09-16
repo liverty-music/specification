@@ -19,15 +19,19 @@
       false` pending `external_account` / `individual.verification.document` — that is
       per-Organizer KYC/KYB in the onboarding flow (§2), not platform config. Livemode is
       out of scope here: account 審査 is `payments-legal-compliance` §1.3.
-- [ ] 0.2 Statement-descriptor strings — **decided; not yet applied to the account**:
-      static `LIVERTY MUSIC` (13/22), Latin prefix `LIVERTY` (7/10), kanji-field
-      `Liverty Music` (13/17), kana-field `リバティミュージック` (10/22, kana-only rule
-      satisfied). Both the static descriptor **and** the prefix are set: Stripe otherwise
-      derives the prefix by truncating the static value to 10 chars (`LIVERTY MU`) the
-      moment a suffix is introduced. Per-event suffix is **not** in MVP — design already
-      allows shipping the static descriptor alone, and the kanji field's 17-char budget
-      leaves only ~8 chars after prefix + separator. Remaining work: set these on the
-      platform account.
+- [x] 0.2 Statement-descriptor strings, applied to the **prod** platform account: static
+      `LIVERTY MUSIC` (13/22), Latin prefix `LIVERTY` (7/10), kanji-field `Liverty Music`
+      (13/17), kana-field `リバティミュージック` (10/22, kana-only rule satisfied). Both the static
+      descriptor **and** the prefix are set: Stripe otherwise derives the prefix by
+      truncating the static value to 10 chars (`LIVERTY MU`) the moment a suffix is
+      introduced. Per-event suffix is **not** in MVP — design already allows shipping the
+      static descriptor alone, and the kanji field's 17-char budget leaves only ~8 chars
+      after prefix + separator.
+      Applied and confirmed by the operator on the prod account; not independently verified
+      here, since prod is outside the test-mode sandboxes this work had API access to. The
+      three sandboxes (`local`, `ci`, `pannpers.dev sandbox`) still carry their default
+      descriptors, which is correct — they never charge a real buyer, and per §0 only prod's
+      descriptor ever reaches a card statement.
 
 ## 1. Proto / entity (specification → BSR)
 
