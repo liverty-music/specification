@@ -19,10 +19,15 @@
       false` pending `external_account` / `individual.verification.document` — that is
       per-Organizer KYC/KYB in the onboarding flow (§2), not platform config. Livemode is
       out of scope here: account 審査 is `payments-legal-compliance` §1.3.
-- [ ] 0.2 Statement-descriptor strings: platform default + prefix (Latin + kanji/kana);
-      per-event suffix scheme
-- [ ] 0.3 Stripe account-manager: `allocated_funds` JP availability + single-manual-capture
-      support (currently JP-ineligible → MVP does NOT depend on it)
+- [ ] 0.2 Statement-descriptor strings — **decided; not yet applied to the account**:
+      static `LIVERTY MUSIC` (13/22), Latin prefix `LIVERTY` (7/10), kanji-field
+      `Liverty Music` (13/17), kana-field `リバティミュージック` (10/22, kana-only rule
+      satisfied). Both the static descriptor **and** the prefix are set: Stripe otherwise
+      derives the prefix by truncating the static value to 10 chars (`LIVERTY MU`) the
+      moment a suffix is introduced. Per-event suffix is **not** in MVP — design already
+      allows shipping the static descriptor alone, and the kanji field's 17-char budget
+      leaves only ~8 chars after prefix + separator. Remaining work: set these on the
+      platform account.
 
 ## 1. Proto / entity (specification → BSR)
 
@@ -93,7 +98,8 @@
       [PARTIAL: PR #489 is merged — the Pulumi-provisioned GSM secret, the `/stripe-webhook`
       HTTPRoute exact-path rule, and the optional `envFrom` are on main and applied to dev.
       The isolated `ExternalSecret` for `fan-api-stripe-webhook-secret` follows once the
-      Stripe webhook endpoint is registered and the GSM key exists]
+      **prod** Stripe webhook endpoint is registered and the GSM key exists — a launch-time
+      item, since prod is the only environment whose endpoint is ever registered]
       (Stripe-account-side config is not cloud's: `losses_collector = application` is
       done under 0.1, and the statement-descriptor prefix strings are 0.2.)
 
@@ -103,4 +109,8 @@
       **Transfer to Organizer** (source_transaction) + retained fee; KYC-incomplete →
       payout withheld; cancellation refund → buyer refund + transfer_reversal;
       postponement resets gate; duplicate webhook idempotency
+      [Runs against the `local`/`ci` sandboxes via `make test-stripe-e2e`. Inbound webhook
+      legs (dispute → reversal, duplicate-delivery idempotency) are driven with the Stripe
+      CLI forwarding events to the local webhook server — no registered endpoint and no
+      public URL are involved, since no dev Stripe environment exists.]
 - [ ] 6.2 Sync delta to main specs and archive

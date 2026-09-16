@@ -132,6 +132,16 @@ money-movement behind `RefundOrder`; it does **not** modify #938's proto, and th
   carried contractually + in 特商法 表記. If counsel later requires the Organizer's name on
   the statement, that is a future change (merchant onboarding + pre-sale gating), not a flag
   flip — it changes the sales-gating model.
+- **Stripe environments: prod + test only — no per-environment `dev`/`staging` account.**
+  Two Stripe contexts exist. **test** = the `local` and `ci` sandboxes, keyed from the
+  shell/`.env` and the backend repo's `STRIPE_TEST_SECRET_KEY` Actions secret; this is where
+  the E2E harness runs. **prod** = the real account (still in test mode until the
+  `payments-legal-compliance` §4.1 livemode flip), keyed through Pulumi ESC → GSM → ESO.
+  The `dev` environment deliberately has **no** Stripe key: `pulumiConfig.stripeSecretKey`
+  is unset there, so the backend runs `NoopAuthorizationPort` and the webhook handler fails
+  closed (503). Consequently there is **no dev webhook endpoint to register** — the only
+  endpoint ever registered with Stripe is prod's, at launch. Webhook behaviour is verified
+  locally by forwarding events with the Stripe CLI (§6), not by registering a deployed URL.
 - **No fund isolation (no `allocated_funds`).** Held funds mix with the general platform
   balance. *→* Careful balance monitoring + reserve; revisit with Stripe if JP opens.
 
