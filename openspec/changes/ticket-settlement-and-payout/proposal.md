@@ -97,11 +97,13 @@ Rationale, competitor + Stripe grounding: [`payments-design.md`](../../../docs/p
   recipient/transfers status, a `SettlementSplit` model (payee ref + amount/share), and
   payout/refund state including the **captured-charge ref (`ch_`)** resolved for
   `source_transaction`. Provider-agnostic (opaque Stripe refs). Confirm shape in design.
-- **cloud-provisioning:** Stripe Connect platform config (loss-liable controller,
-  statement-descriptor prefix incl. kanji/kana), webhook endpoints for
-  transfer/payout/dispute events.
+- **cloud-provisioning:** webhook endpoint + signing secret for transfer/payout/dispute
+  events. The Stripe-account-side config (loss-liable controller, statement-descriptor
+  prefix incl. kanji/kana) is a Dashboard/account item rather than IaC.
 - **Depends on:** ④ (the captured platform charge) + ⑤ (the Order the payout settles
-  against). **Gates launch** (first live paid sale) with Stripe KYC + 収納代行 counsel.
+  against). **Gates launch** (first live paid sale) together with
+  `payments-legal-compliance`, which owns the 収納代行 counsel opinion and the livemode
+  Stripe 審査; the test-mode Connect platform + recipient config is already in place.
 - **Relationship to ⑤:** ⑤ owns Order/Ticket issuance + the refund *policy*
   (cancellation/postponement); this capability owns the *money movement* (payout,
   refund execution, reversal). The former "④ destination-charge follow-up" is

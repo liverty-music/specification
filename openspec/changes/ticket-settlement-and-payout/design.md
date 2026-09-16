@@ -111,9 +111,10 @@ money-movement behind `RefundOrder`; it does **not** modify #938's proto, and th
 - **Chargeback after payout.** *→* Reserve past the dispute window + platform
   negative-balance responsibility + `transfer_reversal`.
 - **JP 資金移動業 / 収納代行 boundary.** Single-payee collection-agent is the lower-risk,
-  trodden JP path; multi-party splitting would raise the risk. *→* MVP single-payee;
-  counsel opinion (payments-design flag 1) gates launch. Multi-payee re-analysis before
-  any venue payee.
+  trodden JP path; multi-party splitting would raise the risk. *→* MVP single-payee; the
+  counsel opinion (payments-design flag 1) gates launch and is tracked by
+  `payments-legal-compliance` §1.1, not here. Multi-payee re-analysis before any venue
+  payee.
 - **Statement shows the platform, not the Organizer (no `on_behalf_of`).** The buyer's
   statement prefix is the platform brand. *→* Accepted: it is the JP-incumbent norm
   (Peatix/ZAIKO), the per-event suffix keeps it recognizable, and seller-of-record is
@@ -128,10 +129,13 @@ money-movement behind `RefundOrder`; it does **not** modify #938's proto, and th
 New capability. Sequence: proto (connected-account ref/status, `SettlementSplit`, payout/
 refund state, RPCs) → BSR → backend (Connect onboarding + KYC gate, payout controller with
 `source_transaction` Transfers, refund executor + `transfer_reversal`, reserve, webhook
-ingest) → cloud-provisioning (Stripe Connect platform config: loss-liable controller,
-descriptor prefix incl. kanji/kana, transfer/dispute webhooks) → console (payout/refund
-ops). Gated on ④ (charge) + ⑤ (Order). Long-lead externals (Stripe KYC, 収納代行 counsel)
-gate launch.
+ingest) → cloud-provisioning (transfer/dispute webhook endpoint + signing secret) →
+console (payout/refund ops). The Stripe-account-side config (loss-liable controller,
+statement-descriptor prefix incl. kanji/kana) is a Dashboard/account item rather than
+IaC: the loss-liable controller is already in place, the descriptor strings are still
+open. Gated on ④ (charge) + ⑤ (Order). Launch is additionally gated on
+`payments-legal-compliance`, which owns the 収納代行 counsel opinion and the livemode
+Stripe 審査.
 
 ## Open Questions
 
