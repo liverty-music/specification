@@ -1,132 +1,281 @@
 ## Context
 
-See proposal.md. Root cause is confirmed: the re-entry cache fast-path assigns
-`dateGroups` synchronously inside the pre-render `loading()` hook, so the heavy
-timetable render lands in the same rendering task as the shell's optimistic
-header/nav update and the browser paints once, after the render.
+See proposal.md. Two spikes were run before this design was written, and their
+measurements — not inference — decide the load-bearing choices below. Both are
+reproducible; the harnesses are described under "Spike evidence".
 
-The fix is a lifecycle relocation, not a rewrite: move the render-driving
-assignment past the first paint. The subtlety is that the surrounding behaviors
-are wired through the same path and must be preserved.
+Aurelia facts relied on (Aurelia 2.0.0-rc.2, confirmed against the official docs
+and then verified by measurement):
 
-Aurelia facts this design relies on (confirmed against Context7 `/aurelia/aurelia`,
-2026-09-15):
+- There are **two lifecycles**, and the design must place each concern on the one
+  that owns it:
+  - **Route lifecycle** (`canLoad` → `loading` → … → `loaded`, and `canUnload` →
+    `unloading`) knows about navigation: params, query, where we came from, and
+    whether we are leaving. The official descriptions are explicit: `loading` is
+    the **pre-activation** hook ("fetch data, prepare state"), `loaded` is the
+    **post-activation** hook, and `unloading` is the **pre-deactivation** hook
+    ("cleanup, **save state**").
+  - **Component lifecycle** (`binding` → `bound` → `attaching` → `attached` →
+    `detaching` → `unbinding`) knows about the DOM: `bound` is where refs become
+    available, `attached` is where the element is in the DOM.
+- `attaching()` and `detaching()` **may return a Promise, which Aurelia awaits**,
+  and `attached()` runs only after `attaching()`'s promise resolves. This change
+  does not use that facility — entrance motion is CSS and blocks nothing — but it
+  is recorded because it is what made "let the animation be the yield" look
+  plausible before it was measured.
+- Official guidance on async data (`components/lifecycle-diagrams.md`) ranks the
+  options by what they block: `async binding()` blocks all children and is wrong;
+  `async loading()` blocks the view swap; `attached()` + `void` blocks nothing.
+  The repo's existing `non-blocking-menu-navigation` capability picked a fourth
+  point on that spectrum — `loading()` + `void` — which starts the fetch earliest
+  while blocking nothing. That choice stands.
 
-- Navigation order: `canUnload` → `canLoad` → `unloading` → `loading` →
-  component hooks (`binding`→`bound`→`attaching`→`attached`). `loading()` runs
-  before the component renders.
-- `attached()` runs bottom-up after the subtree is mounted but is **still inside
-  the activation task, before the browser's first paint**. So moving work to
-  `attached()` alone does NOT push a *synchronous* assignment past the paint.
-- To actually land the assignment on a LATER frame you need a **macrotask hop**
-  (`queueAsyncTask`, `setTimeout`) or a **double** `requestAnimationFrame`. A
-  SINGLE `requestAnimationFrame` is NOT sufficient — its callback runs just
-  before that same frame's paint, so a synchronous `dateGroups` assignment inside
-  one rAF would still coalesce the heavy render into the same paint as the shell
-  update (reproducing this bug). Do not treat a single rAF as equivalent.
-- `queueAsyncTask` (from `aurelia`) is the idiomatic deferral primitive and
-  returns an awaitable/cancelable Task; it is the one used below.
+## Spike evidence
+
+**Spike 2 — subgrid flatten × containment** (static HTML, Chromium 1243, 390px
+viewport). Four variants of the real `concert-highway` structure, measured by
+`getBoundingClientRect()` rather than by eye:
+
+| Variant | Lane left offsets | Aligned to stage header | Containment active |
+| --- | --- | --- | --- |
+| V0 current (subgrid ×4) | 17 / 135.66 / 254.33 | yes (baseline) | n/a |
+| V1 current + `content-visibility` | lanes collapse to full width, stacked | **NO** | — |
+| V2 flattened | 17 / 135.66 / 254.31 | yes (≤0.02px) | n/a |
+| V3 flattened + `content-visibility` | 17 / 135.66 / 254.31 | yes (≤0.02px) | **yes** |
+
+- V1 reproduces the reverted P2 failure exactly, confirming the diagnosis:
+  containment severs a subgrid chain that crosses the contained boundary.
+- V2/V3 confirm the hypothesis that **subgrid is not load-bearing here**: the
+  root columns are equal fractions and there is **no grid column-gap** (the only
+  `gap` in the component is the month separator's flex gap), so a group that
+  declares the same `grid-template-columns` lands on identical column positions.
+- Sticky date separator pinned at the same offset (9.2px) in V0, V2 and V3.
+- The matched-card glow is not clipped in V3 (lane `overflow` stays `visible`).
+- **Scroll-height drift**: V0/V2 `scrollHeight` 4776 vs V3 **5192** (+416px),
+  because `contain-intrinsic-size`'s literal fallback (180px) differs from the
+  real group height (159.2px) for groups never yet rendered.
+
+**Spike 1 — lifecycle vs paint** (Aurelia 2.0.0-rc.2 via CDN ESM, router,
+4× CPU throttle, 1500 rows). "Shell-only frames" counts rendering opportunities
+where the App Shell frame was on screen while the heavy list was still empty:
+
+| `rows` assigned in | `attaching()` returns | Shell-only frames | Shell lead |
+| --- | --- | --- | --- |
+| `loading()` | — | **0** | none (current behavior) |
+| `attached()` | nothing | **0** | none |
+| `attached()` | `Promise.resolve()` | **0** | none |
+| `attached()` | `setTimeout(0)` promise | 1 | 180 ms |
+| `attached()` | `element.animate(…).finished` | **5** | **277 ms** |
+
+Conclusions, which overturn earlier assumptions in this change:
+
+1. Moving the assignment to `attached()` is **not sufficient** — on its own it
+   produced zero shell-only frames. `attached()` is inside the activation task,
+   before the browser's first paint.
+2. **Returning a Promise from `attaching()` is not automatically a yield.**
+   `Promise.resolve()` is a microtask and produced zero frames. Only promises
+   settling on a macrotask or an animation frame create a paint opportunity.
+
+A second run then measured the render block against list size, which reframed
+the whole question:
+
+| Rows rendered | Render block | Navigation |
+| --- | --- | --- |
+| 1500 (≈ today's unwindowed timetable) | 177.7 ms | 219 ms |
+| 400 | 76.8 ms | 112 ms |
+| 120 (≈ one windowed viewport) | **44.2 ms** | 82 ms |
+| 60 | 16.3 ms | 49 ms |
+
+3. **The yield was treating a symptom.** Once containment bounds the render to
+   the viewport, a single paint is fast, so no scheduling primitive is needed on
+   any path — and forcing a frame-only paint on re-entry would cost a frame and
+   flash an empty frame over content the fan has already seen.
+
+**Spike 3 — `content-visibility` × CSS animation** (Chromium, same harness
+style). An off-screen date group under `content-visibility: auto` had its CSS
+animation **running on schedule** (`currentTime` 633 ms sampled at t=600 ms,
+against 600 ms with containment off). Containment does not defer animations.
+Two consequences the motion design depends on: a time-based stagger consumes
+itself off screen, so it is visible only for content in view at first render;
+and it has always finished before a group is scrolled into view, so the
+time-based and view-timeline triggers never animate the same element at once.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- On re-entry, paint the shell (header title + active nav tab) at navigation
-  intent, independent of the timetable render.
-- No empty-state flash; no lost background refresh; celebration/onboarding latch
-  and deep-link resolution unchanged.
+- The timetable frame (stage header + lanes) paints at tab-switch without data.
+- Off-screen date groups skip style, layout and paint.
+- Date groups reveal top-to-bottom as data arrives and as they are scrolled into
+  view; re-entry restores instantly at the previous scroll position with no
+  entrance animation.
+- Every bottom-nav tab honours the non-blocking contract.
 
 **Non-Goals:**
 
-- Reducing how much the timetable render costs (virtualization / P4).
-- Touching the cold-load path (already separated by the `isLoading` skeleton).
-- Any CSS / P1 / P2 work.
+- `virtual-repeat` / `@aurelia/ui-virtualization`.
+- The CSS render-cost work (P1 shipped, P2 reverted) in the sibling change.
+- Loading skeletons for Tickets / Order / Discovery.
 
 ## Decisions
 
-- **Decision: Defer only the cache fast-path render; leave the cold path alone.**
-  The cold path already shows a skeleton and fills in after an awaited fetch, so
-  it never blocks the shell paint. Only the fast-path assigns render state
-  synchronously in `loading()`. Scope the change to that branch.
+- **Decision: Flatten the subgrid chain; the date group declares its own
+  columns.** Measured in Spike 2 (V2/V3 within 0.02px of baseline). The group
+  stops being a subgrid participant of the scroll container, so containment no
+  longer severs a chain that crosses it; `.lane-grid` may still subgrid off the
+  group because that chain is internal to the contained element. This is the
+  enabling refactor — every decision below depends on it.
 
-- **Decision: Yield only the cached-assignment branch with `queueAsyncTask`; do
-  NOT relocate the whole load trigger.** `loading()`'s single call is
-  `void this.loadData()`, and `loadData()` is the one entry point for BOTH the
-  cache fast-path and the cold fetch. Moving that trigger to `attached()` would
-  also delay the cold-path fetch kickoff — violating the Non-Goal / Decision 1
-  ("leave the cold path alone"). So keep `loading() → void this.loadData()` as-is,
-  and inside `loadData()` wrap ONLY the cache fast-path's synchronous
-  `this.dateGroups = cachedDateGroups` (and its `timetableLoaded` flip) in
-  `queueAsyncTask(() => { … })`, so that render lands on the frame AFTER the
-  shell's first paint. The Task Queue macrotask hop is the load-bearing part;
-  `attached()` alone would not help (it is pre-paint), and relocating the trigger
-  is neither necessary nor in scope. The cold path is untouched — its awaited
-  fetch already yields, and its `isLoading` skeleton already separates the shell
-  paint from the timetable fill.
+- **Decision: Restore viewport scoping with `content-visibility: auto` on the
+  flattened group.** This is P2, re-applied on a structure that can carry it.
+  Spike 2 V3 shows containment engaging (off-screen groups fall back to the
+  intrinsic size while the on-screen group renders naturally) with alignment,
+  sticky behavior and the matched-card glow all preserved.
 
-- **Decision: Cover the one-frame gap with the skeleton, not the empty state.**
-  Between the shell paint and the deferred cached render there is one frame with
-  no `dateGroups`. The template must render the `state-placeholder` loading
-  skeleton for that frame, never the "no concerts" empty state (which is only
-  correct after a settled load returns zero groups). This likely means gating the
-  empty state on a "load has settled" flag rather than on `dateGroups.length ===
-  0 && !isLoading`.
+- **Decision: Treat `contain-intrinsic-size` drift as a scroll-restoration
+  problem, not a cosmetic one.** Spike 2 measured +416px of scroll-height error
+  over 30 groups. Use `contain-intrinsic-size: auto <fallback>` so each group's
+  real height is remembered once rendered, and pick the fallback from the real
+  median group height rather than a round number. Because a restored scroll
+  offset is meaningless against a wrong scroll height, restoration must be
+  applied **after** the cached groups render, and must tolerate the list being
+  shorter than the saved offset (clamp, do not throw).
 
-- **Decision: Do not overload `isLoading` for the skeleton on the fast path.**
-  `isLoading` also guards `refreshInBackground()` (`if (this.needsRegion ||
-  this.isLoading) return`). Setting `isLoading = true` on the fast path to show
-  the skeleton would suppress the background refresh. Use a separate, dedicated
-  latch for "cached paint pending" (e.g. `pendingCachePaint`) that drives the
-  skeleton for the one frame and does NOT gate the refresh — or sequence the
-  refresh kickoff after clearing the flag.
+- **Decision: Split "start the fetch" from "reflect render state", and place
+  each on the lifecycle that owns it.** This is the root-cause statement for the
+  original bug: the cache fast path did *presentation* work in a *pre-activation
+  route* hook, so the component's first render already contained every group.
+  - Starting the fetch stays in `loading()` + `void` — navigation-scoped, earliest
+    possible, blocking nothing. The existing capability is right about this.
+  - Reflecting render state (including the cached fast path) moves to the
+    component lifecycle, so the first render contains the frame and skeleton only.
+
+- **Decision: Do not schedule a paint. Bound the render instead.** The earlier
+  `queueAsyncTask`, and its replacement of yielding from `attaching()`, both
+  treated a symptom. Spike 1 (rerun) measured the render block against list size
+  at 4x CPU throttle: 1500 rows 177.7 ms, 400 rows 76.8 ms, 120 rows (about one
+  windowed viewport) **44.2 ms**, 60 rows 16.3 ms. Once containment bounds the
+  work to the viewport, a single paint is fast, and forcing an earlier
+  frame-only paint would cost an extra frame and flash an empty frame over
+  content the fan has already seen. `attaching()` therefore returns nothing and
+  no scheduling primitive is used anywhere. If a yield were ever needed, the
+  standards primitive is `scheduler.yield()`, not `setTimeout(0)` -- but the
+  simpler answer is to not need one.
+
+- **Decision: Cold load needs no yield either.** With no cached data there is
+  nothing to render but the frame and skeleton, and the fetch's own await is the
+  natural yield. This is already how the cold path behaves today, which is why it
+  never froze; only the cache fast path did.
+
+- **Decision: Keep render-state reflection off the pre-activation hook, for
+  contract reasons, not paint reasons.** The broadened
+  `non-blocking-menu-navigation` forbids synchronous render-state assignment in
+  `loading()`. The relocation stands on that rule. It does **not** by itself
+  produce an earlier paint -- Spike 1 measured zero frame-only paints from the
+  relocation alone.
+
+- **Decision: Entrance motion is CSS on the date group, with two triggers that
+  cannot collide.** The motion unit is the date group, so one keyframe set serves
+  both cases:
+  - *Initial reveal* uses a time-based stagger via `sibling-index()`
+    (Baseline newly available, 2026-08-18; Chrome 138, Firefox 154, Safari 26.2).
+    A `--sibling-index` custom-property fallback declaration precedes it for
+    browsers below that Baseline, set by a short guarded script.
+  - *Scroll reveal* uses a view timeline (`animation-timeline: view()` with
+    `animation-range: entry`), feature-detected with
+    `@supports ((animation-timeline: view()) and (animation-range: entry))` --
+    the `animation-range` term is required to exclude partial implementations.
+    Scroll-driven animations are limited availability (Chrome 115, Safari 26, not
+    Firefox); the effect is decorative, so this is progressive enhancement with
+    no fallback and explicitly **no** `scroll-timeline-polyfill`.
+  Spike 3 measured that `content-visibility: auto` does **not** defer animations
+  in skipped subtrees (an off-screen group's animation ran on schedule:
+  `currentTime` 633 ms at t=600 ms, against 600 ms with containment off). The
+  time-based stagger therefore consumes itself off screen and is visible only for
+  content in view at first render -- exactly the intended behavior -- and it has
+  always finished before a group is scrolled into view, so the two triggers never
+  animate the same element at once and need no gating.
+
+- **Decision: Re-entry restores in one cheap paint.** Entrance motion is
+  suppressed on the cached path. With the view timeline this is partly
+  structural: a group already in view sits past its `entry` range and renders in
+  its final state without animating. Re-entry correctness is a render-cost
+  property, bounded by containment, not a paint-ordering property.
+
+- **Decision: The App Shell frame is gated on "settled and empty", not on
+  `dateGroups.length`.** The stage header and lane columns render whenever the
+  view is loading or populated, and are withheld only for a settled-empty result.
+  Both empty-state placeholders — the guest one and the "no concerts" one — must
+  be gated on a settled condition, never inferred from `length === 0 &&
+  !isLoading`, which cannot distinguish "not assigned yet" from "genuinely zero".
+
+- **Decision: Do not overload `isLoading`.** It also guards
+  `refreshInBackground()`. The skeleton and the empty-state gate read a distinct
+  settled flag so the background refresh still fires on re-entry.
+
+- **Decision: Save scroll at `unloading`, restore at `attached()` after data.**
+  `unloading` is officially the "save state" hook and is navigation-scoped, which
+  matches a per-route scroll memory. Restoration needs the DOM and the rendered
+  list, so it belongs to the component lifecycle and must be sequenced after the
+  cached groups are in place.
+
+- **Decision: Broaden the non-blocking contract rather than re-deriving it.**
+  `non-blocking-menu-navigation` already states the rule correctly; it names only
+  the three tabs that existed when it was written. Widen it to every bottom-nav
+  tab and add that a synchronous render-state assignment in `loading()` blocks
+  first paint exactly as an `await` does. Fix Settings accordingly.
 
 ## Risks / Trade-offs
 
-- **Empty-state flash** → Mitigation: skeleton-gates-on-settled (above); add a
-  test asserting the empty state never renders while a cached paint is pending.
-- **`isLoading` double-duty breaking `refreshInBackground`** → Mitigation:
-  dedicated `pendingCachePaint` latch; unit-test that the background refresh still
-  fires on the fast path.
-- **`timetableLoaded` latch timing** (celebration + onboarding completion +
-  deep-link) is anchored to `timetableLoaded` flipping true → Mitigation: flip
-  `timetableLoaded` inside the deferred task, after `dateGroups` is assigned, so
-  the ordering the latch relies on is unchanged; keep the existing
-  `timetableLoadedChanged` handler untouched. Cover with the existing
-  celebration/latch tests.
-- **A cancelled navigation mid-defer** (user taps away before the queued task
-  runs) → Mitigation: cancel the queued task in `detaching()` / on a new load, so
-  a stale cached paint never writes into a torn-down or re-navigated route
-  (mirror the existing `abortController` discipline).
-- **Perceived regression of "instant cached paint"** → the cached timetable now
-  appears one frame later behind a skeleton. Accept: trading a sub-frame delay of
-  the list for an instant, responsive header/nav is the whole point, and the
-  current behavior freezes the shell for seconds.
+- **The flatten changes lane alignment in a way the spike did not model** (real
+  cards have container queries, variable counts and the `hideAway` two-column
+  mode) → Mitigation: assert lane/stage-header column geometry in a component
+  test at both three-lane and `hideAway` widths, not only visually.
+- **`contain-intrinsic-size` drift corrupts a restored scroll offset** →
+  Mitigation: restore after render, clamp to `scrollHeight`, and verify on device
+  that returning to a deep scroll position lands within a card of where it left.
+- **Re-entry has no yield by design** → Mitigation: the device trace must show
+  re-entry INP within budget; if not, add a non-microtask yield on the cached
+  path (measured at 180 ms lead with `setTimeout(0)`).
+- **Storybook regression guard currently asserts the opposite of this change** —
+  it requires NO `content-visibility` and that the `<li>` keeps its subgrid. It
+  encodes the P2 revert and must be rewritten with the flatten, not deleted.
+- **`verify:build-templates` marker drift** — the dashboard template changes; a
+  removed marker class breaks the production image build, not CI.
+- **Entrance animation on cold load competes with the first data render** → the
+  animation is on the frame, not the cards, so it must not delay the list beyond
+  its own duration; keep it short and honour `prefers-reduced-motion` (which must
+  then fall back to a non-microtask yield, since no animation means no yield).
 
 ## Migration Plan
 
-- Single-file behavior change in `dashboard-route.ts` (+ possibly a template
-  gate for the skeleton-vs-empty decision). Reversible by reverting. Ships with
-  the normal frontend release, but only after device verification confirms the
-  header/nav paint precedes the timetable render.
+Ships in the normal frontend release. The flatten and the containment land
+together — containment without the flatten is the reverted P2 bug. Rollback is a
+revert of the CSS plus the template gate.
 
 ## Verification (device-only — headless passkey auth is infeasible)
 
 On the reference profile (Pixel 8 or emulation + 4× CPU), signed in with a
-populated timetable, from another tab tap the dashboard nav tab and record a
-Performance trace:
+populated timetable:
 
-1. The header `<h1>` and the active nav tab switch (paint) **before** the
-   timetable render block — i.e. there is an early paint frame containing the
-   switched shell, ahead of the large Rendering block.
-2. No empty-state flash during re-entry (skeleton only).
-3. INP for the tap is substantially below the pre-change baseline and the shell
-   is interactive while the timetable fills.
-4. Background refresh still runs (fresh data swaps in), the post-signup / guest
-   celebration still fires once when due, and a `/concerts/:id` deep-link still
-   opens the detail sheet.
+1. Cold load: the stage header and lane columns paint while the fetch is in
+   flight; date groups reveal top-to-bottom as the data arrives; no empty-state
+   flash.
+2. Re-entry from another tab: the restored timetable paints in a single frame
+   whose render block is bounded by the viewport, with the header/nav and the
+   timetable arriving together and INP substantially below the pre-change
+   baseline. No entrance animation, restored at the previous scroll position.
+3. Scrolling reveals subsequent dates, animated where supported, without a
+   scrollbar jump.
+4. Background refresh still swaps fresh data; the celebration fires once when
+   due; a `/concerts/:id` deep-link still opens the detail sheet.
+5. Settings: tapping the tab swaps the view immediately; the previous screen is
+   never held while its RPCs resolve.
 
 ## Open Questions
 
-- Whether a dedicated `pendingCachePaint` latch or reusing the cold-path skeleton
-  with a settled-gate reads cleaner in the template — decide during
-  implementation against the actual `dashboard-route.html` structure.
+- The `contain-intrinsic-size` fallback value — derive from the real median group
+  height on the reference dataset during implementation.
+- Whether `prefers-reduced-motion` cold load should use `setTimeout(0)` as its
+  yield or accept a single coalesced paint; decide against the measured render
+  cost once containment is in.
