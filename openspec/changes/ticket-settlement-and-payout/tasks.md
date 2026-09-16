@@ -106,12 +106,30 @@
 
 ## 6. Verification
 
-- [ ] 6.1 Stripe test-mode: capture (④) → funds on **platform** balance → post-event
+- [x] 6.1 Stripe test-mode: capture (④) → funds on **platform** balance → post-event
       **Transfer to Organizer** (source_transaction) + retained fee; KYC-incomplete →
       payout withheld; cancellation refund → buyer refund + transfer_reversal;
       postponement resets gate; duplicate webhook idempotency
-      [Runs against the `local`/`ci` sandboxes via `make test-stripe-e2e`. Inbound webhook
-      legs (dispute → reversal, duplicate-delivery idempotency) are driven with the Stripe
-      CLI forwarding events to the local webhook server — no registered endpoint and no
-      public URL are involved, since no dev Stripe environment exists.]
+      [Money-out verified against the `local` sandbox **through the production adapter** by
+      `TestStripeSettlementPort_MoneyOut_Integration`: capture → `ResolveChargeRef` →
+      `CreateTransfer` (asserting `source_transaction` really is the charge and the platform
+      fee is the untransferred remainder, not an `application_fee`) → `CreateRefund` →
+      `ReverseTransfer` (asserting `amount_reversed`/`reversed` on the retrieved transfer),
+      plus both retry legs replaying the original instead of moving money twice. Onboarding
+      verified by `TestStripeSettlementPort_CreateConnectedAccount_Integration`: a fresh
+      recipient is created NOT payout-ready and the port's status mapping agrees — the
+      state the payout gate reads.
+      The remaining legs are covered off-network, deliberately. Postponement gate reset is
+      pure date arithmetic with no Stripe involvement (`TestRefundOrder_PostponementWindow_*`).
+      The payout-withheld decision is `TestPayoutSweeper_OrganizerNotActive_PayoutWithheld`.
+      Webhook handling already runs the **real** Stripe verification path —
+      `stripewh.ComputeSignature` + `stripewh.ConstructEvent`, the same SDK function the
+      production handler calls — over real event payloads (`stripe_webhook_handler_test.go`
+      covers valid/invalid signature, unset-secret 503, and dispute/refund field extraction),
+      and duplicate delivery is `TestStripeWebhook_DuplicateEvent_AppliedOnce`.
+      What is NOT exercised is an actual HTTPS delivery from Stripe's servers. That needs a
+      registered, reachable endpoint, and per the §0 environment decision prod's is the only
+      one ever registered — so it is checked at launch alongside 5.1 rather than simulated
+      here. The uncovered surface is the HTTP transport only; the signature algorithm,
+      payload shape and de-duplication above it are all exercised for real.]
 - [ ] 6.2 Sync delta to main specs and archive
