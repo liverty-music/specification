@@ -46,10 +46,14 @@
       (payout blocked until verified; sales/issuance unaffected)
       [PARTIAL: code + port + status-gate + onboarding-link done. The blocker is no longer
       0.1 (platform enablement + recipient config are verified) but the production wiring
-      itself: `StripeSettlementPort.CreateConnectedAccount` is still `TODO: wire Accounts
-      v2 (/v2/core/accounts) when the Stripe SDK and platform allow`. The PoC test
-      (`stripe_connect_poc_test.go`) already self-provisions an Accounts v2 recipient, so
-      the API path is proven — only the production call site remains]
+      itself: `StripeSettlementPort.CreateConnectedAccount` does nothing today — it logs a
+      warning and returns Unavailable. Its in-code TODO ("when the Stripe SDK ... available")
+      is stale: stripe-go v86.4.2 already ships `V2CoreAccountCreateParams`, and the PoC test
+      (`stripe_connect_poc_test.go`) creates a recipient with it against a real sandbox, so
+      both the SDK and the API path are proven. Remaining work is the single
+      `/v2/core/accounts` call plus correcting that TODO and the `settlement_port.go` doc,
+      which wrongly claims the adapter "creates the account via the v1 accounts API as a
+      temporary stand-in"]
 - [x] 2.2 Persist connected-account ref + status; surface onboarding status to organizers
       [OrganizerConnectedAccount repo + OnboardingUseCase + PayoutOnboardingService handler]
 
@@ -86,10 +90,10 @@
 
 - [ ] 5.1 cloud-provisioning plumbing: transfer/payout/dispute webhook endpoint +
       signing secret (GSM/ESO) for fan-api
-      [PARTIAL: PR #489 lands the Pulumi-provisioned GSM secret, the `/stripe-webhook`
-      HTTPRoute exact-path rule, and the optional `envFrom`; the isolated `ExternalSecret`
-      for `fan-api-stripe-webhook-secret` follows once the Stripe webhook endpoint is
-      registered and the GSM key exists]
+      [PARTIAL: PR #489 is merged — the Pulumi-provisioned GSM secret, the `/stripe-webhook`
+      HTTPRoute exact-path rule, and the optional `envFrom` are on main and applied to dev.
+      The isolated `ExternalSecret` for `fan-api-stripe-webhook-secret` follows once the
+      Stripe webhook endpoint is registered and the GSM key exists]
       (Stripe-account-side config is not cloud's: `losses_collector = application` is
       done under 0.1, and the statement-descriptor prefix strings are 0.2.)
 
