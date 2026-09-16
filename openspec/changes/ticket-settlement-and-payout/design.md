@@ -92,6 +92,17 @@ money-movement behind `RefundOrder`; it does **not** modify #938's proto, and th
   status, NOT the deprecated v1 `payouts_enabled`). Refunds/disputes debit the platform
   balance; reserve past the dispute window; `transfer_reversal` per split claws back
   transferred shares.
+- **KYC/KYB identity is collected by Stripe, never by us.** `CreateConnectedAccount` sends
+  only the account *shape* — country, entity type, currency/locale, `dashboard = none`, the
+  requested `stripe_transfers` capability, and the fees/losses collector responsibilities.
+  It sends **no** personal data. The Organizer supplies their name, date of birth, address
+  and documents directly to Stripe through the hosted onboarding link
+  (`CreateOnboardingLink` → Stripe AccountLink), so no PII transits or rests in our systems
+  and the platform's compliance surface stays minimal. The account is created in `Pending`
+  and becomes payout-eligible only when Stripe reports the capability `active`.
+  *Note for readers of the PoC test:* it passes a full hardcoded identity block only
+  because an automated test cannot click through a hosted web page — that is a test
+  shortcut, **not** a template for the production call.
 - **`allocated_funds` NOT adopted — JP ineligible.** Three gates (preview header opt-in;
   private-preview access grant; market eligibility) and JP is not in the market list
   (BE/CH/DE/DK/ES/FR/GB/NL/SE/US). Held funds sit in the general platform balance until
