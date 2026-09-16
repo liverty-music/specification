@@ -317,11 +317,11 @@ revert of the CSS plus the template gate.
 
 ## Verification
 
-Passkey sign-in cannot be driven headlessly, but the repo ships a password-based
-E2E user (`npm run auth:capture:password`) that can, so before/after traces can
-be automated against dev. The dev account does not carry the 225-group volume,
-so it measures the delta, not the baseline; the production trace above stays
-authoritative.
+Verification happens on production. The dev environment is stopped, so there is
+no pre-production place to measure this — and the 225-group volume that makes
+the change necessary exists on a real account regardless. Promotion is a release
+publish that retags the digest `main` already built, so the measured build is
+byte-identical to the merged one.
 
 On the reference profile (Pixel 8 or emulation + 4× CPU), signed in with a
 populated timetable:
