@@ -127,9 +127,8 @@ The cold-load trace also reported `Forced reflow while executing JavaScript took
 
 - The timetable frame (stage header + lanes) paints at tab-switch without data.
 - Off-screen date groups skip style, layout and paint.
-- Date groups reveal top-to-bottom as data arrives and as they are scrolled into
-  view; re-entry restores instantly at the previous scroll position with no
-  entrance animation.
+- Re-entry restores instantly at the previous scroll position, with no entrance
+  animation.
 - Every bottom-nav tab honours the non-blocking contract.
 
 **Non-Goals:**
@@ -236,20 +235,22 @@ The cold-load trace also reported `Forced reflow while executing JavaScript took
   produce an earlier paint -- Spike 1 measured zero frame-only paints from the
   relocation alone.
 
-- **Decision: Entrance motion is CSS on the date group, with two triggers that
-  cannot collide.** The motion unit is the date group, so one keyframe set serves
-  both cases:
-  - *Initial reveal* uses a time-based stagger via `sibling-index()`
-    (Baseline newly available, 2026-08-18; Chrome 138, Firefox 154, Safari 26.2).
-    A `--sibling-index` custom-property fallback declaration precedes it for
-    browsers below that Baseline, set by a short guarded script.
-  - *Scroll reveal* uses a view timeline (`animation-timeline: view()` with
-    `animation-range: entry`), feature-detected with
-    `@supports ((animation-timeline: view()) and (animation-range: entry))` --
-    the `animation-range` term is required to exclude partial implementations.
-    Scroll-driven animations are limited availability (Chrome 115, Safari 26, not
-    Firefox); the effect is decorative, so this is progressive enhancement with
-    no fallback and explicitly **no** `scroll-timeline-polyfill`.
+- **Decision REVERSED: entrance motion is out of this change.** It was designed
+  as CSS on the date group with two triggers that cannot collide -- a
+  `sibling-index()` stagger for initial reveal, a view timeline
+  (`animation-timeline: view()`, `animation-range: entry`) for scroll reveal --
+  built, and then found not to run at all. Measured on the real component, every
+  row began and finished moving at the same millisecond while `transition-delay`
+  correctly computed to 0.06s / 0.12s / 0.18s / 0.24s per row; removing the
+  scroll animation did not change it, and neither did disabling
+  `content-visibility`. Three explanations were proposed and each was disproved.
+  The cause is unknown, so the CSS is removed and reveal gets its own change --
+  see task 4b.0 for the full record. Nothing else in this design depends on it.
+  The beam keeps its own view timeline, which does work and which the same
+  `@supports ((animation-timeline: view()) and (animation-range: entry))` guard
+  covers; scroll-driven animations are limited availability (Chrome 115,
+  Safari 26, not Firefox), the beam is decorative, so it is progressive
+  enhancement with no fallback and explicitly **no** `scroll-timeline-polyfill`.
   Spike 3 measured that `content-visibility: auto` does **not** defer animations
   in skipped subtrees (an off-screen group's animation ran on schedule:
   `currentTime` 633 ms at t=600 ms, against 600 ms with containment off). The
@@ -317,24 +318,23 @@ revert of the CSS plus the template gate.
 
 ## Verification
 
-Passkey sign-in cannot be driven headlessly, but the repo ships a password-based
-E2E user (`npm run auth:capture:password`) that can, so before/after traces can
-be automated against dev. The dev account does not carry the 225-group volume,
-so it measures the delta, not the baseline; the production trace above stays
-authoritative.
+Verification happens on production. The dev environment is stopped, so there is
+no pre-production place to measure this — and the 225-group volume that makes
+the change necessary exists on a real account regardless. Promotion is a release
+publish that retags the digest `main` already built, so the measured build is
+byte-identical to the merged one.
 
 On the reference profile (Pixel 8 or emulation + 4× CPU), signed in with a
 populated timetable:
 
 1. Cold load: the stage header and lane columns paint while the fetch is in
-   flight; date groups reveal top-to-bottom as the data arrives; no empty-state
-   flash.
+   flight; no empty-state flash.
 2. Re-entry from another tab: the restored timetable paints in a single frame
    whose render block is bounded by the viewport, with the header/nav and the
    timetable arriving together and INP substantially below the pre-change
    baseline. No entrance animation, restored at the previous scroll position.
-3. Scrolling reveals subsequent dates, animated where supported, without a
-   scrollbar jump.
+3. Scrolling reaches subsequent dates without a scrollbar jump. The beam runs
+   where the platform supports it and is simply absent where it does not.
 4. Background refresh still swaps fresh data; the celebration fires once when
    due; a `/concerts/:id` deep-link still opens the detail sheet.
 5. Settings: tapping the tab swaps the view immediately; the previous screen is

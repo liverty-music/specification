@@ -48,54 +48,13 @@ card of where the fan left.
 - **THEN** its lane columns SHALL align with the stage header's columns
 - **AND** this SHALL hold in both the three-lane and the two-lane presentations
 
-### Requirement: Date groups reveal progressively, never all at once
-
-Timetable content SHALL reveal progressively rather than appearing in a single
-simultaneous transition. On a genuine first load, the groups visible when data
-arrives SHALL reveal in top-to-bottom order. As the fan scrolls, groups entering
-the viewport SHALL reveal as they arrive rather than being already settled.
-Reveal motion SHALL be presentational: it SHALL NOT delay content becoming
-visible or interactive, and SHALL NOT be required for the timetable to be usable.
-When the fan prefers reduced motion, reveal motion SHALL be suppressed entirely,
-and suppressing it SHALL NOT change what content is shown or when.
-
-#### Scenario: Visible groups reveal in order on first load
-
-- **WHEN** the timetable's data arrives on a genuine first load
-- **THEN** the date groups in view SHALL reveal in top-to-bottom order rather
-  than all at the same instant
-
-#### Scenario: Scrolled-to groups reveal as they arrive
-
-- **WHEN** the fan scrolls toward date groups that were outside the viewport
-- **THEN** those groups SHALL reveal as they enter the viewport
-- **AND** they SHALL NOT appear already-settled as though their reveal had been
-  consumed while they were off screen
-
-#### Scenario: Reduced motion removes the motion only
-
-- **WHEN** the fan prefers reduced motion
-- **THEN** no reveal motion SHALL play
-- **AND** the same content SHALL be shown, at the same time, as it would be with
-  motion enabled
-
-#### Scenario: Motion is unavailable without loss of function
-
-- **WHEN** the reveal cannot be presented in the fan's browser
-- **THEN** the timetable SHALL render and behave identically apart from the
-  missing motion
-
-### Requirement: Re-entry restores without motion and at the previous position
+### Requirement: Re-entry restores at the previous scroll position
 
 On re-entry to a timetable the fan has already seen, the cached content SHALL be
-restored without reveal motion and at the scroll position it had when the fan
-left. Restoring a scroll position SHALL be clamped to the restored content's
-extent.
-
-#### Scenario: Re-entry does not replay the reveal
-
-- **WHEN** a fan leaves the dashboard and returns while the timetable is cached
-- **THEN** the cached timetable SHALL appear without reveal motion
+restored at the scroll position it had when the fan left. Restoring SHALL happen
+once the content is rendered — against a list that has not rendered yet the
+container has no extent, and the position collapses to the top. It SHALL be
+clamped to the restored content's extent.
 
 #### Scenario: Re-entry restores the previous scroll position
 
