@@ -98,27 +98,24 @@
 
 ## 5. cloud-provisioning
 
-- [ ] 5.1 cloud-provisioning plumbing: transfer/payout/dispute webhook endpoint +
+- [x] 5.1 cloud-provisioning plumbing: transfer/payout/dispute webhook endpoint +
       signing secret (GSM/ESO) for fan-api, with the **Stripe endpoint registration itself
       in IaC**
-      [DONE so far (PR #489, merged and applied to dev): the GSM secret plumbing, the
-      `/stripe-webhook` HTTPRoute exact-path rule, and the optional `envFrom`.
-      REMAINING: register the prod webhook endpoint from Pulumi rather than the Dashboard.
-      `POST /v1/webhook_endpoints` exists and **returns the `whsec_…` signing secret in the
-      creation response**, so a Pulumi Dynamic Resource can feed it straight into the GSM
-      secret — the manual "copy the secret out of the Dashboard into ESC" step disappears
-      entirely, and the subscribed event list becomes reviewable in version control instead
-      of living in Dashboard state. `gcpConfig.stripeWebhookSigningSecret` already accepts a
-      `pulumi.Output<string>`, so the wiring is a drop-in.
-      Follows the established `src/zitadel/dynamic/` pattern (a Dynamic Resource for an API
-      no Pulumi provider covers) rather than adding a Stripe provider. Scoped to the **prod**
-      stack only: per §0 there is no dev Stripe environment, so there is no dev endpoint to
-      register. Then the isolated `ExternalSecret` for `fan-api-stripe-webhook-secret` can
-      land, since the GSM key will exist.
-      NOT launch-gated: the prod stack points at the `pannpers.dev sandbox` preprod account,
-      so the endpoint is registered with a `rk_test_` key and no livemode flip is involved.
-      Steps: `esc env set liverty-music/prod pulumiConfig.stripeWebhookAdminKey "rk_test_…"
-      --secret` → `pulumi up` on prod → add the isolated `ExternalSecret`.]
+      [Endpoint `we_1UGwAZLhlskSSXfLJTN1vNux` is registered and `enabled` in the preprod
+      sandbox, created by the prod Pulumi stack's `StripeWebhookEndpoint` Dynamic Resource
+      (cloud #492), which hands the `whsec_…` from Stripe's creation response straight to
+      the GSM secret — no credential was copied between consoles. ESO syncs it via a
+      prod-overlay-only `ExternalSecret` (cloud #494; prod-only because the GSM key exists
+      only there and `base/` would leave dev permanently SecretSyncError'd).
+      Verified end to end on prod v1.55.0: POSTing a bad signature returns **401 invalid
+      signature**, not 404 (no route) and not 503 (no secret) — the handler is reading the
+      synced secret and actually verifying.
+      Two things worth carrying forward. `envFrom` is evaluated once at pod start and
+      Reloader only reacts to changes in resources a pod *already* references, so creating
+      the Secret afterwards did not restart anything — and `optional: true`, which dev needs,
+      made the resulting gap invisible: healthy pod, passing probes, no logs. fan-api ran
+      eight hours in that state. backend #457 now refuses to start when STRIPE_SECRET_KEY is
+      set without the signing secret, turning that silent hole into a named startup failure.]
       (Stripe-account-side config is not cloud's: `losses_collector = application` is
       done under 0.1, and the statement-descriptor prefix strings are 0.2.)
 
