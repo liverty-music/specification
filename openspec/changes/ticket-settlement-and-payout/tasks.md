@@ -114,7 +114,11 @@
       no Pulumi provider covers) rather than adding a Stripe provider. Scoped to the **prod**
       stack only: per §0 there is no dev Stripe environment, so there is no dev endpoint to
       register. Then the isolated `ExternalSecret` for `fan-api-stripe-webhook-secret` can
-      land, since the GSM key will exist.]
+      land, since the GSM key will exist.
+      NOT launch-gated: the prod stack points at the `pannpers.dev sandbox` preprod account,
+      so the endpoint is registered with a `rk_test_` key and no livemode flip is involved.
+      Steps: `esc env set liverty-music/prod pulumiConfig.stripeWebhookAdminKey "rk_test_…"
+      --secret` → `pulumi up` on prod → add the isolated `ExternalSecret`.]
       (Stripe-account-side config is not cloud's: `losses_collector = application` is
       done under 0.1, and the statement-descriptor prefix strings are 0.2.)
 

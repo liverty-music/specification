@@ -138,16 +138,23 @@ money-movement behind `RefundOrder`; it does **not** modify #938's proto, and th
   carried contractually + in 特商法 表記. If counsel later requires the Organizer's name on
   the statement, that is a future change (merchant onboarding + pre-sale gating), not a flag
   flip — it changes the sales-gating model.
-- **Stripe environments: prod + test only — no per-environment `dev`/`staging` account.**
-  Two Stripe contexts exist. **test** = the `local` and `ci` sandboxes, keyed from the
-  shell/`.env` and the backend repo's `STRIPE_TEST_SECRET_KEY` Actions secret; this is where
-  the E2E harness runs. **prod** = the real account (still in test mode until the
-  `payments-legal-compliance` §4.1 livemode flip), keyed through Pulumi ESC → GSM → ESO.
-  The `dev` environment deliberately has **no** Stripe key: `pulumiConfig.stripeSecretKey`
-  is unset there, so the backend runs `NoopAuthorizationPort` and the webhook handler fails
-  closed (503). Consequently there is **no dev webhook endpoint to register** — the only
-  endpoint ever registered with Stripe is prod's, at launch. Webhook behaviour is verified
-  locally by forwarding events with the Stripe CLI (§6), not by registering a deployed URL.
+- **Every Stripe context is a sandbox; no livemode account is involved.** This matches how
+  ④ `lottery-application` shipped and archived — prod-verified on Stripe **test mode**, with
+  live-money items split out — and what `payments-legal-compliance` states: paid ticketing
+  runs in test mode until its §4.1 launch gate lifts. Three contexts:
+  - **local** / **ci** sandboxes — keyed from the shell/`.env` and the backend repo's
+    `STRIPE_TEST_SECRET_KEY` Actions secret. Where the E2E harness runs.
+  - **`pannpers.dev sandbox`** — the **preprod** account the `prod` Pulumi stack points at,
+    keyed through Pulumi ESC → GSM → ESO. "prod" here means the prod deployment stack, not a
+    livemode Stripe account.
+  - **`dev`** — deliberately **no** Stripe key. `pulumiConfig.stripeSecretKey` is unset, so
+    the backend runs `NoopAuthorizationPort` and the webhook handler fails closed (503).
+
+  Two consequences. There is no dev webhook endpoint to register — the only registered
+  endpoint is the prod stack's, in the preprod sandbox. And because that endpoint lives in a
+  sandbox, registering it is **not** a launch-gated step: it can be done now, and prod
+  test-mode verification is what this change archives on. The eventual livemode account is
+  `payments-legal-compliance`'s concern, not this change's.
 - **The prod webhook endpoint is registered from IaC, not the Dashboard.**
   `POST /v1/webhook_endpoints` returns the `whsec_…` signing secret in its creation response,
   so a Pulumi Dynamic Resource — the pattern already used in `src/zitadel/dynamic/` for APIs
