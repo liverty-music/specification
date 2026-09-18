@@ -48,22 +48,36 @@ card of where the fan left.
 - **THEN** its lane columns SHALL align with the stage header's columns
 - **AND** this SHALL hold in both the three-lane and the two-lane presentations
 
-### Requirement: Re-entry restores at the previous scroll position
+### Requirement: Re-entry restores the date the fan was looking at
 
 On re-entry to a timetable the fan has already seen, the cached content SHALL be
-restored at the scroll position it had when the fan left. Restoring SHALL happen
-once the content is rendered — against a list that has not rendered yet the
-container has no extent, and the position collapses to the top. It SHALL be
-clamped to the restored content's extent.
+restored showing the same date group the fan left it on, at any scroll depth.
 
-#### Scenario: Re-entry restores the previous scroll position
+The position SHALL be remembered as the date it identifies, not as a pixel
+offset. Under viewport-scoped rendering an off-screen group's height is an
+estimate until it renders, and the browser's memory of each real height does not
+outlive the elements — which navigation destroys — so a pixel offset taken
+before the trip denotes a different place after it, increasingly so with depth.
+
+Restoring SHALL happen once the content is rendered: before that the anchored
+group does not exist and the restore is silently lost. A date that is no longer
+in the list SHALL leave the fan where they are rather than resolve to a
+substitute.
+
+#### Scenario: Re-entry restores the same date, at any depth
 
 - **WHEN** a fan scrolls deep into the timetable, navigates to another tab, and
   returns
-- **THEN** the timetable SHALL be restored at the scroll position it had when
-  they left
-- **AND** if the restored content is shorter than that position, the view SHALL
-  clamp to the end of the content rather than failing
+- **THEN** the timetable SHALL show the same date group it showed when they left
+- **AND** this SHALL hold as far down the timetable as the content goes, not only
+  near the top
+
+#### Scenario: The anchored date is gone
+
+- **WHEN** the timetable is restored but a background refresh has dropped the
+  date the fan left it on
+- **THEN** the view SHALL stay where it is rather than scroll to a substitute
+  date
 
 ### Requirement: Page identity paints independent of the timetable render
 
