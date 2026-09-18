@@ -67,15 +67,17 @@ did not survive; see design.md → Spike evidence.
 - **Scope rendering to the viewport.** With the chain flattened, apply
   containment to the date group so off-screen groups skip style, layout and
   paint. Scrolling reveals subsequent dates.
-- **Reveal progressively, in CSS.** Today every card runs the same entrance
-  animation simultaneously. Instead the date group becomes the motion unit, with
-  two triggers that cannot collide: a `sibling-index()` stagger reveals the
-  groups in view top-to-bottom as data arrives, and a view timeline reveals
-  groups as they are scrolled into view. Both are pure CSS, compositor-only, and
-  fully suppressed under `prefers-reduced-motion`. On re-entry the fan has
-  already seen this content, so it is restored instantly with no motion and at
-  the previous scroll position — lost today, because a new route instance is
-  created on every navigation and nothing persists the offset.
+- **Drop the all-at-once entrance animation; defer its replacement.** Today every
+  card runs the same entrance animation simultaneously, including cards nobody
+  can see, so off-screen cards burn their animation long before the fan scrolls
+  to them. That animation is removed. Its intended replacement — the date group
+  as the motion unit, staggered by `sibling-index()` on first appearance and by a
+  view timeline on scroll — was built and did not run; the cause is unknown, so
+  reveal is deferred to its own change rather than shipped unmet (task 4b.0 has
+  the measurements). What does ship is the scroll position on re-entry: the fan
+  has already seen this content, so it is restored at the offset they left —
+  lost today, because a new route instance is created on every navigation and
+  nothing persists the offset.
 - **Place each concern on the lifecycle that owns it, and schedule nothing.**
   Starting the fetch stays in the route lifecycle (`loading()` + `void`, earliest
   and blocking nothing); reflecting render state moves to the component
