@@ -26,6 +26,13 @@ preference SHALL behave identically.
 - **THEN** those groups SHALL remain skipped
 - **AND** the beams SHALL NOT cause them to be laid out
 
+#### Scenario: Only concerts on screen are lit
+
+- **WHEN** the beam effect is enabled on a timetable longer than the viewport
+- **THEN** only the concerts currently on screen SHALL have a beam drawn
+- **AND** a concert the fan has not scrolled to SHALL NOT be lit, whether its date
+  group is merely below the fold or is being skipped entirely
+
 #### Scenario: Beams are absent where unsupported, with nothing else affected
 
 - **WHEN** the fan's browser cannot drive the effect
