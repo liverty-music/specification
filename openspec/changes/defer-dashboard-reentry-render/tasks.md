@@ -29,14 +29,13 @@
 - [x] 4.4 Re-entry restores in a single bounded paint with reveal motion suppressed. Do not try to produce a frame-only paint on the cached path: it would cost a frame and flash an empty frame over content the fan has already seen.
 - [x] 4.5 Guard the deferred reflection so it never overwrites a fresher background-refresh result that already landed, and cancel it on teardown / a new load so a stale paint never writes into a torn-down or re-navigated route (mirror the existing `abortController` discipline).
 
-## 4b. Reveal motion (CSS only, no JS beyond a guarded fallback)
+## 4b. Reveal motion — DEFERRED to its own change
 
-- [x] 4b.1 Replace `event-card.css`'s current `animation: fade-slide-up 400ms ease-out both` — which fires on every card simultaneously — with reveal motion on the **date group**, so one keyframe set serves both triggers and the motion unit matches the scroll-reveal unit.
-- [x] 4b.2 First-load reveal: stagger via `animation-delay: calc(sibling-index() * <step>)`, capped (e.g. `min(..., 400ms)`) so groups just below the fold do not sit on a long delay. `sibling-index()` is Baseline newly available (2026-08-18; Chrome 138, Firefox 154, Safari 26.2), which is newer than the repo's stated 2024-2025 Baseline target, so precede it with a `calc(var(--sibling-index) * <step>)` declaration and set that property from a short script guarded by `CSS.supports('animation-delay: calc(sibling-index() * 0.1s)')`.
-- [x] 4b.3 Scroll reveal: `animation-timeline: view()` with `animation-range: entry`, inside `@supports ((animation-timeline: view()) and (animation-range: entry))` — the `animation-range` term is required to exclude partial implementations. Declare `animation-timeline` AFTER the `animation` shorthand or the shorthand resets it. Scroll-driven animations are limited availability (Chrome 115, Safari 26, not Firefox); the reveal is decorative, so this is progressive enhancement with no fallback. Do NOT add `scroll-timeline-polyfill` — the guidance explicitly rules it out.
-- [x] 4b.4 Animate only compositor-friendly properties (`transform`, `opacity`). Add `@media (prefers-reduced-motion: reduce)` disabling the reveal entirely; nothing else may depend on the animation, so suppression must change motion only, never what is shown or when.
-- [x] 4b.5 No gating is needed between the two triggers. Spike 3 measured that `content-visibility: auto` does NOT defer animations in skipped subtrees, so the time-based stagger consumes itself off screen and has always finished before a group is scrolled into view. Add a regression test asserting this stays true, since the whole no-gating design rests on it.
-- [x] 4b.6 Add Storybook stories for the reveal states and confirm `.skeleton`-style animated elements are still not screenshotted (the repo forbids `toMatchScreenshot` on animated elements — assert DOM/a11y instead).
+- [x] 4b.0 Reveal motion is removed from this change. What was built: `@starting-style` plus a `sibling-index()` stagger for first appearance, and a view timeline for scroll reveal. What was measured on the real component: every row began moving at the same millisecond and finished at the same millisecond, while `transition-delay` correctly computed to 0.06s / 0.12s / 0.18s / 0.24s per row. Removing the scroll-driven animation did not change it. Disabling `content-visibility` did not change it. The cause is not known.
+
+  Three explanations were proposed and each was disproved by measurement — that the two mechanisms coexist, that their conflict was the cause, and that containment was the cause. Rather than keep adjusting something whose failure is not understood, the CSS is removed and the work gets its own change, starting from when `@starting-style` actually fires against Aurelia's `repeat` rather than from a fix.
+
+  The card's previous entrance animation stays removed regardless: it fired on every card at once, including ones nobody could see, which is the behaviour this change set out to replace.
 
 ## 5. Scroll position
 
