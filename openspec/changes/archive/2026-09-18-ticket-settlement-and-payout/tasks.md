@@ -147,4 +147,13 @@
       one ever registered — so it is checked at launch alongside 5.1 rather than simulated
       here. The uncovered surface is the HTTP transport only; the signature algorithm,
       payload shape and de-duplication above it are all exercised for real.]
-- [ ] 6.2 Sync delta to main specs and archive
+- [x] 6.2 Sync delta to main specs and archive — **DONE 2026-09-18**. Shipped: proto via
+      specification #945 / Release v0.63.0 → BSR; backend #446 #447 #454 #456 #457 released
+      as **v1.55.0** and deployed to prod; cloud-provisioning #489 #492 #494 (webhook
+      endpoint registered from IaC, signing secret synced via ESO). Verified on prod
+      v1.55.0: the webhook handler answers a bad signature with 401, and the money-out path
+      (capture → charge resolution → transfer with source_transaction → refund → reversal,
+      retries included) runs green against a real Stripe sandbox through the production
+      adapter. Livemode is deliberately out of scope — it belongs to
+      `payments-legal-compliance`, following the same split ④ `lottery-application` used
+      when it archived on prod test-mode verification.
