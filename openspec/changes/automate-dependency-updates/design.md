@@ -92,19 +92,44 @@ Playwright is excluded from automerge because a version bump changes Chromium's 
 
 ### D6: Infrastructure credentials never reach a dependency pull request
 
-`cloud-provisioning` CI runs `make lint-ts` (biome + `tsc --noEmit`) only; `make check` also runs `vitest`, but CI never invokes it. Both gaps are closed: a `test` job, and a `pulumi-preview` job.
+The constraint that shapes this decision is what a preview must do to produce a plan: install the stack's dependencies and execute its program. `Pulumi.prod.yaml` opens with `environment: liverty-music/prod`, so ESC resolves the Cloudflare, Zitadel, GitHub and GCP credentials at stack load. Whatever those dependencies contain therefore executes with production infrastructure credentials, and the shared environment cannot be narrowed per job.
 
-The preview itself is established practice — seven runbooks document it, and the pull request template already tells reviewers to "check the CI/GitHub Actions output for the Preview result. If CI is not running, paste the local `pulumi preview` output here." CI was always its intended home.
+An earlier draft gated Pulumi automerge on an empty preview, reasoning that this made "CI green" truthful for a provider upgrade. It did — but it also meant every Renovate pull request in `cloud-provisioning` would run `npm ci` against a just-published package and execute it with those credentials, before any person had read it. Renovate pushes to branches inside the repository, so the fork protections do not apply. That turns the dependency pipeline into a path for third-party code to reach production credentials, which is the category of risk this whole change exists to reduce.
 
-The constraint that shapes the design is what a preview must do to produce a plan: install the stack's dependencies and execute its program. `Pulumi.prod.yaml` opens with `environment: liverty-music/prod`, so ESC resolves the Cloudflare, Zitadel, GitHub and GCP credentials at stack load. Whatever those dependencies contain therefore executes with production infrastructure credentials, and the shared environment cannot be narrowed per job.
+**The preview therefore must not run on automated dependency pull requests.** That conclusion is unchanged. What changed is where it has to be enforced.
 
-An earlier draft of this design gated Pulumi automerge on an empty preview, reasoning that this made "CI green" truthful for a provider upgrade. It did — but it also meant every Renovate pull request in `cloud-provisioning` would run `npm ci` against a just-published package and execute it with those credentials, before any person had read it. Renovate pushes to branches inside the repository, so the fork protections do not apply. That turns the dependency pipeline into a path for third-party code to reach production credentials, which is the category of risk this whole change exists to reduce.
+#### The preview is not in GitHub Actions
 
-**The preview therefore does not run on automated dependency pull requests.** It runs on pull requests a project member authored, where the code being executed is the author's own. Dependency pull requests in `cloud-provisioning` get lint and test only.
+That draft also assumed the preview did not exist yet and would be built as a `pulumi-preview` job. It does exist: Pulumi Cloud Deployments has `previewPullRequests: true` on both stacks, with GCP reached by OIDC rather than a stored token.
 
-The consequence is that infrastructure provider updates are not automerged. That is not a loss: Pulumi was already the clearest case in D-series reasoning where a reviewer holds something the gate cannot supply — the preview output itself. The reviewer runs it, exactly as the pull request template and runbooks already prescribe.
+| | dev | prod |
+|---|---|---|
+| `previewPullRequests` | true | true |
+| `deployCommits` | true | *(absent — no apply on merge)* |
+| trigger `paths` | `src/**`, `Pulumi.dev.yaml` | `src/**` |
+| `skipInstallDependencies` | false | false |
 
-*Alternatives considered:* gating the preview job behind a GitHub Environment with required reviewers for bot pull requests — rejected because approving that job means approving execution of code the approver has not read, the same ceremony-instead-of-verification failure identified elsewhere in this change. Relying on the release-age delay alone — rejected because it shortens the window without closing it, and would make that delay load-bearing for a threat it was not designed to stop.
+Nothing in the repository records this. The settings exist only in the Pulumi Cloud console, and `docs/runbooks/pulumi-state-recovery.md` already cites a `Pulumi.dev.deploy.yaml` that was never committed — the runbook points at a file that does not exist.
+
+Building the GitHub Actions job anyway was considered and rejected on three grounds: it previews twice per pull request; it would add a `PULUMI_ACCESS_TOKEN` secret where OIDC already works, trading a short-lived exchange for a stored long-lived credential; and, decisively, **it would not implement the control it was written to implement**. A GitHub Actions `if:` condition governs a GitHub Actions job. It has no effect on whether Pulumi Cloud runs a preview.
+
+#### The control is a trigger path, and today it is accidental
+
+Given `previewPullRequests: true` and `skipInstallDependencies: false`, a Renovate pull request *should* already be executing an unreviewed package against production credentials. It is not — because the trigger `paths` list `src/**` and a stack YAML, and a Renovate pull request touches only `package.json` and `package-lock.json`.
+
+So the property D6 exists to guarantee holds today, by coincidence. Nobody chose it, nothing records it, and the obvious improvement — "a dependency change alters what the program does, so it should trigger a preview" — opens the exposure the moment someone acts on it. A safeguard that survives only until a reasonable person edits a config file is not a safeguard.
+
+This change therefore makes it explicit rather than incidental:
+
+- The deployment settings are committed as `Pulumi.{dev,prod}.deploy.yaml`, so the `paths` list is reviewable, diffable, and subject to the same gate as any other change.
+- `Pulumi.prod.yaml` is added to the prod stack's `paths`. Its absence is a real gap in the opposite direction: a pull request editing only prod stack configuration changes what would be deployed and is previewed by nothing.
+- Dependency manifests are deliberately NOT added, with the reason recorded inline next to the list — so the next person to consider adding them reads why they must not.
+
+The consequence for automerge is unchanged: infrastructure provider updates are not automerged. That is not a loss. Pulumi was already the clearest case in D-series reasoning where a reviewer holds something the gate cannot supply — the preview output itself. The reviewer runs it, exactly as the pull request template and runbooks already prescribe.
+
+*Alternatives considered:* gating the preview behind a GitHub Environment with required reviewers for bot pull requests — rejected because approving that job means approving execution of code the approver has not read, the same ceremony-instead-of-verification failure identified elsewhere in this change. Relying on the release-age delay alone — rejected because it shortens the window without closing it, and would make that delay load-bearing for a threat it was not designed to stop. Turning `previewPullRequests` off for prod and previewing only from GitHub Actions — rejected as a larger, riskier migration than the gap warrants, and it would lose the OIDC credential path.
+
+*Separately:* `cloud-provisioning` CI ran `make lint-ts` only, while `make check` is `lint-ts test`, so the repository's vitest suite never ran on a pull request. That gap is real, unrelated to the preview, and closed by adding a `test` job.
 
 ### D7: Schema SDK exclusion is visible, not silent
 
@@ -247,7 +272,9 @@ On-disk drift is therefore accepted rather than tracked. It exists today and is 
 
 - **The WebKit gate this change adds is itself unreliable.** Once `webkit-repro` was actually executed, it proved intermittently red: 8 passes / 2 failures over 10 local runs, against 3/3 for `chromium-control`. The failure is the defect the spec exists to catch — the page-help bottom sheet dismissing itself shortly after opening, on real WebKit only — so the `IntersectionObserver` "just-opened" guard does not hold reliably. → Not mitigated here, and deliberately not retried away: `retries: 2` will usually mask it, which is precisely the failure mode this change is trying to eliminate elsewhere. It is recorded in `frontend/docs/ci-coverage-gaps.md` as an open product defect. Until it is fixed, WebKit-sensitive automerge rests on a gate that flakes, and the honest reading is that the WebKit gap is *narrowed*, not closed.
 - **Grouped PRs are harder to bisect.** A ten-package OpenTelemetry PR that breaks a test gives a coarser signal than ten separate PRs. → Accepted: the packages cannot be upgraded separately anyway, so the finer signal was never actually available.
-- **A preview job resolves write-capable provider credentials through ESC, and running it executes the stack's dependencies** (D6). → The exposure is removed rather than narrowed: the preview does not run on automated dependency pull requests, so third-party code never executes with those credentials. It runs only on pull requests a project member authored, and never on fork pull requests. Residual risk is a malicious commit pushed directly to a branch by someone who already has write access.
+- **The preview resolves write-capable provider credentials through ESC, and running it executes the stack's dependencies** (D6). → The exposure is removed rather than narrowed: automated dependency pull requests do not trigger a preview, so third-party code never executes with those credentials. Residual risk is a malicious commit pushed directly to a branch by someone who already has write access.
+
+  The sharp edge is that this protection is **one config line deep, in a file this project did not previously control**. It holds because the Pulumi Cloud trigger `paths` do not list dependency manifests, while `previewPullRequests: true` and `skipInstallDependencies: false`. Committing the deployment settings and recording the reason inline is the mitigation; it does not make the setting harder to change, only harder to change *unknowingly*. Anyone who adds `package.json` to that list re-opens the exposure, and no GitHub Actions configuration can prevent it — which is precisely why D6 rejected implementing the control there.
 - **The org preset is the highest-leverage file in this change and sits in the least protected repository.** A careless or hostile edit to `renovate-config.json` silently changes automerge behaviour across four repositories. "Pulumi-managed" describes how `.github`'s settings are declared; it is not a review gate on commits landing in `.github`, which per D11 has no branch protection and no CI of its own. → Not mitigated by this change. Follow-up 12.4 (giving `.github` its own CI and protection) is the actual remedy, and this risk is the strongest argument for doing it.
 
 ## Migration Plan
