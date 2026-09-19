@@ -9,29 +9,52 @@ CSS scroll-driven animation deleted the scroll listener, the animation-frame loo
 and the measurement — about 130 lines — and removed the cost entirely.
 
 That was not an isolated mistake. A sweep of the frontend found the same shape in
-five more places: work the platform will do declaratively, or work that should
-not be running at all, carried instead by hand-written JavaScript. Two of them
-keep a continuous animation frame loop running while nothing is on screen to see
-it — including the app's heaviest surface, the physics-simulated discovery orb.
+five more places: work the platform will do declaratively, carried instead by
+hand-written JavaScript.
 
-The pattern is worth addressing as one change because the fix is the same
-judgement each time — ask what the platform already provides — and because the
-guidance for each is already documented rather than a matter of taste.
+The sweep also claimed two surfaces kept an animation frame loop running while
+nothing could see it. **That claim was wrong, and checking it is what this change
+now does about suspension.** The frontend has exactly two continuous loops — the
+discovery orb and the welcome page's ambient glow — and both already suspend on
+every condition that can occur to them, including the case where two conditions
+overlap. Neither can be scrolled out of view: the glow is a viewport-fixed
+full-screen canvas, and the orb sits in a non-scrolling viewport-height layout.
+
+What is actually missing there is not the behaviour but any statement of it. The
+suspension lives in two routes' event handlers, nothing tests it, and a third
+surface added tomorrow would have no contract to meet and no test to fail. It is
+also the kind of correctness that fails silently: a surface that never suspends
+looks completely normal.
+
+The pattern is worth addressing as one change because the judgement is the same
+each time — ask what the platform already provides, and check the current
+behaviour before assuming it is absent.
 
 ## What Changes
 
-**Stop continuous work that nothing can see**
+**Write down the suspension contract that already holds, and test it**
 
-- The discovery orb (`dna-orb-canvas.ts`) runs a Matter.js physics simulation and
-  canvas render loop whose only stop condition is the route being torn down. It
-  keeps running at full rate while scrolled out of view and while the tab is in
-  the background. Discovery is a route fans stay on, so this is not a brief
-  window.
-- The welcome page's ambient glow (`ambient-glow.ts`) already pauses when the tab
-  is hidden but not when it scrolls off screen — the same fix completes it.
-- Both suspend and resume from the browser's own rendering lifecycle, which is
-  the documented mechanism for rendering-heavy work and distinct from asking
-  whether an element is visually in view.
+- The discovery orb (`dna-orb-canvas.ts`) exposes `pause()`/`resume()`, and
+  `discovery-route.ts` calls them on entering and leaving search mode (where the
+  orb's container is `display: none`) and on `visibilitychange`. It also handles
+  the overlap: returning from a background tab resumes only if search mode is not
+  still active. `resume()` resets the frame timebase, and the loop caps its delta.
+- The welcome page's ambient glow (`ambient-glow.ts`) suspends on
+  `visibilitychange`, and under reduced motion never registers the listener at
+  all, so a resume cannot start a loop the fan opted out of.
+- One gap remains, and it is the kind this capability exists to close.
+  `onVisibilityChange` resumes only if search mode is not active, but
+  `onExitSearchMode` resumes unconditionally — leaving search mode in a hidden tab
+  would wake the orb. It is unreachable today only because every exit path is
+  user-initiated and so needs the tab in the foreground: correct by a property of
+  the callers rather than of the suspension. One guard closes it.
+- Otherwise no behaviour changes. The change adds the `offscreen-work-suspension`
+  capability describing this contract, and the tests that hold both surfaces to
+  it — including the properties that are currently correct by accident rather than
+  by design: both overlap orderings and the timebase reset.
+- The audit that established this is part of the change: the conditions a surface
+  can actually be in are a property of its layout, and assuming "scrolled out of
+  view" without checking is exactly the error this section corrects.
 
 **Let the platform own what it already owns**
 
@@ -58,7 +81,8 @@ Out of scope:
   `IntersectionObserver` uses that drive application logic (starting the welcome
   demo, committing the sheet dismiss) rather than gating rendering work.
 - The laser beam itself, which the sibling change has already converted.
-- Rewriting the discovery orb's rendering; only its suspension is in scope.
+- Changing how either continuous surface suspends. Section 1 established that
+  both are already correct; this change writes the contract down and tests it.
 
 ## Capabilities
 
@@ -67,11 +91,21 @@ Out of scope:
 - `offscreen-work-suspension`: the app-wide contract that continuous work —
   animation frame loops, physics simulation, canvas painting — runs only while
   the surface it draws is actually being rendered, and resumes in time to be
-  seen. Today each surface decides this for itself, and two decide it wrongly.
+  seen, without advancing, without waking against a reduced-motion preference,
+  and without one suspension condition cancelling another. Today each surface
+  decides all of this for itself and both get it right; nothing records the
+  contract and nothing would catch a third surface getting it wrong.
 
 ### Modified Capabilities
 
-None declared up front. `bottom-sheet-ce`'s stated behaviour does include
+Two are contingent, and neither delta exists yet.
+
+`onboarding-celebration` admits exactly one no-animation case today (reduced
+motion). Adopting `@starting-style` adds a second — a browser below its Baseline
+toggles instantly — so if the celebration item proceeds, that capability needs a
+delta saying so.
+
+`bottom-sheet-ce`'s stated behaviour does include
 component-managed focus trap, background `inert` and Escape, so moving those to a
 modal dialog would change it — but that depends on the spike's outcome, and this
 change does not commit to a requirement it has not yet established. If the spike
@@ -79,19 +113,20 @@ says the dismiss gesture and a modal dialog can coexist, the delta is added then
 
 ## Impact
 
-- **Frontend only**, across unrelated surfaces: `dna-orb-canvas.ts`,
-  `ambient-glow.ts`, `celebration-overlay.ts` (+ its CSS), `coach-mark.ts`,
-  `press-feedback.ts` (+ its CSS), and — only if the spike allows —
-  `bottom-sheet.ts` (+ its CSS and spec).
+- **Frontend only**, across unrelated surfaces: `celebration-overlay.ts` (+ its
+  CSS), `coach-mark.ts`, `press-feedback.ts` (+ its CSS), and — only if the spike
+  allows — `bottom-sheet.ts` (+ its CSS and spec). `dna-orb-canvas.ts` and
+  `ambient-glow.ts` gain tests, plus a single guard on the orb's search-mode exit.
 - **No visual change is intended anywhere.** Each item either removes work the
   fan cannot see or swaps the mechanism behind an unchanged appearance, so the
   component tests and visual baselines are the check that nothing moved.
 - **Risk is concentrated in the bottom sheet**, which is the single dialog
   primitive for every overlay in the app; a regression there is app-wide. That is
   why it is gated behind a spike and sequenced last.
-- **The orb's suspension changes observable timing**: a paused simulation resumes
-  where it left off rather than having advanced. Whether that reads as correct or
-  as a stutter needs checking on device.
-- Browser-support decisions follow the project's platform guidance rather than
-  inference — the sibling change twice shipped assumptions that measurement
-  disproved.
+- **The suspension half is now test-only**, so its risk is that a test encodes
+  today's implementation rather than the contract, and blocks a legitimate future
+  refactor. The requirements are written in terms of conditions and outcomes, not
+  of `pause()`, `visibilitychange` or search mode, and the tests should follow.
+- Browser-support and current-behaviour claims are checked rather than inferred.
+  The sibling change twice shipped assumptions that measurement disproved, and the
+  original form of this change asserted a defect in code that did not have one.
