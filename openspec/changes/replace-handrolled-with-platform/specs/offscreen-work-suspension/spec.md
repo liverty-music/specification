@@ -2,30 +2,36 @@
 
 Establishes that continuous work in the app — animation frame loops, physics
 simulation, canvas painting — runs only while the surface it produces is actually
-being rendered. Without this each surface decides for itself, and a surface that
-forgets keeps a device busy drawing something nobody can see.
+being rendered.
+
+The app already behaves this way. An audit of every continuous loop in the
+frontend found both of them suspending correctly on every condition that can
+occur, including the interaction between two conditions at once. What is missing
+is that nothing says so and nothing checks it: the behaviour lives in two
+routes' event handlers, and a third surface added tomorrow would have no contract
+to meet and no test to fail. These requirements codify what holds today so that
+it keeps holding.
 
 ## ADDED Requirements
 
 ### Requirement: Continuous work suspends when its surface is not rendered
 
 A surface that performs continuous per-frame work SHALL suspend that work
-whenever the browser is not rendering it, and SHALL resume it in time for the
-content to be correct when seen. This SHALL hold for every reason the browser
-stops rendering a surface, including the surface being scrolled out of view and
-the page being in a background tab. Suspension SHALL be driven by the browser's
-own rendering lifecycle rather than by a separate judgement about visual
-visibility, so that work stops for the same reasons and at the same times the
-browser stops painting.
+whenever the browser is not rendering it, and SHALL resume it before the content
+is seen again.
 
-Suspension SHALL be invisible to the fan: resuming SHALL NOT show a partially
-drawn frame, and SHALL NOT require the fan to interact to restore the surface.
+This SHALL hold for every reason the surface stops being rendered. The reasons
+are a property of the surface's layout and the page's state, not a fixed list —
+a surface hidden by its own route, one scrolled out of a scrolling container, and
+one in a background tab are all the same condition for this purpose, and a
+surface SHALL be suspended under whichever of them can occur to it.
 
-#### Scenario: Work stops when the surface scrolls out of view
+#### Scenario: Work stops while the surface is not rendered
 
-- **WHEN** a surface performing continuous per-frame work is scrolled out of view
+- **WHEN** a surface performing continuous per-frame work stops being rendered,
+  for any reason
 - **THEN** that work SHALL stop
-- **AND** it SHALL resume when the surface is about to be rendered again
+- **AND** it SHALL resume before the surface is seen again
 
 #### Scenario: Work stops in a background tab
 
@@ -38,6 +44,50 @@ drawn frame, and SHALL NOT require the fan to interact to restore the surface.
 - **WHEN** a suspended surface resumes
 - **THEN** it SHALL present a complete frame
 - **AND** the fan SHALL NOT have to interact with it to make it render
+
+### Requirement: Overlapping suspension conditions do not cancel each other
+
+Where more than one condition can suspend the same surface, a surface SHALL
+remain suspended while any of them still holds. Lifting one condition SHALL NOT
+resume work that another condition independently requires to stay stopped.
+
+This is the failure that hides: each condition read on its own looks correct, and
+the surface only wakes wrongly when two overlap.
+
+#### Scenario: A second condition keeps the surface suspended
+
+- **WHEN** a surface is suspended for two reasons at once
+- **AND** one of those reasons stops applying
+- **THEN** the surface SHALL remain suspended while the other still applies
+- **AND** it SHALL resume only once none of them applies
+
+### Requirement: Resuming continues the work rather than advancing it
+
+A surface SHALL resume from where it was suspended rather than accounting for the
+time that passed while it was stopped. Continuous work computes from the interval
+since its previous frame; after a suspension that interval is arbitrarily large,
+and applying it would make a simulation jump rather than continue.
+
+#### Scenario: A long suspension does not make the surface lurch
+
+- **WHEN** a surface resumes after being suspended for an extended period
+- **THEN** it SHALL continue from the state it was suspended in
+- **AND** it SHALL NOT jump, skip ahead, or destabilise as though the elapsed
+  time had been simulated
+
+### Requirement: Suspension respects a reduced-motion preference
+
+Suspension and resumption SHALL NOT reintroduce motion that a fan's reduced-motion
+preference has suppressed. A surface that paints a single static frame instead of
+animating SHALL still be painting that frame after any suspension condition comes
+and goes, and SHALL NOT be started into a loop by a resume.
+
+#### Scenario: A resume does not start motion the fan has opted out of
+
+- **WHEN** a fan prefers reduced motion
+- **AND** a suspension condition applies to a surface and then stops applying
+- **THEN** no continuous work SHALL be started
+- **AND** the surface SHALL still show its static content
 
 ### Requirement: Suspension never changes what is on screen
 

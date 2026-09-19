@@ -19,16 +19,6 @@ relied on rather than reasoned about.
 
 Platform facts this design rests on:
 
-- **`content-visibility` and `contentvisibilityautostatechange`** are Baseline
-  since 2025-09-15 (Chrome 108, Firefox 130, Safari 26). Where unsupported the
-  property is ignored and the event never fires, so the work simply continues as
-  it does today — a progressive enhancement with no fallback required.
-- The guidance distinguishes the two ways to ask "can this be seen":
-  `contentvisibilityautostatechange` for **rendering-heavy work**, because it is
-  tied to the browser's own rendering lifecycle and fires within the pre-render
-  margin; `IntersectionObserver` for **application logic** tied to exact visual
-  visibility. The event does not bubble reliably, so it is listened for on the
-  element itself or with `{ capture: true }`.
 - **`@starting-style` and `transition-behavior: allow-discrete`** are Baseline
   since 2024-08-06 (Chrome 117, Firefox 129, Safari 17.5). Where unsupported,
   elements toggle instantly instead of animating.
@@ -41,7 +31,9 @@ Platform facts this design rests on:
 
 **Goals:**
 
-- No surface performs per-frame work while the browser is not rendering it.
+- The rule that no surface performs per-frame work while the browser is not
+  rendering it is written down and tested, rather than upheld by coincidence in
+  two routes.
 - Behaviour the platform already provides is not re-implemented in the component.
 - No visual change anywhere.
 
@@ -54,25 +46,55 @@ Platform facts this design rests on:
 
 ## Decisions
 
-- **Decision: Suspend continuous work from `contentvisibilityautostatechange`,
-  not from an `IntersectionObserver`.** Both the orb and the ambient glow are
-  rendering-heavy, which is the case the event exists for; it also fires inside
-  the pre-render margin, so a surface is resumed slightly before it is on screen
-  and never shows a stale or half-drawn first frame. Using an
-  `IntersectionObserver` instead would answer a subtly different question and
-  resume later. The host surface takes `content-visibility: auto` so the browser
-  has a reason to skip it in the first place.
+- **Decision: Establish the current behaviour before specifying a fix — which
+  here removed the fix.** The sweep that started this change asserted that the orb
+  and the glow keep running while nothing can see them. Reading the code and the
+  layout disproved both halves:
+  - Neither surface can be **scrolled out of view**. The glow canvas is
+    `position: fixed; inset: 0` — a viewport-fixed full-screen element. The orb
+    sits in `.discovery-layout`, which is `block-size: 100%; overflow: hidden`
+    inside a `100dvh` app shell, so the route does not scroll at all.
+  - The orb **already suspends** on both conditions that can occur to it. It
+    exposes `pause()`/`resume()`, and the route calls them on entering and leaving
+    search mode — where its container is `display: none` — and on
+    `visibilitychange`.
+  - The glow **already suspends** on `visibilitychange`, the only condition that
+    can occur to it.
 
-- **Decision: Keep the existing `visibilitychange` handling as well, rather than
-  replacing it.** The ambient glow already pauses on a background tab. The two
-  conditions are different — a hidden tab and an off-screen element — and the
-  event only covers the second. Both remain.
+  So the mechanism this design originally chose does not apply. A
+  `contentvisibilityautostatechange` handler would never fire on either surface:
+  one is always in the viewport, and `display: none` does not produce that event.
+  This is recorded rather than deleted, because the reasoning was sound and only
+  its premise was false — the conditions a surface can be in are a property of its
+  layout, and have to be read rather than assumed.
+
+- **Decision: Specify the contract and test it, rather than change behaviour.**
+  Two of the properties the surfaces satisfy are the kind that hold today and
+  break quietly tomorrow, and neither is written down or covered by a test:
+  - **Overlapping conditions.** Returning from a background tab resumes the orb
+    only `if (!this.search.isSearchMode)`. Each condition read alone looks
+    correct; the bug appears only when both apply and lifting one wakes a surface
+    the other still requires to stay stopped.
+  - **The timebase.** `resume()` sets `lastTime = performance.now()`, and the loop
+    caps its delta at 32ms. Without either, a resume after a long pause feeds the
+    simulation an enormous interval and it explodes rather than continues.
+
+  The requirements are written in terms of conditions and outcomes, not in terms
+  of `pause()`, `visibilitychange` or search mode, so a future refactor of how
+  suspension is wired does not have to rewrite the spec.
+
+- **Decision: Reduced motion is part of the suspension contract, not separate from
+  it.** The glow paints a single static frame under `prefers-reduced-motion` and
+  never registers its `visibilitychange` listener, so no resume can start a loop
+  the fan opted out of. That is the correct shape and it is easy to lose in a
+  refactor that centralises suspension, so it becomes a requirement.
 
 - **Decision: Suspension preserves the last frame.** Pausing must not clear the
   canvas: a surface that is partially visible, or that becomes visible a frame
   before work resumes, has to keep showing what it last drew. This is what makes
   the suspension invisible, and it is the difference between pausing a loop and
-  tearing down a renderer.
+  tearing down a renderer. Both surfaces already do this; the requirement records
+  it so a renderer teardown is never mistaken for a pause.
 
 - **Decision: Replace the celebration overlay's `transitionend` choreography with
   declarative entry/exit.** The component currently listens for `transitionend`
@@ -113,10 +135,10 @@ Platform facts this design rests on:
 
 ## Risks / Trade-offs
 
-- **The orb resumes where it paused, not where it would have been.** A physics
-  simulation that stops for ten seconds and restarts has not advanced. Whether
-  that reads as natural or as a stutter is a judgement that needs a device check,
-  not a test.
+- **The suspension half ships no behaviour change**, so its risk is the opposite
+  of the usual one: a test that encodes today's wiring rather than the contract
+  would block a legitimate refactor while proving nothing. The requirements avoid
+  naming the mechanism, and the tests should be written against them.
 - **The bottom sheet is the highest-risk item in the change** and the one whose
   outcome is unknown when the change is written. It is gated and sequenced last
   precisely so the rest can ship whatever the spike concludes.
@@ -130,16 +152,19 @@ Platform facts this design rests on:
 
 ## Migration Plan
 
-Each item is independent and separately revertible. Order: the two suspension
-items first (highest value, contained blast radius), then the celebration overlay,
-then the coach mark and ripple simplifications, then the bottom-sheet spike and —
-only on a positive result — its rewrite.
+Each item is independent and separately revertible. Order: the suspension audit
+and its tests first (no production change, so nothing can regress), then the
+celebration overlay, then the coach mark and ripple simplifications, then the
+bottom-sheet spike and — only on a positive result — its rewrite.
 
 ## Verification
 
-- Device checks that the orb and the glow stop when scrolled away and when the
-  tab is backgrounded, and that both resume showing a complete frame.
-- A check that a suspended surface keeps its last frame rather than blanking.
+- Tests that hold both surfaces to the contract: work stops and resumes for each
+  condition that can occur to them, an overlapping condition keeps a surface
+  suspended, a resume does not advance the simulation, and a reduced-motion
+  surface is never started into a loop.
+- A device check that the orb resumes showing a complete frame, since a preserved
+  last frame is the one property a unit test cannot see.
 - Component tests and visual baselines unchanged across every item.
 - For the bottom sheet, if it proceeds: focus containment, Escape, background
   inertness and the dismiss gesture all verified against the existing capability's
@@ -152,6 +177,7 @@ only on a positive result — its rewrite.
   removes the item from the change.
 - Whether the coach mark's visibility query reports what that check needs, which
   decides whether that item happens.
-- Whether the orb should resume on the pre-render margin or wait until it is
-  genuinely on screen, if the margin turns out to start the simulation noticeably
-  early on a long page.
+- Whether any surface other than these two will ever need suspension. The
+  contract is written app-wide on the strength of two instances, which is thin; if
+  a third never appears, the requirements are still the only record that the two
+  are correct on purpose.

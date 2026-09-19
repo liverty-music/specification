@@ -1,20 +1,30 @@
-## 1. Baseline
+## 1. Audit — establish what is actually true before changing anything
 
-- [ ] 1.1 Record what each surface costs today, so the change has something to be measured against: with the discovery orb on screen, capture a trace; then scroll it out of view and background the tab, and confirm the animation-frame work continues in both. Do the same for the welcome page's ambient glow (which should already stop on a background tab, but not when scrolled away).
+- [x] 1.1 DONE. Enumerated every continuous animation-frame loop in the frontend: there are exactly two, `dna-orb-canvas.ts` and the `ambient-glow` custom attribute. (`dashboard-route.ts` uses a one-shot `requestAnimationFrame`, not a loop.)
+- [x] 1.2 DONE. Established which "nothing can see it" conditions can actually occur to each, by reading its layout rather than assuming:
+  - **The glow cannot be scrolled out of view.** `welcome-route.css` gives it `position: fixed; inset: 0; inline-size: 100%; block-size: 100%` — a viewport-fixed full-screen canvas. The welcome page's two-screen scroll-snap moves the content past it, not it past the viewport. Its only condition is a background tab.
+  - **The orb cannot be scrolled out of view either.** `.discovery-layout` is `block-size: 100%; overflow: hidden` inside an app shell that is `block-size: 100dvh`, so the route does not scroll. Its conditions are search mode (`.discovery-layout[data-search-mode="true"] .bubble-area { display: none }`) and a background tab.
+- [x] 1.3 DONE. Established that both already suspend correctly on every condition found in 1.2, which **withdraws the defect this change was opened on**:
+  - `DnaOrbCanvas` exposes `pause()`/`resume()`. `discovery-route.ts` calls them from `onEnterSearchMode`/`onExitSearchMode` and from `onVisibilityChange`, and handles the overlap — returning from a background tab resumes only `if (!this.search.isSearchMode)`.
+  - `resume()` sets `lastTime = performance.now()`, and the loop caps its delta at 32ms ("prevent physics explosions on tab-switch/GC pauses").
+  - `ambient-glow` suspends on `visibilitychange`, releases both listeners in `detaching()`, and under `prefers-reduced-motion` paints one static frame and never registers the visibility listener at all — so no resume can start a loop the fan opted out of.
 
-## 2. Suspend the discovery orb
+## 2. The orb — hold it to the contract, do not change it
 
-- [ ] 2.1 Give the orb's host surface `content-visibility: auto` with a `contain-intrinsic-size` sized from its real layout box, so the browser has a reason to skip it and the page does not reflow when it does.
-- [ ] 2.2 Suspend and resume the animation-frame loop from `contentvisibilityautostatechange` on that surface. Listen on the element itself or with `{ capture: true }` — the event does not bubble reliably. Use this event rather than an `IntersectionObserver`: this is rendering-heavy work, and the event is tied to the browser's rendering lifecycle so the loop resumes within the pre-render margin, before the orb is actually on screen.
-- [ ] 2.3 Keep the physics simulation and the renderer intact while suspended — pause the loop, do not tear down or clear. The canvas must still show its last frame, so a partially-visible or just-resumed orb never appears blank or torn.
-- [ ] 2.4 Handle the elapsed-time gap on resume. The loop computes a delta from the previous frame; after a long pause that delta is enormous and would make the simulation jump. Reset the timebase on resume so it continues rather than lurching.
-- [ ] 2.5 Add a background-tab suspension too — the orb currently has none. A hidden tab and an off-screen element are different conditions and the rendering event only covers the second.
-- [ ] 2.6 Confirm teardown still stops everything: leaving the route must leave no loop, timer or subscription running.
+- [ ] 2.1 No production change. The suspension is already correct; this section adds the tests that would catch it becoming incorrect, because today nothing would.
+- [ ] 2.2 Test that entering search mode suspends the loop and leaving it resumes.
+- [ ] 2.3 Test that a background tab suspends the loop and returning resumes.
+- [ ] 2.4 Test the **overlapping condition**: backgrounding the tab while search mode is active, then returning to the foreground, must leave the orb suspended — search mode still applies. This is the property that reads as correct in each handler separately and is wrong only in combination, and it is currently protected by nothing.
+- [ ] 2.5 Test that resuming **does not advance the simulation**: a resume after a long suspension must re-base the frame clock rather than feed the loop the elapsed interval. Assert the contract (the first frame after a resume gets a normal-sized delta), not the mechanism.
+- [ ] 2.6 Test that teardown stops everything and leaves nothing scheduled.
+- [ ] 2.7 Write these against the requirement wording — conditions and outcomes — not against `pause()`, `visibilitychange` or search mode by name, so a future refactor of the wiring does not have to rewrite them.
 
-## 3. Suspend the ambient glow
+## 3. The ambient glow — hold it to the contract, do not change it
 
-- [ ] 3.1 Apply the same `content-visibility` + `contentvisibilityautostatechange` suspension to the welcome page's ambient glow canvas. Keep its existing `visibilitychange` handling — that covers the background tab, this covers being scrolled away, and both are needed.
-- [ ] 3.2 Preserve the last painted frame while suspended, and keep the reduced-motion path (which paints one static frame and never loops) working — it must not be started by a resume.
+- [ ] 3.1 No production change, for the same reason. Do **not** add `content-visibility` here: the canvas is viewport-fixed, so it can never be skipped and `contentvisibilityautostatechange` would never fire.
+- [ ] 3.2 Test that a background tab suspends the loop and returning resumes it.
+- [ ] 3.3 Test the reduced-motion path: under `prefers-reduced-motion` the attribute paints once and starts no loop, and no visibility transition starts one either.
+- [ ] 3.4 Test that `detaching()` stops the loop and removes both listeners.
 
 ## 4. Declarative entry and exit for the celebration overlay
 
@@ -43,12 +53,13 @@
 
 ## 8. Tests and verification
 
-- [ ] 8.1 Add tests that a suspended surface stops its per-frame work and resumes — both are invisible when working and quiet when broken, so neither can be left to manual noticing.
+- [ ] 8.1 SUPERSEDED by the per-surface tests in 2.2-2.7 and 3.2-3.4.
 - [ ] 8.2 `make lint` + `make test`, plus the Storybook component tests.
 - [ ] 8.3 Visual baselines must be unchanged across every item in this change. A baseline diff here means something was got wrong — do NOT regenerate baselines to make it pass.
-- [ ] 8.4 Device check: the orb and the glow stop when scrolled away and when the tab is backgrounded, both resume showing a complete frame, and the orb's resume does not read as a stutter.
+- [ ] 8.4 Device check: the orb resumes showing a complete frame rather than a blank or torn canvas. This is the one property in the capability that a unit test cannot observe, so it is the only device check the suspension half needs — the rest are assertions, not judgements.
 
 ## 9. Close-out
 
 - [ ] 9.1 Sync the `offscreen-work-suspension` delta into the main specs before archiving, plus the `bottom-sheet-ce` delta if 7.3 happened.
-- [ ] 9.2 Record in the PR which items shipped and which were dropped, and for anything dropped, why — particularly the bottom sheet, whose outcome is unknown when this change is written.
+- [ ] 9.2 Record in the PR which items shipped and which were dropped, and for anything dropped, why — particularly the bottom sheet, whose outcome is unknown when this change is written, and the suspension fix, which was withdrawn by the audit in section 1.
+- [ ] 9.3 If task 4.1 proceeds, `onboarding-celebration` needs a MODIFIED delta: it currently admits exactly one no-animation case (reduced motion), and `@starting-style` adds a second (a browser below its Baseline). That spec file does not exist under this change yet — create it with `/opsx:continue` before implementing section 4.
