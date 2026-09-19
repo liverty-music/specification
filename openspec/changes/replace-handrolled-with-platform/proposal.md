@@ -42,10 +42,16 @@ behaviour before assuming it is absent.
 - The welcome page's ambient glow (`ambient-glow.ts`) suspends on
   `visibilitychange`, and under reduced motion never registers the listener at
   all, so a resume cannot start a loop the fan opted out of.
-- So no behaviour changes here. The change adds the `offscreen-work-suspension`
+- One gap remains, and it is the kind this capability exists to close.
+  `onVisibilityChange` resumes only if search mode is not active, but
+  `onExitSearchMode` resumes unconditionally — leaving search mode in a hidden tab
+  would wake the orb. It is unreachable today only because every exit path is
+  user-initiated and so needs the tab in the foreground: correct by a property of
+  the callers rather than of the suspension. One guard closes it.
+- Otherwise no behaviour changes. The change adds the `offscreen-work-suspension`
   capability describing this contract, and the tests that hold both surfaces to
-  it — including the two properties that are currently correct by accident rather
-  than by design: the overlapping-condition case and the timebase reset.
+  it — including the properties that are currently correct by accident rather than
+  by design: both overlap orderings and the timebase reset.
 - The audit that established this is part of the change: the conditions a surface
   can actually be in are a property of its layout, and assuming "scrolled out of
   view" without checking is exactly the error this section corrects.
@@ -110,7 +116,7 @@ says the dismiss gesture and a modal dialog can coexist, the delta is added then
 - **Frontend only**, across unrelated surfaces: `celebration-overlay.ts` (+ its
   CSS), `coach-mark.ts`, `press-feedback.ts` (+ its CSS), and — only if the spike
   allows — `bottom-sheet.ts` (+ its CSS and spec). `dna-orb-canvas.ts` and
-  `ambient-glow.ts` gain tests but no production changes.
+  `ambient-glow.ts` gain tests, plus a single guard on the orb's search-mode exit.
 - **No visual change is intended anywhere.** Each item either removes work the
   fan cannot see or swaps the mechanism behind an unchanged appearance, so the
   component tests and visual baselines are the check that nothing moved.

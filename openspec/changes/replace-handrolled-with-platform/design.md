@@ -74,7 +74,13 @@ Platform facts this design rests on:
   - **Overlapping conditions.** Returning from a background tab resumes the orb
     only `if (!this.search.isSearchMode)`. Each condition read alone looks
     correct; the bug appears only when both apply and lifting one wakes a surface
-    the other still requires to stay stopped.
+    the other still requires to stay stopped. The implementation guards one
+    ordering and not its mirror: `onExitSearchMode` resumes without checking
+    `document.hidden`. That ordering is unreachable only because every exit path
+    is user-initiated, which is a property of the callers. The requirement is
+    written symmetrically because that is the correct rule, and a one-line guard
+    brings the implementation to it — the difference between correct by
+    reachability and correct by construction.
   - **The timebase.** `resume()` sets `lastTime = performance.now()`, and the loop
     caps its delta at 32ms. Without either, a resume after a long pause feeds the
     simulation an enormous interval and it explodes rather than continues.
@@ -135,7 +141,8 @@ Platform facts this design rests on:
 
 ## Risks / Trade-offs
 
-- **The suspension half ships no behaviour change**, so its risk is the opposite
+- **The suspension half ships one guard and otherwise no behaviour change**, so
+  its risk is the opposite
   of the usual one: a test that encodes today's wiring rather than the contract
   would block a legitimate refactor while proving nothing. The requirements avoid
   naming the mechanism, and the tests should be written against them.

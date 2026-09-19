@@ -5,19 +5,23 @@
   - **The glow cannot be scrolled out of view.** `welcome-route.css` gives it `position: fixed; inset: 0; inline-size: 100%; block-size: 100%` — a viewport-fixed full-screen canvas. The welcome page's two-screen scroll-snap moves the content past it, not it past the viewport. Its only condition is a background tab.
   - **The orb cannot be scrolled out of view either.** `.discovery-layout` is `block-size: 100%; overflow: hidden` inside an app shell that is `block-size: 100dvh`, so the route does not scroll. Its conditions are search mode (`.discovery-layout[data-search-mode="true"] .bubble-area { display: none }`) and a background tab.
 - [x] 1.3 DONE. Established that both already suspend correctly on every condition found in 1.2, which **withdraws the defect this change was opened on**:
-  - `DnaOrbCanvas` exposes `pause()`/`resume()`. `discovery-route.ts` calls them from `onEnterSearchMode`/`onExitSearchMode` and from `onVisibilityChange`, and handles the overlap — returning from a background tab resumes only `if (!this.search.isSearchMode)`.
+  - `DnaOrbCanvas` exposes `pause()`/`resume()`. `discovery-route.ts` calls them from `onEnterSearchMode`/`onExitSearchMode` and from `onVisibilityChange`.
+  - **The overlap is handled in one direction only.** `onVisibilityChange` resumes only `if (!this.search.isSearchMode)`, but `onExitSearchMode` resumes unconditionally — it does not check `document.hidden`. The mirror ordering (leaving search mode while the tab is still backgrounded) would therefore wake the orb in a hidden tab. It is unreachable today only because every path into `exitSearchMode()` is user-initiated — a query edit, a result tap — and so requires the tab to be in the foreground. That is a property of the callers, not of the suspension, and it is exactly the kind of correct-by-accident this capability exists to convert into correct-by-construction. Closed in 2.2.
   - `resume()` sets `lastTime = performance.now()`, and the loop caps its delta at 32ms ("prevent physics explosions on tab-switch/GC pauses").
   - `ambient-glow` suspends on `visibilitychange`, releases both listeners in `detaching()`, and under `prefers-reduced-motion` paints one static frame and never registers the visibility listener at all — so no resume can start a loop the fan opted out of.
 
-## 2. The orb — hold it to the contract, do not change it
+## 2. The orb — close the one real gap, then hold it to the contract
 
-- [ ] 2.1 No production change. The suspension is already correct; this section adds the tests that would catch it becoming incorrect, because today nothing would.
-- [ ] 2.2 Test that entering search mode suspends the loop and leaving it resumes.
-- [ ] 2.3 Test that a background tab suspends the loop and returning resumes.
-- [ ] 2.4 Test the **overlapping condition**: backgrounding the tab while search mode is active, then returning to the foreground, must leave the orb suspended — search mode still applies. This is the property that reads as correct in each handler separately and is wrong only in combination, and it is currently protected by nothing.
-- [ ] 2.5 Test that resuming **does not advance the simulation**: a resume after a long suspension must re-base the frame clock rather than feed the loop the elapsed interval. Assert the contract (the first frame after a resume gets a normal-sized delta), not the mechanism.
-- [ ] 2.6 Test that teardown stops everything and leaves nothing scheduled.
-- [ ] 2.7 Write these against the requirement wording — conditions and outcomes — not against `pause()`, `visibilitychange` or search mode by name, so a future refactor of the wiring does not have to rewrite them.
+- [ ] 2.1 Almost no production change: the suspension is already correct on every reachable path. This section adds the one guard that makes it correct independent of reachability, plus the tests that would catch any of it regressing — because today nothing would.
+- [ ] 2.2 Guard the mirror ordering found in 1.3: leaving search mode must resume only when the tab is also in the foreground, the same way returning to the foreground resumes only when search mode is not active. One condition lifting must never wake a surface another still requires stopped, whichever lifts first. Not currently reachable, so this is not a bug fix — it is removing the reliance on it staying unreachable.
+- [ ] 2.3 Test that entering search mode suspends the loop and leaving it resumes.
+- [ ] 2.4 Test that a background tab suspends the loop and returning resumes.
+- [ ] 2.5 Test **both overlap orderings**, since the requirement is symmetric and the implementation was not:
+  - background the tab while search mode is active, then return to the foreground → still suspended (search mode still applies);
+  - enter search mode, background the tab, then leave search mode → still suspended (the tab is still hidden). This is the ordering 2.2 adds, and it fails before that guard.
+- [ ] 2.6 Test that resuming **does not advance the simulation**: a resume after a long suspension must re-base the frame clock rather than feed the loop the elapsed interval. Assert the contract (the first frame after a resume gets a normal-sized delta), not the mechanism.
+- [ ] 2.7 Test that teardown stops everything and leaves nothing scheduled.
+- [ ] 2.8 Write these against the requirement wording — conditions and outcomes — not against `pause()`, `visibilitychange` or search mode by name, so a future refactor of the wiring does not have to rewrite them.
 
 ## 3. The ambient glow — hold it to the contract, do not change it
 
