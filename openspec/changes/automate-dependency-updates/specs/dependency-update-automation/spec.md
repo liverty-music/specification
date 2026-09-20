@@ -51,7 +51,15 @@ An axis whose declared versions are unresolvable floating references — for exa
 
 Dependencies that must move together to remain functional SHALL be proposed in a single pull request rather than individually. A set of dependencies is version-coupled when upgrading a strict subset of it leaves the repository in a state that does not build, does not pass its tests, or behaves inconsistently.
 
-At minimum, the following SHALL each be treated as one unit: the OpenTelemetry Go modules (core and contrib together); the Connect-RPC Go modules; the Aurelia packages; the Vitest packages; the Storybook packages; the Vite plugin set; the stylelint configuration and plugin set; the workbox packages, including those split across `dependencies` and `devDependencies`; the OpenTelemetry JavaScript packages; and the Pulumi provider set.
+Membership of this category SHALL be established by the declared constraints between the packages, not by how far apart their version numbers look. A family whose members depend on each other with a lower bound only — where the package manager resolves to the highest requested version and no upper bound exists — is NOT version-coupled, however uneven its numbering: upgrading one member alone still builds. A family whose members pin each other exactly, or bound each other from above, is.
+
+At minimum, the following SHALL each be treated as one unit: the Aurelia packages; the Vitest packages; the Storybook packages; the Vite plugin set; the stylelint configuration and plugin set; the workbox packages, including those split across `dependencies` and `devDependencies`; the OpenTelemetry JavaScript packages; and the Pulumi provider set.
+
+#### Scenario: A family's versions differ but its constraints do not bind
+
+- **WHEN** members of a family carry visibly different version numbers, and each depends on the others with a lower bound only
+- **THEN** the family SHALL NOT be treated as version-coupled
+- **AND** a local grouping rule for it SHALL NOT override a maintained upstream grouping that separates them
 
 #### Scenario: One member of a coupled set is released
 

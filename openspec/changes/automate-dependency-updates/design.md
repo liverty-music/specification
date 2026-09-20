@@ -53,24 +53,34 @@ The `dependency-update-automation` spec requires that version-coupled sets move 
 | stylelint | `group:stylelint` |
 | Pulumi | `group:pulumi` |
 
-**Local rules — no upstream coverage:**
+**Local rules — no upstream coverage.** Only two remain. `aurelia` is a genuine version-coupled family (exact inter-package pins, verified below); `go-tools` is NOT coupled and is not claimed to be — the four `tool` entries are independent CLIs, grouped purely to keep build tooling to one pull request a month. That distinction matters: a convenience grouping may be split at any time, while splitting a coupled one breaks the build.
+
 
 | Group | Members | Automerge |
 |---|---|---|
-| `otel-go` | `go.opentelemetry.io/otel{,/metric,/sdk,/trace}`, both OTLP exporters, `contrib/.../otelgrpc`, `contrib/.../otelhttp` | yes |
-| `connectrpc-go` | `connectrpc.com/{connect,authn,cors,grpchealth,otelconnect,validate}` | yes |
 | `go-tools` | `tool` directive entries: buf, delve, mockery, gofumpt | yes |
 | `aurelia` | `aurelia`, `@aurelia/{i18n,router,testing,vite-plugin,storybook}` | yes |
 
-`group:opentelemetry-go` exists but matches `github.com/open-telemetry/**`; `backend` imports `go.opentelemetry.io/*`, so it does not apply and the local `otel-go` group is required. Core-versus-contrib version skew (`v1.44.x` core against `v0.6x` contrib) is why that group matches by family rather than by version. No upstream group covers `connectrpc.com` or Aurelia.
+Earlier drafts of this table also carried `otel-go` and `connectrpc-go` groups, on the reasoning that core-versus-contrib version skew (`v1.44.x` core against `v0.6x` contrib) meant the families had to move together. Checking the declared constraints showed that reasoning was wrong, and both were removed:
+
+| module | requires | repo has |
+|---|---|---|
+| `otelhttp v0.67.0` | `otel >= v1.42.0` | `v1.44.0` |
+| `otelgrpc v0.68.0` | `otel >= v1.43.0` | `v1.44.0` |
+| `connectrpc.com/validate v0.6.0` | `connect >= v1.19.0` | `v1.21.0` |
+| `connectrpc.com/otelconnect v0.8.0` | `connect >= v1.17.0` | `v1.21.0` |
+
+These are lower bounds with no upper bound, and Go resolves to the highest requested version — so upgrading core alone builds fine. The uneven numbering is how these projects version satellite modules, not evidence of coupling. The two contrib modules are not even in step with each other (`v0.67` against `v0.68`).
+
+Grouping them anyway would have meant overriding a deliberate upstream decision: Renovate's monorepo registry separates `opentelemetry-go` from `opentelemetry-go-contrib` precisely because they do not release together, and its own guidance warns that grouping packages which are not co-released produces immortal pull requests. Both families are therefore left entirely to upstream.
+
+Aurelia is the contrast that shows the test is worth applying rather than assuming: `@aurelia/router@2.0.0-rc.2` depends on `@aurelia/kernel@2.0.0-rc.2` **exactly**, with no caret. Advancing one package alone forces a kernel version the others do not pin, and Aurelia's DI and metadata are identity-sensitive, so duplicate copies break at runtime rather than failing to install. That family is genuinely coupled and no upstream group covers it.
 
 `workbox` is in Renovate's monorepo registry (`googlechrome/workbox`), so `group:monorepos` covers it; `vite` and `connectrpc-js` are left to upstream coverage pending verification during the observation phase (D10). A local rule is added only if the observed PRs show them ungrouped.
 
-`opentelemetry-go` is in that registry too, but pointing at `open-telemetry/opentelemetry-go` — the contrib modules live in a separate repository, so the registry would split core from contrib, which is exactly the coupling `otel-go` exists to preserve. The local rule stays for that reason, and the observation phase confirms whether it still needs to cover core as well.
-
 `@biomejs/biome` is pinned to the same exact version in `frontend` and `cloud-provisioning`. Renovate cannot group across repositories, so the two are placed on the same schedule; they will be proposed as two PRs that land close together. Accepting brief skew is cheaper than the alternatives (a shared config package, or a custom cross-repo bump workflow) for a formatter.
 
-*Ordering caveat:* preset rules are evaluated before `packageRules`, and once a preset sets a `groupSlug` a later rule cannot override it. Local rules must therefore target families the presets do not claim, rather than attempting to re-group ones they do.
+*On overriding presets:* a local `packageRule` placed after the inherited presets CAN override a grouping they set — Renovate evaluates rules in order and re-derives `groupSlug` from a later `groupName`. An earlier draft of this design asserted the opposite. The correction does not change the policy: local rules still target only families upstream does not claim, but now because reimplementing a maintained group makes it drift, not because overriding is impossible.
 
 ### D4: Custom managers for the three version fan-outs
 
