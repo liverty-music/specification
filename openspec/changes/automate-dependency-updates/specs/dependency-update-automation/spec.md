@@ -76,11 +76,15 @@ At minimum, the following SHALL each be treated as one unit: the Aurelia package
 
 Where one logical version is recorded in more than one file, all of its locations SHALL be updated by the same pull request. Updating a strict subset is prohibited, because the resulting pipeline would verify a configuration that does not match what is being proposed.
 
-The following fan-outs SHALL each be bound into one unit:
+**A duplicated version SHALL be eliminated rather than synchronised, wherever the toolchain can derive it from a single declaration.** Keeping copies in step needs a mechanism that keeps working — a pattern that must keep matching after a file is reformatted, and a check to catch it when it stops. Removing the copies needs nothing. Where a build or CI tool accepts a version file in place of a literal, that form SHALL be used, and the remaining declaration is the single source.
 
-- **Go version** — the `go` language directive and the `toolchain` directive in `backend/go.mod`, the builder image tag in `backend/Dockerfile`, the `go` setting in `backend/.golangci.yml`, and every `go-version` input across `backend`'s workflows (eight locations at the time of writing).
-- **Node version** — every `node-version` workflow input across `frontend` and `cloud-provisioning`, every Node base image tag in `frontend`'s Dockerfiles, `cloud-provisioning`'s declared `engines.node` range, and the `@types/node` major in both repositories' manifests (fourteen locations at the time of writing).
-- **Playwright version** — the `@playwright/test` package version, the Playwright container image tag used by the component-test CI job, and the same image tag in the documented baseline-regeneration command, which must match the CI job's image for baselines to be reproducible.
+Only a version that genuinely cannot be derived SHALL be bound as a synchronised unit, and that binding SHALL be justified by the absence of a derivation, not chosen for convenience.
+
+At the time of writing:
+
+- **Go version** — `backend/go.mod` is the single source. `setup-go` reads it via `go-version-file`, and golangci-lint reads it when its `go` setting is absent. The builder image tag in `backend/Dockerfile` records the version at coarser precision and is managed as an ordinary container dependency, not as a copy to be synchronised.
+- **Node version** — a version file per repository is the single source, read by `setup-node` via `node-version-file`. The Node base image tags and the declared `engines.node` range are ordinary dependencies at their own precision.
+- **Playwright version** — NOT derivable, and therefore bound as a unit: the `@playwright/test` package version, the Playwright container image tag used by the component-test CI job, and the same image tag in the documented baseline-regeneration command. The third is prose in a contributor document, which no tool can derive, and it must match the CI job's image for committed visual baselines to be reproducible.
 
 Because the locations of a fan-out record the version at differing precision — some carry a full patch version, others only major or major-minor — the unit SHALL define how a proposed version projects onto each location. A location whose recorded precision does not change under a given bump SHALL be treated as already satisfying that bump, and its unchanged state SHALL NOT be interpreted as a partial update.
 
@@ -89,8 +93,13 @@ The `@playwright/test` version SHALL be recorded as an exact version rather than
 #### Scenario: The Go minor version is upgraded
 
 - **WHEN** an update crossing a Go minor version is proposed
-- **THEN** the pull request SHALL update every Go-version location to the proposed version at that location's recorded precision
-- **AND** the CI run for that pull request SHALL build and lint using the proposed version, not the previous one
+- **THEN** the CI run for that pull request SHALL build and lint using the proposed version, not the previous one
+
+#### Scenario: A duplicated version could be derived instead
+
+- **WHEN** a version is repeated across files and the consuming tools accept a version file in place of the literal
+- **THEN** the repetition SHALL be removed by deriving from a single declaration
+- **AND** a pattern-matching rule to keep the copies in step SHALL NOT be introduced in its place
 
 #### Scenario: A bump does not alter a coarser location
 

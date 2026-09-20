@@ -82,15 +82,27 @@ Aurelia is the contrast that shows the test is worth applying rather than assumi
 
 *On overriding presets:* a local `packageRule` placed after the inherited presets CAN override a grouping they set — Renovate evaluates rules in order and re-derives `groupSlug` from a later `groupName`. An earlier draft of this design asserted the opposite. The correction does not change the policy: local rules still target only families upstream does not claim, but now because reimplementing a maintained group makes it drift, not because overriding is impossible.
 
-### D4: Custom managers for the three version fan-outs
+### D4: Version fan-outs are removed, not synchronised
 
-Go (8 locations), Node (14 locations), and Playwright (3 locations) are each bound into one Renovate group using regex custom managers over the workflow YAML, `.golangci.yml`, Dockerfiles, and `AGENTS.md`, combined with the native `gomod` / `npm` / `dockerfile` managers.
+Go and Node versions are each repeated across many files — measured: nine locations for Go (five `go-version` workflow inputs, `go.mod`'s `go` and `toolchain`, the `Dockerfile` tag, `.golangci.yml`'s `go`) and fifteen for Node. An earlier draft of this design bound each into one Renovate group using regex `customManagers`, and added a CI assertion (task 7.2) to catch the regexes silently ceasing to match.
 
-The Go unit must include `go.mod`'s `go` language directive alongside `toolchain`. Renovate's `gomod` manager treats the two as separate dependencies and will propose the `go` directive on its own, which is precisely the partial update the binding exists to prevent.
+That was the wrong shape. The duplication is not a fact about Go or Node; it is a fact about this repository, and the official actions already solve it:
 
-This is the load-bearing decision of the change. Without it, a lone `go.mod` `toolchain` bump produces a PR whose CI installs Go 1.27 via `setup-go`, then silently builds with the proposed toolchain because `GOTOOLCHAIN` defaults to `auto` — a green result that verified a configuration nobody proposed.
+| tool | documented input | source |
+|---|---|---|
+| `actions/setup-go` | `go-version-file` — "Path to **go.mod**, go.work, .go-version, or .tool-versions file", and since v6 it reads the `toolchain` directive in preference to `go` | `go.mod` |
+| `actions/setup-node` | `node-version-file` — "Examples: package.json, mise.toml, **.nvmrc**, .node-version, .tool-versions" | `.nvmrc` |
+| `golangci-lint` | `run.go` — "Default: **use Go version from the go.mod file**" | `go.mod` |
 
-*Alternative considered:* deriving every location from a single source (`setup-go` supports `go-version-file: go.mod`; Dockerfiles could take a build arg). This is the better end state and removes the need for custom managers on the Go axis. It is deliberately not bundled here: it changes how CI resolves its toolchain, which is exactly the mechanism this change needs to be able to trust while it is being established. Recorded as follow-up work in `tasks.md`.
+So the workflow copies are deleted rather than kept in step, and `.golangci.yml`'s `go:` line is deleted so it derives. Go's duplication drops from nine locations to two; Node's from fifteen to six, and every one that remains is an ordinary dependency a native Renovate manager already handles at its own precision (the `golang:` and `node:` image tags, `engines.node`, `@types/node`).
+
+This deletes three custom managers and the CI assertion written to guard one of them. Nothing is left that can silently stop matching.
+
+The load-bearing hazard the earlier draft identified is removed rather than mitigated. It was: a lone `go.mod` `toolchain` bump produces a pull request whose CI installs Go via `setup-go`, then silently builds with the *proposed* toolchain because `GOTOOLCHAIN` defaults to `auto` — a green result that verified a configuration nobody proposed. With `go-version-file: go.mod`, the version `setup-go` installs and the version the build resolves come from the same declaration, so they cannot disagree.
+
+**Playwright is the exception and keeps its binding** (D5). Its third location is prose in `frontend/AGENTS.md` documenting the baseline-regeneration command, and no tool derives a version from a contributor document. That is what makes it a genuine fan-out rather than an avoidable duplication.
+
+*Alternative considered:* keeping the custom managers, on the reasoning that changing how CI resolves its toolchain is exactly the mechanism this change needs to trust while it is being established. Rejected on reflection: it builds the inferior mechanism now and defers the better one to a follow-up that would then delete it — and the switch is *more* safely done here, before Renovate is enabled, than later when a toolchain-resolution failure would be tangled up with dependency-update failures. Verifying it costs one CI run.
 
 ### D5: `@playwright/test` pinned exactly
 

@@ -52,12 +52,14 @@
 - [x] 6.6 Place `@biomejs/biome` on the same schedule in `frontend` and `cloud-provisioning` so the two exact pins are proposed together (design D3 — cross-repo grouping is not possible).
 - [x] 6.7 Decide whether `specification` needs a repository-local `renovate.json` at all, or whether the inherited preset covers its GitHub Actions and mise axes (design Open Question 2). Create it only if needed.
 
-## 7. Renovate — version fan-out custom managers
+## 7. Version fan-outs — derive from one source
 
-- [ ] 7.1 Add a `customManagers` entry grouping all eight Go-version locations: `go.mod`'s `go` language directive AND its `toolchain` directive, the `Dockerfile` `golang:` tag, `.golangci.yml` `go:`, and the four `go-version:` workflow inputs. The `go` directive must be included explicitly — Renovate's `gomod` manager treats it as a separate dependency and will otherwise propose it alone. Verify a dry run proposes all eight together.
-- [ ] 7.2 Add a CI assertion in `backend` that fails when the eight Go-version locations disagree, so a regex that silently stops matching is caught by the pipeline (design Risk 1).
-- [ ] 7.3 Add a `customManagers` entry grouping all fourteen Node-version locations across `frontend` and `cloud-provisioning`: eight `node-version:` workflow inputs, three `node:` Dockerfile tags, `cloud-provisioning`'s `engines.node`, and the `@types/node` major in both manifests. `@types/node` is part of the unit — a Node runtime bump without it leaves the type definitions describing the previous runtime.
-- [ ] 7.4 Add a `customManagers` entry binding `@playwright/test` to the `mcr.microsoft.com/playwright` container tag in `ci.yaml` AND to the same tag in the baseline-regeneration command documented in `frontend/AGENTS.md`. All three move together, grouped and automerge-disabled.
+- [x] 7.1 `backend`: replace the five `go-version: "1.27.0"` inputs across `test.yml`, `lint.yml` and `stripe-sandbox-e2e.yml` with `go-version-file: go.mod`. `setup-go` reads `go.mod` and, since v6, prefers its `toolchain` directive over `go`. This also removes the hazard the custom-manager approach existed to mitigate: `setup-go` and the build now resolve their version from the same declaration, so `GOTOOLCHAIN=auto` can no longer make CI build with a toolchain nobody proposed.
+- [x] 7.1a `backend`: delete the `go: '1.27'` line from `.golangci.yml`. Documented default is "use Go version from the go.mod file", so the setting is a copy with no purpose.
+- [ ] 7.2 Verify on CI that `go build`, `go test` and `golangci-lint` all run on the version `go.mod` declares after 7.1/7.1a. This replaces the drift assertion the previous plan needed — there is no longer anything to drift.
+- [x] 7.3 `frontend` and `cloud-provisioning`: add a `.nvmrc` containing the major in use (`22`) and replace all nine `node-version: '22'` inputs with `node-version-file: .nvmrc`.
+- [x] 7.3a Leave the three `node:22-alpine` tags, `cloud-provisioning`'s `engines.node` range and the two `@types/node` entries alone. Each records the version at its own precision and is already handled by a native Renovate manager (`dockerfile`, `npm`); they are dependencies, not copies to be synchronised.
+- [x] 7.4 Add a `customManagers` entry binding `@playwright/test` to the `mcr.microsoft.com/playwright` container tag in `ci.yaml` AND to the same tag in the baseline-regeneration command documented in `frontend/AGENTS.md`. This is the ONLY remaining fan-out: its third location is prose in a contributor document, which no tool can derive from. All three move together, grouped and automerge-disabled.
 
 ## 8. GitHub Actions SHA pinning
 
