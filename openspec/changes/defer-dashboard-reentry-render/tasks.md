@@ -67,7 +67,7 @@
 
 ## 8. Close-out
 
-- [ ] 8.1 Sync both deltas into the main specs (`openspec sync`) before archiving. `dashboard-timetable-rendering` does not yet exist under `openspec/specs/` — it is created by the sibling `optimize-dashboard-render-cost` change, so that change must sync first or the two deltas must be reconciled at sync time.
+- [x] 8.1 Synced. `dashboard-timetable-rendering` did not exist under `openspec/specs/`, so the sibling `optimize-dashboard-render-cost` delta created it first (carrying its Purpose); this change's four requirements were then added alongside. The two deltas name disjoint requirements, so no reconciliation was needed. `beam-effect-toggle` gained one requirement, and `non-blocking-menu-navigation` had two modified in place with their existing scenarios preserved. Its leftover `TBD` Purpose placeholder was written while there. `openspec validate --specs` → 211 passed, 0 failed.
 - [x] 8.2 PR descriptions record the measured baseline (cold load 21,352 ms Rendering / 31.6 s total; re-entry INP 64,472 ms, 225 date groups, CPU throttling off) and the spike evidence behind each decision. The after-figures are still outstanding — see 7.4. frontend#614 merged as 0e5cfe5; specification#966 merged as 3951aeb.
 - [x] 8.3 Handed off to `progressive-route-rendering`. What the final shape actually was:
   - **Reflection runs from `attached()`**, guarded so a background refresh that already landed is never overwritten by the stale cache. The relocation alone produces no earlier paint — measured — so it stands on the non-blocking contract, not on a paint argument.

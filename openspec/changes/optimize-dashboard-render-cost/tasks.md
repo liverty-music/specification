@@ -73,5 +73,5 @@ win is moot in prod (reverted).
 
 ## 5. Close-out
 
-- [ ] 5.1 Sync the `dashboard-timetable-rendering` delta into the main specs (`openspec sync`) before archiving.
+- [x] 5.1 Synced. The capability had no main spec, so this delta created `openspec/specs/dashboard-timetable-rendering/spec.md`, carrying this delta's Purpose verbatim and both of its requirements. The sibling `defer-dashboard-reentry-render` change then added its four alongside; the two deltas name disjoint requirements, so nothing had to be reconciled. `openspec validate --specs` → 211 passed, 0 failed.
 - [x] 5.2 Record before/after INP·LCP·Layout·Style numbers in the PR description as the evidence of effect.
