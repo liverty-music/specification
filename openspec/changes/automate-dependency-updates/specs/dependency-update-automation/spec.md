@@ -8,11 +8,21 @@ Defines how dependency updates are proposed, grouped, and merged across the live
 
 Each of `backend`, `frontend`, `cloud-provisioning`, and `specification` SHALL have automated dependency update proposals enabled. Shared policy — scheduling, grouping of cross-cutting ecosystems, automerge defaults, and concurrency limits — SHALL be expressed once in an organization-level configuration and inherited by each repository, so that a policy change takes effect across all four without editing each repository. Repository-specific rules SHALL extend, and MAY override, the inherited policy.
 
-The automation SHALL cover every dependency axis present in the repositories. As of this change those are: Go modules; Go `tool` directives; the Go toolchain; npm packages; npm `overrides`; GitHub Actions; Docker base images; mise tools; Pulumi providers; pre-commit hook revisions; Buf module dependencies recorded in `buf.lock`; and container image tags in kustomize manifests.
+The automation SHALL cover every dependency axis present in the repositories for which the chosen tool provides a mechanism. As of this change those are: Go modules; Go `tool` directives; the Go toolchain; npm packages; npm `overrides`; GitHub Actions; Docker base images; mise tools; Pulumi providers; pre-commit hook revisions; and container image tags in kustomize manifests.
 
 This enumeration is a statement of current coverage, not a closed set. Introducing a manifest that declares external dependencies in a form none of the above covers SHALL be treated as introducing a new axis requiring configuration, not as a dependency exempt from automation.
 
+An axis the tool has no mechanism to read SHALL NOT simply be dropped from this list. It SHALL be recorded as a known gap, together with the named human control that covers it in the tool's place — otherwise an unautomatable axis is indistinguishable from one nobody thought of, and its absence reads as completeness.
+
+Buf module dependencies recorded in `buf.lock` are such an axis at the time of writing: Renovate ships no manager or datasource for the Buf Schema Registry, and the entries are registry commit identifiers rather than versions, so no generic mechanism applies either. They are advanced by running `buf dep update` by hand, which the operational runbook names.
+
 An axis whose declared versions are unresolvable floating references — for example a tool pinned to `latest` — cannot produce update proposals. Such declarations SHALL be replaced with concrete versions so the axis is actually covered rather than silently inert.
+
+#### Scenario: An axis has no mechanism in the chosen tool
+
+- **WHEN** a dependency axis exists in the repositories and the update tool provides no manager or datasource able to read it
+- **THEN** the axis SHALL be recorded as a known gap rather than omitted from the enumeration
+- **AND** the human action that advances it SHALL be named
 
 #### Scenario: A tool is declared as a floating reference
 
@@ -28,7 +38,7 @@ An axis whose declared versions are unresolvable floating references — for exa
 
 #### Scenario: A dependency axis receives an upstream release
 
-- **WHEN** a new version is published for a dependency in any of the twelve covered axes
+- **WHEN** a new version is published for a dependency in any of the covered axes
 - **THEN** an update proposal SHALL be raised for it, unless that dependency is excluded by another requirement in this specification
 
 #### Scenario: A repository needs a rule the others do not

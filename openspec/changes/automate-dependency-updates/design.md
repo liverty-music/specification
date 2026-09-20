@@ -27,7 +27,7 @@ See `proposal.md` — Why. The relevant existing state:
 
 ### D1: Renovate over Dependabot
 
-Dependabot cannot read `mise` configuration files or `kustomize` manifests, both of which are live dependency axes here (`cloud-provisioning/.mise.toml`, `specification/.mise/config.toml`, `backend/k8s/`). It also cannot express cross-file grouping, which D4 depends on entirely. Renovate covers all twelve axes, supports arbitrary grouping, and supports regex-based custom managers.
+Dependabot cannot read `mise` configuration files or `kustomize` manifests, both of which are live dependency axes here (`cloud-provisioning/.mise.toml`, `specification/.mise/config.toml`, `backend/k8s/`). It also cannot express cross-file grouping, which D4 depends on entirely. Renovate covers eleven of the twelve axes, supports arbitrary grouping, and supports regex-based custom managers. The twelfth, `buf.lock`, is covered by neither tool — Renovate has no Buf Schema Registry manager or datasource — so it is not a point of comparison between them; it stays manual under either choice (D7).
 
 *Alternatives considered:* Dependabot — rejected on the coverage and grouping gaps above. A bespoke scheduled workflow generating update PRs — rejected because it would reimplement changelog fetching, version comparison, and grouping for twelve ecosystems, and the existing `bump-prod-pin.yml` shows how much workflow code a single well-defined bump already costs.
 
@@ -137,7 +137,9 @@ The consequence for automerge is unchanged: infrastructure provider updates are 
 
 `buf.build/gen/go/pocketsign/apis/*` is *not* excluded — it is a third-party schema on someone else's release cadence, where falling behind is the risk rather than the safeguard.
 
-Renovate needs `hostRules` credentials for `buf.build/gen/npm/v1/` to read `@buf` package metadata at all. Those are still required even though the liverty-music packages are disabled, because the datasource is consulted to populate the dashboard.
+No `hostRules` are needed. `buf.build/gen/npm/v1/` answers unauthenticated — verified directly — and `frontend/.npmrc` carries no token, so there is no credential to supply for the dashboard to populate.
+
+**The exclusion is scoped to `liverty-music/*`, deliberately, and is not widened to "BSR packages".** Excluding everything from the Buf Schema Registry would be simpler to state and would be wrong: the reason for excluding our own schema is that `backend` and `frontend` must sit on the same build and an independently-scheduled bump would break that correspondence while leaving the code migration undone. That reason is a property of *ours*, not of the registry. It does not transfer to `buf.build/gen/go/pocketsign/apis/*`, where nobody here controls the cadence and falling behind is the risk rather than the safeguard — nor to the third-party modules in `specification/buf.lock` (`bufbuild/protovalidate`, `googleapis/googleapis`), which sit on the same side of that line and are unautomatable for an unrelated reason: Renovate has no Buf Schema Registry manager or datasource at all. Those are advanced by `buf dep update`, run by a person, and named in the runbook (task 11.3).
 
 ### D8: The Go toolchain comment is documentation, not a constraint
 
