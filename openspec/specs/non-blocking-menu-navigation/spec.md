@@ -1,10 +1,15 @@
 # non-blocking-menu-navigation Specification
 
 ## Purpose
-TBD - created by archiving change non-blocking-menu-navigation. Update Purpose after archive.
+
+Keeps every route reachable from the bottom navigation swapping into view the
+moment a fan taps its tab, rather than holding the screen they are leaving until
+data arrives. Fetching stays the route's job; what this capability fixes is where
+that work sits relative to the view swap, and what the fan sees while it runs.
+
 ## Requirements
 ### Requirement: Menu-tab navigation attaches the view before data resolves
-Bottom-nav menu-tab routes (My Artists, Dashboard, Discovery) SHALL NOT block the router view swap on their data fetch. The route's `loading()` hook SHALL complete without awaiting network/RPC work, so the incoming view attaches immediately and the outgoing view is never held frozen waiting for data.
+Every bottom-nav menu-tab route SHALL NOT block the router view swap on its data fetch. The route's `loading()` hook SHALL complete without awaiting network/RPC work, so the incoming view attaches immediately and the outgoing view is never held frozen waiting for data. This applies to every route reachable from the bottom nav, not to an enumerated subset: adding a tab brings that route under this requirement. A `loading()` hook SHALL also not assign render-bound state synchronously from a cache, because that places the full render inside the component's first render exactly as an `await` places it ahead of the view swap; reflecting render state belongs to the component lifecycle. A route MAY deliberately block navigation on data when showing the incoming view in an intermediate state would be wrong (for example, parking an unverified fan before a payment step); such a case SHALL be documented as an exception at the call site.
 
 #### Scenario: Tapping a menu tab swaps the view immediately
 - **WHEN** the user taps a bottom-nav menu tab whose route fetches data
@@ -16,8 +21,18 @@ Bottom-nav menu-tab routes (My Artists, Dashboard, Discovery) SHALL NOT block th
 - **THEN** the data fetch SHALL be started as fire-and-forget (not awaited inside `loading()`)
 - **AND** `loading()` SHALL resolve as soon as its synchronous prelude completes
 
+#### Scenario: A cached result does not collapse into the first render
+- **WHEN** a menu-tab route can serve its content from a cache on re-entry
+- **THEN** `loading()` SHALL NOT assign that cached content to render-bound state
+- **AND** the cached content SHALL be reflected from the component lifecycle, so the first render shows the route's loading presentation rather than the full content
+
+#### Scenario: A newly added bottom-nav tab is covered
+- **WHEN** a route is added to the bottom navigation
+- **THEN** that route SHALL satisfy this requirement from the moment it appears in the nav
+- **AND** no enumeration of route names SHALL be required to bring it into scope
+
 ### Requirement: In-flight state is shown via the route's existing UI
-While a menu-tab route's data is loading, the attached view SHALL present that route's existing loading indicator (spinner/skeleton) or empty state, and SHALL surface an error state if the fetch fails.
+While a menu-tab route's data is loading, the attached view SHALL present that route's existing loading indicator (spinner/skeleton) or empty state, and SHALL surface an error state if the fetch fails. This SHALL hold on re-entry as well as on first load: a route serving cached content SHALL present its loading indicator for as long as the content is not yet reflected, and SHALL NOT present an empty state during that window.
 
 #### Scenario: Spinner shown immediately after attach
 - **WHEN** a menu-tab route attaches with its fetch still in flight
@@ -28,6 +43,11 @@ While a menu-tab route's data is loading, the attached view SHALL present that r
 - **WHEN** a menu-tab route's non-blocking fetch rejects with a non-abort error
 - **THEN** the view SHALL display the route's error or empty state
 - **AND** navigation SHALL NOT have been blocked by the failure
+
+#### Scenario: Re-entry shows the loading presentation, never an empty flash
+- **WHEN** a menu-tab route re-enters with cached content not yet reflected
+- **THEN** the view SHALL show that route's loading presentation
+- **AND** the route's empty state SHALL NOT be rendered at any point before the load has settled
 
 ### Requirement: Synchronous prelude remains in loading()
 The synchronous setup a menu-tab route performs before fetching — toggling `isLoading`, restoring filters from URL query params, hydrating persisted guest state, and computing banner visibility — SHALL run inside `loading()` before the fetch routine is invoked, so this state is correct on the first render. The request `AbortController` is owned by the fetch routine (see "Re-entrant load"), not created separately in the `loading()` body, so there is a single owner and the routine never aborts a controller the `loading()` body just created.
@@ -74,4 +94,3 @@ A menu-tab route's rendering SHALL be order-independent: whether the fetched dat
 #### Scenario: Data resolves after the view attaches
 - **WHEN** a non-blocking fetch resolves after the route's view has attached
 - **THEN** the observed data change SHALL update the rendered content (e.g. the canvas seeds artists once its context exists)
-
