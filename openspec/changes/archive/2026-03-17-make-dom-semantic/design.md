@@ -63,10 +63,11 @@ dialog/card 内のボタングループは `<footer>` とする。
 - ただし `@scope` 内でのみ。グローバルな要素セレクタは作らない
 - 不要になったクラス名は削除する
 
-### 6. Maximum div nesting depth
+### 6. `<div>` のネスト深さの上限
 
-Consecutive nested `<div>` elements within a component template SHALL NOT exceed 2 levels. Nesting beyond that is treated as a signal that a wrapper serves neither a layout nor a semantic purpose and is a candidate for removal.
-This is not enforced by automated lint (no static analysis over template structure exists yet), so it is a review-time checklist item.
+コンポーネントテンプレート内で連続してネストする `<div>` は 2 階層までとする。それを超えるネストは、レイアウト上の役割もセマンティックな意味も持たないラッパーが存在する兆候とみなし、削除の候補とする。
+
+**理由**: テンプレート構造に対する静的解析は現時点で存在しないため、自動 lint では強制せず、レビュー時のチェック項目とする。
 
 ## Risks / Trade-offs
 
