@@ -1,0 +1,1 @@
+Provides the application's outer shell: brand identity, page transition animations, runtime configuration loading, an authentication guard for protected routes, and a consistent layout frame with tactile interaction feedback throughout the app.

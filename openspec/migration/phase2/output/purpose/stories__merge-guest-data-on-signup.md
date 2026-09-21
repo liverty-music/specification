@@ -1,0 +1,1 @@
+Ensures artist follows, hype levels, and region preferences a guest accumulates before creating an account are stored locally, then merged into the new account on successful sign-up and cleared afterward, with reconciliation if a merge was interrupted.

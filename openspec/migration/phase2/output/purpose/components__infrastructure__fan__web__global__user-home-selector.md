@@ -1,0 +1,1 @@
+Provides the shared control that lets a user select and see their home area preference, used consistently in both onboarding and settings.

@@ -1,0 +1,1 @@
+Refunds a buyer's captured ticket payment when issuance fails or an event is cancelled or postponed, and claws back funds already split out to the organizer when a refund or dispute occurs.

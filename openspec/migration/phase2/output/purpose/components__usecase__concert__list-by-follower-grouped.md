@@ -1,0 +1,1 @@
+Lists upcoming concerts for the artists a user follows, grouped by date and classified into home, nearby, and away lanes for display on their dashboard.

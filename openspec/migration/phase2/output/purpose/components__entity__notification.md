@@ -1,0 +1,1 @@
+Defines the Notification entity, its payload for a concert-related alert, and its persistence as a uniquely identified record.

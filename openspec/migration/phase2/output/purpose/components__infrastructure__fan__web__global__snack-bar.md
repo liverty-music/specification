@@ -1,0 +1,1 @@
+Provides a persistent snack bar that notifies the user when an app update is ready to install, with a prominent action to apply it.

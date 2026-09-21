@@ -1,0 +1,1 @@
+Provides the reusable page header shown across routes, rendering the localized page title and optional trailing actions, switching instantly on navigation, and showing authentication status.

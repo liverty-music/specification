@@ -1,0 +1,1 @@
+Presents the guest-facing landing page that introduces the product, offers passkey sign-in, lets a visitor switch language, and previews a live interactive dashboard demo before redirecting already-authenticated users onward.

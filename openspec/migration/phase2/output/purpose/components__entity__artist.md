@@ -1,0 +1,1 @@
+Defines the Artist entity, its identity, official site, imagery collected from external sources, derived logo color profile, and the standalone surface for artist operations independent of concerts.

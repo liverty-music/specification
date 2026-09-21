@@ -1,0 +1,100 @@
+# Hosted Login
+
+## Purpose
+
+Manage identity, authentication, and authorization policies for the Liverty Music platform.
+
+## Requirements
+
+### Requirement: Configure Login Policy
+
+The system SHALL establish a login policy on the **`liverty-music` product
+org** (the org that hosts the OIDC application and end-user accounts) that
+enforces passwordless authentication to improve user security and
+eliminate reliance on passwords. This policy SHALL apply ONLY to the
+`liverty-music` product org and MUST NOT be inherited by the `admin` role
+org, which has its own admin-oriented login policy governed by separate
+requirements.
+
+#### Scenario: Apply Strict Passkeys Policy on product org
+
+- **WHEN** Pulumi stack is applied
+- **THEN** the login policy for the `liverty-music` product org SHALL be
+  configured
+- **AND** `PasswordlessType` SHALL be "ALLOWED"
+- **AND** `UserLogin` SHALL be false (Enforces Passkeys-only)
+- **AND** `AllowExternalIdp` SHALL be false
+
+#### Scenario: Admin org isolation
+
+- **WHEN** the `liverty-music` product org login policy is applied
+- **THEN** the policy SHALL NOT be applied to the `admin` role org
+- **AND** the `admin` role org SHALL retain a separate login policy that
+  allows external IdP sign-in (see "Configure Admin Org Login Policy")
+
+### Requirement: Configure Login UI Branding
+
+The system SHALL configure Liverty Music brand colors for the hosted Login UI v2 of the `liverty-music` product application, so its login flow presents product branding instead of the default Zitadel appearance. Because Zitadel defines branding only at instance or organization level (there is no application-level label policy), the system SHALL define an org-level label policy on the product org AND enforce it for the product application via the project's private-labeling setting. Branding SHALL be provisioned declaratively via the Zitadel Pulumi provider and activated.
+
+#### Scenario: Brand colors on the product org label policy
+
+- **WHEN** the Zitadel resources for the `liverty-music` product org are provisioned
+- **THEN** a label policy SHALL be applied to that org with the Liverty Music brand colors (primary, background, font, warn — including dark variants) sourced from the product's brand palette
+- **AND** the policy SHALL set `disableWatermark` so no Zitadel watermark is shown
+- **AND** the policy SHALL be activated (set active) so the hosted Login UI v2 renders it
+
+#### Scenario: Enforce product branding per application
+
+- **WHEN** the product `Project` is provisioned
+- **THEN** its private-labeling setting SHALL be `ENFORCE_PROJECT_RESOURCE_OWNER_POLICY`
+- **AND** the product application's login flow SHALL render the product org's label policy regardless of the logging-in user's organization
+- **AND** the separate admin/console org login SHALL remain unaffected (it is a different org)
+
+#### Scenario: Hosted Login UI v2 reflects the brand colors
+
+- **WHEN** an end user reaches the hosted login screen (`/ui/v2/login/*`) through the product OIDC flow
+- **THEN** the screen SHALL display the Liverty Music brand colors (buttons, links, background, text)
+- **AND** it SHALL NOT display the default unbranded Zitadel colors or watermark
+
+#### Scenario: Light and dark themes are branded
+
+- **WHEN** the login screen is rendered in either light or dark mode
+- **THEN** the corresponding brand colors SHALL be applied for that theme
+
+#### Scenario: Logo and login text remain out of scope
+
+- **WHEN** the login branding is applied
+- **THEN** only brand colors and theme SHALL be customized
+- **AND** no login logo SHALL be set (deferred until a brand logo asset exists)
+- **AND** login interface text strings SHALL remain the Zitadel Login UI v2 defaults except where a later capability (Localize Login UI Text for the Product) provisions a translation override
+
+### Requirement: Configure OIDC Token Lifetimes
+
+The system SHALL manage Zitadel instance-level OIDC token lifetimes explicitly via Infrastructure as Code, rather than relying on Zitadel built-in defaults. The configured values SHALL be:
+
+| Setting | Value | Purpose |
+|---|---|---|
+| `accessTokenLifetime` | `30m` | Short-lived access token limits exposure if leaked; cannot be revoked before expiry once issued. |
+| `refreshTokenIdleExpiration` | `30d` | Inactivity window — a refresh token unused for 30 days becomes invalid. |
+| `refreshTokenExpiration` | `90d` | Absolute lifetime — after 90 days the user must re-authenticate regardless of activity. |
+
+**Rationale**: A never-miss-a-live notification app benefits from long-lived sessions so fans stay signed in across gaps, while a short access-token lifetime keeps the security exposure window small. Pinning these values in IaC makes the intent durable and reviewable instead of implicitly inheriting whatever Zitadel ships as defaults.
+
+#### Scenario: OIDC token lifetimes provisioned via IaC
+
+- **WHEN** the Zitadel Pulumi stack is applied in an environment
+- **THEN** the instance-level OIDC settings SHALL set `accessTokenLifetime` to `30m`
+- **AND** SHALL set `refreshTokenIdleExpiration` to `30d`
+- **AND** SHALL set `refreshTokenExpiration` to `90d`
+
+#### Scenario: Access token rejected after its lifetime
+
+- **WHEN** an access token is older than `30m`
+- **THEN** the backend JWT validation SHALL reject requests bearing that token as expired
+- **AND** the client SHALL obtain a fresh access token via the refresh-token grant
+
+#### Scenario: Session ends after refresh token absolute expiry
+
+- **WHEN** a refresh token reaches its `90d` absolute expiration
+- **THEN** Zitadel SHALL reject further refresh-token grants for that token
+- **AND** the user SHALL be required to re-authenticate

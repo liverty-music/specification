@@ -1,0 +1,1 @@
+Provides the primary bottom tab navigation for moving between the app's main routes, showing an animated selection state and switching the visible route immediately on tap without waiting for its data to load, hiding on fullscreen routes.

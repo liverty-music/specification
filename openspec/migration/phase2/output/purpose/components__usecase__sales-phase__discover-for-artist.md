@@ -1,0 +1,1 @@
+Discovers and tracks the ticket sales-phase timeline for an artist's concerts, extracting details such as lottery deadlines and result dates verbatim from sources, converging repeated discoveries on a consistent phase, and running on a schedule.

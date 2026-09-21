@@ -1,0 +1,1 @@
+Prompts a signed-in user, once onboarding is complete, to grant push-notification permission, limiting itself to one prompt per session, taking priority over other disruptive prompts, and never reappearing once dismissed.

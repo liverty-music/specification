@@ -1,0 +1,287 @@
+# Welcome
+
+## Purpose
+
+Presents the guest-facing landing page that introduces the product, offers passkey sign-in, lets a visitor switch language, and previews a live interactive dashboard demo before redirecting already-authenticated users onward.
+
+## Requirements
+
+### Requirement: Passkey Authentication CTA
+
+The system SHALL provide both a primary `[Get Started]` CTA and a secondary `[Log In]` CTA to unauthenticated users on the landing page. When the dashboard preview is available (Screen 2 is rendered), both CTAs SHALL be rendered only within Screen 2 adjacent to the preview, and SHALL NOT appear on the hero screen (Screen 1). When the dashboard preview is unavailable and Screen 2 is not rendered, both CTAs SHALL fall back to inline placement within Screen 1 so that unauthenticated users always have a way to start onboarding or sign in. Both CTAs SHALL always be reachable on the page regardless of `onboardingStep` value. Both CTAs SHALL be rendered as `<button>` elements for accessibility.
+
+#### Scenario: With preview data — both CTAs appear on Screen 2 only
+
+- **WHEN** an unauthenticated user visits `/` and the preview data is available
+- **THEN** the system SHALL display a primary `[Get Started]` button on Screen 2
+- **AND** the system SHALL display a secondary `[Log In]` button on Screen 2, below the primary CTA
+- **AND** the primary CTA SHALL use the brand accent color with a filled background
+- **AND** the secondary CTA SHALL use an outline/ghost style with brand color text
+- **AND** both buttons SHALL have a minimum tap target of 48px height
+- **AND** neither `[Get Started]` nor `[Log In]` SHALL be rendered on Screen 1
+
+#### Scenario: Without preview data — CTAs fall back to Screen 1
+
+- **WHEN** an unauthenticated user visits `/` and preview data is unavailable (no Screen 2)
+- **THEN** the system SHALL display the `[Get Started]` and `[Log In]` buttons inline on Screen 1 below the hero copy
+- **AND** the system SHALL NOT render the `[See how it works ↓]` scroll-affordance button (since there is no Screen 2 to scroll to)
+- **AND** the hero SHALL occupy the full viewport (`block-size: 100svh`) rather than the 95svh peek configuration used when Screen 2 follows
+
+#### Scenario: Get Started initiates onboarding without clearing guest data
+
+- **WHEN** an unauthenticated user taps `[Get Started]` (on Screen 2 or the Screen 1 fallback)
+- **THEN** the system SHALL reset the onboarding step to DISCOVERY
+- **AND** the system SHALL navigate to `/discovery`
+- **AND** the system SHALL NOT clear previously stored guest artist data (`guest.follows`)
+
+#### Scenario: Log In initiates OAuth sign-in
+
+- **WHEN** an unauthenticated user taps `[Log In]` (on Screen 2 or the Screen 1 fallback)
+- **THEN** the system SHALL initiate the Zitadel OIDC sign-in flow
+
+#### Scenario: No alternative auth methods displayed
+
+- **WHEN** the landing page is displayed
+- **THEN** the system SHALL NOT display email/password fields or social login buttons (Google, Spotify, etc.)
+- **AND** Passkey SHALL be the sole authentication method
+
+### Requirement: Hero Screen Scroll Affordance
+
+The landing page Screen 1 SHALL provide a single, clearly labeled affordance that invites the user to reveal the guided demo below, whenever the demo is rendered. This affordance SHALL be the only primary interactive control on Screen 1 (apart from the language switcher) when the demo is present, preserving the "message-first" intent of the hero screen. When the demo is not rendered (no preview data), the scroll-affordance SHALL NOT be displayed, because there is no target to scroll to — the inline CTA fallback takes its place (see `Passkey Authentication CTA`). The affordance label and behavior are unchanged from the prior single-preview-screen design.
+
+#### Scenario: Scroll affordance button is rendered when preview is available
+
+- **WHEN** an unauthenticated user visits `/` and views Screen 1, and preview data is available
+- **THEN** the system SHALL display a labeled scroll-affordance button within Screen 1
+- **AND** the button SHALL be rendered as a `<button>` element
+- **AND** the button SHALL have a minimum tap target of 44×44px
+- **AND** the button SHALL be focusable via keyboard navigation
+- **AND** the visible focus indicator SHALL be preserved under keyboard focus
+
+#### Scenario: Tapping the scroll affordance reveals the preview
+
+- **WHEN** the user taps or activates the scroll-affordance button
+- **THEN** the system SHALL scroll the viewport to the guided demo below the hero
+- **AND** the scrolling SHALL use smooth-scroll animation by default
+
+#### Scenario: Reduced motion preference disables smooth scroll
+
+- **WHEN** the user has `prefers-reduced-motion: reduce` set in their environment
+- **AND** the user activates the scroll-affordance button
+- **THEN** the system SHALL jump directly to the demo without a smooth-scroll animation
+
+#### Scenario: Scroll affordance hidden when preview data is unavailable
+
+- **WHEN** an unauthenticated user visits `/` and preview data is unavailable
+- **THEN** the system SHALL NOT render the scroll-affordance button
+- **AND** the hero Screen 1 SHALL instead render inline `[Get Started]` and `[Log In]` CTAs (see `Passkey Authentication CTA`)
+
+#### Scenario: Button label is localized
+
+- **WHEN** the landing page is rendered in Japanese
+- **THEN** the button label SHALL display the Japanese scroll-affordance label
+- **WHEN** the landing page is rendered in English
+- **THEN** the button label SHALL display the English scroll-affordance label
+
+### Requirement: Guest-Friendly Welcome Copy
+
+The Welcome page SHALL communicate that no account is required to try the product, and SHALL place this message where the primary CTA's intent is most clearly disambiguated.
+
+#### Scenario: Guest-friendly copy displayed near primary CTA
+
+- **WHEN** the Welcome page renders
+- **THEN** the page SHALL display copy equivalent to "アカウント不要でお試しいただけます" in immediate visual proximity to the primary CTA
+- **AND** the copy MAY be rendered as a caption directly below the CTA label, as a sub-line above the CTA group, or as inline microcopy adjacent to the button — whichever placement keeps the message visible without requiring the user to scroll past the CTA
+- **AND** the copy SHALL NOT be hidden inside an expandable affordance or relegated below other less-relevant text
+
+### Requirement: Authenticated User Redirect
+
+The system SHALL redirect already-authenticated users away from the landing page to the Dashboard, regardless of `onboardingStep` value.
+
+#### Scenario: Authenticated user visits landing page
+
+- **WHEN** an authenticated user navigates to `/`
+- **THEN** the system SHALL redirect to the Dashboard with full unrestricted access
+- **AND** the system SHALL NOT check `onboardingStep`
+
+#### Scenario: Redirect target check fails
+
+- **WHEN** the redirect fails due to a network or API error
+- **THEN** the system SHALL display the landing page with an error toast: "Could not determine account status. Please try signing in again."
+- **AND** the system SHALL NOT crash to a white screen
+- **AND** the system SHALL allow the user to manually navigate via the Log In button
+
+### Requirement: Welcome Page Language Switcher
+
+The landing page SHALL provide a language toggle for unauthenticated users to switch between supported locales without requiring sign-in.
+
+#### Scenario: Language toggle visible on welcome page
+- **WHEN** an unauthenticated user visits the welcome page
+- **THEN** the system SHALL display a language toggle on Screen 1, below the hero subtitle and above the scroll-affordance button (or the inline fallback CTA group when preview data is unavailable)
+- **AND** the toggle SHALL show all supported languages (EN, JA)
+- **AND** the current active language SHALL be visually distinguished (e.g., bold or underline)
+
+#### Scenario: Switching language on welcome page
+- **WHEN** the user taps a language option
+- **THEN** the system SHALL call `i18n.setLocale(lang)` to update all translated strings immediately
+- **AND** the system SHALL persist the choice via `localStorage.setItem('language', lang)`
+- **AND** no page reload SHALL be required
+
+#### Scenario: Language preference persists across sessions
+- **WHEN** the user selects a language on the welcome page and later returns
+- **THEN** the i18next language detector SHALL read the persisted `language` key from localStorage
+- **AND** the application SHALL start in the previously selected language
+
+### Requirement: Guided Product Demo Sequence
+
+When preview data is available, the landing page SHALL present a single guided product-demo sequence below the hero that replays the product's core journey — new-concert notification, auto-collected timetable, and ticket/goods detail — as one connected flow. The sequence SHALL begin when it scrolls into view. It SHALL communicate all three value pillars. All sequence motion SHALL be disabled when the user prefers reduced motion, and the demo's end state (an interactive timetable the visitor can explore) SHALL remain reachable regardless of whether the sequence animates.
+
+#### Scenario: Demo begins on scroll entry
+
+- **WHEN** an unauthenticated user with preview data available scrolls the demo into view
+- **THEN** the system SHALL start the sequence by presenting a mock new-concert push notification
+- **AND** the notification SHALL animate in to draw attention (a drop-in entrance) indicating new activity, and a pulsing hint SHALL invite the visitor to advance
+
+#### Scenario: Notification advances to the timetable
+
+- **WHEN** the user taps the mock notification
+- **THEN** the system SHALL transition the notification into the concert timetable
+- **WHEN** the user does not interact within a short interval
+- **THEN** the system SHALL auto-advance to the timetable so the sequence always completes
+
+#### Scenario: Notification transitions into the timetable
+
+- **WHEN** the sequence advances from the notification to the timetable and reduced motion is not preferred
+- **THEN** the system SHALL play a sequential transition — the notification is dismissed, and only after it has fully left does the timetable appear — so the two views never overlap
+- **WHEN** reduced motion is preferred
+- **THEN** the system SHALL present the timetable directly without transition motion
+
+#### Scenario: Reduced motion presents the interactive end state directly
+
+- **WHEN** the user has `prefers-reduced-motion: reduce` set in their environment
+- **THEN** the system SHALL present the interactive timetable without the notification, transition, or attention-cue motion
+- **AND** the timetable and its detail interaction SHALL remain fully usable
+
+#### Scenario: Content present without motion
+
+- **WHEN** demo motion does not run for any reason (reduced motion or script failure)
+- **THEN** the interactive timetable SHALL still be rendered and reachable in the document
+
+### Requirement: Interactive Timetable Detail
+
+The landing page SHALL present the concert auto-collection pillar as the product's own timetable, rendered as a complete composed frame, and SHALL make its concert cards interactive so that activating a card opens the product's real concert detail view. The detail view SHALL surface the official-information link, venue information, and the calendar affordance. Controls that require authentication (such as the ticket-journey tracker) SHALL NOT be shown to the anonymous visitor. The landing page SHALL guide the visitor to this interaction rather than relying on a hover-only affordance.
+
+#### Scenario: Timetable shown as a composed frame
+
+- **WHEN** an unauthenticated user reaches the timetable and preview data is available
+- **THEN** the system SHALL display the concert timetable as a complete composed frame, not a cropped peek
+- **AND** the system SHALL communicate that this timetable is auto-collected from the user's followed artists
+
+#### Scenario: Guidance to open a concert
+
+- **WHEN** the timetable becomes interactive in the demo
+- **THEN** the system SHALL surface a guidance affordance directing the visitor to open a concert card
+- **AND** the guidance SHALL NOT depend on a pointer hover state
+
+#### Scenario: Card opens the real detail view
+
+- **WHEN** the unauthenticated user activates a concert card
+- **THEN** the system SHALL open the product's real concert detail view for that concert
+- **AND** the view SHALL surface official-information, venue, and calendar affordances
+- **AND** the system SHALL NOT display authentication-gated controls such as the ticket-journey tracker
+
+#### Scenario: Timetable absent without preview data
+
+- **WHEN** preview data is unavailable
+- **THEN** the system SHALL NOT render the demo or the timetable
+- **AND** the landing page SHALL fall back to the hero inline CTA behavior defined by `Passkey Authentication CTA`
+
+### Requirement: New-Concert Notification Cue
+
+The landing page SHALL represent the new-concert push notification pillar with a mock notification card that stands in for an in-product new-concert alert, since a real operating-system push cannot be rendered inside the page. The mock notification SHALL be the entry point of the guided demo sequence and SHALL communicate that new concerts are delivered via push notification. Its attention-cue motion SHALL be disabled under reduced motion.
+
+#### Scenario: Notification communicates the push value
+
+- **WHEN** an unauthenticated user reaches the demo
+- **THEN** the system SHALL display a mock notification card representing a new-concert alert
+- **AND** the card SHALL communicate that new concerts are delivered via push notification
+
+### Requirement: Hero Kinetic Brand Treatment
+
+The landing page hero SHALL present the product brand wordmark with a continuous, ambient kinetic treatment consistent with the product's festival-spotlight visual vocabulary, so the hero reads as a living product rather than static text. The treatment SHALL animate only compositor-friendly properties and SHALL be disabled under reduced motion, leaving the brand fully legible.
+
+#### Scenario: Brand wordmark is kinetic
+
+- **WHEN** an unauthenticated user views the hero and reduced motion is not preferred
+- **THEN** the system SHALL animate the brand wordmark with an ambient kinetic treatment
+- **WHEN** reduced motion is preferred
+- **THEN** the system SHALL render the brand wordmark in a static, fully legible state
+
+### Requirement: Ambient Background
+
+The landing page SHALL render an ambient background effect behind its content to give the dark surface depth and reinforce the product's discovery theme. The effect SHALL be decorative, SHALL NOT capture pointer input, SHALL keep foreground content legible, and SHALL be disabled or static under reduced motion.
+
+#### Scenario: Ambient background is decorative and non-blocking
+
+- **WHEN** the landing page renders
+- **THEN** the system SHALL display the ambient background behind the content
+- **AND** the ambient background SHALL NOT intercept pointer interaction with the content
+- **WHEN** reduced motion is preferred
+- **THEN** the system SHALL disable or freeze the ambient background motion
+
+### Requirement: Landing Page Value Pillars Scope
+
+The landing page SHALL communicate only the product capabilities that currently exist: concert-information auto-collection, ticket and goods information, and new-concert push notifications. The landing page SHALL NOT advertise capabilities that are not currently offered, and SHALL NOT present device-frame chrome, usage statistics, social-proof material, or a promotional name marquee as value signals.
+
+#### Scenario: Only existing capabilities are advertised
+
+- **WHEN** the landing page renders its demo and value content
+- **THEN** the system SHALL present only concert-information auto-collection, ticket and goods information, and new-concert push notifications
+- **AND** the system SHALL NOT present any capability that is not currently offered
+- **AND** the system SHALL NOT present usage statistics, social-proof material, or a promotional name marquee as value signals
+
+### Requirement: Live Dashboard Preview on Welcome Page
+
+The system SHALL display an interactive, read-only dashboard preview on the Welcome page using live concert data from a curated popular-artist fallback list.
+
+#### Scenario: Preview loads with live data via ListWithProximity RPC
+
+- **WHEN** the Welcome page renders
+- **THEN** the system SHALL call the `ListWithProximity` RPC with the curated artist UUIDs and a fixed home location of Tokyo (JP, JP-13)
+- **AND** the system SHALL render the response using the `<concert-highway>` custom element in readonly mode
+- **AND** concerts SHALL be correctly classified into home/nearby/away lanes by the backend's proximity calculation
+
+#### Scenario: Fallback when artist has no concerts
+
+- **WHEN** a curated artist has no upcoming concerts in the database
+- **THEN** that artist SHALL be excluded from the preview data
+- **AND** the system SHALL continue fetching from the remaining list until at least 5 artists with concerts are found
+
+#### Scenario: Preview is read-only
+
+- **WHEN** the user interacts with concert cards in the preview
+- **THEN** tapping a card SHALL NOT navigate or open a detail sheet
+- **AND** the preview SHALL serve as a visual demonstration only
+
+#### Scenario: Two-screen scroll-snap layout with hero-only Screen 1 and preview-with-CTA Screen 2
+
+- **WHEN** the Welcome page renders with preview data
+- **THEN** the page SHALL use a two-screen scroll-snap layout composed of:
+  - **Screen 1 (hero)**: brand, headline, subtitle, language selector, and a single `[See how it works ↓]` scroll-affordance button — with no `[Get Started]` or `[Log In]` buttons present
+  - **Screen 2 (preview + CTA)**: a contextual label, the `<concert-highway>` preview (capped at approximately 30 concerts), a fade-out gradient mask at the bottom, and the `[Get Started]` + `[Log In]` CTAs
+- **AND** Screen 1 SHALL be sized so that the top edge of Screen 2 is faintly visible above the fold of the initial viewport (Screen 1 occupying approximately 95% of the small viewport height, revealing approximately 5% of Screen 2 as a peek)
+- **AND** the scroll container SHALL use `scroll-snap-type: y proximity` so the viewport snaps only when the user's scroll position is near a snap point, allowing mid-scroll reading of the peek
+- **AND** the user SHALL be able to scroll between screens via natural scroll gestures, with the proximity-snap providing soft alignment at the two snap points
+- **AND** the system SHALL NOT render a floating arrow or icon-only scroll-hint element at any position
+
+#### Scenario: Guest-friendly copy shown alongside preview
+
+- **WHEN** the Welcome page renders
+- **THEN** the page SHALL display the text "アカウント不要でお試しいただけます" near the CTA buttons on Screen 2
+
+#### Scenario: Artist list is environment-configurable
+
+- **WHEN** the application is built for a given environment
+- **THEN** the curated artist UUID list SHALL be sourced from the `VITE_PREVIEW_ARTIST_IDS` environment variable (comma-separated UUIDs)
+- **AND** the corresponding artist display names SHALL be sourced from the `VITE_PREVIEW_ARTIST_NAMES` environment variable (comma-separated, same order as IDs)
+- **AND** all IDs in the list SHALL be valid UUIDs accepted by the `ConcertService/List` RPC

@@ -1,0 +1,1 @@
+Shows a single, transient spotlight overlay with a tooltip that highlights one UI element at a time to guide the user, without blocking interaction, and delegates any tap on the highlighted target to normal navigation.

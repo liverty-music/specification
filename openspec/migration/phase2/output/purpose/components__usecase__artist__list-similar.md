@@ -1,0 +1,1 @@
+Returns artists similar to a given artist, automatically persisting any externally discovered artists so every result has a stable database-backed identity, with a caller-controlled result limit.

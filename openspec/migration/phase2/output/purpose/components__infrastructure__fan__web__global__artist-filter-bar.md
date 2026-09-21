@@ -1,0 +1,1 @@
+Provides the artist selection filter sheet used to narrow the concert list to chosen artists, pre-selecting the user's followed artists and offering a ticket-journey status facet to authenticated users.

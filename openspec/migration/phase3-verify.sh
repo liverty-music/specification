@@ -4,9 +4,10 @@
 set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 WT="$(mktemp -d "${TMPDIR:-/tmp}/specs-next-check.XXXXXX")"
-cleanup() { git -C "$ROOT" worktree remove --force "$WT" >/dev/null 2>&1 || true; rm -rf "$WT"; }
+cleanup() { mise trust --untrust "$WT/.mise/config.toml" >/dev/null 2>&1 || true; git -C "$ROOT" worktree remove --force "$WT" >/dev/null 2>&1 || true; rm -rf "$WT"; }
 trap cleanup EXIT
 git -C "$ROOT" worktree add --detach "$WT" HEAD >/dev/null 2>&1
+mise trust "$WT/.mise/config.toml" >/dev/null 2>&1 || true   # the shim refuses untrusted worktree configs
 rm -rf "$WT/openspec/specs"
 cp -r "$ROOT/openspec/specs.next" "$WT/openspec/specs"
 rm -rf "$WT/openspec/specs.next"

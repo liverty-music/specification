@@ -1,0 +1,1 @@
+Turns a discovered concert into a persisted event, grouping related tour dates into a series, deduplicating against existing records on a natural key, resolving the venue to a canonical record, and either publishing, staging for review, or skipping when the venue cannot be resolved.

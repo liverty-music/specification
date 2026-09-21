@@ -1,0 +1,1 @@
+Notifies a user's subscribed devices when concerts matching their followed artists are newly discovered, sending a localized message that deep-links to the earliest matching concert.

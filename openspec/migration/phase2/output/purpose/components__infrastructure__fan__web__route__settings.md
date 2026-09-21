@@ -1,0 +1,1 @@
+Provides the settings screen where a user manages their account, push notification and language preferences, and analytics and session-replay consent, adapting its account section for guests and signed-in users alike.

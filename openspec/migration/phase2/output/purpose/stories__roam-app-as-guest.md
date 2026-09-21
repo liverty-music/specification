@@ -1,0 +1,1 @@
+Lets an unauthenticated guest navigate the app freely once past the dashboard, reach Settings and Welcome during onboarding, and see account-only features hidden rather than navigation-blocked, guarded by a single auth check.

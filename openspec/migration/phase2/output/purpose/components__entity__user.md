@@ -1,0 +1,1 @@
+Defines the User entity: its identity, home area and preferred language fields, validation rules, and the conventions authenticated per-user operations follow to scope access to the correct user and report a missing user.

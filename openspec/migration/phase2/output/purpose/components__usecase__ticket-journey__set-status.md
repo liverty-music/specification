@@ -1,0 +1,1 @@
+Lets a user record and update their personal ticket-acquisition status for a concert, maintaining a single authoritative status per user per event as they progress from tracking through applying to paying.

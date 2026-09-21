@@ -1,0 +1,1 @@
+Lists the artists a user follows along with each artist's hype level, for use by clients that need the user's current follow set.

@@ -1,0 +1,1 @@
+Lets a user follow an artist, recording the relationship with a default hype level and triggering a background concert search for that artist on first follow, without letting search failures block the follow action.

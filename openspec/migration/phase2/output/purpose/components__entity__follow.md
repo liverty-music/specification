@@ -1,0 +1,1 @@
+Defines the Follow entity's hype level, its valid tiers of enthusiasm for a followed artist, and the rules that determine whether a given hype level should trigger a push notification.

@@ -1,0 +1,1 @@
+Provisions a backend account for a newly authenticated user, resolving or creating their user record and capturing their home area and preferred display language at signup.

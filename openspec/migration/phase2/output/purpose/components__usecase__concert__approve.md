@@ -1,0 +1,1 @@
+Lets an operator approve a discovered concert for publication, resolving conflicts with existing duplicate events, preserving series grouping, and idempotently persisting the concert and its venue.

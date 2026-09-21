@@ -1,0 +1,138 @@
+# Brand Vocabulary
+
+## Purpose
+
+Manage the canonical vocabulary used in user-facing copy across Liverty Music while preserving the protobuf entity layer as the authoritative ubiquitous-language source. Classify each term into one of two layers — entity-grounded labels (Layer A, surfaced through a dedicated `entity.*` i18n namespace mirroring protobuf entity names) or brand expressions without entity backing (Layer B, catalogued in this spec) — so terminology drift cannot occur silently and JA/EN locales may legitimately choose asymmetric surface labels for the same entity.
+
+## Requirements
+
+### Requirement: Two-Layer Vocabulary Model
+The system SHALL classify every user-facing term into one of two layers based on whether the term corresponds to a protobuf entity definition.
+
+#### Scenario: Term refers to a protobuf entity
+- **WHEN** a user-facing term refers to a concept that is defined as a protobuf message, enum, or enum value in `specification/proto/`
+- **THEN** the term SHALL be managed under Layer A (entity-grounded labels)
+- **AND** its label SHALL live in the frontend i18n JSON under the `entity.*` namespace
+
+#### Scenario: Term has no entity backing
+- **WHEN** a user-facing term is a coined brand expression, marketing phrase, lane name, or product noun that has no corresponding protobuf entity
+- **THEN** the term SHALL be managed under Layer B (brand expressions)
+- **AND** its canonical JA and EN forms SHALL be listed in `openspec/specs/brand-vocabulary/spec.md`
+
+#### Scenario: Layer B term becomes entity-modeled
+- **WHEN** a Layer B term is later modeled as a protobuf entity
+- **THEN** the term SHALL be migrated to Layer A
+- **AND** the corresponding row SHALL be removed from this spec's brand expression table
+
+---
+
+### Requirement: Asymmetric Locale Labels
+The system SHALL allow JA and EN entries under the same `entity.*` key to use different surface words, treating asymmetric localization as a normal i18n choice rather than a defect.
+
+#### Scenario: Lint accepts asymmetric values
+- **WHEN** the brand-vocabulary lint script runs against an `entity.*` key whose JA and EN values differ in meaning (not just spelling)
+- **THEN** the script SHALL NOT flag the difference as an error
+
+---
+
+### Requirement: Deprecated Colloquial Terms
+
+The system SHALL maintain a registry of colloquial Japanese terms whose use in user-facing copy is forbidden in favor of entity-grounded vocabulary, and SHALL provide the canonical replacement guidance for each.
+
+> **Enforcement model**: This requirement is normative (the `SHALL NOT` clauses below are binding on any change to JA user-facing copy). Until the `check-brand-vocabulary` lint script is extended to flag arbitrary banned tokens (currently it enforces `entity.*` JA/EN parity only), enforcement relies on (a) the registry below acting as the single source of truth and (b) reviewer attention during PR review. The follow-up to add automated token scanning is tracked separately and does not block any change that respects the rules.
+
+#### Scenario: 推し is deprecated in favor of entity-grounded vocabulary
+
+- **WHEN** authoring or reviewing JA user-facing copy in `frontend/src/locales/ja/translation.json`
+- **THEN** the token `推し` SHALL NOT appear as a noun standing in for "artist a user follows"
+- **AND** the noun SHALL be expressed as `アーティスト` (mapping to the protobuf `Artist` entity)
+- **AND** the act of marking an artist as followed SHALL be expressed with the verb `フォローする` (mapping to the `FollowService.Follow` RPC semantics)
+- **AND** typical surface forms SHALL follow these patterns:
+  - CTA verb phrase: `アーティストをフォローする`
+  - Outcome phrase: `フォローしたアーティストの<…>`
+  - Possessive phrase: `好きなアーティストの<…>` (when the relationship has not yet been formalized as a follow)
+
+#### Scenario: Registry of deprecated terms maintained in this spec
+
+- **WHEN** this requirement is in effect
+- **THEN** this spec SHALL list every deprecated colloquial JA term alongside its canonical replacement guidance
+- **AND** the initial registry SHALL contain at least:
+  - `推し` → noun `アーティスト` (Layer A, entity-grounded) + verb `フォローする`
+
+#### Scenario: Adding a new deprecated term
+
+- **WHEN** the team agrees that a previously-used JA colloquial term is no longer acceptable in user-facing copy
+- **THEN** a row SHALL be added to this spec's deprecated-terms registry before or alongside the change that removes its remaining usages
+- **AND** the row SHALL state the deprecated token and its canonical replacement guidance
+
+---
+
+### Requirement: Brand Expression Registry
+The system SHALL maintain a single registry table in this spec listing every Layer B brand expression with its canonical JA and EN forms.
+
+#### Scenario: Initial registry contents
+- **WHEN** this spec is interpreted at the current revision
+- **THEN** the registry SHALL include the following Layer B expressions, each with identical JA and EN surface forms unless otherwise noted:
+  - `Product name — full form` — JA: `Liverty Music` / EN: `Liverty Music` (used in the HTML `<title>`, the web app manifest `name` member, and prose)
+  - `Product name — home-screen short form` — JA: `LivertyMusic` / EN: `LivertyMusic` (the web app manifest `short_name` member, chosen without a space to minimize home-screen label truncation)
+  - `Navigation tab — Timetable` — JA: `Timetable` / EN: `Timetable`
+  - `Navigation tab — Discovery` — JA: `Discovery` / EN: `Discovery`
+  - `Navigation tab — My Artists` — JA: `My Artists` / EN: `My Artists`
+  - `Navigation tab — Tickets` — JA: `Tickets` / EN: `Tickets`
+  - `Navigation tab — Settings` — JA: `Settings` / EN: `Settings`
+  - `Personal timetable promise` — JA: `あなただけのタイムテーブル` / EN: `your personal timetable`
+  - `HOME STAGE lane` — JA: `HOME STAGE` / EN: `HOME STAGE`
+  - `NEAR STAGE lane` — JA: `NEAR STAGE` / EN: `NEAR STAGE`
+  - `AWAY STAGE lane` — JA: `AWAY STAGE` / EN: `AWAY STAGE`
+  - `Hype concept label` — JA: `Hype` / EN: `Hype`
+  - `Hype tier — Watch` — JA: `Watch` / EN: `Watch`
+  - `Hype tier — Home` — JA: `Home` / EN: `Home`
+  - `Hype tier — Nearby` — JA: `Nearby` / EN: `Nearby`
+  - `Hype tier — Away` — JA: `Away` / EN: `Away`
+
+#### Scenario: Navigation tab labels are invariant across locales
+- **WHEN** a navigation tab label is rendered in any UI surface (bottom navigation bar or a route's page header)
+- **THEN** the label SHALL be the invariant English form from the registry, identical in JA and EN locales
+- **AND** a route's page header SHALL bind the shared `nav.*` label rather than a separate localized title key
+
+#### Scenario: Adding a new brand expression
+- **WHEN** a new coined phrase is introduced into user-facing copy
+- **AND** the phrase has no corresponding protobuf entity
+- **THEN** a row SHALL be added to this spec's registry table before or alongside the change that introduces the phrase
+
+#### Scenario: Removing a graduated expression
+- **WHEN** a Layer B expression becomes entity-modeled and is migrated to Layer A
+- **THEN** its row SHALL be removed from this spec's registry table in the same change that performs the migration
+
+#### Scenario: Japanese gloss is prose, not label
+- **WHEN** a Japanese-locale help or descriptive sentence introduces a Layer B brand expression that may be unfamiliar to first-time JA readers (e.g. `Hype`)
+- **THEN** the sentence MAY include a parenthetical gloss (e.g. `Hype（熱量）`) inline within the prose
+- **AND** the gloss SHALL NOT be promoted to the canonical surface label or stored as a separate i18n key
+
+#### Scenario: Registry SHALL NOT include deprecated colloquial terms
+
+- **WHEN** a colloquial JA term (such as `推し`) is identified as deprecated per the Deprecated Colloquial Terms requirement
+- **THEN** the term SHALL NOT be listed in the Layer B brand expression registry
+- **AND** the term SHALL instead be tracked in the deprecated-terms registry with its canonical entity-grounded replacement
+
+### Requirement: Hype Tier Surface Labels Are Layer B
+The system SHALL treat the four hype tier surface labels (`Watch`, `Home`, `Nearby`, `Away`) and the Hype concept label itself as Layer B brand expressions rendered invariantly across JA and EN locales, NOT as Layer A entity-grounded labels.
+
+#### Scenario: Hype tier label is invariant English
+- **WHEN** any UI surface (help sheet, table column header, slider legend, prose) renders a hype tier label
+- **THEN** the surface form SHALL be one of `Watch`, `Home`, `Nearby`, `Away` regardless of the active locale
+- **AND** the surface form SHALL NOT be sourced from an `entity.hype.values.*` i18n key
+- **AND** the JA-only tier translations (`観測`, `地元`, `近郊`, `全国`) SHALL NOT appear anywhere in user-facing copy
+
+#### Scenario: Hype concept label is invariant English
+- **WHEN** any UI surface labels the four-tier concept itself (e.g. as a column-group label, a help sheet section title prefix, an accessibility name)
+- **THEN** the surface form SHALL be `Hype` regardless of the active locale
+- **AND** the surface form SHALL NOT be sourced from an `entity.hype.label` i18n key
+- **AND** the JA-only concept label `Stage` SHALL NOT appear as a label for the Hype concept
+
+#### Scenario: Lint script does not enforce parity on Hype keys
+- **WHEN** the brand-vocabulary lint script processes the translation files
+- **THEN** the script SHALL NOT require `entity.hype.label` or `entity.hype.values.*` to exist in either locale
+- **AND** the script SHALL flag any newly-introduced `entity.hype.*` key as a vocabulary-layer violation (Layer A namespace used for what is now a Layer B concept)
+
+---
