@@ -33,6 +33,8 @@ Relevant infrastructure is managed via Pulumi in `cloud-provisioning/src/gcp/`:
 
 **Alternative considered**: Manual quota override via GCP Console. Rejected because it is not reproducible, not auditable, and would be overwritten if Pulumi ever re-creates the project resource.
 
+**Exhaustion behavior for Places API**: once the daily override is hit, Places API (New) returns HTTP 429; `pkg/api.FromHTTP` maps this to `codes.ResourceExhausted`, which the backend treats as a non-retryable error for venue resolution — that single venue is skipped rather than retried, so the quota failure is scoped to the venue that triggered it, not the whole discovery run.
+
 **Quota metric identifiers** (from GCP):
 - Places API (New): `places.googleapis.com/v1/places_requests` with limit name `PLACES_REQUESTS-DAILY-per-project`
 - Vertex AI: `aiplatform.googleapis.com/generate_content_requests` with limit name `generate-content-requests-per-minute-per-project-per-base-model` (note: GCP exposes per-minute quota override; we set a low enough value to effectively cap daily usage)

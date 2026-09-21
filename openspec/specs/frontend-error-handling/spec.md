@@ -110,25 +110,6 @@ The system SHALL handle navigation errors gracefully using Aurelia 2 router conf
 
 ---
 
-### Requirement: Declarative Async Error Handling with promise.bind
-The system SHALL use Aurelia 2's `promise.bind` template pattern for all async data rendering to provide declarative pending, success, and error states.
-
-#### Scenario: Data loading with pending state
-- **WHEN** a component loads async data via `promise.bind`
-- **THEN** the template SHALL display a loading skeleton or spinner during the pending state
-
-#### Scenario: Data loading succeeds
-- **WHEN** the bound promise resolves successfully
-- **THEN** the template SHALL render the data in the `then` block
-
-#### Scenario: Data loading fails with error UI
-- **WHEN** the bound promise rejects
-- **THEN** the template SHALL display an error message in the `catch` block
-- **AND** the error UI SHALL include a "Retry" button that re-invokes the data loading function
-- **AND** the error UI SHALL display a brief, user-friendly description of what failed
-
----
-
 ### Requirement: Service Error Recovery Patterns
 The system SHALL replace silent error swallowing in services with explicit error states that callers can distinguish from empty-data states.
 

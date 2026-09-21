@@ -18,7 +18,8 @@ The `database-schema-designer` skill defines schema design policies (no audit co
 ## Capabilities
 
 ### New Capabilities
-- `schema-lint`: Automated static analysis of schema.sql against database design policies
+
+(none — see design.md)
 
 ### Modified Capabilities
 - `database-migration`: `make check` now includes `lint-schema` target; CI `lint.yml` gains a `schema-lint` job

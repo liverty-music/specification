@@ -23,7 +23,7 @@ Current state:
 
 ### 1. Use `msg.Context()` in consumer handlers instead of `context.Background()`
 
-The `wotel.Trace()` middleware already calls `msg.SetContext(ctx)` with a span-enriched context before invoking the handler. Handlers just need to read it.
+The `wotel.Trace()` middleware already calls `msg.SetContext(ctx)` with a span-enriched context before invoking the handler. Handlers just need to read it. Once a handler threads that context through to its downstream work — database queries, any nested `NewEvent()`/publish calls — those operations automatically become children of the propagated span, giving an unbroken trace from the original publisher through the consumer and anything it triggers next.
 
 **Alternative considered**: Extract trace context manually from message metadata using `propagation.TraceContext{}`. Rejected because the middleware already does this — manual extraction would duplicate work.
 

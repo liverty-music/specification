@@ -356,16 +356,6 @@ The ConcertService RPC handlers SHALL have a dedicated handler timeout of 120 se
 - **THEN** the default handler timeout (60 seconds) SHALL apply
 - **AND** the ConcertService timeout SHALL NOT affect other services
 
-### Requirement: GKE Gateway timeout for ConcertService
-
-The GKE Gateway backend policy `timeoutSec` SHALL be set to 150 seconds to accommodate the ConcertService handler timeout (120 seconds) plus network overhead buffer.
-
-#### Scenario: Gateway timeout exceeds handler timeout
-
-- **WHEN** a request is routed through the GKE Gateway to the backend
-- **THEN** the Gateway timeout (150 seconds) SHALL be greater than the ConcertService handler timeout (120 seconds)
-- **AND** the Gateway SHALL NOT prematurely terminate ConcertService requests
-
 ### Requirement: ListByLocation RPC
 
 The system SHALL provide an unauthenticated RPC `ConcertService.ListByLocation` that accepts a `GeoLocation` reference point and a date range, returning all concerts in the DB whose venues are HOME or NEARBY relative to the reference point, grouped by date and proximity.
@@ -428,4 +418,3 @@ The system SHALL provide an unauthenticated RPC `ConcertService.ListByLocation` 
 - **AND** AWAY-tier `ProximityGroup` entries (where `len(Home)+len(Nearby)==0` after classification) SHALL be stripped from the result before returning; entire date-group entries with no HOME or NEARBY concerts SHALL be omitted, not returned as empty rows
 
 ---
-

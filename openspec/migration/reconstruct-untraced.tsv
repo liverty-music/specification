@@ -1,0 +1,39 @@
+old_spec	old_req_name	disposition
+apex-frontend-serving	Apex serving SHALL route to the `fan-web-app` frontend Service via HTTPRoute hostname matching	OUT:runbook
+app-error-log-alerting	Notification via Slack	OUT:runbook
+authentication	JWKS Caching	OUT:design-doc
+authentication	Token Validation Performance	OUT:design-doc
+authentication	Authentication Error Handling	OUT:design-doc
+cloud-sql-connector	Configuration Validation	OUT:runbook
+continuous-delivery	Internal Web UI Access	OUT:runbook
+continuous-delivery	Git Repository Integration	OUT:runbook
+continuous-delivery	Root Application	OUT:runbook
+continuous-delivery	Image Build and Publish	OUT:runbook
+continuous-delivery	Secure CI Authentication	OUT:runbook
+continuous-delivery	Backend Application Provisioning	OUT:runbook
+css-linting	Stylelint compatible with modern CSS at-rules	OUT:lint
+css-state-management	Three-layer responsibility separation	OUT:lint
+css-state-management	Discrete visual state via `data-*.bind`	OUT:lint
+css-state-management	Parent container strategy for shared state flags	OUT:lint
+css-state-management	Total `style` attribute ban in templates	OUT:lint
+css-state-management	CSS `attr()` migration path	OUT:lint
+css-state-management	Animation lifecycle via CSS events	OUT:lint
+css-state-management	No if.bind for visual-only visibility	OUT:lint
+css-state-management	Custom attributes for JS→CSS bridge only	OUT:lint
+cube-css-architecture	Utility layer for single-purpose helpers	OUT:lint
+deployment-infrastructure	Workload Identity Federation (WIF)	OUT:runbook
+deployment-infrastructure	Pulumi OIDC Provider	OUT:runbook
+deployment-infrastructure	Deployment Service Account	OUT:runbook
+deployment-infrastructure	Native Managed OIDC Deployment	OUT:runbook
+deployment-infrastructure	Automated PR Flow	OUT:delete
+deployment-infrastructure	Automated Merge Flow (Dev)	OUT:delete
+deployment-infrastructure	Manual Deployment Flow (Prod)	OUT:delete
+dev-db-access	A Cloud SQL Auth Proxy Deployment SHALL exist in the dev cluster	OUT:runbook
+dev-db-access	Dev DB access procedure SHALL be discoverable from backend/AGENTS.md	OUT:runbook
+dev-db-access	Dev DB access SHALL use existing IAM permissions with no new service accounts	OUT:runbook
+frontend-hosting	Caddy SHALL serve `/config.json` with no-store header	OUT:design-doc
+frontend-testing	Custom attribute tests use createFixture with style verification	OUT:lint
+gcp-cost-guardrails	Vertex AI Per-Minute Quota Limit (Dev)	OUT:runbook
+gke-standard-infrastructure	Shielded GKE Nodes SHALL be enabled on the Spot node pool	OUT:design-doc
+interceptor-chain-ordering	Interceptor Execution Order	OUT:design-doc
+interceptor-chain-ordering	Interceptor Ordering Documentation	OUT:design-doc

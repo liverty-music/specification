@@ -20,7 +20,6 @@ Discovery ページの検索バーには 3 つの UX 問題がある。(1) follo
 ### Modified Capabilities
 
 - `artist-discovery-dna-orb-ui`: 検索結果 UI の変更（行全体タップ化、+ アイコン削除）と follow 後の自動遷移
-- `aurelia-reactivity`: BubblePool.followedIds の公開と Aurelia ネイティブ Set 観測によるテンプレートバインディング
 
 ## Impact
 

@@ -13,12 +13,11 @@ prod 環境の月次コストが想定を上回り、SKU レベルの調査で 3
 ## Capabilities
 
 ### New Capabilities
-- `billing-export-infrastructure`: GCP Billing Export の受け皿となる BigQuery dataset と billing-export service account への IAM binding を Pulumi で provision する。Standard / Detailed / Pricing の各 export を同一 dataset に集約し、コスト分析 SQL の基盤として恒久運用する。
+(none — see design.md)
 
 ### Modified Capabilities
 - `otel-collector-deployment`: metric pipeline の filter ポリシーを要件として追加。"OTLP で受け取った metric のうち、現在の運用で必要なものだけを Cloud Monitoring に export する" 振る舞いを規定する。
 - `argocd-image-automation`: 「prod 環境では image-updater は無効」「prod は semver pin 経由でのみ image 更新」という運用ポリシーを明文化する。dev は現状通り auto-update を継続。
-- `argocd-gateway-deployment`: prod overlay の Argo CD pod minimum 構成 (image-updater / notifications / applicationset の有効/無効と argocd-server のレプリカ数) を要件化する。
 - `database`: prod の Cloud SQL availability に関する要件を「launch フェーズは ZONAL、本格運用フェーズで REGIONAL HA を選択する」段階的ポリシーに緩める。
 
 ## Impact

@@ -45,11 +45,6 @@ instead of blocking on plumbing.
   Vite MPA entry in the `frontend` repo built with bundle isolation from the
   consumer SPA, Zitadel OIDC authentication via the admin org + Google Workspace
   IDP, an authenticated route guard, and a post-login welcome placeholder.
-- `admin-console-hosting`: serving and delivery for `admin.liverty-music.app` —
-  a separate container image and Kubernetes Deployment/Service, a dedicated
-  HTTPRoute hostname on the shared external gateway, certmap + Cloud DNS entries,
-  per-host runtime config delivery, and the ArgoCD/image-updater wiring. Also
-  covers the new admin-org `ApplicationOidc` Zitadel resource.
 
 ### Modified Capabilities
 

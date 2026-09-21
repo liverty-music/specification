@@ -14,7 +14,7 @@ The Aurelia 2 frontend web application is currently not hosted anywhere and cann
 ## Capabilities
 
 ### New Capabilities
-- `frontend-hosting`: Kubernetes-based hosting infrastructure for serving the Aurelia 2 SPA with automated GitOps deployment, container image builds, and HTTPS ingress
+(none — see design.md)
 
 ### Modified Capabilities
 <!-- No existing capabilities are being modified -->

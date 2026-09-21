@@ -12,7 +12,7 @@ Dev environment deployments currently require manual intervention to update imag
 ## Capabilities
 
 ### New Capabilities
-- `argocd-image-automation`: Automated container image updates for dev environment using ArgoCD Image Updater with in-cluster parameter overrides (zero commit spam)
+(none — see design.md)
 
 ### Modified Capabilities
 <!-- No existing capabilities are being modified -->

@@ -14,7 +14,7 @@ Both frontend and backend integrate the OpenTelemetry SDK and generate trace dat
 
 ### New Capabilities
 
-- `otel-collector-deployment`: Defines the OTel Collector Kubernetes deployment, configuration, service account, and Workload Identity binding for exporting traces to Cloud Trace.
+(none — see design.md)
 
 ### Modified Capabilities
 

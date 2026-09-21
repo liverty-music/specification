@@ -185,6 +185,14 @@ spec:
 - GitHub Release checklist includes "update cloud-provisioning prod overlay"
 - ArgoCD will show Out-of-Sync if prod manifest not updated
 
+### Risk 5: Image Updater Cannot Reach GAR or the ArgoCD API
+**Risk:** Image Updater loses connectivity to Google Artifact Registry, or an ArgoCD API call to set a parameter override fails.
+**Mitigation:**
+- Both failure modes are logged with error details
+- Image Updater retries automatically on the next 30-second polling interval
+- Dev deployments keep running the currently deployed image until the update succeeds
+- Operators can inspect failures via `kubectl logs -n argocd -l app.kubernetes.io/name=argocd-image-updater`
+
 ## Migration Plan
 
 ### Phase 1: Installation (Day 1)

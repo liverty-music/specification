@@ -77,26 +77,6 @@ The test suite SHALL verify that `TicketEmailUsecase.Update()` fetches the exist
 - **THEN** the system SHALL call the journey repository to upsert the ticket journey status
 - **AND** the journey status SHALL be derived from the email type and parsed data
 
-### Requirement: TicketEmailUsecase Helper Tests
-
-The test suite SHALL verify the internal helper methods `buildNewTicketEmail()` and `determineJourneyStatus()`.
-
-#### Scenario: buildNewTicketEmail constructs entity from parsed data
-
-- **WHEN** `buildNewTicketEmail()` is called with parsed email data containing dates
-- **THEN** the returned `NewTicketEmail` SHALL contain correctly parsed timestamps for `PaymentDeadline`, `LotteryStart`, `LotteryEnd`
-- **AND** the `ApplicationURL` SHALL be set from the parsed data
-
-#### Scenario: determineJourneyStatus with valid mapping
-
-- **WHEN** `determineJourneyStatus()` is called with an email type and parsed data that map to a known status
-- **THEN** the returned status SHALL match the expected `TicketJourneyStatus`
-
-#### Scenario: determineJourneyStatus with no mapping (default)
-
-- **WHEN** `determineJourneyStatus()` is called with data that does not map to a known status
-- **THEN** the system SHALL return the default journey status
-
 ### Requirement: ArtistImageSyncUsecase SyncArtistImage Tests
 
 The test suite SHALL verify that `ArtistImageSyncUsecase.SyncArtistImage()` correctly orchestrates artist fetch, image resolution, logo color analysis, and fanart update.
@@ -135,36 +115,6 @@ The test suite SHALL verify that `ArtistImageSyncUsecase.SyncArtistImage()` corr
 - **AND** the artist repository returns an error when fetching the artist
 - **THEN** the system SHALL propagate the error
 - **AND** no fanart update SHALL occur
-
-### Requirement: Adapter mapper test coverage
-
-All adapter mapper files under `internal/adapter/rpc/mapper/` SHALL have corresponding test files verifying Proto-to-Entity and Entity-to-Proto conversions.
-
-#### Scenario: Concert mapper tested
-
-- **WHEN** a Concert entity is converted to Proto and back
-- **THEN** all fields (event ID, artist, venue, dates, title) SHALL round-trip correctly
-- **AND** nil/zero-value fields SHALL be handled without panic
-
-#### Scenario: Follow mapper tested
-
-- **WHEN** a FollowedArtist entity is converted to Proto
-- **THEN** hype level, artist details, and follow metadata SHALL map correctly
-
-#### Scenario: Ticket mapper tested
-
-- **WHEN** a Ticket entity is converted to Proto
-- **THEN** token ID, tx hash, event ID, and minted timestamp SHALL map correctly
-
-#### Scenario: TicketEmail mapper tested
-
-- **WHEN** a TicketEmail entity is converted to Proto
-- **THEN** email type, parsed data fields, and optional timestamps SHALL map correctly
-
-#### Scenario: TicketJourney mapper tested
-
-- **WHEN** a TicketJourney entity is converted to Proto
-- **THEN** journey status enum and event reference SHALL map correctly
 
 ### Requirement: Messaging layer test coverage
 

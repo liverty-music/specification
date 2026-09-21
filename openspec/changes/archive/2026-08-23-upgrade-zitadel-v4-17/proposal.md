@@ -47,10 +47,8 @@ independent version bump.
 ## Capabilities
 
 ### Modified Capabilities
-- `zitadel-self-hosted-deployment`: the pinned Zitadel runtime version moves to
-  v4.17.1, and the deployment requirement gains an explicit **version-upgrade
-  procedure** (pinned-tag edit → boot-time migration → post-upgrade
-  verification, prod-direct while dev is stopped).
+
+(none — see design.md)
 
 ## Impact
 

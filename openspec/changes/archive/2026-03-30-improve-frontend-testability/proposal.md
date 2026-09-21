@@ -12,7 +12,7 @@ Several Aurelia 2 frontend components access browser APIs (`window.location`, `h
 
 ### New Capabilities
 
-- `frontend-router-query-params`: Using Aurelia Router's `RouteNode.queryParams` API instead of `window.location.search` in route lifecycle hooks.
+(none — see design.md)
 
 ### Modified Capabilities
 

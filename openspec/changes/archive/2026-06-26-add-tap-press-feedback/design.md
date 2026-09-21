@@ -45,7 +45,7 @@ iOS Safari only applies `:active` when the element (or an ancestor) has `cursor:
 
 - [A future `<a>`- or `<div>`-based primary control is added without `:active`] → The baseline only covers `<button>`; new non-button primary controls must add their own `:active` (captured as a spec requirement so reviewers catch it).
 - [`transform` on a press establishes a containing block / paint layer] → Targets are leaf controls with no fixed-position descendants; effect is negligible.
-- [Inconsistent reduced-motion fallbacks per element (opacity vs background)] → Acceptable: each fallback fits its element type; the single rule "drop motion, keep a non-motion cue" is captured in the spec.
+- [Inconsistent reduced-motion fallbacks per element (opacity vs background)] → Acceptable: each fallback fits its element type under the single rule "drop motion, keep a non-motion cue" — the button baseline falls back to a reduced-opacity press cue, and the nav tab falls back to a brief accent-tinted background.
 
 ## Migration Plan
 

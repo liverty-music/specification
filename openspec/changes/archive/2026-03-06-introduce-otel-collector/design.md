@@ -98,3 +98,11 @@ service:
 - **Single point of failure**: One Collector replica means trace loss during restarts or OOM. → Acceptable for dev/staging. For prod, add a second replica or HPA.
 - **Backend-only traces in Cloud Trace**: Without frontend span export, Cloud Trace shows only backend spans. Frontend-to-backend latency is not directly measurable. → Acceptable trade-off — backend spans include the full RPC processing time, which is the primary debugging need.
 - **GKE Autopilot resource costs**: The Collector pod adds resource cost. → Mitigate with tight resource requests/limits and Spot VM nodeSelector (consistent with dev cost optimization policy).
+
+## Migration Plan
+
+1. Add the `otel-collector` Kustomize base/overlay under `k8s/namespaces/otel-collector/overlays/dev` and register an ArgoCD Application `otel-collector` in namespace `argocd`, pointing at that overlay with automated sync (prune + self-heal) enabled, following the existing App of Apps pattern.
+2. Set `TELEMETRY_OTLP_ENDPOINT` to `otel-collector.otel-collector.svc.cluster.local:4318` uniformly across the backend server, the backend consumer, and the concert-discovery CronJob Deployment/CronJob manifests, so all three export to the same in-cluster Collector.
+3. Verify traces appear in Cloud Trace for a sample of backend requests after sync.
+
+**Rollback:** Unset `TELEMETRY_OTLP_ENDPOINT` on the backend workloads (spans are simply dropped, matching current behavior) and remove the ArgoCD Application; ArgoCD prunes the Collector resources.

@@ -1,18 +1,5 @@
 ## MODIFIED Requirements
 
-### Requirement: Authenticate via Cloud SQL Connector
-
-The application SHALL use the Cloud SQL Go Connector for database connectivity when `ENVIRONMENT` is NOT `local`.
-
-#### Scenario: Non-local Environments
-
-- **WHEN** `ENVIRONMENT` is `development`, `staging`, or `production`
-- **AND** `DATABASE_INSTANCE_CONNECTION_NAME` is provided
-- **THEN** application initializes `cloudsqlconn.Dialer` with PSC enabled
-- **AND** `pgx` uses this dialer to connect
-- **AND** connection uses IAM Auth and Private Service Connect
-- **AND** the DSN SHALL include `search_path` set to the configured `DATABASE_SCHEMA`
-
 ### Requirement: Standard Connection for Local
 
 The application SHALL use standard `pgx` connection when running locally.

@@ -38,6 +38,7 @@ The gap is a runtime secret delivery pipeline: GCP Secret Manager → K8s Pod en
 - ESO provides clear error reporting via `ExternalSecret` status conditions. CSI Driver failures manifest as opaque Pod scheduling errors.
 - ESO is a CNCF Sandbox project with broad community support and multi-provider capability.
 - CSI Driver's only advantage (native GKE addon) is offset by ESO's straightforward Helm-based deployment under ArgoCD.
+- ESO installs the `externalsecrets.external-secrets.io`, `secretstores.external-secrets.io`, and `clustersecretstores.external-secrets.io` CRDs; the controller pod running in the `external-secrets` namespace is the health signal to watch.
 
 **Alternatives considered**:
 - **CSI Driver**: Native GKE addon but requires file-based consumption or complex syncSecret configuration.
@@ -61,7 +62,9 @@ The gap is a runtime secret delivery pipeline: GCP Secret Manager → K8s Pod en
 **Rationale**:
 - GKE clusters are already environment-specific (`liverty-music-dev`, `liverty-music-prod`).
 - `ClusterSecretStore` avoids per-namespace SecretStore duplication.
-- Authentication uses existing Workload Identity binding -- the `backend-app` GCP SA gets `roles/secretmanager.secretAccessor`.
+- Authentication uses existing Workload Identity binding -- the `backend-app` GCP SA gets `roles/secretmanager.secretAccessor`, and only that SA; no other service account is granted access unless explicitly provisioned.
+
+The store is named `gcp-secret-manager` and references the environment's GCP project ID; its `Ready` condition is the signal that Workload Identity authentication is wired correctly.
 
 ### Decision 4: Secret naming convention in GCP Secret Manager
 
@@ -73,6 +76,15 @@ The gap is a runtime secret delivery pipeline: GCP Secret Manager → K8s Pod en
 - Kebab-case secret names align with existing resource naming conventions.
 - Maps cleanly to ExternalSecret `remoteRef.key` field.
 - Secret value is sourced from Pulumi ESC config key `gcp.lastFmApiKey` (set with `--secret`).
+- Secrets and their versions are provisioned inline in `KubernetesComponent` via `pulumi.requireSecret()`, so the plaintext value never lands in Pulumi state.
+
+### Decision 4b: `ExternalSecret` maps GCP secrets to `config.go`'s env var names
+
+**Choice**: One `ExternalSecret` per namespace holds a `data` array mapping each GCP Secret Manager `remoteRef.key` to the K8s Secret key that `config.go` already expects (e.g. `lastfm-api-key` → `LASTFM_API_KEY`), targeting a single K8s Secret named `backend-secrets`.
+
+**Rationale**:
+- Adding a future secret is then just one GCP SM entry plus one `data` array entry -- no application code change, per the Goals' extensibility requirement.
+- The backend Deployment consumes `backend-secrets` via `envFrom: secretRef` (Decision 1), so a missing `backend-secrets` K8s Secret surfaces as a Pod startup failure with a clear missing-reference error rather than a silent empty env var.
 
 ### Decision 5: Rotation via Reloader
 

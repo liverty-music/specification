@@ -73,6 +73,8 @@ Backend constraints unique to this change:
 
 **Risk**: the matrix may produce partial success — e.g., 3/4 retags succeed and 1 fails (transient AR error, IAM propagation delay, etc.). The 3 successful retags wrote prod AR tags that are now immutable per `prod-image-tag-immutability`.
 
+The digest-resolve step itself retries before treating a missing dev tag as a real failure: a release can be cut seconds after the triggering push, while the dev build for that commit is still in flight. Each matrix entry retries the digest-resolve up to 5 additional times (6 attempts total) with 60-second waits between attempts — about 5 minutes max — to absorb that race window. `strategy.fail-fast: false` is set so one matrix entry's failure doesn't cancel the other 3, which is what makes the isolated-re-run recovery below possible.
+
 **Chosen response**: documented in the runbook update (`docs/runbooks/prod-image-tag-pinning.md` extension to the "Retag failure recovery" section). The operator SHALL NOT attempt to re-trigger the failed retag in isolation — instead, the recovery path is:
 
 1. Investigate the per-matrix-entry failure log.

@@ -21,8 +21,7 @@ The `dev` environment currently depends on Zitadel Cloud (`dev-svijfm.us1.zitade
 - `zitadel-action-webhook`: Defines the backend `/pre-access-token` webhook handler that receives Zitadel Actions v2 `preaccesstoken` function calls, verifies the `PAYLOAD_TYPE_JWT` request via the existing JWKS validator, and returns an `append_claims` response that injects the user's `email` claim into the issued access token.
 
 ### Modified Capabilities
-- `identity-management`: The auto-verify-email behavior migrates from an Actions v1 JavaScript Action on the `INTERNAL_AUTHENTICATION/PRE_CREATION` flow to an Actions v2 Execution + Target pointing at a backend webhook. New requirements are added for the email-claim injection Execution and for the v2 Target / Execution provisioning flow in Pulumi. Existing requirements for Organization, Project, OIDC Application, and Login Policy are unaffected at the requirement level (only the provider `domain` input changes, which is configuration, not spec behavior).
-- `authentication`: The backend gains a requirement for verifying Zitadel-issued Actions v2 webhook JWTs using the same JWKS already trusted for end-user access tokens, and for populating the issued access token `email` claim via the new v2 injection path rather than the v1 JS Action.
+- `identity-management`: The auto-verify-email behavior migrates from an Actions v1 JavaScript Action on the `INTERNAL_AUTHENTICATION/PRE_CREATION` flow to an Actions v2 Execution + Target pointing at a backend webhook. Existing requirements for Organization, Project, OIDC Application, and Login Policy are unaffected at the requirement level (only the provider `domain` input changes, which is configuration, not spec behavior).
 
 ## Impact
 

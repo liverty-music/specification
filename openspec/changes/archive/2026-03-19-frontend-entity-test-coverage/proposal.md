@@ -14,7 +14,7 @@ The `frontend-entity-logic` change extracted pure business logic into `entities/
 
 ### New Capabilities
 
-- `entity-test-coverage`: Comprehensive unit test suite for all pure functions in `entities/` and `adapter/view/` layers
+(none — see design.md)
 
 ### Modified Capabilities
 

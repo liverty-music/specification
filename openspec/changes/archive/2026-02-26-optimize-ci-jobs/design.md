@@ -37,6 +37,7 @@ Uses the existing `ci` env in `atlas.hcl` (dev URL = service container). No clou
 Enforce thresholds via vitest config rather than CLI flags to keep the workflow clean:
 - statements: 20%, branches: 70%, functions: 30%, lines: 20%
 - These match the values in issue #23 and reflect the current test coverage baseline.
+- The coverage summary is posted as a PR comment via `vitest-coverage-report-action`, updated on every push to the PR rather than accumulating duplicate comments.
 
 ### 4. Permissions per workflow
 | Workflow | Required permissions |
@@ -51,6 +52,12 @@ Enforce thresholds via vitest config rather than CLI flags to keep the workflow 
 
 ### 5. CI success gate job
 Add a final `ci-success` job with `needs: [lint, test, ...]` and `if: always()` that fails if any required job failed. Enables single-check branch protection rules.
+
+### 6. Backend Go formatting is enforced via `gofmt`
+`lint.yml` gains a dedicated format-check job that runs `gofmt -l` and fails if it lists any file, rather than folding formatting into the existing lint job. Keeping it as a separate job makes the failure reason unambiguous in the checks list.
+
+### 7. Benchmark workflow Postgres version matches test.yml
+`benchmark.yml`'s service container is bumped from `postgres:15` to `postgres:18`, matching `test.yml`. Running benchmarks against a different major version than the one CI tests (and production runs) against risks measuring query-planner behavior that doesn't reflect the deployed database.
 
 ## Risks / Trade-offs
 

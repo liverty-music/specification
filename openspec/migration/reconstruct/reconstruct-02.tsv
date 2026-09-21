@@ -1,0 +1,53 @@
+change	old_spec	old_req_name	disposition	design_section	delta_action	proposal_action	note
+2026-03-13-stylelint-plugin-cube-css	cube-css-layer-constraints	`cube/exception-data-attr` requires `data-*` selectors in exception layer	OUT:lint	Decisions §8	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-layer-constraints	`cube/no-visual-in-composition` prohibits visual properties in composition layer	OUT:lint	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-layer-constraints	`cube/utility-single-property` limits properties per utility selector	OUT:lint	Decisions §8	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-layer-constraints	`cube/block-require-scope` requires `@scope` in block layer	OUT:lint	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-layer-constraints	`cube/data-attr-naming` restricts data attribute names in exception layer	OUT:lint	Decisions §8	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-layer-enforcement	`cube/require-layer` rejects CSS rules outside `@layer` blocks	OUT:lint	Decisions §8	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-layer-enforcement	`cube/layer-order` enforces correct `@layer` declaration order	OUT:lint	Decisions §8	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-lint-plugin	Plugin registers all rules under the `cube/` namespace	OUT:lint	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-lint-plugin	Plugin is a local ESM package	OUT:lint	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-lint-plugin	Each rule has comprehensive test coverage	OUT:lint	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-lint-plugin	Shared layer context utility	OUT:lint	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-modern-css-rules	`cube/prefer-vi-over-vw` recommends `vi` unit over `vw`	OUT:lint	Decisions §9	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-modern-css-rules	`cube/require-container-name` enforces naming containers	OUT:lint	Decisions §9	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-modern-css-rules	`cube/prefer-color-mix` recommends `color-mix()` for derived colors	OUT:lint	Decisions §9	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-structural-rules	`cube/block-max-lines` limits block size	OUT:lint	Decisions §9	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-structural-rules	`cube/one-block-per-file` enforces single block per file	OUT:lint	Decisions §9	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-structural-rules	`cube/prefer-where-in-reset` recommends `:where()` in reset and global layers	OUT:lint	Decisions §9	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-token-enforcement	`cube/require-token-variables` enforces `var()` for design token properties	OUT:lint	Decisions §4	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-token-enforcement	`calc()` expressions must contain at least one `var()`	OUT:lint	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-token-enforcement	Structural values bypass token enforcement	OUT:lint	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-token-enforcement	Token definition layers are excluded	OUT:lint	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-token-enforcement	Duration and easing properties are token-enforced	OUT:lint	Decisions §4	deleted-file+dir	removed-new-capability	
+2026-03-13-stylelint-plugin-cube-css	cube-css-token-enforcement	Configurable property list	OUT:lint	Decisions §4	deleted-file+dir	removed-new-capability	
+2026-03-18-email-provider-setup	email-provider	Zitadel SMTP configuration via Pulumi	OUT:design-doc	Decisions §3	deleted-file+dir	removed-new-capability	
+2026-03-18-email-provider-setup	email-provider	Mail subdomain DNS records for DKIM authentication	OUT:design-doc	Decisions §2	deleted-file+dir	removed-new-capability	
+2026-03-18-email-provider-setup	email-provider	ZitadelConfig interface extension	OUT:lint	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-18-email-provider-setup	email-provider	SmtpConfig component isolation	OUT:design-doc	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-18-email-provider-setup	email-provider	Environment-specific Postmark Server separation	OUT:runbook	Decisions §3	deleted-file+dir	removed-new-capability	
+2026-03-18-email-provider-setup	secret-management	Postmark Server API Token in Pulumi ESC	OUT:runbook	Decisions §3	deleted-file+dir	removed-modified-capability	
+2026-03-06-introduce-otel-collector	otel-collector-deployment	OTel Collector Kubernetes Deployment	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-06-introduce-otel-collector	otel-collector-deployment	Workload Identity for Cloud Trace Authentication	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-06-introduce-otel-collector	otel-collector-deployment	Backend Trace Export Configuration	OUT:runbook	Migration Plan	deleted-file+dir	removed-new-capability	
+2026-03-06-introduce-otel-collector	otel-collector-deployment	Cost-Optimized Resource Configuration	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-06-introduce-otel-collector	otel-collector-deployment	ArgoCD GitOps Management	OUT:runbook	Migration Plan	deleted-file+dir	removed-new-capability	
+2026-04-08-optimize-dev-cluster-cost	gke-standard-infrastructure	Dev cluster SHALL use LEGACY_DATAPATH (kube-proxy/iptables)	OUT:design-doc	already-covered	removed-block	none	
+2026-04-08-optimize-dev-cluster-cost	gke-standard-infrastructure	Dev cluster SHALL disable Google Managed Prometheus	OUT:design-doc	already-covered	removed-block	none	
+2026-04-08-optimize-dev-cluster-cost	k8s-resource-right-sizing	Dev environment resource requests use Standard GKE minimums	OUT:runbook	Decisions §4	removed-block	none	
+2026-04-08-optimize-dev-cluster-cost	k8s-resource-right-sizing	KEDA ScaledObjects in dev SHALL cap at maxReplicaCount 1	OUT:runbook	already-covered	removed-block	none	
+2026-02-22-optimize-k8s-dev-resources	continuous-delivery	ArgoCD Manifests	OUT:runbook	already-covered	deleted-file+dir	removed-modified-capability	
+2026-02-22-optimize-k8s-dev-resources	deployment-infrastructure	Dev backend runs single replica	OUT:runbook	already-covered	deleted-file+dir	removed-modified-capability	
+2026-02-22-optimize-k8s-dev-resources	deployment-infrastructure	All dev workload kinds use Spot VM scheduling	OUT:runbook	already-covered	deleted-file+dir	removed-modified-capability	
+2026-08-16-harden-web-push-subscription-lifecycle	notification-lifecycle	Notification fan-out logs zero-recipient skips	OUT:runbook	Decisions	removed-block	none	
+2026-08-16-harden-web-push-subscription-lifecycle	web-push-delivery-alerting	Alert on sustained push delivery failure	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-08-16-harden-web-push-subscription-lifecycle	web-push-delivery-alerting	Alert on active-subscription starvation	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-13-css-cleanup	css-linting	Stylelint enforces stacking context management	OUT:lint	Decisions §1	removed-block	none	
+2026-03-13-css-cleanup	css-linting	Stylelint enforces accessibility media queries	OUT:lint	Decisions §1	removed-block	none	
+2026-05-18-promote-prod-image-via-retag	prod-image-pipeline	CI service accounts MAY hold scoped cross-project AR reader for image promotion	OUT:runbook	already-covered	removed-block	none	
+2026-05-18-promote-prod-image-via-retag	prod-image-pipeline	Frontend prod image SHALL be promoted to prod AR on GitHub Release tags	OUT:runbook	already-covered	removed-block	none	
+2026-04-13-dev-db-local-access	cloud-sql-connector	A standalone Auth Proxy Deployment SHALL exist in dev for local access	OUT:runbook	already-covered	deleted-file+dir	removed-modified-capability	
+2026-03-18-use-proto-artist-entity	frontend-entity-layer	Guest state stores proto Artist	OUT:design-doc	already-covered	removed-block	none	
+2026-08-21-organizer-accounts	organizer-accounts	Organizer lifecycle emits analytics events	OUT:design-doc	already-covered	removed-block	none	
+2026-03-18-manage-ticket-status	ticket-journey	Ticket Journey Database Schema	OUT:design-doc	already-covered	removed-block	none	

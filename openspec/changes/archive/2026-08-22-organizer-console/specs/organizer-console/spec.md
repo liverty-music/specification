@@ -8,19 +8,6 @@ in later changes.
 
 ## ADDED Requirements
 
-### Requirement: Bundle isolation from the consumer SPA and admin console
-
-The organizer console SHALL be built as a separate Vite/Rollup entry point
-(`organizer.html`) such that no organizer-only code is included in any chunk
-loaded by the consumer SPA or the admin console. Adding it MUST NOT increase
-the consumer SPA's downloaded bundle size or regress its Core Web Vitals.
-
-#### Scenario: Consumer page loads no organizer code
-
-- **WHEN** a fan loads the consumer SPA at the consumer hostname
-- **THEN** the consumer entry's chunk graph SHALL contain no module
-  originating from the organizer source directory
-
 ### Requirement: Authenticate operators via org-pinned entry, one client for all tenants
 
 The organizer console SHALL authenticate operators through Zitadel OIDC
@@ -75,24 +62,6 @@ placeholder.
 - **WHEN** an authenticated user whose token lacks the `owner` role loads
   the console
 - **THEN** the guard SHALL deny access to organizer screens
-
-### Requirement: Organizer runtime config resolves the org at login
-
-The organizer console SHALL load its runtime config from `/config.json`
-carrying the Zitadel issuer, the `organizer-console` client id, and
-`apiBaseUrl` pointing at the organizer API host. It SHALL **omit a fixed
-organization id** — one client serves all tenants and the tenant org is
-resolved at login by **org-pinned entry** (an org handle carried in the URL /
-remembered / re-issued sign-in link), not baked into config nor resolved by
-email domain.
-
-#### Scenario: Organizer config omits a fixed org id
-
-- **WHEN** the organizer console loads `/config.json`
-- **THEN** the config SHALL provide the issuer, `organizer-console` client
-  id, and the organizer `apiBaseUrl`
-- **AND** it SHALL NOT require a fixed organization id (the org is resolved
-  per session by org-pinned entry)
 
 ### Requirement: login_hint pre-fill for first-time sign-in
 

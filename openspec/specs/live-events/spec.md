@@ -145,15 +145,6 @@ Both `Concert` and `Event` proto messages SHALL embed a resolved `Venue` object 
 - **WHEN** an `Event` is returned from any RPC
 - **THEN** the `venue` field SHALL be populated with the corresponding `Venue` entity.
 
-### Requirement: Go Entity Field Name Alignment
-
-The Go domain entity `event.Event.LocalEventDate` SHALL be renamed to `LocalDate` to align with the proto VO field name.
-
-#### Scenario: LocalEventDate renamed to LocalDate
-
-- **WHEN** the Go `entity.Event` struct is used in backend code
-- **THEN** the date field SHALL be accessed as `LocalDate` (not `LocalEventDate`).
-
 ### Requirement: Dashboard Lane Classification
 
 The backend SHALL classify live events into three lanes based on the proximity classification model, replacing the previous frontend-only classification.
@@ -216,4 +207,3 @@ The system SHALL provide a mechanism to check whether an artist has upcoming liv
 - **AND** the `ConcertService/List` RPC call fails
 - **THEN** the system SHALL return `false`
 - **AND** the system SHALL log the error
-

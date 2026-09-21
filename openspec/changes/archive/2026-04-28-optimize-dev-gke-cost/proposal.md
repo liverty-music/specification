@@ -16,7 +16,7 @@ The dev GCP project's Compute Engine spend jumped +1403% in the last 30 days (¥
 None.
 
 ### Modified Capabilities
-- `gke-standard-infrastructure`: Add a requirement specifying the Spot node pool boot disk size (30GB) and type (pd-standard), with the rationale that E2 does not support Hyperdisk.
+None.
 
 ## Impact
 

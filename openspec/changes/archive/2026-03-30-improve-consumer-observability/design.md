@@ -36,7 +36,7 @@ The existing `app-error-log-alerting` spec covers ERROR-level log alerting per w
 
 ### Decision 2: Poison Queue consumer emits ERROR logs, does not re-process
 
-**Chosen**: Add a `PoisonConsumer` handler that reads each message from the `POISON` stream, logs it at ERROR level with the original topic and error context, and acks it.
+**Chosen**: Add a `PoisonConsumer` handler that reads each message from the `POISON` stream, logs it at ERROR level with the original topic and the message UUID (for tracing back to the source event), and acks it — it does not re-process the message. Because it's a durable NATS consumer, if the Pod is scaled to zero when a message is poisoned, the message simply waits in the stream; on next Pod startup the consumer drains and logs everything that accumulated while it was down.
 
 **Alternatives considered**:
 - Cloud Monitoring metric-based alert on NATS stream message count — possible but requires exposing NATS metrics to Cloud Monitoring (not yet set up); the log-based approach reuses existing infrastructure.
@@ -48,7 +48,7 @@ The existing `app-error-log-alerting` spec covers ERROR-level log alerting per w
 
 ### Decision 3: Add a secondary NATS lag alert in cloud-provisioning
 
-**Chosen**: Add a Cloud Monitoring log-based alert that triggers when the POISON stream consumer lag exceeds 0 (i.e., any unprocessed poisoned message). This fires even if the PoisonConsumer is down.
+**Chosen**: Add a Cloud Monitoring log-based alert that triggers when the POISON stream consumer lag exceeds 0 (i.e., any unprocessed poisoned message) for more than 5 minutes — the delay tolerates the normal PoisonConsumer startup time after a KEDA scale-up so a routine scale-from-zero doesn't page anyone. This fires even if the PoisonConsumer is down. It notifies through the same Slack and Google Chat channels, and under the same 12-hour notification rate limit, as the existing `app-error-log-alerting` workload alerts, so on-call doesn't need to learn a second alerting surface.
 
 **Rationale**: Defense in depth. The PoisonConsumer alert requires the consumer Pod to be running. A NATS monitoring-based alert catches poison messages that accumulate when the consumer is scaled to zero (KEDA).
 

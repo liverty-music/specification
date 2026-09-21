@@ -48,23 +48,6 @@ Proto `Artist` objects SHALL flow through service clients, state, and into compo
 - **WHEN** `DashboardService` builds `DateGroup[]`
 - **THEN** each `Concert` SHALL contain the proto `Artist` from the follow data, with no intermediate extraction of fanart fields
 
-## ADDED Requirements
-
-### Requirement: Guest state stores proto Artist
-The guest state (`AppState.guest.follows`) SHALL store proto `Artist` objects instead of `{ artistId, name }` tuples. The persistence middleware SHALL serialize `Artist` objects using proto-ES `toJsonString()` and deserialize using `fromJson()` to ensure all fields (including nested `Fanart` and `LogoColorProfile`) survive localStorage round-trips.
-
-#### Scenario: Follow during onboarding persists full Artist
-- **WHEN** a user follows an artist during onboarding discovery
-- **THEN** the guest state SHALL store the full proto `Artist` object (including `fanart` if present) not just `{ artistId, name }`
-
-#### Scenario: Guest state survives page reload
-- **WHEN** the guest state is persisted to localStorage and the page is reloaded
-- **THEN** `fromJson()` SHALL reconstruct proto `Artist` instances with all nested messages (`Fanart`, `LogoColorProfile`) intact
-
-#### Scenario: Guest merge sends correct artist IDs
-- **WHEN** `GuestDataMergeService.merge()` processes guest follows after login
-- **THEN** it SHALL read `artist.id?.value` from the stored proto `Artist` objects
-
 ## REMOVED Requirements
 
 ### Requirement: Entity directory structure

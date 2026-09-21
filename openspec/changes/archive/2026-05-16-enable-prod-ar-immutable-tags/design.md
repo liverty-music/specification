@@ -44,6 +44,8 @@ Alternative considered: hybrid (`newTag: v1.0.0` + `digest: sha256:...` in same 
 
 Alternative considered: pin to combined tag `v1.0.0-3bc2dada` (build pipeline pushes a third tag). Rejected — adds a workflow change with no security benefit over immutable-semver-tag, and the combined tag is no more readable than `v1.0.0` alone.
 
+The semver format accepted in `newTag:` (`^v\d+\.\d+\.\d+(-[A-Za-z0-9.-]+)?$`) allows a pre-release suffix (`-rc1`, `-alpha.2`) but deliberately excludes SemVer build metadata (the `+build.<id>` form): OCI registry tag names have inconsistent support for the `+` character across registries, and build metadata carries no version-ordering weight per SemVer 2.0.0 §10, so it would add no operational signal a release tag doesn't already carry. This capability is also a deliberately stricter subset of `prod-image-pipeline` (added by the in-flight `prepare-prod-service-in` change), which permits either a semver tag or a commit-SHA tag for prod overlays; once both specs are live, the semver-only + immutable-tags rule here supersedes the SHA-tag allowance as the prod convention, because AR Immutable Tags didn't exist yet when `prod-image-pipeline` was authored.
+
 ### D2: Dev AR stays mutable; any other env (incl. future staging) gets immutable-tags by default
 
 ArgoCD Image Updater on dev rewrites the `:latest` and `:main` tags on every push to `liverty-music/{backend,frontend}:main`. Enabling immutable-tags on dev AR would break this — `:latest` would have to be deleted and recreated on every push, which is not how Image Updater works. The cost-benefit: dev exists to be churned; immutability there has zero operational value.
@@ -73,6 +75,8 @@ Forensics use cases (incident response, compliance audit, security review) need 
 - Runtime: add `app.kubernetes.io/version: "1.0.0"` Recommended Label on the Deployment / CronJob (per Kubernetes conventions). This propagates to Pods, gets scraped by Prometheus relabeling (`__meta_kubernetes_pod_label_app_kubernetes_io_version`), and lands in log entries via the OTel resource processor.
 
 The label could also carry the SHA (`app.kubernetes.io/version: "1.0.0-3bc2dada"`), but per Kubernetes label-value constraints (63 chars, DNS-1123) and convention (`version: <semver>`), keep the label semver-only and rely on the comment for SHA trace.
+
+The label is applied via a kustomize patch scoped to the prod overlay only — base manifests never carry it, and dev overlays never receive it, because dev images stay pinned to mutable `:latest`/`:main` tags where a semver label would convey false precision. Propagation to the Pod template is what actually matters, because Prometheus and OTel scrape Pods, not the owning Deployment/CronJob object: for a Deployment the label needs to land on both the Deployment object and `spec.template.metadata.labels`; for a CronJob, which has no `spec.template` of its own, it needs to land on the CronJob object, the Job template (`spec.jobTemplate.metadata.labels`), and the Pod template nested inside it (`spec.jobTemplate.spec.template.metadata.labels`). Kustomize's `labels:` block with `includeTemplates: true` (v4.5+) covers all of these paths in a single patch.
 
 ### D6: GHA push idempotency under immutable-tags
 
@@ -105,7 +109,7 @@ Today's rollback: flip `newTag: <sha-new>` → `newTag: <sha-old>` in overlay PR
 
 Per D4: single PR on `liverty-music/cloud-provisioning` bundles all changes.
 
-1. **PR**: Pulumi `dockerConfig.immutableTags = true` on prod backend + frontend AR repos + kustomize overlay rewrites (SHA → semver `newTag:`) + `app.kubernetes.io/version` patches + runbook. Merge after CI green + review.
+1. **PR**: Pulumi `dockerConfig.immutableTags = true` on prod backend + frontend AR repos + kustomize overlay rewrites (SHA → semver `newTag:`) + `app.kubernetes.io/version` patches + a new runbook at `docs/runbooks/prod-image-tag-pinning.md` covering the dev-vs-prod policy split, the operator procedure for cutting a release and bumping `newTag:`, the AR rejection behavior on a tag re-push, and recovery procedures for the common failure scenarios (Release re-run, accidental manual re-tag, rollback). Merge after CI green + review.
 2. **Pulumi apply**: operator triggers `pulumi up --stack prod` via Pulumi Cloud console after merge. Expected preview: 2 `gcp:artifactregistry/repository:Repository` updates with `dockerConfig.immutableTags` field changing `false` → `true`.
 3. **ArgoCD reconcile**: automatic on the cloud-provisioning main-branch change. Prod Deployments / CronJobs roll with new `image:` reference (same digest) and new `metadata.labels` (adds `app.kubernetes.io/version`).
 4. **Validation**: verify `gcloud artifacts repositories describe backend --project=liverty-music-prod --location=asia-northeast2 --format='value(dockerConfig.immutableTags)'` returns `True` for both repos. Verify `kubectl get deploy -A -o yaml | grep image:` on prod shows `:v1.0.0` everywhere. Verify `kubectl get deploy -A --show-labels | grep app.kubernetes.io/version` shows the label.

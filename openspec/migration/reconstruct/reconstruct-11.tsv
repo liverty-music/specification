@@ -1,0 +1,52 @@
+change	old_spec	old_req_name	disposition	design_section	delta_action	proposal_action	note
+2026-05-16-prepare-prod-service-in	atlas-operator	Backend repository SHALL host an Atlas migration prod overlay	OUT:runbook	Decisions D6	deleted-file+dir	removed-modified-capability	
+2026-05-16-prepare-prod-service-in	gcp-cost-guardrails	Project Billing Budget Alert	OUT:runbook	Decisions D11	deleted-file+dir	removed-modified-capability	
+2026-05-16-prepare-prod-service-in	identity-management	Maintain Google OAuth Client in Prod Infrastructure	OUT:runbook	Decisions D12	removed-block	none	bullet kept (Manage OIDC Application still present), trimmed sibling-add text
+2026-05-16-prepare-prod-service-in	prod-environment-bootstrap	Prod backend ConfigMaps SHALL reference the mainnet ticket SBT contract	OUT:runbook	already-covered	deleted-file+dir	removed-modified-capability	content already in D10/R4
+2026-05-16-prepare-prod-service-in	prod-environment-bootstrap	Prod VAPID public key SHALL match the GSM-stored private key	OUT:runbook	already-covered	deleted-file+dir	removed-modified-capability	content already in D9 and Migration Plan Phase 6
+2026-05-16-prepare-prod-service-in	prod-environment-bootstrap	Prod blockchain ESC values SHALL reference mainnet	OUT:runbook	Decisions D13	deleted-file+dir	removed-modified-capability	
+2026-05-16-prepare-prod-service-in	prod-environment-bootstrap	Prod admin Google sub SHALL be issued by the prod OAuth client	OUT:runbook	Decisions D14	deleted-file+dir	removed-modified-capability	
+2026-05-16-prepare-prod-service-in	prod-image-pipeline	Prod container images SHALL be sourced exclusively from the prod project's Artifact Registry	OUT:runbook	already-covered	removed-block	none	content already in Context/Goals and D4
+2026-05-16-prepare-prod-service-in	prod-image-pipeline	Prod cluster service accounts SHALL NOT hold cross-project Artifact Registry IAM grants	OUT:runbook	already-covered	removed-block	none	content already in D4 and R2
+2026-05-16-prepare-prod-service-in	prod-image-pipeline	Prod kustomize overlays SHALL pin image URIs to prod-AR paths	OUT:runbook	Decisions D5	removed-block	none	
+2026-03-27-enhance-backend-observability	backend-otel-instrumentation	External HTTP client tracing via otelhttp transport	OUT:design-doc	already-covered	deleted-file+dir	removed-new-capability	content already in D1/D2
+2026-03-27-enhance-backend-observability	backend-otel-instrumentation	Zitadel gRPC client tracing via otelgrpc	OUT:design-doc	already-covered	deleted-file+dir	removed-new-capability	content already in D3
+2026-03-27-enhance-backend-observability	backend-otel-instrumentation	UseCase spans for CPU-intensive business logic	OUT:design-doc	Decisions D4	deleted-file+dir	removed-new-capability	added span attribute names
+2026-03-27-enhance-backend-observability	backend-otel-instrumentation	Application metrics	OUT:design-doc	Decisions D6	deleted-file+dir	removed-new-capability	added note on automatic otelhttp histogram vs custom instrument
+2026-03-27-enhance-backend-observability	backend-otel-instrumentation	Trace context preservation in deferred operations	OUT:design-doc	already-covered	deleted-file+dir	removed-new-capability	content already in D8
+2026-03-27-enhance-backend-observability	otel-sdk-configuration	Environment-aware trace sampling	OUT:design-doc	already-covered	deleted-file+dir	removed-new-capability	content already in D5
+2026-03-27-enhance-backend-observability	otel-sdk-configuration	Enriched resource attributes	OUT:design-doc	already-covered	deleted-file+dir	removed-new-capability	content already in D5
+2026-03-27-enhance-backend-observability	otel-sdk-configuration	Explicit text map propagator	OUT:design-doc	already-covered	deleted-file+dir	removed-new-capability	content already in D5
+2026-03-27-enhance-backend-observability	otel-sdk-configuration	MeterProvider initialization	OUT:design-doc	already-covered	deleted-file+dir	removed-new-capability	content already in D5 and Risks
+2026-04-13-harden-test-infrastructure	frontend-testing	Vitest environment is managed by vitest, not manually	OUT:lint	already-covered	removed-block	none	content already in Decision 1
+2026-04-13-harden-test-infrastructure	frontend-testing	Aurelia template module graph is contained in tests	OUT:lint	already-covered	removed-block	none	content already in Decision 2
+2026-04-13-harden-test-infrastructure	frontend-testing	CE composition integration tests verify layout propagation	OUT:lint	Decisions Decision 5	removed-block	none	added readonly-mode and beamIndexMap scenarios
+2026-04-13-harden-test-infrastructure	frontend-testing	Dashboard-route has integration tests	OUT:lint	already-covered	removed-block	none	content already in Decision 6
+2026-04-13-harden-test-infrastructure	frontend-testing	Per-file vitest environment annotations optimize execution	OUT:lint	already-covered	removed-block	none	content already in Decision 7 Phase A
+2026-04-13-harden-test-infrastructure	layout-assertions	E2E selectors use data-testid for stability	OUT:lint	already-covered	deleted-file+dir	removed-modified-capability	content already in Decision 3
+2026-04-13-harden-test-infrastructure	layout-assertions	E2E tests use Playwright native locator API without JS dispatch workarounds	OUT:lint	Decisions Decision 4	deleted-file+dir	removed-modified-capability	added getByLabel-vs-dispatch clarification
+2026-09-04-adopt-storybook-component-testing	storybook-component-testing	Presentational components have isolated stories	OUT:lint	already-covered	deleted-file+dir	removed-new-capability	content already in D2
+2026-09-04-adopt-storybook-component-testing	storybook-component-testing	Component stories run as tests in CI	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	content already in D1 and Migration Plan step 5
+2026-09-04-adopt-storybook-component-testing	storybook-component-testing	Accessibility checks run on component stories	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	content already in D3
+2026-09-04-adopt-storybook-component-testing	storybook-component-testing	Component-level visual regression detects unintended changes	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	content already in D4 and OQ2
+2026-09-04-adopt-storybook-component-testing	storybook-component-testing	A single visual-regression pipeline is maintained	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	content already in D4 and Migration Plan step 6
+2026-09-04-adopt-storybook-component-testing	storybook-component-testing	Unit and component test suites are isolated but jointly gated	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	content already in D1, D8, and R1
+2026-03-05-add-migration-rebase-guard	database-migration	The CI pipeline MUST validate migration file ordering	OUT:lint	Decisions 1	deleted-file+dir	removed-modified-capability	
+2026-03-05-add-migration-rebase-guard	migration-rebase-guard	The system MUST detect out-of-order migration timestamps	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	content already in Decision 2
+2026-03-05-add-migration-rebase-guard	migration-rebase-guard	The system MUST auto-fix out-of-order migrations when --fix is passed	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	content already in Decision 3
+2026-03-05-add-migration-rebase-guard	migration-rebase-guard	The system MUST integrate with Claude Code hooks	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	content already in Decision 4
+2026-08-13-organizer-tenancy	organizer-tenancy	Shared organizer-console project in the product org	OUT:runbook	Decisions D1/D2	removed-block	none	added role-assertion/non-blocking-signin note; bullet kept, description trimmed
+2026-08-13-organizer-tenancy	organizer-tenancy	Organizer console OIDC app and backend API app	OUT:runbook	Decisions D2	removed-block	none	added OIDC/backend-api app detail (was missing)
+2026-08-13-organizer-tenancy	organizer-tenancy	Dedicated organizer-provisioner machine user	OUT:runbook	already-covered	removed-block	none	content already in D3
+2026-08-13-organizer-tenancy	organizer-tenancy	Organizer-provisioner root key has a finite lifecycle	OUT:runbook	already-covered	removed-block	none	content already in D3 credential-lifecycle paragraph
+2026-08-24-upgrade-backend-go-1-27	goroutine-leak-detection	Goroutine leak profile is exposed	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	content already in D3
+2026-08-24-upgrade-backend-go-1-27	goroutine-leak-detection	Detected goroutine leaks raise an alert	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	content already in D3/D4
+2026-08-24-upgrade-backend-go-1-27	goroutine-leak-detection	Leak detection complements existing consumer health signals	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	content already in Risks
+2026-02-21-artist-creation	bulk-insert-unnest	Bulk artist creation via unnest	OUT:design-doc	Decisions Decision 3	deleted-file+dir	removed-new-capability	added empty-slice short-circuit note
+2026-02-21-artist-creation	bulk-insert-unnest	Concert bulk insert via unnest	OUT:design-doc	already-covered	deleted-file+dir	removed-new-capability	content already in Decision 2 and Goals
+2026-06-30-introduce-notification-service	notification-lifecycle	All user-facing notifications flow through the notification service	OUT:design-doc	already-covered	removed-block	none	content already in Decision 3 and Risks
+2026-06-30-introduce-notification-service	notification-lifecycle	The notification identifier is propagated end-to-end	OUT:design-doc	already-covered	removed-block	none	content already in Decision 5
+2026-03-17-improve-search-bar	aurelia-reactivity	Collection observation via native Set binding	OUT:lint	already-covered	deleted-file+dir	removed-modified-capability	content already in Decision 2/3
+2026-03-25-unify-scraped-concert-entity	entity-domain-logic	ScrapedConcerts collection type	OUT:lint	already-covered	removed-block	none	content already in Decision 2
+2026-03-18-logo-color-analysis	logo-color-analysis	sRGB to OKLCH Conversion	OUT:design-doc	already-covered	removed-block	none	content already in Decision 3
+2026-04-20-standardize-user-scoped-rpc-auth	rpc-auth-scoping	Shared JWT-match helper	OUT:design-doc	already-covered	removed-block	none	content already in D2 and Open Questions

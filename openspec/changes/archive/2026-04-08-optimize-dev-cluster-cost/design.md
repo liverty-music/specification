@@ -65,6 +65,8 @@ After removing ADVANCED_DATAPATH and GMP and reducing requests to 10m: DaemonSet
 
 **Exception:** `argocd-application-controller` retains a higher request (20m CPU, 320Mi memory) because it exhibits genuine periodic CPU spikes (reconciliation loops) and historically uses ~307Mi memory at rest.
 
+Memory requests are left alone by this change (already right-sized previously) and follow the standing rule of 1.5-2x observed peak usage with a 20MiB floor — e.g. `server-app` at 60MiB, `consumer-app`/`otel-collector` at 20MiB, ArgoCD `repo-server`/`server`/`applicationset-controller` at 64MiB, and its `redis`/`redisSecretInit` at 52MiB.
+
 **Alternative considered:** Keep 50m requests to give pods more scheduling headroom. Rejected — on Standard GKE, requests (not actual usage) drive autoscaler decisions, so lower requests reduce cost without reducing available CPU burst capacity.
 
 ### Decision 5: Set ScaledObject maxReplicaCount to 1 for consumer-app in dev

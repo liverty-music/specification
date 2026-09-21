@@ -22,7 +22,6 @@ Proto, Go entity, DB schema の各レイヤーに `created_at` / `updated_at` �
 ### Modified Capabilities
 
 - `user-account-sync`: `User` エンティティから `create_time` を削除。API レスポンスの変更。
-- `database`: 6 テーブルからタイムスタンプカラムを DROP するマイグレーション追加。
 
 ## Impact
 

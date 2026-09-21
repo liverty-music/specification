@@ -56,6 +56,7 @@ Stakeholders:
 - The 9 components instantiated in `ZitadelProdStackComponent` are byte-identical (modulo arg names) to those instantiated in `Zitadel`. The duplication has no functional benefit and creates drift risk on every future Zitadel-side change.
 - The `if (env !== 'dev')` throw was a defensive guard from when `Zitadel` was the dev-only cutover artifact (per `add-zitadel-console-admin-via-google-idp`, archived 2026-05-08). Post-cutover, dev's component leaves are all env-parameterized via maps and component args — removing the guard surfaces no behavioral risk.
 - The `BackendMachineKeyComponent` justification ("prod needs only backend-app, parallel class keeps it minimal") was a reasonable judgment when prod needed 1 component. It does not scale to 9 components, and the precedent it set ("parallel class for env") propagated to `ZitadelProdStackComponent`'s anti-pattern.
+- `src/index.ts` collapses to exactly one `new Zitadel('liverty-music', { env, ... })` call site, with no `if (env === ...)` branch around the instantiation — the env-branching that used to select between the dev `Zitadel` class and the prod wrapper classes is gone entirely, not just relocated.
 - **Alternative considered (rejected): keep `BackendMachineKeyComponent` as a "compose-over-inline" sub-component inside `Zitadel`.** This was the original `complete-zitadel-prod-pulumi-stack` D9 decision. Cost: still requires `parent: this` + `aliases: [{ parent: pulumi.rootStackResource }]` plumbing on the inner class, plus a `backendMachineKey.adminJwt` re-export hack to share the GSM read. Benefit: would preserve some prod state URNs. Net: rejected because the user explicitly preferred simpler code (D3 below) over state preservation.
 
 ### D3 — Destroy + recreate prod state (no `aliases`); accept 2-5 min auth outage
@@ -174,6 +175,17 @@ The Pulumi code reads these via the existing `gcpConfig.monitoring?.slackNotific
 - The `complete-zitadel-prod-pulumi-stack` change correctly identified the 9-component prod gap but chose a parallel-class pattern that this change retrospectively rejects. Its proposal/design/specs remain useful historical context but its tasks are no longer the path forward.
 - Per memory `feedback_openspec_archive_when_done.md`, `/opsx:archive` requires `isComplete: true`. The remaining tasks need to be marked done (with "superseded" notes) before archive succeeds. Acceptable because the *intent* of those tasks is realized by this change.
 - Archive PR will bundle: (a) updating `complete-zitadel-prod-pulumi-stack/tasks.md` to mark remaining tasks as superseded, (b) running `/opsx:archive complete-zitadel-prod-pulumi-stack` to move the directory to `archive/`, (c) running `/opsx:archive refactor-unify-env-dispatch` itself.
+
+### D11 — Backend MachineUser lives in a Pulumi-managed product org, not the first-boot admin org, in every environment
+
+**Decision:** The `Zitadel` class creates the backend `MachineUser` (with `ORG_USER_MANAGER` role granted via `OrgMember`) inside a Pulumi-managed product org named `liverty-music`, identically in dev and prod. Pulumi does not create the first-boot admin org — that org is auto-created by Zitadel via `ZITADEL_FIRSTINSTANCE_ORG_NAME` during bootstrap — it is instead brought under Pulumi state via the `import:` resource option, keyed by the `adminOrgIdMap[env]` introduced in D2.
+
+**Rationale:**
+
+- The first-boot admin org holds operator identities: `pulumi-admin` (the IaC break-glass machine user), `login-client` (the Login V2 UI's PAT host), and any human `IAM_OWNER` admins. Granting the backend `MachineUser` `ORG_USER_MANAGER` inside that org would let the runtime backend Pod create, suspend, or modify those operator identities — a privilege-escalation path from a compromised backend Pod straight into the IaC/admin tier.
+- Placing `backend-app` in a separate, Pulumi-managed product org confines `ORG_USER_MANAGER` to end-user principals only, so a backend compromise cannot reach operator-tier identities.
+- This rule applied to dev from the original cutover and was previously extended to prod only through the now-deleted, prod-specific `BackendMachineKeyComponent`. Folding it into the unified `Zitadel` class (D2) makes the rule env-agnostic: the same code path, the same Pulumi resource shapes, with only the admin-org id varying by env via `adminOrgIdMap`.
+- The admin `zitadel.Org` resource is declared with `protect: true` and `isDefault: true` (matching the bootstrap-set flag) in addition to the `import:` binding, so Pulumi never attempts to create or destroy it.
 
 ## Risks / Trade-offs
 

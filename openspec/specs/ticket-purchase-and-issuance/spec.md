@@ -133,36 +133,6 @@ for operator follow-up. It MUST never double-issue on a later retry.
      effectively does not fail; a rare failed capture is ④'s manual-follow-up
      concern (see "Issue from ④'s captured winning payment"). -->
 
-### Requirement: Settlement and payout are delegated to ticket-settlement-and-payout
-
-⑤ issues the Order + Tickets from ④'s captured payment and owns the refund
-**policy** (cancellation/postponement taxonomy, below). The **money-out layer** —
-holding funds on the platform balance until the event, the post-event `Transfer` of
-the Organizer's net share (platform fee retained) via separate charges & transfers,
-Organizer Stripe Connect onboarding, the hold-to-event + dispute-buffer release gate,
-and refund/dispute `transfer_reversal` **execution** — is owned by the
-**`ticket-settlement-and-payout`** capability. ⑤ SHALL NOT itself perform the payout
-Transfer; it records the Order that settlement settles against.
-
-#### Scenario: ⑤ does not perform the payout
-
-- **WHEN** an Order is created and its tickets issued
-- **THEN** the post-event Organizer payout (and any refund clawback) is performed by ticket-settlement-and-payout, not by ⑤
-
-### Requirement: 収納代行 scheme — discharge on payment + 代理受領権限
-
-The system's terms SHALL structure the money flow so the **buyer's payment
-obligation is discharged on paying the platform** and the **Organizer grants the
-platform 代理受領権限** (collection-agent authority), with the Organizer as the
-**business seller-of-record**. This keeps the flow a collection agency (収納代行),
-not 為替取引 / 資金移動業 / 前払式 (the load-bearing legal structure; see
-payments-design counsel flag 1).
-
-#### Scenario: Buyer obligation discharged at platform payment
-
-- **WHEN** a buyer pays the platform for a ticket
-- **THEN** their payment obligation to the Organizer is discharged at that moment (the platform holds as the Organizer's 代理受領 agent), and the Organizer is the seller-of-record
-
 ### Requirement: Refund taxonomy — cancellation vs postponement
 
 On event **cancellation (中止)** the system SHALL refund the ticket's **current
@@ -215,15 +185,3 @@ caller it constrains.
      the behavior of the EXISTING ticket-journey capability (adding a first-party
      issuance side-effect trigger), it is specified as a MODIFIED delta in
      specs/ticket-journey/spec.md, not as an ADDED requirement here. -->
-
-### Requirement: No stored card data (PCI SAQ A)
-
-The system SHALL collect card data only via the provider's hosted fields (Stripe
-Elements) so **no PAN/CVC/expiry** touches our systems; it SHALL store only
-provider tokens/customer references and maintain **PCI SAQ A** scope.
-
-#### Scenario: Card data never reaches our systems
-
-- **WHEN** a buyer enters card details
-- **THEN** the details go directly to the provider and only opaque tokens are stored
-

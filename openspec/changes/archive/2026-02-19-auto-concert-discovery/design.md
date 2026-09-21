@@ -42,6 +42,8 @@ The goal is to add a scheduled job that calls `SearchNewConcerts` for every foll
 
 **Alternative considered**: Always continue regardless of errors. Rejected because it could produce hundreds of identical error logs when the root cause is systemic.
 
+More generally, the job always exits 0 regardless of individual, partial, or total failure — including when every artist search errors — logging the total count of discovered concerts and failed artists. A non-zero exit would just cause K8s to restart the CronJob into the same failure.
+
 ### 4. `ConcertRepository.Create` changes to variadic `...*Concert`
 
 **Choice**: Change the `Create` method signature from `Create(ctx, *Concert)` to `Create(ctx, ...*Concert)` and implement as bulk INSERT.

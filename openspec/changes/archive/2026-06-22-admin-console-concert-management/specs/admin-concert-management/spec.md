@@ -1,29 +1,5 @@
 ## ADDED Requirements
 
-### Requirement: Admin concert operations are served by a single ConcertService
-
-The admin-scoped concert operations SHALL be served by a single
-`liverty_music.rpc.admin.v1.ConcertService` — listing published concerts, listing
-the pending review queue, approving, rejecting, and deleting. This service is distinct from
-the consumer `liverty_music.rpc.concert.v1.ConcertService`; the proto package is
-the sole disambiguator and the `admin.v1` package conveys the admin audience, so
-the service name SHALL NOT carry an audience or role qualifier. Method names SHALL
-be bare verbs (`List`, `ListPending`, `Approve`, `Reject`, `Delete`) because the
-service name already carries the `Concert` entity.
-
-#### Scenario: Admin concert service identity
-
-- **WHEN** the admin concert RPC surface is defined
-- **THEN** it SHALL be the service `liverty_music.rpc.admin.v1.ConcertService`
-- **AND** its methods SHALL be `List`, `ListPending`, `Approve`, `Reject`, and `Delete`
-
-#### Scenario: No collision with the consumer concert service
-
-- **WHEN** both the consumer and admin concert services exist
-- **THEN** they SHALL be distinguished by proto package
-  (`rpc.concert.v1` vs `rpc.admin.v1`)
-- **AND** neither service's fully-qualified name SHALL depend on a role suffix
-
 ### Requirement: Admin lists every published concert
 
 The admin `ConcertService` SHALL provide a `List` operation that returns every

@@ -27,6 +27,8 @@ The `z-index: 10` in `.stage-header` existed because it was a `position: sticky`
 
 **Alternative considered**: `isolation: isolate` on the parent. Rejected because `isolation: isolate` only scopes children's z-index from leaking outward — it does not control sibling stacking order within the container. `position: sticky` alone (without a non-auto z-index) does not create a stacking context, so siblings with implicit stacking contexts (e.g., via `backdrop-filter`) will still paint over the header.
 
+The `z-index` ban itself is enforced via stylelint's `property-disallowed-list` rule; the goal is zero `stylelint-disable` overrides for it, not a looser rule. Accessibility media features (`prefers-contrast`, `forced-colors`, `prefers-reduced-motion`) are allowlisted in the same stylelint config so they are never flagged as unknown media features.
+
 ### Decision 2: Remove Tailwind at-rule allowances
 
 Remove `@theme` from `ignoreAtRules` in `stylelint.config.js` and `theme()` from `ignoreFunctions`. These were needed for Tailwind v4 compatibility but serve no purpose now.

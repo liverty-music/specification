@@ -1,0 +1,53 @@
+change	old_spec	old_req_name	disposition	design_section	delta_action	proposal_action	note
+2026-05-11-self-hosted-zitadel	authentication	Validate Zitadel Actions v2 Webhook JWTs by Signature	OUT:design-doc	Decisions D5	deleted-file+dir	removed-modified-capability	folded signature-only validation + defense-in-depth stack into D5; authentication delta was the file's only requirement
+2026-05-11-self-hosted-zitadel	identity-management	Inject Email Claim into Access Tokens via Actions v2	OUT:runbook	Decisions D5	removed-block	none	added human-vs-machine-user claim omission detail to D5's first bullet
+2026-05-11-self-hosted-zitadel	identity-management	Provision Actions v2 Target and Execution Resources	OUT:runbook	Decisions D5/D6	removed-block	none	added Target name pre-access-token-webhook to D5; PAYLOAD_TYPE_JWT/no-signingKey already in D6
+2026-05-11-self-hosted-zitadel	identity-management	Dedicated Service User for Login V2 UI	OUT:runbook	Decisions D12 (new)	removed-block	none	new decision; login-client MachineUser/PAT-as-file was absent from design.md
+2026-05-11-self-hosted-zitadel	zitadel-action-webhook	Webhook Reachable Only Within Cluster	OUT:runbook	Decisions D5	removed-block	none	folded :9090 isolation + authn.Middleware fallback into the rewritten D5
+2026-05-11-self-hosted-zitadel	zitadel-self-hosted-deployment	Two-Container Deployment with Path-Based Routing	OUT:design-doc	Decisions D2	removed-block	none	corrected image path to ghcr.io/zitadel/zitadel-login
+2026-05-11-self-hosted-zitadel	zitadel-self-hosted-deployment	TLS Terminated at Gateway, Cluster Traffic Unencrypted	OUT:design-doc	already-covered (D1)	removed-block	none	
+2026-05-11-self-hosted-zitadel	zitadel-self-hosted-deployment	Cloud SQL Connection via Auth Proxy Sidecar with IAM Authentication	OUT:design-doc	already-covered (D3)	removed-block	none	
+2026-05-11-self-hosted-zitadel	zitadel-self-hosted-deployment	Cloud SQL Database and IAM User Pre-Provisioned by Pulumi	OUT:design-doc	Decisions D3	removed-block	none	added Workload Identity KSA-to-GSA binding detail to D3
+2026-05-11-self-hosted-zitadel	zitadel-self-hosted-deployment	Connection Pool Sized Within Dev Connection Budget	OUT:runbook	Decisions D4	removed-block	none	added future-rescale-safety rationale for keeping MaxOpenConns:3 after dev dropped to 1 replica
+2026-05-11-self-hosted-zitadel	zitadel-self-hosted-deployment	Bootstrap Admin Machine Key Stored in Secret Manager	OUT:runbook	Decisions D7	removed-block	none	added unlink-after-upload security detail to D7
+2026-05-11-self-hosted-zitadel	zitadel-self-hosted-deployment	Backend MachineKey Lifecycle Tied to Zitadel-Side Identity	OUT:runbook	Decisions D11 (new)	removed-block	none	new decision documenting the three-way state-drift incident and force-replace recovery
+2026-05-11-self-hosted-zitadel	zitadel-self-hosted-deployment	Masterkey Generated Once and Stored Immutably	OUT:runbook	already-covered (D7)	removed-block	none	
+2026-05-11-self-hosted-zitadel	zitadel-self-hosted-deployment	Resilient Scheduling on Shared Spot Node Pool	OUT:runbook	already-covered (D8)	removed-block	none	
+2026-02-26-optimize-ci-jobs	ci-optimization	Workflows cancel superseded runs	OUT:runbook	already-covered (Decision 1 + Risks)	deleted-file+dir	removed-new-capability	
+2026-02-26-optimize-ci-jobs	ci-optimization	Workflows declare minimum required permissions	OUT:runbook	already-covered (Decision 4)	deleted-file+dir	removed-new-capability	
+2026-02-26-optimize-ci-jobs	ci-optimization	Frontend CI enforces code quality gates	OUT:runbook	already-covered (Goals)	deleted-file+dir	removed-new-capability	
+2026-02-26-optimize-ci-jobs	ci-optimization	Frontend CI reports coverage on PRs	OUT:runbook	Decisions Decision 3	deleted-file+dir	removed-new-capability	added vitest-coverage-report-action PR-comment detail to Decision 3
+2026-02-26-optimize-ci-jobs	ci-optimization	Backend CI enforces format correctness	OUT:lint	Decisions Decision 6 (new)	deleted-file+dir	removed-new-capability	new one-line decision: gofmt enforced via dedicated lint.yml job
+2026-02-26-optimize-ci-jobs	ci-optimization	Atlas migration lint runs without Atlas Cloud	OUT:runbook	already-covered (Decision 2)	deleted-file+dir	removed-new-capability	
+2026-02-26-optimize-ci-jobs	ci-optimization	Benchmark workflow uses consistent Postgres version	OUT:runbook	Decisions Decision 7 (new)	deleted-file+dir	removed-new-capability	new decision: postgres:15 -> postgres:18 to match test.yml
+2026-02-26-optimize-ci-jobs	ci-optimization	Both repos have a CI success gate job	OUT:runbook	already-covered (Decision 5)	deleted-file+dir	removed-new-capability	
+2026-06-19-split-admin-rpc-server	admin-rpc-server	Dedicated admin Connect server	OUT:design-doc	Decisions Decision 1	deleted-file+dir	removed-new-capability	added shared shutdown Drain-phase registration detail to Decision 1
+2026-06-19-split-admin-rpc-server	admin-rpc-server	Boundary-level admin authorization	OUT:design-doc	already-covered (Decision 2)	deleted-file+dir	removed-new-capability	
+2026-06-19-split-admin-rpc-server	admin-rpc-server	Admin-only CORS allowlist	OUT:design-doc	already-covered (Decision 3)	deleted-file+dir	removed-new-capability	
+2026-06-19-split-admin-rpc-server	admin-rpc-server	Shared server construction to prevent interceptor drift	OUT:design-doc	already-covered (Decisions 2/3)	deleted-file+dir	removed-new-capability	
+2026-06-19-split-admin-rpc-server	admin-rpc-server	Dedicated admin API ingress host	OUT:design-doc	already-covered (Decision 4)	deleted-file+dir	removed-new-capability	
+2026-06-19-split-admin-rpc-server	admin-rpc-server	Admin console resolves the admin API host from runtime config	OUT:design-doc	already-covered (Decision 5)	deleted-file+dir	removed-new-capability	
+2026-02-22-auth-control	authentication	Authenticated Endpoint Protection	OUT:design-doc	already-covered (Decisions 1/3)	removed-block	none	
+2026-02-22-auth-control	authentication	Public Endpoint Access	OUT:runbook	already-covered (Decision 2)	removed-block	none	
+2026-02-22-auth-control	e2e-auth-testing	Playwright MCP Authenticated Session	OUT:runbook	already-covered (Decision 5)	deleted-file+dir	removed-new-capability	
+2026-02-22-auth-control	e2e-auth-testing	StorageState Capture Script	OUT:runbook	already-covered (Decision 5)	deleted-file+dir	removed-new-capability	
+2026-02-22-auth-control	e2e-auth-testing	StorageState Gitignore	OUT:runbook	Risks / Trade-offs (new)	deleted-file+dir	removed-new-capability	new risk bullet: storageState.json must never be committed, gitignored
+2026-03-06-correlate-otel-cloud-sql	db-trace-correlation	OTel span creation for database queries	OUT:design-doc	Decisions Decision 4	deleted-file+dir	removed-new-capability	added error-recording/span-status detail to Decision 4
+2026-03-06-correlate-otel-cloud-sql	db-trace-correlation	sqlcommenter traceparent injection	OUT:design-doc	Decisions Decision 3	deleted-file+dir	removed-new-capability	clarified span_id is the DB-query span's own id, and no-active-span skip behavior
+2026-03-06-correlate-otel-cloud-sql	db-trace-correlation	Transparent pool wrapping	OUT:design-doc	already-covered (Decisions 1/2/5)	deleted-file+dir	removed-new-capability	
+2026-03-06-correlate-otel-cloud-sql	db-trace-correlation	Transaction query tracing	OUT:design-doc	Decisions Decision 5	deleted-file+dir	removed-new-capability	clarified Commit/Rollback each get their own span
+2026-05-15-refactor-unify-env-dispatch	zitadel-self-hosted-deployment	Single Unified Zitadel Class Across All Environments	OUT:design-doc	Decisions D2	removed-block	none	added single call-site (no env-branching) detail to D2
+2026-05-15-refactor-unify-env-dispatch	zitadel-self-hosted-deployment	Per-Environment Configuration Values Sourced From Env-Keyed Map	OUT:lint	already-covered (Goals + D2/D4/D6)	removed-block	none	
+2026-05-15-refactor-unify-env-dispatch	zitadel-self-hosted-deployment	Backend MachineUser Lives in Product Org Across All Environments	OUT:design-doc	Decisions D11 (new)	removed-block	none	new decision: product-org placement + privilege-escalation rationale, absent from design.md
+2026-05-15-refactor-unify-env-dispatch	zitadel-self-hosted-deployment	Cost Guardrails and Observability Applied to All Environments	OUT:runbook	already-covered (D4)	removed-block	none	
+2026-09-15-ticket-purchase-and-issuance	ticket-purchase-and-issuance	Settlement and payout are delegated to ticket-settlement-and-payout	OUT:design-doc	already-covered (Decisions bullets)	removed-block	none	
+2026-09-15-ticket-purchase-and-issuance	ticket-purchase-and-issuance	収納代行 scheme — discharge on payment + 代理受領権限	OUT:design-doc	Decisions (new bullet)	removed-block	none	added 代理受領権限 + exclusion from 為替取引/資金移動業/前払式 to Decisions
+2026-09-15-ticket-purchase-and-issuance	ticket-purchase-and-issuance	No stored card data (PCI SAQ A)	OUT:design-doc	Decisions (new bullet)	removed-block	none	added Stripe Elements hosted-fields + PCI SAQ A scope detail to Decisions
+2026-03-29-refine-backend	entity-test-coverage	SafePredictor interface in entity layer	OUT:design-doc	already-covered (D4)	deleted-file+dir	removed-modified-capability	
+2026-03-29-refine-backend	usecase-test-coverage	Adapter mapper test coverage	OUT:lint	already-covered (D6)	removed-block	none	
+2026-03-17-make-dom-semantic	semantic-dom	Semantic HTML element usage	OUT:lint	already-covered (Decisions 1/2/4)	deleted-file+dir	none	proposal.md already said none for both capability lists
+2026-03-17-make-dom-semantic	semantic-dom	Minimal div nesting depth	OUT:lint	Decisions 6 (new)	deleted-file+dir	none	new one-line decision: 2-level nesting cap, review-time checklist item
+2026-01-31-provision-cloud-sql	database	The system MUST provide persistent relational storage	OUT:runbook	Cloud SQL Design (section 2)	deleted-file+dir	none	added encryption-at-rest-by-default and prod-HA-expectation line; proposal.md has no Capabilities section
+2026-04-30-optimize-dev-kube-dns-replicas	gke-standard-infrastructure	Dev cluster `kube-dns-autoscaler` SHALL set `preventSinglePointFailure: false`	OUT:design-doc	already-covered (Decisions 1-3 + Goals)	deleted-file+dir	removed-modified-capability	
+2026-07-08-emit-auth-events-via-webhook	product-analytics	Account authentication events are emitted server-side	OUT:design-doc	already-covered (Decisions 1-5)	deleted-file+dir	removed-modified-capability	
+2026-03-14-remove-venue-enrichment	venue-normalization	PlaceSearcher Is Required	OUT:design-doc	already-covered (Decision 4)	removed-block	none	

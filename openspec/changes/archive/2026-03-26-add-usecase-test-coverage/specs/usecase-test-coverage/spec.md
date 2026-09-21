@@ -71,26 +71,6 @@ The test suite SHALL verify that `TicketEmailUsecase.Update()` fetches the exist
 - **THEN** the system SHALL call the journey repository to upsert the ticket journey status
 - **AND** the journey status SHALL be derived from the email type and parsed data
 
-### Requirement: TicketEmailUsecase Helper Tests
-
-The test suite SHALL verify the internal helper methods `buildNewTicketEmail()` and `determineJourneyStatus()`.
-
-#### Scenario: buildNewTicketEmail constructs entity from parsed data
-
-- **WHEN** `buildNewTicketEmail()` is called with parsed email data containing dates
-- **THEN** the returned `NewTicketEmail` SHALL contain correctly parsed timestamps for `PaymentDeadline`, `LotteryStart`, `LotteryEnd`
-- **AND** the `ApplicationURL` SHALL be set from the parsed data
-
-#### Scenario: determineJourneyStatus with valid mapping
-
-- **WHEN** `determineJourneyStatus()` is called with an email type and parsed data that map to a known status
-- **THEN** the returned status SHALL match the expected `TicketJourneyStatus`
-
-#### Scenario: determineJourneyStatus with no mapping (default)
-
-- **WHEN** `determineJourneyStatus()` is called with data that does not map to a known status
-- **THEN** the system SHALL return the default journey status
-
 ### Requirement: ArtistImageSyncUsecase SyncArtistImage Tests
 
 The test suite SHALL verify that `ArtistImageSyncUsecase.SyncArtistImage()` correctly orchestrates artist fetch, image resolution, logo color analysis, and fanart update.

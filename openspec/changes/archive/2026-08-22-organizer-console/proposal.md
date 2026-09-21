@@ -51,8 +51,6 @@ reception check-in PWA.
 - `organizer-console`: the `organizer.html` bundle-isolated entry, OIDC
   login via org-pinned entry, the role-claim route guard + placeholder, and
   the organizer runtime-config shape (no fixed org id).
-- `organizer-console-hosting`: the `organizer.{base}` host — HTTPRoute, TLS
-  cert, Cloud DNS, and per-host `/config.json`.
 
 ### Modified Capabilities
 <!-- None. The organizer entry defines its own config shape in the

@@ -64,15 +64,6 @@ The concert creation pipeline SHALL skip concerts whose venues cannot be resolve
 - **AND** the system SHALL emit a structured Warn log with the error and all `ScrapedConcert` fields
 - **AND** processing SHALL continue with the next concert in the batch
 
-### Requirement: PlaceSearcher Is Required
-
-The `ConcertCreationUseCase` SHALL require a non-nil `VenuePlaceSearcher` at construction time.
-
-#### Scenario: Nil placeSearcher at startup
-
-- **WHEN** `NewConcertCreationUseCase` is called with a nil `placeSearcher`
-- **THEN** the function SHALL panic with a descriptive message
-
 ### Requirement: Idempotent venue get-or-create with place_id-authoritative identity
 
 The venue lookup-or-create path SHALL be idempotent and SHALL NOT fail when a venue
@@ -185,4 +176,3 @@ The concert creation pipeline SHALL apply `NormalizeVenueName` to the scraped `l
 
 - **WHEN** the concert creation pipeline processes a scraped concert with `listed_venue_name` equal to `"日本武道館"`
 - **THEN** the stored `listed_venue_name` SHALL be `"日本武道館"` (unchanged, normalization is idempotent)
-

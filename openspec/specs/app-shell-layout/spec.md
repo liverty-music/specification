@@ -78,34 +78,6 @@ The system SHALL conditionally show or hide the navigation bar based on the curr
 
 ---
 
-### Requirement: Route components own page structure
-Each route component SHALL define its own HTML document structure using semantic landmark elements AND its own CSS layout using `:scope` grid declarations. The app shell SHALL own exactly one shared page header for the current route's title; apart from that header, the app shell SHALL NOT provide a shared page layout wrapper or style route child custom elements.
-
-#### Scenario: Route provides header and main landmarks
-- **WHEN** a route component renders inside `<au-viewport>`
-- **THEN** the route template SHALL contain exactly one `<main>` element as a top-level child
-- **AND** the route template SHALL NOT render a `<page-header>` custom element or a top-level `<header>` for the page title — the page title header is owned by the app shell
-- **AND** top-layer elements (`<dialog>`, popover components) MAY appear as top-level siblings after `<main>`
-
-#### Scenario: Route `:scope` declares grid layout with areas
-- **WHEN** a route component's CSS is loaded
-- **THEN** the `:scope` rule SHALL declare `display: grid` with `grid-template-areas` naming every structural region it owns (e.g. `content`, `controls`)
-- **AND** the `:scope` rule SHALL NOT declare a `header` grid area — the header is positioned by the shell grid, not the route grid
-- **AND** the `:scope` rule SHALL declare `grid-template-rows` matching the areas
-- **AND** the `:scope` rule SHALL declare `block-size: 100%` to inherit the definite height from `au-viewport`
-- **AND** the `:scope` rule SHALL declare `min-block-size: 0` to allow overflow activation on descendants
-- **AND** each structural child element SHALL be assigned to its grid area via `grid-area`
-
-#### Scenario: No page-shell wrapper
-- **WHEN** any route component renders
-- **THEN** the route template SHALL NOT use a `<page-shell>` custom element
-- **AND** the `page-shell` component SHALL NOT exist in the codebase
-
-#### Scenario: App-shell does not style child custom elements
-- **WHEN** `app-shell.css` is loaded
-- **THEN** the file MAY assign `grid-area` to `<au-viewport>` to place it in the shell grid, but SHALL NOT otherwise style `<au-viewport>` and SHALL NOT contain selectors targeting `live-highway` or any route component custom element
-- **AND** the shell's own direct children — the shared `<page-header>`, `<bottom-nav-bar>`, and overlay elements (`pwa-install-prompt`, `toast-notification`, `error-banner`, `coach-mark`) — MAY be styled in `app-shell.css`
-
 ### Requirement: Stale-data warning uses overlay pattern
 The dashboard stale-data warning SHALL render as a fixed-position overlay, consistent with the application's notification pattern (`toast-notification`, `error-banner`).
 
@@ -119,33 +91,6 @@ The dashboard stale-data warning SHALL render as a fixed-position overlay, consi
 - **WHEN** the stale-data warning is visible
 - **THEN** the `live-highway` scroll area SHALL occupy the full `main` grid area
 - **AND** scrolling the concert list SHALL NOT move the stale-data warning
-
----
-
-### Requirement: Semantic HTML structure
-Route components SHALL use semantic HTML elements per web.dev accessibility structure and MDN document structuring guidelines.
-
-#### Scenario: Lists use list elements
-- **WHEN** a route displays a collection of items (artists, tickets, search results)
-- **THEN** the collection SHALL be wrapped in `<ul role="list">`
-- **AND** each item SHALL be wrapped in `<li>`
-
-#### Scenario: Page headers use header element
-- **WHEN** a route has a page title with optional actions
-- **THEN** the title and actions SHALL be in a `<header>` element at the route's top level
-- **AND** the title SHALL use an `<h1>` element
-
-#### Scenario: Search UI uses search element
-- **WHEN** a route contains a search input
-- **THEN** the search input and associated controls SHALL be wrapped in a `<search>` element
-
-#### Scenario: Supplementary banners use aside element
-- **WHEN** a route displays a non-critical informational banner (e.g., stale data warning)
-- **THEN** the banner SHALL use an `<aside>` element
-
-#### Scenario: Loading states use ARIA busy
-- **WHEN** a route displays a loading indicator
-- **THEN** the loading container SHALL include `aria-busy="true"` and `role="status"`
 
 ---
 
@@ -323,4 +268,3 @@ tap is acknowledged immediately while content continues to load or animate.
 - **WHEN** a route changes its own title while it is the active route (e.g. the dashboard My Timetable ↔ All Nearby swap)
 - **THEN** the route SHALL update the shared page-identity state
 - **AND** the shell-hosted page header SHALL reflect the new title, preserving any opted-in title View-Transition morph
-

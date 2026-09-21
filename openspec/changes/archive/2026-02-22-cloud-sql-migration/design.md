@@ -36,6 +36,8 @@ Key constraints:
 
 **Rationale**: goose accepts `*sql.DB` directly (compatible with `cloudsqlconn`), supports `embed.FS`, includes PostgreSQL advisory locking via `WithSessionLocker`, and requires only a `-- +goose Up` annotation added to existing SQL files (no content changes).
 
+On every startup, goose checks its version table before executing anything: against an empty database it applies every migration file in version order; against an up-to-date database it finds nothing pending and returns immediately without delaying startup; against a database that's behind the binary's embedded migration set, it applies only the files newer than the last recorded version and never re-runs ones already applied.
+
 ### Decision 2: Create a dedicated `*sql.DB` for migrations
 
 **Choice**: Create a short-lived `*sql.DB` connection using `cloudsqlconn` + `pgx/v5/stdlib`, run migrations, then close it. The main application continues using `pgxpool.Pool`.
@@ -76,7 +78,7 @@ InitializeApp(ctx)
 
 - **[Startup latency]** Migrations add time to pod startup. → Negligible for already-applied migrations (goose checks version table, finds nothing pending, returns). Only first deployment has measurable overhead.
 
-- **[Failed migration blocks startup]** A bad migration prevents all pods from starting. → This is intentional — running with an inconsistent schema would cause worse failures. Fix the migration and redeploy.
+- **[Failed migration blocks startup]** A bad migration prevents all pods from starting. → This is intentional — running with an inconsistent schema would cause worse failures. On failure, the application logs the file name and the failing SQL statement, releases the advisory lock, and exits with a non-zero status code rather than continuing to serve traffic. Fix the migration and redeploy.
 
 - **[Advisory lock timeout]** If a migration takes very long, other pods wait. → Set a reasonable lock timeout (e.g., 30s). Migrations in this project are lightweight DDL operations.
 

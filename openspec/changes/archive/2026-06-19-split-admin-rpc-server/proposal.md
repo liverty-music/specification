@@ -20,7 +20,7 @@ This is purely a relocation + hardening of an **existing** service. `ConcertMode
 ## Capabilities
 
 ### New Capabilities
-- `admin-rpc-server`: A dedicated backend Connect server for admin-scoped RPCs — a separate in-process listener on its own port, serving only admin services, with boundary-level admin-role authorization (replacing per-method checks), an admin-only CORS allowlist, its own ingress host/Service/cert/DNS/health, and the consumer server's exclusion of admin services. The admin console's RPC client resolves the admin API host from its runtime config.
+(none — see design.md)
 
 ## Impact
 

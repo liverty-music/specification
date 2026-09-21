@@ -21,7 +21,7 @@ CI workflows across frontend and backend repos lack basic optimizations: no conc
 ## Capabilities
 
 ### New Capabilities
-- `ci-optimization`: CI workflow improvements for performance, security, and developer experience across frontend and backend repositories
+(none — see design.md)
 
 ### Modified Capabilities
 

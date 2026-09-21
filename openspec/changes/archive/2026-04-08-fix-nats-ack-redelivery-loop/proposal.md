@@ -15,7 +15,7 @@ None.
 
 ### Modified Capabilities
 
-- `auto-concert-discovery`: The consumer reliability guarantee changes — messages are now delivered at-most-once-from-history (DeliverNew) with guaranteed Ack delivery (SyncAck), preventing duplicate concert notifications caused by NATS state loss events.
+None.
 
 ## Impact
 

@@ -70,6 +70,8 @@ metadata:
 - Spec-based certificateRefs: More flexible but verbose. Only needed for edge cases.
 - Self-signed certs: Development only, not suitable for production.
 
+Because the Gateway resolves the certificate through the map annotation rather than pinning a certificate at listener-creation time, rotating the entry in `api-cert-map` takes effect for new TLS handshakes immediately while connections already established keep the certificate they negotiated — certificate renewal or replacement never forces a disconnect.
+
 ### 3. **Cross-Namespace Routing: HTTPRoute → backend Service**
 
 **Decision:** HTTPRoute (gateway ns) references Service (backend ns) via explicit namespace field.
@@ -88,6 +90,8 @@ spec:
     namespace: backend      ← Explicit cross-namespace reference
     port: 8080
 ```
+
+The backend Service stays `ClusterIP` — never `LoadBalancer` or `NodePort` — so it is reachable only via this HTTPRoute reference and is never exposed directly to the internet. Its port advertises `appProtocol: kubernetes.io/h2c`, which tells the load balancer it can speak HTTP/2 to the backend without TLS on that hop. The Service's own selector fans requests out to whichever backend Pods are Ready — HTTPRoute backendRefs target the Service, never Pod IPs directly, so a Pod restart or rolling update is invisible to clients — and when Deployment replicas > 1 the Service load-balances across them automatically with no extra Gateway configuration.
 
 ### 4. **CORS: Application-Level Middleware**
 
@@ -114,6 +118,8 @@ opts := cors.Options{
 
 **Env:** `CORS_ALLOWED_ORIGINS=https://liverty-music.app,http://localhost:5173`
 
+The default header set from `connectcors.AllowedHeaders()`/`ExposedHeaders()` already covers the Connect-specific headers browsers need — `Connect-Protocol-Version`, `Connect-Timeout-Ms`, `Grpc-Status`, `Grpc-Message`, `Grpc-Status-Details-Bin` — and exposes any `Trailer-`-prefixed response trailers so browser JavaScript can read them.
+
 ### 5. **Health Checks: gRPC Protocol**
 
 **Decision:** Use HealthCheckPolicy with gRPC health check protocol.
@@ -131,6 +137,8 @@ config:
   grpcHealthCheck:
     port: 8080
 ```
+
+Pods that fail the gRPC health check are automatically drained from the load balancer's backend pool — only Pods reporting `SERVING` receive traffic — so a single unhealthy Pod does not affect the others.
 
 ### 6. **Environment Strategy: Dev-Only Resources**
 
@@ -177,6 +185,10 @@ config:
 - Domain already registered at Cloudflare; nameservers remain Cloudflare's
 - Only subdomain delegation via NS records (automated via Pulumi)
 
+**Config Is Optional Per Environment:**
+- `GcpConfig.domains.publicDomain` and the Cloudflare fields are read from Pulumi ESC, never hardcoded, so each stack supplies its own value
+- When a stack's ESC omits `domains.publicDomain` (or it is null) — as production does, since it manages its zone through Cloudflare directly — `NetworkComponent` skips public DNS zone creation entirely rather than erroring; this is how dev and prod share the same component code while using different DNS paths
+
 ### 8. **GitOps: Three ArgoCD Applications**
 
 **Decision:** Create three separate ArgoCD Applications.
@@ -191,11 +203,19 @@ config:
 - Backend updates don't require LB recreation
 - Clear responsibility boundaries
 
+Each Application targets a distinct manifest path and namespace scope: `cluster-app` syncs `k8s/cluster/` and creates the `argocd`, `backend`, and `gateway` namespaces; `gateway-app` syncs `k8s/namespaces/gateway/overlays/dev/` into the `gateway` namespace (Gateway, HTTPRoute, Policy resources); `backend-app` syncs `k8s/namespaces/backend/overlays/dev/` into the `backend` namespace (Deployment, Service, and its HealthCheck/Backend/Gateway Policies). `cluster-app` must sync first since the other two Applications reference namespaces it creates; `gateway-app` and `backend-app` have no dependency on each other and sync in either order. Day to day, `argocd app sync <app-name>` and `argocd app get <app-name>` (or the ArgoCD dashboard) cover manual sync and status reporting; enabling an automated sync policy so ArgoCD continuously reconciles drift is a later addition once the workflow has proven out.
+
+### 9. **Gateway Resource Configuration: GatewayClass, Listeners, and Policy**
+
+**Decision:** The Gateway resource (`gateway` namespace) uses GatewayClass `gke-l7-global-external-managed` and declares an HTTPS listener on 443 (TLS terminated via the Certificate Manager map from Decision 2) and an HTTP listener on 80 that returns a 301 redirect to HTTPS. HTTPRoute resources match requests by hostname (`api.liverty-music.app`) and path prefix (`/liverty_music.rpc.*/`) and forward them to the `backend/server:8080` Service. A `GCPGatewayPolicy` attaches to the Gateway to carry settings that live at the load-balancer level rather than on a listener — SSL policy and global access.
+
+**Rationale:** `gke-l7-global-external-managed` is GKE's GatewayClass for a Global External Application Load Balancer, matching Goal 5 (cloud-native Gateway API) and the single-Global-ALB cost model in Decision 6. Hostname+path matching on the HTTPRoute keeps routing declarative and lets new APIs be added as additional match rules without touching the Gateway itself (Goal 7). `GCPGatewayPolicy` exists because SSL policy and access settings are GCP load-balancer concepts with no equivalent field on the Gateway API's own listener spec.
+
 ## Risks / Trade-offs
 
 ### Risk 1: Cross-Namespace Routing Adds Complexity
 **Risk:** HTTPRoute referencing backend Service requires namespace awareness.
-**Mitigation:** Document in comments, enforce via code review. Explicit namespace references are clearer than implicit discovery.
+**Mitigation:** Document in comments, enforce via code review. Explicit namespace references are clearer than implicit discovery, and because `backendRefs` are always explicit, the Gateway cannot accidentally route to a Service in an unrelated namespace — only Services listed in an HTTPRoute's `backendRefs` are reachable through it.
 
 ### Risk 2: CORS Configuration in Two Places (App + Env)
 **Risk:** If env var not set, CORS fails silently.
@@ -212,6 +232,10 @@ config:
 ### Risk 5: Global ALB Cost Grows with Traffic
 **Risk:** At 1000 RPS avg, cost jumps to ~$3,300/mo.
 **Mitigation:** Cost is feature, not bug. Scale happens when product succeeds. Monitor cost via GCP dashboards.
+
+### Risk 6: Public DNS Zone Could Conflict With Private Cloud SQL Zone
+**Risk:** The new public zone(s) for `liverty-music.app` / `dev.liverty-music.app` could in principle collide with the existing private Cloud DNS zone for Cloud SQL (`asia-northeast2.sql.goog`).
+**Mitigation:** The two zones have different visibility (public vs. private) and disjoint name scopes, so they resolve independently with no conflict; no additional configuration is required to keep them apart.
 
 ## Migration Plan
 
@@ -288,7 +312,7 @@ fetch('https://api.liverty-music.app/liverty_music.rpc.artist.v1.ArtistService/S
 })
 ```
 
-**Rollback:** Remove ArgoCD Applications, delete gateway namespace. Backend remains unchanged.
+**Rollback:** Remove ArgoCD Applications, delete gateway namespace. Backend remains unchanged. For a single Application's bad sync rather than a full rollback, `argocd app rollback <app-name> <revision>` reverts just that Application to a prior revision without touching the others.
 
 ## Open Questions
 

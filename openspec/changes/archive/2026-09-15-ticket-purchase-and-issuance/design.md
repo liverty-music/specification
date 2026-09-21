@@ -90,6 +90,20 @@ identity-ekyc adds a `verification_level` ⑤ consumes; ⑥ is not yet built.
   `TicketId`, a `PaymentRef` wrapper) and an **enum** for `Order.status`, with
   protovalidate constraints — the spec's status names (`pending`/`paid`/...) are
   logical values, not proto bare-string literals.
+- **収納代行, not 為替取引 / 資金移動業 / 前払式.** The Organizer grants the platform
+  **代理受領権限** (collection-agent authority) over the buyer's payment; the
+  buyer's payment obligation to the Organizer is discharged the moment they pay
+  the platform, not when the platform later settles the Organizer. Combined with
+  the Organizer being the business seller-of-record and the hold-to-event escrow
+  (counter-performance gate — funds move to the Organizer only after the covered
+  event happens), this keeps the flow inside the 収納代行 exemption rather than
+  crossing into a licensed payment-service category. This is the load-bearing
+  legal structure the counsel opinion (#778 flag 1) evaluates.
+- **Card data never reaches our systems.** Card entry happens exclusively through
+  the provider's hosted fields (Stripe Elements); the backend and frontend only
+  ever see opaque provider tokens/customer references, never PAN/CVC/expiry. This
+  keeps PCI scope at **SAQ A**, the lightest self-assessment tier, rather than the
+  far heavier scope that direct card-field handling would require.
 - **Payout hold-to-event + dispute buffer — relocated to `ticket-settlement-and-payout`.**
   The hold-to-event gate, the post-event `Transfer`, and the single-Organizer-payee +
   platform-fee split all live in the settlement capability. ⑤ only needs the Order to

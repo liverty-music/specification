@@ -22,7 +22,6 @@ The frontend has accumulated significant CSS duplication and structural repetiti
 ### Modified Capabilities
 
 - `design-system`: Addition of three new shared CEs to the component library; rename of toast-notification to snack-bar.
-- `semantic-dom`: Simplified DOM structure across dialog/prompt/state components by removing redundant wrapper elements.
 
 ## Impact
 

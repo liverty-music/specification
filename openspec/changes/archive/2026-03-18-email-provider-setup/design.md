@@ -40,9 +40,11 @@ Create `mail.liverty-music.app` (prod) / `mail.dev.liverty-music.app` (dev) as m
 
 **Rationale**: `dev.liverty-music.app` is already NS-delegated from Cloudflare to GCP Cloud DNS. Placing `mail.dev.liverty-music.app` records in Cloudflare would not resolve.
 
+Domain authentication requires two record types per environment: a DKIM TXT record at `<selector>._domainkey.mail.<domain>` (selector and public key supplied by Postmark once the mail subdomain is added as a Sender Signature) and a Return-Path CNAME at `pm-bounces.mail.<domain>` pointing to `pm.mtasv.net`.
+
 ### 3. SMTP credential management
 
-Postmark uses the same Server API Token as both the SMTP username and password. A single config field `postmark.serverApiToken` is stored as a secret in Pulumi ESC and assigned to both the `user` and `password` fields of the `zitadel.SmtpConfig` resource.
+Postmark uses the same Server API Token as both the SMTP username and password. A single config field `postmark.serverApiToken` is stored as a secret in Pulumi ESC — at the environment level (`pulumiConfig.postmark.serverApiToken`, set via `esc env set liverty-music/<env> pulumiConfig.postmark.serverApiToken "<value>" --secret`), not the common environment, since dev and prod each run their own Postmark Server and must not share a token — and assigned to both the `user` and `password` fields of the `zitadel.SmtpConfig` resource. The resource connects to `smtp.postmarkapp.com:587` with `tls: true` (STARTTLS) and `senderName: "Liverty Music"`. Credentials are consumed directly by Pulumi via ESC config and are never provisioned as a GCP Secret Manager secret, since Zitadel Cloud connects to SMTP directly rather than through a K8s Pod.
 
 **Rationale**: Postmark's SMTP authentication model uses the Server API Token for both fields. Storing it under separate `smtpUser` / `smtpPassword` names would be misleading. A single `serverApiToken` field accurately represents the credential and avoids duplication. GCP Secret Manager + ESO pipeline is unnecessary since Zitadel Cloud connects to SMTP directly (no need to inject into K8s Pods).
 

@@ -15,7 +15,7 @@ Prod kustomize overlays currently pin container images by 40-character commit SH
 ## Capabilities
 
 ### New Capabilities
-- `prod-image-tag-immutability`: contracts the policy that prod AR repositories enforce tag immutability at the API level, prod kustomize overlays pin to immutable semver tags (not commit SHAs and not `:latest`), and the `app.kubernetes.io/version` Recommended Label propagates the release version onto every prod workload. Scope is intentionally narrow to prod — dev / staging are out of scope.
+(none — see design.md)
 
 ### Modified Capabilities
 None. The companion change `prepare-prod-service-in` (active, not yet archived) already ADDS the `prod-image-pipeline` capability with broader rules ("tags SHALL be `:vX.Y.Z` or `:<sha>`, never `:latest`"). This change deliberately authors a SEPARATE capability rather than MODIFYING `prod-image-pipeline` for two reasons: (a) `prod-image-pipeline` does not yet exist in `openspec/specs/` (only in the in-flight change's delta), so MODIFIED would be unenforceable until `prepare-prod-service-in` archives; (b) tag immutability is a distinct concern from the pipeline-shape contract (registry-side policy + manifest convention vs. build/push pipeline), and conflating them would couple future evolution of both.

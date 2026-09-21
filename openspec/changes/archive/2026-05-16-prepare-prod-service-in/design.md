@@ -72,9 +72,13 @@ Prod images carry two tags:
 
 `:latest` is forbidden on prod (per spec). Dev retains its existing `:latest + :sha + :main` triple because dev's ArgoCD Image Updater relies on `:latest`. Mixing models per env is acceptable; prod's release cadence is slow enough that the operator-friendly tag scheme outweighs the drift-from-dev cost.
 
+Each prod kustomize overlay under `k8s/namespaces/<ns>/overlays/prod/` whose base references an image emits its own `images:` transformation (or equivalent JSON 6902 patch) rewriting the rendered URI to the matching `liverty-music-prod` AR path. This is a belt-and-suspenders guard against base-manifest drift: if a base `image:` field is ever repointed at dev-AR (e.g., during a merge from a dev-focused PR), the overlay transformation still forces the prod-AR path at render time instead of silently propagating the wrong registry into the cluster.
+
 ### D6. Atlas prod overlay lives in `liverty-music/backend`, not in `cloud-provisioning`
 
 `cloud-provisioning/k8s/argocd-apps/prod/backend-migrations.yaml` already points at `liverty-music/backend:k8s/atlas/overlays/prod`. The Atlas overlay's source code IS the migration code (backend's responsibility), not infra plumbing (cloud-provisioning's responsibility). No relocation; we just add the missing directory in backend.
+
+The prod overlay diverges from the existing dev overlay in exactly three places: the `AtlasMigration.spec.cloud.url` targets the prod PSC DNS name (`298474959c18.25pf3r4b6sfkn.asia-northeast2.sql.goog`) and the `liverty-music` database on the prod Cloud SQL instance; the Atlas connection authenticates as `backend-app@liverty-music-prod.iam` (mirroring the dev overlay's use of the backend-app GSA for migration apply); and the migration source `configMapGenerator` still points at the same `migrations/` directory dev uses, so both envs apply identical forward migrations — there is no per-env migration fork.
 
 ### D7. Cross-repo PR fan-out: one PR per repo, sequenced
 
@@ -112,6 +116,22 @@ Determination of Mode A vs Mode B is itself a task (decrypt the prod GSM secret,
 ### D10. Mainnet SBT contract deployment: external, but spec-required
 
 The contract deploy itself is outside this change's code scope (it's a smart-contract operation against a public chain). The spec requires the address NOT be the zero address; the task list captures the operator action (deploy contract, record address in three configmap.env files). The verification scenario in the spec is a checksum + on-chain bytecode probe.
+
+### D11. Billing budget alert generalizes from dev-only to per-env
+
+`gcpConfig.billingAlertEmail` and `gcpConfig.budgetAmountJpy` were already env-agnostic in the Pulumi code path — the `cost-budget` and `billing-alert-email` resources materialize for any env whose ESC seeds `billingAlertEmail`. Only the spec and the requirement's name were dev-specific ("Dev Project Billing Budget Alert"), which no longer matched what the code already did once prod seeds its own values. Renaming to "Project Billing Budget Alert" and generalizing the thresholds (50%, 90%, 100% of `gcpConfig.budgetAmountJpy`, defaulting to ¥3,000 when unset) to apply per-env, rather than rewriting the Pulumi component, is the low-risk path: an env with no seeded `billingAlertEmail` simply has no budget resource, which is an explicit operator choice to defer rather than a bug.
+
+### D12. Prod Google OAuth client mirrors the existing dev requirement
+
+The Zitadel admin console signs in via a Google IdP, and that IdP needs a Google Cloud OAuth 2.0 Web Application client per env — one already exists for dev ("Maintain Google OAuth Client in Dev Infrastructure"). The prod client is provisioned the same way (manual GCP Console creation in the `liverty-music-prod` project, since Google OAuth clients are not currently Pulumi-managed) and recorded via `esc env set liverty-music/prod` under `pulumiConfig.zitadel.googleAdminIdp.{clientId,clientSecret}`, with the redirect URI pointed at the prod Zitadel Login V2 IdP callback (`https://auth.liverty-music.app/idps/callback`). The existing `docs/runbooks/zitadel-oauth-client-recreate.md` runbook gains the prod recreation steps alongside the dev ones, so an accidental deletion in either project has a documented recovery path.
+
+### D13. Prod blockchain ESC values must resolve to mainnet, verified by inspection
+
+`blockchain.deployerPrivateKey`, `blockchain.rpcUrl`, and `blockchain.bundlerApiKey` in `liverty-music/prod` ESC carry the same key names as dev but must resolve to Polygon mainnet (or whichever EVM mainnet hosts the prod SBT contract) rather than dev's Amoy/Sepolia testnet values. There's no Pulumi-side validation for this — it's a manual verification during the change: the RPC URL's host must match a known Polygon mainnet provider and must not contain `amoy`, `mumbai`, `sepolia`, or `testnet`; the deployer private key's derived address must be the `owner()` of the deployed mainnet SBT contract; and the bundler API key must resolve chainId `137`. Because these are plaintext-adjacent secrets already living in ESC, verification by inspection (decrypt, derive, compare) is cheaper than building tooling for a one-time check.
+
+### D14. Prod admin Google sub is per-OAuth-client, not a copy of dev's
+
+Google's `sub` claim is scoped to the OAuth client that requested it, not to the underlying Google identity — so `pannpers@pannpers.dev` signing in through the prod Google OAuth client (D12) receives a different `sub` than signing in through the dev client, even though it's the same human. `zitadel.adminGoogleSubs.pannpers` in prod ESC must hold the prod-issued value; copying the dev sub into prod ESC would silently fail IdP linking on first prod sign-in (Zitadel would have no HumanUser pre-linked to that sub) rather than erroring loudly, which is why it's called out as its own verification step rather than assumed to fall out of D12.
 
 ## Risks / Trade-offs
 

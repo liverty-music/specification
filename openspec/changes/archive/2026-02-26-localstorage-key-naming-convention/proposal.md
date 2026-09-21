@@ -34,7 +34,7 @@ Additionally, the key `user-region` stores a prefecture/admin area value but doe
 ## Capabilities
 
 ### New Capabilities
-- `localstorage-naming`: Centralized localStorage key registry with consistent naming convention
+(none — see design.md)
 
 ### Modified Capabilities
 _None — this is a refactor of key strings, not a behavioral change._

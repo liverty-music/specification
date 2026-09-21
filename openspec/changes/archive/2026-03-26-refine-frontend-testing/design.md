@@ -325,6 +325,21 @@ afterEach(async () => {
 
 Untyped mocks silently allow incorrect mock shapes to pass TypeScript compilation, leading to runtime failures that are hard to debug.
 
+### Decision 14: Integration test coverage for untested critical-path components
+
+**Choice:** Add `createFixture` integration tests for the critical-path components that currently have zero test coverage, each verifying the behavior specific to that component:
+
+- **BottomNavBar**: navigation items render for all configured routes; the active route's nav item carries the active CSS class.
+- **SnackBar**: the popover-based DOM is out of reach in JSDOM, so only the service-level logic (event aggregation via `IEventAggregator`, auto-dismiss scheduling) is tested via DI Unit tests in `test/services/snack-bar.spec.ts`; DOM behavior remains covered by E2E.
+- **UserHomeSelector**: region/prefecture options render, and a selection triggers a call to the user service to persist it.
+- **PostSignupDialog**: the multi-step flow renders the notification-permission prompt first and advances to the PWA install prompt once that step completes.
+- **ErrorBanner**: the error message renders when the error boundary service has a current error, and the dismiss button calls the error boundary service's `dismiss()`.
+- **SettingsRoute**: language options render via `repeat.for` for all configured locales; the verified-email indicator and verify button toggle based on verification status; the PWA install section only shows when the PWA install service reports `canShow: true`.
+- **ConcertHighway** (extracted from dashboard-route): date groups render into three lane columns (home/nearby/away); `beamIndexMap` is built from matched events; `isReadonly` suppresses `event-selected` dispatch on click; `detaching()` removes the scroll listener and cancels any pending `requestAnimationFrame`.
+- **WelcomeRoute**: unauthenticated users see sign-in/sign-up CTAs; `canLoad` redirects authenticated users to the dashboard; `attached()` loads preview concert data via `concertService.listWithProximity` into `dateGroups`; the `@observable currentLocale` change handler calls `changeLocale`.
+
+**Rationale:** These are the critical-path components identified as having zero test coverage; template binding bugs in them (broken `if.bind`, `repeat.for`, event wiring) would otherwise only surface at the E2E layer.
+
 ## Risks / Trade-offs
 
 ### [Risk] Fixture tests are slower than DI Unit tests

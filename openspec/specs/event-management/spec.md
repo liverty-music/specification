@@ -150,20 +150,6 @@ The `Concert` message MAY retain `VenueId venue_id` alongside the embedded `Venu
 - **THEN** it SHALL NOT contain a `Title title` field
 - **AND** it SHALL NOT contain a `Url source_url` field
 
-### Requirement: Trace context propagation across message broker
-
-The system SHALL propagate W3C Trace Context (traceparent) from the publisher process to the consumer process via message metadata. Consumer-side structured logs SHALL include `trace_id` and `span_id` fields extracted from the propagated trace context.
-
-#### Scenario: Consumer log includes trace fields from publisher trace
-
-- **WHEN** a publisher emits an event while processing a traced request
-- **THEN** the consumer handler's structured logs MUST contain `trace_id` and `span_id` fields matching the publisher's trace
-
-#### Scenario: Consumer handler operates within propagated span
-
-- **WHEN** the consumer receives a message with trace context in its metadata
-- **THEN** all downstream operations (database queries, nested event publishing) MUST be children of the propagated trace
-
 ### Requirement: Event Natural Key Reflects Physical Identity
 
 The natural key of the `events` table SHALL be `(venue_id, local_event_date, start_at)`, enforced as a unique constraint that treats NULL `start_at` as equal (`NULLS NOT DISTINCT`) — a database-layer constraint expressed in storage column names; the corresponding proto fields are the embedded `venue.id`, `local_date` (note the proto/DB column rename), and `start_time`. `series_id` SHALL NOT be part of the key: an event's identity is physical (where and when it happens), independent of how it is grouped into a series. The previous key `(series_id, local_event_date, venue_id)` SHALL be removed.
@@ -185,4 +171,3 @@ This makes event identity artist- and series-independent, so the same physical s
 
 - **WHEN** two discovered events share `(venue_id, local_event_date)` and both have NULL `start_at`
 - **THEN** the `NULLS NOT DISTINCT` constraint SHALL collapse them to a single `Event` row
-

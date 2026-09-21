@@ -62,6 +62,8 @@ After:
 - Total height never approaches 70vh
 - The `scrollTop > 0` check in current TS is defensive code that never fires
 
+**Non-dismissable mode:** When the sheet is opened with `popover="manual"` (the onboarding flow), the `.dismiss-zone` snap point is hidden or disabled so the sheet has only one snap point (`.sheet-body`) and the user cannot swipe it away — onboarding controls dismissal programmatically instead.
+
 ### Decision 2: @starting-style for entry animations
 
 Elements inserted into the DOM dynamically SHALL use `@starting-style` for entry animations instead of `requestAnimationFrame` or two-step class toggling. This is already partially adopted (event-detail-sheet popover uses `@starting-style`); extend to all dynamic content.
@@ -75,6 +77,10 @@ Parent elements that need to change style based on child state SHALL use `:has()
 Custom attributes that solely bridge JS values to CSS custom properties (`--_drag-y`, `--_swipe-x`) are an unnecessary abstraction layer. These SHALL be deleted when the underlying JS pattern is replaced (scroll snap for drag, unused for swipe).
 
 Custom attributes that perform computation (e.g., `artist-color` which hashes an artist name to a hue value) remain valid and are out of scope.
+
+### Decision 5: Scroll-driven Animations for scroll-linked effects
+
+Scroll-linked visual effects (progress indicators, parallax, shadow-on-scroll) SHALL use `animation-timeline: scroll()` with a `@keyframes` rule instead of a JavaScript `scroll` event listener — the browser drives the effect off the compositor thread instead of a main-thread listener recomputing styles on every scroll tick.
 
 ## Risks / Trade-offs
 

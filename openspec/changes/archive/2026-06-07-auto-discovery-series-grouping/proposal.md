@@ -20,7 +20,6 @@ This change separates the two concerns: **events deduplicate on their physical i
 - `auto-discovery-series-grouping`: discovery-time grouping — one `Series` per Gemini `<tour>` group via event-derived identity, a physical event natural key with application-layer resolution, SeriesType assignment, and multi-hall venue disambiguation. This replaces the 1:1 SINGLE fallback deferred by `add-series-hierarchy`.
 
 ### Modified Capabilities
-- `gemini-grounded-extract-and-coerce`: `parseStep1Envelope` SHALL no longer discard the tour grouping; each `EventDraft` SHALL carry its block origin (tour/standalone) and, for tours, an intra-run group handle.
 - `event-management`: the events natural key SHALL be `(venue_id, local_event_date, start_at)` (was `(series_id, local_event_date, venue_id)`); series identity SHALL be established by application-layer adoption from member events rather than by a database-level key.
 
 ## Impact

@@ -47,6 +47,8 @@ On mobile, the canvas captures all touch events before they reach the complete b
 - `<dna-orb-canvas>` (first child, paints first)
 - Overlay elements (later in DOM, paint on top)
 
+The `.container::before` starfield keeps `pointer-events: none` (it never needed `z-index` to sit behind everything else — being the first painted layer already guarantees that), and it's the pattern the rest of the overlay follows: paint order alone decides what's on top, `pointer-events` alone decides what's interactive.
+
 ### 3. Bubble replenishment fallback
 
 **Decision**: When `getSimilarArtists()` returns zero new bubbles (all deduplicated), fall back to calling `loadInitialArtists()` again but filter against the `seenArtistIds` set. This reloads the top-50 artist pool and any unseen artists become new bubbles.

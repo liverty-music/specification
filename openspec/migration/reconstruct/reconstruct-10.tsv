@@ -1,0 +1,53 @@
+change	old_spec	old_req_name	disposition	design_section	delta_action	proposal_action	note
+2026-05-08-add-zitadel-console-admin-via-google-idp	identity-management	Manage Zitadel Organization	OUT:runbook	Decisions D1	removed-block	none	
+2026-05-08-add-zitadel-console-admin-via-google-idp	identity-management	Manage Zitadel Project	OUT:runbook	already-covered	removed-block	none	
+2026-05-08-add-zitadel-console-admin-via-google-idp	identity-management	Manage OIDC Application	OUT:runbook	already-covered	removed-block	none	unsure whether Type=SPA/Auth Method=NONE needed restating in design; treated as pre-existing app config, not a new decision
+2026-05-08-add-zitadel-console-admin-via-google-idp	identity-management	Configure Admin Org Login Policy	OUT:runbook	Decisions D12	removed-block	none	
+2026-05-08-add-zitadel-console-admin-via-google-idp	identity-management	Provision Google IdP for Admin Sign-in	OUT:runbook	Decisions D4	removed-block	none	
+2026-05-08-add-zitadel-console-admin-via-google-idp	identity-management	Provision Human Admin User in Admin Role Org	OUT:runbook	Decisions D5	removed-block	none	
+2026-05-08-add-zitadel-console-admin-via-google-idp	identity-management	Grant IAM_OWNER to Human Admin User	OUT:runbook	Decisions D5	removed-block	none	
+2026-05-08-add-zitadel-console-admin-via-google-idp	identity-management	Pre-link Google Identity to Human Admin via IaC	OUT:runbook	Decisions D11	removed-block	none	
+2026-05-08-add-zitadel-console-admin-via-google-idp	identity-management	Provision Admin Google Sub via ESC	OUT:runbook	Decisions D11	removed-block	none	
+2026-05-08-add-zitadel-console-admin-via-google-idp	identity-management	Place Machine Users by Responsibility	OUT:runbook	Decisions D7	removed-block	none	
+2026-05-08-add-zitadel-console-admin-via-google-idp	identity-management	Retain Break-glass Machine User	OUT:runbook	already-covered	removed-block	none	
+2026-05-08-add-zitadel-console-admin-via-google-idp	identity-management	Maintain Google OAuth Client in Dev Infrastructure	OUT:runbook	already-covered	removed-block	none	
+2026-06-06-add-admin-console	admin-console	Bundle isolation from the consumer SPA	OUT:design-doc	already-covered	removed-block	none	
+2026-06-06-add-admin-console	admin-console	Dedicated source directory with an enforced import boundary	OUT:lint	already-covered	removed-block	none	
+2026-06-06-add-admin-console	admin-console-hosting	Dedicated container image and Kubernetes workload	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-06-06-add-admin-console	admin-console-hosting	Dedicated hostname on the shared external gateway	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-06-06-add-admin-console	admin-console-hosting	Per-host runtime config delivery	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-06-06-add-admin-console	admin-console-hosting	Admin-org OIDC application provisioning	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-06-06-add-admin-console	admin-console-hosting	TLS certificate and DNS for the admin hostname	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-06-06-add-admin-console	admin-console-hosting	GitOps delivery for the admin image	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-05-13-provision-prod-gcp-resources	prod-environment-bootstrap	Prod GKE cluster SHALL enable Dataplane V2	OUT:design-doc	already-covered	removed-block	none	
+2026-05-13-provision-prod-gcp-resources	prod-environment-bootstrap	Prod GKE cluster SHALL encrypt Kubernetes Secrets via Cloud KMS (etcd CMEK)	OUT:design-doc	already-covered	removed-block	none	
+2026-05-13-provision-prod-gcp-resources	prod-environment-bootstrap	Prod project SHALL host the Cloud KMS keyring and key for etcd CMEK	OUT:design-doc	already-covered	removed-block	none	
+2026-05-13-provision-prod-gcp-resources	prod-environment-bootstrap	Prod GKE cluster SHALL use the same secondary IP CIDR plan as dev	OUT:design-doc	already-covered	removed-block	none	
+2026-05-13-provision-prod-gcp-resources	prod-environment-bootstrap	Prod cluster SHALL NOT enable Confidential GKE Nodes at cluster level	OUT:design-doc	already-covered	removed-block	none	
+2026-05-13-provision-prod-gcp-resources	prod-environment-bootstrap	Prod GCP project SHALL host the same peripheral GCP resources as dev	OUT:design-doc	Decisions D10	removed-block	none	
+2026-05-13-provision-prod-gcp-resources	prod-environment-bootstrap	Initial prod Pulumi deploy SHALL be manual-triggered	OUT:runbook	already-covered	removed-block	none	
+2026-03-17-argocd-google-chat-alerts	argocd-deployment-alerts	ArgoCD Notifications controller is enabled	OUT:runbook	Decisions D3	deleted-file+dir	removed-new-capability	
+2026-03-17-argocd-google-chat-alerts	argocd-deployment-alerts	Google Chat webhook service is configured	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-17-argocd-google-chat-alerts	argocd-deployment-alerts	Default triggers notify on error conditions	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-17-argocd-google-chat-alerts	argocd-deployment-alerts	ArgoCD secrets are isolated from backend secrets	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-17-argocd-google-chat-alerts	argocd-deployment-alerts	Webhook URL is stored in Pulumi ESC and GCP Secret Manager	OUT:runbook	Decisions D2	deleted-file+dir	removed-new-capability	
+2026-03-05-unify-lint-test-ops	commit-gate-hook	Claude Code PreToolUse hook blocks unchecked commits	OUT:runbook	already-covered	removed-block	none	
+2026-03-05-unify-lint-test-ops	commit-gate-hook	CLAUDE.md and AGENTS.md updated	OUT:runbook	Migration Plan	removed-block	none	
+2026-03-05-unify-lint-test-ops	unified-check-interface	Makefile with standard targets in every repo	OUT:delete	already-covered	deleted-file+dir	removed-new-capability	
+2026-03-05-unify-lint-test-ops	unified-check-interface	CI workflows use Makefile targets	OUT:delete	already-covered	deleted-file+dir	removed-new-capability	
+2026-08-22-organizer-console	organizer-console	Bundle isolation from the consumer SPA and admin console	OUT:design-doc	already-covered	removed-block	none	
+2026-08-22-organizer-console	organizer-console	Organizer runtime config resolves the org at login	OUT:design-doc	already-covered	removed-block	none	
+2026-08-22-organizer-console	organizer-console-hosting	Serve the organizer console at a dedicated per-env host	OUT:runbook	already-covered	deleted-file+dir	removed-new-capability	
+2026-08-22-organizer-console	organizer-console-hosting	Serve a per-host organizer config	OUT:runbook	Decisions D3	deleted-file+dir	removed-new-capability	
+2026-04-02-gke-cost-optimization	gke-standard-infrastructure	Standard zonal GKE cluster for dev	OUT:design-doc	Decisions D1	deleted-file+dir	removed-new-capability	
+2026-04-02-gke-cost-optimization	gke-standard-infrastructure	Dev cluster nodes SHALL have public external IPs	OUT:design-doc	already-covered	deleted-file+dir	removed-new-capability	
+2026-04-02-gke-cost-optimization	gke-standard-infrastructure	Standard cluster Spot nodeSelector	OUT:design-doc	already-covered	deleted-file+dir	removed-new-capability	
+2026-04-08-fix-nats-ack-redelivery-loop	auto-concert-discovery	Consumer JetStream Delivery Policy	OUT:design-doc	Decisions D2	deleted-file+dir	removed-modified-capability	
+2026-04-08-fix-nats-ack-redelivery-loop	auto-concert-discovery	Consumer JetStream Acknowledgement Policy	OUT:design-doc	already-covered	deleted-file+dir	removed-modified-capability	
+2026-09-01-declarative-jetstream-nack	jetstream-consumer-reliability	Stream and durable configuration is managed declaratively by a single owner	OUT:design-doc	already-covered	deleted-file+dir	removed-modified-capability	
+2026-09-01-declarative-jetstream-nack	jetstream-consumer-reliability	A consumer may scale to zero without losing its durable	OUT:runbook	already-covered	deleted-file+dir	removed-modified-capability	
+2026-03-16-google-chat-alert	app-error-log-alerting	Notification via Google Chat	OUT:runbook	already-covered	removed-block	none	
+2026-04-20-customize-local-db-port	dev-db-access	Local DB access SHALL be established via kubectl port-forward	OUT:runbook	already-covered	deleted-file+dir	removed-modified-capability	
+2026-02-22-concert-detail	live-events	Go Entity Field Name Alignment	OUT:design-doc	Decisions D6	removed-block	none	
+2026-04-16-scope-new-concert-notifications	push-notification-service	Notification consumer is a thin adapter over the use case	OUT:design-doc	Decisions D4	removed-block	none	
+2026-08-23-fix-zitadel-httpclient-denylist-blocks-webhook	zitadel-self-hosted-deployment	Outbound HTTP Client Permits In-Cluster Webhook Targets While Retaining SSRF Protection	OUT:design-doc	already-covered	deleted-file+dir	removed-modified-capability	

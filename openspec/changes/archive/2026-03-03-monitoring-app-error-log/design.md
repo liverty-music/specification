@@ -45,6 +45,8 @@ Pulumi IaC (`cloud-provisioning/`) で全インフラを管理しており、コ
 
 **理由:** ワークロードごとに分けることで、通知メッセージからどのコンポーネントでエラーが発生したか即座に判別可能。Alert Policy 名にワークロード名を含めることで、Google Chat の通知にもワークロード名が表示される。コスト差は $0.20/月で無視できる。
 
+各 Alert Policy のフィルタは `resource.type = "k8s_container"`、`resource.labels.namespace_name = "backend"`、`resource.labels.container_name` (ワークロード名で一致)、`severity = "ERROR"` の組み合わせ。`WARNING` 以下は明示的にどの Alert Policy も発火しない。
+
 ### 3. Notification Channel は Google Chat (primary) + Email (backup)
 
 **選択:** 2 つの Notification Channel を作成し、全 Alert Policy で両方を指定する

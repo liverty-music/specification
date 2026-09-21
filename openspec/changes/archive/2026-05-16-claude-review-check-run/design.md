@@ -51,6 +51,8 @@ A `workflow_call` reusable workflow needs a stable address. The conventional Git
 
 **Alternative considered**: A dedicated `liverty-music/shared-workflows` repo. Acceptable but introduces an extra repo before there is a second reusable workflow to justify it. We can split later if the `.github` repo accumulates too many concerns.
 
+Each of the four repos' own `.github/workflows/claude-code-review.yml` shrinks to a caller-only workflow (~12 lines): it invokes the reusable workflow via `uses:`, forwards `secrets: inherit`, and optionally passes a repo-specific `additional_focus` input for review emphasis particular to that repo. Behavior changes (prompt, plugin version, verdict logic) land once in the reusable workflow and take effect on all four repos without touching the callers.
+
 ### 3. Use the existing `code-review@claude-code-plugins` plugin and add a small wrapper
 
 The plugin already orchestrates multiple specialist agents (haiku/sonnet/opus) with built-in false-positive gating. Re-implementing that in a custom prompt would regress review quality. Instead, the reusable workflow keeps the plugin invocation as `Step 1` and adds two further steps:

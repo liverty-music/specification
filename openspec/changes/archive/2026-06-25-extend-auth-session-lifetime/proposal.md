@@ -14,7 +14,7 @@ Users who sign up and install the PWA are signed out when they reopen the app th
 <!-- None — both behaviors extend existing capabilities. -->
 
 ### Modified Capabilities
-- `user-auth`: Add a requirement for transparent session restoration on app cold-start via silent refresh-token renewal, and specify that server-side session monitoring (`monitorSession`) is disabled in all environments.
+- `user-auth`: Add a requirement for transparent session restoration on app cold-start via silent refresh-token renewal.
 - `identity-management`: Add a requirement that OIDC token lifetimes are managed explicitly via IaC (access 30m, refresh idle 30d, refresh absolute 90d) rather than relying on Zitadel built-in defaults.
 
 ## Impact

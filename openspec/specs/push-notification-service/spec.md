@@ -95,22 +95,6 @@ The system SHALL expose `PushNotificationService.Delete` to remove the push subs
 - **WHEN** `Delete` is called without a valid user session
 - **THEN** the service SHALL return `UNAUTHENTICATED`
 
-### Requirement: Per-browser scoping for repository operations
-
-The system's `PushSubscriptionRepository` interface SHALL expose exclusively per-browser operations keyed by `(user_id, endpoint)` for mutation and retrieval, plus a batch list for internal push delivery.
-
-#### Scenario: Repository surface
-
-- **WHEN** any component inside the backend needs to mutate or read push subscription state
-- **THEN** it SHALL use one of: `Create(sub)`, `Get(userID, endpoint)`, `Delete(userID, endpoint)`, or `ListByUserIDs(userIDs)`
-- **AND** `ListByUserIDs` SHALL be used only by the push delivery path, not by any externally triggered RPC
-
-#### Scenario: No bulk-per-user mutation
-
-- **WHEN** any component needs to remove push subscriptions
-- **THEN** the removal SHALL be scoped to a single `(user_id, endpoint)` pair
-- **AND** no helper SHALL exist that deletes all subscriptions for a user in a single call
-
 ### Requirement: Stale subscription self-healing on the client
 
 The system SHALL keep the browser's push subscription and the backend's stored subscription convergent automatically, without requiring user interaction, whenever the user has already granted browser notification permission. Recovery SHALL cover both divergence directions:
@@ -221,23 +205,6 @@ The `CONCERT.created` CloudEvent payload SHALL carry the artist identifier and t
 - **THEN** its data payload SHALL NOT contain a `concert_count` field
 - **AND** SHALL NOT contain any other field beyond `artist_id` and `concert_ids`
 
-### Requirement: Notification consumer is a thin adapter over the use case
-
-The consumer handler subscribed to `CONCERT.created` SHALL only parse the CloudEvent envelope and delegate to the notification use case. It SHALL NOT perform repository queries, hydrate domain entities, or apply business filters.
-
-#### Scenario: Handler responsibilities
-
-- **WHEN** the `CONCERT.created` consumer receives a message
-- **THEN** it SHALL deserialize the CloudEvent data into the use case's input struct
-- **AND** invoke the `NotifyNewConcerts` use case method with that struct and the request context
-- **AND** propagate the use case's error (if any) unchanged
-
-#### Scenario: Handler has no direct repository dependencies
-
-- **WHEN** the notification consumer is constructed
-- **THEN** it SHALL NOT accept `ArtistRepository`, `ConcertRepository`, or any other repository as a dependency
-- **AND** all domain-data access required for notification delivery SHALL occur inside the use case
-
 ### Requirement: NotifyNewConcerts debug RPC for deterministic invocation
 
 The `PushNotificationService` SHALL expose a `NotifyNewConcerts` RPC that invokes the same delivery path as the `CONCERT.created` consumer, bypassing the event bus. This RPC is intended for integration testing and operator-initiated re-delivery.
@@ -326,4 +293,3 @@ Push subscription registration (`PushManager.subscribe()` and the `PushNotificat
 - **THEN** the failure SHALL be logged on the client
 - **AND** the UI toggle SHALL reflect the OFF (not-enabled) state
 - **AND** the user SHALL NOT be shown a success state
-

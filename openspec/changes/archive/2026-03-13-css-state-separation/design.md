@@ -152,6 +152,8 @@ Replace `setTimeout(() => cleanup(), DURATION_MS)` with CSS event listeners. Two
 
 For `prefers-reduced-motion`, detect via `matchMedia('(prefers-reduced-motion: reduce)')` and run cleanup immediately since no transition fires.
 
+The same event-driven rule applies to popover exit animations: when a popover element has an exit animation and needs `hidePopover()` called after it finishes, the component listens for `animationend` on the popover element and calls `hidePopover()` from that handler — never from a `setTimeout` callback.
+
 **Note:** `celebration-overlay.ts` already implements `transitionend` for fade-out cleanup. The remaining change is replacing the display-duration `setTimeout` with CSS animation delay.
 
 ### Decision 6: Remove if.bind where Popover API manages visibility

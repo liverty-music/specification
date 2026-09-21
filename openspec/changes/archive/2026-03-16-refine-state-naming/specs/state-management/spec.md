@@ -80,28 +80,6 @@ The system SHALL implement a single `appReducer` function that returns a new sta
 - **WHEN** an unrecognized action type is dispatched
 - **THEN** the reducer SHALL return the current state unchanged (same reference)
 
-### Requirement: OnboardingStep string values
-
-The system SHALL define `OnboardingStep` as a const object with string literal values representing each step by name.
-
-#### Scenario: Step values
-
-- **WHEN** `OnboardingStep` is defined
-- **THEN** it SHALL contain exactly these entries: `LP: 'lp'`, `DISCOVERY: 'discovery'`, `DASHBOARD: 'dashboard'`, `DETAIL: 'detail'`, `MY_ARTISTS: 'my-artists'`, `COMPLETED: 'completed'`
-- **AND** it SHALL NOT contain `LOADING` or `SIGNUP`
-
-#### Scenario: Step ordering
-
-- **WHEN** step ordering is needed (e.g., auth-hook route guard)
-- **THEN** the system SHALL use an explicit `STEP_ORDER` array to determine step precedence
-- **AND** the system SHALL provide a `stepIndex(step)` function that returns the ordinal position
-
-#### Scenario: Onboarding detection
-
-- **WHEN** determining if the user is in the onboarding flow
-- **THEN** the system SHALL check membership in an `ONBOARDING_STEPS` Set containing `'discovery'`, `'dashboard'`, `'detail'`, `'my-artists'`
-- **AND** the system SHALL NOT use numeric range comparison
-
 ### Requirement: Persistence middleware
 
 The system SHALL implement an `After` middleware that persists relevant state slices to localStorage after each dispatch.

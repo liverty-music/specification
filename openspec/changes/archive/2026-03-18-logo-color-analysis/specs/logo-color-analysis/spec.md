@@ -19,21 +19,6 @@ The system SHALL analyze artist logo images (clearLOGO PNGs) to extract dominant
 - **WHEN** a logo image has no non-transparent pixels (alpha >= 10)
 - **THEN** the analysis SHALL return nil (no analysis possible)
 
-### Requirement: sRGB to OKLCH Conversion
-The system SHALL convert sRGB pixel values to OKLCH color space using fixed-coefficient matrix math (sRGB → Linear RGB → OKLab → OKLCH). The conversion SHALL use Go standard library types (`color.NRGBA`) with no external dependencies.
-
-#### Scenario: Pure white pixel
-- **WHEN** sRGB (255, 255, 255) is converted to OKLCH
-- **THEN** lightness SHALL be approximately 1.0 and chroma SHALL be approximately 0.0
-
-#### Scenario: Pure red pixel
-- **WHEN** sRGB (255, 0, 0) is converted to OKLCH
-- **THEN** lightness SHALL be approximately 0.63, chroma SHALL be > 0.2, and hue SHALL be approximately 29°
-
-#### Scenario: Pure black pixel
-- **WHEN** sRGB (0, 0, 0) is converted to OKLCH
-- **THEN** lightness SHALL be approximately 0.0 and chroma SHALL be approximately 0.0
-
 ### Requirement: Logo Analysis Integration in Sync Pipeline
 The fanart sync pipeline (CronJob and ARTIST.created consumer) SHALL perform logo color analysis after fetching fanart data. The analysis SHALL use the best logo image selected by `BestByLikes` from `HDMusicLogo`, falling back to `MusicLogo` if `HDMusicLogo` is empty.
 

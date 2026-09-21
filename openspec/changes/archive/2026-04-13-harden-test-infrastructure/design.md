@@ -230,7 +230,7 @@ await page.locator('[data-live-card]').first().click()
 
 Initial hypothesis was to replace JS dispatch with `page.getByLabel()`. **Investigation revealed this is not feasible** — Aurelia's `change.trigger` binding fires only on native `change` events, not on `click`. The hype radio labels contain only visual dots (`<span class="hype-dot">`) with no readable text, so `page.getByLabel()` cannot target them.
 
-**Conclusion:** JS dispatch via `dispatchEvent(new Event('change', { bubbles: true }))` is the **correct approach** for Aurelia `change.trigger` bindings on visually-hidden inputs without readable label text. These are not workarounds — they are the appropriate interaction pattern.
+**Conclusion:** JS dispatch via `dispatchEvent(new Event('change', { bubbles: true }))` is the **correct approach** for Aurelia `change.trigger` bindings on visually-hidden inputs without readable label text. These are not workarounds — they are the appropriate interaction pattern. Where a visually-hidden input's label does carry readable text and the binding isn't `change.trigger`-sensitive, `page.getByLabel('label text').click()` is preferred over dispatch — the dispatch escape hatch is reserved for the specific case (no readable label, or a native `change` event is required) where Playwright's locator API has no native path.
 
 **Remaining JS dispatch sites (audit results):**
 - 2 hype radio dispatches — correct (Aurelia `change.trigger`)
@@ -273,6 +273,8 @@ it('concert-highway renders with non-zero height when dateGroups provided', asyn
 1. `dashboard-route` + `concert-highway` — grid height propagation
 2. `welcome-route` + `concert-highway` — scroll-snap overflow containment
 3. `concert-highway` + `event-card` — subgrid lane alignment
+4. `concert-highway` readonly mode — with `is-readonly="true"`, clicking an `event-card` SHALL NOT dispatch an `event-selected` custom event, catching accidental interaction wiring in the readonly path
+5. `concert-highway` beam index map — for dateGroups containing `matched: true` events, `component.beamIndexMap` SHALL map each matched event ID to a beam index, verifying the beam-rendering state stays in sync with the bound data
 
 **JSDOM limitation:** `offsetHeight` and computed styles may not fully replicate browser layout. Tests should verify DOM structure and CSS class/attribute presence. For pixel-accurate layout, E2E remains necessary — but composition tests catch structural issues (missing elements, broken bindings, incorrect display modes).
 

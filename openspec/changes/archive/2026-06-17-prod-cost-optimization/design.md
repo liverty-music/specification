@@ -77,6 +77,8 @@ service:
 
 `filter` を `batch` の **前** に置くことで、drop 対象を batch 集約前に捨てる (batch を経由してから捨てる無駄を回避)。
 
+ConfigMap の `filter` processor 定義には、なぜこの2つの metric group を drop するのか (billing account の 150 MiB free tier 制約) を説明するコメントブロックを付け、残す 3 metric も明示的に列挙しておく。将来の運用者が filter ルールを拡張・緩和・revert する際に文脈を追えるようにするため。
+
 ### Decision 2: Argo CD の不要 pod 削減は base ではなく overlays/prod で patch する
 
 prod overlay 限定の disable を行い、dev では現状動作を維持する。
@@ -102,7 +104,7 @@ spec:
 # (未使用なら。tasks.md の事前確認で判断)
 ```
 
-argocd-server の `replicas: 2 → 1` も同じ overlay の strategic merge patch で実施。
+argocd-server の `replicas: 2 → 1` も同じ overlay の strategic merge patch で実施。single replica では Argo CD UI/API の可用性が下がるが、この phase では Argo CD UI に対する HA SLA は要求されないため許容する。`replicas: 0` に patch する各 Deployment には、どの機能を犠牲にしているかを説明するコメントを付ける。
 
 ### Decision 3: Cloud SQL availability 切り替えは Pulumi 経由、staged rollout は行わない
 
@@ -164,6 +166,8 @@ new gcp.bigquery.DatasetIamMember('billing-export-svc', {
 5. (任意) Pricing export も同 dataset に向ける
 6. 24h 後に `bq ls liverty-music-prod:billing_export` でテーブル生成を確認
 7. テーブルが現れない場合は IAM 権限を再確認
+
+Standard usage cost export だけでなく Detailed usage cost export も有効化する。Detailed export はリソースレベルの粒度を持つため、cost spike 調査時に pod / namespace 単位でコストを帰属させられる。runbook には、日次の SKU 別コスト集計 (`SUM(cost) GROUP BY service, sku`) のサンプル SQL も併記し、次回の spike 調査を推測でなく SQL で即座に行えるようにする。
 
 ### Decision 5: 適用順序は「リスクが小さい順」で otel → Argo CD → BQ → Cloud SQL
 

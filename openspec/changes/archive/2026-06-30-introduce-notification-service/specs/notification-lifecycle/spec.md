@@ -20,15 +20,6 @@ The service SHALL record the delivery outcome of each notification's channel sen
 - **THEN** the notification's delivery status SHALL be recorded as `failed` with a failure reason
 - **AND** the notification record SHALL remain so the failure is auditable and the send is re-dispatchable
 
-### Requirement: All user-facing notifications flow through the notification service
-Producers of user-facing notifications SHALL dispatch through the notification service rather than calling the push sender directly, so that every notification a user receives has a corresponding record and delivery outcome. Migrating producers SHALL preserve their existing behaviour (audience resolution, once-only delivery) and the content users receive.
-
-#### Scenario: New-concert and sales-reminder notifications are recorded
-- **WHEN** the new-concert notifier or the sales-reminder delivery sends a notification
-- **THEN** it SHALL do so through the notification service
-- **AND** a notification record with a delivery outcome SHALL exist for that send
-- **AND** the user SHALL receive the same web-push content as before
-
 ### Requirement: Read and dismiss state is user-controllable and idempotent
 The service SHALL let a user mark a notification (by `notification_id`) as read or dismissed, scoped to that user, recording the transition timestamp. Repeating the same transition SHALL be a no-op (idempotent), and a user SHALL NOT be able to change another user's notification state.
 
@@ -36,11 +27,3 @@ The service SHALL let a user mark a notification (by `notification_id`) as read 
 - **WHEN** a user marks their own notification as read, then marks it read again
 - **THEN** the first call SHALL record `read_at` and the second SHALL be a no-op
 - **AND** a request to mark a notification belonging to a different user SHALL be rejected
-
-### Requirement: The notification identifier is propagated end-to-end
-The `notification_id` SHALL be carried from the stored record into the dispatched push payload (so the client/service worker can reference it), establishing a stable correlation key for later notification-lifecycle features (in-app inbox, and the deferred `notification.opened` / `notification.dismissed` analytics events).
-
-#### Scenario: The push payload carries the notification id
-- **WHEN** a notification is dispatched to the web-push channel
-- **THEN** the push payload SHALL include the `notification_id` (e.g. in its `data`)
-- **AND** that id SHALL match the stored notification record's identifier

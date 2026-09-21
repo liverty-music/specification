@@ -14,12 +14,7 @@ The CUBE CSS methodology defines strict rules for how CSS should be organized ac
 ## Capabilities
 
 ### New Capabilities
-- `cube-css-lint-plugin`: The stylelint plugin package itself — rule implementations, test suite, and plugin registration
-- `cube-css-layer-enforcement`: Rules that enforce `@layer` structure (`require-layer`, `layer-order`)
-- `cube-css-layer-constraints`: Rules that constrain what is allowed within each layer (`no-visual-in-composition`, `utility-single-property`, `block-require-scope`, `exception-data-attr`, `data-attr-naming`)
-- `cube-css-token-enforcement`: The `require-token-variables` rule — enforces `var()` for design tokens in consumption layers, with `calc()` awareness
-- `cube-css-structural-rules`: Rules enforcing file/block structure (`block-max-lines`, `one-block-per-file`, `prefer-where-in-reset`)
-- `cube-css-modern-css-rules`: Rules enforcing modern CSS best practices (`prefer-vi-over-vw`, `require-container-name`, `prefer-color-mix`)
+(none — see design.md)
 
 ### Modified Capabilities
 - `css-linting`: The existing stylelint configuration will be updated to register and configure the new plugin rules

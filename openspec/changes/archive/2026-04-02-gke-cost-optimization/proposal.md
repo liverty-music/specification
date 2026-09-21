@@ -16,7 +16,7 @@ GKE Autopilot's mandatory $0.10/hr cluster management fee (¥10,800/month) and C
 
 ### New Capabilities
 
-- `gke-standard-infrastructure`: Standard zonal GKE cluster with Spot node pool for dev, replacing Autopilot
+(none — see design.md)
 
 ### Modified Capabilities
 

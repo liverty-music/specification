@@ -14,7 +14,7 @@ The previous change `optimize-dev-gke-cost` (archived 2026-04-28) only realized 
 None.
 
 ### Modified Capabilities
-- `gke-standard-infrastructure`: ADD a requirement constraining the dev cluster's `kube-dns-autoscaler` ConfigMap to `preventSinglePointFailure: false`, with verification scenarios for ConfigMap state and the resulting `kube-dns` Deployment replica count.
+None.
 
 ## Impact
 

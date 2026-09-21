@@ -56,23 +56,6 @@ The `CONCERT.created` CloudEvent payload SHALL carry the artist identifier and t
 - **THEN** its data payload SHALL NOT contain a `concert_count` field
 - **AND** SHALL NOT contain any other field beyond `artist_id` and `concert_ids`
 
-### Requirement: Notification consumer is a thin adapter over the use case
-
-The consumer handler subscribed to `CONCERT.created` SHALL only parse the CloudEvent envelope and delegate to the notification use case. It SHALL NOT perform repository queries, hydrate domain entities, or apply business filters.
-
-#### Scenario: Handler responsibilities
-
-- **WHEN** the `CONCERT.created` consumer receives a message
-- **THEN** it SHALL deserialize the CloudEvent data into the use case's input struct
-- **AND** invoke the `NotifyNewConcerts` use case method with that struct and the request context
-- **AND** propagate the use case's error (if any) unchanged
-
-#### Scenario: Handler has no direct repository dependencies
-
-- **WHEN** the notification consumer is constructed
-- **THEN** it SHALL NOT accept `ArtistRepository`, `ConcertRepository`, or any other repository as a dependency
-- **AND** all domain-data access required for notification delivery SHALL occur inside the use case
-
 ### Requirement: NotifyNewConcerts debug RPC for deterministic invocation
 
 The `PushNotificationService` SHALL expose a `NotifyNewConcerts` RPC that invokes the same delivery path as the `CONCERT.created` consumer, bypassing the event bus. This RPC is intended for integration testing and operator-initiated re-delivery.

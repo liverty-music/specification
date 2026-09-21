@@ -45,6 +45,8 @@ Key naming convention: `<page>.<component>.<element>` (e.g., `welcome.hero.title
 
 **Rationale**: Single file per locale keeps things simple for 2 languages. Namespace-by-page convention makes keys discoverable and avoids collisions. Can split into multiple namespace files later via i18next namespaces if files grow large.
 
+Both locale files are kept in key parity — every key added to `ja/translation.json` gets the same key in `en/translation.json`. i18next's own fallback handles the gap when EN translation work lags behind: a key missing from `en/translation.json` renders the JA value rather than the raw key.
+
 **Alternatives considered**:
 - One JSON file per page per locale: Over-fragmented for the current ~24 string locations. Can migrate to this later with i18next's `ns` option if translation files exceed ~500 keys.
 
@@ -79,7 +81,7 @@ this.toast.show('ログインが必要です');
 this.toast.show(this.i18n.tr('auth.loginRequired'));
 ```
 
-**Rationale**: `t` attribute is the idiomatic Aurelia 2 pattern per `@aurelia/i18n` docs. It automatically re-renders when locale changes.
+**Rationale**: `t` attribute is the idiomatic Aurelia 2 pattern per `@aurelia/i18n` docs. It automatically re-renders when locale changes. For strings with dynamic values (a count, a name), the same `t` binding carries the interpolation, e.g. `t="key;count.bind:count"`, rather than falling back to template string concatenation.
 
 ### 5. Date/number formatting: use Aurelia i18n's `df` and `nf` ValueConverters
 

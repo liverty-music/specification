@@ -149,7 +149,7 @@ Dev resources receive no `protect`. Dev must remain teardownable (e.g., for envi
 
 ### D8 — Apex serving via single-hostname certificate, mirrors the existing api/auth pattern
 
-**Decision:** Provision the apex cert as a standalone `gcp.certificatemanager.Certificate` named `web-app-cert` (NOT `apex-cert` — D2 naming consistency with the existing dev pattern where `web-app` is the apex-occupying service in dev). Single-hostname `managed.domains: ['liverty-music.app']` (no SAN). Bind via a `web-app-cert-map-entry` to the shared `api-gateway-cert-map`. ACME DNS-01 CNAME hosted in Cloudflare at the challenge label Google assigns.
+**Decision:** Provision the apex cert as a standalone `gcp.certificatemanager.Certificate` named `web-app-cert` (NOT `apex-cert` — D2 naming consistency with the existing dev pattern where `web-app` is the apex-occupying service in dev). Single-hostname `managed.domains: ['liverty-music.app']` (no SAN). Bind via a `web-app-cert-map-entry` to the shared `api-gateway-cert-map`. ACME DNS-01 CNAME hosted in Cloudflare at the challenge label Google assigns. The apex A record targets the same `api-gateway-static-ip` GlobalAddress already used by `api` and `auth`, so the apex joins the existing shared Gateway / static-IP / CertMap pattern rather than provisioning a dedicated address. TLS termination stays entirely at the Gateway using this Google-managed cert; Cloudflare remains authoritative for the DNS A record only (Proxy OFF, no Cloudflare TLS termination).
 
 **Rationale:**
 

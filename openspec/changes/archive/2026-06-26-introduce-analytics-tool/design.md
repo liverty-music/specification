@@ -82,6 +82,8 @@ Events are named as dot-separated hierarchies of domain, action, and (where appl
 
 **Rationale:** Domain prefix groups events for navigation, the outcome suffix makes state transitions first-class, and the convention mirrors the existing proto layout. The cost is a one-line documented convention rather than self-evident natural language.
 
+A fourth segment (a qualifier before the outcome, e.g. `ticket.lottery.entry.submitted`) is permitted for paired-funnel events where domain and action alone would collide across steps of the same flow; property keys are enforced via the same `snake_case` rule. Both the segment-count/character-set format and the property-key casing are enforced via a lint check in CI rather than by review.
+
 ### Decision 5: Frontend / backend event-sourcing split
 
 Event emission is partitioned by trust requirement:
@@ -113,7 +115,7 @@ NATS subjects use UPPERCASE stream-prefixed two-segment names (e.g. `USER.create
 
 ### Decision 7: Transparency-and-opt-out model (identified analytics on by default), not a signup consent gate
 
-Identified analytics is **enabled by default** for authenticated users; the user can opt out at any time from a settings control. There is no signup consent gate. The final onboarding step is a one-time, non-blocking **transparency notice** naming PostHog (Netherlands) and the cross-border purpose, linking to the privacy policy and the settings opt-out. Anonymous visitors (pre-identification, not opted out) capture the **full non-PII catalogue** anonymously, MAY use `localStorage` so anonymous funnels survive reloads, with IP configurable and no account-mapped identifier; on login the anonymous profile is **merged** into the identified profile. An explicit opt-out is a distinct state: `opt_out_capturing()` suppresses all capture, so an opted-out user emits no telemetry of any kind (and the re-enable path needs no `reset()` because there is no opted-out anonymous profile to merge). The settings section carries two opt-out toggles — **Analytics** and **Session replay** (the latter is the former `marketingMeasurement` field, renamed) — both defaulting on. 要配慮個人情報 is excluded structurally at the property/replay layer; the minor-user legality question is deferred to legal counsel (it is a "whose data" risk that property-stripping does not resolve).
+Identified analytics is **enabled by default** for authenticated users; the user can opt out at any time from a settings control. There is no signup consent gate. The final onboarding step is a one-time, non-blocking **transparency notice** naming PostHog (Netherlands) and the cross-border purpose, linking to the privacy policy and the settings opt-out. Anonymous visitors (pre-identification, not opted out) capture the **full non-PII catalogue** anonymously, MAY use `localStorage` so anonymous funnels survive reloads, with IP configurable and no account-mapped identifier; on login the anonymous profile is **merged** into the identified profile. An explicit opt-out is a distinct state: `opt_out_capturing()` suppresses all capture, so an opted-out user emits no telemetry of any kind (and the re-enable path needs no `reset()` because there is no opted-out anonymous profile to merge). The settings section carries two opt-out toggles — **Analytics** and **Session replay** (the latter is the former `marketingMeasurement` field, renamed) — both defaulting on. 要配慮個人情報 is excluded structurally at the property/replay layer; the minor-user legality question is deferred to legal counsel (it is a "whose data" risk that property-stripping does not resolve). As a further data-minimisation measure, no precise birth date or exact age is ever captured; any age-derived property is bucketized before it reaches the event pipeline.
 
 **Alternatives considered:**
 
@@ -125,7 +127,7 @@ Identified analytics is **enabled by default** for authenticated users; the user
 
 ### Decision 8: PostHog SDK defers initialisation until after first paint and disables autocapture
 
-The PostHog JS SDK initialises after the application's first paint via `requestIdleCallback` (with a 2 s timeout fallback to `setTimeout`). Autocapture is disabled (`autocapture: false`), automatic page-view capture is disabled (`capture_pageview: false`), and all events including page views are emitted manually through a typed `AnalyticsService`. Session replay is enabled with strict masking (`maskAllInputs: true`, `maskTextSelector: '[data-pii]'`, `blockSelector: '.ph-no-capture'`) but **sampled** (initial target ~10%): the free tier's 5,000 recordings/month is exhausted at ~600–1,000 MAU at 100% capture, far below the ~5,000 MAU the 1M-event tier supports, so replay is the binding free-tier constraint and must be sampled from day one. Replay is independently disableable via the Session-replay opt-out toggle. Events emitted before initialisation completes are held in an in-memory queue and flushed once the SDK loads.
+The PostHog JS SDK initialises after the application's first paint via `requestIdleCallback` (with a 2 s timeout fallback to `setTimeout`). Autocapture is disabled (`autocapture: false`), automatic page-view and page-leave capture are disabled (`capture_pageview: false`, `capture_pageleave: false`), and all events including page views are emitted manually through a typed `AnalyticsService`. Session replay is enabled with strict masking (`maskAllInputs: true`, `maskTextSelector: '[data-pii]'`, `blockSelector: '.ph-no-capture'`) but **sampled** (initial target ~10%): the free tier's 5,000 recordings/month is exhausted at ~600–1,000 MAU at 100% capture, far below the ~5,000 MAU the 1M-event tier supports, so replay is the binding free-tier constraint and must be sampled from day one. Replay is independently disableable via the Session-replay opt-out toggle. Events emitted before initialisation completes are held in an in-memory queue and flushed once the SDK loads.
 
 **Alternatives considered:**
 
@@ -138,7 +140,9 @@ The PostHog JS SDK initialises after the application's first paint via `requestI
 
 Every PostHog feature flag MUST have a description block listing: `OWNER`, `HYPOTHESIS`, `KPI`, `KILL_DATE` (creation + 90 days), and `ISSUE` (GitHub link). A monthly review removes or escalates stale flags. Significant A/B experiments (those measuring conversion or revenue) are evaluated only after `posthog.identify()` completes; flags evaluated against anonymous users are restricted to release toggles and emergency kill switches where bucket-flip is harmless.
 
-Frontend flag evaluation uses bootstrap with the last-known value from `localStorage` and a runtime default in case PostHog is unreachable. Backend flag evaluation uses PostHog's local-evaluation mode (periodic flag-definition sync) so that handlers do not block on PostHog availability.
+Frontend flag evaluation uses bootstrap with the last-known value from `localStorage` and a runtime default in case PostHog is unreachable. Backend flag evaluation uses PostHog's local-evaluation mode (periodic flag-definition sync) so that handlers do not block on PostHog availability; every call site supplies a default, and the evaluator returns it — without blocking the handler — whenever PostHog is unreachable, the local cache hasn't synced yet, or the flag key doesn't exist.
+
+The monthly review lists any flag whose description omits a required field, whose `KILL_DATE` has passed, or whose rollout has sat at 0% or 100% for more than 30 days; a flag past its `KILL_DATE` is escalated to its owner and the project lead with a tracking issue opened for resolution in the following cycle.
 
 **Alternatives considered:**
 
@@ -220,6 +224,12 @@ An initial read held that task 13.1 was implementable via the existing Zitadel `
 - **`account.login`** has no clean backend hook. The `pre_access_token` webhook — the only login-adjacent touchpoint — fires on **every access-token mint, including silent refresh-token grants**, so emitting `account.login` there over-counts logins (a refresh is not a login). A correct event needs a login-specific signal: a Zitadel session-created Action, or refresh-vs-fresh-auth discrimination in the webhook payload. Neither exists today; FE emission is rejected (the catalogue marks `account.login` BE-sourced/trust-critical). Deferred until such a signal exists.
 
 **Rationale:** emitting a redundant signup event or a refresh-inflated login count is worse than not emitting — it produces misleading funnels. Consistent with Decisions 12–14: instrument the live, correctly-attributable surface; defer events whose clean signal the product doesn't yet provide.
+
+### Decision 16: Internal and E2E traffic is excluded from product analytics
+
+Internal traffic — the Pulumi-managed E2E test user (`e2e-test-password@dev.liverty-music.app`) and developer/staff sessions signed in to known-internal accounts — is excluded from product-analytics measurement so that funnels, conversion rates, and retention cohorts reflect real users only. Exclusion is keyed off a stable internal-identity marker (the E2E user's `UserId`, or an internal-traffic property) rather than heuristic detection such as user-agent sniffing, which drifts as tooling changes. It may be implemented at the SDK level (suppressing capture for known-internal identities), at the PostHog project level (internal-user filters), or both; production dashboards apply the filter regardless of where suppression happens.
+
+**Rationale:** Automated E2E runs and staff dogfooding sessions are frequent enough to distort funnel and retention numbers if left in. A stable identity marker composes cleanly with both SDK-side suppression and dashboard-side filtering, and survives changes to browsers, devices, or CI runners that would break a heuristic approach.
 
 ## Risks / Trade-offs
 

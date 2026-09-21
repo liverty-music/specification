@@ -18,12 +18,11 @@ This change closes the loop. After it lands, prod runs the same 14 ArgoCD Applic
 
 ### New Capabilities
 
-- `prod-k8s-manifests`: contracts the prod Kubernetes manifest set — per-namespace overlay existence + shape, hostname mapping, ESC secret sourcing, Gateway binding to the static IP, Spot label enforcement, PodMonitoring opt-in pattern, ArgoCD Application set. Per-workload runtime/network requirements stay in their respective specs (e.g., `zitadel-self-hosted-deployment`, `gke-gateway-infrastructure`); this spec is about the *prod manifest set* as a coherent unit.
+(none — see design.md)
 
 ### Modified Capabilities
 
 - `prod-environment-bootstrap`: remove the existing "Prod GCP infrastructure ships without ArgoCD bootstrap (workloads in follow-up change)" requirement. After this change, prod ships *with* the full manifest set. The companion "follow-up change is tracked separately" scenario is also removed.
-- `zitadel-self-hosted-deployment`: extend the existing dev-scoped *runtime* requirement (cluster + OIDC issuer URL) to apply equally to prod. The other dev-scoped requirements in that capability (Cloud SQL Connection via Auth Proxy Sidecar, Database & IAM User pre-provisioning, Bootstrap Admin Machine Key Storage) describe env-specific values (`liverty-music-dev:asia-northeast2:postgres-osaka`, etc.) that the prod overlay-level patches replicate for prod via env-divergent kustomize fields — runtime behavior is correct for both envs after this change. A separate consolidation change can broaden those dev-scoped specs to be env-agnostic; that doc cleanup is intentionally out of scope here to avoid PR-scope creep.
 
 ## Impact
 

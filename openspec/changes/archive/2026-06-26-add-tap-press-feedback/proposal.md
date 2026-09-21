@@ -14,7 +14,7 @@ The frontend is a touch-first PWA, but tapping a button or tab gives no press fe
 ## Capabilities
 
 ### New Capabilities
-- `tap-press-feedback`: The cross-cutting convention that every interactive control gives an immediate, touch-visible press response on `:active`, with a global `<button>` baseline, explicit coverage for non-`<button>` tappables, and a reduced-motion fallback.
+(none — see design.md)
 
 ### Modified Capabilities
 <!-- None. The change reuses existing design-system tokens (--color-brand-accent, --transition-fast) and the @layer cascade (modern-css-platform / cube-css) without changing their requirements. -->

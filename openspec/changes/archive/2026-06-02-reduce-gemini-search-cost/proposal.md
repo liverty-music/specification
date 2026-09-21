@@ -37,10 +37,6 @@ official-site change-detection as a search trigger.
   condition is added (skip when a new concert was discovered within the last 14 days).
 - `concert-search-log`: the `latest_search_logs` schema gains a nullable `last_found_at`
   column, and a new tracking rule records it when a search discovers new concerts.
-- `gemini-searcher-config`: two new env-configurable settings are added — the
-  search-cache TTL and the recent-discovery skip window — each resolved with env-var
-  precedence over a built-in default, following the existing per-step model-resolution
-  pattern.
 
 ## Impact
 

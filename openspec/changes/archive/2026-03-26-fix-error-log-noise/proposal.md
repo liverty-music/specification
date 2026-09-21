@@ -16,7 +16,7 @@ Cloud Monitoring の ERROR ログアラートが、サーバー起因ではな�
 
 ### Modified Capabilities
 
-- `app-error-log-alerting`: ERROR ログアラートのノイズ低減。Gemini HTTP 499 が ERROR として記録されなくなり、NATS リトライの false positive が解消される。
+(none)
 
 ## Impact
 

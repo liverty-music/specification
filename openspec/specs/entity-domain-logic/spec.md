@@ -220,17 +220,6 @@ Classification rules (evaluated in order):
 
 ---
 
-### Requirement: ScrapedConcerts collection type
-
-The entity package SHALL provide a `ScrapedConcerts` type defined as `type ScrapedConcerts []*ScrapedConcert`.
-
-#### Scenario: Type alias is usable as slice
-
-- **WHEN** a `[]*ScrapedConcert` value is cast to `ScrapedConcerts`
-- **THEN** it is usable as `ScrapedConcerts` without data loss
-
----
-
 ### Requirement: ScrapedConcerts.FilterNew deduplication
 
 The `ScrapedConcerts` type SHALL provide a `FilterNew(existing []*Concert) ScrapedConcerts` method that returns only the scraped concerts that do not conflict with existing concerts, applying date-only deduplication.
@@ -563,4 +552,3 @@ The function SHALL return nil when the address matches the pattern `^0x[0-9a-fA-
 
 - **WHEN** ValidateEthereumAddress receives "0xZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
 - **THEN** it returns an error mentioning "Ethereum address"
-

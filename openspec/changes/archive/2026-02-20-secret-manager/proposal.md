@@ -13,10 +13,10 @@ Runtime secrets (starting with `LASTFM_API_KEY`) are currently unmanaged -- ther
 ## Capabilities
 
 ### New Capabilities
-- `secret-management`: Secure provisioning, storage, and synchronization of runtime secrets from GCP Secret Manager to Kubernetes pods via External Secrets Operator
+(none — see design.md)
 
 ### Modified Capabilities
-- `deployment-infrastructure`: Backend Deployment gains a `secretRef` in `envFrom` to load secrets from a K8s Secret managed by ESO
+(none — see design.md)
 
 ## Impact
 

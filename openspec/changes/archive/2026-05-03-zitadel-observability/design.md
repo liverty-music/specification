@@ -109,6 +109,14 @@ Backend already emits a structured `slog` ERROR for every JWT validation failure
 
 **Alternative considered:** Add a Prometheus counter on backend's JWT validator. Rejected — duplicates the data already in logs; introduces a new signal source the on-call needs to learn.
 
+The log-based metric is named `backend_jwt_validation_zitadel_errors`, scoped to the `backend/server` workload's `severity=ERROR` entries whose `jsonPayload.msg` or `jsonPayload.error` matches the case-insensitive regex `jwt|jwks|token|authn|invalid token|failed to validate` — tight on namespace/workload/severity (the only place Zitadel-issued JWTs get validated), then keyword-filtered. The alert fires at 10 events/minute over a 5-minute window (the "order of magnitude above baseline" from Goals), which is well above steady-state JWT validation noise in dev.
+
+### D8. Cloud SQL connection-pool dashboard panel is observation-only, not an alert
+
+**Choice:** Add a dashboard panel (not an `AlertPolicy`) plotting `cloudsql.googleapis.com/database/postgresql/num_backends` for the `zitadel` database on `postgres-osaka`, with a yellow (not red) threshold line at 80% of the instance tier's default `max_connections` — `db-f1-micro` defaults to 25, so the line sits at 20. The panel retains at least 7 days of history.
+
+**Why:** Hypothesis B needs connection-pool history to correlate against a hang event, but we don't yet know the lead time between saturation and the hang, so there's no data to set a meaningful alert threshold. A panel gets the signal on a dashboard now; an alert can follow once a hang reproduces with data attached. The threshold is yellow because the panel doesn't page — it's there for a responder or a curious engineer to read after the fact. If the instance tier changes, the 80%-of-`max_connections` line must be re-derived since GCP's default scales with tier memory.
+
 ### D6. Weekly-restart `CronJob` is a band-aid — opt-in via dev overlay only
 
 The `kubectl rollout restart deploy/zitadel` `CronJob` is **explicitly a band-aid** that should be removed once a root cause is identified. To make removal trivial:
@@ -121,11 +129,19 @@ The `kubectl rollout restart deploy/zitadel` `CronJob` is **explicitly a band-ai
 
 **Alternative considered:** Resource-based restart trigger (e.g., restart when memory > 80%). Rejected — adds a Vertical Pod Autoscaler-like dependency without a clear "what threshold" answer; weekly time-based restart is simpler and the upper-bound is what we care about, not the median case.
 
+The CronJob runs Sunday 03:00 UTC (the lowest-traffic window) and triggers a rollout with `maxUnavailable: 0`, `maxSurge: 1` so at least one Ready pod stays reachable throughout. Its ServiceAccount is granted RBAC scoped to `kubectl rollout restart` on the `zitadel` Deployment only, not on any other Deployment in the namespace — minimum privilege for a band-aid resource that a future cleanup pass needs to be able to delete without auditing what else it could touch.
+
 ### D7. Runbook lives in `cloud-provisioning/docs/runbooks/`, sourced from this change's specs
 
 Sibling capability `app-error-log-alerting` keeps its runbook content inside its `spec.md` as scenarios. This change adopts the same convention for consistency, plus exports a derived markdown to `cloud-provisioning/docs/runbooks/zitadel-hang.md` for ops convenience (operators don't need to know about openspec to find the runbook).
 
-The runbook content is the source of truth in `specs/zitadel-observability/spec.md` "Operator Runbook" requirements; the markdown export is a convenience copy.
+The runbook content is the source of truth in this design; the markdown export at `cloud-provisioning/docs/runbooks/zitadel-hang.md` is a convenience copy kept in sync whenever this content changes. It covers:
+
+- **Symptom recognition**: how to confirm an incident matches the §18.6 shape (the `OIDCService/*` p99 alert firing, plus 30s+ timeouts and `code: internal` responses).
+- **Forensic data capture before mitigation**: what to snapshot before restarting, so the root-cause investigation isn't lost — the Zitadel `/debug/metrics` snapshot, the Cloud SQL connection-pool metric snapshot, the last 30 minutes of Zitadel access log filtered to state-changing API calls, and `kubectl describe pod` output for the affected pod — saved to a timestamped location (e.g. `/tmp/zitadel-hang-<timestamp>/`) so it survives the operator's terminal session closing.
+- **Mitigation command**: the exact `kubectl rollout restart deploy/zitadel` invocation, including which `kubeconfig` context to select.
+- **Post-mitigation verification**: confirm `/debug/healthz` returns 200 and a sample `OIDCService/*` call succeeds with normal (< 1s) latency.
+- **Escalation path**: when to involve upstream Zitadel maintainers — e.g., the same shape recurring within 24 hours of a restart.
 
 ## Risks / Trade-offs
 

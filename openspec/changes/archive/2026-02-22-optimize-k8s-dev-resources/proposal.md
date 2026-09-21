@@ -25,8 +25,7 @@ The dev environment GKE Autopilot cluster costs ¥18,119/month (forecast), with 
 
 ### Modified Capabilities
 
-- `continuous-delivery`: ArgoCD component configuration changes (disable dex, notifications) and dev overlay patching strategy update (CronJob Spot VM coverage)
-- `deployment-infrastructure`: Backend replica count policy for dev environment; Spot VM nodeSelector coverage for all workload kinds
+(none — see design.md)
 
 ## Impact
 

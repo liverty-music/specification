@@ -20,8 +20,7 @@ _(none)_
 
 ### Modified Capabilities
 
-- `frontend-testing`: Resolve dual jsdom management, contain template module graph expansion, add CE composition tests, add dashboard-route tests, optimize vitest environment configuration
-- `layout-assertions`: Introduce data-testid selector strategy, eliminate page.evaluate() JS dispatch workarounds in E2E tests
+- `frontend-testing`: Adds `createCompositionFixture` to the shared mock-factory helpers, for composing parent+child CE fixtures with mocked services in one call (see design.md for the rest of the test-infrastructure hardening)
 
 ## Impact
 

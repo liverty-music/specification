@@ -49,11 +49,7 @@ hack-free scale-to-zero media consumer.
      realized (declarative vs imperative) and adds scale-to-zero. -->
 
 ### Modified Capabilities
-- `jetstream-consumer-reliability`: the requirement that durable configuration is
-  **reconciled by the app on startup** changes to **declaratively managed by an
-  in-cluster controller (NACK)** that exclusively owns streams/consumers; add that
-  a consumer MAY scale to zero (its durable persists independent of the workload)
-  and that per-app global reconcile no longer deletes other consumers' durables.
+None.
 
 ## Impact
 

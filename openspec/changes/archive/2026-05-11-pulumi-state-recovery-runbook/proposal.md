@@ -64,9 +64,7 @@ actual failure mode (operator-initiated `state delete` mishap) directly.
 
 ### New Capabilities
 
-- `pulumi-state-recovery`: Defines the operator runbook contract for
-  Pulumi state corruption / cascade-delete recovery and the
-  `pulumi state delete` vs `pulumi destroy --target` decision rule.
+(none — see design.md)
 
 ### Modified Capabilities
 

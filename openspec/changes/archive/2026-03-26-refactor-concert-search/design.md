@@ -80,6 +80,10 @@ This affects 3 call sites in concert_uc.go that previously required mocking:
 
 **Alternative considered:** Moving it to a middleware or interceptor. Rejected because the function is usecase-specific (it resolves a domain user ID from claims, not just authentication) and not all RPCs need it.
 
+### 5. Entity construction via `ScrapedConcert.ToConcert()`
+
+`executeSearch` stops constructing `entity.Concert` inline from scraped data; every concert produced by the search API SHALL go through `ScrapedConcert.ToConcert()` (introduced by the parallel `extract-entity-domain-logic` change) instead of manual field assignment. This is the code the Decision 1 defer-pattern cleanup vacates -- see the Context note on the `extract-entity-domain-logic` dependency and the sequencing risk below.
+
 ## Risks / Trade-offs
 
 **[Risk] Dependency on extract-entity-domain-logic** -- The defer pattern cleanup in `executeSearch` removes inline entity construction code that is being replaced by `ScrapedConcert.ToConcert()` from the parallel change. If that change is not merged first, the defer refactoring must retain the inline construction temporarily. Mitigation: sequence the implementation so `extract-entity-domain-logic` merges first, or keep the inline code in an intermediate commit.

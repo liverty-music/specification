@@ -20,9 +20,7 @@ Production launch is imminent and the platform currently has no instrumentation 
 
 ### New Capabilities
 
-- `product-analytics`: end-to-end product analytics covering event taxonomy and naming, frontend/backend instrumentation roles, user identification via `UserId`, the `analytics-consumer` NATS subscriber, SDK initialization patterns in the Aurelia 2 PWA, PII redaction in session replay, and the OpenTelemetry/PostHog separation boundary.
 - `analytics-consent`: APPI-aligned analytics governance under the EU-adequacy opt-out model — identified analytics enabled by default, a single user-controlled **analytics opt-out** toggle on the settings page, anonymous full-catalogue capture before/without identification with anonymous→identified merge on login, structural exclusion of 要配慮個人情報 and minor-identifying data, and the privacy-policy purpose-of-use notification that satisfies the surviving APPI obligation. (The second settings toggle is redefined — see Modified Capabilities below.)
-- `feature-flag-management`: operational policy and runtime evaluation patterns for PostHog feature flags, including the flag-creation申告制 (owner, hypothesis, KPI, kill date), the post-identify evaluation rule for significant experiments, and PostHog-down fallback defaults on both frontend and backend.
 
 ### Modified Capabilities
 

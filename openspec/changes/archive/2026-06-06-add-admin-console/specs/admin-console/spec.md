@@ -1,25 +1,5 @@
 ## ADDED Requirements
 
-### Requirement: Bundle isolation from the consumer SPA
-
-The admin console SHALL be built as a separate Vite/Rollup entry point in the
-`frontend` repository such that no admin-only code is included in any chunk
-loaded by the consumer SPA. Adding the admin console MUST NOT increase the
-consumer SPA's downloaded bundle size or regress its Core Web Vitals.
-
-#### Scenario: Consumer page loads no admin code
-
-- **WHEN** a fan loads the consumer SPA at the consumer hostname
-- **THEN** the network requests for the consumer entry's chunk graph contain no
-  module originating from the admin source directory
-
-#### Scenario: Consumer bundle size unchanged
-
-- **WHEN** the production build runs with the admin entry present
-- **THEN** the consumer entry's emitted chunk set is byte-for-byte equivalent to a
-  build without the admin entry (excluding shared chunks the consumer already
-  loads)
-
 ### Requirement: Authentication via the admin org with Google Workspace IDP
 
 The admin console SHALL authenticate users through Zitadel OIDC (PKCE, no client
@@ -76,23 +56,3 @@ exists only to confirm the authenticated foundation is in place.
 
 - **WHEN** an authenticated developer lands on the admin console root
 - **THEN** a welcome placeholder is shown with no admin business functionality
-
-### Requirement: Dedicated source directory with an enforced import boundary
-
-Admin console source SHALL live in a dedicated top-level `admin/` directory in
-the `frontend` repository, separate from the consumer `src/` directory.
-Cross-app code SHALL be consumed only from a shared location. An automated lint
-check SHALL fail the build if consumer (`src/`) code imports admin (`admin/`)
-code or vice versa, except through the shared location.
-
-#### Scenario: Cross-import fails lint
-
-- **WHEN** a module under `src/` imports a module under `admin/` (or the reverse)
-  directly rather than through the shared location
-- **THEN** the lint/CI check fails
-
-#### Scenario: Shared code is importable by both
-
-- **WHEN** both the consumer and admin entries import a module from the shared
-  location
-- **THEN** the import is permitted and the module is emitted as a shared chunk

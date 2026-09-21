@@ -53,4 +53,4 @@ The component already handles alert policies and notification channels. Adding a
 ## Risks / Trade-offs
 
 - **[Risk] Atlas Operator log format changes across versions** → Pin to known log patterns. Review on operator upgrades.
-- **[Risk] Alert fatigue from repeated failures** → Same 12-hour rate limit as existing alerts. Atlas Operator also has a `backoffLimit` that stops retries.
+- **[Risk] Alert fatigue from repeated failures** → Same 12-hour rate limit and 1-hour auto-close as existing backend workload alerts, reusing the same Slack notification channels rather than introducing new ones. Atlas Operator also has a `backoffLimit` that stops retries.

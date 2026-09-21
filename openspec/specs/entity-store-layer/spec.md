@@ -3,48 +3,6 @@
 ## Purpose
 TBD - created by archiving change introduce-entity-store-layer. Update Purpose after archive.
 ## Requirements
-### Requirement: Per-Entity Store Ownership
-
-Client-side state SHALL be owned by observable **stores** organized by
-entity/aggregate, not by authentication state. Each store SHALL own the
-observable state for its entity, SHALL internally resolve its source
-(guest localStorage vs authenticated backend), and SHALL obtain any read-only
-resource caching from the shared `frontend-store-cache` primitive rather than a
-bespoke per-store TTL, in-flight coalescing, or invalidation implementation. The
-store SHALL remain the single source of truth for its resource; the primitive is
-an internal collaborator, and callers SHALL read state only from the store's
-exposed observable. Callers SHALL read state from the store and SHALL NOT branch
-on `auth.isAuthenticated` to select a guest-vs-authed source.
-
-#### Scenario: Caller reads without auth branching
-- **WHEN** a view model or service needs an entity value owned by a store
-- **THEN** it SHALL read the store's exposed observable
-- **AND** it SHALL NOT inspect `auth.isAuthenticated` to choose between a guest
-  store and an authenticated entity
-
-#### Scenario: UserStore owns home and language for both auth states
-- **WHEN** the current user's home area or preferred language is read
-- **THEN** it SHALL be sourced from `UserStore`
-- **AND** for an authenticated user `UserStore` SHALL surface the backend `User`
-  entity values
-- **AND** for a guest `UserStore` SHALL surface a synthesized current-user view
-  sourced from guest localStorage
-- **AND** the exposed value SHALL be observable so dependent bindings
-  re-evaluate on change
-
-#### Scenario: Cache-only stores own no guest/authed duality
-- **WHEN** a store owns read-only resources (e.g. a top-artists list)
-- **THEN** it SHALL cache those resources
-- **AND** it SHALL NOT participate in guest→authed transition or sign-out clear
-
-#### Scenario: Caching goes through the shared primitive
-- **WHEN** a store needs to cache a read-only resource
-- **THEN** it SHALL use the shared `frontend-store-cache` primitive for storage,
-  staleness, in-flight coalescing, and invalidation
-- **AND** it SHALL NOT hand-roll a separate TTL cache
-- **AND** exactly one copy of the resource SHALL exist, owned by the store, with
-  consumers reading it only through the store's observable state
-
 ### Requirement: Event-Driven Auth-Boundary Transitions
 
 Guest→authenticated transition and sign-out SHALL be handled per-store via
@@ -146,4 +104,3 @@ Ticket-journey status SHALL be owned by a single observable store (a `TicketJour
 - **WHEN** the user signs out
 - **THEN** the `TicketJourneyStore` SHALL clear its journey map
 - **AND** no prior user's journey status SHALL be readable afterward
-

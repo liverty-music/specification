@@ -8,34 +8,6 @@
 
 **Migration**: Per-environment values move out of `frontend/.env.prod` (deleted) and into `cloud-provisioning/k8s/namespaces/frontend/overlays/<env>/configmap.yaml`. The frontend image SHALL be built with no env-specific build-args. See the new `frontend-runtime-config` capability for the runtime config contract and the new ADDED requirement below for the env-agnostic bundle invariant.
 
-## ADDED Requirements
-
-### Requirement: Frontend prod image SHALL be env-agnostic at the bundle level
-
-The frontend container image SHALL be built with no env-specific build-args, so that the bundle's JavaScript chunks contain no environment-divergent literals (no hardcoded dev or prod hostnames, no OIDC client IDs, no VAPID public keys, no environment flags other than Vite's `import.meta.env.DEV` / `PROD` / `MODE` which encode "vite dev server vs. vite build artifact"). Per-environment values SHALL be sourced exclusively from `/config.json` served at request time. This invariant SHALL be asserted by CI on every build.
-
-#### Scenario: Bundle contains no env-divergent hostnames
-
-- **WHEN** searching every JavaScript chunk in the built `dist/` output (excluding `public/config.json` which is the bundled fallback) for substrings of dev or prod hostnames (`api.dev.liverty-music.app`, `api.liverty-music.app`, `auth.dev.liverty-music.app`, `auth.liverty-music.app`)
-- **THEN** zero matches SHALL be found in any chunk's compiled JavaScript
-
-#### Scenario: Bundle contains no OIDC client IDs
-
-- **WHEN** searching every JavaScript chunk for the literal dev OIDC client_id (`371355407710421859`) or the literal prod OIDC client_id (`373015520582107291`)
-- **THEN** zero matches SHALL be found
-
-#### Scenario: Image build receives no env-specific build-arg
-
-- **WHEN** inspecting `frontend/Dockerfile`
-- **THEN** no `ARG VITE_MODE` declaration SHALL exist
-- **AND** the `npm run build` command SHALL NOT receive a `--mode` flag
-
-#### Scenario: Same image SHA can be deployed to multiple environments
-
-- **WHEN** the same image (by digest) is pulled by a `frontend` namespace pod in any of dev, staging, or prod clusters
-- **AND** the pod's ConfigMap mount serves a `/config.json` for its target environment
-- **THEN** the SPA SHALL function correctly in that environment without any image-level change
-
 ## MODIFIED Requirements
 
 ### Requirement: Frontend prod image build SHALL be triggered by GitHub Release tags

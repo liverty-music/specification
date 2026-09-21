@@ -40,17 +40,6 @@ The mapper layer SHALL convert the domain `Fanart` entity (with full image array
 - **WHEN** a domain Artist with Fanart data is mapped to proto
 - **THEN** each proto Fanart field SHALL contain the URL of the image with the highest likes count from the corresponding domain field
 
-### Requirement: Fanart Database Storage
-The system SHALL store fanart.tv API response data in a `fanart` JSONB column on the `artists` table. The system SHALL also store the synchronization timestamp in a `fanart_synced_at` TIMESTAMPTZ column.
-
-#### Scenario: Fanart data persisted
-- **WHEN** fanart data is fetched for an artist
-- **THEN** the `fanart` JSONB column SHALL contain the parsed response data and `fanart_synced_at` SHALL be set to the current timestamp
-
-#### Scenario: Fanart data updated
-- **WHEN** fanart data is re-fetched for an artist that already has fanart data
-- **THEN** the `fanart` JSONB column SHALL be overwritten with the new data and `fanart_synced_at` SHALL be updated
-
 ### Requirement: ArtistImageResolver Interface
 The system SHALL define an `ArtistImageResolver` interface in the entity layer with a method `ResolveImages(ctx, mbid) (*Fanart, error)` that fetches image data from an external source using the artist's MusicBrainz ID.
 
@@ -65,21 +54,6 @@ The system SHALL define an `ArtistImageResolver` interface in the entity layer w
 #### Scenario: External service failure
 - **WHEN** the external image service is unavailable
 - **THEN** it SHALL return an `Unavailable` error
-
-### Requirement: fanart.tv API Client
-The system SHALL implement the `ArtistImageResolver` interface using the fanart.tv API v3 endpoint `GET /v3/music/{mbid}`. The client SHALL use the existing throttle and retry patterns (exponential backoff, max 4 retries). Authentication SHALL use a project API key provided via `FANARTTV_API_KEY` environment variable.
-
-#### Scenario: Successful API call
-- **WHEN** the client calls fanart.tv with a valid MBID
-- **THEN** it SHALL parse the JSON response into a `Fanart` entity
-
-#### Scenario: Artist not found on fanart.tv
-- **WHEN** fanart.tv returns HTTP 404 for an MBID
-- **THEN** the client SHALL return `nil` without error
-
-#### Scenario: Rate limited
-- **WHEN** fanart.tv returns HTTP 429
-- **THEN** the client SHALL retry with exponential backoff respecting the `Retry-After` header
 
 ### Requirement: Immediate Image Fetch on Artist Creation
 The system SHALL subscribe to `ARTIST.created` events and asynchronously fetch fanart data for newly created artists. This ensures images are available shortly after onboarding when artists are followed.

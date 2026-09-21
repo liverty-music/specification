@@ -19,7 +19,7 @@ _None — all changes are implementation-level modernization within existing com
 
 ### Modified Capabilities
 
-- `modern-css-platform`: Add requirements for Anchored Container Queries (`@container anchored()`), `@starting-style`, `transitionend`-based cleanup, `overscroll-behavior`, and `scrollIntoView` + `scrollend` patterns as standard practices. Prohibit `rAF`-based positioning, `setTimeout` for animation timing, and `getBoundingClientRect` for layout-dependent decisions that CSS can handle.
+(none — see design.md)
 
 ## Impact
 

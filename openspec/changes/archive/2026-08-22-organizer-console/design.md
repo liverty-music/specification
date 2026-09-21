@@ -38,7 +38,10 @@ enforcement is at the backend; the guard is UX.
 **D3 — Dedicated hosting mirrors admin-console-hosting.** `organizer.{base}`
 host with HTTPRoute + cert + Cloud DNS + per-host `/config.json`; bundle
 isolation is enforced the same way as the admin console (consumer chunk
-graph contains no organizer module).
+graph contains no organizer module). As with the admin console, any Service
+Worker registered on the organizer host bypasses cache for `/config.json`,
+so a config change (new issuer, client id, or API base URL) takes effect on
+next load rather than being served stale from the SW cache.
 
 **D4 — Consumer config contract unchanged.** The organizer entry defines its
 own config shape (this change); the consumer's `frontend-runtime-config`

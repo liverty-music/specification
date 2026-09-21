@@ -15,12 +15,11 @@ Zitadel Cloud has no custom SMTP provider configured, so email verification code
 
 ### New Capabilities
 
-- `email-provider`: Postmark SMTP provider configuration, DNS authentication (DKIM / Return-Path), and mail subdomain management
+(none — see design.md)
 
 ### Modified Capabilities
 
 - `authentication`: Add `email_verified` claim injection to the Zitadel Action. Establish the prerequisite for the Hosted Login Self-Registration flow to perform email verification
-- `secret-management`: Add the Postmark Server API Token to Pulumi ESC (stored as a secret)
 
 ## Impact
 

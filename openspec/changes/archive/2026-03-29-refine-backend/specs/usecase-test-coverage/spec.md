@@ -1,35 +1,5 @@
 ## ADDED Requirements
 
-### Requirement: Adapter mapper test coverage
-
-All adapter mapper files under `internal/adapter/rpc/mapper/` SHALL have corresponding test files verifying Proto-to-Entity and Entity-to-Proto conversions.
-
-#### Scenario: Concert mapper tested
-
-- **WHEN** a Concert entity is converted to Proto and back
-- **THEN** all fields (event ID, artist, venue, dates, title) SHALL round-trip correctly
-- **AND** nil/zero-value fields SHALL be handled without panic
-
-#### Scenario: Follow mapper tested
-
-- **WHEN** a FollowedArtist entity is converted to Proto
-- **THEN** hype level, artist details, and follow metadata SHALL map correctly
-
-#### Scenario: Ticket mapper tested
-
-- **WHEN** a Ticket entity is converted to Proto
-- **THEN** token ID, tx hash, event ID, and minted timestamp SHALL map correctly
-
-#### Scenario: TicketEmail mapper tested
-
-- **WHEN** a TicketEmail entity is converted to Proto
-- **THEN** email type, parsed data fields, and optional timestamps SHALL map correctly
-
-#### Scenario: TicketJourney mapper tested
-
-- **WHEN** a TicketJourney entity is converted to Proto
-- **THEN** journey status enum and event reference SHALL map correctly
-
 ### Requirement: Messaging layer test coverage
 
 The messaging infrastructure under `internal/infrastructure/messaging/` SHALL have unit tests for event publishing, CloudEvents formatting, and stream configuration.

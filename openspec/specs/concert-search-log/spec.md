@@ -25,21 +25,6 @@ The system SHALL maintain a log of when each artist's concerts were last searche
 - **WHEN** a search log already exists for the given artist
 - **THEN** the system MUST update the existing record's `searched_at` to the current timestamp
 
-### Requirement: Search Log Persistence
-
-The system SHALL store search logs in a `latest_search_logs` table with `artist_id` as the primary key, `searched_at` as a non-null timestamp with timezone, and `last_found_at` as a nullable timestamp with timezone recording the most recent successful discovery.
-
-#### Scenario: Schema definition
-
-- **WHEN** the `latest_search_logs` table is queried
-- **THEN** it MUST contain columns `artist_id` (PK, FK to `artists.id`), `searched_at` (timestamptz, NOT NULL), and `last_found_at` (timestamptz, NULL)
-
-#### Scenario: Additive nullable column migration
-
-- **WHEN** the migration adding `last_found_at` is applied
-- **THEN** existing rows MUST retain their `artist_id` and `searched_at`
-- **AND** their `last_found_at` MUST default to null without requiring a backfill
-
 ### Requirement: Frontend search status polling for onboarding
 
 The frontend SHALL poll the `ListSearchStatuses` RPC during onboarding to detect when backend concert searches have actually completed, rather than relying on the `SearchNewConcerts` RPC return (which is fire-and-forget).

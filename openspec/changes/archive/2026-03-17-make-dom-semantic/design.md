@@ -63,6 +63,11 @@ dialog/card 内のボタングループは `<footer>` とする。
 - ただし `@scope` 内でのみ。グローバルな要素セレクタは作らない
 - 不要になったクラス名は削除する
 
+### 6. Maximum div nesting depth
+
+Consecutive nested `<div>` elements within a component template SHALL NOT exceed 2 levels. Nesting beyond that is treated as a signal that a wrapper serves neither a layout nor a semantic purpose and is a candidate for removal.
+This is not enforced by automated lint (no static analysis over template structure exists yet), so it is a review-time checklist item.
+
 ## Risks / Trade-offs
 
 - **[レイアウト崩れ]** → semantic 要素（`<footer>`, `<section>` 等）のデフォルト display がブロックのため、既存の flex/grid レイアウトに影響しない。ただし `<fieldset>` はブラウザデフォルトの border/padding があるため、reset.css での対応を確認する。→ 既存 reset.css で `fieldset { border: 0; padding: 0; }` が設定済みか確認する

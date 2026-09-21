@@ -12,11 +12,9 @@ Parallel development branches frequently create migration files with timestamps 
 
 ### New Capabilities
 
-- `migration-rebase-guard`: Automated detection and correction of out-of-order Atlas migration timestamps caused by parallel branch development
+(none — see design.md)
 
 ### Modified Capabilities
-
-- `database-migration`: Add migration rebase guard to the development workflow and CI pipeline
 
 ## Impact
 

@@ -33,7 +33,6 @@ These create fragile timing dependencies between TS and CSS, duplicate duration 
 ### Modified Capabilities
 
 - `cube-css-architecture`: Strengthen exception layer — class toggling for visual state SHALL be prohibited; `data-*` attributes with direct `.bind` (no interpolation) SHALL be the only mechanism; parent container strategy for shared state flags
-- `modern-css-platform`: Total `style` attribute ban in templates; custom attributes as JS→CSS bridge; `color-mix()` for dynamic alpha; `translate` shorthand for transforms; grep-based lint enforcement
 
 ## Impact
 

@@ -35,10 +35,7 @@ today's upgrade.
 <!-- none -->
 
 ### Modified Capabilities
-- `zitadel-self-hosted-deployment`: Add a requirement that Zitadel's outbound
-  protected HTTP client permits the in-cluster webhook Service CIDR while
-  retaining SSRF protection for all other private ranges and the cloud metadata
-  endpoint.
+<!-- none -->
 
 ## Impact
 

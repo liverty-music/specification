@@ -23,7 +23,7 @@ The product owner now wants login instrumented anyway: `account.login` is the si
 
 ### Modified Capabilities
 
-- `product-analytics`: account authentication events are now emitted server-side. `account.login` is login-specific (one event per user-initiated login, never on token refresh) and attributed to the platform `UserId`; signup continues to be represented by `user.created` with no duplicate `account.signup.completed`.
+(none — see design.md)
 
 ## Impact
 

@@ -17,7 +17,7 @@ Cloud SQL is configured with PSC-only connectivity (no public IP), so developers
 
 ### Modified Capabilities
 
-- `cloud-sql-connector`: Add requirement that a standalone Auth Proxy deployment SHALL exist in dev for local access
+(none — see design.md)
 
 ## Impact
 

@@ -15,7 +15,6 @@
 ### New Capabilities
 
 - `artist-auto-persist`: Automatic persistence of externally-discovered artists during ListTop/ListSimilar, ensuring proto contract compliance and enabling downstream follow/concert-search flows.
-- `bulk-insert-unnest`: PostgreSQL unnest-based bulk insert pattern for artist and concert repositories, replacing manual placeholder construction.
 
 ### Modified Capabilities
 

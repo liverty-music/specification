@@ -43,17 +43,6 @@ The `DashboardRoute` SHALL manage the lane introduction onboarding flow as a pur
 - **WHEN** `detaching()` is called
 - **THEN** the abort controller SHALL be aborted and `INavDimmingService.setDimmed(false)` SHALL be called
 
-### Requirement: Mock helpers cover INavDimmingService and ILocalStorage
-The test helper library SHALL provide typed mock factories for the new injectable services introduced by this change.
-
-#### Scenario: createMockNavDimmingService returns spy
-- **WHEN** `createMockNavDimmingService()` is called
-- **THEN** it SHALL return an object with `setDimmed` as a Vitest spy
-
-#### Scenario: createMockLocalStorage returns configurable spy
-- **WHEN** `createMockLocalStorage(initialData)` is called with an initial key-value map
-- **THEN** it SHALL return an object implementing `ILocalStorage` with `getItem`, `setItem`, `removeItem` as Vitest spies that read/write the initial data
-
 ## MODIFIED Requirements
 
 ### Requirement: Coverage reporting is configured

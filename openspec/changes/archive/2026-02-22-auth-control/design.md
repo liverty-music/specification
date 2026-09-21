@@ -129,6 +129,8 @@ This replaces the old `AuthInterceptor` in the interceptor chain, is much simple
 
 **[Risk] `storageState.json` tokens expire** → Mitigated by `offline_access` scope providing refresh tokens. `oidc-client-ts` handles automatic token refresh in the browser context. For CI, a pre-test setup step regenerates the storageState.
 
+**[Risk] `storageState.json` contains live session tokens** → The captured file includes the access token, refresh token, and user profile for a real (test) account. It must never be committed to version control. `.auth/storageState.json` is added to `.gitignore` so the setup script's output is excluded by default.
+
 **[Risk] New dependency `connectrpc.com/authn`** → The library is maintained by the Connect-RPC team, follows semantic versioning, and is the official auth solution for Connect. Low risk.
 
 **[Risk] Health check path routing correctness** → The separate mux approach requires exact path matching. Validated by existing health check tests and K8s probe configuration.

@@ -100,22 +100,6 @@ The system SHALL allow an authenticated user to retrieve all their ticket journe
 - **AND** the user has no ticket journeys
 - **THEN** the system SHALL return an empty list
 
-### Requirement: Ticket Journey Database Schema
-
-The system SHALL store ticket journeys in a `ticket_journeys` table with a composite primary key.
-
-#### Scenario: Table structure
-
-- **WHEN** the `ticket_journeys` table is created
-- **THEN** it SHALL have columns: `user_id` (UUID, FK -> users), `event_id` (UUID, FK -> events), `status` (SMALLINT)
-- **AND** the primary key SHALL be `(user_id, event_id)`
-- **AND** it SHALL NOT include `created_at` or `updated_at` columns
-
-#### Scenario: Upsert operation
-
-- **WHEN** a `SetStatus` operation targets an existing `(user_id, event_id)` pair
-- **THEN** the database SHALL perform `INSERT ... ON CONFLICT (user_id, event_id) DO UPDATE SET status`
-
 ### Requirement: Ticket Status UI visibility
 
 The Ticket Status UI in `EventDetailSheet` SHALL only be rendered when the user is authenticated. Unauthenticated (guest) users SHALL NOT see the Ticket Status section.
@@ -241,4 +225,3 @@ The Ticket Journey status UI (concert-card badge and detail-sheet status control
 
 - **WHEN** a user has not completed any ticket purchase or NFT minting
 - **THEN** the user SHALL still be able to set and view their journey status (e.g. `tracking`, `applied`, `lost`, `unpaid`, `paid`) via the UI
-
