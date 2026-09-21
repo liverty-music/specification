@@ -87,12 +87,16 @@ artifacts:
           ConcertUseCase.ListByFollower → components/usecase/concert/list-by-follower).
           Scenarios correspond to unit tests.
 
-        components/infrastructure/ui/route/<route>/spec.md
-          Behavior that appears on exactly one route (frontend/src/routes/<route>).
+        components/infrastructure/ui/<app>/route/<screen>/spec.md
+          Behavior that appears on exactly one screen of one app. <app> is
+          fan (frontend/src/routes/<screen>), admin (frontend/admin/<screen>),
+          organizer (frontend/organizer/<screen>), or hosted-login (the
+          identity provider's login screen, bound to cloud-provisioning).
 
-        components/infrastructure/ui/global/<surface>/spec.md
-          Behavior of a UI surface that appears on two or more routes
-          (frontend/src/components/<surface>).
+        components/infrastructure/ui/<app>/global/<surface>/spec.md
+          Behavior of a UI surface that appears on two or more screens of
+          one app (frontend/src/components/<surface>, frontend/src/app-shell,
+          frontend/<app>/<app>-shell).
 
         components/infrastructure/<kind>/<name>/spec.md
           Non-UI user-experience infrastructure (push, service-worker, locale, email).
@@ -111,7 +115,7 @@ artifacts:
 
       The subject of a requirement or scenario is a contract or a ubiquitous-
       language noun: an entity name, an exported interface and its methods
-      (ArtistRepository, ConcertUseCase.List), a route name, a surface name
+      (ArtistRepository, ConcertUseCase.List), an app and screen name, a surface name
       (dna-orb, bottom-sheet), or a UI vocabulary term (bubble, orb, lane, hype)
       defined by the surface that owns it.
 
