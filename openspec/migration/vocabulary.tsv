@@ -52,21 +52,21 @@ components/usecase/follow/follow	go	backend/internal/usecase/follow_uc.go:Follow
 components/usecase/follow/unfollow	go	backend/internal/usecase/follow_uc.go:FollowUseCase.Unfollow	
 components/usecase/follow/set-hype	go	backend/internal/usecase/follow_uc.go:FollowUseCase.SetHype	
 components/usecase/follow/list-followed	go	backend/internal/usecase/follow_uc.go:FollowUseCase.ListFollowed	
-components/usecase/identity-verification/start-verify	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.StartVerify	
-components/usecase/identity-verification/complete-verify	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.CompleteVerify	
-components/usecase/identity-verification/re-check	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.ReCheck	
-components/usecase/identity-verification/get-my-verification-status	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.GetMyVerificationStatus	
-components/usecase/identity-verification/delete	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.Delete	
-components/usecase/lottery/configure-lottery-phase	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.ConfigureLotteryPhase	
-components/usecase/lottery/set-phase-verification-requirement	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.SetPhaseVerificationRequirement	
-components/usecase/lottery/create-authorization	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.CreateAuthorization	
-components/usecase/lottery/apply	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.Apply	
-components/usecase/lottery/withdraw-application	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.WithdrawApplication	
-components/usecase/lottery/get-my-application	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.GetMyApplication	
-components/usecase/lottery/get-result	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.GetResult	
-components/usecase/lottery/get-lottery-phase-status	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.GetLotteryPhaseStatus	
-components/usecase/lottery/draw-due-phases	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.DrawDuePhases	
-components/usecase/lottery/run-draw	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.RunDraw	
+components/usecase/verified-identity/start-verify	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.StartVerify	entity segment aligned to proto
+components/usecase/verified-identity/complete-verify	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.CompleteVerify	entity segment aligned to proto
+components/usecase/verified-identity/re-check	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.ReCheck	entity segment aligned to proto
+components/usecase/verified-identity/get-my-verification-status	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.GetMyVerificationStatus	entity segment aligned to proto
+components/usecase/verified-identity/delete	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.Delete	entity segment aligned to proto
+components/usecase/lottery-application/configure-lottery-phase	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.ConfigureLotteryPhase	entity segment aligned to proto
+components/usecase/lottery-application/set-phase-verification-requirement	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.SetPhaseVerificationRequirement	entity segment aligned to proto
+components/usecase/lottery-application/create-authorization	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.CreateAuthorization	entity segment aligned to proto
+components/usecase/lottery-application/apply	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.Apply	entity segment aligned to proto
+components/usecase/lottery-application/withdraw-application	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.WithdrawApplication	entity segment aligned to proto
+components/usecase/lottery-application/get-my-application	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.GetMyApplication	entity segment aligned to proto
+components/usecase/lottery-application/get-result	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.GetResult	entity segment aligned to proto
+components/usecase/lottery-application/get-lottery-phase-status	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.GetLotteryPhaseStatus	entity segment aligned to proto
+components/usecase/lottery-application/draw-due-phases	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.DrawDuePhases	entity segment aligned to proto
+components/usecase/lottery-application/run-draw	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.RunDraw	entity segment aligned to proto
 components/usecase/media/create-media-upload-url	go	backend/internal/usecase/media_uc.go:MediaUseCase.CreateMediaUploadURL	
 components/usecase/media/attach-media	go	backend/internal/usecase/media_uc.go:MediaUseCase.AttachMedia	
 components/usecase/notification/notify	go	backend/internal/usecase/notification_uc.go:NotificationUseCase.Notify	
@@ -81,14 +81,14 @@ components/usecase/organizer/associate-artist	go	backend/internal/usecase/organi
 components/usecase/organizer/disassociate-artist	go	backend/internal/usecase/organizer_uc.go:OrganizerUseCase.DisassociateArtist	
 components/usecase/organizer/deactivate	go	backend/internal/usecase/organizer_uc.go:OrganizerUseCase.Deactivate	
 components/usecase/organizer/reconcile-provisioning	go	backend/internal/usecase/organizer_uc.go:OrganizerUseCase.ReconcileProvisioning	
-components/usecase/push-notification/create	go	backend/internal/usecase/push_notification_uc.go:PushNotificationUseCase.Create	
-components/usecase/push-notification/get	go	backend/internal/usecase/push_notification_uc.go:PushNotificationUseCase.Get	
-components/usecase/push-notification/delete	go	backend/internal/usecase/push_notification_uc.go:PushNotificationUseCase.Delete	
-components/usecase/push-notification/notify-new-concerts	go	backend/internal/usecase/push_notification_uc.go:PushNotificationUseCase.NotifyNewConcerts	
+components/usecase/push-subscription/create	go	backend/internal/usecase/push_notification_uc.go:PushNotificationUseCase.Create	entity segment aligned to proto
+components/usecase/push-subscription/get	go	backend/internal/usecase/push_notification_uc.go:PushNotificationUseCase.Get	entity segment aligned to proto
+components/usecase/push-subscription/delete	go	backend/internal/usecase/push_notification_uc.go:PushNotificationUseCase.Delete	entity segment aligned to proto
+components/usecase/push-subscription/notify-new-concerts	go	backend/internal/usecase/push_notification_uc.go:PushNotificationUseCase.NotifyNewConcerts	entity segment aligned to proto
 components/usecase/sales-phase/announce-discovered-phase	go	backend/internal/usecase/sales_phase_announcement_uc.go:SalesPhaseAnnouncementUseCase.AnnounceDiscoveredPhase	
 components/usecase/sales-phase/discover-for-artist	go	backend/internal/usecase/sales_phase_uc.go:SalesPhaseDiscoveryUseCase.DiscoverForArtist	
-components/usecase/sales-reminder/deliver-reminder	go	backend/internal/usecase/sales_reminder_delivery_uc.go:SalesReminderDeliveryUseCase.DeliverReminder	
-components/usecase/sales-reminder/scan-due-reminders	go	backend/internal/usecase/sales_reminder_uc.go:SalesReminderUseCase.ScanDueReminders	
+components/usecase/sales-phase/deliver-reminder	go	backend/internal/usecase/sales_reminder_delivery_uc.go:SalesReminderDeliveryUseCase.DeliverReminder	entity segment aligned to proto
+components/usecase/sales-phase/scan-due-reminders	go	backend/internal/usecase/sales_reminder_uc.go:SalesReminderUseCase.ScanDueReminders	entity segment aligned to proto
 components/usecase/ticket-journey/set-status	go	backend/internal/usecase/ticket_journey_uc.go:TicketJourneyUseCase.SetStatus	
 components/usecase/ticket-journey/delete	go	backend/internal/usecase/ticket_journey_uc.go:TicketJourneyUseCase.Delete	
 components/usecase/ticket-journey/list-by-user	go	backend/internal/usecase/ticket_journey_uc.go:TicketJourneyUseCase.ListByUser	
