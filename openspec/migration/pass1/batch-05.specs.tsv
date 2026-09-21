@@ -1,0 +1,19 @@
+old_spec	disposition	primary_target	confidence	evidence	note
+zitadel-self-hosted-deployment	OUT:design-doc	-	high	20/20 requirements are OUT (12 design-doc, 7 runbook, 1 lint); self-hosted Zitadel K8s/Pulumi deployment shape has no fan/organizer actor	cloud-provisioning/docs/design/zitadel-self-hosted-deployment.md
+cube-css-architecture	OUT:lint	-	high	11/11 requirements are OUT (10 lint, 1 design-doc); CUBE CSS layer/file conventions enforced via stylelint, no user actor	frontend/stylelint-plugin-cube-css docs (CSS architecture conventions)
+passive-concert-discovery	KEEP	components/infrastructure/ui/route/dashboard	high	8/8 requirements are Dashboard-route behavior (All Nearby mode toggle, filters, list, follow CTA)	-
+cube-css-layer-constraints	OUT:lint	-	high	5/5 requirements are stylelint rule definitions (cube/exception-data-attr etc.), no user actor	frontend/stylelint-plugin-cube-css docs (layer constraint rules)
+venue-normalization	SPLIT	components/usecase/concert/create-from-discovered	medium	5 KEEP (4 under create-from-discovered, 1 under approve) + 1 OUT:design-doc (constructor guard)	cloud-provisioning n/a; OUT req is an implementation-level DI guard with no user actor
+gemini-searcher-config	OUT:design-doc	-	high	5/5 requirements are internal Gemini model/cache/window config wiring, no user actor observes model selection	backend internal config docs (gemini searcher configuration)
+admin-concert-management	NEEDS_HUMAN	components/usecase/concert/approve	medium	3 KEEP (list/delete/approve usecases) + 1 OUT:design-doc (service naming) + 1 NEEDS_HUMAN (admin console grouped-view screen has no cataloged route/global surface)	admin console frontend is not yet represented in vocabulary.tsv; needs human decision on where its UI requirements land
+zitadel-observability	OUT:runbook	-	high	5/5 requirements are Cloud Monitoring alerts/dashboards/CronJob/runbook for the self-hosted Zitadel incident, no user actor	cloud-provisioning/docs/runbooks/zitadel-hang.md
+concert-search-log	SPLIT	components/usecase/concert/search-new-concerts	medium	3 KEEP (2 under search-new-concerts, 1 story proposal for onboarding polling) + 1 OUT:design-doc (table schema)	-
+hype-inline-slider	KEEP	components/infrastructure/ui/route/my-artists	high	4/4 requirements are My Artists route behavior (hype slider + header legend)	-
+tap-press-feedback	OUT:lint	-	low	5/5 requirements are cross-cutting :active press-cue CSS conventions, treated like cube-css styling rules; genuinely unsure whether this deserves KEEP as a UX-quality requirement instead	frontend CSS interaction-feedback conventions doc
+page-header-ce	KEEP	components/infrastructure/ui/global/page-header	high	6/6 requirements describe the shared page-header global surface used across routes	-
+database-migration	OUT:design-doc	-	high	4/5 design-doc (startup migration mechanics) + 1/5 lint (CI ordering check); backend deployment mechanics, no user actor	backend internal docs (migration runtime behavior)
+frontend-client-rpc-telemetry	OUT:design-doc	-	high	6/6 requirements are cross-cutting RPC telemetry; tie-break rule routes telemetry to OUT	frontend internal docs (RPC telemetry design)
+cube-css-lint-plugin	OUT:lint	-	high	4/4 requirements describe the stylelint plugin's own implementation, no user actor	frontend/stylelint-plugin-cube-css docs (plugin architecture)
+bulk-insert-unnest	OUT:design-doc	-	high	2/2 requirements are repository-layer SQL insert strategy, no user actor	backend internal docs (repository bulk-insert pattern)
+frontend-router-query-params	OUT:lint	-	high	1/1 requirement is a coding convention for testable query-param access, no user actor	frontend internal docs (router coding conventions)
+onboarding-tutorial	KEEP	components/infrastructure/ui/global/coach-mark	high	1/1 requirement is coach-mark navigation behavior, a shared global surface used across onboarding routes	-

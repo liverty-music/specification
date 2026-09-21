@@ -1,210 +1,210 @@
 old_spec	req	scen	lines	disposition	primary_target	confidence	evidence	reviewer	note	product_hits	nonproduct_hits	score	band
-admin-area-normalization	4	11	84							23	0	23	KEEP?
-admin-concert-management	5	16	176							251	0	251	KEEP?
-admin-console	5	10	103							41	1	40	KEEP?
-admin-console-hosting	6	10	107							44	8	36	REVIEW
-admin-rpc-server	6	15	135							79	2	77	KEEP?
-analytics-consent	6	11	104							131	0	131	KEEP?
-apex-frontend-serving	4	11	85							5	22	-17	OUT?
-api-rate-limiting	5	12	92							21	4	17	REVIEW
-app-error-log-alerting	14	31	267							76	38	38	OUT?(plan)
-app-shell-layout	12	43	327							146	12	134	KEEP?
-argocd-deployment-alerts	5	12	71							30	46	-16	OUT?
-argocd-gateway-deployment	9	16	104							13	48	-35	OUT?
-argocd-image-automation	8	16	114							3	55	-52	OUT?
-artist-auto-persist	3	5	40							48	0	48	KEEP?
-artist-discovery-dna-orb-ui	13	41	316							327	1	326	KEEP?
-artist-following	5	17	126							237	0	237	KEEP?
-artist-image	9	26	137							159	0	159	KEEP?
-artist-image-ui	3	10	57							90	1	89	KEEP?
-artist-service-infrastructure	2	6	38							54	0	54	KEEP?
-atlas-operator	5	7	81							18	41	-23	OUT?
-aurelia-reactivity	5	10	75							6	0	6	KEEP?
-aurelia-template-optimization	8	17	106							46	0	46	KEEP?
-authentication	11	33	358							90	2	88	KEEP?
-auto-concert-discovery	7	18	146							89	0	89	KEEP?
-auto-discovery-series-grouping	8	20	153							123	0	123	KEEP?
-backend-otel-instrumentation	5	13	97							20	0	20	KEEP?
-backend-service-exposure	3	5	37							0	4	-4	OUT?
-beam-effect-toggle	1	5	52							26	2	24	KEEP?
-billing-export-infrastructure	5	8	74							3	21	-18	OUT?
-bottom-sheet-ce	1	28	200							38	6	32	KEEP?
-brand-vocabulary	9	25	201							85	10	75	OUT?(plan)
-browser-locale-detection	2	4	42							5	0	5	KEEP?
-bubble-pool-lifecycle	5	14	119							123	0	123	KEEP?
-bubble-replenishment	1	3	26							30	0	30	KEEP?
-bubble-state-management	7	19	132							82	0	82	KEEP?
-bulk-insert-unnest	2	5	37							36	0	36	KEEP?
-card-logo-presentation	4	6	42							26	0	26	KEEP?
-certificate-manager-integration	6	9	62							7	1	6	OUT?(plan)
-ci-optimization	11	22	145							6	66	-60	OUT?
-cloud-dns-infrastructure	5	13	87							1	28	-27	OUT?
-cloud-sql-connector	5	6	69							0	6	-6	OUT?
-commit-gate-hook	3	4	43							3	0	3	REVIEW
-component-smoke-tests	3	9	67							5	8	-3	OUT?
-concert-approval-queue	10	31	346							369	0	369	KEEP?
-concert-detail	5	28	215							229	4	225	KEEP?
-concert-highway-ce	2	8	64							30	3	27	KEEP?
-concert-search	7	37	295							270	0	270	KEEP?
-concert-search-internals	5	9	81							45	1	44	KEEP?
-concert-search-log	4	13	101							115	0	115	KEEP?
-concert-service	15	57	432							461	3	458	KEEP?
-connect-rpc-cors	5	8	55							6	0	6	KEEP?
-consumer-poison-queue-alerting	2	6	54							7	0	7	KEEP?
-continuous-delivery	9	10	103							6	39	-33	OUT?
-coordinates-vo	1	7	61							54	0	54	KEEP?
-css-linting	9	27	149							31	57	-26	OUT?
-css-state-management	8	21	148							3	4	-1	REVIEW
-cube-css-architecture	11	33	229							24	32	-8	OUT?(plan)
-cube-css-layer-constraints	5	24	119							1	33	-32	OUT?
-cube-css-layer-enforcement	2	11	57							31	26	5	REVIEW
-cube-css-lint-plugin	4	6	43							5	17	-12	OUT?
-cube-css-modern-css-rules	3	12	64							0	17	-17	OUT?
-cube-css-structural-rules	3	13	68							0	18	-18	OUT?
-cube-css-token-enforcement	6	20	106							3	24	-21	OUT?
-dashboard-artist-filter	6	27	183							259	0	259	KEEP?
-dashboard-concert-cache	4	11	75							92	0	92	KEEP?
-dashboard-date-filter	4	10	84							63	0	63	KEEP?
-dashboard-journey-filter	5	21	111							119	0	119	KEEP?
-database	4	7	79							16	12	4	REVIEW
-database-migration	5	8	77							7	6	1	REVIEW
-db-trace-correlation	4	11	91							6	3	3	REVIEW
-deployment-infrastructure	10	13	120							9	40	-31	OUT?
-design-system	9	40	285							47	41	6	OUT?(plan)
-dev-db-access	4	5	61							6	13	-7	OUT?
-discover	5	18	126							131	1	130	KEEP?
-discovery-bubble-cache	2	9	62							59	0	59	KEEP?
-discovery-tap-sonic-feedback	3	8	63							25	0	25	KEEP?
-dna-orb-color-injection	2	6	56							31	0	31	KEEP?
-e2e-auth-testing	5	7	84							35	11	24	REVIEW
-edit-mode-unfollow	3	14	103							79	0	79	KEEP?
-email-provider	5	7	74							6	14	-8	OUT?
-email-verification	2	14	110							78	0	78	KEEP?
-entity-domain-logic	18	76	567							369	0	369	KEEP?
-entity-store-layer	4	16	150							109	0	109	KEEP?
-entity-test-coverage	18	31	192							29	2	27	KEEP?
-event-card-glow	1	1	17							5	0	5	KEEP?
-event-management	7	22	189							271	1	270	KEEP?
-fab-action-launcher	7	21	200							45	1	44	KEEP?
-feature-flag-management	5	10	85							37	0	37	KEEP?
-festival-orb-effects	17	71	415							125	1	124	KEEP?
-follow-triggered-search	3	6	40							89	0	89	KEEP?
-frontend-client-rpc-telemetry	6	7	73							8	0	8	KEEP?
-frontend-entity-layer	7	17	104							218	0	218	KEEP?
-frontend-error-handling	6	18	144							47	1	46	KEEP?
-frontend-hosting	11	27	223							25	65	-40	OUT?
-frontend-i18n	12	31	257							86	7	79	KEEP?
-frontend-network-timeouts	4	8	75							12	0	12	KEEP?
-frontend-observability	3	13	89							3	0	3	REVIEW
-frontend-onboarding-flow	3	16	124							157	1	156	KEEP?
-frontend-performance-instrumentation	3	3	30							11	0	11	KEEP?
-frontend-plain-date-lib	6	13	116							4	3	1	REVIEW
-frontend-route-guard	3	6	63							61	0	61	KEEP?
-frontend-router-query-params	1	3	23							7	0	7	KEEP?
-frontend-runtime-config	6	18	156							15	5	10	REVIEW
-frontend-store-cache	6	17	111							108	0	108	KEEP?
-frontend-testing	45	138	707							305	38	267	OUT?(plan)
-gcp-cost-guardrails	3	10	68							22	13	9	REVIEW
-gemini-grounded-extract-and-coerce	19	46	407							169	3	166	KEEP?
-gemini-searcher-config	5	18	138							38	4	34	KEEP?
-geo-location	2	6	52							24	0	24	KEEP?
-gke-gateway-infrastructure	6	8	58							3	14	-11	OUT?
-gke-standard-infrastructure	8	19	117							8	34	-26	OUT?
-goroutine-leak-detection	3	8	58							4	2	2	REVIEW
-guest-data-merge	4	14	143							119	1	118	KEEP?
-guest-mode-access	3	6	56							64	0	64	KEEP?
-http-retry	8	24	156							19	0	19	KEEP?
-hype-inline-slider	4	12	115							69	0	69	KEEP?
-id-resolution	2	11	60							100	0	100	KEEP?
-identity-management	23	74	904							422	166	256	REVIEW
-infra	2	2	24							2	8	-6	OUT?
-intel	1	1	19							6	0	6	KEEP?
-interaction-feedback	6	16	134							27	0	27	KEEP?
-interceptor-chain-ordering	2	4	58							9	0	9	KEEP?
-jetstream-consumer-reliability	9	17	154							40	2	38	KEEP?
-journey-status-presentation	3	7	49							13	0	13	KEEP?
-k8s-resource-right-sizing	2	10	60							6	26	-20	OUT?
-k8s-service-cross-namespace-routing	6	9	62							0	14	-14	OUT?
-landing-page	11	29	241							160	0	160	KEEP?
-layout-assertions	6	22	125							40	12	28	REVIEW
-legal-documents	7	12	104							83	0	83	KEEP?
-live-events	9	31	220							274	0	274	KEEP?
-loading-spinner-ce	1	6	42							6	3	3	REVIEW
-localstorage-naming	3	5	39							27	1	26	KEEP?
-logo-color-analysis	5	17	89							63	8	55	KEEP?
-lottery-application	9	24	225							215	0	215	KEEP?
-m3-design-tokens	5	13	114							2	5	-3	OUT?
-migration-rebase-guard	3	7	63							23	0	23	KEEP?
-modern-css-platform	21	44	297							73	32	41	OUT?(plan)
-my-artists	6	16	143							139	0	139	KEEP?
-nearby-proximity	3	11	85							79	0	79	KEEP?
-non-blocking-menu-navigation	6	11	78							22	0	22	KEEP?
-notification-lifecycle	8	14	100							163	0	163	KEEP?
-official-site-search	2	8	65							53	0	53	KEEP?
-onboarding-celebration	2	9	75							27	21	6	REVIEW
-onboarding-guidance	5	10	76							77	1	76	KEEP?
-onboarding-page-help	8	19	184							138	10	128	KEEP?
-onboarding-popover-guide	1	7	47							16	1	15	KEEP?
-onboarding-spotlight	11	27	233							64	14	50	REVIEW
-onboarding-tutorial	1	1	16							3	0	3	REVIEW
-organizer-accounts	7	19	200							233	0	233	KEEP?
-organizer-console	4	9	119							63	0	63	KEEP?
-organizer-console-hosting	2	2	37							36	2	34	KEEP?
-organizer-event-authoring	10	30	346							447	0	447	KEEP?
-organizer-rpc-server	4	14	157							152	1	151	KEEP?
-organizer-tenancy	5	12	241							106	8	98	KEEP?
-otel-collector-deployment	7	14	113							15	26	-11	OUT?
-otel-sdk-configuration	4	7	59							0	0	0	REVIEW
-page-header-ce	6	10	68							60	2	58	KEEP?
-passion-level	7	27	226							222	4	218	KEEP?
-passive-concert-discovery	8	29	219							213	1	212	KEEP?
-post-signup-dialog	7	23	198							95	8	87	KEEP?
-private-google-access	3	5	54							6	5	1	REVIEW
-prod-environment-bootstrap	15	44	297							52	117	-65	OUT?
-prod-image-pipeline	12	49	376							127	202	-75	OUT?
-prod-image-tag-immutability	4	17	138							14	80	-66	OUT?
-prod-k8s-manifests	6	15	111							6	112	-106	OUT?
-product-analytics	14	40	292							354	4	350	KEEP?
-prompt-timing	8	18	173							131	0	131	KEEP?
-proximity-model	3	9	75							59	0	59	KEEP?
-pulumi-state-recovery	1	3	32							12	19	-7	OUT?
-push-notification-localization	2	7	52							64	0	64	KEEP?
-push-notification-service	13	40	330							357	0	357	KEEP?
-pwa-install-banner	8	29	240							42	3	39	KEEP?
-pwa-update-lifecycle	6	13	120							45	0	45	KEEP?
-rpc-auth-scoping	3	7	60							35	0	35	KEEP?
-sales-phase	7	13	117							64	1	63	KEEP?
-sales-phase-discovery	6	15	117							84	0	84	KEEP?
-sales-reminders	6	14	112							83	0	83	KEEP?
-schema-lint	10	19	114							3	5	-2	OUT?
-search-follow-absorption	1	3	35							48	0	48	KEEP?
-secret-management	8	18	149							0	76	-76	OUT?
-semantic-dom	4	7	67							21	7	14	REVIEW
-settings	21	53	424							258	1	257	KEEP?
-shell-layout	4	13	92							79	5	74	KEEP?
-signup-prompt-banner	5	18	136							95	3	92	KEEP?
-state-management	10	41	271							224	0	224	KEEP?
-state-transition-diagram	3	14	117							95	1	94	KEEP?
-storybook-component-testing	6	16	92							0	18	-18	OUT?
-tap-press-feedback	5	11	70							23	3	20	KEEP?
-ticket-journey	13	31	245							250	0	250	KEEP?
-ticket-purchase-and-issuance	9	18	230							216	0	216	KEEP?
-toast-ce	1	6	47							17	4	13	REVIEW
-typography-focused-dashboard	1	11	80							34	8	26	REVIEW
-unified-check-interface	2	23	144							2	53	-51	OUT?
-usecase-test-coverage	8	30	218							131	0	131	KEEP?
-user-account-sync	1	5	58							66	0	66	KEEP?
-user-auth	3	10	96							44	0	44	KEEP?
-user-home	7	32	264							275	4	271	KEEP?
-user-language-preference	7	24	198							103	1	102	KEEP?
-user-profile-hydration	9	16	160							71	0	71	KEEP?
-venue-name-cache	2	5	46							18	0	18	KEEP?
-venue-name-localization	1	5	46							61	0	61	KEEP?
-venue-normalization	6	21	189							134	0	134	KEEP?
-watermill-structured-logging	2	3	26							0	4	-4	OUT?
-web-push-delivery-alerting	2	3	27							9	0	9	KEEP?
-welcome-dashboard-preview	1	6	54							56	0	56	KEEP?
-workload-naming-convention	5	9	113							76	12	64	OUT?(plan)
-zitadel-action-webhook	3	8	91							26	1	25	KEEP?
-zitadel-observability	5	15	143							26	26	0	REVIEW
-zitadel-self-hosted-deployment	20	67	692							153	246	-93	OUT?
+admin-area-normalization	4	11	84	SPLIT	components/entity/venue	medium	Normalization + extraction are entity invariants (venue, user); pipeline requirement is a usecase; migration requirement is historic (already executed)			23	0	23	KEEP?
+admin-concert-management	5	16	176	NEEDS_HUMAN	components/usecase/concert/approve	medium	3 KEEP (list/delete/approve usecases) + 1 OUT:design-doc (service naming) + 1 NEEDS_HUMAN (admin console grouped-view screen has no cataloged route/global surface)		admin console frontend is not yet represented in vocabulary.tsv; needs human decision on where its UI requirements land	251	0	251	KEEP?
+admin-console	5	10	103	SPLIT	stories/sign-in-to-admin-console	medium	3 of 5 requirements form one sign-in journey story (no admin app namespace exists yet in vocabulary); bundle isolation and import-boundary lint are build concerns			41	1	40	KEEP?
+admin-console-hosting	6	10	107	OUT:runbook		high	All 6 reqs describe hosting/deploy infrastructure (image, Service, hostname, config delivery, OIDC app, TLS/DNS, GitOps) for the admin console; ops-only, no distinguishable product behavior		cloud-provisioning/docs/runbooks/admin-console-hosting.md	44	8	36	REVIEW
+admin-rpc-server	6	15	135	OUT:design-doc		high	all 6 reqs are backend Connect-server topology, boundary authorization, CORS, ingress, and interceptor-construction architecture; PERMISSION_DENIED/host-resolution are standard RPC/infra patterns, not distinctive product contracts		backend/docs/design/admin-rpc-server.md	79	2	77	KEEP?
+analytics-consent	6	11	104	SPLIT	components/infrastructure/ui/route/settings	medium	2 of 6 reqs (Settings Analytics/Session-replay toggles) map to the settings route; the other 4 are telemetry/legal policy statements (opt-out default posture, anonymous capture, identify-merge, sensitive-data exclusion) with no single UI surface - tie-break routes telemetry to OUT		frontend analytics-policy design rationale (no existing doc file identified); not a spec surface	131	0	131	KEEP?
+apex-frontend-serving	4	11	85	OUT:runbook		high	All four requirements are Gateway/DNS/TLS/Pulumi deployment infra for the apex domain.		cloud-provisioning/docs/runbooks/apex-frontend-serving.md	5	22	-17	OUT?
+api-rate-limiting	5	12	92	OUT:design-doc		medium	All five requirements are backend self-protection/interceptor architecture, not fan-directed product behavior.		backend/docs/design/rate-limiting.md	21	4	17	REVIEW
+app-error-log-alerting	14	31	267	OUT:runbook		high	All 14 reqs describe Cloud Monitoring alerting, notification routing, and internal error-handling/logging conventions for the on-call engineer; no fan/organizer/admin actor observes any of them (12 OUT:runbook, 2 OUT:lint)		cloud-provisioning/docs/runbooks/app-error-alerting.md	76	38	38	OUT?(plan)
+app-shell-layout	12	43	327	NEEDS_HUMAN	components/infrastructure/ui/global/page-header	low	Mixed: several shell-chrome requirements (brand identity, page transitions) have no matching vocabulary target; two rows marked NEEDS_HUMAN.			146	12	134	KEEP?
+argocd-deployment-alerts	5	12	71	OUT:runbook		high	all 5 requirements are ArgoCD Notifications-controller / Google Chat webhook alerting config; no fan/organizer actor		cloud-provisioning/docs/runbooks/argocd-deployment-alerts.md	30	46	-16	OUT?
+argocd-gateway-deployment	9	16	104	OUT:delete		high	no user actor; ArgoCD Application deployment topology (5 reqs) plus pod-cost overlay mechanics (2 reqs) and operator status/rollback procedures (2 reqs)		cloud-provisioning/k8s (ArgoCD deploy topology and pod-cost overlay mechanics, discard from openspec)	13	48	-35	OUT?
+argocd-image-automation	8	16	114	OUT:delete		high	All 8 reqs describe ArgoCD Image Updater CI/deploy mechanics (polling, parameter overrides, rollback, failure retry) with no lasting product value once implemented			3	55	-52	OUT?
+artist-auto-persist	3	5	40	KEEP	components/usecase/artist/list-top	high	All three requirements map to the ListTop/ListSimilar usecases' auto-persistence contract.			48	0	48	KEEP?
+artist-discovery-dna-orb-ui	13	41	316	SPLIT	components/infrastructure/ui/route/discovery	medium	Mostly KEEP across route/discovery and the dna-orb global component, plus one DROP:duplicate (bug-fix requirement already covered by artist-following).			327	1	326	KEEP?
+artist-following	5	17	126	KEEP	components/usecase/follow/follow	high	All five requirements map to Follow/Unfollow/ListFollowed usecases or the artist-filter-bar/bottom-sheet UI.			237	0	237	KEEP?
+artist-image	9	26	137	SPLIT	components/entity/artist	medium	4 KEEP (entity/artist x2, usecase/artist/sync-artist-image x2), 5 OUT:design-doc (mapper/storage/client/interface/selection algorithm are implementation detail)		backend/docs/design/fanart-integration.md	159	0	159	KEEP?
+artist-image-ui	3	10	57	NEEDS_HUMAN		low	All 3 reqs (event-card logo display, detail-sheet hero image, fanart propagation) describe real product UI but vocabulary has no ui/global entry for event-card or event-detail-sheet			90	1	89	KEEP?
+artist-service-infrastructure	2	6	38	KEEP	components/entity/artist	medium	1 requirement targets entity/artist (Artist entity always/optionally carrying fanart data), 1 targets usecase/artist/search (multi-provider discovery); tied at 1 each, no single dominant target			54	0	54	KEEP?
+atlas-operator	5	7	81	OUT:runbook		high	all 5 requirements are cluster/DB-migration operations with no user actor		cloud-provisioning/docs/runbooks/atlas-operator.md	18	41	-23	OUT?
+aurelia-reactivity	5	10	75	OUT:lint		high	All five requirements are Aurelia 2 framework-usage conventions (decorators, batching, binding patterns) with no user actor.		frontend/docs/conventions/aurelia-reactivity.md	6	0	6	KEEP?
+aurelia-template-optimization	8	17	106	OUT:lint		high	all 8 requirements are Aurelia 2 template/binding coding conventions (key.bind, switch.bind, show.bind, debounce/throttle, etc.); no user actor		frontend coding conventions doc (Aurelia 2 template/binding patterns)	46	0	46	KEEP?
+authentication	11	33	358	SPLIT	stories/maintain-authenticated-session	medium	2 KEEP (frontend session-refresh/re-auth UX, both folded into one story) + 9 OUT (8 design-doc backend JWT/JWKS/middleware architecture cross-cutting like CORS, 1 runbook health-check probe access); no fan/organizer actor in the backend auth plumbing		backend/docs/design/authentication-middleware.md (JWT validation, JWKS caching, authn-go middleware, webhook JWT verification); health-check probe access is a K8s ops concern	90	2	88	KEEP?
+auto-concert-discovery	7	18	146	SPLIT	components/usecase/concert/search-new-concerts	medium	2 KEEP (organizer-exclusion business rule + Gemini response resilience, both fold into ConcertUseCase.SearchNewConcerts) + 5 OUT (3 design-doc DI/NATS JetStream config, 2 runbook CronJob exit-code/circuit-breaker mechanics); no user actor in the job mechanics		cloud-provisioning/docs/runbooks/auto-concert-discovery-job.md (CronJob DI, exit semantics, circuit breaker); NATS consumer config -> backend/docs/design/jetstream-consumer.md	89	0	89	KEEP?
+auto-discovery-series-grouping	8	20	153	SPLIT	components/usecase/concert/create-from-discovered	high	7 requirements govern ConcertCreationUseCase.CreateFromDiscovered grouping/dedup logic; 1 governs AdminConcertUseCase.Approve preserving series identity			123	0	123	KEEP?
+backend-otel-instrumentation	5	13	97	OUT:design-doc		high	all 5 requirements are telemetry/tracing instrumentation with no user actor		backend/docs/design/otel-instrumentation.md	20	0	20	KEEP?
+backend-service-exposure	3	5	37	OUT:runbook		high	All 3 reqs describe K8s Service discoverability, protocol advertisement, and health-check wiring for the backend Service; ops-only		cloud-provisioning/docs/runbooks/backend-service-exposure.md	0	4	-4	OUT?
+beam-effect-toggle	1	5	52	KEEP	components/infrastructure/ui/global/fab-menu	medium	single requirement: beam toggle contributed to the FAB action launcher panel (vocabulary name: fab-menu)			26	2	24	KEEP?
+billing-export-infrastructure	5	8	74	OUT:design-doc		high	5 requirements provision a BigQuery billing-export dataset/IAM and document Console-side enablement steps; no fan/organizer/admin observes any of it		cloud-provisioning/docs/runbooks/billing-export.md	3	21	-18	OUT?
+bottom-sheet-ce	1	28	200	KEEP	components/infrastructure/ui/global/bottom-sheet	high	The single requirement (28 scenarios) fully describes the bottom-sheet global CE, the single dialog primitive used across routes			38	6	32	KEEP?
+brand-vocabulary	9	25	201	SPLIT	components/infrastructure/locale/brand-vocabulary	medium	5 KEEP (user-facing vocabulary/copy governance: two-layer model, asymmetric labels, deprecated-term ban, brand-expression registry, hype-tier labels — all under locale infra) + 4 OUT:lint (i18n key-naming mechanics and CI lint-script enforcement, dev-facing only)		frontend/docs/conventions/i18n-key-naming.md (namespace-mirroring rule, locale-parity/entity-name lint checks, make-lint integration)	85	10	75	OUT?(plan)
+browser-locale-detection	2	4	42	KEEP	components/infrastructure/locale/country-from-timezone	medium	Both requirements describe a non-UI locale-detection utility, kind=locale, name proposed			5	0	5	KEEP?
+bubble-pool-lifecycle	5	14	119	SPLIT	components/infrastructure/ui/route/discovery	high	4 requirements describe Discovery-page bubble pool UX; 1 governs the ListSimilar/ListTop RPC limit parameter shared by ArtistService			123	0	123	KEEP?
+bubble-replenishment	1	3	26	KEEP	components/infrastructure/ui/route/discovery	high	The single requirement describes discovery-canvas bubble replenishment behavior on the discovery route			30	0	30	KEEP?
+bubble-state-management	7	19	132	KEEP	components/infrastructure/ui/route/discovery	high	All 7 requirements describe BubbleManager/physics-layer behavior scoped to the discovery route			82	0	82	KEEP?
+bulk-insert-unnest	2	5	37	OUT:design-doc	-	high	2/2 requirements are repository-layer SQL insert strategy, no user actor		backend internal docs (repository bulk-insert pattern)	36	0	36	KEEP?
+card-logo-presentation	4	6	42	KEEP	components/infrastructure/ui/global/live-highway	high	all 4 requirements describe artist logo/text rendering inside the shared live-highway event card			26	0	26	KEEP?
+certificate-manager-integration	6	9	62	OUT:runbook		high	All 6 reqs describe Google Certificate Manager TLS provisioning, DNS validation, and renewal for the Gateway; ops-only, no user actor		cloud-provisioning/docs/runbooks/certificate-manager.md	7	1	6	OUT?(plan)
+ci-optimization	11	22	145	OUT:runbook		high	All eleven requirements are CI workflow/branch-protection mechanics with no user actor; one (gofmt) is OUT:lint, the rest OUT:runbook.		backend/docs/runbooks/ci.md and frontend/docs/runbooks/ci.md	6	66	-60	OUT?
+cloud-dns-infrastructure	5	13	87	OUT:design-doc		high	All 5 requirements are Pulumi/Cloudflare DNS provisioning decisions for cloud-provisioning infra, no product-user actor		cloud-provisioning/docs/design/dns.md	1	28	-27	OUT?
+cloud-sql-connector	5	6	69	OUT:runbook		high	All 5 reqs describe backend database connectivity (Cloud SQL Connector vs local pgx, schema config, Auth Proxy) with no user actor		backend/docs/runbooks/cloud-sql-connector.md	0	6	-6	OUT?
+commit-gate-hook	3	4	43	OUT:runbook		high	all 3 reqs govern AI-agent dev-tooling (commit gate hook, skill removal, doc updates); no product user actor		docs/runbooks/commit-gate-hook.md (one req, code-verifier skill removal, is a one-time obsolete cleanup task with no destination doc)	3	0	3	REVIEW
+component-smoke-tests	3	9	67	OUT:delete		high	Aurelia component mount, DI mock registry, and E2E console-error smoke-test mechanics; no user actor		frontend/test-plans (test/CI inventory, discard from openspec)	5	8	-3	OUT?
+concert-approval-queue	10	31	346	NEEDS_HUMAN	components/usecase/concert/approve	medium	Nine of ten requirements map cleanly onto AdminConcertUseCase (approve/reject/delete/list-pending) and the discovery pipeline (SearchNewConcerts/CreateFromDiscovered); only the admin console UI has no vocabulary entry			369	0	369	KEEP?
+concert-detail	5	28	215	KEEP	components/infrastructure/ui/route/dashboard	high	All five requirements describe the concert-detail sheet and lane logic anchored to the dashboard route's /concerts/:id URL and its ListByFollowerGrouped RPC			229	4	225	KEEP?
+concert-highway-ce	2	8	64	KEEP	components/infrastructure/ui/global/live-highway	high	Both reqs describe the concert-highway CE (vocabulary target: live-highway), the shared 3-column lane grid and its per-frame beam-tracking performance			30	3	27	KEEP?
+concert-search	7	37	295	KEEP	components/usecase/concert/search-new-concerts	medium	all 7 requirements describe SearchNewConcerts' RPC contract and its dedup/extraction logic			270	0	270	KEEP?
+concert-search-internals	5	9	81	OUT:lint		high	All 5 reqs are Go Clean-Architecture import-boundary and test-methodology rules for internal/usecase; no user actor observes any of them		backend/AGENTS.md (Clean Architecture & testing conventions)	45	1	44	KEEP?
+concert-search-log	4	13	101	SPLIT	components/usecase/concert/search-new-concerts	medium	3 KEEP (2 under search-new-concerts, 1 story proposal for onboarding polling) + 1 OUT:design-doc (table schema)		-	115	0	115	KEEP?
+concert-service	15	57	432	SPLIT	components/usecase/concert/approve	medium	13 KEEP split across concert usecases (approve x2, search-new-concerts x2, list-by-artist x2, list-by-artists x1, list-by-follower-grouped x1, list-by-location x1) and entity invariants (event x2, concert x1, venue x1) — approve/search-new-concerts/list-by-artist/entity-event are tied at 2 requirements each; 1 OUT:design-doc (GKE Gateway timeoutSec) + 1 DROP:obsolete (completed one-time dedup migration)		GKE Gateway timeout req -> cloud-provisioning/docs/design/concert-service-gateway-timeout.md; the obsolete migration requirement has no destination (discard)	461	3	458	KEEP?
+connect-rpc-cors	5	8	55	OUT:design-doc		high	backend Connect-RPC CORS middleware configuration; no user actor		backend/internal/... CORS middleware config (discard from openspec)	6	0	6	KEEP?
+consumer-poison-queue-alerting	2	6	54	OUT:runbook		high	NATS poison-queue consumer logging and Cloud Monitoring alert policy; no user actor		backend ops runbook / cloud-provisioning alert policy (discard from openspec)	7	0	7	KEEP?
+continuous-delivery	9	10	103	OUT:runbook		high	all 9 requirements are ArgoCD/GitOps CI-CD provisioning mechanics (manifests, root app, image build, WIF auth, migration sync wave); no fan/organizer actor		cloud-provisioning/docs/runbooks/continuous-delivery.md	6	39	-33	OUT?
+coordinates-vo	1	7	61	KEEP	components/entity/coordinates	high	Single requirement maps directly to the Coordinates entity			54	0	54	KEEP?
+css-linting	9	27	149	OUT:lint		high	All 9 requirements are Stylelint rule definitions (color functions, logical properties, container queries, anti-patterns, ordering, at-rules, stacking, a11y, CI wiring)		frontend/stylelint.config.js (existing tool config, no separate doc needed)	31	57	-26	OUT?
+css-state-management	8	21	148	OUT:lint		high	all 8 requirements are the TS/template/CSS three-layer coding convention described in the spec Purpose; no user actor		frontend coding conventions doc (CSS state-management three-layer contract)	3	4	-1	REVIEW
+cube-css-architecture	11	33	229	OUT:lint	-	high	11/11 requirements are OUT (10 lint, 1 design-doc); CUBE CSS layer/file conventions enforced via stylelint, no user actor		frontend/stylelint-plugin-cube-css docs (CSS architecture conventions)	24	32	-8	OUT?(plan)
+cube-css-layer-constraints	5	24	119	OUT:lint	-	high	5/5 requirements are stylelint rule definitions (cube/exception-data-attr etc.), no user actor		frontend/stylelint-plugin-cube-css docs (layer constraint rules)	1	33	-32	OUT?
+cube-css-layer-enforcement	2	11	57	OUT:lint		high	both requirements define a stylelint custom rule (require-layer, layer-order); no user actor		frontend stylelint plugin config (already implemented; no separate doc)	31	26	5	REVIEW
+cube-css-lint-plugin	4	6	43	OUT:lint	-	high	4/4 requirements describe the stylelint plugin's own implementation, no user actor		frontend/stylelint-plugin-cube-css docs (plugin architecture)	5	17	-12	OUT?
+cube-css-modern-css-rules	3	12	64	OUT:lint		high	3 stylelint custom rules for CSS authoring; no user actor		frontend stylelint plugin config (already implemented; no separate doc)	0	17	-17	OUT?
+cube-css-structural-rules	3	13	68	OUT:lint		high	stylelint rule definitions for the CUBE CSS block layer; no user actor		frontend/.stylelint-plugin (lint rule config, discard from openspec)	0	18	-18	OUT?
+cube-css-token-enforcement	6	20	106	OUT:lint		high	All 6 reqs define the cube/require-token-variables stylelint rule's behavior and configuration; no user actor observes a lint rule		frontend/AGENTS.md or a stylelint-plugin-cube-css doc (design-token enforcement rule)	3	24	-21	OUT?
+dashboard-artist-filter	6	27	183	KEEP	components/infrastructure/ui/route/dashboard	high	All six requirements are fan-observable dashboard filtering behavior (route, fab-menu, bottom-sheet).			259	0	259	KEEP?
+dashboard-concert-cache	4	11	75	KEEP	components/infrastructure/ui/route/dashboard	high	all 4 requirements describe the Dashboard route's in-memory concert/follow caching			92	0	92	KEEP?
+dashboard-date-filter	4	10	84	KEEP	components/infrastructure/ui/route/dashboard	high	all 4 requirements describe the Dashboard route's date query-param filter			63	0	63	KEEP?
+dashboard-journey-filter	5	21	111	KEEP	components/infrastructure/ui/route/dashboard	high	all 5 requirements are dashboard route / shared filter-sheet UI behavior			119	0	119	KEEP?
+database	4	7	79	OUT:runbook		high	all 4 reqs govern migration ordering, Cloud SQL availability tier, schema placement, and a column-design convention; purely infra/ops, no user actor		cloud-provisioning/docs/runbooks/database.md (design-flavored reqs -> cloud-provisioning/docs/design/database.md: dedicated app schema, no metadata timestamp columns)	16	12	4	REVIEW
+database-migration	5	8	77	OUT:design-doc	-	high	4/5 design-doc (startup migration mechanics) + 1/5 lint (CI ordering check); backend deployment mechanics, no user actor		backend internal docs (migration runtime behavior)	7	6	1	REVIEW
+db-trace-correlation	4	11	91	OUT:design-doc		high	all 4 requirements are DB query tracing/telemetry with no user actor		backend/docs/design/db-trace-correlation.md	6	3	3	REVIEW
+deployment-infrastructure	10	13	120	OUT:runbook		high	All 10 reqs describe Pulumi Cloud Deployments OIDC/WIF setup, CD namespaces, and dev-overlay scheduling knobs; no user actor (7 OUT:runbook, 3 OUT:delete for CI-flow mechanics)		cloud-provisioning/docs/runbooks/pulumi-deployment.md	9	40	-31	OUT?
+design-system	9	40	285	NEEDS_HUMAN	components/infrastructure/ui/global/svg-icon	medium	3 of 9 requirements KEEP onto existing global components (svg-icon, state-placeholder, snack-bar); 4 are OUT (tokens/fonts/transitions/type-scale, all design tokens excluded per spec Purpose); Page Shell Component has no matching vocabulary surface		frontend/docs/design-tokens.md for OUT items; Page Shell Component needs a vocabulary decision (new global surface vs merge into page-header)	47	41	6	OUT?(plan)
+dev-db-access	4	5	61	OUT:runbook		high	Entire spec is a developer/agent-only Cloud SQL Auth Proxy access procedure, no fan/organizer actor		backend/docs/dev-db-access.md	6	13	-7	OUT?
+discover	5	18	126	KEEP	components/infrastructure/ui/route/discovery	high	all 5 requirements are Discover-tab route behavior			131	1	130	KEEP?
+discovery-bubble-cache	2	9	62	KEEP	components/infrastructure/ui/route/discovery	medium	Both requirements describe fan-observable bubble-field caching behavior on the discovery route.			59	0	59	KEEP?
+discovery-tap-sonic-feedback	3	8	63	KEEP	components/infrastructure/ui/route/discovery	high	All three requirements describe discovery-route tap/absorption audio feedback			25	0	25	KEEP?
+dna-orb-color-injection	2	6	56	KEEP	components/infrastructure/ui/global/dna-orb	high	Both requirements describe OrbRenderer behavior of the shared dna-orb component			31	0	31	KEEP?
+e2e-auth-testing	5	7	84	OUT:runbook		high	All 5 reqs describe Playwright MCP session capture and storageState/credential hygiene for E2E test automation; developer-tooling, no product user actor		frontend/docs/runbooks/e2e-auth-testing.md	35	11	24	REVIEW
+edit-mode-unfollow	3	14	103	KEEP	components/infrastructure/ui/route/my-artists	high	All 3 reqs describe the My Artists route's Edit-mode toggle, per-row remove controls, their accessibility, and the optimistic unfollow/Undo UX			79	0	79	KEEP?
+email-provider	5	7	74	OUT:design-doc		high	Postmark/Zitadel SMTP provisioning, DNS/DKIM infra, and credential separation; no user actor		cloud-provisioning/src/zitadel (SMTP infra provisioning, discard from openspec)	6	14	-8	OUT?
+email-verification	2	14	110	KEEP	components/infrastructure/email/verification	medium	"Both requirements route through EmailVerifier and are grouped under the email infra kind (name proposed as ""verification"")"			78	0	78	KEEP?
+entity-domain-logic	18	76	567	NEEDS_HUMAN	components/entity/concert	medium	Mostly clean entity invariants (Home/Hype/Proximity/Concert/Artist/Venue/Notification) plus two DROP:historic blockchain-ticket leftovers (GenerateTokenID, ValidateEthereumAddress), one OUT:lint type-alias, and one NEEDS_HUMAN status-mapping mismatch against the current TicketJourneyStatus enum			369	0	369	KEEP?
+entity-store-layer	4	16	150	NEEDS_HUMAN	components/usecase/ticket-journey/set-status	low	Mixes an internal store-architecture mandate (OUT:design-doc) with two user-observable guarantees (guest-data continuity as a story, ticket-journey sync via SetStatus) and one ambiguous resilience requirement (NEEDS_HUMAN)			109	0	109	KEEP?
+entity-test-coverage	18	31	192	OUT:lint		high	17 of 18 requirements are pure unit-test-coverage or apperr coding conventions with named functions/types (isHypeMatched, hasFollow, HYPE_TIERS, etc.); SafePredictor is an internal dependency-direction convention		backend AGENTS.md / go-tester skill testing standards; frontend entity test conventions	29	2	27	KEEP?
+event-card-glow	1	1	17	NEEDS_HUMAN		medium	The single requirement describes a real visual behavior of the (vocabulary-unmapped) event-card component; no ui/global vocabulary entry exists for event-card			5	0	5	KEEP?
+event-management	7	22	189	SPLIT	components/entity/event	high	6/7 reqs are entity invariants for Event/Concert/Series (fields, identity, aggregation, embedding); 1 req (trace context propagation) is a telemetry cross-cutting concern with no user actor		backend/docs/design/event-management.md (OUT-portion: Trace context propagation across message broker)	271	1	270	KEEP?
+fab-action-launcher	7	21	200	KEEP	components/infrastructure/ui/global/fab-menu	high	all 7 requirements describe the fab-menu global component shared across routes			45	1	44	KEEP?
+feature-flag-management	5	10	85	OUT:design-doc		medium	3 OUT:design-doc (cross-cutting flag-evaluation policy) + 2 OUT:runbook (engineering process); no fan/organizer actor in any requirement		product-analytics/docs/feature-flag-governance.md	37	0	37	KEEP?
+festival-orb-effects	17	71	415	SPLIT	components/infrastructure/ui/global/dna-orb	high	14/17 requirements describe dna-orb rendering/effects behavior; 3 are unit-test-coverage requirements with no user actor		n/a (discarded; unit-test-coverage requirements have no openspec destination)	125	1	124	KEEP?
+follow-triggered-search	3	6	40	KEEP	components/usecase/follow/follow	high	All 3 reqs describe FollowUseCase.Follow's background concert-search trigger on first follow and its non-blocking error handling			89	0	89	KEEP?
+frontend-client-rpc-telemetry	6	7	73	OUT:design-doc	-	high	6/6 requirements are cross-cutting RPC telemetry; tie-break rule routes telemetry to OUT		frontend internal docs (RPC telemetry design)	8	0	8	KEEP?
+frontend-entity-layer	7	17	104	SPLIT	components/infrastructure/ui/route/my-artists	medium	5 OUT:design-doc (frontend proto-mapping architecture, no user actor) + 2 KEEP (my-artists route, locale infra)		frontend/docs/design/entity-layer.md	218	0	218	KEEP?
+frontend-error-handling	6	18	144	SPLIT	components/infrastructure/ui/global/error-banner	medium	5 of 6 requirements KEEP under error-banner/toast (global error UI and recovery feedback); the promise.bind requirement is OUT as a generic coding convention			47	1	46	KEEP?
+frontend-hosting	11	27	223	OUT:runbook		high	all 11 reqs describe container build, Kubernetes/Caddy/Gateway deployment, DNS/TLS, and post-deploy verification mechanics; no fan/organizer/admin actor observes any of it		cloud-provisioning/docs/runbooks/frontend-hosting.md (design-flavored reqs -> cloud-provisioning/docs/design/frontend-hosting.md: SPA routing, Caddyfile configuration, /config.json header)	25	65	-40	OUT?
+frontend-i18n	12	31	257	SPLIT	components/infrastructure/locale/language-switching	medium	Mix of KEEP (locale-detection, language-switching, date/number formatting) and OUT:lint (string-externalization/key-naming conventions) plus one DROP:historic.		frontend/docs/conventions/i18n-string-externalization.md	86	7	79	KEEP?
+frontend-network-timeouts	4	8	75	NEEDS_HUMAN	components/infrastructure/service-worker/analytics-capture-timeout	medium	2 of 4 reqs (Service-Worker fetch timeouts for analytics capture and VAPID-key fetch) map to the service-worker infra kind; the other 2 (main-thread shared-transport RPC deadline, its runtime config) are cross-app and have no matching networking/transport infra kind in vocabulary			12	0	12	KEEP?
+frontend-observability	3	13	89	OUT:design-doc		high	All three requirements describe OTEL/telemetry wiring (WebTracerProvider, ConnectError spans, OtelLogSink) with no user actor		frontend/docs/design/otel-observability.md	3	0	3	REVIEW
+frontend-onboarding-flow	3	16	124	KEEP	stories/complete-onboarding	medium	2 of 3 reqs (single-flag onboarding state, final transparency-notice step) describe the cross-route onboarding-completion story; 1 (bubble-network discovery UI) is scoped to the discovery route			157	1	156	KEEP?
+frontend-performance-instrumentation	3	3	30	OUT:runbook		high	PostHog performance telemetry (long animation frames, Core Web Vitals, slow interactions); telemetry is explicitly OUT per the cross-cutting tie-break rule		frontend observability telemetry (discard from openspec)	11	0	11	KEEP?
+frontend-plain-date-lib	6	13	116	OUT:design-doc		high	All 6 reqs define the internal calendar-arithmetic library's API contract, engine-equivalence testing, and build-time engine selection; no user actor observes the library boundary itself		frontend/src/lib/plain-date design rationale (no existing doc file identified); not a spec surface	4	3	1	REVIEW
+frontend-route-guard	3	6	63	KEEP	stories/roam-app-as-guest	medium	all 3 requirements describe the global AuthHook's guest free-roam navigation behavior (dashboard/settings/welcome reachability), proposed as one story spanning all routes			61	0	61	KEEP?
+frontend-router-query-params	1	3	23	OUT:lint	-	high	1/1 requirement is a coding convention for testable query-param access, no user actor		frontend internal docs (router coding conventions)	7	0	7	KEEP?
+frontend-runtime-config	6	18	156	NEEDS_HUMAN		low	5 of 6 requirements are bootstrap config-loading mechanics with no user actor (OUT:design-doc); the static bootstrap-failure error page is user-visible but has no matching ui/global vocabulary entry (it bypasses Aurelia entirely)		candidate OUT destination: frontend/docs or specification design note on runtime config contract; error-page requirement needs a human decision	15	5	10	REVIEW
+frontend-store-cache	6	17	111	OUT:design-doc		high	All 6 requirements define an internal Aurelia store caching primitive (stale-while-revalidate, key composition, invalidation) with no distinct user-facing surface		frontend design doc for the store-cache primitive	108	0	108	KEEP?
+frontend-testing	45	138	707	NEEDS_HUMAN	components/infrastructure/ui/route/discovery	low	Of 45 reqs: 26 are test-infrastructure/mock/cleanup conventions (OUT:lint) and 1 is an implementation-detail utility (OUT:design-doc); 10 turned out to be real product behavior misfiled under this testing capability (dashboard/discovery routes; toast, live-highway, error-banner, bottom-nav-bar global surfaces); 8 describe product-adjacent behavior (event-card, event-detail-sheet, auth guard/interceptors, gRPC transport) with no matching vocabulary target		frontend Vitest/Aurelia testing-conventions doc (e.g. frontend/AGENTS.md) for the OUT:lint portion	305	38	267	OUT?(plan)
+gcp-cost-guardrails	3	10	68	OUT:runbook		high	All 3 requirements are GCP Pulumi cost-guardrail resources (quota overrides, billing budget alerts), pure ops		cloud-provisioning/docs/runbooks/cost-guardrails.md	22	13	9	REVIEW
+gemini-grounded-extract-and-coerce	19	46	407	OUT:design-doc		high	All 19 requirements describe ConcertSearcher's internal two-step Gemini call pipeline (tool configs, XML/JSON envelope shapes, merge/dedup algorithms, A/B harness) — implementation detail of the backend gemini adapter, not directly observed by fans/organizers		backend/internal/infrastructure/gcp/gemini/design.md	169	3	166	KEEP?
+gemini-searcher-config	5	18	138	OUT:design-doc	-	high	5/5 requirements are internal Gemini model/cache/window config wiring, no user actor observes model selection		backend internal config docs (gemini searcher configuration)	38	4	34	KEEP?
+geo-location	2	6	52	KEEP	components/entity/geo-location	high	both requirements define entity.v1.GeoLocation fields and validation			24	0	24	KEEP?
+gke-gateway-infrastructure	6	8	58	OUT:design-doc		high	6 requirements define GKE Gateway API resources (listeners, HTTPRoute, GatewayClass, cross-namespace routing, cert annotation, policy attachment); no fan/organizer/admin observes any of it		cloud-provisioning/docs/decisions/gke-gateway-infrastructure.md	3	14	-11	OUT?
+gke-standard-infrastructure	8	19	117	OUT:design-doc		high	All 8 reqs are GKE cluster/node-pool/networking provisioning decisions for the dev environment; no user (fan/organizer) actor observes any of them		cloud-provisioning/docs/infrastructure/gke-dev-cluster.md	8	34	-26	OUT?
+goroutine-leak-detection	3	8	58	OUT:runbook		high	All three requirements are backend operator-facing profiling/alerting with no fan or organizer actor.		backend/docs/runbooks/goroutine-leak-detection.md	4	2	2	REVIEW
+guest-data-merge	4	14	143	KEEP	stories/merge-guest-data-on-signup	medium	All 4 reqs (guest storage during onboarding, hype merge, data merge on authentication, cleanup) describe one cross-route story: syncing guest session data to the backend account on signup			119	1	118	KEEP?
+guest-mode-access	3	6	56	NEEDS_HUMAN	components/infrastructure/ui/route/settings	low	2 of 3 requirements are cross-route policies with no clean vocabulary target (route guard/hidden-features pattern); 1 KEEP (settings route)			64	0	64	KEEP?
+http-retry	8	24	156	NEEDS_HUMAN		low	backend HTTP client retry/backoff policy; no user actor for 7/8 requirements (OUT:design-doc/runbook); the auth-token-refresh interceptor requirement is user-visible but has no matching vocabulary target		backend/pkg/api retry policy and diagnostic capture; OUT rows have no openspec destination (design-doc/runbook, discard)	19	0	19	KEEP?
+hype-inline-slider	4	12	115	KEEP	components/infrastructure/ui/route/my-artists	high	4/4 requirements are My Artists route behavior (hype slider + header legend)		-	69	0	69	KEEP?
+id-resolution	2	11	60	NEEDS_HUMAN		medium	1 of 2 requirements is a pure code-layering convention (OUT); the NotFound-response requirement is genuinely cross-cutting across many usecases with no single vocabulary target			100	0	100	KEEP?
+identity-management	23	74	904	NEEDS_HUMAN	components/infrastructure/locale/hosted-login-translation	low	Of 23 reqs: 18 are Pulumi/Zitadel IaC provisioning with no product actor (OUT:runbook); 3 (login policy, login branding, OIDC token lifetimes) are fan-observable but have no vocabulary route/component for the Zitadel-hosted login UI (NEEDS_HUMAN); 2 KEEP (SMTP activation -> infrastructure/email, login translation -> infrastructure/locale)		cloud-provisioning/docs/runbooks/zitadel-identity.md	422	166	256	REVIEW
+infra	2	2	24	OUT:design-doc		high	Both requirements are Kustomize/ArgoCD conventions for KEDA-managed Deployment replica counts; no fan/organizer/admin observes any of it		cloud-provisioning/docs/decisions/keda-replica-management.md	2	8	-6	OUT?
+intel	1	1	19	NEEDS_HUMAN		low	crawling/extraction capability likely underlies ConcertUseCase.SearchNewConcerts but the intel CLI's relationship to that RPC is unconfirmed from this spec alone			6	0	6	KEEP?
+interaction-feedback	6	16	134	NEEDS_HUMAN	components/infrastructure/ui/global/bottom-nav-bar	low	Cross-cutting app-wide feedback primitives; two requirements (press acknowledgement, haptics) have no matching vocabulary target and are NEEDS_HUMAN.			27	0	27	KEEP?
+interceptor-chain-ordering	2	4	58	OUT:design-doc		high	Both requirements define backend Connect-RPC interceptor registration order and its documentation; no fan/organizer/admin observes any of it		backend/docs/interceptor-ordering.md (or inline code comments per requirement 2)	9	0	9	KEEP?
+jetstream-consumer-reliability	9	17	154	OUT:design-doc		high	all 9 reqs govern JetStream consumer naming, fan-out topology, liveness probes, autoscaling, and stream ownership; entirely backend messaging-infra reliability with no fan/organizer/admin actor		backend/docs/design/jetstream-consumer-reliability.md (operational-flavored reqs -> cloud-provisioning/docs/runbooks/jetstream-consumer-reliability.md: backlog-stall alert, subscription-failure-fails-loud, liveness probe, scale-to-zero)	40	2	38	KEEP?
+journey-status-presentation	3	7	49	KEEP	components/infrastructure/ui/route/dashboard	medium	Canonical map/icon/hue requirements primarily surface on dashboard filter chips; no matching ui/global surface exists in vocabulary			13	0	13	KEEP?
+k8s-resource-right-sizing	2	10	60	OUT:runbook		high	both reqs set dev-environment CPU/memory request sizing and autoscaler replica caps; purely operational cost/capacity policy, no user actor		cloud-provisioning/docs/runbooks/k8s-resource-right-sizing.md	6	26	-20	OUT?
+k8s-service-cross-namespace-routing	6	9	62	OUT:runbook		high	all 6 requirements are Kubernetes Service/Gateway networking config; no fan/organizer actor		cloud-provisioning/docs/runbooks/k8s-cross-namespace-routing.md	0	14	-14	OUT?
+landing-page	11	29	241	KEEP	components/infrastructure/ui/route/welcome	high	all 11 requirements describe the landing/welcome route ('/')			160	0	160	KEEP?
+layout-assertions	6	22	125	OUT:runbook		high	All 6 requirements govern the E2E/layout test suite's own selectors and assertions, not product behavior		frontend/e2e (test conventions, no dedicated doc)	40	12	28	REVIEW
+legal-documents	7	12	104	SPLIT	components/infrastructure/ui/route/legal	high	routing/auth/localization structure targets route/legal (4 reqs); document content requirements (Privacy Policy, ToS, OSS Licenses disclosures) target the shared legal-document component (3 reqs)			83	0	83	KEEP?
+live-events	9	31	220	SPLIT	components/entity/concert	medium	7/9 reqs map to entity (Concert/Event data model, Venue embedding) or usecase (list-by-follower-grouped, artist/create, concert/list-by-artist) targets, plus one locale infra proposal; 2 reqs (Proto VO Consistency, Go field rename) are internal data-representation/refactor conventions with no user actor		backend/docs/design/live-events.md (OUT-portion: Proto Value Object Consistency, Go Entity Field Name Alignment)	274	0	274	KEEP?
+loading-spinner-ce	1	6	42	KEEP	components/infrastructure/ui/global/loading-spinner	high	Single requirement maps directly to frontend/src/components/loading-spinner			6	3	3	REVIEW
+localstorage-naming	3	5	39	OUT:lint		high	All 3 reqs are localStorage key naming/registry conventions; no user actor (one req also carries a one-time HISTORIC legacy-key removal with no value migration)		frontend/AGENTS.md (localStorage key naming convention)	27	1	26	KEEP?
+logo-color-analysis	5	17	89	NEEDS_HUMAN	components/usecase/artist/sync-artist-image	medium	3 of 5 requirements KEEP (2 onto usecase/artist/sync-artist-image, 1 onto entity/artist for the LogoColorProfile proto message); sRGB->OKLCH conversion is OUT (pure math utility); Frontend Background Color Derivation has no matching ui/global surface for event-card artist-hue		No fitting vocabulary surface for the frontend event-card background-color derivation step	63	8	55	KEEP?
+lottery-application	9	24	225	KEEP	components/usecase/lottery-application/run-draw	high	All 9 reqs describe the lottery capability's organizer-configuration route, fan-apply/withdraw/results usecases, the automated draw usecase (run-draw, most common KEEP target), and the TicketApplication entity's identity-binding invariant			215	0	215	KEEP?
+m3-design-tokens	5	13	114	OUT:lint		high	all 5 requirements are design-token/style rules explicitly excluded by the migration Purpose statement		frontend/docs/design/m3-tokens.md	2	5	-3	OUT?
+migration-rebase-guard	3	7	63	OUT:runbook		high	All 3 reqs describe a developer-tooling migration-drift check script and its Claude Code PostToolUse hook integration; no user actor		backend/docs/runbooks/migration-drift-guard.md	23	0	23	KEEP?
+modern-css-platform	21	44	297	OUT:design-doc		high	all 21 reqs mandate a specific CSS/JS platform API or authoring convention, enforced by stylelint; no requirement names a user-observable product contract distinct from the implementation choice		frontend/docs/design/modern-css-platform.md	73	32	41	OUT?(plan)
+my-artists	6	16	143	KEEP	components/infrastructure/ui/route/my-artists	high	5 of 6 requirements describe the My Artists route (guest hype persistence, view toggle, grid view, help content, table headers); 1 (default hype tier for new follows) targets FollowUseCase.Follow			139	0	139	KEEP?
+nearby-proximity	3	11	85	SPLIT	components/entity/proximity	high	2/3 reqs map to the Proximity entity method and UserUseCase.UpdateHome; 1 req mandates unit-test coverage for an internal function with no user actor		backend/docs/design/nearby-proximity.md (OUT-portion: Centroid Resolution Unit Coverage is a test-coverage/lint mandate)	79	0	79	KEEP?
+non-blocking-menu-navigation	6	11	78	NEEDS_HUMAN	components/infrastructure/ui/route/dashboard	medium	1 of 6 requirements KEEPs onto the dashboard route (data-ready side effects); 2 are OUT (loading()/AbortController implementation detail); 3 cross-route router-behavior requirements (My Artists/Dashboard/Discovery) have no single fitting vocabulary target		Cross-route requirements need a vocabulary decision (per-route duplication vs a new router/navigation surface)	22	0	22	KEEP?
+notification-lifecycle	8	14	100	SPLIT	components/entity/notification	medium	3/8 reqs map to Notification entity and NotificationUseCase.Notify/MarkRead; 5 reqs are telemetry (product-analytics emission), operational logging, or internal producer/id-propagation wiring with no distinct user-facing behavior		backend/docs/design/notification-lifecycle.md (OUT-portion: producer routing, id propagation; runbook-portion: zero-recipient logging -> cloud-provisioning/docs/runbooks/notification-lifecycle.md; analytics reqs are telemetry)	163	0	163	KEEP?
+official-site-search	2	8	65	KEEP	components/usecase/artist/create-official-site	high	both requirements describe ArtistUseCase.CreateOfficialSite (MusicBrainz URL resolution feeding async persistence triggered on follow)			53	0	53	KEEP?
+onboarding-celebration	2	9	75	KEEP	components/infrastructure/ui/global/celebration-overlay	high	both requirements describe the celebration-overlay global component			27	21	6	REVIEW
+onboarding-guidance	5	10	76	SPLIT	components/infrastructure/ui/route/discovery	high	4 of 5 requirements KEEP (3 onto the discovery route, 1 onto the dna-orb global component); the z-index requirement is OUT (CSS anti-pattern, mirrors css-linting)		z-index requirement -> frontend/stylelint.config.js (existing tool config)	77	1	76	KEEP?
+onboarding-page-help	8	19	184	KEEP	components/infrastructure/ui/global/page-help	high	All eight requirements describe the page-help global component's fan-facing behavior.			138	10	128	KEEP?
+onboarding-popover-guide	1	7	47	KEEP	components/infrastructure/ui/route/discovery	high	its single requirement closes entirely within the discover route			16	1	15	KEEP?
+onboarding-spotlight	11	27	233	KEEP	components/infrastructure/ui/global/coach-mark	high	All 11 requirements describe the shared <coach-mark> overlay component (frontend/src/components/coach-mark)			64	14	50	REVIEW
+onboarding-tutorial	1	1	16	KEEP	components/infrastructure/ui/global/coach-mark	high	1/1 requirement is coach-mark navigation behavior, a shared global surface used across onboarding routes		-	3	0	3	REVIEW
+organizer-accounts	7	19	200	SPLIT	components/usecase/organizer/create	high	6/7 reqs map cleanly to OrganizerUseCase methods (create, associate-artist, list, reconcile-provisioning, deactivate) or a proposed first-sign-in story; 1 req (analytics events) is a telemetry cross-cutting concern with no observing actor		backend/docs/design/organizer-accounts.md (OUT-portion: Organizer lifecycle emits analytics events)	233	0	233	KEEP?
+organizer-console	4	9	119	NEEDS_HUMAN	stories/sign-in-as-organizer	low	2 OUT:design-doc (bundle/config architecture) + 1 KEEP (org-pinned sign-in story) + 1 NEEDS_HUMAN (cross-route route guard has no vocabulary fit)		organizer console bundle/config detail -> frontend/docs/design/organizer-console.md	63	0	63	KEEP?
+organizer-console-hosting	2	2	37	OUT:runbook		medium	Both requirements are HTTPRoute/cert/DNS/config.json deployment infra for the organizer console host, not organizer-facing product behavior; Pass 0 hinted KEEP but decision tree points to infra.		cloud-provisioning/docs/runbooks/organizer-console-hosting.md	36	2	34	KEEP?
+organizer-event-authoring	10	30	346	KEEP	components/usecase/concert/publish	high	all 10 requirements KEEP; publish is the most common target (4 of 10)			447	0	447	KEEP?
+organizer-rpc-server	4	14	157	NEEDS_HUMAN	components/usecase/organizer/get	medium	2 of 4 requirements KEEP cleanly onto OrganizerUseCase.Get and .ListArtists; server-isolation/CORS requirement is OUT; org-scoped authorization spans both usecases with no single fitting target		Dedicated-server isolation requirement -> cloud-provisioning/docs/decisions/organizer-rpc-server.md	152	1	151	KEEP?
+organizer-tenancy	5	12	241	NEEDS_HUMAN		low	4 of 5 reqs are Zitadel IaC scaffolding (project, apps, provisioner machine user, key lifecycle) with no directly observed organizer feature (OUT:runbook); 1 (passkey-primary login policy) is organizer-observable but has no vocabulary target for the Zitadel-hosted organizer login screen		cloud-provisioning/docs/runbooks/organizer-tenancy.md	106	8	98	KEEP?
+otel-collector-deployment	7	14	113	OUT:runbook		high	All seven requirements are Kubernetes/telemetry deployment infra with no user actor.		cloud-provisioning/docs/runbooks/otel-collector.md	15	26	-11	OUT?
+otel-sdk-configuration	4	7	59	OUT:design-doc		high	All 4 requirements configure the backend OTel SDK (sampler, resource, propagator, MeterProvider) — telemetry cross-cutting, no user actor		backend design doc for OTel SDK setup	0	0	0	REVIEW
+page-header-ce	6	10	68	KEEP	components/infrastructure/ui/global/page-header	high	6/6 requirements describe the shared page-header global surface used across routes		-	60	2	58	KEEP?
+passion-level	7	27	226	SPLIT	components/usecase/follow/set-hype	medium	hype tiers -> entity/follow; SetHype auth/persistence/API -> usecase/follow/set-hype (3 reqs, overlapping); ListFollowed -> usecase/follow/list-followed; dashboard card visuals -> ui/global/live-highway; one requirement (pre-migration hype preservation) is DROP:historic			222	4	218	KEEP?
+passive-concert-discovery	8	29	219	KEEP	components/infrastructure/ui/route/dashboard	high	8/8 requirements are Dashboard-route behavior (All Nearby mode toggle, filters, list, follow CTA)		-	213	1	212	KEEP?
+post-signup-dialog	7	23	198	KEEP	components/infrastructure/ui/global/post-signup-dialog	high	6 of 7 reqs directly describe the post-signup-dialog global surface (display rules, open timing, i18n, footer state, sequencing, PWA-install fallback); 1 describes the pwa-install-banner's beforeinstallprompt listener timing that the dialog also depends on			95	8	87	KEEP?
+private-google-access	3	5	54	OUT:runbook		high	All three requirements are GCP networking/DNS infra with no fan or organizer actor.		cloud-provisioning/docs/runbooks/private-google-access.md	6	5	1	REVIEW
+prod-environment-bootstrap	15	44	297	OUT:design-doc		high	15 provisioning requirements for liverty-music-prod GCP/GKE (irreversible cluster decisions + peripheral resources); no fan/organizer/admin observes any of it		cloud-provisioning/docs/decisions/prod-environment-bootstrap.md (design-doc items); cloud-provisioning/docs/runbooks/prod-environment-bootstrap.md (runbook items)	52	117	-65	OUT?
+prod-image-pipeline	12	49	376	OUT:runbook		high	11 of 12 requirements are CI/deploy/IAM mechanics with no user actor; 1 OUT:design-doc (bundle env-agnosticism)		cloud-provisioning/docs/runbooks/prod-image-pipeline.md	127	202	-75	OUT?
+prod-image-tag-immutability	4	17	138	OUT:runbook		high	all 4 requirements are GCP Artifact Registry / kustomize / k8s-label provisioning policy; no user actor		cloud-provisioning/docs/runbooks/prod-image-tag-pinning.md	14	80	-66	OUT?
+prod-k8s-manifests	6	15	111	OUT:design-doc		high	6 requirements define the prod ArgoCD Application set, Kustomize overlay scope, Gateway static-IP binding, and PodMonitoring opt-in; no fan/organizer/admin observes any of it		cloud-provisioning/docs/decisions/prod-k8s-manifests.md	6	112	-106	OUT?
+product-analytics	14	40	292	OUT:design-doc		high	All 14 requirements govern the PostHog analytics pipeline (platform choice, event naming/catalogue process, SDK config, replay privacy) — internal instrumentation, not product behavior a fan/organizer observes		docs/analytics/event-catalog.md (process items) plus a design-doc for SDK/pipeline choices	354	4	350	KEEP?
+prompt-timing	8	18	173	SPLIT	components/infrastructure/ui/global/notification-prompt	medium	governs eligibility/priority of two global prompts: notification-prompt (6 reqs) and pwa-install-banner (2 reqs)			131	0	131	KEEP?
+proximity-model	3	9	75	SPLIT	components/entity/concert	high	Proximity enum and Concert.ProximityTo are entity invariants (KEEP); the underlying Haversine math utility is a generic implementation helper (OUT)			59	0	59	KEEP?
+pulumi-state-recovery	1	3	32	OUT:runbook		high	Spec is entirely the operator runbook content itself for cloud-provisioning		cloud-provisioning/docs/runbooks/pulumi-state-recovery.md	12	19	-7	OUT?
+push-notification-localization	2	7	52	KEEP	components/usecase/push-subscription/notify-new-concerts	high	both reqs describe user-facing push notification content localized to the recipient's preferred language, mapping to a locale infra proposal and PushNotificationUseCase.NotifyNewConcerts			64	0	64	KEEP?
+push-notification-service	13	40	330	SPLIT	components/usecase/push-subscription/notify-new-concerts	high	11 KEEP (entity, create/get/delete, notify-new-concerts x4, settings route x2, service-worker) + 2 OUT:design-doc (repository interface, consumer adapter architecture)		backend/docs/design/push-notification-internals.md	357	0	357	KEEP?
+pwa-install-banner	8	29	240	KEEP	components/infrastructure/ui/global/pwa-install-banner	high	all 8 requirements describe the pwa-install-banner component's visibility, CTA, dismiss, and accessibility behavior			42	3	39	KEEP?
+pwa-update-lifecycle	6	13	120	KEEP	components/infrastructure/service-worker/update-lifecycle	high	4 of 6 requirements are SW registration/lifecycle mechanics (service-worker kind); 2 describe the user-visible update Snack (ui/global/snack-bar)			45	0	45	KEEP?
+rpc-auth-scoping	3	7	60	NEEDS_HUMAN		low	1 of 3 requirements is OUT (internal JWT-match helper location convention); the 2 user_id-convention requirements are cross-cutting over every per-user RPC handler with no single usecase/route target		Cross-cutting RPC-auth convention needs a vocabulary decision (e.g. a dedicated adapter/interceptor kind)	35	0	35	KEEP?
+sales-phase	7	13	117	SPLIT	components/entity/sales-phase	high	6/7 reqs are SalesPhase entity invariants or SalesPhaseDiscoveryUseCase.DiscoverForArtist reconciliation/persistence rules; 1 req (database schema) is an implementation-level table layout with no user actor		backend/docs/design/sales-phase.md (OUT-portion: SalesPhase Database Schema)	64	1	63	KEEP?
+sales-phase-discovery	6	15	117	KEEP	components/usecase/sales-phase/discover-for-artist	medium	5 of 6 requirements map to SalesPhaseDiscoveryUseCase.DiscoverForArtist; the announcement requirement maps to AnnounceDiscoveredPhase			84	0	84	KEEP?
+sales-reminders	6	14	112	KEEP	components/usecase/sales-phase/scan-due-reminders	high	4 of 6 requirements describe SalesReminderUseCase.ScanDueReminders (stage scan, audience, once-only dedup, quiet hours); 2 describe SalesReminderDeliveryUseCase.DeliverReminder (payload content, web push delivery)			83	0	83	KEEP?
+schema-lint	10	19	114	OUT:lint		high	9 of 10 requirements are schema.sql linter rules (banned types, audit columns, comment coverage, CI/Makefile wiring); 1 duplicates the Makefile-integration requirement		backend/docs/schema-lint.md (or scripts/lint-schema.sh header comment)	3	5	-2	OUT?
+search-follow-absorption	1	3	35	KEEP	components/infrastructure/ui/route/discovery	high	The single req describes the discovery route's bubble-view transition and absorption animation when a user follows from search results			48	0	48	KEEP?
+secret-management	8	18	149	OUT:runbook		high	All 8 reqs describe GCP Secret Manager provisioning, ESO/ClusterSecretStore wiring, and secret rotation for backend pods; no user actor		cloud-provisioning/docs/runbooks/secret-management.md	0	76	-76	OUT?
+semantic-dom	4	7	67	OUT:lint		high	All four requirements are markup/architecture conventions (semantic elements, div nesting, bottom-sheet/toast consolidation) with no fan-observable difference; two are OUT:lint, two OUT:design-doc.		frontend/docs/conventions/semantic-dom.md	21	7	14	REVIEW
+settings	21	53	424	KEEP	components/infrastructure/ui/route/settings	high	19 of 21 requirements describe the single Settings route; 2 (My Home Area Preference, Home Area Selected-State Indicator) describe the shared user-home-selector dialog			258	1	257	KEEP?
+shell-layout	4	13	92	NEEDS_HUMAN	components/infrastructure/ui/route/dashboard	medium	2 of 4 requirements KEEP onto the dashboard route (semantic HTML, live-highway elimination); the two app-shell-level CSS Grid/scroll-containment requirements have no matching 'app-shell' surface in vocabulary		App-shell-level requirements need a vocabulary decision (new global surface vs folding into each route)	79	5	74	KEEP?
+signup-prompt-banner	5	18	136	KEEP	components/infrastructure/ui/global/signup-prompt-banner	high	5 KEEPs, tied 2/2 between global/signup-prompt-banner and route/dashboard; global banner chosen as primary since it is the spec's namesake component			95	3	92	KEEP?
+state-management	10	41	271	SPLIT	components/usecase/follow/follow	medium	8/10 reqs describe internal Aurelia service implementation (DI singletons, @observable, localStorage keys/serialization) with no distinct product contract; 2 reqs (FollowServiceClient, ConcertServiceClient) mirror real backend usecases (follow/follow, concert/search-new-concerts) that a fan observes		frontend/docs/design/state-management.md (OUT-portion: OnboardingService/GuestService/GuestFollow/persistence/hydration/OnboardingStep are implementation detail; Single DI access path is a lint rule)	224	0	224	KEEP?
+state-transition-diagram	3	14	117	SPLIT	components/infrastructure/ui/global/coach-mark	medium	coach-mark maps to the ui/global/coach-mark component; onboarding-latch and guest-data-bag both span multiple routes and are proposed as stories (stories/complete-onboarding, stories/accumulate-guest-data-before-signup)			95	1	94	KEEP?
+storybook-component-testing	6	16	92	OUT:runbook		high	5 of 6 requirements are CI pipeline mechanics; 1 OUT:lint (authoring convention); no user actor in any		frontend/docs/testing/storybook.md	0	18	-18	OUT?
+tap-press-feedback	5	11	70	OUT:lint	-	low	5/5 requirements are cross-cutting :active press-cue CSS conventions, treated like cube-css styling rules; genuinely unsure whether this deserves KEEP as a UX-quality requirement instead		frontend CSS interaction-feedback conventions doc	23	3	20	KEEP?
+ticket-journey	13	31	245	NEEDS_HUMAN	components/usecase/ticket-journey/set-status	medium	"Entity + 3 usecase methods map cleanly to vocabulary; 8 ""Ticket Status"" UI requirements (EventDetailSheet) have no matching components/infrastructure/ui/global/<surface> entry — needs a new vocabulary entry (e.g. event-detail-sheet or ticket-status) in Pass 2"			250	0	250	KEEP?
+ticket-purchase-and-issuance	9	18	230	NEEDS_HUMAN	components/entity/order	low	Of 9 reqs: 2 map cleanly to Order/Ticket entity invariants; 3 are legal/architecture design-doc statements (settlement-and-payout delegation, 収納代行 scheme, PCI SAQ A scope); 4 describe issuance/refund usecase behavior (idempotent issuance, post-capture reconciliation, refund taxonomy, the trigger itself) with no matching usecase target - vocabulary has no order/ticket-issuance usecase family yet			216	0	216	KEEP?
+toast-ce	1	6	47	KEEP	components/infrastructure/ui/global/toast	high	the single requirement matches the existing frontend/src/components/toast global UI surface exactly			17	4	13	REVIEW
+typography-focused-dashboard	1	11	80	KEEP	components/infrastructure/ui/global/live-highway	high	single requirement describing the three-lane Live Highway layout maps directly to the live-highway component			34	8	26	REVIEW
+unified-check-interface	2	23	144	OUT:delete		high	Both requirements are cross-repo Makefile/CI target-wiring mechanics with no lasting product value		repo-root Makefile / CI workflow YAML (mechanics only, no doc)	2	53	-51	OUT?
+usecase-test-coverage	8	30	218	OUT:lint		high	all 8 requirements are backend unit-test coverage inventory per the spec Purpose; no user actor		backend test-coverage inventory (discard from openspec)	131	0	131	KEEP?
+user-account-sync	1	5	58	KEEP	components/usecase/user/create	medium	its single requirement is the idempotent resolve-or-provision contract of UserUseCase.Create, bundled with frontend localStorage caching scenarios (SPLIT-CANDIDATE)			66	0	66	KEEP?
+user-auth	3	10	96	SPLIT	stories/sign-up-or-sign-in	medium	2 KEEPs proposed as distinct stories (sign-up-or-sign-in, restore-session-on-cold-start), 1 OUT:design-doc (session-monitoring CSP incompatibility)			44	0	44	KEEP?
+user-home	7	32	264	SPLIT	components/infrastructure/ui/global/user-home-selector	medium	splits across the User entity, three UserService usecases (create/update-home/get), a cross-route home-persistence story, and the user-home-selector component (2 reqs, most common target)			275	4	271	KEEP?
+user-language-preference	7	24	198	SPLIT	components/infrastructure/locale/language-resolution	medium	3 KEEPs split across entity/user, usecase/user/create, usecase/user/update-preferred-language, and 2 KEEPs sharing locale/language-resolution (most common); 1 DROP:duplicate, 1 OUT:lint			103	1	102	KEEP?
+user-profile-hydration	9	16	160	SPLIT	components/infrastructure/locale/preferred-language-sync	medium	3 of 9 requirements are locale-sync behavior (KEEP, locale infra kind); the remaining 6 describe internal UserService hydration/caching orchestration (OUT)			71	0	71	KEEP?
+venue-name-cache	2	5	46	KEEP	components/usecase/concert/create-from-discovered	medium	venue-listed-name lookup feeds ConcertCreationUseCase.CreateFromDiscovered; the unique-index requirement is a venue entity invariant			18	0	18	KEEP?
+venue-name-localization	1	5	46	KEEP	components/infrastructure/locale/venue-name-display	medium	its single requirement is a locale-driven display rule			61	0	61	KEEP?
+venue-normalization	6	21	189	SPLIT	components/usecase/concert/create-from-discovered	medium	5 KEEP (4 under create-from-discovered, 1 under approve) + 1 OUT:design-doc (constructor guard)		cloud-provisioning n/a; OUT req is an implementation-level DI guard with no user actor	134	0	134	KEEP?
+watermill-structured-logging	2	3	26	OUT:design-doc		high	Both requirements are backend logging-infrastructure technology decisions (Watermill slog adapter), no user actor		backend design doc for logging	0	4	-4	OUT?
+web-push-delivery-alerting	2	3	27	OUT:runbook		high	both reqs are Cloud Monitoring alerts on delivery-failure ratio and subscription starvation; purely operational, no user actor		cloud-provisioning/docs/runbooks/web-push-delivery-alerting.md	9	0	9	KEEP?
+welcome-dashboard-preview	1	6	54	KEEP	components/infrastructure/ui/route/welcome	high	The single requirement (with 6 scenarios) matches the /welcome route in vocabulary			56	0	56	KEEP?
+workload-naming-convention	5	9	113	OUT:design-doc		high	all 5 reqs establish a Kubernetes/GCP resource naming convention and its migration procedure; no fan/organizer/admin actor observes internal resource names		cloud-provisioning/docs/design/workload-naming-convention.md (migration-procedure req -> cloud-provisioning/docs/runbooks/workload-naming-convention.md: additive rename sequence)	76	12	64	OUT?(plan)
+zitadel-action-webhook	3	8	91	OUT:design-doc		medium	all 3 requirements are backend Zitadel Actions v2 webhook auth/network plumbing; no fan/organizer/admin actor observes it		backend design docs (e.g. backend/docs/design/zitadel-webhook.md); network-topology portion could instead go to a cloud-provisioning runbook	26	1	25	KEEP?
+zitadel-observability	5	15	143	OUT:runbook	-	high	5/5 requirements are Cloud Monitoring alerts/dashboards/CronJob/runbook for the self-hosted Zitadel incident, no user actor		cloud-provisioning/docs/runbooks/zitadel-hang.md	26	26	0	REVIEW
+zitadel-self-hosted-deployment	20	67	692	OUT:design-doc	-	high	20/20 requirements are OUT (12 design-doc, 7 runbook, 1 lint); self-hosted Zitadel K8s/Pulumi deployment shape has no fan/organizer actor		cloud-provisioning/docs/design/zitadel-self-hosted-deployment.md	153	246	-93	OUT?

@@ -1,0 +1,109 @@
+old_spec	old_req_name	disposition	target_path	new_req_name	merge_group	rewrite_flags	confidence	rationale
+concert-service	Concert Service	KEEP	components/usecase/concert/list-by-artist	Concert Service			medium	bundles List(->concert/list-by-artist), ListArtists(->artist/list), CreateArtist(->artist/create) scenarios; dominant scenario is ConcertUseCase.ListByArtist; SPLIT-CANDIDATE for ListArtists/CreateArtist scenarios
+concert-service	Search Concerts by Artist	KEEP	components/usecase/concert/search-new-concerts	Search Concerts by Artist			high	direct match to ConcertUseCase.SearchNewConcerts
+concert-service	Concert Persistence	KEEP	components/usecase/concert/approve	Concert Persistence			medium	AdminConcertUseCase.Approve persists staged concerts via bulk insert; the staging scenario also touches create-from-discovered, SPLIT-CANDIDATE
+concert-service	List Concerts with Proximity for Unauthenticated Users	KEEP	components/usecase/concert/list-by-artists	List Concerts with Proximity for Unauthenticated Users			medium	unauthenticated ListWithProximity RPC is backed by ConcertUseCase.ListByArtists (plural, coordinates for proximity), per the Venue Resolution requirement below
+concert-service	Venue Resolution in Concert List	KEEP	components/usecase/concert/list-by-artist	Venue Resolution in Concert List			medium	dominant scenarios describe ConcertRepository.ListByArtist JOIN + mapper; third scenario covers ListByArtists (plural), SPLIT-CANDIDATE
+concert-service	Concert-Event Association	KEEP	components/entity/concert	Concert-Event Association			high	always-true structural invariant of the Concert entity (Event field integrity)
+concert-service	Listed Venue Name Preservation	KEEP	components/entity/event	Listed Venue Name Preservation			medium	structural field invariant of the Event entity (listed_venue_name distinct from Venue.Name)
+concert-service	Venue AdminArea Persistence	KEEP	components/entity/venue	Venue AdminArea Persistence			medium	structural field invariant of the Venue entity (admin_area set/NULL)
+concert-service	List Concerts by Follower	KEEP	components/usecase/concert/list-by-follower-grouped	List Concerts by Follower			medium	ConcertUseCase.ListByFollowerGrouped returns the ProximityGroup-shaped grouped-by-date result described in the scenarios
+concert-service	Event Natural Key Constraint	KEEP	components/entity/event	Event Natural Key Constraint			medium	entity identity invariant (natural key uniqueness) of the Event entity
+concert-service	Concert UPSERT on Natural Key	KEEP	components/usecase/concert/approve	Concert UPSERT on Natural Key			medium	conflict-resolution behavior of ConcertRepository.Create used at approval time (AdminConcertUseCase.Approve)
+concert-service	Duplicate Data Cleanup Migration	DROP:obsolete					high	one-time, already-run database migration script; no user actor, no ongoing value
+concert-service	ConcertService handler timeout isolation	KEEP	components/usecase/concert/search-new-concerts	ConcertService handler timeout isolation			medium	timeout as experienced by the SearchNewConcerts caller (Gemini API grounding latency)
+concert-service	GKE Gateway timeout for ConcertService	OUT:design-doc					high	Gateway backend policy timeoutSec config value; no user actor, pure infra technology decision
+concert-service	ListByLocation RPC	KEEP	components/usecase/concert/list-by-location	ListByLocation RPC			high	direct match to ConcertUseCase.ListByLocation in vocabulary
+authentication	Silent token refresh strategy	KEEP	stories/maintain-authenticated-session	Silent token refresh strategy			medium	multi-step flow across app boot, foreground resume, and RPC-retry layers (frontend AuthService); story proposal per decision tree #1
+authentication	JWT Token Validation	OUT:design-doc					medium	cross-cutting backend token-validation architecture (JWKS verification mechanism), analogous to CORS; no entity/usecase/route fits
+authentication	User ID Propagation	OUT:design-doc					medium	internal request-context plumbing (external_id propagation); cross-cutting infra with no entity/usecase mapping
+authentication	Authenticated Endpoint Protection	OUT:design-doc					medium	authn-go middleware architecture decision (default-deny); cross-cutting like CORS
+authentication	Public Endpoint Access	OUT:runbook					high	Kubernetes liveness/readiness probe access; no fan/organizer actor
+authentication	Email Verified Claim Injection	OUT:design-doc					high	forward-looking Zitadel Action plumbing; rationale states \"no current feature requires it\" -- no user actor yet
+authentication	Validate Zitadel Actions v2 Webhook JWTs by Signature	OUT:design-doc					high	system-to-system (Zitadel -> backend) webhook trust; no fan/organizer actor
+authentication	JWKS Caching	OUT:design-doc					high	backend caching/performance implementation detail; no user actor
+authentication	Token Validation Performance	OUT:design-doc					high	backend latency SLA implementation detail; no user actor
+authentication	Authentication Error Handling	OUT:design-doc					medium	backend RPC error-code contract; the user-visible consequence is covered separately by the frontend \"Graceful session re-authentication\" requirement
+authentication	Graceful session re-authentication	KEEP	stories/maintain-authenticated-session	Graceful session re-authentication			medium	multi-step recovery flow (silent refresh, forced-logout cleanup, return-to preservation, re-auth redirect) across app layers; story proposal
+usecase-test-coverage	TicketEmailUsecase Create Tests	OUT:lint				CLASSNAME	high	test inventory requirement per spec Purpose; no user actor; names TicketEmailUsecase implementation type
+usecase-test-coverage	TicketEmailUsecase Update Tests	OUT:lint				CLASSNAME	high	test inventory requirement per spec Purpose; no user actor; names TicketEmailUsecase implementation type
+usecase-test-coverage	TicketEmailUsecase Helper Tests	OUT:lint				CLASSNAME	high	test inventory requirement per spec Purpose; no user actor; names TicketEmailUsecase implementation type
+usecase-test-coverage	ArtistImageSyncUsecase SyncArtistImage Tests	OUT:lint				CLASSNAME	high	test inventory requirement per spec Purpose; no user actor; names ArtistImageSyncUsecase implementation type
+usecase-test-coverage	Adapter mapper test coverage	OUT:lint					high	test inventory requirement per spec Purpose; no user actor
+usecase-test-coverage	Messaging layer test coverage	OUT:lint					high	test inventory requirement per spec Purpose; no user actor
+usecase-test-coverage	User event consumer test coverage	OUT:lint					high	test inventory requirement per spec Purpose; no user actor
+usecase-test-coverage	Package utility test coverage	OUT:lint					high	test inventory requirement per spec Purpose; no user actor
+brand-vocabulary	Two-Layer Vocabulary Model	KEEP	components/infrastructure/locale/brand-vocabulary	Two-Layer Vocabulary Model			medium	governs which user-facing terms use entity-grounded vs brand-expression labels; non-UI locale infrastructure
+brand-vocabulary	Entity Namespace Mirrors Protobuf Names	OUT:lint					medium	mechanical i18n key-path derivation rule; dev-facing convention, not observed by a fan directly
+brand-vocabulary	Asymmetric Locale Labels	KEEP	components/infrastructure/locale/brand-vocabulary	Asymmetric Locale Labels			medium	fan observes different JA/EN wording for the same entity; locale infrastructure
+brand-vocabulary	Entity Namespace Locale Parity	OUT:lint					high	CI lint-script rule (missing-key error, exit non-zero); dev-facing enforcement
+brand-vocabulary	Entity Name Validation	OUT:lint					high	CI lint-script rule (curated entity list check); dev-facing enforcement
+brand-vocabulary	Deprecated Colloquial Terms	KEEP	components/infrastructure/locale/brand-vocabulary	Deprecated Colloquial Terms			medium	fan-observed JA copy word choice (推し banned, アーティスト/フォローする mandated); locale infrastructure
+brand-vocabulary	Brand Expression Registry	KEEP	components/infrastructure/locale/brand-vocabulary	Brand Expression Registry			medium	canonical user-facing copy registry (nav labels, hype tier labels, product name); locale infrastructure
+brand-vocabulary	Hype Tier Surface Labels Are Layer B	KEEP	components/infrastructure/locale/brand-vocabulary	Hype Tier Surface Labels Are Layer B			medium	fan-observed invariant English hype tier labels across locales; locale infrastructure
+brand-vocabulary	Lint Script Integration	OUT:lint					high	CI make-lint integration rule; dev-facing enforcement
+css-state-management	Three-layer responsibility separation	OUT:lint					high	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	Discrete visual state via `data-*.bind`	OUT:lint					high	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	Parent container strategy for shared state flags	OUT:lint					high	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	Total `style` attribute ban in templates	OUT:lint					high	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	CSS `attr()` migration path	OUT:lint					high	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	Animation lifecycle via CSS events	OUT:lint					high	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	No if.bind for visual-only visibility	OUT:lint					high	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	Custom attributes for JS→CSS bridge only	OUT:lint					high	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+auto-concert-discovery	Scheduled Concert Discovery Job	KEEP	components/usecase/concert/search-new-concerts	Scheduled Concert Discovery Job			medium	business rule: organizer-associated artists excluded before ConcertUseCase.SearchNewConcerts is called; CronJob scheduling/DI mechanics are SPLIT-CANDIDATE (infra)
+auto-concert-discovery	Circuit Breaker on Consecutive Failures	OUT:runbook					high	batch-job resilience mechanism; no user actor
+auto-concert-discovery	Job Always Exits Successfully	OUT:runbook					high	CronJob exit-code semantics; no user actor
+auto-concert-discovery	Job-Specific Dependency Injection	OUT:design-doc					high	DI/initialization architecture for the batch job; no user actor
+auto-concert-discovery	Gemini Response Resilience	KEEP	components/usecase/concert/search-new-concerts	Gemini Response Resilience		CLASSNAME	medium	retry/error-classification behavior changes what ConcertUseCase.SearchNewConcerts returns (empty vs error); internal EventsResponse type referenced
+auto-concert-discovery	Consumer JetStream Delivery Policy	OUT:design-doc					high	NATS JetStream consumer configuration; no user actor
+auto-concert-discovery	Consumer JetStream Acknowledgement Policy	OUT:design-doc					high	NATS JetStream Ack configuration; no user actor
+aurelia-template-optimization	Keyed list rendering	OUT:lint					high	Aurelia 2 template/binding coding convention; no user actor, per spec Purpose
+aurelia-template-optimization	Switch-based multi-branch conditionals	OUT:lint					high	Aurelia 2 template/binding coding convention; no user actor, per spec Purpose
+aurelia-template-optimization	Show binding for frequently toggled elements	OUT:lint					high	Aurelia 2 template/binding coding convention; no user actor, per spec Purpose
+aurelia-template-optimization	Class binding syntax for conditional CSS classes	OUT:lint					high	Aurelia 2 template/binding coding convention; no user actor, per spec Purpose
+aurelia-template-optimization	Debounce on search inputs	OUT:lint					medium	Aurelia 2 template/binding coding convention; framed as an implementation-pattern mandate rather than route-specific behavior
+aurelia-template-optimization	Throttle binding behavior on continuous event handlers	OUT:lint					high	Aurelia 2 template/binding coding convention; no user actor, per spec Purpose
+aurelia-template-optimization	Date value converter	OUT:lint					medium	reusable template code-utility convention; not scoped to a specific route or entity
+aurelia-template-optimization	Route title configuration	OUT:lint					medium	cross-cutting implementation-pattern requirement spanning all routes, not one route's behavior
+my-artists	Hype Change Persisted for Guest Users	KEEP	components/infrastructure/ui/route/my-artists	Hype Change Persisted for Guest Users			high	behavior of the My Artists route (guest hype editing decoupled from onboarding)
+my-artists	View Toggle (List / Grid)	KEEP	components/infrastructure/ui/route/my-artists	View Toggle (List / Grid)			high	behavior of the My Artists route page header
+my-artists	Grid (Festival) View	KEEP	components/infrastructure/ui/route/my-artists	Grid (Festival) View			high	behavior of the My Artists route grid view
+my-artists	My Artists page help content documents all available gestures	KEEP	components/infrastructure/ui/route/my-artists	My Artists page help content documents all available gestures			medium	page-specific help content rendered via the shared page-help component; content is scoped to the my-artists route
+my-artists	Default hype tier for new follows is Nearby	KEEP	components/usecase/follow/follow	Default hype tier for new follows is Nearby			medium	default value set whenever FollowUseCase.Follow creates a follow record (true after the follow operation)
+my-artists	My Artists hype column headers render invariant English	KEEP	components/infrastructure/ui/route/my-artists	My Artists hype column headers render invariant English			high	behavior of the My Artists route table header rendering
+sales-reminders	Multi-Stage Reminder Scan	KEEP	components/usecase/sales-phase/scan-due-reminders	Multi-Stage Reminder Scan			high	direct match to SalesReminderUseCase.ScanDueReminders
+sales-reminders	Reminder Audience	KEEP	components/usecase/sales-phase/scan-due-reminders	Reminder Audience			high	audience resolution logic within SalesReminderUseCase.ScanDueReminders
+sales-reminders	Once-Only Delivery	KEEP	components/usecase/sales-phase/scan-due-reminders	Once-Only Delivery			medium	dedup guarantee enforced across scan runs of SalesReminderUseCase.ScanDueReminders
+sales-reminders	Quiet Hours	KEEP	components/usecase/sales-phase/scan-due-reminders	Quiet Hours			high	scan-timing business rule within SalesReminderUseCase.ScanDueReminders
+sales-reminders	Notification Content	KEEP	components/usecase/sales-phase/deliver-reminder	Notification Content			medium	per-recipient payload construction, part of SalesReminderDeliveryUseCase.DeliverReminder
+sales-reminders	Reminder Delivery Reuses Web Push	KEEP	components/usecase/sales-phase/deliver-reminder	Reminder Delivery Reuses Web Push			high	direct match to SalesReminderDeliveryUseCase.DeliverReminder
+argocd-deployment-alerts	ArgoCD Notifications controller is enabled	OUT:runbook					high	ArgoCD/Google Chat deployment alerting; ops-only, no fan/organizer actor
+argocd-deployment-alerts	Google Chat webhook service is configured	OUT:runbook					high	ArgoCD/Google Chat deployment alerting; ops-only, no fan/organizer actor
+argocd-deployment-alerts	Default triggers notify on error conditions	OUT:runbook					high	ArgoCD/Google Chat deployment alerting; ops-only, no fan/organizer actor
+argocd-deployment-alerts	ArgoCD secrets are isolated from backend secrets	OUT:runbook					high	ArgoCD/Google Chat deployment alerting; ops-only, no fan/organizer actor
+argocd-deployment-alerts	Webhook URL is stored in Pulumi ESC and GCP Secret Manager	OUT:runbook					high	ArgoCD/Google Chat deployment alerting; ops-only, no fan/organizer actor
+cube-css-layer-enforcement	`cube/require-layer` rejects CSS rules outside `@layer` blocks	OUT:lint					high	stylelint-style CSS lint rule; no user actor
+cube-css-layer-enforcement	`cube/layer-order` enforces correct `@layer` declaration order	OUT:lint					high	stylelint-style CSS lint rule; no user actor
+continuous-delivery	ArgoCD Manifests	OUT:runbook					high	ArgoCD/CI/CD GitOps mechanics; ops-only, no fan/organizer actor
+continuous-delivery	Internal Web UI Access	OUT:runbook					high	ArgoCD/CI/CD GitOps mechanics; ops-only, no fan/organizer actor
+continuous-delivery	Git Repository Integration	OUT:runbook					high	ArgoCD/CI/CD GitOps mechanics; ops-only, no fan/organizer actor
+continuous-delivery	Root Application	OUT:runbook					high	ArgoCD/CI/CD GitOps mechanics; ops-only, no fan/organizer actor
+continuous-delivery	Image Build and Publish	OUT:runbook					high	ArgoCD/CI/CD GitOps mechanics; ops-only, no fan/organizer actor
+continuous-delivery	Secure CI Authentication	OUT:runbook					high	ArgoCD/CI/CD GitOps mechanics; ops-only, no fan/organizer actor
+continuous-delivery	Backend Application Provisioning	OUT:runbook					high	ArgoCD/CI/CD GitOps mechanics; ops-only, no fan/organizer actor
+continuous-delivery	ArgoCD SHALL sync Atlas migration resources from backend repo	OUT:runbook					high	ArgoCD/CI/CD GitOps mechanics; ops-only, no fan/organizer actor
+continuous-delivery	Migration sync wave SHALL precede application deployment	OUT:runbook					high	ArgoCD/CI/CD GitOps mechanics; ops-only, no fan/organizer actor
+k8s-service-cross-namespace-routing	Backend Service Accessibility from External Gateway	OUT:runbook					high	Kubernetes Service/Gateway networking config; ops-only, no fan/organizer actor
+k8s-service-cross-namespace-routing	Service Protocol Configuration for HTTP/2	OUT:runbook					high	Kubernetes Service/Gateway networking config; ops-only, no fan/organizer actor
+k8s-service-cross-namespace-routing	Cross-Namespace Routing Enabled	OUT:runbook					high	Kubernetes Service/Gateway networking config; ops-only, no fan/organizer actor
+k8s-service-cross-namespace-routing	Backend Pods Targeted via Service	OUT:runbook					high	Kubernetes Service/Gateway networking config; ops-only, no fan/organizer actor
+k8s-service-cross-namespace-routing	No Direct Pod Exposure	OUT:runbook					high	Kubernetes Service/Gateway networking config; ops-only, no fan/organizer actor
+k8s-service-cross-namespace-routing	Namespace Isolation Maintained	OUT:runbook					high	Kubernetes Service/Gateway networking config; ops-only, no fan/organizer actor
+official-site-search	Resolve Official Site URL from MusicBrainz	KEEP	components/usecase/artist/create-official-site	Resolve Official Site URL from MusicBrainz			medium	resolution algorithm feeding ArtistUseCase.CreateOfficialSite; SPLIT-CANDIDATE (resolver interface vs persistence usecase)
+official-site-search	Async Official Site Persistence on Follow	KEEP	components/usecase/artist/create-official-site	Async Official Site Persistence on Follow			high	direct match to ArtistUseCase.CreateOfficialSite triggered after Follow
+artist-service-infrastructure	Standalone Artist Service	KEEP	components/entity/artist	Standalone Artist Service			medium	dominant scenarios describe the Artist entity always/optionally carrying fanart data; the service-registration scenario is SPLIT-CANDIDATE (infra)
+artist-service-infrastructure	Unified Music Discovery Interface	KEEP	components/usecase/artist/search	Unified Music Discovery Interface			medium	general multi-provider search statement maps to ArtistUseCase.Search; ListTop/ListSimilar persistence scenarios are SPLIT-CANDIDATE
+frontend-route-guard	Global Auth Hook	KEEP	stories/roam-app-as-guest	Global Auth Hook			medium	global navigation-guard behavior spanning all routes for guest free-roam; story proposal per decision tree #1
+frontend-route-guard	Settings Reachable During Onboarding	KEEP	stories/roam-app-as-guest	Settings Reachable During Onboarding			medium	part of the guest free-roam navigation story
+frontend-route-guard	Welcome Reachable During Onboarding	KEEP	stories/roam-app-as-guest	Welcome Reachable During Onboarding			medium	part of the guest free-roam navigation story
+user-account-sync	User Account Provisioning on Signup	KEEP	components/usecase/user/create	User Account Provisioning on Signup			medium	idempotent resolve-or-provision contract of UserUseCase.Create; frontend localStorage caching scenarios are SPLIT-CANDIDATE

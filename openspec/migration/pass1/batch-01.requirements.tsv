@@ -1,0 +1,111 @@
+old_spec	old_req_name	disposition	target_path	new_req_name	merge_group	rewrite_flags	confidence	rationale
+analytics-consent	Analytics operates under an EU-adequacy opt-out model, not a consent gate	OUT:design-doc					medium	Telemetry/legal policy statement (PostHog identify() call, privacy-policy content) with no single UI surface; tie-break routes telemetry to OUT
+analytics-consent	Settings exposes Analytics and Session-replay opt-out toggles	KEEP	components/infrastructure/ui/route/settings	Settings exposes Analytics and Session-replay opt-out toggles			high	Settings route renders the Analytics/Session-replay toggles the user controls
+analytics-consent	Full non-PII catalogue is captured anonymously before identification	OUT:design-doc					medium	Anonymous PostHog capture policy; no user-observed UI surface - telemetry tie-break routes to OUT
+analytics-consent	Anonymous behaviour is merged into the identified profile on login	OUT:design-doc					medium	posthog.identify() merge behavior is internal telemetry plumbing, not user-observed
+analytics-consent	Sensitive personal information is structurally excluded; minor-user legality is deferred to legal review	OUT:design-doc					medium	Event-property allowlist/redaction is an engineering safeguard with no user-facing surface; also flags an open legal question, not a testable product behavior
+analytics-consent	Analytics opt-out state is persisted and user-controllable from settings	KEEP	components/infrastructure/ui/route/settings	Analytics opt-out state is persisted and user-controllable from settings			high	Settings route is where the user toggles and observes opt-out state
+artist-image-ui	Event Card Logo Display	NEEDS_HUMAN					low	EventCard is rendered across dashboard/welcome/discovery but vocabulary has no ui/global event-card surface entry
+artist-image-ui	Event Detail Sheet Hero Image	NEEDS_HUMAN					low	EventDetailSheet has no vocabulary entry (only the generic bottom-sheet exists, which this specializes)
+artist-image-ui	Fanart Data Propagation	NEEDS_HUMAN					low	Frontend service-layer mapping that feeds the (currently unmapped) event-card/detail-sheet surfaces above
+concert-search-internals	Usecase layer SHALL NOT import infrastructure packages	OUT:lint					high	Go Clean-Architecture import-boundary rule for internal/usecase; no user actor
+concert-search-internals	Search status marking SHALL use defer pattern	OUT:lint					high	Code-structure rule for executeSearch's defer usage; no user actor
+concert-search-internals	Time-dependent tests SHALL use testing/synctest	OUT:lint					high	Test-methodology rule (Go testing/synctest); no user actor
+concert-search-internals	resolveUserID SHALL NOT be duplicated	OUT:lint					high	DRY code-convention for a shared internal helper function; no user actor
+concert-search-internals	Entity construction SHALL use domain methods	OUT:lint					high	Mandates ScrapedConcert.ToConcert() over inline field assignment; no user actor
+follow-triggered-search	Trigger concert search on first follow	KEEP	components/usecase/follow/follow	Trigger concert search on first follow			high	FollowUseCase.Follow's side effect of launching SearchNewConcerts on first follow
+follow-triggered-search	Search errors do not affect follow operation	KEEP	components/usecase/follow/follow	Search errors do not affect follow operation			high	Invariant of the Follow RPC response when the background search fails
+follow-triggered-search	Search log check failure is non-blocking	KEEP	components/usecase/follow/follow	Search log check failure is non-blocking			high	Invariant of Follow's handling of searchLogRepo lookup errors
+frontend-network-timeouts	Default RPC call timeout	NEEDS_HUMAN					low	Cross-app RPC transport deadline, not scoped to one route; vocabulary has no networking/transport infra kind
+frontend-network-timeouts	RPC timeout value is runtime-configurable	NEEDS_HUMAN					low	Same shared-transport config surface as the default-timeout requirement above; no matching vocabulary target
+frontend-network-timeouts	Service-Worker analytics capture is time-bounded	KEEP	components/infrastructure/service-worker/analytics-capture-timeout	Service-Worker analytics capture is time-bounded			high	Service Worker fetch() timeout; kind 'service-worker' exists in vocabulary
+frontend-network-timeouts	Service-Worker VAPID key fetch is time-bounded	KEEP	components/infrastructure/service-worker/vapid-key-fetch-timeout	Service-Worker VAPID key fetch is time-bounded			high	Service Worker VAPID fetch() timeout during push-subscription renewal
+frontend-onboarding-flow	Interactive Artist Discovery (Bubble Network UI)	KEEP	components/infrastructure/ui/route/discovery	Interactive Artist Discovery (Bubble Network UI)			high	Bubble-tap follow, coach-mark trigger, and snack notifications all happen on the discovery route
+frontend-onboarding-flow	Single-Flag Onboarding State	KEEP	stories/complete-onboarding	Single-Flag Onboarding State			medium	isOnboarding/finish() latch spans discovery, dashboard, and auth-callback - a cross-route onboarding story
+frontend-onboarding-flow	Final onboarding step is a non-blocking analytics transparency notice	KEEP	stories/complete-onboarding	Final onboarding step is a non-blocking analytics transparency notice			medium	One-time notice shown as the final step of the same cross-route onboarding story
+frontend-plain-date-lib	Calendar arithmetic SHALL be exposed through an implementation-agnostic interface with `CalendarDate` boundary values	OUT:design-doc					high	Internal library API-boundary contract; no user actor observes the interface shape
+frontend-plain-date-lib	The library SHALL implement a fixed calendar-arithmetic contract	OUT:design-doc					high	Defines the plain-date library's function contract; implementation detail
+frontend-plain-date-lib	Invalid calendar components SHALL NOT silently roll over	OUT:design-doc					high	Engine-internal validation rule for CalendarDate math
+frontend-plain-date-lib	Two interchangeable engines SHALL satisfy the contract identically	OUT:design-doc					high	Differential-test requirement between Date/Temporal engines; developer-facing
+frontend-plain-date-lib	The active engine SHALL be selected at build time, defaulting to the `Date` engine	OUT:design-doc					high	Vite build-time engine-selection decision
+frontend-plain-date-lib	The production bundle SHALL contain no Temporal polyfill	OUT:design-doc					high	Bundle-size/CI guard for the polyfill dependency
+frontend-testing	Test infrastructure provides shared mock factories	OUT:lint					high	test/helpers mock-factory requirement; developer-facing test infra
+frontend-testing	Vitest environment is managed by vitest, not manually	OUT:lint					high	test/setup.ts jsdom-ownership rule; no user actor
+frontend-testing	Aurelia template module graph is contained in tests	OUT:lint					high	Test-file import isolation rule to avoid template-chain resolution
+frontend-testing	CE composition integration tests verify layout propagation	OUT:lint					high	Integration-test methodology for ConcertHighway; statement is about tests, not the component
+frontend-testing	Dashboard-route has integration tests	OUT:lint					high	Mandates createFixture tests exist for DashboardRoute
+frontend-testing	Per-file vitest environment annotations optimize execution	OUT:lint					high	Per-file @vitest-environment annotation convention
+frontend-testing	Color generator produces deterministic colors	OUT:design-doc					medium	artistColor is an internal hashing utility; determinism isn't itself user-observed
+frontend-testing	Dashboard service groups concerts by date	KEEP	components/infrastructure/ui/route/dashboard	Dashboard service groups concerts by date			medium	DashboardService.loadDashboardEvents backs the Dashboard route's rendered event list
+frontend-testing	Onboarding service routes based on completion status	KEEP	stories/complete-onboarding	Onboarding service routes based on completion status			medium	OnboardingService redirect logic spans dashboard/onboarding routes - same onboarding story
+frontend-testing	Toast notification service manages toast lifecycle	KEEP	components/infrastructure/ui/global/toast	Toast notification service manages toast lifecycle			high	ToastNotification.show is the toast global surface's lifecycle
+frontend-testing	Event card computes display properties	NEEDS_HUMAN					low	EventCard display logic; no vocabulary event-card surface (see artist-image-ui)
+frontend-testing	Live highway displays grouped events	KEEP	components/infrastructure/ui/global/live-highway	Live highway displays grouped events			high	LiveHighway is the shared global surface rendering date groups
+frontend-testing	Auth status delegates to auth service	NEEDS_HUMAN					low	AuthStatus component has no matching ui/global vocabulary entry
+frontend-testing	MyApp showNav hides navigation on fullscreen routes	KEEP	components/infrastructure/ui/global/bottom-nav-bar	App shell hides navigation on fullscreen routes		CLASSNAME	medium	showNav gates visibility of the bottom-nav-bar global surface
+frontend-testing	Auth hook guards all authenticated routes	NEEDS_HUMAN					low	AuthHook route guard is cross-cutting; no matching infra kind in vocabulary
+frontend-testing	Auth retry interceptor refreshes tokens on Unauthenticated errors	NEEDS_HUMAN					low	Auth-retry interceptor is transport-level; not a UI surface or listed infra kind
+frontend-testing	Retry interceptor applies exponential backoff on transient errors	NEEDS_HUMAN					low	Generic retry interceptor is transport-level; not a UI surface or listed infra kind
+frontend-testing	Artist discovery service manages bubble state with optimistic follow	KEEP	components/infrastructure/ui/route/discovery	Artist discovery service manages bubble state with optimistic follow			medium	ArtistDiscoveryService backs the discovery route's bubble canvas
+frontend-testing	gRPC transport injects auth headers	NEEDS_HUMAN					low	gRPC auth-header injection is transport-level plumbing; tie-break excludes components/adapter
+frontend-testing	Concert service forwards RPC calls with AbortSignal	NEEDS_HUMAN					low	ConcertService RPC forwarding/AbortSignal is transport-level plumbing with no clear target
+frontend-testing	Error boundary service captures and sanitizes errors	KEEP	components/infrastructure/ui/global/error-banner	Error boundary service captures and sanitizes errors			medium	ErrorBoundaryService's captured errors surface through the global error-banner
+frontend-testing	Dashboard route manages stale data on reload failure	KEEP	components/infrastructure/ui/route/dashboard	Dashboard route manages stale data on reload failure			high	Dashboard route's stale-data handling on reload failure
+frontend-testing	Discover page debounces search with stale response guard	KEEP	components/infrastructure/ui/route/discovery	Discover page debounces search with stale response guard			medium	DiscoverPage search debounce is part of the discovery route
+frontend-testing	Artist discovery page dismisses guidance overlay	KEEP	components/infrastructure/ui/route/discovery	Artist discovery page dismisses guidance overlay			medium	ArtistDiscoveryPage guidance overlay dismissal on the discovery route
+frontend-testing	Event detail sheet computes URLs and handles touch dismiss	NEEDS_HUMAN					low	EventDetailSheet has no vocabulary entry distinct from the generic bottom-sheet primitive
+frontend-testing	Test mock helpers cover all tested DI interfaces	OUT:lint					high	Mock-factory coverage requirement for DI interfaces used in tests
+frontend-testing	Mock helpers cover INavDimmingService and ILocalStorage	OUT:lint					high	Mock-factory coverage for INavDimmingService/ILocalStorage
+frontend-testing	Timer cleanup uses afterEach unconditionally	OUT:lint					high	afterEach fake-timer cleanup convention
+frontend-testing	Coverage reporting is configured	OUT:lint					high	Vitest coverage-threshold configuration
+frontend-testing	Global fixture cleanup awaits all stop() calls	OUT:lint					high	Global afterEach fixture-cleanup await pattern
+frontend-testing	All afterEach hooks prevent test state pollution	OUT:lint					high	afterEach state-pollution prevention convention
+frontend-testing	Mock helpers return typed Partial interfaces	OUT:lint					high	Typed Partial<Interface> mock-factory convention
+frontend-testing	No deprecated Aurelia testing APIs are used	OUT:lint					high	Bans deprecated Aurelia tearDown() API in tests
+frontend-testing	Component integration tests use createFixture with official assertion helpers	OUT:lint					high	createFixture usage convention for component integration tests
+frontend-testing	Smoke tests use meaningful DOM assertions	OUT:lint					high	Smoke-test assertion-quality convention
+frontend-testing	Bottom nav bar has component integration tests	OUT:lint					high	Mandates integration tests exist for BottomNavBar
+frontend-testing	Snack bar service logic is tested	OUT:lint					high	Snack-bar test strategy (DI unit vs E2E) statement
+frontend-testing	User home selector has component integration tests	OUT:lint					high	Mandates integration tests exist for UserHomeSelector
+frontend-testing	Post-signup dialog has component integration tests	OUT:lint					high	Mandates integration tests exist for PostSignupDialog
+frontend-testing	Error banner has component integration tests	OUT:lint					high	Mandates integration tests exist for ErrorBanner
+frontend-testing	Settings route has component integration tests	OUT:lint					high	Mandates integration tests exist for SettingsRoute
+frontend-testing	Concert highway CE has component integration tests	OUT:lint					high	Mandates integration tests exist for ConcertHighway CE
+frontend-testing	Welcome route has component integration tests	OUT:lint					high	Mandates integration tests exist for WelcomeRoute
+frontend-testing	Custom attribute tests use createFixture with style verification	OUT:lint					high	createFixture + style-verification convention for custom-attribute tests
+frontend-testing	Value converter tests include fixture integration tests	OUT:lint					high	createFixture requirement for value-converter test suites
+gke-standard-infrastructure	Standard zonal GKE cluster for dev	OUT:design-doc					high	GKE cluster-mode/location provisioning decision; no user actor
+gke-standard-infrastructure	Dev cluster nodes SHALL have public external IPs	OUT:design-doc					high	Node networking topology decision (no Cloud NAT) for dev
+gke-standard-infrastructure	Standard cluster Spot nodeSelector	OUT:design-doc					high	Pod-scheduling nodeSelector convention for Spot nodes
+gke-standard-infrastructure	Shielded GKE Nodes SHALL be enabled on the Spot node pool	OUT:design-doc					high	Node security-hardening config decision
+gke-standard-infrastructure	Dev cluster SHALL use LEGACY_DATAPATH (kube-proxy/iptables)	OUT:design-doc					high	GKE datapath-provider provisioning decision
+gke-standard-infrastructure	Dev cluster SHALL disable Google Managed Prometheus	OUT:design-doc					high	Monitoring/logging config decision for cost control
+gke-standard-infrastructure	Dev cluster Spot node pool boot disk SHALL be 30GB pd-standard	OUT:design-doc					high	Node boot-disk sizing/type decision
+gke-standard-infrastructure	Dev cluster `kube-dns-autoscaler` SHALL set `preventSinglePointFailure: false`	OUT:design-doc					high	kube-dns-autoscaler ConfigMap override for cost/capacity tuning
+guest-data-merge	Guest Data Storage	KEEP	stories/merge-guest-data-on-signup	Guest Data Storage			medium	Guest follow/hype/home capture spans discovery+dashboard ahead of signup - part of the merge-on-signup story
+guest-data-merge	Guest hype included in data merge on signup	KEEP	stories/merge-guest-data-on-signup	Guest hype included in data merge on signup	GUEST-HYPE-MERGE		medium	Hype-merge detail folded into the broader signup data-merge story (see Data Merge on Authentication)
+guest-data-merge	Data Merge on Authentication	KEEP	stories/merge-guest-data-on-signup	Data Merge on Authentication	GUEST-HYPE-MERGE		medium	UserService.Create + FollowService.Follow/SetHype sequence on signup/sign-in is the merge-on-signup story
+guest-data-merge	Guest Data Cleanup	KEEP	stories/merge-guest-data-on-signup	Guest Data Cleanup			medium	Per-store localStorage cleanup after migration/sign-out is part of the same guest-merge story
+localstorage-naming	Unified key naming convention	OUT:lint					high	Naming-pattern rule for localStorage keys; no user actor
+localstorage-naming	Centralized key registry	OUT:lint					high	Mandates StorageKeys constants module; developer-facing
+localstorage-naming	Domain term alignment	OUT:lint				HISTORIC	medium	Naming rule plus a one-time removed-legacy-key migration (guest.adminArea); no ongoing user actor
+migration-rebase-guard	The system MUST detect out-of-order migration timestamps	OUT:runbook					high	CI/dev-tooling drift-check script; no user actor
+migration-rebase-guard	The system MUST auto-fix out-of-order migrations when --fix is passed	OUT:runbook					high	Developer-tooling auto-rebase behavior
+migration-rebase-guard	The system MUST integrate with Claude Code hooks	OUT:runbook					high	Claude Code PostToolUse hook wiring; developer workflow only
+post-signup-dialog	Post-Signup Dialog on First Authentication	KEEP	components/infrastructure/ui/global/post-signup-dialog	Post-Signup Dialog on First Authentication			high	PostSignupDialog global surface's first-signup display rules
+post-signup-dialog	Dialog reliably opens when active is true at creation time	KEEP	components/infrastructure/ui/global/post-signup-dialog	Dialog reliably opens when active is true at creation time			high	activeChanged()/binding-phase open behavior of the post-signup-dialog surface
+post-signup-dialog	PostSignupDialog title and aria-label use i18n bindings	KEEP	components/infrastructure/ui/global/post-signup-dialog	Dialog title and aria-label use i18n bindings		CLASSNAME	high	i18n binding rule for the post-signup-dialog surface's title/aria-label
+post-signup-dialog	PostSignupDialog footer button reflects completion state	KEEP	components/infrastructure/ui/global/post-signup-dialog	Dialog footer button reflects completion state		CLASSNAME	high	Footer-button label logic of the post-signup-dialog surface
+post-signup-dialog	Celebration Precedes Post-Signup Dialog	KEEP	components/infrastructure/ui/global/post-signup-dialog	Celebration Precedes Post-Signup Dialog			medium	Sequencing between celebration-overlay and post-signup-dialog; dialog is the dominant target per tie-break
+post-signup-dialog	PWA Install Row Shows Fallback Instructions When Native Prompt Unavailable	KEEP	components/infrastructure/ui/global/post-signup-dialog	PWA Install Row Shows Fallback Instructions When Native Prompt Unavailable			high	Install-row fallback UI inside the post-signup-dialog surface
+post-signup-dialog	PwaInstallService Registers beforeinstallprompt Listener Before Routing	KEEP	components/infrastructure/ui/global/pwa-install-banner	Install-prompt listener registers before routing		CLASSNAME	medium	beforeinstallprompt capture timing backs both pwa-install-banner and the dialog; banner is the persistent global surface
+search-follow-absorption	Search result follow triggers bubble view transition and absorption animation	KEEP	components/infrastructure/ui/route/discovery	Search result follow triggers bubble view transition and absorption animation			high	Follow-from-search-result absorption animation happens on the discovery route's bubble canvas
+ticket-purchase-and-issuance	Issue from ④'s captured winning payment	NEEDS_HUMAN					low	Order-creation usecase triggered by lottery capture signal; vocabulary has no order/ticket-issuance usecase entries yet
+ticket-purchase-and-issuance	Order record	KEEP	components/entity/order	Order record			high	Order's fields/status/invariants (paid/refunded/failed, opaque tokens) match the Order entity
+ticket-purchase-and-issuance	Issue account-bound covered tickets on the captured win	KEEP	components/entity/ticket	Issue account-bound covered tickets on the captured win			medium	Covered-ticket (特定興行入場券) legal-condition fields are Ticket entity invariants
+ticket-purchase-and-issuance	Idempotent issuance	NEEDS_HUMAN					low	Issuance-replay-safety usecase behavior; no order/ticket-issuance usecase in vocabulary
+ticket-purchase-and-issuance	Capture succeeded but issuance failed	NEEDS_HUMAN					low	Post-capture reconciliation/refund usecase behavior; no matching usecase target
+ticket-purchase-and-issuance	Settlement and payout are delegated to ticket-settlement-and-payout	OUT:design-doc					medium	Capability-boundary declaration between this capability and ticket-settlement-and-payout; architecture decision, not user-facing
+ticket-purchase-and-issuance	収納代行 scheme — discharge on payment + 代理受領権限	OUT:design-doc					medium	収納代行 legal/financial structuring decision (payments-design counsel flag); not a testable product behavior
+ticket-purchase-and-issuance	Refund taxonomy — cancellation vs postponement	NEEDS_HUMAN					low	Refund-policy usecase spans Event/Ticket/Order with execution owned by an out-of-batch capability; no matching usecase target
+ticket-purchase-and-issuance	No stored card data (PCI SAQ A)	OUT:design-doc					medium	PCI-scope/Stripe-Elements compliance decision; overlaps the Order entity's opaque-token invariant already captured in the Order record requirement
