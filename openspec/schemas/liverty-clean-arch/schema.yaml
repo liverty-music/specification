@@ -85,32 +85,27 @@ artifacts:
         components/usecase/<entity>/<method>/spec.md
           One operation on the exported usecase interface (e.g.
           ConcertUseCase.ListByFollower → components/usecase/concert/list-by-follower).
-          Scenarios correspond to unit tests.
+          Scenarios correspond to unit tests. No audience here: usecases are
+          shared by every audience.
 
-        components/infrastructure/ui/<app>/route/<screen>/spec.md
-          Behavior that appears on exactly one screen of one app. <app> is
-          fan (frontend/src/routes/<screen>), admin (frontend/admin/<screen>),
-          organizer (frontend/organizer/<screen>), or hosted-login (the
-          identity provider's login screen, bound to cloud-provisioning).
-
-        components/infrastructure/ui/<app>/global/<surface>/spec.md
-          Behavior of a UI surface that appears on two or more screens of
-          one app (frontend/src/components/<surface>, frontend/src/app-shell,
-          frontend/<app>/<app>-shell).
-
-        components/infrastructure/<kind>/<name>/spec.md
-          Non-UI user-experience infrastructure (push, service-worker, locale, email).
-
-        components/adapter/<pkg>/<contract>/spec.md
-          A contract implemented in the code's adapter layer
-          (backend/internal/adapter/<pkg>, frontend/src/adapter/<pkg>):
-          usecase-to-transport error mapping, event envelopes, webhook
-          endpoints, view derivations. Only for contracts that live there in
-          code; entity invariants and screen behavior never go here.
-
-        components/infrastructure/server/<contract>/spec.md
-          Behavior of the Connect RPC server itself (backend/internal/
-          infrastructure/server): rate limiting and other interceptors.
+        components/adapter/<audience>/<delivery>/**/<component>/spec.md
+        components/infrastructure/<audience>/<delivery>/**/<component>/spec.md
+          The outer layers are always written from one audience's point of
+          view. <audience> is fan, admin or organizer; <delivery> is web
+          (frontend/src for fan, frontend/<audience> for admin and organizer)
+          or api (backend/internal, served by fan-api for every audience).
+          Levels under <delivery> follow the code:
+            infrastructure/fan/web/route/<screen>      frontend/src/routes/<screen>
+            infrastructure/fan/web/global/<surface>    frontend/src/components/<surface>, app-shell, design-tokens
+            infrastructure/<a>/web/route|global/…       frontend/<a>/…
+            infrastructure/<a>/web/hosted-login         the identity provider's login as that audience experiences it
+            infrastructure/fan/api/<pkg>/<contract>     backend/internal/infrastructure/<pkg>
+            adapter/<a>/api/rpc/<handler>               backend/internal/adapter/rpc/<a>_*_handler.go
+            adapter/fan/api/<pkg>/<contract>            backend/internal/adapter/<pkg>
+            adapter/fan/web/<pkg>/<contract>            frontend/src/adapter/<pkg>
+          A contract that several audiences rely on is written under each
+          audience that relies on it; a flow that crosses audiences is a story.
+          There is no shared slot.
 
       ## Writing order
 
@@ -123,7 +118,7 @@ artifacts:
 
       The subject of a requirement or scenario is a contract or a ubiquitous-
       language noun: an entity name, an exported interface and its methods
-      (ArtistRepository, ConcertUseCase.List), an app and screen name, a surface name
+      (ArtistRepository, ConcertUseCase.List), an audience and screen name, a surface name
       (dna-orb, bottom-sheet), or a UI vocabulary term (bubble, orb, lane, hype)
       defined by the surface that owns it.
 
