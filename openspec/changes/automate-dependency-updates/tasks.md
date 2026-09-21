@@ -98,6 +98,6 @@
 
 ## 12. Follow-ups (not required for this change)
 
-- [ ] 12.1 Replace the Go-version custom manager with single-source derivation: `setup-go` reading `go-version-file: go.mod`, and the Dockerfile taking a build arg. Deferred from design D4 because it changes how CI resolves its toolchain while this change is establishing trust in that mechanism.
+- [x] 12.1 ~~Replace the Go-version custom manager with single-source derivation.~~ DONE IN THIS CHANGE, not deferred — see section 7 and design D4. The custom manager was never written: `setup-go`'s `go-version-file` and golangci-lint's go.mod default made the duplication removable outright, which is strictly better than grouping it. Kept here rather than deleted so the reversal is visible.
 - [ ] 12.3 Find a way to cover `pwa-install-prompt.spec.ts`, the one PWA gap that genuinely cannot be closed in headless CI. Until then `vite-plugin-pwa` manifest behavior has no pipeline coverage (design Risk 2).
 - [ ] 12.4 Decide whether `.github` should get its own CI and branch protection so it can participate in automerge like the other four (design D11).
