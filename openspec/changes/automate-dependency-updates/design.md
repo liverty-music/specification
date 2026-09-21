@@ -153,7 +153,7 @@ The consequence for automerge is unchanged: infrastructure provider updates are 
 
 *Separately:* `cloud-provisioning` CI ran `make lint-ts` only, while `make check` is `lint-ts test`, so the repository's vitest suite never ran on a pull request. That gap is real, unrelated to the preview, and closed by adding a `test` job.
 
-### D7: Schema SDK exclusion is visible, not silent
+### D7: Our own build outputs are excluded, visibly, not silently
 
 `buf.build/gen/go/liverty-music/schema/*` and `@buf/liverty-music_schema.*` are set to `enabled: false` rather than added to `ignoreDeps`. Both suppress PRs, but `enabled: false` keeps the dependency listed on the dependency dashboard as disabled-with-an-update-available. That turns the exclusion into a drift detector: a schema release whose consumers were never advanced becomes visible instead of invisible.
 
@@ -162,6 +162,18 @@ The consequence for automerge is unchanged: infrastructure provider updates are 
 No `hostRules` are needed. `buf.build/gen/npm/v1/` answers unauthenticated — verified directly — and `frontend/.npmrc` carries no token, so there is no credential to supply for the dashboard to populate.
 
 **The exclusion is scoped to `liverty-music/*`, deliberately, and is not widened to "BSR packages".** Excluding everything from the Buf Schema Registry would be simpler to state and would be wrong: the reason for excluding our own schema is that `backend` and `frontend` must sit on the same build and an independently-scheduled bump would break that correspondence while leaving the code migration undone. That reason is a property of *ours*, not of the registry. It does not transfer to `buf.build/gen/go/pocketsign/apis/*`, where nobody here controls the cadence and falling behind is the risk rather than the safeguard — nor to the third-party modules in `specification/buf.lock` (`bufbuild/protovalidate`, `googleapis/googleapis`), which sit on the same side of that line and are unautomatable for an unrelated reason: Renovate has no Buf Schema Registry manager or datasource at all. Those are advanced by `buf dep update`, run by a person, and named in the runbook (task 11.3).
+
+#### The same judgement applies to the production image pins
+
+Renovate's first run on `cloud-provisioning` reported `No docker auth found` and ten failed lookups against `asia-northeast2-docker.pkg.dev/liverty-music-prod/**`, from the `images:` blocks in `k8s/namespaces/{backend,frontend}/overlays/prod/kustomization.yaml`.
+
+The obvious reading is a missing credential. It is not: those tags are **this project's own application images**, and the overlays are what ArgoCD syncs from, so changing a `newTag` IS a production deployment. They already have an owner — `bump-prod-pin.yml` moves the tag and its `app.kubernetes.io/version` label in lock-step and validates the result. A Renovate pull request against them would propose shipping a version nobody decided to release, and an automerged one would ship it unattended.
+
+So the error is a symptom and the cause is scope: authenticating the lookup would *enable* precisely the updates that must not happen. They are excluded with `enabled: false`, the same shape and for the same reason as the schema SDKs — an artefact we build and release ourselves, advanced by a deliberate process rather than by a bot.
+
+Every `images:` entry in the repository is ours (twenty, all under `asia-northeast2-docker.pkg.dev/liverty-music-{dev,prod}/`), so the exclusion is a clean cut with no third-party casualty. Third-party images in these repositories appear as inline `image:` fields in pod specs — `postgres:16` in `backend/k8s/atlas/overlays/dev` — which the `kubernetes` manager handles and which stay in scope.
+
+This does not narrow the capability's twelve-axis coverage: kustomize image tags remain an automated axis. What was missing was the distinction between a third-party image and one we publish, which is the same line D7 already draws between `liverty-music/schema` and `pocketsign/apis`.
 
 ### D8: The Go toolchain comment is documentation, not a constraint
 

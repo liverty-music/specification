@@ -234,13 +234,31 @@ Actions published from within the liverty-music organization are exempt, as thei
 - **WHEN** a pinned third-party action publishes a release
 - **THEN** an update proposal SHALL be raised that advances both the SHA and its accompanying version comment
 
-### Requirement: The liverty-music schema SDK is excluded from automated updates
+### Requirement: This project's own build outputs are excluded from automated updates
 
-The generated SDKs for the liverty-music schema — the `buf.build/gen/go/liverty-music/schema/*` Go modules and the `@buf/liverty-music_schema.*` npm packages — SHALL NOT have update pull requests raised for them.
+An artefact this project builds and releases is not a dependency in the sense this capability automates, even when it is consumed through a dependency manifest. Where such an artefact is advanced by a deliberate release process, update pull requests SHALL NOT be raised for it: the automation would be proposing a decision the release process exists to make.
 
-These SDKs are advanced as part of the OpenSpec change that alters the schema, together with the consuming code that the schema change requires. `backend` and `frontend` SHALL be pinned to the same schema build; automated, independently-scheduled updates would break that correspondence and would not carry the accompanying code migration.
+Two sets qualify at the time of writing.
 
-The exclusion SHALL be visible rather than silent: these dependencies SHALL continue to be reported as available-but-disabled, so that a schema release whose consumers were never advanced is detectable.
+**The generated SDKs for the liverty-music schema** — the `buf.build/gen/go/liverty-music/schema/*` Go modules and the `@buf/liverty-music_schema.*` npm packages. These are advanced as part of the OpenSpec change that alters the schema, together with the consuming code that the schema change requires. `backend` and `frontend` SHALL be pinned to the same schema build; automated, independently-scheduled updates would break that correspondence and would not carry the accompanying code migration.
+
+**The application image tags pinned in production kustomize overlays.** Changing one of these is a deployment: the overlays are what the cluster's continuous-delivery controller syncs from, so a raised pull request proposes shipping a version nobody chose to release, and an automerged one ships it unattended. They are advanced by the repository's own pin-bump workflow, which moves the tag and its version label together and validates the result.
+
+This exclusion SHALL NOT be implemented by supplying the automation with registry credentials so the lookup succeeds. A failed lookup against a private registry is a symptom; the cause is that the artefact should not be under automation at all, and authenticating it would enable exactly the updates this requirement prohibits.
+
+The exclusion SHALL be visible rather than silent: excluded dependencies SHALL continue to be reported as available-but-disabled, so that a release whose consumers were never advanced is detectable.
+
+#### Scenario: A newer application image exists than the production overlay pins
+
+- **WHEN** a newer tag of an image this project builds exists in its registry, and a production overlay pins an older one
+- **THEN** no update pull request SHALL be raised
+- **AND** the tag SHALL be advanced only by the release process that owns it
+
+#### Scenario: A private registry lookup fails for an excluded artefact
+
+- **WHEN** the automation cannot look up an artefact excluded by this requirement because it has no credentials for that registry
+- **THEN** the remedy SHALL be to exclude the artefact explicitly
+- **AND** credentials SHALL NOT be supplied to make the lookup succeed
 
 #### Scenario: A new schema build is published
 
