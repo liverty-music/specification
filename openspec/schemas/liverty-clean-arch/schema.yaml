@@ -101,8 +101,16 @@ artifacts:
         components/infrastructure/<kind>/<name>/spec.md
           Non-UI user-experience infrastructure (push, service-worker, locale, email).
 
-        components/adapter/
-          Not used. Decompose cross-cutting concerns into the layers above.
+        components/adapter/<pkg>/<contract>/spec.md
+          A contract implemented in the code's adapter layer
+          (backend/internal/adapter/<pkg>, frontend/src/adapter/<pkg>):
+          usecase-to-transport error mapping, event envelopes, webhook
+          endpoints, view derivations. Only for contracts that live there in
+          code; entity invariants and screen behavior never go here.
+
+        components/infrastructure/server/<contract>/spec.md
+          Behavior of the Connect RPC server itself (backend/internal/
+          infrastructure/server): rate limiting and other interceptors.
 
       ## Writing order
 

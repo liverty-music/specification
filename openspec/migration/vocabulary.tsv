@@ -1,4 +1,11 @@
 target_path	source_kind	source_artifact	note
+components/adapter/browser/<contract>	ts	frontend/src/adapter/browser	contract name proposed per requirement
+components/adapter/event/<contract>	go	backend/internal/adapter/event	contract name proposed per requirement
+components/adapter/rpc/<contract>	go	backend/internal/adapter/rpc	contract name proposed per requirement
+components/adapter/rpc/<contract>	ts	frontend/src/adapter/rpc	contract name proposed per requirement
+components/adapter/storage/<contract>	ts	frontend/src/adapter/storage	contract name proposed per requirement
+components/adapter/view/<contract>	ts	frontend/src/adapter/view	contract name proposed per requirement
+components/adapter/webhook/<contract>	go	backend/internal/adapter/webhook	contract name proposed per requirement
 components/entity/artist	proto	specification/proto/liverty_music/entity/v1/artist.proto	bootstrap only; spec becomes the source after migration
 components/entity/concert	proto	specification/proto/liverty_music/entity/v1/concert.proto	bootstrap only; spec becomes the source after migration
 components/entity/coordinates	proto	specification/proto/liverty_music/entity/v1/coordinates.proto	bootstrap only; spec becomes the source after migration
@@ -24,6 +31,7 @@ components/entity/verified-identity	proto	specification/proto/liverty_music/enti
 components/infrastructure/email/<name>	manual		kind seeded; <name> decided in Phase 1 Pass 1
 components/infrastructure/locale/<name>	manual		kind seeded; <name> decided in Phase 1 Pass 1
 components/infrastructure/push/<name>	manual		kind seeded; <name> decided in Phase 1 Pass 1
+components/infrastructure/server/<contract>	go	backend/internal/infrastructure/server	Connect server behavior: interceptors, rate limiting
 components/infrastructure/service-worker/<name>	manual		kind seeded; <name> decided in Phase 1 Pass 1
 components/infrastructure/ui/admin/global/admin-shell	ts	frontend/admin/admin-shell	
 components/infrastructure/ui/admin/route/approval-queue	ts	frontend/admin/approval-queue	
@@ -38,6 +46,7 @@ components/infrastructure/ui/fan/global/bottom-nav-bar	ts	frontend/src/component
 components/infrastructure/ui/fan/global/bottom-sheet	ts	frontend/src/components/bottom-sheet	
 components/infrastructure/ui/fan/global/celebration-overlay	ts	frontend/src/components/celebration-overlay	
 components/infrastructure/ui/fan/global/coach-mark	ts	frontend/src/components/coach-mark	
+components/infrastructure/ui/fan/global/design-tokens	ts	frontend/src/styles/tokens.css	app-wide design tokens as user-experienced UI invariants
 components/infrastructure/ui/fan/global/dna-orb	ts	frontend/src/components/dna-orb	
 components/infrastructure/ui/fan/global/error-banner	ts	frontend/src/components/error-banner	
 components/infrastructure/ui/fan/global/fab-menu	ts	frontend/src/components/fab-menu	

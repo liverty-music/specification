@@ -32,7 +32,7 @@ Cross-cutting API rules (e.g. "per-user RPCs require the caller's own user_id", 
 - route vs usecase: what the user sees → route; the result of the call → usecase. If both are in one requirement, choose the dominant one and note `SPLIT-CANDIDATE` in rationale.
 - story vs route: needs multiple routes → story; closes within one route → route.
 - entity vs usecase: always true → entity; true after an operation → usecase.
-- cross-cutting (errors, timeouts, telemetry, cors): telemetry/cors → OUT; user-visible errors → `ui/global/<surface>`; timeouts as experienced → route or story. Never `components/adapter`.
+- cross-cutting (errors, timeouts, telemetry, cors): telemetry/cors → OUT; user-visible errors → `ui/<app>/global/<surface>`; timeouts as experienced → route or story. Contracts implemented in the code's adapter layer (error mapping, event envelope, webhook, view derivation) → `components/adapter/<pkg>/<contract>`; Connect server behavior (rate limiting) → `components/infrastructure/server/<contract>`.
 - mixed infra + product inside one spec: classify per requirement; the spec-level disposition becomes `SPLIT`.
 
 ## rewrite_flags (comma-separated, may be empty)
