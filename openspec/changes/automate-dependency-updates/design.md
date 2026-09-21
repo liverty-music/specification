@@ -51,7 +51,14 @@ The `dependency-update-automation` spec requires that version-coupled sets move 
 | Vitest | `group:vitestMonorepo` |
 | OpenTelemetry JS | `group:opentelemetry-jsMonorepo` |
 | stylelint | `group:stylelint` |
-| Pulumi | `group:pulumi` |
+
+*Observed, not assumed:* the first Renovate run contradicted one row of the table above. `group:pulumi` did NOT group the providers — `@pulumi/{cloudflare,gcp,github,pulumi,random,tls}` each got their own branch, six pull requests where the table predicted one.
+
+Measuring the constraints before reacting gave the same answer as `otel-go` and `connectrpc-go`: every provider requires `@pulumi/pulumi` with a lower bound only (`^3.142.0` against the `^3.234.0` in use), and the providers do not depend on each other at all. **They are not version-coupled**, so the capability's coupled-set list was wrong to include them and no correctness argument requires grouping them.
+
+They are grouped anyway, as a NOISE-REDUCTION grouping and labelled as one — six pull requests a person must open one at a time is a real cost, and Pulumi is permanently excluded from automerge (D6), so every one of them is reviewed by hand. That is the same treatment, and the same honesty about the reason, as `go-tools`.
+
+This is the second table row the observation phase corrected, which is the argument for having an observation phase at all: `group:monorepos` was verified to work for Vitest and for the Node family (`node` and `@types/node` arrived in one pull request, exactly what the deleted custom manager was for), while `group:pulumi` was verified not to.
 
 **Local rules — no upstream coverage.** Only two remain. `aurelia` is a genuine version-coupled family (exact inter-package pins, verified below); `go-tools` is NOT coupled and is not claimed to be — the four `tool` entries are independent CLIs, grouped purely to keep build tooling to one pull request a month. That distinction matters: a convenience grouping may be split at any time, while splitting a coupled one breaks the build.
 
@@ -157,7 +164,13 @@ The consequence for automerge is unchanged: infrastructure provider updates are 
 
 `buf.build/gen/go/liverty-music/schema/*` and `@buf/liverty-music_schema.*` are set to `enabled: false` rather than added to `ignoreDeps`. Both suppress PRs, but `enabled: false` keeps the dependency listed on the dependency dashboard as disabled-with-an-update-available. That turns the exclusion into a drift detector: a schema release whose consumers were never advanced becomes visible instead of invisible.
 
-`buf.build/gen/go/pocketsign/apis/*` is *not* excluded — it is a third-party schema on someone else's release cadence, where falling behind is the risk rather than the safeguard.
+`buf.build/gen/go/pocketsign/apis/*` was *not* excluded on that reasoning — a third-party schema on someone else's cadence, where falling behind is the risk rather than the safeguard.
+
+**The first Renovate run showed that intent cannot be met.** Both modules failed with `Could not determine new digest for update`, and the failure took the version update with it — newer builds existed (`connectrpc/go v1.21.0-…`) and none was proposed. The cause is the BSR version format: `v1.20.0-20260826021924-0ff29b2b0335.1` resembles a Go pseudo-version, so Renovate splits the embedded commit out as a digest (the dashboard renders it as `…@0ff29b2b0335`) and then cannot resolve a new one, because the module is generated output with no repository behind it. Disabling digest updates was tried and did not help: the parse happens before the update type is chosen.
+
+So these are excluded too — but for the OPPOSITE reason to the liverty-music SDKs. Ours are excluded because automating them would be wrong; `pocketsign` is excluded because automating it does not work. The distinction matters for what happens next: if Renovate gains BSR support, ours stay excluded and `pocketsign` should be re-enabled.
+
+Left enabled-but-failing, it would have been the worst of both: a warning on every run, and an axis that looks automated while proposing nothing — indistinguishable from one that is up to date. It is recorded as a known gap with a manual bump in the runbook, alongside `buf.lock`, which it shares a root cause with.
 
 No `hostRules` are needed. `buf.build/gen/npm/v1/` answers unauthenticated — verified directly — and `frontend/.npmrc` carries no token, so there is no credential to supply for the dashboard to populate.
 

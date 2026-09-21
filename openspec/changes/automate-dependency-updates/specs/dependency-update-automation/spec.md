@@ -14,7 +14,12 @@ This enumeration is a statement of current coverage, not a closed set. Introduci
 
 An axis the tool has no mechanism to read SHALL NOT simply be dropped from this list. It SHALL be recorded as a known gap, together with the named human control that covers it in the tool's place — otherwise an unautomatable axis is indistinguishable from one nobody thought of, and its absence reads as completeness.
 
-Buf module dependencies recorded in `buf.lock` are such an axis at the time of writing: Renovate ships no manager or datasource for the Buf Schema Registry, and the entries are registry commit identifiers rather than versions, so no generic mechanism applies either. They are advanced by running `buf dep update` by hand, which the operational runbook names.
+Buf Schema Registry artefacts are such an axis at the time of writing, in two forms:
+
+- **`buf.lock` module dependencies.** Renovate ships no manager or datasource for the registry at all.
+- **BSR-generated Go modules** (`buf.build/gen/go/**`). A manager exists — these are ordinary `gomod` entries — but their version format defeats it. `v1.20.0-20260826021924-0ff29b2b0335.1` resembles a Go pseudo-version, so Renovate splits the embedded commit out as a digest and then cannot resolve a new one, because the module is generated output with no repository behind it. The lookup fails, and the failure takes the version update with it. Disabling digest updates does not help: the parse happens before the update type is chosen.
+
+Both are advanced by hand — `buf dep update` for the first, an explicit version bump for the second — which the operational runbook names.
 
 An axis whose declared versions are unresolvable floating references — for example a tool pinned to `latest` — cannot produce update proposals. Such declarations SHALL be replaced with concrete versions so the axis is actually covered rather than silently inert.
 
@@ -53,7 +58,9 @@ Dependencies that must move together to remain functional SHALL be proposed in a
 
 Membership of this category SHALL be established by the declared constraints between the packages, not by how far apart their version numbers look. A family whose members depend on each other with a lower bound only — where the package manager resolves to the highest requested version and no upper bound exists — is NOT version-coupled, however uneven its numbering: upgrading one member alone still builds. A family whose members pin each other exactly, or bound each other from above, is.
 
-At minimum, the following SHALL each be treated as one unit: the Aurelia packages; the Vitest packages; the Storybook packages; the Vite plugin set; the stylelint configuration and plugin set; the workbox packages, including those split across `dependencies` and `devDependencies`; the OpenTelemetry JavaScript packages; and the Pulumi provider set.
+At minimum, the following SHALL each be treated as one unit: the Aurelia packages; the Vitest packages; the Storybook packages; the Vite plugin set; the stylelint configuration and plugin set; the workbox packages, including those split across `dependencies` and `devDependencies`; and the OpenTelemetry JavaScript packages.
+
+A family MAY additionally be grouped for noise reduction where its members are NOT coupled — several small pull requests a person must review one by one are a cost even when splitting them breaks nothing. Such a grouping SHALL be recorded as what it is. It MAY be split at any time; splitting a coupled one cannot.
 
 #### Scenario: A family's versions differ but its constraints do not bind
 
