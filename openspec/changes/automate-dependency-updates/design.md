@@ -27,7 +27,7 @@ See `proposal.md` — Why. The relevant existing state:
 
 ### D1: Renovate over Dependabot
 
-Dependabot cannot read `mise` configuration files or `kustomize` manifests, both of which are live dependency axes here (`cloud-provisioning/.mise.toml`, `specification/.mise/config.toml`, `backend/k8s/`). It also cannot express cross-file grouping, which D4 depends on entirely. Renovate covers all twelve axes, supports arbitrary grouping, and supports regex-based custom managers.
+Dependabot cannot read `mise` configuration files or `kustomize` manifests, both of which are live dependency axes here (`cloud-provisioning/.mise.toml`, `specification/.mise/config.toml`, `backend/k8s/`). It also cannot express cross-file grouping, which D4 depends on entirely. Renovate covers eleven of the twelve axes, supports arbitrary grouping, and supports regex-based custom managers. The twelfth, `buf.lock`, is covered by neither tool — Renovate has no Buf Schema Registry manager or datasource — so it is not a point of comparison between them; it stays manual under either choice (D7).
 
 *Alternatives considered:* Dependabot — rejected on the coverage and grouping gaps above. A bespoke scheduled workflow generating update PRs — rejected because it would reimplement changelog fetching, version comparison, and grouping for twelve ecosystems, and the existing `bump-prod-pin.yml` shows how much workflow code a single well-defined bump already costs.
 
@@ -53,34 +53,56 @@ The `dependency-update-automation` spec requires that version-coupled sets move 
 | stylelint | `group:stylelint` |
 | Pulumi | `group:pulumi` |
 
-**Local rules — no upstream coverage:**
+**Local rules — no upstream coverage.** Only two remain. `aurelia` is a genuine version-coupled family (exact inter-package pins, verified below); `go-tools` is NOT coupled and is not claimed to be — the four `tool` entries are independent CLIs, grouped purely to keep build tooling to one pull request a month. That distinction matters: a convenience grouping may be split at any time, while splitting a coupled one breaks the build.
+
 
 | Group | Members | Automerge |
 |---|---|---|
-| `otel-go` | `go.opentelemetry.io/otel{,/metric,/sdk,/trace}`, both OTLP exporters, `contrib/.../otelgrpc`, `contrib/.../otelhttp` | yes |
-| `connectrpc-go` | `connectrpc.com/{connect,authn,cors,grpchealth,otelconnect,validate}` | yes |
 | `go-tools` | `tool` directive entries: buf, delve, mockery, gofumpt | yes |
 | `aurelia` | `aurelia`, `@aurelia/{i18n,router,testing,vite-plugin,storybook}` | yes |
 
-`group:opentelemetry-go` exists but matches `github.com/open-telemetry/**`; `backend` imports `go.opentelemetry.io/*`, so it does not apply and the local `otel-go` group is required. Core-versus-contrib version skew (`v1.44.x` core against `v0.6x` contrib) is why that group matches by family rather than by version. No upstream group covers `connectrpc.com` or Aurelia.
+Earlier drafts of this table also carried `otel-go` and `connectrpc-go` groups, on the reasoning that core-versus-contrib version skew (`v1.44.x` core against `v0.6x` contrib) meant the families had to move together. Checking the declared constraints showed that reasoning was wrong, and both were removed:
+
+| module | requires | repo has |
+|---|---|---|
+| `otelhttp v0.67.0` | `otel >= v1.42.0` | `v1.44.0` |
+| `otelgrpc v0.68.0` | `otel >= v1.43.0` | `v1.44.0` |
+| `connectrpc.com/validate v0.6.0` | `connect >= v1.19.0` | `v1.21.0` |
+| `connectrpc.com/otelconnect v0.8.0` | `connect >= v1.17.0` | `v1.21.0` |
+
+These are lower bounds with no upper bound, and Go resolves to the highest requested version — so upgrading core alone builds fine. The uneven numbering is how these projects version satellite modules, not evidence of coupling. The two contrib modules are not even in step with each other (`v0.67` against `v0.68`).
+
+Grouping them anyway would have meant overriding a deliberate upstream decision: Renovate's monorepo registry separates `opentelemetry-go` from `opentelemetry-go-contrib` precisely because they do not release together, and its own guidance warns that grouping packages which are not co-released produces immortal pull requests. Both families are therefore left entirely to upstream.
+
+Aurelia is the contrast that shows the test is worth applying rather than assuming: `@aurelia/router@2.0.0-rc.2` depends on `@aurelia/kernel@2.0.0-rc.2` **exactly**, with no caret. Advancing one package alone forces a kernel version the others do not pin, and Aurelia's DI and metadata are identity-sensitive, so duplicate copies break at runtime rather than failing to install. That family is genuinely coupled and no upstream group covers it.
 
 `workbox` is in Renovate's monorepo registry (`googlechrome/workbox`), so `group:monorepos` covers it; `vite` and `connectrpc-js` are left to upstream coverage pending verification during the observation phase (D10). A local rule is added only if the observed PRs show them ungrouped.
 
-`opentelemetry-go` is in that registry too, but pointing at `open-telemetry/opentelemetry-go` — the contrib modules live in a separate repository, so the registry would split core from contrib, which is exactly the coupling `otel-go` exists to preserve. The local rule stays for that reason, and the observation phase confirms whether it still needs to cover core as well.
-
 `@biomejs/biome` is pinned to the same exact version in `frontend` and `cloud-provisioning`. Renovate cannot group across repositories, so the two are placed on the same schedule; they will be proposed as two PRs that land close together. Accepting brief skew is cheaper than the alternatives (a shared config package, or a custom cross-repo bump workflow) for a formatter.
 
-*Ordering caveat:* preset rules are evaluated before `packageRules`, and once a preset sets a `groupSlug` a later rule cannot override it. Local rules must therefore target families the presets do not claim, rather than attempting to re-group ones they do.
+*On overriding presets:* a local `packageRule` placed after the inherited presets CAN override a grouping they set — Renovate evaluates rules in order and re-derives `groupSlug` from a later `groupName`. An earlier draft of this design asserted the opposite. The correction does not change the policy: local rules still target only families upstream does not claim, but now because reimplementing a maintained group makes it drift, not because overriding is impossible.
 
-### D4: Custom managers for the three version fan-outs
+### D4: Version fan-outs are removed, not synchronised
 
-Go (8 locations), Node (14 locations), and Playwright (3 locations) are each bound into one Renovate group using regex custom managers over the workflow YAML, `.golangci.yml`, Dockerfiles, and `AGENTS.md`, combined with the native `gomod` / `npm` / `dockerfile` managers.
+Go and Node versions are each repeated across many files — measured: nine locations for Go (five `go-version` workflow inputs, `go.mod`'s `go` and `toolchain`, the `Dockerfile` tag, `.golangci.yml`'s `go`) and fifteen for Node. An earlier draft of this design bound each into one Renovate group using regex `customManagers`, and added a CI assertion (task 7.2) to catch the regexes silently ceasing to match.
 
-The Go unit must include `go.mod`'s `go` language directive alongside `toolchain`. Renovate's `gomod` manager treats the two as separate dependencies and will propose the `go` directive on its own, which is precisely the partial update the binding exists to prevent.
+That was the wrong shape. The duplication is not a fact about Go or Node; it is a fact about this repository, and the official actions already solve it:
 
-This is the load-bearing decision of the change. Without it, a lone `go.mod` `toolchain` bump produces a PR whose CI installs Go 1.27 via `setup-go`, then silently builds with the proposed toolchain because `GOTOOLCHAIN` defaults to `auto` — a green result that verified a configuration nobody proposed.
+| tool | documented input | source |
+|---|---|---|
+| `actions/setup-go` | `go-version-file` — "Path to **go.mod**, go.work, .go-version, or .tool-versions file", and since v6 it reads the `toolchain` directive in preference to `go` | `go.mod` |
+| `actions/setup-node` | `node-version-file` — "Examples: package.json, mise.toml, **.nvmrc**, .node-version, .tool-versions" | `.nvmrc` |
+| `golangci-lint` | `run.go` — "Default: **use Go version from the go.mod file**" | `go.mod` |
 
-*Alternative considered:* deriving every location from a single source (`setup-go` supports `go-version-file: go.mod`; Dockerfiles could take a build arg). This is the better end state and removes the need for custom managers on the Go axis. It is deliberately not bundled here: it changes how CI resolves its toolchain, which is exactly the mechanism this change needs to be able to trust while it is being established. Recorded as follow-up work in `tasks.md`.
+So the workflow copies are deleted rather than kept in step, and `.golangci.yml`'s `go:` line is deleted so it derives. Go's duplication drops from nine locations to two; Node's from fifteen to six, and every one that remains is an ordinary dependency a native Renovate manager already handles at its own precision (the `golang:` and `node:` image tags, `engines.node`, `@types/node`).
+
+This deletes three custom managers and the CI assertion written to guard one of them. Nothing is left that can silently stop matching.
+
+The load-bearing hazard the earlier draft identified is removed rather than mitigated. It was: a lone `go.mod` `toolchain` bump produces a pull request whose CI installs Go via `setup-go`, then silently builds with the *proposed* toolchain because `GOTOOLCHAIN` defaults to `auto` — a green result that verified a configuration nobody proposed. With `go-version-file: go.mod`, the version `setup-go` installs and the version the build resolves come from the same declaration, so they cannot disagree.
+
+**Playwright is the exception and keeps its binding** (D5). Its third location is prose in `frontend/AGENTS.md` documenting the baseline-regeneration command, and no tool derives a version from a contributor document. That is what makes it a genuine fan-out rather than an avoidable duplication.
+
+*Alternative considered:* keeping the custom managers, on the reasoning that changing how CI resolves its toolchain is exactly the mechanism this change needs to trust while it is being established. Rejected on reflection: it builds the inferior mechanism now and defers the better one to a follow-up that would then delete it — and the switch is *more* safely done here, before Renovate is enabled, than later when a toolchain-resolution failure would be tangled up with dependency-update failures. Verifying it costs one CI run.
 
 ### D5: `@playwright/test` pinned exactly
 
@@ -92,19 +114,44 @@ Playwright is excluded from automerge because a version bump changes Chromium's 
 
 ### D6: Infrastructure credentials never reach a dependency pull request
 
-`cloud-provisioning` CI runs `make lint-ts` (biome + `tsc --noEmit`) only; `make check` also runs `vitest`, but CI never invokes it. Both gaps are closed: a `test` job, and a `pulumi-preview` job.
+The constraint that shapes this decision is what a preview must do to produce a plan: install the stack's dependencies and execute its program. `Pulumi.prod.yaml` opens with `environment: liverty-music/prod`, so ESC resolves the Cloudflare, Zitadel, GitHub and GCP credentials at stack load. Whatever those dependencies contain therefore executes with production infrastructure credentials, and the shared environment cannot be narrowed per job.
 
-The preview itself is established practice — seven runbooks document it, and the pull request template already tells reviewers to "check the CI/GitHub Actions output for the Preview result. If CI is not running, paste the local `pulumi preview` output here." CI was always its intended home.
+An earlier draft gated Pulumi automerge on an empty preview, reasoning that this made "CI green" truthful for a provider upgrade. It did — but it also meant every Renovate pull request in `cloud-provisioning` would run `npm ci` against a just-published package and execute it with those credentials, before any person had read it. Renovate pushes to branches inside the repository, so the fork protections do not apply. That turns the dependency pipeline into a path for third-party code to reach production credentials, which is the category of risk this whole change exists to reduce.
 
-The constraint that shapes the design is what a preview must do to produce a plan: install the stack's dependencies and execute its program. `Pulumi.prod.yaml` opens with `environment: liverty-music/prod`, so ESC resolves the Cloudflare, Zitadel, GitHub and GCP credentials at stack load. Whatever those dependencies contain therefore executes with production infrastructure credentials, and the shared environment cannot be narrowed per job.
+**The preview therefore must not run on automated dependency pull requests.** That conclusion is unchanged. What changed is where it has to be enforced.
 
-An earlier draft of this design gated Pulumi automerge on an empty preview, reasoning that this made "CI green" truthful for a provider upgrade. It did — but it also meant every Renovate pull request in `cloud-provisioning` would run `npm ci` against a just-published package and execute it with those credentials, before any person had read it. Renovate pushes to branches inside the repository, so the fork protections do not apply. That turns the dependency pipeline into a path for third-party code to reach production credentials, which is the category of risk this whole change exists to reduce.
+#### The preview is not in GitHub Actions
 
-**The preview therefore does not run on automated dependency pull requests.** It runs on pull requests a project member authored, where the code being executed is the author's own. Dependency pull requests in `cloud-provisioning` get lint and test only.
+That draft also assumed the preview did not exist yet and would be built as a `pulumi-preview` job. It does exist: Pulumi Cloud Deployments has `previewPullRequests: true` on both stacks, with GCP reached by OIDC rather than a stored token.
 
-The consequence is that infrastructure provider updates are not automerged. That is not a loss: Pulumi was already the clearest case in D-series reasoning where a reviewer holds something the gate cannot supply — the preview output itself. The reviewer runs it, exactly as the pull request template and runbooks already prescribe.
+| | dev | prod |
+|---|---|---|
+| `previewPullRequests` | true | true |
+| `deployCommits` | true | *(absent — no apply on merge)* |
+| trigger `paths` | `src/**`, `Pulumi.dev.yaml` | `src/**` |
+| `skipInstallDependencies` | false | false |
 
-*Alternatives considered:* gating the preview job behind a GitHub Environment with required reviewers for bot pull requests — rejected because approving that job means approving execution of code the approver has not read, the same ceremony-instead-of-verification failure identified elsewhere in this change. Relying on the release-age delay alone — rejected because it shortens the window without closing it, and would make that delay load-bearing for a threat it was not designed to stop.
+Nothing in the repository records this. The settings exist only in the Pulumi Cloud console, and `docs/runbooks/pulumi-state-recovery.md` already cites a `Pulumi.dev.deploy.yaml` that was never committed — the runbook points at a file that does not exist.
+
+Building the GitHub Actions job anyway was considered and rejected on three grounds: it previews twice per pull request; it would add a `PULUMI_ACCESS_TOKEN` secret where OIDC already works, trading a short-lived exchange for a stored long-lived credential; and, decisively, **it would not implement the control it was written to implement**. A GitHub Actions `if:` condition governs a GitHub Actions job. It has no effect on whether Pulumi Cloud runs a preview.
+
+#### The control is a trigger path, and today it is accidental
+
+Given `previewPullRequests: true` and `skipInstallDependencies: false`, a Renovate pull request *should* already be executing an unreviewed package against production credentials. It is not — because the trigger `paths` list `src/**` and a stack YAML, and a Renovate pull request touches only `package.json` and `package-lock.json`.
+
+So the property D6 exists to guarantee holds today, by coincidence. Nobody chose it, nothing records it, and the obvious improvement — "a dependency change alters what the program does, so it should trigger a preview" — opens the exposure the moment someone acts on it. A safeguard that survives only until a reasonable person edits a config file is not a safeguard.
+
+This change therefore makes it explicit rather than incidental:
+
+- The deployment settings are committed as `Pulumi.{dev,prod}.deploy.yaml`, so the `paths` list is reviewable, diffable, and subject to the same gate as any other change.
+- `Pulumi.prod.yaml` is added to the prod stack's `paths`. Its absence is a real gap in the opposite direction: a pull request editing only prod stack configuration changes what would be deployed and is previewed by nothing.
+- Dependency manifests are deliberately NOT added, with the reason recorded inline next to the list — so the next person to consider adding them reads why they must not.
+
+The consequence for automerge is unchanged: infrastructure provider updates are not automerged. That is not a loss. Pulumi was already the clearest case in D-series reasoning where a reviewer holds something the gate cannot supply — the preview output itself. The reviewer runs it, exactly as the pull request template and runbooks already prescribe.
+
+*Alternatives considered:* gating the preview behind a GitHub Environment with required reviewers for bot pull requests — rejected because approving that job means approving execution of code the approver has not read, the same ceremony-instead-of-verification failure identified elsewhere in this change. Relying on the release-age delay alone — rejected because it shortens the window without closing it, and would make that delay load-bearing for a threat it was not designed to stop. Turning `previewPullRequests` off for prod and previewing only from GitHub Actions — rejected as a larger, riskier migration than the gap warrants, and it would lose the OIDC credential path.
+
+*Separately:* `cloud-provisioning` CI ran `make lint-ts` only, while `make check` is `lint-ts test`, so the repository's vitest suite never ran on a pull request. That gap is real, unrelated to the preview, and closed by adding a `test` job.
 
 ### D7: Schema SDK exclusion is visible, not silent
 
@@ -112,7 +159,9 @@ The consequence is that infrastructure provider updates are not automerged. That
 
 `buf.build/gen/go/pocketsign/apis/*` is *not* excluded — it is a third-party schema on someone else's release cadence, where falling behind is the risk rather than the safeguard.
 
-Renovate needs `hostRules` credentials for `buf.build/gen/npm/v1/` to read `@buf` package metadata at all. Those are still required even though the liverty-music packages are disabled, because the datasource is consulted to populate the dashboard.
+No `hostRules` are needed. `buf.build/gen/npm/v1/` answers unauthenticated — verified directly — and `frontend/.npmrc` carries no token, so there is no credential to supply for the dashboard to populate.
+
+**The exclusion is scoped to `liverty-music/*`, deliberately, and is not widened to "BSR packages".** Excluding everything from the Buf Schema Registry would be simpler to state and would be wrong: the reason for excluding our own schema is that `backend` and `frontend` must sit on the same build and an independently-scheduled bump would break that correspondence while leaving the code migration undone. That reason is a property of *ours*, not of the registry. It does not transfer to `buf.build/gen/go/pocketsign/apis/*`, where nobody here controls the cadence and falling behind is the risk rather than the safeguard — nor to the third-party modules in `specification/buf.lock` (`bufbuild/protovalidate`, `googleapis/googleapis`), which sit on the same side of that line and are unautomatable for an unrelated reason: Renovate has no Buf Schema Registry manager or datasource at all. Those are advanced by `buf dep update`, run by a person, and named in the runbook (task 11.3).
 
 ### D8: The Go toolchain comment is documentation, not a constraint
 
@@ -215,12 +264,41 @@ When GA is published it arrives as an ordinary update within the existing range,
 
 Withholding Aurelia from automerge would repeat the mistake corrected elsewhere in this change — a reviewer reading an Aurelia version bump sees no more than the pipeline does. So the skipped tests are repaired as a required task and Aurelia automerge is gated on that, in the same shape as the workbox gate. What had been an open question is closed: once the governing rule existed, it applied here identically, and leaving it open was an inconsistency rather than a deferral.
 
+### D18: Build-regenerated artefacts are not gated on freshness
+
+Some generated files are committed to a repository even though the build regenerates them from scratch on every run. No CI check asserts that the committed copy matches what a regeneration would produce, and none is added, because such a check would make every dependency update pull request red.
+
+The mechanism is direct: a dependency bump changes the tree the generator reads, so the artefact's correct content changes with it. Renovate proposes the manifest and lock file change but cannot regenerate the artefact, so a freshness gate fails on exactly the pull requests this change wants to automerge — and fails them for a reason that has nothing to do with whether the update is safe. Automerge stops working across the board, and the only ways out are to disable the gate again or to hand-run the generator on every update.
+
+What such a gate would protect is already protected. `frontend/src/generated/oss-licenses.json` is the worked example: `package.json` wires `"prebuild": "npm run licenses:generate"`, and `frontend/Dockerfile` runs `npm run build`, so the shipped image regenerates the file from the tree `npm ci` actually installed. The stale committed copy never reaches production. It is committed for a different reason entirely — `src/routes/legal/licenses-route.ts` imports it statically, so the file must exist for the dev server and Vitest to resolve the module. Its committed *content* is not what anything depends on.
+
+The project has already classified these files this way. `frontend/.github/workflows/claude-code-review.yml` carries `paths-ignore: ['**/oss-licenses.json']` under the comment "Skip review on generated / machine-managed files to cut review noise" — the same judgement, applied to review rather than to CI.
+
+On-disk drift is therefore accepted rather than tracked. It exists today and is harmless: on `origin/main` the committed `oss-licenses.json` records `@bufbuild/protobuf` at `2.14.1` while the lock file beside it resolves `2.15.0`. It is resolved opportunistically, when someone's build happens to produce the diff, and is not actively chased.
+
+*Alternatives considered:*
+
+- **Have Renovate regenerate the artefact via `postUpgradeTasks`.** Not available to rely on. The commands are gated by `allowedCommands`, which is a self-hosted-only administrative option — "If this list is empty then no tasks will be executed." On the Mend-hosted app selected in D1, that list is Mend's, not ours: the documentation states only that "a limited set of approved `postUpgradeTasks` commands are allowed in the app. The commands are not documented, as they may change over time." **Requires verification** whether any command capable of regenerating a project artefact is on that allowlist; it can only be determined by reading the `allowedCommands` line in Renovate's own log output, which cannot be done before the app is installed (task 5.4). Until then this option is treated as unavailable, and even if a usable command were found, an undocumented allowlist that "may change over time" is not a foundation for the automerge policy.
+- **Add the freshness gate and accept the red pull requests.** Rejected: it trades the entire automerge policy for a property the build already guarantees.
+- **Stop committing the artefact.** This is the correct remedy *if* the drift ever becomes a practical nuisance — `gitignore` it, and generate it on the dev and test paths as well as the build, so the static import still resolves. Recorded here so that a future contributor who notices the drift reaches for this rather than for a freshness gate. It is not done now because nothing currently depends on the committed copy being accurate, so the change would be cost without benefit.
+
+
 ## Risks / Trade-offs
 
-- **A custom manager's regex silently stops matching** after a workflow is reformatted, so one location of a fan-out is quietly left behind — the exact failure the grouping exists to prevent. → Add an assertion that fails CI when the Go-version locations disagree with `go.mod`, so drift is caught by the pipeline rather than by a regex that matched nothing.
-- **Automerge lands a green-but-wrong change** in an area CI does not observe. The audit found four such areas; three are closed here (WebKit, Pulumi preview, `cloud-provisioning` tests). The fourth was the PWA specs excluded from CI, which would leave `workbox` and `vite-plugin-pwa` unverified. → Withholding them from automerge was considered and rejected: a reviewer opening a `workbox` bump sees a version and a lock file and cannot evaluate Service Worker behavior, so that route produces ceremony, not verification. The gap is closed instead. `pwa-offline-cache.spec.ts` drives offline through `context.setOffline()`, a core Playwright API that works in headless Chromium, so its recorded exclusion reason ("not available in CI headless") appears stale and is re-verified in task 2.5. `pwa-install-prompt.spec.ts` genuinely cannot run — `beforeinstallprompt` depends on browser install heuristics — and remains an enumerated gap, but it constrains `vite-plugin-pwa` manifest behavior rather than workbox caching.
+- **A custom manager's regex silently stops matching** after a file is reformatted, leaving one location of a fan-out quietly behind — the exact failure the grouping exists to prevent. → Mostly designed out rather than mitigated: D4 removes the Go and Node duplication instead of synchronising it, so there is nothing left for a regex to miss and the CI assertion that would have guarded one is not needed. One custom manager remains, for Playwright, because its third location is prose in `AGENTS.md`. That one is checked by running the pattern against the real files rather than assumed to match.
+- **Automerge lands a green-but-wrong change** in an area CI does not observe. The audit found four such areas; three are closed here (WebKit, Pulumi preview, `cloud-provisioning` tests). The fourth was the PWA coverage, and re-verification found it worse than the audit recorded: the `pwa` project matched **zero specs**, because all three specs in `e2e/pwa/` sat in its `testIgnore`. CI was starting an empty project and reporting it green, so `workbox` and `vite-plugin-pwa` had no coverage at all rather than partial coverage. → Withholding them from automerge was considered and rejected: a reviewer opening a `workbox` bump sees a version and a lock file and cannot evaluate Service Worker behavior, so that route produces ceremony, not verification. The gap is closed instead.
+
+  The recorded exclusion reason for `pwa-offline-cache.spec.ts` ("not available in CI headless") was indeed stale — `context.setOffline()` works in headless Chromium — but that was not what blocked it. `vite.config.ts` sets vite-plugin-pwa's `devOptions.enabled: false` and the e2e web server is the dev server, so no service worker existed to test; the spec failed with a blank page. Un-ignoring it, which is what task 2.5 originally prescribed, would have produced a red spec rather than coverage. The specs now run from `playwright.pwa.config.mjs` against `vite preview` over a production build.
+
+  The assertions were rewritten at the same time, and this mattered more than the environment fix. The spec asserted `expect(bodyText).toBeTruthy()` — satisfied even when no service worker was ever registered — so it could not have detected a workbox regression had it been running all along. It now asserts the worker reaches `activated` and controls the page, and that the precache holds the app shell and its route chunks. It deliberately does not assert offline *navigation*: Playwright's offline emulation fails the top-level navigation before the service worker is consulted, and precache contents are what an upgrade actually breaks.
+
+  The gap therefore splits. **`workbox` precaching is now covered.** `pwa-install-prompt.spec.ts` still genuinely cannot run — `beforeinstallprompt` depends on browser install heuristics — so `vite-plugin-pwa`'s *manifest / install-prompt* behaviour remains an enumerated gap, narrower than "PWA" and distinct from caching.
+
+- **The WebKit gate this change adds is itself unreliable.** Once `webkit-repro` was actually executed, it proved intermittently red: 8 passes / 2 failures over 10 local runs, against 3/3 for `chromium-control`. The failure is the defect the spec exists to catch — the page-help bottom sheet dismissing itself shortly after opening, on real WebKit only — so the `IntersectionObserver` "just-opened" guard does not hold reliably. → Not mitigated here, and deliberately not retried away: `retries: 2` will usually mask it, which is precisely the failure mode this change is trying to eliminate elsewhere. It is recorded in `frontend/docs/ci-coverage-gaps.md` as an open product defect. Until it is fixed, WebKit-sensitive automerge rests on a gate that flakes, and the honest reading is that the WebKit gap is *narrowed*, not closed.
 - **Grouped PRs are harder to bisect.** A ten-package OpenTelemetry PR that breaks a test gives a coarser signal than ten separate PRs. → Accepted: the packages cannot be upgraded separately anyway, so the finer signal was never actually available.
-- **A preview job resolves write-capable provider credentials through ESC, and running it executes the stack's dependencies** (D6). → The exposure is removed rather than narrowed: the preview does not run on automated dependency pull requests, so third-party code never executes with those credentials. It runs only on pull requests a project member authored, and never on fork pull requests. Residual risk is a malicious commit pushed directly to a branch by someone who already has write access.
+- **The preview resolves write-capable provider credentials through ESC, and running it executes the stack's dependencies** (D6). → The exposure is removed rather than narrowed: automated dependency pull requests do not trigger a preview, so third-party code never executes with those credentials. Residual risk is a malicious commit pushed directly to a branch by someone who already has write access.
+
+  The sharp edge is that this protection is **one config line deep, in a file this project did not previously control**. It holds because the Pulumi Cloud trigger `paths` do not list dependency manifests, while `previewPullRequests: true` and `skipInstallDependencies: false`. Committing the deployment settings and recording the reason inline is the mitigation; it does not make the setting harder to change, only harder to change *unknowingly*. Anyone who adds `package.json` to that list re-opens the exposure, and no GitHub Actions configuration can prevent it — which is precisely why D6 rejected implementing the control there.
 - **The org preset is the highest-leverage file in this change and sits in the least protected repository.** A careless or hostile edit to `renovate-config.json` silently changes automerge behaviour across four repositories. "Pulumi-managed" describes how `.github`'s settings are declared; it is not a review gate on commits landing in `.github`, which per D11 has no branch protection and no CI of its own. → Not mitigated by this change. Follow-up 12.4 (giving `.github` its own CI and protection) is the actual remedy, and this risk is the strongest argument for doing it.
 
 ## Migration Plan

@@ -48,19 +48,36 @@ Each enumerated gap SHALL name the control that addresses it. Automated merge po
 - **THEN** that control SHALL be considered insufficient
 - **AND** the gap SHALL be addressed by restoring pipeline coverage
 
-### Requirement: cloud-provisioning CI previews infrastructure changes
+### Requirement: cloud-provisioning previews infrastructure changes on pull requests
 
-The `cloud-provisioning` CI workflow SHALL run an infrastructure preview on pull requests that a member of the project authored, and SHALL report whether the change would alter any live resource. A type check alone SHALL NOT be treated as sufficient verification for a change to infrastructure code.
+Every pull request that a project member authors and that alters what the infrastructure stack would deploy SHALL be previewed, and the preview SHALL report whether the change would alter any live resource. A type check alone SHALL NOT be treated as sufficient verification for a change to infrastructure code.
 
-Running a preview requires installing the stack's dependencies and executing its program, so whatever code those dependencies contain runs with the credentials the preview resolves. Those credentials cannot be narrowed per job — the stack resolves its providers from a shared secrets environment — so the exposure is governed by controlling *which pull requests* reach the job, not by scoping what the job may do.
+This requirement does not prescribe where the preview runs. It MAY be produced by the repository's CI workflow or by the infrastructure tool's own pull-request integration. What it does require is that the set of inputs that trigger it actually covers what the stack reads: if stack configuration is an input to the deployed result, a pull request editing only stack configuration SHALL be previewed.
 
-The preview job SHALL NOT run on a pull request whose content was proposed by automation rather than written by a project member. An automated dependency-update pull request introduces third-party code that has not been read by anyone, and running the preview on it would execute that code with production infrastructure credentials before any review. Pull requests originating from a fork SHALL likewise be excluded.
+Running a preview requires installing the stack's dependencies and executing its program, so whatever code those dependencies contain runs with the credentials the preview resolves. Those credentials cannot be narrowed per job — the stack resolves its providers from a shared secrets environment — so the exposure is governed by controlling *which pull requests* reach the preview, not by scoping what the preview may do.
+
+A pull request whose content was proposed by automation rather than written by a project member SHALL NOT be previewed. An automated dependency-update pull request introduces third-party code that has not been read by anyone, and previewing it would execute that code with production infrastructure credentials before any review. Pull requests originating from a fork SHALL likewise be excluded.
+
+That exclusion SHALL be an explicit, recorded control, expressed in the same place the preview's trigger is configured and carrying its reason. An exclusion that holds only as an unstated side-effect of some other setting SHALL NOT be treated as satisfying this requirement: it is indistinguishable from an oversight, and the next person to revise that setting has nothing telling them what they would be removing.
+
+The configuration carrying that control SHALL be version-controlled and subject to review, so that a change to it is visible as a change.
 
 Consequently, infrastructure provider updates SHALL NOT be automatically merged. They SHALL be reviewed by a person, who obtains the preview by running it themselves — which is the workflow the repository's pull request template and runbooks already describe.
 
 The preview job SHALL execute only the preview operation and SHALL contain no path that applies changes.
 
 Its result SHALL be reported on the pull request so a reviewer can act on it.
+
+#### Scenario: The exclusion holds only by coincidence
+
+- **WHEN** automated pull requests are not previewed only because the trigger's input filter happens not to match the files such a pull request touches, and no record states that this is intended
+- **THEN** the exclusion SHALL NOT be considered a control satisfying this requirement
+- **AND** it SHALL be made explicit and recorded where the trigger is configured
+
+#### Scenario: A pull request edits only stack configuration
+
+- **WHEN** a project member's pull request changes only the stack's configuration, and that configuration is an input to what would be deployed
+- **THEN** the preview SHALL run
 
 #### Scenario: An automated dependency update touches the infrastructure stack
 
@@ -79,15 +96,15 @@ Its result SHALL be reported on the pull request so a reviewer can act on it.
 - **WHEN** a project member's pull request preview reports no resource changes
 - **THEN** that result SHALL be distinguishable from a preview that reported changes
 
-#### Scenario: The preview job is inspected for an apply path
+#### Scenario: The preview is inspected for an apply path
 
-- **WHEN** the preview workflow is inspected
-- **THEN** it SHALL contain no step that applies infrastructure changes
+- **WHEN** the preview's configuration is inspected
+- **THEN** it SHALL contain no path that applies infrastructure changes on a pull request or on merge
 
 #### Scenario: A pull request originates from a fork
 
 - **WHEN** a pull request is opened from a fork
-- **THEN** the preview job SHALL NOT run with repository secrets available to the fork's code
+- **THEN** the preview SHALL NOT run with infrastructure credentials available to the fork's code
 
 ### Requirement: cloud-provisioning CI runs its test suite
 

@@ -8,11 +8,21 @@ Defines how dependency updates are proposed, grouped, and merged across the live
 
 Each of `backend`, `frontend`, `cloud-provisioning`, and `specification` SHALL have automated dependency update proposals enabled. Shared policy — scheduling, grouping of cross-cutting ecosystems, automerge defaults, and concurrency limits — SHALL be expressed once in an organization-level configuration and inherited by each repository, so that a policy change takes effect across all four without editing each repository. Repository-specific rules SHALL extend, and MAY override, the inherited policy.
 
-The automation SHALL cover every dependency axis present in the repositories. As of this change those are: Go modules; Go `tool` directives; the Go toolchain; npm packages; npm `overrides`; GitHub Actions; Docker base images; mise tools; Pulumi providers; pre-commit hook revisions; Buf module dependencies recorded in `buf.lock`; and container image tags in kustomize manifests.
+The automation SHALL cover every dependency axis present in the repositories for which the chosen tool provides a mechanism. As of this change those are: Go modules; Go `tool` directives; the Go toolchain; npm packages; npm `overrides`; GitHub Actions; Docker base images; mise tools; Pulumi providers; pre-commit hook revisions; and container image tags in kustomize manifests.
 
 This enumeration is a statement of current coverage, not a closed set. Introducing a manifest that declares external dependencies in a form none of the above covers SHALL be treated as introducing a new axis requiring configuration, not as a dependency exempt from automation.
 
+An axis the tool has no mechanism to read SHALL NOT simply be dropped from this list. It SHALL be recorded as a known gap, together with the named human control that covers it in the tool's place — otherwise an unautomatable axis is indistinguishable from one nobody thought of, and its absence reads as completeness.
+
+Buf module dependencies recorded in `buf.lock` are such an axis at the time of writing: Renovate ships no manager or datasource for the Buf Schema Registry, and the entries are registry commit identifiers rather than versions, so no generic mechanism applies either. They are advanced by running `buf dep update` by hand, which the operational runbook names.
+
 An axis whose declared versions are unresolvable floating references — for example a tool pinned to `latest` — cannot produce update proposals. Such declarations SHALL be replaced with concrete versions so the axis is actually covered rather than silently inert.
+
+#### Scenario: An axis has no mechanism in the chosen tool
+
+- **WHEN** a dependency axis exists in the repositories and the update tool provides no manager or datasource able to read it
+- **THEN** the axis SHALL be recorded as a known gap rather than omitted from the enumeration
+- **AND** the human action that advances it SHALL be named
 
 #### Scenario: A tool is declared as a floating reference
 
@@ -28,7 +38,7 @@ An axis whose declared versions are unresolvable floating references — for exa
 
 #### Scenario: A dependency axis receives an upstream release
 
-- **WHEN** a new version is published for a dependency in any of the twelve covered axes
+- **WHEN** a new version is published for a dependency in any of the covered axes
 - **THEN** an update proposal SHALL be raised for it, unless that dependency is excluded by another requirement in this specification
 
 #### Scenario: A repository needs a rule the others do not
@@ -41,7 +51,15 @@ An axis whose declared versions are unresolvable floating references — for exa
 
 Dependencies that must move together to remain functional SHALL be proposed in a single pull request rather than individually. A set of dependencies is version-coupled when upgrading a strict subset of it leaves the repository in a state that does not build, does not pass its tests, or behaves inconsistently.
 
-At minimum, the following SHALL each be treated as one unit: the OpenTelemetry Go modules (core and contrib together); the Connect-RPC Go modules; the Aurelia packages; the Vitest packages; the Storybook packages; the Vite plugin set; the stylelint configuration and plugin set; the workbox packages, including those split across `dependencies` and `devDependencies`; the OpenTelemetry JavaScript packages; and the Pulumi provider set.
+Membership of this category SHALL be established by the declared constraints between the packages, not by how far apart their version numbers look. A family whose members depend on each other with a lower bound only — where the package manager resolves to the highest requested version and no upper bound exists — is NOT version-coupled, however uneven its numbering: upgrading one member alone still builds. A family whose members pin each other exactly, or bound each other from above, is.
+
+At minimum, the following SHALL each be treated as one unit: the Aurelia packages; the Vitest packages; the Storybook packages; the Vite plugin set; the stylelint configuration and plugin set; the workbox packages, including those split across `dependencies` and `devDependencies`; the OpenTelemetry JavaScript packages; and the Pulumi provider set.
+
+#### Scenario: A family's versions differ but its constraints do not bind
+
+- **WHEN** members of a family carry visibly different version numbers, and each depends on the others with a lower bound only
+- **THEN** the family SHALL NOT be treated as version-coupled
+- **AND** a local grouping rule for it SHALL NOT override a maintained upstream grouping that separates them
 
 #### Scenario: One member of a coupled set is released
 
@@ -58,11 +76,15 @@ At minimum, the following SHALL each be treated as one unit: the OpenTelemetry G
 
 Where one logical version is recorded in more than one file, all of its locations SHALL be updated by the same pull request. Updating a strict subset is prohibited, because the resulting pipeline would verify a configuration that does not match what is being proposed.
 
-The following fan-outs SHALL each be bound into one unit:
+**A duplicated version SHALL be eliminated rather than synchronised, wherever the toolchain can derive it from a single declaration.** Keeping copies in step needs a mechanism that keeps working — a pattern that must keep matching after a file is reformatted, and a check to catch it when it stops. Removing the copies needs nothing. Where a build or CI tool accepts a version file in place of a literal, that form SHALL be used, and the remaining declaration is the single source.
 
-- **Go version** — the `go` language directive and the `toolchain` directive in `backend/go.mod`, the builder image tag in `backend/Dockerfile`, the `go` setting in `backend/.golangci.yml`, and every `go-version` input across `backend`'s workflows (eight locations at the time of writing).
-- **Node version** — every `node-version` workflow input across `frontend` and `cloud-provisioning`, every Node base image tag in `frontend`'s Dockerfiles, `cloud-provisioning`'s declared `engines.node` range, and the `@types/node` major in both repositories' manifests (fourteen locations at the time of writing).
-- **Playwright version** — the `@playwright/test` package version, the Playwright container image tag used by the component-test CI job, and the same image tag in the documented baseline-regeneration command, which must match the CI job's image for baselines to be reproducible.
+Only a version that genuinely cannot be derived SHALL be bound as a synchronised unit, and that binding SHALL be justified by the absence of a derivation, not chosen for convenience.
+
+At the time of writing:
+
+- **Go version** — `backend/go.mod` is the single source. `setup-go` reads it via `go-version-file`, and golangci-lint reads it when its `go` setting is absent. The builder image tag in `backend/Dockerfile` records the version at coarser precision and is managed as an ordinary container dependency, not as a copy to be synchronised.
+- **Node version** — a version file per repository is the single source, read by `setup-node` via `node-version-file`. The Node base image tags and the declared `engines.node` range are ordinary dependencies at their own precision.
+- **Playwright version** — NOT derivable, and therefore bound as a unit: the `@playwright/test` package version, the Playwright container image tag used by the component-test CI job, and the same image tag in the documented baseline-regeneration command. The third is prose in a contributor document, which no tool can derive, and it must match the CI job's image for committed visual baselines to be reproducible.
 
 Because the locations of a fan-out record the version at differing precision — some carry a full patch version, others only major or major-minor — the unit SHALL define how a proposed version projects onto each location. A location whose recorded precision does not change under a given bump SHALL be treated as already satisfying that bump, and its unchanged state SHALL NOT be interpreted as a partial update.
 
@@ -71,8 +93,13 @@ The `@playwright/test` version SHALL be recorded as an exact version rather than
 #### Scenario: The Go minor version is upgraded
 
 - **WHEN** an update crossing a Go minor version is proposed
-- **THEN** the pull request SHALL update every Go-version location to the proposed version at that location's recorded precision
-- **AND** the CI run for that pull request SHALL build and lint using the proposed version, not the previous one
+- **THEN** the CI run for that pull request SHALL build and lint using the proposed version, not the previous one
+
+#### Scenario: A duplicated version could be derived instead
+
+- **WHEN** a version is repeated across files and the consuming tools accept a version file in place of the literal
+- **THEN** the repetition SHALL be removed by deriving from a single declaration
+- **AND** a pattern-matching rule to keep the copies in step SHALL NOT be introduced in its place
 
 #### Scenario: A bump does not alter a coarser location
 

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": [
+    "Inherits the organization policy and adds nothing. This file exists so that the absence of local rules is a recorded decision rather than an oversight.",
+    "This repository has three automatable dependency axes — GitHub Actions, mise tools (buf, pre-commit) and the pre-commit hook revision — and Renovate's native managers cover all three. There is no npm manifest, no go.mod and no Dockerfile here, and no version-coupled family that the inherited presets do not already group.",
+    "It has a fourth axis that is NOT automatable: the Buf module dependencies in buf.lock. Renovate ships no Buf Schema Registry manager or datasource, and the entries are registry commit identifiers rather than versions, so no generic mechanism applies. Those are advanced by running `buf dep update` by hand. Nothing here will remind anyone — the operational runbook is the only control."
+  ],
+  "extends": ["local>liverty-music/.github:renovate-config"]
+}
