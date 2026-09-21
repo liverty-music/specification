@@ -9,7 +9,14 @@ You classify every `### Requirement:` block of the specs assigned to you into th
 - Each spec at `openspec/specs/<old_spec>/spec.md`.
 
 ## What belongs in openspec
-Only what the product does for its users (fan, organizer, admin). Code conventions, lint rules, CI, deployment, infrastructure, operations, test inventories, design tokens do NOT. When in doubt whether a requirement describes user-facing behavior, ask: "does a fan or organizer observe this?" If no actor observes it, it is OUT.
+The product's own specification. The test is NOT "does a fan observe this" — it is "is this what the product does". That includes:
+- UI behavior of every app (fan, admin, organizer, hosted login)
+- API contracts: inputs, outputs, error codes, authorization rules, idempotency, rate limits, event-publishing contracts
+- Background behavior: discovery pipelines, lottery draws, notification delivery, reminders
+- Entity invariants and data semantics
+It excludes things that are not the product: CI, deployment, infrastructure provisioning, operational procedures, code/style conventions, test inventories, observability plumbing (tracing, log formats), and performance-only implementation choices (cache strategy, DI wiring). "No user actor" is never a sufficient reason for OUT.
+
+Cross-cutting API rules (e.g. "per-user RPCs require the caller's own user_id", "operations on a missing User return NotFound") are invariants of the entity they protect: put them in `components/entity/<entity>`, once, not copied into every usecase.
 
 ## Decision tree — apply IN ORDER, take the FIRST match
 1. Describes a user's multi-step goal across screens/layers → `stories/<story>` (write the story name as a verb phrase, e.g. `stories/follow-an-artist`; stories are not yet in vocabulary — these are proposals, mark confidence ≤ medium)
@@ -18,7 +25,7 @@ Only what the product does for its users (fan, organizer, admin). Code conventio
 4. Non-UI user-experience infrastructure (push, service-worker, locale, email) → `components/infrastructure/<kind>/<name>` (kind from vocabulary; propose `<name>` in kebab-case)
 5. Backend response/state change for one operation → `components/usecase/<entity>/<method>` (must exist in vocabulary)
 6. Invariant of an entity itself (fields, identity, validation) → `components/entity/<entity>`
-7. No user actor appears → `OUT:lint` (code/style rule) | `OUT:runbook` (operational constraint) | `OUT:design-doc` (technology decision) | `OUT:delete` (CI/deploy mechanics with no lasting value)
+7. Not the product's specification (see above) → `OUT:lint` (code/style rule) | `OUT:runbook` (operational constraint) | `OUT:design-doc` (technology/implementation decision) | `OUT:delete` (CI/deploy mechanics with no lasting value)
 8. Otherwise → `NEEDS_HUMAN`
 
 ## Tie-breaks (never copy a requirement to two targets)

@@ -1,0 +1,181 @@
+old_spec	old_req_name	current_disposition	current_rationale
+admin-console	Bundle isolation from the consumer SPA	OUT:design-doc	No user actor directly; Vite/Rollup chunk-graph separation is a build architecture decision, a fan never observes bundle composition
+admin-console	Dedicated source directory with an enforced import boundary	OUT:lint	No user actor; automated lint/CI check fails the build on src/ <-> admin/ cross-import
+admin-rpc-server	Dedicated admin Connect server	OUT:design-doc	separate-port server topology; internal architecture, no user actor observes port separation
+admin-rpc-server	Shared server construction to prevent interceptor drift	OUT:design-doc	internal interceptor-chain construction pattern; no user actor
+admin-rpc-server	Dedicated admin API ingress host	OUT:design-doc	ingress/DNS/cert topology for admin host; infra architecture, no user actor
+analytics-consent	Anonymous behaviour is merged into the identified profile on login	OUT:design-doc	posthog.identify() merge behavior is internal telemetry plumbing, not user-observed
+apex-frontend-serving	Apex hostname SHALL be served end-to-end via the GKE Gateway with a Google-managed TLS certificate	OUT:runbook	Gateway/TLS/cert provisioning for the apex domain; deployment infra, no user actor.
+apex-frontend-serving	Apex serving SHALL route to the `fan-web-app` frontend Service via HTTPRoute hostname matching	OUT:runbook	HTTPRoute hostname-matching wiring; deployment infra, no user actor.
+apex-frontend-serving	Apex serving SHALL NOT use Cloudflare Proxy on initial deploy	OUT:runbook	DNS-proxy configuration decision; deployment infra, no user actor.
+apex-frontend-serving	Apex serving prod-stack resources SHALL be `protect: true`	OUT:runbook	Pulumi resource-protection flagging; deployment infra, no user actor.
+api-rate-limiting	Rate limiter interceptor placement	OUT:design-doc	Interceptor chain ordering is an implementation/architecture decision; no user actor.
+api-rate-limiting	Rate limiter memory management	OUT:design-doc	Idle-entry eviction is an implementation detail; no user actor.
+api-rate-limiting	Rate limit configuration via environment variables	OUT:design-doc	Environment-variable configuration mechanism; no user actor.
+artist-image	Best Image Selection	OUT:design-doc	pure selection algorithm (BestByLikes); no user actor, subsumed by Fanart Proto Mapper's selection behavior
+artist-image	Fanart Proto Mapper	OUT:design-doc	internal mapper layer (domain->proto conversion); no user actor, implementation detail
+artist-image	Fanart Database Storage	OUT:design-doc	JSONB column/storage schema detail; no user actor
+artist-image	ArtistImageResolver Interface	OUT:design-doc	internal Go interface for external image resolution; no user actor
+artist-image	fanart.tv API Client	OUT:design-doc	external HTTP client implementation detail; no user actor
+aurelia-reactivity	Watch-based reactive observation	OUT:lint	Framework-usage convention (@watch decorator); no user actor.
+aurelia-reactivity	Computed property caching	OUT:lint	Framework-usage convention (@computed decorator); no user actor.
+aurelia-reactivity	Batched multi-property updates	OUT:lint	Framework-usage convention (batch()); no user actor.
+aurelia-reactivity	Observable for side-effect properties	OUT:lint	Framework-usage convention (@observable decorator); no user actor.
+aurelia-reactivity	Collection observation via native Set binding	OUT:lint	Template-binding convention for Set.has(); no user actor.
+aurelia-template-optimization	Keyed list rendering	OUT:lint	Aurelia 2 template/binding coding convention; no user actor, per spec Purpose
+aurelia-template-optimization	Switch-based multi-branch conditionals	OUT:lint	Aurelia 2 template/binding coding convention; no user actor, per spec Purpose
+aurelia-template-optimization	Show binding for frequently toggled elements	OUT:lint	Aurelia 2 template/binding coding convention; no user actor, per spec Purpose
+aurelia-template-optimization	Class binding syntax for conditional CSS classes	OUT:lint	Aurelia 2 template/binding coding convention; no user actor, per spec Purpose
+aurelia-template-optimization	Throttle binding behavior on continuous event handlers	OUT:lint	Aurelia 2 template/binding coding convention; no user actor, per spec Purpose
+authentication	User ID Propagation	OUT:design-doc	internal request-context plumbing (external_id propagation); cross-cutting infra with no entity/usecase mapping
+authentication	Email Verified Claim Injection	OUT:design-doc	"forward-looking Zitadel Action plumbing; rationale states \""no current feature requires it\"" -- no user actor yet"
+authentication	JWKS Caching	OUT:design-doc	backend caching/performance implementation detail; no user actor
+authentication	Token Validation Performance	OUT:design-doc	backend latency SLA implementation detail; no user actor
+auto-concert-discovery	Circuit Breaker on Consecutive Failures	OUT:runbook	batch-job resilience mechanism; no user actor
+auto-concert-discovery	Job Always Exits Successfully	OUT:runbook	CronJob exit-code semantics; no user actor
+auto-concert-discovery	Job-Specific Dependency Injection	OUT:design-doc	DI/initialization architecture for the batch job; no user actor
+auto-concert-discovery	Consumer JetStream Delivery Policy	OUT:design-doc	NATS JetStream consumer configuration; no user actor
+auto-concert-discovery	Consumer JetStream Acknowledgement Policy	OUT:design-doc	NATS JetStream Ack configuration; no user actor
+brand-vocabulary	Entity Namespace Mirrors Protobuf Names	OUT:lint	mechanical i18n key-path derivation rule; dev-facing convention, not observed by a fan directly
+bulk-insert-unnest	Bulk artist creation via unnest	OUT:design-doc	repository-layer SQL insert strategy, no user actor
+bulk-insert-unnest	Concert bulk insert via unnest	OUT:design-doc	repository-layer SQL insert strategy, no user actor
+concert-search-internals	Usecase layer SHALL NOT import infrastructure packages	OUT:lint	Go Clean-Architecture import-boundary rule for internal/usecase; no user actor
+concert-search-internals	Search status marking SHALL use defer pattern	OUT:lint	Code-structure rule for executeSearch's defer usage; no user actor
+concert-search-internals	Time-dependent tests SHALL use testing/synctest	OUT:lint	Test-methodology rule (Go testing/synctest); no user actor
+concert-search-internals	resolveUserID SHALL NOT be duplicated	OUT:lint	DRY code-convention for a shared internal helper function; no user actor
+concert-search-internals	Entity construction SHALL use domain methods	OUT:lint	Mandates ScrapedConcert.ToConcert() over inline field assignment; no user actor
+concert-search-log	Search Log Persistence	OUT:design-doc	latest_search_logs table schema is a persistence-layer detail, no user actor
+concert-service	GKE Gateway timeout for ConcertService	OUT:design-doc	Gateway backend policy timeoutSec config value; no user actor, pure infra technology decision
+connect-rpc-cors	CORS Middleware for Connect-RPC	OUT:design-doc	no user actor; backend CORS middleware config
+connect-rpc-cors	Allowed Origins Configuration	OUT:design-doc	no user actor; CORS_ALLOWED_ORIGINS env config
+connect-rpc-cors	Connect-RPC Protocol Headers	OUT:design-doc	no user actor; Connect protocol header allowlist
+connect-rpc-cors	Authorization Header Support	OUT:design-doc	no user actor; CORS header allowlist
+connect-rpc-cors	CORS Validation at Startup	OUT:runbook	no user actor; startup warning log for ops
+database	Schema migrations MUST be applied before serving traffic	OUT:runbook	ArgoCD sync-wave/Atlas Operator migration ordering; deployment mechanic, no user actor
+database	The system MUST provide persistent relational storage	OUT:runbook	Cloud SQL availability-tier provisioning policy; infra non-functional requirement, no user actor
+database	Application data SHALL reside in a dedicated schema	OUT:design-doc	DSN search_path/schema-naming convention; implementation detail, no user actor
+database	Database tables SHALL NOT include metadata timestamp columns	OUT:design-doc	table-design convention banning audit timestamp columns; references removal of tickets.minted_at/nullifiers.used_at under the Scenario A pivot; no user actor
+database-migration	The system MUST apply pending database migrations on startup	OUT:design-doc	startup migration execution is a deployment technology decision, no user actor
+database-migration	The system MUST prevent concurrent migration execution	OUT:design-doc	advisory-lock concurrency control is a deployment technology decision, no user actor
+database-migration	The system MUST fail startup on migration error	OUT:design-doc	fail-fast startup behavior is a deployment technology decision, no user actor
+database-migration	The system MUST embed migration files in the binary	OUT:design-doc	embedding migration files is a build technology decision, no user actor
+database-migration	The CI pipeline MUST validate migration file ordering	OUT:lint	CI ordering validation is a lint-like pipeline check, no user actor
+email-provider	Zitadel SMTP configuration via Pulumi	OUT:design-doc	no user actor; Pulumi SmtpConfig provisioning/technology choice
+email-provider	Mail subdomain DNS records for DKIM authentication	OUT:design-doc	no user actor; DNS/DKIM infra provisioning
+email-provider	ZitadelConfig interface extension	OUT:lint	no user actor; TypeScript compile-time interface field requirement
+email-provider	SmtpConfig component isolation	OUT:design-doc	no user actor; code organization pattern (src/zitadel/components/smtp.ts)
+email-provider	Environment-specific Postmark Server separation	OUT:runbook	no user actor; operational credential separation per environment
+entity-domain-logic	ScrapedConcerts collection type	OUT:lint	Bare Go type alias (type ScrapedConcerts []*ScrapedConcert) with no business rule of its own; a code-structure convention, no user actor
+entity-store-layer	Per-Entity Store Ownership	OUT:design-doc	Mandates internal store architecture (UserStore, frontend-store-cache primitive); no fan or organizer perceives which store owns state
+event-management	Trace context propagation across message broker	OUT:design-doc	telemetry cross-cutting concern (trace_id/span_id propagation) per tie-break rule; no user actor
+festival-orb-effects	Unit test coverage for stage effects	OUT:delete	no user actor; unit-test inventory for stage-effects.ts module
+festival-orb-effects	Unit test coverage for OrbRenderer state	OUT:delete	no user actor; unit-test inventory for OrbRenderer
+festival-orb-effects	Unit test coverage for AbsorptionAnimator comet trail	OUT:delete	no user actor; unit-test inventory for AbsorptionAnimator
+frontend-entity-layer	Artist entity	OUT:design-doc	frontend architecture: use canonical proto Artist, remove ArtistBubble/GuestFollow duplicate interfaces; no user actor
+frontend-entity-layer	FollowedArtist entity	OUT:design-doc	frontend architecture: follow.ts interface shape; no user actor
+frontend-entity-layer	Concert entity	OUT:design-doc	frontend architecture: concert.ts interface shape; no user actor
+frontend-entity-layer	Single mapping point	OUT:design-doc	frontend architecture principle (no intermediate mapping); no user actor
+frontend-entity-layer	Guest state stores proto Artist	OUT:design-doc	frontend persistence/serialization architecture; no user actor
+frontend-plain-date-lib	Calendar arithmetic SHALL be exposed through an implementation-agnostic interface with `CalendarDate` boundary values	OUT:design-doc	Internal library API-boundary contract; no user actor observes the interface shape
+frontend-plain-date-lib	Invalid calendar components SHALL NOT silently roll over	OUT:design-doc	Engine-internal validation rule for CalendarDate math
+frontend-router-query-params	Route loading hooks read query parameters via RouteNode	OUT:lint	RouteNode-vs-window.location coding convention for testability, no user actor
+frontend-runtime-config	`/config.json` SHALL conform to the AppConfig schema	OUT:design-doc	schema contract between build and deploy tooling; no user actor
+frontend-runtime-config	A checked-in `public/config.json` SHALL provide dev defaults	OUT:design-doc	dev-tooling/build convenience (public/config.json); no user actor
+frontend-runtime-config	The Service Worker SHALL bypass any cache for `/config.json`	OUT:design-doc	Workbox routing strategy in frontend/src/sw.ts; no user actor
+frontend-store-cache	Shared stale-while-revalidate cache primitive	OUT:design-doc	generic frontend caching primitive, internal to stores, no user actor
+frontend-store-cache	In-flight request coalescing	OUT:design-doc	internal fetch-coalescing mechanics
+frontend-store-cache	Explicit invalidation on mutations	OUT:design-doc	cache-invalidation wiring, internal
+frontend-store-cache	Caching scope is limited to audited read resources	OUT:design-doc	defines which RPC resources use the cache primitive, internal scoping decision
+gemini-grounded-extract-and-coerce	ConcertSearcher executes a two-step Gemini call sequence per Search invocation	OUT:design-doc	ConcertSearcher.Search internal call orchestration; no fan/organizer-observable behavior beyond the resulting concert list
+gemini-grounded-extract-and-coerce	Step 1 runs a single grounded slice per the default slice configuration	OUT:design-doc	internal slice-fanout configuration (defaultStep1Slices, runStep1Slice), no user actor
+gemini-grounded-extract-and-coerce	Step 1 tools MUST be {GoogleSearch, URLContext} together; no schema	OUT:design-doc	Gemini tool-config invariant enforced by assertStepInvariants guard, no user actor
+gemini-grounded-extract-and-coerce	Step 1 emits a per-field XML envelope with `<tour>` and `<standalone>` blocks	OUT:design-doc	internal XML wire format between Gemini call and Go parser, no user actor
+gemini-grounded-extract-and-coerce	Step 1 fills in missing years from page context for partial dates	OUT:design-doc	LLM prompt-engineering rule for date inference; no user actor, affects internal extraction only
+gemini-grounded-extract-and-coerce	Go-side verbatim parse extracts title, source_url, venue, country, and raw date/time strings	OUT:design-doc	internal parser contract (parseStep1Envelope, EventDraft), no user actor
+gemini-grounded-extract-and-coerce	Step 1 slice envelopes are merged by concatenation, not URL grouping	OUT:design-doc	internal merge algorithm (mergeAndDedupEnvelopes)
+gemini-grounded-extract-and-coerce	Step 2 receives only the JSON-coercion-relevant fields	OUT:design-doc	internal Step2 payload/schema shape (step2InputEvent)
+gemini-grounded-extract-and-coerce	Step 2's coerced output is joined back to EventDraft by index	OUT:design-doc	internal join/merge logic (parseStep2Response, toScrapedConcert)
+gemini-grounded-extract-and-coerce	Deduplication keys on (local_date, venue, start_time)	OUT:design-doc	internal dedup algorithm (parseStep2Response); result-count effect already covered by entity/concert correctness
+gemini-grounded-extract-and-coerce	SearchMetadata exposes Step1Grounded and Step2Parse	OUT:design-doc	internal observability struct for logs (SearchMetadata, PassMetadata), no user actor
+gemini-grounded-extract-and-coerce	A/B harness emits per-step sub-objects in raw response files	OUT:runbook	internal test/evaluation harness (searcher_integration_test.go), engineering-only
+gemini-grounded-extract-and-coerce	parseStep1Envelope Preserves Tour Grouping On EventDraft	OUT:design-doc	internal grouping handle for tour drafts (parseStep1Envelope, EventDraft), no user actor
+gemini-grounded-extract-and-coerce	Step 1 extracts every field in the source page's original language	OUT:design-doc	LLM extraction-fidelity instruction; affects data correctness but is an internal prompt rule, not an entity validation
+gemini-grounded-extract-and-coerce	Step 1 selects the tour-specific page as source_url	OUT:design-doc	LLM page-selection heuristic, internal to the extraction pipeline
+gemini-searcher-config	GCPConfig exposes per-step Gemini search model fields	OUT:design-doc	per-step Gemini model config wiring, no user actor observes model selection
+gemini-searcher-config	Helper methods resolve per-step model with env-var precedence over defaults	OUT:design-doc	helper-method resolution order for model config, no user actor
+gemini-searcher-config	Config passes per-step models through DI into gemini.Config	OUT:design-doc	DI wiring of resolved models into gemini.Config, no user actor
+gemini-searcher-config	Configurable search-cache TTL with env-var precedence over default	OUT:design-doc	search-cache TTL is internal config, no user actor
+gemini-searcher-config	Configurable discovery-skip window with env-var precedence over default	OUT:design-doc	discovery-skip window is internal config, no user actor
+goroutine-leak-detection	Detected goroutine leaks raise an alert	OUT:runbook	Operations alerting; no user actor.
+goroutine-leak-detection	Leak detection complements existing consumer health signals	OUT:runbook	Operations alerting scope/documentation; no user actor.
+http-retry	HTTP retry on transient errors	OUT:design-doc	no user actor; backend HTTP client retry policy (exponential backoff)
+http-retry	Retry-After header respect	OUT:design-doc	no user actor; HTTP header parsing policy
+http-retry	Context cancellation during retry	OUT:design-doc	no user actor; backend retry-loop cancellation mechanics
+http-retry	Request body replay for retried POST requests	OUT:design-doc	no user actor; HTTP client implementation detail
+http-retry	Independent context per Gemini API retry	OUT:design-doc	no user actor; Gemini API caller context.WithoutCancel mechanics
+http-retry	Backoff max interval aligned with Google recommendation	OUT:design-doc	no user actor; backoff tuning per vendor docs
+http-retry	Diagnostic capture of error response body	OUT:runbook	no user actor; operational diagnostic/log capture for apperr
+id-resolution	RPC handlers resolve Zitadel external ID to internal UUID before database access	OUT:design-doc	handler/usecase ID-resolution layering convention, no observable actor effect
+identity-management	Manage Zitadel Organization	OUT:runbook	No user actor observes Zitadel org topology; Pulumi zitadel.Org IaC provisioning (admin/liverty-music orgs)
+identity-management	Manage Zitadel Project	OUT:runbook	No user actor; Pulumi zitadel.Project resource provisioning
+identity-management	Manage OIDC Application	OUT:runbook	No user actor; Pulumi ApplicationOidc provisioning — client_id delivery to the SPA is covered by the frontend-runtime-config capability
+infra	KEDA-managed Deployments SHALL NOT declare replicas	OUT:design-doc	no user actor: Kustomize base manifest convention for KEDA-managed Deployments
+infra	ArgoCD SHALL ignore replicas drift for KEDA-managed Deployments	OUT:design-doc	no user actor: ArgoCD ignoreDifferences config for KEDA-scaled Deployments
+interceptor-chain-ordering	Interceptor Execution Order	OUT:design-doc	no user actor: Connect-RPC interceptor registration order on the backend server
+interceptor-chain-ordering	Interceptor Ordering Documentation	OUT:design-doc	no user actor: inline code-comment documentation requirement for interceptor registration
+jetstream-consumer-reliability	Subscription failure fails loud	OUT:runbook	consumer startup failure-mode policy; operational, no user actor
+jetstream-consumer-reliability	Liveness reflects consumption health	OUT:runbook	Kubernetes liveness/readiness probe semantics; operational, no user actor
+jetstream-consumer-reliability	Consumers are named by behavior, with a unique deliver group	OUT:design-doc	durable/deliver-group naming convention; no user actor
+jetstream-consumer-reliability	Every handler receives every message (fan-out)	OUT:design-doc	messaging architecture decision (one consumer per handler); no user actor
+jetstream-consumer-reliability	Subjects are named as past-tense events	OUT:design-doc	NATS subject naming convention; no user actor
+jetstream-consumer-reliability	KEDA triggers reference the live behavior-named durables	OUT:design-doc	consistency rule between application durable names and KEDA ScaledObject config; no user actor
+jetstream-consumer-reliability	Stream and durable configuration is managed declaratively by a single owner	OUT:design-doc	ownership/reconciliation architecture for JetStream config; no user actor
+jetstream-consumer-reliability	A consumer may scale to zero without losing its durable	OUT:runbook	KEDA scale-to-zero autoscaling behavior; operational, no user actor
+layout-assertions	E2E selectors use data-testid for stability	OUT:lint	Playwright selector convention, test-code style rule, no user actor
+live-events	Proto Value Object Consistency	OUT:design-doc	proto wrapper-message typing convention for internal data representation; no user actor
+live-events	Go Entity Field Name Alignment	OUT:design-doc	internal Go struct field rename (LocalEventDate->LocalDate); no user actor
+logo-color-analysis	sRGB to OKLCH Conversion	OUT:design-doc	no user actor: pure sRGB->OKLCH math/color-space conversion utility, no-external-deps decision
+nearby-proximity	Centroid Resolution Unit Coverage	OUT:lint	mandates unit-test coverage for internal ResolveCentroid function; no user actor
+non-blocking-menu-navigation	Synchronous prelude remains in loading()	OUT:design-doc	no user actor: loading() hook wiring / AbortController ownership, internal code organization
+non-blocking-menu-navigation	Navigating away cancels the in-flight fetch	OUT:design-doc	no user actor: abort-on-deactivate implementation detail, AbortError not surfaced to the user
+notification-lifecycle	All user-facing notifications flow through the notification service	OUT:design-doc	internal producer call-graph requirement (route through service vs direct push); user-received content is unchanged, implementation wiring only
+notification-lifecycle	The notification identifier is propagated end-to-end	OUT:design-doc	internal data-plumbing requirement carrying notification_id into the push payload for future correlation; no current standalone user-facing behavior
+notification-lifecycle	Notification fan-out logs zero-recipient skips	OUT:runbook	operational diagnostic logging for zero-dispatch outcomes; no user actor
+organizer-accounts	Organizer lifecycle emits analytics events	OUT:design-doc	backend analytics-event emission is a telemetry cross-cutting concern per tie-break rule; not observed by any actor
+organizer-console	Bundle isolation from the consumer SPA and admin console	OUT:design-doc	frontend build/bundle architecture (Vite entry organizer.html); no user actor observes bundle graph directly
+organizer-console	Organizer runtime config resolves the org at login	OUT:design-doc	/config.json shape/config-loading detail; no user actor, org-resolution UX itself covered by the org-pinned-entry story
+private-google-access	Private DNS zone for googleapis.com	OUT:runbook	Private Cloud DNS zone/VIP config; network infra, no user actor.
+private-google-access	Google API traffic bypasses Cloud NAT	OUT:runbook	Cloud NAT routing behavior; network infra, no user actor.
+product-analytics	PostHog Cloud EU is the sole product-analytics platform	OUT:design-doc	analytics-platform choice, telemetry cross-cutting, no user actor
+product-analytics	Event names follow `domain.action[.qualifier][.outcome]` in dot.case	OUT:lint	event-naming convention enforced at code-review time, no user actor
+product-analytics	Backend analytics flow uses NATS and an `analytics-consumer`	OUT:design-doc	backend analytics pipeline architecture, no user actor
+product-analytics	Internal and E2E traffic is excluded from product analytics	OUT:design-doc	analytics filtering implementation decision, no user actor
+push-notification-service	Per-browser scoping for repository operations	OUT:design-doc	internal PushSubscriptionRepository interface surface; no user actor, behaviorally covered by Create/Get/Delete requirements
+push-notification-service	Notification consumer is a thin adapter over the use case	OUT:design-doc	consumer/handler architecture detail; no user actor
+rpc-auth-scoping	Shared JWT-match helper	OUT:design-doc	no user actor: internal requireMatchingUserID helper-location convention in internal/adapter/rpc/
+sales-phase	SalesPhase Database Schema	OUT:design-doc	sales_phases table column layout; implementation detail, no user actor
+semantic-dom	Semantic HTML element usage	OUT:lint	Markup-element convention (dialog/footer/section over div); no user actor.
+semantic-dom	Minimal div nesting depth	OUT:lint	Template-nesting-depth convention; no user actor.
+state-management	OnboardingService as singleton state owner	OUT:design-doc	internal Aurelia DI/@observable implementation of OnboardingService; no distinct product contract
+state-management	GuestService as singleton state owner	OUT:design-doc	internal Aurelia DI/@observable implementation of GuestService storage; no distinct product contract
+state-management	GuestFollow type in entities	OUT:design-doc	local TS interface declaration for guest-mode data; implementation detail, no user actor
+state-management	Service hydration from localStorage	OUT:design-doc	field-initializer hydration ordering is implementation detail; no user actor
+state-management	OnboardingStep string values	OUT:design-doc	internal enum/const shape for OnboardingStep; no user actor
+state-management	Single DI access path	OUT:lint	grep-verifiable prohibition on resolveStore()/IStore usage; code convention, no user actor
+ticket-journey	Ticket Journey Database Schema	OUT:design-doc	physical Postgres table/column layout, no user actor; overlaps entity composite-key invariant
+user-language-preference	Repository NULL-Safe Reads on Nullable users Columns	OUT:lint	"The scanUser/nullStringFromEmpty NULL-safe scan pattern is explicitly ""enforced by code review"" — a Go coding convention, no user actor"
+user-profile-hydration	User profile hydration at app startup	OUT:design-doc	startup orchestration of UserService.Get, internal timing, no distinct user actor
+user-profile-hydration	User profile hydration after auth callback	OUT:design-doc	ensureLoaded() orchestration around auth callback, internal
+user-profile-hydration	Idempotent profile loading	OUT:design-doc	ensureLoaded() idempotency guard, internal implementation detail
+user-profile-hydration	Graceful degradation on hydration failure	OUT:design-doc	startup error-handling fallback, internal
+user-profile-hydration	Write-through on user mutation	OUT:design-doc	UserService.current cache write-through, internal state sync
+user-profile-hydration	Profile cleared on sign-out	OUT:design-doc	UserService.current cache-clear on sign-out, internal state cleanup
+venue-normalization	PlaceSearcher Is Required	OUT:design-doc	constructor dependency guard on ConcertCreationUseCase, no user actor, implementation detail
+frontend-testing	Auth retry interceptor refreshes tokens on Unauthenticated errors	NEEDS_HUMAN	Auth-retry interceptor is transport-level; not a UI surface or listed infra kind
+frontend-testing	Retry interceptor applies exponential backoff on transient errors	NEEDS_HUMAN	Generic retry interceptor is transport-level; not a UI surface or listed infra kind
+http-retry	Deduplicated auth token refresh on concurrent 401s	NEEDS_HUMAN	user-visible via session-clear/redirect to /welcome on failure, but no vocabulary target for a cross-cutting RPC auth-refresh interceptor (not a route, not a global UI surface, not a usecase)
+id-resolution	Handlers return NotFound when user record does not exist	NEEDS_HUMAN	cross-cutting NotFound behavior spans Follow/TicketJourney/TicketEmail usecases, no single vocabulary usecase/entity target fits
+interaction-feedback	Immediate tactile acknowledgement on press	NEEDS_HUMAN	App-wide cross-cutting press-feedback primitive applied to every tappable control; no matching route/global vocabulary target.
+organizer-rpc-server	Org-scoped authorization from the role claim	NEEDS_HUMAN	cross-cutting auth spanning both Get and ListArtists, no single fitting usecase target
+rpc-auth-scoping	Explicit user_id in authenticated per-user RPC bodies	NEEDS_HUMAN	cross-cutting convention over every per-user RPC handler, no single usecase/route target
+rpc-auth-scoping	Creation RPCs are exempt from the user_id convention	NEEDS_HUMAN	corollary of the sibling requirement, same cross-cutting scope issue

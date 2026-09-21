@@ -1,9 +1,11 @@
 # Pass 2 — 人間レビュー資料
 
-Pass 1（12エージェント並列）→ 語彙拡張（ui/<app>/route|global, app-shell, hosted-login）で22件を確定した後の状態。V1/V3/V5/V8 は成立。
+Pass 1（12エージェント）→ 語彙拡張で22件確定 → **判定軸の修正**（「観察されるか」ではなく「プロダクト自体の仕様か」）による180行の再審査後。V1/V3/V5/V8 成立。
+
+再審査の結果: OUT→KEEP 反転 16件（API 認可規則→entity/user・entity/organizer、NotFound 契約→entity/user、発見パイプラインの挙動→usecase/concert/search-new-concerts、entity の検証制約 等）、OUT 維持 159件、NEEDS_HUMAN 5件。
 
 
-## A. openspec から出る spec — 89本（全 requirement が OUT）
+## A. openspec から出る spec — 79本（全 requirement が OUT）
 
 誤って捨てられる唯一の関門。**全行を見て、行き先(note)が妥当か確認してください。**
 
@@ -11,10 +13,8 @@ Pass 1（12エージェント並列）→ 語彙拡張（ui/<app>/route|global, 
 |---|---|---:|---:|---|
 | zitadel-self-hosted-deployment | OUT:design-doc | 20 | 67 | cloud-provisioning/docs/design/zitadel-self-hosted-deployment.md |
 | prod-image-pipeline | OUT:runbook | 12 | 49 | cloud-provisioning/docs/runbooks/prod-image-pipeline.md |
-| gemini-grounded-extract-and-coerce | OUT:design-doc | 19 | 46 | backend/internal/infrastructure/gcp/gemini/design.md |
 | modern-css-platform | OUT:design-doc | 21 | 44 | frontend/docs/design/modern-css-platform.md |
 | prod-environment-bootstrap | OUT:design-doc | 15 | 44 | cloud-provisioning/docs/decisions/prod-environment-bootstrap.md (design-doc items); cloud- |
-| product-analytics | OUT:design-doc | 14 | 40 | docs/analytics/event-catalog.md (process items) plus a design-doc for SDK/pipeline choices |
 | cube-css-architecture | OUT:lint | 11 | 33 | frontend/stylelint-plugin-cube-css docs (CSS architecture conventions) |
 | app-error-log-alerting | OUT:runbook | 14 | 31 | cloud-provisioning/docs/runbooks/app-error-alerting.md |
 | entity-test-coverage | OUT:lint | 18 | 31 | backend AGENTS.md / go-tester skill testing standards; frontend entity test conventions |
@@ -24,7 +24,6 @@ Pass 1（12エージェント並列）→ 語彙拡張（ui/<app>/route|global, 
 | cube-css-layer-constraints | OUT:lint | 5 | 24 | frontend/stylelint-plugin-cube-css docs (layer constraint rules) |
 | unified-check-interface | OUT:delete | 2 | 23 | repo-root Makefile / CI workflow YAML (mechanics only, no doc) |
 | ci-optimization | OUT:runbook | 11 | 22 | backend/docs/runbooks/ci.md and frontend/docs/runbooks/ci.md |
-| layout-assertions | OUT:runbook | 6 | 22 | frontend/e2e (test conventions, no dedicated doc) |
 | css-state-management | OUT:lint | 8 | 21 | frontend coding conventions doc (CSS state-management three-layer contract) |
 | cube-css-token-enforcement | OUT:lint | 6 | 20 | frontend/AGENTS.md or a stylelint-plugin-cube-css doc (design-token enforcement rule) |
 | gke-standard-infrastructure | OUT:design-doc | 8 | 19 | cloud-provisioning/docs/infrastructure/gke-dev-cluster.md |
@@ -33,7 +32,6 @@ Pass 1（12エージェント並列）→ 語彙拡張（ui/<app>/route|global, 
 | secret-management | OUT:runbook | 8 | 18 | cloud-provisioning/docs/runbooks/secret-management.md |
 | aurelia-template-optimization | OUT:lint | 8 | 17 | frontend coding conventions doc (Aurelia 2 template/binding patterns) |
 | frontend-store-cache | OUT:design-doc | 6 | 17 | frontend design doc for the store-cache primitive |
-| jetstream-consumer-reliability | OUT:design-doc | 9 | 17 | backend/docs/design/jetstream-consumer-reliability.md (operational-flavored reqs -> cloud- |
 | prod-image-tag-immutability | OUT:runbook | 4 | 17 | cloud-provisioning/docs/runbooks/prod-image-tag-pinning.md |
 | argocd-gateway-deployment | OUT:delete | 9 | 16 | cloud-provisioning/k8s (ArgoCD deploy topology and pod-cost overlay mechanics, discard fro |
 | argocd-image-automation | OUT:delete | 8 | 16 |  |
@@ -47,7 +45,6 @@ Pass 1（12エージェント並列）→ 語彙拡張（ui/<app>/route|global, 
 | cube-css-structural-rules | OUT:lint | 3 | 13 | frontend/.stylelint-plugin (lint rule config, discard from openspec) |
 | deployment-infrastructure | OUT:runbook | 10 | 13 | cloud-provisioning/docs/runbooks/pulumi-deployment.md |
 | frontend-observability | OUT:design-doc | 3 | 13 | frontend/docs/design/otel-observability.md |
-| frontend-plain-date-lib | OUT:design-doc | 6 | 13 | frontend/src/lib/plain-date design rationale (no existing doc file identified); not a spec |
 | m3-design-tokens | OUT:lint | 5 | 13 | frontend/docs/design/m3-tokens.md |
 | api-rate-limiting | OUT:design-doc | 5 | 12 | backend/docs/design/rate-limiting.md |
 | argocd-deployment-alerts | OUT:runbook | 5 | 12 | cloud-provisioning/docs/runbooks/argocd-deployment-alerts.md |
@@ -68,19 +65,14 @@ Pass 1（12エージェント並列）→ 語彙拡張（ui/<app>/route|global, 
 | k8s-service-cross-namespace-routing | OUT:runbook | 6 | 9 | cloud-provisioning/docs/runbooks/k8s-cross-namespace-routing.md |
 | workload-naming-convention | OUT:design-doc | 5 | 9 | cloud-provisioning/docs/design/workload-naming-convention.md (migration-procedure req -> c |
 | billing-export-infrastructure | OUT:design-doc | 5 | 8 | cloud-provisioning/docs/runbooks/billing-export.md |
-| connect-rpc-cors | OUT:design-doc | 5 | 8 | backend/internal/... CORS middleware config (discard from openspec) |
-| database-migration | OUT:design-doc | 5 | 8 | backend internal docs (migration runtime behavior) |
 | gke-gateway-infrastructure | OUT:design-doc | 6 | 8 | cloud-provisioning/docs/decisions/gke-gateway-infrastructure.md |
 | goroutine-leak-detection | OUT:runbook | 3 | 8 | backend/docs/runbooks/goroutine-leak-detection.md |
 | zitadel-action-webhook | OUT:design-doc | 3 | 8 | backend design docs (e.g. backend/docs/design/zitadel-webhook.md); network-topology portio |
 | atlas-operator | OUT:runbook | 5 | 7 | cloud-provisioning/docs/runbooks/atlas-operator.md |
-| database | OUT:runbook | 4 | 7 | cloud-provisioning/docs/runbooks/database.md (design-flavored reqs -> cloud-provisioning/d |
 | e2e-auth-testing | OUT:runbook | 5 | 7 | frontend/docs/runbooks/e2e-auth-testing.md |
-| email-provider | OUT:design-doc | 5 | 7 | cloud-provisioning/src/zitadel (SMTP infra provisioning, discard from openspec) |
 | frontend-client-rpc-telemetry | OUT:design-doc | 6 | 7 | frontend internal docs (RPC telemetry design) |
 | migration-rebase-guard | OUT:runbook | 3 | 7 | backend/docs/runbooks/migration-drift-guard.md |
 | otel-sdk-configuration | OUT:design-doc | 4 | 7 | backend design doc for OTel SDK setup |
-| semantic-dom | OUT:lint | 4 | 7 | frontend/docs/conventions/semantic-dom.md |
 | cloud-sql-connector | OUT:runbook | 5 | 6 | backend/docs/runbooks/cloud-sql-connector.md |
 | consumer-poison-queue-alerting | OUT:runbook | 2 | 6 | backend ops runbook / cloud-provisioning alert policy (discard from openspec) |
 | cube-css-lint-plugin | OUT:lint | 4 | 6 | frontend/stylelint-plugin-cube-css docs (plugin architecture) |
@@ -99,28 +91,27 @@ Pass 1（12エージェント並列）→ 語彙拡張（ui/<app>/route|global, 
 | infra | OUT:design-doc | 2 | 2 | cloud-provisioning/docs/decisions/keda-replica-management.md |
 | organizer-console-hosting | OUT:runbook | 2 | 2 | cloud-provisioning/docs/runbooks/organizer-console-hosting.md |
 
-SPLIT spec 内の OUT requirement も含めた OUT 合計: 1704 scenario / 699 req
+SPLIT spec 内の OUT requirement も含めた OUT 合計: 1675 scenario / 686 req
 
 
-## B. NEEDS_HUMAN — 残り 33 requirement / 91 scenario
+## B. NEEDS_HUMAN — 残り 30 requirement / 76 scenario
 
 
-### B-1. 横断的挙動（決定4「adapter 不使用・分解」の適用）— 8件。**提案を承認/修正してください**
+### B-1. アプリ横断の挙動 — 5件。**提案を承認/修正してください**
+
+方針: API の横断規則を entity の不変条件として1箇所に置いたのと同じく、フロントエンドのアプリ全体挙動は app-shell の不変条件として1箇所に置く。
 
 | spec | requirement | scen | 提案 |
 |---|---|---:|---|
-| frontend-testing | Auth retry interceptor refreshes tokens on Unauthentica | 3 | KEEP → stories/maintain-authenticated-session（利用者が観察するのは「セッションが維持される」こと。再試行の機構は design-doc） |
-| frontend-testing | Retry interceptor applies exponential backoff on transi | 4 | OUT:design-doc（バックオフ間隔は利用者に観察されない） |
-| http-retry | Deduplicated auth token refresh on concurrent 401s | 3 | KEEP → stories/maintain-authenticated-session（失敗時の /welcome リダイレクトが観察可能な部分） |
-| id-resolution | Handlers return NotFound when user record does not exis | 1 | Phase 2 で SPLIT: 該当する各 usecase（follow/follow, ticket-journey/set-status 等）の scenario として分解。単一 spec には置かない |
-| interaction-feedback | Immediate tactile acknowledgement on press | 3 | OUT:lint（batch-05 が tap-press-feedback を OUT:lint とした判断と揃える。CSS の規約） |
-| organizer-rpc-server | Org-scoped authorization from the role claim | 8 | KEEP → usecase/organizer/get を主とし SPLIT-CANDIDATE（list-artists にも同じ scenario を Phase 2 で複製せず分割） |
-| rpc-auth-scoping | Explicit user_id in authenticated per-user RPC bodies | 4 | OUT:design-doc（API 規約。ファンは観察しない） |
-| rpc-auth-scoping | Creation RPCs are exempt from the user_id convention | 1 | OUT:design-doc（同上の系） |
+| frontend-plain-date-lib | Invalid calendar components SHALL NOT silently roll ove | 1 | KEEP → components/entity/event。日付のロールオーバー禁止は Event の日付データの意味論。ライブラリの所在はパスに出さない |
+| frontend-testing | Auth retry interceptor refreshes tokens on Unauthentica | 3 | KEEP → components/infrastructure/ui/fan/global/app-shell（上と merge_group=SESSION-REFRESH。http-retry 版が詳細なのでそちらを本文に） |
+| http-retry | Deduplicated auth token refresh on concurrent 401s | 3 | KEEP → components/infrastructure/ui/fan/global/app-shell。API 認可規則を entity に1箇所で書くのと同型で、アプリ全体のセッション維持挙動は app-shell の不変条件。frontend-testing の同内容行と merge_group |
+| interaction-feedback | Immediate tactile acknowledgement on press | 3 | KEEP → components/infrastructure/ui/fan/global/app-shell。全タップ可能要素に共通のアプリ全体挙動。batch-05 の tap-press-feedback=OUT:lint は再審査対象外だったので、こちらに揃えて KEEP へ戻す候補 |
+| non-blocking-menu-navigation | Synchronous prelude remains in loading() | 2 | KEEP → components/infrastructure/ui/fan/global/app-shell。初回描画の状態整合性はルート横断の app-shell 挙動（既に route guard / transition を app-shell に置いた判断と整合） |
 
 ### B-2. 個別判断 — 25件
 
-| spec | requirement | scen | エージェントの rationale |
+| spec | requirement | scen | rationale |
 |---|---|---:|---|
 | artist-image-ui | Event Detail Sheet Hero Image | 3 | EventDetailSheet has no vocabulary entry (only the generic bottom-sheet exists, which this specializes) |
 | design-system | Page Shell Component | 4 | proposed <page-shell> global surface is not present in vocabulary.tsv (closest is page-header) |
@@ -148,7 +139,7 @@ SPLIT spec 内の OUT requirement も含めた OUT 合計: 1704 scenario / 699 r
 | ticket-purchase-and-issuance | Capture succeeded but issuance failed | 1 | Post-capture reconciliation/refund usecase behavior; no matching usecase target |
 | ticket-purchase-and-issuance | Refund taxonomy — cancellation vs postponement | 4 | Refund-policy usecase spans Event/Ticket/Order with execution owned by an out-of-batch capability; no matching usecase t |
 
-## C. 提案された story — 13本（語彙に無い新規提案。命名と統合を判断）
+## C. 提案された story — 13本
 
 | story | req | scen | 由来 spec |
 |---|---:|---:|---|
@@ -169,13 +160,17 @@ SPLIT spec 内の OUT requirement も含めた OUT 合計: 1704 scenario / 699 r
 重複が疑われる組: `complete-onboarding` / `onboard-new-fan`、`accumulate-guest-data-before-signup` / `preserve-guest-activity-on-sign-up` / `merge-guest-data-on-signup`、`sign-up-or-sign-in` / `maintain-authenticated-session` / `restore-session-on-cold-start`。
 
 
-## D. merge_group — 13件（複数の旧 requirement を1本に統合してよいか）
+## D. merge_group — 15件
 
 
 **ADMIN-CONSOLE-AUTH** → `stories/sign-in-to-admin-console`
 - admin-console / Authentication via the admin org with Google Workspace IDP (3 scen)
 - admin-console / Authenticated route guard (2 scen)
 - admin-console / Post-login welcome placeholder (1 scen)
+
+**ARTIST-IMAGE-SELECT** → `components/entity/artist`
+- artist-image / Best Image Selection (2 scen)
+- artist-image / Fanart Proto Mapper (2 scen)
 
 **BUBBLE-CAP** → `components/infrastructure/ui/fan/route/discovery`
 - bubble-state-management / BubbleManager provides single source of truth for bubble lifecycle (4 scen)
@@ -218,6 +213,10 @@ SPLIT spec 内の OUT requirement も含めた OUT 合計: 1704 scenario / 699 r
 - concert-approval-queue / Re-discovery dedup consults published and pending state (3 scen)
 - concert-approval-queue / Re-discovery skips suppressed concerts (2 scen)
 
+**RPC-USER-ID-SCOPING** → `components/entity/user`
+- rpc-auth-scoping / Explicit user_id in authenticated per-user RPC bodies (4 scen)
+- rpc-auth-scoping / Creation RPCs are exempt from the user_id convention (1 scen)
+
 **SEARCH-LOG** → `components/usecase/concert/search-new-concerts`
 - concert-search-log / Track Concert Search History (3 scen)
 - concert-search-log / Track Last Concert Discovery Time (3 scen)
@@ -227,13 +226,12 @@ SPLIT spec 内の OUT requirement も含めた OUT 合計: 1704 scenario / 699 r
 - passion-level / Hype Level Persistence (1 scen)
 - passion-level / SetHype API (3 scen)
 
-**V6**: `Search Concerts by Artist` が `concert-service` と `concert-search` から同じ `components/usecase/concert/search-new-concerts` に着地（merge_group なし）。重複なら merge_group、別物なら片方を改名。
+**V6**: `Search Concerts by Artist` が `concert-service` と `concert-search` から同じ usecase に着地（merge_group なし）。
 
 
-## E. requirement が1本も割り当たらなかった語彙 — 51本（参考。spec が無い＝未記述の振る舞い）
+## E. requirement が割り当たらなかった語彙 — 50本（参考）
 
 - components/entity/media
-- components/entity/organizer
 - components/entity/settlement
 - components/entity/staged-concert
 - components/entity/verified-identity
@@ -288,11 +286,11 @@ SPLIT spec 内の OUT requirement も含めた OUT 合計: 1704 scenario / 699 r
 
 | disposition | req | scen |
 |---|---:|---:|
-| KEEP | 531 | 1768 |
-| OUT:design-doc | 280 | 672 |
-| OUT:runbook | 225 | 509 |
+| KEEP | 547 | 1812 |
+| OUT:design-doc | 268 | 646 |
+| OUT:runbook | 224 | 506 |
 | OUT:lint | 170 | 451 |
-| NEEDS_HUMAN | 33 | 91 |
+| NEEDS_HUMAN | 30 | 76 |
 | OUT:delete | 24 | 72 |
 | DROP:historic | 5 | 14 |
 | DROP:duplicate | 3 | 7 |
