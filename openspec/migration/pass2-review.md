@@ -1,32 +1,20 @@
 # Pass 2 — 人間レビュー資料
 
-Pass 1 → 語彙拡張（ui/<app>/route|global）→ 判定軸の修正（「観察されるか」→「プロダクト自体の仕様か」）→ 観察性を理由にした OUT **全458行** の再審査後。V1/V3/V5/V8 成立。
+経緯: Pass 1（12エージェント）→ 語彙拡張（ui/<app>/route|global）→ 判定軸の修正と観察性 OUT 458行の全件再審査 → 横断契約をコードの層（adapter / infrastructure/server）に束縛。V1/V3/V5/V8 成立。
 
-再審査の結果: OUT→KEEP 17件、NEEDS_HUMAN 19件、DROP:obsolete 2件（TicketEmail は削除済み）、OUT 維持 431件。
+| disposition | req | scen |
+|---|---:|---:|
+| KEEP | 564 | 1858 |
+| OUT:design-doc | 260 | 626 |
+| OUT:runbook | 224 | 506 |
+| OUT:lint | 158 | 413 |
+| NEEDS_HUMAN | 31 | 78 |
+| OUT:delete | 24 | 72 |
+| DROP:historic | 5 | 14 |
+| DROP:obsolete | 4 | 14 |
+| DROP:duplicate | 3 | 7 |
 
-
-## B-0. 🔴 要決定: 横断的な契約で entity にも surface にも属さないもの — 11件 / 29 scen
-
-プロダクトの契約だが、ツリーに置き場が無い。Clean Architecture の adapter 層の契約に相当する（usecase↔transport のエラー変換、メッセージングのエンベロープ、インターセプタ、プレゼンテーション層の共有語彙）。
-
-| spec | requirement | scen | 内容 |
-|---|---|---:|---|
-| entity-test-coverage | Error code semantic correctness | 3 | [re-audit-2] defines a cross-cutting API error-code contract (JSON decode->Internal, invalid input->InvalidArg |
-| frontend-testing | Color generator produces deterministic colors | 3 | [re-audit-2] artistColor assigns each artist a persistent, deterministic display color -- user-observable UI b |
-| m3-design-tokens | Color roles with guaranteed on-color pairing | 3 | [re-audit-2] cross-cutting site-wide design-token layer (contrast pairing, hover/focus/selected state-layer fe |
-| m3-design-tokens | State-layer opacity scale | 3 | [re-audit-2] cross-cutting site-wide design-token layer (contrast pairing, hover/focus/selected state-layer fe |
-| m3-design-tokens | Motion tokens split by property class | 3 | [re-audit-2] cross-cutting site-wide design-token layer (contrast pairing, hover/focus/selected state-layer fe |
-| m3-design-tokens | Shape roles including expressive steps | 2 | [re-audit-2] cross-cutting site-wide design-token layer (contrast pairing, hover/focus/selected state-layer fe |
-| m3-design-tokens | Tonal surface-container tiers | 2 | [re-audit-2] cross-cutting site-wide design-token layer (contrast pairing, hover/focus/selected state-layer fe |
-| usecase-test-coverage | Messaging layer test coverage | 3 | [re-audit-2] CloudEvents envelope field contract (id/source/type/time/datacontenttype) is an event-publishing  |
-| usecase-test-coverage | Package utility test coverage | 2 | [re-audit-2] Haversine part is pure math-utility testing (stays OUT), but 'API error mapping tested' hides a r |
-| zitadel-action-webhook | Pre-Access-Token Webhook Endpoint | 2 | [re-audit-2 sibling] webhook endpoint API contract (request/response, status codes); same class as the auth re |
-| zitadel-action-webhook | Webhook Authentication via Zitadel-Issued JWT Signature | 3 | [re-audit-2] defines a real API auth contract for POST /pre-access-token (JWKS signature check, no iss/aud enf |
-
-候補: (a) `components/adapter/<name>` を**この類型に限って**解禁（error-mapping, messaging-envelope, rate-limiting, webhook, design-tokens）。(b) `components/infrastructure/<kind>` に api / messaging / design を kind として追加。(c) 最寄りの entity / surface に無理に寄せる。
-
-
-## A. openspec から出る spec — 62本（全 requirement が OUT）
+## A. openspec から出る spec — 61本（全 requirement が OUT）— **全行確認**
 
 | spec | disposition | req | scen | note |
 |---|---|---:|---:|---|
@@ -51,7 +39,6 @@ Pass 1 → 語彙拡張（ui/<app>/route|global）→ 判定軸の修正（「�
 | cube-css-structural-rules | OUT:lint | 3 | 13 | frontend/.stylelint-plugin (lint rule config, discard from openspec) |
 | deployment-infrastructure | OUT:runbook | 10 | 13 | cloud-provisioning/docs/runbooks/pulumi-deployment.md |
 | frontend-observability | OUT:design-doc | 3 | 13 | frontend/docs/design/otel-observability.md |
-| api-rate-limiting | OUT:design-doc | 5 | 12 | backend/docs/design/rate-limiting.md |
 | argocd-deployment-alerts | OUT:runbook | 5 | 12 | cloud-provisioning/docs/runbooks/argocd-deployment-alerts.md |
 | cube-css-modern-css-rules | OUT:lint | 3 | 12 | frontend stylelint plugin config (already implemented; no separate doc) |
 | apex-frontend-serving | OUT:runbook | 4 | 11 | cloud-provisioning/docs/runbooks/apex-frontend-serving.md |
@@ -93,16 +80,18 @@ Pass 1 → 語彙拡張（ui/<app>/route|global）→ 判定軸の修正（「�
 | infra | OUT:design-doc | 2 | 2 | cloud-provisioning/docs/decisions/keda-replica-management.md |
 | organizer-console-hosting | OUT:runbook | 2 | 2 | cloud-provisioning/docs/runbooks/organizer-console-hosting.md |
 
-SPLIT 内の OUT を含む OUT 合計: 1629 scen / 671 req
+SPLIT 内の OUT を含む OUT 合計: 1617 scen / 666 req
 
 
-## B-1. アプリ横断のフロントエンド挙動 — 5件。app-shell / entity/event への配置案
+## B-1. アプリ横断のフロントエンド挙動 — 5件（提案の承認）
+
+API の横断規則を entity に1箇所置いたのと同じ論理で、アプリ全体の挙動は app-shell の不変条件に。
 
 | spec | requirement | scen | 提案 |
 |---|---|---:|---|
 | frontend-plain-date-lib | Invalid calendar components SHALL NOT silently roll ove | 1 | KEEP → components/entity/event |
-| frontend-testing | Auth retry interceptor refreshes tokens on Unauthentica | 3 | KEEP → components/infrastructure/ui/fan/global/app-shell（merge_group=SESSION-REFRESH） |
-| http-retry | Deduplicated auth token refresh on concurrent 401s | 3 | KEEP → components/infrastructure/ui/fan/global/app-shell |
+| frontend-testing | Auth retry interceptor refreshes tokens on Unauthentica | 3 | KEEP → components/infrastructure/ui/fan/global/app-shell（同上。http-retry 版を本文に） |
+| http-retry | Deduplicated auth token refresh on concurrent 401s | 3 | KEEP → components/infrastructure/ui/fan/global/app-shell（merge_group=SESSION-REFRESH） |
 | interaction-feedback | Immediate tactile acknowledgement on press | 3 | KEEP → components/infrastructure/ui/fan/global/app-shell |
 | non-blocking-menu-navigation | Synchronous prelude remains in loading() | 2 | KEEP → components/infrastructure/ui/fan/global/app-shell |
 
@@ -137,7 +126,7 @@ SPLIT 内の OUT を含む OUT 合計: 1629 scen / 671 req
 | ticket-purchase-and-issuance | Refund taxonomy — cancellation vs postponement | 4 | Refund-policy usecase spans Event/Ticket/Order with execution owned by an out-of-batch capability; no matching usecase t |
 | usecase-test-coverage | User event consumer test coverage | 2 | [re-audit-2] Describes real background-job behavior (USER.created CloudEvent drives a usecase call; malformed payload is |
 
-## C. 提案された story — 13本
+## C. 提案された story — 13本（命名・統合）
 
 | story | req | scen | 由来 spec |
 |---|---:|---:|---|
@@ -158,7 +147,7 @@ SPLIT 内の OUT を含む OUT 合計: 1629 scen / 671 req
 重複疑い: `complete-onboarding` / `onboard-new-fan`、`accumulate-guest-data-before-signup` / `preserve-guest-activity-on-sign-up` / `merge-guest-data-on-signup`、`sign-up-or-sign-in` / `maintain-authenticated-session` / `restore-session-on-cold-start`。
 
 
-## D. merge_group — 15件
+## D. merge_group — 17件（統合の可否）
 
 
 **ADMIN-CONSOLE-AUTH** → `stories/sign-in-to-admin-console`
@@ -181,6 +170,10 @@ SPLIT 内の OUT を含む OUT 合計: 1629 scen / 671 req
 **DISCOVERY-CONSUMER** → `components/usecase/concert/create-from-discovered`
 - concert-approval-queue / Rejection log is append-only and analysis-only (1 scen)
 - concert-approval-queue / Discovery auto-publishes new concerts and stages only conflicts (5 scen)
+
+**ERROR-MAPPING** → `components/adapter/rpc/error-mapping`
+- entity-test-coverage / Error code semantic correctness (3 scen)
+- usecase-test-coverage / Package utility test coverage (2 scen)
 
 **GUEST-HYPE-MERGE** → `stories/merge-guest-data-on-signup`
 - guest-data-merge / Guest hype included in data merge on signup (3 scen)
@@ -223,6 +216,10 @@ SPLIT 内の OUT を含む OUT 合計: 1629 scen / 671 req
 - passion-level / Hype Changes Require Authentication for Server-Side Persistence (2 scen)
 - passion-level / Hype Level Persistence (1 scen)
 - passion-level / SetHype API (3 scen)
+
+**WEBHOOK-PRE-ACCESS-TOKEN** → `components/adapter/webhook/pre-access-token`
+- zitadel-action-webhook / Pre-Access-Token Webhook Endpoint (2 scen)
+- zitadel-action-webhook / Webhook Authentication via Zitadel-Issued JWT Signature (3 scen)
 
 **V6**: `Search Concerts by Artist` が `concert-service` と `concert-search` から同じ usecase に着地（merge_group なし）。
 
@@ -279,17 +276,3 @@ SPLIT 内の OUT を含む OUT 合計: 1629 scen / 671 req
 - components/usecase/verified-identity/get-my-verification-status
 - components/usecase/verified-identity/re-check
 - components/usecase/verified-identity/start-verify
-
-## 集計
-
-| disposition | req | scen |
-|---|---:|---:|
-| KEEP | 548 | 1817 |
-| OUT:design-doc | 265 | 638 |
-| OUT:runbook | 224 | 506 |
-| OUT:lint | 158 | 413 |
-| NEEDS_HUMAN | 42 | 107 |
-| OUT:delete | 24 | 72 |
-| DROP:historic | 5 | 14 |
-| DROP:obsolete | 4 | 14 |
-| DROP:duplicate | 3 | 7 |
