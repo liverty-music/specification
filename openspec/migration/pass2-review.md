@@ -14,70 +14,72 @@
 | DROP:obsolete | 4 | 14 |
 | DROP:duplicate | 3 | 7 |
 
+`OUT:design-doc` の行き先は **導入元 change の archived design.md**（`docs/design/` は作らない）。
+
 ## A. openspec から出る spec — 61本（全 requirement が OUT）— **全行確認**
 
 | spec | disposition | req | scen | note |
 |---|---|---:|---:|---|
-| modern-css-platform | OUT:design-doc | 21 | 44 | frontend/docs/design/modern-css-platform.md |
+| modern-css-platform | OUT:design-doc | 21 | 44 | → archived design.md of 2026-02-25-aurelia-best-practice, 2026-03-06-introduce-stylelint, 2026-03-12 |
 | css-linting | OUT:lint | 9 | 27 | frontend/stylelint.config.js (existing tool config, no separate doc needed) |
 | cube-css-layer-constraints | OUT:lint | 5 | 24 | frontend/stylelint-plugin-cube-css docs (layer constraint rules) |
 | unified-check-interface | OUT:delete | 2 | 23 | repo-root Makefile / CI workflow YAML (mechanics only, no doc) |
 | css-state-management | OUT:lint | 8 | 21 | frontend coding conventions doc (CSS state-management three-layer contract) |
 | cube-css-token-enforcement | OUT:lint | 6 | 20 | frontend/AGENTS.md or a stylelint-plugin-cube-css doc (design-token enforcement rule) |
-| gke-standard-infrastructure | OUT:design-doc | 8 | 19 | cloud-provisioning/docs/infrastructure/gke-dev-cluster.md |
-| gemini-searcher-config | OUT:design-doc | 5 | 18 | backend internal config docs (gemini searcher configuration) |
+| gke-standard-infrastructure | OUT:design-doc | 8 | 19 | → archived design.md of 2026-04-02-gke-cost-optimization, 2026-04-08-optimize-dev-cluster-cost, 2026 |
+| gemini-searcher-config | OUT:design-doc | 5 | 18 | → archived design.md of 2026-05-25-redesign-concert-searcher-grounded-extract, 2026-06-02-reduce-gem |
 | secret-management | OUT:runbook | 8 | 18 | cloud-provisioning/docs/runbooks/secret-management.md |
 | aurelia-template-optimization | OUT:lint | 8 | 17 | frontend coding conventions doc (Aurelia 2 template/binding patterns) |
-| frontend-store-cache | OUT:design-doc | 6 | 17 | frontend design doc for the store-cache primitive |
+| frontend-store-cache | OUT:design-doc | 6 | 17 | → archived design.md of 2026-07-27-frontend-store-cache-and-consistency |
 | prod-image-tag-immutability | OUT:runbook | 4 | 17 | cloud-provisioning/docs/runbooks/prod-image-tag-pinning.md |
 | argocd-image-automation | OUT:delete | 8 | 16 |  |
-| admin-rpc-server | OUT:design-doc | 6 | 15 | backend/docs/design/admin-rpc-server.md |
+| admin-rpc-server | OUT:design-doc | 6 | 15 | → archived design.md of 2026-06-19-split-admin-rpc-server |
 | zitadel-observability | OUT:runbook | 5 | 15 | cloud-provisioning/docs/runbooks/zitadel-hang.md |
 | otel-collector-deployment | OUT:runbook | 7 | 14 | cloud-provisioning/docs/runbooks/otel-collector.md |
-| backend-otel-instrumentation | OUT:design-doc | 5 | 13 | backend/docs/design/otel-instrumentation.md |
-| cloud-dns-infrastructure | OUT:design-doc | 5 | 13 | cloud-provisioning/docs/design/dns.md |
+| backend-otel-instrumentation | OUT:design-doc | 5 | 13 | → archived design.md of 2026-03-27-enhance-backend-observability |
+| cloud-dns-infrastructure | OUT:design-doc | 5 | 13 | → archived design.md of 2026-02-14-expose-api-via-gateway, 2026-05-15-consolidate-public-dns-on-clou |
 | cube-css-structural-rules | OUT:lint | 3 | 13 | frontend/.stylelint-plugin (lint rule config, discard from openspec) |
 | deployment-infrastructure | OUT:runbook | 10 | 13 | cloud-provisioning/docs/runbooks/pulumi-deployment.md |
-| frontend-observability | OUT:design-doc | 3 | 13 | frontend/docs/design/otel-observability.md |
+| frontend-observability | OUT:design-doc | 3 | 13 | → archived design.md of 2026-02-22-frontend-error-handling |
 | argocd-deployment-alerts | OUT:runbook | 5 | 12 | cloud-provisioning/docs/runbooks/argocd-deployment-alerts.md |
 | cube-css-modern-css-rules | OUT:lint | 3 | 12 | frontend stylelint plugin config (already implemented; no separate doc) |
 | apex-frontend-serving | OUT:runbook | 4 | 11 | cloud-provisioning/docs/runbooks/apex-frontend-serving.md |
 | cube-css-layer-enforcement | OUT:lint | 2 | 11 | frontend stylelint plugin config (already implemented; no separate doc) |
-| db-trace-correlation | OUT:design-doc | 4 | 11 | backend/docs/design/db-trace-correlation.md |
+| db-trace-correlation | OUT:design-doc | 4 | 11 | → archived design.md of 2026-03-06-correlate-otel-cloud-sql |
 | tap-press-feedback | OUT:lint | 5 | 11 | frontend CSS interaction-feedback conventions doc |
 | admin-console-hosting | OUT:runbook | 6 | 10 | cloud-provisioning/docs/runbooks/admin-console-hosting.md |
 | aurelia-reactivity | OUT:lint | 5 | 10 | frontend/docs/conventions/aurelia-reactivity.md |
 | continuous-delivery | OUT:runbook | 9 | 10 | cloud-provisioning/docs/runbooks/continuous-delivery.md |
-| feature-flag-management | OUT:design-doc | 5 | 10 | product-analytics/docs/feature-flag-governance.md |
+| feature-flag-management | OUT:design-doc | 5 | 10 | → archived design.md of 2026-06-26-introduce-analytics-tool |
 | gcp-cost-guardrails | OUT:runbook | 3 | 10 | cloud-provisioning/docs/runbooks/cost-guardrails.md |
 | k8s-resource-right-sizing | OUT:runbook | 2 | 10 | cloud-provisioning/docs/runbooks/k8s-resource-right-sizing.md |
 | certificate-manager-integration | OUT:runbook | 6 | 9 | cloud-provisioning/docs/runbooks/certificate-manager.md |
 | component-smoke-tests | OUT:delete | 3 | 9 | frontend/test-plans (test/CI inventory, discard from openspec) |
 | concert-search-internals | OUT:lint | 5 | 9 | backend/AGENTS.md (Clean Architecture & testing conventions) |
 | k8s-service-cross-namespace-routing | OUT:runbook | 6 | 9 | cloud-provisioning/docs/runbooks/k8s-cross-namespace-routing.md |
-| gke-gateway-infrastructure | OUT:design-doc | 6 | 8 | cloud-provisioning/docs/decisions/gke-gateway-infrastructure.md |
+| gke-gateway-infrastructure | OUT:design-doc | 6 | 8 | → archived design.md of 2026-02-14-expose-api-via-gateway |
 | goroutine-leak-detection | OUT:runbook | 3 | 8 | backend/docs/runbooks/goroutine-leak-detection.md |
 | atlas-operator | OUT:runbook | 5 | 7 | cloud-provisioning/docs/runbooks/atlas-operator.md |
 | e2e-auth-testing | OUT:runbook | 5 | 7 | frontend/docs/runbooks/e2e-auth-testing.md |
-| frontend-client-rpc-telemetry | OUT:design-doc | 6 | 7 | frontend internal docs (RPC telemetry design) |
+| frontend-client-rpc-telemetry | OUT:design-doc | 6 | 7 | → archived design.md of 2026-09-11-frontend-client-rpc-telemetry |
 | migration-rebase-guard | OUT:runbook | 3 | 7 | backend/docs/runbooks/migration-drift-guard.md |
-| otel-sdk-configuration | OUT:design-doc | 4 | 7 | backend design doc for OTel SDK setup |
+| otel-sdk-configuration | OUT:design-doc | 4 | 7 | → archived design.md of 2026-03-27-enhance-backend-observability |
 | cloud-sql-connector | OUT:runbook | 5 | 6 | backend/docs/runbooks/cloud-sql-connector.md |
 | consumer-poison-queue-alerting | OUT:runbook | 2 | 6 | backend ops runbook / cloud-provisioning alert policy (discard from openspec) |
 | cube-css-lint-plugin | OUT:lint | 4 | 6 | frontend/stylelint-plugin-cube-css docs (plugin architecture) |
 | backend-service-exposure | OUT:runbook | 3 | 5 | cloud-provisioning/docs/runbooks/backend-service-exposure.md |
-| bulk-insert-unnest | OUT:design-doc | 2 | 5 | backend internal docs (repository bulk-insert pattern) |
+| bulk-insert-unnest | OUT:design-doc | 2 | 5 | → archived design.md of 2026-02-21-artist-creation |
 | dev-db-access | OUT:runbook | 4 | 5 | backend/docs/dev-db-access.md |
 | localstorage-naming | OUT:lint | 3 | 5 | frontend/AGENTS.md (localStorage key naming convention) |
 | private-google-access | OUT:runbook | 3 | 5 | cloud-provisioning/docs/runbooks/private-google-access.md |
-| commit-gate-hook | OUT:runbook | 3 | 4 | docs/runbooks/commit-gate-hook.md (one req, code-verifier skill removal, is a one-time obs |
-| interceptor-chain-ordering | OUT:design-doc | 2 | 4 | backend/docs/interceptor-ordering.md (or inline code comments per requirement 2) |
+| commit-gate-hook | OUT:runbook | 3 | 4 | docs/runbooks/commit-gate-hook.md (one req, code-verifier skill removal, is a one-time obsolete clea |
+| interceptor-chain-ordering | OUT:design-doc | 2 | 4 | → archived design.md of ; 2 untraced → git history |
 | frontend-performance-instrumentation | OUT:runbook | 3 | 3 | frontend observability telemetry (discard from openspec) |
 | frontend-router-query-params | OUT:lint | 1 | 3 | frontend internal docs (router coding conventions) |
 | pulumi-state-recovery | OUT:runbook | 1 | 3 | cloud-provisioning/docs/runbooks/pulumi-state-recovery.md |
-| watermill-structured-logging | OUT:design-doc | 2 | 3 | backend design doc for logging |
+| watermill-structured-logging | OUT:design-doc | 2 | 3 | → archived design.md of 2026-03-11-watermill-structured-logging |
 | web-push-delivery-alerting | OUT:runbook | 2 | 3 | cloud-provisioning/docs/runbooks/web-push-delivery-alerting.md |
-| infra | OUT:design-doc | 2 | 2 | cloud-provisioning/docs/decisions/keda-replica-management.md |
+| infra | OUT:design-doc | 2 | 2 | → archived design.md of 2026-03-13-fix-keda-argocd-replicas-conflict |
 | organizer-console-hosting | OUT:runbook | 2 | 2 | cloud-provisioning/docs/runbooks/organizer-console-hosting.md |
 
 SPLIT 内の OUT を含む OUT 合計: 1617 scen / 666 req
