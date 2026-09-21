@@ -23,7 +23,7 @@ for f in glob.glob(f"{S}/*/spec.md"):
 def strip_hdr(t): return "\n".join(l for l in t.split("\n") if not l.strip().startswith("<!--")).strip("\n") + "\n"
 merged = {os.path.basename(f)[:-3]: strip_hdr(open(f, encoding="utf-8").read()) for f in glob.glob(f"{M}/phase2/output/merge/*.md")}
 rewritten = {}
-for f in glob.glob(f"{M}/phase2/output/rewrite/*.md"):
+for f in glob.glob(f"{M}/phase2/output/rewrite/*.md") + glob.glob(f"{M}/phase2/output/rewrite2/*.md"):
     t = open(f, encoding="utf-8").read()
     if "<!-- DROP:" in t: rewritten[os.path.basename(f)[:-3]] = None
     else: rewritten[os.path.basename(f)[:-3]] = strip_hdr(t)
@@ -34,11 +34,11 @@ scen_of = lambda b: re.split(r"(?=^#### Scenario:)", b, flags=re.M)[1:]
 for r in keep:
     k = (r["old_spec"], r["old_req_name"].strip()); tp = r["target_path"]; srcs[tp].add(r["old_spec"])
     if r["merge_group"]:
-        g = r["merge_group"]
+        g = r["merge_group"]; changed_rows.append(k)
         if g in groups_done: continue
         groups_done.add(g)
         if g not in merged: missing.append(("merge", g)); continue
-        out[tp].append(merged[g]); changed_rows.append(k); continue
+        out[tp].append(merged[g]); continue
     fn = f"{r['old_spec']}__{r['req_hash']}"
     if fn in rewritten:
         if rewritten[fn] is None: continue
@@ -56,6 +56,8 @@ purpose_todo = []
 for tp, bl in out.items():
     d = f"{N}/{tp}"; os.makedirs(d, exist_ok=True)
     ss = sorted(srcs[tp]); p = purposes.get(ss[0], "") if len(ss) == 1 else ""
+    pf = f"{M}/phase2/output/purpose/{tp.replace('/', '__')}.md"
+    if os.path.exists(pf): p = open(pf, encoding="utf-8").read().strip()
     if len(p) < 50: purpose_todo.append(tp); p = f"<!-- PURPOSE: write from sources {', '.join(ss)} -->\nTBD"
     with open(f"{d}/spec.md", "w", encoding="utf-8") as f:
         f.write(f"# {titles(tp)}\n\n## Purpose\n\n{p}\n\n## Requirements\n\n" + "\n".join(bl))
@@ -73,7 +75,7 @@ if dupn: fails.append(f"C12 duplicate requirement names: {len(dupn)} {dupn[:5]}"
 sc = rd(f"{M}/scenarios.tsv"); keep_keys = {(r["old_spec"], r["old_req_name"].strip()) for r in keep}
 expected_unchanged = collections.Counter(r["scen_hash"] for r in sc if (r["old_spec"], r["old_req_name"].strip()) in keep_keys and (r["old_spec"], r["old_req_name"].strip()) not in set(changed_rows))
 total_next = sum(len(scen_of(b)) for bl in out.values() for b in bl)
-total_keep = sum(1 for r in sc if (r["old_spec"], r["old_req_name"].strip()) in keep_keys)
+total_keep = sum(1 for r in sc if (r["old_spec"], r["old_req_name"].strip()) in keep_keys and r.get("routing") != "DEDUP")
 print(f"C7 scenarios: specs.next {total_next} vs KEEP ledger {total_keep}")
 diff = sum((expected_unchanged - conserved_hashes).values())
 print(f"C8 unchanged-row scenario hashes missing from specs.next: {diff}")

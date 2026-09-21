@@ -753,7 +753,7 @@ concert-service	Concert Service	2	eb0f54ea	Create Artist	FOLLOW_PARENT
 concert-service	Concert Service	3	a2581459	Create Artist with Invalid Name	FOLLOW_PARENT	
 concert-service	Search Concerts by Artist	0	818aec35	Successful Search with known official site	FOLLOW_PARENT	
 concert-service	Search Concerts by Artist	1	6d23a26d	Successful Search without official site	FOLLOW_PARENT	
-concert-service	Search Concerts by Artist	2	fc2918d0	Filter Past Events	FOLLOW_PARENT	
+concert-service	Search Concerts by Artist	2	fc2918d0	Filter Past Events	DEDUP	
 concert-service	Search Concerts by Artist	3	d39b409f	No Results	FOLLOW_PARENT	
 concert-service	Search Concerts by Artist	4	28dee5bd	Error context in failures	FOLLOW_PARENT	
 concert-service	Concert Persistence	0	a7aa3dd0	Discovered concerts are staged, not persisted	FOLLOW_PARENT	
@@ -2388,8 +2388,11 @@ nearby-proximity	Centroid Resolution Unit Coverage	0	96da5564	Japanese prefectur
 nearby-proximity	Centroid Resolution Unit Coverage	1	4d1cefd5	Unsupported region code	FOLLOW_PARENT	
 non-blocking-menu-navigation	Menu-tab navigation attaches the view before data resolves	0	c910ddfe	Tapping a menu tab swaps the view immediately	FOLLOW_PARENT	
 non-blocking-menu-navigation	Menu-tab navigation attaches the view before data resolves	1	af2ee744	Data fetch is kicked off non-blocking from loading()	FOLLOW_PARENT	
+non-blocking-menu-navigation	Menu-tab navigation attaches the view before data resolves	2	d731fa21	A cached result does not collapse into the first render	FOLLOW_PARENT	
+non-blocking-menu-navigation	Menu-tab navigation attaches the view before data resolves	3	dfa692c3	A newly added bottom-nav tab is covered	FOLLOW_PARENT	
 non-blocking-menu-navigation	In-flight state is shown via the route's existing UI	0	709d69d1	Spinner shown immediately after attach	FOLLOW_PARENT	
 non-blocking-menu-navigation	In-flight state is shown via the route's existing UI	1	d76cb897	Fetch failure shows an error/empty state, not a frozen screen	FOLLOW_PARENT	
+non-blocking-menu-navigation	In-flight state is shown via the route's existing UI	2	dd50e63f	Re-entry shows the loading presentation, never an empty flash	FOLLOW_PARENT	
 non-blocking-menu-navigation	Synchronous prelude remains in loading()	0	e2912c7c	Prelude state is set before first paint	FOLLOW_PARENT	
 non-blocking-menu-navigation	Synchronous prelude remains in loading()	1	58430076	Re-entrant load aborts the prior request first	FOLLOW_PARENT	
 non-blocking-menu-navigation	Navigating away cancels the in-flight fetch	0	5ad2657f	Leaving the tab aborts the request	FOLLOW_PARENT	
@@ -3587,34 +3590,34 @@ zitadel-self-hosted-deployment	Outbound HTTP Client Permits In-Cluster Webhook T
 zitadel-self-hosted-deployment	Outbound HTTP Client Permits In-Cluster Webhook Targets While Retaining SSRF Protection	1	8954906e	Token issuance completes with the pre-access-token Target enabled	FOLLOW_PARENT	
 zitadel-self-hosted-deployment	Outbound HTTP Client Permits In-Cluster Webhook Targets While Retaining SSRF Protection	2	afdcb028	Cloud metadata endpoint remains denied	FOLLOW_PARENT	
 zitadel-self-hosted-deployment	Outbound HTTP Client Permits In-Cluster Webhook Targets While Retaining SSRF Protection	3	acca5d86	Non-webhook private ranges remain denied	FOLLOW_PARENT	
-dashboard-timetable-rendering	Timetable rendering cost is bounded and must not dominate the main thread	0	e3b0c442	Tab-switch re-entry does not freeze on rendering	FOLLOW_PARENT	
-dashboard-timetable-rendering	Timetable rendering cost is bounded and must not dominate the main thread	1	e3b0c442	First dashboard load render cost is reduced	FOLLOW_PARENT	
-dashboard-timetable-rendering	Timetable rendering cost is bounded and must not dominate the main thread	2	e3b0c442	Off-screen timetable content is not styled or laid out eagerly	FOLLOW_PARENT	
-dashboard-timetable-rendering	Timetable rendering cost is bounded and must not dominate the main thread	3	e3b0c442	Viewport-scoping off-screen content does not regress sticky headers or shift layout	FOLLOW_PARENT	
-dashboard-timetable-rendering	Highlighted card visuals must not drive continuous rendering work	0	e3b0c442	Idle timetable does no continuous rendering work	FOLLOW_PARENT	
-dashboard-timetable-rendering	Highlighted card visuals must not drive continuous rendering work	1	e3b0c442	Reduced motion is respected	FOLLOW_PARENT	
-dashboard-timetable-rendering	The timetable frame paints without data	0	e3b0c442	Frame appears before any concert data	FOLLOW_PARENT	
-dashboard-timetable-rendering	The timetable frame paints without data	1	e3b0c442	Empty state waits for a settled load	FOLLOW_PARENT	
-dashboard-timetable-rendering	Timetable rendering is scoped to the viewport	0	e3b0c442	Off-screen dates are not rendered	FOLLOW_PARENT	
-dashboard-timetable-rendering	Timetable rendering is scoped to the viewport	1	e3b0c442	Lanes stay aligned under viewport scoping	FOLLOW_PARENT	
-dashboard-timetable-rendering	Re-entry restores the date the fan was looking at	0	e3b0c442	Re-entry restores the same date, at any depth	FOLLOW_PARENT	
-dashboard-timetable-rendering	Re-entry restores the date the fan was looking at	1	e3b0c442	The anchored date is gone	FOLLOW_PARENT	
-dashboard-timetable-rendering	Page identity paints independent of the timetable render	0	e3b0c442	Header and nav switch before the timetable renders	FOLLOW_PARENT	
-dashboard-timetable-rendering	Page identity paints independent of the timetable render	1	e3b0c442	Deferring the render preserves load-path side effects	FOLLOW_PARENT	
-ticket-settlement-and-payout	Organizer Connect onboarding and payout eligibility	0	e3b0c442	Payout blocked until KYC clears	FOLLOW_PARENT	
-ticket-settlement-and-payout	Organizer Connect onboarding and payout eligibility	1	e3b0c442	Verified Organizer is payout-eligible	FOLLOW_PARENT	
-ticket-settlement-and-payout	Hold-to-event payout via separate charges and transfers	0	e3b0c442	Post-event Transfer settles the Organizer's net share	FOLLOW_PARENT	
-ticket-settlement-and-payout	Hold-to-event payout via separate charges and transfers	1	e3b0c442	Funds are held on the platform balance until release	FOLLOW_PARENT	
-ticket-settlement-and-payout	Settlement splits — single Organizer payee, extensible	0	e3b0c442	MVP settles a single Organizer split	FOLLOW_PARENT	
-ticket-settlement-and-payout	Settlement splits — single Organizer payee, extensible	1	e3b0c442	Additional payee added without a breaking change	FOLLOW_PARENT	
-ticket-settlement-and-payout	Payout release gated on event occurrence plus dispute buffer	0	e3b0c442	No release before event plus buffer	FOLLOW_PARENT	
-ticket-settlement-and-payout	Payout release gated on event occurrence plus dispute buffer	1	e3b0c442	Postponement resets the release clock	FOLLOW_PARENT	
-ticket-settlement-and-payout	Contractual seller-of-record with a recognizable statement descriptor	0	e3b0c442	Platform is the settlement merchant; Organizer is contractual seller	FOLLOW_PARENT	
-ticket-settlement-and-payout	Contractual seller-of-record with a recognizable statement descriptor	1	e3b0c442	Statement descriptor identifies the event	FOLLOW_PARENT	
-ticket-settlement-and-payout	Refund and dispute clawback across splits	0	e3b0c442	Refund reverses each transferred split	FOLLOW_PARENT	
-ticket-settlement-and-payout	Refund and dispute clawback across splits	1	e3b0c442	Chargeback after payout draws on the reserve	FOLLOW_PARENT	
-ticket-settlement-and-payout	Refund and dispute clawback across splits	2	e3b0c442	Refund webhook is idempotent	FOLLOW_PARENT	
-beam-effect-toggle	The beam effect is presentational and costs nothing to render	0	e3b0c442	Beams track scroll position without scripting	FOLLOW_PARENT	
-beam-effect-toggle	The beam effect is presentational and costs nothing to render	1	e3b0c442	Beams do not defeat viewport-scoped rendering	FOLLOW_PARENT	
-beam-effect-toggle	The beam effect is presentational and costs nothing to render	2	e3b0c442	Only concerts on screen are lit	FOLLOW_PARENT	
-beam-effect-toggle	The beam effect is presentational and costs nothing to render	3	e3b0c442	Beams are absent where unsupported, with nothing else affected	FOLLOW_PARENT	
+dashboard-timetable-rendering	Timetable rendering cost is bounded and must not dominate the main thread	0	92aa27f6	Tab-switch re-entry does not freeze on rendering	FOLLOW_PARENT	
+dashboard-timetable-rendering	Timetable rendering cost is bounded and must not dominate the main thread	1	d26bee52	First dashboard load render cost is reduced	FOLLOW_PARENT	
+dashboard-timetable-rendering	Timetable rendering cost is bounded and must not dominate the main thread	2	339e907a	Off-screen timetable content is not styled or laid out eagerly	FOLLOW_PARENT	
+dashboard-timetable-rendering	Timetable rendering cost is bounded and must not dominate the main thread	3	ba27770d	Viewport-scoping off-screen content does not regress sticky headers or shift layout	FOLLOW_PARENT	
+dashboard-timetable-rendering	Highlighted card visuals must not drive continuous rendering work	0	3ae9939b	Idle timetable does no continuous rendering work	FOLLOW_PARENT	
+dashboard-timetable-rendering	Highlighted card visuals must not drive continuous rendering work	1	7573648b	Reduced motion is respected	FOLLOW_PARENT	
+dashboard-timetable-rendering	The timetable frame paints without data	0	88e1a422	Frame appears before any concert data	FOLLOW_PARENT	
+dashboard-timetable-rendering	The timetable frame paints without data	1	35496a0b	Empty state waits for a settled load	FOLLOW_PARENT	
+dashboard-timetable-rendering	Timetable rendering is scoped to the viewport	0	b9c8cb7b	Off-screen dates are not rendered	FOLLOW_PARENT	
+dashboard-timetable-rendering	Timetable rendering is scoped to the viewport	1	cb5e12e3	Lanes stay aligned under viewport scoping	FOLLOW_PARENT	
+dashboard-timetable-rendering	Re-entry restores the date the fan was looking at	0	1d0088d2	Re-entry restores the same date, at any depth	FOLLOW_PARENT	
+dashboard-timetable-rendering	Re-entry restores the date the fan was looking at	1	726ac13b	The anchored date is gone	FOLLOW_PARENT	
+dashboard-timetable-rendering	Page identity paints independent of the timetable render	0	f8393726	Header and nav switch before the timetable renders	FOLLOW_PARENT	
+dashboard-timetable-rendering	Page identity paints independent of the timetable render	1	7c286e94	Deferring the render preserves load-path side effects	FOLLOW_PARENT	
+ticket-settlement-and-payout	Organizer Connect onboarding and payout eligibility	0	bb7d8261	Payout blocked until KYC clears	FOLLOW_PARENT	
+ticket-settlement-and-payout	Organizer Connect onboarding and payout eligibility	1	fb988426	Verified Organizer is payout-eligible	FOLLOW_PARENT	
+ticket-settlement-and-payout	Hold-to-event payout via separate charges and transfers	0	4cbdcf34	Post-event Transfer settles the Organizer's net share	FOLLOW_PARENT	
+ticket-settlement-and-payout	Hold-to-event payout via separate charges and transfers	1	4dea9470	Funds are held on the platform balance until release	FOLLOW_PARENT	
+ticket-settlement-and-payout	Settlement splits — single Organizer payee, extensible	0	d5b30e04	MVP settles a single Organizer split	FOLLOW_PARENT	
+ticket-settlement-and-payout	Settlement splits — single Organizer payee, extensible	1	c97cb672	Additional payee added without a breaking change	FOLLOW_PARENT	
+ticket-settlement-and-payout	Payout release gated on event occurrence plus dispute buffer	0	32ecec2a	No release before event plus buffer	FOLLOW_PARENT	
+ticket-settlement-and-payout	Payout release gated on event occurrence plus dispute buffer	1	257008d7	Postponement resets the release clock	FOLLOW_PARENT	
+ticket-settlement-and-payout	Contractual seller-of-record with a recognizable statement descriptor	0	de8d0cdb	Platform is the settlement merchant; Organizer is contractual seller	FOLLOW_PARENT	
+ticket-settlement-and-payout	Contractual seller-of-record with a recognizable statement descriptor	1	d0902abb	Statement descriptor identifies the event	FOLLOW_PARENT	
+ticket-settlement-and-payout	Refund and dispute clawback across splits	0	c1a7907b	Refund reverses each transferred split	FOLLOW_PARENT	
+ticket-settlement-and-payout	Refund and dispute clawback across splits	1	a4b920f2	Chargeback after payout draws on the reserve	FOLLOW_PARENT	
+ticket-settlement-and-payout	Refund and dispute clawback across splits	2	77e7a082	Refund webhook is idempotent	FOLLOW_PARENT	
+beam-effect-toggle	The beam effect is presentational and costs nothing to render	0	f055e8c5	Beams track scroll position without scripting	FOLLOW_PARENT	
+beam-effect-toggle	The beam effect is presentational and costs nothing to render	1	bbcf19dc	Beams do not defeat viewport-scoped rendering	FOLLOW_PARENT	
+beam-effect-toggle	The beam effect is presentational and costs nothing to render	2	a22bc1ec	Only concerts on screen are lit	FOLLOW_PARENT	
+beam-effect-toggle	The beam effect is presentational and costs nothing to render	3	725f68bb	Beams are absent where unsupported, with nothing else affected	FOLLOW_PARENT	
