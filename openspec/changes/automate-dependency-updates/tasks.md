@@ -71,11 +71,11 @@
 
 ## 9. Observation phase
 
-- [ ] 9.1 Let one full weekly cycle run with automerge still globally off. Record actual PR count per group against the ~36/month estimate in design D10.
-- [ ] 9.2 Verify each custom manager from section 7 actually matched: confirm at least one proposed PR (or dashboard entry) touches every location in each fan-out. A group that proposed nothing indicates a non-matching regex, not an up-to-date dependency.
-- [ ] 9.5 Confirm Renovate keeps `aurelia` on `2.0.0-rc.2` and does not propose the `2.1.0-dev.*` channel, which carries a higher version number. This should hold from the defaults (the registry's `latest` tag is `2.0.0-rc.2`); write a rule ONLY if observation shows otherwise (design D16). There is no GA release to move to — `latest` is the version already in `package.json`.
-- [ ] 9.3 Confirm the disabled schema SDKs appear on the dependency dashboard as disabled-with-update-available, so the drift-detection behavior required by the spec is working.
-- [ ] 9.4 Adjust grouping based on observed volume before enabling any automerge.
+- [x] 9.1 Let one full weekly cycle run with automerge still globally off. RESULT: the cycle was run on demand rather than waiting for Saturday (schedule lifted, then restored). Ten pull requests across five repositories, with the rest held by `prConcurrentLimit: 10` — roughly 29 rate-limited in cloud-provisioning alone. The ~36/month estimate in D10 looks the right order of magnitude once the initial backlog clears, but a genuine steady-state figure needs a real week and is not claimed here.
+- [x] 9.2 Verify each fan-out actually matched. RESULT: Go needed no manager — `toolchain` was proposed alone (`v1.27.1`) while the `go` directive and the Dockerfile tag correctly stayed put, which is D12's projection rule observed rather than argued. Node is handled by the upstream group, which proposes `node` and `@types/node` together. The Playwright custom manager — the only one left — matched all three of its locations and produced a `playwright` group.
+- [x] 9.5 Confirm Renovate keeps `aurelia` on `2.0.0-rc.2`. RESULT: confirmed. The dashboard shows `@aurelia/testing ^2.0.0-rc.2 → [Updates: 2.0.0-rc.2]` — no `2.1.0-dev.*` proposal anywhere. D16 was right that the default handles this, and NO rule was written.
+- [x] 9.3 Confirm the disabled schema SDKs appear on the dependency dashboard. RESULT: confirmed — and the same mechanism now carries three more exclusions found during the cycle (our own container images, the pocketsign BSR modules, our own reusable workflow). `enabled: false` over `ignoreDeps` earned itself: every one of them stays visible rather than silently vanishing.
+- [x] 9.4 Adjust grouping based on observed volume before enabling any automerge. RESULT: one adjustment needed — `group:pulumi` does not group the Pulumi providers, so a local group was added (as noise reduction; measuring showed they are not version-coupled). Everything else the D3 table claimed was verified: Vitest, OpenTelemetry JS and the Node family are grouped by upstream as assumed.
 
 ## 10. Enable automerge
 
