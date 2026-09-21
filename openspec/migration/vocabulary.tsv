@@ -1,0 +1,163 @@
+target_path	source_kind	source_artifact	note
+components/entity/artist	proto	specification/proto/liverty_music/entity/v1/artist.proto	bootstrap only; spec becomes the source after migration
+components/entity/concert	proto	specification/proto/liverty_music/entity/v1/concert.proto	bootstrap only; spec becomes the source after migration
+components/entity/coordinates	proto	specification/proto/liverty_music/entity/v1/coordinates.proto	bootstrap only; spec becomes the source after migration
+components/entity/event	proto	specification/proto/liverty_music/entity/v1/event.proto	bootstrap only; spec becomes the source after migration
+components/entity/follow	proto	specification/proto/liverty_music/entity/v1/follow.proto	bootstrap only; spec becomes the source after migration
+components/entity/geo-location	proto	specification/proto/liverty_music/entity/v1/geo_location.proto	bootstrap only; spec becomes the source after migration
+components/entity/lottery-application	proto	specification/proto/liverty_music/entity/v1/lottery_application.proto	bootstrap only; spec becomes the source after migration
+components/entity/media	proto	specification/proto/liverty_music/entity/v1/media.proto	bootstrap only; spec becomes the source after migration
+components/entity/notification	proto	specification/proto/liverty_music/entity/v1/notification.proto	bootstrap only; spec becomes the source after migration
+components/entity/order	proto	specification/proto/liverty_music/entity/v1/order.proto	bootstrap only; spec becomes the source after migration
+components/entity/organizer	proto	specification/proto/liverty_music/entity/v1/organizer.proto	bootstrap only; spec becomes the source after migration
+components/entity/proximity	proto	specification/proto/liverty_music/entity/v1/proximity.proto	bootstrap only; spec becomes the source after migration
+components/entity/push-subscription	proto	specification/proto/liverty_music/entity/v1/push_subscription.proto	bootstrap only; spec becomes the source after migration
+components/entity/sales-phase	proto	specification/proto/liverty_music/entity/v1/sales_phase.proto	bootstrap only; spec becomes the source after migration
+components/entity/series	proto	specification/proto/liverty_music/entity/v1/series.proto	bootstrap only; spec becomes the source after migration
+components/entity/settlement	proto	specification/proto/liverty_music/entity/v1/settlement.proto	bootstrap only; spec becomes the source after migration
+components/entity/staged-concert	proto	specification/proto/liverty_music/entity/v1/staged_concert.proto	bootstrap only; spec becomes the source after migration
+components/entity/ticket	proto	specification/proto/liverty_music/entity/v1/ticket.proto	bootstrap only; spec becomes the source after migration
+components/entity/ticket-journey	proto	specification/proto/liverty_music/entity/v1/ticket_journey.proto	bootstrap only; spec becomes the source after migration
+components/entity/user	proto	specification/proto/liverty_music/entity/v1/user.proto	bootstrap only; spec becomes the source after migration
+components/entity/venue	proto	specification/proto/liverty_music/entity/v1/venue.proto	bootstrap only; spec becomes the source after migration
+components/entity/verified-identity	proto	specification/proto/liverty_music/entity/v1/verified_identity.proto	bootstrap only; spec becomes the source after migration
+components/usecase/artist/sync-artist-image	go	backend/internal/usecase/artist_image_sync_uc.go:ArtistImageSyncUseCase.SyncArtistImage	
+components/usecase/artist/resolve-canonical-name	go	backend/internal/usecase/artist_name_resolution_uc.go:ArtistNameResolutionUseCase.ResolveCanonicalName	
+components/usecase/artist/create	go	backend/internal/usecase/artist_uc.go:ArtistUseCase.Create	
+components/usecase/artist/list	go	backend/internal/usecase/artist_uc.go:ArtistUseCase.List	
+components/usecase/artist/create-official-site	go	backend/internal/usecase/artist_uc.go:ArtistUseCase.CreateOfficialSite	
+components/usecase/artist/get-official-site	go	backend/internal/usecase/artist_uc.go:ArtistUseCase.GetOfficialSite	
+components/usecase/artist/search	go	backend/internal/usecase/artist_uc.go:ArtistUseCase.Search	
+components/usecase/artist/list-similar	go	backend/internal/usecase/artist_uc.go:ArtistUseCase.ListSimilar	
+components/usecase/artist/list-top	go	backend/internal/usecase/artist_uc.go:ArtistUseCase.ListTop	
+components/usecase/concert/list	go	backend/internal/usecase/concert_admin_uc.go:AdminConcertUseCase.List	
+components/usecase/concert/list-pending	go	backend/internal/usecase/concert_admin_uc.go:AdminConcertUseCase.ListPending	
+components/usecase/concert/approve	go	backend/internal/usecase/concert_admin_uc.go:AdminConcertUseCase.Approve	
+components/usecase/concert/reject	go	backend/internal/usecase/concert_admin_uc.go:AdminConcertUseCase.Reject	
+components/usecase/concert/delete	go	backend/internal/usecase/concert_admin_uc.go:AdminConcertUseCase.Delete	
+components/usecase/concert/create-draft	go	backend/internal/usecase/concert_authoring_uc.go:ConcertAuthoringUseCase.CreateDraft	
+components/usecase/concert/update-draft	go	backend/internal/usecase/concert_authoring_uc.go:ConcertAuthoringUseCase.UpdateDraft	
+components/usecase/concert/publish	go	backend/internal/usecase/concert_authoring_uc.go:ConcertAuthoringUseCase.Publish	
+components/usecase/concert/cancel	go	backend/internal/usecase/concert_authoring_uc.go:ConcertAuthoringUseCase.Cancel	
+components/usecase/concert/regenerate-token	go	backend/internal/usecase/concert_authoring_uc.go:ConcertAuthoringUseCase.RegenerateToken	
+components/usecase/concert/list-own	go	backend/internal/usecase/concert_authoring_uc.go:ConcertAuthoringUseCase.ListOwn	
+components/usecase/concert/create-from-discovered	go	backend/internal/usecase/concert_creation_uc.go:ConcertCreationUseCase.CreateFromDiscovered	
+components/usecase/concert/list-by-artist	go	backend/internal/usecase/concert_uc.go:ConcertUseCase.ListByArtist	
+components/usecase/concert/list-by-follower	go	backend/internal/usecase/concert_uc.go:ConcertUseCase.ListByFollower	
+components/usecase/concert/list-by-follower-grouped	go	backend/internal/usecase/concert_uc.go:ConcertUseCase.ListByFollowerGrouped	
+components/usecase/concert/list-by-artists	go	backend/internal/usecase/concert_uc.go:ConcertUseCase.ListByArtists	
+components/usecase/concert/list-by-location	go	backend/internal/usecase/concert_uc.go:ConcertUseCase.ListByLocation	
+components/usecase/concert/search-new-concerts	go	backend/internal/usecase/concert_uc.go:ConcertUseCase.SearchNewConcerts	
+components/usecase/follow/follow	go	backend/internal/usecase/follow_uc.go:FollowUseCase.Follow	
+components/usecase/follow/unfollow	go	backend/internal/usecase/follow_uc.go:FollowUseCase.Unfollow	
+components/usecase/follow/set-hype	go	backend/internal/usecase/follow_uc.go:FollowUseCase.SetHype	
+components/usecase/follow/list-followed	go	backend/internal/usecase/follow_uc.go:FollowUseCase.ListFollowed	
+components/usecase/identity-verification/start-verify	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.StartVerify	
+components/usecase/identity-verification/complete-verify	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.CompleteVerify	
+components/usecase/identity-verification/re-check	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.ReCheck	
+components/usecase/identity-verification/get-my-verification-status	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.GetMyVerificationStatus	
+components/usecase/identity-verification/delete	go	backend/internal/usecase/identity_verification_uc.go:IdentityVerificationUseCase.Delete	
+components/usecase/lottery/configure-lottery-phase	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.ConfigureLotteryPhase	
+components/usecase/lottery/set-phase-verification-requirement	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.SetPhaseVerificationRequirement	
+components/usecase/lottery/create-authorization	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.CreateAuthorization	
+components/usecase/lottery/apply	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.Apply	
+components/usecase/lottery/withdraw-application	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.WithdrawApplication	
+components/usecase/lottery/get-my-application	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.GetMyApplication	
+components/usecase/lottery/get-result	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.GetResult	
+components/usecase/lottery/get-lottery-phase-status	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.GetLotteryPhaseStatus	
+components/usecase/lottery/draw-due-phases	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.DrawDuePhases	
+components/usecase/lottery/run-draw	go	backend/internal/usecase/lottery_uc.go:LotteryUseCase.RunDraw	
+components/usecase/media/create-media-upload-url	go	backend/internal/usecase/media_uc.go:MediaUseCase.CreateMediaUploadURL	
+components/usecase/media/attach-media	go	backend/internal/usecase/media_uc.go:MediaUseCase.AttachMedia	
+components/usecase/notification/notify	go	backend/internal/usecase/notification_uc.go:NotificationUseCase.Notify	
+components/usecase/notification/mark-read	go	backend/internal/usecase/notification_uc.go:NotificationUseCase.MarkRead	
+components/usecase/notification/mark-dismissed	go	backend/internal/usecase/notification_uc.go:NotificationUseCase.MarkDismissed	
+components/usecase/organizer/create	go	backend/internal/usecase/organizer_uc.go:OrganizerUseCase.Create	
+components/usecase/organizer/get	go	backend/internal/usecase/organizer_uc.go:OrganizerUseCase.Get	
+components/usecase/organizer/get-by-zitadel-org-id	go	backend/internal/usecase/organizer_uc.go:OrganizerUseCase.GetByZitadelOrgID	
+components/usecase/organizer/list	go	backend/internal/usecase/organizer_uc.go:OrganizerUseCase.List	
+components/usecase/organizer/list-artists	go	backend/internal/usecase/organizer_uc.go:OrganizerUseCase.ListArtists	
+components/usecase/organizer/associate-artist	go	backend/internal/usecase/organizer_uc.go:OrganizerUseCase.AssociateArtist	
+components/usecase/organizer/disassociate-artist	go	backend/internal/usecase/organizer_uc.go:OrganizerUseCase.DisassociateArtist	
+components/usecase/organizer/deactivate	go	backend/internal/usecase/organizer_uc.go:OrganizerUseCase.Deactivate	
+components/usecase/organizer/reconcile-provisioning	go	backend/internal/usecase/organizer_uc.go:OrganizerUseCase.ReconcileProvisioning	
+components/usecase/push-notification/create	go	backend/internal/usecase/push_notification_uc.go:PushNotificationUseCase.Create	
+components/usecase/push-notification/get	go	backend/internal/usecase/push_notification_uc.go:PushNotificationUseCase.Get	
+components/usecase/push-notification/delete	go	backend/internal/usecase/push_notification_uc.go:PushNotificationUseCase.Delete	
+components/usecase/push-notification/notify-new-concerts	go	backend/internal/usecase/push_notification_uc.go:PushNotificationUseCase.NotifyNewConcerts	
+components/usecase/sales-phase/announce-discovered-phase	go	backend/internal/usecase/sales_phase_announcement_uc.go:SalesPhaseAnnouncementUseCase.AnnounceDiscoveredPhase	
+components/usecase/sales-phase/discover-for-artist	go	backend/internal/usecase/sales_phase_uc.go:SalesPhaseDiscoveryUseCase.DiscoverForArtist	
+components/usecase/sales-reminder/deliver-reminder	go	backend/internal/usecase/sales_reminder_delivery_uc.go:SalesReminderDeliveryUseCase.DeliverReminder	
+components/usecase/sales-reminder/scan-due-reminders	go	backend/internal/usecase/sales_reminder_uc.go:SalesReminderUseCase.ScanDueReminders	
+components/usecase/ticket-journey/set-status	go	backend/internal/usecase/ticket_journey_uc.go:TicketJourneyUseCase.SetStatus	
+components/usecase/ticket-journey/delete	go	backend/internal/usecase/ticket_journey_uc.go:TicketJourneyUseCase.Delete	
+components/usecase/ticket-journey/list-by-user	go	backend/internal/usecase/ticket_journey_uc.go:TicketJourneyUseCase.ListByUser	
+components/usecase/user/create	go	backend/internal/usecase/user_uc.go:UserUseCase.Create	
+components/usecase/user/get	go	backend/internal/usecase/user_uc.go:UserUseCase.Get	
+components/usecase/user/get-by-external-id	go	backend/internal/usecase/user_uc.go:UserUseCase.GetByExternalID	
+components/usecase/user/update-preferred-language	go	backend/internal/usecase/user_uc.go:UserUseCase.UpdatePreferredLanguage	
+components/usecase/user/update-home	go	backend/internal/usecase/user_uc.go:UserUseCase.UpdateHome	
+components/usecase/user/delete	go	backend/internal/usecase/user_uc.go:UserUseCase.Delete	
+components/infrastructure/ui/route/about	ts	frontend/src/routes/about	
+components/infrastructure/ui/route/auth-callback	ts	frontend/src/routes/auth-callback	
+components/infrastructure/ui/route/consent	ts	frontend/src/routes/consent	
+components/infrastructure/ui/route/dashboard	ts	frontend/src/routes/dashboard	
+components/infrastructure/ui/route/discovery	ts	frontend/src/routes/discovery	
+components/infrastructure/ui/route/legal	ts	frontend/src/routes/legal	
+components/infrastructure/ui/route/lottery-application	ts	frontend/src/routes/lottery-application	
+components/infrastructure/ui/route/lottery-apply	ts	frontend/src/routes/lottery-apply	
+components/infrastructure/ui/route/my-artists	ts	frontend/src/routes/my-artists	
+components/infrastructure/ui/route/not-found	ts	frontend/src/routes/not-found	
+components/infrastructure/ui/route/order	ts	frontend/src/routes/order	
+components/infrastructure/ui/route/settings	ts	frontend/src/routes/settings	
+components/infrastructure/ui/route/tickets	ts	frontend/src/routes/tickets	
+components/infrastructure/ui/route/verify-callback	ts	frontend/src/routes/verify-callback	
+components/infrastructure/ui/route/welcome	ts	frontend/src/routes/welcome	
+components/infrastructure/ui/global/all-nearby	ts	frontend/src/components/all-nearby	
+components/infrastructure/ui/global/artist-filter-bar	ts	frontend/src/components/artist-filter-bar	
+components/infrastructure/ui/global/bottom-nav-bar	ts	frontend/src/components/bottom-nav-bar	
+components/infrastructure/ui/global/bottom-sheet	ts	frontend/src/components/bottom-sheet	
+components/infrastructure/ui/global/celebration-overlay	ts	frontend/src/components/celebration-overlay	
+components/infrastructure/ui/global/coach-mark	ts	frontend/src/components/coach-mark	
+components/infrastructure/ui/global/dna-orb	ts	frontend/src/components/dna-orb	
+components/infrastructure/ui/global/error-banner	ts	frontend/src/components/error-banner	
+components/infrastructure/ui/global/fab-menu	ts	frontend/src/components/fab-menu	
+components/infrastructure/ui/global/icons	ts	frontend/src/components/icons	
+components/infrastructure/ui/global/inline-error	ts	frontend/src/components/inline-error	
+components/infrastructure/ui/global/legal-document	ts	frontend/src/components/legal-document	
+components/infrastructure/ui/global/live-highway	ts	frontend/src/components/live-highway	
+components/infrastructure/ui/global/loading-spinner	ts	frontend/src/components/loading-spinner	
+components/infrastructure/ui/global/notification-mock	ts	frontend/src/components/notification-mock	
+components/infrastructure/ui/global/notification-prompt	ts	frontend/src/components/notification-prompt	
+components/infrastructure/ui/global/page-header	ts	frontend/src/components/page-header	
+components/infrastructure/ui/global/page-help	ts	frontend/src/components/page-help	
+components/infrastructure/ui/global/post-signup-dialog	ts	frontend/src/components/post-signup-dialog	
+components/infrastructure/ui/global/pwa-install-banner	ts	frontend/src/components/pwa-install-banner	
+components/infrastructure/ui/global/signup-prompt-banner	ts	frontend/src/components/signup-prompt-banner	
+components/infrastructure/ui/global/snack-bar	ts	frontend/src/components/snack-bar	
+components/infrastructure/ui/global/state-placeholder	ts	frontend/src/components/state-placeholder	
+components/infrastructure/ui/global/svg-icon	ts	frontend/src/components/svg-icon	
+components/infrastructure/ui/global/toast	ts	frontend/src/components/toast	
+components/infrastructure/ui/global/user-home-selector	ts	frontend/src/components/user-home-selector	
+components/infrastructure/push/<name>	manual		kind seeded; <name> decided in Phase 1 Pass 1
+components/infrastructure/service-worker/<name>	manual		kind seeded; <name> decided in Phase 1 Pass 1
+components/infrastructure/locale/<name>	manual		kind seeded; <name> decided in Phase 1 Pass 1
+components/infrastructure/email/<name>	manual		kind seeded; <name> decided in Phase 1 Pass 1
+stories/<story>	e2e-reference	frontend/e2e/__screenshots__/authenticated-visual/visual/settings.auth.visual.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/functional/analytics-opt-out.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/functional/app-shell-scroll-lock.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/functional/artist-filter-bar.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/functional/artist-image-ui.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/functional/beam-verify.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/functional/dashboard-lane-classification.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/functional/detail-sheet-dismiss.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/functional/instant-page-switch.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/functional/onboarding-flow.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/functional/page-help-sheet-webkit.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/functional/settings-layout.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/functional/snack-bar.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/pwa/pwa-install-prompt.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/pwa/pwa-offline-cache.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/pwa/pwa-settings.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/smoke/no-console-errors.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts
+stories/<story>	e2e-reference	frontend/e2e/smoke/post-deploy.spec.ts	current e2e name is NOT a story name; stories are defined manually as verb phrases in Pass 2, then e2e is reorganised to e2e/stories/<story>.spec.ts

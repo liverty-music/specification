@@ -1,0 +1,1274 @@
+old_spec	old_req_name	req_hash	scen_n	disposition	target_path	new_req_name	merge_group	rewrite_flags	confidence	rationale
+admin-area-normalization	Admin Area Normalization Function	745ee09a	4							p=2 n=0
+admin-area-normalization	Country Code Extraction	8075e718	2							p=2 n=0
+admin-area-normalization	Normalization in Concert Discovery Pipeline	9aaeab40	3							p=17 n=0
+admin-area-normalization	Existing Data Migration	4ceec4f1	2							p=2 n=0
+admin-concert-management	Admin concert operations are served by a single ConcertService	2f0bf05a	2							p=43 n=0
+admin-concert-management	Admin lists every published concert	ff97963a	2							p=39 n=0
+admin-concert-management	Admin hard-deletes a published concert	1696ac6d	5							p=74 n=0
+admin-concert-management	Admin console presents approved concerts grouped by artist and series	d669c04f	3							p=49 n=0
+admin-concert-management	Approve resolves duplicate-event conflicts via a resolution selector	f6d1c9b8	4							p=46 n=0
+admin-console	Bundle isolation from the consumer SPA	f023d8fb	2							p=8 n=0
+admin-console	Authentication via the admin org with Google Workspace IDP	60bc3dd8	3							p=15 n=0
+admin-console	Authenticated route guard	94b1ecad	2							p=5 n=0
+admin-console	Post-login welcome placeholder	68a19ed1	1							p=7 n=0
+admin-console	Dedicated source directory with an enforced import boundary	b5f8099e	2							p=6 n=1
+admin-console-hosting	Dedicated container image and Kubernetes workload	0dda3f5e	2							p=7 n=2
+admin-console-hosting	Dedicated hostname on the shared external gateway	f962861e	2							p=9 n=0
+admin-console-hosting	Per-host runtime config delivery	3b00a6af	2							p=10 n=1
+admin-console-hosting	Admin-org OIDC application provisioning	feb5e79f	2							p=7 n=0
+admin-console-hosting	TLS certificate and DNS for the admin hostname	8cd5c8c9	1							p=5 n=1
+admin-console-hosting	GitOps delivery for the admin image	96c359ed	1							p=6 n=4
+admin-rpc-server	Dedicated admin Connect server	80883ae5	3							p=17 n=0
+admin-rpc-server	Boundary-level admin authorization	6ed0b179	4							p=17 n=0
+admin-rpc-server	Admin-only CORS allowlist	8b4a9ff3	2							p=12 n=0
+admin-rpc-server	Shared server construction to prevent interceptor drift	6ef2c816	1							p=6 n=0
+admin-rpc-server	Dedicated admin API ingress host	67f580ba	3							p=11 n=2
+admin-rpc-server	Admin console resolves the admin API host from runtime config	7e9236b3	2							p=16 n=0
+analytics-consent	Analytics operates under an EU-adequacy opt-out model, not a consent gate	a5e344dc	2							p=14 n=0
+analytics-consent	Settings exposes Analytics and Session-replay opt-out toggles	761038a1	2							p=13 n=0
+analytics-consent	Full non-PII catalogue is captured anonymously before identification	36d1c3a2	2							p=39 n=0
+analytics-consent	Anonymous behaviour is merged into the identified profile on login	e594ef14	1							p=21 n=0
+analytics-consent	Sensitive personal information is structurally excluded; minor-user legality is deferred to legal review	2b9ede9e	2							p=19 n=0
+analytics-consent	Analytics opt-out state is persisted and user-controllable from settings	665f7b22	2							p=25 n=0
+apex-frontend-serving	Apex hostname SHALL be served end-to-end via the GKE Gateway with a Google-managed TLS certificate	9f433aff	4							p=0 n=7
+apex-frontend-serving	Apex serving SHALL route to the `fan-web-app` frontend Service via HTTPRoute hostname matching	0d819884	2							p=5 n=10
+apex-frontend-serving	Apex serving SHALL NOT use Cloudflare Proxy on initial deploy	b0b9e01f	2							p=0 n=0
+apex-frontend-serving	Apex serving prod-stack resources SHALL be `protect: true`	53db766c	3							p=0 n=5
+api-rate-limiting	Per-user rate limiting for authenticated endpoints	76b81e6a	3							p=16 n=0
+api-rate-limiting	Per-IP rate limiting for unauthenticated endpoints	ca47e3fa	3							p=0 n=3
+api-rate-limiting	Rate limiter interceptor placement	4c374345	2							p=1 n=1
+api-rate-limiting	Rate limiter memory management	40b39f09	2							p=4 n=0
+api-rate-limiting	Rate limit configuration via environment variables	b5587895	2							p=0 n=0
+app-error-log-alerting	Error log detection per workload	44ed9f65	5							p=18 n=2
+app-error-log-alerting	Discovery CronJob failure observability	3a9ab993	3							p=12 n=2
+app-error-log-alerting	Atlas Operator migration failure detection	a8b1c33d	3							p=4 n=1
+app-error-log-alerting	Atlas migration alert uses same notification and rate limiting as backend alerts	52ea89d3	1							p=4 n=0
+app-error-log-alerting	Notification via Slack	7de83f42	2							p=8 n=9
+app-error-log-alerting	Notification via Google Chat	d483f768	4							p=13 n=8
+app-error-log-alerting	Notification rate limiting	4df5fc3d	1							p=5 n=0
+app-error-log-alerting	Incident auto-close	c258832f	2							p=2 n=0
+app-error-log-alerting	Error context in alert labels	53e773a5	1							p=3 n=0
+app-error-log-alerting	Error Reporting API enabled	40ef64b9	1							p=0 n=1
+app-error-log-alerting	Infrastructure as Code	42542b7b	1							p=7 n=13
+app-error-log-alerting	Gemini client-cancelled errors classified as client error	a27e5d84	2							p=0 n=0
+app-error-log-alerting	Infrastructure layer preserves original error types	f4d19ca0	3							p=0 n=0
+app-error-log-alerting	Standard slog output uses structured JSON format	7e7898fd	2							p=0 n=2
+app-shell-layout	Brand Identity Elements	a990a4c4	4							p=6 n=8
+app-shell-layout	Conditional Navigation Display	5cf530ee	7							p=34 n=0
+app-shell-layout	Route components own page structure	c6d4da5e	4							p=11 n=1
+app-shell-layout	Stale-data warning uses overlay pattern	45aa4368	2							p=11 n=3
+app-shell-layout	Semantic HTML structure	f875d0c9	5							p=14 n=0
+app-shell-layout	Page Transition Animations	b395f155	3							p=7 n=0
+app-shell-layout	Auth Status UI Redesign	e87d06c4	2							p=10 n=0
+app-shell-layout	Notification Prompt Placement	87d117bd	3							p=23 n=0
+app-shell-layout	PWA Install Prompt i18n	0c97c491	1							p=7 n=0
+app-shell-layout	Prompt Entrance and Exit Animations	b7e77f21	3							p=5 n=0
+app-shell-layout	App shell hosts the global FAB action launcher	7a949016	3							p=2 n=0
+app-shell-layout	Instant page-identity switch on navigation intent	7911cbdf	6							p=16 n=0
+argocd-deployment-alerts	ArgoCD Notifications controller is enabled	d3788415	2							p=7 n=7
+argocd-deployment-alerts	Google Chat webhook service is configured	da17243a	2							p=8 n=9
+argocd-deployment-alerts	Default triggers notify on error conditions	6a8ce97a	4							p=8 n=5
+argocd-deployment-alerts	ArgoCD secrets are isolated from backend secrets	9d44f908	2							p=0 n=9
+argocd-deployment-alerts	Webhook URL is stored in Pulumi ESC and GCP Secret Manager	81366bd1	2							p=7 n=16
+argocd-gateway-deployment	Cluster-Level Application	bc8533a9	2							p=0 n=9
+argocd-gateway-deployment	Gateway-Level Application	2121ef6a	2							p=0 n=5
+argocd-gateway-deployment	Backend Application	21e7db73	2							p=0 n=4
+argocd-gateway-deployment	GitOps Synchronization	df524005	2							p=2 n=4
+argocd-gateway-deployment	Application Dependency Ordering	f7e457cb	2							p=4 n=1
+argocd-gateway-deployment	Application Status Visibility	222c00db	1							p=3 n=1
+argocd-gateway-deployment	Rollback Capability	3317b777	1							p=2 n=2
+argocd-gateway-deployment	Prod overlay minimizes Argo CD Pod count	3158a305	3							p=0 n=13
+argocd-gateway-deployment	dev overlay is unaffected	fd6d1a76	1							p=2 n=9
+argocd-image-automation	Image Updater monitors container registry	b15fc43d	2							p=0 n=6
+argocd-image-automation	In-cluster parameter override for dev	408bb11b	2							p=0 n=9
+argocd-image-automation	Parameter override recovery after Application recreation	76bff2b7	1							p=1 n=4
+argocd-image-automation	Production deployments remain manual	09d238ed	4							p=0 n=17
+argocd-image-automation	Image pull policy enforcement	d10775c0	1							p=0 n=0
+argocd-image-automation	Multiple image support	3fb79a40	2							p=2 n=6
+argocd-image-automation	Rollback capability	fa348971	2							p=0 n=5
+argocd-image-automation	Failure handling	afe4a30f	2							p=0 n=8
+artist-auto-persist	Auto-persist external artists during ListTop	8ef430f8	3							p=20 n=0
+artist-auto-persist	Auto-persist external artists during ListSimilar	9a46091b	1							p=15 n=0
+artist-auto-persist	Handle artists without MBID	823cb91f	1							p=13 n=0
+artist-discovery-dna-orb-ui	DNA Extraction UI Concept	7a7e35fa	4							p=28 n=1
+artist-discovery-dna-orb-ui	Bubble Absorption Animation	85356f0e	5							p=23 n=0
+artist-discovery-dna-orb-ui	Bubble Burst On Tap	9a429107	4							p=14 n=0
+artist-discovery-dna-orb-ui	Orb respects prefers-reduced-motion	09b3bae6	1							p=12 n=0
+artist-discovery-dna-orb-ui	Dynamic Toast Notifications for Live Events	236246cd	2							p=34 n=0
+artist-discovery-dna-orb-ui	Similar Artist Chain Reaction	f3818b90	3							p=55 n=0
+artist-discovery-dna-orb-ui	Search result item is fully tappable	c9ea2486	3							p=24 n=0
+artist-discovery-dna-orb-ui	Spawn and absorb API on canvas	2c43caef	1							p=5 n=0
+artist-discovery-dna-orb-ui	Completion Action via DNA Orb	61e2970d	1							p=10 n=0
+artist-discovery-dna-orb-ui	Physics-Based Bubble Animation	2ed75303	1							p=2 n=0
+artist-discovery-dna-orb-ui	List followed artists from backend	8cbae072	2							p=13 n=0
+artist-discovery-dna-orb-ui	Small-screen bubble and orb density adaptation	31011f29	8							p=41 n=0
+artist-discovery-dna-orb-ui	Orb Activation Separates Gesture Celebration From Follow-Count State	ace911e4	6							p=66 n=0
+artist-following	Follow Relationship Data Model	6df369c4	3							p=47 n=0
+artist-following	ListFollowed Response	90cb780f	4							p=47 n=0
+artist-following	ArtistFilterBar sheet initializes pendingIds from followedArtists	fbb8eb50	3							p=17 n=0
+artist-following	Idempotent Unfollow Logic	bcc85f46	1							p=18 n=0
+artist-following	Follow CTA in Event Detail Sheet	dcadf69d	6							p=108 n=0
+artist-image	Fanart Entity	c4b2af6f	3							p=23 n=0
+artist-image	Best Image Selection	86729c46	2							p=1 n=0
+artist-image	Fanart Proto Message	f31df147	3							p=32 n=0
+artist-image	Fanart Proto Mapper	7e050070	2							p=16 n=0
+artist-image	Fanart Database Storage	d15e0dc9	3							p=20 n=0
+artist-image	ArtistImageResolver Interface	805e9870	3							p=11 n=0
+artist-image	fanart.tv API Client	69d55140	3							p=14 n=0
+artist-image	Immediate Image Fetch on Artist Creation	3c8eab6f	3							p=24 n=0
+artist-image	Periodic Image Sync CronJob	4dd84491	4							p=18 n=0
+artist-image-ui	Event Card Logo Display	34d2ad12	4							p=32 n=0
+artist-image-ui	Event Detail Sheet Hero Image	38e44a60	3							p=22 n=1
+artist-image-ui	Fanart Data Propagation	e75f0594	3							p=36 n=0
+artist-service-infrastructure	Standalone Artist Service	d253c9d0	3							p=28 n=0
+artist-service-infrastructure	Unified Music Discovery Interface	3d1c20bd	3							p=26 n=0
+atlas-operator	Atlas Operator SHALL be installed in the GKE cluster	3b1b511b	1							p=1 n=7
+atlas-operator	Migrations SHALL be stored as ConfigMap	dbee8f38	1							p=0 n=4
+atlas-operator	AtlasMigration CRD SHALL connect as postgres user	7164a062	1							p=8 n=5
+atlas-operator	Migrations SHALL create the app schema and grant permissions	bfddea6a	1							p=4 n=0
+atlas-operator	Backend repository SHALL host an Atlas migration prod overlay	b7bb9e33	3							p=5 n=25
+aurelia-reactivity	Watch-based reactive observation	7dbb112f	2							p=1 n=0
+aurelia-reactivity	Computed property caching	2a551ac9	2							p=0 n=0
+aurelia-reactivity	Batched multi-property updates	d564c598	2							p=3 n=0
+aurelia-reactivity	Observable for side-effect properties	c56ca0d1	1							p=0 n=0
+aurelia-reactivity	Collection observation via native Set binding	4298ea9b	3							p=2 n=0
+aurelia-template-optimization	Keyed list rendering	30d2f5cd	3							p=6 n=0
+aurelia-template-optimization	Switch-based multi-branch conditionals	edbdbe28	1							p=1 n=0
+aurelia-template-optimization	Show binding for frequently toggled elements	bf400881	2							p=5 n=0
+aurelia-template-optimization	Class binding syntax for conditional CSS classes	d5737fe5	3							p=0 n=0
+aurelia-template-optimization	Debounce on search inputs	1ddabedd	2							p=9 n=0
+aurelia-template-optimization	Throttle binding behavior on continuous event handlers	6106c80d	1							p=7 n=0
+aurelia-template-optimization	Date value converter	16f8f329	3							p=3 n=0
+aurelia-template-optimization	Route title configuration	e2835205	2							p=15 n=0
+authentication	Silent token refresh strategy	7ef8b047	8							p=14 n=0
+authentication	JWT Token Validation	8fdf9baf	2							p=2 n=0
+authentication	User ID Propagation	f48f91ff	1							p=15 n=0
+authentication	Authenticated Endpoint Protection	8f2b5ef2	4							p=2 n=0
+authentication	Public Endpoint Access	c3e41acd	2							p=3 n=2
+authentication	Email Verified Claim Injection	93c3a6a6	3							p=12 n=0
+authentication	Validate Zitadel Actions v2 Webhook JWTs by Signature	c079e733	3							p=12 n=0
+authentication	JWKS Caching	6ac51ef6	1							p=0 n=0
+authentication	Token Validation Performance	4ce72d5b	1							p=0 n=0
+authentication	Authentication Error Handling	19f04213	3							p=0 n=0
+authentication	Graceful session re-authentication	8c4219be	5							p=30 n=0
+auto-concert-discovery	Scheduled Concert Discovery Job	1b868baa	3							p=56 n=0
+auto-concert-discovery	Circuit Breaker on Consecutive Failures	4882d07c	3							p=16 n=0
+auto-concert-discovery	Job Always Exits Successfully	94b49472	2							p=9 n=0
+auto-concert-discovery	Job-Specific Dependency Injection	807837de	2							p=4 n=0
+auto-concert-discovery	Gemini Response Resilience	1870aa66	4							p=4 n=0
+auto-concert-discovery	Consumer JetStream Delivery Policy	e2db604d	2							p=0 n=0
+auto-concert-discovery	Consumer JetStream Acknowledgement Policy	5fc88b2e	2							p=0 n=0
+auto-discovery-series-grouping	Tour Events Group Into a Single Series	96ed48bf	2							p=16 n=0
+auto-discovery-series-grouping	Series Identity Is Adopted From Member Events	20d36098	3							p=19 n=0
+auto-discovery-series-grouping	Events Deduplicate On Physical Natural Key	487880f5	3							p=16 n=0
+auto-discovery-series-grouping	Event Identity Is Resolved In The Application	6f0576dc	2							p=12 n=0
+auto-discovery-series-grouping	SeriesType Assigned From Source Classification	996718f9	2							p=7 n=0
+auto-discovery-series-grouping	Multi-Hall Venues Are Disambiguated By venue_id	c6df2d92	1							p=3 n=0
+auto-discovery-series-grouping	Residual Grouping Ambiguities Are Logged, Not Fatal	5728cb1c	3							p=10 n=0
+auto-discovery-series-grouping	Approval Preserves Series Grouping And Type	fd2a5bbc	4							p=40 n=0
+backend-otel-instrumentation	External HTTP client tracing via otelhttp transport	492a850e	5							p=5 n=0
+backend-otel-instrumentation	Zitadel gRPC client tracing via otelgrpc	39c83a39	1							p=0 n=0
+backend-otel-instrumentation	UseCase spans for CPU-intensive business logic	f0ed1312	3							p=8 n=0
+backend-otel-instrumentation	Application metrics	416a6f58	3							p=2 n=0
+backend-otel-instrumentation	Trace context preservation in deferred operations	ff118968	1							p=5 n=0
+backend-service-exposure	Backend Service Discoverability	288ebd02	2							p=0 n=3
+backend-service-exposure	Service Backend Protocol Support	f22f988f	1							p=0 n=1
+backend-service-exposure	Health Check Integration	5ffc7857	2							p=0 n=0
+beam-effect-toggle	User can toggle the laser beam spotlight effect on the dashboard	e4fe188a	5							p=26 n=2
+billing-export-infrastructure	BigQuery dataset for GCP Billing Export	0b561cd3	2							p=1 n=10
+billing-export-infrastructure	IAM binding for billing export service account	d64c0ddc	2							p=1 n=7
+billing-export-infrastructure	Runbook documents the Console step to enable billing export	6cd398f2	2							p=1 n=3
+billing-export-infrastructure	Detailed usage cost export is preferred over Standard-only	e9c0e0a8	1							p=0 n=1
+billing-export-infrastructure	Sample analysis SQL is provided	85441441	1							p=0 n=0
+bottom-sheet-ce	Bottom Sheet Custom Element	9c530a97	28							p=38 n=6
+brand-vocabulary	Two-Layer Vocabulary Model	486a4cc6	3							p=6 n=1
+brand-vocabulary	Entity Namespace Mirrors Protobuf Names	3dfd65ad	3							p=10 n=4
+brand-vocabulary	Asymmetric Locale Labels	414bf71c	1							p=0 n=0
+brand-vocabulary	Entity Namespace Locale Parity	bbfdcc6f	2							p=4 n=1
+brand-vocabulary	Entity Name Validation	766fc709	2							p=4 n=0
+brand-vocabulary	Deprecated Colloquial Terms	2db32bc5	3							p=28 n=0
+brand-vocabulary	Brand Expression Registry	f375928c	6							p=28 n=2
+brand-vocabulary	Hype Tier Surface Labels Are Layer B	1656f878	3							p=5 n=1
+brand-vocabulary	Lint Script Integration	2605a05e	2							p=0 n=1
+browser-locale-detection	Timezone-based country detection	e77ada14	3							p=4 n=0
+browser-locale-detection	Mapping table coverage	5b027272	1							p=1 n=0
+bubble-pool-lifecycle	Bubble pool initialization based on followed-artist count	4d1f8c1d	4							p=55 n=0
+bubble-pool-lifecycle	Bubble pool deduplication	a2072496	3							p=22 n=0
+bubble-pool-lifecycle	Bubble pool cap and eviction on tap	f19a48f2	2							p=10 n=0
+bubble-pool-lifecycle	Tap-to-refill flow	a0543a14	3							p=27 n=0
+bubble-pool-lifecycle	ListSimilar and ListTop limit parameter	af5b9d7e	2							p=9 n=0
+bubble-replenishment	Canvas replenishes bubbles when similar artists are exhausted	eff94ea8	3							p=30 n=0
+bubble-state-management	BubbleManager provides single source of truth for bubble lifecycle	2dc53917	4							p=8 n=0
+bubble-state-management	BubbleManager enforces capacity through coordinated eviction	a7ae2dc4	2							p=0 n=0
+bubble-state-management	BubbleManager defers canvas reads until element is visible	049c705d	2							p=1 n=0
+bubble-state-management	BubbleManager supports reset to global top artists	c90699e2	3							p=19 n=0
+bubble-state-management	Initial load tops up a sparse discovery field	06c1e0ef	3							p=27 n=0
+bubble-state-management	Physics layer is a pure projection of the field	3ced30f7	3							p=16 n=0
+bubble-state-management	Bubble invariants are applied once at the field boundary	876258e9	2							p=11 n=0
+bulk-insert-unnest	Bulk artist creation via unnest	1e34d024	3							p=22 n=0
+bulk-insert-unnest	Concert bulk insert via unnest	e017feec	2							p=14 n=0
+card-logo-presentation	Logo and text visibility on unmatched cards	a64c1143	2							p=9 n=0
+card-logo-presentation	Center-aligned card content	fd1b20a1	2							p=7 n=0
+card-logo-presentation	Text fallback font size prominence	9ade909d	1							p=7 n=0
+card-logo-presentation	Logo scales to fill card space	4e61d412	1							p=3 n=0
+certificate-manager-integration	Google-Managed Certificate Provisioning	95bc49f8	2							p=2 n=0
+certificate-manager-integration	DNS Validation for Certificate Issuance	ee921aa0	2							p=0 n=0
+certificate-manager-integration	Certificate Map for Gateway Binding	726cc4e7	2							p=1 n=0
+certificate-manager-integration	Automatic Certificate Renewal	aca093ca	1							p=0 n=0
+certificate-manager-integration	Certificate Status Monitoring	f14f2f06	1							p=3 n=1
+certificate-manager-integration	Zero-Downtime Certificate Update	c017ab49	1							p=1 n=0
+ci-optimization	Workflows cancel superseded runs	ac6f315a	2							p=2 n=7
+ci-optimization	Workflows declare minimum required permissions	40d19387	2							p=0 n=2
+ci-optimization	Frontend CI enforces code quality gates	7fa6434a	3							p=0 n=3
+ci-optimization	Frontend CI reports coverage on PRs	a456d383	1							p=0 n=4
+ci-optimization	Backend CI enforces format correctness	b7d312b7	1							p=0 n=5
+ci-optimization	Atlas migration lint runs without Atlas Cloud	74a3f62f	2							p=0 n=4
+ci-optimization	Benchmark workflow uses consistent Postgres version	03c73eaa	1							p=0 n=3
+ci-optimization	Both repos have a CI success gate job	542b09d5	2							p=0 n=8
+ci-optimization	Claude code review runs via a single org-wide reusable workflow	ac211d95	3							p=3 n=9
+ci-optimization	Claude review posts advisory inline comments on pull requests	63794ce5	3							p=1 n=12
+ci-optimization	Branch protection gates merges on CI Success only	8503c748	2							p=0 n=9
+cloud-dns-infrastructure	Domain Configuration via Pulumi ESC	9787a661	2							p=0 n=7
+cloud-dns-infrastructure	No Manual Registrar Nameserver Update	3a0c2a82	2							p=0 n=1
+cloud-dns-infrastructure	Environment Isolation via DNS Architecture	2bb67820	3							p=1 n=5
+cloud-dns-infrastructure	No Conflicting Private Zones	de6f52ee	1							p=0 n=5
+cloud-dns-infrastructure	Cloudflare DNS Zone Management	bb46bb73	5							p=0 n=10
+cloud-sql-connector	Authenticate via Cloud SQL Connector	bbf23286	1							p=0 n=3
+cloud-sql-connector	Standard Connection for Local	49e0e238	1							p=0 n=0
+cloud-sql-connector	Database schema SHALL be configurable via environment variable	10553097	2							p=0 n=0
+cloud-sql-connector	Configuration Validation	736a89a1	1							p=0 n=0
+cloud-sql-connector	A standalone Auth Proxy Deployment SHALL exist in dev for local access	59c7508a	1							p=0 n=3
+commit-gate-hook	Claude Code PreToolUse hook blocks unchecked commits	2f0b8e7b	2							p=2 n=0
+commit-gate-hook	code-verifier skill removal	f327ca15	1							p=0 n=0
+commit-gate-hook	CLAUDE.md and AGENTS.md updated	ceb22887	1							p=1 n=0
+component-smoke-tests	Component mount smoke tests	5804d8d7	3							p=1 n=0
+component-smoke-tests	DI mock registry for smoke tests	6bf27f70	2							p=0 n=0
+component-smoke-tests	E2E console error smoke test	a0fc67de	4							p=4 n=8
+concert-approval-queue	Approval publishes the concert	f2801da4	3							p=38 n=0
+concert-approval-queue	Rejection drops the concert and is non-permanent	68496dfd	3							p=22 n=0
+concert-approval-queue	Re-discovery dedup consults published and pending state	ed457141	3							p=15 n=0
+concert-approval-queue	Rejection log is append-only and analysis-only	6ff21eb8	1							p=4 n=0
+concert-approval-queue	Admin-scoped moderation RPCs	39332caf	3							p=35 n=0
+concert-approval-queue	Admin console approval-queue UI	a10f8ce5	5							p=79 n=0
+concert-approval-queue	Approval reconciles a duplicate existing event	7784b8a8	4							p=34 n=0
+concert-approval-queue	Discovery auto-publishes new concerts and stages only conflicts	9e6cf2d0	5							p=93 n=0
+concert-approval-queue	Deleting a published concert suppresses re-discovery	69628543	2							p=28 n=0
+concert-approval-queue	Re-discovery skips suppressed concerts	a433cd90	2							p=21 n=0
+concert-detail	Concert Detail View	a8544792	13							p=84 n=2
+concert-detail	Localized Concert Detail Sheet Copy	f7dfd024	4							p=25 n=2
+concert-detail	Compact journey-status control layout	e7f498bc	4							p=6 n=0
+concert-detail	Dashboard Lane Assignment	cbdf6a0b	3							p=34 n=0
+concert-detail	Deep-link auto-open of a concert detail sheet	4799f75e	4							p=80 n=0
+concert-highway-ce	Concert Highway Custom Element	018f059e	5							p=28 n=1
+concert-highway-ce	Beam tracking updates efficiently per frame	c205c62c	3							p=2 n=2
+concert-search	Search Concerts by Artist	b489675b	9							p=79 n=0
+concert-search	Venue Administrative Area Extraction	bb3642bf	3							p=8 n=0
+concert-search	Resilient External Search	903bb177	5							p=12 n=0
+concert-search	Concert Deduplication Natural Key	622a6aa8	9							p=80 n=0
+concert-search	Dedup Key Comparison for Existing Concerts	51c718a2	2							p=26 n=0
+concert-search	Resilience to Gemini API Non-Determinism	12d3dd70	6							p=37 n=0
+concert-search	Dedup Tolerates Venue Name Drift	1fcd9cc8	3							p=28 n=0
+concert-search-internals	Usecase layer SHALL NOT import infrastructure packages	cd41027f	2							p=7 n=1
+concert-search-internals	Search status marking SHALL use defer pattern	e7795de1	2							p=4 n=0
+concert-search-internals	Time-dependent tests SHALL use testing/synctest	f466409e	2							p=8 n=0
+concert-search-internals	resolveUserID SHALL NOT be duplicated	093b52c3	2							p=18 n=0
+concert-search-internals	Entity construction SHALL use domain methods	3102b636	1							p=8 n=0
+concert-search-log	Track Concert Search History	f50c63ed	3							p=27 n=0
+concert-search-log	Search Log Persistence	bf73ee5e	2							p=7 n=0
+concert-search-log	Frontend search status polling for onboarding	1d1af1c4	5							p=43 n=0
+concert-search-log	Track Last Concert Discovery Time	7d86ead6	3							p=38 n=0
+concert-service	Concert Service	3f13acfa	4							p=41 n=0
+concert-service	Search Concerts by Artist	4c0b8b02	5							p=44 n=0
+concert-service	Concert Persistence	d9a67866	5							p=41 n=0
+concert-service	List Concerts with Proximity for Unauthenticated Users	0a3cd853	6							p=47 n=0
+concert-service	Venue Resolution in Concert List	d48a9f92	3							p=41 n=0
+concert-service	Concert-Event Association	5cd50171	1							p=18 n=0
+concert-service	Listed Venue Name Preservation	d0beb89d	2							p=19 n=0
+concert-service	Venue AdminArea Persistence	f82ebb0c	2							p=14 n=0
+concert-service	List Concerts by Follower	6d6a87e3	5							p=63 n=0
+concert-service	Event Natural Key Constraint	a97174d2	3							p=8 n=0
+concert-service	Concert UPSERT on Natural Key	d3e5718e	5							p=40 n=0
+concert-service	Duplicate Data Cleanup Migration	d88f1e92	3							p=5 n=0
+concert-service	ConcertService handler timeout isolation	653f357b	3							p=11 n=0
+concert-service	GKE Gateway timeout for ConcertService	3736f990	1							p=4 n=3
+concert-service	ListByLocation RPC	2e789f1a	9							p=65 n=0
+connect-rpc-cors	CORS Middleware for Connect-RPC	fd0ec114	2							p=0 n=0
+connect-rpc-cors	Allowed Origins Configuration	4fed2e18	2							p=4 n=0
+connect-rpc-cors	Connect-RPC Protocol Headers	288a92e4	2							p=2 n=0
+connect-rpc-cors	Authorization Header Support	912304b9	1							p=0 n=0
+connect-rpc-cors	CORS Validation at Startup	92c282b3	1							p=0 n=0
+consumer-poison-queue-alerting	Poison Queue consumer emits ERROR logs	8c351921	3							p=2 n=0
+consumer-poison-queue-alerting	NATS POISON stream lag alert	8fe71c24	3							p=5 n=0
+continuous-delivery	ArgoCD Manifests	7f6c4460	2							p=4 n=11
+continuous-delivery	Internal Web UI Access	1e38a096	1							p=0 n=2
+continuous-delivery	Git Repository Integration	543baacf	1							p=0 n=2
+continuous-delivery	Root Application	cea62654	1							p=0 n=1
+continuous-delivery	Image Build and Publish	95da5105	1							p=2 n=1
+continuous-delivery	Secure CI Authentication	0446782b	1							p=0 n=4
+continuous-delivery	Backend Application Provisioning	4138385a	1							p=0 n=5
+continuous-delivery	ArgoCD SHALL sync Atlas migration resources from backend repo	d985e2b9	1							p=0 n=10
+continuous-delivery	Migration sync wave SHALL precede application deployment	0c3094ff	1							p=0 n=3
+coordinates-vo	Coordinates Value Object	0928dc72	7							p=54 n=0
+css-linting	Stylelint enforces modern color functions	fab9a126	3							p=1 n=9
+css-linting	Stylelint enforces CSS Logical Properties	c4665fe1	4							p=3 n=8
+css-linting	Stylelint enforces Container Queries over viewport-width media queries	c2679bf2	3							p=12 n=5
+css-linting	Stylelint prevents CSS anti-patterns	0516f8d1	6							p=2 n=9
+css-linting	Stylelint enforces property declaration ordering	87d0d4ed	1							p=3 n=2
+css-linting	Stylelint compatible with modern CSS at-rules	b6c61524	2							p=0 n=4
+css-linting	Stylelint enforces stacking context management	c119e7fb	2							p=4 n=6
+css-linting	Stylelint enforces accessibility media queries	39415478	4							p=6 n=6
+css-linting	Stylelint integrated into CI pipeline	98576256	2							p=0 n=8
+css-state-management	Three-layer responsibility separation	b0435790	2							p=0 n=0
+css-state-management	Discrete visual state via `data-*.bind`	992834a2	4							p=0 n=0
+css-state-management	Parent container strategy for shared state flags	22304519	1							p=0 n=0
+css-state-management	Total `style` attribute ban in templates	92a0e943	5							p=0 n=1
+css-state-management	CSS `attr()` migration path	cee4f55c	1							p=0 n=0
+css-state-management	Animation lifecycle via CSS events	40d1fa6c	4							p=3 n=0
+css-state-management	No if.bind for visual-only visibility	508f941d	2							p=0 n=3
+css-state-management	Custom attributes for JS→CSS bridge only	520d225b	2							p=0 n=0
+cube-css-architecture	CUBE CSS layer ordering via `@layer`	6a83dfc2	2							p=5 n=6
+cube-css-architecture	CSS entry point at `src/styles/main.css`	862e5a6d	2							p=8 n=0
+cube-css-architecture	Design tokens in `tokens.css` as plain CSS custom properties	4fe1defa	2							p=0 n=7
+cube-css-architecture	Browser reset in `reset.css` using `:where()` for zero specificity	8cf844c0	2							p=1 n=1
+cube-css-architecture	Global layer for base element styling	3d75876a	2							p=1 n=4
+cube-css-architecture	Composition layer for layout primitives	3b54bb51	6							p=0 n=4
+cube-css-architecture	Utility layer for single-purpose helpers	21880ac6	3							p=4 n=2
+cube-css-architecture	Block layer for component-scoped styles	a0cf697a	3							p=2 n=4
+cube-css-architecture	Exception layer for state deviations via `data-*` attributes	82085020	6							p=1 n=4
+cube-css-architecture	Spacing controlled by parent, not child	49834b90	2							p=2 n=0
+cube-css-architecture	No TailwindCSS dependency	a6f53e1f	3							p=0 n=0
+cube-css-layer-constraints	`cube/exception-data-attr` requires `data-*` selectors in exception layer	0545c3f3	4							p=0 n=5
+cube-css-layer-constraints	`cube/no-visual-in-composition` prohibits visual properties in composition layer	37da0796	6							p=0 n=9
+cube-css-layer-constraints	`cube/utility-single-property` limits properties per utility selector	b0fba875	5							p=0 n=8
+cube-css-layer-constraints	`cube/block-require-scope` requires `@scope` in block layer	03820073	4							p=1 n=7
+cube-css-layer-constraints	`cube/data-attr-naming` restricts data attribute names in exception layer	173703f9	5							p=0 n=4
+cube-css-layer-enforcement	`cube/require-layer` rejects CSS rules outside `@layer` blocks	24b4a04b	5							p=2 n=14
+cube-css-layer-enforcement	`cube/layer-order` enforces correct `@layer` declaration order	759a1bb8	6							p=29 n=12
+cube-css-lint-plugin	Plugin registers all rules under the `cube/` namespace	e487d337	2							p=5 n=5
+cube-css-lint-plugin	Plugin is a local ESM package	6c791ca2	1							p=0 n=5
+cube-css-lint-plugin	Each rule has comprehensive test coverage	b348525b	1							p=0 n=4
+cube-css-lint-plugin	Shared layer context utility	743ff014	2							p=0 n=3
+cube-css-modern-css-rules	`cube/prefer-vi-over-vw` recommends `vi` unit over `vw`	1278a050	4							p=0 n=0
+cube-css-modern-css-rules	`cube/require-container-name` enforces naming containers	003380e3	4							p=0 n=0
+cube-css-modern-css-rules	`cube/prefer-color-mix` recommends `color-mix()` for derived colors	2feb81c4	4							p=0 n=17
+cube-css-structural-rules	`cube/block-max-lines` limits block size	d58f44f7	4							p=0 n=4
+cube-css-structural-rules	`cube/one-block-per-file` enforces single block per file	61b7046a	3							p=0 n=4
+cube-css-structural-rules	`cube/prefer-where-in-reset` recommends `:where()` in reset and global layers	720e0ab9	6							p=0 n=10
+cube-css-token-enforcement	`cube/require-token-variables` enforces `var()` for design token properties	712cab6d	4							p=0 n=6
+cube-css-token-enforcement	`calc()` expressions must contain at least one `var()`	ec76b54f	4							p=0 n=7
+cube-css-token-enforcement	Structural values bypass token enforcement	79ff9e3e	7							p=0 n=6
+cube-css-token-enforcement	Token definition layers are excluded	e979703e	2							p=0 n=3
+cube-css-token-enforcement	Duration and easing properties are token-enforced	9d0b12c8	2							p=0 n=2
+cube-css-token-enforcement	Configurable property list	d86d3083	1							p=3 n=0
+dashboard-artist-filter	URL-driven artist filter	25fc4638	5							p=63 n=0
+dashboard-artist-filter	Filter state synchronised with URL	fb16e97d	2							p=24 n=0
+dashboard-artist-filter	Filter chip UI in page header	5f409ecb	4							p=15 n=0
+dashboard-artist-filter	Artist-selection bottom sheet	3d09f65b	12							p=84 n=0
+dashboard-artist-filter	Push notification deep-link to filtered dashboard	15095e79	2							p=54 n=0
+dashboard-artist-filter	Filter availability for guest users	a75c82bc	2							p=19 n=0
+dashboard-concert-cache	listByFollower results are cached in memory for the session	91ddd61d	4							p=16 n=0
+dashboard-concert-cache	Concert cache is invalidated on follow	cd4d8d5d	2							p=34 n=0
+dashboard-concert-cache	listFollowed RPC provides hype data on every dashboard load	7ca617ff	2							p=26 n=0
+dashboard-concert-cache	All Nearby mode uses ListByLocation	ad233d4e	3							p=16 n=0
+dashboard-date-filter	Default today-onward timetable	4b946cc4	2							p=20 n=0
+dashboard-date-filter	URL-driven date filter	cf52684f	3							p=13 n=0
+dashboard-date-filter	Date facet in the filter bottom sheet	9caf60dc	4							p=24 n=0
+dashboard-date-filter	Date filter state persistence	14da1d10	1							p=6 n=0
+dashboard-journey-filter	URL-driven journey filter	4a7a935b	6							p=38 n=0
+dashboard-journey-filter	Journey filter combines with artist filter	febe6296	3							p=27 n=0
+dashboard-journey-filter	Journey filter state synchronised with URL	b3e883d6	3							p=24 n=0
+dashboard-journey-filter	Journey-status facet in the filter sheet	a657ff32	6							p=19 n=0
+dashboard-journey-filter	Journey facet visible to authenticated users only	a8ef4501	3							p=11 n=0
+database	Schema migrations MUST be applied before serving traffic	dedc7c7a	1							p=1 n=4
+database	The system MUST provide persistent relational storage	096ab94c	3							p=2 n=8
+database	Application data SHALL reside in a dedicated schema	544e3b01	1							p=0 n=0
+database	Database tables SHALL NOT include metadata timestamp columns	572c52f2	2							p=13 n=0
+database-migration	The system MUST apply pending database migrations on startup	1303699d	3							p=3 n=0
+database-migration	The system MUST prevent concurrent migration execution	530f163d	1							p=0 n=0
+database-migration	The system MUST fail startup on migration error	dc8997e7	1							p=0 n=0
+database-migration	The system MUST embed migration files in the binary	f8abe4cc	1							p=0 n=0
+database-migration	The CI pipeline MUST validate migration file ordering	30e04b62	2							p=4 n=6
+db-trace-correlation	OTel span creation for database queries	abda625f	5							p=5 n=2
+db-trace-correlation	sqlcommenter traceparent injection	af7e7871	2							p=0 n=1
+db-trace-correlation	Transparent pool wrapping	42ea95e2	2							p=0 n=0
+db-trace-correlation	Transaction query tracing	af002122	2							p=1 n=0
+deployment-infrastructure	Workload Identity Federation (WIF)	3631463f	1							p=0 n=2
+deployment-infrastructure	Pulumi OIDC Provider	a6facd11	1							p=1 n=6
+deployment-infrastructure	Deployment Service Account	52368275	1							p=0 n=4
+deployment-infrastructure	Native Managed OIDC Deployment	a72ea9f7	1							p=1 n=5
+deployment-infrastructure	Automated PR Flow	da0a5d41	2							p=0 n=3
+deployment-infrastructure	Automated Merge Flow (Dev)	32125426	1							p=1 n=2
+deployment-infrastructure	Manual Deployment Flow (Prod)	569e38f9	1							p=1 n=2
+deployment-infrastructure	Dedicated CD Namespace	7d12163e	2							p=0 n=9
+deployment-infrastructure	Dev backend runs single replica	6e3e915e	1							p=1 n=2
+deployment-infrastructure	All dev workload kinds use Spot VM scheduling	c437f886	2							p=4 n=5
+design-system	Design Token Definition	f4a60460	10							p=2 n=37
+design-system	Display Font Loading	69247ba6	1							p=1 n=0
+design-system	View Transitions as route animation system	843ac40c	2							p=0 n=0
+design-system	Container Query infrastructure	88359241	1							p=0 n=1
+design-system	SVG Icon Component	0a98947d	4							p=18 n=0
+design-system	State Placeholder Component	288ccd48	3							p=7 n=0
+design-system	Page Shell Component	17bacf3c	4							p=6 n=0
+design-system	Snack Bar Component	10435ee6	12							p=11 n=3
+design-system	Type-scale minimum legibility floor	623f1c16	3							p=2 n=0
+dev-db-access	A Cloud SQL Auth Proxy Deployment SHALL exist in the dev cluster	b5aad48e	1							p=0 n=5
+dev-db-access	Local DB access SHALL be established via kubectl port-forward	969974ab	2							p=6 n=3
+dev-db-access	Dev DB access procedure SHALL be discoverable from backend/AGENTS.md	d538803c	1							p=0 n=0
+dev-db-access	Dev DB access SHALL use existing IAM permissions with no new service accounts	6b56a1b0	1							p=0 n=5
+discover	Bubble UI Re-experience	0969bb0f	6							p=71 n=1
+discover	Manual Search	090ec233	4							p=32 n=0
+discover	Search bar icon explicit sizing	e4e64031	2							p=7 n=0
+discover	Performance on Tab Switch	81e7a9b6	2							p=4 n=0
+discover	Reset to Top 50 control	78c88b77	4							p=17 n=0
+discovery-bubble-cache	Discovery bubble pool is cached in ArtistStore singleton	870d67de	5							p=34 n=0
+discovery-bubble-cache	Re-entry preserves the in-session bubble field	d1347c17	4							p=25 n=0
+discovery-tap-sonic-feedback	Bubble Tap Sound Character	6b05db56	4							p=12 n=0
+discovery-tap-sonic-feedback	Landing Tone On Absorption	23638e52	1							p=0 n=0
+discovery-tap-sonic-feedback	Sound Respects Mute and Volume Settings	b41b9dfc	3							p=13 n=0
+dna-orb-color-injection	Bubble Hue Injection into Orb Particles	1ca28104	3							p=18 n=0
+dna-orb-color-injection	Swirl Animation on Follow	2d9d6b0a	3							p=13 n=0
+e2e-auth-testing	Playwright MCP Authenticated Session	af73d3e1	2							p=8 n=4
+e2e-auth-testing	StorageState Capture Script	419eb90f	1							p=6 n=2
+e2e-auth-testing	StorageState Gitignore	8a41a4f4	1							p=2 n=0
+e2e-auth-testing	Password-Based Storage State Capture Path	d8984d8c	2							p=13 n=4
+e2e-auth-testing	Test-User Credential File Gitignored	f8a0fffc	1							p=6 n=1
+edit-mode-unfollow	Edit-mode toggle reveals per-row remove controls	e00b1170	9							p=41 n=0
+edit-mode-unfollow	Edit-mode controls are accessible	58556a2f	2							p=7 n=0
+edit-mode-unfollow	Remove control unfollows immediately with Undo	0debba97	3							p=31 n=0
+email-provider	Zitadel SMTP configuration via Pulumi	d3b3cd12	2							p=4 n=4
+email-provider	Mail subdomain DNS records for DKIM authentication	b7e96ad5	2							p=1 n=8
+email-provider	ZitadelConfig interface extension	adeb4ebc	1							p=0 n=1
+email-provider	SmtpConfig component isolation	86ea9b95	1							p=1 n=0
+email-provider	Environment-specific Postmark Server separation	feb4f70a	1							p=0 n=1
+email-verification	Trigger verification email on user creation	a5106f7e	6							p=39 n=0
+email-verification	Resend verification email via RPC	b05ad4a0	8							p=39 n=0
+entity-domain-logic	Home validation	77e54d89	7							p=12 n=0
+entity-domain-logic	Hype validity check	da79181f	2							p=1 n=0
+entity-domain-logic	Hype-based notification eligibility	be4385b7	10							p=39 n=0
+entity-domain-logic	Concert proximity grouping	661ad4ff	4							p=36 n=0
+entity-domain-logic	Concert proximity classification	1184e901	9							p=63 n=0
+entity-domain-logic	ScrapedConcerts collection type	7f85273e	1							p=0 n=0
+entity-domain-logic	ScrapedConcerts.FilterNew deduplication	57772de3	8							p=38 n=0
+entity-domain-logic	ScrapedConcert JSON serialization	4aacb04f	2							p=11 n=0
+entity-domain-logic	Artist filtering by MBID	f29b747d	4							p=19 n=0
+entity-domain-logic	OfficialSite constructor	3d7d8ed9	2							p=14 n=0
+entity-domain-logic	Venue constructor from scraped data	8a5c98a8	1							p=4 n=0
+entity-domain-logic	Token ID generation	6454c2cd	2							p=0 n=0
+entity-domain-logic	ScrapedConcert to Concert conversion	99b46016	3							p=62 n=0
+entity-domain-logic	Parsed email data journey status mapping	97ef25a8	6							p=20 n=0
+entity-domain-logic	SearchLog freshness check	c4ac16a5	3							p=3 n=0
+entity-domain-logic	SearchLog pending check	ad2a8f83	3							p=3 n=0
+entity-domain-logic	Concert notification payload construction	87429492	3							p=44 n=0
+entity-domain-logic	Ethereum address validation	7f8e7f71	6							p=0 n=0
+entity-store-layer	Per-Entity Store Ownership	edbf7f2c	4							p=12 n=0
+entity-store-layer	Event-Driven Auth-Boundary Transitions	d51269e0	4							p=47 n=0
+entity-store-layer	Boot Reconciliation of Unmerged Guest Data	6db12175	3							p=21 n=0
+entity-store-layer	Ticket-journey status is a single source of truth	3e03617a	5							p=29 n=0
+entity-test-coverage	isHypeMatched exhaustive coverage	6dbe8726	1							p=0 n=0
+entity-test-coverage	hasFollow boundary cases	2c026b0a	2							p=12 n=0
+entity-test-coverage	normalizeStep full legacy mapping	f426b9c6	2							p=0 n=0
+entity-test-coverage	translationKey coverage	92fbc669	2							p=0 n=0
+entity-test-coverage	codeToHome boundary cases	684ab5b9	1							p=0 n=0
+entity-test-coverage	bytesToHex zero-padding	fb830a73	1							p=0 n=0
+entity-test-coverage	bytesToDecimal multi-byte	9c3bd779	1							p=0 n=0
+entity-test-coverage	uuidToFieldElement robustness	eb89fdfc	1							p=0 n=0
+entity-test-coverage	artistHue empty string	ef12f6a8	1							p=2 n=0
+entity-test-coverage	artistHueFromColorProfile dominantHue zero	42e2f667	1							p=2 n=0
+entity-test-coverage	HYPE_TIERS completeness	81f6c94f	2							p=1 n=0
+entity-test-coverage	HYPE_ORDER and LANE_ORDER completeness	67afb099	2							p=4 n=0
+entity-test-coverage	Interface Possible errors completeness	12a52846	2							p=5 n=0
+entity-test-coverage	Implementation error code consistency	230982cb	2							p=0 n=0
+entity-test-coverage	Error code semantic correctness	87ab6fb9	3							p=1 n=0
+entity-test-coverage	Error path test coverage	4af8de1c	2							p=0 n=0
+entity-test-coverage	Infrastructure test go-tester compliance	085c2bfa	3							p=0 n=2
+entity-test-coverage	SafePredictor interface in entity layer	751038c1	2							p=2 n=0
+event-card-glow	Matched event card glow opacity	06160446	1							p=5 n=0
+event-management	Generic Event Management	addc5e4d	4							p=65 n=0
+event-management	Event-Type Extensibility	e1c21c6f	2							p=17 n=0
+event-management	Series as Parent Aggregation	7e7d0b68	5							p=79 n=1
+event-management	Multiple Performers per Event	4d5569bb	3							p=33 n=0
+event-management	Concert DTO Embeds Series and Performers	1dfe3006	3							p=54 n=0
+event-management	Trace context propagation across message broker	ef848cb7	2							p=2 n=0
+event-management	Event Natural Key Reflects Physical Identity	6651dc4d	3							p=21 n=0
+fab-action-launcher	Global thumb-zone floating launcher	29d6658d	3							p=0 n=0
+fab-action-launcher	Single-tap disclosure of a labeled action list	9d197c17	4							p=11 n=0
+fab-action-launcher	Per-route contextual action registration	5410403d	3							p=8 n=0
+fab-action-launcher	Command and toggle action items	48338353	2							p=4 n=1
+fab-action-launcher	Material 3 Expressive expansion and spring motion	49c54fb9	3							p=8 n=0
+fab-action-launcher	Launcher accessibility contract	389c9e26	3							p=6 n=0
+fab-action-launcher	Persisted left-handed placement	25a3131e	3							p=8 n=0
+feature-flag-management	Feature flags require a documented description record on creation	b3e068de	2							p=11 n=0
+feature-flag-management	Significant experiments evaluate flags only after `identify`	1e79cbcc	2							p=13 n=0
+feature-flag-management	Flag evaluation always has a default value on PostHog unavailability	947b004e	2							p=0 n=0
+feature-flag-management	Frontend bootstraps flags from the last-known persisted value	1ccc3139	2							p=10 n=0
+feature-flag-management	Stale flags are reviewed monthly and decided at or before the kill date	9dc83c0d	2							p=3 n=0
+festival-orb-effects	Stage-level escalation system	2ef7a258	9							p=34 n=0
+festival-orb-effects	Growing orb with dynamic bubble boundary	95074ab8	3							p=8 n=0
+festival-orb-effects	Breathing pulse animation	b0f46797	3							p=4 n=0
+festival-orb-effects	Orbital particles	41a05943	4							p=6 n=0
+festival-orb-effects	Light rays	54d9051a	6							p=6 n=0
+festival-orb-effects	Shockwave rings on follow	02302c60	4							p=7 n=0
+festival-orb-effects	Comet trail on absorption	74a1d972	3							p=2 n=0
+festival-orb-effects	Ground glow	f79d7b7b	3							p=2 n=0
+festival-orb-effects	Color palette accumulation	b3fac6f6	3							p=5 n=0
+festival-orb-effects	Vortex flow trails inside the orb	7e27dc0b	4							p=7 n=0
+festival-orb-effects	Nebula fill layers	c8573493	5							p=6 n=0
+festival-orb-effects	Strobe flash on follow	f14e149f	5							p=8 n=1
+festival-orb-effects	Beat sync pulsation	93375dec	5							p=9 n=0
+festival-orb-effects	Orbital comet tails	4c7a5b3f	4							p=13 n=0
+festival-orb-effects	Unit test coverage for stage effects	b2c509f3	4							p=8 n=0
+festival-orb-effects	Unit test coverage for OrbRenderer state	e39060a8	4							p=0 n=0
+festival-orb-effects	Unit test coverage for AbsorptionAnimator comet trail	8d147cad	2							p=0 n=0
+follow-triggered-search	Trigger concert search on first follow	c196c77c	4							p=70 n=0
+follow-triggered-search	Search errors do not affect follow operation	a699b7c1	1							p=12 n=0
+follow-triggered-search	Search log check failure is non-blocking	1cc7834e	1							p=7 n=0
+frontend-client-rpc-telemetry	Client-observed RPC duration is captured	4f846619	2							p=2 n=0
+frontend-client-rpc-telemetry	Deadline-exceeded rate is observable	4c2e3a2d	1							p=0 n=0
+frontend-client-rpc-telemetry	Telemetry is reported as aggregates, not per-request events	ba1787d2	1							p=0 n=0
+frontend-client-rpc-telemetry	Pending telemetry is flushed at session end	74433255	1							p=0 n=0
+frontend-client-rpc-telemetry	Telemetry honors analytics opt-out and unconfigured analytics	cd79bbed	1							p=6 n=0
+frontend-client-rpc-telemetry	Telemetry carries no personally identifying request content	0fc4f943	1							p=0 n=0
+frontend-entity-layer	Artist entity	f5940ae5	3							p=47 n=0
+frontend-entity-layer	FollowedArtist entity	7b5db27e	2							p=42 n=0
+frontend-entity-layer	Concert entity	ab290232	2							p=47 n=0
+frontend-entity-layer	Single mapping point	dc825ab2	2							p=18 n=0
+frontend-entity-layer	Guest state stores proto Artist	f3a8fb48	3							p=37 n=0
+frontend-entity-layer	Grid view removal	6819677b	2							p=12 n=0
+frontend-entity-layer	Concert region is presentation-ready	5a69b01d	3							p=15 n=0
+frontend-error-handling	Global Error Handler Registration	46af09b7	2							p=1 n=0
+frontend-error-handling	Error Boundary Service	67732087	3							p=9 n=0
+frontend-error-handling	Error Banner UI in Root Component	ff82ad2e	4							p=14 n=1
+frontend-error-handling	Router Error Handling	d4a3b4ae	4							p=8 n=0
+frontend-error-handling	Declarative Async Error Handling with promise.bind	7bb47664	3							p=3 n=0
+frontend-error-handling	Service Error Recovery Patterns	2acf9d60	2							p=12 n=0
+frontend-hosting	Container image build pipeline	8f5cbae5	2							p=0 n=3
+frontend-hosting	Kubernetes deployment configuration	6f0798ce	2							p=0 n=13
+frontend-hosting	Static asset serving with caching	bdd19484	2							p=4 n=0
+frontend-hosting	SPA client-side routing support	93c738ec	2							p=5 n=0
+frontend-hosting	HTTPS ingress via Gateway API	84b151b4	2							p=0 n=6
+frontend-hosting	GitOps deployment automation	3d44f513	2							p=2 n=19
+frontend-hosting	Caddyfile configuration	c44bea7a	2							p=0 n=0
+frontend-hosting	DNS and TLS infrastructure provisioning	b7bcf296	4							p=3 n=7
+frontend-hosting	Caddy SHALL serve `/config.json` with no-store header	e90569ad	2							p=2 n=0
+frontend-hosting	Frontend Deployment SHALL mount a per-environment runtime-config ConfigMap	b297f7ae	4							p=6 n=15
+frontend-hosting	Post-deploy smoke verification SHALL assert the SPA renders	64eaa064	3							p=3 n=2
+frontend-i18n	i18n Plugin Registration	f49c7446	1							p=0 n=0
+frontend-i18n	Locale Detection	84382bfe	4							p=17 n=0
+frontend-i18n	Translation Resource Files	9d47ea83	4							p=9 n=3
+frontend-i18n	Template String Externalization	3785436b	2							p=2 n=0
+frontend-i18n	TypeScript String Externalization	3aa525b2	1							p=5 n=0
+frontend-i18n	Locale-Aware Date and Number Formatting	ad5ed538	2							p=2 n=0
+frontend-i18n	Runtime Language Switching	f544bfd5	3							p=20 n=0
+frontend-i18n	Shared Language Switching Utility	81b24406	3							p=5 n=0
+frontend-i18n	Locale Sourced from Backend User Entity for Authenticated Sessions	74eac472	2							p=12 n=0
+frontend-i18n	Legacy Key Removal After Entity Migration	0d34c189	2							p=3 n=4
+frontend-i18n	Anonymous Locale is a Single Source of Truth	7046eb40	3							p=9 n=0
+frontend-i18n	One-Time Migration of the Legacy `guest.language` Key	60f55438	4							p=2 n=0
+frontend-network-timeouts	Default RPC call timeout	93913e06	3							p=6 n=0
+frontend-network-timeouts	RPC timeout value is runtime-configurable	c925fdc1	3							p=3 n=0
+frontend-network-timeouts	Service-Worker analytics capture is time-bounded	ec1a0a15	1							p=2 n=0
+frontend-network-timeouts	Service-Worker VAPID key fetch is time-bounded	0f59aa77	1							p=1 n=0
+frontend-observability	OpenTelemetry Browser SDK Integration	ef0f1910	4							p=0 n=0
+frontend-observability	Connect-RPC Error Instrumentation	236bc4d1	3							p=1 n=0
+frontend-observability	ILogger OpenTelemetry Sink	caa0b92f	6							p=2 n=0
+frontend-onboarding-flow	Interactive Artist Discovery (Bubble Network UI)	405304e2	6							p=103 n=0
+frontend-onboarding-flow	Single-Flag Onboarding State	8f1087f4	7							p=37 n=1
+frontend-onboarding-flow	Final onboarding step is a non-blocking analytics transparency notice	1d29de3c	3							p=17 n=0
+frontend-performance-instrumentation	Long animation frames reported to analytics	8a8c2bf6	1							p=2 n=0
+frontend-performance-instrumentation	Core Web Vitals reported to analytics	12ee17ec	1							p=3 n=0
+frontend-performance-instrumentation	Slow interactions reported to analytics	6e83a990	1							p=6 n=0
+frontend-plain-date-lib	Calendar arithmetic SHALL be exposed through an implementation-agnostic interface with `CalendarDate` boundary values	a5384c76	2							p=0 n=0
+frontend-plain-date-lib	The library SHALL implement a fixed calendar-arithmetic contract	9ad829fa	3							p=3 n=0
+frontend-plain-date-lib	Invalid calendar components SHALL NOT silently roll over	bc4cd464	1							p=1 n=0
+frontend-plain-date-lib	Two interchangeable engines SHALL satisfy the contract identically	57dce3d5	2							p=0 n=0
+frontend-plain-date-lib	The active engine SHALL be selected at build time, defaulting to the `Date` engine	cf6804e6	2							p=0 n=0
+frontend-plain-date-lib	The production bundle SHALL contain no Temporal polyfill	485cbf51	3							p=0 n=3
+frontend-route-guard	Global Auth Hook	07ae060d	4							p=35 n=0
+frontend-route-guard	Settings Reachable During Onboarding	fa30faf8	1							p=13 n=0
+frontend-route-guard	Welcome Reachable During Onboarding	344d0976	1							p=13 n=0
+frontend-router-query-params	Route loading hooks read query parameters via RouteNode	392dd985	3							p=7 n=0
+frontend-runtime-config	Frontend SPA SHALL load environment configuration from `/config.json` at bootstrap	294cc05d	4							p=5 n=0
+frontend-runtime-config	`/config.json` SHALL conform to the AppConfig schema	f7e145cb	3							p=4 n=0
+frontend-runtime-config	Bootstrap SHALL cross-check the configured environment against the page host	87474119	4							p=3 n=3
+frontend-runtime-config	A checked-in `public/config.json` SHALL provide dev defaults	dc51c2ae	2							p=0 n=1
+frontend-runtime-config	The Service Worker SHALL bypass any cache for `/config.json`	852b5f1f	3							p=3 n=1
+frontend-runtime-config	Bootstrap failures SHALL surface a static error page	b260d537	2							p=0 n=0
+frontend-store-cache	Shared stale-while-revalidate cache primitive	0821d958	4							p=0 n=0
+frontend-store-cache	In-flight request coalescing	307d76ca	1							p=0 n=0
+frontend-store-cache	Complete cache keys	488c05c6	2							p=13 n=0
+frontend-store-cache	Explicit invalidation on mutations	b61d8d20	4							p=51 n=0
+frontend-store-cache	Revalidation on route entry and PWA resume	c2c228cd	3							p=3 n=0
+frontend-store-cache	Caching scope is limited to audited read resources	9ed42f02	3							p=41 n=0
+frontend-testing	Test infrastructure provides shared mock factories	2c40288d	4							p=2 n=1
+frontend-testing	Vitest environment is managed by vitest, not manually	9fc94f14	3							p=1 n=7
+frontend-testing	Aurelia template module graph is contained in tests	42951e01	3							p=4 n=3
+frontend-testing	CE composition integration tests verify layout propagation	5e3675f1	4							p=16 n=0
+frontend-testing	Dashboard-route has integration tests	658a9d09	5							p=20 n=0
+frontend-testing	Per-file vitest environment annotations optimize execution	4001a092	4							p=4 n=10
+frontend-testing	Color generator produces deterministic colors	705378d7	3							p=8 n=0
+frontend-testing	Dashboard service groups concerts by date	03733cb4	3							p=28 n=0
+frontend-testing	Onboarding service routes based on completion status	3c286657	4							p=24 n=0
+frontend-testing	Toast notification service manages toast lifecycle	9a68cd6f	3							p=10 n=0
+frontend-testing	Event card computes display properties	9b50e9e0	2							p=16 n=0
+frontend-testing	Live highway displays grouped events	375530cd	2							p=4 n=0
+frontend-testing	Auth status delegates to auth service	1e87fec3	3							p=0 n=0
+frontend-testing	MyApp showNav hides navigation on fullscreen routes	186006a4	2							p=3 n=0
+frontend-testing	Auth hook guards all authenticated routes	11984fe6	4							p=9 n=0
+frontend-testing	Auth retry interceptor refreshes tokens on Unauthenticated errors	a3aa065a	3							p=4 n=0
+frontend-testing	Retry interceptor applies exponential backoff on transient errors	c7161a2a	4							p=0 n=0
+frontend-testing	Artist discovery service manages bubble state with optimistic follow	00bee30a	6							p=35 n=0
+frontend-testing	gRPC transport injects auth headers	3e24f6b4	2							p=6 n=0
+frontend-testing	Concert service forwards RPC calls with AbortSignal	8b93bbcd	3							p=19 n=0
+frontend-testing	Error boundary service captures and sanitizes errors	73a2803f	5							p=3 n=0
+frontend-testing	Dashboard route manages stale data on reload failure	abc8969b	4							p=2 n=0
+frontend-testing	Discover page debounces search with stale response guard	4d5943aa	4							p=11 n=0
+frontend-testing	Artist discovery page dismisses guidance overlay	856e9013	3							p=13 n=4
+frontend-testing	Event detail sheet computes URLs and handles touch dismiss	b731b0e7	4							p=10 n=0
+frontend-testing	Test mock helpers cover all tested DI interfaces	63fdf3e0	3							p=1 n=3
+frontend-testing	Mock helpers cover INavDimmingService and ILocalStorage	912c785a	2							p=0 n=2
+frontend-testing	Timer cleanup uses afterEach unconditionally	ce615540	3							p=0 n=0
+frontend-testing	Coverage reporting is configured	7b20667b	4							p=0 n=4
+frontend-testing	Global fixture cleanup awaits all stop() calls	b15f208e	2							p=0 n=0
+frontend-testing	All afterEach hooks prevent test state pollution	41edc308	1							p=0 n=0
+frontend-testing	Mock helpers return typed Partial interfaces	316f94a7	3							p=1 n=0
+frontend-testing	No deprecated Aurelia testing APIs are used	9241839a	2							p=0 n=1
+frontend-testing	Component integration tests use createFixture with official assertion helpers	1f9efd8a	6							p=3 n=0
+frontend-testing	Smoke tests use meaningful DOM assertions	87baade7	2							p=0 n=1
+frontend-testing	Bottom nav bar has component integration tests	b7859ab7	2							p=3 n=0
+frontend-testing	Snack bar service logic is tested	295f260c	2							p=5 n=2
+frontend-testing	User home selector has component integration tests	5201f2e0	2							p=7 n=0
+frontend-testing	Post-signup dialog has component integration tests	e817a4fc	2							p=5 n=0
+frontend-testing	Error banner has component integration tests	357c460d	2							p=3 n=0
+frontend-testing	Settings route has component integration tests	963a0803	3							p=4 n=0
+frontend-testing	Concert highway CE has component integration tests	1145556a	4							p=11 n=0
+frontend-testing	Welcome route has component integration tests	6f65bee1	4							p=10 n=0
+frontend-testing	Custom attribute tests use createFixture with style verification	d65f734f	1							p=0 n=0
+frontend-testing	Value converter tests include fixture integration tests	be7fef2a	1							p=0 n=0
+gcp-cost-guardrails	Places API Daily Quota Limit (Dev)	c1c9b380	2							p=5 n=3
+gcp-cost-guardrails	Vertex AI Per-Minute Quota Limit (Dev)	acc1298a	3							p=15 n=3
+gcp-cost-guardrails	Project Billing Budget Alert	f00fc8ea	5							p=2 n=7
+gemini-grounded-extract-and-coerce	ConcertSearcher executes a two-step Gemini call sequence per Search invocation	04c5adf9	5							p=11 n=0
+gemini-grounded-extract-and-coerce	Step 1 runs a single grounded slice per the default slice configuration	dd30bb79	2							p=5 n=0
+gemini-grounded-extract-and-coerce	Step 1 tools MUST be {GoogleSearch, URLContext} together; no schema	cb2361ff	2							p=0 n=0
+gemini-grounded-extract-and-coerce	Step 1 emits a per-field XML envelope with `<tour>` and `<standalone>` blocks	3a2f9f8e	3							p=18 n=0
+gemini-grounded-extract-and-coerce	Step 1 fills in missing years from page context for partial dates	20c4c586	3							p=4 n=0
+gemini-grounded-extract-and-coerce	Step 1 uses a single consolidated English extraction instruction	640863c5	2							p=19 n=1
+gemini-grounded-extract-and-coerce	Step 1 prompt template uses three positional placeholders	b430de47	1							p=8 n=0
+gemini-grounded-extract-and-coerce	Go-side verbatim parse extracts title, source_url, venue, country, and raw date/time strings	ae9d1aa4	3							p=15 n=0
+gemini-grounded-extract-and-coerce	Step 1 slice envelopes are merged by concatenation, not URL grouping	b106e31d	3							p=7 n=0
+gemini-grounded-extract-and-coerce	Step 2 receives only the JSON-coercion-relevant fields	69f3b051	2							p=13 n=0
+gemini-grounded-extract-and-coerce	Step 2 tools MUST be empty; responseJSONSchema MUST be set	fbf55d59	2							p=0 n=0
+gemini-grounded-extract-and-coerce	Step 2's coerced output is joined back to EventDraft by index	ef819026	2							p=11 n=0
+gemini-grounded-extract-and-coerce	Deduplication keys on (local_date, venue, start_time)	c93f14f8	3							p=6 n=0
+gemini-grounded-extract-and-coerce	SearchMetadata exposes Step1Grounded and Step2Parse	c8352939	2							p=2 n=0
+gemini-grounded-extract-and-coerce	A/B harness emits per-step sub-objects in raw response files	68b0327f	1							p=0 n=1
+gemini-grounded-extract-and-coerce	cmd/smoke-diff reports per-event evaluation breakdown for a single smoke run	f6683a11	3							p=23 n=1
+gemini-grounded-extract-and-coerce	parseStep1Envelope Preserves Tour Grouping On EventDraft	33502a0f	3							p=12 n=0
+gemini-grounded-extract-and-coerce	Step 1 extracts every field in the source page's original language	d55a01bc	2							p=9 n=0
+gemini-grounded-extract-and-coerce	Step 1 selects the tour-specific page as source_url	4b4c478f	2							p=6 n=0
+gemini-searcher-config	GCPConfig exposes per-step Gemini search model fields	9d58add6	3							p=3 n=0
+gemini-searcher-config	Helper methods resolve per-step model with env-var precedence over defaults	3161d32b	3							p=4 n=0
+gemini-searcher-config	Config passes per-step models through DI into gemini.Config	11de1652	4							p=0 n=4
+gemini-searcher-config	Configurable search-cache TTL with env-var precedence over default	e9b27289	4							p=14 n=0
+gemini-searcher-config	Configurable discovery-skip window with env-var precedence over default	fa8fc204	4							p=17 n=0
+geo-location	GeoLocation Proto Entity	0bebcc9b	3							p=18 n=0
+geo-location	GeoLocation Field Validation	145fa2a5	3							p=6 n=0
+gke-gateway-infrastructure	Gateway API Resource Creation	093fb1b2	2							p=0 n=2
+gke-gateway-infrastructure	HTTPRoute API Routing	46c1f362	2							p=1 n=0
+gke-gateway-infrastructure	GatewayClass Selection	b1783e07	1							p=0 n=3
+gke-gateway-infrastructure	Cross-Namespace Routing	18c2dc2a	1							p=0 n=7
+gke-gateway-infrastructure	Certificate Management Annotation	f942d1dc	1							p=0 n=2
+gke-gateway-infrastructure	Policy Attachment for Gateway Configuration	806132d2	1							p=2 n=0
+gke-standard-infrastructure	Standard zonal GKE cluster for dev	3c1b3f84	2							p=0 n=3
+gke-standard-infrastructure	Dev cluster nodes SHALL have public external IPs	92f7caab	2							p=1 n=2
+gke-standard-infrastructure	Standard cluster Spot nodeSelector	4662f226	1							p=0 n=4
+gke-standard-infrastructure	Shielded GKE Nodes SHALL be enabled on the Spot node pool	974107d4	1							p=0 n=3
+gke-standard-infrastructure	Dev cluster SHALL use LEGACY_DATAPATH (kube-proxy/iptables)	80f21196	2							p=0 n=2
+gke-standard-infrastructure	Dev cluster SHALL disable Google Managed Prometheus	508603ec	4							p=1 n=5
+gke-standard-infrastructure	Dev cluster Spot node pool boot disk SHALL be 30GB pd-standard	dbb3ebe9	3							p=2 n=5
+gke-standard-infrastructure	Dev cluster `kube-dns-autoscaler` SHALL set `preventSinglePointFailure: false`	396f0aae	4							p=4 n=10
+goroutine-leak-detection	Goroutine leak profile is exposed	4f65eada	3							p=0 n=1
+goroutine-leak-detection	Detected goroutine leaks raise an alert	a26e7cef	3							p=4 n=0
+goroutine-leak-detection	Leak detection complements existing consumer health signals	5c1c2be7	2							p=0 n=1
+guest-data-merge	Guest Data Storage	0b2d6c9d	4							p=30 n=1
+guest-data-merge	Guest hype included in data merge on signup	341f5cc3	3							p=15 n=0
+guest-data-merge	Data Merge on Authentication	d6feb5e0	4							p=57 n=0
+guest-data-merge	Guest Data Cleanup	0a31c332	3							p=17 n=0
+guest-mode-access	Guest Free Navigation After Dashboard	71119db3	2							p=32 n=0
+guest-mode-access	Account-Only Features Hidden, Not Blocked	b4dd8147	2							p=7 n=0
+guest-mode-access	Persistent Auth Entry From Discovery Onward	78c0b743	2							p=25 n=0
+http-retry	HTTP retry on transient errors	7479d226	9							p=3 n=0
+http-retry	Retry-After header respect	9e0f82f7	2							p=0 n=0
+http-retry	Context cancellation during retry	d452af0c	1							p=0 n=0
+http-retry	Request body replay for retried POST requests	d6ccb741	1							p=0 n=0
+http-retry	Independent context per Gemini API retry	f4d680cb	3							p=3 n=0
+http-retry	Backoff max interval aligned with Google recommendation	f9f21ef6	1							p=0 n=0
+http-retry	Diagnostic capture of error response body	d84546fc	4							p=2 n=0
+http-retry	Deduplicated auth token refresh on concurrent 401s	3e896229	3							p=11 n=0
+hype-inline-slider	Sticky Header Legend	8c59d6b9	3							p=21 n=0
+hype-inline-slider	Inline Dot Slider	1aa7f7bb	7							p=46 n=0
+hype-inline-slider	Slider Track Vertical Centering	7eada823	1							p=0 n=0
+hype-inline-slider	Slider dot positions align with header columns	6dcff9cd	1							p=2 n=0
+id-resolution	RPC handlers resolve Zitadel external ID to internal UUID before database access	61bcd79b	10							p=86 n=0
+id-resolution	Handlers return NotFound when user record does not exist	0b6458ef	1							p=14 n=0
+identity-management	Manage Zitadel Organization	c552dcfa	5							p=67 n=15
+identity-management	Manage Zitadel Project	1517ca17	1							p=1 n=1
+identity-management	Manage OIDC Application	e3bd0968	2							p=3 n=8
+identity-management	Configure Login Policy	24de9278	2							p=12 n=1
+identity-management	Configure Admin Org Login Policy	ac4ddb43	4							p=26 n=5
+identity-management	Provision Google IdP for Admin Sign-in	ad07bc6b	2							p=7 n=8
+identity-management	Provision Human Admin User in Admin Role Org	00142b74	3							p=37 n=8
+identity-management	Grant IAM_OWNER to Human Admin User	36c6e40b	1							p=21 n=3
+identity-management	Pre-link Google Identity to Human Admin via IaC	68b42f3b	4							p=33 n=6
+identity-management	Provision Admin Google Sub via ESC	8f531e89	2							p=15 n=9
+identity-management	Place Machine Users by Responsibility	b3f1a155	3							p=20 n=5
+identity-management	Retain Break-glass Machine User	23b060c1	2							p=35 n=18
+identity-management	Maintain Google OAuth Client in Dev Infrastructure	4ce0e604	4							p=4 n=10
+identity-management	Inject Email Claim into Access Tokens via Actions v2	45da03ee	2							p=14 n=0
+identity-management	Provision Actions v2 Target and Execution Resources	6851a826	2							p=1 n=5
+identity-management	Dedicated Service User for Login V2 UI	5feadb3c	3							p=14 n=5
+identity-management	SMTP Configuration Must Be Activated After Creation	08f38d47	5							p=22 n=20
+identity-management	Provision Password-Based E2E Test User in Dev Zitadel	274126cf	4							p=31 n=13
+identity-management	E2E Test User Password Marked Permanent	79d0b965	5							p=31 n=14
+identity-management	Maintain Google OAuth Client in Prod Infrastructure	bfccc575	4							p=1 n=10
+identity-management	Configure Login UI Branding	0a270d71	5							p=5 n=1
+identity-management	Localize Login UI Text for the Product	6c504712	6							p=13 n=0
+identity-management	Configure OIDC Token Lifetimes	3e5e3a50	3							p=9 n=1
+infra	KEDA-managed Deployments SHALL NOT declare replicas	a88764f9	1							p=1 n=4
+infra	ArgoCD SHALL ignore replicas drift for KEDA-managed Deployments	3af7c9e0	1							p=1 n=4
+intel	Live Information Crawling	c5713f44	1							p=6 n=0
+interaction-feedback	Immediate tactile acknowledgement on press	99c29ee7	3							p=3 n=0
+interaction-feedback	Layout-preserving skeleton loading	65f2253b	3							p=1 n=0
+interaction-feedback	Haptic feedback for meaningful confirmations	eae408a3	2							p=6 n=0
+interaction-feedback	Animated list enter and exit	eccd3386	3							p=11 n=0
+interaction-feedback	Animated selection state	153c66ec	3							p=4 n=0
+interaction-feedback	Expression budget and accessibility guarantees	f4b1a5e3	2							p=2 n=0
+interceptor-chain-ordering	Interceptor Execution Order	0a3eb12e	3							p=5 n=0
+interceptor-chain-ordering	Interceptor Ordering Documentation	a3594f15	1							p=4 n=0
+jetstream-consumer-reliability	Consumer backlog stall is detected and alerted	27c4844c	3							p=0 n=0
+jetstream-consumer-reliability	Subscription failure fails loud	655e0885	2							p=1 n=0
+jetstream-consumer-reliability	Liveness reflects consumption health	3ea3831d	2							p=0 n=2
+jetstream-consumer-reliability	Consumers are named by behavior, with a unique deliver group	ab1ea4ca	2							p=15 n=0
+jetstream-consumer-reliability	Every handler receives every message (fan-out)	9b211723	1							p=9 n=0
+jetstream-consumer-reliability	Subjects are named as past-tense events	d25c5c69	1							p=11 n=0
+jetstream-consumer-reliability	KEDA triggers reference the live behavior-named durables	7790d815	1							p=0 n=0
+jetstream-consumer-reliability	Stream and durable configuration is managed declaratively by a single owner	0ce40e56	3							p=4 n=0
+jetstream-consumer-reliability	A consumer may scale to zero without losing its durable	082615dd	2							p=0 n=0
+journey-status-presentation	Canonical journey-status presentation map	da574054	2							p=2 n=0
+journey-status-presentation	Status icon and hue assignments	5b67db05	4							p=4 n=0
+journey-status-presentation	Consistent rendering across components	2c1f0fda	1							p=7 n=0
+k8s-resource-right-sizing	Dev environment resource requests use Standard GKE minimums	f7a24146	9							p=4 n=24
+k8s-resource-right-sizing	KEDA ScaledObjects in dev SHALL cap at maxReplicaCount 1	ee221ec0	1							p=2 n=2
+k8s-service-cross-namespace-routing	Backend Service Accessibility from External Gateway	fa9ad046	2							p=0 n=3
+k8s-service-cross-namespace-routing	Service Protocol Configuration for HTTP/2	c6657e8b	2							p=0 n=2
+k8s-service-cross-namespace-routing	Cross-Namespace Routing Enabled	78d1ff3d	1							p=0 n=6
+k8s-service-cross-namespace-routing	Backend Pods Targeted via Service	dec3bc09	2							p=0 n=0
+k8s-service-cross-namespace-routing	No Direct Pod Exposure	0c409779	1							p=0 n=0
+k8s-service-cross-namespace-routing	Namespace Isolation Maintained	9fc54eb5	1							p=0 n=3
+landing-page	Passkey Authentication CTA	5ed80925	5							p=23 n=0
+landing-page	Hero Screen Scroll Affordance	8afb614a	5							p=13 n=0
+landing-page	Guest-Friendly Welcome Copy	114c65d0	1							p=5 n=0
+landing-page	Authenticated User Redirect	9dfcaa80	2							p=11 n=0
+landing-page	Welcome Page Language Switcher	3352ae37	3							p=11 n=0
+landing-page	Guided Product Demo Sequence	1b122fe6	5							p=28 n=0
+landing-page	Interactive Timetable Detail	a768ac2a	4							p=32 n=0
+landing-page	New-Concert Notification Cue	2e706cab	1							p=20 n=0
+landing-page	Hero Kinetic Brand Treatment	440d23bb	1							p=2 n=0
+landing-page	Ambient Background	9663fbe3	1							p=1 n=0
+landing-page	Landing Page Value Pillars Scope	152379fa	1							p=14 n=0
+layout-assertions	E2E selectors use data-testid for stability	503adfde	7							p=19 n=2
+layout-assertions	E2E tests use Playwright native locator API without JS dispatch workarounds	8d2acdb4	4							p=7 n=10
+layout-assertions	Shell layout structural integrity	baab1ab2	4							p=4 n=0
+layout-assertions	Discover page layout containment	6a361c57	5							p=10 n=0
+layout-assertions	Layout test execution performance	4e65389c	1							p=0 n=0
+layout-assertions	Layout tests independent of backend	7bf9fb05	1							p=0 n=0
+legal-documents	Legal documents are served as in-app routes with stable URLs	39967ebb	2							p=21 n=0
+legal-documents	Legal documents are reachable without authentication	8549c2f0	1							p=10 n=0
+legal-documents	Legal documents are localized	f297ff8d	1							p=6 n=0
+legal-documents	Privacy Policy discloses the actual data practices	6f240c5d	4							p=11 n=0
+legal-documents	Terms of Service disclaims third-party data accuracy	ae6f3610	1							p=9 n=0
+legal-documents	OSS Licenses content is generated from the shipped dependencies	3562c9fb	2							p=4 n=0
+legal-documents	In-app legal links resolve to in-app legal routes	fb2cd645	1							p=22 n=0
+live-events	Concert Schedue Data Model	399dd0b7	6							p=66 n=0
+live-events	Artist Management	3ad79c68	4							p=26 n=0
+live-events	Live Schedule Access	6d7b3943	4							p=47 n=0
+live-events	Proto Value Object Consistency	054f3748	5							p=29 n=0
+live-events	Venue Embedding in Concert and Event	bdc2e479	2							p=20 n=0
+live-events	Go Entity Field Name Alignment	869776f0	1							p=6 n=0
+live-events	Dashboard Lane Classification	c65a3f9e	4							p=44 n=0
+live-events	ISO 3166-2 Display Conversion	cd7d0a86	2							p=8 n=0
+live-events	Live Event Availability Check	32c8c0c2	3							p=28 n=0
+loading-spinner-ce	Loading Spinner Custom Element	eb742db2	6							p=6 n=3
+localstorage-naming	Unified key naming convention	f704eef1	1							p=4 n=1
+localstorage-naming	Centralized key registry	3465a2d6	2							p=0 n=0
+localstorage-naming	Domain term alignment	24814048	2							p=23 n=0
+logo-color-analysis	Logo Color Extraction	672fe22f	4							p=2 n=2
+logo-color-analysis	sRGB to OKLCH Conversion	4795f64a	3							p=0 n=6
+logo-color-analysis	Logo Analysis Integration in Sync Pipeline	122caad3	4							p=19 n=0
+logo-color-analysis	LogoColorProfile Proto Message	cbe6cd46	2							p=15 n=0
+logo-color-analysis	Frontend Background Color Derivation	06cbaefa	4							p=27 n=0
+lottery-application	Configure a lottery sales phase	eb032c91	3							p=63 n=0
+lottery-application	Organizer console entry point to lottery configuration	18e6f2e6	2							p=45 n=0
+lottery-application	Apply to a lottery phase	9cc9381f	5							p=28 n=0
+lottery-application	One application per account per phase	ae91fab5	3							p=16 n=0
+lottery-application	Automatic draw against fixed capacity	3ee5fa12	5							p=26 n=0
+lottery-application	Capture winners and release losers at the draw	49569bbc	3							p=22 n=0
+lottery-application	Application results	3d985bc2	1							p=0 n=0
+lottery-application	Persisted loser waitlist for resale	8c83ce13	1							p=7 n=0
+lottery-application	本人確認 binding carried to issuance	a3c7f2ed	1							p=8 n=0
+m3-design-tokens	Color roles with guaranteed on-color pairing	2e9abc63	3							p=2 n=2
+m3-design-tokens	State-layer opacity scale	87078cfb	3							p=0 n=2
+m3-design-tokens	Motion tokens split by property class	12503c43	3							p=0 n=0
+m3-design-tokens	Shape roles including expressive steps	3554ac2a	2							p=0 n=0
+m3-design-tokens	Tonal surface-container tiers	05a05c21	2							p=0 n=1
+migration-rebase-guard	The system MUST detect out-of-order migration timestamps	e75ff790	3							p=8 n=0
+migration-rebase-guard	The system MUST auto-fix out-of-order migrations when --fix is passed	6ec56f6c	2							p=12 n=0
+migration-rebase-guard	The system MUST integrate with Claude Code hooks	8654da0d	2							p=3 n=0
+modern-css-platform	Container Queries for component-level responsive design	9c258ab3	3							p=8 n=2
+modern-css-platform	View Transitions API for route animations	e872f685	2							p=4 n=0
+modern-css-platform	CSS `:has()` selector for state-based styling	b5008d8a	2							p=0 n=0
+modern-css-platform	CSS Logical Properties	e424e586	3							p=3 n=6
+modern-css-platform	CSS `@layer` for cascade management	6969ebf8	2							p=9 n=5
+modern-css-platform	CSS `@scope` for component isolation	96402e57	2							p=3 n=2
+modern-css-platform	No viewport media queries for component responsiveness	9881b8f2	1							p=6 n=1
+modern-css-platform	OKLCH color enforcement	fd26bfcb	3							p=1 n=10
+modern-css-platform	Anchored Container Query for position-dependent child styling	1990468a	2							p=0 n=0
+modern-css-platform	CSS `@starting-style` for entry animations on dynamic elements	4544da24	2							p=4 n=0
+modern-css-platform	`transitionend` event for post-animation DOM cleanup	59a668ec	3							p=10 n=3
+modern-css-platform	`overscroll-behavior: contain` for scroll isolation	e03e6ede	1							p=2 n=1
+modern-css-platform	`scrollIntoView` + `scrollend` for scroll-then-act patterns	0d8c9cc3	2							p=3 n=1
+modern-css-platform	`data-state` attribute for CSS animation state	1abd4972	1							p=1 n=0
+modern-css-platform	Total `style` attribute ban in templates	0ae12549	3							p=2 n=0
+modern-css-platform	`color-mix()` for dynamic alpha	d07dedea	1							p=0 n=1
+modern-css-platform	`translate` shorthand for transforms	6d99ddc3	1							p=0 n=0
+modern-css-platform	No setTimeout for CSS animation timing	61ad462d	3							p=2 n=0
+modern-css-platform	CSS scroll snap for bottom sheet dismiss gestures	a89da6fa	3							p=13 n=0
+modern-css-platform	No JS-to-CSS variable bridge custom attributes	994b5b23	2							p=0 n=0
+modern-css-platform	Scroll-driven Animations for scroll-linked effects	2ce6b3d2	2							p=2 n=0
+my-artists	Hype Change Persisted for Guest Users	42fd997e	3							p=21 n=0
+my-artists	View Toggle (List / Grid)	6273fef3	1							p=7 n=0
+my-artists	Grid (Festival) View	86a896c6	3							p=10 n=0
+my-artists	My Artists page help content documents all available gestures	fd9e3a88	2							p=14 n=0
+my-artists	Default hype tier for new follows is Nearby	f851470f	5							p=77 n=0
+my-artists	My Artists hype column headers render invariant English	ca145d8c	2							p=10 n=0
+nearby-proximity	Proximity Classification Model	915466c2	5							p=56 n=0
+nearby-proximity	Home Area Centroid Lookup	00b938c3	4							p=21 n=0
+nearby-proximity	Centroid Resolution Unit Coverage	3a5dc12b	2							p=2 n=0
+non-blocking-menu-navigation	Menu-tab navigation attaches the view before data resolves	8b869589	2							p=5 n=0
+non-blocking-menu-navigation	In-flight state is shown via the route's existing UI	b01cfa4d	2							p=0 n=0
+non-blocking-menu-navigation	Synchronous prelude remains in loading()	b4b8e05c	2							p=3 n=0
+non-blocking-menu-navigation	Navigating away cancels the in-flight fetch	0bd54cca	1							p=4 n=0
+non-blocking-menu-navigation	Data-ready side effects gate on observed data arrival	178a80cd	2							p=4 n=0
+non-blocking-menu-navigation	Late-arriving data renders regardless of attach order	a139a9e9	2							p=6 n=0
+notification-lifecycle	Notifications are persisted as identified entities	c50919c4	1							p=14 n=0
+notification-lifecycle	Per-notification delivery outcome is recorded	521a0df0	3							p=11 n=0
+notification-lifecycle	All user-facing notifications flow through the notification service	2a7c796d	1							p=21 n=0
+notification-lifecycle	Read and dismiss state is user-controllable and idempotent	68ef0424	1							p=22 n=0
+notification-lifecycle	The notification identifier is propagated end-to-end	70629db5	1							p=9 n=0
+notification-lifecycle	Delivered notifications are reported to product analytics	c7b637f0	3							p=21 n=0
+notification-lifecycle	Notification opens and dismissals are reported to product analytics	1763cdae	3							p=40 n=0
+notification-lifecycle	Notification fan-out logs zero-recipient skips	f0edee48	1							p=25 n=0
+official-site-search	Resolve Official Site URL from MusicBrainz	c6a62d41	4							p=16 n=0
+official-site-search	Async Official Site Persistence on Follow	ab8a3f84	4							p=37 n=0
+onboarding-celebration	Two-Tier Celebration Overlay	aba1b0eb	6							p=25 n=12
+onboarding-celebration	Celebration Reveals the Timetable Behind the Text	f9bad442	3							p=2 n=9
+onboarding-guidance	Onboarding guidance rendered within unified DiscoverPage	72dcc2f8	3							p=13 n=0
+onboarding-guidance	Followed count reflects localStorage state	4ae462ec	3							p=30 n=0
+onboarding-guidance	Orb pulse on follow	7f98f5ef	1							p=8 n=0
+onboarding-guidance	Search and genre filter available during onboarding	8d1ac7bb	1							p=18 n=0
+onboarding-guidance	No z-index stacking in discovery page CSS	a3e06b1e	2							p=8 n=1
+onboarding-page-help	Persistent Help Icon in Onboarding Pages	298a98c5	3							p=16 n=0
+onboarding-page-help	Auto-open on First Page Visit	97414a11	3							p=24 n=0
+onboarding-page-help	Page-specific Help Content	97ea35d7	3							p=44 n=3
+onboarding-page-help	Multi-section help sheet structure	58ada54b	3							p=17 n=0
+onboarding-page-help	Hype tier table is a 3-column grid	6a8abfc3	3							p=25 n=0
+onboarding-page-help	Help sheet visual readability	2fb576ed	1							p=3 n=3
+onboarding-page-help	Top-layer Popover Text Color Inheritance	3f4354a3	2							p=3 n=4
+onboarding-page-help	Help seen flags cleared on onboarding reset	49472b48	1							p=6 n=0
+onboarding-popover-guide	Popover guide on discover page entry during onboarding	7bba6202	7							p=16 n=1
+onboarding-spotlight	Spotlight Visual Layer via Box-Shadow	172a149f	3							p=4 n=2
+onboarding-spotlight	Coach Mark Overlay System	5e402074	4							p=13 n=3
+onboarding-spotlight	Spotlight Uses Popover Top Layer	f63f3c86	2							p=0 n=2
+onboarding-spotlight	Route Detach Spotlight Cleanup	e36ee0ca	2							p=5 n=0
+onboarding-spotlight	Coach Mark Target Click Delegates Navigation to Aurelia Router	7b103f15	2							p=12 n=3
+onboarding-spotlight	Smooth Spotlight Movement via View Transitions API	3cba2bc3	3							p=14 n=0
+onboarding-spotlight	Tooltip Anchor Positioning	c17c2427	1							p=0 n=0
+onboarding-spotlight	Tooltip Visual Treatment	ce5afd23	1							p=2 n=3
+onboarding-spotlight	Inline SVG Directional Arrow	ae1af728	4							p=2 n=0
+onboarding-spotlight	Invisible Target Rejection	6e0b2b66	2							p=1 n=0
+onboarding-spotlight	Single Transient Non-Blocking Coach Mark	07e51ec0	3							p=11 n=1
+onboarding-tutorial	Coach Mark Navigation Delegation	09038930	1							p=3 n=0
+organizer-accounts	Admin creates an organizer with an initial operator	cba2f2f5	3							p=46 n=0
+organizer-accounts	Initial operator bootstraps credentials on first sign-in	c9ad7ec6	4							p=21 n=0
+organizer-accounts	An artist is represented by at most one organizer	8ad9ad5e	4							p=61 n=0
+organizer-accounts	Admin can list and inspect organizers	1453a725	2							p=29 n=0
+organizer-accounts	Organizer provisioning is idempotent and compensating	e69e10cb	2							p=15 n=0
+organizer-accounts	An organizer can be deactivated	1b1f4601	2							p=28 n=0
+organizer-accounts	Organizer lifecycle emits analytics events	5b9c7d83	2							p=33 n=0
+organizer-console	Bundle isolation from the consumer SPA and admin console	fc8d391e	1							p=13 n=0
+organizer-console	Authenticate operators via org-pinned entry, one client for all tenants	daca59b4	4							p=19 n=0
+organizer-console	Route guard admits only owner-role operators	c7ff5095	3							p=14 n=0
+organizer-console	Organizer runtime config resolves the org at login	c8317014	1							p=17 n=0
+organizer-console-hosting	Serve the organizer console at a dedicated per-env host	f9b600d0	1							p=18 n=2
+organizer-console-hosting	Serve a per-host organizer config	8fb65d9f	1							p=18 n=0
+organizer-event-authoring	Organizer authors a concert as a draft	9e975862	4							p=76 n=0
+organizer-event-authoring	Organizer lists and edits its own concerts	991161b2	4							p=66 n=0
+organizer-event-authoring	Publish makes a concert live, first-party, and notifies once	1c2d77db	5							p=65 n=0
+organizer-event-authoring	Publish enforces the complete required-field set	5c4b4ab2	2							p=54 n=0
+organizer-event-authoring	First-party publish supersedes scraped data without harm	f3a6ad19	4							p=58 n=0
+organizer-event-authoring	Represented artists are excluded from scraping	7bd5c270	2							p=40 n=0
+organizer-event-authoring	Visibility controls where a published concert appears	51cad74f	2							p=36 n=0
+organizer-event-authoring	Organizer uploads an image	a3499c28	3							p=31 n=0
+organizer-event-authoring	Uploaded images are processed into safe, responsive variants	89cb91fa	3							p=9 n=0
+organizer-event-authoring	Replacing an image reclaims the previous one	2cbd3821	1							p=12 n=0
+organizer-rpc-server	Dedicated organizer Connect server isolated by audience	ee16cde1	2							p=32 n=1
+organizer-rpc-server	OrganizerService.Get returns the caller's own organizer	5160a528	1							p=21 n=0
+organizer-rpc-server	OrganizerService.ListArtists returns the caller's roster	df5b60ef	3							p=51 n=0
+organizer-rpc-server	Org-scoped authorization from the role claim	5a9977f7	8							p=48 n=0
+organizer-tenancy	Shared organizer-console project in the product org	0cd7a512	2							p=20 n=1
+organizer-tenancy	Organizer console OIDC app and backend API app	649970ae	2							p=22 n=2
+organizer-tenancy	Dedicated organizer-provisioner machine user	b3eb0063	1							p=28 n=3
+organizer-tenancy	Organizer-provisioner root key has a finite lifecycle	fae770a7	1							p=9 n=2
+organizer-tenancy	Organizer tenant orgs use a passkey-primary login policy with a designed recovery path	0c57290f	6							p=27 n=0
+otel-collector-deployment	OTel Collector Kubernetes Deployment	8019f498	6							p=4 n=6
+otel-collector-deployment	Workload Identity for Cloud Trace Authentication	0345afe4	1							p=0 n=7
+otel-collector-deployment	Backend Trace Export Configuration	9bba4cc2	3							p=6 n=0
+otel-collector-deployment	Cost-Optimized Resource Configuration	33096ac2	1							p=2 n=1
+otel-collector-deployment	ArgoCD GitOps Management	6c8db94b	1							p=1 n=10
+otel-collector-deployment	Filter rule scope is documented in the ConfigMap	49789034	1							p=1 n=2
+otel-collector-deployment	Metric ingest volume is observable	fe118019	1							p=1 n=0
+otel-sdk-configuration	Environment-aware trace sampling	322e796d	2							p=0 n=0
+otel-sdk-configuration	Enriched resource attributes	5aa6b4a8	1							p=0 n=0
+otel-sdk-configuration	Explicit text map propagator	c6ab8862	1							p=0 n=0
+otel-sdk-configuration	MeterProvider initialization	7ee6767e	3							p=0 n=0
+page-header-ce	Page header renders i18n title	8a561770	2							p=16 n=0
+page-header-ce	Page header supports trailing actions via slot	3750476e	2							p=15 n=0
+page-header-ce	Page header provides consistent visual styling	cbbe8dcc	1							p=7 n=2
+page-header-ce	Page header participates in route grid layout	0e915889	1							p=2 n=0
+page-header-ce	Page header is globally registered	8bbdad7f	1							p=3 n=0
+page-header-ce	Page header is a single shell-hosted instance bound to shared state	cda67c34	3							p=17 n=0
+passion-level	Passion Level Tiers	aae42e68	3							p=32 n=0
+passion-level	Existing follow records preserve their stored hype	41a314ff	2							p=17 n=0
+passion-level	Hype Changes Require Authentication for Server-Side Persistence	48605646	2							p=19 n=0
+passion-level	Hype Level Persistence	2c39c75c	1							p=13 n=0
+passion-level	SetHype API	e8995e6a	3							p=31 n=0
+passion-level	HypeLevel in ListFollowed Response	c9651dee	1							p=20 n=0
+passion-level	Hype Visual Indicators on Dashboard Cards	38abb130	15							p=90 n=4
+passive-concert-discovery	Dashboard Mode Toggle	bb2408f8	3							p=28 n=0
+passive-concert-discovery	Date Preset Selector	29291c00	9							p=19 n=0
+passive-concert-discovery	Area Selector in All Nearby Mode	4c82b731	4							p=50 n=0
+passive-concert-discovery	All Nearby Concert List	49122510	3							p=31 n=0
+passive-concert-discovery	Follow CTA in Event Detail Sheet for All Nearby	b4ed78de	4							p=75 n=0
+passive-concert-discovery	Compact All Nearby Filter Bar	c1fedd81	2							p=5 n=1
+passive-concert-discovery	Localized All Nearby Date Display	08fabd19	3							p=2 n=0
+passive-concert-discovery	Natural Japanese Copy for All Nearby	b7bd2904	1							p=3 n=0
+post-signup-dialog	Post-Signup Dialog on First Authentication	a1505e70	10							p=49 n=1
+post-signup-dialog	Dialog reliably opens when active is true at creation time	b4b88903	1							p=4 n=0
+post-signup-dialog	PostSignupDialog title and aria-label use i18n bindings	4c636a98	4							p=12 n=0
+post-signup-dialog	PostSignupDialog footer button reflects completion state	08a056f8	1							p=8 n=0
+post-signup-dialog	Celebration Precedes Post-Signup Dialog	a469a649	2							p=9 n=7
+post-signup-dialog	PWA Install Row Shows Fallback Instructions When Native Prompt Unavailable	d8d69862	3							p=3 n=0
+post-signup-dialog	PwaInstallService Registers beforeinstallprompt Listener Before Routing	1ce0fe75	2							p=10 n=0
+private-google-access	Private DNS zone for googleapis.com	9aa99ea0	2							p=0 n=2
+private-google-access	Google API traffic bypasses Cloud NAT	c8f536d0	1							p=0 n=2
+private-google-access	Reachability of services not protected by VPC Service Controls	a5150fd9	2							p=6 n=1
+prod-environment-bootstrap	Prod GKE cluster SHALL be an Autopilot regional cluster in asia-northeast2	4505456d	4							p=2 n=15
+prod-environment-bootstrap	Prod GKE cluster SHALL enable Dataplane V2	9a136e10	3							p=0 n=4
+prod-environment-bootstrap	Prod GKE cluster SHALL encrypt Kubernetes Secrets via Cloud KMS (etcd CMEK)	557e5556	2							p=0 n=11
+prod-environment-bootstrap	Prod project SHALL host the Cloud KMS keyring and key for etcd CMEK	4bcaf0eb	4							p=1 n=11
+prod-environment-bootstrap	Prod GKE cluster SHALL use the same secondary IP CIDR plan as dev	af1294e8	4							p=0 n=3
+prod-environment-bootstrap	Prod cluster SHALL NOT enable Confidential GKE Nodes at cluster level	92599649	1							p=2 n=4
+prod-environment-bootstrap	Prod cluster SHALL bound Google Managed Service for Prometheus (GMP) cost via disabled application auto-monitoring	c096ff46	3							p=8 n=11
+prod-environment-bootstrap	Workload Pods SHALL request Spot scheduling via the `cloud.google.com/gke-spot` label	ed481c9c	2							p=0 n=8
+prod-environment-bootstrap	Prod GCP project SHALL host the same peripheral GCP resources as dev	ed649891	4							p=2 n=18
+prod-environment-bootstrap	Initial prod Pulumi deploy SHALL be manual-triggered	d146a10f	2							p=2 n=9
+prod-environment-bootstrap	Prod public DNS SHALL be managed entirely by Cloudflare, with apex A record bound to the shared GKE Gateway static IP	1aac3520	5							p=1 n=15
+prod-environment-bootstrap	Prod backend ConfigMaps SHALL reference the mainnet ticket SBT contract	a177ec6c	2							p=8 n=6
+prod-environment-bootstrap	Prod VAPID public key SHALL match the GSM-stored private key	9693d320	3							p=9 n=1
+prod-environment-bootstrap	Prod blockchain ESC values SHALL reference mainnet	b1a9bb9f	3							p=8 n=0
+prod-environment-bootstrap	Prod admin Google sub SHALL be issued by the prod OAuth client	a536bc3a	2							p=9 n=1
+prod-image-pipeline	Prod container images SHALL be sourced exclusively from the prod project's Artifact Registry	66748f8b	3							p=8 n=12
+prod-image-pipeline	Prod cluster service accounts SHALL NOT hold cross-project Artifact Registry IAM grants	112eba3c	3							p=4 n=18
+prod-image-pipeline	CI service accounts MAY hold scoped cross-project AR reader for image promotion	f605ee3c	4							p=6 n=13
+prod-image-pipeline	Frontend prod image SHALL be env-agnostic at the bundle level	a4000d79	4							p=0 n=3
+prod-image-pipeline	Backend prod images SHALL be promoted to prod AR on GitHub Release tags	1e592e67	5							p=25 n=17
+prod-image-pipeline	Frontend prod image SHALL be promoted to prod AR on GitHub Release tags	9edab8ce	5							p=19 n=19
+prod-image-pipeline	Prod kustomize overlays SHALL pin image URIs to prod-AR paths	3a477246	2							p=1 n=21
+prod-image-pipeline	Every main commit SHALL have a resolvable dev AR image	82aec379	6							p=21 n=31
+prod-image-pipeline	Prod kustomize pin-bumps SHALL be automated via repository_dispatch	a0dcc1c5	5							p=26 n=10
+prod-image-pipeline	A cloud-provisioning workflow SHALL apply the prod pin-bump on dispatch	b3129170	8							p=10 n=46
+prod-image-pipeline	cloud-provisioning main ruleset SHALL allow the ci-bot App to bypass for the pin-bump push	47cfb4ff	2							p=1 n=6
+prod-image-pipeline	The manual pin-bump fallback SHALL be admin-gated	9d12ec00	2							p=6 n=6
+prod-image-tag-immutability	Non-dev Artifact Registry Docker repositories SHALL enforce tag immutability at the registry API level	290bcab1	5							p=4 n=14
+prod-image-tag-immutability	Prod kustomize overlays SHALL pin image URIs to semantic version tags	45ea5586	4							p=2 n=27
+prod-image-tag-immutability	Prod workload Deployments and CronJobs SHALL carry the app.kubernetes.io/version Recommended Label, propagated to the Pod template	bce0898d	6							p=8 n=34
+prod-image-tag-immutability	A runbook SHALL document the prod image tag pinning policy	55d968e2	2							p=0 n=5
+prod-k8s-manifests	Prod cluster SHALL run a full ArgoCD Application set matching dev's structure	8c8b1f6f	3							p=0 n=20
+prod-k8s-manifests	Every prod namespace under `k8s/namespaces/` SHALL have a `prod/` overlay	de9fbda3	2							p=1 n=26
+prod-k8s-manifests	Prod overlays SHALL diverge from dev only by ESC secret refs, hostnames, ArgoCD project labels, and replica counts	e3bf89c5	2							p=0 n=16
+prod-k8s-manifests	Every Pod template in prod overlays SHALL include the gke-spot nodeSelector	7459695d	2							p=0 n=25
+prod-k8s-manifests	Prod Gateway SHALL bind to the existing api-gateway-static-ip and serve api./auth. hostnames	cc617de0	3							p=0 n=15
+prod-k8s-manifests	Prod cluster SHALL opt application workloads into GMP via per-workload PodMonitoring CRDs	51c776a1	3							p=5 n=10
+product-analytics	PostHog Cloud EU is the sole product-analytics platform	d1f0143b	2							p=3 n=2
+product-analytics	Analytics `distinct_id` is the platform-internal `UserId`	7ee614a7	2							p=21 n=0
+product-analytics	Event names follow `domain.action[.qualifier][.outcome]` in dot.case	0273e643	2							p=17 n=0
+product-analytics	Event sourcing is partitioned between frontend and backend	af11b926	3							p=32 n=0
+product-analytics	Backend analytics flow uses NATS and an `analytics-consumer`	87651c25	3							p=6 n=0
+product-analytics	PostHog SDK initialisation is deferred until after first paint	5d2997a6	2							p=5 n=0
+product-analytics	Frontend disables autocapture and automatic page-view capture	0a6cf193	2							p=18 n=0
+product-analytics	Session replay masks PII by default	d1aacdd9	4							p=17 n=0
+product-analytics	Product analytics and OpenTelemetry remain separated; only `trace_id` bridges	c00d51fd	3							p=32 n=0
+product-analytics	Event catalogue is the single source of truth	ebaaec53	4							p=80 n=0
+product-analytics	Internal and E2E traffic is excluded from product analytics	de75e6e9	2							p=12 n=2
+product-analytics	Account authentication events are emitted server-side	54dce072	4							p=54 n=0
+product-analytics	Every active catalogue event has a verified emission call site	d0b92b4e	2							p=12 n=0
+product-analytics	The event catalogue records a per-event collection status	ebd63f93	5							p=45 n=0
+prompt-timing	PWA Install Prompt Blocked During Onboarding	c6c26c7b	2							p=20 n=0
+prompt-timing	Notification Prompt Blocked When Not Authenticated	c95a01a0	2							p=18 n=0
+prompt-timing	Notification Prompt Blocked During Onboarding	7d1963ac	1							p=8 n=0
+prompt-timing	Single Prompt Per Session	9863dfb2	3							p=7 n=0
+prompt-timing	Notification Prompt Priority Over Disruptive PWA Prompts	4fa94c75	2							p=18 n=0
+prompt-timing	Notification Prompt Eligible on First Post-Completion Session	87cc1ab7	2							p=21 n=0
+prompt-timing	PWA Install Banner Eligible After Onboarding Completion	dfb67358	3							p=19 n=0
+prompt-timing	Dismissed Prompts Do Not Reappear	0db12636	3							p=20 n=0
+proximity-model	Proximity Enum in Proto	15ba957a	2							p=10 n=0
+proximity-model	Concert.ProximityTo Entity Method	2c42bcbc	6							p=48 n=0
+proximity-model	Haversine in pkg/geo	c2e9153d	1							p=1 n=0
+pulumi-state-recovery	State-Recovery Operator Runbook	d090ca66	3							p=12 n=19
+push-notification-localization	Localized Notification Copy	5cb90279	4							p=23 n=0
+push-notification-localization	Concert Discovery Notification Content	a9273aed	3							p=41 n=0
+push-notification-service	PushSubscription entity model	9a1fc912	2							p=14 n=0
+push-notification-service	Create RPC registers the calling browser's subscription	f4a28920	3							p=16 n=0
+push-notification-service	Get RPC returns the subscription for a specific browser	c0a5a278	4							p=18 n=0
+push-notification-service	Delete RPC removes only the specified browser's subscription	3e5c6df3	4							p=15 n=0
+push-notification-service	Per-browser scoping for repository operations	587801da	2							p=10 n=0
+push-notification-service	Stale subscription self-healing on the client	f432f155	4							p=31 n=0
+push-notification-service	Delivery scope limited to newly created concerts	19e310ac	5							p=94 n=0
+push-notification-service	CONCERT.created event carries identifiers of newly created concerts	1b8820e7	3							p=39 n=0
+push-notification-service	Notification consumer is a thin adapter over the use case	a364fdda	2							p=12 n=0
+push-notification-service	NotifyNewConcerts debug RPC for deterministic invocation	172ba817	5							p=29 n=0
+push-notification-service	New-concert notification deep-links to the earliest matched concert	d35d3ed0	3							p=60 n=0
+push-notification-service	Service Worker renews the subscription on pushsubscriptionchange	cf27fe01	2							p=9 n=0
+push-notification-service	Subscription registration failures are observable on the client	b2380b2e	1							p=10 n=0
+pwa-install-banner	Banner Visible to Authenticated Non-Installed Users After Onboarding	c5963f92	4							p=17 n=0
+pwa-install-banner	Banner CTA Install Flow by Platform	4119cdd2	6							p=6 n=0
+pwa-install-banner	Banner Disappears Permanently After Installation	5cbde489	2							p=1 n=0
+pwa-install-banner	Session-Level Dismiss	04d937d5	3							p=12 n=0
+pwa-install-banner	Banner Suppressed While PostSignupDialog Is Open	25572bdf	2							p=3 n=0
+pwa-install-banner	Banner Visual Presentation	3eb41063	5							p=2 n=3
+pwa-install-banner	Banner Accessibility	1372c5f1	3							p=0 n=0
+pwa-install-banner	PwaInstallService Banner Visibility API	71f5e962	4							p=1 n=0
+pwa-update-lifecycle	The SPA SHALL register its Service Worker via `virtual:pwa-register`	29b27100	2							p=0 n=0
+pwa-update-lifecycle	The Service Worker SHALL handle `SKIP_WAITING` messages and claim clients on activate	f14b8527	2							p=4 n=0
+pwa-update-lifecycle	The SPA SHALL show a persistent update toast when a waiting SW is detected after user interaction	6c9da1b6	3							p=18 n=0
+pwa-update-lifecycle	The SPA SHALL apply a waiting SW silently on boot before user interaction	d34c4ed1	2							p=19 n=0
+pwa-update-lifecycle	The SPA SHALL trigger SW update checks on boot and on page resume	a67403bd	2							p=2 n=0
+pwa-update-lifecycle	The update action button SHALL be visually prominent	4a510247	2							p=2 n=0
+rpc-auth-scoping	Explicit user_id in authenticated per-user RPC bodies	73eb80a9	4							p=22 n=0
+rpc-auth-scoping	Creation RPCs are exempt from the user_id convention	b7af17c1	1							p=10 n=0
+rpc-auth-scoping	Shared JWT-match helper	9e4581a4	2							p=3 n=0
+sales-phase	SalesPhase Entity	0b1cb02b	2							p=39 n=0
+sales-phase	SalesPhase Identity	de715c0d	1							p=4 n=0
+sales-phase	Sales Method and Channel Classification	859491ec	3							p=2 n=0
+sales-phase	Timeline Fields Are Nullable Except the Start	9c5ae284	1							p=3 n=0
+sales-phase	Best-Effort Stable Phase Identity	6e7d77aa	3							p=5 n=1
+sales-phase	Persist Only Phases With a Known Start	7c959ac7	2							p=6 n=0
+sales-phase	SalesPhase Database Schema	368eb127	1							p=5 n=0
+sales-phase-discovery	Dedicated Sales-Phase Searcher	1efb3929	3							p=34 n=0
+sales-phase-discovery	Verbatim Extraction Discipline	d6192fdf	2							p=6 n=0
+sales-phase-discovery	Scheduled Sales-Phase Discovery Job	2b9a0e18	3							p=15 n=0
+sales-phase-discovery	Event-Driven Announcement on New Phase	7039a1b3	3							p=18 n=0
+sales-phase-discovery	Play-guide sales are classified as プレイガイド even when general	13f27f40	2							p=1 n=0
+sales-phase-discovery	Lottery phases extract the application deadline and result date when published	13eb3df0	2							p=10 n=0
+sales-reminders	Multi-Stage Reminder Scan	2e5ab342	6							p=12 n=0
+sales-reminders	Reminder Audience	20550ed2	2							p=29 n=0
+sales-reminders	Once-Only Delivery	8dae3574	1							p=5 n=0
+sales-reminders	Quiet Hours	07c99058	3							p=14 n=0
+sales-reminders	Notification Content	a69ee980	1							p=20 n=0
+sales-reminders	Reminder Delivery Reuses Web Push	ac187a2e	1							p=3 n=0
+schema-lint	SERIAL and BIGSERIAL detection	178e7842	2							p=0 n=0
+schema-lint	Bare TIMESTAMP detection	1ade96c5	2							p=0 n=0
+schema-lint	Audit column detection	c466722a	2							p=0 n=0
+schema-lint	VARCHAR detection	8238a672	2							p=0 n=0
+schema-lint	COMMENT ON TABLE coverage	dc05323c	2							p=3 n=0
+schema-lint	COMMENT ON COLUMN coverage	0122b55d	2							p=0 n=0
+schema-lint	Makefile integration	a7087e4f	2							p=0 n=0
+schema-lint	CI integration	74a09816	2							p=0 n=4
+schema-lint	Comment-line exclusion	3a31eb09	2							p=0 n=0
+schema-lint	Database migration workflow includes schema lint	c06f209f	1							p=0 n=1
+search-follow-absorption	Search result follow triggers bubble view transition and absorption animation	5e559d83	3							p=48 n=0
+secret-management	GCP Secret Manager provisioning	2e7a24d0	2							p=0 n=19
+secret-management	IAM access control for secrets	a703e69c	2							p=0 n=3
+secret-management	External Secrets Operator deployment	4389da9a	2							p=0 n=7
+secret-management	ClusterSecretStore configuration	8a784072	2							p=0 n=9
+secret-management	ExternalSecret for backend secrets	6aa85357	3							p=0 n=14
+secret-management	Backend Deployment secret consumption	50d8ae22	2							p=0 n=3
+secret-management	Postmark Server API Token in Pulumi ESC	a83ead79	3							p=0 n=16
+secret-management	Secret rotation propagation	d1b01a6b	2							p=0 n=5
+semantic-dom	Semantic HTML element usage	4405aea2	3							p=0 n=4
+semantic-dom	Minimal div nesting depth	de34c46e	1							p=0 n=0
+semantic-dom	Dialog consolidation to bottom-sheet CE	f7c51d0e	2							p=14 n=3
+semantic-dom	Prompt consolidation to toast CE	c58939a3	1							p=7 n=0
+settings	My Home Area Preference	e10629fb	5							p=37 n=1
+settings	Push Notification Toggle	6b430c37	6							p=30 n=0
+settings	About Section	6125218d	1							p=12 n=0
+settings	Language Preference	202b7dda	5							p=23 n=0
+settings	Sign Out	157329e7	2							p=11 n=0
+settings	Guest-Adaptive Account Section	4f35beae	2							p=11 n=0
+settings	Guest Language Preference	b9042996	3							p=19 n=0
+settings	Settings Page Layout and Scroll	6b282b21	3							p=13 n=0
+settings	Toggle Control Layout Integrity	e2f06646	2							p=4 n=0
+settings	Expandable Toggle Description	b3a903f1	4							p=12 n=0
+settings	Privacy & Analytics Consent Toggle Labeling	625236d9	3							p=27 n=0
+settings	Platform-Conditional Sound Effects Hint	143d0fd5	2							p=4 n=0
+settings	Language Selector Single-Select Semantics	299ce57b	2							p=2 n=0
+settings	Home Area Selected-State Indicator	9687f5b1	1							p=8 n=0
+settings	Settings Async Status Live Region	b9a9a010	1							p=2 n=0
+settings	Toggle Hint Association And Disabled Push Row	4d81e1d9	2							p=3 n=0
+settings	Settings Group List Semantics	446b68ac	1							p=8 n=0
+settings	Email And Verification Badge Association	163284e5	1							p=0 n=0
+settings	Consent Toggle Observable Binding	14d6480b	2							p=12 n=0
+settings	Language Selection Sheet Dismiss And Error Surfacing	9b78c364	3							p=4 n=0
+settings	Settings Page Header Label	8fe39d4c	2							p=16 n=0
+shell-layout	Overlay elements excluded from grid flow	05931e6e	5							p=37 n=5
+shell-layout	Dashboard uses semantic HTML structure	9fe11d31	3							p=14 n=0
+shell-layout	live-highway component eliminated	ab408bc8	2							p=19 n=0
+shell-layout	Document root is a non-scrolling frame	861a43d5	3							p=9 n=0
+signup-prompt-banner	Guest Signup Prompt Banner	980dfdf0	2							p=11 n=0
+signup-prompt-banner	Signup Banner on My Artists	fff2bb68	4							p=31 n=0
+signup-prompt-banner	Signup Banner on Dashboard	458cc836	3							p=17 n=0
+signup-prompt-banner	Shared Banner Component	0f78015c	7							p=20 n=3
+signup-prompt-banner	Dashboard auth guard for journey fetch	16433aea	2							p=16 n=0
+state-management	OnboardingService as singleton state owner	7847c6de	3							p=0 n=0
+state-management	GuestService as singleton state owner	aa6bc055	8							p=53 n=0
+state-management	GuestFollow type in entities	5d5764b0	1							p=10 n=0
+state-management	Service-level persistence via propertyChanged	13127827	3							p=10 n=0
+state-management	Service hydration from localStorage	9e2cb3d1	4							p=4 n=0
+state-management	Simplified guest-storage POJO-only serialization	13521b4e	4							p=9 n=0
+state-management	OnboardingStep string values	202a948d	3							p=12 n=0
+state-management	FollowServiceClient as follow state SSoT	046ad7c4	5							p=66 n=0
+state-management	ConcertServiceClient concert search and tracking	ad3f4edd	9							p=60 n=0
+state-management	Single DI access path	884f0921	1							p=0 n=0
+state-transition-diagram	Onboarding is a one-way latched boolean	79e8a995	6							p=29 n=1
+state-transition-diagram	Coach mark is an independent, non-blocking hint	87540baa	3							p=7 n=0
+state-transition-diagram	Guest data accumulates before signup and clears after merge	2d69ca51	5							p=59 n=0
+storybook-component-testing	Presentational components have isolated stories	85945a5d	3							p=0 n=0
+storybook-component-testing	Component stories run as tests in CI	41a5f39e	4							p=0 n=6
+storybook-component-testing	Accessibility checks run on component stories	007cb563	2							p=0 n=1
+storybook-component-testing	Component-level visual regression detects unintended changes	1db1a8e9	3							p=0 n=1
+storybook-component-testing	A single visual-regression pipeline is maintained	fb494241	1							p=0 n=2
+storybook-component-testing	Unit and component test suites are isolated but jointly gated	50754c36	3							p=0 n=8
+tap-press-feedback	Global button press feedback baseline	eef56daa	3							p=4 n=3
+tap-press-feedback	Non-button primary tappables give press feedback	7de7e6fc	3							p=7 n=0
+tap-press-feedback	List rows give press feedback	79df2900	1							p=8 n=0
+tap-press-feedback	Reduced motion fallback for press feedback	8ddb683b	2							p=4 n=0
+tap-press-feedback	Touch activation reliability on iOS Safari	406c5df4	2							p=0 n=0
+ticket-journey	Ticket Journey Entity	1fc3751e	2							p=27 n=0
+ticket-journey	Set Ticket Journey Status	7670237b	7							p=68 n=0
+ticket-journey	Delete Ticket Journey	4385c3f2	2							p=23 n=0
+ticket-journey	List Ticket Journeys by User	3b844bbf	2							p=28 n=0
+ticket-journey	Ticket Journey Database Schema	b56ca8de	2							p=7 n=0
+ticket-journey	Ticket Status UI visibility	403ab48d	2							p=32 n=0
+ticket-journey	Ticket Status UI two-phase layout	c3cac2c9	2							p=10 n=0
+ticket-journey	Ticket Status cumulative progress display	8534efcd	3							p=6 n=0
+ticket-journey	Ticket Status selection contrast	9be3c600	1							p=2 n=0
+ticket-journey	Ticket Status semantic color and non-color cues	74180f46	2							p=3 n=0
+ticket-journey	Ticket Status outcome gating	c19ad4f2	3							p=6 n=0
+ticket-journey	Ticket Status radiogroup accessibility	e88aa6ab	1							p=8 n=0
+ticket-journey	Ticket Journey UI is independent of ticket sales	e461279d	2							p=30 n=0
+ticket-purchase-and-issuance	Issue from ④'s captured winning payment	c1d24f5c	3							p=28 n=0
+ticket-purchase-and-issuance	Order record	9a5c5577	2							p=32 n=0
+ticket-purchase-and-issuance	Issue account-bound covered tickets on the captured win	6582d0a3	4							p=32 n=0
+ticket-purchase-and-issuance	Idempotent issuance	024ecd53	1							p=12 n=0
+ticket-purchase-and-issuance	Capture succeeded but issuance failed	8dbf2550	1							p=18 n=0
+ticket-purchase-and-issuance	Settlement and payout are delegated to ticket-settlement-and-payout	dfd6a483	1							p=32 n=0
+ticket-purchase-and-issuance	収納代行 scheme — discharge on payment + 代理受領権限	8d79ebfe	1							p=17 n=0
+ticket-purchase-and-issuance	Refund taxonomy — cancellation vs postponement	18ed1bbb	4							p=45 n=0
+ticket-purchase-and-issuance	No stored card data (PCI SAQ A)	a387fd5d	1							p=0 n=0
+toast-ce	Toast Custom Element	a00742f0	6							p=17 n=4
+typography-focused-dashboard	Three-Lane Live Highway Layout	f74f28f8	11							p=34 n=8
+unified-check-interface	Makefile with standard targets in every repo	1f4236a6	16							p=2 n=19
+unified-check-interface	CI workflows use Makefile targets	5f29dbc8	7							p=0 n=34
+usecase-test-coverage	TicketEmailUsecase Create Tests	b74403ed	6							p=28 n=0
+usecase-test-coverage	TicketEmailUsecase Update Tests	06d88adc	4							p=12 n=0
+usecase-test-coverage	TicketEmailUsecase Helper Tests	6e79be2d	3							p=4 n=0
+usecase-test-coverage	ArtistImageSyncUsecase SyncArtistImage Tests	b0ef3711	5							p=38 n=0
+usecase-test-coverage	Adapter mapper test coverage	372e9507	5							p=29 n=0
+usecase-test-coverage	Messaging layer test coverage	b8f5f431	3							p=6 n=0
+usecase-test-coverage	User event consumer test coverage	c0438570	2							p=14 n=0
+usecase-test-coverage	Package utility test coverage	2e32c368	2							p=0 n=0
+user-account-sync	User Account Provisioning on Signup	4a7a9870	5							p=66 n=0
+user-auth	Sign Up / Sign In	4feada93	6							p=28 n=0
+user-auth	Session Restoration on App Cold Start	6e3ca315	3							p=16 n=0
+user-auth	Server-Side Session Monitoring Disabled	55d53cca	1							p=0 n=0
+user-home	User Home Area Data Model	e76b8579	6							p=41 n=0
+user-home	Create User with Home	d4abfe2d	2							p=39 n=0
+user-home	Update Home RPC	03687617	5							p=22 n=0
+user-home	Home included in User retrieval	a3ec45d1	3							p=36 n=0
+user-home	Frontend home area persistence via RPC	ae323978	6							p=68 n=0
+user-home	Unified Home Area Selector Component	28ba240d	8							p=48 n=0
+user-home	Home area i18n namespace	74fb8dda	2							p=21 n=4
+user-language-preference	User Preferred Language Field on User Entity	d0858130	2							p=12 n=0
+user-language-preference	Create RPC Captures Preferred Language at Signup	92dc9e36	6							p=33 n=0
+user-language-preference	UpdatePreferredLanguage RPC	c5154740	5							p=28 n=0
+user-language-preference	"DB Column Semantics — NULL Means ""Not Yet Set by Client"""	4212b60b	4							p=9 n=0
+user-language-preference	Repository NULL-Safe Reads on Nullable users Columns	27a58266	4							p=5 n=1
+user-language-preference	Guest Language as Observable Store State	51876e5c	2							p=7 n=0
+user-language-preference	UserStore Handles NULL Server Preferred Language	3f534392	1							p=9 n=0
+user-profile-hydration	User profile hydration at app startup	082b67f3	2							p=12 n=0
+user-profile-hydration	User profile hydration after auth callback	26245679	2							p=15 n=0
+user-profile-hydration	Idempotent profile loading	6206645b	2							p=2 n=0
+user-profile-hydration	Graceful degradation on hydration failure	9cdd404a	1							p=0 n=0
+user-profile-hydration	Write-through on user mutation	ffc7c544	2							p=18 n=0
+user-profile-hydration	Apply Preferred Language to i18n After Hydration	526ee4e1	2							p=8 n=0
+user-profile-hydration	Backfill Preferred Language When Missing	95a098c6	2							p=4 n=0
+user-profile-hydration	Remove Legacy localStorage Language Key After Authenticated Session Begins	f79d5bd1	2							p=4 n=0
+user-profile-hydration	Profile cleared on sign-out	ca36f2ea	1							p=8 n=0
+venue-name-cache	Venue lookup by listed name before Places API call	5ed41020	3							p=9 n=0
+venue-name-cache	Unique index on venue listed name and admin area	2d940e7a	2							p=9 n=0
+venue-name-localization	Venue Name Display Respects User's Preferred Language	ce6c5d20	5							p=61 n=0
+venue-normalization	Venue Resolution During Concert Creation	b5cffdc8	5							p=46 n=0
+venue-normalization	Skip Unresolvable Venues	49fcae57	2							p=15 n=0
+venue-normalization	PlaceSearcher Is Required	5c9914dd	1							p=1 n=0
+venue-normalization	Idempotent venue get-or-create with place_id-authoritative identity	070135aa	6							p=38 n=0
+venue-normalization	Google Places API Request Includes Language Code	4a6bf4ba	4							p=20 n=0
+venue-normalization	listed_venue_name Is Normalized Before Storage	ee5f4d87	3							p=14 n=0
+watermill-structured-logging	Watermill logs use structured JSON output	4ec3e8b2	2							p=0 n=4
+watermill-structured-logging	Watermill and application logs share the same slog handler	5c822c0e	1							p=0 n=0
+web-push-delivery-alerting	Alert on sustained push delivery failure	38eff45b	2							p=5 n=0
+web-push-delivery-alerting	Alert on active-subscription starvation	39b85fb5	1							p=4 n=0
+welcome-dashboard-preview	Live Dashboard Preview on Welcome Page	0553ef68	6							p=56 n=0
+workload-naming-convention	Workload names follow the audience-tier scheme	37ea1f33	3							p=33 n=0
+workload-naming-convention	Derived resources share the workload stem with uniform suffixes	18c7b60a	2							p=9 n=1
+workload-naming-convention	GCP identities and image repositories key off the same principal	67aff0f5	1							p=10 n=6
+workload-naming-convention	A canonical name mapping is the authoritative reference	c87e5845	1							p=12 n=2
+workload-naming-convention	Renames use an additive create-new then cutover then delete-old migration	7c872f18	2							p=12 n=3
+zitadel-action-webhook	Pre-Access-Token Webhook Endpoint	58dcc538	2							p=10 n=0
+zitadel-action-webhook	Webhook Authentication via Zitadel-Issued JWT Signature	aed4c899	3							p=6 n=0
+zitadel-action-webhook	Webhook Reachable Only Within Cluster	2490c752	3							p=10 n=1
+zitadel-observability	Alert on Zitadel API request latency p99	8837e7de	4							p=5 n=1
+zitadel-observability	Alert on backend JWT validation error rate	d5fe4e39	3							p=3 n=1
+zitadel-observability	Cloud SQL connection-pool dashboard panel for Zitadel database	71ec3438	2							p=11 n=5
+zitadel-observability	Weekly Zitadel API restart CronJob in dev	ab3b25a7	3							p=2 n=18
+zitadel-observability	Operator runbook for the Zitadel hang incident shape	2889fc74	3							p=5 n=1
+zitadel-self-hosted-deployment	Self-Hosted Zitadel Runtime in Each Environment Cluster	44895c14	4							p=6 n=15
+zitadel-self-hosted-deployment	Two-Container Deployment with Path-Based Routing	ab9fc2db	4							p=2 n=19
+zitadel-self-hosted-deployment	TLS Terminated at Gateway, Cluster Traffic Unencrypted	0236d0b9	2							p=3 n=2
+zitadel-self-hosted-deployment	Cloud SQL Connection via Auth Proxy Sidecar with IAM Authentication	d82df351	2							p=9 n=4
+zitadel-self-hosted-deployment	Cloud SQL Database and IAM User Pre-Provisioned by Pulumi	3c414b62	2							p=14 n=12
+zitadel-self-hosted-deployment	Connection Pool Sized Within Dev Connection Budget	578956e3	1							p=0 n=7
+zitadel-self-hosted-deployment	Bootstrap Admin Machine Key Stored in Secret Manager	b0175238	3							p=22 n=22
+zitadel-self-hosted-deployment	Backend MachineKey Lifecycle Tied to Zitadel-Side Identity	dbc37c2d	4							p=27 n=9
+zitadel-self-hosted-deployment	Masterkey Generated Once and Stored Immutably	4b73a014	2							p=2 n=6
+zitadel-self-hosted-deployment	Resilient Scheduling on Shared Spot Node Pool	94459a55	4							p=1 n=9
+zitadel-self-hosted-deployment	GSM Naming Convention for Zitadel MachineKey Credentials	ac64c315	2							p=4 n=5
+zitadel-self-hosted-deployment	Per-Environment Overlay Topology	30ca2556	7							p=1 n=56
+zitadel-self-hosted-deployment	Single Unified Zitadel Class Across All Environments	14b4f9a6	3							p=1 n=5
+zitadel-self-hosted-deployment	Per-Environment Configuration Values Sourced From Env-Keyed Map	68c43661	3							p=6 n=2
+zitadel-self-hosted-deployment	Backend MachineUser Lives in Product Org Across All Environments	96fac2e7	3							p=20 n=14
+zitadel-self-hosted-deployment	Cost Guardrails and Observability Applied to All Environments	d7813885	3							p=10 n=10
+zitadel-self-hosted-deployment	Zitadel Deployment Rendered by Official Helm Chart	9c5c2b45	4							p=1 n=32
+zitadel-self-hosted-deployment	Login V2 UI Routes Outbound Calls Via Cluster-Internal Service Using CUSTOM_REQUEST_HEADERS	202ed740	6							p=10 n=11
+zitadel-self-hosted-deployment	Zitadel Version Upgrades Applied by Pinned-Tag Edit with Boot-Time Migration and Post-Upgrade Verification	938a18d5	4							p=6 n=6
+zitadel-self-hosted-deployment	Outbound HTTP Client Permits In-Cluster Webhook Targets While Retaining SSRF Protection	b6ebc4e9	4							p=8 n=0
