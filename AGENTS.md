@@ -3,11 +3,15 @@
     Liverty Music poly-repo workspace managed as git worktrees.
     Each repo's AGENTS.md contains detailed coding conventions.
     Read the target repo's AGENTS.md before making changes.
+    All planning (OpenSpec specs and changes) lives in this repository, which is
+    registered as the OpenSpec store `openspec-store`. backend, frontend and
+    cloud-provisioning carry no planning of their own: their `openspec/config.yaml`
+    declares `store: openspec-store`, so every `openspec` command run there resolves here.
   </description>
 
   <structure>
     liverty-music/
-    ├── specification/
+    ├── specification/         ← OpenSpec store "openspec-store" (.openspec-store/store.yaml)
     │   ├── openspec/changes/ ← Ongoing changes (proposals, designs, specs, tasks)
     │   ├── openspec/specs/   ← The latest capability specs
     │   └── proto/            ← Protobuf entity / RPC schema
@@ -66,7 +70,7 @@
 <poly-repo-context repo="specification">
   <responsibilities>Protocol Buffers schema repository. Defines entity and RPC interfaces
   using Buf. Single source of truth for API contracts consumed by backend and frontend.
-  Also hosts OpenSpec structured specification changes.</responsibilities>
+  Also the OpenSpec store `openspec-store`: hosts every spec and change for all repos.</responsibilities>
   <essential-commands>
     buf lint                                  # Lint proto files
     buf format -w                             # Auto-format proto files
@@ -116,7 +120,12 @@ Generated code is hosted on BSR at `buf.build/liverty-music/schema`. Do not comm
 
 ## OpenSpec Workflow
 
-This repo uses OpenSpec for structured specification changes. Changes live in `openspec/changes/` and follow an artifact workflow (proposal → design → specs → tasks). Use `/opsx:new` to start a new change and `/opsx:continue` to progress through artifacts.
+This repo is the OpenSpec **store** `openspec-store` (identity file: `.openspec-store/store.yaml`). Every change and spec for backend, frontend, cloud-provisioning and this repo lives under `openspec/` here; the other repos only carry a pointer (`openspec/config.yaml` with `store: openspec-store`). Changes follow the artifact workflow (proposal → design → specs → tasks) via the `/opsx:*` commands.
+
+- **Inside this repo** commands resolve to the local `openspec/` root as usual. **Anywhere else** they resolve through the store registry; pass `--store openspec-store` when in doubt. The `Using OpenSpec root: openspec-store` banner confirms which root is in use.
+- **Per-machine registration** (once per laptop or fresh cloud VM): `openspec store register <path-to-this-checkout> --id openspec-store`. `openspec doctor` reports a missing registration and prints the exact fix (clone URL comes from `store.yaml`).
+- **Task progress and archive are recorded here.** Implementation repos never write to the store; their PRs cite the change (`OpenSpec-Change: <id>`) and the store commit they were built against, and the change is verified/archived in this repo once those PRs merge.
+- **Sharing is plain git.** OpenSpec never pulls or pushes; commit and push planning like code, and review it via PRs on this repo.
 
 ## Pre-implementation Checklist
 

@@ -1,0 +1,3 @@
+version: 1
+id: openspec-store
+remote: https://github.com/liverty-music/specification.git
