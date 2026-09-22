@@ -3,5 +3,5 @@
 # proposal, so Renovate would report this axis as up to date forever while it
 # silently drifted. Concrete versions make each bump a reviewable pull request.
 # See OpenSpec change `automate-dependency-updates`, task 5.2a.
-buf = "1.69.0"
+buf = "1.73.0"
 pre-commit = "4.3.0"
