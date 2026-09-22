@@ -66,19 +66,11 @@ Out of scope:
 
 ### New Capabilities
 
-- `route-rendering-lifecycle`: the app-wide contract for how a route coordinates
-  Aurelia's two lifecycles when it renders fetched data — where the fetch starts,
-  where render state is reflected, where a paint is yielded, and where scroll
-  position is saved and restored — expressed so that it holds for every
-  data-fetching route rather than being re-derived per route.
+- `components/infrastructure/fan/web/global/route-rendering-lifecycle`: Render state is reflected after the route's first render; An expensive render is preceded by a frame paint; Long lists render only what is in view; Scroll position survives navigation away and back
 
 ### Modified Capabilities
 
-- `non-blocking-menu-navigation`: the contract currently describes what each
-  route must do. Once the shared hooks exist, it additionally requires that
-  routes satisfy it by declaring their data rather than by implementing the
-  wiring themselves, so conformance is structural instead of per-route
-  discipline.
+(none)
 
 ## Impact
 

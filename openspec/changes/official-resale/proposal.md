@@ -57,19 +57,19 @@ buyer-side markup. Provider/payment mechanics reuse ⑤'s Stripe Connect /
 ## Capabilities
 
 ### New Capabilities
-- `official-resale`: face-value resale of an issued ticket — listing lifecycle,
-  the public marketplace + loser-priority sequential timed matching, the two-leg
-  money model (seller refund on resale completion + fresh face-value buyer sale),
-  mandatory-by-default enablement with structural exclusions, buyer 返品特約, and
-  the covered-ticket (特定興行入場券) re-bind on reissue.
+
+- `components/entity/resale-listing`: Resale deadline; Resale is enabled by default with structural exclusions only; Event cancellation or postponement while listed; Anonymity and no person-to-person contact
+- `components/infrastructure/fan/web/route/order`: Buyer return policy on the final confirmation screen
+- `components/usecase/resale-listing/create`: List a ticket for resale
+- `components/usecase/resale-listing/expire`: Unsold listing returns to the holder
+- `components/usecase/resale-listing/match`: Public resale marketplace with lottery-loser priority; Two-leg money model at match time; Covered-ticket re-bind on reissue; No double-seat or double-charge across lottery and resale
+- `components/usecase/resale-listing/withdraw`: Withdraw a listing
 
 ### Modified Capabilities
-<!-- None yet. official-resale reuses the Order/Payment/Ticket entities defined by
-     the not-yet-specced ⑤ ticket-purchase-and-issuance and ⑥ ticket-wallet-and-
-     checkin, and the demand pool from ④ lottery-application. Those are DEPENDENCIES
-     (see design.md), not modifications of existing shipped specs. When ⑤/⑥ are
-     specced, this change may add delta modifications to their ticket lifecycle;
-     for now the resale capability is self-contained. -->
+
+- `components/entity/event`: Ticket sales require complete event info
+- `components/entity/ticket-journey`: Resold companion seat leaves the same-time-entry group
+- `components/usecase/order/refund-order`: Seller refund triggered on resale completion; Resale fee
 
 ## Impact
 

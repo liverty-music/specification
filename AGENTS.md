@@ -13,7 +13,7 @@
     liverty-music/
     ├── specification/         ← OpenSpec store "openspec-store" (.openspec-store/store.yaml)
     │   ├── openspec/changes/ ← Ongoing changes (proposals, designs, specs, tasks)
-    │   ├── openspec/specs/   ← The latest capability specs
+    │   ├── openspec/specs/   ← The latest specs: stories/ + components/{entity,usecase,adapter,infrastructure}/
     │   └── proto/            ← Protobuf entity / RPC schema
     ├── backend/               ← Go implementation (Connect-RPC services)
     ├── frontend/              ← Aurelia 2 PWA
@@ -126,6 +126,17 @@ This repo is the OpenSpec **store** `openspec-store` (identity file: `.openspec-
 - **Per-machine registration** (once per laptop or fresh cloud VM): `openspec store register <path-to-this-checkout> --id openspec-store`. `openspec doctor` reports a missing registration and prints the exact fix (clone URL comes from `store.yaml`).
 - **Task progress and archive are recorded here.** Implementation repos never write to the store; their PRs cite the change (`OpenSpec-Change: <id>`) and the store commit they were built against, and the change is verified/archived in this repo once those PRs merge.
 - **Sharing is plain git.** OpenSpec never pulls or pushes; commit and push planning like code, and review it via PRs on this repo.
+
+### Spec tree
+
+Specs follow the `liverty-clean-arch` schema (`openspec/schemas/liverty-clean-arch/`), whose `specs` instruction is the authoritative description of the tree and the writing rules. In short:
+
+- `specs/stories/<story>/` — one user goal, named as a verb phrase, verified end to end.
+- `specs/components/entity/<entity>/` — the ubiquitous language; language-independent, proto/Go/TS are derived from it. Write entities first.
+- `specs/components/usecase/<entity>/<method>/` — one exported usecase method each.
+- `specs/components/{adapter,infrastructure}/<audience>/<web|api>/.../<component>/` — outer layers, always from one audience's point of view (`fan`, `admin`, `organizer`); flows that cross audiences are stories.
+- Only product behavior belongs in a spec. CI, deployment, code conventions and implementation design go in the change's `design.md` or outside OpenSpec. Subjects are entities, interfaces, routes, surfaces and ubiquitous-language nouns, never implementation types or file paths; thresholds are numbers.
+- `scripts/check-spec-layout.py` (pre-commit) rejects any spec outside this layout.
 
 ## Pre-implementation Checklist
 

@@ -27,3 +27,9 @@ repos:
         language: system
         types: [proto]
         pass_filenames: false
+      - id: check-spec-layout
+        name: openspec spec layout
+        entry: python3 scripts/check-spec-layout.py
+        language: system
+        files: ^openspec/(specs|changes)/.*spec\.md$
+        pass_filenames: false

@@ -1,4 +1,4 @@
-schema: spec-driven
+schema: liverty-clean-arch
 
 context: |
   Tech Stack:

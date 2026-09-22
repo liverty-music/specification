@@ -88,28 +88,11 @@ Out of scope:
 
 ### New Capabilities
 
-- `offscreen-work-suspension`: the app-wide contract that continuous work —
-  animation frame loops, physics simulation, canvas painting — runs only while
-  the surface it draws is actually being rendered, and resumes in time to be
-  seen, without advancing, without waking against a reduced-motion preference,
-  and without one suspension condition cancelling another. Today each surface
-  decides all of this for itself and both get it right; nothing records the
-  contract and nothing would catch a third surface getting it wrong.
+- `components/infrastructure/fan/web/global/offscreen-work-suspension`: Continuous work suspends when its surface is not rendered; Overlapping suspension conditions do not cancel each other; Resuming continues the work rather than advancing it; Suspension respects a reduced-motion preference; Suspension never changes what is on screen; Teardown releases continuous work
 
 ### Modified Capabilities
 
-Two are contingent, and neither delta exists yet.
-
-`onboarding-celebration` admits exactly one no-animation case today (reduced
-motion). Adopting `@starting-style` adds a second — a browser below its Baseline
-toggles instantly — so if the celebration item proceeds, that capability needs a
-delta saying so.
-
-`bottom-sheet-ce`'s stated behaviour does include
-component-managed focus trap, background `inert` and Escape, so moving those to a
-modal dialog would change it — but that depends on the spike's outcome, and this
-change does not commit to a requirement it has not yet established. If the spike
-says the dismiss gesture and a modal dialog can coexist, the delta is added then.
+(none)
 
 ## Impact
 

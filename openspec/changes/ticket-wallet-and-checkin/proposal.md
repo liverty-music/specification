@@ -50,20 +50,15 @@ bulk-scalp resistance arrives with `identity-ekyc-jpki`.
 ## Capabilities
 
 ### New Capabilities
-- `ticket-wallet-and-checkin`: the fan **wallet** (renders the ticket + its
-  covered-ticket face), the **in-app dynamic QR / signed short-TTL token** entry
-  credential, **signature+freshness then online atomic duplicate-check** at admit,
-  **same-time companion group entry** (no first-party distribution), the
-  **reception PWA** (web-camera scan, no NFC), and entry status with double-entry
-  prevention.
+
+- `components/infrastructure/fan/web/route/tickets`: Ticket wallet renders the ticket and its covered-ticket face
+- `components/infrastructure/organizer/web/route/reception`: Reception check-in PWA (web camera)
+- `components/usecase/ticket/admit`: Validate signature + freshness, then atomic duplicate-check at admit; Same-time companion group entry; Entry status and no double-entry; Void invalidates the entry credential
+- `components/usecase/ticket/get-entry-credential`: Entry credential is an in-app dynamic QR from a signed short-TTL token
 
 ### Modified Capabilities
-<!-- None as a delta. This capability operates on the `Ticket` entity defined by
-     ⑤ ticket-purchase-and-issuance (account-bound, 本人確認-bound, covered-ticket
-     face CONTENT); ⑥ adds entry state + credential/check-in behavior and RENDERS
-     ⑤'s covered-ticket face. ⑤ is not yet specced (forward contract). NOTE: an
-     earlier draft added a WebAuthn step-up primitive to identity-management — that
-     is WITHDRAWN (no gate-time step-up; see design). -->
+
+(none)
 
 ## Impact
 
