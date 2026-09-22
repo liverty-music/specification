@@ -6,6 +6,13 @@ key mismatches, or any leftover migration marker in archived files."""
 import csv, glob, os, re, sys, shutil, collections, subprocess
 M = "openspec/migration"; S = "openspec/specs"; A = "openspec/changes/archive"
 APPLY = "--apply" in sys.argv
+# Optional overrides so a later batch can be applied on its own:
+#   --batches <json>  --reports <glob>  --expect <total scenarios>
+def opt(name, default):
+    return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else default
+BATCHES = opt("--batches", f"{M}/reconstruct-batches.json")
+REPORTS = opt("--reports", f"{M}/reconstruct/reconstruct-*.tsv")
+EXPECT = int(opt("--expect", "3588"))
 rd = lambda p: list(csv.DictReader(open(p, encoding="utf-8"), delimiter="\t"))
 def wr(p, rows, fields):
     with open(p, "w", encoding="utf-8", newline="") as f:
@@ -13,17 +20,17 @@ def wr(p, rows, fields):
 fails = []
 # 1. reports: strict columns + key coverage against batches
 import json
-batches = json.load(open(f"{M}/reconstruct-batches.json", encoding="utf-8"))
+batches = json.load(open(BATCHES, encoding="utf-8"))
 expected = {(ch, r["old_spec"], r["old_req_name"]) for b in batches.values() for ch, rows in b.items() for r in rows}
 reports = []
-for f in sorted(glob.glob(f"{M}/reconstruct/reconstruct-*.tsv")):
+for f in sorted(glob.glob(REPORTS)):
     lines = open(f, encoding="utf-8").read().rstrip("\n").split("\n"); n = lines[0].count("\t") + 1
     bad = [i for i, l in enumerate(lines[1:], 2) if l.count("\t") + 1 != n]
     if bad: fails.append(f"MALFORMED {f}: rows {bad[:5]}"); continue
     reports += rd(f)
 got = {(r["change"], r["old_spec"], r["old_req_name"].strip()) for r in reports}
 missing = expected - got; extra = got - expected
-print(f"reports: {len(reports)} rows from {len(glob.glob(f'{M}/reconstruct/reconstruct-*.tsv'))} files; expected {len(expected)}; missing {len(missing)}; extra {len(extra)}")
+print(f"reports: {len(reports)} rows from {len(glob.glob(REPORTS))} files; expected {len(expected)}; missing {len(missing)}; extra {len(extra)}")
 if missing: fails.append(f"{len(missing)} assigned requirements have no report"); [print("  missing:", m) for m in list(missing)[:10]]
 if extra: fails.append(f"{len(extra)} report rows not assigned"); [print("  extra:", e) for e in list(extra)[:10]]
 # 2. no migration markers leaked into archives
@@ -73,12 +80,12 @@ for r in req:
     elif r["disposition"].startswith("OUT:") and not r.get("origin_change") and not r["resolved_to"]: r["resolved_to"] = "git-history (untraced)"; n += 1
 if APPLY: wr(f"{M}/requirements.tsv", req, fields)
 print(f"ledger: resolved_to set on {n} rows")
-# 6. conservation: main-spec scenarios + resolved scenarios == 3588
+# 6. conservation: main-spec scenarios + resolved scenarios == EXPECT
 if APPLY:
     main_sc = sum(1 for f in glob.glob(f"{S}/*/spec.md") for l in open(f, encoding="utf-8") if l.startswith("#### Scenario:"))
     res_sc = sum(sc[(r["old_spec"], r["old_req_name"].strip())] for r in req if r.get("resolved_to"))
-    print(f"conservation: main {main_sc} + resolved {res_sc} = {main_sc + res_sc} (expect 3588)")
-    if main_sc + res_sc != 3588: print("FAIL: conservation broken"); sys.exit(1)
+    print(f"conservation: main {main_sc} + resolved {res_sc} = {main_sc + res_sc} (expect {EXPECT})")
+    if main_sc + res_sc != EXPECT: print("FAIL: conservation broken"); sys.exit(1)
     out = subprocess.run("openspec validate --specs --json", shell=True, capture_output=True, text=True).stdout
     print("validate --specs:", json.loads(out)["summary"]["totals"])
 else:

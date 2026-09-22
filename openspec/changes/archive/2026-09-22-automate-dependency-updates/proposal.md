@@ -51,11 +51,11 @@ Three logical versions are each spread across multiple files, so a bot bumping o
 
 ### New Capabilities
 
-- `dependency-update-automation`: How Renovate is configured across the four repositories — the organization preset and its inheritance, grouping of version-coupled package families, the automerge policy and its exclusions, the version fan-outs that must be updated as single units, and the dependencies that are deliberately withheld from automation.
+(none — see design.md)
 
 ### Modified Capabilities
 
-- `ci-optimization`: Adds requirements that the frontend CI exercise the WebKit engine, that `cloud-provisioning` CI run `pulumi preview` and its test suite, and that repositories participating in automerge have it enabled through Pulumi-managed repository configuration.
+(none — see design.md)
 
 ## Impact
 
