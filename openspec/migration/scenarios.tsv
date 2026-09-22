@@ -3621,3 +3621,56 @@ beam-effect-toggle	The beam effect is presentational and costs nothing to render
 beam-effect-toggle	The beam effect is presentational and costs nothing to render	1	bbcf19dc	Beams do not defeat viewport-scoped rendering	FOLLOW_PARENT	
 beam-effect-toggle	The beam effect is presentational and costs nothing to render	2	a22bc1ec	Only concerts on screen are lit	FOLLOW_PARENT	
 beam-effect-toggle	The beam effect is presentational and costs nothing to render	3	725f68bb	Beams are absent where unsupported, with nothing else affected	FOLLOW_PARENT	
+dependency-update-automation	Dependency updates are proposed automatically in every repository	0	f54adaa6	An axis has no mechanism in the chosen tool	FOLLOW_PARENT	
+dependency-update-automation	Dependency updates are proposed automatically in every repository	1	fd7c56a6	A tool is declared as a floating reference	FOLLOW_PARENT	
+dependency-update-automation	Dependency updates are proposed automatically in every repository	2	a72fc34a	A shared policy change is made	FOLLOW_PARENT	
+dependency-update-automation	Dependency updates are proposed automatically in every repository	3	bebb745d	A dependency axis receives an upstream release	FOLLOW_PARENT	
+dependency-update-automation	Dependency updates are proposed automatically in every repository	4	6d8018d4	A repository needs a rule the others do not	FOLLOW_PARENT	
+dependency-update-automation	Version-coupled dependencies are proposed as a single unit	0	152e8283	A family's versions differ but its constraints do not bind	FOLLOW_PARENT	
+dependency-update-automation	Version-coupled dependencies are proposed as a single unit	1	6ee51f7c	One member of a coupled set is released	FOLLOW_PARENT	
+dependency-update-automation	Version-coupled dependencies are proposed as a single unit	2	fb2468bf	A coupled set spans dependency types	FOLLOW_PARENT	
+dependency-update-automation	A single logical version is updated in every location it appears	0	e897ce4f	The Go minor version is upgraded	FOLLOW_PARENT	
+dependency-update-automation	A single logical version is updated in every location it appears	1	e9b4bef7	A duplicated version could be derived instead	FOLLOW_PARENT	
+dependency-update-automation	A single logical version is updated in every location it appears	2	54930070	A bump does not alter a coarser location	FOLLOW_PARENT	
+dependency-update-automation	A single logical version is updated in every location it appears	3	995bb99d	Only part of a fan-out could be updated	FOLLOW_PARENT	
+dependency-update-automation	A single logical version is updated in every location it appears	4	29f9de58	A Playwright upgrade invalidates visual baselines	FOLLOW_PARENT	
+dependency-update-automation	Updates automerge only when the CI gate covers their risk	0	4d181d6b	Coverage is missing and no reviewer could evaluate the risk	FOLLOW_PARENT	
+dependency-update-automation	Updates automerge only when the CI gate covers their risk	1	93a63c44	A minor update passes CI	FOLLOW_PARENT	
+dependency-update-automation	Updates automerge only when the CI gate covers their risk	2	b6716443	A major update passes CI	FOLLOW_PARENT	
+dependency-update-automation	Updates automerge only when the CI gate covers their risk	3	fb26ad57	An infrastructure provider upgrade is proposed	FOLLOW_PARENT	
+dependency-update-automation	Updates automerge only when the CI gate covers their risk	4	09e3b10e	A prerelease dependency's channel advances	FOLLOW_PARENT	
+dependency-update-automation	Releases are not adopted until they have aged	0	f860a51e	A release is published and immediately proposed	FOLLOW_PARENT	
+dependency-update-automation	Releases are not adopted until they have aged	1	8a533544	A release has aged	FOLLOW_PARENT	
+dependency-update-automation	Releases are not adopted until they have aged	2	9b0923fc	A release carries no publication timestamp	FOLLOW_PARENT	
+dependency-update-automation	Maintained upstream configuration is reused rather than reimplemented	0	8f8c1ea5	An upstream family gains a new package	FOLLOW_PARENT	
+dependency-update-automation	Maintained upstream configuration is reused rather than reimplemented	1	12df685b	A local rule overlaps maintained configuration	FOLLOW_PARENT	
+dependency-update-automation	Maintained upstream configuration is reused rather than reimplemented	2	119bd6b8	A family has no upstream coverage	FOLLOW_PARENT	
+dependency-update-automation	Third-party GitHub Actions are pinned to immutable references	0	e9cf4627	A workflow references an action by tag	FOLLOW_PARENT	
+dependency-update-automation	Third-party GitHub Actions are pinned to immutable references	1	6fb17a82	An upstream tag is repointed	FOLLOW_PARENT	
+dependency-update-automation	Third-party GitHub Actions are pinned to immutable references	2	3139933b	A pinned action publishes a new version	FOLLOW_PARENT	
+dependency-update-automation	This project's own build outputs are excluded from automated updates	0	bbb58afd	A newer application image exists than the production overlay pins	FOLLOW_PARENT	
+dependency-update-automation	This project's own build outputs are excluded from automated updates	1	d5fcba11	A private registry lookup fails for an excluded artefact	FOLLOW_PARENT	
+dependency-update-automation	This project's own build outputs are excluded from automated updates	2	0a642823	A new schema build is published	FOLLOW_PARENT	
+dependency-update-automation	This project's own build outputs are excluded from automated updates	3	622b8304	A consumer is left behind	FOLLOW_PARENT	
+dependency-update-automation	This project's own build outputs are excluded from automated updates	4	ef3ac87b	An external schema SDK is published	FOLLOW_PARENT	
+dependency-update-automation	Proposal volume is bounded and scheduled	0	ec99ad22	Several upstream releases occur mid-week	FOLLOW_PARENT	
+dependency-update-automation	Proposal volume is bounded and scheduled	1	ec9ccdfd	A security advisory is published	FOLLOW_PARENT	
+dependency-update-automation	Proposal volume is bounded and scheduled	2	c4a873dd	The open pull request cap is reached	FOLLOW_PARENT	
+ci-optimization	Every defined Playwright project is executed by CI	0	48cbed10	A spec is excluded from one project as covered by another	FOLLOW_PARENT	
+ci-optimization	Every defined Playwright project is executed by CI	1	deff7843	A WebKit-only regression is introduced	FOLLOW_PARENT	
+ci-optimization	Every defined Playwright project is executed by CI	2	2ab1b815	A project is defined but invoked nowhere	FOLLOW_PARENT	
+ci-optimization	Every defined Playwright project is executed by CI	3	62a42567	A spec is excluded from every project that could run it	FOLLOW_PARENT	
+ci-optimization	Every defined Playwright project is executed by CI	4	84f5076f	An exclusion reason no longer holds	FOLLOW_PARENT	
+ci-optimization	Every defined Playwright project is executed by CI	5	3e034f63	A gap names human review as its control	FOLLOW_PARENT	
+ci-optimization	cloud-provisioning previews infrastructure changes on pull requests	0	02b75048	The exclusion holds only by coincidence	FOLLOW_PARENT	
+ci-optimization	cloud-provisioning previews infrastructure changes on pull requests	1	9adee2f7	A pull request edits only stack configuration	FOLLOW_PARENT	
+ci-optimization	cloud-provisioning previews infrastructure changes on pull requests	2	372f05e7	An automated dependency update touches the infrastructure stack	FOLLOW_PARENT	
+ci-optimization	cloud-provisioning previews infrastructure changes on pull requests	3	855ac148	A project member changes infrastructure code	FOLLOW_PARENT	
+ci-optimization	cloud-provisioning previews infrastructure changes on pull requests	4	86ae7068	A change is infrastructure-inert	FOLLOW_PARENT	
+ci-optimization	cloud-provisioning previews infrastructure changes on pull requests	5	cb581465	The preview is inspected for an apply path	FOLLOW_PARENT	
+ci-optimization	cloud-provisioning previews infrastructure changes on pull requests	6	57de840d	A pull request originates from a fork	FOLLOW_PARENT	
+ci-optimization	cloud-provisioning CI runs its test suite	0	48e819af	A pull request breaks a unit test	FOLLOW_PARENT	
+ci-optimization	cloud-provisioning CI runs its test suite	1	6f125560	The repository declares a fuller check than CI runs	FOLLOW_PARENT	
+ci-optimization	Automated merge is enabled through managed repository configuration	0	36144705	Automatic merge is requested on a pull request whose CI fails	FOLLOW_PARENT	
+ci-optimization	Automated merge is enabled through managed repository configuration	1	8f6adb39	Automatic merge is requested on a pull request whose CI passes	FOLLOW_PARENT	
+ci-optimization	Automated merge is enabled through managed repository configuration	2	5de9c3e8	The automatic-merge setting is inspected	FOLLOW_PARENT	
