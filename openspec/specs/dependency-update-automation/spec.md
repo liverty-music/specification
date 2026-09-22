@@ -1,8 +1,10 @@
+# Dependency Update Automation
+
 ## Purpose
 
 Defines how dependency updates are proposed, grouped, and merged across the liverty-music repositories without human intervention, and which dependencies are deliberately withheld from that automation because a green pipeline does not establish their safety.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Dependency updates are proposed automatically in every repository
 
@@ -132,7 +134,7 @@ An update SHALL be merged without human review when its repository's `CI Success
 
 Where the gate does not exercise that behavior, the update SHALL be withheld from automerge only when a human reviewer can observe something the pipeline cannot. Human review is not a general-purpose substitute for missing coverage: for a dependency whose pull request contains only a version and a lock file, a reviewer sees strictly less than the pipeline does, and requiring their approval produces ceremony rather than verification. Where no reviewer can evaluate the risk, the correct response is to extend the pipeline's coverage, not to route the update through a person.
 
-Minor and patch updates SHALL automerge by default, including the external `pocketsign` schema SDK. Major updates SHALL NOT automerge.
+Minor and patch updates SHALL automerge by default. Major updates SHALL NOT automerge.
 
 A dependency whose current version is a prerelease SHALL continue to track the release channel its registry marks as current, and SHALL NOT be advanced onto a less stable channel merely because that channel carries a higher version number. This is the tool's default behaviour and SHALL be verified rather than reimplemented.
 
@@ -280,7 +282,9 @@ The exclusion SHALL be visible rather than silent: excluded dependencies SHALL c
 #### Scenario: An external schema SDK is published
 
 - **WHEN** a new build of a third-party schema SDK, such as `buf.build/gen/go/pocketsign/apis/*`, is published
-- **THEN** an update pull request SHALL be raised, because its release cadence is not controlled by this project
+- **THEN** this requirement SHALL NOT withhold it — its release cadence is not controlled by this project, so falling behind is the risk here rather than the safeguard
+- **AND** it SHALL nonetheless be treated as an unautomatable axis carrying a named human control, because the tool cannot resolve its version format and therefore raises nothing
+- **AND** the two reasons SHALL be recorded separately where it is excluded, because one would be undone if the tool gained support and the other would not
 
 ### Requirement: Proposal volume is bounded and scheduled
 
