@@ -70,7 +70,10 @@ Out of scope:
 
 ### Modified Capabilities
 
-(none)
+<!-- No spec delta. That menu-tab routes satisfy the non-blocking contract by
+     declaring their data rather than by writing their own wiring is how the
+     behavior is provided, not what the product does; it is stated under
+     "Extract the shared lifecycle mechanism" above and belongs in design.md. -->
 
 ## Impact
 

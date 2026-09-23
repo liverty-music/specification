@@ -92,7 +92,19 @@ Out of scope:
 
 ### Modified Capabilities
 
-(none)
+Two are contingent, and neither delta exists yet.
+
+`components/infrastructure/fan/web/global/celebration-overlay` admits exactly one
+no-animation case today (reduced motion). Adopting `@starting-style` adds a
+second — a browser below its Baseline toggles instantly — so if the celebration
+item proceeds, that spec needs a delta saying so.
+
+`components/infrastructure/fan/web/global/bottom-sheet`'s stated behaviour does
+include component-managed focus trap, background `inert` and Escape, so moving
+those to a modal dialog would change it — but that depends on the spike's
+outcome, and this change does not commit to a requirement it has not yet
+established. If the spike says the dismiss gesture and a modal dialog can
+coexist, the delta is added then.
 
 ## Impact
 

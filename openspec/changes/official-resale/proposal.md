@@ -67,6 +67,10 @@ buyer-side markup. Provider/payment mechanics reuse ⑤'s Stripe Connect /
 
 ### Modified Capabilities
 
+<!-- official-resale reuses the Order/Payment/Ticket entities defined by ⑤
+     ticket-purchase-and-issuance and ⑥ ticket-wallet-and-checkin, and the demand
+     pool from ④ lottery-application. Those are DEPENDENCIES (see design.md); the
+     deltas below only add resale-specific requirements to them. -->
 - `components/entity/event`: Ticket sales require complete event info
 - `components/entity/ticket-journey`: Resold companion seat leaves the same-time-entry group
 - `components/usecase/order/refund-order`: Seller refund triggered on resale completion; Resale fee

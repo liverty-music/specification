@@ -70,6 +70,13 @@ not a 特定事業者) — lightweight JPKI binding, not 取引時確認; and **
 
 ### Modified Capabilities
 
+<!-- ④ lottery-application consumes the verified-person + per-person-limit signal
+     (its "1 account / 1 application" becomes "1 verified person / 1 application"
+     where an event requires verification) and ⑤ consumes the verification level;
+     the enforcement hooks are folded into ④/⑤ when this lands. identity-management
+     provides the underlying Zitadel account. Where an event requires verification,
+     the verified identity is authoritative for the covered-ticket 本人確認 (⑤/④
+     face content). See design.md. -->
 - `components/usecase/lottery-application/apply`: Relationship to the ④ covered-ticket identity
 
 ## Impact

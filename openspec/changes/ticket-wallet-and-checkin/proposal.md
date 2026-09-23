@@ -58,6 +58,12 @@ bulk-scalp resistance arrives with `identity-ekyc-jpki`.
 
 ### Modified Capabilities
 
+<!-- This capability operates on the `Ticket` entity defined by ⑤
+     ticket-purchase-and-issuance (account-bound, 本人確認-bound, covered-ticket
+     face CONTENT); ⑥ adds entry state + credential/check-in behavior and RENDERS
+     ⑤'s covered-ticket face. NOTE: an earlier draft added a WebAuthn step-up
+     primitive to identity-management — that is WITHDRAWN (no gate-time step-up;
+     see design). -->
 (none)
 
 ## Impact

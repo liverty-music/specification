@@ -48,6 +48,9 @@ existing bespoke brand and CUBE investment instead.
 
 ### Modified Capabilities
 
+<!-- Per-feature flow gaps surfaced by the audit (e.g. lottery phase
+     list/edit/status navigation) are enabled by the console shell here but
+     specified under their own feature capabilities in separate changes. -->
 - `components/infrastructure/fan/web/global/design-tokens`: Single source of design tokens
 - `components/infrastructure/organizer/web/global/organizer-shell`: Console persistent navigation with no dead-end screens
 
