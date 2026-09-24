@@ -2,46 +2,57 @@
 
 ## Purpose
 
-This capability turns a **captured** lottery win into an Order and issued tickets:
-④ **authorizes (holds) the card at application and captures the winner's
-authorization at the draw**; ⑤ takes that **captured winning payment** and records
-an Order + issues Web2 account-bound tickets — under the 収納代行 scheme with the
-Organizer as seller-of-record. It is the primary Order + issuance pipeline for the
-ticketing MVP.
+A Ticket is one account-bound admission right to an event, issued from an Order. Every Ticket is a 特定興行入場券 (covered ticket): it names the event and its holder and states that resale without the organizer's consent is prohibited.
+
+| attribute | meaning | constraint |
+|-----------|---------|------------|
+| id | the ticket's identity | required, assigned on issuance |
+| order | the Order that issued it | required |
+| holder | the account the ticket is currently bound to | required |
+| event | the event it admits to, which gives the date and venue on its face | required |
+| holder full name | the holder's name noted on the face (本人確認) | required, 1-200 characters |
+| holder phone number | the holder's contact phone noted on the face (本人確認) | required, 1-20 characters |
+| verified identity | the verified identity the ticket is bound to | optional; set only when the phase required verification |
+| resale without consent prohibited | the face states that resale without the organizer's consent is prohibited | always true |
+| status | lifecycle; a Voided ticket is no longer valid for entry | Issued or Voided |
+| issued time | when the ticket was issued | required |
+
+```mermaid
+erDiagram
+  Order ||--|{ Ticket : "issues"
+  User ||--o{ Ticket : "holds"
+  Event ||--o{ Ticket : "is admitted by"
+  VerifiedIdentity |o--o{ Ticket : "binds"
+```
+
+```mermaid
+stateDiagram-v2
+  [*] --> Issued
+  Issued --> Voided
+  Voided --> [*]
+```
 
 ## Requirements
 
-### Requirement: Issue account-bound covered tickets on the captured win
+### Requirement: Every ticket is a covered ticket
 
-On ④'s **Won-captured** signal the system SHALL issue **N account-bound Tickets**.
-Each SHALL be a **covered ticket (特定興行入場券)** carrying **all three** legal
-conditions: (i) the face states **resale without organizer consent is prohibited**,
-(ii) the face specifies **date/venue + eligible-person** (the lottery is a common
-pool with **no seat map** — the eligible-person is the bound holder, seat is
-general-admission/none), and (iii) the **本人確認** is captured and noted on the
-face, bound to the buyer's account. **本人確認 source depends on the phase's
-verification requirement:** where the phase **required identity verification**
-(identity-ekyc), the **verified identity is authoritative** and the bound name
-MUST match the verified 本人確認 (no conflicting self-declared name); otherwise ④'s
-**self-declared name + contact** is bound. Tickets MUST NOT be issued on a
-client-side confirmation alone (issuance keys on ④'s captured-win signal).
+Every Ticket SHALL carry the three conditions of a 特定興行入場券: its face states that resale without the organizer's consent is prohibited; it names the event (date and venue) and the eligible person, who is the holder named by the holder full name, with no seat assigned; and it records the holder's name and contact phone (本人確認).
 
-#### Scenario: Tickets issued on the captured win
+#### Scenario: Issued ticket face
 
-- **WHEN** ④ marks a winning application Won-captured
-- **THEN** N account-bound covered tickets are issued to the buyer
+- **WHEN** a Ticket is issued
+- **THEN** it states that resale without consent is prohibited, names its event and its holder, carries the holder's name and phone, and has no seat
 
-#### Scenario: Issued ticket carries all three covered-ticket conditions
+#### Scenario: Resale flag cannot be false
 
-- **WHEN** a ticket is issued
-- **THEN** its face states resale-without-consent is prohibited, specifies date/venue + eligible-person, and records the holder's 本人確認 (so it qualifies as a 特定興行入場券)
+- **WHEN** a Ticket states resale without consent is not prohibited
+- **THEN** the Ticket is invalid
 
-#### Scenario: Verified identity binds the covered ticket where required
+### Requirement: A new ticket starts Issued
 
-- **WHEN** the phase required identity verification and a verified person's win is issued
-- **THEN** the covered-ticket 本人確認 is the verified identity (a conflicting self-declared name is not bound)
+A Ticket SHALL start in status Issued.
 
-#### Scenario: No issuance without the captured-win signal
+#### Scenario: New ticket
 
-- **WHEN** no ④ Won-captured signal exists for an application
-- **THEN** no ticket is issued
+- **WHEN** a Ticket is issued
+- **THEN** its status is Issued

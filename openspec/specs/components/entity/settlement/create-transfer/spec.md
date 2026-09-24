@@ -2,25 +2,25 @@
 
 ## Purpose
 
-Pays one Organizer's net share of one captured charge out of the platform balance to the Organizer's payout account.
+Pays one split of a Settlement from the platform to the payee Organizer's payout account, tied to the Order's captured charge, and returns the payout's reference.
 
 ## Requirements
 
-### Requirement: Funds are held until the transfer
+### Requirement: Pay out a split once
 
-Captured ticket money SHALL stay on the platform balance, held under the 収納代行 (collection agency) scheme, until CreateTransfer runs for it; CreateTransfer SHALL move the Organizer's net share of that one charge to the Organizer's payout account, tied to that charge, and the platform fee SHALL be the part not transferred. CreateTransfer SHALL fail with InvalidArgument when the amount is zero or negative, and with Unavailable when the payment provider cannot be reached.
+CreateTransfer SHALL move the given amount, in the Order's currency, to the payee's payout account, tied to the given captured charge so it never exceeds that charge's funds, and return the payout reference; a repeated CreateTransfer for the same Settlement and payee SHALL pay only once and return the same reference. It SHALL fail with InvalidArgument when the amount is zero or negative, and with Unavailable when payouts cannot be reached.
 
-#### Scenario: Net share is transferred
+#### Scenario: Split paid out
 
-- **WHEN** CreateTransfer runs for a captured charge with a positive net share
-- **THEN** the net share reaches the Organizer's payout account, tied to that charge, and the platform fee stays on the platform balance
+- **WHEN** CreateTransfer is called for a 14400 yen split against a captured charge
+- **THEN** 14400 yen reaches the payee's payout account, tied to that charge, and a payout reference is returned
 
-#### Scenario: Funds before the transfer
+#### Scenario: Repeated payout
 
-- **WHEN** a charge is captured and CreateTransfer has not run for it
-- **THEN** all of the charge stays on the platform balance
+- **WHEN** CreateTransfer is called again for the same Settlement and payee
+- **THEN** nothing more is paid and the same reference is returned
 
 #### Scenario: Non-positive amount
 
 - **WHEN** CreateTransfer is called with an amount of zero or less
-- **THEN** it fails with InvalidArgument and nothing is transferred
+- **THEN** it fails with InvalidArgument and nothing is paid

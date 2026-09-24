@@ -1,99 +1,92 @@
-# Refund Order
+# RefundOrderUseCase.RefundOrder
 
 ## Purpose
 
-Refunds a buyer's captured ticket payment when issuance fails or an event is cancelled or postponed, and claws back funds already split out to the organizer when a refund or dispute occurs.
+RefundOrderUseCase.RefundOrder refunds one Paid Order for a stated reason — 中止 (cancellation), a 延期 (postponement) refund within its window, or a dispute — voiding its tickets, clawing back any payout already made, and marking the Order Refunded.
 
 ## Requirements
 
-### Requirement: Capture succeeded but issuance failed
+### Requirement: Reason and refundable order
 
-If ④'s capture **succeeded** but ⑤ **cannot complete issuance** (e.g. a persistence
-error after capture), ⑤ MUST NOT leave money captured with no ticket. ⑤ SHALL
-**retry issuance idempotently**; if issuance still cannot complete within a bounded
-window it SHALL **refund/void the captured payment** (the refund executed via
-`ticket-settlement-and-payout`: `Refund` + `transfer_reversal`) and surface the case
-for operator follow-up. It MUST never double-issue on a later retry.
+RefundOrder SHALL take an Order, a reason — Cancellation, PostponementWindow or Dispute — and the current time. It SHALL fail with InvalidArgument when no reason is given. It SHALL read the Order with Order.Get, failing with NotFound when it does not exist. When the Order is already Refunded it SHALL return it unchanged and move no money. When the Order is not refundable it SHALL fail with FailedPrecondition.
 
-#### Scenario: Post-capture issuance failure is reconciled
+#### Scenario: Reason missing
 
-- **WHEN** the capture succeeded but ticket issuance fails
-- **THEN** ⑤ retries issuance idempotently, and if it still cannot complete it refunds the captured payment and flags the case (money is never captured with no ticket, and no double issuance occurs)
+- **WHEN** RefundOrder is called without a reason
+- **THEN** it fails with InvalidArgument and nothing changes
 
-<!-- The former "Charge outcome reporting (grace before void)" requirement is
-     REMOVED: ④'s authorization-hold model (authorize at apply, capture on win,
-     release on loss) has no off-session charge, no payment deadline, no
-     re-auth/grace, and no 繰上げ — a held authorization captured at the draw
-     effectively does not fail; a rare failed capture is ④'s manual-follow-up
-     concern (see "Issue from ④'s captured winning payment"). -->
+#### Scenario: Repeated refund
 
-### Requirement: Refund taxonomy — cancellation vs postponement
+- **WHEN** RefundOrder is called for an Order that is already Refunded
+- **THEN** the Order is returned unchanged and no refund or claw-back is made
 
-On event **cancellation (中止)** the system SHALL refund the ticket's **current
-holder** (which, for a ticket that changed hands via ⑦ official resale, is the
-resale buyer — not necessarily the original purchaser) the **face value +
-system/発券 fee** (retaining the payment-processor fee, JP norm) via a provider
-refund and claw back the Organizer's share (`transfer_reversal`) — this refund/
-clawback is **executed by `ticket-settlement-and-payout`**; ⑤ owns the policy (who
-is refunded, what amount). If the ticket is
-**listed/offered for resale** at cancellation time, the system SHALL **cancel that
-listing/offer** and refund the holder (the resale fresh-sale leg MUST NOT run) —
-this is the "normal cancellation-refund path" ⑦ defers to. On **postponement
-(延期)** the system SHALL **not** auto-refund; the ticket stays valid for the new
-date, **but SHALL offer a holder-initiated refund window** — a bounded period in
-which a holder who cannot attend the rescheduled date may request a refund
-(refunded like a cancellation: face + system/発券 fee, processor fee retained) —
-the JP norm for postponed events. The window SHALL be measured from a
-**server-owned reschedule/announcement timestamp** (`Event.rescheduled_time`),
-stamped by the platform when the organizer reschedules — independent of the
-refund caller — so the window cannot be measured from the purchase/capture time
-(which would reject every advance-purchase refund) nor set by the same admin
-caller it constrains.
+#### Scenario: Unknown order
 
-#### Scenario: Postponement offers a holder-initiated refund window
+- **WHEN** the Order does not exist
+- **THEN** RefundOrder fails with NotFound
 
-- **WHEN** an event is postponed and a holder cannot attend the new date, within the window measured from `Event.rescheduled_time`
-- **THEN** the holder may request a refund (face + system/発券 fee, processor fee retained); outside the window the ticket simply stays valid for the new date
+### Requirement: Postponement refund window
 
-#### Scenario: Cancellation refunds the current holder
+For the reason PostponementWindow, RefundOrder SHALL read the reschedule time of the Order's event with Event.GetRescheduleTimeByOrder and SHALL fail with FailedPrecondition when the current time is more than 14 days after it. When the event has no reschedule time, the refund SHALL proceed.
 
-- **WHEN** an event is cancelled
-- **THEN** the ticket's current holder is refunded face value + system/発券 fee (processor fee retained) and the Organizer's share is clawed back
+#### Scenario: Within the window
 
-#### Scenario: Cancellation supersedes a live resale listing
+- **WHEN** a postponement refund is requested 10 days after the event was rescheduled
+- **THEN** the Order is refunded
 
-- **WHEN** an event is cancelled while a ticket is listed/offered for resale
-- **THEN** the listing/offer is cancelled and the holder is refunded via this path (the resale fresh-sale leg does not run)
+#### Scenario: Window closed
 
-#### Scenario: Postponement keeps tickets valid
+- **WHEN** a postponement refund is requested 15 days after the event was rescheduled
+- **THEN** RefundOrder fails with FailedPrecondition and nothing changes
 
-- **WHEN** an event is postponed
-- **THEN** no automatic refund is issued and issued tickets remain valid for the new date
+#### Scenario: No reschedule time
 
-### Requirement: Refund and dispute clawback across splits
+- **WHEN** a postponement refund is requested for an event that has no reschedule time
+- **THEN** the Order is refunded
 
-The refund **entry point** is ⑤'s `OrderAdminService.RefundOrder` (already defined in
-#938); this capability provides the **money movement** it invokes. Refunds and disputes
-SHALL be executed from the **platform balance** (`Refund` for the buyer), and any
-Organizer share already transferred SHALL be **clawed back per split via
-`transfer_reversal`**. The system SHALL hold a **reserve past the dispute window** so a
-chargeback arriving after payout does not strand the platform, and it SHALL process
-inbound refund/dispute provider webhooks **idempotently** (no double-refund, no
-double-reversal). ⑤ owns the refund **policy + RPC** (cancellation refunds the current
-holder; postponement offers a bounded holder-initiated window); this capability moves
-the money.
+### Requirement: Buyer refunded the full amount
 
-#### Scenario: Refund reverses each transferred split
+For the reasons Cancellation and PostponementWindow, RefundOrder SHALL refund the Order's full amount to the buyer's original payment with Order.CreateRefund, against the charge recorded on the Order's Settlement or, when none is recorded, the charge found by Order.ResolveChargeRef. It SHALL fail with FailedPrecondition when the Order's payment service cannot issue refunds or the Order has no payment reference. For the reason Dispute it SHALL issue no refund, because the dispute has already returned the money to the cardholder.
 
-- **WHEN** a refund is owed for an order whose shares were already transferred
-- **THEN** the buyer is refunded from the platform balance and each transferred split is reversed via transfer_reversal
+#### Scenario: Cancellation refund
 
-#### Scenario: Chargeback after payout draws on the reserve
+- **WHEN** an event is cancelled and a 16000 yen Order is refunded with the reason Cancellation
+- **THEN** 16000 yen is refunded to the buyer's card
 
-- **WHEN** a chargeback arrives after the Organizer payout was released
-- **THEN** the platform absorbs it against the held reserve / negative-balance responsibility and reverses the Organizer's transfer
+#### Scenario: Dispute
 
-#### Scenario: Refund webhook is idempotent
+- **WHEN** RefundOrder runs with the reason Dispute
+- **THEN** no refund is issued to the buyer and the rest of the refund still happens
 
-- **WHEN** a refund/dispute webhook is delivered more than once
-- **THEN** the refund and reversals are applied exactly once
+### Requirement: Payout clawed back
+
+When the Order's Settlement, read with Settlement.GetByOrderID, is Released, RefundOrder SHALL reverse every paid split that is not yet reversed with Settlement.ReverseTransfer for the split's amount. When it is Held, no payout is reversed and the Settlement becomes Reversed, so it is never paid out later. When the Order has no Settlement, nothing is clawed back.
+
+#### Scenario: Payout already released
+
+- **WHEN** the Order's Settlement is Released
+- **THEN** each paid split is reversed and the Settlement becomes Reversed
+
+#### Scenario: Payout not yet released
+
+- **WHEN** the Order's Settlement is Held
+- **THEN** no payout is reversed and the Settlement becomes Reversed
+
+### Requirement: Refund recorded
+
+After the money has moved, RefundOrder SHALL record the refund with Order.CommitRefund — the Order Refunded with its refund reference, all of its Tickets Voided, its Settlement Reversed — and return the Refunded Order. When Order.CommitRefund fails with FailedPrecondition because another refund of the same Order got there first, RefundOrder SHALL return the Order as read again with Order.Get. When a money movement fails, its error SHALL be returned and nothing is recorded; a retried RefundOrder refunds and reverses at most once.
+
+#### Scenario: Tickets voided
+
+- **WHEN** an Order with 2 Issued Tickets is refunded
+- **THEN** the Order is Refunded and both Tickets are Voided
+
+#### Scenario: Concurrent refund
+
+- **WHEN** Order.CommitRefund fails with FailedPrecondition
+- **THEN** RefundOrder returns the Order as it is now stored
+
+#### Scenario: Retry after a failure
+
+- **WHEN** a refund failed after the buyer was refunded and is run again
+- **THEN** the buyer is not refunded a second time and the refund is recorded
