@@ -36,7 +36,7 @@ self-serve organizer onboarding.
 ### Modified Capabilities
 
 - `components/usecase/organizer/deactivate`: Post-onboarding antisocial discovery triggers deactivation
-- `components/usecase/organizer/get-or-create-onboarding`: Organizer onboarding agreement includes an antisocial-forces exclusion clause
+- `components/usecase/organizer-connected-account/get-or-create-onboarding`: Organizer onboarding agreement includes an antisocial-forces exclusion clause
 
 ## Impact
 

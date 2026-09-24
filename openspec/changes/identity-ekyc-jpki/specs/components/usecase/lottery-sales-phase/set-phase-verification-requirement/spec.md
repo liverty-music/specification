@@ -1,7 +1,3 @@
-## Purpose
-
-Lets an organizer mark a lottery phase as requiring a verified identity to apply, and tells a fan who is not yet verified what that requirement is and how to satisfy it, while leaving verification optional wherever a phase does not require it.
-
 ## ADDED Requirements
 
 ### Requirement: Verification lane, per-event requirement, and fallback

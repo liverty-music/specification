@@ -64,7 +64,7 @@ not a 特定事業者) — lightweight JPKI binding, not 取引時確認; and **
 ### New Capabilities
 
 - `components/entity/verified-identity`: Verified-person dedupe via Pocket Sign `User.id`; Per-person limit signal and mixed populations; Privacy — data minimization and deletion
-- `components/usecase/lottery-application/set-phase-verification-requirement`: Verification lane, per-event requirement, and fallback
+- `components/usecase/lottery-sales-phase/set-phase-verification-requirement`: Verification lane, per-event requirement, and fallback
 - `components/usecase/verified-identity/complete-verify`: JPKI account verification via Pocket Sign Verify
 - `components/usecase/verified-identity/re-check`: 現況確認 (revocation / attribute-change re-check)
 
@@ -77,7 +77,7 @@ not a 特定事業者) — lightweight JPKI binding, not 取引時確認; and **
      provides the underlying Zitadel account. Where an event requires verification,
      the verified identity is authoritative for the covered-ticket 本人確認 (⑤/④
      face content). See design.md. -->
-- `components/usecase/lottery-application/apply`: Relationship to the ④ covered-ticket identity
+- `components/usecase/ticket-application/apply`: Relationship to the ④ covered-ticket identity
 
 ## Impact
 

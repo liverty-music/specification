@@ -38,7 +38,7 @@ Extends the `organizer-event-authoring` capability with:
 
 - `components/entity/concert`: Rich media on a concert page; Streaming and hybrid concerts; Discovery metadata; Japan-idiomatic structured fields; Password-protected visibility
 - `components/entity/event`: Per-event notes and lineup detail
-- `components/usecase/concert/publish`: Scheduled publish
+- `components/usecase/series/publish`: Scheduled publish
 
 ## Impact
 
