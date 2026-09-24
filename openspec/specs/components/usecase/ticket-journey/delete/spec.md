@@ -2,22 +2,25 @@
 
 ## Purpose
 
-The `ticket-journey` capability allows users to track their personal ticket acquisition status for concerts and events. Users can set, update, and remove journey statuses representing stages of the ticket acquisition process (tracking, applied, lost, unpaid, paid).
+Removes a fan's ticket journey for one event at the fan's request, so the event goes back to having no status for them.
 
 ## Requirements
 
-### Requirement: Delete Ticket Journey
+### Requirement: Delete removes the fan's journey for the event
 
-The system SHALL allow an authenticated user to remove their ticket journey for a given event.
+When a fan removes their journey for an event, Delete SHALL remove it through TicketJourney.Delete; removing a journey that does not exist therefore succeeds. When the removal fails, Delete SHALL fail with that error. Delete sends no status-change signal.
 
-#### Scenario: Delete an existing journey
+#### Scenario: The fan removes their journey
 
-- **WHEN** an authenticated user calls `Delete` with an `event_id`
-- **AND** a journey exists for that user and event
-- **THEN** the system SHALL remove the journey record
+- **WHEN** the fan has a journey for the event and removes it
+- **THEN** the fan no longer has a journey for the event
 
-#### Scenario: Delete a non-existent journey
+#### Scenario: Nothing to remove
 
-- **WHEN** an authenticated user calls `Delete` with an `event_id`
-- **AND** no journey exists for that user and event
-- **THEN** the system SHALL return successfully (idempotent delete)
+- **WHEN** the fan has no journey for the event and removes it
+- **THEN** Delete succeeds
+
+#### Scenario: Removal fails
+
+- **WHEN** TicketJourney.Delete fails
+- **THEN** Delete fails with that error

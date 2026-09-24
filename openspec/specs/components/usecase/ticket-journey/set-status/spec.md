@@ -2,80 +2,54 @@
 
 ## Purpose
 
-Lets a user record and update their personal ticket-acquisition status for a concert, maintaining a single authoritative status per user per event as they progress from tracking through applying to paying.
+Records a fan's ticket journey status for one event at the fan's request, creating the journey or replacing its status, and reports every actual status change for product analytics.
 
 ## Requirements
 
-### Requirement: Ticket-journey status is a single source of truth
-Ticket-journey status SHALL be owned by a single observable store exposing an observable map of event id to journey status. Reads (`listByUser`) SHALL populate the store and SHALL be treated as always-fresh (network-first, no stale window). Writes (`SetStatus`, `Delete`) SHALL be write-through: they SHALL issue the RPC and then update the store's observable map. All consumers — the Dashboard and the event detail sheet — SHALL read journey status from this store, so a status change from any surface is reflected everywhere without a re-fetch or route re-entry. The store SHALL clear its journey state on sign-out.
+### Requirement: SetStatus records the fan's status for the event
 
-#### Scenario: Sheet write reflects on the Dashboard without re-entry
-- **WHEN** the user changes a journey status in the event detail sheet
-- **THEN** the store's observable journey map SHALL be updated after the write RPC succeeds
-- **AND** the Dashboard's rendering of that event's status SHALL update without re-fetching or re-entering the route
+When a fan sets a status for an event, SetStatus SHALL first read the fan's current journey for the event through TicketJourney.Get, treating NotFound as "no journey yet", and SHALL then record the given status through TicketJourney.Upsert. It accepts any of the five journey statuses whatever the current status is. When the read fails with any error other than NotFound, SetStatus SHALL fail with that error and record nothing. When the write fails, SetStatus SHALL fail with that error.
 
-#### Scenario: Single shared journey state
-- **WHEN** both the Dashboard and the detail sheet render a journey status for the same event
-- **THEN** both SHALL read from the same observable map
-- **AND** they SHALL NOT hold separate copies of the status
+#### Scenario: First status for an event
 
-#### Scenario: Journey read is always fresh
-- **WHEN** the Dashboard loads and requests journey status via the store
-- **THEN** the store SHALL fetch `listByUser` fresh (no stale window)
-- **AND** it SHALL surface the result via its observable map
+- **WHEN** the fan has no journey for the event and sets Tracking
+- **THEN** the fan's journey for the event is recorded as Tracking
 
-#### Scenario: Write failure does not desync the store
-- **WHEN** a journey `SetStatus`/`Delete` RPC fails
-- **THEN** the store's observable map SHALL NOT be updated to the attempted value
+#### Scenario: Changing an existing status
 
-#### Scenario: Journey state cleared on sign-out
-- **WHEN** the user signs out
-- **THEN** the store SHALL clear its journey map
-- **AND** no prior user's journey status SHALL be readable afterward
+- **WHEN** the fan's journey for the event is Applied and the fan sets Unpaid
+- **THEN** the fan's journey for the event is recorded as Unpaid
 
-### Requirement: Set Ticket Journey Status
+#### Scenario: Reading the current journey fails
 
-The system SHALL allow an authenticated user to set (create or update) their ticket journey status for a given event via a single upsert operation. Status can be set manually by the user, as a side effect of confirming a ticket email import, **or as a first-party authoritative side effect of ⑤ `ticket-purchase-and-issuance` issuing a ticket** (which sets the status to `PAID` for that user and event, superseding any scraped/self-reported value).
+- **WHEN** reading the fan's current journey fails with an error other than NotFound
+- **THEN** SetStatus fails with that error and nothing is recorded
 
-#### Scenario: Set status on a new journey
+#### Scenario: Recording the status fails
 
-- **WHEN** an authenticated user calls `SetStatus` with an `event_id` and `status`
-- **AND** no journey exists for that user and event
-- **THEN** the system SHALL create a new `TicketJourney` with the given status
-- **AND** the user_id SHALL be derived from the authentication context
+- **WHEN** TicketJourney.Upsert fails
+- **THEN** SetStatus fails with that error and no status-change signal is sent
 
-#### Scenario: Update status on an existing journey
+### Requirement: SetStatus reports each actual status change
 
-- **WHEN** an authenticated user calls `SetStatus` with an `event_id` and `status`
-- **AND** a journey already exists for that user and event
-- **THEN** the system SHALL update the existing journey's status
+After the status is recorded, SetStatus SHALL send a "ticket journey status changed" signal for product analytics carrying the fan, the event, the previous status ("none" when the fan had no journey) and the new status. It SHALL send no signal when the new status equals the recorded one. A failure to send the signal SHALL NOT fail SetStatus and SHALL NOT undo the recorded status.
 
-#### Scenario: Any status transition is allowed
+#### Scenario: First status sends a signal from none
 
-- **WHEN** a user calls `SetStatus` with any valid status value
-- **THEN** the system SHALL accept the transition regardless of the current status
-- **AND** the system SHALL NOT enforce a state machine or transition rules
+- **WHEN** the fan has no journey for the event and sets Tracking
+- **THEN** a signal is sent with previous status none and new status Tracking
 
-#### Scenario: Invalid status value rejected
+#### Scenario: A real change sends a signal
 
-- **WHEN** a user calls `SetStatus` with `UNSPECIFIED` or an undefined enum value
-- **THEN** the system SHALL return an `INVALID_ARGUMENT` error
+- **WHEN** the fan's journey is Applied and the fan sets Lost
+- **THEN** a signal is sent with previous status Applied and new status Lost
 
-#### Scenario: Invalid event_id rejected
+#### Scenario: Setting the same status sends nothing
 
-- **WHEN** a user calls `SetStatus` with a malformed or missing `event_id`
-- **THEN** the system SHALL return an `INVALID_ARGUMENT` error
+- **WHEN** the fan's journey is Paid and the fan sets Paid
+- **THEN** SetStatus succeeds and no signal is sent
 
-#### Scenario: Status set via ticket email confirmation
+#### Scenario: Sending the signal fails
 
-- **WHEN** a user confirms a ticket email import via `UpdateTicketEmail`
-- **THEN** the system SHALL set the `TicketJourney` status for each associated event based on the parsed email content
-- **AND** for `LOTTERY_INFO` emails, the status SHALL be set to `TRACKING`
-- **AND** for `LOTTERY_RESULT` emails with a win and pending payment, the status SHALL be set to `UNPAID`
-- **AND** for `LOTTERY_RESULT` emails with a win and completed payment, the status SHALL be set to `PAID`
-- **AND** for `LOTTERY_RESULT` emails with a loss, the status SHALL be set to `LOST`
-
-#### Scenario: First-party issuance sets PAID
-
-- **WHEN** ⑤ issues a ticket for a user's event
-- **THEN** the system SHALL set that user's ticket-journey for the event to `PAID` as a first-party authoritative side effect (superseding any scraped/self-reported value)
+- **WHEN** the status is recorded but the signal cannot be sent
+- **THEN** SetStatus still succeeds and the new status stays recorded

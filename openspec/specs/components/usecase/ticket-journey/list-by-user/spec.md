@@ -2,22 +2,25 @@
 
 ## Purpose
 
-The `ticket-journey` capability allows users to track their personal ticket acquisition status for concerts and events. Users can set, update, and remove journey statuses representing stages of the ticket acquisition process (tracking, applied, lost, unpaid, paid).
+Returns every ticket journey of a fan, as event and status pairs, so the fan's screens can show each event's status next to its concert.
 
 ## Requirements
 
-### Requirement: List Ticket Journeys by User
+### Requirement: ListByUser returns the fan's journeys
 
-The system SHALL allow an authenticated user to retrieve all their ticket journeys.
+ListByUser SHALL return the fan's journeys as TicketJourney.ListByUser returns them. When that read fails, ListByUser SHALL fail with that error.
 
-#### Scenario: User has journeys
+#### Scenario: The fan has journeys
 
-- **WHEN** an authenticated user calls `ListByUser`
-- **THEN** the system SHALL return all `TicketJourney` records for that user
-- **AND** each record SHALL contain `event_id` and `status`
+- **WHEN** the fan has journeys for two events
+- **THEN** ListByUser returns both journeys with their events and statuses
 
-#### Scenario: User has no journeys
+#### Scenario: The fan has no journeys
 
-- **WHEN** an authenticated user calls `ListByUser`
-- **AND** the user has no ticket journeys
-- **THEN** the system SHALL return an empty list
+- **WHEN** the fan has no journeys
+- **THEN** ListByUser returns an empty list
+
+#### Scenario: Reading fails
+
+- **WHEN** TicketJourney.ListByUser fails
+- **THEN** ListByUser fails with that error
