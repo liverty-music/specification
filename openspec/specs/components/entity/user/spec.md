@@ -2,191 +2,102 @@
 
 ## Purpose
 
-Defines the User entity: its identity, home area and preferred language fields, validation rules, and the conventions authenticated per-user operations follow to scope access to the correct user and report a missing user.
+A User is a person registered on Liverty Music, linked to exactly one identity at the identity provider; it carries the contact address, display name, preferred display language and optional home area used to personalize concert notifications and proximity. A Home is a value owned by one User: the geographic area where the user regularly attends live events without considering it a trip (遠征).
+
+User
+
+| attribute | meaning | constraint |
+|-----------|---------|------------|
+| id | the user's platform identifier | required; assigned when the User is created and never changes |
+| external id | the user's identifier at the identity provider | required; non-empty; no two Users share it |
+| email | primary contact and account address | required; an email address; no two Users share it |
+| name | display name taken from the identity provider | required; may be empty text |
+| preferred language | display language for the UI and notifications | optional; when present exactly two lowercase letters (ISO 639-1, e.g. `ja`, `en`); absent means no client has asserted a language yet |
+| home | the user's home area | optional; absent until the user selects an area |
+
+Home
+
+| attribute | meaning | constraint |
+|-----------|---------|------------|
+| id | identifier of the home | required; assigned when the User first gets a home and kept when the home is changed later |
+| country code | home country | required; ISO 3166-1 alpha-2, two uppercase letters (e.g. `JP`) |
+| level 1 | first-order subdivision: prefecture, state, Land | required; ISO 3166-2: two uppercase letters, a hyphen, then 1 to 3 uppercase letters or digits (e.g. `JP-13`); its first two letters are the country code |
+| level 2 | finer area within level 1, in a code system chosen by the country (US: FIPS county code, DE: AGS; JP: not defined, always absent) | optional; 1 to 20 bytes of text when present |
+| centroid | approximate geographic centre of the level 1 area, the reference point for Nearby classification | optional; set when the home is stored and level 1 is in the supported catalog (the 47 Japanese prefectures), absent otherwise |
+
+```mermaid
+erDiagram
+  User ||--o| Home : "lives in"
+  User ||--o{ Follow : "follows artists through"
+  User ||--o{ TicketJourney : "tracks events through"
+  User ||--o{ PushSubscription : "receives push on"
+  User ||--o{ Notification : "receives"
+  User ||--o{ VerifiedIdentity : "is verified by"
+  User ||--o{ Order : "buys"
+  User ||--o{ Ticket : "holds"
+  User ||--o{ TicketApplication : "applies with"
+```
 
 ## Requirements
 
-### Requirement: Country Code Extraction
+### Requirement: A new User gets a fresh identifier
 
-The system SHALL provide a function that extracts the ISO 3166-1 alpha-2 country code from an ISO 3166-2 subdivision code.
+A new User SHALL receive a fresh id when it is created, distinct from every other User's id, and SHALL keep the external id, email, name and preferred language it was created with.
 
-#### Scenario: Extract country code from subdivision
+#### Scenario: New User
 
-- **WHEN** the function receives a valid ISO 3166-2 code (e.g., `JP-13`, `US-NY`)
-- **THEN** it SHALL return the two-letter country prefix (e.g., `JP`, `US`)
+- **WHEN** a User is created for external id `abc`, email `fan@example.com` and preferred language `ja`
+- **THEN** it has a fresh id, external id `abc`, email `fan@example.com` and preferred language `ja`
 
-#### Scenario: Construct structured Home from normalization result
+### Requirement: Preferred language format
 
-- **WHEN** a free-text admin_area is successfully normalized to an ISO 3166-2 code
-- **THEN** the system SHALL be able to derive a `Home` structure with:
-  - `country_code` extracted from the ISO 3166-2 prefix
-  - `level_1` set to the full ISO 3166-2 code
-  - `level_2` absent (normalization only resolves to level_1 in Phase 1)
+A preferred language value SHALL be valid only when it is exactly two lowercase Latin letters (ISO 639-1).
 
-### Requirement: User ID Propagation
+#### Scenario: Two lowercase letters
 
-The system SHALL extract the user ID from validated tokens and propagate it through the request context.
+- **WHEN** the value is `ja` or `en`
+- **THEN** it is a valid preferred language
 
-**Rationale**: Handlers need access to the authenticated user ID to scope operations correctly (e.g., following artists, viewing followed content). The `external_id` (Zitadel `sub`) enables identity resolution against the local database.
+#### Scenario: Any other shape
 
-#### Scenario: Authenticated Request
-
-- **WHEN** a JWT token is successfully validated
-- **THEN** the system extracts the user ID from the token's `sub` claim
-- **AND** adds the user ID to the request context as `external_id`
-- **AND** makes the user ID accessible to downstream handlers
+- **WHEN** the value is empty, `jpn`, `JA` or `ja-JP`
+- **THEN** it is not a valid preferred language
 
 ### Requirement: Home validation
 
-The `Home` entity SHALL provide a `Validate() error` method that enforces structural integrity of geographic home area data. The method SHALL return the first validation error encountered.
+A Home SHALL be valid only when its country code is two uppercase letters, its level 1 is two uppercase letters, a hyphen and 1 to 3 uppercase letters or digits, the first two letters of level 1 equal the country code, and level 2, when present, is 1 to 20 bytes of text. Any Home that breaks one of these rules SHALL be invalid.
 
-Validation rules:
-1. `CountryCode` MUST match ISO 3166-1 alpha-2 format (`^[A-Z]{2}$`).
-2. `Level1` MUST match ISO 3166-2 subdivision format (`^[A-Z]{2}-[A-Z0-9]{1,3}$`).
-3. The first two characters of `Level1` MUST equal `CountryCode`.
-4. When `Level2` is non-nil, its length MUST be between 1 and 20 characters inclusive.
+#### Scenario: Valid home without level 2
 
-#### Scenario: Valid home with all fields
+- **WHEN** a Home has country code `JP`, level 1 `JP-13` and no level 2
+- **THEN** it is valid
 
-- **WHEN** Home has CountryCode="JP", Level1="JP-13", Level2=nil
-- **THEN** Validate returns nil
+#### Scenario: Valid home with level 2
 
-#### Scenario: Valid home with Level2
+- **WHEN** a Home has country code `US`, level 1 `US-CA` and level 2 `06037`
+- **THEN** it is valid
 
-- **WHEN** Home has CountryCode="JP", Level1="JP-13", Level2="Shibuya"
-- **THEN** Validate returns nil
+#### Scenario: Malformed country code
 
-#### Scenario: Invalid country code format
+- **WHEN** a Home has country code `j` or `jp`
+- **THEN** it is invalid
 
-- **WHEN** Home has CountryCode="j" (lowercase or wrong length)
-- **THEN** Validate returns error mentioning "ISO 3166-1 alpha-2"
+#### Scenario: Malformed level 1
 
-#### Scenario: Invalid Level1 format
+- **WHEN** a Home has level 1 `INVALID`
+- **THEN** it is invalid
 
-- **WHEN** Home has Level1="INVALID"
-- **THEN** Validate returns error mentioning "ISO 3166-2"
+#### Scenario: Level 1 in another country
 
-#### Scenario: Level1 prefix mismatch
+- **WHEN** a Home has country code `JP` and level 1 `US-CA`
+- **THEN** it is invalid
 
-- **WHEN** Home has CountryCode="JP" but Level1="US-CA"
-- **THEN** Validate returns error mentioning prefix mismatch
+#### Scenario: Empty level 2
 
-#### Scenario: Level2 empty string
+- **WHEN** a Home has level 2 present but empty
+- **THEN** it is invalid
 
-- **WHEN** Home has Level2 pointing to an empty string
-- **THEN** Validate returns error mentioning "1 and 20 characters"
+#### Scenario: Level 2 too long
 
-#### Scenario: Level2 too long
-
-- **WHEN** Home has Level2 pointing to a 21-character string
-- **THEN** Validate returns error mentioning "1 and 20 characters"
-
----
-
-### Requirement: Handlers return NotFound when user record does not exist
-If `GetByExternalID` returns no user (e.g., user has a valid JWT but no record in `users`), the resolution layer SHALL return `CodeNotFound`.
-
-#### Scenario: Valid JWT but no user record
-- **WHEN** an authenticated request arrives but `GetByExternalID` finds no matching user
-- **THEN** the handler or use case returns `connect.CodeNotFound` with message "user not found"
-
-### Requirement: Explicit user_id scoping for authenticated per-user RPCs
-
-The system SHALL require that every authenticated RPC scoped to a specific user — except creation RPCs where the caller's internal user ID does not yet exist — carries an explicit `entity.v1.UserId` field in its request message. The field SHALL be marked required via `protovalidate`. The backend SHALL compare the supplied value against the userID derived from the JWT context and reject mismatches with `PERMISSION_DENIED`. Creation RPCs that mint a new internal user record are exempt from this `user_id` convention: such RPCs SHALL identify the caller via `external_id` (the identity provider's `sub` claim) extracted from the JWT, not via a client-supplied `user_id`.
-
-#### Scenario: Matching user_id passes authorization
-
-- **WHEN** an authenticated client calls a per-user RPC with `user_id` equal to the JWT-derived userID
-- **THEN** the handler SHALL proceed with normal processing
-
-#### Scenario: Mismatched user_id is rejected
-
-- **WHEN** an authenticated client calls a per-user RPC with `user_id` that differs from the JWT-derived userID
-- **THEN** the handler SHALL return `PERMISSION_DENIED`
-- **AND** no business logic SHALL execute
-- **AND** the response SHALL NOT reveal whether the requested user exists or what data they have
-
-#### Scenario: Missing user_id is rejected
-
-- **WHEN** an authenticated client calls a per-user RPC with an absent or empty `user_id`
-- **THEN** the handler SHALL return `INVALID_ARGUMENT` via `protovalidate` enforcement
-
-#### Scenario: Unauthenticated request is rejected before user_id check
-
-- **WHEN** a client calls a per-user RPC without a valid JWT
-- **THEN** the authentication middleware SHALL reject the request with `UNAUTHENTICATED` before the `user_id` check runs
-
-#### Scenario: User creation does not require user_id
-
-- **WHEN** a client calls `UserService.Create` (or any analogous creation RPC that mints a new internal user ID)
-- **THEN** the request SHALL NOT carry a `user_id` field
-- **AND** the backend SHALL extract `external_id` from the JWT context to identify the identity provider user
-- **AND** the backend SHALL return the newly minted `UserId` in the response for the client to use on subsequent RPCs
-
-### Requirement: User Home Area Data Model
-
-The system SHALL support a structured `home` field on the User entity representing the user's home area — the geographic area where the user regularly attends live events without considering it a "trip" (遠征). The value is a structured geographic location expressed through a hierarchy of internationally standardized codes, with centroid coordinates for proximity calculations.
-
-#### Scenario: Home message in Proto definition
-
-- **WHEN** the `Home` proto message is defined
-- **THEN** it SHALL contain a `string country_code` field validated as ISO 3166-1 alpha-2 (exactly two uppercase Latin letters, e.g., `JP`, `US`)
-- **AND** a `string level_1` field validated as ISO 3166-2 format (4–6 characters, e.g., `JP-13`, `US-NY`)
-- **AND** an `optional string level_2` field for finer-grained subdivision (1–20 characters when present)
-- **AND** an `optional double centroid_latitude` field for the centroid latitude
-- **AND** an `optional double centroid_longitude` field for the centroid longitude
-
-#### Scenario: Home field on User message
-
-- **WHEN** the `User` proto message is defined
-- **THEN** it SHALL include a `Home home` field as an optional structured message
-- **AND** the field SHALL be absent until the user explicitly selects their area
-
-#### Scenario: Home field in database
-
-- **WHEN** the `homes` table is defined
-- **THEN** it SHALL include a primary key `id TEXT`
-- **AND** a required `country_code TEXT` column storing an ISO 3166-1 alpha-2 code
-- **AND** a required `level_1 TEXT` column storing an ISO 3166-2 subdivision code
-- **AND** a nullable `level_2 TEXT` column storing a country-specific finer area code
-- **AND** a nullable `centroid_latitude DOUBLE PRECISION` column for the centroid latitude
-- **AND** a nullable `centroid_longitude DOUBLE PRECISION` column for the centroid longitude
-
-#### Scenario: Home field in Go entity
-
-- **WHEN** the Go `entity.Home` struct is defined
-- **THEN** it SHALL include `ID string`, `CountryCode string`, `Level1 string`, `Level2 *string`, and `Centroid *Coordinates` fields
-- **AND** the `entity.User` struct SHALL include a `Home *Home` field
-- **AND** a nil `Home` SHALL mean the user has not set their home area
-
-#### Scenario: Centroid populated at write time
-
-- **WHEN** `UserRepository.Create` or `UserRepository.UpdateHome` is called with a `Home` value
-- **THEN** the repository implementation SHALL resolve the `Level1` ISO 3166-2 code to centroid coordinates
-- **AND** store the resolved `centroid_latitude` and `centroid_longitude` alongside the other home fields
-- **AND** the centroid resolution logic SHALL be an infrastructure implementation detail (not visible to usecase/entity layers)
-
-#### Scenario: Code system contract for level_2
-
-- **WHEN** `level_2` is populated
-- **THEN** its code system SHALL be determined by `country_code`:
-  - `JP` → future use (not yet defined; Phase 1 always omits level_2)
-  - `US` → FIPS county code (e.g., `06037` for Los Angeles County)
-  - `DE` → AGS code (e.g., `09162` for Munich)
-- **AND** additional country mappings SHALL be documented in the `Home` proto message comment as they are introduced
-
-### Requirement: User Preferred Language Field on User Entity
-
-The `entity.v1.User` message SHALL expose the user's preferred display language as an ISO 639-1 two-letter code, distinguishable from the unset state.
-
-#### Scenario: Preferred language present
-
-- **WHEN** the backend returns a `User` entity for a row whose `preferred_language` column is non-NULL
-- **THEN** the proto response SHALL include `preferred_language` set to the stored ISO 639-1 code (e.g., `"ja"` or `"en"`)
-- **AND** the code SHALL match `^[a-z]{2}$`
-
-#### Scenario: Preferred language unset (legacy or new row before backfill)
-
-- **WHEN** the backend returns a `User` entity for a row whose `preferred_language` column is NULL
-- **THEN** the proto response SHALL signal absence via the `optional` field marker (the field SHALL NOT be present in the wire response)
-- **AND** clients SHALL interpret absence as "client must backfill on next observation"
+- **WHEN** a Home has a level 2 of 21 bytes, such as 21 ASCII characters or 7 kanji
+- **THEN** it is invalid

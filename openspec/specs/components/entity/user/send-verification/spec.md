@@ -2,25 +2,20 @@
 
 ## Purpose
 
-Sends a verification email to a user's registered address.
+Sends a verification email to the registered address of the User linked to a given identity at the identity provider.
 
 ## Requirements
 
 ### Requirement: Sending a verification email
 
-SendVerification SHALL send a verification email to the user's registered address. Sending it again for the same user SHALL have no adverse effect. Any failure to send SHALL fail with Internal.
+SendVerification SHALL send a verification email to the registered address of the User with the given external id. Any failure to send SHALL fail with Internal.
 
 #### Scenario: Unverified user
 
-- **WHEN** SendVerification runs for a user whose address is not verified
+- **WHEN** SendVerification runs for a User whose address is not verified
 - **THEN** a verification email is sent to that address
-
-#### Scenario: Sent twice
-
-- **WHEN** SendVerification runs twice for the same user
-- **THEN** the user may receive a second email and nothing else changes
 
 #### Scenario: Sending fails
 
-- **WHEN** the email cannot be sent
+- **WHEN** the email cannot be sent, for any reason
 - **THEN** SendVerification fails with Internal

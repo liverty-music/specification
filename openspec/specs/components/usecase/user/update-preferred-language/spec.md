@@ -1,38 +1,31 @@
-# Update Preferred Language
+# UserUseCase.UpdatePreferredLanguage
 
 ## Purpose
 
-Persists each authenticated user's display language in the backend database so language is consistent across devices and browser sessions. Defines the proto-surface (entity field, Create capture, UpdatePreferredLanguage RPC), the storage semantics (NULL = "not yet set by client"), and the repository scan contract that prevents NULL-column reads from masquerading as `not_found` / `already_exists` at the wire boundary.
+Sets or changes a User's preferred display language, so the same language is used on every device and in notifications, and returns the updated User.
 
 ## Requirements
 
-### Requirement: UpdatePreferredLanguage RPC
+### Requirement: A valid language is stored for the user
 
-The `UserService.UpdatePreferredLanguage` RPC SHALL allow an authenticated user to change their stored preferred language. The RPC SHALL follow the rpc-auth-scoping convention — the request carries an explicit `user_id` that the backend verifies against the caller's JWT-derived userID.
+UpdatePreferredLanguage SHALL take a User id and a language. It SHALL fail with InvalidArgument and change nothing when the id is empty or the language is not a valid preferred language in the terms of the User entity. Otherwise it SHALL call User.UpdatePreferredLanguage and return the updated User; a failure of User.UpdatePreferredLanguage, such as NotFound for an unknown User, SHALL be returned as it is.
 
 #### Scenario: Successful language update
 
-- **WHEN** an authenticated user calls `UpdatePreferredLanguage` with their own `user_id` and `preferred_language = "en"`
-- **THEN** the backend SHALL persist `preferred_language = "en"` on the user's row
-- **AND** the response SHALL return the updated `User` entity with `preferred_language = "en"`
+- **WHEN** UpdatePreferredLanguage is called with a stored User's id and `en`
+- **THEN** it returns the User with preferred language `en`
 
-#### Scenario: Cross-user update is rejected
+#### Scenario: Malformed language
 
-- **WHEN** an authenticated user calls `UpdatePreferredLanguage` with a `user_id` that does not match their JWT-derived userID
-- **THEN** the backend SHALL reject the request with `PERMISSION_DENIED`
-- **AND** no DB write SHALL occur
+- **WHEN** UpdatePreferredLanguage is called with `ja-JP`
+- **THEN** it fails with InvalidArgument and nothing changes
 
-#### Scenario: Malformed language code is rejected
+#### Scenario: Empty id
 
-- **WHEN** the request carries `preferred_language` not matching `^[a-z]{2}$` (e.g., `""`, `"jpn"`, `"JA"`, `"ja-JP"`)
-- **THEN** the backend SHALL reject the request with `INVALID_ARGUMENT`
+- **WHEN** UpdatePreferredLanguage is called with an empty id
+- **THEN** it fails with InvalidArgument
 
-#### Scenario: Unknown user is rejected
+#### Scenario: Unknown user
 
-- **WHEN** the request is well-formed but the JWT-derived user has no corresponding `users` row
-- **THEN** the backend SHALL reject the request with `NOT_FOUND`
-
-#### Scenario: Unauthenticated request is rejected
-
-- **WHEN** the request lacks valid authentication credentials
-- **THEN** the backend SHALL reject the request with `UNAUTHENTICATED`
+- **WHEN** no User has the given id
+- **THEN** UpdatePreferredLanguage fails with NotFound

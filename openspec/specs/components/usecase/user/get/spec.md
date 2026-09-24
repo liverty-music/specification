@@ -1,29 +1,28 @@
-# Get
+# UserUseCase.Get
 
 ## Purpose
 
-Define the user's home area capability end to end: the structured `Home` data model (proto, database, Go entity, centroid resolution), the RPCs that create and update it, and the unified `user-home-selector` frontend component and its `userHome.*` i18n namespace used in both onboarding and Settings.
+Returns a User by its platform id, including its home area and preferred language.
 
 ## Requirements
 
-### Requirement: Home included in User retrieval
+### Requirement: Get returns the user by id
 
-The `User.home` field SHALL be populated in all RPCs that return a `User` entity. `UserService.Get` requests SHALL carry an explicit `user_id` that the backend verifies against the JWT-derived userID; mismatches SHALL be rejected with `PERMISSION_DENIED`.
+Get SHALL call User.Get with the given id and return the User. A missing User SHALL fail with NotFound, and any other failure to read SHALL be returned with its own code.
 
-#### Scenario: Get returns home
+Known defect: liverty-music/backend#471
 
-- **WHEN** `UserService.Get` is called for a user who has set their home area
-- **AND** the supplied `user_id` equals the userID derived from the JWT
-- **THEN** the returned `User.home` field SHALL contain the full structured home (country_code, level_1, and level_2 if set)
+#### Scenario: Existing user
 
-#### Scenario: Get returns nil home
+- **WHEN** Get is called with the id of a stored User
+- **THEN** it returns that User with its Home, if any
 
-- **WHEN** `UserService.Get` is called for a user who has not set their home area
-- **AND** the supplied `user_id` equals the userID derived from the JWT
-- **THEN** the returned `User.home` field SHALL be absent (not set)
+#### Scenario: Unknown id
 
-#### Scenario: Get rejects mismatched user_id
+- **WHEN** no User has the given id
+- **THEN** Get fails with NotFound
 
-- **WHEN** `UserService.Get` is called with a `user_id` that differs from the userID derived from the JWT
-- **THEN** the system SHALL return `PERMISSION_DENIED`
-- **AND** the response SHALL NOT carry any user data
+#### Scenario: Store unavailable
+
+- **WHEN** User.Get fails with Unavailable
+- **THEN** Get fails with Unavailable

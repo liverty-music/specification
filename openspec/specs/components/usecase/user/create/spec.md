@@ -1,137 +1,83 @@
-# Create
+# UserUseCase.Create
 
 ## Purpose
 
-Provisions a backend account for a newly authenticated user, resolving or creating their user record and capturing their home area and preferred display language at signup.
+Registers the signed-in person as a User, or returns their existing User when their identity is already registered, optionally capturing their home area and preferred language at sign-up.
 
 ## Requirements
 
-### Requirement: User Account Provisioning on Signup
+### Requirement: Input is checked before anything is stored
 
-The system SHALL create a local user record in the application database when a user completes the onboarding tutorial and authenticates via Passkey. The provisioning is triggered by the guest data merge process at the end of the tutorial.
+Create SHALL take a new User's external id, email, name and, optionally, a Home and a preferred language. It SHALL fail with InvalidArgument and store nothing when the Home is invalid or when a preferred language is given that is not valid, in the terms of the User entity.
 
-The `UserService.Create` RPC SHALL be idempotent on duplicate `external_id`: a second call for the same `external_id` SHALL return the existing user as a successful response rather than `connect.CodeAlreadyExists`. This allows the frontend to treat `Create` as a uniform "resolve-or-provision" bootstrap RPC on any device, regardless of whether the user was provisioned in a prior session.
+#### Scenario: Invalid home
 
-The `Create` RPC SHALL carry the user's effective locale as `preferred_language` so the language preference is persisted atomically with the new user row. On the idempotent-return path, `preferred_language` SHALL NOT overwrite an existing row's value (mirroring the rule for `home`).
+- **WHEN** Create is called with a Home whose level 1 `US-CA` does not belong to country code `JP`
+- **THEN** it fails with InvalidArgument and no User is stored
 
-#### Scenario: Successful signup provisioning from tutorial
+#### Scenario: Malformed preferred language
 
-- **WHEN** a user completes Passkey authentication at tutorial Step 6
-- **AND** the frontend has no cached `user_id` for the authenticated `external_id`
-- **THEN** the frontend SHALL call the `Create` RPC with the user's `email` parameter AND `preferred_language` set to `I18N.getLocale()` (the locale currently effective in the client)
-- **AND** the backend SHALL extract `external_id` (from JWT `sub` claim) and `name` (from JWT `name` claim)
-- **AND** the backend SHALL create a new user record with `external_id`, `email`, `name`, and `preferred_language` persisted
-- **AND** the backend SHALL return the newly created `User` entity in `CreateResponse.user` (including `preferred_language`)
-- **AND** the frontend SHALL cache the returned `user_id` in `localStorage` keyed by `external_id`
-- **AND** the frontend SHALL remove `localStorage['language']` after the successful Create
-- **AND** the frontend SHALL then proceed to sync guest data (follows, passion levels)
+- **WHEN** Create is called with preferred language `JA`
+- **THEN** it fails with InvalidArgument and no User is stored
 
-#### Scenario: Successful provisioning from Login link
+### Requirement: A new identity is registered
 
-- **WHEN** a returning user authenticates via the [Login] link on the LP
-- **AND** the frontend has no cached `user_id` for the authenticated `external_id` (e.g., fresh device or cleared storage)
-- **THEN** the frontend SHALL call the `Create` RPC with the user's `email` parameter AND `preferred_language` set to `I18N.getLocale()`
-- **AND** the backend SHALL either create a new record (first-ever sign-in) or return the existing record (returning user)
-- **AND** the frontend SHALL cache the returned `user_id` in `localStorage` keyed by `external_id`
-- **AND** the frontend SHALL remove `localStorage['language']` after the successful Create
+When no User exists for the external id or the email, Create SHALL call User.Create with the given values and return the stored User, with its Home when one was given and with the preferred language when one was given.
 
-#### Scenario: Duplicate Create call returns the existing user idempotently
+#### Scenario: New user with home and language
 
-- **WHEN** the `Create` RPC is called with an `external_id` that already exists in the database
-- **THEN** the backend SHALL return `OK` with `CreateResponse.user` populated from the existing row
-- **AND** the backend SHALL NOT return `connect.CodeAlreadyExists`
-- **AND** the backend SHALL NOT modify the existing `email`, `name`, `home`, or `preferred_language` fields (the duplicate call is a read, not an upsert)
-- **AND** the frontend SHALL treat the response identically to a fresh creation — cache the `user_id` and proceed
+- **WHEN** Create is called for an unregistered identity with a Home `JP-13` and preferred language `ja`
+- **THEN** it returns a new User carrying that Home and preferred language `ja`
 
-#### Scenario: Cached userID is reused on subsequent boots
+#### Scenario: New user without optional values
 
-- **WHEN** the app boots for a user whose `external_id` has a cached `user_id` in `localStorage`
-- **THEN** the frontend SHALL read the cached `user_id` **before** issuing any authenticated per-user RPC
-- **AND** the frontend SHALL call `UserService.Get` with the cached `user_id` to hydrate the current profile
-- **AND** the backend SHALL verify the supplied `user_id` matches the JWT-derived userID (per `rpc-auth-scoping`)
+- **WHEN** Create is called for an unregistered identity with no Home and no preferred language
+- **THEN** it returns a new User with no home and no preferred language
 
-#### Scenario: Cached userID is cleared on sign-out
+### Requirement: A registered identity gets its existing user back
 
-- **WHEN** the user signs out via the auth service
-- **THEN** the frontend SHALL remove the `localStorage` entry keyed by the signed-out user's `external_id`
-- **AND** the next sign-in SHALL follow the cache-miss path (call `Create` to resolve the `user_id`)
+When User.Create fails with AlreadyExists, Create SHALL look the identity up with User.GetByExternalID. When a User is found, Create SHALL return that User unchanged: its email, name, home and preferred language are not overwritten by the new values. When no User has the external id, the email belongs to another identity and Create SHALL fail with AlreadyExists. When the lookup fails for any other reason, Create SHALL fail with the lookup's error.
 
-### Requirement: Create User with Home
+#### Scenario: Same identity again
 
-The system SHALL accept an optional home area during user creation, allowing the home selected during onboarding to be persisted atomically with the user record.
+- **WHEN** Create is called for an external id that is already registered, with preferred language `en`, and the stored User's preferred language is `ja`
+- **THEN** it returns the stored User, whose preferred language stays `ja`
 
-#### Scenario: Create user with home provided
+#### Scenario: Email used by another identity
 
-- **WHEN** an authenticated user calls `UserService.Create` with a valid `home` field
-- **THEN** the system SHALL create the user record and the associated home record in a single transaction
-- **AND** the response SHALL include the created `User` entity with the `home` field populated
+- **WHEN** Create is called with an email that a User with a different external id already has
+- **THEN** it fails with AlreadyExists
 
-#### Scenario: Create user without home
+#### Scenario: Lookup after the conflict fails
 
-- **WHEN** an authenticated user calls `UserService.Create` without a `home` field
-- **THEN** the system SHALL create the user record with `home_id = NULL`
-- **AND** the response SHALL include the created `User` entity with `home` absent
-
-### Requirement: Create RPC Captures Preferred Language at Signup
-
-The `UserService.Create` RPC SHALL accept an optional `preferred_language` field carrying the client's effective locale at the moment of signup. When the field is present, the backend SHALL persist it atomically with the new user row; when absent, the row SHALL be created with NULL and the client SHALL backfill on next hydration via `UpdatePreferredLanguage`. The field is `optional` on the wire so the RPC stays backward-compatible during a rolling deploy where the new backend may briefly serve old frontend clients.
-
-#### Scenario: Successful Create persists the supplied language
-
-- **WHEN** a client calls `Create` with `preferred_language = "ja"` and an unprovisioned `external_id`
-- **THEN** the backend SHALL persist `preferred_language = "ja"` on the new `users` row
-- **AND** the returned `User` entity SHALL include `preferred_language = "ja"`
-
-#### Scenario: Create accepts absent preferred_language for old clients
-
-- **WHEN** a client calls `Create` without supplying the `preferred_language` field at all (i.e. the field is absent on the wire, as an unupdated client would send)
-- **THEN** the backend SHALL create the user row with `preferred_language` as NULL
-- **AND** the returned `User` entity SHALL NOT include `preferred_language`
-- **AND** subsequent hydration SHALL trigger client-side backfill via `UpdatePreferredLanguage`
-
-#### Scenario: Create rejects malformed preferred_language
-
-- **WHEN** a client calls `Create` with `preferred_language` explicitly present but not matching `^[a-z]{2}$` (e.g., `""`, `"jpn"`, `"JA"`, `"ja-JP"`)
-- **THEN** the backend SHALL reject the request with `INVALID_ARGUMENT`
-- **AND** no user row SHALL be created
-
-#### Scenario: Idempotent Create does NOT overwrite existing language
-
-- **WHEN** `Create` is called with an `external_id` that already exists in the database
-- **AND** the request carries `preferred_language = "en"`
-- **AND** the existing row has `preferred_language = "ja"`
-- **THEN** the backend SHALL return `OK` with the existing user
-- **AND** the stored `preferred_language` SHALL remain `"ja"` (the duplicate call is a read, not an upsert — mirroring the existing rule for `home`)
-
-#### Scenario: Create retry surfaces non-NotFound errors truthfully
-
-- **WHEN** `Create`'s INSERT fails with `unique_violation`
-- **AND** the idempotent retry `GetByExternalID(claims.sub)` returns an error
-- **AND** that error's code is NOT `NotFound` (e.g., `Internal` from a scan failure or `Unavailable` from a transient pool error)
-- **THEN** the backend SHALL respond with the retry's error code, not the original `AlreadyExists`
-- **AND** the backend SHALL log a WARN with both errors so the operator sees the full context
-
-#### Scenario: Create retry treats NotFound as the email-collision case
-
-- **WHEN** `Create`'s INSERT fails with `unique_violation`
-- **AND** the idempotent retry `GetByExternalID(claims.sub)` returns `NotFound`
-- **THEN** the backend SHALL respond with the original `AlreadyExists`
+- **WHEN** User.Create fails with AlreadyExists and the following User.GetByExternalID fails with Unavailable
+- **THEN** Create fails with Unavailable
 
 ### Requirement: A verification email follows every new user
 
-When Create stores a new user, User.SendVerification SHALL run for that user; when the user already existed, nothing is sent. A failed send SHALL be retried up to 3 times and then given up, and the user stays created. If announcing the new user fails, no verification email is sent for it.
+When Create stores a new User, it SHALL announce the new User, and each announcement SHALL cause User.SendVerification to run for that User's external id; when Create returns an existing User, nothing is announced or sent. A failed send SHALL be retried up to 3 more times and then given up, and the User stays created. If announcing the new User fails, Create still succeeds and no verification email is sent for it. When email verification is not configured, the announcement is accepted and no email is sent.
 
 #### Scenario: New user
 
-- **WHEN** Create stores a new user
-- **THEN** a verification email is sent to the user's address
+- **WHEN** Create stores a new User
+- **THEN** a verification email is sent to the User's address
 
 #### Scenario: User already existed
 
-- **WHEN** Create finds the user already stored
+- **WHEN** Create returns an already registered User
 - **THEN** no verification email is sent
 
 #### Scenario: Sending keeps failing
 
-- **WHEN** sending the verification email fails 3 more times after the first attempt
-- **THEN** the send is given up and the user stays created
+- **WHEN** sending the verification email fails on the first attempt and on 3 retries
+- **THEN** the send is given up and the User stays created
+
+#### Scenario: Announcing fails
+
+- **WHEN** the new User is stored but announcing it fails
+- **THEN** Create returns the new User and no verification email is sent
+
+#### Scenario: Verification not configured
+
+- **WHEN** a new User is announced while email verification is not configured
+- **THEN** no email is sent and the User stays created
