@@ -197,6 +197,8 @@ function validateEnvironmentMatchesHost(config: AppConfig): void {
 
 This catches the failure mode where a prod pod accidentally serves the `public/config.json` shipped in the image (which contains dev values), by refusing to start instead of silently calling dev URLs from prod.
 
+`staging` is included in the host map and the `AppConfig.environment` union so the SPA is ready the moment a `staging` cluster exists, even though no overlay or hostname maps to it yet. The staging scenarios are forward-looking documentation, not blocking acceptance criteria, until a `staging` overlay actually lands; the dev/prod checks are blocking today.
+
 ### D8. `public/config.json` is checked-in with dev values
 
 The frontend repo's `public/config.json` is committed with dev environment values. This serves three purposes:
@@ -280,7 +282,7 @@ This catches the specific regression that v1.0.0 hit AND any analogous future re
 7. Cut frontend release tag `v1.0.1` on the new merge commit. Release CI builds → pushes to `liverty-music-prod/frontend/web-app:v1.0.1`.
 8. Update `cloud-provisioning/k8s/namespaces/frontend/overlays/prod/kustomization.yaml` image pin to `v1.0.1`. Merge.
 9. ArgoCD syncs prod. New pod fetches ConfigMap-backed `/config.json` (prod values). Verify `https://liverty-music.app/` renders.
-10. Run post-deploy smoke E2E (Playwright) against prod URL.
+10. Run post-deploy smoke E2E (Playwright) against prod URL. The check loads the environment's homepage, waits for `networkidle` (or equivalent stabilization), and asserts `document.body.innerText.trim()` is non-empty and that the welcome route's first-screen selector (e.g. `.welcome-hero` or `[data-screen-1]`) is present in the DOM. It also fetches `/config.json` and asserts the `environment` field matches the deployed host. The whole run is bounded by a 60-second wall-clock timeout so a hang fails closed. On any non-prod environment, a failed or timed-out smoke run marks the deploy workflow failed and blocks automatic promotion of that artifact to the next environment.
 11. Archive this change in OpenSpec; update specs/ tree.
 
 **Rollback**:

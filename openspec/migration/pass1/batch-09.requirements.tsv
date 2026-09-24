@@ -1,0 +1,114 @@
+old_spec	old_req_name	disposition	target_path	new_req_name	merge_group	rewrite_flags	confidence	rationale
+gemini-grounded-extract-and-coerce	ConcertSearcher executes a two-step Gemini call sequence per Search invocation	OUT:design-doc				CLASSNAME	high	ConcertSearcher.Search internal call orchestration; no fan/organizer-observable behavior beyond the resulting concert list
+gemini-grounded-extract-and-coerce	Step 1 runs a single grounded slice per the default slice configuration	OUT:design-doc				CLASSNAME	high	internal slice-fanout configuration (defaultStep1Slices, runStep1Slice), no user actor
+gemini-grounded-extract-and-coerce	Step 1 tools MUST be {GoogleSearch, URLContext} together; no schema	OUT:design-doc				CLASSNAME	high	Gemini tool-config invariant enforced by assertStepInvariants guard, no user actor
+gemini-grounded-extract-and-coerce	Step 1 emits a per-field XML envelope with `<tour>` and `<standalone>` blocks	OUT:design-doc					high	internal XML wire format between Gemini call and Go parser, no user actor
+gemini-grounded-extract-and-coerce	Step 1 fills in missing years from page context for partial dates	OUT:design-doc					medium	LLM prompt-engineering rule for date inference; no user actor, affects internal extraction only
+gemini-grounded-extract-and-coerce	Step 1 uses a single consolidated English extraction instruction	OUT:design-doc				CLASSNAME	high	prompt content decision (systemInstructionStep1)
+gemini-grounded-extract-and-coerce	Step 1 prompt template uses three positional placeholders	OUT:design-doc				CLASSNAME	high	prompt template implementation detail (promptTemplateStep1)
+gemini-grounded-extract-and-coerce	Go-side verbatim parse extracts title, source_url, venue, country, and raw date/time strings	OUT:design-doc				CLASSNAME	high	internal parser contract (parseStep1Envelope, EventDraft), no user actor
+gemini-grounded-extract-and-coerce	Step 1 slice envelopes are merged by concatenation, not URL grouping	OUT:design-doc				CLASSNAME	high	internal merge algorithm (mergeAndDedupEnvelopes)
+gemini-grounded-extract-and-coerce	Step 2 receives only the JSON-coercion-relevant fields	OUT:design-doc				CLASSNAME	high	internal Step2 payload/schema shape (step2InputEvent)
+gemini-grounded-extract-and-coerce	Step 2 tools MUST be empty; responseJSONSchema MUST be set	OUT:design-doc				CLASSNAME	high	Gemini call config invariant enforced by assertStepInvariants
+gemini-grounded-extract-and-coerce	Step 2's coerced output is joined back to EventDraft by index	OUT:design-doc				CLASSNAME	high	internal join/merge logic (parseStep2Response, toScrapedConcert)
+gemini-grounded-extract-and-coerce	Deduplication keys on (local_date, venue, start_time)	OUT:design-doc				CLASSNAME	medium	internal dedup algorithm (parseStep2Response); result-count effect already covered by entity/concert correctness
+gemini-grounded-extract-and-coerce	SearchMetadata exposes Step1Grounded and Step2Parse	OUT:design-doc				CLASSNAME	high	internal observability struct for logs (SearchMetadata, PassMetadata), no user actor
+gemini-grounded-extract-and-coerce	A/B harness emits per-step sub-objects in raw response files	OUT:runbook				CLASSNAME	high	internal test/evaluation harness (searcher_integration_test.go), engineering-only
+gemini-grounded-extract-and-coerce	cmd/smoke-diff reports per-event evaluation breakdown for a single smoke run	OUT:runbook				CLASSNAME	high	developer CLI tool (cmd/smoke-diff) for evaluating scraper quality, no end-user actor
+gemini-grounded-extract-and-coerce	parseStep1Envelope Preserves Tour Grouping On EventDraft	OUT:design-doc				CLASSNAME	high	internal grouping handle for tour drafts (parseStep1Envelope, EventDraft), no user actor
+gemini-grounded-extract-and-coerce	Step 1 extracts every field in the source page's original language	OUT:design-doc					medium	LLM extraction-fidelity instruction; affects data correctness but is an internal prompt rule, not an entity validation
+gemini-grounded-extract-and-coerce	Step 1 selects the tour-specific page as source_url	OUT:design-doc					medium	LLM page-selection heuristic, internal to the extraction pipeline
+product-analytics	PostHog Cloud EU is the sole product-analytics platform	OUT:design-doc					high	analytics-platform choice, telemetry cross-cutting, no user actor
+product-analytics	Analytics `distinct_id` is the platform-internal `UserId`	OUT:design-doc					high	analytics identity-mapping implementation decision
+product-analytics	Event names follow `domain.action[.qualifier][.outcome]` in dot.case	OUT:lint					high	event-naming convention enforced at code-review time, no user actor
+product-analytics	Event sourcing is partitioned between frontend and backend	OUT:design-doc					high	architecture decision for where analytics events originate
+product-analytics	Backend analytics flow uses NATS and an `analytics-consumer`	OUT:design-doc					high	backend analytics pipeline architecture, no user actor
+product-analytics	PostHog SDK initialisation is deferred until after first paint	OUT:design-doc					high	SDK init timing implementation detail, telemetry cross-cutting
+product-analytics	Frontend disables autocapture and automatic page-view capture	OUT:design-doc					high	analytics SDK configuration decision
+product-analytics	Session replay masks PII by default	OUT:design-doc					medium	session-replay privacy configuration (deferred/not in current scope per spec note); telemetry cross-cutting
+product-analytics	Product analytics and OpenTelemetry remain separated; only `trace_id` bridges	OUT:design-doc					high	telemetry/analytics architecture boundary, cross-cutting per tie-break rule
+product-analytics	Event catalogue is the single source of truth	OUT:runbook					high	PR-review process gate requiring catalogue updates, operational not user-facing
+product-analytics	Internal and E2E traffic is excluded from product analytics	OUT:design-doc					high	analytics filtering implementation decision, no user actor
+product-analytics	Account authentication events are emitted server-side	OUT:design-doc					high	backend analytics-event emission mechanics tied to Zitadel Actions webhook, telemetry cross-cutting
+product-analytics	Every active catalogue event has a verified emission call site	OUT:runbook					high	catalogue-hygiene process check during PR review
+product-analytics	The event catalogue records a per-event collection status	OUT:runbook					high	documentation/process convention for the event catalogue
+ticket-journey	Ticket Journey Entity	KEEP	components/entity/ticket-journey	Ticket Journey Entity			high	TicketJourney fields/identity — entity/v1/ticket_journey.proto invariant
+ticket-journey	Set Ticket Journey Status	KEEP	components/usecase/ticket-journey/set-status	Set Ticket Journey Status			high	backend/internal/usecase/ticket_journey_uc.go:TicketJourneyUseCase.SetStatus, response/state change for one operation
+ticket-journey	Delete Ticket Journey	KEEP	components/usecase/ticket-journey/delete	Delete Ticket Journey			high	backend/internal/usecase/ticket_journey_uc.go:TicketJourneyUseCase.Delete
+ticket-journey	List Ticket Journeys by User	KEEP	components/usecase/ticket-journey/list-by-user	List Ticket Journeys by User			high	backend/internal/usecase/ticket_journey_uc.go:TicketJourneyUseCase.ListByUser
+ticket-journey	Ticket Journey Database Schema	OUT:design-doc					high	physical Postgres table/column layout, no user actor; overlaps entity composite-key invariant
+ticket-journey	Ticket Status UI visibility	NEEDS_HUMAN					low	EventDetailSheet Ticket Status section is a cross-route UI surface with no matching components/infrastructure/ui/global/<surface> entry in vocabulary.tsv
+ticket-journey	Ticket Status UI two-phase layout	NEEDS_HUMAN					low	same EventDetailSheet Ticket Status surface, no matching vocabulary target
+ticket-journey	Ticket Status cumulative progress display	NEEDS_HUMAN					low	same EventDetailSheet Ticket Status surface, no matching vocabulary target
+ticket-journey	Ticket Status selection contrast	NEEDS_HUMAN					low	same EventDetailSheet Ticket Status surface, no matching vocabulary target
+ticket-journey	Ticket Status semantic color and non-color cues	NEEDS_HUMAN					low	same EventDetailSheet Ticket Status surface, no matching vocabulary target
+ticket-journey	Ticket Status outcome gating	NEEDS_HUMAN					low	same EventDetailSheet Ticket Status surface, no matching vocabulary target
+ticket-journey	Ticket Status radiogroup accessibility	NEEDS_HUMAN					low	same EventDetailSheet Ticket Status surface, no matching vocabulary target
+ticket-journey	Ticket Journey UI is independent of ticket sales	NEEDS_HUMAN					low	governs visibility of the same unregistered EventDetailSheet Ticket Status surface plus concert-card badge, no matching vocabulary target
+onboarding-spotlight	Spotlight Visual Layer via Box-Shadow	KEEP	components/infrastructure/ui/global/coach-mark	Spotlight Visual Layer via Box-Shadow			high	frontend/src/components/coach-mark visual cutout behavior
+onboarding-spotlight	Coach Mark Overlay System	KEEP	components/infrastructure/ui/global/coach-mark	Coach Mark Overlay System			high	frontend/src/components/coach-mark, CoachMarkService-owned overlay state
+onboarding-spotlight	Spotlight Uses Popover Top Layer	KEEP	components/infrastructure/ui/global/coach-mark	Spotlight Uses Popover Top Layer			high	frontend/src/components/coach-mark popover rendering
+onboarding-spotlight	Route Detach Spotlight Cleanup	KEEP	components/infrastructure/ui/global/coach-mark	Route Detach Spotlight Cleanup			high	frontend/src/components/coach-mark lifecycle cleanup
+onboarding-spotlight	Coach Mark Target Click Delegates Navigation to Aurelia Router	KEEP	components/infrastructure/ui/global/coach-mark	Coach Mark Target Click Delegates Navigation to Aurelia Router			high	frontend/src/components/coach-mark click delegation
+onboarding-spotlight	Smooth Spotlight Movement via View Transitions API	KEEP	components/infrastructure/ui/global/coach-mark	Smooth Spotlight Movement via View Transitions API			high	frontend/src/components/coach-mark animation behavior
+onboarding-spotlight	Tooltip Anchor Positioning	KEEP	components/infrastructure/ui/global/coach-mark	Tooltip Anchor Positioning			high	frontend/src/components/coach-mark tooltip placement
+onboarding-spotlight	Tooltip Visual Treatment	KEEP	components/infrastructure/ui/global/coach-mark	Tooltip Visual Treatment			high	frontend/src/components/coach-mark tooltip styling
+onboarding-spotlight	Inline SVG Directional Arrow	KEEP	components/infrastructure/ui/global/coach-mark	Inline SVG Directional Arrow			high	frontend/src/components/coach-mark tooltip arrow
+onboarding-spotlight	Invisible Target Rejection	KEEP	components/infrastructure/ui/global/coach-mark	Invisible Target Rejection			high	frontend/src/components/coach-mark findAndHighlight() retry behavior
+onboarding-spotlight	Single Transient Non-Blocking Coach Mark	KEEP	components/infrastructure/ui/global/coach-mark	Single Transient Non-Blocking Coach Mark			high	frontend/src/components/coach-mark, single-instance non-blocking behavior
+layout-assertions	E2E selectors use data-testid for stability	OUT:lint					high	Playwright selector convention, test-code style rule, no user actor
+layout-assertions	E2E tests use Playwright native locator API without JS dispatch workarounds	OUT:lint					high	test-code API-usage convention
+layout-assertions	Shell layout structural integrity	OUT:runbook					medium	layout-assertion test-suite inventory item verifying CSS Grid sizing; subject is the test suite itself
+layout-assertions	Discover page layout containment	OUT:runbook					medium	test-suite layout assertions; subject is the test suite itself
+layout-assertions	Layout test execution performance	OUT:runbook					high	CI/local test-suite performance budget, operational constraint
+layout-assertions	Layout tests independent of backend	OUT:runbook					high	test isolation/mocking constraint, operational
+frontend-error-handling	Global Error Handler Registration	KEEP	components/infrastructure/ui/global/error-banner	Global Error Handler Registration			medium	window.onerror/unhandledrejection interception feeds the error-banner UI surface
+frontend-error-handling	Error Boundary Service	KEEP	components/infrastructure/ui/global/error-banner	Captured errors are stored and exposed for display			medium	ErrorBoundaryService is the state owner behind error-banner; renamed from the implementation-class-mirroring title
+frontend-error-handling	Error Banner UI in Root Component	KEEP	components/infrastructure/ui/global/error-banner	Error Banner UI in Root Component			high	directly describes the error-banner component rendered in the my-app root
+frontend-error-handling	Router Error Handling	KEEP	components/infrastructure/ui/global/error-banner	Router Error Handling			medium	navigation-error capture feeds error-banner; SPLIT-CANDIDATE: 404 scenario belongs to route/not-found instead
+frontend-error-handling	Declarative Async Error Handling with promise.bind	OUT:design-doc					medium	Aurelia promise.bind template pattern is a coding convention applied across many components, not a distinct user-observable surface
+frontend-error-handling	Service Error Recovery Patterns	KEEP	components/infrastructure/ui/global/toast	Fire-and-forget failures show a toast and revert optimistic UI			medium	toast on RPC failure maps to ui/global/toast; SPLIT-CANDIDATE: "throw instead of swallow" half is an internal pattern
+frontend-store-cache	Shared stale-while-revalidate cache primitive	OUT:design-doc					high	generic frontend caching primitive, internal to stores, no user actor
+frontend-store-cache	In-flight request coalescing	OUT:design-doc					high	internal fetch-coalescing mechanics
+frontend-store-cache	Complete cache keys	OUT:design-doc					high	cache-key composition detail
+frontend-store-cache	Explicit invalidation on mutations	OUT:design-doc					high	cache-invalidation wiring, internal
+frontend-store-cache	Revalidation on route entry and PWA resume	OUT:design-doc					medium	background revalidation timing, no distinct user actor beyond generic freshness
+frontend-store-cache	Caching scope is limited to audited read resources	OUT:design-doc					high	defines which RPC resources use the cache primitive, internal scoping decision
+user-profile-hydration	User profile hydration at app startup	OUT:design-doc					medium	startup orchestration of UserService.Get, internal timing, no distinct user actor
+user-profile-hydration	User profile hydration after auth callback	OUT:design-doc					medium	ensureLoaded() orchestration around auth callback, internal
+user-profile-hydration	Idempotent profile loading	OUT:design-doc					high	ensureLoaded() idempotency guard, internal implementation detail
+user-profile-hydration	Graceful degradation on hydration failure	OUT:design-doc					medium	startup error-handling fallback, internal
+user-profile-hydration	Write-through on user mutation	OUT:design-doc					high	UserService.current cache write-through, internal state sync
+user-profile-hydration	Apply Preferred Language to i18n After Hydration	KEEP	components/infrastructure/locale/preferred-language-sync	Apply Preferred Language to i18n After Hydration			medium	applies DB-sourced preferred language to i18n locale; locale infra kind, name proposed
+user-profile-hydration	Backfill Preferred Language When Missing	KEEP	components/infrastructure/locale/preferred-language-sync	Backfill Preferred Language When Missing			medium	backfills missing preferred_language via UpdatePreferredLanguage RPC; same locale-sync surface
+user-profile-hydration	Remove Legacy localStorage Language Key After Authenticated Session Begins	KEEP	components/infrastructure/locale/preferred-language-sync	Remove Legacy localStorage Language Key After Authenticated Session Begins			medium	clears legacy localStorage locale key on authenticated session start; same locale-sync surface
+user-profile-hydration	Profile cleared on sign-out	OUT:design-doc					medium	UserService.current cache-clear on sign-out, internal state cleanup
+cloud-dns-infrastructure	Domain Configuration via Pulumi ESC	OUT:design-doc					high	Pulumi ESC config-sourcing for Cloudflare, no user actor
+cloud-dns-infrastructure	No Manual Registrar Nameserver Update	OUT:design-doc					high	registrar/DNS provider policy decision
+cloud-dns-infrastructure	Environment Isolation via DNS Architecture	OUT:design-doc					high	dev/prod DNS architecture decision
+cloud-dns-infrastructure	No Conflicting Private Zones	OUT:design-doc					high	Cloud DNS vs Cloudflare zone coexistence decision
+cloud-dns-infrastructure	Cloudflare DNS Zone Management	OUT:design-doc					high	DNS zone/record management technology decision
+pwa-update-lifecycle	The SPA SHALL register its Service Worker via `virtual:pwa-register`	KEEP	components/infrastructure/service-worker/update-lifecycle	The SPA registers its Service Worker on boot		CLASSNAME	high	SW registration is non-UI UX infra, kind=service-worker
+pwa-update-lifecycle	The Service Worker SHALL handle `SKIP_WAITING` messages and claim clients on activate	KEEP	components/infrastructure/service-worker/update-lifecycle	The Service Worker handles SKIP_WAITING messages and claims clients on activate			high	SW lifecycle message handling, kind=service-worker
+pwa-update-lifecycle	The SPA SHALL show a persistent update toast when a waiting SW is detected after user interaction	KEEP	components/infrastructure/ui/global/snack-bar	The SPA shows a persistent update toast when a waiting SW is detected after user interaction			medium	user-visible Snack notification; SPLIT-CANDIDATE: trigger mechanics (SKIP_WAITING/controllerchange) are service-worker infra
+pwa-update-lifecycle	The SPA SHALL apply a waiting SW silently on boot before user interaction	KEEP	components/infrastructure/service-worker/update-lifecycle	The SPA applies a waiting SW silently on boot before user interaction			high	silent update path, no UI, kind=service-worker
+pwa-update-lifecycle	The SPA SHALL trigger SW update checks on boot and on page resume	KEEP	components/infrastructure/service-worker/update-lifecycle	The SPA triggers SW update checks on boot and on page resume			high	registration.update() polling on boot/resume, kind=service-worker
+pwa-update-lifecycle	The update action button SHALL be visually prominent	KEEP	components/infrastructure/ui/global/snack-bar	The update action button is visually prominent			high	visual styling of the update Snack's action button
+id-resolution	RPC handlers resolve Zitadel external ID to internal UUID before database access	OUT:design-doc					high	handler/usecase ID-resolution layering convention, no observable actor effect
+id-resolution	Handlers return NotFound when user record does not exist	NEEDS_HUMAN					low	cross-cutting NotFound behavior spans Follow/TicketJourney/TicketEmail usecases, no single vocabulary usecase/entity target fits
+gcp-cost-guardrails	Places API Daily Quota Limit (Dev)	OUT:runbook					high	dev-only GCP quota guardrail, operational cost protection, no user actor
+gcp-cost-guardrails	Vertex AI Per-Minute Quota Limit (Dev)	OUT:runbook					high	dev-only GCP quota guardrail
+gcp-cost-guardrails	Project Billing Budget Alert	OUT:runbook					high	billing alert operational constraint
+proximity-model	Proximity Enum in Proto	KEEP	components/entity/proximity	Proximity Enum in Proto			high	Proximity enum is the canonical proto entity type
+proximity-model	Concert.ProximityTo Entity Method	KEEP	components/entity/concert	Concert classifies its proximity to a user's home		CLASSNAME	high	pure classification method on the Concert entity, always-true invariant not tied to a specific operation
+proximity-model	Haversine in pkg/geo	OUT:design-doc				CLASSNAME	medium	generic great-circle-distance math utility (pkg/geo.Haversine), not itself a domain concept or user-observable behavior
+coordinates-vo	Coordinates Value Object	KEEP	components/entity/coordinates	Coordinates Value Object			high	Coordinates proto/Go value object is the canonical entity type for WGS84 points
+otel-sdk-configuration	Environment-aware trace sampling	OUT:design-doc					high	OTel sampler configuration, telemetry cross-cutting, no user actor
+otel-sdk-configuration	Enriched resource attributes	OUT:design-doc					high	OTel Resource attribute configuration
+otel-sdk-configuration	Explicit text map propagator	OUT:design-doc					high	W3C TraceContext propagator wiring
+otel-sdk-configuration	MeterProvider initialization	OUT:design-doc					high	OTel MeterProvider bootstrap configuration
+loading-spinner-ce	Loading Spinner Custom Element	KEEP	components/infrastructure/ui/global/loading-spinner	Loading Spinner Custom Element			high	direct match to frontend/src/components/loading-spinner
+browser-locale-detection	Timezone-based country detection	KEEP	components/infrastructure/locale/country-from-timezone	Timezone-based country detection			medium	non-UI locale-detection infra, kind=locale, name proposed
+browser-locale-detection	Mapping table coverage	KEEP	components/infrastructure/locale/country-from-timezone	Mapping table coverage			medium	supporting data table for the same timezone-to-country utility
+watermill-structured-logging	Watermill logs use structured JSON output	OUT:design-doc					high	backend logging-library technology decision, no user actor
+watermill-structured-logging	Watermill and application logs share the same slog handler	OUT:design-doc					high	logger-configuration consistency decision

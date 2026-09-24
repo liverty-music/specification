@@ -35,25 +35,6 @@ The `createAuthRetryInterceptor` SHALL intercept `Code.Unauthenticated` errors, 
 - **WHEN** a gRPC call returns an error code other than `Unauthenticated`
 - **THEN** the interceptor SHALL re-throw the error without interception
 
-### Requirement: Retry interceptor applies exponential backoff on transient errors
-The `createRetryInterceptor` SHALL retry requests that fail with `Code.Unavailable` or `Code.DeadlineExceeded` using exponential backoff.
-
-#### Scenario: Unavailable error triggers retry with backoff
-- **WHEN** a gRPC call returns `Code.Unavailable`
-- **THEN** the interceptor SHALL retry with exponential backoff delay
-
-#### Scenario: DeadlineExceeded error triggers retry
-- **WHEN** a gRPC call returns `Code.DeadlineExceeded`
-- **THEN** the interceptor SHALL retry with exponential backoff delay
-
-#### Scenario: Max retries exhausted
-- **WHEN** retries are exhausted and the error persists
-- **THEN** the interceptor SHALL throw the original error
-
-#### Scenario: Non-retryable error is not retried
-- **WHEN** a gRPC call returns `Code.NotFound` or `Code.InvalidArgument`
-- **THEN** the interceptor SHALL throw immediately without retrying
-
 ### Requirement: Artist discovery service manages bubble state with optimistic follow
 The `ArtistDiscoveryService` SHALL manage artist bubbles, track seen artists across three deduplication sets, and perform optimistic follow/unfollow with retry and rollback.
 
@@ -286,32 +267,6 @@ The `EventDetailSheet` component SHALL compute Google Maps and Calendar URLs and
 #### Scenario: Touch drag below threshold keeps sheet open
 - **WHEN** a touch drag moves less than 100px
 - **THEN** the sheet SHALL remain open
-
-### Requirement: Test mock helpers cover all tested DI interfaces
-The test helper library SHALL provide typed mock factories for all DI interfaces used across the test suite.
-
-#### Scenario: Mock router factory
-- **WHEN** `createMockRouter` is called
-- **THEN** it SHALL return a `Partial<IRouter>` with `load` as a Vitest spy
-
-#### Scenario: Mock toast service factory
-- **WHEN** `createMockToastService` is called
-- **THEN** it SHALL return a `Partial<IToastService>` with `show` as a Vitest spy
-
-#### Scenario: Mock error boundary factory
-- **WHEN** `createMockErrorBoundary` is called
-- **THEN** it SHALL return a `Partial<IErrorBoundaryService>` with `captureError` and `dismiss` as Vitest spies
-
-### Requirement: Timer cleanup uses afterEach unconditionally
-All tests that use `vi.useFakeTimers()` SHALL restore real timers in `afterEach`, never inside individual `it()` blocks.
-
-#### Scenario: Fake timers restored after each test
-- **WHEN** a test suite uses `vi.useFakeTimers()` in `beforeEach`
-- **THEN** `vi.useRealTimers()` SHALL be called in `afterEach`
-
-#### Scenario: Mocks restored after each test
-- **WHEN** a test suite uses mock spies
-- **THEN** `vi.restoreAllMocks()` SHALL be called in `afterEach`
 
 ## MODIFIED Requirements
 

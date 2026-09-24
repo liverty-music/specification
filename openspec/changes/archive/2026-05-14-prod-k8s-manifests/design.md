@@ -48,6 +48,7 @@ The team's plan: after prod is fully bootstrapped and externally addressable, re
 3. **Image tag**: same images, same tags — no env-divergent images. ArgoCD Image Updater handles tag bumps across both envs.
 4. **Resource requests/limits**: same as dev for now (no SLO-driven sizing yet). When real prod traffic arrives, a `right-size-prod` follow-up change tunes these.
 5. **Spot label**: confirmed via lint — base manifests already include it for dev, so prod inherits unchanged.
+6. **ArgoCD project labels / Application metadata**: patched as needed so prod Applications register under the prod ArgoCD project rather than dev's.
 
 **Why limited patches:** the more divergent the overlays, the more divergent the runtime behavior. The team should be able to debug prod issues by reading dev manifests; that only works if prod and dev are mostly identical.
 
@@ -64,6 +65,8 @@ addresses:
 ```
 
 This tells GKE to bind the Gateway to the existing `api-gateway-static-ip` global address (currently `RESERVED`, value `34.110.151.208`). On ArgoCD sync, the Gateway claims the IP and the existing Cloud DNS A records start resolving live.
+
+Two HTTPRoutes attach to this Gateway. The `api.liverty-music.app` route sends all traffic to the `backend` Service in the `backend` namespace. The `auth.liverty-music.app` route path-splits between the two Zitadel Services — there is no single Service named `zitadel`: prefix `/ui/v2/login` goes to `zitadel-web` (port 3000), and everything else goes to `zitadel-api` (port 8080), both in the `zitadel` namespace, per the canonical `zitadel-self-hosted-deployment` Two-Container Deployment requirement.
 
 **Why declarative:** the alternative (provisioning a fresh static IP per Gateway sync) would break the pre-existing DNS records that the migrate change pinned. By using `NamedAddress`, GKE looks up the existing global address by name and binds without reallocating.
 
@@ -99,6 +102,8 @@ The `zitadelMachineKey` / `zitadelLoginPat` Pulumi `Output`s at `src/index.ts:72
 5. The bootstrap flow ends here: `zitadel-machine-key-for-pulumi-admin` now has its first version. The org-admin JWT is consumed by a subsequent `pulumi up --stack prod` (NOT by any K8s Pod) — that run uses the JWT as the Zitadel org-admin to create the backend's lower-privilege `MachineKey`, which Pulumi writes to a *separate* GSM Secret `zitadel-machine-key-for-backend-app` (per the canonical `zitadel-self-hosted-deployment` spec at lines 164 + 175). ESO syncs the **`zitadel-machine-key-for-backend-app`** Secret into the backend Pod for runtime use — the `pulumi-admin` JWT itself is never mounted into any Pod, preserving the blast-radius separation called out in the "Mounted secret" bullet above.
 
 **No human pre-seed step is required.** Earlier drafts of this design proposed a manual `gcloud secrets versions add` before the first sync — that's redundant because the bootstrap-uploader sidecar performs the seed automatically on first boot. Memory `reference_zitadel_bootstrap_uploader_scenario_2.md` notes that the sidecar only fires on first-instance bootstrap (subsequent boots idle); for greenfield prod, the first boot IS the first-instance bootstrap, so the sidecar fires normally.
+
+Both envs run the same minimum Zitadel image tag, `v4.11.0` or later — the version that supports the `POSTGRES_18` Cloud SQL instance each cluster's Zitadel database runs on. Each environment's Zitadel resolves the OIDC discovery document at its own issuer URL, served by that environment's in-cluster deployment rather than Zitadel Cloud: dev at `https://auth.dev.liverty-music.app` (cluster `standard-cluster-osaka`), prod at `https://auth.liverty-music.app` (cluster `autopilot-cluster-osaka`).
 
 **Why reuse dev pattern**: avoids re-deriving the masterkey-immutability + MachineKey lifecycle invariants. The dev deploy has been stable post-incident-fix; copying its shape minimizes the surface area for new bugs.
 

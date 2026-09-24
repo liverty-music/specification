@@ -16,7 +16,7 @@ Atlas Operator migration failures on the dev cluster went undetected for a week 
 
 ### Modified Capabilities
 
-- `app-error-log-alerting`: Extend alerting scope to include Atlas Operator migration failures in the `atlas-operator` namespace
+(none — see design.md)
 
 ## Impact
 

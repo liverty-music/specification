@@ -121,6 +121,8 @@ No `window.history.replaceState` needed in tests.
 
 ---
 
+Both `INavDimmingService` and `ILocalStorage` mocks are exposed as named factories (`createMockNavDimmingService`, `createMockLocalStorage`) in `frontend/test/helpers/`, rather than being hand-rolled per spec file, so `dashboard-route.spec.ts` and any future consumer of these interfaces share one mock implementation.
+
 ## Risks / Trade-offs
 
 - **`IRouterEvents` approach requires `/concerts/:id` route** → Verify `app-shell.ts` route config before implementing. If the route does not exist, fall back to keeping `history.pushState` (with the existing spy-based test strategy) as an interim solution.

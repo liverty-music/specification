@@ -87,6 +87,18 @@ Tokens land first (inert until consumed), then each primitive, then per-screen a
 reduced-motion / forced-colors / contrast verification pass. This keeps every intermediate state shippable
 and lets `make check` gate each step.
 
+### D8. Expression budget and accessibility as a cross-cutting constraint on every primitive
+
+Every primitive above follows the Material 3 expression budget — a small number of hero moments per flow
+(nav-tab morph, confirm haptic), with everything else kept foundational rather than independently
+expressive — and none of them may cost legibility, hit area, labels, reduced-motion support, or
+high-contrast/forced-colors survivability. Concretely: every animated primitive ships a
+`prefers-reduced-motion: reduce` branch that lands directly on the same end state (no overshoot, no
+shimmer); the clickable/tappable bounds stay ≥ 44–48px regardless of visual morph (per D2); text labels and
+contrast targets are never removed or weakened by a feedback treatment; and every primitive remains operable
+under `forced-colors: active`. This is verified during the D7 rollout pass rather than per-primitive, since
+it is a property of the whole feedback layer, not any single primitive.
+
 ## Risks / Trade-offs
 
 - **Over-application of motion/haptic (feels noisy)** → Enforce the M3 expression budget (1–2 hero moments

@@ -37,6 +37,8 @@ Current state:
 - Cloud SQL Studio manual SQL: Not IaC, not reproducible
 - goose in init container: Would still run as IAM SA (no `CREATE SCHEMA` privilege)
 
+The first migration file is the schema bootstrap: it creates the `app` schema, grants `CREATE` and `USAGE` on it to the backend IAM service account, and sets default privileges so future tables and sequences created in the schema automatically grant `ALL` to the IAM SA — new objects don't need a follow-up grant migration.
+
 ### Decision 2: postgres user with password authentication for Atlas Operator
 
 **Choice**: Set a password on the Cloud SQL `postgres` user via Pulumi (`gcp.sql.User` with `password` field), store it in Secret Manager, sync to K8s Secret via ESO.
@@ -66,6 +68,8 @@ backend/
       kustomization.yaml      # patches host to Cloud SQL PSC endpoint
 ```
 
+The backend-migrations ArgoCD Application targets the `k8s/atlas/overlays/<env>` path and deploys its resources into the `atlas-operator` namespace, alongside the Operator itself.
+
 ### Decision 4: Clean start — rewrite migrations without goose headers
 
 **Choice**: Convert existing 25 goose migration files to plain SQL (remove `-- +goose Up/Down` headers). Since no tables exist in the target database, this is a clean slate.
@@ -83,6 +87,12 @@ backend/
 **Choice**: Use ArgoCD `argocd.argoproj.io/sync-wave` annotations. AtlasMigration gets a lower sync wave than the backend Deployment.
 
 **Why**: Ensures migrations complete before the app starts. ArgoCD's built-in wave mechanism is the standard approach for ordered deployments.
+
+### Decision 7: Application DSN routes to the dedicated `app` schema via an environment variable
+
+**Choice**: The backend reads a `DATABASE_SCHEMA` environment variable and sets it as the DSN's `search_path`. It defaults to `public` when unset, and is set to `app` in cloud environments. This applies uniformly to the standard `pgx` connection used locally and to the connection used in deployed environments — both build their DSN from the same `search_path` logic, just with a different `DATABASE_SCHEMA` value.
+
+**Why**: Local development keeps working against `public` without any configuration, while deployed environments route unqualified table references to the dedicated `app` schema created by the bootstrap migration (Decision 1). A single env var keeps the schema selection declarative and environment-specific without branching connection code. No application tables live in `public`; the schema boundary is enforced entirely through `search_path`, not through per-query qualification.
 
 ## Risks / Trade-offs
 

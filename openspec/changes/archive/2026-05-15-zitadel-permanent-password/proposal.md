@@ -24,7 +24,7 @@ The proper fix is to drive Zitadel into the desired state at provision time via 
 
 ### Modified Capabilities
 
-- `identity-management`: ADD one requirement — "E2E Test User Password Marked Permanent" — specifying that the dev e2e-test-user's password SHALL be marked permanent (`noChangeRequired = true`) at Pulumi-apply time, with scenarios covering the first-sign-in flow and the password-rotation path.
+(none — see design.md)
 
 ### New Capabilities
 

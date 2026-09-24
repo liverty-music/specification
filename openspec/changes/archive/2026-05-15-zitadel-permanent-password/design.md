@@ -113,7 +113,7 @@ Dev-only and additive. No data migration.
 
 1. `cloud-provisioning`: add `dynamic/permanent-password.ts`, re-export from `dynamic/index.ts`, wire into `E2eTestUserComponent`, thread `jwtProfileJson` through `E2eTestUserComponentArgs` and the `Zitadel` class. `pulumi preview` on dev: expect `+1 create` (`ZitadelHumanUserPasswordPermanent`) and `~1 update` on `E2eTestUserComponent` (signature change).
 2. Apply on dev (`pulumi up`); verify the new resource creates successfully and the Management API call returns 2xx.
-3. `frontend`: remove the `[4b/5]` handler block and renumber log lines; re-run `npm run auth:capture:password` against the dev environment; expect no `/password/change` redirect.
+3. `frontend`: remove the `[4b/5]` handler block and renumber log lines; re-run `npm run auth:capture:password` against the dev environment; expect no `/password/change` redirect and a captured `storageState.json` with a valid `oidc.user:*` entry.
 4. Verify Playwright E2E suite still passes (`npx playwright test`).
 5. Archive the change.
 

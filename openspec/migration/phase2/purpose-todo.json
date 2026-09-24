@@ -1,0 +1,743 @@
+[
+ {
+  "target": "stories/merge-guest-data-on-signup",
+  "sources": [
+   "entity-store-layer",
+   "guest-data-merge",
+   "state-transition-diagram"
+  ],
+  "source_purposes": {
+   "entity-store-layer": "TBD - created by archiving change introduce-entity-store-layer. Update Purpose after archive.",
+   "guest-data-merge": "Defines how guest session data captured during onboarding (followed artists with hype, region) is stored locally and merged to the backend via existing RPCs upon successful authentication, then cleaned up.",
+   "state-transition-diagram": "Defines the client-side state machines that govern the first-run experience: the one-way onboarding latch, the independent coach-mark hint, and the ephemeral guest-data state accumulated before account creation. It captures each machine's states, transitions, triggers, persistence, and invariants so"
+  }
+ },
+ {
+  "target": "stories/complete-onboarding",
+  "sources": [
+   "concert-search-log",
+   "frontend-onboarding-flow",
+   "frontend-testing",
+   "state-transition-diagram"
+  ],
+  "source_purposes": {
+   "concert-search-log": "To track when each artist's concerts were last searched via external sources, enabling time-based caching that prevents redundant API calls.",
+   "frontend-onboarding-flow": "Defines the guest onboarding flow: interactive artist discovery, the linear onboarding step sequence (LP → DISCOVERY → DASHBOARD → MY_ARTISTS → … → COMPLETED), and the local-storage-backed progression that precedes account creation.",
+   "frontend-testing": "Establish comprehensive test coverage for the Aurelia 2 frontend application, including test infrastructure, service tests, component tests, and coverage reporting.\n\nThis capability ensures code quality, prevents regressions, and enables confident refactoring through automated testing.",
+   "state-transition-diagram": "Defines the client-side state machines that govern the first-run experience: the one-way onboarding latch, the independent coach-mark hint, and the ephemeral guest-data state accumulated before account creation. It captures each machine's states, transitions, triggers, persistence, and invariants so"
+  }
+ },
+ {
+  "target": "stories/roam-app-as-guest",
+  "sources": [
+   "frontend-route-guard",
+   "guest-mode-access"
+  ],
+  "source_purposes": {
+   "frontend-route-guard": "Defines the global authentication / onboarding navigation guard (`AuthHook`) that gates SPA route loads based on auth state and onboarding step — including the contextual feedback shown when navigation is blocked, the routes reachable early by guests (Settings, Welcome), and free roam after the dash",
+   "guest-mode-access": "Defines what an unauthenticated (guest) user may access: which routes are reachable (free roam after the dashboard), the principle that account-only features are hidden rather than navigation-blocked, and the persistent sign-in / sign-up entry point available from the discovery step onward."
+  }
+ },
+ {
+  "target": "components/adapter/fan/api/rpc/error-mapping",
+  "sources": [
+   "entity-test-coverage",
+   "usecase-test-coverage"
+  ],
+  "source_purposes": {
+   "entity-test-coverage": "Defines the required unit-test coverage for frontend entity mapping and helper functions.",
+   "usecase-test-coverage": "This capability defines the test coverage requirements for use case layer implementations, ensuring that business logic, input validation, dependency orchestration, and error propagation are verified through unit tests with mocked dependencies."
+  }
+ },
+ {
+  "target": "components/usecase/ticket-journey/set-status",
+  "sources": [
+   "entity-store-layer",
+   "ticket-journey"
+  ],
+  "source_purposes": {
+   "entity-store-layer": "TBD - created by archiving change introduce-entity-store-layer. Update Purpose after archive.",
+   "ticket-journey": "The `ticket-journey` capability allows users to track their personal ticket acquisition status for concerts and events. Users can set, update, and remove journey statuses representing stages of the ticket acquisition process (tracking, applied, lost, unpaid, paid)."
+  }
+ },
+ {
+  "target": "components/usecase/user/create",
+  "sources": [
+   "user-account-sync",
+   "user-home",
+   "user-language-preference"
+  ],
+  "source_purposes": {
+   "user-account-sync": "Provisions and resolves the backend `users` row for an authenticated identity. Defines the `UserService.Create` contract used as a \"resolve-or-provision\" bootstrap RPC on every device, the idempotent-return semantics on duplicate `external_id`, and the cache lifecycle for the returned `user_id` acro",
+   "user-home": "Define the user's home area capability end to end: the structured `Home` data model (proto, database, Go entity, centroid resolution), the RPCs that create and update it, and the unified `user-home-selector` frontend component and its `userHome.*` i18n namespace used in both onboarding and Settings.",
+   "user-language-preference": "Persists each authenticated user's display language in the backend database so language is consistent across devices and browser sessions. Defines the proto-surface (entity field, Create capture, UpdatePreferredLanguage RPC), the storage semantics (NULL = \"not yet set by client\"), and the repository"
+  }
+ },
+ {
+  "target": "components/usecase/user/update-home",
+  "sources": [
+   "nearby-proximity",
+   "user-home"
+  ],
+  "source_purposes": {
+   "nearby-proximity": "The `nearby-proximity` capability defines the home area centroid lookup and resolution logic required by the proximity classification system. The proximity classification model itself (including the `Proximity` enum, `Concert.ProximityTo` method, and Haversine calculation) lives in the `proximity-mo",
+   "user-home": "Define the user's home area capability end to end: the structured `Home` data model (proto, database, Go entity, centroid resolution), the RPCs that create and update it, and the unified `user-home-selector` frontend component and its `userHome.*` i18n namespace used in both onboarding and Settings."
+  }
+ },
+ {
+  "target": "components/usecase/artist/list-similar",
+  "sources": [
+   "artist-auto-persist",
+   "bubble-pool-lifecycle"
+  ],
+  "source_purposes": {
+   "artist-auto-persist": "This capability ensures that artists discovered from external sources (Last.fm) are automatically persisted to the local database during ListTop and ListSimilar operations, guaranteeing every returned Artist entity has a valid database-backed ID.",
+   "bubble-pool-lifecycle": "This capability defines the lifecycle management of the artist bubble pool on the Discovery page. It covers initialization strategies based on user state, deduplication logic, capacity management with FIFO eviction, and the tap-to-refill interaction cycle. The pool is capped at 50 bubbles and refres"
+  }
+ },
+ {
+  "target": "components/usecase/artist/sync-artist-image",
+  "sources": [
+   "artist-image",
+   "logo-color-analysis",
+   "usecase-test-coverage"
+  ],
+  "source_purposes": {
+   "artist-image": "This capability provides artist image data from fanart.tv, enabling visual identification of artists in the frontend via thumbnails, backgrounds, logos, and banners.",
+   "logo-color-analysis": "This capability extracts dominant color properties from artist logo images (clearLOGO PNGs) using OKLCH color space analysis, enabling the frontend to derive perceptually accurate background colors for event cards.",
+   "usecase-test-coverage": "This capability defines the test coverage requirements for use case layer implementations, ensuring that business logic, input validation, dependency orchestration, and error propagation are verified through unit tests with mocked dependencies."
+  }
+ },
+ {
+  "target": "components/usecase/organizer/associate-artist",
+  "sources": [
+   "organizer-accounts",
+   "organizer-event-authoring"
+  ],
+  "source_purposes": {
+   "organizer-accounts": "The Organizer domain: the vetted seller an admin creates, its link to the\nartists it represents, the runtime provisioning that gives each Organizer an\nisolated Zitadel tenant its operator can sign into, and the admin surface to\nmanage them. The organizer-facing API and console are separate capabilit",
+   "organizer-event-authoring": "Lets a vetted organizer author and publish first-party concert event pages\nfor the artists it represents, as informational pages that supersede\nscraped data and take those artists out of the discovery pipeline."
+  }
+ },
+ {
+  "target": "components/usecase/sales-phase/discover-for-artist",
+  "sources": [
+   "sales-phase",
+   "sales-phase-discovery"
+  ],
+  "source_purposes": {
+   "sales-phase": "TBD - created by archiving change add-sales-phase-timeline. Update Purpose after archive.",
+   "sales-phase-discovery": "TBD - created by archiving change add-sales-phase-timeline. Update Purpose after archive."
+  }
+ },
+ {
+  "target": "components/usecase/concert/approve",
+  "sources": [
+   "admin-concert-management",
+   "auto-discovery-series-grouping",
+   "concert-approval-queue",
+   "concert-service",
+   "venue-normalization"
+  ],
+  "source_purposes": {
+   "admin-concert-management": "TBD - created by archiving change admin-console-concert-management. Update Purpose after archive.",
+   "auto-discovery-series-grouping": "TBD - created by archiving change auto-discovery-series-grouping. Update Purpose after archive.",
+   "concert-approval-queue": "Concerts discovered by the search pipeline are staged for human review before\nthey become fan-visible. Discovery resolves the venue and writes a `pending`\nstaged concert instead of publishing directly; a developer approves (publishing\nthe concert and notifying followers) or rejects (dropping it and ",
+   "concert-service": "The Concert Service manages the lifecycle of concert data, including artist management, automated discovery via search, and persistent storage of concert and venue information.",
+   "venue-normalization": "The Venue Normalization capability resolves scraped venue names to canonical venue records via Google Places API during concert creation. Venues are either resolved to a canonical record (with name, coordinates, and `google_place_id`) or the concert is skipped with structured logging."
+  }
+ },
+ {
+  "target": "components/usecase/concert/delete",
+  "sources": [
+   "admin-concert-management",
+   "concert-approval-queue"
+  ],
+  "source_purposes": {
+   "admin-concert-management": "TBD - created by archiving change admin-console-concert-management. Update Purpose after archive.",
+   "concert-approval-queue": "Concerts discovered by the search pipeline are staged for human review before\nthey become fan-visible. Discovery resolves the venue and writes a `pending`\nstaged concert instead of publishing directly; a developer approves (publishing\nthe concert and notifying followers) or rejects (dropping it and "
+  }
+ },
+ {
+  "target": "components/usecase/concert/list-by-follower-grouped",
+  "sources": [
+   "concert-detail",
+   "concert-service",
+   "live-events"
+  ],
+  "source_purposes": {
+   "concert-detail": "The Concert Detail capability provides users with a rich detail view for a selected concert, including venue information, time, and entry points for ticket purchase. It also defines the logic for assigning concerts to dashboard lanes based on the user's stored region preference.",
+   "concert-service": "The Concert Service manages the lifecycle of concert data, including artist management, automated discovery via search, and persistent storage of concert and venue information.",
+   "live-events": "The `live-events` capability defines the core domain entities—Artists, Venues, and Concerts—and the standard interfaces for managing them. It establishes the single source of truth for concert metadata, enabling consistent data representation and access across the platform's crawler, backend service"
+  }
+ },
+ {
+  "target": "components/usecase/concert/search-new-concerts",
+  "sources": [
+   "auto-concert-discovery",
+   "concert-approval-queue",
+   "concert-search",
+   "concert-search-log",
+   "concert-service",
+   "gemini-grounded-extract-and-coerce",
+   "state-management"
+  ],
+  "source_purposes": {
+   "auto-concert-discovery": "This capability automates concert discovery by running a scheduled batch job that invokes `SearchNewConcerts` for all followed artists, ensuring the concert database stays up-to-date without manual user intervention.",
+   "concert-approval-queue": "Concerts discovered by the search pipeline are staged for human review before\nthey become fan-visible. Discovery resolves the venue and writes a `pending`\nstaged concert instead of publishing directly; a developer approves (publishing\nthe concert and notifying followers) or rejects (dropping it and ",
+   "concert-search": "To define the interface and behavior for discovering new concerts for artists, enabling the system to keep its concert catalog up-to-date.",
+   "concert-search-log": "To track when each artist's concerts were last searched via external sources, enabling time-based caching that prevents redundant API calls.",
+   "concert-service": "The Concert Service manages the lifecycle of concert data, including artist management, automated discovery via search, and persistent storage of concert and venue information.",
+   "gemini-grounded-extract-and-coerce": "Defines the two-step Gemini call pipeline that powers `ConcertSearcher.Search` in the backend's `internal/infrastructure/gcp/gemini` package. Step 1 runs a `gemini-3.5-flash` call with `GoogleSearch` and `URLContext` enabled together, fans out into three parallel slices (tours_near, tours_far, stand",
+   "state-management": "Defines the singleton service state owners (Onboarding, Guest) and how their state is persisted to and hydrated from localStorage."
+  }
+ },
+ {
+  "target": "components/usecase/concert/list-by-artist",
+  "sources": [
+   "concert-service",
+   "live-events"
+  ],
+  "source_purposes": {
+   "concert-service": "The Concert Service manages the lifecycle of concert data, including artist management, automated discovery via search, and persistent storage of concert and venue information.",
+   "live-events": "The `live-events` capability defines the core domain entities—Artists, Venues, and Concerts—and the standard interfaces for managing them. It establishes the single source of truth for concert metadata, enabling consistent data representation and access across the platform's crawler, backend service"
+  }
+ },
+ {
+  "target": "components/usecase/concert/create-from-discovered",
+  "sources": [
+   "admin-area-normalization",
+   "auto-discovery-series-grouping",
+   "concert-approval-queue",
+   "venue-name-cache",
+   "venue-normalization"
+  ],
+  "source_purposes": {
+   "admin-area-normalization": "Defines how administrative area strings are normalized (including country-code extraction) so concert discovery matching and stored data stay consistent.",
+   "auto-discovery-series-grouping": "TBD - created by archiving change auto-discovery-series-grouping. Update Purpose after archive.",
+   "concert-approval-queue": "Concerts discovered by the search pipeline are staged for human review before\nthey become fan-visible. Discovery resolves the venue and writes a `pending`\nstaged concert instead of publishing directly; a developer approves (publishing\nthe concert and notifying followers) or rejects (dropping it and ",
+   "venue-name-cache": "The Venue Name Cache capability provides a DB-first lookup for venues by their scraped `listed_venue_name` and optional `admin_area` before falling through to the Google Places API. This avoids redundant external API calls when a venue has already been resolved and persisted from a prior scrape.",
+   "venue-normalization": "The Venue Normalization capability resolves scraped venue names to canonical venue records via Google Places API during concert creation. Venues are either resolved to a canonical record (with name, coordinates, and `google_place_id`) or the concert is skipped with structured logging."
+  }
+ },
+ {
+  "target": "components/usecase/order/refund-order",
+  "sources": [
+   "ticket-purchase-and-issuance",
+   "ticket-settlement-and-payout"
+  ],
+  "source_purposes": {
+   "ticket-purchase-and-issuance": "This capability turns a **captured** lottery win into an Order and issued tickets:\n④ **authorizes (holds) the card at application and captures the winner's\nauthorization at the draw**; ⑤ takes that **captured winning payment** and records\nan Order + issues Web2 account-bound tickets — under the 収納代行",
+   "ticket-settlement-and-payout": "This capability settles ticket money **out** to the Organizer. Buyer funds captured\nby ④ sit on the **platform balance** (Stripe **separate charges & transfers**); after\nthe event this capability `Transfer`s the Organizer's net share (the platform retains\nits fee) to the Organizer's **Stripe connect"
+  }
+ },
+ {
+  "target": "components/usecase/push-subscription/notify-new-concerts",
+  "sources": [
+   "push-notification-localization",
+   "push-notification-service"
+  ],
+  "source_purposes": {
+   "push-notification-localization": "TBD - created by archiving change localize-push-notification-text. Update Purpose after archive.",
+   "push-notification-service": "Defines the backend `PushNotificationService` capability that registers, retrieves, and removes a browser's Web Push subscription on a per-`(user_id, endpoint)` basis. The service models subscriptions as type-safe `PushSubscription` entities, enforces strict per-browser scoping (no bulk-per-user mut"
+  }
+ },
+ {
+  "target": "components/usecase/follow/list-followed",
+  "sources": [
+   "artist-following",
+   "passion-level"
+  ],
+  "source_purposes": {
+   "artist-following": "Manage the relationship between users and artists they follow, including follow/unfollow actions and listing followed artists.",
+   "passion-level": "Allow users to express different levels of enthusiasm for followed artists, influencing how prominently their events appear on the Dashboard and whether push notifications are sent."
+  }
+ },
+ {
+  "target": "components/usecase/follow/follow",
+  "sources": [
+   "artist-following",
+   "follow-triggered-search",
+   "my-artists",
+   "state-management"
+  ],
+  "source_purposes": {
+   "artist-following": "Manage the relationship between users and artists they follow, including follow/unfollow actions and listing followed artists.",
+   "follow-triggered-search": "TBD - created by archiving change trigger-search-on-first-follow. Update Purpose after archive.",
+   "my-artists": "Display and manage the user's followed artists, providing list and grid views with passion level controls.",
+   "state-management": "Defines the singleton service state owners (Onboarding, Guest) and how their state is persisted to and hydrated from localStorage."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/route/dashboard",
+  "sources": [
+   "app-shell-layout",
+   "concert-detail",
+   "dashboard-artist-filter",
+   "dashboard-concert-cache",
+   "dashboard-date-filter",
+   "dashboard-journey-filter",
+   "dashboard-timetable-rendering",
+   "frontend-testing",
+   "interaction-feedback",
+   "journey-status-presentation",
+   "non-blocking-menu-navigation",
+   "passive-concert-discovery",
+   "shell-layout",
+   "signup-prompt-banner"
+  ],
+  "source_purposes": {
+   "app-shell-layout": "Defines the application shell structure including brand identity, conditional navigation display, page transition animations, and authentication status UI. The app shell provides the consistent outer frame for all routes in the Liverty Music application.",
+   "concert-detail": "The Concert Detail capability provides users with a rich detail view for a selected concert, including venue information, time, and entry points for ticket purchase. It also defines the logic for assigning concerts to dashboard lanes based on the user's stored region preference.",
+   "dashboard-artist-filter": "Defines the dashboard's artist-based filtering of the concert highway: a URL-synchronised `artists` query parameter, the filter chip UI in the page header, the artist-selection bottom sheet (count-prefixed, count-sorted chips), and guest availability of the filter.",
+   "dashboard-concert-cache": "Defines in-memory caching behavior for concert and follow data on the Dashboard, reducing unnecessary RPC calls while ensuring data freshness after follow actions.",
+   "dashboard-date-filter": "Defines the dashboard timetable's date-based filtering: a URL-synchronised date query parameter, the collapsible date facet in the filter bottom sheet (\"過去のコンサートも表示\" → \"この日付以降を表示\"), the default today-onward view, and the past-inclusive re-fetch it triggers. Unlike the artist and journey facets, whic",
+   "dashboard-journey-filter": "TBD - created by archiving change enhance-dashboard-filter. Update Purpose after archive.",
+   "dashboard-timetable-rendering": "Defines the rendering performance and motion contract for the fan-web dashboard\ntimetable (My Timetable), so that showing the followed-artist concert list on\nentry and on tab-switch re-entry stays responsive and does not block the main\nthread, independent of how the list is implemented.",
+   "frontend-testing": "Establish comprehensive test coverage for the Aurelia 2 frontend application, including test infrastructure, service tests, component tests, and coverage reporting.\n\nThis capability ensures code quality, prevents regressions, and enables confident refactoring through automated testing.",
+   "interaction-feedback": "Defines the app's interaction-feedback contract: every interaction acknowledges immediately, communicates\nin-progress state, and confirms its outcome, using shared feedback primitives (ripple, press-morph, skeleton,\nhaptic, list transitions, selection morph) applied consistently across all primary s",
+   "journey-status-presentation": "TBD - created by archiving change enhance-dashboard-filter. Update Purpose after archive.",
+   "non-blocking-menu-navigation": "Keeps every route reachable from the bottom navigation swapping into view the\nmoment a fan taps its tab, rather than holding the screen they are leaving until\ndata arrives. Fetching stays the route's job; what this capability fixes is where\nthat work sits relative to the view swap, and what the fan ",
+   "passive-concert-discovery": "TBD - created by archiving change passive-concert-discovery. Update Purpose after archive.",
+   "shell-layout": "Defines the PWA shell layout structure for `app-shell`, ensuring overlay custom elements are excluded from CSS Grid flow so that `bottom-nav-bar` stays pinned at the viewport bottom and `position: sticky` headers work correctly within scroll containers.",
+   "signup-prompt-banner": "Provide a persistent fixed banner on My Artists and Dashboard pages prompting unauthenticated users to create an account, dismissed automatically on signup completion."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/route/my-artists",
+  "sources": [
+   "edit-mode-unfollow",
+   "frontend-entity-layer",
+   "hype-inline-slider",
+   "interaction-feedback",
+   "my-artists",
+   "signup-prompt-banner"
+  ],
+  "source_purposes": {
+   "edit-mode-unfollow": "Provide a discoverable, accessible way to unfollow artists from the My Artists list on every pointer type: a header Edit-mode toggle that reveals a per-row remove control, replacing the retired hidden long-press gesture.",
+   "frontend-entity-layer": "Defines the frontend entity layer that maps backend proto types (Artist, FollowedArtist, Concert) to a single canonical representation.",
+   "hype-inline-slider": "Provide a 1-tap inline slider for setting hype level per artist in the My Artists list view, with a sticky header legend and artist-color glow on the active dot.",
+   "interaction-feedback": "Defines the app's interaction-feedback contract: every interaction acknowledges immediately, communicates\nin-progress state, and confirms its outcome, using shared feedback primitives (ripple, press-morph, skeleton,\nhaptic, list transitions, selection morph) applied consistently across all primary s",
+   "my-artists": "Display and manage the user's followed artists, providing list and grid views with passion level controls.",
+   "signup-prompt-banner": "Provide a persistent fixed banner on My Artists and Dashboard pages prompting unauthenticated users to create an account, dismissed automatically on signup completion."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/route/settings",
+  "sources": [
+   "analytics-consent",
+   "guest-mode-access",
+   "push-notification-service",
+   "settings"
+  ],
+  "source_purposes": {
+   "analytics-consent": "TBD - created by archiving change introduce-analytics-tool. Update Purpose after archive.",
+   "guest-mode-access": "Defines what an unauthenticated (guest) user may access: which routes are reachable (free roam after the dashboard), the principle that account-only features are hidden rather than navigation-blocked, and the persistent sign-in / sign-up entry point available from the discovery step onward.",
+   "push-notification-service": "Defines the backend `PushNotificationService` capability that registers, retrieves, and removes a browser's Web Push subscription on a per-`(user_id, endpoint)` basis. The service models subscriptions as type-safe `PushSubscription` entities, enforces strict per-browser scoping (no bulk-per-user mut",
+   "settings": "Provides user access to account management, system preferences, and legal information. The Settings page is a grouped list UI accessible via the Bottom Navigation Bar's Settings tab."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/route/discovery",
+  "sources": [
+   "artist-discovery-dna-orb-ui",
+   "bubble-pool-lifecycle",
+   "bubble-replenishment",
+   "bubble-state-management",
+   "discover",
+   "discovery-bubble-cache",
+   "discovery-tap-sonic-feedback",
+   "frontend-onboarding-flow",
+   "frontend-testing",
+   "onboarding-guidance",
+   "onboarding-popover-guide",
+   "search-follow-absorption"
+  ],
+  "source_purposes": {
+   "artist-discovery-dna-orb-ui": "This capability defines the Artist Discovery UI for the Liverty Music MVP onboarding flow, featuring a gamified \"DNA Extraction\" metaphor. Users interact with physics-based artist bubbles that are absorbed into a visual \"Music DNA Orb\" inventory, creating an engaging way to collect music preferences",
+   "bubble-pool-lifecycle": "This capability defines the lifecycle management of the artist bubble pool on the Discovery page. It covers initialization strategies based on user state, deduplication logic, capacity management with FIFO eviction, and the tap-to-refill interaction cycle. The pool is capped at 50 bubbles and refres",
+   "bubble-replenishment": "Defines how the discovery canvas replenishes artist bubbles when the pool of similar artists is exhausted.",
+   "bubble-state-management": "Defines the BubbleManager as the single source of truth for bubble lifecycle, ensuring pool state and physics state are always synchronized. Covers coordinated eviction, capacity enforcement, and safe canvas dimension reads.\n\n**Key Aspects:**\n- Unified BubbleManager for pool membership, physics bodi",
+   "discover": "Provides a dedicated space for users to discover and follow new artists after onboarding. Combines the gamified Bubble UI experience with a targeted text search, both accessible anytime via the Discover tab.",
+   "discovery-bubble-cache": "TBD - created by archiving change discovery-bubble-cache. Update Purpose after archive.",
+   "discovery-tap-sonic-feedback": "This capability defines the procedural sound effect played when a user taps an artist bubble on the discovery page. It specifies a single fixed, crisp two-part \"pu-chu\" pop (synthesized via the Web Audio API, no recorded assets), the soft settle tone on absorption completion, and respect for the use",
+   "frontend-onboarding-flow": "Defines the guest onboarding flow: interactive artist discovery, the linear onboarding step sequence (LP → DISCOVERY → DASHBOARD → MY_ARTISTS → … → COMPLETED), and the local-storage-backed progression that precedes account creation.",
+   "frontend-testing": "Establish comprehensive test coverage for the Aurelia 2 frontend application, including test infrastructure, service tests, component tests, and coverage reporting.\n\nThis capability ensures code quality, prevents regressions, and enables confident refactoring through automated testing.",
+   "onboarding-guidance": "Specifies the onboarding guidance experience rendered within the unified DiscoverPage for new and guest users.",
+   "onboarding-popover-guide": "Provides a one-time instructional popover when onboarding users first visit the discover page, using the native Popover API with light-dismiss behavior. Replaces the previous persistent HUD approach.",
+   "search-follow-absorption": "Defines the behavior when a user follows an artist from the search results, including the transition back to bubble view, absorption animation, and error handling."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/route/welcome",
+  "sources": [
+   "landing-page",
+   "welcome-dashboard-preview"
+  ],
+  "source_purposes": {
+   "landing-page": "Defines the guest-facing landing page: passkey authentication CTA, welcome copy, language switching, and authenticated-user redirect.",
+   "welcome-dashboard-preview": "Displays an interactive, read-only dashboard preview on the Welcome page using live concert data from a curated popular-artist fallback list, giving new users a tangible preview of what they will build during onboarding."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/live-highway",
+  "sources": [
+   "artist-image-ui",
+   "beam-effect-toggle",
+   "card-logo-presentation",
+   "concert-highway-ce",
+   "event-card-glow",
+   "frontend-testing",
+   "logo-color-analysis",
+   "passion-level",
+   "typography-focused-dashboard"
+  ],
+  "source_purposes": {
+   "artist-image-ui": "Specifies how artist imagery (logos, hero images, fanart) is surfaced across event cards and detail sheets in the frontend.",
+   "beam-effect-toggle": "Provides a user-controllable toggle for the laser beam spotlight visual effect on the concert highway dashboard. The preference is persisted in localStorage so the user's choice is remembered across sessions.",
+   "card-logo-presentation": "This capability defines how artist logos and text fallback names are presented within event cards, ensuring legibility, proper sizing, and alignment regardless of matched/unmatched state.",
+   "concert-highway-ce": "Reusable custom element that renders the 3-column concert lane grid (home/nearby/away) with stage headers, date separators, event cards, and laser beam effects. Used by both the authenticated dashboard and the Welcome page preview.",
+   "event-card-glow": "This capability defines the visual glow effect applied to matched event cards on the dashboard. The glow effect uses a diffuse laser-beam style around the card border to indicate a match, while remaining visually subdued so it does not overwhelm surrounding content.\n\n---",
+   "frontend-testing": "Establish comprehensive test coverage for the Aurelia 2 frontend application, including test infrastructure, service tests, component tests, and coverage reporting.\n\nThis capability ensures code quality, prevents regressions, and enables confident refactoring through automated testing.",
+   "logo-color-analysis": "This capability extracts dominant color properties from artist logo images (clearLOGO PNGs) using OKLCH color space analysis, enabling the frontend to derive perceptually accurate background colors for event cards.",
+   "passion-level": "Allow users to express different levels of enthusiasm for followed artists, influencing how prominently their events appear on the Dashboard and whether push notifications are sent.",
+   "typography-focused-dashboard": "Display upcoming concerts in a three-lane equal-width layout (HOME STAGE, NEAR STAGE, AWAY STAGE) with typography-focused card design, with card visual prominence driven by the hype-lane match model (see `passion-level` capability)."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/page-header",
+  "sources": [
+   "app-shell-layout",
+   "page-header-ce"
+  ],
+  "source_purposes": {
+   "app-shell-layout": "Defines the application shell structure including brand identity, conditional navigation display, page transition animations, and authentication status UI. The app shell provides the consistent outer frame for all routes in the Liverty Music application.",
+   "page-header-ce": "The Page Header capability provides a reusable custom element that renders a consistent header across route pages, supporting i18n titles, optional trailing actions via slots, and automatic grid layout integration."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/app-shell",
+  "sources": [
+   "app-shell-layout",
+   "design-system",
+   "frontend-runtime-config",
+   "frontend-testing",
+   "http-retry",
+   "interaction-feedback",
+   "non-blocking-menu-navigation",
+   "shell-layout"
+  ],
+  "source_purposes": {
+   "app-shell-layout": "Defines the application shell structure including brand identity, conditional navigation display, page transition animations, and authentication status UI. The app shell provides the consistent outer frame for all routes in the Liverty Music application.",
+   "design-system": "Defines the centralized design token system and visual foundation for the Liverty Music application, ensuring consistency across all screens through plain CSS custom properties in `tokens.css`, a dark-first theme, and optimized display font loading.",
+   "frontend-runtime-config": "This capability defines the runtime environment-configuration contract for the Aurelia 2 frontend SPA. Per-environment values (API base URL, OIDC issuer / client / org IDs, VAPID public key, ZK circuit base URL, log level, preview artist data, and the environment identifier) are fetched from a same-",
+   "frontend-testing": "Establish comprehensive test coverage for the Aurelia 2 frontend application, including test infrastructure, service tests, component tests, and coverage reporting.\n\nThis capability ensures code quality, prevents regressions, and enables confident refactoring through automated testing.",
+   "http-retry": "Defines HTTP client retry behavior for transient errors: Retry-After handling, context cancellation, request-body replay, and backoff limits.",
+   "interaction-feedback": "Defines the app's interaction-feedback contract: every interaction acknowledges immediately, communicates\nin-progress state, and confirms its outcome, using shared feedback primitives (ripple, press-morph, skeleton,\nhaptic, list transitions, selection morph) applied consistently across all primary s",
+   "non-blocking-menu-navigation": "Keeps every route reachable from the bottom navigation swapping into view the\nmoment a fan taps its tab, rather than holding the screen they are leaving until\ndata arrives. Fetching stays the route's job; what this capability fixes is where\nthat work sits relative to the view swap, and what the fan ",
+   "shell-layout": "Defines the PWA shell layout structure for `app-shell`, ensuring overlay custom elements are excluded from CSS Grid flow so that `bottom-nav-bar` stays pinned at the viewport bottom and `position: sticky` headers work correctly within scroll containers."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/notification-prompt",
+  "sources": [
+   "app-shell-layout",
+   "prompt-timing"
+  ],
+  "source_purposes": {
+   "app-shell-layout": "Defines the application shell structure including brand identity, conditional navigation display, page transition animations, and authentication status UI. The app shell provides the consistent outer frame for all routes in the Liverty Music application.",
+   "prompt-timing": "Defines the eligibility rules for displaying PWA install and push notification permission prompts. Prompts are gated by authentication state, onboarding completion, and a per-session single-prompt constraint to avoid overwhelming the user."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/pwa-install-banner",
+  "sources": [
+   "app-shell-layout",
+   "post-signup-dialog",
+   "prompt-timing",
+   "pwa-install-banner"
+  ],
+  "source_purposes": {
+   "app-shell-layout": "Defines the application shell structure including brand identity, conditional navigation display, page transition animations, and authentication status UI. The app shell provides the consistent outer frame for all routes in the Liverty Music application.",
+   "post-signup-dialog": "Consolidates notification permission and PWA install prompts into a single dialog shown after the first successful signup, providing a streamlined post-authentication experience.",
+   "prompt-timing": "Defines the eligibility rules for displaying PWA install and push notification permission prompts. Prompts are gated by authentication state, onboarding completion, and a per-session single-prompt constraint to avoid overwhelming the user.",
+   "pwa-install-banner": "Defines a persistent full-width banner that promotes PWA installation to signed-in users, replacing the floating action button. The banner covers both native one-tap install (Chrome/Edge) and manual guided install (iOS Safari), and persists across sessions with a per-session dismiss until the app is"
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/coach-mark",
+  "sources": [
+   "onboarding-spotlight",
+   "onboarding-tutorial",
+   "state-transition-diagram"
+  ],
+  "source_purposes": {
+   "onboarding-spotlight": "Defines the coach mark spotlight overlay — the visual cutout, tooltip, target-click delegation, and lifecycle. The coach mark is a single, transient, non-blocking hint owned by `CoachMarkService`.",
+   "onboarding-tutorial": "Define the guided first-run onboarding tutorial: the linear step progression through landing, artist discovery, dashboard arrival, and My Artists, including how spotlights and coach marks steer the user. The dashboard Lane Intro sequence (blocker divs, scroll lock, nav dimming) has been removed; arr",
+   "state-transition-diagram": "Defines the client-side state machines that govern the first-run experience: the one-way onboarding latch, the independent coach-mark hint, and the ephemeral guest-data state accumulated before account creation. It captures each machine's states, transitions, triggers, persistence, and invariants so"
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/artist-filter-bar",
+  "sources": [
+   "artist-following",
+   "dashboard-journey-filter"
+  ],
+  "source_purposes": {
+   "artist-following": "Manage the relationship between users and artists they follow, including follow/unfollow actions and listing followed artists.",
+   "dashboard-journey-filter": "TBD - created by archiving change enhance-dashboard-filter. Update Purpose after archive."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/bottom-nav-bar",
+  "sources": [
+   "app-shell-layout",
+   "frontend-testing",
+   "interaction-feedback",
+   "non-blocking-menu-navigation"
+  ],
+  "source_purposes": {
+   "app-shell-layout": "Defines the application shell structure including brand identity, conditional navigation display, page transition animations, and authentication status UI. The app shell provides the consistent outer frame for all routes in the Liverty Music application.",
+   "frontend-testing": "Establish comprehensive test coverage for the Aurelia 2 frontend application, including test infrastructure, service tests, component tests, and coverage reporting.\n\nThis capability ensures code quality, prevents regressions, and enables confident refactoring through automated testing.",
+   "interaction-feedback": "Defines the app's interaction-feedback contract: every interaction acknowledges immediately, communicates\nin-progress state, and confirms its outcome, using shared feedback primitives (ripple, press-morph, skeleton,\nhaptic, list transitions, selection morph) applied consistently across all primary s",
+   "non-blocking-menu-navigation": "Keeps every route reachable from the bottom navigation swapping into view the\nmoment a fan taps its tab, rather than holding the screen they are leaving until\ndata arrives. Fetching stays the route's job; what this capability fixes is where\nthat work sits relative to the view swap, and what the fan "
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/snack-bar",
+  "sources": [
+   "design-system",
+   "pwa-update-lifecycle"
+  ],
+  "source_purposes": {
+   "design-system": "Defines the centralized design token system and visual foundation for the Liverty Music application, ensuring consistency across all screens through plain CSS custom properties in `tokens.css`, a dark-first theme, and optimized display font loading.",
+   "pwa-update-lifecycle": "Defines the Service Worker registration and update lifecycle for the Aurelia 2 frontend PWA. This capability specifies how the SPA registers its SW via `vite-plugin-pwa`, detects available updates, applies them silently on boot (pre-interaction) or presents a user-confirmable toast (post-interaction"
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/toast",
+  "sources": [
+   "artist-discovery-dna-orb-ui",
+   "frontend-error-handling",
+   "frontend-testing",
+   "toast-ce"
+  ],
+  "source_purposes": {
+   "artist-discovery-dna-orb-ui": "This capability defines the Artist Discovery UI for the Liverty Music MVP onboarding flow, featuring a gamified \"DNA Extraction\" metaphor. Users interact with physics-based artist bubbles that are absorbed into a visual \"Music DNA Orb\" inventory, creating an engaging way to collect music preferences",
+   "frontend-error-handling": "Defines the global error handling infrastructure for the Aurelia 2 frontend, ensuring that unhandled errors never crash the page to a white screen. Provides structured error capture, user-facing error UI with one-click GitHub Issue reporting, declarative async error handling via `promise.bind`, and ",
+   "frontend-testing": "Establish comprehensive test coverage for the Aurelia 2 frontend application, including test infrastructure, service tests, component tests, and coverage reporting.\n\nThis capability ensures code quality, prevents regressions, and enables confident refactoring through automated testing.",
+   "toast-ce": "Provides a `<toast>` custom element as a top-positioned popover banner for user-action prompts (notification permission, PWA install)."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/dna-orb",
+  "sources": [
+   "artist-discovery-dna-orb-ui",
+   "dna-orb-color-injection",
+   "festival-orb-effects",
+   "onboarding-guidance"
+  ],
+  "source_purposes": {
+   "artist-discovery-dna-orb-ui": "This capability defines the Artist Discovery UI for the Liverty Music MVP onboarding flow, featuring a gamified \"DNA Extraction\" metaphor. Users interact with physics-based artist bubbles that are absorbed into a visual \"Music DNA Orb\" inventory, creating an engaging way to collect music preferences",
+   "dna-orb-color-injection": "Defines how followed-artist bubble hues are injected into discovery orb particles, including the swirl animation triggered on follow.",
+   "festival-orb-effects": "Defines the festival-stage visual escalation effects applied to discovery orbs as users follow more artists.",
+   "onboarding-guidance": "Specifies the onboarding guidance experience rendered within the unified DiscoverPage for new and guest users."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/event-detail-sheet",
+  "sources": [
+   "artist-image-ui",
+   "frontend-testing",
+   "ticket-journey"
+  ],
+  "source_purposes": {
+   "artist-image-ui": "Specifies how artist imagery (logos, hero images, fanart) is surfaced across event cards and detail sheets in the frontend.",
+   "frontend-testing": "Establish comprehensive test coverage for the Aurelia 2 frontend application, including test infrastructure, service tests, component tests, and coverage reporting.\n\nThis capability ensures code quality, prevents regressions, and enables confident refactoring through automated testing.",
+   "ticket-journey": "The `ticket-journey` capability allows users to track their personal ticket acquisition status for concerts and events. Users can set, update, and remove journey statuses representing stages of the ticket acquisition process (tracking, applied, lost, unpaid, paid)."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/error-banner",
+  "sources": [
+   "frontend-error-handling",
+   "frontend-testing",
+   "non-blocking-menu-navigation"
+  ],
+  "source_purposes": {
+   "frontend-error-handling": "Defines the global error handling infrastructure for the Aurelia 2 frontend, ensuring that unhandled errors never crash the page to a white screen. Provides structured error capture, user-facing error UI with one-click GitHub Issue reporting, declarative async error handling via `promise.bind`, and ",
+   "frontend-testing": "Establish comprehensive test coverage for the Aurelia 2 frontend application, including test infrastructure, service tests, component tests, and coverage reporting.\n\nThis capability ensures code quality, prevents regressions, and enables confident refactoring through automated testing.",
+   "non-blocking-menu-navigation": "Keeps every route reachable from the bottom navigation swapping into view the\nmoment a fan taps its tab, rather than holding the screen they are leaving until\ndata arrives. Fetching stays the route's job; what this capability fixes is where\nthat work sits relative to the view swap, and what the fan "
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/user-home-selector",
+  "sources": [
+   "settings",
+   "user-home"
+  ],
+  "source_purposes": {
+   "settings": "Provides user access to account management, system preferences, and legal information. The Settings page is a grouped list UI accessible via the Bottom Navigation Bar's Settings tab.",
+   "user-home": "Define the user's home area capability end to end: the structured `Home` data model (proto, database, Go entity, centroid resolution), the RPCs that create and update it, and the unified `user-home-selector` frontend component and its `userHome.*` i18n namespace used in both onboarding and Settings."
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/fab-menu",
+  "sources": [
+   "app-shell-layout",
+   "beam-effect-toggle",
+   "dashboard-artist-filter",
+   "fab-action-launcher"
+  ],
+  "source_purposes": {
+   "app-shell-layout": "Defines the application shell structure including brand identity, conditional navigation display, page transition animations, and authentication status UI. The app shell provides the consistent outer frame for all routes in the Liverty Music application.",
+   "beam-effect-toggle": "Provides a user-controllable toggle for the laser beam spotlight visual effect on the concert highway dashboard. The preference is persisted in localStorage so the user's choice is remembered across sessions.",
+   "dashboard-artist-filter": "Defines the dashboard's artist-based filtering of the concert highway: a URL-synchronised `artists` query parameter, the filter chip UI in the page header, the artist-selection bottom sheet (count-prefixed, count-sorted chips), and guest availability of the filter.",
+   "fab-action-launcher": "Provides a single, thumb-reachable floating action launcher in the bottom corner of\nthe fan-web app that expands, on tap, into a labeled list of context-appropriate\nactions — consolidating controls that were previously scattered in the top-right\nheader into one ergonomic, Material 3 Expressive surfa"
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/global/bottom-sheet",
+  "sources": [
+   "artist-following",
+   "bottom-sheet-ce",
+   "dashboard-artist-filter",
+   "onboarding-page-help"
+  ],
+  "source_purposes": {
+   "artist-following": "Manage the relationship between users and artists they follow, including follow/unfollow actions and listing followed artists.",
+   "bottom-sheet-ce": "Provides a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, promoted to the Top Layer via a non-modal `popover` (`<dialog popover=\"manual\">` shown with `showPopover()`), with CSS scroll-snap dismiss driven by an `IntersectionObserver` on the sheet body; focus-t",
+   "dashboard-artist-filter": "Defines the dashboard's artist-based filtering of the concert highway: a URL-synchronised `artists` query parameter, the filter chip UI in the page header, the artist-selection bottom sheet (count-prefixed, count-sorted chips), and guest availability of the filter.",
+   "onboarding-page-help": "Provides persistent, page-specific help content via a help icon and bottom-sheet on the Discovery, Dashboard, and My Artists pages. Auto-opens on first visit to each page during onboarding to deliver contextual guidance without blocking the user's flow. The help icon remains accessible after onboard"
+  }
+ },
+ {
+  "target": "components/infrastructure/fan/web/service-worker",
+  "sources": [
+   "frontend-network-timeouts",
+   "push-notification-service",
+   "pwa-update-lifecycle"
+  ],
+  "source_purposes": {
+   "frontend-network-timeouts": "Defines the client-side network timeout policy for the Aurelia 2 frontend: a bounded default deadline for every Connect-RPC call and bounded Service-Worker `fetch()` calls, so that no browser-originated network request can hang without an upper bound and stalled requests fail closed with predictable",
+   "push-notification-service": "Defines the backend `PushNotificationService` capability that registers, retrieves, and removes a browser's Web Push subscription on a per-`(user_id, endpoint)` basis. The service models subscriptions as type-safe `PushSubscription` entities, enforces strict per-browser scoping (no bulk-per-user mut",
+   "pwa-update-lifecycle": "Defines the Service Worker registration and update lifecycle for the Aurelia 2 frontend PWA. This capability specifies how the SPA registers its SW via `vite-plugin-pwa`, detects available updates, applies them silently on boot (pre-interaction) or presents a user-confirmable toast (post-interaction"
+  }
+ },
+ {
+  "target": "components/entity/user",
+  "sources": [
+   "admin-area-normalization",
+   "authentication",
+   "entity-domain-logic",
+   "id-resolution",
+   "rpc-auth-scoping",
+   "user-home",
+   "user-language-preference"
+  ],
+  "source_purposes": {
+   "admin-area-normalization": "Defines how administrative area strings are normalized (including country-code extraction) so concert discovery matching and stored data stay consistent.",
+   "authentication": "JWT-based authentication for user-specific operations in the backend. This capability validates JWT tokens from ZITADEL using their JWKS endpoint to authenticate API requests and scope operations to individual users.",
+   "entity-domain-logic": "Defines the pure domain-logic behaviors of core business entities — validation\nrules, value-object constructors, deduplication, serialization, and conversion\nhelpers — that must hold consistently across services independent of any\ntransport or storage concern.",
+   "id-resolution": "Defines how authenticated RPC handlers resolve the Zitadel external ID (JWT `sub` claim) to the internal `users.id` UUID before any database access. This prevents raw external IDs from being passed to UUID columns and ensures consistent user identity across all services.",
+   "rpc-auth-scoping": "Defines the cross-service convention that every authenticated per-user RPC carries an explicit `user_id` in the request body, verified against the userID derived from the JWT context. This provides defense-in-depth against client bugs that would otherwise silently operate on the wrong user's data, a",
+   "user-home": "Define the user's home area capability end to end: the structured `Home` data model (proto, database, Go entity, centroid resolution), the RPCs that create and update it, and the unified `user-home-selector` frontend component and its `userHome.*` i18n namespace used in both onboarding and Settings.",
+   "user-language-preference": "Persists each authenticated user's display language in the backend database so language is consistent across devices and browser sessions. Defines the proto-surface (entity field, Create capture, UpdatePreferredLanguage RPC), the storage semantics (NULL = \"not yet set by client\"), and the repository"
+  }
+ },
+ {
+  "target": "components/entity/event",
+  "sources": [
+   "concert-service",
+   "event-management",
+   "frontend-plain-date-lib"
+  ],
+  "source_purposes": {
+   "concert-service": "The Concert Service manages the lifecycle of concert data, including artist management, automated discovery via search, and persistent storage of concert and venue information.",
+   "event-management": "The Event Management capability handles the lifecycle of generic events, providing a foundation for specific event types like concerts. It ensures consistent handling of common event data such as titles, dates, times, and venues.",
+   "frontend-plain-date-lib": "This capability defines the SPA's implementation-agnostic calendar-arithmetic library: a single seam through which all pure \"civil date\" math (weekend/range preset resolution, `<input type=\"date\">` parse/format, inclusive day-span, `CalendarDate` conversions) flows. It fixes one behavioral contract "
+  }
+ },
+ {
+  "target": "components/entity/artist",
+  "sources": [
+   "artist-image",
+   "artist-service-infrastructure",
+   "entity-domain-logic",
+   "logo-color-analysis"
+  ],
+  "source_purposes": {
+   "artist-image": "This capability provides artist image data from fanart.tv, enabling visual identification of artists in the frontend via thumbnails, backgrounds, logos, and banners.",
+   "artist-service-infrastructure": "This capability provides dedicated infrastructure for artist-related operations, independent of concert management, enabling multi-provider music discovery and metadata aggregation.",
+   "entity-domain-logic": "Defines the pure domain-logic behaviors of core business entities — validation\nrules, value-object constructors, deduplication, serialization, and conversion\nhelpers — that must hold consistently across services independent of any\ntransport or storage concern.",
+   "logo-color-analysis": "This capability extracts dominant color properties from artist logo images (clearLOGO PNGs) using OKLCH color space analysis, enabling the frontend to derive perceptually accurate background colors for event cards."
+  }
+ },
+ {
+  "target": "components/entity/concert",
+  "sources": [
+   "concert-service",
+   "entity-domain-logic",
+   "event-management",
+   "live-events",
+   "proximity-model"
+  ],
+  "source_purposes": {
+   "concert-service": "The Concert Service manages the lifecycle of concert data, including artist management, automated discovery via search, and persistent storage of concert and venue information.",
+   "entity-domain-logic": "Defines the pure domain-logic behaviors of core business entities — validation\nrules, value-object constructors, deduplication, serialization, and conversion\nhelpers — that must hold consistently across services independent of any\ntransport or storage concern.",
+   "event-management": "The Event Management capability handles the lifecycle of generic events, providing a foundation for specific event types like concerts. It ensures consistent handling of common event data such as titles, dates, times, and venues.",
+   "live-events": "The `live-events` capability defines the core domain entities—Artists, Venues, and Concerts—and the standard interfaces for managing them. It establishes the single source of truth for concert metadata, enabling consistent data representation and access across the platform's crawler, backend service",
+   "proximity-model": "The `proximity-model` capability defines the domain model for geographic proximity classification between a user's home area and concert venues. It provides the `Proximity` enum, the `Concert.ProximityTo` entity method, and the `pkg/geo.Haversine` utility function."
+  }
+ },
+ {
+  "target": "components/entity/notification",
+  "sources": [
+   "entity-domain-logic",
+   "notification-lifecycle"
+  ],
+  "source_purposes": {
+   "entity-domain-logic": "Defines the pure domain-logic behaviors of core business entities — validation\nrules, value-object constructors, deduplication, serialization, and conversion\nhelpers — that must hold consistently across services independent of any\ntransport or storage concern.",
+   "notification-lifecycle": "TBD - created by archiving change introduce-notification-service. Update Purpose after archive."
+  }
+ },
+ {
+  "target": "components/entity/venue",
+  "sources": [
+   "admin-area-normalization",
+   "concert-service",
+   "entity-domain-logic",
+   "venue-name-cache"
+  ],
+  "source_purposes": {
+   "admin-area-normalization": "Defines how administrative area strings are normalized (including country-code extraction) so concert discovery matching and stored data stay consistent.",
+   "concert-service": "The Concert Service manages the lifecycle of concert data, including artist management, automated discovery via search, and persistent storage of concert and venue information.",
+   "entity-domain-logic": "Defines the pure domain-logic behaviors of core business entities — validation\nrules, value-object constructors, deduplication, serialization, and conversion\nhelpers — that must hold consistently across services independent of any\ntransport or storage concern.",
+   "venue-name-cache": "The Venue Name Cache capability provides a DB-first lookup for venues by their scraped `listed_venue_name` and optional `admin_area` before falling through to the Google Places API. This avoids redundant external API calls when a venue has already been resolved and persisted from a prior scrape."
+  }
+ },
+ {
+  "target": "components/entity/proximity",
+  "sources": [
+   "entity-domain-logic",
+   "nearby-proximity",
+   "proximity-model"
+  ],
+  "source_purposes": {
+   "entity-domain-logic": "Defines the pure domain-logic behaviors of core business entities — validation\nrules, value-object constructors, deduplication, serialization, and conversion\nhelpers — that must hold consistently across services independent of any\ntransport or storage concern.",
+   "nearby-proximity": "The `nearby-proximity` capability defines the home area centroid lookup and resolution logic required by the proximity classification system. The proximity classification model itself (including the `Proximity` enum, `Concert.ProximityTo` method, and Haversine calculation) lives in the `proximity-mo",
+   "proximity-model": "The `proximity-model` capability defines the domain model for geographic proximity classification between a user's home area and concert venues. It provides the `Proximity` enum, the `Concert.ProximityTo` entity method, and the `pkg/geo.Haversine` utility function."
+  }
+ },
+ {
+  "target": "components/entity/follow",
+  "sources": [
+   "entity-domain-logic",
+   "passion-level"
+  ],
+  "source_purposes": {
+   "entity-domain-logic": "Defines the pure domain-logic behaviors of core business entities — validation\nrules, value-object constructors, deduplication, serialization, and conversion\nhelpers — that must hold consistently across services independent of any\ntransport or storage concern.",
+   "passion-level": "Allow users to express different levels of enthusiasm for followed artists, influencing how prominently their events appear on the Dashboard and whether push notifications are sent."
+  }
+ }
+]

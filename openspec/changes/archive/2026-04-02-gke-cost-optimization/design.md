@@ -28,6 +28,8 @@ Cloud SQL is accessed via Private Service Connect (PSC) at a static internal IP 
 
 GKE does not support in-place Autopilot → Standard conversion. The migration requires creating a new Standard cluster, migrating workloads, then deleting the Autopilot cluster. Dev downtime is acceptable, so this is straightforward.
 
+The replacement cluster is **zonal**, in `asia-northeast2-a` (not regional), and is the first zonal Standard cluster in the project — GKE waives the cluster management fee for a project's first zonal cluster, which is exactly the ¥10,800/month this change eliminates. A regional cluster would not qualify for that waiver.
+
 ### Decision 2: Machine type for Standard node pool
 
 **Chosen: `e2-standard-2` (2 vCPU, 8 GiB)**

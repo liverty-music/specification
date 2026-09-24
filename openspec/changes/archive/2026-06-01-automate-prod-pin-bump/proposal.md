@@ -18,7 +18,7 @@ Promoting a release to prod today is a two-gate process: cutting the GitHub Rele
 <!-- none — this extends the existing prod image pipeline rather than introducing a new capability surface -->
 
 ### Modified Capabilities
-- `prod-image-pipeline`: Add a requirement that prod kustomize pin-bumps are automated via `repository_dispatch` from the release workflows to a `cloud-provisioning` bump workflow (validate-then-push-to-main), replacing the manual pin-bump PR as the rollout gate. The existing "Prod kustomize overlays SHALL pin image URIs to prod-AR paths" and the release-retag requirements are unchanged; this adds the *bump mechanism* on top of them.
+(none — see design.md)
 
 ## Impact
 

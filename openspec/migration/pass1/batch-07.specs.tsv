@@ -1,0 +1,18 @@
+old_spec	disposition	primary_target	confidence	evidence	note
+card-logo-presentation	KEEP	components/infrastructure/ui/global/live-highway	high	all 4 requirements describe artist logo/text rendering inside the shared live-highway event card	
+concert-search	KEEP	components/usecase/concert/search-new-concerts	medium	all 7 requirements describe SearchNewConcerts' RPC contract and its dedup/extraction logic	
+cube-css-modern-css-rules	OUT:lint		high	3 stylelint custom rules for CSS authoring; no user actor	frontend stylelint plugin config (already implemented; no separate doc)
+dashboard-concert-cache	KEEP	components/infrastructure/ui/route/dashboard	high	all 4 requirements describe the Dashboard route's in-memory concert/follow caching	
+dashboard-date-filter	KEEP	components/infrastructure/ui/route/dashboard	high	all 4 requirements describe the Dashboard route's date query-param filter	
+fab-action-launcher	KEEP	components/infrastructure/ui/global/fab-menu	high	all 7 requirements describe the fab-menu global component shared across routes	
+frontend-runtime-config	NEEDS_HUMAN		low	5 of 6 requirements are bootstrap config-loading mechanics with no user actor (OUT:design-doc); the static bootstrap-failure error page is user-visible but has no matching ui/global vocabulary entry (it bypasses Aurelia entirely)	candidate OUT destination: frontend/docs or specification design note on runtime config contract; error-page requirement needs a human decision
+geo-location	KEEP	components/entity/geo-location	high	both requirements define entity.v1.GeoLocation fields and validation	
+landing-page	KEEP	components/infrastructure/ui/route/welcome	high	all 11 requirements describe the landing/welcome route ('/')	
+onboarding-celebration	KEEP	components/infrastructure/ui/global/celebration-overlay	high	both requirements describe the celebration-overlay global component	
+passion-level	SPLIT	components/usecase/follow/set-hype	medium	hype tiers -> entity/follow; SetHype auth/persistence/API -> usecase/follow/set-hype (3 reqs, overlapping); ListFollowed -> usecase/follow/list-followed; dashboard card visuals -> ui/global/live-highway; one requirement (pre-migration hype preservation) is DROP:historic	
+prod-image-tag-immutability	OUT:runbook		high	all 4 requirements are GCP Artifact Registry / kustomize / k8s-label provisioning policy; no user actor	cloud-provisioning/docs/runbooks/prod-image-tag-pinning.md
+sales-phase-discovery	KEEP	components/usecase/sales-phase/discover-for-artist	medium	5 of 6 requirements map to SalesPhaseDiscoveryUseCase.DiscoverForArtist; the announcement requirement maps to AnnounceDiscoveredPhase	
+settings	KEEP	components/infrastructure/ui/route/settings	high	19 of 21 requirements describe the single Settings route; 2 (My Home Area Preference, Home Area Selected-State Indicator) describe the shared user-home-selector dialog	
+state-transition-diagram	SPLIT	components/infrastructure/ui/global/coach-mark	medium	coach-mark maps to the ui/global/coach-mark component; onboarding-latch and guest-data-bag both span multiple routes and are proposed as stories (stories/complete-onboarding, stories/accumulate-guest-data-before-signup)	
+venue-name-cache	KEEP	components/usecase/concert/create-from-discovered	medium	venue-listed-name lookup feeds ConcertCreationUseCase.CreateFromDiscovered; the unique-index requirement is a venue entity invariant	
+zitadel-action-webhook	OUT:design-doc		medium	all 3 requirements are backend Zitadel Actions v2 webhook auth/network plumbing; no fan/organizer/admin actor observes it	backend design docs (e.g. backend/docs/design/zitadel-webhook.md); network-topology portion could instead go to a cloud-provisioning runbook

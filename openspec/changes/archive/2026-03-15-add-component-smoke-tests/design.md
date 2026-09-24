@@ -61,6 +61,8 @@ The `bottom-nav-bar` component has had an invalid `<template switch.bind>` since
 
 **Why**: Public routes don't require auth state setup. Catches runtime errors (including template compilation) in a real browser. Authenticated routes are out of scope — they need auth storage state which is a separate concern.
 
+Console errors caused by a failed network request (e.g., the backend being unavailable in the test environment) are excluded from the assertion — only application-level errors (template compilation failures, JS exceptions) fail the test. Otherwise the smoke test would be flaky against backend availability rather than catching the class of bug it targets.
+
 ### D6: `svg-icon` fix — use `<span>` as switch host
 
 **Decision**: Replace `<template switch.bind="name">` with `<span switch.bind="name" class="icon-switch">` in `svg-icon.html`. The original AUR0703 bug was in `bottom-nav-bar.html`, but commit 779e579 moved it to `svg-icon.html` by extracting inline SVGs into the `<svg-icon>` component.

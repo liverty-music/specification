@@ -1,0 +1,1 @@
+Renders the shared three-lane concert card grid showing each artist's followed events with artist logo or name, hype-driven visual prominence, and a subtle glow effect on matched cards.

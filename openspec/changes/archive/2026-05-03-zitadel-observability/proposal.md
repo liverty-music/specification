@@ -15,7 +15,7 @@ The cutover to self-hosted Zitadel landed on 2026-04-30 (`self-hosted-zitadel` c
 
 ### New Capabilities
 
-- `zitadel-observability`: Defines the alert thresholds, dashboard panels, and operator-facing runbook contracts for the self-hosted Zitadel API and Login UI containers running in the dev cluster. Covers both upstream-supplied metrics (Zitadel `/debug/metrics`) and infrastructure-supplied metrics (Cloud SQL connection pool, GKE pod health). Sibling to the existing `app-error-log-alerting` (backend), `argocd-deployment-alerts` (deploy), and `consumer-poison-queue-alerting` (consumer) capabilities — same alerting pattern, different subject system.
+(none — see design.md)
 
 ### Modified Capabilities
 

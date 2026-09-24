@@ -37,43 +37,6 @@ The system SHALL detect the user's preferred language using a priority chain: UR
 
 ---
 
-### Requirement: Translation Resource Files
-The system SHALL maintain translation JSON files for each supported locale with identical key structures.
-
-#### Scenario: Key parity between locales
-- **WHEN** a translation key exists in `ja/translation.json`
-- **THEN** the same key SHALL exist in `en/translation.json`
-- **AND** missing keys in EN SHALL fall back to the JA value
-
-#### Scenario: Key naming convention
-- **WHEN** a new translation key is added
-- **THEN** the key SHALL follow the pattern `<page>.<component>.<element>` (e.g., `welcome.hero.title`, `settings.language.label`)
-
----
-
-### Requirement: Template String Externalization
-The system SHALL replace all hardcoded Japanese strings in Aurelia 2 HTML templates with `t` attribute bindings that reference translation keys.
-
-#### Scenario: Static text in templates
-- **WHEN** a template contains a hardcoded display string (e.g., headings, labels, button text)
-- **THEN** the string SHALL be replaced with a `t` attribute binding (e.g., `<h1 t="welcome.hero.title"></h1>`)
-- **AND** the corresponding translation keys SHALL exist in both JA and EN resource files
-
-#### Scenario: Dynamic text with interpolation
-- **WHEN** a template contains a string with dynamic values (e.g., a count or name)
-- **THEN** the string SHALL use i18next interpolation syntax (e.g., `t="key;count.bind:count"`)
-
----
-
-### Requirement: TypeScript String Externalization
-The system SHALL replace all hardcoded Japanese strings in TypeScript files (error messages, toast notifications, loading text) with `I18N.tr()` calls.
-
-#### Scenario: Error and toast messages
-- **WHEN** a TypeScript file contains a hardcoded Japanese string used for user-facing messages
-- **THEN** the string SHALL be replaced with `this.i18n.tr('key')` using the injected `I18N` service
-
----
-
 ### Requirement: Locale-Aware Date and Number Formatting
 The system SHALL format dates and numbers according to the active locale instead of hardcoding `ja-JP`.
 

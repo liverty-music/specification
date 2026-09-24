@@ -1,0 +1,1 @@
+Defines the Concert entity as a scheduled performance extending a single event, embedding its resolved venue, series, and performers, tracking when it was last searched, and classifying its proximity to a user's home.

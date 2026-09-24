@@ -40,6 +40,8 @@ Already an indirect dependency in `go.mod`. Promotes to direct usage.
 - `failsafe-go` — Over-engineered for current needs (circuit breaker, hedging). Larger dependency.
 - Custom implementation — Duplicates what `cenkalti/backoff` already provides well.
 
+`backoff.Retry()` in v5 takes a `context.Context` and stops immediately, returning the context's error, when it is canceled or its deadline is exceeded — so a retry loop (in `RetryTransport` or the Gemini call) never outlives the caller's own timeout waiting on a backoff sleep.
+
 ### 2. Package placement: `pkg/httpx`
 
 New package `pkg/httpx` containing a `RetryTransport` that implements `http.RoundTripper`.

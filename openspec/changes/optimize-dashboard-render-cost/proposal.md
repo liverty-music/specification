@@ -75,15 +75,11 @@ Out of scope (deferred to a follow-up change once P1+P2 are measured):
 
 ### New Capabilities
 
-- `dashboard-timetable-rendering`: The performance and motion contract for
-  rendering the fan-web dashboard timetable — an entry/re-entry rendering budget
-  (no multi-second main-thread block) and the rule that card visuals must not
-  drive continuous per-frame style/layout invalidation, respecting
-  `prefers-reduced-motion`.
+(none)
 
 ### Modified Capabilities
 
-<!-- None — no existing spec captures dashboard timetable rendering. -->
+- `components/infrastructure/fan/web/route/dashboard`: Timetable rendering cost is bounded and must not dominate the main thread; Highlighted card visuals must not drive continuous rendering work
 
 ## Impact
 

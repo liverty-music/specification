@@ -1,0 +1,1 @@
+Provides the central visual orb that grows and accumulates each followed artist's color as the user follows more artists during discovery, animating absorption, follow celebrations, and escalating festival-style effects while respecting reduced-motion preferences.

@@ -131,6 +131,9 @@ Implemented with the same architecture as the Last.fm client.
 - `httpx.IsRetryableStatus` for 429/503/504 retry targeting
 - API key sourced from `FANARTTV_API_KEY` environment variable
 - Implements `entity.ArtistImageResolver` interface
+- Calls fanart.tv API v3's `GET /v3/music/{mbid}` endpoint and parses the JSON response into a `Fanart` entity
+- HTTP 404 (no fanart.tv data for the MBID) returns `nil` without an error, matching `ArtistImageResolver.ResolveImages`'s "no images found" contract
+- HTTP 429 triggers the retry path, honouring the `Retry-After` header on top of the exponential backoff
 
 ### 6. Best Image Selection: Highest likes
 

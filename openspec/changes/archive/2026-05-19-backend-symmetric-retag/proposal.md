@@ -20,7 +20,6 @@ No proto / schema changes. No backend application code changes. CI workflow + Pu
 ### Modified Capabilities
 
 - `prod-image-pipeline`:
-  - **MODIFIED** "Backend prod image build SHALL be triggered by GitHub Release tags" → renamed to "Backend prod images SHALL be promoted to prod AR on GitHub Release tags"; body and scenarios replaced with retag-flow scenarios that mirror the frontend equivalent across the 4-image matrix.
   - **MODIFIED** "CI service accounts MAY hold scoped cross-project AR reader for image promotion": the "Backend dev AR is NOT yet granted (forward-looking)" scenario is **REMOVED** (because the grant now exists), and a positive scenario "Prod CI SA holds repo-scoped reader on dev backend AR" is **ADDED** to assert the binding's presence.
 
 ## Impact

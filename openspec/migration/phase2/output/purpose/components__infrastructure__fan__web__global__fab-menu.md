@@ -1,0 +1,1 @@
+Provides a single thumb-reachable floating action launcher that expands into a labeled list of actions relevant to the current route, such as toggling the dashboard's beam effect or opening filters, remembering a left- or right-handed placement.

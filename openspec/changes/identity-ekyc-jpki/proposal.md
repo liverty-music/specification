@@ -62,20 +62,22 @@ not a 特定事業者) — lightweight JPKI binding, not 取引時確認; and **
 ## Capabilities
 
 ### New Capabilities
-- `identity-ekyc`: JPKI account verification via **Pocket Sign (Verify SDK + API)**,
-  the `VerifiedIdentity` entity + account verification level, the 1-person-1-account
-  dedupe on Pocket Sign **`User.id`** + per-person limit signal, 現況確認 freshness,
-  the per-event "requires verified identity" flag with a 運転免許証 fallback (weaker
-  dedupe), and the privacy (利用目的 / store-only-User.id / 削除) requirements.
+
+- `components/entity/verified-identity`: Verified-person dedupe via Pocket Sign `User.id`; Per-person limit signal and mixed populations; Privacy — data minimization and deletion
+- `components/usecase/lottery-sales-phase/set-phase-verification-requirement`: Verification lane, per-event requirement, and fallback
+- `components/usecase/verified-identity/complete-verify`: JPKI account verification via Pocket Sign Verify
+- `components/usecase/verified-identity/re-check`: 現況確認 (revocation / attribute-change re-check)
 
 ### Modified Capabilities
-<!-- None specced as a delta here. ④ lottery-application consumes the verified-person
-     + per-person-limit signal (its "1 account / 1 application" becomes "1 verified
-     person / 1 application" where an event requires verification) and ⑤ consumes
-     the verification level; those enforcement hooks are folded into ④/⑤ when this
-     lands. identity-management provides the underlying Zitadel account. Where an
-     event requires verification, the verified identity is authoritative for the
-     covered-ticket 本人確認 (⑤/④ face content). See design.md. -->
+
+<!-- ④ lottery-application consumes the verified-person + per-person-limit signal
+     (its "1 account / 1 application" becomes "1 verified person / 1 application"
+     where an event requires verification) and ⑤ consumes the verification level;
+     the enforcement hooks are folded into ④/⑤ when this lands. identity-management
+     provides the underlying Zitadel account. Where an event requires verification,
+     the verified identity is authoritative for the covered-ticket 本人確認 (⑤/④
+     face content). See design.md. -->
+- `components/usecase/ticket-application/apply`: Relationship to the ④ covered-ticket identity
 
 ## Impact
 

@@ -41,6 +41,8 @@ Two analysis reports inform this design:
 
 **Alternative considered**: Integration test with `createTransport` + mock HTTP server. Rejected as over-engineering — the interceptor contract is simple enough for unit testing. A future E2E test will cover the full stack.
 
+`createRetryInterceptor`'s actual contract, which the tests pin down: it retries with exponential backoff on `Code.Unavailable` and `Code.DeadlineExceeded` — the two codes that indicate a transient, retriable failure rather than a request problem. Once retries are exhausted it throws the original error rather than swallowing it. Codes like `Code.NotFound` or `Code.InvalidArgument` are never retried — retrying a request that's wrong by construction only delays the inevitable failure.
+
 ### Decision 3: Extract and test proof-service pure utilities separately
 
 **Choice**: Test `bytesToDecimal`, `uuidToFieldElement`, and `bytesToHex` as pure unit tests. Test `verifyCircuitIntegrity` with mocked `crypto.subtle.digest`. Defer full `generateEntryProof` integration testing.

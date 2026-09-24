@@ -44,6 +44,10 @@ Use TypeScript `interface` (not `class`) for entity types. Entities are data con
 
 **Divergence rationale:** `DateGroup` and `LaneType` are UI-presentation concepts that don't map 1:1 to Go's `ProximityGroup` / `Proximity`. Forcing Go names here would reduce clarity in templates. `Concert` replaces `LiveEvent` since it directly maps to the Go entity.
 
+`artist.ts` exports `Artist` (`id`, `name`, `mbid`, optional `fanart: Fanart`) and `Fanart` (optional `artistThumb`, `artistBackground`, `hdMusicLogo`, `musicLogo`, `musicBanner` image URLs) — a service maps a fully-populated proto `Artist` to a `fanart` object with every URL set, and maps one with no fanart to `fanart: undefined` rather than an object of empty strings.
+
+`follow.ts` exports `FollowedArtist` with the artist fields flattened onto it (`id`, `name`) alongside a `Hype` value, plus optional `logoUrl` / `backgroundUrl` for UI consumption. `Hype` is a string union mirroring Go's `Hype` constants: `'watch' | 'home' | 'nearby' | 'away'`.
+
 ### 3. UI-only fields are allowed on entities
 
 Frontend entities may include fields that don't exist in Go, annotated with comments:

@@ -73,6 +73,12 @@
 
 **理由**: `webpush/sender.go` は interface (`PushNotificationSender`) の直接実装であり、`Possible errors` (NotFound, Internal) のテストが必要。`messaging/` は pub/sub 基盤でありテスト設計が複雑で、別変更として扱うべき。
 
+### 5. `Possible errors` の網羅的テスト
+
+**決定**: interface の `# Possible errors` に列挙された各 `apperr` コードについて、`assert.ErrorIs(t, err, ...)` で検証するテストケースを最低 1 つ用意する。
+
+**理由**: ドキュメントが完備されていても、対応するテストがなければ実装との乖離を検知できない。ドキュメントとテストを対にすることで、Decision 1/2 で修正したエラーコードの回帰を防ぐ。
+
 ## Risks / Trade-offs
 
 **[Risk] `export_test.go` 作成時に未エクスポートシンボルの依存関係を見落とす**

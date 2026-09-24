@@ -1,0 +1,1 @@
+Links an artist to the single organizer authorized to represent it, excluding that artist from automated discovery once represented so the organizer's own event pages take precedence.

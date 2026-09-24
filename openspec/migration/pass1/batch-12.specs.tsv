@@ -1,0 +1,19 @@
+old_spec	disposition	primary_target	confidence	evidence	note
+app-shell-layout	NEEDS_HUMAN	components/infrastructure/ui/global/page-header	low	Mixed: several shell-chrome requirements (brand identity, page transitions) have no matching vocabulary target; two rows marked NEEDS_HUMAN.	
+artist-discovery-dna-orb-ui	SPLIT	components/infrastructure/ui/route/discovery	medium	Mostly KEEP across route/discovery and the dna-orb global component, plus one DROP:duplicate (bug-fix requirement already covered by artist-following).	
+frontend-i18n	SPLIT	components/infrastructure/locale/language-switching	medium	Mix of KEEP (locale-detection, language-switching, date/number formatting) and OUT:lint (string-externalization/key-naming conventions) plus one DROP:historic.	frontend/docs/conventions/i18n-string-externalization.md
+dashboard-artist-filter	KEEP	components/infrastructure/ui/route/dashboard	high	All six requirements are fan-observable dashboard filtering behavior (route, fab-menu, bottom-sheet).	
+ci-optimization	OUT:runbook		high	All eleven requirements are CI workflow/branch-protection mechanics with no user actor; one (gofmt) is OUT:lint, the rest OUT:runbook.	backend/docs/runbooks/ci.md and frontend/docs/runbooks/ci.md
+onboarding-page-help	KEEP	components/infrastructure/ui/global/page-help	high	All eight requirements describe the page-help global component's fan-facing behavior.	
+artist-following	KEEP	components/usecase/follow/follow	high	All five requirements map to Follow/Unfollow/ListFollowed usecases or the artist-filter-bar/bottom-sheet UI.	
+interaction-feedback	NEEDS_HUMAN	components/infrastructure/ui/global/bottom-nav-bar	low	Cross-cutting app-wide feedback primitives; two requirements (press acknowledgement, haptics) have no matching vocabulary target and are NEEDS_HUMAN.	
+otel-collector-deployment	OUT:runbook		high	All seven requirements are Kubernetes/telemetry deployment infra with no user actor.	cloud-provisioning/docs/runbooks/otel-collector.md
+api-rate-limiting	OUT:design-doc		medium	All five requirements are backend self-protection/interceptor architecture, not fan-directed product behavior.	backend/docs/design/rate-limiting.md
+apex-frontend-serving	OUT:runbook		high	All four requirements are Gateway/DNS/TLS/Pulumi deployment infra for the apex domain.	cloud-provisioning/docs/runbooks/apex-frontend-serving.md
+aurelia-reactivity	OUT:lint		high	All five requirements are Aurelia 2 framework-usage conventions (decorators, batching, binding patterns) with no user actor.	frontend/docs/conventions/aurelia-reactivity.md
+discovery-bubble-cache	KEEP	components/infrastructure/ui/route/discovery	medium	Both requirements describe fan-observable bubble-field caching behavior on the discovery route.	
+goroutine-leak-detection	OUT:runbook		high	All three requirements are backend operator-facing profiling/alerting with no fan or organizer actor.	backend/docs/runbooks/goroutine-leak-detection.md
+semantic-dom	OUT:lint		high	All four requirements are markup/architecture conventions (semantic elements, div nesting, bottom-sheet/toast consolidation) with no fan-observable difference; two are OUT:lint, two OUT:design-doc.	frontend/docs/conventions/semantic-dom.md
+artist-auto-persist	KEEP	components/usecase/artist/list-top	high	All three requirements map to the ListTop/ListSimilar usecases' auto-persistence contract.	
+private-google-access	OUT:runbook		high	All three requirements are GCP networking/DNS infra with no fan or organizer actor.	cloud-provisioning/docs/runbooks/private-google-access.md
+organizer-console-hosting	OUT:runbook		medium	Both requirements are HTTPRoute/cert/DNS/config.json deployment infra for the organizer console host, not organizer-facing product behavior; Pass 0 hinted KEEP but decision tree points to infra.	cloud-provisioning/docs/runbooks/organizer-console-hosting.md

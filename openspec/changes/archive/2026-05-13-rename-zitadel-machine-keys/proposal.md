@@ -53,8 +53,6 @@ where `machine-key` mirrors the Zitadel/Pulumi resource type (`zitadel.MachineKe
   - "Bootstrap Admin Machine Key Stored in Secret Manager" — switch reference from `zitadel-admin-sa-key` to `zitadel-machine-key-for-pulumi-admin`.
   - "Backend MachineKey Lifecycle Tied to Zitadel-Side Identity" — switch reference from `zitadel-machine-key` to `zitadel-machine-key-for-backend-app`.
 
-  Additionally, a new requirement "GSM Naming Convention for Zitadel MachineKey Credentials" SHALL be ADDED to codify the `zitadel-machine-key-for-<principal>` pattern as a normative convention (not just an outcome of this rename).
-
 - **`identity-management`**: The "Retain Break-glass Machine User" requirement SHALL be updated to reference `zitadel-machine-key-for-pulumi-admin` instead of `zitadel-admin-sa-key` (4 occurrences). The break-glass semantics do not change.
 
 Both deltas are authored as `MODIFIED` / `ADDED` Requirements blocks against the landed `specs/`. The `self-hosted-zitadel` change archived on 2026-05-11, so these run as follow-ups against the landed specs.

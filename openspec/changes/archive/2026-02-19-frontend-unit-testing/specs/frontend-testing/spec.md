@@ -1,20 +1,5 @@
 ## ADDED Requirements
 
-### Requirement: Test infrastructure provides shared mock factories
-The test suite SHALL provide reusable mock factories for commonly used DI dependencies (`ILogger`, `IAuthService`, `IRouter`, RPC service clients) in `test/helpers/`.
-
-#### Scenario: Creating a mock logger
-- **WHEN** a test imports `createMockLogger` from `test/helpers/mock-logger`
-- **THEN** it SHALL return an object implementing `ILogger` with all methods as Vitest spies (`debug`, `info`, `warn`, `error`, `scopeTo`)
-
-#### Scenario: Creating a mock auth service
-- **WHEN** a test imports `createMockAuth` from `test/helpers/mock-auth`
-- **THEN** it SHALL return an object implementing `IAuthService` with configurable `isAuthenticated`, `user`, and spy methods for `signIn`, `signOut`, `register`, `handleCallback`
-
-#### Scenario: Creating a test DI container
-- **WHEN** a test calls `createTestContainer` with mock registrations
-- **THEN** it SHALL return an Aurelia `IContainer` with the provided mocks registered and `ILogger` pre-registered
-
 ### Requirement: Color generator produces deterministic colors
 The `artistColor` function SHALL produce a valid HSL color string deterministically from any input string.
 
@@ -145,10 +130,3 @@ The `MyApp.showNav` getter SHALL return `false` for fullscreen routes and `true`
 #### Scenario: Non-fullscreen route
 - **WHEN** the active route path is `dashboard` or `about`
 - **THEN** `showNav` SHALL return `true`
-
-### Requirement: Coverage reporting is configured
-Vitest SHALL be configured with V8 coverage reporting.
-
-#### Scenario: Running tests with coverage
-- **WHEN** `vitest --coverage` is executed
-- **THEN** a coverage report SHALL be generated showing statement, branch, and function coverage

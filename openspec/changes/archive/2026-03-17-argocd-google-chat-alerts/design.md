@@ -32,7 +32,7 @@ ArgoCD manages 10 Applications via the App of Apps pattern with automated sync a
 
 **Decision**: Follow the existing secret management pattern:
 1. Store webhook URL in Pulumi ESC (`pulumiConfig.gcp.argocdGoogleChatWebhookUrl`)
-2. Pulumi creates a `gcp.secretmanager.Secret` with per-secret IAM binding for the ESO SA only (not backend-app SA)
+2. Pulumi creates a `gcp.secretmanager.Secret` named `argocd-google-chat-webhook-url` with per-secret IAM binding for the ESO SA only (not backend-app SA)
 3. An `ExternalSecret` in argocd namespace syncs to a K8s Secret named `argocd-notifications-secret`
 4. ArgoCD Notifications controller references the secret key via `$` syntax in the service config
 
@@ -47,6 +47,8 @@ ArgoCD manages 10 Applications via the App of Apps pattern with automated sync a
 - Per-overlay values files — unnecessary since triggers and templates are environment-agnostic (only the webhook URL differs, and that's in the Secret)
 
 **Rationale**: The existing values.yaml already contains all ArgoCD configuration (server, controller, redis, etc.). Adding notifications config here maintains consistency. The Helm chart renders `argocd-notifications-cm` ConfigMap from these values.
+
+CPU and memory requests/limits are set on the notifications controller pod in the same values block, consistent with the resource constraints already applied to the other ArgoCD controller pods, so the new controller cannot consume unbounded cluster resources.
 
 ### D4: Use Helm `secret.create: false` with ESO-managed Secret
 

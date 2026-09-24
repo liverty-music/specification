@@ -26,6 +26,8 @@ The existing `scripts/check-migration-drift.sh` handles kustomization sync, sche
 
 **Rationale**: The script already handles migration consistency checks and is called from hooks and CI. Adding another check keeps the single entry point. A new script would require separate hook/CI integration.
 
+Because the atlas-ci workflow already invokes `check-migration-drift.sh` on every PR, Check 4 gates PRs for free — no new CI job is needed. When Check 4 fails, the workflow's failure message SHALL point the author at the fix (`scripts/check-migration-drift.sh --fix`) rather than just reporting the mismatch, since the auto-fix path (Decision 3) makes the failure self-service.
+
 ### 2. Detection method
 
 **Decision**: Compare timestamps of new migration files (files not on `origin/main`) against the latest timestamp on `origin/main`.

@@ -1,0 +1,180 @@
+change	old_cap	req_name	scen_n	cap_purpose
+identity-ekyc-jpki	identity-ekyc	JPKI account verification via Pocket Sign Verify	3	"Identity eKYC binds an account to a **verified real person** — via マイナンバーカード
+公的個人認証 (JPKI) using **Pocket Sign (PocketSign Verify)** — so bulk/industrial
+scalping (many accounts per person, bot armies"
+identity-ekyc-jpki	identity-ekyc	Verified-person dedupe via Pocket Sign `User.id`	2	"Identity eKYC binds an account to a **verified real person** — via マイナンバーカード
+公的個人認証 (JPKI) using **Pocket Sign (PocketSign Verify)** — so bulk/industrial
+scalping (many accounts per person, bot armies"
+identity-ekyc-jpki	identity-ekyc	現況確認 (revocation / attribute-change re-check)	1	"Identity eKYC binds an account to a **verified real person** — via マイナンバーカード
+公的個人認証 (JPKI) using **Pocket Sign (PocketSign Verify)** — so bulk/industrial
+scalping (many accounts per person, bot armies"
+identity-ekyc-jpki	identity-ekyc	Per-person limit signal and mixed populations	2	"Identity eKYC binds an account to a **verified real person** — via マイナンバーカード
+公的個人認証 (JPKI) using **Pocket Sign (PocketSign Verify)** — so bulk/industrial
+scalping (many accounts per person, bot armies"
+identity-ekyc-jpki	identity-ekyc	Verification lane, per-event requirement, and fallback	3	"Identity eKYC binds an account to a **verified real person** — via マイナンバーカード
+公的個人認証 (JPKI) using **Pocket Sign (PocketSign Verify)** — so bulk/industrial
+scalping (many accounts per person, bot armies"
+identity-ekyc-jpki	identity-ekyc	Relationship to the ④ covered-ticket identity	1	"Identity eKYC binds an account to a **verified real person** — via マイナンバーカード
+公的個人認証 (JPKI) using **Pocket Sign (PocketSign Verify)** — so bulk/industrial
+scalping (many accounts per person, bot armies"
+identity-ekyc-jpki	identity-ekyc	Privacy — data minimization and deletion	2	"Identity eKYC binds an account to a **verified real person** — via マイナンバーカード
+公的個人認証 (JPKI) using **Pocket Sign (PocketSign Verify)** — so bulk/industrial
+scalping (many accounts per person, bot armies"
+official-resale	official-resale	List a ticket for resale	3	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Resale deadline	2	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Ticket sales require complete event info	1	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Withdraw a listing	2	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Resale is enabled by default with structural exclusions only	3	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Public resale marketplace with lottery-loser priority	7	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Two-leg money model at match time	3	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Seller refund triggered on resale completion	3	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Resale fee	3	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Buyer return policy on the final confirmation screen	1	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Covered-ticket re-bind on reissue	1	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Resold companion seat leaves the same-time-entry group	1	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	No double-seat or double-charge across lottery and resale	2	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Unsold listing returns to the holder	1	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Event cancellation or postponement while listed	2	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+official-resale	official-resale	Anonymity and no person-to-person contact	1	"Official, face-value resale lets a fan who can no longer attend hand their
+issued ticket back for a sanctioned face-value re-sale, so no seat is wasted and
+no scalping or person-to-person payment ever"
+optimize-dashboard-render-cost	dashboard-timetable-rendering	Timetable rendering cost is bounded and must not dominate the main thread	4	"Defines the rendering performance and motion contract for the fan-web dashboard
+timetable (My Timetable), so that showing the followed-artist concert list on
+entry and on tab-switch re-entry stays res"
+optimize-dashboard-render-cost	dashboard-timetable-rendering	Highlighted card visuals must not drive continuous rendering work	2	"Defines the rendering performance and motion contract for the fan-web dashboard
+timetable (My Timetable), so that showing the followed-artist concert list on
+entry and on tab-switch re-entry stays res"
+organizer-antisocial-vetting	organizer-antisocial-exclusion	Organizer onboarding agreement includes an antisocial-forces exclusion clause	1	"Excludes 反社会的勢力 (antisocial forces) from the platform's Organizer
+relationships, as expected of a money-handling marketplace under the 暴力団
+排除条例: an onboarding exclusion clause, an admin 反社チェック gate be"
+organizer-antisocial-vetting	organizer-antisocial-exclusion	Admin antisocial-forces check gates Organizer activation	3	"Excludes 反社会的勢力 (antisocial forces) from the platform's Organizer
+relationships, as expected of a money-handling marketplace under the 暴力団
+排除条例: an onboarding exclusion clause, an admin 反社チェック gate be"
+organizer-antisocial-vetting	organizer-antisocial-exclusion	Post-onboarding antisocial discovery triggers deactivation	1	"Excludes 反社会的勢力 (antisocial forces) from the platform's Organizer
+relationships, as expected of a money-handling marketplace under the 暴力団
+排除条例: an onboarding exclusion clause, an admin 反社チェック gate be"
+organizer-event-authoring-extensions	organizer-event-authoring	Rich media on a concert page	1	
+organizer-event-authoring-extensions	organizer-event-authoring	Streaming and hybrid concerts	1	
+organizer-event-authoring-extensions	organizer-event-authoring	Discovery metadata	1	
+organizer-event-authoring-extensions	organizer-event-authoring	Japan-idiomatic structured fields	1	
+organizer-event-authoring-extensions	organizer-event-authoring	Password-protected visibility	1	
+organizer-event-authoring-extensions	organizer-event-authoring	Per-event notes and lineup detail	1	
+organizer-event-authoring-extensions	organizer-event-authoring	Scheduled publish	1	
+payments-legal-compliance	payments-legal-compliance	Livemode launch gate	2	Defines the Japanese legal, tax, and payments-compliance obligations the platform MUST satisfy before charging real money for tickets. It is the single launch gate between test-mode paid ticketing (al
+payments-legal-compliance	payments-legal-compliance	Total-price display (総額表示)	1	Defines the Japanese legal, tax, and payments-compliance obligations the platform MUST satisfy before charging real money for tickets. It is the single launch gate between test-mode paid ticketing (al
+payments-legal-compliance	payments-legal-compliance	特定商取引法 final confirmation	1	Defines the Japanese legal, tax, and payments-compliance obligations the platform MUST satisfy before charging real money for tickets. It is the single launch gate between test-mode paid ticketing (al
+payments-legal-compliance	payments-legal-compliance	PCI SAQ A — no PAN handling	1	Defines the Japanese legal, tax, and payments-compliance obligations the platform MUST satisfy before charging real money for tickets. It is the single launch gate between test-mode paid ticketing (al
+payments-legal-compliance	payments-legal-compliance	Receipts and qualified invoices (適格請求書)	1	Defines the Japanese legal, tax, and payments-compliance obligations the platform MUST satisfy before charging real money for tickets. It is the single launch gate between test-mode paid ticketing (al
+payments-legal-compliance	payments-legal-compliance	Cross-border data-transfer disclosure and retention	1	Defines the Japanese legal, tax, and payments-compliance obligations the platform MUST satisfy before charging real money for tickets. It is the single launch gate between test-mode paid ticketing (al
+progressive-route-rendering	non-blocking-menu-navigation	Conformance is structural, not per-route discipline	2	
+progressive-route-rendering	route-rendering-lifecycle	Render state is reflected after the route's first render	2	"Defines how any data-fetching route coordinates Aurelia's two lifecycles — the
+navigation-scoped route lifecycle and the DOM-scoped component lifecycle — so
+that a route paints something meaningful im"
+progressive-route-rendering	route-rendering-lifecycle	An expensive render is preceded by a frame paint	2	"Defines how any data-fetching route coordinates Aurelia's two lifecycles — the
+navigation-scoped route lifecycle and the DOM-scoped component lifecycle — so
+that a route paints something meaningful im"
+progressive-route-rendering	route-rendering-lifecycle	Long lists render only what is in view	1	"Defines how any data-fetching route coordinates Aurelia's two lifecycles — the
+navigation-scoped route lifecycle and the DOM-scoped component lifecycle — so
+that a route paints something meaningful im"
+progressive-route-rendering	route-rendering-lifecycle	Scroll position survives navigation away and back	2	"Defines how any data-fetching route coordinates Aurelia's two lifecycles — the
+navigation-scoped route lifecycle and the DOM-scoped component lifecycle — so
+that a route paints something meaningful im"
+progressive-route-rendering	route-rendering-lifecycle	The rendering contract is provided, not re-implemented	2	"Defines how any data-fetching route coordinates Aurelia's two lifecycles — the
+navigation-scoped route lifecycle and the DOM-scoped component lifecycle — so
+that a route paints something meaningful im"
+refactor-shared-ui-design-system	shared-ui-design-system	Single source of design tokens	2	"The shared-ui-design-system capability gives Liverty Music's three web audiences
+(fan-web, admin console, organizer console) one consistent, accessible UI
+foundation — a single source of design tokens"
+refactor-shared-ui-design-system	shared-ui-design-system	Shared reusable UI primitives	2	"The shared-ui-design-system capability gives Liverty Music's three web audiences
+(fan-web, admin console, organizer console) one consistent, accessible UI
+foundation — a single source of design tokens"
+refactor-shared-ui-design-system	shared-ui-design-system	Console persistent navigation with no dead-end screens	2	"The shared-ui-design-system capability gives Liverty Music's three web audiences
+(fan-web, admin console, organizer console) one consistent, accessible UI
+foundation — a single source of design tokens"
+refactor-shared-ui-design-system	shared-ui-design-system	Responsive and accessible primitives	2	"The shared-ui-design-system capability gives Liverty Music's three web audiences
+(fan-web, admin console, organizer console) one consistent, accessible UI
+foundation — a single source of design tokens"
+refactor-shared-ui-design-system	shared-ui-design-system	Consumer and console bundle isolation preserved	2	"The shared-ui-design-system capability gives Liverty Music's three web audiences
+(fan-web, admin console, organizer console) one consistent, accessible UI
+foundation — a single source of design tokens"
+replace-handrolled-with-platform	offscreen-work-suspension	Continuous work suspends when its surface is not rendered	3	"Establishes that continuous work in the app — animation frame loops, physics
+simulation, canvas painting — runs only while the surface it produces is actually
+being rendered.
+
+The app already behaves "
+replace-handrolled-with-platform	offscreen-work-suspension	Overlapping suspension conditions do not cancel each other	1	"Establishes that continuous work in the app — animation frame loops, physics
+simulation, canvas painting — runs only while the surface it produces is actually
+being rendered.
+
+The app already behaves "
+replace-handrolled-with-platform	offscreen-work-suspension	Resuming continues the work rather than advancing it	1	"Establishes that continuous work in the app — animation frame loops, physics
+simulation, canvas painting — runs only while the surface it produces is actually
+being rendered.
+
+The app already behaves "
+replace-handrolled-with-platform	offscreen-work-suspension	Suspension respects a reduced-motion preference	1	"Establishes that continuous work in the app — animation frame loops, physics
+simulation, canvas painting — runs only while the surface it produces is actually
+being rendered.
+
+The app already behaves "
+replace-handrolled-with-platform	offscreen-work-suspension	Suspension never changes what is on screen	1	"Establishes that continuous work in the app — animation frame loops, physics
+simulation, canvas painting — runs only while the surface it produces is actually
+being rendered.
+
+The app already behaves "
+replace-handrolled-with-platform	offscreen-work-suspension	Teardown releases continuous work	1	"Establishes that continuous work in the app — animation frame loops, physics
+simulation, canvas painting — runs only while the surface it produces is actually
+being rendered.
+
+The app already behaves "
+ticket-wallet-and-checkin	ticket-wallet-and-checkin	Ticket wallet renders the ticket and its covered-ticket face	1	"This capability lets a fan hold and use an issued ticket: an in-app wallet that
+renders the ticket (incl. its covered-ticket face) and an **entry credential = an
+in-app dynamic QR backed by a server-s"
+ticket-wallet-and-checkin	ticket-wallet-and-checkin	Entry credential is an in-app dynamic QR from a signed short-TTL token	3	"This capability lets a fan hold and use an issued ticket: an in-app wallet that
+renders the ticket (incl. its covered-ticket face) and an **entry credential = an
+in-app dynamic QR backed by a server-s"
+ticket-wallet-and-checkin	ticket-wallet-and-checkin	Validate signature + freshness, then atomic duplicate-check at admit	3	"This capability lets a fan hold and use an issued ticket: an in-app wallet that
+renders the ticket (incl. its covered-ticket face) and an **entry credential = an
+in-app dynamic QR backed by a server-s"
+ticket-wallet-and-checkin	ticket-wallet-and-checkin	Reception check-in PWA (web camera)	1	"This capability lets a fan hold and use an issued ticket: an in-app wallet that
+renders the ticket (incl. its covered-ticket face) and an **entry credential = an
+in-app dynamic QR backed by a server-s"
+ticket-wallet-and-checkin	ticket-wallet-and-checkin	Same-time companion group entry	2	"This capability lets a fan hold and use an issued ticket: an in-app wallet that
+renders the ticket (incl. its covered-ticket face) and an **entry credential = an
+in-app dynamic QR backed by a server-s"
+ticket-wallet-and-checkin	ticket-wallet-and-checkin	Entry status and no double-entry	1	"This capability lets a fan hold and use an issued ticket: an in-app wallet that
+renders the ticket (incl. its covered-ticket face) and an **entry credential = an
+in-app dynamic QR backed by a server-s"
+ticket-wallet-and-checkin	ticket-wallet-and-checkin	Void invalidates the entry credential	1	"This capability lets a fan hold and use an issued ticket: an in-app wallet that
+renders the ticket (incl. its covered-ticket face) and an **entry credential = an
+in-app dynamic QR backed by a server-s"

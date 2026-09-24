@@ -103,16 +103,3 @@ The system SHALL persist a `SalesPhase` only when both (a) its `apply_start_time
 
 - **WHEN** an extracted phase has a concrete `apply_start_time` and at least one resolved covered event
 - **THEN** the system SHALL persist it even if `apply_end_time`, `lottery_result_time`, or `payment_deadline_time` are still null
-
-### Requirement: SalesPhase Database Schema
-
-The system SHALL store sales phases in a `sales_phases` table.
-
-#### Scenario: Table structure
-
-- **WHEN** the `sales_phases` table is created
-- **THEN** it SHALL have an `id` UUID primary key and a `series_id` foreign key referencing series
-- **AND** it SHALL store method, channel, provider_name, sequence, `apply_start_at` (NOT NULL), the three nullable timestamps (`apply_end_at`, `lottery_result_at`, `payment_deadline_at`), and url
-- **AND** the surrogate `id` SHALL be the only uniqueness constraint; it SHALL store an immutable `anchor_event_id` (set once at insert as a representative, never recomputed) but SHALL NOT impose a unique constraint over `(series_id, channel, sequence)` or the anchor, since convergence is the application-level best-effort overlap match defined in Best-Effort Stable Phase Identity
-- **AND** the covered-events relationship SHALL be stored in an `event_sales_phases` join table keyed by `(sales_phase_id, event_id)`, each `event_id` referencing an event of the phase's series
-- **AND** the existing `ticket_emails` table SHALL NOT be modified by this change

@@ -22,7 +22,6 @@ The backend codebase has grown to ~21,000 LOC across 120+ files with strong Clea
 ### Modified Capabilities
 
 - `usecase-test-coverage`: Extend test requirements to cover adapter mapper layer, messaging infrastructure, and event consumers
-- `entity-test-coverage`: Extend test requirements to cover error documentation completeness for entity interfaces
 
 ## Impact
 

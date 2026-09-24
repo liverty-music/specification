@@ -33,7 +33,7 @@ Stakeholders: frontend (E2E pipeline owner), cloud-provisioning (Pulumi-provisio
 
 ### D1: Password-based HumanUser over passkey emulation or WebAuthn-virtual-authenticator
 
-**Choice**: Provision a separate `zitadel.HumanUser` with `InitialPassword` set, alongside the existing passkey user. Both coexist.
+**Choice**: Provision a separate `zitadel.HumanUser` with `InitialPassword` set, alongside the existing passkey user. Both coexist. The user is also provisioned with `isEmailVerified: true` — without it, Zitadel injects an email-verification step into the OIDC flow that the headless capture script has no way to complete.
 
 **Alternatives considered**:
 

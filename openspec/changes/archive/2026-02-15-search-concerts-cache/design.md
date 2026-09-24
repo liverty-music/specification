@@ -38,7 +38,7 @@ When a recent search log exists, `SearchNewConcerts` returns `[]` (empty). This 
 
 ### 4. UPSERT pattern for search log
 
-Use `INSERT ... ON CONFLICT (artist_id) DO UPDATE SET searched_at = NOW()` to handle both first-time and subsequent searches in a single query. This avoids race conditions from concurrent searches for the same artist.
+Use `INSERT ... ON CONFLICT (artist_id) DO UPDATE SET searched_at = NOW()` to handle both first-time and subsequent searches in a single query. This avoids race conditions from concurrent searches for the same artist. `latest_search_logs` has `artist_id` as its primary key (also a foreign key to `artists.id`, giving the UPSERT its conflict target) and `searched_at` as a non-null `timestamptz` column.
 
 ### 5. Search log check placement: inside `SearchNewConcerts` usecase
 

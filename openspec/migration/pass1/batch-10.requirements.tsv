@@ -1,0 +1,118 @@
+old_spec	old_req_name	disposition	target_path	new_req_name	merge_group	rewrite_flags	confidence	rationale
+modern-css-platform	Container Queries for component-level responsive design	OUT:design-doc					high	CSS platform API choice (Container Queries vs media queries), enforced by stylelint; no distinct user-facing contract
+modern-css-platform	View Transitions API for route animations	OUT:design-doc					high	mandates a specific browser API for route transitions; enforcement is implementation-level, not a product behavior contract
+modern-css-platform	CSS `:has()` selector for state-based styling	OUT:design-doc					high	CSS selector technology choice replacing JS class toggling; no user actor
+modern-css-platform	CSS Logical Properties	OUT:design-doc					high	CSS authoring convention enforced by stylelint property-disallowed-list; no user actor
+modern-css-platform	CSS `@layer` for cascade management	OUT:design-doc				CLASSNAME	high	CSS cascade architecture decision (CUBE layering) in src/styles/main.css; no user actor
+modern-css-platform	CSS `@scope` for component isolation	OUT:design-doc				CLASSNAME	high	CSS scoping technology decision per component file (e.g. event-card.css); no user actor
+modern-css-platform	No viewport media queries for component responsiveness	OUT:design-doc					high	restates Container Query mandate as a stylelint-enforced authoring rule; no user actor
+modern-css-platform	OKLCH color enforcement	OUT:design-doc					high	color-function technology choice enforced by stylelint; no user actor
+modern-css-platform	Anchored Container Query for position-dependent child styling	OUT:design-doc					high	CSS anchor-positioning technique replacing JS position detection; no user actor
+modern-css-platform	CSS `@starting-style` for entry animations on dynamic elements	OUT:design-doc					high	animation implementation technique (CSS vs requestAnimationFrame); no user actor
+modern-css-platform	`transitionend` event for post-animation DOM cleanup	OUT:design-doc					high	event-driven cleanup implementation technique replacing setTimeout; no user actor
+modern-css-platform	`overscroll-behavior: contain` for scroll isolation	OUT:design-doc					high	CSS property mandate for scroll containment; no user actor
+modern-css-platform	`scrollIntoView` + `scrollend` for scroll-then-act patterns	OUT:design-doc					high	DOM API choice for scroll-then-act sequencing; no user actor
+modern-css-platform	`data-state` attribute for CSS animation state	OUT:design-doc					high	state-attribute authoring convention replacing classList; no user actor
+modern-css-platform	Total `style` attribute ban in templates	OUT:design-doc					high	template authoring/lint rule banning inline style attributes; grep-enforced by make check
+modern-css-platform	`color-mix()` for dynamic alpha	OUT:design-doc					high	CSS function choice for alpha derivation; no user actor
+modern-css-platform	`translate` shorthand for transforms	OUT:design-doc					high	CSS property choice (translate vs transform); no user actor
+modern-css-platform	No setTimeout for CSS animation timing	OUT:design-doc					high	coding convention banning setTimeout for animation timing; no user actor
+modern-css-platform	CSS scroll snap for bottom sheet dismiss gestures	OUT:design-doc					high	gesture-handling implementation technique (CSS scroll-snap vs JS touch handlers); no user actor
+modern-css-platform	No JS-to-CSS variable bridge custom attributes	OUT:design-doc					high	coding convention removing a class of custom attributes; no user actor
+modern-css-platform	Scroll-driven Animations for scroll-linked effects	OUT:design-doc					high	animation implementation technique (CSS scroll-timeline vs JS scroll listeners); no user actor
+state-management	OnboardingService as singleton state owner	OUT:design-doc				CLASSNAME	high	internal Aurelia DI/@observable implementation of OnboardingService; no distinct product contract
+state-management	GuestService as singleton state owner	OUT:design-doc				CLASSNAME	high	internal Aurelia DI/@observable implementation of GuestService storage; no distinct product contract
+state-management	GuestFollow type in entities	OUT:design-doc				CLASSNAME	medium	local TS interface declaration for guest-mode data; implementation detail, no user actor
+state-management	Service-level persistence via propertyChanged	OUT:design-doc				CLASSNAME	high	localStorage persistence wiring (propertyChanged callbacks, key names) is implementation detail
+state-management	Service hydration from localStorage	OUT:design-doc				CLASSNAME	high	field-initializer hydration ordering is implementation detail; no user actor
+state-management	Simplified guest-storage POJO-only serialization	OUT:design-doc				CLASSNAME	high	serialization format for adapter/storage/guest-storage.ts is implementation detail
+state-management	OnboardingStep string values	OUT:design-doc				CLASSNAME	high	internal enum/const shape for OnboardingStep; no user actor
+state-management	FollowServiceClient as follow state SSoT	KEEP	components/usecase/follow/follow	Follow an artist		CLASSNAME	medium	FollowServiceClient.follow() mirrors FollowUseCase.Follow with optimistic update/rollback the user experiences; SPLIT-CANDIDATE (derived followedIds/followedCount getters are implementation detail)
+state-management	ConcertServiceClient concert search and tracking	KEEP	components/usecase/concert/search-new-concerts	Search and track new concerts for followed artists		CLASSNAME	medium	ConcertServiceClient.searchAndTrack wraps ConcertUseCase.SearchNewConcerts polling to completion, a user-observed result; SPLIT-CANDIDATE (polling interval/timeout mechanics are implementation detail)
+state-management	Single DI access path	OUT:lint				CLASSNAME	high	grep-verifiable prohibition on resolveStore()/IStore usage; code convention, no user actor
+live-events	Concert Schedue Data Model	KEEP	components/entity/concert	Concert schedule data model		HISTORIC	medium	requirement bundles Artist/Venue/Concert/Event field definitions and a dashboard ticket-journey badge UI scenario; Concert is the named/central entity. SPLIT-CANDIDATE: Artist/Venue/Event field definitions belong to their own entities, and the badge scenarios belong to a dashboard route/global UI surface. Contains HISTORIC note (Event SHALL NOT include merkle_root, removed with blockchain ticket system)
+live-events	Artist Management	KEEP	components/usecase/artist/create	Create an artist			medium	CreateArtist/ListArtists map to ArtistUseCase.Create/List; SPLIT-CANDIDATE (ListArtists->artist/list, Add/Remove Media have no matching vocab usecase)
+live-events	Live Schedule Access	KEEP	components/usecase/concert/list-by-follower-grouped	List concerts grouped by date for followed artists			medium	3 of 4 scenarios describe ConcertUseCase.ListByFollowerGrouped's grouping/lane/date behavior; SPLIT-CANDIDATE (List Concerts scenario maps to concert/list-by-artist)
+live-events	Proto Value Object Consistency	OUT:design-doc					high	proto wrapper-message typing convention for internal data representation; no user actor
+live-events	Venue Embedding in Concert and Event	KEEP	components/entity/concert	Concert carries an embedded venue			medium	RPC responses embed resolved Venue on Concert (and Event); SPLIT-CANDIDATE (Event entity)
+live-events	Go Entity Field Name Alignment	OUT:design-doc					high	internal Go struct field rename (LocalEventDate->LocalDate); no user actor
+live-events	Dashboard Lane Classification	KEEP	components/usecase/concert/list-by-follower-grouped	Classify concerts into home/nearby/away lanes			high	backend classification rule within ConcertUseCase.ListByFollowerGrouped, replacing frontend-only classification
+live-events	ISO 3166-2 Display Conversion	KEEP	components/infrastructure/locale/admin-area-names	Display localized admin-area names			medium	frontend locale-dependent conversion of admin_area codes to display names; proposed infra/locale kind, name not yet in vocabulary
+live-events	Live Event Availability Check	KEEP	components/usecase/concert/list-by-artist	Check whether an artist has upcoming live events			medium	checkLiveEvents wraps ConcertService/List (by artist ID) and returns a boolean derived from it
+frontend-hosting	Container image build pipeline	OUT:runbook					high	CI image build/tag/push mechanics; no user actor
+frontend-hosting	Kubernetes deployment configuration	OUT:runbook					high	Deployment/Service manifest sizing and topology; no user actor
+frontend-hosting	Static asset serving with caching	OUT:runbook					medium	Caddy server cache-header behavior; infra config with no product-facing variability
+frontend-hosting	SPA client-side routing support	OUT:design-doc					medium	Caddy try_files fallback mechanism enabling client routing; webserver infra decision, not a specific route/component contract
+frontend-hosting	HTTPS ingress via Gateway API	OUT:runbook					high	Gateway API HTTPRoute/TLS provisioning; no user actor
+frontend-hosting	GitOps deployment automation	OUT:runbook					high	ArgoCD sync/prune policy; no user actor
+frontend-hosting	Caddyfile configuration	OUT:design-doc					high	webserver configuration file contents; implementation detail
+frontend-hosting	DNS and TLS infrastructure provisioning	OUT:runbook					high	Pulumi DNS/certificate provisioning; no user actor
+frontend-hosting	Caddy SHALL serve `/config.json` with no-store header	OUT:design-doc					medium	webserver header configuration for runtime-config propagation; infra implementation detail, no user actor
+frontend-hosting	Frontend Deployment SHALL mount a per-environment runtime-config ConfigMap	OUT:runbook				THRESHOLD	medium	"Kubernetes ConfigMap/Reloader deployment mechanics; rollout latency described qualitatively (""typically tens of seconds"") as an operational expectation, not a testable contract"
+frontend-hosting	Post-deploy smoke verification SHALL assert the SPA renders	OUT:runbook					high	CI/CD post-deploy smoke-check gating promotion; operational verification mechanic, no user actor
+event-management	Generic Event Management	KEEP	components/entity/event	Event represents a single performance occurrence			high	defines Event fields, EventId canonical identity, and DB mapping; entity invariant
+event-management	Event-Type Extensibility	KEEP	components/entity/concert	Concert extends Event via a 1:1 relationship			medium	Concert-as-Event extension relationship; SPLIT-CANDIDATE (Event entity)
+event-management	Series as Parent Aggregation	KEEP	components/entity/series	Series aggregates events for a tour, run, or festival			high	defines Series fields, SeriesType enum, visibility/publish_state lifecycle; entity invariant
+event-management	Multiple Performers per Event	KEEP	components/entity/event	Event supports multiple performing artists			medium	M:N Event<->Artist relationship via event_performers; SPLIT-CANDIDATE (Concert DTO performers field)
+event-management	Concert DTO Embeds Series and Performers	KEEP	components/entity/concert	Concert embeds resolved series and performers			high	defines Concert message shape (embedded Series, performers, no duplicated title/source_url); entity invariant
+event-management	Trace context propagation across message broker	OUT:design-doc					high	telemetry cross-cutting concern (trace_id/span_id propagation) per tie-break rule; no user actor
+event-management	Event Natural Key Reflects Physical Identity	KEEP	components/entity/event	Event identity is keyed on venue, date, and start time			high	defines events table natural key/uniqueness constraint; entity invariant
+organizer-accounts	Admin creates an organizer with an initial operator	KEEP	components/usecase/organizer/create	Admin creates an organizer with an initial operator			high	matches OrganizerUseCase.Create; admin-observed operation result
+organizer-accounts	Initial operator bootstraps credentials on first sign-in	KEEP	stories/bootstrap-operator-credentials-on-first-sign-in	Operator bootstraps credentials on first sign-in			medium	multi-step journey across invitation email, identity-provider credential page, and organizer console redirect; story proposal, not yet in vocabulary
+organizer-accounts	An artist is represented by at most one organizer	KEEP	components/usecase/organizer/associate-artist	Associate an artist with at most one organizer			medium	OrganizerUseCase.AssociateArtist rejection rules dominate; SPLIT-CANDIDATE (disassociate-artist)
+organizer-accounts	Admin can list and inspect organizers	KEEP	components/usecase/organizer/list	Admin lists and inspects organizers			medium	OrganizerUseCase.List is the primary scenario; SPLIT-CANDIDATE (Get, ListArtists)
+organizer-accounts	Organizer provisioning is idempotent and compensating	KEEP	components/usecase/organizer/reconcile-provisioning	Organizer provisioning is idempotent and compensating			high	matches OrganizerUseCase.ReconcileProvisioning exactly
+organizer-accounts	An organizer can be deactivated	KEEP	components/usecase/organizer/deactivate	An organizer can be deactivated			high	matches OrganizerUseCase.Deactivate exactly
+organizer-accounts	Organizer lifecycle emits analytics events	OUT:design-doc					medium	backend analytics-event emission is a telemetry cross-cutting concern per tie-break rule; not observed by any actor
+jetstream-consumer-reliability	Consumer backlog stall is detected and alerted	OUT:runbook					high	Cloud Monitoring alert on JetStream backlog metric; operational, no fan/organizer/admin actor
+jetstream-consumer-reliability	Subscription failure fails loud	OUT:runbook					high	consumer startup failure-mode policy; operational, no user actor
+jetstream-consumer-reliability	Liveness reflects consumption health	OUT:runbook					high	Kubernetes liveness/readiness probe semantics; operational, no user actor
+jetstream-consumer-reliability	Consumers are named by behavior, with a unique deliver group	OUT:design-doc					high	durable/deliver-group naming convention; no user actor
+jetstream-consumer-reliability	Every handler receives every message (fan-out)	OUT:design-doc					high	messaging architecture decision (one consumer per handler); no user actor
+jetstream-consumer-reliability	Subjects are named as past-tense events	OUT:design-doc					high	NATS subject naming convention; no user actor
+jetstream-consumer-reliability	KEDA triggers reference the live behavior-named durables	OUT:design-doc					medium	consistency rule between application durable names and KEDA ScaledObject config; no user actor
+jetstream-consumer-reliability	Stream and durable configuration is managed declaratively by a single owner	OUT:design-doc					high	ownership/reconciliation architecture for JetStream config; no user actor
+jetstream-consumer-reliability	A consumer may scale to zero without losing its durable	OUT:runbook					high	KEDA scale-to-zero autoscaling behavior; operational, no user actor
+admin-rpc-server	Dedicated admin Connect server	OUT:design-doc					high	separate-port server topology; internal architecture, no user actor observes port separation
+admin-rpc-server	Boundary-level admin authorization	OUT:design-doc					medium	boundary-vs-per-method authorization architecture; PERMISSION_DENIED outcome is a standard RPC pattern, not a distinctive product contract
+admin-rpc-server	Admin-only CORS allowlist	OUT:design-doc					high	CORS is a cross-cutting concern per tie-break rule (telemetry/cors -> OUT)
+admin-rpc-server	Shared server construction to prevent interceptor drift	OUT:design-doc					high	internal interceptor-chain construction pattern; no user actor
+admin-rpc-server	Dedicated admin API ingress host	OUT:design-doc					medium	ingress/DNS/cert topology for admin host; infra architecture, no user actor
+admin-rpc-server	Admin console resolves the admin API host from runtime config	OUT:design-doc					medium	admin console runtime-config wiring; admin console has no vocabulary entry yet, implementation-level host resolution
+notification-lifecycle	Notifications are persisted as identified entities	KEEP	components/entity/notification	Notification is persisted as an identified record			high	defines Notification record fields (notification_id, user_id, type, payload, created_at); entity invariant
+notification-lifecycle	Per-notification delivery outcome is recorded	KEEP	components/usecase/notification/notify	Notify records the delivery outcome			medium	NotificationUseCase.Notify records queued/delivered/failed state; SPLIT-CANDIDATE (WARNING log + metric emission is a telemetry cross-cutting concern -> OUT)
+notification-lifecycle	All user-facing notifications flow through the notification service	OUT:design-doc					medium	internal producer call-graph requirement (route through service vs direct push); user-received content is unchanged, implementation wiring only
+notification-lifecycle	Read and dismiss state is user-controllable and idempotent	KEEP	components/usecase/notification/mark-read	Mark a notification as read or dismissed			medium	NotificationUseCase.MarkRead is the dominant scenario; SPLIT-CANDIDATE (MarkDismissed)
+notification-lifecycle	The notification identifier is propagated end-to-end	OUT:design-doc					medium	internal data-plumbing requirement carrying notification_id into the push payload for future correlation; no current standalone user-facing behavior
+notification-lifecycle	Delivered notifications are reported to product analytics	OUT:design-doc					high	product-analytics emission is a telemetry cross-cutting concern per tie-break rule
+notification-lifecycle	Notification opens and dismissals are reported to product analytics	OUT:design-doc					high	product-analytics emission is a telemetry cross-cutting concern per tie-break rule
+notification-lifecycle	Notification fan-out logs zero-recipient skips	OUT:runbook					high	operational diagnostic logging for zero-dispatch outcomes; no user actor
+sales-phase	SalesPhase Entity	KEEP	components/entity/sales-phase	SalesPhase represents one ticket-sales opportunity			high	defines SalesPhase fields (series_id, method, channel, timeline fields); entity invariant
+sales-phase	SalesPhase Identity	KEEP	components/entity/sales-phase	SalesPhaseId is a UUID value object			high	defines SalesPhaseId format; entity invariant
+sales-phase	Sales Method and Channel Classification	KEEP	components/entity/sales-phase	SalesMethod and SalesChannel are orthogonal classifications			high	defines SalesMethod/SalesChannel enum values; entity invariant
+sales-phase	Timeline Fields Are Nullable Except the Start	KEEP	components/entity/sales-phase	Only apply_start_time is required on a sales phase			high	defines nullability of SalesPhase timeline fields; entity invariant
+sales-phase	Best-Effort Stable Phase Identity	KEEP	components/usecase/sales-phase/discover-for-artist	Re-discovered sales phases converge to the same phase			medium	matching/reconciliation behavior of SalesPhaseDiscoveryUseCase.DiscoverForArtist on re-extraction; SPLIT-CANDIDATE (entity identity semantics)
+sales-phase	Persist Only Phases With a Known Start	KEEP	components/usecase/sales-phase/discover-for-artist	Only persist a discovered phase with a known start			medium	conditional-persist business rule applied during discovery, not a passive field constraint
+sales-phase	SalesPhase Database Schema	OUT:design-doc					high	sales_phases table column layout; implementation detail, no user actor
+nearby-proximity	Proximity Classification Model	KEEP	components/entity/proximity	Classify a venue's proximity to the user's home			high	Concert.ProximityTo(home) entity method classifying HOME/NEARBY/AWAY; entity invariant
+nearby-proximity	Home Area Centroid Lookup	KEEP	components/usecase/user/update-home	Resolve and store the home area's centroid on write			medium	centroid resolution happens within UserUseCase.UpdateHome (and Create); SPLIT-CANDIDATE (user/create)
+nearby-proximity	Centroid Resolution Unit Coverage	OUT:lint					high	mandates unit-test coverage for internal ResolveCentroid function; no user actor
+k8s-resource-right-sizing	Dev environment resource requests use Standard GKE minimums	OUT:runbook					high	Kubernetes CPU/memory request sizing for dev workloads; operational, no user actor
+k8s-resource-right-sizing	KEDA ScaledObjects in dev SHALL cap at maxReplicaCount 1	OUT:runbook					high	dev-environment autoscaler cap; operational, no user actor
+workload-naming-convention	Workload names follow the audience-tier scheme	OUT:design-doc					high	Kubernetes workload naming convention; no user actor
+workload-naming-convention	Derived resources share the workload stem with uniform suffixes	OUT:design-doc					high	resource naming convention (Service/HTTPRoute/etc suffixes); no user actor
+workload-naming-convention	GCP identities and image repositories key off the same principal	OUT:design-doc					high	GCP identity/image-repo naming convention; no user actor
+workload-naming-convention	A canonical name mapping is the authoritative reference	OUT:design-doc					high	maintenance of a naming-migration reference table; no user actor
+workload-naming-convention	Renames use an additive create-new then cutover then delete-old migration	OUT:runbook				THRESHOLD	medium	"operational migration procedure for renaming live workloads; ""brief"" interruption is qualitative, no user actor"
+database	Schema migrations MUST be applied before serving traffic	OUT:runbook					high	ArgoCD sync-wave/Atlas Operator migration ordering; deployment mechanic, no user actor
+database	The system MUST provide persistent relational storage	OUT:runbook					high	Cloud SQL availability-tier provisioning policy; infra non-functional requirement, no user actor
+database	Application data SHALL reside in a dedicated schema	OUT:design-doc					high	DSN search_path/schema-naming convention; implementation detail, no user actor
+database	Database tables SHALL NOT include metadata timestamp columns	OUT:design-doc				HISTORIC	high	table-design convention banning audit timestamp columns; references removal of tickets.minted_at/nullifiers.used_at under the Scenario A pivot; no user actor
+push-notification-localization	Localized Notification Copy	KEEP	components/infrastructure/locale/push-notification-copy	Select push notification copy by recipient's preferred language			medium	user-experience infrastructure (locale kind) selecting notification title/body language; proposed name, not yet in vocabulary
+push-notification-localization	Concert Discovery Notification Content	KEEP	components/usecase/push-subscription/notify-new-concerts	Localize the concert-discovery follower notification body			high	matches PushNotificationUseCase.NotifyNewConcerts content generation
+toast-ce	Toast Custom Element	KEEP	components/infrastructure/ui/global/toast	Toast custom element as a top-positioned popover banner			high	matches existing frontend/src/components/toast global UI surface exactly
+commit-gate-hook	Claude Code PreToolUse hook blocks unchecked commits	OUT:runbook					high	AI-agent dev-tooling gate (PreToolUse hook running make check); no product user actor
+commit-gate-hook	code-verifier skill removal	DROP:obsolete					high	one-time cleanup task (removing a retired Claude skill); no lasting rule, no user actor
+commit-gate-hook	CLAUDE.md and AGENTS.md updated	OUT:runbook					high	developer-documentation standard listing Makefile commands; no product user actor
+web-push-delivery-alerting	Alert on sustained push delivery failure	OUT:runbook					high	Cloud Monitoring alert on delivery-failure ratio; operational, no user actor
+web-push-delivery-alerting	Alert on active-subscription starvation	OUT:runbook					high	Cloud Monitoring alert on subscription starvation; operational, no user actor

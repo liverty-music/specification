@@ -129,6 +129,15 @@ After rename, the conflicting env var name becomes `ZITADEL_API_PORT` (Service `
 
 This contradicts the actual value (`https://auth.dev.liverty-music.app`) and the detailed rationale a few lines below (L59-71). Leftover from before [cloud-provisioning#214](https://github.com/liverty-music/cloud-provisioning/pull/214). Removed as part of this change (the file is being renamed anyway).
 
+### 7. Prod overlay excludes dev-only resources by omission, not by flag
+
+Both overlays import the same `../../base` and apply the same renamed-resource patches (Deployment/Service/PDB/HealthCheckPolicy names, hostname), but two resources exist only under `overlays/dev/` and are simply absent from `overlays/prod/kustomization.yaml`'s resource list rather than being included and conditionally disabled:
+
+- `cronjob-restart-zitadel.yaml` — the dev-only weekly restart band-aid for the `self-hosted-zitadel` §18.6 hang.
+- `zitadel-db-grant` Job — hardcodes the dev Cloud SQL instance and dev IAM SA username, so it cannot be shared as-is.
+
+**Why omission over a disable flag**: both resources are inherently environment-specific (one is a temporary workaround tagged `liverty-music.app/temporary`, the other hardcodes dev-only connection values); a flag to no-op them in prod would still require prod-specific values to exist somewhere. Kustomize's resource-list mechanism already expresses "this file doesn't apply here" without inventing a toggle.
+
 ## Trade-offs explored and rejected
 
 ### Hostname strategy B: keep base = dev hostname, prod patches only

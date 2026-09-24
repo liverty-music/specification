@@ -1,0 +1,1 @@
+Searches external sources for new concerts on behalf of followed artists, deduplicating against existing and pending records, tolerating source inconsistencies and failures, and tracking each artist's search history, running both on demand and on a schedule.

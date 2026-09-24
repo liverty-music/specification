@@ -16,7 +16,8 @@ The frontend has shipped with Storybook since project init, but it is effectivel
 ## Capabilities
 
 ### New Capabilities
-- `storybook-component-testing`: Storybook-based isolated component development and CI-enforced component testing for the Aurelia 2 frontend — story authoring scope, browser-mode test execution, accessibility checks, component-level visual regression, and CI integration.
+
+(none — see design.md)
 
 ### Modified Capabilities
 <!-- No existing capability's requirements change. Visual-regression behavior migrates into the new capability above; the retirement of the Playwright mobile-visual project is captured there and in tasks. -->

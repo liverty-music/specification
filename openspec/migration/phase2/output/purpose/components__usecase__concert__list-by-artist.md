@@ -1,0 +1,1 @@
+Lists concerts for a given artist with resolved venue information, and reports whether that artist has any upcoming live events.

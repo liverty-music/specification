@@ -14,7 +14,7 @@ Four routes require OIDC auth (dashboard, my-artists, tickets, settings). The re
 **Goals:**
 - Detect layout regressions (element sizing, overflow, containment) automatically in CI.
 - Cover the shell layout (Grid auto-stretch, bottom-nav positioning), public routes, and authenticated routes (settings) via `storageState`.
-- Keep test execution under 3 seconds for the full layout suite.
+- Keep test execution fast enough for local development feedback loops — under 5 seconds for the full layout suite, excluding browser launch time.
 - Use Playwright `boundingBox()` and `toHaveCSS()` assertions — no screenshot diffing.
 
 **Non-Goals:**

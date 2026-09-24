@@ -1,0 +1,1 @@
+Provides transient toast notifications that surface live-event updates and background-operation failures, reverting any optimistic UI change when an action fails.

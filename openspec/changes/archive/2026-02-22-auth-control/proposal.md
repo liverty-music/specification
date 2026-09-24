@@ -16,7 +16,6 @@ The current system specifies that all views beyond the landing page require auth
 ### New Capabilities
 
 - `frontend-route-guard`: Global authentication guard for frontend routing using Aurelia 2 lifecycle hooks. Redirects unauthenticated users to the landing page for protected routes.
-- `e2e-auth-testing`: Playwright MCP configuration for running automated E2E tests against authenticated routes using pre-captured storageState.
 
 ### Modified Capabilities
 

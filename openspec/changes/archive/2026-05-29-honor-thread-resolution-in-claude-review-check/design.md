@@ -70,7 +70,7 @@ jobs:
           claude_args: '--allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh search:*),mcp__github_inline_comment__create_inline_comment"'
 ```
 
-Removed: the `verdict_only` input on `workflow_call`; the `Count unresolved Claude review threads` step; the `Publish Claude review Check Run` step; the `checks: write` permission; all pagination loop / GraphQL / jq logic.
+Removed: the `verdict_only` input on `workflow_call`; the `Count unresolved Claude review threads` step; the `Publish Claude review Check Run` step; the `checks: write` permission; all pagination loop / GraphQL / jq logic. The workflow posts inline comments only — it does not emit a verdict file and does not submit a formal pull request review (`APPROVED` or `CHANGES_REQUESTED`); the `code-review` slash command's documented behavior is comment-only, and nothing in this shape adds a review-submission step on top of it.
 
 **Why:**
 

@@ -16,7 +16,7 @@ After account creation or sign-in, the frontend never fetches the backend User e
 
 ### New Capabilities
 
-- `user-profile-hydration`: Centralized loading and caching of the authenticated user's backend profile in the frontend, triggered at app startup and after auth callback.
+(none — the profile cache is an implementation of the modified capabilities below; see design.md)
 
 ### Modified Capabilities
 

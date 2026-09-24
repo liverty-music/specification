@@ -28,10 +28,7 @@ The change is deliberately scoped to *prerequisites for service-in*, not feature
 
 ### Modified Capabilities
 
-- `prod-environment-bootstrap`: gains requirements that prod runtime config is filled with prod-appropriate values rather than placeholders — mainnet `TICKET_SBT_ADDRESS`, VAPID keypair integrity (configmap public ↔ GSM private match), blockchain-mainnet-value invariant, and admin Google sub correctness. These are preconditions the capability never asserted before but the `refactor-unify-env-dispatch` audit shows are required for the env to be operational.
-- `gcp-cost-guardrails`: generalizes "Dev Project Billing Budget Alert" to a per-env "Project Billing Budget Alert" so that prod can declare its own budget threshold + email channel via ESC (the existing `gcpConfig.billingAlertEmail` / `gcpConfig.budgetAmountJpy` code paths are already env-agnostic; this aligns the spec).
-- `atlas-operator`: gains the requirement that a `k8s/atlas/overlays/prod/` directory exists in the backend repository so the corresponding ArgoCD `backend-migrations` Application can sync (currently `Unknown` due to missing path).
-- `identity-management`: extends per-env coverage — modifies "Manage OIDC Application" so the SPA `client_id` and product-org-id are committed to a per-env build-time env file (not just `.env`), and adds a sibling "Maintain Google OAuth Client in Prod Infrastructure" to mirror the dev requirement at line 477. The prod Google OAuth client already exists in the prod GCP project; the spec just needs to acknowledge it.
+- `identity-management`: extends per-env coverage — modifies "Manage OIDC Application" so the SPA `client_id` and product-org-id are committed to a per-env build-time env file (not just `.env`). The prod Google OAuth client already exists in the prod GCP project; see design.md for how it's provisioned and recorded.
 
 ## Impact
 

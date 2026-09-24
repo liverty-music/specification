@@ -19,12 +19,10 @@ The frontend codebase uses Aurelia 2 but does not leverage many of its most powe
 ## Capabilities
 
 ### New Capabilities
-- `aurelia-reactivity`: Covers adoption of `@watch`, `@computed`, `batch()`, and `@observable` patterns across components and services for fine-grained reactivity
-- `aurelia-template-optimization`: Covers `key.bind`, `switch.bind`, `show.bind`, `.class` binding, binding behaviors (`debounce`, `throttle`), and value converters
-- `modern-css-platform`: Covers Container Queries, View Transitions API, `:has()` selectors, and CSS Logical Properties adoption
+(none — see design.md)
 
 ### Modified Capabilities
-- `design-system`: Adding Container Queries and View Transitions API to the design token system; updating animation requirements from CSS keyframes to View Transitions
+- `design-system`: Adding Container Query breakpoint and view transition duration/easing tokens to the design token system
 
 ## Impact
 

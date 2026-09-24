@@ -30,15 +30,13 @@ self-serve organizer onboarding.
 ## Capabilities
 
 ### New Capabilities
-- `organizer-antisocial-exclusion`: the 暴排条項 onboarding clause, the admin
-  反社チェック gate on Organizer activation, and post-onboarding deactivation
-  on discovery.
+
+- `components/usecase/organizer/record-antisocial-check`: Admin antisocial-forces check gates Organizer activation
 
 ### Modified Capabilities
-<!-- None edited directly. This layers a vetting precondition onto the
-     `organizer-accounts` Create/deactivate flow; that capability's spec is
-     still in-flight in its own change, so the gate is expressed here and
-     integrates when both archive. Cross-reference, do not edit that change. -->
+
+- `components/usecase/organizer/deactivate`: Post-onboarding antisocial discovery triggers deactivation
+- `components/usecase/organizer-connected-account/get-or-create-onboarding`: Organizer onboarding agreement includes an antisocial-forces exclusion clause
 
 ## Impact
 

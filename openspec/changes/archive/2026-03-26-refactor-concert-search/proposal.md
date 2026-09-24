@@ -16,7 +16,7 @@ These issues increase the risk of regressions and make it harder to add comprehe
 
 ### New Capabilities
 
-- `concert-search-internals`: Defines internal quality requirements for the concert search usecase -- architectural boundaries, testability constraints, and code structure rules. No external behavior changes.
+(none — see design.md)
 
 ### Modified Capabilities
 

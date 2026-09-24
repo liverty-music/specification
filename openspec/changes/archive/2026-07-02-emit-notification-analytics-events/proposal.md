@@ -14,7 +14,7 @@
 <!-- none -->
 
 ### Modified Capabilities
-- `notification-lifecycle`: adds the requirement that delivered/opened/dismissed transitions are reported to product analytics, correlated by `notification_id` (the analytics seam its Decision 5 deferred).
+(none — see design.md)
 
 ## Impact
 

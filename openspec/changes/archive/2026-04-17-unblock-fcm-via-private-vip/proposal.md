@@ -29,8 +29,7 @@ _None._
 
 ### Modified Capabilities
 
-- `private-google-access`: VIP changes from restricted to private; rationale, DNS record, and reachability requirements updated. Adds an explicit requirement that FCM (and other non-VPC-SC services) are reachable through the configured VIP.
-- `http-retry`: Adds a requirement that error-response body bytes are captured into the resulting `apperr` for diagnostic purposes.
+- `private-google-access`: VIP changes from restricted to private; rationale, DNS record, and reachability requirements updated.
 
 ## Impact
 

@@ -65,6 +65,7 @@ graph TD
 - **DNS**: `postgres.osaka.psc.internal` points to the PSC Endpoint IP.
 - **Identity**: IAM Database Authentication enabled.
 - **Cost**: `db-f1-micro` tier for development; HA and PITR disabled in `dev` to reduce costs.
+- **Durability**: Encryption at rest is enabled by default on Cloud SQL and is not disabled in any environment. HA (regional failover) is the `dev` cost trade-off above; a production deployment is expected to enable HA for a highly-available instance.
 
 ## 3. GKE Design (Autopilot)
 

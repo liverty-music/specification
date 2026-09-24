@@ -1,0 +1,1 @@
+Defines the semantics of error codes returned to the fan-facing client when a call fails, translating backend failures into a consistent, well-tested set of client-facing error codes.

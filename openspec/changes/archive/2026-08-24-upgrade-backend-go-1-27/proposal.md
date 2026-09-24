@@ -13,7 +13,8 @@ Go 1.27 (August 2026) ships changes that map directly onto this backend's operat
 ## Capabilities
 
 ### New Capabilities
-- `goroutine-leak-detection`: The backend continuously exposes a goroutine leak profile and raises an alert when goroutines are detected permanently blocked on concurrency primitives, catching silent consumer/RPC wedges that backlog-stall and liveness signals can miss.
+
+(none — see design.md)
 
 ### Modified Capabilities
 <!-- None. The Go 1.27 toolchain bump, stdlib uuid migration, json/v2 adoption, and

@@ -1,0 +1,1 @@
+Defines the Venue entity, constructed from scraped source data, its normalized administrative area, and the uniqueness constraint that prevents duplicate venues for the same listed name and area.

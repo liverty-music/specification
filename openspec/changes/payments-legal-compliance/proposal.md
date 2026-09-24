@@ -17,11 +17,13 @@ Paid ticketing (roadmap ⑤ `ticket-purchase-and-issuance`) is implemented and v
 ## Capabilities
 
 ### New Capabilities
-- `payments-legal-compliance`: the legal, tax, and payments-compliance obligations that gate flipping paid ticketing to livemode — counsel opinions, tax registrations, consumer-facing 総額表示 / 特商法 disclosures, PCI SAQ A, and 越境移転 / record-retention / receipt (適格請求書) obligations.
+
+- `components/entity/order`: card numbers never reach the platform (PCI SAQ A); an Order's receipt is a qualified invoice (適格請求書). The livemode launch gate is a launch decision recorded in design.md.
+- `components/infrastructure/fan/web/route/order`: Total-price display (総額表示); 特定商取引法 final confirmation
 
 ### Modified Capabilities
-<!-- None. ⑤'s delta spec requirements do not change: the moved items were tracking
-     tasks (§0/§6), not spec-level requirements of ticket-purchase-and-issuance. -->
+
+- `components/infrastructure/fan/web/global/legal-document`: Cross-border data-transfer disclosure and retention
 
 ## Impact
 

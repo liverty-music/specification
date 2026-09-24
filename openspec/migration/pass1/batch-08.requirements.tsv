@@ -1,0 +1,101 @@
+old_spec	old_req_name	disposition	target_path	new_req_name	merge_group	rewrite_flags	confidence	rationale
+artist-image	Fanart Entity	KEEP	components/entity/artist	Artist fanart image collection			medium	Fanart is a field on the Artist entity (artist.proto); fan/organizer sees these images
+artist-image	Best Image Selection	OUT:design-doc				CLASSNAME	medium	pure selection algorithm (BestByLikes); no user actor, subsumed by Fanart Proto Mapper's selection behavior
+artist-image	Fanart Proto Message	KEEP	components/entity/artist	Artist fanart proto shape			medium	defines the Artist.fanart field shape exposed to clients
+artist-image	Fanart Proto Mapper	OUT:design-doc				CLASSNAME	medium	internal mapper layer (domain->proto conversion); no user actor, implementation detail
+artist-image	Fanart Database Storage	OUT:design-doc					high	JSONB column/storage schema detail; no user actor
+artist-image	ArtistImageResolver Interface	OUT:design-doc					high	internal Go interface for external image resolution; no user actor
+artist-image	fanart.tv API Client	OUT:design-doc					high	external HTTP client implementation detail; no user actor
+artist-image	Immediate Image Fetch on Artist Creation	KEEP	components/usecase/artist/sync-artist-image	Immediate image fetch on artist creation			high	matches ArtistImageSyncUseCase.SyncArtistImage triggered by ARTIST.created
+artist-image	Periodic Image Sync CronJob	KEEP	components/usecase/artist/sync-artist-image	Periodic sync refreshes stale artist images		CLASSNAME	medium	scheduled invocation of ArtistImageSyncUseCase.SyncArtistImage; cron/circuit-breaker mechanics are ops detail folded into same target
+atlas-operator	Atlas Operator SHALL be installed in the GKE cluster	OUT:runbook					high	no user actor; cluster operator installation detail
+atlas-operator	Migrations SHALL be stored as ConfigMap	OUT:runbook					high	no user actor; Kustomize ConfigMap mechanics
+atlas-operator	AtlasMigration CRD SHALL connect as postgres user	OUT:runbook					high	no user actor; DB connection/auth mechanics
+atlas-operator	Migrations SHALL create the app schema and grant permissions	OUT:runbook					high	no user actor; schema bootstrap mechanics
+atlas-operator	Backend repository SHALL host an Atlas migration prod overlay	OUT:runbook				CLASSNAME	high	no user actor; kustomize overlay/ArgoCD sync mechanics
+backend-otel-instrumentation	External HTTP client tracing via otelhttp transport	OUT:design-doc					high	telemetry cross-cutting concern; no user actor
+backend-otel-instrumentation	Zitadel gRPC client tracing via otelgrpc	OUT:design-doc					high	telemetry cross-cutting concern; no user actor
+backend-otel-instrumentation	UseCase spans for CPU-intensive business logic	OUT:design-doc				CLASSNAME	high	telemetry cross-cutting concern naming BuildMerkleTree/FilterNewConcerts/PersistArtists; no user actor
+backend-otel-instrumentation	Application metrics	OUT:design-doc					high	telemetry cross-cutting concern; no user actor
+backend-otel-instrumentation	Trace context preservation in deferred operations	OUT:design-doc					high	telemetry cross-cutting concern; no user actor
+dashboard-journey-filter	URL-driven journey filter	KEEP	components/infrastructure/ui/route/dashboard	URL-driven journey filter			high	single-route (dashboard) URL query behavior
+dashboard-journey-filter	Journey filter combines with artist filter	KEEP	components/infrastructure/ui/route/dashboard	Journey filter combines with artist filter			high	dashboard route filtering logic
+dashboard-journey-filter	Journey filter state synchronised with URL	KEEP	components/infrastructure/ui/route/dashboard	Journey filter state synchronised with URL			high	dashboard route URL state sync
+dashboard-journey-filter	Journey-status facet in the filter sheet	KEEP	components/infrastructure/ui/global/artist-filter-bar	Journey-status facet in the filter sheet			medium	shared filter bottom sheet surface (artist-filter-bar) gains a facet
+dashboard-journey-filter	Journey facet visible to authenticated users only	KEEP	components/infrastructure/ui/global/artist-filter-bar	Journey facet visible to authenticated users only			medium	shared filter sheet surface visibility rule
+db-trace-correlation	OTel span creation for database queries	OUT:design-doc					high	telemetry cross-cutting concern; no user actor
+db-trace-correlation	sqlcommenter traceparent injection	OUT:design-doc					high	telemetry cross-cutting concern; no user actor
+db-trace-correlation	Transparent pool wrapping	OUT:design-doc				CLASSNAME	high	names TracedPool implementation type; no user actor
+db-trace-correlation	Transaction query tracing	OUT:design-doc					high	telemetry cross-cutting concern; no user actor
+discover	Bubble UI Re-experience	KEEP	components/infrastructure/ui/route/discovery	Bubble UI re-experience on Discover tab			high	discover route behavior
+discover	Manual Search	KEEP	components/infrastructure/ui/route/discovery	Manual search on Discover tab			high	discover route behavior
+discover	Search bar icon explicit sizing	KEEP	components/infrastructure/ui/route/discovery	Search bar icon explicit sizing			medium	discover route layout fix, user-visible overflow prevention
+discover	Performance on Tab Switch	KEEP	components/infrastructure/ui/route/discovery	Bubble physics pauses when Discover tab is inactive			medium	discover route resource behavior tied to tab activation
+discover	Reset to Top 50 control	KEEP	components/infrastructure/ui/route/discovery	Reset to Top 50 control			high	discover route control
+feature-flag-management	Feature flags require a documented description record on creation	OUT:runbook					high	engineering process/governance; no fan or organizer actor
+feature-flag-management	Significant experiments evaluate flags only after `identify`	OUT:design-doc					medium	cross-cutting analytics evaluation-timing policy, not a specific route/usecase; no named user actor
+feature-flag-management	Flag evaluation always has a default value on PostHog unavailability	OUT:design-doc					medium	cross-cutting resilience policy for analytics tooling; no named user actor
+feature-flag-management	Frontend bootstraps flags from the last-known persisted value	OUT:design-doc					medium	cross-cutting analytics bootstrap policy; no named user actor
+feature-flag-management	Stale flags are reviewed monthly and decided at or before the kill date	OUT:runbook					high	engineering process; no fan or organizer actor
+frontend-entity-layer	Artist entity	OUT:design-doc				CLASSNAME	medium	frontend architecture: use canonical proto Artist, remove ArtistBubble/GuestFollow duplicate interfaces; no user actor
+frontend-entity-layer	FollowedArtist entity	OUT:design-doc				CLASSNAME	medium	frontend architecture: follow.ts interface shape; no user actor
+frontend-entity-layer	Concert entity	OUT:design-doc				CLASSNAME	medium	frontend architecture: concert.ts interface shape; no user actor
+frontend-entity-layer	Single mapping point	OUT:design-doc				CLASSNAME	medium	frontend architecture principle (no intermediate mapping); no user actor
+frontend-entity-layer	Guest state stores proto Artist	OUT:design-doc				CLASSNAME	medium	frontend persistence/serialization architecture; no user actor
+frontend-entity-layer	Grid view removal	KEEP	components/infrastructure/ui/route/my-artists	My Artists list-view only			high	single-route (my-artists) UI behavior
+frontend-entity-layer	Concert region is presentation-ready	KEEP	components/infrastructure/locale/venue-admin-area-label	Concert admin-area shown as localized label		CLASSNAME	medium	locale-kind infra: presentation layer shows localized admin-area label instead of raw code, cross-cutting across surfaces
+guest-mode-access	Guest Free Navigation After Dashboard	NEEDS_HUMAN					low	cross-route navigation policy; no single route/global-surface vocabulary entry fits and it is not a concrete story goal
+guest-mode-access	Account-Only Features Hidden, Not Blocked	NEEDS_HUMAN					low	cross-route UI policy applied per-screen; no single route/global-surface vocabulary entry fits
+guest-mode-access	Persistent Auth Entry From Discovery Onward	KEEP	components/infrastructure/ui/route/settings	Persistent auth entry point in Settings			high	spec explicitly says entry point is hosted in Settings route
+m3-design-tokens	Color roles with guaranteed on-color pairing	OUT:lint					high	design-token/style rule; no user actor
+m3-design-tokens	State-layer opacity scale	OUT:lint					high	design-token/style rule; no user actor
+m3-design-tokens	Motion tokens split by property class	OUT:lint					high	design-token/style rule; no user actor
+m3-design-tokens	Shape roles including expressive steps	OUT:lint					high	design-token/style rule; no user actor
+m3-design-tokens	Tonal surface-container tiers	OUT:lint					high	design-token/style rule; no user actor
+onboarding-popover-guide	Popover guide on discover page entry during onboarding	KEEP	components/infrastructure/ui/route/discovery	Popover guide on discover page entry during onboarding			high	closes entirely within the discover route
+organizer-console	Bundle isolation from the consumer SPA and admin console	OUT:design-doc				CLASSNAME	medium	frontend build/bundle architecture (Vite entry organizer.html); no user actor observes bundle graph directly
+organizer-console	Authenticate operators via org-pinned entry, one client for all tenants	KEEP	stories/sign-in-as-organizer	Sign in as organizer via org-pinned entry			medium	multi-step goal spanning IdP invitation flow, passkey setup, and console redirect across screens
+organizer-console	Route guard admits only owner-role operators	NEEDS_HUMAN					low	guard applies across all organizer-console routes, not one route or an existing global surface in vocabulary
+organizer-console	Organizer runtime config resolves the org at login	OUT:design-doc				CLASSNAME	medium	/config.json shape/config-loading detail; no user actor, org-resolution UX itself covered by the org-pinned-entry story
+organizer-event-authoring	Organizer authors a concert as a draft	KEEP	components/usecase/concert/create-draft	Organizer authors a concert as a draft			high	matches ConcertAuthoringUseCase.CreateDraft
+organizer-event-authoring	Organizer lists and edits its own concerts	KEEP	components/usecase/concert/list-own	Organizer lists and edits its own concerts			medium	SPLIT-CANDIDATE: also touches UpdateDraft and Cancel; ListOwn chosen as dominant/title-led operation
+organizer-event-authoring	Publish makes a concert live, first-party, and notifies once	KEEP	components/usecase/concert/publish	Publish makes a concert live, first-party, and notifies once			high	matches ConcertAuthoringUseCase.Publish
+organizer-event-authoring	Publish enforces the complete required-field set	KEEP	components/usecase/concert/publish	Publish enforces the complete required-field set			high	matches ConcertAuthoringUseCase.Publish validation gate
+organizer-event-authoring	First-party publish supersedes scraped data without harm	KEEP	components/usecase/concert/publish	First-party publish supersedes scraped data without harm			high	result of the Publish operation reconciling staged/discovered data
+organizer-event-authoring	Represented artists are excluded from scraping	KEEP	components/usecase/organizer/associate-artist	Represented artists are excluded from scraping			medium	SPLIT-CANDIDATE: keyed on OrganizerUseCase.AssociateArtist/DisassociateArtist; AssociateArtist chosen as the state-starting operation
+organizer-event-authoring	Visibility controls where a published concert appears	KEEP	components/usecase/concert/publish	Visibility controls where a published concert appears			medium	visibility (PUBLIC/UNLISTED) is set and enforced at Publish
+organizer-event-authoring	Organizer uploads an image	KEEP	components/usecase/media/create-media-upload-url	Organizer uploads an image			medium	SPLIT-CANDIDATE: also touches MediaUseCase.AttachMedia; CreateMediaUploadURL chosen as the dominant first step
+organizer-event-authoring	Uploaded images are processed into safe, responsive variants	KEEP	components/usecase/media/attach-media	Uploaded images are processed into safe, responsive variants			medium	async processing result of MediaUseCase.AttachMedia
+organizer-event-authoring	Replacing an image reclaims the previous one	KEEP	components/usecase/media/attach-media	Replacing an image reclaims the previous one			medium	re-attach flow through MediaUseCase.AttachMedia
+prod-image-pipeline	Prod container images SHALL be sourced exclusively from the prod project's Artifact Registry	OUT:runbook					high	no user actor; cluster image sourcing/IAM constraint
+prod-image-pipeline	Prod cluster service accounts SHALL NOT hold cross-project Artifact Registry IAM grants	OUT:runbook					high	no user actor; IAM/security constraint
+prod-image-pipeline	CI service accounts MAY hold scoped cross-project AR reader for image promotion	OUT:runbook					high	no user actor; IAM/security constraint
+prod-image-pipeline	Frontend prod image SHALL be env-agnostic at the bundle level	OUT:design-doc					medium	no user actor; frontend build/bundle architecture decision
+prod-image-pipeline	Backend prod images SHALL be promoted to prod AR on GitHub Release tags	OUT:runbook				CLASSNAME	high	no user actor; deploy.yml release-promotion mechanics
+prod-image-pipeline	Frontend prod image SHALL be promoted to prod AR on GitHub Release tags	OUT:runbook				CLASSNAME	high	no user actor; push-image.yaml release-promotion mechanics
+prod-image-pipeline	Prod kustomize overlays SHALL pin image URIs to prod-AR paths	OUT:runbook					high	no user actor; kustomize overlay mechanics
+prod-image-pipeline	Every main commit SHALL have a resolvable dev AR image	OUT:runbook				CLASSNAME	high	no user actor; CI build/inherit pipeline mechanics
+prod-image-pipeline	Prod kustomize pin-bumps SHALL be automated via repository_dispatch	OUT:runbook				CLASSNAME	high	no user actor; cross-repo CI dispatch mechanics
+prod-image-pipeline	A cloud-provisioning workflow SHALL apply the prod pin-bump on dispatch	OUT:runbook				CLASSNAME	high	no user actor; bump-prod-pin.yml workflow mechanics
+prod-image-pipeline	cloud-provisioning main ruleset SHALL allow the ci-bot App to bypass for the pin-bump push	OUT:runbook					high	no user actor; repo ruleset/bypass-actor mechanics
+prod-image-pipeline	The manual pin-bump fallback SHALL be admin-gated	OUT:runbook				CLASSNAME	high	no user actor; admin-approval workflow mechanics
+push-notification-service	PushSubscription entity model	KEEP	components/entity/push-subscription	PushSubscription entity model			high	matches entity/v1/push_subscription.proto
+push-notification-service	Create RPC registers the calling browser's subscription	KEEP	components/usecase/push-subscription/create	Create RPC registers the calling browser's subscription			high	matches PushNotificationUseCase.Create
+push-notification-service	Get RPC returns the subscription for a specific browser	KEEP	components/usecase/push-subscription/get	Get RPC returns the subscription for a specific browser			high	matches PushNotificationUseCase.Get
+push-notification-service	Delete RPC removes only the specified browser's subscription	KEEP	components/usecase/push-subscription/delete	Delete RPC removes only the specified browser's subscription			high	matches PushNotificationUseCase.Delete
+push-notification-service	Per-browser scoping for repository operations	OUT:design-doc					medium	internal PushSubscriptionRepository interface surface; no user actor, behaviorally covered by Create/Get/Delete requirements
+push-notification-service	Stale subscription self-healing on the client	KEEP	components/infrastructure/ui/route/settings	Stale subscription self-healing on settings load			medium	all scenarios trigger on settings page load; tie-break toward route over broader app-startup phrasing
+push-notification-service	Delivery scope limited to newly created concerts	KEEP	components/usecase/push-subscription/notify-new-concerts	Delivery scope limited to newly created concerts			high	matches PushNotificationUseCase.NotifyNewConcerts filtering logic
+push-notification-service	CONCERT.created event carries identifiers of newly created concerts	KEEP	components/usecase/push-subscription/notify-new-concerts	CONCERT.created event carries identifiers of newly created concerts			medium	event contract consumed by NotifyNewConcerts; SPLIT-CANDIDATE with the concert-creation producer side
+push-notification-service	Notification consumer is a thin adapter over the use case	OUT:design-doc					medium	consumer/handler architecture detail; no user actor
+push-notification-service	NotifyNewConcerts debug RPC for deterministic invocation	KEEP	components/usecase/push-subscription/notify-new-concerts	NotifyNewConcerts debug RPC for deterministic invocation			high	matches PushNotificationUseCase.NotifyNewConcerts debug entrypoint
+push-notification-service	New-concert notification deep-links to the earliest matched concert	KEEP	components/usecase/push-subscription/notify-new-concerts	New-concert notification deep-links to the earliest matched concert			high	payload computed inside NotifyNewConcerts
+push-notification-service	Service Worker renews the subscription on pushsubscriptionchange	KEEP	components/infrastructure/service-worker/push-subscription-renewal	Service Worker renews the subscription on pushsubscriptionchange			medium	non-UI push/service-worker infra kind; name proposed
+push-notification-service	Subscription registration failures are observable on the client	KEEP	components/infrastructure/ui/route/settings	Subscription registration failures are observable on the client			medium	observed via the settings notification toggle
+storybook-component-testing	Presentational components have isolated stories	OUT:lint					high	component-authoring convention; no user actor
+storybook-component-testing	Component stories run as tests in CI	OUT:runbook					high	CI pipeline mechanics; no user actor
+storybook-component-testing	Accessibility checks run on component stories	OUT:runbook					high	CI pipeline mechanics; no user actor
+storybook-component-testing	Component-level visual regression detects unintended changes	OUT:runbook					high	CI pipeline mechanics; no user actor
+storybook-component-testing	A single visual-regression pipeline is maintained	OUT:runbook				HISTORIC	high	CI pipeline consolidation/retirement of legacy mobile-visual pipeline; no user actor
+storybook-component-testing	Unit and component test suites are isolated but jointly gated	OUT:runbook					high	CI gating mechanics; no user actor
+venue-name-localization	Venue Name Display Respects User's Preferred Language	KEEP	components/infrastructure/locale/venue-name-display	Venue name display respects user's preferred language			medium	locale-kind non-UI infra selecting display name by language; cross-cutting across surfaces that show venue name

@@ -85,6 +85,10 @@ CI workflow structure:
 
 **Rationale**: `lint-k8s` requires kustomize, kube-linter, and helm installed — tools not available in the standard developer environment. CI installs these tools explicitly. `lint-ts` is sufficient for local pre-commit checks since TypeScript changes are the primary risk area for AI-generated code.
 
+## Migration Plan
+
+- Update the global `CLAUDE.md` and each repo's `AGENTS.md` to list `make lint`, `make fix`, `make test`, and `make check` as the primary development commands, replacing the scattered per-tool command references that made the code-verifier skill's job harder to infer.
+
 ## Risks / Trade-offs
 
 - **`make test` starts docker compose every time** → Mitigation: `docker compose up -d --wait` is idempotent and fast if container already running

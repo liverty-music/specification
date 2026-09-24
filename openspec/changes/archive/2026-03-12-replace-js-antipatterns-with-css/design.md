@@ -43,6 +43,8 @@ The frontend uses four JS-based patterns that modern CSS (2026 Baseline) handles
 
 **Alternative considered:** `animation` keyframes — rejected because `@starting-style` integrates with `transition` (which the exit animation already uses), keeping enter/exit as symmetric operations on the same properties.
 
+The same pattern applies to children inserted into a `showPopover()`-shown popover container: each child's entry animation is driven by `@starting-style` on the child's own rule, so `showPopover()` is called immediately without a `requestAnimationFrame` deferral to let the browser register the initial state first.
+
 ### Decision 3: `transitionend` for post-animation DOM cleanup
 
 **Choice:** Listen for `transitionend` on the host element (event delegation via bubbling) and remove DOM elements only after the CSS transition completes. Match by `propertyName === 'opacity'` and `target.dataset.toastId`.
@@ -50,6 +52,8 @@ The frontend uses four JS-based patterns that modern CSS (2026 Baseline) handles
 **Why:** Directly tied to the actual transition end, not a hardcoded timeout. Immune to timing drift if transition durations change in CSS.
 
 **Alternative considered:** `MutationObserver` — rejected as over-engineering. `transitionend` is the natural event for "animation just finished."
+
+The celebration overlay's fade-out cleanup follows the same rule: its `onComplete` callback and state cleanup fire on the overlay's `transitionend`, not after a hardcoded delay, so the overlay stays visible for exactly as long as the transition actually runs.
 
 ### Decision 4: `overscroll-behavior: contain` for scroll isolation
 
@@ -62,6 +66,12 @@ The frontend uses four JS-based patterns that modern CSS (2026 Baseline) handles
 **Choice:** Always call `scrollIntoView({ behavior: 'smooth', block: 'center' })` and wait for the `scrollend` event (with an 800ms failsafe timeout) before showing the spotlight.
 
 **Why:** `scrollIntoView` is a no-op when the element is already visible — the browser handles the viewport check internally. Eliminates `getBoundingClientRect` and the `isInViewport()` helper entirely.
+
+### Decision 6: `data-state` attribute drives CSS transitions instead of class toggling
+
+**Choice:** Elements with enter/exit CSS transitions carry a `data-state` attribute (`entering`, `exiting`, `active`, ...) that CSS selectors key off (e.g. `[data-state="exiting"] { opacity: 0; }`), rather than JS toggling `classList` entries per transition step.
+
+**Why:** A single attribute value expresses the element's animation state as data, not as an imperative sequence of class add/remove calls. CSS owns the mapping from state to visual properties entirely; JS only ever writes the current state name.
 
 ## Risks / Trade-offs
 

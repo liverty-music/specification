@@ -1,0 +1,1 @@
+Runs the app's background service process, which registers on boot, checks for and applies updates silently before user interaction, renews the push subscription when it changes, and bounds all its network calls to a time limit.

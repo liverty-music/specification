@@ -146,6 +146,12 @@ Two reference documents in the cloud-provisioning repo capture the underlying ra
 
 **Audit needed:** Each namespace's current overlay structure should be reviewed to determine whether a prod overlay needs to be authored, modified, or whether the base is sufficient.
 
+### D10: Peripheral GCP resources mirror dev's kinds, not necessarily its config values
+
+**Decision:** `liverty-music-prod` provisions the same kinds of peripheral Pulumi-managed resources dev has — a Cloud SQL Postgres instance (PSC-only, IAM auth), Artifact Registry repositories for `backend` and `frontend`, GCP Service Accounts (`gke-node`, `backend-app`, `otel-collector`, `zitadel`, `eso`, `image-updater`), Secret Manager entries for the same secret keys dev declares, and Cloud DNS + Certificate Manager resources for the prod hostnames. Configuration values (instance tier, secret contents, hostnames) may differ from dev; the resource kinds must match.
+
+**Why:** Deployment manifests and Pulumi components already assume "prod has the same shape as dev" — a `ServiceAccount` reference, a Secret Manager key name, or a Certificate Manager entry that exists in dev but not prod would break the first prod deploy in a way that is invisible until that specific resource is exercised. Matching resource kinds up front, even before real traffic, means the same k8s manifests and application code paths work unmodified in both environments.
+
 ## Risks / Trade-offs
 
 - **[Risk] CIDR overlap with future VPC peering** → Mitigation: VPC peering between dev and prod is not currently planned. If future requirements introduce it, a new OpenSpec change reworks the CIDR plan (this would require both clusters to be re-created — large blast radius). Documented explicitly so future contributors understand the constraint.

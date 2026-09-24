@@ -73,6 +73,8 @@ ON CONFLICT (mbid) DO NOTHING
 
 **Rationale**: `ListTop` returns ~30 artists. Some may already exist in the DB. We need all of them with valid IDs. Using `ON CONFLICT DO NOTHING` + `SELECT WHERE mbid = ANY($1)` ensures idempotency without requiring individual `GetByMBID` calls per artist.
 
+An empty input slice short-circuits before any SQL runs — there's nothing to `unnest` or upsert, and issuing a no-op round trip would just be wasted latency.
+
 **Alternative considered**: Adding a separate `CreateBulk` method — rejected to maintain naming consistency with `ConcertRepository.Create`.
 
 ### Decision 4: `ON CONFLICT (mbid)` for artist deduplication

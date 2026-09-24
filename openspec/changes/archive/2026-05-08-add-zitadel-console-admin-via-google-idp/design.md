@@ -89,6 +89,12 @@ start, then create the `liverty-music` product org via Pulumi.
   frontend `ApplicationOidc`, passkey-only `LoginPolicy`, future fan
   accounts.
 
+The instance holds exactly these two orgs. Pulumi treats any additional
+org discovered via `POST /admin/v1/orgs/_search` as drift and reverts it
+on the next apply — the same invariant applied at the identity level in
+D5 (no ad hoc Console-created users) and D7 (machine users placed by
+responsibility).
+
 **Why:**
 
 - Zitadel `LoginPolicy` is per-org. Two policies → two orgs. There is no
@@ -182,6 +188,10 @@ The `admin` org's policy lists it; the `liverty-music` org's policy does
 not. The same IdP can be reused if a future product org also wants Google
 sign-in for its admins.
 
+The IdP requests the `openid`, `profile`, and `email` scopes — the
+minimum needed to resolve a stable `sub` claim (used for the pre-link in
+D11) and a display identity for the Console.
+
 ### D5: Pre-create the human admin, then pre-link the Google identity
 
 **Choice:** Pulumi creates a `HumanUser` in the `admin` org with
@@ -192,6 +202,13 @@ the binding between the admin Google IdP and that local user, keyed
 by the admin's Google OIDC `sub` claim. First Google sign-in resolves
 directly to the local user via the pre-existing `(idpId, sub)`
 record — no email match, no UI prompt.
+
+The user carries no `userGrant` on the `liverty-music` project — Console
+access comes entirely from the instance-level `IAM_OWNER` membership
+(`InstanceMember`, granted alongside the user), not from a project role,
+so the admin identity stays inside the `admin` org's scope. Granting
+`IAM_OWNER` this way also means the audit log records Console actions
+under the human user's own id, distinct from `pulumi-admin`'s.
 
 **Why the random password is required and harmless:** the
 `@pulumiverse/zitadel` `HumanUser` resource documents that
@@ -252,15 +269,22 @@ Workload Identity already trusts secrets from this project's Secret
 Manager. Avoids a new "identity-only" GCP project for a single OAuth
 client.
 
-### D7: `login-client` machine user belongs in the `admin` org
+### D7: Machine users are placed by responsibility — operator identities in `admin`, product identities in `liverty-music`
 
 **Choice:** Move the existing `login-client` machine user (Login V2 PAT
-host) from the current bootstrap org to the new `admin` org.
+host) from the current bootstrap org to the new `admin` org, alongside
+`pulumi-admin`. The `backend-app` machine user — the backend Go service's
+identity for calling Zitadel Management APIs on behalf of product
+features — stays in `liverty-music`.
 
-**Why:** `login-client` is operator infrastructure (the Login V2 service
-authenticates Zitadel API calls with this PAT). It is not a product
-identity. Keeping it in `admin` keeps the rule "the `liverty-music` org
-contains only product-relevant identities" clean.
+**Why:** `login-client` and `pulumi-admin` are operator infrastructure
+(the Login V2 service and Pulumi/IaC tooling authenticate Zitadel API
+calls with them). They are not product identities. `backend-app` is the
+opposite: it acts on behalf of product features, so it belongs with the
+product resources it serves. Splitting on responsibility this way keeps
+"who acts on behalf of the platform" separate from "who acts on behalf
+of the product", and lets each org's policies, audit logs, and key
+rotations be reasoned about independently.
 
 After re-bootstrap, Pulumi recreates `login-client` in the `admin` org.
 The k8s `ExternalSecret` that consumes its PAT does not change — only the
@@ -381,6 +405,18 @@ The admin's Google `sub` claim is provisioned via ESC
 `HumanAdminComponent`. With the link record already present, the IdP
 callback resolves directly to the local user and Console loads.
 
+The Dynamic Resource treats a `409 AlreadyExists` response from
+`POST /v2/users/{userId}/links` as success rather than an error, so
+re-running `pulumi up` after the link already exists (for example, a
+partial apply that gets retried) does not fail the deployment.
+
+The `sub` claim itself is not sensitive — it is an opaque numeric ID —
+but it is stored under `esc env set --secret` anyway, alongside
+`googleAdminIdp.clientId` / `clientSecret`, so the entire
+`pulumiConfig.zitadel.*` tree stays uniformly encrypted. That uniformity
+simplifies secret-handling audits: reviewers do not need to special-case
+one config field as "the one that's plaintext".
+
 **Why the `admin` org's policy combination forces this:** Zitadel
 offers exactly two native first-sign-in paths to attach an external
 identity to a Zitadel user, and the `admin` org's policy disables
@@ -434,6 +470,26 @@ once via OAuth Playground or `gcloud auth print-access-token` +
 small admin teams (<10) this is acceptable overhead. At larger scale,
 revisit Option B (`isAutoCreation = true` + an Action that grants
 `IAM_OWNER` based on an email allow-list).
+
+### D12: Admin org login policy disallows self-registration; domain discovery is configured but unused
+
+**Choice:** The `admin` org's `LoginPolicy` sets `allowRegister = false`,
+so no anonymous identity can create a local user through the Console's
+registration flow, and `allowDomainDiscovery = true`, so that a future
+verified organisation domain can route a typed email straight to the
+admin org's policy.
+
+**Why:** `allowRegister = false` closes the last native user-creation
+path left open after the IdP-level `isCreationAllowed = false` (D11) —
+together the two guards mean the only way to get a new admin user is the
+Pulumi-declared `HumanUser` resource. Domain discovery is enabled
+pre-emptively even though `pannpers.dev` is not registered as a verified
+Zitadel organisation domain in this change: that registration requires
+DNS-based proof, which adds friction without functional benefit for a
+single-admin setup, so the admin instead clicks the "Sign in with
+Google" IdP button directly and resolves through the `DefaultLoginPolicy`
+fallback (D8). Leaving domain discovery configured means a future
+verified-domain registration works immediately, with no policy change.
 
 ## Risks / Trade-offs
 

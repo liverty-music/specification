@@ -20,15 +20,21 @@ PSI Mobile スコア 28/100（TBT 2,660ms、20 Long Tasks）の Discovery ペー
 
 `web-vitals` の attribution build (`'web-vitals/attribution'`) を使用。LCP / INP / CLS の attribution（どの要素が LCP か等）が取得でき、PostHog でのデバッグ精度が上がる。Soft Navigation は Chrome 151+（July 2026 正式リリース）で計測可能、iOS Safari は未対応 — `navigation_type` プロパティで区別する。
 
+各指標が確定した時点（ページビュー、または soft navigation ごと）で `web.vitals` イベントを送信する。プロパティは指標名・値（LCP/INP は ms、CLS は unitless）・`rating`（`good` / `needs-improvement` / `poor`）・`navigation_type`・現在のルートパス名。web-vitals のコールバックは確定値のみをレポートする設計のため、中間更新値は送信しない。
+
 ### Long Animation Frames のフィルタリング
 
 **100ms 以上のフレームのみ送信。** LoAF のデフォルト閾値は 50ms（視覚的ジャンクの開始点・Long Tasks API と同値）だが、Discovery ページのような physics アニメーションでは低スペック端末で 50〜99ms フレームが頻発し PostHog のイベント量とコストが増大するリスクがある。100ms は 2 フレーム分の遅延（明確なジャンク）を示すため、**50〜99ms の軽微なジャンクは PostHog から見えない** トレードオフを受け入れてコストを抑える。計測初期フェーズでは 100ms で運用し、必要に応じて下げる。
+
+Observer は全ページ共通で `bootstrap()` に一度だけ登録し、セッション終了まで有効なまま動作し続ける（上記「計測コードの配置場所」と同じ配置）。閾値を超えたフレームは `perf.long_animation_frame` イベントとして PostHog に送信し、フレーム長（ms）・原因関数名・原因スクリプト URL・現在のルートパス名をプロパティに含める。
 
 ### Event Timing のフィルタリング
 
 INP の poor 閾値（200ms）付近、**150ms 以上のインタラクションのみ送信**。
 
 **実装上の注意：** ブラウザは Event Timing の `durationThreshold` を 104ms 未満に設定できない（104ms = 8ms 刻みで 100ms より大きな最初の値、セキュリティ上の制約）。`durationThreshold: 150` と書くと 104〜149ms のイベントが観測されなくなるため、**Observer 登録は `durationThreshold` を省略（デフォルト 104ms 適用）し、コールバック内で `entry.duration >= 150` フィルタを掛ける**。
+
+フィルタを通過したインタラクションは `perf.slow_interaction` イベントとして送信し、インタラクション種別（pointer down / key press / click）・処理時間（ms）・現在のルートパス名をプロパティに含める。
 
 ### バブル上限修正の方針
 

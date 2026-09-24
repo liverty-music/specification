@@ -42,6 +42,8 @@ The frontend is a Vite-built Aurelia 2 SPA that produces static assets (HTML, JS
 - Nginx: More mature, better for high-scale (50k+ req/s), but overkill for dev and adds config complexity
 - Apache: Process-based model, not container-optimized, avoid
 
+**Caddyfile**: `root * /srv` sets the document root, `file_server` serves the compiled static assets, and the server listens on port 80. `try_files {path} /index.html` serves the actual file when it exists and falls back to `index.html` for any other path, so direct navigation to a client-side route (e.g. `/concerts`) still reaches the Aurelia 2 router without a 404. Versioned asset files (e.g. `/assets/main.abc123.js`) get long-term cache headers since their filenames change on every build; `index.html` gets shorter-lived cache headers so a new deploy is picked up promptly.
+
 ### D2: Build Strategy - Multi-stage Dockerfile
 
 **Decision**: Multi-stage Docker build (Node builder → Caddy runtime)
@@ -85,6 +87,8 @@ cloud-provisioning/k8s/
 - Consistent with existing pattern (`api.dev.liverty-music.app`)
 
 **DNS/TLS**: Requires adding `dev.liverty-music.app` to existing `api-gateway-cert-map` and DNS records
+
+**Gateway binding**: The frontend HTTPRoute references the same `external-gateway` (in the `gateway` namespace) that the backend already uses, so frontend and backend share one Gateway, one static IP, and one certificate map — routing differentiation comes entirely from HTTPRoute hostname matching. TLS terminates at the Gateway and HTTP requests are redirected to HTTPS automatically.
 
 ### D5: CI/CD - GitHub Actions for Image Builds
 
@@ -133,7 +137,7 @@ cloud-provisioning/k8s/
 ## Migration Plan
 
 ### Deployment steps:
-1. **Prepare DNS/TLS**: Add `dev.liverty-music.app` to cert-map and DNS
+1. **Prepare DNS/TLS**: Add `dev.liverty-music.app` to cert-map and DNS, via Pulumi: a DNS A record (`web-app-a-record`) pointing at the shared `api-gateway-static-ip` with a 300s TTL, a DNS Authorization plus ACME-challenge CNAME for the domain, and a `web-app-cert-map-entry` added to the existing `api-gateway-cert` and `api-gateway-cert-map` alongside the backend's entry
 2. **Deploy ArgoCD app**: Apply `k8s/argocd-apps/dev/frontend.yaml`
 3. **Sync manifests**: ArgoCD pulls from cloud-provisioning main
 4. **Build initial image**: Run CI workflow manually or merge Dockerfile PR

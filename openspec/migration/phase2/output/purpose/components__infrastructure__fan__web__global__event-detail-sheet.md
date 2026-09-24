@@ -1,0 +1,1 @@
+Shows a detail sheet for a selected concert with a hero image, venue and time information, and an accessible ticket-journey status control that lets a user track their ticket-acquisition progress independent of actual ticket sales.

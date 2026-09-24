@@ -130,6 +130,7 @@ Empirical idle-cluster GMP cost at the time of these notes: ~$0/mo (Autopilot ha
 - The `gke-spot` label is already enforced in every dev pod template per the `gke-standard-infrastructure` spec. Workload manifests do not need to change between Standard and Autopilot.
 - Spot Pod billing in Autopilot: approximately `$0.00475/vCPU/hr + $0.00053/GB/hr` (per the GCP pricing page), which is comparable to running Spot VMs on Standard and *cheaper than* running on-demand Pods on Autopilot.
 - Once real users arrive and SLO concerns appear, on-demand Pods can be requested by removing the label — no cluster reconfig needed.
+- Spot-scheduled Pods remain eligible for preemption at any time, with the standard ~25-second notice before eviction — unchanged from Spot VM behavior on Standard.
 
 ### D7: Static IP and DNS records are retargeted, not replaced
 

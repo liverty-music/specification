@@ -8,28 +8,6 @@ Organizer and the artists it represents.
 
 ## ADDED Requirements
 
-### Requirement: Dedicated organizer Connect server isolated by audience
-
-The system SHALL serve the organizer-facing `OrganizerService` on a
-dedicated Connect server at `api.organizer.{base-domain}` with its own CORS
-allowlist (only the `organizer.{base-domain}` origin), TLS cert, Cloud DNS,
-and health check. The fan and admin servers SHALL NOT serve organizer
-services, and this server SHALL NOT serve fan or admin services.
-
-#### Scenario: Organizer server is reachable and isolated
-
-- **WHEN** the organizer console calls `api.organizer.{base-domain}`
-- **THEN** the request SHALL be served by the dedicated organizer server
-- **AND** the same organizer service SHALL NOT be reachable on the fan
-  or admin API hosts
-
-#### Scenario: CORS admits only the organizer origin
-
-- **WHEN** a browser request to the organizer API originates from the
-  `organizer.{base-domain}` origin
-- **THEN** CORS SHALL permit it
-- **AND** requests from other origins SHALL be rejected by CORS
-
 ### Requirement: OrganizerService.Get returns the caller's own organizer
 
 The system SHALL expose a bare-verb `Get` returning the caller's own

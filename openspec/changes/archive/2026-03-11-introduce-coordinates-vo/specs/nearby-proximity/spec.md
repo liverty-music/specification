@@ -61,19 +61,3 @@ The system SHALL resolve geographic centroid coordinates for the user's home are
 
 - **WHEN** the centroid columns migration is applied
 - **THEN** all existing `homes` rows with Japanese ISO 3166-2 codes SHALL be backfilled with centroid coordinates
-
-### Requirement: Centroid Resolution Unit Coverage
-
-The infrastructure centroid resolution logic SHALL be independently testable and tested.
-
-#### Scenario: Japanese prefecture centroid lookup
-
-- **WHEN** `ResolveCentroid` is called with a valid Japanese ISO 3166-2 code (e.g., `JP-13`)
-- **THEN** it SHALL return coordinates with `ok = true`
-- **AND** the latitude and longitude SHALL match the expected centroid for that prefecture
-
-#### Scenario: Unsupported region code
-
-- **WHEN** `ResolveCentroid` is called with an unsupported ISO 3166-2 code (e.g., `US-NY`)
-- **THEN** it SHALL return `ok = false`
-- **AND** the caller SHALL treat the coordinates as absent

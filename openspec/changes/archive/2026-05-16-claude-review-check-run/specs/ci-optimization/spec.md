@@ -1,16 +1,5 @@
 ## ADDED Requirements
 
-### Requirement: Claude code review runs via a single org-wide reusable workflow
-All four liverty-music repositories (`backend`, `frontend`, `specification`, `cloud-provisioning`) SHALL invoke Claude code review through a reusable workflow hosted at `liverty-music/.github/.github/workflows/claude-review.yml` (`workflow_call`). Each repository's own `.github/workflows/claude-code-review.yml` SHALL be a caller-only workflow that forwards `secrets: inherit` and optionally provides a repo-specific `additional_focus` input. The reusable workflow SHALL invoke `code-review@claude-code-plugins` with the `--comment` flag and `anthropics/claude-code-action@v1`.
-
-#### Scenario: PR is opened in any liverty-music repo
-- **WHEN** a pull request is opened or updated in `backend`, `frontend`, `specification`, or `cloud-provisioning`
-- **THEN** the repo's `claude-code-review.yml` SHALL call `liverty-music/.github/.github/workflows/claude-review.yml` via `uses:` rather than running Claude inline
-
-#### Scenario: Claude review behavior needs updating
-- **WHEN** the Claude review prompt, plugin version, or verdict logic needs to change
-- **THEN** the change SHALL be made in `liverty-music/.github/.github/workflows/claude-review.yml` and SHALL take effect on all four repos without modifying individual repo workflows
-
 ### Requirement: Claude review publishes its verdict as a GitHub Check Run
 The reusable workflow SHALL create a GitHub Check Run named exactly `Claude review` on the pull request's head commit. The Check Run `conclusion` SHALL be derived from a `/tmp/claude-verdict.json` file that Claude writes after posting its sticky comment.
 

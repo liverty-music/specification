@@ -32,6 +32,8 @@ backend Pod (one binary)
 
 Why not a separate binary (Opt 3)? The admin surface is low-traffic and shares the same domain logic/deps; a separate deployment buys independent scaling/blast-radius we don't need yet, at real CI/release cost. Two listeners in one binary give the governance split (host, CORS, authz boundary) cheaply. Opt 3 stays open as a later step if admin ever needs independent scaling.
 
+Both `ConnectServer`s register with the same shutdown Drain phase, so a shutdown signal drains in-flight requests on the consumer and admin listeners together rather than only the consumer one.
+
 ## Decision 2 — Authorization at the server boundary
 
 The admin server applies a **fixed admin-authorization interceptor** to every handler, as an inner layer of the shared chain (after the claims bridge, so it sees the bridged claims):

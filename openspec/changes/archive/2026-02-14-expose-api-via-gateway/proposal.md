@@ -18,15 +18,10 @@ The Connect-RPC backend server (port 8080) is currently only accessible from wit
 ### New Capabilities
 
 - `cloud-dns-infrastructure`: Hybrid DNS architecture using Cloudflare DNS for production (`liverty-music.app`, Proxy OFF) and Cloud DNS for dev environment (`dev.liverty-music.app`) via subdomain delegation, managed through Pulumi with ESC configuration
-- `gke-gateway-infrastructure`: GKE Gateway API resources (Gateway, HTTPRoute, Policies) for exposing services on public IPs with TLS termination
-- `connect-rpc-cors`: CORS middleware integration for Connect-RPC to support browser clients using connectrpc.com/cors package
-- `certificate-manager-integration`: Google-managed SSL certificate provisioning with automatic DNS validation and renewal
-- `k8s-service-cross-namespace-routing`: HTTPRoute rules that route traffic across Kubernetes namespaces (gateway → backend)
-- `argocd-gateway-deployment`: ArgoCD Application manifests for managing Gateway infrastructure via GitOps
 
 ### Modified Capabilities
 
-- `backend-service-exposure`: Backend Service now discoverable from external Gateway via cross-namespace references
+(none — see design.md)
 
 ## Impact
 

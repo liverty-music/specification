@@ -51,6 +51,8 @@ src/
 
 **Why `main.css` not `my-app.css` as entry point?** `my-app.css` is Aurelia's convention for the `my-app` component's colocated CSS. Using it as the global entry point conflates "app shell component styles" with "entire application's CSS architecture." `main.css` pairs with `main.ts` (the bootstrap file) and clearly means "the CSS entry point."
 
+Each component CSS file holds exactly one `@scope` block and stays under ~80 lines; a component whose styles outgrow the limit gets refactored by extracting shared patterns into the composition or utility layers rather than growing the block further. Nested components limit the parent's scope with `@scope(<parent>) to (<child>)` so a parent's block styles don't leak into a child component's own boundary. Enforced via stylelint (`cube/one-block-per-file`, `cube/block-max-lines`, `cube/block-require-scope`).
+
 ### Decision 2: `@layer` ordering — CUBE layers declared in `main.css`
 
 ```css
@@ -68,7 +70,7 @@ src/
 
 Block and exception layers are populated by component CSS files via `@layer block { ... }` declarations in each file.
 
-**Why this order?** Follows CUBE CSS cascade philosophy: reset (lowest) → tokens (design values) → global (element defaults) → composition (layout) → utility (overrides) → block (component-specific) → exception (state deviations). Each layer can override the previous.
+**Why this order?** Follows CUBE CSS cascade philosophy: reset (lowest) → tokens (design values) → global (element defaults) → composition (layout) → utility (overrides) → block (component-specific) → exception (state deviations). Each layer can override the previous, and because block sits later in the order than utility, a block-layer rule wins over a utility-layer rule on the same element without needing `!important`. Enforced via stylelint (`cube/require-layer`): every style rule, `@keyframes`, and `@media` block must be nested inside an `@layer`.
 
 ### Decision 3: Tailwind removal — phased approach with co-existence
 
@@ -133,6 +135,8 @@ Initial compositions based on current Tailwind usage patterns:
 
 Additional compositions will be extracted during component migration as patterns emerge. Do not pre-create compositions that aren't needed yet.
 
+Compositions control layout only — no `color`, `background`, `border`, `shadow`, `font-*`, or `text-*` properties belong in a composition class. Visual treatment is the block or global layer's job; mixing it into compositions defeats their purpose as reusable, purely spatial primitives. Enforced via stylelint (`cube/no-visual-in-composition`).
+
 ### Decision 8: HTML class notation — CUBE grouping convention
 
 ```html
@@ -144,6 +148,18 @@ Additional compositions will be extracted during component migration as patterns
 - `[ utility ]` — single-purpose override
 
 Brackets are optional sugar for readability; CSS treats them as part of the class list (they're ignored). This convention makes it easy to see which layer each class belongs to.
+
+### Decision 9: Exception layer — `data-*` attributes, not class toggling
+
+**Decision**: Component state variations (active, disabled, loading, selected, etc.) are expressed via `data-state`, `data-variant`, or `data-theme` attributes rather than toggling CSS classes at runtime. Selectors targeting these attributes live in `@layer exception`, or alongside block styles using `data-*` attribute selectors when the deviation is small.
+
+**Rationale**: Toggling classes for state conflates "what this element is" (block classes) with "what state it's currently in." `data-*` attributes keep that distinction explicit, read naturally at the component boundary, and give the exception layer a single, consistent selector pattern to hook into. Enforced via stylelint (`cube/exception-data-attr`, `cube/data-attr-naming`).
+
+### Decision 10: Container queries over viewport media queries for component responsiveness
+
+**Decision**: Components adapt their layout to available space with `@container` rules, not `@media (min-width: ...)` / `@media (max-width: ...)`. Viewport media queries are reserved for concerns that are genuinely about the viewport rather than the component's own box — `prefers-reduced-motion`, `prefers-color-scheme`, and the like.
+
+**Rationale**: A component's layout should respond to the space it's actually given, not the window size — the same card renders in a wide grid column and a narrow sidebar. Container queries make components composable across contexts without duplicating breakpoint logic per placement. The stylelint configuration warns on viewport-width media queries found in component CSS.
 
 ## Risks / Trade-offs
 

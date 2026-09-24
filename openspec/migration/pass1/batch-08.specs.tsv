@@ -1,0 +1,18 @@
+old_spec	disposition	primary_target	confidence	evidence	note
+artist-image	SPLIT	components/entity/artist	medium	4 KEEP (entity/artist x2, usecase/artist/sync-artist-image x2), 5 OUT:design-doc (mapper/storage/client/interface/selection algorithm are implementation detail)	backend/docs/design/fanart-integration.md
+atlas-operator	OUT:runbook		high	all 5 requirements are cluster/DB-migration operations with no user actor	cloud-provisioning/docs/runbooks/atlas-operator.md
+backend-otel-instrumentation	OUT:design-doc		high	all 5 requirements are telemetry/tracing instrumentation with no user actor	backend/docs/design/otel-instrumentation.md
+dashboard-journey-filter	KEEP	components/infrastructure/ui/route/dashboard	high	all 5 requirements are dashboard route / shared filter-sheet UI behavior	
+db-trace-correlation	OUT:design-doc		high	all 4 requirements are DB query tracing/telemetry with no user actor	backend/docs/design/db-trace-correlation.md
+discover	KEEP	components/infrastructure/ui/route/discovery	high	all 5 requirements are Discover-tab route behavior	
+feature-flag-management	OUT:design-doc		medium	3 OUT:design-doc (cross-cutting flag-evaluation policy) + 2 OUT:runbook (engineering process); no fan/organizer actor in any requirement	product-analytics/docs/feature-flag-governance.md
+frontend-entity-layer	SPLIT	components/infrastructure/ui/route/my-artists	medium	5 OUT:design-doc (frontend proto-mapping architecture, no user actor) + 2 KEEP (my-artists route, locale infra)	frontend/docs/design/entity-layer.md
+guest-mode-access	NEEDS_HUMAN	components/infrastructure/ui/route/settings	low	2 of 3 requirements are cross-route policies with no clean vocabulary target (route guard/hidden-features pattern); 1 KEEP (settings route)	
+m3-design-tokens	OUT:lint		high	all 5 requirements are design-token/style rules explicitly excluded by the migration Purpose statement	frontend/docs/design/m3-tokens.md
+onboarding-popover-guide	KEEP	components/infrastructure/ui/route/discovery	high	its single requirement closes entirely within the discover route	
+organizer-console	NEEDS_HUMAN	stories/sign-in-as-organizer	low	2 OUT:design-doc (bundle/config architecture) + 1 KEEP (org-pinned sign-in story) + 1 NEEDS_HUMAN (cross-route route guard has no vocabulary fit)	organizer console bundle/config detail -> frontend/docs/design/organizer-console.md
+organizer-event-authoring	KEEP	components/usecase/concert/publish	high	all 10 requirements KEEP; publish is the most common target (4 of 10)	
+prod-image-pipeline	OUT:runbook		high	11 of 12 requirements are CI/deploy/IAM mechanics with no user actor; 1 OUT:design-doc (bundle env-agnosticism)	cloud-provisioning/docs/runbooks/prod-image-pipeline.md
+push-notification-service	SPLIT	components/usecase/push-subscription/notify-new-concerts	high	11 KEEP (entity, create/get/delete, notify-new-concerts x4, settings route x2, service-worker) + 2 OUT:design-doc (repository interface, consumer adapter architecture)	backend/docs/design/push-notification-internals.md
+storybook-component-testing	OUT:runbook		high	5 of 6 requirements are CI pipeline mechanics; 1 OUT:lint (authoring convention); no user actor in any	frontend/docs/testing/storybook.md
+venue-name-localization	KEEP	components/infrastructure/locale/venue-name-display	medium	its single requirement is a locale-driven display rule	

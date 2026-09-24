@@ -65,6 +65,8 @@ A detailed UI analysis identified 50+ improvement points across all screens (see
 --shadow-*          (card-glow, sheet)
 ```
 
+**Concrete values:** `--color-brand-primary` indigo-500, `--color-brand-secondary` violet-500, `--color-brand-accent` cyan-400; `--color-surface-*` gray-950/gray-900/gray-800; `--color-text-*` white (primary), gray-300 (secondary), gray-500 (muted); `--radius-card` 1rem, `--radius-button` 0.75rem, `--radius-sheet` 1.5rem; `--shadow-card-glow`, `--shadow-sheet`, `--shadow-button`. The type scale covers mega (4xl+, for dashboard hero numerals), heading (2xl-3xl), body (base-lg), and caption (xs-sm).
+
 ### Decision 3: Per-Screen CSS Approach
 
 **Choice:** Keep ShadowDOM CSS for canvas-heavy components (DnaOrbCanvas, LoadingSequence), use Tailwind utility classes for all other components.

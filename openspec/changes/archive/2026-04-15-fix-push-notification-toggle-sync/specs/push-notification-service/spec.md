@@ -91,22 +91,6 @@ The system SHALL expose `PushNotificationService.Delete` to remove the push subs
 - **WHEN** `Delete` is called without a valid user session
 - **THEN** the service SHALL return `UNAUTHENTICATED`
 
-### Requirement: Per-browser scoping for repository operations
-
-The system's `PushSubscriptionRepository` interface SHALL expose exclusively per-browser operations keyed by `(user_id, endpoint)` for mutation and retrieval, plus a batch list for internal push delivery.
-
-#### Scenario: Repository surface
-
-- **WHEN** any component inside the backend needs to mutate or read push subscription state
-- **THEN** it SHALL use one of: `Create(sub)`, `Get(userID, endpoint)`, `Delete(userID, endpoint)`, or `ListByUserIDs(userIDs)`
-- **AND** `ListByUserIDs` SHALL be used only by the push delivery path, not by any externally triggered RPC
-
-#### Scenario: No bulk-per-user mutation
-
-- **WHEN** any component needs to remove push subscriptions
-- **THEN** the removal SHALL be scoped to a single `(user_id, endpoint)` pair
-- **AND** no helper SHALL exist that deletes all subscriptions for a user in a single call
-
 ### Requirement: Stale subscription self-healing on the client
 
 The system SHALL recover from the "browser has subscription but backend does not" divergence automatically, without requiring user interaction, provided the user has already granted browser notification permission.

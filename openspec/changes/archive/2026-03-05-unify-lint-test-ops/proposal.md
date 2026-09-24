@@ -14,7 +14,6 @@ CI failures caused by lint/format/test issues that should have been caught local
 
 ### New Capabilities
 
-- `unified-check-interface`: Makefile-based lint/fix/test/check targets providing a single entry point across all repos
 - `commit-gate-hook`: Claude Code PreToolUse hook that blocks `git commit` unless `make check` passes
 
 ### Modified Capabilities

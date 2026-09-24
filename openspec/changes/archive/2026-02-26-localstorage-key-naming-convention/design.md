@@ -46,7 +46,7 @@ export const StorageKeys = {
 } as const
 ```
 
-**Rationale**: A single registry prevents duplicate/divergent key definitions. Each consuming module imports from this one source.
+**Rationale**: A single registry prevents duplicate/divergent key definitions. Each consuming module imports from this one source — no service or component reads or writes localStorage with an inline string literal; enforced via ESLint.
 
 ### 3. Domain term alignment: `region` → `adminArea`
 

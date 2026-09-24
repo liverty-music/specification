@@ -1,0 +1,1 @@
+Defines the proximity classification used to describe how close a concert's venue is to a user's home area, grouping and classifying concerts accordingly.

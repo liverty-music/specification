@@ -16,13 +16,12 @@ The Pulumi `@pulumi/postgresql` provider approach for managing PostgreSQL schema
 
 ### New Capabilities
 
-- `atlas-operator`: Kubernetes-native database schema management using Atlas Operator CRDs with versioned migrations stored as ConfigMaps
+(none — see design.md)
 
 ### Modified Capabilities
 
 - `database`: Migration execution moves from app-startup goose to Atlas Operator; data resides in dedicated `app` schema
 - `cloud-sql-connector`: Add `search_path=app` to DSN; postgres admin user requires password authentication
-- `continuous-delivery`: ArgoCD syncs Atlas migration CRDs from backend repo; sync wave ordering ensures migrations run before app deployment
 
 ## Impact
 

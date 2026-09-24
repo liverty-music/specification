@@ -1,0 +1,1 @@
+Defines the Event entity representing a single performance occurrence at a venue on a given date and time, identified by venue, date, and start time, and supporting multiple performing artists.

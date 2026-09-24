@@ -46,6 +46,8 @@ Current observed impact: ~7-minute redelivery cycles running continuously since 
 
 **Trade-off**: If a consumer pod crashes mid-batch and its Acks were all confirmed (SyncAck), the unprocessed messages in that batch will not be redelivered after `DeliverNew` is set. This is mitigated by SyncAck itself: if the pod crashes before `m.AckSync()` returns, the Ack was never sent, and NATS will redeliver that specific message to the next consumer — correct at-least-once behavior.
 
+`DeliverPolicy` only governs the starting point when a durable consumer is *created*; a normal pod restart reconnects to the already-existing durable and simply resumes from the last acknowledged sequence, unaffected by which delivery policy was used at creation time. The policy change therefore only changes behavior for the state-loss case this fix targets, not routine reconnects.
+
 ## Risks / Trade-offs
 
 - **[Risk] In-flight messages at deploy time** → During rolling restart, old pods (AckAsync) and new pods (SyncAck) may coexist briefly. Old pods may still lose Acks. Mitigation: the KEDA cooldownPeriod=300s ensures that once new pods process all messages, scale-down will not trigger immediate re-activation (lag will be 0 with confirmed Acks).

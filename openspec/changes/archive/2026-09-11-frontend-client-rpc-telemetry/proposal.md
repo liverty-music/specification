@@ -15,7 +15,7 @@ Scope note: the consumer (fan-web) transport is the target — it carries the re
 ## Capabilities
 
 ### New Capabilities
-- `frontend-client-rpc-telemetry`: Client-side observability for the Aurelia 2 frontend's Connect-RPC calls — capturing the client-observed call duration distribution (including the auth-retry recovery tail that the client deadline bounds) and the client-side deadline-exceeded rate, aggregated and reported without per-request events, so the default RPC timeout can be validated and tuned from production data.
+(none — see design.md)
 
 ### Modified Capabilities
 <!-- None. This is additive client-side observability. The `frontend-network-timeouts`

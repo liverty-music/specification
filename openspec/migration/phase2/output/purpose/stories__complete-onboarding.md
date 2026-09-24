@@ -1,0 +1,1 @@
+Guides a new user through the onboarding sequence from landing to an irreversible completed state, tracking concert-search progress, presenting a final non-blocking analytics notice, and routing the app based on completion status.

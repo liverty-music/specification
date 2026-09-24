@@ -12,7 +12,7 @@ When a user signs up, the `user.created` event triggers an email verification vi
 
 ### New Capabilities
 
-- `consumer-poison-queue-alerting`: Covers detection and alerting when messages are routed to the Poison Queue, including a consumer that emits ERROR logs and a Cloud Monitoring alert on POISON stream lag.
+(none — see design.md)
 
 ### Modified Capabilities
 

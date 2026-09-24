@@ -1,0 +1,551 @@
+name: liverty-clean-arch
+version: 2
+description: OpenSpec spec-driven workflow with a typed Clean Architecture spec tree - proposal → specs (stories, entity, entity operations, usecase, outer components) → design → tasks
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Initial proposal document outlining the change
+    template: proposal.md
+    instruction: |
+      Create the proposal document that establishes WHY this change is needed.
+
+      Sections:
+      - **Why**: 1-2 sentences on the problem or opportunity. What problem does this solve? Why now?
+      - **What Changes**: Bullet list of changes. Be specific about new capabilities, modifications, or removals. Mark breaking changes with **BREAKING**.
+      - **Capabilities**: Identify which specs will be created or modified:
+        - **New Capabilities**: List capabilities being introduced. Each becomes a new `specs/<capability-path>/spec.md`. The path is one of the spec-tree slots defined in the specs instruction - `stories/<story>`, `components/entity/<entity>`, `components/entity/<entity>/<operation>`, `components/usecase/<entity>/<method>`, `components/adapter|infrastructure/<audience>/<delivery>/.../<component>` - in kebab-case.
+        - **Modified Capabilities**: List existing capabilities whose REQUIREMENTS are changing. Only include if spec-level behavior changes (not just implementation details). Each needs a delta spec file. Use the exact existing path under `openspec/specs/`. Leave empty if no requirement changes. An entity's Purpose (its attribute table and state diagram) is edited directly in the main spec, never through a delta: list the entity here marked (Purpose) so reviewers see it, and if that is the change's only spec edit set `skip_specs: true` and say so. When a usecase is listed, also list the entity and the entity operations it relies on, or state here why they are unchanged.
+      - **Impact**: Affected code, APIs, dependencies, or systems.
+
+      IMPORTANT: The Capabilities section is critical. It creates the contract between
+      proposal and specs phases. Research existing specs before filling this in:
+      run `openspec list --specs` for the project's capability inventory, then
+      `openspec show "<spec-id>" --type spec --json --no-scenarios` for any that
+      look related - that returns a capability's purpose and requirement texts
+      without pulling whole spec files into context. Append `--store "<id>"` to
+      both commands only for a registered standalone store, and keep `--type
+      spec`: a change and a spec sharing a name is otherwise an ambiguous-item
+      error. `openspec list` without `--specs` lists in-flight changes, not
+      specs - it never shows what the project already covers. Reuse an existing
+      capability's exact path instead of introducing a near-duplicate name.
+      The filtered read is only an overview. Before deciding what is already
+      covered or what should change, read each relevant spec in full, including
+      scenarios, with `openspec show "<spec-id>" --type spec` (same `--store` rule).
+      Each capability listed here will need a corresponding spec file.
+
+      Every change must either declare at least one capability (new or
+      modified) or explicitly opt out of specs: `openspec validate` rejects a
+      change with zero deltas unless the change's `.openspec.yaml` sets
+      `skip_specs: true`. Use `skip_specs: true` only when no spec-level
+      behavior changes (pure refactor, tooling, docs) - specs describe
+      behavior, so if behavior does not change, no spec should change either.
+      Do not invent a requirement just to satisfy validation.
+
+      Keep it concise (1-2 pages). Focus on the "why" not the "how" -
+      implementation details belong in design.md.
+
+      This is the foundation - specs, design, and tasks all build on this.
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: Detailed specifications for the change
+    template: spec.md
+    instruction: |
+      Create specification files that define WHAT the system should do.
+
+      A spec is a behavior contract, not an implementation plan.
+
+      Good spec content:
+      - Observable behavior users or downstream systems rely on
+      - Inputs, outputs, and error conditions
+      - External constraints (security, privacy, reliability, compatibility)
+      - Scenarios that can be tested or explicitly validated
+
+      Avoid in specs:
+      - Internal class/function names
+      - Library or framework choices
+      - Step-by-step implementation details
+      - Detailed execution plans (those belong in design.md or tasks.md)
+
+      Quick test: if the implementation can change without changing externally
+      visible behavior, it likely does not belong in the spec.
+
+      ## Spec tree
+
+      A capability is one node of a typed tree. The path type decides what the
+      spec may contain and which test verifies its scenarios; every
+      `<capability-path>` is one of these paths, in kebab-case.
+
+        stories/<story>/spec.md
+          One user goal, named as a verb phrase. Composes usecases, and the
+          outer components that reach the user, into an end-to-end behavior;
+          a change's stories are what satisfy its proposal. Scenarios
+          correspond to E2E tests.
+
+        components/entity/<entity>/spec.md
+          The noun. Purpose: what it is, its attribute table and, when it has
+          a state attribute, its states. Requirements: the rules the entity
+          enforces on itself. The project's data schemas and language types
+          are derived from it. Scenarios correspond to entity unit tests or
+          to schema validation rules.
+
+        components/entity/<entity>/<operation>/spec.md
+          One named operation on the entity: a store access (create, get,
+          list), a lookup in an external catalog (search) or a computation
+          (draw). The operation becomes one method on an interface the entity
+          layer declares; which interface, and whether a repository, an
+          external client or a pure function realizes it, is a design
+          decision. Scenarios correspond to contract tests run against the
+          implementation. Every operation a usecase calls has a spec, a plain
+          get or list included (its not-found or empty-result scenario is its
+          promise); an operation with no promise to state is a definition
+          still missing, not a spec to skip. When a spec is written for code
+          that already exists, the operation takes the name of the existing
+          method with the same meaning, and the method's interface is the one
+          the spec binds to; renaming the method, or moving its interface to
+          where the project context binds operations, is a change of its own.
+
+        components/usecase/<entity>/<method>/spec.md
+          One method on the exported usecase interface, composing entity
+          operations into business logic. Scenarios correspond to usecase
+          unit tests with the operations mocked. No audience here: usecases
+          are shared by every audience. `<entity>` is the entity the method's
+          primary effect is stored on (the one whose create or set operation
+          it calls); a method that only reads goes under the entity it
+          returns. A usecase composes the operations of any entity and may
+          call another method of its own usecase interface; it never calls a
+          method of another usecase interface - a flow that spans usecases is
+          a story, and each usecase's spec states only its own part.
+
+        components/adapter/<audience>/<delivery>/**/<component>/spec.md
+          A boundary that receives calls from the outside and hands them to
+          usecases: an RPC handler's audience gate, a webhook from an external
+          system. The boundary resolves the caller (token validity, tenant,
+          user); role and ownership preconditions belong to the usecase.
+          Client-side transport, formatting helpers and state stores are
+          implementation, not components: what the user sees of them is
+          written in the screen or surface that shows it, and a rule several
+          screens or surfaces must agree on is a story.
+
+        components/infrastructure/<audience>/<delivery>/**/<component>/spec.md
+          What the user directly experiences, or the mechanism that hosts
+          the boundary: a screen, a surface, hosted login, the service
+          worker, a server-wide rule such as rate limiting.
+
+          Both are what a story needs to reach the user or the outside world
+          and no entity operation or usecase describes, and both are written
+          from one audience's point of view; a webhook takes the audience
+          whose delivery serves it, as the project context states. A schedule
+          or an internal event is a trigger of the usecase it runs, written as
+          that usecase's requirement, not a component. The audiences, the deliveries and
+          the segments under each delivery, with the code they map to, are
+          listed in the project context; a new segment is added there first.
+          An implementation of an entity operation - a repository, a provider
+          adapter - has no spec here: the operation's spec is its contract.
+
+        An <operation> or <method> directory name is the method name in
+        kebab-case (void-by-order → VoidByOrder). A contract several
+        audiences rely on is written under each audience; a flow that crosses
+        audiences is a story. There is no shared slot.
+
+      ## Writing order
+
+      1. components/entity/<entity>/spec.md first: the vocabulary everything
+         below is written in.
+      2. components/entity/<entity>/<operation>/ next, then components/usecase/.
+      3. Outer components, then stories/<story>/ last, composing the above
+         into the user's goal.
+
+      ## Layer contents
+
+      The test for where a sentence goes: a sentence belongs in the entity
+      spec only if it stays true no matter which operation or usecase touched
+      the entity. A sentence about one named operation belongs in that
+      operation's spec. A sentence that answers "when", "after what", "by
+      whom", "in what order" or "how many times" is about handling the entity
+      and belongs in a usecase spec.
+
+      components/entity/<entity>/spec.md
+
+        ## Purpose
+          What the entity is and stands for, in one or two sentences, then
+          its attributes as a table: attribute | meaning | constraint
+          (required or optional, format, range, what the zero value means).
+          Ids are rows; derived values are requirements, not rows. When the
+          entity refers to other entities, draw its direct relationships in a
+          `mermaid` erDiagram fence - this entity and its neighbours only,
+          each line with its cardinality (`||--o{` one-to-many, `}o--o{`
+          many-to-many); the diagram is the only place cardinality is
+          stated. A many-to-many relation that carries attributes of its own
+          (a level, a status, a timestamp) is an entity in its own right and
+          is drawn as one (User ||--o{ Follow }o--|| Artist); only a
+          many-to-many relation without attributes is drawn directly. Join
+          tables are implementation and never appear. When the entity has a state attribute,
+          list its states and draw the legal transitions in a `mermaid`
+          stateDiagram-v2 fence; the state set is vocabulary, what drives
+          each transition is a usecase concern. States and attributes come
+          from the requirements' own conditions; none is added that no
+          requirement mentions. An entity's Purpose is therefore one or two
+          sentences followed by the table and the fence - longer than any
+          other Purpose, by design.
+          Tables and closed fences are fine; never an HTML comment or an
+          extra `##` heading, or archive cannot carry the Purpose into a new
+          main spec. A new entity puts the table in its delta's Purpose
+          (archive carries it over); an existing entity's Purpose is edited
+          directly in the main spec, never through a delta.
+
+        ## Requirements
+          Only rules the entity answers by itself, with no caller, clock or
+          store in the picture, one scenario per branch (a branch is a
+          distinct outcome; constraints that share an outcome may share a
+          scenario):
+            - validation: a constraint on an attribute or value object
+              (a postal code matches its country's format)
+            - creation: what a new instance starts as and what is derived
+              (an order starts Pending; its total is the sum of its lines)
+            - guards: yes/no questions about one instance (cancellable only
+              while Pending)
+            - classification: a value derived from the instance and an
+              argument (whether an address is inside a delivery zone)
+          Anything with a name of its own - a store access, a lookup, a
+          computation - is an <operation> spec, not a requirement here.
+
+      components/entity/<entity>/<operation>/spec.md
+
+        ## Purpose       What the operation does for the entity, in one or
+                         two sentences.
+        ## Requirements  What the operation promises and which errors it
+                         returns - inputs, outputs, atomicity, idempotency,
+                         uniqueness, not-found - never how the implementation
+                         achieves it (no index, lock, transaction shape,
+                         provider or vendor name; those are design.md). One
+                         scenario per branch.
+
+      components/usecase/<entity>/<method>/spec.md
+
+        ## Purpose       The operation and its caller-facing intent.
+        ## Requirements  Everything about driving the entity: the trigger and
+                         input in entity terms; preconditions as entity
+                         states and guards, in the entity spec's words; the
+                         effect - entity operations called, state changes
+                         made; failure handling (repeated signal,
+                         precondition not met, not found); what is delegated
+                         to another capability. A rule the entity spec states
+                         or a promise an operation spec makes is never
+                         restated here; a rule that must hold no matter who
+                         calls goes in the entity spec.
+
+      One rule, split across four places:
+
+        entity/order/spec.md           "Cancellable only while Pending: WHEN
+                                       status is Shipped THEN not cancellable"
+        entity/order/create/spec.md    "Create stores the order and its lines
+                                       together or not at all; a second
+                                       create for the same cart reference
+                                       fails with AlreadyExists"
+        usecase/order/checkout/spec.md "On checkout, create the order from the
+                                       cart; on AlreadyExists return the
+                                       existing order - a retried checkout
+                                       creates nothing"
+        design.md                      "AlreadyExists is enforced by a unique
+                                       index on the cart reference, inside one
+                                       transaction"
+
+      The outer layers and a story, for the same order:
+
+        adapter/<a>/api/webhook/payment-refund   "On a refund notice from the
+                                                 payment provider, resolve the
+                                                 order by its payment reference
+                                                 and call OrderUseCase.Refund;
+                                                 an unknown reference is
+                                                 acknowledged and ignored"
+        infrastructure/<a>/web/route/orders      "The orders screen lists the
+                                                 customer's orders newest
+                                                 first and shows a Refunded
+                                                 order greyed out"
+        stories/refund-a-cancelled-order         "WHEN the seller cancels the
+                                                 event THEN every customer's
+                                                 order for it is refunded and
+                                                 their orders screen shows it
+                                                 Refunded"
+
+      A change that adds or modifies a usecase spec reviews the entity spec
+      and the operation specs it relies on, and the reverse. Touch all of
+      them, or say in the proposal's Capabilities why the others are
+      unchanged.
+
+      ## What may be named in a spec
+
+      The subject of a requirement or scenario is an entity, an operation or
+      usecase method (Order.Create, OrderUseCase.Checkout), an audience and
+      screen name, a surface name, or a UI vocabulary term defined by the
+      surface that owns it. Never an implementation type, a file path, or a
+      package-internal function or field. Frontend behavior is stated from
+      the user's side: "the list shows at most 50 items", never "the store
+      caps the list at 50".
+
+      A third-party name may appear only when the user sees it or is
+      constrained by it (a card brand, a ticketing outlet, a currency); a name
+      the user never sees (a payment or identity provider, an SDK, an object
+      type) belongs in design.md. Errors are named from the error vocabulary
+      in the project context, in its spelling. A capability that has no spec
+      yet is referenced by its plain product name only, and the change lists
+      such references for a follow-up proposal. A legal or contractual
+      constraint is spec content where the user sees its effect (a notice, a
+      refund rule); the contract itself is referenced from design.md.
+
+      Two nouns are one entity only when every attribute and rule of one
+      holds for the other; otherwise name the second and say in its Purpose
+      how it relates to the first.
+
+      Thresholds are numbers with units ("below 30 items", "within 15
+      minutes"), never qualitative words ("below a minimum target",
+      "promptly"). When a source threshold is qualitative and the change may
+      not decide it, keep the phrase and mark it `TODO(threshold)` for the
+      change that numbers it.
+
+      Do not write historical prohibitions ("SHALL NOT reintroduce X"). A
+      complete description of current behavior makes them redundant.
+
+      ## Capability files
+
+      A main spec starts with a title line (`# <Name>`), then `## Purpose`,
+      then `## Requirements`. Moving, splitting or merging main specs is not
+      a change: it is done directly on the main specs in one commit, with a
+      mapping table from old to new paths.
+
+      Create one spec file per capability listed in the proposal's Capabilities section.
+      `<capability-path>` is the spec directory relative to `specs/` and is one of
+      the spec-tree paths above. Preserve the full path:
+      - New capabilities: use the exact path from the proposal at `specs/<capability-path>/spec.md`. Any path segment newly introduced in the proposal must be kebab-case. Follow the project's existing organization.
+      - Modified capabilities: use the exact existing path from `openspec/specs/<capability-path>/` when creating the delta at `specs/<capability-path>/spec.md`. Run `openspec list --specs` to confirm that path before writing the delta, appending `--store "<id>"` only for a registered standalone store - a mistyped or invented path targets a capability that does not exist rather than the one you meant. Do not move or rename the capability.
+
+      There must be at least one spec file unless the change's `.openspec.yaml`
+      sets `skip_specs: true` (no spec-level behavior change) - `openspec validate`
+      rejects a zero-delta change without that marker. If the proposal lists no
+      capabilities and `skip_specs` is not set, revisit the proposal first.
+
+      Delta operations (use ## headers):
+      - **ADDED Requirements**: New capabilities
+      - **MODIFIED Requirements**: Changed behavior - MUST include full updated content
+      - **REMOVED Requirements**: Deprecated features - MUST include **Reason** and **Migration**
+      - **RENAMED Requirements**: Name changes only - use FROM:/TO: format
+
+      Format requirements:
+      - Each requirement: `### Requirement: <name>` followed by description
+      - Use SHALL/MUST for normative requirements (avoid should/may)
+      - Each scenario: `#### Scenario: <name>` with WHEN/THEN format
+      - **CRITICAL**: Scenarios MUST use exactly 4 hashtags (`####`). Using 3 hashtags or bullets will fail silently.
+      - Every requirement MUST have at least one scenario.
+
+      New capabilities only: the delta spec's first section is `## Purpose` -
+      one or two sentences (50+ characters, or `openspec validate --strict`
+      reports it as too brief) describing what the capability is for. Archive
+      copies it into the main spec it creates; without it the new main spec is
+      left with a `TBD ... Update Purpose after archive` placeholder to fill in
+      by hand. Do NOT add `## Purpose` to a delta for an existing capability -
+      that spec already has one and the delta's is ignored. To change an
+      existing capability's Purpose - including a leftover `TBD` placeholder -
+      edit `<planningHome.root>/openspec/specs/<capability-path>/spec.md`
+      directly. `planningHome.root` comes from the `openspec instructions ...
+      --json` response. Always use it rather than a repo-relative path: it
+      resolves to the store whenever the change lives in one - whether that
+      came from `--store`, a project `store:` pointer, or a global default
+      store - and to the current repository otherwise. Do not try to work out
+      which case applies; the field already has.
+
+      MODIFIED requirements workflow:
+      1. Locate the existing requirement in `<planningHome.root>/openspec/specs/<capability-path>/spec.md` (the same store-aware root as above)
+      2. Copy the ENTIRE requirement block (from `### Requirement:` through all scenarios)
+      3. Paste under `## MODIFIED Requirements` and edit to reflect new behavior
+      4. Ensure header text matches exactly (whitespace-insensitive)
+
+      Common pitfall: Using MODIFIED with partial content loses detail at archive time.
+      If adding new concerns without changing existing behavior, use ADDED instead.
+
+      Example (a new entity, so its delta's first section is `## Purpose`; the
+      paired operation delta follows):
+      ````
+      # Spec Delta
+
+      ## Purpose
+
+      An Order is a customer's confirmed purchase of the lines in a cart.
+
+      | attribute | meaning                      | constraint                    |
+      |-----------|------------------------------|-------------------------------|
+      | cart_ref  | the cart it was created from | required, one order per cart  |
+      | status    | lifecycle                    | Pending, Shipped or Cancelled |
+      | lines     | purchased items              | at least one                  |
+
+      ```mermaid
+      erDiagram
+        Cart ||--o| Order : "becomes"
+        Order ||--|{ OrderLine : "contains"
+        Product ||--o{ OrderLine : "is bought in"
+      ```
+
+      ## ADDED Requirements
+
+      ### Requirement: Cancellable only while pending
+      An Order SHALL be cancellable only while its status is Pending.
+
+      #### Scenario: Shipped order is not cancellable
+      - **WHEN** status is Shipped
+      - **THEN** the order is not cancellable
+
+      ## REMOVED Requirements
+
+      ### Requirement: Free-text status
+      **Reason**: Replaced by the status attribute above
+      **Migration**: Existing free-text values are mapped by the backfill in this change's tasks
+      ````
+
+      Paired operation delta at components/entity/order/create:
+      ```
+      # Spec Delta
+
+      ## Purpose
+
+      Stores a new Order together with its lines.
+
+      ## ADDED Requirements
+
+      ### Requirement: Create is atomic and unique per cart
+      Create SHALL store the order and its lines together or not at all, and
+      SHALL fail with AlreadyExists when an order for the same cart_ref exists.
+
+      #### Scenario: Second create for the same cart
+      - **WHEN** an order for the cart_ref already exists
+      - **THEN** Create fails with AlreadyExists and stores nothing
+      ```
+
+      Specs should be testable - each scenario is a potential test case.
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: Technical design document with implementation details
+    template: design.md
+    instruction: |
+      Create the design document that explains HOW to implement the change.
+
+      When to include design.md (create only if any apply):
+      - Cross-cutting change (multiple services/modules) or new architectural pattern
+      - New external dependency or significant data model changes
+      - Security, performance, or migration complexity
+      - Ambiguity that benefits from technical decisions before coding
+
+      Sections:
+      - **Context**: Only the current state and constraints needed to explain the approach. Reference the proposal for motivation instead of restating it (e.g., "See proposal.md - Why").
+      - **Goals / Non-Goals**: What this design achieves and explicitly excludes. Don't restate the proposal's scope - add only design-level boundaries.
+      - **Decisions**: Key technical choices with rationale (why X over Y?). Include alternatives considered for each decision.
+        This is also where the HOW behind a spec lives: which interface an entity
+        operation is placed on and what realizes it (a repository with a unique
+        index, an external client, a pure function), how a state change is
+        realized in code, and every provider or vendor name and object type.
+        None of these belong in a spec.
+      - **Risks / Trade-offs**: Known limitations, things that could go wrong. Format: [Risk] → Mitigation
+      - **Migration Plan**: Steps to deploy, rollback strategy (if applicable)
+      - **Open Questions**: Unknowns that can safely be answered later without
+        changing the specs, the approach, or the task breakdown. Omit if none.
+
+      Open questions are for genuinely deferrable unknowns, not decisions you
+      skipped. If a question would change the specs, the chosen approach, or
+      the task breakdown, resolve it now - ask the user instead of guessing.
+
+      Focus on architecture and approach, not line-by-line implementation.
+      The proposal covers why and what; design covers how. Reference the
+      proposal for motivation and, once written, the specs for requirements -
+      if a section would only restate them, point to them instead.
+
+      Good design docs explain the "why" behind technical decisions.
+    requires:
+      - proposal
+
+  - id: tasks
+    generates: tasks.md
+    description: Implementation checklist with trackable tasks
+    template: tasks.md
+    instruction: |
+      Create the task list that breaks down the implementation work.
+
+      Before writing tasks, check design.md for Open Questions. If any of them
+      would change what gets built, resolve them with the user first - do not
+      bake an unstated assumption into the task list.
+
+      **IMPORTANT: Follow the template below exactly.** The apply phase parses
+      checkbox format to track progress. A box holding only `x` counts as done,
+      upper or lower case and with any spacing, so `- [ x]` is done too. Every
+      other marker, including `- [~]`, `- [-]` and an empty `- []`, reads as
+      unfinished. A line with no checkbox is not tracked at all.
+
+      Guidelines:
+      - Group related tasks under ## numbered headings
+      - Each task MUST be a checkbox: `- [ ] X.Y Task description`
+      - Tasks should be small enough to complete in one session
+      - Order tasks by dependency (what must be done first?)
+      - Derive tasks from the spec paths: an entity spec yields the data
+        schemas, the entity code and one unit test per scenario; an entity
+        operation yields the interface method, its implementation and one
+        contract test per scenario; a usecase yields the method and one unit
+        test per scenario; an outer component yields the component and its
+        tests; a story yields its E2E test. Every test task names the
+        scenarios it covers, each test carrying the
+        `@spec <capability-path> "<scenario name>"` marker. Design decisions
+        add their own tasks (migrations, indexes, configuration).
+      - Each task MUST state how to verify completion (a test, command,
+        observable behavior, or delivered artifact). Put the verification in
+        that task's checkbox description. Use a separate verification task only
+        when it checks broader integration or system behavior that spans
+        multiple implementation tasks.
+      - Each task group MUST land the tests and documentation its own work
+        calls for. Do NOT collect testing or documentation into a final group -
+        when a late group first exercises work from an early one, the failures
+        cascade back through every group in between and force rework. A group
+        whose work calls for neither, such as scaffolding or dependency setup,
+        carries neither. A final group is for integration checks only, not for
+        the tests and docs an earlier group owed.
+
+      Example:
+      ```
+      # Tasks
+
+      ## 1. Entity (components/entity/order)
+
+      - [ ] 1.1 Add the Order data schema from the attribute table, with a validation rule per constraint, and verify schema validation passes
+      - [ ] 1.2 Implement the Order entity rules and verify one unit test per scenario passes
+
+      ## 2. Entity operation (components/entity/order/create)
+
+      - [ ] 2.1 Declare Create on the order interface, implement it in the store, and verify one contract test per scenario passes
+
+      ## 3. Usecase (components/usecase/order/checkout)
+
+      - [ ] 3.1 Implement Checkout and verify one unit test per scenario passes with the operations mocked
+
+      ## 4. Story (stories/check-out-a-cart)
+
+      - [ ] 4.1 Add the E2E test covering each story scenario and verify it passes
+      ```
+
+      Reference specs for what needs to be built, design for how to build it.
+    requires:
+      - specs
+      - design
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    Read context files, work through pending tasks, mark complete as you go.
+    Pause if you hit blockers or need clarification.
+    Each component scenario is a unit or contract test and each story scenario
+    an E2E test - write the test with the code it verifies, and mark it with
+    `@spec <capability-path> "<scenario name>"` in a comment or in the test's
+    name, exactly as the scenario is written. Archive is refused while an added
+    or modified scenario has no marked test. A scenario no automated test can
+    verify is exempted by a line in the change's design.md:
+    `@spec-manual <capability-path> "<scenario name>" -- <how it is verified>`.

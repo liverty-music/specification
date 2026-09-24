@@ -28,7 +28,16 @@ Proto, Go entity, DB schema の各レイヤーに `created_at` / `updated_at` �
 
 ### 2. マイグレーションは 1 ファイルで全テーブルをまとめる
 
-6 テーブルの `DROP COLUMN` を 1 つのマイグレーションファイルにまとめる。
+6 テーブルの `DROP COLUMN` を 1 つのマイグレーションファイルにまとめる。対象カラム:
+
+- `users.created_at`, `users.updated_at`
+- `events.created_at`, `events.updated_at`
+- `venues.created_at`, `venues.updated_at`
+- `artist_official_site.created_at`, `artist_official_site.updated_at`
+- `followed_artists.created_at`（このテーブルに `updated_at` は無い）
+- `notifications.created_at`, `notifications.updated_at`
+
+`schema.sql` からも該当カラム定義を除去し、両者が乖離しないようにする。業務上の意味を持つタイムスタンプ（`tickets.minted_at`, `events.start_at`/`open_at`, `latest_search_logs.searched_at`, `nullifiers.used_at`, `notifications.scheduled_at`/`sent_at`）は変更しない。Non-Goals のとおり対象外。
 
 **理由**: 全て同じ理由（メタデータタイムスタンプ削除）であり、原子的に適用すべき。既存の `20260221130000_drop_artists_timestamps.sql` と同じパターン。
 

@@ -1,0 +1,117 @@
+old_spec	old_req_name	disposition	target_path	new_req_name	merge_group	rewrite_flags	confidence	rationale
+identity-management	Manage Zitadel Organization	OUT:runbook					high	No user actor observes Zitadel org topology; Pulumi zitadel.Org IaC provisioning (admin/liverty-music orgs)
+identity-management	Manage Zitadel Project	OUT:runbook					high	No user actor; Pulumi zitadel.Project resource provisioning
+identity-management	Manage OIDC Application	OUT:runbook					high	No user actor; Pulumi ApplicationOidc provisioning — client_id delivery to the SPA is covered by the frontend-runtime-config capability
+identity-management	Configure Login Policy	NEEDS_HUMAN					low	Fan observes passwordless enforcement on the hosted Login UI, but no vocabulary route/component covers the Zitadel-hosted login screen
+identity-management	Configure Admin Org Login Policy	OUT:runbook					high	Admin-only zitadel.LoginPolicy IaC configuration on the admin org; no frontend surface
+identity-management	Provision Google IdP for Admin Sign-in	OUT:runbook					high	Pulumi zitadel.IdpGoogle instance-level provisioning; operator sign-in plumbing, ops-only
+identity-management	Provision Human Admin User in Admin Role Org	OUT:runbook					high	Pulumi HumanUser provisioning for the admin org; no product actor observes this
+identity-management	Grant IAM_OWNER to Human Admin User	OUT:runbook					high	Pulumi InstanceMember role grant; ops-only IAM plumbing
+identity-management	Pre-link Google Identity to Human Admin via IaC	OUT:runbook					high	ZitadelUserIdpLink IaC resource; ops-only sign-in resolution plumbing
+identity-management	Provision Admin Google Sub via ESC	OUT:runbook					high	Pulumi ESC secret plumbing for the admin's Google sub; no product actor
+identity-management	Place Machine Users by Responsibility	OUT:runbook					high	Machine-user org placement (pulumi-admin, login-client, backend-app); no product actor
+identity-management	Retain Break-glass Machine User	OUT:runbook					high	pulumi-admin break-glass credential in GCP Secret Manager; ops-only
+identity-management	Maintain Google OAuth Client in Dev Infrastructure	OUT:runbook					high	Manual GCP Console OAuth client + Pulumi ESC storage; ops-only, dev environment
+identity-management	Inject Email Claim into Access Tokens via Actions v2	OUT:runbook					high	Backend /pre-access-token webhook + Zitadel Actions v2 wiring; no directly observed UX
+identity-management	Provision Actions v2 Target and Execution Resources	OUT:runbook					high	Pulumi Dynamic Resource for Zitadel Actions v2 Target/ExecutionFunction; ops-only
+identity-management	Dedicated Service User for Login V2 UI	OUT:runbook					high	zitadel-login Pod service-user PAT plumbing (SSR auth to Zitadel API); ops-only
+identity-management	SMTP Configuration Must Be Activated After Creation	KEEP	components/infrastructure/email/smtp-activation	SMTP Configuration Must Be Activated After Creation			medium	Fan-observable: an inactive SMTP config silently drops verification/password-reset emails; \"email\" kind matches vocabulary
+identity-management	Provision Password-Based E2E Test User in Dev Zitadel	OUT:runbook					high	Dev-only Pulumi test-user provisioning for headless E2E automation; no product actor
+identity-management	E2E Test User Password Marked Permanent	OUT:runbook					high	Dev-only Pulumi Dynamic Resource marking a test credential permanent; no product actor
+identity-management	Maintain Google OAuth Client in Prod Infrastructure	OUT:runbook					high	Manual GCP Console OAuth client + Pulumi ESC storage; ops-only, prod environment
+identity-management	Configure Login UI Branding	NEEDS_HUMAN					low	Fan observes brand colors on the hosted Login UI v2, but no vocabulary route/component or infra kind covers Zitadel-hosted branding
+identity-management	Localize Login UI Text for the Product	KEEP	components/infrastructure/locale/hosted-login-translation	Localize Login UI Text for the Product			medium	Fan observes Japanese/English login text on the hosted Login UI v2; \"locale\" kind matches vocabulary
+identity-management	Configure OIDC Token Lifetimes	NEEDS_HUMAN					low	Fan-observable session/expiry behavior (30m access, 90d refresh), but no vocabulary route/component covers Zitadel-hosted session lifetime
+app-error-log-alerting	Error log detection per workload	OUT:runbook					high	Cloud Monitoring Log-Based Alert Policy per workload; on-call engineer is the actor, not a product user
+app-error-log-alerting	Discovery CronJob failure observability	OUT:runbook					high	CronJob handled-failure alerting coverage; ops-only, no product user
+app-error-log-alerting	Atlas Operator migration failure detection	OUT:runbook					high	Atlas Operator migration-failure Alert Policy; ops-only
+app-error-log-alerting	Atlas migration alert uses same notification and rate limiting as backend alerts	OUT:runbook					high	Shared alert-policy configuration reuse; ops-only
+app-error-log-alerting	Notification via Slack	OUT:runbook					high	Slack notification channel for on-call incidents; ops-only
+app-error-log-alerting	Notification via Google Chat	OUT:runbook					high	Google Chat notification channel for on-call incidents; ops-only
+app-error-log-alerting	Notification rate limiting	OUT:runbook					high	notificationRateLimit on Alert Policies; ops-only
+app-error-log-alerting	Incident auto-close	OUT:runbook					high	Cloud Monitoring Incident autoClose lifecycle; ops-only
+app-error-log-alerting	Error context in alert labels	OUT:runbook					high	labelExtractors on alert notifications; ops-only
+app-error-log-alerting	Error Reporting API enabled	OUT:runbook					high	clouderrorreporting.googleapis.com API enablement; ops-only
+app-error-log-alerting	Infrastructure as Code	OUT:runbook					high	Pulumi monitoring.ts resource management statement; ops-only
+app-error-log-alerting	Gemini client-cancelled errors classified as client error	OUT:lint					high	Error-classification convention in the Gemini infra layer's error handling interceptor; no user actor
+app-error-log-alerting	Infrastructure layer preserves original error types	OUT:lint					high	rdb.toAppErr error-wrapping/errors.Is convention in the database infra layer; no user actor
+app-error-log-alerting	Standard slog output uses structured JSON format	OUT:runbook					high	slog.SetDefault JSON formatting to avoid GKE log-severity misclassification; ops-only
+bottom-sheet-ce	Bottom Sheet Custom Element	KEEP	components/infrastructure/ui/global/bottom-sheet	Bottom Sheet Custom Element			high	Matches the vocabulary global CE bottom-sheet, the single dialog primitive used across routes
+lottery-application	Configure a lottery sales phase	KEEP	components/usecase/lottery-application/configure-lottery-phase	Configure a lottery sales phase			high	Matches LotteryUseCase.ConfigureLotteryPhase; organizer-initiated operation on a published event
+lottery-application	Organizer console entry point to lottery configuration	KEEP	components/infrastructure/ui/route/lottery-application	Organizer console entry point to lottery configuration			high	Organizer-facing navigation entry point within the lottery-application route
+lottery-application	Apply to a lottery phase	KEEP	components/usecase/lottery-application/apply	Apply to a lottery phase			high	Matches LotteryUseCase.Apply; fan-initiated operation with Stripe manual-capture hold
+lottery-application	One application per account per phase	KEEP	components/usecase/lottery-application/apply	One application per account per phase			medium	SPLIT-CANDIDATE: anti-scalp invariant enforced at LotteryUseCase.Apply; the withdraw portion belongs to LotteryUseCase.WithdrawApplication
+lottery-application	Automatic draw against fixed capacity	KEEP	components/usecase/lottery-application/run-draw	Automatic draw against fixed capacity	LOTTERY-DRAW		high	Matches LotteryUseCase.RunDraw, the scheduled draw-against-capacity operation
+lottery-application	Capture winners and release losers at the draw	KEEP	components/usecase/lottery-application/run-draw	Capture winners and release losers at the draw	LOTTERY-DRAW		high	Same LotteryUseCase.RunDraw operation as the capacity-draw requirement (capture/release side effects)
+lottery-application	Application results	KEEP	components/usecase/lottery-application/get-result	Application results			high	Matches LotteryUseCase.GetResult
+lottery-application	Persisted loser waitlist for resale	KEEP	components/usecase/lottery-application/run-draw	Persisted loser waitlist for resale			medium	Result-of-call from LotteryUseCase.RunDraw, persisted for downstream official-resale consumption
+lottery-application	本人確認 binding carried to issuance	KEEP	components/entity/lottery-application	本人確認 binding carried to issuance			medium	Invariant that identity binding always travels with the TicketApplication entity (entity tie-break: always true)
+cube-css-token-enforcement	`cube/require-token-variables` enforces `var()` for design token properties	OUT:lint					high	stylelint custom rule definition; no user actor
+cube-css-token-enforcement	`calc()` expressions must contain at least one `var()`	OUT:lint					high	stylelint custom rule definition; no user actor
+cube-css-token-enforcement	Structural values bypass token enforcement	OUT:lint					high	stylelint rule exemption list (0, auto, none, keywords); no user actor
+cube-css-token-enforcement	Token definition layers are excluded	OUT:lint					high	stylelint rule layer-exclusion config (reset/tokens/global); no user actor
+cube-css-token-enforcement	Duration and easing properties are token-enforced	OUT:lint					high	stylelint rule property-list config; no user actor
+cube-css-token-enforcement	Configurable property list	OUT:lint					high	stylelint rule options schema; no user actor
+secret-management	GCP Secret Manager provisioning	OUT:runbook					high	Pulumi GCP Secret Manager secret provisioning; no user actor
+secret-management	IAM access control for secrets	OUT:runbook					high	backend-app service-account secretAccessor IAM binding; no user actor
+secret-management	External Secrets Operator deployment	OUT:runbook					high	ESO cluster component via ArgoCD; no user actor
+secret-management	ClusterSecretStore configuration	OUT:runbook					high	ClusterSecretStore resource wiring GCP Secret Manager; no user actor
+secret-management	ExternalSecret for backend secrets	OUT:runbook					high	ExternalSecret resource mapping to K8s Secret; no user actor
+secret-management	Backend Deployment secret consumption	OUT:runbook					high	envFrom secretRef wiring on the backend Deployment; no user actor
+secret-management	Postmark Server API Token in Pulumi ESC	OUT:runbook					high	Pulumi ESC secret storage for the Postmark SMTP token; no user actor
+secret-management	Secret rotation propagation	OUT:runbook					high	Reloader-driven rolling restart on secret rotation; no user actor
+argocd-image-automation	Image Updater monitors container registry	OUT:delete					high	ArgoCD Image Updater GAR polling mechanics; CI/deploy plumbing with no lasting product value
+argocd-image-automation	In-cluster parameter override for dev	OUT:delete					high	ArgoCD Application parameter-override mechanics for dev; CI/deploy plumbing
+argocd-image-automation	Parameter override recovery after Application recreation	OUT:delete					high	ArgoCD Image Updater self-healing after root-app sync recreation; CI/deploy plumbing
+argocd-image-automation	Production deployments remain manual	OUT:delete					high	Prod image-updater-controller disablement + manual semver overlay PRs; CI/deploy plumbing
+argocd-image-automation	Image pull policy enforcement	OUT:delete					high	imagePullPolicy: Always for dev latest-tag deployments; CI/deploy plumbing
+argocd-image-automation	Multiple image support	OUT:delete					high	Image Updater coverage across backend/frontend Applications; CI/deploy plumbing
+argocd-image-automation	Rollback capability	OUT:delete					high	ArgoCD app rollback/history mechanics; CI/deploy plumbing
+argocd-image-automation	Failure handling	OUT:delete					high	Image Updater retry/log-on-failure mechanics; CI/deploy plumbing
+edit-mode-unfollow	Edit-mode toggle reveals per-row remove controls	KEEP	components/infrastructure/ui/route/my-artists	Edit-mode toggle reveals per-row remove controls			high	My Artists route behavior: header Edit toggle revealing per-row remove controls
+edit-mode-unfollow	Edit-mode controls are accessible	KEEP	components/infrastructure/ui/route/my-artists	Edit-mode controls are accessible			high	Accessibility of the Edit toggle and remove controls on the My Artists route
+edit-mode-unfollow	Remove control unfollows immediately with Undo	KEEP	components/infrastructure/ui/route/my-artists	Remove control unfollows immediately with Undo			medium	SPLIT-CANDIDATE: route-level optimistic-removal/Undo UX; the actual unfollow commit already routes through FollowUseCase.Unfollow unchanged
+deployment-infrastructure	Workload Identity Federation (WIF)	OUT:runbook					high	Pulumi WorkloadIdentityPool for keyless Pulumi Cloud auth; ops-only
+deployment-infrastructure	Pulumi OIDC Provider	OUT:runbook					high	WorkloadIdentityPoolProvider trusting Pulumi Cloud as issuer; ops-only
+deployment-infrastructure	Deployment Service Account	OUT:runbook					high	Dedicated GCP Service Account for Pulumi deployments; ops-only
+deployment-infrastructure	Native Managed OIDC Deployment	OUT:runbook					high	Pulumi Cloud Deployments native OIDC integration; ops-only
+deployment-infrastructure	Automated PR Flow	OUT:delete					high	Pulumi Cloud preview-on-PR CI mechanics; no lasting product value
+deployment-infrastructure	Automated Merge Flow (Dev)	OUT:delete					high	Pulumi Cloud auto-apply-on-merge CI mechanics; no lasting product value
+deployment-infrastructure	Manual Deployment Flow (Prod)	OUT:delete					high	Manual prod-apply CI mechanics; no lasting product value
+deployment-infrastructure	Dedicated CD Namespace	OUT:runbook					high	argocd/external-secrets namespace existence; ops-only
+deployment-infrastructure	Dev backend runs single replica	OUT:runbook					high	Dev-overlay fan-api replica count; ops-only
+deployment-infrastructure	All dev workload kinds use Spot VM scheduling	OUT:runbook					high	Dev-overlay Spot VM nodeSelector across workload kinds; ops-only
+organizer-tenancy	Shared organizer-console project in the product org	OUT:runbook					high	Zitadel Project/role IaC provisioning; no directly observed organizer feature
+organizer-tenancy	Organizer console OIDC app and backend API app	OUT:runbook					high	Zitadel OIDC app + backend-api audience app IaC provisioning; ops-only
+organizer-tenancy	Dedicated organizer-provisioner machine user	OUT:runbook					high	organizer-provisioner machine-user IaC provisioning; ops-only
+organizer-tenancy	Organizer-provisioner root key has a finite lifecycle	OUT:runbook					high	Root JWT-profile signing-key expiry/rotation policy; ops-only
+organizer-tenancy	Organizer tenant orgs use a passkey-primary login policy with a designed recovery path	NEEDS_HUMAN					low	Organizer actor directly experiences passkey login + recovery, but no vocabulary route/component covers the Zitadel-hosted organizer login screen
+admin-console-hosting	Dedicated container image and Kubernetes workload	OUT:runbook					high	Separate Deployment/Service for the admin console; hosting/deploy infra, ops-only
+admin-console-hosting	Dedicated hostname on the shared external gateway	OUT:runbook					high	HTTPRoute for admin.{env-base-domain}; hosting/deploy infra, ops-only
+admin-console-hosting	Per-host runtime config delivery	OUT:runbook					high	Admin-pod /config.json ConfigMap delivery; hosting/deploy infra, ops-only
+admin-console-hosting	Admin-org OIDC application provisioning	OUT:runbook					high	Zitadel ApplicationOidc for the admin console; ops-only IaC
+admin-console-hosting	TLS certificate and DNS for the admin hostname	OUT:runbook					high	Gateway certmap + Cloud DNS for the admin hostname; ops-only
+admin-console-hosting	GitOps delivery for the admin image	OUT:runbook					high	ArgoCD image-updater tracking for the admin image; ops-only
+certificate-manager-integration	Google-Managed Certificate Provisioning	OUT:runbook					high	Google Certificate Manager TLS provisioning for api.liverty-music.app; ops-only
+certificate-manager-integration	DNS Validation for Certificate Issuance	OUT:runbook					high	CNAME-based DNS authorization for certificate issuance; ops-only
+certificate-manager-integration	Certificate Map for Gateway Binding	OUT:runbook					high	Certificate Map resource binding hostnames to certs on the Gateway; ops-only
+certificate-manager-integration	Automatic Certificate Renewal	OUT:runbook					high	Google-managed certificate auto-renewal; ops-only
+certificate-manager-integration	Certificate Status Monitoring	OUT:runbook					high	GCP Console/API certificate status visibility; ops-only
+certificate-manager-integration	Zero-Downtime Certificate Update	OUT:runbook					high	Live certificate rotation without dropping TLS connections; ops-only
+concert-highway-ce	Concert Highway Custom Element	KEEP	components/infrastructure/ui/global/live-highway	Concert Highway Custom Element		CLASSNAME	high	Vocabulary target renames the concert-highway CE to live-highway; shared 3-column lane grid used by dashboard and Welcome preview
+concert-highway-ce	Beam tracking updates efficiently per frame	KEEP	components/infrastructure/ui/global/live-highway	Beam tracking updates efficiently per frame		CLASSNAME	high	Same live-highway CE; per-frame beam-tracking performance refinement, no observable behavior change
+e2e-auth-testing	Playwright MCP Authenticated Session	OUT:runbook					high	Dev-tooling for launching Playwright MCP with a captured session; no product user actor
+e2e-auth-testing	StorageState Capture Script	OUT:runbook					high	Dev-tooling setup script for capturing storageState; no product user actor
+e2e-auth-testing	StorageState Gitignore	OUT:runbook					high	Repo-hygiene rule excluding storageState.json from git; no product user actor
+e2e-auth-testing	Password-Based Storage State Capture Path	OUT:runbook					high	Headless capture path for WSL2 dev workstations; dev-tooling, no product user actor
+e2e-auth-testing	Test-User Credential File Gitignored	OUT:runbook					high	Repo-hygiene rule excluding the test-user password file from git; no product user actor
+cloud-sql-connector	Authenticate via Cloud SQL Connector	OUT:runbook					high	Cloud SQL Go Connector usage for non-local environments; backend infra, no user actor
+cloud-sql-connector	Standard Connection for Local	OUT:runbook					high	Standard pgx TCP connection for local dev; backend infra, no user actor
+cloud-sql-connector	Database schema SHALL be configurable via environment variable	OUT:runbook					high	DATABASE_SCHEMA env var controlling search_path; backend infra, no user actor
+cloud-sql-connector	Configuration Validation	OUT:runbook					high	Startup validation of InstanceConnectionName; backend infra, no user actor
+cloud-sql-connector	A standalone Auth Proxy Deployment SHALL exist in dev for local access	OUT:runbook					high	cloud-sql-proxy Deployment for dev-only local DB access; backend infra, no user actor
+backend-service-exposure	Backend Service Discoverability	OUT:runbook					high	Cross-namespace Gateway backendRef to the backend Service; ops-only
+backend-service-exposure	Service Backend Protocol Support	OUT:runbook					high	appProtocol: kubernetes.io/h2c advertisement; ops-only
+backend-service-exposure	Health Check Integration	OUT:runbook					high	gRPC HealthCheckPolicy for the backend Service; ops-only
+bubble-replenishment	Canvas replenishes bubbles when similar artists are exhausted	KEEP	components/infrastructure/ui/route/discovery	Canvas replenishes bubbles when similar artists are exhausted		CLASSNAME	high	Discovery-canvas bubble replenishment behavior on the discovery route; BubbleManager is an implementation class name
+event-card-glow	Matched event card glow opacity	NEEDS_HUMAN					medium	event-card has no dedicated ui/global vocabulary entry (cf. batch-01 artist-image-ui precedent); the glow is a style detail of that unmapped nested component

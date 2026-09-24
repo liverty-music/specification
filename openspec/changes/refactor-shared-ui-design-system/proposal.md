@@ -42,17 +42,17 @@ existing bespoke brand and CUBE investment instead.
 ## Capabilities
 
 ### New Capabilities
-- `shared-ui-design-system`: the cross-audience UI foundation and primitives —
-  a single source of design tokens and reusable UI components shared by fan-web,
-  admin, and organizer; the console persistent-navigation shell and the
-  no-dead-end-screen guarantee; and the preservation of consumer/console bundle
-  isolation.
+
+- `components/infrastructure/admin/web/global/admin-shell`: Console persistent navigation with no dead-end screens
+- `components/infrastructure/fan/web/global/ui-primitives`: Shared reusable UI primitives; Responsive and accessible primitives
 
 ### Modified Capabilities
-<!-- None: this introduces a new cross-cutting capability. Per-feature flow gaps
-     surfaced by the audit (e.g. lottery phase list/edit/status navigation) are
-     enabled by the console shell here but specified under their own feature
-     capabilities in separate changes. -->
+
+<!-- Per-feature flow gaps surfaced by the audit (e.g. lottery phase
+     list/edit/status navigation) are enabled by the console shell here but
+     specified under their own feature capabilities in separate changes. -->
+- `components/infrastructure/fan/web/global/design-tokens`: Single source of design tokens
+- `components/infrastructure/organizer/web/global/organizer-shell`: Console persistent navigation with no dead-end screens
 
 ## Impact
 

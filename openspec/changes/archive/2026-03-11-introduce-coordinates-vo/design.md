@@ -42,6 +42,8 @@ The `infrastructure/geo/centroid.go` already has a `LatLng` struct with `Latitud
 
 **Alternative**: Use `entity.Coordinates` directly in infrastructure → rejected because infrastructure should not import entity layer.
 
+`ResolveCentroid` returns coordinates plus an `ok bool` rather than a nil pointer, keeping the resolution logic a pure function that is independently unit-testable (Japanese prefecture code → expected centroid; unsupported code → `ok = false`) without needing a database or repository fixture; enforced via `go test`.
+
 ### Decision 5: DB columns unchanged
 
 DB columns stay as `centroid_latitude`/`centroid_longitude` (homes) and `latitude`/`longitude` (venues). Repository layer maps between flat columns and `*entity.Coordinates`. No migration needed.

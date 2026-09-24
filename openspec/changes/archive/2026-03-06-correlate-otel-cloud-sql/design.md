@@ -63,6 +63,8 @@ Format follows the [sqlcommenter specification](https://google.github.io/sqlcomm
 - Only `traceparent` key is included — minimal and sufficient for trace correlation
 - Values are URL-encoded per spec (traceparent uses only hex chars, so no encoding needed in practice)
 - Keys are sorted alphabetically (trivial with a single key)
+- The `span_id` embedded in the comment is the DB query span's own span ID (the child span the wrapper just created), not the caller's incoming span — this is what lets Cloud SQL Query Insights attach its execution-plan span as a child of the DB query span specifically, rather than the broader RPC span
+- If no OTel span is active in the context when a query executes, the wrapper skips comment injection entirely and sends the SQL unmodified — there is no trace to correlate against
 
 ### Decision 4: Span attributes and naming
 
@@ -73,12 +75,13 @@ Spans follow [OTel semantic conventions for database](https://opentelemetry.io/d
 - **`db.query.text`**: Full SQL text (without the injected comment)
 - **`db.operation.name`**: Extracted operation (SELECT, INSERT, etc.)
 - **Span kind**: `Client`
+- **Errors**: a failed query records the error on the span and sets the span status to `Error` before the span ends
 
 ### Decision 5: Transaction tracing
 
 `Begin` returns a `pgx.Tx`. The wrapper creates a span for the `Begin` call itself, but individual queries within the transaction are executed through `pgx.Tx` methods — not through the pool wrapper.
 
-To trace queries within transactions, the wrapper returns a `TracedTx` that wraps `pgx.Tx` with the same span creation and comment injection logic.
+To trace queries within transactions, the wrapper returns a `TracedTx` that wraps `pgx.Tx` with the same span creation and comment injection logic — `Query`, `QueryRow`, and `Exec` within the transaction get a span and a `traceparent` comment exactly like direct pool calls, and `Commit`/`Rollback` each get their own span marking the end of the transaction.
 
 ### Decision 6: File placement
 

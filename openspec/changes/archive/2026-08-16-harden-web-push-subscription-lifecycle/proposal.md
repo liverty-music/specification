@@ -19,7 +19,7 @@ And it stayed invisible for ~2 weeks because delivery failures are recorded only
 ## Capabilities
 
 ### New Capabilities
-- `web-push-delivery-alerting`: detection and alerting when Web Push delivery is systemically failing (high failure ratio, or zero active subscriptions while notifications are being generated), so silent push outages surface operationally.
+(none — see design.md)
 
 ### Modified Capabilities
 - `push-notification-service`: client subscription lifecycle gains automatic renewal on `pushsubscriptionchange` and automatic recovery when the browser subscription is lost/absent (the current self-heal is a no-op in that case); subscribe/register failures are surfaced rather than swallowed.

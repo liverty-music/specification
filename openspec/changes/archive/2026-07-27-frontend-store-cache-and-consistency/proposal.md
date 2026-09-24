@@ -15,7 +15,7 @@ The fix is a single, standard **stale-while-revalidate (SWR)** discipline expres
 ## Capabilities
 
 ### New Capabilities
-- `frontend-store-cache`: A shared stale-while-revalidate primitive that Aurelia singleton stores use to cache read-only RPC resources — per-resource `staleTime`, in-flight coalescing, explicit invalidation, and revalidation on route entry and PWA resume — while keeping the store the single source of truth (no parallel state).
+(none — see design.md)
 
 ### Modified Capabilities
 - `dashboard-concert-cache`: The `listByFollower` cache is re-expressed via the shared primitive and gains revalidation on route entry and PWA resume (previously it only had a passive 24h TTL with no refresh trigger).

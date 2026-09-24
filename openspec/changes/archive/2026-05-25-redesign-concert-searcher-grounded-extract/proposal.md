@@ -27,8 +27,7 @@ This change records that architecture as the new spec so future work has a singl
 
 ### New Capabilities
 
-- `gemini-grounded-extract-and-coerce`: the two-step grounded-extract / JSON-coerce pipeline, three parallel Step 1 slices, the `<extracted>` XML envelope shape, the Go-side verbatim parse, the year-inference rule, the `(local_date, venue, start_time)` dedup key, the tool-set invariants per step, the per-step `SearchMetadata` fields, and the `cmd/smoke-diff` per-event evaluation tool that consumes the resulting raw artifacts.
-- `gemini-searcher-config`: per-step model configuration. Two fields — `ModelExtract` (Step 1) and `ModelParse` (Step 2) — each with a `defaultSearch*` fallback and a `GCP_GEMINI_SEARCH_MODEL_*` env var override. Default model bindings: extract → `gemini-3.5-flash`, parse → `gemini-3.1-flash-lite`. No `ModelDiscovery`.
+- `gemini-grounded-extract-and-coerce`: the two-step grounded-extract / JSON-coerce pipeline, three parallel Step 1 slices, the `<extracted>` XML envelope shape, the Go-side verbatim parse, the year-inference rule, and the `(local_date, venue, start_time)` dedup key.
 
 ### Modified Capabilities
 

@@ -17,7 +17,6 @@ On the Discover tab, following an artist spawns similar-artist bubbles and may a
 ### Modified Capabilities
 - `discover`: Add a Reset-to-Top-50 control to the Discover tab's genre-chips row, defining its placement, behavior, and accessibility.
 - `bubble-state-management`: Add a reset operation that replaces the entire pool with the global Top 50, clears seen-sets and eviction history, and re-synchronizes physics state.
-- `design-system`: Raise the type-scale minimum legibility floor (`--step--2` → 11px) and scope `--step--2` to compact-only usage, with all other text resting on `--step--1` or larger.
 
 ## Impact
 

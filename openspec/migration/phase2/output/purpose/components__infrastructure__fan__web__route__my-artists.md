@@ -1,0 +1,1 @@
+Displays and manages the artists a user follows, letting them adjust each artist's hype level with an inline slider, remove artists via an accessible edit mode with undo, and switch between list and grid views.

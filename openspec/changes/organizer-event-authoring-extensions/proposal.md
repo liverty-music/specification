@@ -31,11 +31,14 @@ Extends the `organizer-event-authoring` capability with:
 ## Capabilities
 
 ### New Capabilities
-<!-- None. -->
+
+(none)
 
 ### Modified Capabilities
-- `organizer-event-authoring`: adds the richer authoring requirements above
-  on top of the MVP capability created by change ②.
+
+- `components/entity/concert`: Rich media on a concert page; Streaming and hybrid concerts; Discovery metadata; Japan-idiomatic structured fields; Password-protected visibility
+- `components/entity/event`: Per-event notes and lineup detail
+- `components/usecase/series/publish`: Scheduled publish
 
 ## Impact
 

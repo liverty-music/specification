@@ -1,0 +1,1 @@
+Catches unhandled application and routing errors, sanitizes and stores them, and surfaces a global error banner so the user is informed without the page crashing, ignoring errors from fetches cancelled by navigation.

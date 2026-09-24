@@ -79,6 +79,8 @@ Replace imperative error handling in route components with Aurelia 2's declarati
 
 **Where NOT to use**: `canLoad()` guards that decide routing (these must remain imperative).
 
+The `catch.bind` block renders a brief, user-friendly description of what failed and a "Retry" button that re-invokes the same data-loading function, so per-component load failures recover without a full page reload.
+
 ### Decision 5: Router Error Subscription via `IRouterEvents`
 
 Subscribe to `au:router:navigation-error` in the root component to catch navigation failures. Configure `restorePreviousRouteTreeOnError: true` for production and `false` for development.

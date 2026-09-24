@@ -50,10 +50,10 @@ server + `OrganizerService.Get` + org-scoped authz (`organizer-rpc-server`).
 ## Capabilities
 
 ### New Capabilities
-- `organizer-tenancy`: the shared `organizer-console` Zitadel project (its
-  `owner` role and apps), the `organizer-provisioner` machine user, and the
-  required passkey-primary + recovery + federation + org-pinned-resolution
-  login policy that Organizer tenant orgs are provisioned with.
+- `organizer-tenancy`: the required passkey-primary + recovery + federation +
+  org-pinned-resolution login policy that Organizer tenant orgs are
+  provisioned with (the shared `organizer-console` Zitadel project and the
+  `organizer-provisioner` machine user are IaC scaffolding — see design.md).
 
 ### Modified Capabilities
 - `identity-management`: relax the "exactly two top-level orgs" topology to

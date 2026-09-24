@@ -52,6 +52,8 @@ The three strict misses on Vaundy are Hong-Kong / Korea venue timezone extractio
 
 **Rationale**: flash is the cheapest model that handles `URLContext` reliably and is the only model the cookbook examples use for the `GoogleSearch + URLContext` combination.
 
+At the config layer, `pkg/config.GCPConfig` exposes this as `GeminiSearchModelExtract`, read from `GCP_GEMINI_SEARCH_MODEL_EXTRACT`; the resolver `SearchModelExtract()` returns the field when non-empty and falls back to `defaultSearchModelExtract` otherwise. `internal/di/provider.go` and `internal/di/job.go` wire both this and the Step 2 resolver into `gemini.Config`'s `ModelExtract` / `ModelParse` fields, and `searcher.go` reads them only through the `modelExtract()` / `modelParse()` accessors; `gemini.NewConcertSearcher` refuses construction with an error naming the unresolved field if either accessor would resolve to the empty string. No `GeminiSearchModelDiscovery` field, `defaultSearchModelDiscovery` constant, or read of `GCP_GEMINI_SEARCH_MODEL_DISCOVERY` remains.
+
 ### D2. Lite on Step 2, not flash
 
 **Decision**: Step 2 uses `gemini-3.1-flash-lite` by default (`defaultSearchModelParse`). The Step 2 call has no tools and `responseJsonSchema` set.
@@ -62,6 +64,8 @@ The three strict misses on Vaundy are Hong-Kong / Korea venue timezone extractio
 2. Lite-Pro fallback (try lite, retry on flash on truncation). Rejected: adds latency, masks the symptom rather than the root cause. Lite's truncation bug is on the `URLContext + schema` combination only; with no tools, lite handles `responseJsonSchema` reliably.
 
 **Rationale**: the `responseJsonSchema × URLContext` truncation bug is documented to occur only when both are present. Step 2 has no tools, so the bug does not apply.
+
+`assertStepInvariants("step2_parse", cfg)` enforces the no-tools / schema-set contract before the call is issued, mirroring the Step 1 guard in D3; a config with a non-empty `Tools` or a nil schema is rejected with an internal error rather than sent to the API. At the config layer this pairs with `GeminiSearchModelParse` / `GCP_GEMINI_SEARCH_MODEL_PARSE` / `SearchModelParse()`, which resolve to `defaultSearchModelParse` when the field is empty — the same shape D1 uses for Step 1's model.
 
 ### D3. Combined `{GoogleSearch, URLContext}` in Step 1
 
@@ -85,6 +89,8 @@ The three strict misses on Vaundy are Hong-Kong / Korea venue timezone extractio
 3. Single tour slice (collapse near + far). Acceptable; chosen split is conservative because some artists announce 18-month-out tours (Vaundy ASIA TOUR 2027) and we want the model to focus per-slice.
 
 **Rationale**: narrow scoping per slice reduces output truncation and lets the model commit to one bucket at a time. Cross-slice duplicates are handled by Step 2's dedup.
+
+The slices' envelopes are combined by `mergeAndDedupEnvelopes`, which extracts each slice's inner `<extracted>` body (via `extractedInnerRe`) and concatenates them — it does not group by URL; cross-slice duplicate folding happens downstream, in `parseStep2Response`'s `(local_date, venue, start_time)` dedup. If every slice fails to produce a parseable envelope, the merge falls back to the first non-empty slice's raw text verbatim (preserving the artefact for logs), `parseStep1Envelope` yields an empty draft list from it, and `runStep2Parse` short-circuits without issuing a Step 2 call.
 
 ### D5. XML envelope shape — `<extracted>` → `<tour>` / `<standalone>` blocks with `<title>`, `<source_url>`, and `<event>` children
 
@@ -127,6 +133,8 @@ The three strict misses on Vaundy are Hong-Kong / Korea venue timezone extractio
 
 **Trade-off**: title / source_url errors must be caught upstream, in Step 1. The cookbook-grounded flash call has not produced such errors in our smokes.
 
+Step 2's schema requires exactly `{index, admin_area, local_date, start_time, open_time}` per element with `additionalProperties: false`; `admin_area` is the sub-national region in local form (`愛知県`, `California`), never an ISO 3166-2 code, derived from `venue` and `country` and emitted as `""` — never `null` — when it cannot be determined with confidence. On the Step 1 side, `parseStep1Envelope` returns an empty slice rather than an error on unparseable input (non-XML body, malformed structure), so Step 2 always receives a deterministic input, empty or not.
+
 ### D7. `(local_date, venue, start_time)` triple-key dedup
 
 **Decision**: `parseStep2Response` deduplicates concerts by the tuple `(local_date, venue, start_time)`. Two shows with identical `(local_date, venue)` but different `start_time` (e.g. Billboard Live 1st stage 18:00 / 2nd stage 21:00) survive as distinct entries.
@@ -158,6 +166,18 @@ Instructions are written in Japanese (the target language of most of the source 
 
 **Rationale**: numbered workflows outperform rule lists on LLM compliance per OpenAI / Anthropic prompt-engineering guides. Japanese matches the source corpus.
 
+### D10. Two-call sequence with fail-fast on permanent errors, degrade on transient ones
+
+**Decision**: `Search` issues exactly two Gemini calls total — Step 1 (which fans out into the D4 slices) completes in full before Step 2 starts. If any Step 1 slice returns a permanent error (4xx, invalid argument, quota exhausted) after exhausting the retry policy, Step 2 does not run at all; the first such error is wrapped per `toAppErr` semantics and returned to the caller. A slice that instead exhausts only its *transient* retries is treated as an empty contribution to the merged envelope (per D4) rather than aborting the call, so the remaining slices' content still reaches Step 2. Step 2 permanent errors propagate with no partial result. Step 2 output that is not valid JSON or fails `responseJSONSchema` sets `SearchMetadata.InvalidJSON` and propagates the wrapped `errInvalidJSON`.
+
+**Rationale**: a hard failure anywhere in Step 1 means the searcher has no reliable verbatim data to coerce, so paying for Step 2 would be wasted spend; a transient failure on one slice out of three is common enough (network blips, rate limiting) that discarding the whole search over it would needlessly depress recall.
+
+### D11. Index-based join, WARN-skip on gaps, and per-step metadata exposure
+
+**Decision**: `parseStep2Response` joins Step 2's coerced output back to the Step 1 drafts by `index`, producing one `*entity.ScrapedConcert` per pair via `toScrapedConcert(draft, coerced, from, attrs)` — verbatim fields (`Title`, `SourceURL`, `Venue`, `Country`) come from the draft, coerced fields (`AdminArea`, `LocalDate`, `StartTime`, `OpenTime`) come from Step 2. An index present in the drafts but missing from Step 2's output is logged as a WARN and that draft is skipped, rather than failing the whole call. `SearchMetadata` exposes `Step1Grounded` (aggregated across the parallel slices — summed token counts, OR-ed finish reasons, concatenated raw response text) and `Step2Parse` (nil whenever Step 2 did not run: all slices exhausted retries, a permanent Step 1 error aborted the call, or the merged envelope produced an empty draft list). The legacy top-level token counters and `RawResponseText` mirror `Step2Parse` once it completes, for backward compatibility with existing log consumers; there is no `Step1Search` / `Step2Extract` / `Step3Parse` left over from the abandoned three-step shape.
+
+**Rationale**: skip-with-WARN keeps a single Step 2 anomaly from discarding an entire search's results, and mirroring the legacy counters onto `Step2Parse` let existing dashboards and log queries keep working unmodified through this redesign.
+
 ## Risks / Trade-offs
 
 - **[Loss of multi-source cross-validation signal]** → Mitigation: model already collapses sources internally (BRADIO 2026-05-23 smoke confirmed); no existing code consumes cross-source signals. We accept the loss in exchange for prompt simplicity and a stricter source_url contract.
@@ -177,6 +197,8 @@ Spec migration:
 3. Rewrite `backend/docs/gemini-concert-searcher-tuning.md` around the two-step shipped flow.
 4. Run a final 4-artist smoke against the post-cleanup code to confirm the dead-code removal is behaviour-preserving.
 5. Update the existing `openspec/specs/` if any concert-search capability there references the abandoned three-step shape (none observed in the 2026-05-24 audit).
+6. The A/B harness (`searcher_integration_test.go`) persists each cell's raw response with per-step sub-objects under the `step1_grounded` and `step2_parse` keys (each a serialised `PassMetadata`), and the CSV row writer carries per-step cost columns (`step1_cost`, `step2_cost`) alongside a summed `cost_usd`, so step-level regressions are visible without re-running the smoke.
+7. `cmd/smoke-diff` consumes one raw artifact plus `testdata/ab_ground_truth.json` and classifies that artist's events into MATCH / MISS / FALSE_POSITIVE / TIME_MISMATCH, printing `recall_pct = 100 × MATCH / (MATCH + MISS + TIME_MISMATCH)` and `precision_pct = 100 × MATCH / (MATCH + FALSE_POSITIVE)` — TIME_MISMATCH counts against recall but not precision, since the event was found but its time field was wrong. It always exits 0 (an observation tool, not a CI gate); a `-json` flag emits the same breakdown as a machine-readable object. This formalises the ad-hoc `jq` + `comm` pipelines used for the 4-artist smoke referenced above and is what step 4 should be run through.
 
 Rollback strategy:
 

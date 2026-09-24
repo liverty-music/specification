@@ -25,3 +25,21 @@ See proposal.md — Why. Paid ticketing (⑤) is implemented and verified in Str
 - **External timelines dominate.** Counsel opinion (#778), 税務署 registration, Stripe live 審査, and DPA execution are not engineering-paced; the gate may sit open for a while. Accepted — that is the point of isolating it from ⑤.
 - **Split ownership of consumer UI.** The obligation lives here but the pixels live in ④/⑤; risk of drift if a price/flow changes without re-checking 総額表示 / 特商法. Mitigation: the spec scenarios are the cross-surface acceptance check.
 - **媒介者交付特例 undecided ⇒ receipt work partially blocked.** The receipt/invoice task cannot finalize content until the stance is chosen; sequence the counsel/tax decision first.
+
+## Livemode launch gate
+
+Moved here from the specs: the gate decides when the product may start taking real money, which is a launch decision rather than behavior a user observes.
+
+
+The platform SHALL NOT process livemode (real-money) ticket payments until all of the following are in place: a 収納代行 counsel opinion covering the discharge clause (弁済免責), hold-to-event escrow, and no cross-border remittance; 適格請求書発行事業者 registration with a decided 媒介者交付特例 stance; and the consumer-disclosure, receipt, and data-transfer obligations below. Until then paid ticketing runs in Stripe **test mode** only.
+
+**Check:** Livemode blocked until obligations met
+
+- **WHEN** paid ticketing would be switched to livemode
+- **THEN** the switch is withheld unless the 収納代行 opinion, 適格請求書発行事業者 registration, and the consumer/receipt/data-transfer disclosures below are all satisfied
+
+**Check:** Test mode requires no gate
+
+- **WHEN** paid ticketing runs in Stripe test mode
+- **THEN** no real money moves and the launch gate does not apply
+

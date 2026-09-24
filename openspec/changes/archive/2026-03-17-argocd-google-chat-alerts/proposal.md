@@ -16,7 +16,7 @@ The current monitoring setup only covers application-level log errors (backend E
 ## Capabilities
 
 ### New Capabilities
-- `argocd-deployment-alerts`: Automated Google Chat notifications for ArgoCD Application sync failures, health degradation, and unknown sync states across all managed workloads.
+(none — see design.md)
 
 ### Modified Capabilities
 <!-- No existing specs to modify -->

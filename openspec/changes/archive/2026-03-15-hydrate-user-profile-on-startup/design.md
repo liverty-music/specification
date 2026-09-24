@@ -45,9 +45,11 @@ The project uses **Service-Based State** (singleton DI services, no external sta
 
 **Rationale**: AppTask.activating() runs before root component activation and route navigation. It's the Aurelia 2 recommended pattern for async service initialization. Combined with auth-callback load, it covers all entry paths.
 
+The auth-callback path is the second entry: after `provisionUser()` completes, the callback calls `ensureLoaded()` and only then navigates to the destination route, so the first route already sees `current`. For a brand-new user the returned `User` carries the home area submitted during provisioning. Unauthenticated and guest startups skip the load entirely and leave `current` undefined.
+
 ### 3. Idempotent `ensureLoaded()` method
 
-**Decision**: `ensureLoaded()` checks `this._current is not undefined` before making an RPC call. Returns immediately if already loaded.
+**Decision**: `ensureLoaded()` returns immediately when `this._current` is already populated; otherwise, and only when `authService.isAuthenticated` is true, it calls `UserService.Get` and stores the result.
 
 **Rationale**: This method is called from both AppTask (page load/reload) and auth-callback (sign-in/sign-up). Making it idempotent avoids duplicate RPCs when both paths run in the same session.
 
@@ -59,9 +61,15 @@ The project uses **Service-Based State** (singleton DI services, no external sta
 
 ### 5. Clear on sign-out
 
-**Decision**: Add a `clear()` method that sets `_current = undefined`, called during sign-out flow.
+**Decision**: Add a `clear()` method that sets `_current = undefined`, called during the sign-out flow before the OIDC sign-out redirect is issued.
 
 **Rationale**: Prevents stale profile data from being visible if a different user signs in on the same browser session.
+
+### 6. Hydration failure is non-fatal
+
+**Decision**: If `ensureLoaded()` fails during `AppTask.activating()` — network error, timeout, or server error — the error is caught and logged as a warning, `current` stays undefined, and the application continues to render normally.
+
+**Rationale**: Profile hydration is an optimisation for data correctness, not a precondition for the app to run. Blocking startup on a backend hiccup would turn a transient failure into an outage; every consumer of `current` already handles the undefined case because guests run without a profile.
 
 ## Risks / Trade-offs
 

@@ -19,7 +19,6 @@ The frontend web app frequently crashes to a white screen when errors occur beca
 
 ### New Capabilities
 - `frontend-error-handling`: Global error boundary, error UI components, error reporting (GitHub Issue creation), and error recovery patterns for the Aurelia 2 frontend
-- `frontend-observability`: OpenTelemetry browser SDK integration for distributed tracing and error telemetry, custom ILogger ISink, and Connect-RPC instrumentation
 
 ### Modified Capabilities
 - `frontend-onboarding-flow`: Add error handling to onboarding lifecycle hooks (loading sequence, artist discovery) that currently fail silently

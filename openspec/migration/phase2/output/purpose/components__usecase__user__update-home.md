@@ -1,0 +1,1 @@
+Lets a user update their home area, resolving the selected area to a geographic centroid and persisting it so it can be used for proximity-based concert classification.

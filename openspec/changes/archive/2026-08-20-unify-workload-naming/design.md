@@ -33,6 +33,13 @@ domain-based names (`organizer-api`) because a workload serves an *audience surf
 one domain (the admin API serves `organizer`, and later other admin domains). Chosen over
 keeping `-app` because `-app` does not distinguish web vs api vs worker.
 
+The canonical mapping — the authoritative source every downstream reference (migration
+steps, CI targets, dashboards) resolves against — is: `server-app`→`fan-api`,
+`web-app`→`fan-web`, `consumer-app`→`event-consumer`, `admin-app`→`admin-console-web`
+(`admin-console-api` already conforms, unchanged), and `organizer-app`→
+`organizer-console-web` (`organizer-console-api` is built new under the convention by
+`organizer-rpc-server`, not renamed).
+
 **D2 — GCP identity keys off the workload name.** GSA account-id = stem, Cloud SQL IAM
 user = `<stem>@<project>.iam`, GSM key = `zitadel-machine-key-for-<stem>`, AR repo =
 `<layer>/<stem>`. This makes the identity self-describing and matches the existing
@@ -59,6 +66,14 @@ resource names change, so external clients and OIDC redirect URIs are untouched.
 identifier as a normative requirement (the GSM key) → a MODIFIED delta. Other specs'
 name mentions are incidental prose reconciled by a tasks sweep against the new convention
 spec; they carry no behavioral change (hostnames/APIs unchanged).
+
+**D8 — Derived resource suffixes are uniform per stem.** Every Kubernetes resource bound
+to a workload reuses the workload name as its stem with a fixed suffix: Service
+`<stem>-svc`, HealthCheckPolicy `<stem>-policy`, HTTPRoute `<stem>-route`, ExternalSecret
+`<stem>-secrets`, configmap `<stem>-config`. Env-specific hostnames on HTTPRoutes are
+unchanged by the rename — they are the external contract, not part of the stem. Uniform
+suffixes are what let a reader derive every bound resource name from the workload stem
+alone, which is the point of the convention.
 
 ## Risks / Trade-offs (per-resource)
 

@@ -41,13 +41,24 @@ its roles/grants/branding independent; and the `admin` org is hardened as
 internal-only (Google Workspace, default org), so an external-facing app
 must not live there. Owner org is only the project's administrative home —
 operators authenticate in their own tenant org, so the owner org's login
-policy never applies to them. (Full rationale: tenancy-model doc.)
+policy never applies to them. (Full rationale: tenancy-model doc.) Access-token
+role assertion is enabled on the project so operator tokens carry the roles
+claim, but a missing grant never blocks sign-in at the login layer —
+authorization is enforced at the backend, keeping the hosted Login v2 flow
+resilient even for an operator who hasn't been granted a role yet.
 
 **D2 — Actor-named project (`organizer-console`), not a generic `console`.**
 Every mature platform splits back-office by actor; a generic name would
 collide with a future `venue-console`. RBAC (roles/grants) is project-scoped,
 so a distinct actor gets a distinct project; multiple apps (console web,
 later a reception PWA) can share one project.
+
+The project carries two apps from day one: the `organizer-console` OIDC
+application itself — PKCE, no client secret, since it's a public SPA client
+— and a `backend-api` application that exists purely to give the organizer
+API server an audience to validate against. One OIDC app serves every
+Organizer tenant (its redirect URIs are per-environment, not per-tenant), so
+there is no per-tenant app-registration step in the provisioning saga.
 
 **D3 — Dedicated `organizer-provisioner` machine user.** Creating orgs +
 cross-org grants needs instance-level rights far broader than the existing

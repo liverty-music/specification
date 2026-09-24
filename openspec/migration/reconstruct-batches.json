@@ -1,0 +1,3440 @@
+{
+ "reconstruct-01": {
+  "2026-02-14-expose-api-via-gateway": [
+   {
+    "old_spec": "argocd-gateway-deployment",
+    "old_req_name": "Cluster-Level Application",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "argocd-gateway-deployment",
+    "old_req_name": "Gateway-Level Application",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "argocd-gateway-deployment",
+    "old_req_name": "Backend Application",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "argocd-gateway-deployment",
+    "old_req_name": "GitOps Synchronization",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "argocd-gateway-deployment",
+    "old_req_name": "Application Dependency Ordering",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "argocd-gateway-deployment",
+    "old_req_name": "Application Status Visibility",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "argocd-gateway-deployment",
+    "old_req_name": "Rollback Capability",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "backend-service-exposure",
+    "old_req_name": "Backend Service Discoverability",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "backend-service-exposure",
+    "old_req_name": "Service Backend Protocol Support",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "backend-service-exposure",
+    "old_req_name": "Health Check Integration",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "certificate-manager-integration",
+    "old_req_name": "Google-Managed Certificate Provisioning",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "certificate-manager-integration",
+    "old_req_name": "DNS Validation for Certificate Issuance",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "certificate-manager-integration",
+    "old_req_name": "Certificate Map for Gateway Binding",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "certificate-manager-integration",
+    "old_req_name": "Automatic Certificate Renewal",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "certificate-manager-integration",
+    "old_req_name": "Certificate Status Monitoring",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "certificate-manager-integration",
+    "old_req_name": "Zero-Downtime Certificate Update",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "cloud-dns-infrastructure",
+    "old_req_name": "Domain Configuration via Pulumi ESC",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "cloud-dns-infrastructure",
+    "old_req_name": "No Manual Registrar Nameserver Update",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "cloud-dns-infrastructure",
+    "old_req_name": "Environment Isolation via DNS Architecture",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "cloud-dns-infrastructure",
+    "old_req_name": "No Conflicting Private Zones",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "connect-rpc-cors",
+    "old_req_name": "CORS Middleware for Connect-RPC",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "connect-rpc-cors",
+    "old_req_name": "Allowed Origins Configuration",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "connect-rpc-cors",
+    "old_req_name": "Connect-RPC Protocol Headers",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "connect-rpc-cors",
+    "old_req_name": "Authorization Header Support",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "connect-rpc-cors",
+    "old_req_name": "CORS Validation at Startup",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "gke-gateway-infrastructure",
+    "old_req_name": "Gateway API Resource Creation",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gke-gateway-infrastructure",
+    "old_req_name": "HTTPRoute API Routing",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gke-gateway-infrastructure",
+    "old_req_name": "GatewayClass Selection",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gke-gateway-infrastructure",
+    "old_req_name": "Cross-Namespace Routing",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gke-gateway-infrastructure",
+    "old_req_name": "Certificate Management Annotation",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gke-gateway-infrastructure",
+    "old_req_name": "Policy Attachment for Gateway Configuration",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "k8s-service-cross-namespace-routing",
+    "old_req_name": "Backend Service Accessibility from External Gateway",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "k8s-service-cross-namespace-routing",
+    "old_req_name": "Service Protocol Configuration for HTTP/2",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "k8s-service-cross-namespace-routing",
+    "old_req_name": "Cross-Namespace Routing Enabled",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "k8s-service-cross-namespace-routing",
+    "old_req_name": "Backend Pods Targeted via Service",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "k8s-service-cross-namespace-routing",
+    "old_req_name": "No Direct Pod Exposure",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "k8s-service-cross-namespace-routing",
+    "old_req_name": "Namespace Isolation Maintained",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-05-16-enable-prod-ar-immutable-tags": [
+   {
+    "old_spec": "prod-image-tag-immutability",
+    "old_req_name": "Non-dev Artifact Registry Docker repositories SHALL enforce tag immutability at the registry API level",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-image-tag-immutability",
+    "old_req_name": "Prod kustomize overlays SHALL pin image URIs to semantic version tags",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-image-tag-immutability",
+    "old_req_name": "Prod workload Deployments and CronJobs SHALL carry the app.kubernetes.io/version Recommended Label, propagated to the Pod template",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-image-tag-immutability",
+    "old_req_name": "A runbook SHALL document the prod image tag pinning policy",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-15-css-modern-patterns": [
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "CSS scroll snap for bottom sheet dismiss gestures",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "No JS-to-CSS variable bridge custom attributes",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "Scroll-driven Animations for scroll-linked effects",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-30-improve-consumer-observability": [
+   {
+    "old_spec": "consumer-poison-queue-alerting",
+    "old_req_name": "Poison Queue consumer emits ERROR logs",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "consumer-poison-queue-alerting",
+    "old_req_name": "NATS POISON stream lag alert",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-04-05-private-google-access": [
+   {
+    "old_spec": "private-google-access",
+    "old_req_name": "Private DNS zone for googleapis.com",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "private-google-access",
+    "old_req_name": "Google API traffic bypasses Cloud NAT",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-06-dedicated-db-schema": [
+   {
+    "old_spec": "cloud-sql-connector",
+    "old_req_name": "Authenticate via Cloud SQL Connector",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-12-propagate-traceparent-to-consumer": [
+   {
+    "old_spec": "event-management",
+    "old_req_name": "Trace context propagation across message broker",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-04-fix-onboarding-ux-regressions": [
+   {
+    "old_spec": "onboarding-guidance",
+    "old_req_name": "No z-index stacking in discovery page CSS",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-16-refine-state-naming": [
+   {
+    "old_spec": "state-management",
+    "old_req_name": "OnboardingStep string values",
+    "disposition": "OUT:design-doc"
+   }
+  ]
+ },
+ "reconstruct-02": {
+  "2026-03-13-stylelint-plugin-cube-css": [
+   {
+    "old_spec": "cube-css-layer-constraints",
+    "old_req_name": "`cube/exception-data-attr` requires `data-*` selectors in exception layer",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-layer-constraints",
+    "old_req_name": "`cube/no-visual-in-composition` prohibits visual properties in composition layer",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-layer-constraints",
+    "old_req_name": "`cube/utility-single-property` limits properties per utility selector",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-layer-constraints",
+    "old_req_name": "`cube/block-require-scope` requires `@scope` in block layer",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-layer-constraints",
+    "old_req_name": "`cube/data-attr-naming` restricts data attribute names in exception layer",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-layer-enforcement",
+    "old_req_name": "`cube/require-layer` rejects CSS rules outside `@layer` blocks",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-layer-enforcement",
+    "old_req_name": "`cube/layer-order` enforces correct `@layer` declaration order",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-lint-plugin",
+    "old_req_name": "Plugin registers all rules under the `cube/` namespace",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-lint-plugin",
+    "old_req_name": "Plugin is a local ESM package",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-lint-plugin",
+    "old_req_name": "Each rule has comprehensive test coverage",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-lint-plugin",
+    "old_req_name": "Shared layer context utility",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-modern-css-rules",
+    "old_req_name": "`cube/prefer-vi-over-vw` recommends `vi` unit over `vw`",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-modern-css-rules",
+    "old_req_name": "`cube/require-container-name` enforces naming containers",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-modern-css-rules",
+    "old_req_name": "`cube/prefer-color-mix` recommends `color-mix()` for derived colors",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-structural-rules",
+    "old_req_name": "`cube/block-max-lines` limits block size",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-structural-rules",
+    "old_req_name": "`cube/one-block-per-file` enforces single block per file",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-structural-rules",
+    "old_req_name": "`cube/prefer-where-in-reset` recommends `:where()` in reset and global layers",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-token-enforcement",
+    "old_req_name": "`cube/require-token-variables` enforces `var()` for design token properties",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-token-enforcement",
+    "old_req_name": "`calc()` expressions must contain at least one `var()`",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-token-enforcement",
+    "old_req_name": "Structural values bypass token enforcement",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-token-enforcement",
+    "old_req_name": "Token definition layers are excluded",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-token-enforcement",
+    "old_req_name": "Duration and easing properties are token-enforced",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-token-enforcement",
+    "old_req_name": "Configurable property list",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-18-email-provider-setup": [
+   {
+    "old_spec": "email-provider",
+    "old_req_name": "Zitadel SMTP configuration via Pulumi",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "email-provider",
+    "old_req_name": "Mail subdomain DNS records for DKIM authentication",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "email-provider",
+    "old_req_name": "ZitadelConfig interface extension",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "email-provider",
+    "old_req_name": "SmtpConfig component isolation",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "email-provider",
+    "old_req_name": "Environment-specific Postmark Server separation",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "secret-management",
+    "old_req_name": "Postmark Server API Token in Pulumi ESC",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-06-introduce-otel-collector": [
+   {
+    "old_spec": "otel-collector-deployment",
+    "old_req_name": "OTel Collector Kubernetes Deployment",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "otel-collector-deployment",
+    "old_req_name": "Workload Identity for Cloud Trace Authentication",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "otel-collector-deployment",
+    "old_req_name": "Backend Trace Export Configuration",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "otel-collector-deployment",
+    "old_req_name": "Cost-Optimized Resource Configuration",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "otel-collector-deployment",
+    "old_req_name": "ArgoCD GitOps Management",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-04-08-optimize-dev-cluster-cost": [
+   {
+    "old_spec": "gke-standard-infrastructure",
+    "old_req_name": "Dev cluster SHALL use LEGACY_DATAPATH (kube-proxy/iptables)",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gke-standard-infrastructure",
+    "old_req_name": "Dev cluster SHALL disable Google Managed Prometheus",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "k8s-resource-right-sizing",
+    "old_req_name": "Dev environment resource requests use Standard GKE minimums",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "k8s-resource-right-sizing",
+    "old_req_name": "KEDA ScaledObjects in dev SHALL cap at maxReplicaCount 1",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-02-22-optimize-k8s-dev-resources": [
+   {
+    "old_spec": "continuous-delivery",
+    "old_req_name": "ArgoCD Manifests",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "deployment-infrastructure",
+    "old_req_name": "Dev backend runs single replica",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "deployment-infrastructure",
+    "old_req_name": "All dev workload kinds use Spot VM scheduling",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-08-16-harden-web-push-subscription-lifecycle": [
+   {
+    "old_spec": "notification-lifecycle",
+    "old_req_name": "Notification fan-out logs zero-recipient skips",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "web-push-delivery-alerting",
+    "old_req_name": "Alert on sustained push delivery failure",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "web-push-delivery-alerting",
+    "old_req_name": "Alert on active-subscription starvation",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-13-css-cleanup": [
+   {
+    "old_spec": "css-linting",
+    "old_req_name": "Stylelint enforces stacking context management",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "css-linting",
+    "old_req_name": "Stylelint enforces accessibility media queries",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-05-18-promote-prod-image-via-retag": [
+   {
+    "old_spec": "prod-image-pipeline",
+    "old_req_name": "CI service accounts MAY hold scoped cross-project AR reader for image promotion",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-image-pipeline",
+    "old_req_name": "Frontend prod image SHALL be promoted to prod AR on GitHub Release tags",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-04-13-dev-db-local-access": [
+   {
+    "old_spec": "cloud-sql-connector",
+    "old_req_name": "A standalone Auth Proxy Deployment SHALL exist in dev for local access",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-18-use-proto-artist-entity": [
+   {
+    "old_spec": "frontend-entity-layer",
+    "old_req_name": "Guest state stores proto Artist",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-08-21-organizer-accounts": [
+   {
+    "old_spec": "organizer-accounts",
+    "old_req_name": "Organizer lifecycle emits analytics events",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-18-manage-ticket-status": [
+   {
+    "old_spec": "ticket-journey",
+    "old_req_name": "Ticket Journey Database Schema",
+    "disposition": "OUT:design-doc"
+   }
+  ]
+ },
+ "reconstruct-03": {
+  "2026-06-26-introduce-analytics-tool": [
+   {
+    "old_spec": "analytics-consent",
+    "old_req_name": "Analytics operates under an EU-adequacy opt-out model, not a consent gate",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "analytics-consent",
+    "old_req_name": "Full non-PII catalogue is captured anonymously before identification",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "analytics-consent",
+    "old_req_name": "Anonymous behaviour is merged into the identified profile on login",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "analytics-consent",
+    "old_req_name": "Sensitive personal information is structurally excluded; minor-user legality is deferred to legal review",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "feature-flag-management",
+    "old_req_name": "Feature flags require a documented description record on creation",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "feature-flag-management",
+    "old_req_name": "Significant experiments evaluate flags only after `identify`",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "feature-flag-management",
+    "old_req_name": "Flag evaluation always has a default value on PostHog unavailability",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "feature-flag-management",
+    "old_req_name": "Frontend bootstraps flags from the last-known persisted value",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "feature-flag-management",
+    "old_req_name": "Stale flags are reviewed monthly and decided at or before the kill date",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "PostHog Cloud EU is the sole product-analytics platform",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "Analytics `distinct_id` is the platform-internal `UserId`",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "Event names follow `domain.action[.qualifier][.outcome]` in dot.case",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "Event sourcing is partitioned between frontend and backend",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "Backend analytics flow uses NATS and an `analytics-consumer`",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "PostHog SDK initialisation is deferred until after first paint",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "Frontend disables autocapture and automatic page-view capture",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "Session replay masks PII by default",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "Product analytics and OpenTelemetry remain separated; only `trace_id` bridges",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "Event catalogue is the single source of truth",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "Internal and E2E traffic is excluded from product analytics",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-07-25-harden-jetstream-consumer-reliability": [
+   {
+    "old_spec": "jetstream-consumer-reliability",
+    "old_req_name": "Consumer backlog stall is detected and alerted",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "jetstream-consumer-reliability",
+    "old_req_name": "Subscription failure fails loud",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "jetstream-consumer-reliability",
+    "old_req_name": "Liveness reflects consumption health",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "jetstream-consumer-reliability",
+    "old_req_name": "Consumers are named by behavior, with a unique deliver group",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "jetstream-consumer-reliability",
+    "old_req_name": "Every handler receives every message (fan-out)",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "jetstream-consumer-reliability",
+    "old_req_name": "Subjects are named as past-tense events",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "jetstream-consumer-reliability",
+    "old_req_name": "KEDA triggers reference the live behavior-named durables",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-05-15-consolidate-public-dns-on-cloudflare": [
+   {
+    "old_spec": "apex-frontend-serving",
+    "old_req_name": "Apex hostname SHALL be served end-to-end via the GKE Gateway with a Google-managed TLS certificate",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "apex-frontend-serving",
+    "old_req_name": "Apex serving SHALL NOT use Cloudflare Proxy on initial deploy",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "apex-frontend-serving",
+    "old_req_name": "Apex serving prod-stack resources SHALL be `protect: true`",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "cloud-dns-infrastructure",
+    "old_req_name": "Cloudflare DNS Zone Management",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Prod public DNS SHALL be managed entirely by Cloudflare, with apex A record bound to the shared GKE Gateway static IP",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-05-01-establish-brand-vocabulary": [
+   {
+    "old_spec": "brand-vocabulary",
+    "old_req_name": "Entity Namespace Mirrors Protobuf Names",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "brand-vocabulary",
+    "old_req_name": "Entity Namespace Locale Parity",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "brand-vocabulary",
+    "old_req_name": "Entity Name Validation",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "brand-vocabulary",
+    "old_req_name": "Lint Script Integration",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-10-add-layout-assertions": [
+   {
+    "old_spec": "layout-assertions",
+    "old_req_name": "Shell layout structural integrity",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "layout-assertions",
+    "old_req_name": "Discover page layout containment",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "layout-assertions",
+    "old_req_name": "Layout test execution performance",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "layout-assertions",
+    "old_req_name": "Layout tests independent of backend",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-15-festival-orb-effects": [
+   {
+    "old_spec": "festival-orb-effects",
+    "old_req_name": "Unit test coverage for stage effects",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "festival-orb-effects",
+    "old_req_name": "Unit test coverage for OrbRenderer state",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "festival-orb-effects",
+    "old_req_name": "Unit test coverage for AbsorptionAnimator comet trail",
+    "disposition": "OUT:delete"
+   }
+  ],
+  "2026-03-05-add-atlas-migration-alert": [
+   {
+    "old_spec": "app-error-log-alerting",
+    "old_req_name": "Atlas Operator migration failure detection",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "app-error-log-alerting",
+    "old_req_name": "Atlas migration alert uses same notification and rate limiting as backend alerts",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-30-improve-frontend-testability": [
+   {
+    "old_spec": "frontend-router-query-params",
+    "old_req_name": "Route loading hooks read query parameters via RouteNode",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Mock helpers cover INavDimmingService and ILocalStorage",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-18-extract-shared-custom-elements": [
+   {
+    "old_spec": "semantic-dom",
+    "old_req_name": "Dialog consolidation to bottom-sheet CE",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "semantic-dom",
+    "old_req_name": "Prompt consolidation to toast CE",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-04-08-add-gcp-cost-guardrails": [
+   {
+    "old_spec": "gcp-cost-guardrails",
+    "old_req_name": "Places API Daily Quota Limit (Dev)",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-08-25-organizer-rpc-server": [
+   {
+    "old_spec": "organizer-rpc-server",
+    "old_req_name": "Dedicated organizer Connect server isolated by audience",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-26-add-usecase-test-coverage": [
+   {
+    "old_spec": "usecase-test-coverage",
+    "old_req_name": "TicketEmailUsecase Helper Tests",
+    "disposition": "OUT:lint"
+   }
+  ]
+ },
+ "reconstruct-04": {
+  "2026-02-25-aurelia-best-practice": [
+   {
+    "old_spec": "aurelia-reactivity",
+    "old_req_name": "Watch-based reactive observation",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "aurelia-reactivity",
+    "old_req_name": "Computed property caching",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "aurelia-reactivity",
+    "old_req_name": "Batched multi-property updates",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "aurelia-reactivity",
+    "old_req_name": "Observable for side-effect properties",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "aurelia-template-optimization",
+    "old_req_name": "Keyed list rendering",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "aurelia-template-optimization",
+    "old_req_name": "Switch-based multi-branch conditionals",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "aurelia-template-optimization",
+    "old_req_name": "Show binding for frequently toggled elements",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "aurelia-template-optimization",
+    "old_req_name": "Class binding syntax for conditional CSS classes",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "aurelia-template-optimization",
+    "old_req_name": "Debounce on search inputs",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "aurelia-template-optimization",
+    "old_req_name": "Throttle binding behavior on continuous event handlers",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "aurelia-template-optimization",
+    "old_req_name": "Date value converter",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "aurelia-template-optimization",
+    "old_req_name": "Route title configuration",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "design-system",
+    "old_req_name": "View Transitions as route animation system",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "design-system",
+    "old_req_name": "Container Query infrastructure",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "Container Queries for component-level responsive design",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "View Transitions API for route animations",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "CSS `:has()` selector for state-based styling",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "CSS Logical Properties",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-06-introduce-stylelint": [
+   {
+    "old_spec": "css-linting",
+    "old_req_name": "Stylelint enforces modern color functions",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "css-linting",
+    "old_req_name": "Stylelint enforces CSS Logical Properties",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "css-linting",
+    "old_req_name": "Stylelint enforces Container Queries over viewport-width media queries",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "css-linting",
+    "old_req_name": "Stylelint prevents CSS anti-patterns",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "css-linting",
+    "old_req_name": "Stylelint enforces property declaration ordering",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "css-linting",
+    "old_req_name": "Stylelint integrated into CI pipeline",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "OKLCH color enforcement",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-07-27-frontend-store-cache-and-consistency": [
+   {
+    "old_spec": "frontend-store-cache",
+    "old_req_name": "Shared stale-while-revalidate cache primitive",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-store-cache",
+    "old_req_name": "In-flight request coalescing",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-store-cache",
+    "old_req_name": "Complete cache keys",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-store-cache",
+    "old_req_name": "Explicit invalidation on mutations",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-store-cache",
+    "old_req_name": "Revalidation on route entry and PWA resume",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-store-cache",
+    "old_req_name": "Caching scope is limited to audited read resources",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-08-20-unify-workload-naming": [
+   {
+    "old_spec": "workload-naming-convention",
+    "old_req_name": "Workload names follow the audience-tier scheme",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "workload-naming-convention",
+    "old_req_name": "Derived resources share the workload stem with uniform suffixes",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "workload-naming-convention",
+    "old_req_name": "GCP identities and image repositories key off the same principal",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "workload-naming-convention",
+    "old_req_name": "A canonical name mapping is the authoritative reference",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "workload-naming-convention",
+    "old_req_name": "Renames use an additive create-new then cutover then delete-old migration",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-13-css-state-separation": [
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "Total `style` attribute ban in templates",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "`color-mix()` for dynamic alpha",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "`translate` shorthand for transforms",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "No setTimeout for CSS animation timing",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-02-27-i18n-frontend": [
+   {
+    "old_spec": "frontend-i18n",
+    "old_req_name": "Translation Resource Files",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-i18n",
+    "old_req_name": "Template String Externalization",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-i18n",
+    "old_req_name": "TypeScript String Externalization",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-15-flatten-app-shell": [
+   {
+    "old_spec": "app-shell-layout",
+    "old_req_name": "Route components own page structure",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "app-shell-layout",
+    "old_req_name": "Semantic HTML structure",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-02-19-frontend-unit-testing": [
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Test infrastructure provides shared mock factories",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Coverage reporting is configured",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-11-watermill-structured-logging": [
+   {
+    "old_spec": "watermill-structured-logging",
+    "old_req_name": "Watermill logs use structured JSON output",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "watermill-structured-logging",
+    "old_req_name": "Watermill and application logs share the same slog handler",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-06-07-auto-discovery-series-grouping": [
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "parseStep1Envelope Preserves Tour Grouping On EventDraft",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-05-19-backend-symmetric-retag": [
+   {
+    "old_spec": "prod-image-pipeline",
+    "old_req_name": "Backend prod images SHALL be promoted to prod AR on GitHub Release tags",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-06-25-extend-auth-session-lifetime": [
+   {
+    "old_spec": "user-auth",
+    "old_req_name": "Server-Side Session Monitoring Disabled",
+    "disposition": "OUT:design-doc"
+   }
+  ]
+ },
+ "reconstruct-05": {
+  "2026-03-26-refine-frontend-testing": [
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Global fixture cleanup awaits all stop() calls",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "All afterEach hooks prevent test state pollution",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Mock helpers return typed Partial interfaces",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "No deprecated Aurelia testing APIs are used",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Component integration tests use createFixture with official assertion helpers",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Smoke tests use meaningful DOM assertions",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Bottom nav bar has component integration tests",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Snack bar service logic is tested",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "User home selector has component integration tests",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Post-signup dialog has component integration tests",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Error banner has component integration tests",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Settings route has component integration tests",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Concert highway CE has component integration tests",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Welcome route has component integration tests",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Value converter tests include fixture integration tests",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-02-15-frontend-k8s-deployment": [
+   {
+    "old_spec": "frontend-hosting",
+    "old_req_name": "Container image build pipeline",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "frontend-hosting",
+    "old_req_name": "Kubernetes deployment configuration",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "frontend-hosting",
+    "old_req_name": "Static asset serving with caching",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "frontend-hosting",
+    "old_req_name": "SPA client-side routing support",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-hosting",
+    "old_req_name": "HTTPS ingress via Gateway API",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "frontend-hosting",
+    "old_req_name": "GitOps deployment automation",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "frontend-hosting",
+    "old_req_name": "Caddyfile configuration",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-hosting",
+    "old_req_name": "DNS and TLS infrastructure provisioning",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-09-11-frontend-client-rpc-telemetry": [
+   {
+    "old_spec": "frontend-client-rpc-telemetry",
+    "old_req_name": "Client-observed RPC duration is captured",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-client-rpc-telemetry",
+    "old_req_name": "Deadline-exceeded rate is observable",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-client-rpc-telemetry",
+    "old_req_name": "Telemetry is reported as aggregates, not per-request events",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-client-rpc-telemetry",
+    "old_req_name": "Pending telemetry is flushed at session end",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-client-rpc-telemetry",
+    "old_req_name": "Telemetry honors analytics opt-out and unconfigured analytics",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-client-rpc-telemetry",
+    "old_req_name": "Telemetry carries no personally identifying request content",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-06-26-add-tap-press-feedback": [
+   {
+    "old_spec": "tap-press-feedback",
+    "old_req_name": "Global button press feedback baseline",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "tap-press-feedback",
+    "old_req_name": "Non-button primary tappables give press feedback",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "tap-press-feedback",
+    "old_req_name": "List rows give press feedback",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "tap-press-feedback",
+    "old_req_name": "Reduced motion fallback for press feedback",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "tap-press-feedback",
+    "old_req_name": "Touch activation reliability on iOS Safari",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-12-add-http-retry-middleware": [
+   {
+    "old_spec": "http-retry",
+    "old_req_name": "HTTP retry on transient errors",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "http-retry",
+    "old_req_name": "Retry-After header respect",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "http-retry",
+    "old_req_name": "Context cancellation during retry",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "http-retry",
+    "old_req_name": "Request body replay for retried POST requests",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-05-14-playwright-password-test-user": [
+   {
+    "old_spec": "e2e-auth-testing",
+    "old_req_name": "Password-Based Storage State Capture Path",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "e2e-auth-testing",
+    "old_req_name": "Test-User Credential File Gitignored",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Provision Password-Based E2E Test User in Dev Zitadel",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-05-14-migrate-prod-to-autopilot": [
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Prod GKE cluster SHALL be an Autopilot regional cluster in asia-northeast2",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Prod cluster SHALL bound Google Managed Service for Prometheus (GMP) cost via disabled application auto-monitoring",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Workload Pods SHALL request Spot scheduling via the `cloud.google.com/gke-spot` label",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-02-17-refine-ui-design": [
+   {
+    "old_spec": "design-system",
+    "old_req_name": "Design Token Definition",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "design-system",
+    "old_req_name": "Display Font Loading",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-07-09-prune-analytics-event-collection": [
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "Every active catalogue event has a verified emission call site",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "The event catalogue records a per-event collection status",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-02-15-search-concerts-cache": [
+   {
+    "old_spec": "concert-search-log",
+    "old_req_name": "Search Log Persistence",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-04-28-optimize-dev-gke-cost": [
+   {
+    "old_spec": "gke-standard-infrastructure",
+    "old_req_name": "Dev cluster Spot node pool boot disk SHALL be 30GB pd-standard",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-05-30-guarantee-dev-image-per-main-commit": [
+   {
+    "old_spec": "prod-image-pipeline",
+    "old_req_name": "Every main commit SHALL have a resolvable dev AR image",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-05-25-persist-user-language": [
+   {
+    "old_spec": "user-language-preference",
+    "old_req_name": "Repository NULL-Safe Reads on Nullable users Columns",
+    "disposition": "OUT:lint"
+   }
+  ]
+ },
+ "reconstruct-06": {
+  "2026-05-11-self-hosted-zitadel": [
+   {
+    "old_spec": "authentication",
+    "old_req_name": "Validate Zitadel Actions v2 Webhook JWTs by Signature",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Inject Email Claim into Access Tokens via Actions v2",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Provision Actions v2 Target and Execution Resources",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Dedicated Service User for Login V2 UI",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "zitadel-action-webhook",
+    "old_req_name": "Webhook Reachable Only Within Cluster",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Two-Container Deployment with Path-Based Routing",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "TLS Terminated at Gateway, Cluster Traffic Unencrypted",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Cloud SQL Connection via Auth Proxy Sidecar with IAM Authentication",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Cloud SQL Database and IAM User Pre-Provisioned by Pulumi",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Connection Pool Sized Within Dev Connection Budget",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Bootstrap Admin Machine Key Stored in Secret Manager",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Backend MachineKey Lifecycle Tied to Zitadel-Side Identity",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Masterkey Generated Once and Stored Immutably",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Resilient Scheduling on Shared Spot Node Pool",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-02-26-optimize-ci-jobs": [
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "Workflows cancel superseded runs",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "Workflows declare minimum required permissions",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "Frontend CI enforces code quality gates",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "Frontend CI reports coverage on PRs",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "Backend CI enforces format correctness",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "Atlas migration lint runs without Atlas Cloud",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "Benchmark workflow uses consistent Postgres version",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "Both repos have a CI success gate job",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-06-19-split-admin-rpc-server": [
+   {
+    "old_spec": "admin-rpc-server",
+    "old_req_name": "Dedicated admin Connect server",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "admin-rpc-server",
+    "old_req_name": "Boundary-level admin authorization",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "admin-rpc-server",
+    "old_req_name": "Admin-only CORS allowlist",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "admin-rpc-server",
+    "old_req_name": "Shared server construction to prevent interceptor drift",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "admin-rpc-server",
+    "old_req_name": "Dedicated admin API ingress host",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "admin-rpc-server",
+    "old_req_name": "Admin console resolves the admin API host from runtime config",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-02-22-auth-control": [
+   {
+    "old_spec": "authentication",
+    "old_req_name": "Authenticated Endpoint Protection",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "authentication",
+    "old_req_name": "Public Endpoint Access",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "e2e-auth-testing",
+    "old_req_name": "Playwright MCP Authenticated Session",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "e2e-auth-testing",
+    "old_req_name": "StorageState Capture Script",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "e2e-auth-testing",
+    "old_req_name": "StorageState Gitignore",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-06-correlate-otel-cloud-sql": [
+   {
+    "old_spec": "db-trace-correlation",
+    "old_req_name": "OTel span creation for database queries",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "db-trace-correlation",
+    "old_req_name": "sqlcommenter traceparent injection",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "db-trace-correlation",
+    "old_req_name": "Transparent pool wrapping",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "db-trace-correlation",
+    "old_req_name": "Transaction query tracing",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-05-15-refactor-unify-env-dispatch": [
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Single Unified Zitadel Class Across All Environments",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Per-Environment Configuration Values Sourced From Env-Keyed Map",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Backend MachineUser Lives in Product Org Across All Environments",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Cost Guardrails and Observability Applied to All Environments",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-09-15-ticket-purchase-and-issuance": [
+   {
+    "old_spec": "ticket-purchase-and-issuance",
+    "old_req_name": "Settlement and payout are delegated to ticket-settlement-and-payout",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "ticket-purchase-and-issuance",
+    "old_req_name": "収納代行 scheme — discharge on payment + 代理受領権限",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "ticket-purchase-and-issuance",
+    "old_req_name": "No stored card data (PCI SAQ A)",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-29-refine-backend": [
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "SafePredictor interface in entity layer",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "usecase-test-coverage",
+    "old_req_name": "Adapter mapper test coverage",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-17-make-dom-semantic": [
+   {
+    "old_spec": "semantic-dom",
+    "old_req_name": "Semantic HTML element usage",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "semantic-dom",
+    "old_req_name": "Minimal div nesting depth",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-01-31-provision-cloud-sql": [
+   {
+    "old_spec": "database",
+    "old_req_name": "The system MUST provide persistent relational storage",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-04-30-optimize-dev-kube-dns-replicas": [
+   {
+    "old_spec": "gke-standard-infrastructure",
+    "old_req_name": "Dev cluster `kube-dns-autoscaler` SHALL set `preventSinglePointFailure: false`",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-07-08-emit-auth-events-via-webhook": [
+   {
+    "old_spec": "product-analytics",
+    "old_req_name": "Account authentication events are emitted server-side",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-14-remove-venue-enrichment": [
+   {
+    "old_spec": "venue-normalization",
+    "old_req_name": "PlaceSearcher Is Required",
+    "disposition": "OUT:design-doc"
+   }
+  ]
+ },
+ "reconstruct-07": {
+  "2026-05-25-redesign-concert-searcher-grounded-extract": [
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "ConcertSearcher executes a two-step Gemini call sequence per Search invocation",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "Step 1 tools MUST be {GoogleSearch, URLContext} together; no schema",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "Step 1 emits a per-field XML envelope with `<tour>` and `<standalone>` blocks",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "Go-side verbatim parse extracts title, source_url, venue, country, and raw date/time strings",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "Step 1 slice envelopes are merged by concatenation, not URL grouping",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "Step 2 receives only the JSON-coercion-relevant fields",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "Step 2 tools MUST be empty; responseJSONSchema MUST be set",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "Step 2's coerced output is joined back to EventDraft by index",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "SearchMetadata exposes Step1Grounded and Step2Parse",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "A/B harness emits per-step sub-objects in raw response files",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "cmd/smoke-diff reports per-event evaluation breakdown for a single smoke run",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "gemini-searcher-config",
+    "old_req_name": "GCPConfig exposes per-step Gemini search model fields",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-searcher-config",
+    "old_req_name": "Helper methods resolve per-step model with env-var precedence over defaults",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-searcher-config",
+    "old_req_name": "Config passes per-step models through DI into gemini.Config",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-02-20-secret-manager": [
+   {
+    "old_spec": "deployment-infrastructure",
+    "old_req_name": "Dedicated CD Namespace",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "secret-management",
+    "old_req_name": "GCP Secret Manager provisioning",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "secret-management",
+    "old_req_name": "IAM access control for secrets",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "secret-management",
+    "old_req_name": "External Secrets Operator deployment",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "secret-management",
+    "old_req_name": "ClusterSecretStore configuration",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "secret-management",
+    "old_req_name": "ExternalSecret for backend secrets",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "secret-management",
+    "old_req_name": "Backend Deployment secret consumption",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "secret-management",
+    "old_req_name": "Secret rotation propagation",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-03-monitoring-app-error-log": [
+   {
+    "old_spec": "app-error-log-alerting",
+    "old_req_name": "Error log detection per workload",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "app-error-log-alerting",
+    "old_req_name": "Notification rate limiting",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "app-error-log-alerting",
+    "old_req_name": "Incident auto-close",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "app-error-log-alerting",
+    "old_req_name": "Error context in alert labels",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "app-error-log-alerting",
+    "old_req_name": "Error Reporting API enabled",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "app-error-log-alerting",
+    "old_req_name": "Infrastructure as Code",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-26-refactor-concert-search": [
+   {
+    "old_spec": "concert-search-internals",
+    "old_req_name": "Usecase layer SHALL NOT import infrastructure packages",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "concert-search-internals",
+    "old_req_name": "Search status marking SHALL use defer pattern",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "concert-search-internals",
+    "old_req_name": "Time-dependent tests SHALL use testing/synctest",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "concert-search-internals",
+    "old_req_name": "resolveUserID SHALL NOT be duplicated",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "concert-search-internals",
+    "old_req_name": "Entity construction SHALL use domain methods",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-19-standardize-infra-test-and-error-handling": [
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "Interface Possible errors completeness",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "Implementation error code consistency",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "Error path test coverage",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "Infrastructure test go-tester compliance",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-26-fix-error-log-noise": [
+   {
+    "old_spec": "app-error-log-alerting",
+    "old_req_name": "Gemini client-cancelled errors classified as client error",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "app-error-log-alerting",
+    "old_req_name": "Infrastructure layer preserves original error types",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "app-error-log-alerting",
+    "old_req_name": "Standard slog output uses structured JSON format",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-07-28-discovery-perf-instrumentation-and-bubble-cap": [
+   {
+    "old_spec": "frontend-performance-instrumentation",
+    "old_req_name": "Long animation frames reported to analytics",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "frontend-performance-instrumentation",
+    "old_req_name": "Core Web Vitals reported to analytics",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "frontend-performance-instrumentation",
+    "old_req_name": "Slow interactions reported to analytics",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-16-artist-image": [
+   {
+    "old_spec": "artist-image",
+    "old_req_name": "Fanart Database Storage",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "artist-image",
+    "old_req_name": "fanart.tv API Client",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-06-02-reduce-gemini-search-cost": [
+   {
+    "old_spec": "gemini-searcher-config",
+    "old_req_name": "Configurable search-cache TTL with env-var precedence over default",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-searcher-config",
+    "old_req_name": "Configurable discovery-skip window with env-var precedence over default",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-05-20-migrate-zitadel-to-helm-chart": [
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Zitadel Deployment Rendered by Official Helm Chart",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Login V2 UI Routes Outbound Calls Via Cluster-Internal Service Using CUSTOM_REQUEST_HEADERS",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-21-fix-zitadel-id-resolution": [
+   {
+    "old_spec": "id-resolution",
+    "old_req_name": "RPC handlers resolve Zitadel external ID to internal UUID before database access",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-12-refactor-usecase-layer-boundaries": [
+   {
+    "old_spec": "proximity-model",
+    "old_req_name": "Haversine in pkg/geo",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-05-13-rename-zitadel-machine-keys": [
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "GSM Naming Convention for Zitadel MachineKey Credentials",
+    "disposition": "OUT:design-doc"
+   }
+  ]
+ },
+ "reconstruct-08": {
+  "2026-03-13-improve-css-design": [
+   {
+    "old_spec": "cube-css-architecture",
+    "old_req_name": "CUBE CSS layer ordering via `@layer`",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-architecture",
+    "old_req_name": "CSS entry point at `src/styles/main.css`",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-architecture",
+    "old_req_name": "Design tokens in `tokens.css` as plain CSS custom properties",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-architecture",
+    "old_req_name": "Browser reset in `reset.css` using `:where()` for zero specificity",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-architecture",
+    "old_req_name": "Global layer for base element styling",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-architecture",
+    "old_req_name": "Composition layer for layout primitives",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-architecture",
+    "old_req_name": "Block layer for component-scoped styles",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-architecture",
+    "old_req_name": "Exception layer for state deviations via `data-*` attributes",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-architecture",
+    "old_req_name": "Spacing controlled by parent, not child",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "cube-css-architecture",
+    "old_req_name": "No TailwindCSS dependency",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "CSS `@layer` for cascade management",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "CSS `@scope` for component isolation",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "No viewport media queries for component responsiveness",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-10-automate-dev-deployment": [
+   {
+    "old_spec": "argocd-image-automation",
+    "old_req_name": "Image Updater monitors container registry",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "argocd-image-automation",
+    "old_req_name": "In-cluster parameter override for dev",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "argocd-image-automation",
+    "old_req_name": "Parameter override recovery after Application recreation",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "argocd-image-automation",
+    "old_req_name": "Production deployments remain manual",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "argocd-image-automation",
+    "old_req_name": "Image pull policy enforcement",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "argocd-image-automation",
+    "old_req_name": "Multiple image support",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "argocd-image-automation",
+    "old_req_name": "Rollback capability",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "argocd-image-automation",
+    "old_req_name": "Failure handling",
+    "disposition": "OUT:delete"
+   }
+  ],
+  "2026-05-14-prod-k8s-manifests": [
+   {
+    "old_spec": "prod-k8s-manifests",
+    "old_req_name": "Prod cluster SHALL run a full ArgoCD Application set matching dev's structure",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-k8s-manifests",
+    "old_req_name": "Every prod namespace under `k8s/namespaces/` SHALL have a `prod/` overlay",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-k8s-manifests",
+    "old_req_name": "Prod overlays SHALL diverge from dev only by ESC secret refs, hostnames, ArgoCD project labels, and replica counts",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-k8s-manifests",
+    "old_req_name": "Every Pod template in prod overlays SHALL include the gke-spot nodeSelector",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "prod-k8s-manifests",
+    "old_req_name": "Prod Gateway SHALL bind to the existing api-gateway-static-ip and serve api./auth. hostnames",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-k8s-manifests",
+    "old_req_name": "Prod cluster SHALL opt application workloads into GMP via per-workload PodMonitoring CRDs",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Self-Hosted Zitadel Runtime in Each Environment Cluster",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-02-22-cloud-sql-migration": [
+   {
+    "old_spec": "database",
+    "old_req_name": "Schema migrations MUST be applied before serving traffic",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "database-migration",
+    "old_req_name": "The system MUST apply pending database migrations on startup",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "database-migration",
+    "old_req_name": "The system MUST prevent concurrent migration execution",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "database-migration",
+    "old_req_name": "The system MUST fail startup on migration error",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "database-migration",
+    "old_req_name": "The system MUST embed migration files in the binary",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-17-frontend-entity-layer": [
+   {
+    "old_spec": "frontend-entity-layer",
+    "old_req_name": "Artist entity",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-entity-layer",
+    "old_req_name": "FollowedArtist entity",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-entity-layer",
+    "old_req_name": "Concert entity",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-entity-layer",
+    "old_req_name": "Single mapping point",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-15-add-component-smoke-tests": [
+   {
+    "old_spec": "component-smoke-tests",
+    "old_req_name": "Component mount smoke tests",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "component-smoke-tests",
+    "old_req_name": "DI mock registry for smoke tests",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "component-smoke-tests",
+    "old_req_name": "E2E console error smoke test",
+    "disposition": "OUT:delete"
+   }
+  ],
+  "2026-02-26-frontend-test-coverage": [
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Retry interceptor applies exponential backoff on transient errors",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Test mock helpers cover all tested DI interfaces",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Timer cleanup uses afterEach unconditionally",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-17-email-verification": [
+   {
+    "old_spec": "authentication",
+    "old_req_name": "JWT Token Validation",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "authentication",
+    "old_req_name": "Email Verified Claim Injection",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-04-17-unblock-fcm-via-private-vip": [
+   {
+    "old_spec": "http-retry",
+    "old_req_name": "Diagnostic capture of error response body",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "private-google-access",
+    "old_req_name": "Reachability of services not protected by VPC Service Controls",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-06-22-admin-console-concert-management": [
+   {
+    "old_spec": "admin-concert-management",
+    "old_req_name": "Admin concert operations are served by a single ConcertService",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-02-24-remove-audit-timestamps": [
+   {
+    "old_spec": "database",
+    "old_req_name": "Database tables SHALL NOT include metadata timestamp columns",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-05-15-zitadel-permanent-password": [
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "E2E Test User Password Marked Permanent",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-05-11-pulumi-state-recovery-runbook": [
+   {
+    "old_spec": "pulumi-state-recovery",
+    "old_req_name": "State-Recovery Operator Runbook",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-05-13-k8s-naming-cleanup": [
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Per-Environment Overlay Topology",
+    "disposition": "OUT:design-doc"
+   }
+  ]
+ },
+ "reconstruct-09": {
+  "2026-03-19-frontend-entity-test-coverage": [
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "isHypeMatched exhaustive coverage",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "hasFollow boundary cases",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "normalizeStep full legacy mapping",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "translationKey coverage",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "codeToHome boundary cases",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "bytesToHex zero-padding",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "bytesToDecimal multi-byte",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "uuidToFieldElement robustness",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "artistHue empty string",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "artistHueFromColorProfile dominantHue zero",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "HYPE_TIERS completeness",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "entity-test-coverage",
+    "old_req_name": "HYPE_ORDER and LANE_ORDER completeness",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-09-add-schema-lint": [
+   {
+    "old_spec": "schema-lint",
+    "old_req_name": "SERIAL and BIGSERIAL detection",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "schema-lint",
+    "old_req_name": "Bare TIMESTAMP detection",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "schema-lint",
+    "old_req_name": "Audit column detection",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "schema-lint",
+    "old_req_name": "VARCHAR detection",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "schema-lint",
+    "old_req_name": "COMMENT ON TABLE coverage",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "schema-lint",
+    "old_req_name": "COMMENT ON COLUMN coverage",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "schema-lint",
+    "old_req_name": "Makefile integration",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "schema-lint",
+    "old_req_name": "CI integration",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "schema-lint",
+    "old_req_name": "Comment-line exclusion",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-21-migrate-state-to-di": [
+   {
+    "old_spec": "state-management",
+    "old_req_name": "OnboardingService as singleton state owner",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "state-management",
+    "old_req_name": "GuestService as singleton state owner",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "state-management",
+    "old_req_name": "GuestFollow type in entities",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "state-management",
+    "old_req_name": "Service-level persistence via propertyChanged",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "state-management",
+    "old_req_name": "Service hydration from localStorage",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "state-management",
+    "old_req_name": "Simplified guest-storage POJO-only serialization",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "state-management",
+    "old_req_name": "Single DI access path",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-08-12-introduce-swappable-plain-date-lib": [
+   {
+    "old_spec": "frontend-plain-date-lib",
+    "old_req_name": "Calendar arithmetic SHALL be exposed through an implementation-agnostic interface with `CalendarDate` boundary values",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-plain-date-lib",
+    "old_req_name": "The library SHALL implement a fixed calendar-arithmetic contract",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-plain-date-lib",
+    "old_req_name": "Two interchangeable engines SHALL satisfy the contract identically",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-plain-date-lib",
+    "old_req_name": "The active engine SHALL be selected at build time, defaulting to the `Date` engine",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-plain-date-lib",
+    "old_req_name": "The production bundle SHALL contain no Temporal polyfill",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-02-22-frontend-error-handling": [
+   {
+    "old_spec": "frontend-error-handling",
+    "old_req_name": "Declarative Async Error Handling with promise.bind",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-observability",
+    "old_req_name": "OpenTelemetry Browser SDK Integration",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-observability",
+    "old_req_name": "Connect-RPC Error Instrumentation",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-observability",
+    "old_req_name": "ILogger OpenTelemetry Sink",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-26-gemini-retry-timeout-fix": [
+   {
+    "old_spec": "concert-service",
+    "old_req_name": "GKE Gateway timeout for ConcertService",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "http-retry",
+    "old_req_name": "Independent context per Gemini API retry",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "http-retry",
+    "old_req_name": "Backoff max interval aligned with Google recommendation",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-07-29-optimize-concert-searcher-cost": [
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "Step 1 runs a single grounded slice per the default slice configuration",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "Step 1 uses a single consolidated English extraction instruction",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gemini-grounded-extract-and-coerce",
+    "old_req_name": "Step 1 prompt template uses three positional placeholders",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-02-19-auto-concert-discovery": [
+   {
+    "old_spec": "auto-concert-discovery",
+    "old_req_name": "Job Always Exits Successfully",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "auto-concert-discovery",
+    "old_req_name": "Job-Specific Dependency Injection",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-13-fix-keda-argocd-replicas-conflict": [
+   {
+    "old_spec": "infra",
+    "old_req_name": "KEDA-managed Deployments SHALL NOT declare replicas",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "infra",
+    "old_req_name": "ArgoCD SHALL ignore replicas drift for KEDA-managed Deployments",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-07-28-add-discovery-job-error-alerting": [
+   {
+    "old_spec": "app-error-log-alerting",
+    "old_req_name": "Discovery CronJob failure observability",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-06-01-reset-discovery-bubbles": [
+   {
+    "old_spec": "design-system",
+    "old_req_name": "Type-scale minimum legibility floor",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-09-11-m3-expressive-feedback-foundation": [
+   {
+    "old_spec": "interaction-feedback",
+    "old_req_name": "Expression budget and accessibility guarantees",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-04-15-fix-push-notification-toggle-sync": [
+   {
+    "old_spec": "push-notification-service",
+    "old_req_name": "Per-browser scoping for repository operations",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-08-23-upgrade-zitadel-v4-17": [
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Zitadel Version Upgrades Applied by Pinned-Tag Edit with Boot-Time Migration and Post-Upgrade Verification",
+    "disposition": "OUT:runbook"
+   }
+  ]
+ },
+ "reconstruct-10": {
+  "2026-05-08-add-zitadel-console-admin-via-google-idp": [
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Manage Zitadel Organization",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Manage Zitadel Project",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Manage OIDC Application",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Configure Admin Org Login Policy",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Provision Google IdP for Admin Sign-in",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Provision Human Admin User in Admin Role Org",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Grant IAM_OWNER to Human Admin User",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Pre-link Google Identity to Human Admin via IaC",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Provision Admin Google Sub via ESC",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Place Machine Users by Responsibility",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Retain Break-glass Machine User",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Maintain Google OAuth Client in Dev Infrastructure",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-06-06-add-admin-console": [
+   {
+    "old_spec": "admin-console",
+    "old_req_name": "Bundle isolation from the consumer SPA",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "admin-console",
+    "old_req_name": "Dedicated source directory with an enforced import boundary",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "admin-console-hosting",
+    "old_req_name": "Dedicated container image and Kubernetes workload",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "admin-console-hosting",
+    "old_req_name": "Dedicated hostname on the shared external gateway",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "admin-console-hosting",
+    "old_req_name": "Per-host runtime config delivery",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "admin-console-hosting",
+    "old_req_name": "Admin-org OIDC application provisioning",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "admin-console-hosting",
+    "old_req_name": "TLS certificate and DNS for the admin hostname",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "admin-console-hosting",
+    "old_req_name": "GitOps delivery for the admin image",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-05-13-provision-prod-gcp-resources": [
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Prod GKE cluster SHALL enable Dataplane V2",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Prod GKE cluster SHALL encrypt Kubernetes Secrets via Cloud KMS (etcd CMEK)",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Prod project SHALL host the Cloud KMS keyring and key for etcd CMEK",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Prod GKE cluster SHALL use the same secondary IP CIDR plan as dev",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Prod cluster SHALL NOT enable Confidential GKE Nodes at cluster level",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Prod GCP project SHALL host the same peripheral GCP resources as dev",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Initial prod Pulumi deploy SHALL be manual-triggered",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-17-argocd-google-chat-alerts": [
+   {
+    "old_spec": "argocd-deployment-alerts",
+    "old_req_name": "ArgoCD Notifications controller is enabled",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "argocd-deployment-alerts",
+    "old_req_name": "Google Chat webhook service is configured",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "argocd-deployment-alerts",
+    "old_req_name": "Default triggers notify on error conditions",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "argocd-deployment-alerts",
+    "old_req_name": "ArgoCD secrets are isolated from backend secrets",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "argocd-deployment-alerts",
+    "old_req_name": "Webhook URL is stored in Pulumi ESC and GCP Secret Manager",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-05-unify-lint-test-ops": [
+   {
+    "old_spec": "commit-gate-hook",
+    "old_req_name": "Claude Code PreToolUse hook blocks unchecked commits",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "commit-gate-hook",
+    "old_req_name": "CLAUDE.md and AGENTS.md updated",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "unified-check-interface",
+    "old_req_name": "Makefile with standard targets in every repo",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "unified-check-interface",
+    "old_req_name": "CI workflows use Makefile targets",
+    "disposition": "OUT:delete"
+   }
+  ],
+  "2026-08-22-organizer-console": [
+   {
+    "old_spec": "organizer-console",
+    "old_req_name": "Bundle isolation from the consumer SPA and admin console",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "organizer-console",
+    "old_req_name": "Organizer runtime config resolves the org at login",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "organizer-console-hosting",
+    "old_req_name": "Serve the organizer console at a dedicated per-env host",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "organizer-console-hosting",
+    "old_req_name": "Serve a per-host organizer config",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-04-02-gke-cost-optimization": [
+   {
+    "old_spec": "gke-standard-infrastructure",
+    "old_req_name": "Standard zonal GKE cluster for dev",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gke-standard-infrastructure",
+    "old_req_name": "Dev cluster nodes SHALL have public external IPs",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "gke-standard-infrastructure",
+    "old_req_name": "Standard cluster Spot nodeSelector",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-04-08-fix-nats-ack-redelivery-loop": [
+   {
+    "old_spec": "auto-concert-discovery",
+    "old_req_name": "Consumer JetStream Delivery Policy",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "auto-concert-discovery",
+    "old_req_name": "Consumer JetStream Acknowledgement Policy",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-09-01-declarative-jetstream-nack": [
+   {
+    "old_spec": "jetstream-consumer-reliability",
+    "old_req_name": "Stream and durable configuration is managed declaratively by a single owner",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "jetstream-consumer-reliability",
+    "old_req_name": "A consumer may scale to zero without losing its durable",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-16-google-chat-alert": [
+   {
+    "old_spec": "app-error-log-alerting",
+    "old_req_name": "Notification via Google Chat",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-04-20-customize-local-db-port": [
+   {
+    "old_spec": "dev-db-access",
+    "old_req_name": "Local DB access SHALL be established via kubectl port-forward",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-02-22-concert-detail": [
+   {
+    "old_spec": "live-events",
+    "old_req_name": "Go Entity Field Name Alignment",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-04-16-scope-new-concert-notifications": [
+   {
+    "old_spec": "push-notification-service",
+    "old_req_name": "Notification consumer is a thin adapter over the use case",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-08-23-fix-zitadel-httpclient-denylist-blocks-webhook": [
+   {
+    "old_spec": "zitadel-self-hosted-deployment",
+    "old_req_name": "Outbound HTTP Client Permits In-Cluster Webhook Targets While Retaining SSRF Protection",
+    "disposition": "OUT:design-doc"
+   }
+  ]
+ },
+ "reconstruct-11": {
+  "2026-05-16-prepare-prod-service-in": [
+   {
+    "old_spec": "atlas-operator",
+    "old_req_name": "Backend repository SHALL host an Atlas migration prod overlay",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "gcp-cost-guardrails",
+    "old_req_name": "Project Billing Budget Alert",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "identity-management",
+    "old_req_name": "Maintain Google OAuth Client in Prod Infrastructure",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Prod backend ConfigMaps SHALL reference the mainnet ticket SBT contract",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Prod VAPID public key SHALL match the GSM-stored private key",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Prod blockchain ESC values SHALL reference mainnet",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-environment-bootstrap",
+    "old_req_name": "Prod admin Google sub SHALL be issued by the prod OAuth client",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-image-pipeline",
+    "old_req_name": "Prod container images SHALL be sourced exclusively from the prod project's Artifact Registry",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-image-pipeline",
+    "old_req_name": "Prod cluster service accounts SHALL NOT hold cross-project Artifact Registry IAM grants",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-image-pipeline",
+    "old_req_name": "Prod kustomize overlays SHALL pin image URIs to prod-AR paths",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-27-enhance-backend-observability": [
+   {
+    "old_spec": "backend-otel-instrumentation",
+    "old_req_name": "External HTTP client tracing via otelhttp transport",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "backend-otel-instrumentation",
+    "old_req_name": "Zitadel gRPC client tracing via otelgrpc",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "backend-otel-instrumentation",
+    "old_req_name": "UseCase spans for CPU-intensive business logic",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "backend-otel-instrumentation",
+    "old_req_name": "Application metrics",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "backend-otel-instrumentation",
+    "old_req_name": "Trace context preservation in deferred operations",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "otel-sdk-configuration",
+    "old_req_name": "Environment-aware trace sampling",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "otel-sdk-configuration",
+    "old_req_name": "Enriched resource attributes",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "otel-sdk-configuration",
+    "old_req_name": "Explicit text map propagator",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "otel-sdk-configuration",
+    "old_req_name": "MeterProvider initialization",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-04-13-harden-test-infrastructure": [
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Vitest environment is managed by vitest, not manually",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Aurelia template module graph is contained in tests",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "CE composition integration tests verify layout propagation",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Dashboard-route has integration tests",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "frontend-testing",
+    "old_req_name": "Per-file vitest environment annotations optimize execution",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "layout-assertions",
+    "old_req_name": "E2E selectors use data-testid for stability",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "layout-assertions",
+    "old_req_name": "E2E tests use Playwright native locator API without JS dispatch workarounds",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-09-04-adopt-storybook-component-testing": [
+   {
+    "old_spec": "storybook-component-testing",
+    "old_req_name": "Presentational components have isolated stories",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "storybook-component-testing",
+    "old_req_name": "Component stories run as tests in CI",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "storybook-component-testing",
+    "old_req_name": "Accessibility checks run on component stories",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "storybook-component-testing",
+    "old_req_name": "Component-level visual regression detects unintended changes",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "storybook-component-testing",
+    "old_req_name": "A single visual-regression pipeline is maintained",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "storybook-component-testing",
+    "old_req_name": "Unit and component test suites are isolated but jointly gated",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-03-05-add-migration-rebase-guard": [
+   {
+    "old_spec": "database-migration",
+    "old_req_name": "The CI pipeline MUST validate migration file ordering",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "migration-rebase-guard",
+    "old_req_name": "The system MUST detect out-of-order migration timestamps",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "migration-rebase-guard",
+    "old_req_name": "The system MUST auto-fix out-of-order migrations when --fix is passed",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "migration-rebase-guard",
+    "old_req_name": "The system MUST integrate with Claude Code hooks",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-08-13-organizer-tenancy": [
+   {
+    "old_spec": "organizer-tenancy",
+    "old_req_name": "Shared organizer-console project in the product org",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "organizer-tenancy",
+    "old_req_name": "Organizer console OIDC app and backend API app",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "organizer-tenancy",
+    "old_req_name": "Dedicated organizer-provisioner machine user",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "organizer-tenancy",
+    "old_req_name": "Organizer-provisioner root key has a finite lifecycle",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-08-24-upgrade-backend-go-1-27": [
+   {
+    "old_spec": "goroutine-leak-detection",
+    "old_req_name": "Goroutine leak profile is exposed",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "goroutine-leak-detection",
+    "old_req_name": "Detected goroutine leaks raise an alert",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "goroutine-leak-detection",
+    "old_req_name": "Leak detection complements existing consumer health signals",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-02-21-artist-creation": [
+   {
+    "old_spec": "bulk-insert-unnest",
+    "old_req_name": "Bulk artist creation via unnest",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "bulk-insert-unnest",
+    "old_req_name": "Concert bulk insert via unnest",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-06-30-introduce-notification-service": [
+   {
+    "old_spec": "notification-lifecycle",
+    "old_req_name": "All user-facing notifications flow through the notification service",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "notification-lifecycle",
+    "old_req_name": "The notification identifier is propagated end-to-end",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-17-improve-search-bar": [
+   {
+    "old_spec": "aurelia-reactivity",
+    "old_req_name": "Collection observation via native Set binding",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-25-unify-scraped-concert-entity": [
+   {
+    "old_spec": "entity-domain-logic",
+    "old_req_name": "ScrapedConcerts collection type",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-03-18-logo-color-analysis": [
+   {
+    "old_spec": "logo-color-analysis",
+    "old_req_name": "sRGB to OKLCH Conversion",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-04-20-standardize-user-scoped-rpc-auth": [
+   {
+    "old_spec": "rpc-auth-scoping",
+    "old_req_name": "Shared JWT-match helper",
+    "disposition": "OUT:design-doc"
+   }
+  ]
+ },
+ "reconstruct-12": {
+  "2026-06-17-prod-cost-optimization": [
+   {
+    "old_spec": "argocd-gateway-deployment",
+    "old_req_name": "Prod overlay minimizes Argo CD Pod count",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "argocd-gateway-deployment",
+    "old_req_name": "dev overlay is unaffected",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "billing-export-infrastructure",
+    "old_req_name": "BigQuery dataset for GCP Billing Export",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "billing-export-infrastructure",
+    "old_req_name": "IAM binding for billing export service account",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "billing-export-infrastructure",
+    "old_req_name": "Runbook documents the Console step to enable billing export",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "billing-export-infrastructure",
+    "old_req_name": "Detailed usage cost export is preferred over Standard-only",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "billing-export-infrastructure",
+    "old_req_name": "Sample analysis SQL is provided",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "otel-collector-deployment",
+    "old_req_name": "Filter rule scope is documented in the ConfigMap",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "otel-collector-deployment",
+    "old_req_name": "Metric ingest volume is observable",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-02-22-atlas-operator-migration": [
+   {
+    "old_spec": "atlas-operator",
+    "old_req_name": "Atlas Operator SHALL be installed in the GKE cluster",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "atlas-operator",
+    "old_req_name": "Migrations SHALL be stored as ConfigMap",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "atlas-operator",
+    "old_req_name": "AtlasMigration CRD SHALL connect as postgres user",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "atlas-operator",
+    "old_req_name": "Migrations SHALL create the app schema and grant permissions",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "cloud-sql-connector",
+    "old_req_name": "Standard Connection for Local",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "cloud-sql-connector",
+    "old_req_name": "Database schema SHALL be configurable via environment variable",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "continuous-delivery",
+    "old_req_name": "ArgoCD SHALL sync Atlas migration resources from backend repo",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "continuous-delivery",
+    "old_req_name": "Migration sync wave SHALL precede application deployment",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "database",
+    "old_req_name": "Application data SHALL reside in a dedicated schema",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-05-16-adopt-runtime-config-for-frontend": [
+   {
+    "old_spec": "frontend-hosting",
+    "old_req_name": "Frontend Deployment SHALL mount a per-environment runtime-config ConfigMap",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "frontend-hosting",
+    "old_req_name": "Post-deploy smoke verification SHALL assert the SPA renders",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "frontend-runtime-config",
+    "old_req_name": "Frontend SPA SHALL load environment configuration from `/config.json` at bootstrap",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-runtime-config",
+    "old_req_name": "Bootstrap SHALL cross-check the configured environment against the page host",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-runtime-config",
+    "old_req_name": "A checked-in `public/config.json` SHALL provide dev defaults",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "frontend-runtime-config",
+    "old_req_name": "The Service Worker SHALL bypass any cache for `/config.json`",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "prod-image-pipeline",
+    "old_req_name": "Frontend prod image SHALL be env-agnostic at the bundle level",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-12-replace-js-antipatterns-with-css": [
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "Anchored Container Query for position-dependent child styling",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "CSS `@starting-style` for entry animations on dynamic elements",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "`transitionend` event for post-animation DOM cleanup",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "`overscroll-behavior: contain` for scroll isolation",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "`scrollIntoView` + `scrollend` for scroll-then-act patterns",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "modern-css-platform",
+    "old_req_name": "`data-state` attribute for CSS animation state",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-05-03-zitadel-observability": [
+   {
+    "old_spec": "zitadel-observability",
+    "old_req_name": "Alert on Zitadel API request latency p99",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "zitadel-observability",
+    "old_req_name": "Alert on backend JWT validation error rate",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "zitadel-observability",
+    "old_req_name": "Cloud SQL connection-pool dashboard panel for Zitadel database",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "zitadel-observability",
+    "old_req_name": "Weekly Zitadel API restart CronJob in dev",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "zitadel-observability",
+    "old_req_name": "Operator runbook for the Zitadel hang incident shape",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-06-01-automate-prod-pin-bump": [
+   {
+    "old_spec": "prod-image-pipeline",
+    "old_req_name": "Prod kustomize pin-bumps SHALL be automated via repository_dispatch",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-image-pipeline",
+    "old_req_name": "A cloud-provisioning workflow SHALL apply the prod pin-bump on dispatch",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-image-pipeline",
+    "old_req_name": "cloud-provisioning main ruleset SHALL allow the ci-bot App to bypass for the pin-bump push",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "prod-image-pipeline",
+    "old_req_name": "The manual pin-bump fallback SHALL be admin-gated",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-02-26-localstorage-key-naming-convention": [
+   {
+    "old_spec": "localstorage-naming",
+    "old_req_name": "Unified key naming convention",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "localstorage-naming",
+    "old_req_name": "Centralized key registry",
+    "disposition": "OUT:lint"
+   },
+   {
+    "old_spec": "localstorage-naming",
+    "old_req_name": "Domain term alignment",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-05-29-honor-thread-resolution-in-claude-review-check": [
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "Claude review posts advisory inline comments on pull requests",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "Branch protection gates merges on CI Success only",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-07-02-emit-notification-analytics-events": [
+   {
+    "old_spec": "notification-lifecycle",
+    "old_req_name": "Delivered notifications are reported to product analytics",
+    "disposition": "OUT:design-doc"
+   },
+   {
+    "old_spec": "notification-lifecycle",
+    "old_req_name": "Notification opens and dismissals are reported to product analytics",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-05-16-claude-review-check-run": [
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "Claude code review runs via a single org-wide reusable workflow",
+    "disposition": "OUT:runbook"
+   }
+  ],
+  "2026-06-04-introduce-entity-store-layer": [
+   {
+    "old_spec": "entity-store-layer",
+    "old_req_name": "Per-Entity Store Ownership",
+    "disposition": "OUT:design-doc"
+   }
+  ],
+  "2026-03-11-introduce-coordinates-vo": [
+   {
+    "old_spec": "nearby-proximity",
+    "old_req_name": "Centroid Resolution Unit Coverage",
+    "disposition": "OUT:lint"
+   }
+  ],
+  "2026-06-07-add-sales-phase-timeline": [
+   {
+    "old_spec": "sales-phase",
+    "old_req_name": "SalesPhase Database Schema",
+    "disposition": "OUT:design-doc"
+   }
+  ]
+ }
+}

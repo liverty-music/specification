@@ -20,15 +20,6 @@ The concert creation pipeline SHALL skip concerts whose venues cannot be resolve
 - **AND** the system SHALL emit a structured Warn log with the error and all `ScrapedConcert` fields
 - **AND** processing SHALL continue with the next concert in the batch
 
-### Requirement: PlaceSearcher Is Required
-
-The `ConcertCreationUseCase` SHALL require a non-nil `VenuePlaceSearcher` at construction time.
-
-#### Scenario: Nil placeSearcher at startup
-
-- **WHEN** `NewConcertCreationUseCase` is called with a nil `placeSearcher`
-- **THEN** the function SHALL panic with a descriptive message
-
 ## REMOVED Requirements
 
 ### Requirement: Venue Enrichment Pipeline

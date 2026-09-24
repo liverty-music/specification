@@ -1,0 +1,1 @@
+Provides the shared bottom sheet used across the app as the single overlay surface for dialogs such as artist selection and the follow action inside the event detail sheet.

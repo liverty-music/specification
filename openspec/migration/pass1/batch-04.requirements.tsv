@@ -1,0 +1,102 @@
+old_spec	old_req_name	disposition	target_path	new_req_name	merge_group	rewrite_flags	confidence	rationale
+festival-orb-effects	Stage-level escalation system	KEEP	components/infrastructure/ui/global/dna-orb	Stage-level escalation system		CLASSNAME	high	dna-orb component's stage-effects.ts pure function drives all visual params
+festival-orb-effects	Growing orb with dynamic bubble boundary	KEEP	components/infrastructure/ui/global/dna-orb	Growing orb with dynamic bubble boundary			high	dna-orb component's orb radius affects Matter.js bubble physics boundary
+festival-orb-effects	Breathing pulse animation	KEEP	components/infrastructure/ui/global/dna-orb	Breathing pulse animation			high	dna-orb breathing animation, observed by fan on Discovery
+festival-orb-effects	Orbital particles	KEEP	components/infrastructure/ui/global/dna-orb	Orbital particles			high	dna-orb orbital particle rendering
+festival-orb-effects	Light rays	KEEP	components/infrastructure/ui/global/dna-orb	Light rays			high	dna-orb light ray rendering
+festival-orb-effects	Shockwave rings on follow	KEEP	components/infrastructure/ui/global/dna-orb	Shockwave rings on follow			high	dna-orb shockwave burst on follow action
+festival-orb-effects	Comet trail on absorption	KEEP	components/infrastructure/ui/global/dna-orb	Comet trail on absorption			high	dna-orb absorption comet trail
+festival-orb-effects	Ground glow	KEEP	components/infrastructure/ui/global/dna-orb	Ground glow			high	dna-orb ground glow gradient
+festival-orb-effects	Color palette accumulation	KEEP	components/infrastructure/ui/global/dna-orb	Color palette accumulation			high	dna-orb accumulated hue palette feeds effects
+festival-orb-effects	Vortex flow trails inside the orb	KEEP	components/infrastructure/ui/global/dna-orb	Vortex flow trails inside the orb			high	dna-orb inner particle trails
+festival-orb-effects	Nebula fill layers	KEEP	components/infrastructure/ui/global/dna-orb	Nebula fill layers			high	dna-orb nebula gradient layers
+festival-orb-effects	Strobe flash on follow	KEEP	components/infrastructure/ui/global/dna-orb	Strobe flash on follow			high	dna-orb strobe flash on pulse()
+festival-orb-effects	Beat sync pulsation	KEEP	components/infrastructure/ui/global/dna-orb	Beat sync pulsation			high	dna-orb beat-synced modulation of rays/orbitals
+festival-orb-effects	Orbital comet tails	KEEP	components/infrastructure/ui/global/dna-orb	Orbital comet tails			high	dna-orb orbital tail rendering
+festival-orb-effects	Unit test coverage for stage effects	OUT:delete					high	no user actor; unit-test inventory for stage-effects.ts module
+festival-orb-effects	Unit test coverage for OrbRenderer state	OUT:delete					high	no user actor; unit-test inventory for OrbRenderer
+festival-orb-effects	Unit test coverage for AbsorptionAnimator comet trail	OUT:delete					high	no user actor; unit-test inventory for AbsorptionAnimator
+user-home	User Home Area Data Model	KEEP	components/entity/user	User Home Area Data Model		CLASSNAME	medium	Home is a field on the User entity (proto/db/entity.Home struct); entity invariant, always true
+user-home	Create User with Home	KEEP	components/usecase/user/create	Create User with Home			high	UserUseCase.Create accepting optional home
+user-home	Update Home RPC	KEEP	components/usecase/user/update-home	Update Home RPC			high	UserUseCase.UpdateHome response/state change
+user-home	Home included in User retrieval	KEEP	components/usecase/user/get	Home included in User retrieval			high	UserUseCase.Get response includes home field
+user-home	Frontend home area persistence via RPC	KEEP	stories/set-home-area	Home area persists across onboarding, settings, and dashboard		CLASSNAME	medium	spans onboarding/settings/dashboard routes via UserStore; multi-step goal across screens (story proposal)
+user-home	Unified Home Area Selector Component	KEEP	components/infrastructure/ui/global/user-home-selector	Unified home area selector		CLASSNAME	high	user-home-selector component shared across onboarding, settings, and All Nearby
+user-home	Home area i18n namespace	KEEP	components/infrastructure/ui/global/user-home-selector	Home area i18n namespace			medium	copy displayed within the user-home-selector component
+pwa-install-banner	Banner Visible to Authenticated Non-Installed Users After Onboarding	KEEP	components/infrastructure/ui/global/pwa-install-banner	Banner Visible to Authenticated Non-Installed Users After Onboarding			high	pwa-install-banner visibility gating
+pwa-install-banner	Banner CTA Install Flow by Platform	KEEP	components/infrastructure/ui/global/pwa-install-banner	Banner CTA Install Flow by Platform			high	pwa-install-banner CTA behavior
+pwa-install-banner	Banner Disappears Permanently After Installation	KEEP	components/infrastructure/ui/global/pwa-install-banner	Banner Disappears Permanently After Installation			high	pwa-install-banner removal after install
+pwa-install-banner	Session-Level Dismiss	KEEP	components/infrastructure/ui/global/pwa-install-banner	Session-Level Dismiss			high	pwa-install-banner session dismiss behavior
+pwa-install-banner	Banner Suppressed While PostSignupDialog Is Open	KEEP	components/infrastructure/ui/global/pwa-install-banner	Banner Suppressed While PostSignupDialog Is Open		CLASSNAME	high	pwa-install-banner suppressed by post-signup-dialog
+pwa-install-banner	Banner Visual Presentation	KEEP	components/infrastructure/ui/global/pwa-install-banner	Banner Visual Presentation			high	pwa-install-banner visual design
+pwa-install-banner	Banner Accessibility	KEEP	components/infrastructure/ui/global/pwa-install-banner	Banner Accessibility			high	pwa-install-banner accessibility
+pwa-install-banner	PwaInstallService Banner Visibility API	KEEP	components/infrastructure/ui/global/pwa-install-banner	Banner visibility state and installed confirmation		CLASSNAME	medium	PwaInstallService reactive state gates pwa-install-banner visibility; renamed to drop implementation type from title
+http-retry	HTTP retry on transient errors	OUT:design-doc					high	no user actor; backend HTTP client retry policy (exponential backoff)
+http-retry	Retry-After header respect	OUT:design-doc					high	no user actor; HTTP header parsing policy
+http-retry	Context cancellation during retry	OUT:design-doc					high	no user actor; backend retry-loop cancellation mechanics
+http-retry	Request body replay for retried POST requests	OUT:design-doc					high	no user actor; HTTP client implementation detail
+http-retry	Independent context per Gemini API retry	OUT:design-doc					high	no user actor; Gemini API caller context.WithoutCancel mechanics
+http-retry	Backoff max interval aligned with Google recommendation	OUT:design-doc					high	no user actor; backoff tuning per vendor docs
+http-retry	Diagnostic capture of error response body	OUT:runbook					high	no user actor; operational diagnostic/log capture for apperr
+http-retry	Deduplicated auth token refresh on concurrent 401s	NEEDS_HUMAN					low	user-visible via session-clear/redirect to /welcome on failure, but no vocabulary target for a cross-cutting RPC auth-refresh interceptor (not a route, not a global UI surface, not a usecase)
+auto-discovery-series-grouping	Tour Events Group Into a Single Series	KEEP	components/usecase/concert/create-from-discovered	Tour Events Group Into a Single Series			high	ConcertCreationUseCase.CreateFromDiscovered persists Series for discovered tours
+auto-discovery-series-grouping	Series Identity Is Adopted From Member Events	KEEP	components/usecase/concert/create-from-discovered	Series Identity Is Adopted From Member Events			high	series_id resolution during CreateFromDiscovered
+auto-discovery-series-grouping	Events Deduplicate On Physical Natural Key	KEEP	components/usecase/concert/create-from-discovered	Events Deduplicate On Physical Natural Key			high	event dedup during CreateFromDiscovered
+auto-discovery-series-grouping	Event Identity Is Resolved In The Application	KEEP	components/usecase/concert/create-from-discovered	Event Identity Is Resolved In The Application			high	event resolution during CreateFromDiscovered
+auto-discovery-series-grouping	SeriesType Assigned From Source Classification	KEEP	components/usecase/concert/create-from-discovered	SeriesType Assigned From Source Classification			high	SeriesType set during CreateFromDiscovered
+auto-discovery-series-grouping	Multi-Hall Venues Are Disambiguated By venue_id	KEEP	components/usecase/concert/create-from-discovered	Multi-Hall Venues Are Disambiguated By venue_id			high	venue_id resolution during CreateFromDiscovered
+auto-discovery-series-grouping	Residual Grouping Ambiguities Are Logged, Not Fatal	KEEP	components/usecase/concert/create-from-discovered	Residual Grouping Ambiguities Are Logged, Not Fatal			medium	CreateFromDiscovered resilience; organizer/fan still see resulting concerts despite logged ambiguity
+auto-discovery-series-grouping	Approval Preserves Series Grouping And Type	KEEP	components/usecase/concert/approve	Approval Preserves Series Grouping And Type			high	AdminConcertUseCase.Approve preserves existing series_id/type
+prompt-timing	PWA Install Prompt Blocked During Onboarding	KEEP	components/infrastructure/ui/global/pwa-install-banner	PWA Install Prompt Blocked During Onboarding			high	pwa-install-banner suppressed during onboarding
+prompt-timing	Notification Prompt Blocked When Not Authenticated	KEEP	components/infrastructure/ui/global/notification-prompt	Notification Prompt Blocked When Not Authenticated			high	notification-prompt gated on auth state
+prompt-timing	Notification Prompt Blocked During Onboarding	KEEP	components/infrastructure/ui/global/notification-prompt	Notification Prompt Blocked During Onboarding			high	notification-prompt suppressed during onboarding
+prompt-timing	Single Prompt Per Session	KEEP	components/infrastructure/ui/global/notification-prompt	Single Prompt Per Session			medium	SPLIT-CANDIDATE: arbitrates between notification-prompt and pwa-install-banner; notification-prompt chosen as dominant surface
+prompt-timing	Notification Prompt Priority Over Disruptive PWA Prompts	KEEP	components/infrastructure/ui/global/notification-prompt	Notification Prompt Priority Over Disruptive PWA Prompts			medium	notification-prompt takes priority over pwa-install-banner (SPLIT-CANDIDATE, also touches pwa-install-banner)
+prompt-timing	Notification Prompt Eligible on First Post-Completion Session	KEEP	components/infrastructure/ui/global/notification-prompt	Notification Prompt Eligible on First Post-Completion Session			high	notification-prompt eligibility timing
+prompt-timing	PWA Install Banner Eligible After Onboarding Completion	KEEP	components/infrastructure/ui/global/pwa-install-banner	PWA Install Banner Eligible After Onboarding Completion			high	pwa-install-banner eligibility timing
+prompt-timing	Dismissed Prompts Do Not Reappear	KEEP	components/infrastructure/ui/global/notification-prompt	Dismissed Prompts Do Not Reappear			medium	primarily notification-prompt permanent dismissal; also restates pwa-install-banner session dismiss (SPLIT-CANDIDATE, see pwa-install-banner spec)
+argocd-gateway-deployment	Cluster-Level Application	OUT:delete					high	no user actor; ArgoCD cluster-app deploy mechanics
+argocd-gateway-deployment	Gateway-Level Application	OUT:delete					high	no user actor; ArgoCD gateway-app deploy mechanics
+argocd-gateway-deployment	Backend Application	OUT:delete					high	no user actor; ArgoCD backend-app deploy mechanics
+argocd-gateway-deployment	GitOps Synchronization	OUT:delete					high	no user actor; GitOps sync mechanics
+argocd-gateway-deployment	Application Dependency Ordering	OUT:delete					high	no user actor; ArgoCD app sync ordering
+argocd-gateway-deployment	Application Status Visibility	OUT:runbook					high	no user actor; operator-facing argocd app get status procedure
+argocd-gateway-deployment	Rollback Capability	OUT:runbook					high	no user actor; operator rollback procedure
+argocd-gateway-deployment	Prod overlay minimizes Argo CD Pod count	OUT:design-doc					high	no user actor; GKE Autopilot pod-cost technology decision
+argocd-gateway-deployment	dev overlay is unaffected	OUT:design-doc					high	no user actor; companion overlay technology decision
+bubble-pool-lifecycle	Bubble pool initialization based on followed-artist count	KEEP	components/infrastructure/ui/route/discovery	Bubble pool initialization based on followed-artist count		CLASSNAME	high	Discovery route bubble pool init via FollowOrchestrator/BubbleManager
+bubble-pool-lifecycle	Bubble pool deduplication	KEEP	components/infrastructure/ui/route/discovery	Bubble pool deduplication		CLASSNAME	high	Discovery route bubble pool dedup via FollowOrchestrator
+bubble-pool-lifecycle	Bubble pool cap and eviction on tap	KEEP	components/infrastructure/ui/route/discovery	Bubble pool cap and eviction on tap		CLASSNAME	high	Discovery route BubblePool/BubblePhysics cap enforcement
+bubble-pool-lifecycle	Tap-to-refill flow	KEEP	components/infrastructure/ui/route/discovery	Tap-to-refill flow		CLASSNAME	high	Discovery route tap-to-follow-to-refill cycle via BubbleManager/FollowOrchestrator
+bubble-pool-lifecycle	ListSimilar and ListTop limit parameter	KEEP	components/usecase/artist/list-similar	ListSimilar and ListTop limit parameter			medium	ArtistUseCase.ListSimilar limit param; SPLIT-CANDIDATE also governs ArtistUseCase.ListTop
+cube-css-structural-rules	`cube/block-max-lines` limits block size	OUT:lint					high	no user actor; stylelint rule
+cube-css-structural-rules	`cube/one-block-per-file` enforces single block per file	OUT:lint					high	no user actor; stylelint rule
+cube-css-structural-rules	`cube/prefer-where-in-reset` recommends `:where()` in reset and global layers	OUT:lint					high	no user actor; stylelint rule
+legal-documents	Legal documents are served as in-app routes with stable URLs	KEEP	components/infrastructure/ui/route/legal	Legal documents are served as in-app routes with stable URLs			high	/legal/* routing structure
+legal-documents	Legal documents are reachable without authentication	KEEP	components/infrastructure/ui/route/legal	Legal documents are reachable without authentication			high	/legal/* auth-guard opt-out
+legal-documents	Legal documents are localized	KEEP	components/infrastructure/ui/route/legal	Legal documents are localized			high	/legal/* locale behavior
+legal-documents	Privacy Policy discloses the actual data practices	KEEP	components/infrastructure/ui/global/legal-document	Privacy Policy discloses the actual data practices			high	legal-document component's Privacy Policy content
+legal-documents	Terms of Service disclaims third-party data accuracy	KEEP	components/infrastructure/ui/global/legal-document	Terms of Service disclaims third-party data accuracy			high	legal-document component's ToS content
+legal-documents	OSS Licenses content is generated from the shipped dependencies	KEEP	components/infrastructure/ui/global/legal-document	OSS Licenses content is generated from the shipped dependencies			high	legal-document component's OSS Licenses content
+legal-documents	In-app legal links resolve to in-app legal routes	KEEP	components/infrastructure/ui/route/legal	In-app legal links resolve to in-app legal routes		HISTORIC	medium	onboarding consent notice and settings must link to /legal/* not the non-existent liverty.me/privacy
+typography-focused-dashboard	Three-Lane Live Highway Layout	KEEP	components/infrastructure/ui/global/live-highway	Three-Lane Live Highway Layout			high	matches the live-highway component (vocabulary name)
+component-smoke-tests	Component mount smoke tests	OUT:delete					high	no user actor; unit-test inventory
+component-smoke-tests	DI mock registry for smoke tests	OUT:delete					high	no user actor; test infrastructure
+component-smoke-tests	E2E console error smoke test	OUT:delete					high	no user actor; CI mechanics
+connect-rpc-cors	CORS Middleware for Connect-RPC	OUT:design-doc					high	no user actor; backend CORS middleware config
+connect-rpc-cors	Allowed Origins Configuration	OUT:design-doc					high	no user actor; CORS_ALLOWED_ORIGINS env config
+connect-rpc-cors	Connect-RPC Protocol Headers	OUT:design-doc					high	no user actor; Connect protocol header allowlist
+connect-rpc-cors	Authorization Header Support	OUT:design-doc					high	no user actor; CORS header allowlist
+connect-rpc-cors	CORS Validation at Startup	OUT:runbook					high	no user actor; startup warning log for ops
+email-provider	Zitadel SMTP configuration via Pulumi	OUT:design-doc					high	no user actor; Pulumi SmtpConfig provisioning/technology choice
+email-provider	Mail subdomain DNS records for DKIM authentication	OUT:design-doc					high	no user actor; DNS/DKIM infra provisioning
+email-provider	ZitadelConfig interface extension	OUT:lint					high	no user actor; TypeScript compile-time interface field requirement
+email-provider	SmtpConfig component isolation	OUT:design-doc				CLASSNAME	high	no user actor; code organization pattern (src/zitadel/components/smtp.ts)
+email-provider	Environment-specific Postmark Server separation	OUT:runbook					high	no user actor; operational credential separation per environment
+consumer-poison-queue-alerting	Poison Queue consumer emits ERROR logs	OUT:runbook					high	no user actor; ops alerting log emission
+consumer-poison-queue-alerting	NATS POISON stream lag alert	OUT:runbook					high	no user actor; Cloud Monitoring ops alert policy
+beam-effect-toggle	User can toggle the laser beam spotlight effect on the dashboard	KEEP	components/infrastructure/ui/global/fab-menu	User can toggle the laser beam spotlight effect on the dashboard			medium	toggle item contributed to the FAB action launcher panel (vocabulary: fab-menu); SPLIT-CANDIDATE also affects live-highway rendering
+frontend-performance-instrumentation	Long animation frames reported to analytics	OUT:runbook					high	telemetry sent to PostHog; tie-break rule: telemetry -> OUT
+frontend-performance-instrumentation	Core Web Vitals reported to analytics	OUT:runbook					high	telemetry sent to PostHog; tie-break rule: telemetry -> OUT
+frontend-performance-instrumentation	Slow interactions reported to analytics	OUT:runbook					high	telemetry sent to PostHog; tie-break rule: telemetry -> OUT
+intel	Live Information Crawling	NEEDS_HUMAN					low	crawling capability likely feeds ConcertUseCase.SearchNewConcerts but the intel CLI's exact relationship to that RPC/usecase is unconfirmed from this spec alone

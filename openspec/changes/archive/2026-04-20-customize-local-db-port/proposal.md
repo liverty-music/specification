@@ -15,7 +15,7 @@ Multiple projects on the same developer machine run PostgreSQL on the default po
 <!-- None -->
 
 ### Modified Capabilities
-- `dev-db-access`: The `kubectl port-forward` command and `psql` connection example change their localhost port from `5432` to `15432`. No change to the remote side (Cloud SQL still listens on `5432` via PSC).
+<!-- None -->
 
 ## Impact
 

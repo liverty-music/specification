@@ -31,6 +31,10 @@ Functions like `isHypeMatched` (4 hypes x 3 lanes = 12 combinations) and `normal
 
 `HYPE_TIERS` and `HYPE_ORDER` / `LANE_ORDER` tests verify that every value of the union type has a corresponding entry. This catches silent breakage when a new enum value is added to the type but not to the constant.
 
+### 4. Additional boundary-case coverage
+
+Beyond the table-driven and structural-completeness patterns above, each extracted function gets dedicated edge-case tests for the inputs most likely to break it in production: duplicate artist IDs in `hasFollow`, short/malformed codes in `codeToHome`, zero-value bytes in `bytesToHex`, multi-byte inputs in `bytesToDecimal`, hyphen-free UUIDs in `uuidToFieldElement`, and empty-string / zero-hue inputs in `artistHue` and `artistHueFromColorProfile`.
+
 ## Risks / Trade-offs
 
 - **Risk**: Tests could become brittle if they assert exact hash values for `artistHue`. → Mitigation: Assert range and determinism properties, not specific numbers.

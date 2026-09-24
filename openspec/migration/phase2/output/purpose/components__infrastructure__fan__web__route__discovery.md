@@ -1,0 +1,1 @@
+Lets a user discover and follow new artists through an interactive physics-based bubble interface and text search, available throughout onboarding and afterward, with sound and animation feedback on each follow.

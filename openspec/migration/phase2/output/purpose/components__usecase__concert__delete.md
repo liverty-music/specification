@@ -1,0 +1,1 @@
+Lets an administrator permanently remove a published concert, suppressing it from being re-discovered and re-published by the automated search pipeline.

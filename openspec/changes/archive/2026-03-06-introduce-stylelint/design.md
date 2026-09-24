@@ -74,6 +74,18 @@ Current state:
 
 **Rationale**: Tailwind v4 uses CSS-native `@theme` directive. Modern CSS features (`@starting-style`, `@property`, `@container`) are already in use in the codebase and must not be flagged as unknown.
 
+### Decision 7: OKLCH color enforcement
+
+**Choice**: Require `oklch()` for all color definitions; reject `rgb()`, `rgba()`, `hsl()`, `hsla()`, and hex notation via `function-disallowed-list` and `color-no-hex`.
+
+**Rationale**: OKLCH is perceptually uniform, so palette shifts stay predictable across shades and alpha variants. Colors sourced from a Tailwind `theme()` call or a CSS custom property (`var(--color-brand-primary)`) are exempt from the check — the design tokens own their own color representation, so consumers referencing a token shouldn't have to re-declare it in `oklch()`.
+
+### Decision 8: CSS anti-pattern prevention
+
+**Choice**: Disallow `z-index`, `!important`, `float`, `clear`, and ID selectors outright; cap selector specificity at `0,4,0` and selector depth at 4 compound selectors.
+
+**Rationale**: These are the patterns that make CSS hardest to reason about and override later — z-index wars, `!important` escalation, float-based layout fighting flexbox/grid, and ID selectors that class selectors can't override. The codebase is already clean of all three, so the rule locks in that state rather than requiring a migration.
+
 ## Risks / Trade-offs
 
 **[Risk] OKLCH color conversion accuracy** — Converting 66+ `rgb()`/`rgba()` values to `oklch()` may introduce subtle color shifts.

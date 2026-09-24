@@ -44,6 +44,8 @@ test/helpers/
   create-container.ts   # createTestContainer(...registrations)
 ```
 
+`createMockLogger()` returns an `ILogger` with every method (`debug`, `info`, `warn`, `error`, `scopeTo`) as a Vitest spy. `createMockAuth()` returns an `IAuthService` with configurable `isAuthenticated`/`user` state and spies for `signIn`, `signOut`, `register`, `handleCallback`. `createTestContainer(...registrations)` pre-registers `ILogger` by default alongside whatever mocks the test passes in, since nearly every service resolves `ILogger` and re-declaring that registration in every test file would be the exact boilerplate this helper exists to remove.
+
 ### 3. Service tests via DI container (not module mocking)
 
 **Decision**: Test services by creating a real `DI.createContainer()` with mocked dependencies registered via `Registration.instance()`, rather than using `vi.mock()` for module-level mocking.

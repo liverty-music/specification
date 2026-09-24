@@ -80,11 +80,21 @@ Each rule file exports a standard stylelint rule object using `stylelint.createP
 
 ### 4. `require-token-variables` — calc() must contain at least one `var()`
 
+Configured properties in the consumption layers (composition, utility, block, exception) must resolve to a `var()` reference rather than a raw literal — `padding: 16px` is rejected, `padding: var(--space-m)` is accepted. `transition-duration` and `animation-duration` are part of the default enforced property list alongside spacing, color, and typography properties, and the full list is configurable via a `properties` rule option so consumers can narrow enforcement (e.g. to only `padding` and `color`) without disabling the rule outright.
+
 When a property value uses `calc()`, the rule checks that at least one `var()` reference exists within the calc expression. Pure literal `calc()` expressions (e.g., `calc(16px + 4px)`) are rejected because they bypass the token system.
 
 **Allowed structural values** that bypass the rule entirely: `0`, `auto`, `none`, `inherit`, `initial`, `unset`, `revert`, `currentColor`, `transparent`, fractions (`1fr`, `2fr`), and percentages used structurally (`100%`, `50%`).
 
 **Ignored layers**: `reset` and `global` (where tokens are defined).
+
+### 8. Tier 1 layer rules: `require-layer`, `layer-order`, `exception-data-attr`, `data-attr-naming`, `utility-single-property`
+
+`require-layer` flags any CSS rule that sits outside an `@layer` block; `@layer` order-declaration statements (e.g. `@layer reset, global, composition, utility, block, exception;`) and at-rules that cannot live inside `@layer` (`@property`) are exempt, but `@keyframes` outside `@layer` is still flagged. `layer-order` requires the layer sequence — whether written as a declaration statement or as the order block-form `@layer` rules appear in the file — to follow `reset, global, composition, utility, block, exception`; subsets are allowed as long as their relative order is preserved, and an unrecognized layer name is rejected. `exception-data-attr` requires every selector inside `@layer exception` to carry at least one `[data-*]` attribute selector, rejecting exceptions expressed as plain modifier classes; `data-attr-naming` narrows those attributes to `data-state`, `data-variant`, or `data-theme` by default, extensible via an `additionalAttributes` option. `utility-single-property` caps each `@layer utility` selector at 2 properties by default (configurable via `max`), so utilities stay single-purpose.
+
+### 9. Tier 2/3 rules: `block-max-lines`, `one-block-per-file`, `prefer-where-in-reset`, `prefer-vi-over-vw`, `require-container-name`, `prefer-color-mix`
+
+`block-max-lines` caps each `@scope` block inside `@layer block` at 80 lines by default (configurable via `max`), pushing oversized components to be decomposed rather than grown. `one-block-per-file` limits a file containing `@layer block` to a single `@scope` directive, keeping block CSS one-component-per-file. `prefer-where-in-reset` warns (does not error) when `@layer reset`/`@layer global` selectors skip `:where()` wrapping, with `:root` and `body` exempted as standard global singletons. `prefer-vi-over-vw` rejects `vw`/`svw`/`lvw` in favor of the writing-mode-aware `vi`/`svi`/`lvi` units, leaving `vh` untouched. `require-container-name` requires any rule declaring a non-`normal` `container-type` (or the `container` shorthand) to also name the container. `prefer-color-mix` warns when a custom property in `@layer global` appears to derive a color from another token without using `color-mix()` or relative color syntax.
 
 ### 5. `block-require-scope` — `@scope` required in block layer
 

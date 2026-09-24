@@ -44,10 +44,7 @@ names from the audience alone.
 ## Capabilities
 
 ### New Capabilities
-- `workload-naming-convention`: the canonical `<audience-console>-<tier>` scheme, the
-  derived-resource suffix rules, the GCP identity / GSM-key naming, the full canonical
-  name mapping table, and the migration ordering rule (create-new → cutover →
-  delete-old). Future workloads SHALL derive their names from this spec.
+(none — see design.md)
 
 ### Modified Capabilities
 - `zitadel-self-hosted-deployment`: the GSM key requirement changes from

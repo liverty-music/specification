@@ -15,8 +15,7 @@ The backend currently instruments only the RPC entry layer (otelconnect) and dat
 
 ### New Capabilities
 
-- `backend-otel-instrumentation`: Covers external HTTP/gRPC client tracing, UseCase-level span placement, and Metrics signal introduction for the backend service
-- `otel-sdk-configuration`: Covers OTel SDK initialization enhancements including sampler strategy, resource attributes, propagator setup, MeterProvider, and span limits
+(none — see design.md)
 
 ### Modified Capabilities
 

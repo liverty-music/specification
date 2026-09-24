@@ -12,7 +12,7 @@ CSS layout bugs (like the 7-layer `height: 100%` relay chain failure in `simplif
 ## Capabilities
 
 ### New Capabilities
-- `layout-assertions`: Playwright E2E tests that verify CSS layout invariants (element sizing, positioning, overflow, and containment) for the app shell and route components.
+(none — see design.md)
 
 ### Modified Capabilities
 - `frontend-testing`: Add layout assertion tests as a new category alongside existing unit tests and PWA E2E tests.

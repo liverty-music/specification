@@ -13,11 +13,10 @@ After fixing authentication (cloud-provisioning#86), the dev Cloud SQL instance 
 ## Capabilities
 
 ### New Capabilities
-- `database-migration`: Automated schema migration mechanism that applies pending SQL migrations on application startup using goose v3, with advisory lock protection for concurrent pod safety
+(none — see design.md)
 
 ### Modified Capabilities
 - `cloud-sql-connector`: Add a method to create a standard `*sql.DB` connection (alongside existing `pgxpool`) for use by the migration runner
-- `database`: Add requirement that schema migrations are applied automatically before the application serves traffic
 
 ## Impact
 

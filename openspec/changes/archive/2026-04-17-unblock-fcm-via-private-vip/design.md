@@ -57,6 +57,8 @@ Stakeholders: backend engineers (delivery correctness), platform engineers (netw
 
 **Rationale:** Centralizing the body read in the shared helper covers four call sites (Google Maps, fanart.tv main client, Last.fm, MusicBrainz) with a single change. The cap keeps log volume bounded. Non-printable byte handling preserves the structured log invariant.
 
+A truncated body is suffixed with `…` (U+2026) so the log line itself signals that more was cut off. Either way — truncated or not — the underlying response stream is fully drained and closed afterward so the connection can be reused. If reading the body itself fails (network error, timeout), the read failure doesn't get to mask the real problem: the original status-derived `apperr` is still returned with its normal code mapping, and the read failure is logged separately at WARN.
+
 **Alternatives considered:**
 
 - *Log the body separately at the call sites instead of attaching to the error.* Loses the property that the body travels with the error to whichever boundary handles it; requires every caller to opt in. Rejected.
@@ -76,6 +78,8 @@ Stakeholders: backend engineers (delivery correctness), platform engineers (netw
 **Chosen:** Tasks include explicit per-environment smoke tests before promotion. dev → staging → prod, each gated on a `curl` from inside the cluster + a `NotifyNewConcerts` RPC call that produces `RecordPushSend("success")` log entries.
 
 **Rationale:** Although the documented Google behavior strongly implies success, the change touches network routing for every `*.googleapis.com` call from every pod (concert discovery, Cloud SQL connector, Secret Manager, Maps, Gemini, Logging, OTel, ...). A regression in any of those would be high-blast-radius. Per-environment validation catches it early.
+
+The pod-internal `curl` check's pass criterion is specific: a fixed VIP-blocking 403 with the generic edge body means the request never reached FCM; a 4xx status from the FCM application itself (e.g. `405 Method Not Allowed` for an unauthenticated GET) means the request got through and FCM is now the one responding. The validation gate looks for the latter, not just "not a 403" — a different 403 could still originate from FCM's own auth layer.
 
 ### D5. Documentation update is part of the same change
 

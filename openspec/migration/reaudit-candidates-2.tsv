@@ -1,0 +1,287 @@
+old_spec	old_req_name	current_disposition	current_rationale
+app-error-log-alerting	Gemini client-cancelled errors classified as client error	OUT:lint	Error-classification convention in the Gemini infra layer's error handling interceptor; no user actor
+app-error-log-alerting	Infrastructure layer preserves original error types	OUT:lint	rdb.toAppErr error-wrapping/errors.Is convention in the database infra layer; no user actor
+argocd-gateway-deployment	Cluster-Level Application	OUT:delete	no user actor; ArgoCD cluster-app deploy mechanics
+argocd-gateway-deployment	Gateway-Level Application	OUT:delete	no user actor; ArgoCD gateway-app deploy mechanics
+argocd-gateway-deployment	Backend Application	OUT:delete	no user actor; ArgoCD backend-app deploy mechanics
+argocd-gateway-deployment	GitOps Synchronization	OUT:delete	no user actor; GitOps sync mechanics
+argocd-gateway-deployment	Application Dependency Ordering	OUT:delete	no user actor; ArgoCD app sync ordering
+argocd-gateway-deployment	Application Status Visibility	OUT:runbook	no user actor; operator-facing argocd app get status procedure
+argocd-gateway-deployment	Rollback Capability	OUT:runbook	no user actor; operator rollback procedure
+argocd-gateway-deployment	Prod overlay minimizes Argo CD Pod count	OUT:design-doc	no user actor; GKE Autopilot pod-cost technology decision
+argocd-gateway-deployment	dev overlay is unaffected	OUT:design-doc	no user actor; companion overlay technology decision
+atlas-operator	Atlas Operator SHALL be installed in the GKE cluster	OUT:runbook	no user actor; cluster operator installation detail
+atlas-operator	Migrations SHALL be stored as ConfigMap	OUT:runbook	no user actor; Kustomize ConfigMap mechanics
+atlas-operator	AtlasMigration CRD SHALL connect as postgres user	OUT:runbook	no user actor; DB connection/auth mechanics
+atlas-operator	Migrations SHALL create the app schema and grant permissions	OUT:runbook	no user actor; schema bootstrap mechanics
+atlas-operator	Backend repository SHALL host an Atlas migration prod overlay	OUT:runbook	no user actor; kustomize overlay/ArgoCD sync mechanics
+backend-otel-instrumentation	External HTTP client tracing via otelhttp transport	OUT:design-doc	telemetry cross-cutting concern; no user actor
+backend-otel-instrumentation	Zitadel gRPC client tracing via otelgrpc	OUT:design-doc	telemetry cross-cutting concern; no user actor
+backend-otel-instrumentation	UseCase spans for CPU-intensive business logic	OUT:design-doc	telemetry cross-cutting concern naming BuildMerkleTree/FilterNewConcerts/PersistArtists; no user actor
+backend-otel-instrumentation	Application metrics	OUT:design-doc	telemetry cross-cutting concern; no user actor
+backend-otel-instrumentation	Trace context preservation in deferred operations	OUT:design-doc	telemetry cross-cutting concern; no user actor
+billing-export-infrastructure	BigQuery dataset for GCP Billing Export	OUT:design-doc	no user actor: Pulumi-managed BigQuery dataset provisioning for billing export
+billing-export-infrastructure	IAM binding for billing export service account	OUT:design-doc	no user actor: IAM role binding for GCP billing export service account
+billing-export-infrastructure	Runbook documents the Console step to enable billing export	OUT:runbook	no user actor: operator Console-side runbook for enabling billing export
+billing-export-infrastructure	Detailed usage cost export is preferred over Standard-only	OUT:design-doc	no user actor: cost-export granularity technology decision
+billing-export-infrastructure	Sample analysis SQL is provided	OUT:runbook	no user actor: example SQL shipped in runbook/repo docs for cost investigation
+ci-optimization	Workflows declare minimum required permissions	OUT:runbook	CI token permission policy; no user actor.
+ci-optimization	Frontend CI enforces code quality gates	OUT:runbook	CI quality-gate jobs; no user actor.
+ci-optimization	Frontend CI reports coverage on PRs	OUT:runbook	CI coverage-reporting mechanics; no user actor.
+ci-optimization	Backend CI enforces format correctness	OUT:lint	gofmt formatting check is a lint rule; no user actor.
+ci-optimization	Atlas migration lint runs without Atlas Cloud	OUT:runbook	CI migration-lint operational constraint; no user actor.
+ci-optimization	Benchmark workflow uses consistent Postgres version	OUT:runbook	CI benchmark infra config; no user actor.
+ci-optimization	Both repos have a CI success gate job	OUT:runbook	CI branch-protection gate job; no user actor.
+ci-optimization	Claude code review runs via a single org-wide reusable workflow	OUT:runbook	Org-wide CI review workflow plumbing; no user actor.
+ci-optimization	Claude review posts advisory inline comments on pull requests	OUT:runbook	CI review-comment mechanics; no user actor.
+ci-optimization	Branch protection gates merges on CI Success only	OUT:runbook	Branch-protection policy; no user actor.
+cloud-dns-infrastructure	Domain Configuration via Pulumi ESC	OUT:design-doc	Pulumi ESC config-sourcing for Cloudflare, no user actor
+cloud-sql-connector	Authenticate via Cloud SQL Connector	OUT:runbook	Cloud SQL Go Connector usage for non-local environments; backend infra, no user actor
+cloud-sql-connector	Standard Connection for Local	OUT:runbook	Standard pgx TCP connection for local dev; backend infra, no user actor
+cloud-sql-connector	Database schema SHALL be configurable via environment variable	OUT:runbook	DATABASE_SCHEMA env var controlling search_path; backend infra, no user actor
+cloud-sql-connector	Configuration Validation	OUT:runbook	Startup validation of InstanceConnectionName; backend infra, no user actor
+cloud-sql-connector	A standalone Auth Proxy Deployment SHALL exist in dev for local access	OUT:runbook	cloud-sql-proxy Deployment for dev-only local DB access; backend infra, no user actor
+component-smoke-tests	Component mount smoke tests	OUT:delete	no user actor; unit-test inventory
+component-smoke-tests	DI mock registry for smoke tests	OUT:delete	no user actor; test infrastructure
+component-smoke-tests	E2E console error smoke test	OUT:delete	no user actor; CI mechanics
+consumer-poison-queue-alerting	Poison Queue consumer emits ERROR logs	OUT:runbook	no user actor; ops alerting log emission
+consumer-poison-queue-alerting	NATS POISON stream lag alert	OUT:runbook	no user actor; Cloud Monitoring ops alert policy
+css-linting	Stylelint enforces modern color functions	OUT:lint	no user actor: Stylelint function-disallowed-list/color-no-hex rule
+css-linting	Stylelint enforces CSS Logical Properties	OUT:lint	no user actor: Stylelint property-disallowed-list rule for physical properties
+css-linting	Stylelint enforces Container Queries over viewport-width media queries	OUT:lint	no user actor: Stylelint media-feature-name-disallowed-list rule
+css-linting	Stylelint prevents CSS anti-patterns	OUT:lint	no user actor: Stylelint anti-pattern rules (z-index, !important, float, selectors)
+css-linting	Stylelint enforces property declaration ordering	OUT:lint	no user actor: Stylelint property ordering rule with --fix
+css-linting	Stylelint compatible with modern CSS at-rules	OUT:lint	no user actor: Stylelint at-rule allowlist configuration
+css-linting	Stylelint enforces stacking context management	OUT:lint	no user actor: Stylelint z-index prohibition / DOM-structure convention
+css-linting	Stylelint enforces accessibility media queries	OUT:lint	no user actor: Stylelint accessibility media-feature allowlist
+css-linting	Stylelint integrated into CI pipeline	OUT:lint	no user actor: make lint / make check wiring for Stylelint
+css-state-management	Three-layer responsibility separation	OUT:lint	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	Discrete visual state via `data-*.bind`	OUT:lint	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	Parent container strategy for shared state flags	OUT:lint	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	Total `style` attribute ban in templates	OUT:lint	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	CSS `attr()` migration path	OUT:lint	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	Animation lifecycle via CSS events	OUT:lint	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	No if.bind for visual-only visibility	OUT:lint	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+css-state-management	Custom attributes for JS→CSS bridge only	OUT:lint	Aurelia TS/template/CSS coding convention; no user actor, per spec Purpose
+cube-css-architecture	CUBE CSS layer ordering via `@layer`	OUT:lint	CSS layer ordering is a style/architecture rule enforced by stylelint, no user actor
+cube-css-architecture	CSS entry point at `src/styles/main.css`	OUT:lint	CSS entry-point file structure is a build/style convention, no user actor
+cube-css-architecture	Design tokens in `tokens.css` as plain CSS custom properties	OUT:lint	design tokens are excluded per pass1 'What belongs' guidance, no user actor
+cube-css-architecture	Browser reset in `reset.css` using `:where()` for zero specificity	OUT:lint	CSS reset implementation detail, no user actor
+cube-css-architecture	Global layer for base element styling	OUT:lint	base element styling convention, no user actor
+cube-css-architecture	Composition layer for layout primitives	OUT:lint	composition-layer CSS convention, no user actor
+cube-css-architecture	Utility layer for single-purpose helpers	OUT:lint	utility-layer CSS convention, no user actor
+cube-css-architecture	Block layer for component-scoped styles	OUT:lint	block-layer CSS scoping convention, no user actor
+cube-css-architecture	Exception layer for state deviations via `data-*` attributes	OUT:lint	exception-layer data-attribute convention, no user actor
+cube-css-architecture	Spacing controlled by parent, not child	OUT:lint	spacing/gap CSS convention, no user actor
+cube-css-architecture	No TailwindCSS dependency	OUT:design-doc	dependency choice (no TailwindCSS) is a technology decision, no user actor
+cube-css-layer-constraints	`cube/exception-data-attr` requires `data-*` selectors in exception layer	OUT:lint	stylelint rule for exception layer data-* selectors, no user actor
+cube-css-layer-constraints	`cube/no-visual-in-composition` prohibits visual properties in composition layer	OUT:lint	stylelint rule prohibiting visual props in composition layer, no user actor
+cube-css-layer-constraints	`cube/utility-single-property` limits properties per utility selector	OUT:lint	stylelint rule limiting utility selector properties, no user actor
+cube-css-layer-constraints	`cube/block-require-scope` requires `@scope` in block layer	OUT:lint	stylelint rule requiring @scope in block layer, no user actor
+cube-css-layer-constraints	`cube/data-attr-naming` restricts data attribute names in exception layer	OUT:lint	stylelint rule restricting data attribute names, no user actor
+cube-css-layer-enforcement	`cube/require-layer` rejects CSS rules outside `@layer` blocks	OUT:lint	stylelint-style CSS lint rule; no user actor
+cube-css-layer-enforcement	`cube/layer-order` enforces correct `@layer` declaration order	OUT:lint	stylelint-style CSS lint rule; no user actor
+cube-css-lint-plugin	Plugin registers all rules under the `cube/` namespace	OUT:lint	stylelint plugin registration mechanics, no user actor
+cube-css-lint-plugin	Plugin is a local ESM package	OUT:lint	stylelint plugin packaging convention, no user actor
+cube-css-lint-plugin	Each rule has comprehensive test coverage	OUT:lint	plugin test-coverage convention, no user actor
+cube-css-lint-plugin	Shared layer context utility	OUT:lint	shared lint-plugin utility function, no user actor
+cube-css-modern-css-rules	`cube/prefer-vi-over-vw` recommends `vi` unit over `vw`	OUT:lint	stylelint custom rule; no user actor, pure CSS authoring convention
+cube-css-modern-css-rules	`cube/require-container-name` enforces naming containers	OUT:lint	stylelint custom rule; no user actor
+cube-css-modern-css-rules	`cube/prefer-color-mix` recommends `color-mix()` for derived colors	OUT:lint	stylelint custom rule; no user actor
+cube-css-structural-rules	`cube/block-max-lines` limits block size	OUT:lint	no user actor; stylelint rule
+cube-css-structural-rules	`cube/one-block-per-file` enforces single block per file	OUT:lint	no user actor; stylelint rule
+cube-css-structural-rules	`cube/prefer-where-in-reset` recommends `:where()` in reset and global layers	OUT:lint	no user actor; stylelint rule
+cube-css-token-enforcement	`cube/require-token-variables` enforces `var()` for design token properties	OUT:lint	stylelint custom rule definition; no user actor
+cube-css-token-enforcement	`calc()` expressions must contain at least one `var()`	OUT:lint	stylelint custom rule definition; no user actor
+cube-css-token-enforcement	Structural values bypass token enforcement	OUT:lint	stylelint rule exemption list (0, auto, none, keywords); no user actor
+cube-css-token-enforcement	Token definition layers are excluded	OUT:lint	stylelint rule layer-exclusion config (reset/tokens/global); no user actor
+cube-css-token-enforcement	Duration and easing properties are token-enforced	OUT:lint	stylelint rule property-list config; no user actor
+cube-css-token-enforcement	Configurable property list	OUT:lint	stylelint rule options schema; no user actor
+db-trace-correlation	OTel span creation for database queries	OUT:design-doc	telemetry cross-cutting concern; no user actor
+db-trace-correlation	sqlcommenter traceparent injection	OUT:design-doc	telemetry cross-cutting concern; no user actor
+db-trace-correlation	Transparent pool wrapping	OUT:design-doc	names TracedPool implementation type; no user actor
+db-trace-correlation	Transaction query tracing	OUT:design-doc	telemetry cross-cutting concern; no user actor
+design-system	Design Token Definition	OUT:design-doc	no user actor: design tokens explicitly excluded per spec's own Purpose statement
+design-system	Display Font Loading	OUT:design-doc	no user actor: font preconnect/font-display loading technology decision
+design-system	Type-scale minimum legibility floor	OUT:design-doc	no user actor: type-scale token floor, design tokens excluded per spec Purpose
+dev-db-access	A Cloud SQL Auth Proxy Deployment SHALL exist in the dev cluster	OUT:runbook	No user actor; cloud-sql-proxy Deployment is dev-cluster ops config for developer/agent DB access
+dev-db-access	Local DB access SHALL be established via kubectl port-forward	OUT:runbook	No user actor; kubectl port-forward is a developer/agent operational procedure
+dev-db-access	Dev DB access procedure SHALL be discoverable from backend/AGENTS.md	OUT:runbook	No user actor; documentation discoverability for Claude Code agents via backend/AGENTS.md
+dev-db-access	Dev DB access SHALL use existing IAM permissions with no new service accounts	OUT:runbook	No user actor; backend-app Workload Identity reuse is an ops/security constraint
+entity-test-coverage	isHypeMatched exhaustive coverage	OUT:lint	no user actor: unit-test coverage requirement for isHypeMatched()
+entity-test-coverage	hasFollow boundary cases	OUT:lint	no user actor: unit-test coverage requirement for hasFollow()
+entity-test-coverage	normalizeStep full legacy mapping	OUT:lint	no user actor: unit-test coverage requirement for normalizeStep()
+entity-test-coverage	translationKey coverage	OUT:lint	no user actor: unit-test coverage requirement for translationKey()
+entity-test-coverage	codeToHome boundary cases	OUT:lint	no user actor: unit-test coverage requirement for codeToHome()
+entity-test-coverage	bytesToHex zero-padding	OUT:lint	no user actor: unit-test coverage requirement for bytesToHex()
+entity-test-coverage	bytesToDecimal multi-byte	OUT:lint	no user actor: unit-test coverage requirement for bytesToDecimal()
+entity-test-coverage	uuidToFieldElement robustness	OUT:lint	no user actor: unit-test coverage requirement for uuidToFieldElement()
+entity-test-coverage	artistHue empty string	OUT:lint	no user actor: unit-test coverage requirement for artistHue()
+entity-test-coverage	artistHueFromColorProfile dominantHue zero	OUT:lint	no user actor: unit-test coverage requirement for artistHueFromColorProfile()
+entity-test-coverage	HYPE_TIERS completeness	OUT:lint	no user actor: constant-completeness test requirement for HYPE_TIERS
+entity-test-coverage	HYPE_ORDER and LANE_ORDER completeness	OUT:lint	no user actor: constant-completeness test requirement for HYPE_ORDER/LANE_ORDER
+entity-test-coverage	Interface Possible errors completeness	OUT:lint	no user actor: Go doc-comment coding convention for internal/entity/ interfaces
+entity-test-coverage	Implementation error code consistency	OUT:lint	no user actor: apperr coding convention for infrastructure implementations
+entity-test-coverage	Error code semantic correctness	OUT:lint	no user actor: apperr/gRPC code semantics coding convention
+entity-test-coverage	Error path test coverage	OUT:lint	no user actor: test-coverage requirement for documented apperr codes
+entity-test-coverage	Infrastructure test go-tester compliance	OUT:lint	no user actor: go-tester skill compliance for _test.go files
+entity-test-coverage	SafePredictor interface in entity layer	OUT:design-doc	no user actor: internal dependency-direction convention decoupling TicketHandler/safe.Predictor from infrastructure
+frontend-hosting	Container image build pipeline	OUT:runbook	CI image build/tag/push mechanics; no user actor
+frontend-hosting	Kubernetes deployment configuration	OUT:runbook	Deployment/Service manifest sizing and topology; no user actor
+frontend-hosting	HTTPS ingress via Gateway API	OUT:runbook	Gateway API HTTPRoute/TLS provisioning; no user actor
+frontend-hosting	GitOps deployment automation	OUT:runbook	ArgoCD sync/prune policy; no user actor
+frontend-hosting	DNS and TLS infrastructure provisioning	OUT:runbook	Pulumi DNS/certificate provisioning; no user actor
+frontend-hosting	Caddy SHALL serve `/config.json` with no-store header	OUT:design-doc	webserver header configuration for runtime-config propagation; infra implementation detail, no user actor
+frontend-hosting	Post-deploy smoke verification SHALL assert the SPA renders	OUT:runbook	CI/CD post-deploy smoke-check gating promotion; operational verification mechanic, no user actor
+frontend-observability	OpenTelemetry Browser SDK Integration	OUT:design-doc	No user actor; WebTracerProvider/instrumentation-fetch tracing setup is a technology decision
+frontend-observability	Connect-RPC Error Instrumentation	OUT:design-doc	No user actor; ConnectError span attributes are telemetry (cross-cutting telemetry rule => OUT)
+frontend-observability	ILogger OpenTelemetry Sink	OUT:design-doc	No user actor; OtelLogSink/ConsoleSink bridge internal logging to spans
+frontend-testing	Vitest environment is managed by vitest, not manually	OUT:lint	test/setup.ts jsdom-ownership rule; no user actor
+frontend-testing	Color generator produces deterministic colors	OUT:design-doc	artistColor is an internal hashing utility; determinism isn't itself user-observed
+gcp-cost-guardrails	Places API Daily Quota Limit (Dev)	OUT:runbook	dev-only GCP quota guardrail, operational cost protection, no user actor
+gke-gateway-infrastructure	Gateway API Resource Creation	OUT:design-doc	no user actor: k8s Gateway API resource provisioning (HTTPS/HTTP listeners)
+gke-gateway-infrastructure	HTTPRoute API Routing	OUT:design-doc	no user actor: HTTPRoute hostname/path routing config
+gke-gateway-infrastructure	GatewayClass Selection	OUT:design-doc	no user actor: gke-l7-global-external-managed GatewayClass decision
+gke-gateway-infrastructure	Cross-Namespace Routing	OUT:design-doc	no user actor: HTTPRoute cross-namespace backendRefs config
+gke-gateway-infrastructure	Certificate Management Annotation	OUT:design-doc	no user actor: networking.gke.io/certmap annotation config
+gke-gateway-infrastructure	Policy Attachment for Gateway Configuration	OUT:design-doc	no user actor: GCPGatewayPolicy SSL/access config
+gke-standard-infrastructure	Standard zonal GKE cluster for dev	OUT:design-doc	GKE cluster-mode/location provisioning decision; no user actor
+k8s-resource-right-sizing	Dev environment resource requests use Standard GKE minimums	OUT:runbook	Kubernetes CPU/memory request sizing for dev workloads; operational, no user actor
+k8s-resource-right-sizing	KEDA ScaledObjects in dev SHALL cap at maxReplicaCount 1	OUT:runbook	dev-environment autoscaler cap; operational, no user actor
+localstorage-naming	Unified key naming convention	OUT:lint	Naming-pattern rule for localStorage keys; no user actor
+m3-design-tokens	Color roles with guaranteed on-color pairing	OUT:lint	design-token/style rule; no user actor
+m3-design-tokens	State-layer opacity scale	OUT:lint	design-token/style rule; no user actor
+m3-design-tokens	Motion tokens split by property class	OUT:lint	design-token/style rule; no user actor
+m3-design-tokens	Shape roles including expressive steps	OUT:lint	design-token/style rule; no user actor
+m3-design-tokens	Tonal surface-container tiers	OUT:lint	design-token/style rule; no user actor
+migration-rebase-guard	The system MUST detect out-of-order migration timestamps	OUT:runbook	CI/dev-tooling drift-check script; no user actor
+modern-css-platform	CSS `:has()` selector for state-based styling	OUT:design-doc	CSS selector technology choice replacing JS class toggling; no user actor
+modern-css-platform	CSS Logical Properties	OUT:design-doc	CSS authoring convention enforced by stylelint property-disallowed-list; no user actor
+modern-css-platform	CSS `@layer` for cascade management	OUT:design-doc	CSS cascade architecture decision (CUBE layering) in src/styles/main.css; no user actor
+modern-css-platform	CSS `@scope` for component isolation	OUT:design-doc	CSS scoping technology decision per component file (e.g. event-card.css); no user actor
+modern-css-platform	No viewport media queries for component responsiveness	OUT:design-doc	restates Container Query mandate as a stylelint-enforced authoring rule; no user actor
+modern-css-platform	OKLCH color enforcement	OUT:design-doc	color-function technology choice enforced by stylelint; no user actor
+modern-css-platform	Anchored Container Query for position-dependent child styling	OUT:design-doc	CSS anchor-positioning technique replacing JS position detection; no user actor
+modern-css-platform	CSS `@starting-style` for entry animations on dynamic elements	OUT:design-doc	animation implementation technique (CSS vs requestAnimationFrame); no user actor
+modern-css-platform	`transitionend` event for post-animation DOM cleanup	OUT:design-doc	event-driven cleanup implementation technique replacing setTimeout; no user actor
+modern-css-platform	`overscroll-behavior: contain` for scroll isolation	OUT:design-doc	CSS property mandate for scroll containment; no user actor
+modern-css-platform	`scrollIntoView` + `scrollend` for scroll-then-act patterns	OUT:design-doc	DOM API choice for scroll-then-act sequencing; no user actor
+modern-css-platform	`data-state` attribute for CSS animation state	OUT:design-doc	state-attribute authoring convention replacing classList; no user actor
+modern-css-platform	`color-mix()` for dynamic alpha	OUT:design-doc	CSS function choice for alpha derivation; no user actor
+modern-css-platform	`translate` shorthand for transforms	OUT:design-doc	CSS property choice (translate vs transform); no user actor
+modern-css-platform	No setTimeout for CSS animation timing	OUT:design-doc	coding convention banning setTimeout for animation timing; no user actor
+modern-css-platform	CSS scroll snap for bottom sheet dismiss gestures	OUT:design-doc	gesture-handling implementation technique (CSS scroll-snap vs JS touch handlers); no user actor
+modern-css-platform	No JS-to-CSS variable bridge custom attributes	OUT:design-doc	coding convention removing a class of custom attributes; no user actor
+modern-css-platform	Scroll-driven Animations for scroll-linked effects	OUT:design-doc	animation implementation technique (CSS scroll-timeline vs JS scroll listeners); no user actor
+otel-collector-deployment	OTel Collector Kubernetes Deployment	OUT:runbook	K8s Deployment/Service manifest for telemetry infra; no user actor.
+otel-collector-deployment	Workload Identity for Cloud Trace Authentication	OUT:runbook	GCP Workload Identity wiring; no user actor.
+otel-collector-deployment	Backend Trace Export Configuration	OUT:runbook	Backend env-var config for trace export; no user actor.
+otel-collector-deployment	Cost-Optimized Resource Configuration	OUT:runbook	Spot VM / resource-limits policy; no user actor.
+otel-collector-deployment	ArgoCD GitOps Management	OUT:runbook	ArgoCD Application management; no user actor.
+otel-collector-deployment	Filter rule scope is documented in the ConfigMap	OUT:runbook	Operator-facing ConfigMap documentation; no user actor.
+otel-collector-deployment	Metric ingest volume is observable	OUT:runbook	Operator billing-metric verification; no user actor.
+otel-sdk-configuration	Environment-aware trace sampling	OUT:design-doc	OTel sampler configuration, telemetry cross-cutting, no user actor
+prod-environment-bootstrap	Prod GKE cluster SHALL be an Autopilot regional cluster in asia-northeast2	OUT:design-doc	no user actor: GKE Autopilot vs Standard cluster-mode decision
+prod-environment-bootstrap	Prod GKE cluster SHALL enable Dataplane V2	OUT:design-doc	no user actor: Dataplane V2 networking decision (Autopilot default)
+prod-environment-bootstrap	Prod GKE cluster SHALL encrypt Kubernetes Secrets via Cloud KMS (etcd CMEK)	OUT:design-doc	no user actor: etcd CMEK encryption decision at cluster creation
+prod-environment-bootstrap	Prod project SHALL host the Cloud KMS keyring and key for etcd CMEK	OUT:design-doc	no user actor: Cloud KMS keyring/CryptoKey provisioning for etcd CMEK
+prod-environment-bootstrap	Prod GKE cluster SHALL use the same secondary IP CIDR plan as dev	OUT:design-doc	no user actor: VPC subnet/secondary-range CIDR plan decision
+prod-environment-bootstrap	Prod cluster SHALL NOT enable Confidential GKE Nodes at cluster level	OUT:design-doc	no user actor: cluster-level Confidential GKE Nodes decision
+prod-environment-bootstrap	Prod cluster SHALL bound Google Managed Service for Prometheus (GMP) cost via disabled application auto-monitoring	OUT:design-doc	no user actor: GMP auto-monitoring cost-bounding decision
+prod-environment-bootstrap	Workload Pods SHALL request Spot scheduling via the `cloud.google.com/gke-spot` label	OUT:design-doc	no user actor: Spot Pod scheduling labeling convention
+prod-environment-bootstrap	Prod GCP project SHALL host the same peripheral GCP resources as dev	OUT:design-doc	no user actor: peripheral GCP resource parity with dev (Cloud SQL, Artifact Registry, SAs)
+prod-environment-bootstrap	Initial prod Pulumi deploy SHALL be manual-triggered	OUT:runbook	no user actor: operational constraint on the first prod pulumi up trigger
+prod-environment-bootstrap	Prod public DNS SHALL be managed entirely by Cloudflare, with apex A record bound to the shared GKE Gateway static IP	OUT:design-doc	no user actor: DNS hosting/authority decision (Cloudflare vs Cloud DNS)
+prod-environment-bootstrap	Prod backend ConfigMaps SHALL reference the mainnet ticket SBT contract	OUT:runbook	no user actor: operational configuration constraint on TICKET_SBT_ADDRESS configmaps
+prod-environment-bootstrap	Prod VAPID public key SHALL match the GSM-stored private key	OUT:runbook	no user actor: operational key-rotation consistency constraint for VAPID keys
+prod-environment-bootstrap	Prod blockchain ESC values SHALL reference mainnet	OUT:runbook	no user actor: operational ESC environment-value constraint (mainnet vs testnet)
+prod-environment-bootstrap	Prod admin Google sub SHALL be issued by the prod OAuth client	OUT:runbook	no user actor: operational ESC value constraint for admin Google sub identity linking
+prod-image-pipeline	Prod container images SHALL be sourced exclusively from the prod project's Artifact Registry	OUT:runbook	no user actor; cluster image sourcing/IAM constraint
+prod-image-pipeline	Prod cluster service accounts SHALL NOT hold cross-project Artifact Registry IAM grants	OUT:runbook	no user actor; IAM/security constraint
+prod-image-pipeline	CI service accounts MAY hold scoped cross-project AR reader for image promotion	OUT:runbook	no user actor; IAM/security constraint
+prod-image-pipeline	Frontend prod image SHALL be env-agnostic at the bundle level	OUT:design-doc	no user actor; frontend build/bundle architecture decision
+prod-image-pipeline	Backend prod images SHALL be promoted to prod AR on GitHub Release tags	OUT:runbook	no user actor; deploy.yml release-promotion mechanics
+prod-image-pipeline	Frontend prod image SHALL be promoted to prod AR on GitHub Release tags	OUT:runbook	no user actor; push-image.yaml release-promotion mechanics
+prod-image-pipeline	Prod kustomize overlays SHALL pin image URIs to prod-AR paths	OUT:runbook	no user actor; kustomize overlay mechanics
+prod-image-pipeline	Every main commit SHALL have a resolvable dev AR image	OUT:runbook	no user actor; CI build/inherit pipeline mechanics
+prod-image-pipeline	Prod kustomize pin-bumps SHALL be automated via repository_dispatch	OUT:runbook	no user actor; cross-repo CI dispatch mechanics
+prod-image-pipeline	A cloud-provisioning workflow SHALL apply the prod pin-bump on dispatch	OUT:runbook	no user actor; bump-prod-pin.yml workflow mechanics
+prod-image-pipeline	cloud-provisioning main ruleset SHALL allow the ci-bot App to bypass for the pin-bump push	OUT:runbook	no user actor; repo ruleset/bypass-actor mechanics
+prod-image-pipeline	The manual pin-bump fallback SHALL be admin-gated	OUT:runbook	no user actor; admin-approval workflow mechanics
+prod-image-tag-immutability	Non-dev Artifact Registry Docker repositories SHALL enforce tag immutability at the registry API level	OUT:runbook	GCP Artifact Registry provisioning policy; no user actor
+prod-image-tag-immutability	Prod kustomize overlays SHALL pin image URIs to semantic version tags	OUT:runbook	kustomization.yaml convention; no user actor
+prod-image-tag-immutability	Prod workload Deployments and CronJobs SHALL carry the app.kubernetes.io/version Recommended Label, propagated to the Pod template	OUT:runbook	k8s label/observability convention; no user actor
+prod-image-tag-immutability	A runbook SHALL document the prod image tag pinning policy	OUT:runbook	explicitly requires a runbook file; no user actor
+prod-k8s-manifests	Prod cluster SHALL run a full ArgoCD Application set matching dev's structure	OUT:design-doc	no user actor: ArgoCD Application-set structure decision (14 deployment units)
+prod-k8s-manifests	Every prod namespace under `k8s/namespaces/` SHALL have a `prod/` overlay	OUT:design-doc	no user actor: Kustomize overlay structure requirement
+prod-k8s-manifests	Prod overlays SHALL diverge from dev only by ESC secret refs, hostnames, ArgoCD project labels, and replica counts	OUT:design-doc	no user actor: overlay patch-scope decision (design D8)
+prod-k8s-manifests	Prod Gateway SHALL bind to the existing api-gateway-static-ip and serve api./auth. hostnames	OUT:design-doc	no user actor: Gateway static-IP binding and HTTPRoute hostname config
+prod-k8s-manifests	Prod cluster SHALL opt application workloads into GMP via per-workload PodMonitoring CRDs	OUT:design-doc	no user actor: PodMonitoring CRD opt-in pattern for GMP ingestion
+pulumi-state-recovery	State-Recovery Operator Runbook	OUT:runbook	No user actor; the requirement's content is itself the operator runbook for cloud-provisioning Pulumi incidents
+schema-lint	SERIAL and BIGSERIAL detection	OUT:lint	no user actor: schema linter rule for schema.sql
+schema-lint	Bare TIMESTAMP detection	OUT:lint	no user actor: schema linter TIMESTAMP-without-timezone rule
+schema-lint	Audit column detection	OUT:lint	no user actor: schema linter audit-column rule
+schema-lint	VARCHAR detection	OUT:lint	no user actor: schema linter VARCHAR(n) rule
+schema-lint	COMMENT ON TABLE coverage	OUT:lint	no user actor: schema linter table-comment coverage rule
+schema-lint	COMMENT ON COLUMN coverage	OUT:lint	no user actor: schema linter column-comment coverage rule
+schema-lint	Makefile integration	OUT:lint	no user actor: make lint-schema / make check wiring
+schema-lint	CI integration	OUT:lint	no user actor: lint.yml CI job triggered on schema.sql changes
+schema-lint	Comment-line exclusion	OUT:lint	no user actor: schema linter comment-line exclusion behavior
+secret-management	GCP Secret Manager provisioning	OUT:runbook	Pulumi GCP Secret Manager secret provisioning; no user actor
+secret-management	IAM access control for secrets	OUT:runbook	backend-app service-account secretAccessor IAM binding; no user actor
+secret-management	External Secrets Operator deployment	OUT:runbook	ESO cluster component via ArgoCD; no user actor
+secret-management	ClusterSecretStore configuration	OUT:runbook	ClusterSecretStore resource wiring GCP Secret Manager; no user actor
+secret-management	ExternalSecret for backend secrets	OUT:runbook	ExternalSecret resource mapping to K8s Secret; no user actor
+secret-management	Backend Deployment secret consumption	OUT:runbook	envFrom secretRef wiring on the backend Deployment; no user actor
+secret-management	Postmark Server API Token in Pulumi ESC	OUT:runbook	Pulumi ESC secret storage for the Postmark SMTP token; no user actor
+secret-management	Secret rotation propagation	OUT:runbook	Reloader-driven rolling restart on secret rotation; no user actor
+storybook-component-testing	Presentational components have isolated stories	OUT:lint	component-authoring convention; no user actor
+storybook-component-testing	Component stories run as tests in CI	OUT:runbook	CI pipeline mechanics; no user actor
+storybook-component-testing	Accessibility checks run on component stories	OUT:runbook	CI pipeline mechanics; no user actor
+storybook-component-testing	Component-level visual regression detects unintended changes	OUT:runbook	CI pipeline mechanics; no user actor
+storybook-component-testing	A single visual-regression pipeline is maintained	OUT:runbook	CI pipeline consolidation/retirement of legacy mobile-visual pipeline; no user actor
+storybook-component-testing	Unit and component test suites are isolated but jointly gated	OUT:runbook	CI gating mechanics; no user actor
+unified-check-interface	Makefile with standard targets in every repo	OUT:delete	no user actor: cross-repo Makefile/CI tooling mechanics, no lasting product value
+unified-check-interface	CI workflows use Makefile targets	OUT:delete	no user actor: CI workflow wiring to Makefile targets
+usecase-test-coverage	TicketEmailUsecase Create Tests	OUT:lint	test inventory requirement per spec Purpose; no user actor; names TicketEmailUsecase implementation type
+usecase-test-coverage	TicketEmailUsecase Update Tests	OUT:lint	test inventory requirement per spec Purpose; no user actor; names TicketEmailUsecase implementation type
+usecase-test-coverage	TicketEmailUsecase Helper Tests	OUT:lint	test inventory requirement per spec Purpose; no user actor; names TicketEmailUsecase implementation type
+usecase-test-coverage	ArtistImageSyncUsecase SyncArtistImage Tests	OUT:lint	test inventory requirement per spec Purpose; no user actor; names ArtistImageSyncUsecase implementation type
+usecase-test-coverage	Adapter mapper test coverage	OUT:lint	test inventory requirement per spec Purpose; no user actor
+usecase-test-coverage	Messaging layer test coverage	OUT:lint	test inventory requirement per spec Purpose; no user actor
+usecase-test-coverage	User event consumer test coverage	OUT:lint	test inventory requirement per spec Purpose; no user actor
+usecase-test-coverage	Package utility test coverage	OUT:lint	test inventory requirement per spec Purpose; no user actor
+watermill-structured-logging	Watermill logs use structured JSON output	OUT:design-doc	backend logging-library technology decision, no user actor
+web-push-delivery-alerting	Alert on sustained push delivery failure	OUT:runbook	Cloud Monitoring alert on delivery-failure ratio; operational, no user actor
+web-push-delivery-alerting	Alert on active-subscription starvation	OUT:runbook	Cloud Monitoring alert on subscription starvation; operational, no user actor
+workload-naming-convention	Workload names follow the audience-tier scheme	OUT:design-doc	Kubernetes workload naming convention; no user actor
+workload-naming-convention	Derived resources share the workload stem with uniform suffixes	OUT:design-doc	resource naming convention (Service/HTTPRoute/etc suffixes); no user actor
+workload-naming-convention	GCP identities and image repositories key off the same principal	OUT:design-doc	GCP identity/image-repo naming convention; no user actor
+workload-naming-convention	A canonical name mapping is the authoritative reference	OUT:design-doc	maintenance of a naming-migration reference table; no user actor
+workload-naming-convention	Renames use an additive create-new then cutover then delete-old migration	OUT:runbook	"operational migration procedure for renaming live workloads; ""brief"" interruption is qualitative, no user actor"
+zitadel-action-webhook	Webhook Authentication via Zitadel-Issued JWT Signature	OUT:design-doc	backend security-architecture decision (JWKS signature validation); no user actor
+zitadel-action-webhook	Webhook Reachable Only Within Cluster	OUT:runbook	in-cluster Service/port topology (fan-api-webhook-svc, authn.Middleware); no user actor
+zitadel-observability	Alert on Zitadel API request latency p99	OUT:runbook	latency alert policy is operational monitoring, no user actor
+zitadel-observability	Alert on backend JWT validation error rate	OUT:runbook	JWT error-rate alert policy is operational monitoring, no user actor
+zitadel-observability	Cloud SQL connection-pool dashboard panel for Zitadel database	OUT:runbook	dashboard panel is operational observability, no user actor
+zitadel-observability	Weekly Zitadel API restart CronJob in dev	OUT:runbook	band-aid CronJob is an operational mitigation, no user actor
+zitadel-observability	Operator runbook for the Zitadel hang incident shape	OUT:runbook	operator runbook document, no user actor
+zitadel-self-hosted-deployment	Two-Container Deployment with Path-Based Routing	OUT:design-doc	container/routing topology is infra deployment shape, no user actor
+zitadel-self-hosted-deployment	TLS Terminated at Gateway, Cluster Traffic Unencrypted	OUT:design-doc	TLS termination point is infra config, no user actor
+zitadel-self-hosted-deployment	Cloud SQL Connection via Auth Proxy Sidecar with IAM Authentication	OUT:design-doc	Cloud SQL sidecar auth wiring is infra config, no user actor
+zitadel-self-hosted-deployment	Cloud SQL Database and IAM User Pre-Provisioned by Pulumi	OUT:design-doc	Pulumi-provisioned DB/IAM resources, no user actor
+zitadel-self-hosted-deployment	Connection Pool Sized Within Dev Connection Budget	OUT:runbook	connection pool sizing is an operational budget constraint, no user actor
+zitadel-self-hosted-deployment	Bootstrap Admin Machine Key Stored in Secret Manager	OUT:runbook	bootstrap secret lifecycle; legacy GSM name renamed, no user actor
+zitadel-self-hosted-deployment	Backend MachineKey Lifecycle Tied to Zitadel-Side Identity	OUT:runbook	GSM naming/rotation lifecycle tied to legacy incident, no user actor
+zitadel-self-hosted-deployment	Masterkey Generated Once and Stored Immutably	OUT:runbook	masterkey generation/storage is an operational secrets constraint, no user actor
+zitadel-self-hosted-deployment	Resilient Scheduling on Shared Spot Node Pool	OUT:runbook	pod scheduling/PDB posture is operational resilience, no user actor
+zitadel-self-hosted-deployment	GSM Naming Convention for Zitadel MachineKey Credentials	OUT:design-doc	GSM secret naming convention is an infra naming decision, no user actor
+zitadel-self-hosted-deployment	Per-Environment Overlay Topology	OUT:design-doc	Kustomize overlay topology is deployment structure, no user actor
+zitadel-self-hosted-deployment	Single Unified Zitadel Class Across All Environments	OUT:design-doc	Pulumi class structure is IaC code organization, no user actor
+zitadel-self-hosted-deployment	Per-Environment Configuration Values Sourced From Env-Keyed Map	OUT:lint	env-keyed config-map convention is an IaC coding convention, no user actor
+zitadel-self-hosted-deployment	Backend MachineUser Lives in Product Org Across All Environments	OUT:design-doc	Zitadel org/MachineUser placement is a security architecture decision, no user actor
+zitadel-self-hosted-deployment	Cost Guardrails and Observability Applied to All Environments	OUT:runbook	monitoring/budget provisioning is operational, no user actor
+zitadel-self-hosted-deployment	Zitadel Deployment Rendered by Official Helm Chart	OUT:design-doc	Helm chart rendering choice is a deployment technology decision, no user actor
+zitadel-self-hosted-deployment	Login V2 UI Routes Outbound Calls Via Cluster-Internal Service Using CUSTOM_REQUEST_HEADERS	OUT:design-doc	outbound header routing for in-cluster calls is infra config, no user actor
+zitadel-self-hosted-deployment	Zitadel Version Upgrades Applied by Pinned-Tag Edit with Boot-Time Migration and Post-Upgrade Verification	OUT:runbook	version upgrade procedure is an operational runbook item, no user actor
+zitadel-self-hosted-deployment	Outbound HTTP Client Permits In-Cluster Webhook Targets While Retaining SSRF Protection	OUT:design-doc	SSRF deny-list CIDR configuration is infra security config, no user actor

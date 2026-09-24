@@ -14,7 +14,7 @@ A critical AUR0703 template compilation error (`switch` on surrogate `<template>
 
 ### New Capabilities
 
-- `component-smoke-tests`: Vitest mount tests that verify all custom element templates compile without AUR0703-class errors. Playwright console-error smoke tests for public routes.
+(none — see design.md)
 
 ### Modified Capabilities
 

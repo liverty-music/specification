@@ -1,0 +1,71 @@
+{
+ "reconstruct-13": {
+  "2026-09-22-automate-dependency-updates": [
+   {
+    "old_spec": "dependency-update-automation",
+    "old_req_name": "Dependency updates are proposed automatically in every repository",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "dependency-update-automation",
+    "old_req_name": "Version-coupled dependencies are proposed as a single unit",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "dependency-update-automation",
+    "old_req_name": "A single logical version is updated in every location it appears",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "dependency-update-automation",
+    "old_req_name": "Updates automerge only when the CI gate covers their risk",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "dependency-update-automation",
+    "old_req_name": "Releases are not adopted until they have aged",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "dependency-update-automation",
+    "old_req_name": "Maintained upstream configuration is reused rather than reimplemented",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "dependency-update-automation",
+    "old_req_name": "Third-party GitHub Actions are pinned to immutable references",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "dependency-update-automation",
+    "old_req_name": "This project's own build outputs are excluded from automated updates",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "dependency-update-automation",
+    "old_req_name": "Proposal volume is bounded and scheduled",
+    "disposition": "OUT:runbook"
+   },
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "Every defined Playwright project is executed by CI",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "cloud-provisioning previews infrastructure changes on pull requests",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "cloud-provisioning CI runs its test suite",
+    "disposition": "OUT:delete"
+   },
+   {
+    "old_spec": "ci-optimization",
+    "old_req_name": "Automated merge is enabled through managed repository configuration",
+    "disposition": "OUT:delete"
+   }
+  ]
+ }
+}

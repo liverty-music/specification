@@ -13,7 +13,7 @@ Backend traces reach Cloud Trace via the OTel Collector (see `otel-collector-dep
 
 ### New Capabilities
 
-- `db-trace-correlation`: End-to-end trace correlation from backend RPC spans through database query spans to Cloud SQL Query Insights execution-plan spans, using pgxpool wrapper with OTel span creation and sqlcommenter traceparent injection.
+(none — see design.md)
 
 ### Modified Capabilities
 

@@ -1,0 +1,1 @@
+Fetches and keeps an artist's images up to date, fetching immediately when the artist is created and periodically refreshing stale images, deriving logo color data and degrading gracefully when images are unavailable.

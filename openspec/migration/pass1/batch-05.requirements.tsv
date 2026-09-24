@@ -1,0 +1,104 @@
+old_spec	old_req_name	disposition	target_path	new_req_name	merge_group	rewrite_flags	confidence	rationale
+zitadel-self-hosted-deployment	Self-Hosted Zitadel Runtime in Each Environment Cluster	OUT:design-doc					high	in-cluster K8s runtime placement; no fan/organizer actor observes deployment topology
+zitadel-self-hosted-deployment	Two-Container Deployment with Path-Based Routing	OUT:design-doc					high	container/routing topology is infra deployment shape, no user actor
+zitadel-self-hosted-deployment	TLS Terminated at Gateway, Cluster Traffic Unencrypted	OUT:design-doc					high	TLS termination point is infra config, no user actor
+zitadel-self-hosted-deployment	Cloud SQL Connection via Auth Proxy Sidecar with IAM Authentication	OUT:design-doc					high	Cloud SQL sidecar auth wiring is infra config, no user actor
+zitadel-self-hosted-deployment	Cloud SQL Database and IAM User Pre-Provisioned by Pulumi	OUT:design-doc					high	Pulumi-provisioned DB/IAM resources, no user actor
+zitadel-self-hosted-deployment	Connection Pool Sized Within Dev Connection Budget	OUT:runbook					high	connection pool sizing is an operational budget constraint, no user actor
+zitadel-self-hosted-deployment	Bootstrap Admin Machine Key Stored in Secret Manager	OUT:runbook				HISTORIC	high	bootstrap secret lifecycle; legacy GSM name renamed, no user actor
+zitadel-self-hosted-deployment	Backend MachineKey Lifecycle Tied to Zitadel-Side Identity	OUT:runbook				HISTORIC	high	GSM naming/rotation lifecycle tied to legacy incident, no user actor
+zitadel-self-hosted-deployment	Masterkey Generated Once and Stored Immutably	OUT:runbook					high	masterkey generation/storage is an operational secrets constraint, no user actor
+zitadel-self-hosted-deployment	Resilient Scheduling on Shared Spot Node Pool	OUT:runbook					high	pod scheduling/PDB posture is operational resilience, no user actor
+zitadel-self-hosted-deployment	GSM Naming Convention for Zitadel MachineKey Credentials	OUT:design-doc					high	GSM secret naming convention is an infra naming decision, no user actor
+zitadel-self-hosted-deployment	Per-Environment Overlay Topology	OUT:design-doc					high	Kustomize overlay topology is deployment structure, no user actor
+zitadel-self-hosted-deployment	Single Unified Zitadel Class Across All Environments	OUT:design-doc					high	Pulumi class structure is IaC code organization, no user actor
+zitadel-self-hosted-deployment	Per-Environment Configuration Values Sourced From Env-Keyed Map	OUT:lint					high	env-keyed config-map convention is an IaC coding convention, no user actor
+zitadel-self-hosted-deployment	Backend MachineUser Lives in Product Org Across All Environments	OUT:design-doc					high	Zitadel org/MachineUser placement is a security architecture decision, no user actor
+zitadel-self-hosted-deployment	Cost Guardrails and Observability Applied to All Environments	OUT:runbook					high	monitoring/budget provisioning is operational, no user actor
+zitadel-self-hosted-deployment	Zitadel Deployment Rendered by Official Helm Chart	OUT:design-doc					high	Helm chart rendering choice is a deployment technology decision, no user actor
+zitadel-self-hosted-deployment	Login V2 UI Routes Outbound Calls Via Cluster-Internal Service Using CUSTOM_REQUEST_HEADERS	OUT:design-doc					high	outbound header routing for in-cluster calls is infra config, no user actor
+zitadel-self-hosted-deployment	Zitadel Version Upgrades Applied by Pinned-Tag Edit with Boot-Time Migration and Post-Upgrade Verification	OUT:runbook				HISTORIC	high	version upgrade procedure is an operational runbook item, no user actor
+zitadel-self-hosted-deployment	Outbound HTTP Client Permits In-Cluster Webhook Targets While Retaining SSRF Protection	OUT:design-doc					high	SSRF deny-list CIDR configuration is infra security config, no user actor
+cube-css-architecture	CUBE CSS layer ordering via `@layer`	OUT:lint					high	CSS layer ordering is a style/architecture rule enforced by stylelint, no user actor
+cube-css-architecture	CSS entry point at `src/styles/main.css`	OUT:lint					high	CSS entry-point file structure is a build/style convention, no user actor
+cube-css-architecture	Design tokens in `tokens.css` as plain CSS custom properties	OUT:lint					high	design tokens are excluded per pass1 'What belongs' guidance, no user actor
+cube-css-architecture	Browser reset in `reset.css` using `:where()` for zero specificity	OUT:lint					high	CSS reset implementation detail, no user actor
+cube-css-architecture	Global layer for base element styling	OUT:lint					high	base element styling convention, no user actor
+cube-css-architecture	Composition layer for layout primitives	OUT:lint					high	composition-layer CSS convention, no user actor
+cube-css-architecture	Utility layer for single-purpose helpers	OUT:lint					high	utility-layer CSS convention, no user actor
+cube-css-architecture	Block layer for component-scoped styles	OUT:lint					high	block-layer CSS scoping convention, no user actor
+cube-css-architecture	Exception layer for state deviations via `data-*` attributes	OUT:lint					high	exception-layer data-attribute convention, no user actor
+cube-css-architecture	Spacing controlled by parent, not child	OUT:lint					high	spacing/gap CSS convention, no user actor
+cube-css-architecture	No TailwindCSS dependency	OUT:design-doc					high	dependency choice (no TailwindCSS) is a technology decision, no user actor
+passive-concert-discovery	Dashboard Mode Toggle	KEEP	components/infrastructure/ui/route/dashboard	Dashboard Mode Toggle			high	Dashboard route toggle between My Timetable / All Nearby modes
+passive-concert-discovery	Date Preset Selector	KEEP	components/infrastructure/ui/route/dashboard	Date Preset Selector			high	date filter behavior confined to the Dashboard route's All Nearby mode
+passive-concert-discovery	Area Selector in All Nearby Mode	KEEP	components/infrastructure/ui/route/dashboard	Area Selector in All Nearby Mode			medium	area chip behavior confined to Dashboard route, invokes shared user-home-selector
+passive-concert-discovery	All Nearby Concert List	KEEP	components/infrastructure/ui/route/dashboard	All Nearby Concert List		CLASSNAME	high	ConcertHighway rendering is Dashboard-route behavior
+passive-concert-discovery	Follow CTA in Event Detail Sheet for All Nearby	KEEP	components/infrastructure/ui/route/dashboard	Follow CTA in Event Detail Sheet for All Nearby		CLASSNAME	medium	EventDetailSheet follow CTA within Dashboard route's All Nearby mode
+passive-concert-discovery	Compact All Nearby Filter Bar	KEEP	components/infrastructure/ui/route/dashboard	Compact All Nearby Filter Bar		CLASSNAME	high	filter-bar layout confined to Dashboard route
+passive-concert-discovery	Localized All Nearby Date Display	KEEP	components/infrastructure/ui/route/dashboard	Localized All Nearby Date Display			high	date formatting confined to Dashboard route's All Nearby mode
+passive-concert-discovery	Natural Japanese Copy for All Nearby	KEEP	components/infrastructure/ui/route/dashboard	Natural Japanese Copy for All Nearby			medium	i18n copy quality confined to Dashboard route's All Nearby surface
+cube-css-layer-constraints	`cube/exception-data-attr` requires `data-*` selectors in exception layer	OUT:lint					high	stylelint rule for exception layer data-* selectors, no user actor
+cube-css-layer-constraints	`cube/no-visual-in-composition` prohibits visual properties in composition layer	OUT:lint					high	stylelint rule prohibiting visual props in composition layer, no user actor
+cube-css-layer-constraints	`cube/utility-single-property` limits properties per utility selector	OUT:lint					high	stylelint rule limiting utility selector properties, no user actor
+cube-css-layer-constraints	`cube/block-require-scope` requires `@scope` in block layer	OUT:lint					high	stylelint rule requiring @scope in block layer, no user actor
+cube-css-layer-constraints	`cube/data-attr-naming` restricts data attribute names in exception layer	OUT:lint					high	stylelint rule restricting data attribute names, no user actor
+venue-normalization	Venue Resolution During Concert Creation	KEEP	components/usecase/concert/create-from-discovered	Venue Resolution During Concert Creation			medium	venue resolution is a state-change step of ConcertCreationUseCase.CreateFromDiscovered
+venue-normalization	Skip Unresolvable Venues	KEEP	components/usecase/concert/create-from-discovered	Skip Unresolvable Venues			medium	unresolvable-venue skip behavior is part of the create-from-discovered pipeline
+venue-normalization	PlaceSearcher Is Required	OUT:design-doc					low	constructor dependency guard on ConcertCreationUseCase, no user actor, implementation detail
+venue-normalization	Idempotent venue get-or-create with place_id-authoritative identity	KEEP	components/usecase/concert/approve	Idempotent venue get-or-create with place_id-authoritative identity			medium	runs only on AdminConcertUseCase.Approve, the sole caller creating a venues row
+venue-normalization	Google Places API Request Includes Language Code	KEEP	components/usecase/concert/create-from-discovered	Google Places API Request Includes Language Code			medium	language-code selection is part of the venue-resolution step of concert creation
+venue-normalization	listed_venue_name Is Normalized Before Storage	KEEP	components/usecase/concert/create-from-discovered	listed_venue_name Is Normalized Before Storage			medium	normalization occurs during the create-from-discovered pipeline before persistence
+gemini-searcher-config	GCPConfig exposes per-step Gemini search model fields	OUT:design-doc				HISTORIC	high	per-step Gemini model config wiring, no user actor observes model selection
+gemini-searcher-config	Helper methods resolve per-step model with env-var precedence over defaults	OUT:design-doc				HISTORIC	high	helper-method resolution order for model config, no user actor
+gemini-searcher-config	Config passes per-step models through DI into gemini.Config	OUT:design-doc					high	DI wiring of resolved models into gemini.Config, no user actor
+gemini-searcher-config	Configurable search-cache TTL with env-var precedence over default	OUT:design-doc					high	search-cache TTL is internal config, no user actor
+gemini-searcher-config	Configurable discovery-skip window with env-var precedence over default	OUT:design-doc					high	discovery-skip window is internal config, no user actor
+admin-concert-management	Admin concert operations are served by a single ConcertService	OUT:design-doc					medium	admin ConcertService naming/package convention is API-surface design, not an observed behavior
+admin-concert-management	Admin lists every published concert	KEEP	components/usecase/concert/list	Admin lists every published concert			high	AdminConcertUseCase.List response behavior for one operation
+admin-concert-management	Admin hard-deletes a published concert	KEEP	components/usecase/concert/delete	Admin hard-deletes a published concert			high	AdminConcertUseCase.Delete response behavior for one operation
+admin-concert-management	Admin console presents approved concerts grouped by artist and series	NEEDS_HUMAN					low	admin console UI grouping/delete-confirmation screen has no route/global surface yet in vocabulary (admin frontend not catalogued)
+admin-concert-management	Approve resolves duplicate-event conflicts via a resolution selector	KEEP	components/usecase/concert/approve	Approve resolves duplicate-event conflicts via a resolution selector			high	AdminConcertUseCase.Approve response behavior for one operation
+zitadel-observability	Alert on Zitadel API request latency p99	OUT:runbook					high	latency alert policy is operational monitoring, no user actor
+zitadel-observability	Alert on backend JWT validation error rate	OUT:runbook					high	JWT error-rate alert policy is operational monitoring, no user actor
+zitadel-observability	Cloud SQL connection-pool dashboard panel for Zitadel database	OUT:runbook					high	dashboard panel is operational observability, no user actor
+zitadel-observability	Weekly Zitadel API restart CronJob in dev	OUT:runbook					high	band-aid CronJob is an operational mitigation, no user actor
+zitadel-observability	Operator runbook for the Zitadel hang incident shape	OUT:runbook					high	operator runbook document, no user actor
+concert-search-log	Track Concert Search History	KEEP	components/usecase/concert/search-new-concerts	Track Concert Search History	SEARCH-LOG		medium	search-timestamp tracking is a state change resulting from ConcertUseCase.SearchNewConcerts
+concert-search-log	Search Log Persistence	OUT:design-doc					medium	latest_search_logs table schema is a persistence-layer detail, no user actor
+concert-search-log	Frontend search status polling for onboarding	KEEP	stories/onboard-new-fan	Frontend search status polling for onboarding			medium	polling supports the onboarding flow spanning welcome/discovery/dashboard routes; story proposal
+concert-search-log	Track Last Concert Discovery Time	KEEP	components/usecase/concert/search-new-concerts	Track Last Concert Discovery Time	SEARCH-LOG		medium	discovery-timestamp tracking is a state change resulting from SearchNewConcerts
+hype-inline-slider	Sticky Header Legend	KEEP	components/infrastructure/ui/route/my-artists	Sticky Header Legend			high	hype legend header confined to the My Artists route's list view
+hype-inline-slider	Inline Dot Slider	KEEP	components/infrastructure/ui/route/my-artists	Inline Dot Slider			high	hype dot slider confined to the My Artists route's list view
+hype-inline-slider	Slider Track Vertical Centering	KEEP	components/infrastructure/ui/route/my-artists	Slider Track Vertical Centering			medium	visual track-centering within My Artists route slider
+hype-inline-slider	Slider dot positions align with header columns	KEEP	components/infrastructure/ui/route/my-artists	Slider dot positions align with header columns			medium	grid alignment within My Artists route slider/header
+tap-press-feedback	Global button press feedback baseline	OUT:lint					low	global :active press-cue baseline is a cross-cutting CSS/style convention, akin to cube-css rules
+tap-press-feedback	Non-button primary tappables give press feedback	OUT:lint					low	non-button tappable press-cue convention is a CSS styling rule
+tap-press-feedback	List rows give press feedback	OUT:lint					low	list-row press-cue convention is a CSS styling rule
+tap-press-feedback	Reduced motion fallback for press feedback	OUT:lint					low	reduced-motion press-cue fallback is a CSS styling rule
+tap-press-feedback	Touch activation reliability on iOS Safari	OUT:lint					low	iOS :active activation rule is a CSS implementation constraint
+page-header-ce	Page header renders i18n title	KEEP	components/infrastructure/ui/global/page-header	Page header renders i18n title			high	page-header is a shared global surface across routes
+page-header-ce	Page header supports trailing actions via slot	KEEP	components/infrastructure/ui/global/page-header	Page header supports trailing actions via slot			high	page-header shared global surface, slot behavior
+page-header-ce	Page header provides consistent visual styling	KEEP	components/infrastructure/ui/global/page-header	Page header provides consistent visual styling			high	page-header shared global surface, visual consistency
+page-header-ce	Page header participates in route grid layout	KEEP	components/infrastructure/ui/global/page-header	Page header participates in route grid layout			high	page-header shared global surface, layout integration
+page-header-ce	Page header is globally registered	KEEP	components/infrastructure/ui/global/page-header	Page header is globally registered		CLASSNAME	medium	registration mechanics support the page-header's cross-route availability
+page-header-ce	Page header is a single shell-hosted instance bound to shared state	KEEP	components/infrastructure/ui/global/page-header	Page header is a single shell-hosted instance bound to shared state			high	page-header shared global surface, shell-hosted instance behavior
+database-migration	The system MUST apply pending database migrations on startup	OUT:design-doc					high	startup migration execution is a deployment technology decision, no user actor
+database-migration	The system MUST prevent concurrent migration execution	OUT:design-doc					high	advisory-lock concurrency control is a deployment technology decision, no user actor
+database-migration	The system MUST fail startup on migration error	OUT:design-doc					high	fail-fast startup behavior is a deployment technology decision, no user actor
+database-migration	The system MUST embed migration files in the binary	OUT:design-doc					high	embedding migration files is a build technology decision, no user actor
+database-migration	The CI pipeline MUST validate migration file ordering	OUT:lint					high	CI ordering validation is a lint-like pipeline check, no user actor
+frontend-client-rpc-telemetry	Client-observed RPC duration is captured	OUT:design-doc					high	cross-cutting telemetry tie-break: telemetry SHALL be OUT
+frontend-client-rpc-telemetry	Deadline-exceeded rate is observable	OUT:design-doc					high	cross-cutting telemetry tie-break: telemetry SHALL be OUT
+frontend-client-rpc-telemetry	Telemetry is reported as aggregates, not per-request events	OUT:design-doc					high	cross-cutting telemetry tie-break: telemetry SHALL be OUT
+frontend-client-rpc-telemetry	Pending telemetry is flushed at session end	OUT:design-doc					high	cross-cutting telemetry tie-break: telemetry SHALL be OUT
+frontend-client-rpc-telemetry	Telemetry honors analytics opt-out and unconfigured analytics	OUT:design-doc					high	cross-cutting telemetry tie-break: telemetry SHALL be OUT
+frontend-client-rpc-telemetry	Telemetry carries no personally identifying request content	OUT:design-doc					high	cross-cutting telemetry tie-break: telemetry SHALL be OUT
+cube-css-lint-plugin	Plugin registers all rules under the `cube/` namespace	OUT:lint					high	stylelint plugin registration mechanics, no user actor
+cube-css-lint-plugin	Plugin is a local ESM package	OUT:lint					high	stylelint plugin packaging convention, no user actor
+cube-css-lint-plugin	Each rule has comprehensive test coverage	OUT:lint					high	plugin test-coverage convention, no user actor
+cube-css-lint-plugin	Shared layer context utility	OUT:lint					high	shared lint-plugin utility function, no user actor
+bulk-insert-unnest	Bulk artist creation via unnest	OUT:design-doc					high	repository-layer SQL insert strategy, no user actor
+bulk-insert-unnest	Concert bulk insert via unnest	OUT:design-doc					high	repository-layer SQL insert strategy, no user actor
+frontend-router-query-params	Route loading hooks read query parameters via RouteNode	OUT:lint					high	RouteNode-vs-window.location coding convention for testability, no user actor
+onboarding-tutorial	Coach Mark Navigation Delegation	KEEP	components/infrastructure/ui/global/coach-mark	Coach Mark Navigation Delegation			high	coach-mark is a shared global surface used across onboarding routes

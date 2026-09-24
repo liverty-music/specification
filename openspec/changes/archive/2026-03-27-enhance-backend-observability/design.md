@@ -69,6 +69,8 @@ Between these two layers, all business logic (usecases, external API calls, even
 
 **Why**: After Phase 2 wraps all external API and DB calls with spans, only CPU-bound processing remains invisible. Adding spans to methods where external calls dominate (e.g., `MintTicket`, `VerifyEntry`, `CreateFromDiscovered`) would add noise without diagnostic value.
 
+Each span carries attributes sized to its workload: `BuildMerkleTree` records `merkle.leaf_count` (tickets processed); the deduplication span (named `FilterNewConcerts`) records `filter.scraped_count` and `filter.new_count`; `persistArtists()`'s span (named `PersistArtists`) records `persist.input_count` and `persist.created_count`. These give enough signal to spot pathological input sizes without needing a full attribute schema per span.
+
 ### D5: `SetupTelemetry` expanded to `SetupObservability`
 
 **Decision**: Expand `pkg/telemetry/telemetry.go` to initialize both `TracerProvider` and `MeterProvider`, and return a unified closer that shuts down both.
@@ -99,6 +101,8 @@ Between these two layers, all business logic (usecases, external API calls, even
 | `db.pool.idle_connections` | ObservableGauge | pgxpool idle connections |
 
 **Why these first**: RPC and external API durations surface the top latency contributors. Blockchain metrics catch mint failures. Pool gauges catch connection exhaustion. All can trigger alerts without building custom dashboards.
+
+`otelhttp.NewTransport()` (D1) already records its own `http.client.request.duration` histogram automatically for every wrapped client, tagged with the target host and response status — this is separate from and complementary to the custom `external_api.request.duration` histogram above, which groups by logical service name rather than raw host.
 
 **Alternative considered**: Full RED metrics (Rate, Errors, Duration) for every component. Rejected for initial scope — start with high-signal instruments and expand based on operational need.
 

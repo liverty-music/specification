@@ -1,37 +1,4 @@
-## RENAMED Requirements
-
-- FROM: `### Requirement: Cloudflare DNS Zone Management (Production)`
-- TO: `### Requirement: Cloudflare DNS Zone Management`
-
 ## MODIFIED Requirements
-
-### Requirement: Cloudflare DNS Zone Management
-The system SHALL manage the Cloudflare DNS zone for the domain (`liverty-music.app`) with Proxy OFF (DNS only mode). The zone SHALL be the **single authoritative source** for all public DNS records across both dev and prod environments — including A records for service hostnames, ACME DNS-01 challenge CNAMEs for Google-managed certificates, Postmark DKIM TXT records, and Postmark Return-Path CNAMEs. No public DNS subzone SHALL be delegated to Cloud DNS.
-
-#### Scenario: Cloudflare provider configured
-- **WHEN** Pulumi code in cloud-provisioning uses `@pulumi/cloudflare` package
-- **THEN** Cloudflare API token and zone ID SHALL be read from Pulumi ESC (`pulumiConfig.cloudflare.apiToken`, `pulumiConfig.cloudflare.zoneId`)
-- **AND** the token SHALL be shared across dev and prod stacks (no per-env split)
-
-#### Scenario: Single Cloudflare provider instance
-- **WHEN** `network.ts` instantiates `cloudflare.Provider`
-- **THEN** exactly one provider resource named `cloudflare-provider` SHALL exist per stack
-- **AND** no separate `postmark-cloudflare-provider` (or similar per-purpose) instance SHALL exist
-
-#### Scenario: Proxy OFF enforced
-- **WHEN** DNS records are created in the Cloudflare zone
-- **THEN** all records SHALL have `proxied: false` (or the field omitted, accepting Cloudflare's default of `false` for DNS-only records)
-- **AND** TLS termination SHALL remain at the GKE Gateway with Google Certificate Manager-issued certs
-
-#### Scenario: Production A records exist for all GKE-Gateway-fronted hostnames
-- **WHEN** prod public DNS is queried for `liverty-music.app`, `api.liverty-music.app`, or `auth.liverty-music.app`
-- **THEN** an A record SHALL resolve to the shared `api-gateway-static-ip` GlobalAddress in the `liverty-music-prod` project
-- **AND** each A record SHALL be `protect: true` in Pulumi state to prevent accidental destroy
-
-#### Scenario: Dev A records exist for all GKE-Gateway-fronted hostnames
-- **WHEN** dev public DNS is queried for `dev.liverty-music.app`, `api.dev.liverty-music.app`, or `auth.dev.liverty-music.app`
-- **THEN** an A record SHALL resolve to the shared `api-gateway-static-ip` GlobalAddress in the `liverty-music-dev` project
-- **AND** dev A records SHALL NOT be `protect: true` (dev must remain destroyable for environment rebuild)
 
 ### Requirement: Domain Configuration via Pulumi ESC
 The system SHALL accept Cloudflare configuration from Pulumi ESC environment variables, not hardcoded in code. Cloudflare zone identity is a single zone (`liverty-music.app`) authoritative for both environments — no per-env zone configuration is required.

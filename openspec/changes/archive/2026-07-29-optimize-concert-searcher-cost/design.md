@@ -40,7 +40,7 @@ Note: the per-query grounding price is a gemini-3 family SKU and is **model-inde
 
 ### D3: Open-ended (start-date-only) window
 
-The prompt supplies a start date and no end date; the near/far range split is removed. Rationale: concert discovery wants all future concerts from "now" onward; a fixed far boundary added a slice without clear benefit. Drops the `to_date` placeholder from the template.
+The prompt supplies a start date and no end date; the near/far range split is removed. Rationale: concert discovery wants all future concerts from "now" onward; a fixed far boundary added a slice without clear benefit. Drops the `to_date` placeholder from the template, leaving three positional placeholders — `from_date`, artist name, and official-site host — substituted via `fmt.Sprintf`.
 
 ### D4: One consolidated English prompt with explicit coverage rules
 
