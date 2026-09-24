@@ -2,28 +2,67 @@
 
 ## Purpose
 
-TBD - created by archiving change add-sales-phase-timeline. Update Purpose after archive.
+DeliverReminder delivers one due sales-phase reminder (one fan, one phase, one stage) to that fan's push devices. It first checks that this reminder has not already been sent, and it records the reminder as sent only after delivery succeeds or when the fan has no device.
 
 ## Requirements
 
-### Requirement: Notification Content
+### Requirement: Runs for each reminder the scan requests
 
-The system SHALL build each notification (the discovery announcement and every reminder stage) per recipient, formatting times in the recipient's `time_zone` and selecting copy by the recipient's `preferred_language` (default `en`), reusing the existing `NotificationPayload` (`title`, `body`, `url`, `tag`).
+DeliverReminder SHALL run for each reminder that ScanDueReminders requests, with the fan, the sales phase, the stage and the prepared content as input. A request without content SHALL be ignored without an error.
 
-#### Scenario: Payload fields per stage
+#### Scenario: Reminder requested
 
-- **WHEN** a notification is built for a phase and stage
-- **THEN** `title` and `body` SHALL identify the artist, the tour (series) title, and the sales channel, and state the relevant time for that stage in the recipient's timezone
-- **AND** when `channel` is `UNSPECIFIED` the copy SHALL use a generic ticket label
-- **AND** `url` SHALL deep-link to the phase's application URL when present, else the series detail (a sales phase is series-level and has no single covered concert to fall back to)
-- **AND** `tag` SHALL be unique per `(sales_phase_id, stage)` to deduplicate on the browser side
+- **WHEN** ScanDueReminders requests an `APPLY_CLOSE_1H` reminder for a fan
+- **THEN** DeliverReminder runs for that fan, phase and stage
 
-### Requirement: Reminder Delivery Reuses Web Push
+#### Scenario: Empty request
 
-The system SHALL deliver reminders through the existing Web Push infrastructure rather than introducing a new delivery channel.
+- **WHEN** DeliverReminder receives a request without content
+- **THEN** nothing is delivered and it succeeds
 
-#### Scenario: Send via existing sender
+### Requirement: A reminder already sent is not delivered again
 
-- **WHEN** a reminder is delivered
-- **THEN** it SHALL be sent via the existing Web Push sender to the user's stored push subscriptions
-- **AND** an expired subscription SHALL be handled the same way as in existing notifications (removed on a gone response)
+DeliverReminder SHALL first call SalesPhaseReminder.AlreadySent and deliver nothing when the reminder is already recorded as sent. When that check fails, DeliverReminder SHALL fail so the request runs again.
+
+#### Scenario: Repeated request
+
+- **WHEN** DeliverReminder receives a reminder that is already recorded as sent to the fan
+- **THEN** nothing is delivered and it succeeds
+
+#### Scenario: Check fails
+
+- **WHEN** AlreadySent fails
+- **THEN** DeliverReminder fails and the request runs again
+
+### Requirement: Delivery is delegated to the Notification capability
+
+DeliverReminder SHALL hand the reminder to the Notification capability as a notification of type sales reminder, which records it and pushes it to each of the fan's registered devices, unregistering devices the push service reports as gone. When the notification cannot be recorded, DeliverReminder SHALL fail so the request runs again.
+
+#### Scenario: Delivered to a device
+
+- **WHEN** DeliverReminder runs for a fan with a registered device
+- **THEN** one sales reminder notification is created for the fan and pushed to the device
+
+### Requirement: The reminder is recorded as sent only when it reached the fan or cannot
+
+DeliverReminder SHALL call SalesPhaseReminder.RecordSent when at least one of the fan's devices accepted the reminder, or when the fan has no registered device. On any other delivery failure it SHALL record nothing, so a later scan requests the reminder again. When recording fails after a successful delivery, DeliverReminder SHALL still succeed; a later scan may then deliver the reminder again, and the repeat replaces the earlier one on the device.
+
+#### Scenario: Accepted by a device
+
+- **WHEN** one of the fan's devices accepts the reminder
+- **THEN** the reminder is recorded as sent
+
+#### Scenario: No device
+
+- **WHEN** the fan has no registered device
+- **THEN** the reminder is recorded as sent and nothing is pushed
+
+#### Scenario: Push fails
+
+- **WHEN** every push to the fan's devices fails
+- **THEN** nothing is recorded and a later scan requests the reminder again
+
+#### Scenario: Recording fails after delivery
+
+- **WHEN** the reminder was delivered and RecordSent fails
+- **THEN** DeliverReminder succeeds and a later scan may deliver the reminder again

@@ -2,65 +2,93 @@
 
 ## Purpose
 
-TBD - created by archiving change add-sales-phase-timeline. Update Purpose after archive.
+A Sales Phase is one ticket-sales opportunity (a fan-club presale, a play-guide lottery, a general on-sale, and so on) announced for a Series (tour) as a whole; it records how and through whom tickets are sold and the milestones of its timeline, so that fans tracking the series can be told when to apply and when results come out. It is discovered from the artist's published ticket information and is unrelated to the organizer-authored lottery sales phase of an Event, which shares the words but none of the attributes.
+
+| attribute | meaning | constraint |
+|---|---|---|
+| id | The sales phase's identity; the handle reminders refer to | required, UUID, assigned by the system, never changes |
+| series | The tour the phase sells tickets for | required |
+| method | How tickets are allocated: `LOTTERY` (抽選 lottery) or `FIRST_COME` (先着 first come) | optional; `UNSPECIFIED` means not yet determined; only defined values |
+| channel | Who sells the tickets, the gate a fan passes: `FAN_CLUB`, `OFFICIAL`, `PLAYGUIDE`, `CREDIT_CARD`, `MOBILE_CARRIER`, `GENERAL` | optional; `UNSPECIFIED` means not yet determined; only defined values |
+| provider name | The named ticket outlet (for example イープラス, チケットぴあ), mainly for `PLAYGUIDE` | optional free text, at most 255 characters; empty means none or unknown |
+| sequence | The 0-based ordinal of the round within its channel, when a channel runs several rounds | integer, at least 0; 0 when the channel has one round |
+| apply start time | When applications or sales open (受付開始) | required, an absolute instant |
+| apply end time | When applications or sales close (受付終了) | optional; empty means not yet announced |
+| lottery result time | When lottery results are announced (当落発表) | optional; empty means not announced or not a lottery |
+| payment deadline time | The payment deadline for winners (入金期限) | optional; empty means not announced or not applicable |
+| url | The page where fans apply for this phase | optional; empty means none known |
+| discovered time | When the system first learned of the phase | required, set once when the phase is created |
+
+```mermaid
+erDiagram
+    Series ||--o{ SalesPhase : "sells tickets through"
+    SalesPhase ||--o{ SalesPhaseReminder : "is reminded by"
+```
 
 ## Requirements
 
-### Requirement: SalesPhase represents one ticket-sales opportunity
+### Requirement: A sales phase applies to its whole series
 
-The system SHALL define a `SalesPhase` entity representing one ticket-sales opportunity. Each sales phase belongs to a `Series` (the tour) and applies to the series as a whole; it does NOT track a per-event coverage subset. A series-level model is sufficient because notification targeting is driven by an explicit fan signal (a `Tracking` ticket journey on the series' events) and notification content is generic (a series link), so the precise set of covered dates is never consumed.
+A sales phase SHALL belong to exactly one Series and apply to all of that series' events; it SHALL carry no per-event coverage. A standalone concert's phases SHALL belong to its single-event series.
 
-#### Scenario: SalesPhase data model
+#### Scenario: Tour-wide phase
 
-- **WHEN** a sales phase is represented
-- **THEN** it SHALL include `id` (SalesPhaseId), `series_id` (SeriesId), `method` (SalesMethod), `channel` (SalesChannel), `provider_name` (string), and `sequence` (int32)
-- **AND** it SHALL include `apply_start_time` (Timestamp, required — a phase is never persisted without it) and the nullable timeline fields `apply_end_time`, `lottery_result_time`, `payment_deadline_time`
-- **AND** it SHALL include a nullable `url` field reusing the `Url` value object
-- **AND** `series_id` SHALL be the only required entity reference; `apply_start_time` is also required for persistence
-- **AND** it SHALL NOT include an `event_ids` covered-event set nor an `anchor_event_id`
+- **WHEN** a tour announces a fan-club presale
+- **THEN** the sales phase belongs to the tour's series and covers every event of the series
 
-#### Scenario: Phase applies to the whole series
+#### Scenario: Standalone concert
 
-- **WHEN** a tour announces a sales phase
-- **THEN** the `SalesPhase` SHALL apply to its `series_id` as a whole, with no per-event coverage subset
-- **AND** the phases relevant to an `Event` SHALL be resolvable via that event's `series_id` (an event → its series → the series' phases), not via a per-phase covered-event list
-- **AND** a standalone concert (series of one event) SHALL have its phases belong to that single-event series
+- **WHEN** a standalone concert announces a general on-sale
+- **THEN** the sales phase belongs to that concert's single-event series
 
-### Requirement: SalesPhaseId is a UUID value object
+### Requirement: Method and channel are orthogonal classifications
 
-The system SHALL identify each sales phase with a `SalesPhaseId` value object wrapping a UUID.
+A sales phase SHALL be classified by method and by channel independently, and SHALL order repeated rounds of one channel by sequence. Method SHALL be one of `UNSPECIFIED`, `LOTTERY` or `FIRST_COME`; channel SHALL be one of `UNSPECIFIED`, `FAN_CLUB`, `OFFICIAL`, `PLAYGUIDE`, `CREDIT_CARD`, `MOBILE_CARRIER` or `GENERAL`. `UNSPECIFIED` SHALL mean not yet determined. A method or channel outside these values SHALL be invalid.
 
-#### Scenario: SalesPhaseId format
+#### Scenario: Lottery through a play guide
 
-- **WHEN** a `SalesPhaseId` is represented
-- **THEN** its `value` SHALL be a valid UUID string
+- **WHEN** a phase is a lottery sold through イープラス
+- **THEN** its method is `LOTTERY`, its channel is `PLAYGUIDE` and its provider name is イープラス
 
-### Requirement: SalesMethod and SalesChannel are orthogonal classifications
+#### Scenario: Not yet classified
 
-The system SHALL classify each sales phase by `method` and `channel` as orthogonal dimensions, plus an ordinal `sequence`, rather than a single conflated tier enum.
+- **WHEN** the method and channel of a phase are not yet known
+- **THEN** the phase is valid with method `UNSPECIFIED` and channel `UNSPECIFIED`
 
-#### Scenario: SalesMethod values
+#### Scenario: Undefined value
 
-- **WHEN** a sales method is represented
-- **THEN** it SHALL be one of `UNSPECIFIED`, `LOTTERY`, or `FIRST_COME`
-- **AND** `UNSPECIFIED` SHALL be permitted to mean "not yet determined"
+- **WHEN** a phase carries a channel value that is not one of the defined channels
+- **THEN** the phase is invalid
 
-#### Scenario: SalesChannel values
+#### Scenario: Second round of a channel
 
-- **WHEN** a sales channel is represented
-- **THEN** it SHALL be one of `UNSPECIFIED`, `FAN_CLUB`, `OFFICIAL`, `PLAYGUIDE`, `CREDIT_CARD`, `MOBILE_CARRIER`, or `GENERAL`
+- **WHEN** a fan club runs a first and a second presale round
+- **THEN** the first round has sequence 0 and the second has sequence 1
 
-#### Scenario: Sequence captures round ordinal
+### Requirement: Only the apply start time is required
 
-- **WHEN** a series has multiple rounds (earliest, first, second, …)
-- **THEN** the round ordering SHALL be expressed via `sequence` (0=earliest, 1=first, 2=second, …)
-- **AND** adding further rounds SHALL NOT require any schema change
+A sales phase SHALL always have a known apply start time. The apply end time, lottery result time and payment deadline time SHALL be optional, and an absent value SHALL mean the milestone is not yet announced. A negative sequence or a provider name longer than 255 characters SHALL be invalid.
 
-### Requirement: Only apply_start_time is required on a sales phase
+#### Scenario: Later milestones not yet announced
 
-The system SHALL require `apply_start_time` on every persisted phase (see Persist Only Phases With a Known Start) and treat the remaining timeline fields (`apply_end_time`, `lottery_result_time`, `payment_deadline_time`) as nullable, where null means "not yet announced". The row's existence signals the phase is happening; no separate to-be-determined flag is required.
+- **WHEN** a phase's apply start time is known and its close, result and payment dates are not
+- **THEN** the phase is valid with only the apply start time set
 
-#### Scenario: Start known, later milestones not yet announced
+#### Scenario: No start time
 
-- **WHEN** a phase has a known `apply_start_time` but its close / result / payment dates are not yet announced
-- **THEN** the `SalesPhase` SHALL exist with `apply_start_time` set and the other timeline fields left null
+- **WHEN** a phase has no apply start time
+- **THEN** the phase is invalid
+
+#### Scenario: Out-of-range values
+
+- **WHEN** a phase has sequence -1, or a provider name of 256 characters
+- **THEN** the phase is invalid
+
+### Requirement: The discovered time is set once
+
+A sales phase's discovered time SHALL be set when the phase is first created and SHALL never change afterwards, however often the phase is discovered again.
+
+#### Scenario: Re-discovery keeps the discovered time
+
+- **WHEN** a phase created on 1 June is discovered again on 5 June with new details
+- **THEN** its discovered time stays 1 June

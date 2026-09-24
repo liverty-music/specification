@@ -2,90 +2,137 @@
 
 ## Purpose
 
-TBD - created by archiving change add-sales-phase-timeline. Update Purpose after archive.
+ScanDueReminders runs every 15 minutes. For each sales phase with a pending milestone, it works out which reminder stages have become due for each fan tracking that phase's series, and requests one reminder for each fan, phase and stage not yet sent, with due times adjusted to the fan's time zone and quiet hours. It returns the number of reminders requested.
 
 ## Requirements
 
-### Requirement: Multi-Stage Reminder Scan
+### Requirement: Runs every 15 minutes over phases with a pending milestone
 
-The system SHALL run a scheduled job that scans sales phases for approaching milestones and emits reminders for each due stage. Because no delayed-message mechanism exists, reminders SHALL be produced by a periodic scan.
+ScanDueReminders SHALL run every 15 minutes, which is shorter than the tightest reminder stage (1 hour before close). Each run SHALL evaluate the phases returned by SalesPhase.ListPhasesWithPendingMilestones with a lookahead of 7 days and a lookback of 2 hours, and SHALL return the number of reminders it requested. When listing the phases fails, the run SHALL fail; when evaluating one phase fails, that phase SHALL be skipped and the others evaluated.
 
-#### Scenario: Reminder stages
+#### Scenario: Scan cadence
 
-- **WHEN** the reminder scan evaluates a sales phase
-- **THEN** it SHALL emit a reminder for each due stage among: application open (`apply_start_time`), 24 hours before close, 1 hour before close (`apply_end_time`), and lottery-result day (`lottery_result_time`)
+- **WHEN** 15 minutes have passed since the last run
+- **THEN** ScanDueReminders runs again
 
-#### Scenario: Scan cadence finer than tightest window
+#### Scenario: Phase opening in 3 days
 
-- **WHEN** the reminder job is scheduled
-- **THEN** it SHALL run approximately every 15 minutes, which is shorter than the tightest reminder window (the 1-hour-before stage)
+- **WHEN** a phase opens in 3 days
+- **THEN** the phase is evaluated on every run from now on
 
-#### Scenario: Lottery-result reminder fires on the morning of the result day
+#### Scenario: One phase fails
 
-- **WHEN** `lottery_result_time` denotes a result day without a precise time
-- **THEN** the result-day reminder SHALL fire that morning (09:00 in the user's timezone)
+- **WHEN** the audience of one phase cannot be read
+- **THEN** that phase is skipped and the other phases are evaluated
 
-#### Scenario: Milestones already past when a phase is first seen are not fired
+### Requirement: The audience is the fans tracking the series
 
-- **WHEN** a phase is first persisted and one of its milestones is already in the past
-- **THEN** the scan SHALL NOT retroactively fire that stage (the discovery announcement conveys current state); only milestones occurring after the phase becomes known SHALL fire
+For each phase ScanDueReminders SHALL consider the fans returned by TicketJourney.ListUserIDsTrackingSeries for the phase's series, that is, the fans whose journey on an event of the series is still Tracking. A fan who follows the artist without tracking, or whose journey on the series has moved to Applied or later, SHALL NOT be reminded. A fan whose profile cannot be read SHALL be skipped.
 
-#### Scenario: Null milestone produces no reminder
+#### Scenario: Tracking fan
 
-- **WHEN** a sales phase has a null timestamp for a given stage
-- **THEN** no reminder SHALL be emitted for that stage
+- **WHEN** a fan tracks one event of the phase's series and a stage is due
+- **THEN** a reminder is requested for that fan
 
-#### Scenario: Payment deadline is not a reminder stage
+#### Scenario: Follower who does not track
 
-- **WHEN** a sales phase has a non-null `payment_deadline_time`
-- **THEN** the scan SHALL NOT emit a payment-deadline reminder in this capability
-- **AND** payment reminders SHALL remain deferred until lottery win/loss gating exists, because only winners owe payment
+- **WHEN** a fan follows the artist but tracks no event of the series
+- **THEN** no reminder is requested for that fan
 
-### Requirement: Reminder Audience
+#### Scenario: Fan who has applied
 
-The system SHALL target reminders to the users who have a `Tracking` ticket journey on any event of the sales phase's series. A `Tracking` journey is an explicit "notify me about this sale" signal, so reminders no longer resolve audience from covered-event performers, follower lists, or hype-level proximity. Because a phase is series-level, audience is resolved series-wide: any tracked event in the series qualifies the user.
+- **WHEN** a fan's only journey on the series is Applied and the result day arrives
+- **THEN** no `RESULT_DAY` reminder is requested for that fan
 
-#### Scenario: Resolve audience from tracking journeys
+### Requirement: A stage is requested once its due time has passed
 
-- **WHEN** a sales-phase reminder is due
-- **THEN** the system SHALL resolve the phase's `series_id` and find the users who have a `Tracking` ticket journey on any event of that series
-- **AND** deliver the reminder only to those users' push subscriptions
-- **AND** it SHALL NOT resolve audience from covered events, follower lists, or hype-level filtering
+For each fan and each stage that applies to the phase, ScanDueReminders SHALL request a reminder once the stage's due time has passed and SalesPhaseReminder.ListSentStages does not show that stage as sent to that fan. The due time of `APPLY_OPEN`, `APPLY_CLOSE_24H` and `APPLY_CLOSE_1H` SHALL be the stage's anchor; the due time of `RESULT_DAY` SHALL be 09:00 in the fan's time zone on the calendar day, in that time zone, of the lottery result time, whether or not the result time has a precise hour. A stage whose anchor is earlier than the phase's discovered time SHALL NOT be requested. A fan who starts tracking after a stage's due time SHALL still be reminded of it on the next run while the phase is listed. When the sent stages cannot be read, ScanDueReminders SHALL request the due reminders anyway and rely on DeliverReminder not to repeat a sent one. A request that cannot be queued SHALL be skipped and retried by a later run.
 
-#### Scenario: Non-tracking fans are not targeted
+#### Scenario: Application opens
 
-- **WHEN** a fan follows the artist but has no `Tracking` ticket journey on any event of the series
-- **THEN** that fan SHALL NOT receive the sales-phase reminder
+- **WHEN** a phase's apply start time has just passed and `APPLY_OPEN` was not sent to a tracking fan
+- **THEN** an `APPLY_OPEN` reminder is requested for the fan
 
-### Requirement: Once-Only Delivery
+#### Scenario: Already sent
 
-The system SHALL guarantee that each reminder is delivered to a given user at most once, despite overlapping scans, by recording sent reminders keyed by the sales phase's surrogate id.
+- **WHEN** `APPLY_OPEN` was already recorded as sent to the fan
+- **THEN** no reminder is requested again
 
-#### Scenario: Duplicate scan does not resend
+#### Scenario: Result day
 
-- **WHEN** a user has already received a reminder for a given sales phase and stage
-- **THEN** a subsequent scan SHALL NOT send that reminder again
-- **AND** the sent record SHALL be keyed by `(user_id, sales_phase_id, stage)`, referencing the phase's surrogate id — which is stable because re-discovery converges in place on the `(series_id, apply_start_time)` match
+- **WHEN** a phase's lottery result time is 15 July 18:00 and the fan's time zone is Asia/Tokyo
+- **THEN** the `RESULT_DAY` reminder becomes due at 15 July 09:00 Asia/Tokyo
 
-### Requirement: Quiet Hours
+#### Scenario: Milestone already past when the phase was discovered
 
-The system SHALL avoid waking users at night for the time-based reminder scan. A reminder due during a user's quiet window (22:00–08:00 in the user's `time_zone`, falling back to `Asia/Tokyo` when `time_zone` is unset) SHALL be shifted rather than sent in the window. The shift SHALL never push a deadline-relative reminder past its deadline. (The event-driven discovery announcement is out of scope here — it fires from the daily daytime discovery job, not the scan, so it is not subject to this deferral.)
+- **WHEN** a phase is discovered at 12:00 on the day its application opened at 10:00
+- **THEN** no `APPLY_OPEN` reminder is ever requested for it
 
-#### Scenario: Non-deadline reminder defers to morning
+#### Scenario: Unknown milestone
 
-- **WHEN** a reminder whose stage is not deadline-relative (application open or lottery result) is due inside the quiet window
-- **THEN** it SHALL be deferred to the window end (08:00 in the user's timezone)
+- **WHEN** a phase has no apply end time
+- **THEN** no `APPLY_CLOSE_24H` or `APPLY_CLOSE_1H` reminder is requested
 
-#### Scenario: Deadline reminder shifts but never past the deadline
+#### Scenario: No payment reminder
 
-- **WHEN** a deadline-relative reminder (24h-before or 1h-before close) is due inside the quiet window
-- **AND** the window end (08:00) is strictly before `apply_end_time`
-- **THEN** it SHALL be deferred to 08:00
-- **WHEN** instead `apply_end_time` is at or before the window end (i.e. falls within the quiet window or exactly at 08:00)
-- **THEN** the scan SHALL look ahead and emit the reminder on its last run before the quiet window begins (a pre-quiet alert), since a periodic scan cannot send at a past time once the window has started
-- **AND** it SHALL never wake the user during the window nor fire at/after the deadline
+- **WHEN** a phase has a payment deadline time
+- **THEN** no reminder is requested for the payment deadline
 
-#### Scenario: Timezone fallback
+### Requirement: Quiet hours
 
-- **WHEN** a user has no `time_zone` set
-- **THEN** the quiet window SHALL be evaluated in `Asia/Tokyo`
+ScanDueReminders SHALL NOT send a reminder in the fan's quiet window, 22:00 to 08:00 in the fan's time zone, falling back to Asia/Tokyo when the fan's time zone is unset or not recognised. A stage due inside the window SHALL be deferred as follows: `APPLY_OPEN` and `RESULT_DAY` to the next 08:00; `APPLY_CLOSE_24H` and `APPLY_CLOSE_1H` to the next 08:00 when that is strictly before the apply end time, and otherwise to the last run before the window begins. A close-stage reminder SHALL never be requested at or after the apply end time.
+
+Known defect: liverty-music/backend#472
+
+#### Scenario: Opening during the night
+
+- **WHEN** a phase opens at 02:00 in the fan's time zone
+- **THEN** its `APPLY_OPEN` reminder becomes due at 08:00 that morning
+
+#### Scenario: Close with the morning still before the deadline
+
+- **WHEN** the `APPLY_CLOSE_24H` anchor is 23:00 and the apply end time is 23:00 the next day
+- **THEN** the reminder becomes due at 08:00 the next morning
+
+#### Scenario: Close before the morning
+
+- **WHEN** the apply end time is 02:00, so the `APPLY_CLOSE_1H` anchor is 01:00
+- **THEN** the reminder is requested on the last run before 22:00 the evening before
+
+#### Scenario: Close already passed
+
+- **WHEN** a fan starts tracking after a phase's apply end time
+- **THEN** no `APPLY_CLOSE_24H` or `APPLY_CLOSE_1H` reminder is requested for that fan
+
+#### Scenario: Time zone fallback
+
+- **WHEN** a fan's time zone is unset or not a recognised time zone
+- **THEN** the quiet window and due times are evaluated in Asia/Tokyo
+
+### Requirement: Reminder content
+
+Each requested reminder SHALL carry a title that names the stage, a text that names the sales channel and the stage's milestone time, a link and a grouping tag, in the fan's preferred language: Japanese for `ja` and English for any other or no language. The channel label SHALL be the phase's provider name when it has one, otherwise the channel's name, and a generic ticket label (チケット / Ticket) when the channel is not yet determined. The milestone time SHALL be shown as month, day and hour:minute in the fan's time zone. The link SHALL be the phase's url when it has one and the series page otherwise. Repeated deliveries of the same phase and stage SHALL replace each other on the device, and different stages SHALL NOT.
+
+#### Scenario: Play-guide presale opens
+
+- **WHEN** an `APPLY_OPEN` reminder is built in English for a phase with provider name イープラス opening on 1 July 10:00 in the fan's time zone
+- **THEN** the title is Ticket Sales Open and the text is イープラス sales open at Jul 1 10:00
+
+#### Scenario: Channel not determined
+
+- **WHEN** a reminder is built in Japanese for a phase with no provider name and channel `UNSPECIFIED`
+- **THEN** the text names the channel as チケット
+
+#### Scenario: No application url
+
+- **WHEN** the phase has no url
+- **THEN** the reminder links to the series page
+
+### Requirement: Delivery is delegated to DeliverReminder
+
+ScanDueReminders SHALL NOT deliver reminders or record them as sent; each requested reminder, with its fan, phase, stage and content, SHALL be delivered by DeliverReminder.
+
+#### Scenario: Reminder requested
+
+- **WHEN** ScanDueReminders requests a reminder
+- **THEN** DeliverReminder runs once for it and nothing is recorded as sent by the scan
