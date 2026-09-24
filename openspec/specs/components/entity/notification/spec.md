@@ -2,40 +2,65 @@
 
 ## Purpose
 
-Defines the Notification entity, its payload for a concert-related alert, and its persistence as a uniquely identified record.
+A Notification is the durable record of one message sent to one fan, such as new concerts of a followed artist, a ticket-sale reminder or a sales-phase announcement. It records what was sent, whether the push channel accepted it, and whether the fan has read or dismissed it.
+
+| attribute | meaning | constraint |
+|-----------|---------|------------|
+| id | the notification's identity, also carried inside the pushed message so the fan's response can be traced back to it | required; assigned when recorded |
+| user_id | the fan it is for | required |
+| type | what produced it | required; one of new_concerts, sales_reminder, sales_phase_announcement |
+| message | the pushed content: title, body, a tag (a later message with the same tag replaces an earlier one on the device) and data holding the in-app link and the notification id | required |
+| delivery_status | whether the push channel accepted the message | required; Queued, Delivered or Failed |
+| failure_reason | why delivery failed | present only when Failed |
+| queue_time | when the notification was recorded | required |
+| deliver_time | when the push channel accepted the message | present only when Delivered |
+| read_time | when the fan read it | optional; absent until read |
+| dismiss_time | when the fan dismissed it | optional; absent until dismissed |
+
+Delivered means that the push service accepted the message for at least one of the fan's browsers, not that a device displayed it. Read and dismissed are times, independent of the delivery status.
+
+```mermaid
+erDiagram
+  User ||--o{ Notification : "receives"
+```
+
+```mermaid
+stateDiagram-v2
+  [*] --> Queued
+  Queued --> Delivered
+  Queued --> Failed
+```
 
 ## Requirements
 
-### Requirement: Concert notification payload construction
+### Requirement: A new Notification starts Queued
 
-The entity package SHALL provide `NewConcertNotificationPayload(artist *Artist, concertCount int) *NotificationPayload` that constructs a push notification payload for new concert alerts.
+A new Notification SHALL start with delivery status Queued, with no deliver time, no failure reason, and no read or dismiss time.
 
-The method SHALL:
-1. Set the notification title using the artist's name.
-2. Set the notification body including the concert count.
-3. Include the artist ID in the payload data for deep linking.
+#### Scenario: Notification recorded
 
-#### Scenario: Single concert
+- **WHEN** a Notification is created
+- **THEN** its delivery status is Queued and it has no deliver, read or dismiss time
 
-- **WHEN** NewConcertNotificationPayload is called with an artist named "YOASOBI" and concertCount=1
-- **THEN** the returned payload contains the artist name in the title, mentions 1 concert in the body, and includes the artist ID in data
+### Requirement: The delivery outcome is consistent
 
-#### Scenario: Multiple concerts
+A Delivered Notification SHALL have a deliver time and no failure reason. A Failed Notification SHALL have a failure reason and no deliver time.
 
-- **WHEN** NewConcertNotificationPayload is called with concertCount=3
-- **THEN** the returned payload body mentions 3 concerts
+#### Scenario: Delivered
 
-#### Scenario: Payload data contains artist ID
+- **WHEN** a Notification is Delivered
+- **THEN** it has a deliver time and no failure reason
 
-- **WHEN** NewConcertNotificationPayload is called with artist.ID="artist-abc"
-- **THEN** the returned payload data map contains a key mapping to "artist-abc"
+#### Scenario: Failed
 
----
+- **WHEN** a Notification is Failed
+- **THEN** it has a failure reason and no deliver time
 
-### Requirement: Notification is persisted as an identified record
-Every user-facing notification SHALL be persisted as a durable record with a stable identifier (`notification_id`), the recipient `user_id`, a `type`, the rendered `payload`, and a `created_at` timestamp, before or at the moment it is dispatched. The record is the source of truth; a dispatch failure SHALL NOT cause the notification to be lost.
+### Requirement: Read and dismissed do not depend on delivery
 
-#### Scenario: A notification is recorded when produced
-- **WHEN** a producer asks the notification service to notify a user (e.g. new concerts, a sales reminder)
-- **THEN** a notification record SHALL be created with a unique `notification_id`, the `user_id`, the `type`, the `payload`, and `created_at`
-- **AND** the record SHALL exist regardless of whether the channel send subsequently succeeds or fails
+A Notification SHALL be readable and dismissable whatever its delivery status.
+
+#### Scenario: A failed notification is read
+
+- **WHEN** a Failed Notification is marked read
+- **THEN** it has a read time and stays Failed

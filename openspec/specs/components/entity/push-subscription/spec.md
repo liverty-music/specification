@@ -2,24 +2,52 @@
 
 ## Purpose
 
-Defines the backend `PushNotificationService` capability that registers, retrieves, and removes a browser's Web Push subscription on a per-`(user_id, endpoint)` basis. The service models subscriptions as type-safe `PushSubscription` entities, enforces strict per-browser scoping (no bulk-per-user mutation in the externally triggered surface), and supports a client-side self-healing flow that recovers from the "browser has subscription but backend does not" divergence without prompting the user.
+A PushSubscription is one browser that a fan has allowed to receive push messages: the address the browser's push service gave it and the keys needed to encrypt messages for it. A fan may hold several PushSubscriptions, one per browser.
+
+| attribute | meaning | constraint |
+|-----------|---------|------------|
+| id | the subscription's identity | required; assigned when the browser is first registered and kept when it registers again |
+| user_id | the fan who owns it | required |
+| endpoint | the browser's push address | required; an absolute URI of at most 2048 characters; belongs to at most one PushSubscription across all fans |
+| p256dh | the browser's public encryption key | required; Base64url, 1 to 256 characters |
+| auth | the browser's authentication secret | required; Base64url, 1 to 64 characters |
+
+```mermaid
+erDiagram
+  User ||--o{ PushSubscription : "registers"
+```
 
 ## Requirements
 
-### Requirement: PushSubscription entity model
+### Requirement: Push address and keys are well formed
 
-The system SHALL represent a browser Web Push subscription as a `PushSubscription` entity in `liverty_music.entity.v1`, composed of type-safe wrapper messages rather than inline primitive fields.
+A PushSubscription's endpoint SHALL be an absolute URI of at most 2048 characters, its p256dh SHALL be 1 to 256 characters and its auth SHALL be 1 to 64 characters. Any other value SHALL be invalid.
 
-#### Scenario: PushSubscription aggregate shape
+#### Scenario: Valid browser subscription
 
-- **WHEN** a `PushSubscription` entity is serialized
-- **THEN** it SHALL carry `id` (`PushSubscriptionId`, UUID wrapper), `user_id` (`UserId`), `endpoint` (`PushEndpoint`), and `keys` (`PushKeys`)
-- **AND** `PushSubscriptionId.value` SHALL be a UUID string validated by `protovalidate` `string.uuid`
-- **AND** `PushEndpoint.value` SHALL be validated as a URI with `max_len = 2048`
-- **AND** `PushKeys` SHALL carry `p256dh` (Base64url, `min_len = 1`, `max_len = 256`) and `auth` (Base64url, `min_len = 1`, `max_len = 64`)
+- **WHEN** the endpoint is an absolute https URI of 300 characters, p256dh is 87 characters and auth is 22 characters
+- **THEN** the subscription is valid
 
-#### Scenario: No inline primitive subscription fields in request messages
+#### Scenario: Endpoint too long or not absolute
 
-- **WHEN** any RPC in `PushNotificationService` accepts or returns push subscription materials
-- **THEN** the materials SHALL be expressed via `PushEndpoint`, `PushKeys`, or `PushSubscription` entity messages
-- **AND** raw `string endpoint`, `string p256dh`, or `string auth` fields SHALL NOT appear directly in request or response messages
+- **WHEN** the endpoint is 2049 characters long, or is a relative path
+- **THEN** the subscription is invalid
+
+#### Scenario: Missing key
+
+- **WHEN** p256dh or auth is empty
+- **THEN** the subscription is invalid
+
+### Requirement: Device family of a push address
+
+A PushSubscription's device family SHALL be derived from the push service its endpoint points to, as one of android, apple, firefox, windows or other; a push service that is not recognised SHALL give other. The device family is the only information about a browser that may be reported outside the subscription; the endpoint itself SHALL NOT be.
+
+#### Scenario: Recognised push service
+
+- **WHEN** the endpoint points to the push service of Apple browsers
+- **THEN** the device family is apple
+
+#### Scenario: Unrecognised push service
+
+- **WHEN** the endpoint points to a push service that is not recognised
+- **THEN** the device family is other

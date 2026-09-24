@@ -2,14 +2,25 @@
 
 ## Purpose
 
-TBD - created by archiving change introduce-notification-service. Update Purpose after archive.
+NotificationUseCase.MarkRead lets a fan mark one of their own Notifications as read. A fan can never change another fan's Notification.
 
 ## Requirements
 
-### Requirement: Mark a notification as read or dismissed
-The service SHALL let a user mark a notification (by `notification_id`) as read or dismissed, scoped to that user, recording the transition timestamp. Repeating the same transition SHALL be a no-op (idempotent), and a user SHALL NOT be able to change another user's notification state.
+### Requirement: MarkRead only for the fan's own notification
 
-#### Scenario: Marking a notification read is idempotent and user-scoped
-- **WHEN** a user marks their own notification as read, then marks it read again
-- **THEN** the first call SHALL record `read_at` and the second SHALL be a no-op
-- **AND** a request to mark a notification belonging to a different user SHALL be rejected
+MarkRead SHALL read the Notification (Notification.Get) and, when it belongs to the fan, mark it read through Notification.MarkRead. When no Notification has the id, MarkRead SHALL fail with NotFound. When the Notification belongs to another fan, MarkRead SHALL fail with PermissionDenied and change nothing.
+
+#### Scenario: Fan reads their notification
+
+- **WHEN** a fan marks their own Notification as read
+- **THEN** its read time is set and MarkRead succeeds
+
+#### Scenario: Another fan's notification
+
+- **WHEN** a fan marks a Notification that belongs to another fan
+- **THEN** MarkRead fails with PermissionDenied and the Notification is unchanged
+
+#### Scenario: Unknown notification
+
+- **WHEN** no Notification has the given id
+- **THEN** MarkRead fails with NotFound

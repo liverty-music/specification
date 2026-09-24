@@ -2,32 +2,25 @@
 
 ## Purpose
 
-Defines the backend `PushNotificationService` capability that registers, retrieves, and removes a browser's Web Push subscription on a per-`(user_id, endpoint)` basis. The service models subscriptions as type-safe `PushSubscription` entities, enforces strict per-browser scoping (no bulk-per-user mutation in the externally triggered surface), and supports a client-side self-healing flow that recovers from the "browser has subscription but backend does not" divergence without prompting the user.
+PushNotificationUseCase.Delete stops push messages to one of the fan's browsers by removing that browser's subscription, and announces it; the fan's other browsers keep theirs.
 
 ## Requirements
 
-### Requirement: Delete RPC removes only the specified browser's subscription
+### Requirement: Delete removes the browser and announces it
 
-The system SHALL expose `PushNotificationService.Delete` to remove the push subscription uniquely identified by `(user_id, endpoint)`. The operation SHALL be idempotent.
+Delete SHALL remove the fan's PushSubscription for the push address through PushSubscription.Delete and then announce that the fan unsubscribed, carrying only the browser's device family, also when nothing was registered. A failure to remove SHALL fail Delete and announce nothing; a failure to announce SHALL NOT fail Delete.
 
-#### Scenario: Successful deletion
+#### Scenario: Fan disables push on one browser
 
-- **WHEN** an authenticated client calls `Delete` with its own `user_id` and the `PushEndpoint` of one of its registered browsers
-- **THEN** the backend SHALL remove exactly that row
-- **AND** other rows belonging to the same user (other browsers) SHALL be left untouched
+- **WHEN** a fan with two registered browsers removes one
+- **THEN** that PushSubscription is removed, the other remains, and the unsubscription is announced
 
-#### Scenario: Idempotent deletion
+#### Scenario: Browser not registered
 
-- **WHEN** `Delete` is called with a `(user_id, endpoint)` pair that does not match any row
-- **THEN** the service SHALL return a successful empty response
+- **WHEN** the fan has no PushSubscription with that push address
+- **THEN** Delete succeeds and the unsubscription is still announced
 
-#### Scenario: Caller attempts to delete another user's subscription
+#### Scenario: Announcement fails
 
-- **WHEN** `Delete` is called with a `user_id` that differs from the userID extracted from the authenticated session
-- **THEN** the service SHALL return `PERMISSION_DENIED`
-- **AND** no rows SHALL be deleted
-
-#### Scenario: Unauthenticated request
-
-- **WHEN** `Delete` is called without a valid user session
-- **THEN** the service SHALL return `UNAUTHENTICATED`
+- **WHEN** the PushSubscription is removed but announcing fails
+- **THEN** Delete still succeeds

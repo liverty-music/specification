@@ -2,51 +2,86 @@
 
 ## Purpose
 
-TBD - created by archiving change introduce-notification-service. Update Purpose after archive.
+NotificationUseCase.Notify records a Notification for one fan, pushes its message to every browser the fan has registered, and records whether at least one browser's push service accepted it. The record is kept whatever the outcome, so every notification's delivery can be audited and sent again.
 
 ## Requirements
 
-### Requirement: Notify records the delivery outcome
-The service SHALL record the delivery outcome of each notification's channel send: `queued` on creation, then `delivered` once the channel accepts the send, or `failed` (with a failure reason) on error, so that "did this notification reach the user?" is answerable from stored state. (Web push provides no separate sent-vs-delivered receipt, so `delivered` denotes acceptance by the push service; a distinct `sent` state is not modelled for this channel.)
+### Requirement: No record, no send
 
-In addition to persisting the outcome, a `failed` delivery SHALL be surfaced as an operational signal — logged at WARNING with the failure reason, and emitted as a delivery-outcome metric labelled by outcome and failure reason — so that a systemic delivery failure is observable without querying the database. A `failed` outcome SHALL NOT be observable only from stored state.
+Notify SHALL take a fan, a notification type and a finished message. It SHALL fail with InvalidArgument when no message is given. It SHALL record the Notification through Notification.Create before sending anything; when recording fails, Notify SHALL fail with that error and send nothing, so the caller can retry.
 
-#### Scenario: Successful web-push send is recorded as delivered
-- **WHEN** the web-push channel send for a notification succeeds
-- **THEN** the notification's delivery status SHALL be recorded as `delivered` with a delivery timestamp
+#### Scenario: Missing message
 
-#### Scenario: Failed send is recorded as failed, not dropped
-- **WHEN** the web-push channel send fails (e.g. the push service rejects it)
-- **THEN** the notification's delivery status SHALL be recorded as `failed` with a failure reason
-- **AND** the notification record SHALL remain so the failure is auditable and the send is re-dispatchable
+- **WHEN** Notify is called without a message
+- **THEN** it fails with InvalidArgument and nothing is recorded or sent
 
-#### Scenario: Failed send is surfaced as an operational signal
-- **WHEN** a notification's delivery is recorded as `failed`
-- **THEN** the service SHALL log the failure at WARNING including the failure reason
-- **AND** SHALL emit a delivery-outcome metric labelled by outcome and failure reason
-- **AND** the failure SHALL therefore be detectable without reading the notifications table
+#### Scenario: Recording fails
 
-### Requirement: Select push notification copy by recipient's preferred language
+- **WHEN** the Notification cannot be recorded
+- **THEN** Notify fails and no browser is sent the message
 
-The system SHALL select the user-facing copy of every Web Push notification by the recipient's `preferred_language`, defaulting to `en` when the recipient has no language set. Localization SHALL reuse the existing `NotificationPayload` shape (`title`, `body`, `url`, `tag`); only the human-readable `title` and `body` are language-dependent, while `url` and `tag` remain language-independent.
+### Requirement: The pushed message carries the notification id
 
-#### Scenario: Recipient has a preferred language
+Before sending, Notify SHALL add the recorded Notification's id to the message's data, keeping the rest of the message unchanged, and send that same message to each of the fan's browsers.
 
-- **WHEN** a Web Push notification is built for a recipient whose `preferred_language` is a supported code (e.g. `ja`)
-- **THEN** the notification `title` and `body` SHALL be rendered in that language
+#### Scenario: Message identifies its notification
 
-#### Scenario: Recipient has no preferred language
+- **WHEN** a Notification is recorded with a new id
+- **THEN** the message pushed to every browser of the fan carries that id
 
-- **WHEN** a Web Push notification is built for a recipient whose `preferred_language` is unset or empty
-- **THEN** the notification `title` and `body` SHALL be rendered in `en`
+### Requirement: Push to every browser of the fan
 
-#### Scenario: Recipient has an unsupported preferred language
+Notify SHALL send the message (PushSubscription.Send) to every PushSubscription of the fan (PushSubscription.ListByUserIDs). The outcome SHALL be Delivered, with the time of delivery, when at least one send is accepted, and Failed otherwise: with the reason "no active push subscription" when the fan has none, with the listing error when the subscriptions cannot be read, and with the reason of the last failed send when every send fails. A PushSubscription whose send fails with NotFound SHALL be removed through PushSubscription.Delete, only that fan's browser; this removal is not announced as an unsubscription. When the request is cancelled, no further send SHALL be made; sends already accepted still make the outcome Delivered.
 
-- **WHEN** a Web Push notification is built for a recipient whose `preferred_language` is a code with no localized copy available
-- **THEN** the notification `title` and `body` SHALL fall back to `en`
+#### Scenario: One of two browsers accepts
 
-#### Scenario: Mixed-language audience for one notification event
+- **WHEN** the fan has two browsers and one send is accepted while the other fails
+- **THEN** the outcome is Delivered
 
-- **WHEN** a single notification event fans out to recipients with differing `preferred_language` values
-- **THEN** each recipient SHALL receive copy in their own resolved language
-- **AND** the system SHALL build at most one payload per distinct resolved language rather than one per recipient subscription
+#### Scenario: No browser registered
+
+- **WHEN** the fan has no PushSubscription
+- **THEN** the outcome is Failed with the reason "no active push subscription"
+
+#### Scenario: Every send fails
+
+- **WHEN** every send fails
+- **THEN** the outcome is Failed with the reason of the last failure
+
+#### Scenario: Browser gone
+
+- **WHEN** a send fails with NotFound
+- **THEN** that PushSubscription is removed and the fan's other browsers keep theirs
+
+#### Scenario: Cancelled after one accepted send
+
+- **WHEN** the request is cancelled after the first of three sends was accepted
+- **THEN** the remaining two are not sent and the outcome is Delivered
+
+### Requirement: The outcome is recorded without failing the call
+
+Notify SHALL record the outcome through Notification.UpdateDelivery and return the Notification with that outcome. A failure to record the outcome SHALL NOT fail Notify; the stored Notification may then stay Queued. A failed delivery SHALL NOT fail Notify either.
+
+#### Scenario: Delivery failed
+
+- **WHEN** every send fails
+- **THEN** Notify succeeds and the stored Notification is Failed with its reason
+
+#### Scenario: Outcome cannot be stored
+
+- **WHEN** the send is accepted but the outcome cannot be recorded
+- **THEN** Notify succeeds, returns the Notification as Delivered, and the stored Notification stays Queued
+
+### Requirement: A delivered notification is announced once
+
+When the outcome is Delivered, Notify SHALL announce once that the fan's Notification of that type was delivered. A failure to announce SHALL NOT change the outcome or fail Notify. A Failed Notification is not announced.
+
+#### Scenario: Delivered
+
+- **WHEN** the outcome is Delivered
+- **THEN** the delivery is announced once
+
+#### Scenario: Failed
+
+- **WHEN** the outcome is Failed
+- **THEN** nothing is announced

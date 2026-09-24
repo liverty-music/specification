@@ -2,27 +2,27 @@
 
 ## Purpose
 
-Defines the backend `PushNotificationService` capability that registers, retrieves, and removes a browser's Web Push subscription on a per-`(user_id, endpoint)` basis. The service models subscriptions as type-safe `PushSubscription` entities, enforces strict per-browser scoping (no bulk-per-user mutation in the externally triggered surface), and supports a client-side self-healing flow that recovers from the "browser has subscription but backend does not" divergence without prompting the user.
+PushNotificationUseCase.Create registers the fan's current browser to receive push messages, or refreshes it if that browser is already registered, and returns the stored subscription.
 
 ## Requirements
 
-### Requirement: Create RPC registers the calling browser's subscription
+### Requirement: Create registers the browser and announces it
 
-The system SHALL expose `PushNotificationService.Create` to register a browser push subscription for the authenticated user. The operation SHALL be an UPSERT keyed by `endpoint`.
+Create SHALL store the fan's browser through PushSubscription.Create with the given push address and keys, and return the stored PushSubscription. After storing, it SHALL announce that the fan subscribed, carrying only the browser's device family, never its push address. A failure to store SHALL fail Create and announce nothing; a failure to announce SHALL NOT fail Create.
 
-#### Scenario: Successful registration
+Known defect: liverty-music/backend#474
 
-- **WHEN** an authenticated client calls `Create` with a valid `PushEndpoint` and `PushKeys`
-- **THEN** the backend SHALL persist a `push_subscriptions` row associating the user with that endpoint
-- **AND** if a row with the same endpoint already exists, the keys SHALL be updated (UPSERT)
-- **AND** the response SHALL return the resulting `PushSubscription` entity
+#### Scenario: Fan enables push on a new browser
 
-#### Scenario: Unauthenticated request
+- **WHEN** a fan registers a browser that is not registered
+- **THEN** the PushSubscription is stored and returned, and the subscription is announced with its device family
 
-- **WHEN** `Create` is called without a valid user session
-- **THEN** the service SHALL return `UNAUTHENTICATED`
+#### Scenario: Fan re-registers the same browser
 
-#### Scenario: Invalid request payload
+- **WHEN** a fan registers a browser that is already registered
+- **THEN** Create returns the PushSubscription with its existing id
 
-- **WHEN** `Create` is called with a missing or malformed `PushEndpoint` or `PushKeys`
-- **THEN** the service SHALL return `INVALID_ARGUMENT`
+#### Scenario: Announcement fails
+
+- **WHEN** the PushSubscription is stored but announcing fails
+- **THEN** Create still succeeds

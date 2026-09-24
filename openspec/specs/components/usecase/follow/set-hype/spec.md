@@ -2,47 +2,25 @@
 
 ## Purpose
 
-Allow users to express different levels of enthusiasm for followed artists, influencing how prominently their events appear on the Dashboard and whether push notifications are sent.
+FollowUseCase.SetHype changes the hype level of an artist the fan already follows, which changes which of the artist's future concerts reach the fan by push.
 
 ## Requirements
 
-### Requirement: Hype Changes Require Authentication for Server-Side Persistence
+### Requirement: SetHype stores any hype level on the fan's Follow
 
-The system SHALL prevent unauthenticated users from calling the `SetHype` RPC or persisting hype changes to any server-side store. Guest hype selections MAY be held in client-side storage (localStorage) pending signup; see the `my-artists` capability for the guest-hype lifecycle and the `guest-data-merge` capability for the signup-time merge semantics. For authenticated users, the system SHALL persist each user's hype level per followed artist in the backend database, enabling cross-device synchronization, via a `SetHype` RPC endpoint that accepts an artist ID and a hype level and updates the user's preference for that artist; the endpoint SHALL accept all four defined `HypeType` values (WATCH, HOME, NEARBY, AWAY).
+SetHype SHALL set the fan's Follow of the artist to the given hype level through Follow.SetHype and accept every hype level: Watch, Home, Nearby and Away. When the fan does not follow the artist, SetHype SHALL fail with NotFound.
 
-#### Scenario: Unauthenticated user attempts hype change (server-side write blocked)
+#### Scenario: Fan raises the hype level
 
-- **WHEN** an unauthenticated user attempts to change a hype level (via slider tap or any UI control)
-- **THEN** the system SHALL NOT call the `SetHype` RPC
-- **AND** the system SHALL persist the chosen value in client-side storage (localStorage) so the choice survives reloads and can be merged into the user's account on signup
-- **AND** the signup-prompt-banner SHALL be visible (per the `signup-prompt-banner` capability) so the user is aware that server-side persistence requires signup
+- **WHEN** a fan who follows an artist at Nearby sets it to Away
+- **THEN** the Follow is at Away and SetHype succeeds
 
-#### Scenario: Authenticated user changes hype
+#### Scenario: Every level accepted
 
-- **WHEN** an authenticated user changes a hype level
-- **THEN** the system SHALL call `SetHype` RPC and persist the change on the backend
-- **AND** the UI SHALL update optimistically
+- **WHEN** a fan sets the hype level to Watch, Home, Nearby or Away
+- **THEN** SetHype stores that level
 
-#### Scenario: Hype level survives session restart
+#### Scenario: Artist not followed
 
-- **GIVEN** a user sets an artist to Away (どこでも！)
-- **WHEN** the user closes and reopens the app
-- **THEN** the artist SHALL still display as Away (どこでも！)
-
-#### Scenario: Successful update
-
-- **GIVEN** an authenticated user who follows an artist
-- **WHEN** the user calls SetHype with a valid artist ID and hype level
-- **THEN** the system SHALL update the hype level and return success
-
-#### Scenario: Unauthenticated request
-
-- **GIVEN** an unauthenticated request
-- **WHEN** the user calls SetHype
-- **THEN** the system SHALL return an Unauthenticated error
-
-#### Scenario: Invalid artist ID
-
-- **GIVEN** an authenticated user
-- **WHEN** the user calls SetHype without an artist ID
-- **THEN** the system SHALL return an InvalidArgument error
+- **WHEN** a fan sets the hype level of an artist they do not follow
+- **THEN** SetHype fails with NotFound
