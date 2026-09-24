@@ -2,329 +2,109 @@
 
 ## Purpose
 
-Defines the Concert entity as a scheduled performance extending a single event, embedding its resolved venue, series, and performers, tracking when it was last searched, and classifying its proximity to a user's home.
+A Concert is the fan-facing view of one music Event: the performance (venue, date, start and doors-open time) together with its parent Series and the Artists who perform at it. It stores nothing of its own beyond the Event it extends; title, type and source page come from the Series.
+
+| attribute | meaning | constraint |
+|-----------|---------|------------|
+| id | identifier shared with the Event it extends | required |
+| venue | resolved place where it is held | required on every catalog read; absent only on a discovery preview |
+| listed venue name | the venue text as the source or organizer listed it, normalized | optional, 1–255 characters; absent on concerts stored before the name was kept |
+| local date | calendar date at the venue | required |
+| start time | performance start | optional; absent means not announced |
+| open time | doors open | optional; absent means not announced |
+| series | parent Series (title, type, source page) | required |
+| performers | Artists performing | at least 1 |
+
+```mermaid
+erDiagram
+  Event ||--|| Concert : "is shown as"
+  Series ||--o{ Concert : "groups"
+  Venue ||--o{ Concert : "hosts"
+  Concert }o--o{ Artist : "performed by"
+```
 
 ## Requirements
 
-### Requirement: Concert-Event Association
+### Requirement: A concert is exactly one event
 
-Every Concert entity SHALL be securely linked to a distinct generic Event entity.
+A Concert SHALL be exactly one Event: it carries the Event's id, venue, listed venue name, date and times, and adds only the embedded Series and the performing Artists. A Concert SHALL have no title or source page of its own; they are read from its Series.
 
-#### Scenario: Concert Data Integrity
-- **WHEN** a Concert is persisted or retrieved
-- **THEN** it MUST include all fields defined in the `Event` entity (Title, Date, Venue, etc.)
-- **AND** data consistency between the Concert specific fields (ArtistID) and Event generic fields MUST be maintained
+#### Scenario: Title comes from the series
+- **WHEN** a Concert belongs to a Series titled "ARENA TOUR 2026"
+- **THEN** the Concert's title is "ARENA TOUR 2026"
 
-### Requirement: Discovered-concert deduplication by date
+#### Scenario: Concert id is its event id
+- **WHEN** a Concert extends the Event with id E
+- **THEN** the Concert's id is E
 
-Newly discovered (scraped) concerts SHALL be deduplicated against a set of existing concerts using date-only comparison: a discovered concert is considered a duplicate if its local event date matches the local event date of an existing concert, or the local event date of an earlier discovered concert already kept from the same batch. Discovered concerts SHALL be evaluated in their original order, and only concerts whose date does not conflict SHALL be kept, in that same order. This deduplication SHALL apply both across batches (against previously known concerts) and within a single batch (concerts discovered together).
+### Requirement: A concert has at least one performer
 
-#### Scenario: Empty scraped list
+A Concert SHALL carry at least one performing Artist, and the same Artist SHALL appear at most once among its performers. The order of performers is not meaningful.
 
-- **WHEN** the discovered-concerts list is empty and the existing concerts are any value
-- **THEN** no concerts SHALL be kept
+#### Scenario: Co-headlined concert
+- **WHEN** two Artists perform at the same Event
+- **THEN** the Concert lists both Artists as performers, each once
 
-#### Scenario: No existing concerts
+### Requirement: Proximity to a home area
 
-- **WHEN** there are no existing concerts and the discovered concerts have different dates
-- **THEN** all discovered concerts SHALL be kept
+A Concert's proximity to a home area SHALL be classified, in this order: AWAY when there is no home area or no venue; HOME when the venue's admin area equals the home area's level-1 code; NEARBY when both the venue's coordinates and the home area's centroid are known and the great-circle distance between them is at most 200 km; AWAY otherwise.
 
-#### Scenario: All scraped concerts conflict with existing
+#### Scenario: Same admin area is HOME
+- **WHEN** the venue's admin area is JP-13 and the home area's level-1 code is JP-13
+- **THEN** the proximity is HOME
 
-- **WHEN** every discovered concert's date matches an existing concert's date
-- **THEN** no discovered concerts SHALL be kept
+#### Scenario: Admin area match wins over distance
+- **WHEN** the venue's admin area equals the home area's level-1 code and the venue is 500 km from the centroid
+- **THEN** the proximity is HOME
 
-#### Scenario: Partial overlap with existing
+#### Scenario: Different admin area within 200 km is NEARBY
+- **WHEN** the venue's admin area is JP-14, the home area's level-1 code is JP-13, and the venue is 30 km from the home area's centroid
+- **THEN** the proximity is NEARBY
 
-- **WHEN** 3 concerts are discovered, 1 conflicts with an existing concert and 2 do not
-- **THEN** the 2 non-conflicting concerts SHALL be kept, in their original order
+#### Scenario: Venue without an admin area can still be NEARBY
+- **WHEN** the venue has no admin area and lies 50 km from the home area's centroid
+- **THEN** the proximity is NEARBY
 
-#### Scenario: Within-batch duplicate on same date
+#### Scenario: Beyond 200 km is AWAY
+- **WHEN** the admin areas differ and the venue is 500 km from the home area's centroid
+- **THEN** the proximity is AWAY
 
-- **WHEN** 2 discovered concerts share the same date and no existing concert has that date
-- **THEN** only the first of the two SHALL be kept (within-batch dedup)
+#### Scenario: Venue coordinates unknown
+- **WHEN** the admin areas differ and the venue has no coordinates
+- **THEN** the proximity is AWAY
 
-#### Scenario: Within-batch duplicate conflicts with existing
+#### Scenario: Home centroid unknown
+- **WHEN** the admin areas differ and the home area has no centroid
+- **THEN** the proximity is AWAY
 
-- **WHEN** 2 discovered concerts share the same date, and that date also matches an existing concert
-- **THEN** neither discovered concert SHALL be kept
+#### Scenario: No home area
+- **WHEN** there is no home area
+- **THEN** the proximity is AWAY
 
-#### Scenario: Preserves original order
+#### Scenario: No venue
+- **WHEN** the Concert has no venue
+- **THEN** the proximity is AWAY
 
-- **WHEN** discovered concerts have dates in the order [Mar 15, Mar 17, Mar 16] and none conflict
-- **THEN** they SHALL be kept in that same order [Mar 15, Mar 17, Mar 16]
+### Requirement: Earliest concert of a set
 
-#### Scenario: Nil existing concerts
+The earliest Concert of a set SHALL be the one with the earliest local date; on the same date a known start time comes before an unknown one and an earlier start before a later one; any remaining tie is broken by the smaller id. An empty set has no earliest Concert.
 
-- **WHEN** there is no record of existing concerts and concerts have been discovered
-- **THEN** all discovered concerts SHALL be kept (there is nothing to conflict with)
+#### Scenario: Known start precedes unknown start on the same date
+- **WHEN** two Concerts share a date, one starting at 18:00 and one with no start time
+- **THEN** the earliest is the one starting at 18:00
 
-### Requirement: Discovered-concert JSON payload encoding
+#### Scenario: Earlier date wins regardless of time
+- **WHEN** one Concert is on 2026-05-01 with no start time and another on 2026-05-02 at 12:00
+- **THEN** the earliest is the one on 2026-05-01
 
-The discovered-concert entity SHALL have JSON tags on all fields to support serialization as an event payload.
+#### Scenario: Empty set
+- **WHEN** the set of Concerts is empty
+- **THEN** there is no earliest Concert
 
-Field-to-JSON-tag mapping:
-- `Title` → `"title"`
-- `ListedVenueName` → `"listed_venue_name"`
-- `AdminArea` → `"admin_area,omitempty"`
-- `LocalDate` → `"local_date"`
-- `StartTime` → `"start_time,omitempty"`
-- `OpenTime` → `"open_time,omitempty"`
-- `SourceURL` → `"source_url"`
+### Requirement: Fan visibility follows the series
 
-#### Scenario: Marshal omits nil optional fields
+A Concert SHALL be visible to fans exactly when its Series is publicly visible (see Series).
 
-- **WHEN** a discovered-concert entity with `AdminArea=nil`, `StartTime=nil`, `OpenTime=nil` is marshaled to JSON
-- **THEN** the JSON output does not contain `"admin_area"`, `"start_time"`, or `"open_time"` keys
-
-#### Scenario: Marshal includes all non-nil fields
-
-- **WHEN** a discovered-concert entity with all fields set is marshaled to JSON
-- **THEN** all 7 fields appear in the JSON output with correct key names
-
-### Requirement: Discovered-concert to Concert conversion
-
-The discovered-concert entity SHALL provide a `ToConcert(artistID, eventID, venueID string) *Concert` method that constructs a `Concert` from the scraped data.
-
-The method SHALL map fields as follows:
-- `Concert.ID` = `eventID`
-- `Concert.ArtistID` = `artistID`
-- `Concert.VenueID` = `venueID`
-- `Concert.Title` = the discovered-concert entity's `Title`
-- `Concert.LocalDate` = the discovered-concert entity's `LocalDate`
-- `Concert.StartTime` = the discovered-concert entity's `StartTime`
-- `Concert.URL` = the discovered-concert entity's `URL`
-
-#### Scenario: Full field mapping
-
-- **WHEN** `ToConcert` is called on a discovered-concert entity with all fields populated
-- **THEN** the returned `Concert` has ID=eventID, ArtistID=artistID, VenueID=venueID, and all other fields copied from the discovered-concert entity
-
-#### Scenario: Nil optional fields
-
-- **WHEN** `ToConcert` is called on a discovered-concert entity where StartTime and URL are nil
-- **THEN** the returned `Concert` has nil StartTime and nil URL
-
-#### Scenario: Multiple calls produce distinct concerts
-
-- **WHEN** `ToConcert` is called twice with different artistID/eventID/venueID values on the same discovered-concert entity
-- **THEN** each call returns a distinct `Concert` with the respective IDs
-
-### Requirement: SearchLog freshness check
-
-The `SearchLog` entity SHALL provide an `IsFresh(now time.Time, ttl time.Duration) bool` method that determines whether a search log entry is still fresh.
-
-The method SHALL return true when:
-1. The search log has a completed status, AND
-2. The time elapsed since the search log's completion timestamp is less than `ttl`.
-
-#### Scenario: Fresh completed log
-
-- **WHEN** IsFresh is called with now=14:00, ttl=1h, and the SearchLog completed at 13:30
-- **THEN** returns true (30 minutes < 1 hour)
-
-#### Scenario: Stale completed log
-
-- **WHEN** IsFresh is called with now=16:00, ttl=1h, and the SearchLog completed at 13:30
-- **THEN** returns false (2.5 hours > 1 hour)
-
-#### Scenario: Non-completed log
-
-- **WHEN** IsFresh is called on a SearchLog with pending status
-- **THEN** returns false (not completed)
-
----
-
-### Requirement: SearchLog pending check
-
-The `SearchLog` entity SHALL provide an `IsPending(now time.Time, timeout time.Duration) bool` method that determines whether a search log entry is still actively pending (not timed out).
-
-The method SHALL return true when:
-1. The search log has a pending status, AND
-2. The time elapsed since the search log's creation timestamp is less than `timeout`.
-
-#### Scenario: Active pending log
-
-- **WHEN** IsPending is called with now=14:00, timeout=5m, and the SearchLog was created at 13:57
-- **THEN** returns true (3 minutes < 5 minutes)
-
-#### Scenario: Timed-out pending log
-
-- **WHEN** IsPending is called with now=14:10, timeout=5m, and the SearchLog was created at 13:57
-- **THEN** returns false (13 minutes > 5 minutes)
-
-#### Scenario: Completed log is not pending
-
-- **WHEN** IsPending is called on a SearchLog with completed status
-- **THEN** returns false (not pending)
-
----
-
-### Requirement: Concert extends Event via a 1:1 relationship
-
-The system SHALL support extending the base `Event` entity with domain-specific entities (e.g., `Concert`) via a 1:1 relationship. The domain-specific extension table MAY exist as a placeholder for future specialised columns, even when it currently carries no additional fields.
-
-#### Scenario: Concert as Event
-
-- **WHEN** a `Concert` is created
-- **THEN** an associated `Event` record is strictly required
-- **AND** the `Concert` record shares the same unique identifier (or references it as a foreign key with uniqueness constraint)
-
-#### Scenario: Music-specific extension placeholder is retained
-
-- **WHEN** the `concerts` table contains no music-specific columns beyond `event_id`
-- **THEN** the table SHALL still be retained as a placeholder for future music-specific extensions
-- **AND** the `Concert` proto message SHALL continue to exist as the user-facing DTO for music events
-
-### Requirement: Concert embeds resolved series and performers
-
-The `Concert` proto message SHALL embed the full `Series` parent and SHALL expose performing artists via `repeated Artist performers`, so that a single RPC response carries all data needed to render the event to a user.
-
-The `Concert` message SHALL NOT contain `Title title` or `Url source_url` fields; those values SHALL be accessed through the embedded `Series`.
-
-The `Concert` message MAY retain `VenueId venue_id` alongside the embedded `Venue venue` field as a backward-compatibility convenience for clients that have not yet migrated to reading `venue.id`. The proto comment on `venue_id` SHALL flag the field as legacy ("prefer the embedded `venue` field"), and a future change SHOULD migrate consumers off it and reserve the field number.
-
-#### Scenario: Concert response carries embedded Series
-
-- **WHEN** a `Concert` is returned from any RPC
-- **THEN** the `series` field SHALL contain the full `Series` message (not just a `SeriesId`)
-- **AND** the client SHALL be able to render the concert without issuing a follow-up call to fetch the `Series`
-
-#### Scenario: Concert response carries all performers
-
-- **WHEN** a `Concert` is returned from any RPC
-- **THEN** the `performers` repeated field SHALL contain at least one `Artist`
-- **AND** all artists associated with the underlying `Event` via `event_performers` SHALL be present in the response
-
-#### Scenario: Concert does not duplicate series-level metadata
-
-- **WHEN** the `Concert` proto message is defined
-- **THEN** it SHALL NOT contain a `Title title` field
-- **AND** it SHALL NOT contain a `Url source_url` field
-
-### Requirement: Concert schedule data model
-
-The system SHALL define standard data structures for core concert entities to ensure consistency across services.
-
-#### Scenario: Artist Definition
-
-- **WHEN** an artist is represented
-- **THEN** it SHALL include a unique ID, name, and a list of official media channels.
-
-#### Scenario: Venue Definition
-
-- **WHEN** a venue is represented
-- **THEN** it SHALL include a unique ID and name.
-- **AND** it MAY include an administrative area (`admin_area`) as an ISO 3166-2 subdivision code representing the venue's geographic administrative division (e.g., `JP-13` for Tokyo, `JP-40` for Fukuoka).
-
-#### Scenario: Concert Definition
-
-- **WHEN** a concert is represented
-- **THEN** it SHALL include the artist ID, venue ID, local date (`local_date`), title, and start time.
-- **AND** it MAY include open time, source URL, listed venue name, and an embedded `Venue` object.
-- **AND** all primitive scalar fields (date, time, title, URL, venue name) SHALL be represented as VO wrapper messages.
-
-#### Scenario: Event Definition
-
-- **WHEN** an event is represented
-- **THEN** it SHALL include a unique ID, an embedded `Venue` object, title, and local date.
-- **AND** it MAY include start time and open time.
-- **AND** all primitive scalar fields SHALL be represented as VO wrapper messages.
-- **AND** it SHALL NOT include `create_time` or `update_time` fields.
-
-#### Scenario: Concert card displays ticket journey badge
-
-- **WHEN** a concert is rendered on the dashboard
-- **AND** the user has a ticket journey for that concert's event
-- **THEN** the concert card SHALL display a badge indicating the current `TicketJourneyStatus`
-
-#### Scenario: Concert card without ticket journey
-
-- **WHEN** a concert is rendered on the dashboard
-- **AND** the user has no ticket journey for that concert's event
-- **THEN** the concert card SHALL NOT display a journey status badge
-
-### Requirement: Proto Value Object Consistency
-
-All primitive scalar fields on `Concert` and `Event` proto messages SHALL use VO wrapper messages to carry validation constraints and semantic meaning, matching the Go entity layer conventions.
-
-#### Scenario: LocalDate VO
-
-- **WHEN** a calendar date is represented in `Concert` or `Event`
-- **THEN** it SHALL use the `LocalDate` wrapper message containing a `google.type.Date` value.
-- **AND** the field SHALL be named `local_date`.
-
-#### Scenario: StartTime and OpenTime VOs
-
-- **WHEN** a start or open time is represented in `Concert` or `Event`
-- **THEN** it SHALL use `StartTime` or `OpenTime` wrapper messages containing a `google.protobuf.Timestamp` value.
-
-#### Scenario: Title VO
-
-- **WHEN** a title is represented in `Concert` or `Event`
-- **THEN** it SHALL use the `Title` wrapper message containing a non-empty string value.
-
-#### Scenario: SourceUrl VO
-
-- **WHEN** a source URL is represented in `Concert`
-- **THEN** it SHALL use the `SourceUrl` wrapper message containing a URI-validated string value.
-
-#### Scenario: ListedVenueName VO
-
-- **WHEN** a raw scraped venue name is represented in `Concert`
-- **THEN** it SHALL use the `ListedVenueName` wrapper message containing a string value.
-
-### Requirement: Concert carries an embedded venue
-
-Both `Concert` and `Event` proto messages SHALL embed a resolved `Venue` object populated by the server, rather than relying solely on a `venue_id` reference.
-
-#### Scenario: Concert carries embedded Venue
-
-- **WHEN** a `Concert` is returned from any RPC
-- **THEN** the `venue` field SHALL be populated with the corresponding `Venue` entity including `name` and `admin_area` if available.
-
-#### Scenario: Event carries embedded Venue
-
-- **WHEN** an `Event` is returned from any RPC
-- **THEN** the `venue` field SHALL be populated with the corresponding `Venue` entity.
-
-### Requirement: Concert classifies its proximity to a user's home
-
-The Go entity layer SHALL provide a `ProximityTo` receiver method on `Concert` that classifies the geographic relationship between the concert's venue and a user's home. This method SHALL be a pure function over entity fields with no infrastructure dependencies.
-
-#### Scenario: HOME classification by admin_area match
-
-- **WHEN** `Concert.ProximityTo(home)` is called
-- **AND** the concert's venue `admin_area` matches `home.Level1`
-- **THEN** the method SHALL return `ProximityHome`
-
-#### Scenario: NEARBY classification by Haversine distance
-
-- **WHEN** `Concert.ProximityTo(home)` is called
-- **AND** the venue's `admin_area` does not match `home.Level1`
-- **AND** the venue has latitude and longitude coordinates
-- **AND** the Haversine distance between `(home.Latitude, home.Longitude)` and the venue coordinates is less than or equal to 200km
-- **THEN** the method SHALL return `ProximityNearby`
-
-#### Scenario: AWAY classification for distant venues
-
-- **WHEN** `Concert.ProximityTo(home)` is called
-- **AND** the Haversine distance exceeds 200km
-- **THEN** the method SHALL return `ProximityAway`
-
-#### Scenario: AWAY classification when venue has no coordinates
-
-- **WHEN** `Concert.ProximityTo(home)` is called
-- **AND** the venue's latitude or longitude is nil
-- **THEN** the method SHALL return `ProximityAway`
-
-#### Scenario: AWAY classification when home is nil
-
-- **WHEN** `Concert.ProximityTo(nil)` is called
-- **THEN** the method SHALL return `ProximityAway`
-
-#### Scenario: AWAY classification when venue is nil
-
-- **WHEN** `Concert.ProximityTo(home)` is called
-- **AND** the concert's venue is nil
-- **THEN** the method SHALL return `ProximityAway`
+#### Scenario: Concert of an unlisted organizer series
+- **WHEN** a Concert's Series is a first-party Series with visibility UNLISTED
+- **THEN** the Concert is not visible to fans

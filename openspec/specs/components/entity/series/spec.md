@@ -2,53 +2,109 @@
 
 ## Purpose
 
-The Event Management capability handles the lifecycle of generic events, providing a foundation for specific event types like concerts. It ensures consistent handling of common event data such as titles, dates, times, and venues.
+A Series groups the Events of one engagement — a tour, a single-venue run, or a festival — and owns what they share: title, type and source page. A Series authored by an organizer (first-party) also carries a description, a cover image, a visibility and a publish state; a Series found by discovery has none of these and is always visible.
+
+| attribute | meaning | constraint |
+|-----------|---------|------------|
+| id | series identifier | required |
+| title | shared title (tour, show or festival name) | required, 1–255 characters |
+| type | TOUR, SINGLE or FESTIVAL | required |
+| source page | official page for the engagement | optional; a URI of at most 2048 characters |
+| organizer | owning Organizer | optional; present exactly when the Series is first-party |
+| description | organizer-written body text | optional, 1–10000 characters; first-party only |
+| cover image | current cover Media | optional; first-party only |
+| visibility | PUBLIC or UNLISTED | first-party only |
+| publish state | DRAFT, PUBLISHED or CANCELLED | first-party only |
+| share token | token that opens an UNLISTED Series | present only on a published UNLISTED Series; never shown on reads |
+| published at | when it became PUBLISHED | set on publish |
+| cancelled at | when it became CANCELLED | set on cancel |
+
+```mermaid
+erDiagram
+  Series ||--o{ Event : "groups"
+  Series ||--o{ DraftEvent : "drafts"
+  Organizer |o--o{ Series : "authors"
+  Series |o--o| Media : "has cover"
+  Series }o--o{ Artist : "drafts performers"
+  Series ||--o{ StagedConcert : "holds pending"
+  Series ||--o{ SalesPhase : "sells through"
+```
+
+```mermaid
+stateDiagram-v2
+  [*] --> DRAFT
+  DRAFT --> PUBLISHED
+  DRAFT --> CANCELLED
+  PUBLISHED --> CANCELLED
+  CANCELLED --> [*]
+```
 
 ## Requirements
 
-### Requirement: Series aggregates events for a tour, run, or festival
+### Requirement: Series type
 
-The system SHALL support a `Series` entity that aggregates one or more `Event` rows representing a tour, a multi-day single-venue run, or a festival. Each `Event` SHALL belong to exactly one `Series`. A `Series` SHALL own the metadata that is common across all its events.
+A Series' type SHALL be TOUR (events at several venues by the same performers under one name), SINGLE (one venue over one or more consecutive days) or FESTIVAL (a multi-performer event). A Series found by discovery SHALL be TOUR or SINGLE; FESTIVAL is set only by an organizer.
 
-The `Series` entity SHALL include: `SeriesId`, `Title`, `SeriesType`, an optional `source_url`, and — for organizer-authored series — an optional `description`, an optional `media`, a `visibility`, a `publish_state`, and an `organizer_id`. `source_url` is of type `Url`; `media` is of type `Media` (series.proto field 7, renamed and retyped from the former `cover_image`/`Url` by the organizer-media-pipeline change — the responsive CDN variant URLs now live inside `Media.attributes`, and `cover_image` is reserved). Both `source_url` and `media` follow nil-wrapper optionality: a nil wrapper is valid and skips inner value-object validation, while a present wrapper SHALL satisfy its value-object constraints. `description` is a `Description` value object with protovalidate length bounds. `organizer_id` is non-null exactly when the series is organizer-authored (first-party); a null `organizer_id` denotes a discovery-created series. The `SeriesType` enum SHALL declare:
+#### Scenario: Unspecified type is invalid
+- **WHEN** a Series has no type
+- **THEN** it is invalid
 
-- `SERIES_TYPE_UNSPECIFIED = 0` — the proto3-mandated zero-value sentinel; rejected at the proto boundary by `(buf.validate.field).enum.not_in = [0]` so it can never be persisted.
-- `SERIES_TYPE_TOUR = 1` — a series of events at multiple venues by the same set of performers, typically branded with a tour name.
-- `SERIES_TYPE_SINGLE = 2` — a standalone engagement at a single venue, spanning one or more consecutive days.
-- `SERIES_TYPE_FESTIVAL = 3` — a multi-performer event such as a music festival.
+#### Scenario: Discovered standalone show
+- **WHEN** discovery finds a standalone show spanning two days at one venue
+- **THEN** its Series type is SINGLE
 
-The proto-prefixed identifiers above are enforced by `buf lint ENUM_VALUE_PREFIX` and match the generated Go / TS constants; the bare `TOUR` / `SINGLE` / `FESTIVAL` aliases used elsewhere in this spec refer to the same values in prose. The `SeriesType` enum SHALL be designed as additive — new non-zero values MAY be appended without breaking existing consumers.
+### Requirement: Every event belongs to one series
 
-A `Series` SHALL carry a lifecycle for organizer-authored series: `visibility` is one of `PUBLIC` / `UNLISTED` (with `PASSWORD` reserved for a later change), and `publish_state` is one of `DRAFT` / `PUBLISHED` / `CANCELLED` (with `SCHEDULED` reserved). Only a `PUBLISHED` + `PUBLIC` series surfaces in discovery and follower lists; `DRAFT`, `UNLISTED`, and `CANCELLED` series SHALL be excluded from fan-facing surfaces. Discovery-created series (null `organizer_id`) behave as `PUBLISHED` + `PUBLIC` by default.
+Every Event SHALL belong to exactly one Series, and a Series' title and source page SHALL be shared by all its Events.
 
-A `Series` SHALL have no content-derived database key and no database-level uniqueness constraint. Its cross-run identity SHALL be established at the application layer by adopting the `series_id` already carried by its member events (matched on the events' physical natural key), minting a fresh `UUIDv7` `Series` only when no member event yet exists. `series.id` SHALL be a `UUIDv7`.
+#### Scenario: Tour with three stops
+- **WHEN** a tour has three stops on different dates and venues
+- **THEN** one Series holds the title and source page, and each stop is an Event of that Series
 
-#### Scenario: Series owns shared metadata
+### Requirement: Public visibility
 
-- **WHEN** a tour spans multiple stops on different dates and venues
-- **THEN** the tour title and source URL SHALL be stored on the parent `Series` row exactly once
-- **AND** each stop SHALL be persisted as a separate `Event` row referencing the same `series_id`
+A Series SHALL be publicly visible when it is not first-party, or when it is first-party, PUBLISHED and PUBLIC. A first-party Series that is DRAFT, CANCELLED, or UNLISTED is not publicly visible; its Events are not shown on any fan-facing list.
 
-#### Scenario: Every Event belongs to a Series
+#### Scenario: Discovered series is visible
+- **WHEN** a Series has no organizer
+- **THEN** it is publicly visible
 
-- **WHEN** an `Event` is created
-- **THEN** the `series_id` foreign key SHALL be non-null and reference an existing `Series` row
+#### Scenario: Published public series is visible
+- **WHEN** a first-party Series is PUBLISHED with visibility PUBLIC
+- **THEN** it is publicly visible
 
-#### Scenario: SeriesType enumerates supported series shapes
+#### Scenario: Published unlisted series is not visible
+- **WHEN** a first-party Series is PUBLISHED with visibility UNLISTED
+- **THEN** it is not publicly visible
 
-- **WHEN** a `Series` is created
-- **THEN** its `type` SHALL be one of `SERIES_TYPE_TOUR`, `SERIES_TYPE_SINGLE`, or `SERIES_TYPE_FESTIVAL`
-- **AND** the `SERIES_TYPE_UNSPECIFIED` value SHALL never be persisted
+#### Scenario: Draft series is not visible
+- **WHEN** a first-party Series is DRAFT
+- **THEN** it is not publicly visible
 
-#### Scenario: Series identity is derived from member events, not a database key
+#### Scenario: Cancelled series is not visible
+- **WHEN** a first-party Series is CANCELLED
+- **THEN** it is not publicly visible
 
-- **WHEN** a tour group is persisted and at least one of its events already exists
-- **THEN** the group SHALL adopt the existing events' `series_id` rather than minting a new one
-- **AND** when no member event exists, a new `UUIDv7` `Series` SHALL be created
-- **AND** the database SHALL NOT enforce any uniqueness on `Series` title or other content
+### Requirement: A draft series has no catalog events
 
-#### Scenario: Organizer-authored series carry authoring metadata and lifecycle
+While a first-party Series is DRAFT, its performances SHALL be DraftEvents, not Events: it occupies no Event slot and claims no discovered Event until it is published.
 
-- **WHEN** an organizer authors a first-party series
-- **THEN** the `Series` SHALL carry a non-null `organizer_id`, its `visibility`, its `publish_state`, and any `description` / `media`
-- **AND** the series SHALL surface to fans only while `PUBLISHED` + `PUBLIC`
+#### Scenario: Draft performance does not claim a slot
+- **WHEN** a DRAFT Series has a DraftEvent at a Venue, date and start time where a discovered Event exists
+- **THEN** the discovered Event still belongs to its own Series
+
+### Requirement: Cancelled is terminal
+
+A CANCELLED Series SHALL NOT become DRAFT or PUBLISHED again.
+
+#### Scenario: Cancelled series stays cancelled
+- **WHEN** a Series is CANCELLED
+- **THEN** it has no transition to DRAFT or PUBLISHED
+
+### Requirement: Share token only on an unlisted series
+
+A share token SHALL exist only on a published first-party Series whose visibility is UNLISTED, and it SHALL never be part of what a Series read returns.
+
+#### Scenario: Public series has no token
+- **WHEN** a first-party Series is PUBLISHED with visibility PUBLIC
+- **THEN** it has no share token

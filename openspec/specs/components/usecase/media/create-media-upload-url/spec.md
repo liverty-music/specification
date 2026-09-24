@@ -2,45 +2,30 @@
 
 ## Purpose
 
-Lets a vetted organizer author and publish first-party concert event pages
-for the artists it represents, as informational pages that supersede
-scraped data and take those artists out of the discovery pipeline.
+CreateMediaUploadURL gives an organizer operator an authorization, valid for 15 minutes, to upload one image (JPEG, PNG or WebP, at most 10 MiB) directly to storage, together with the Media id used to attach it to a concert afterwards.
 
 ## Requirements
 
-### Requirement: Organizer uploads an image
+### Requirement: Supported image types only
 
-The system SHALL let the organizer attach a single image to a concert via a
-**direct-to-storage upload**: the system issues a short-lived, single-object
-upload authorization scoped to the caller's organization and a fixed content
-type, the client uploads the original bytes directly to object storage, and the
-client then notifies the system to record the image and begin processing. The
-system SHALL validate the declared content type and enforce a maximum byte size
-at authorization time. A concert MAY be published without an image. The uploaded
-original is retained only until processing finishes — it is reclaimed on both
-successful processing and permanent failure; an upload that is authorized but
-never attached is a rare orphan (no automatic cleanup at MVP).
+CreateMediaUploadURL SHALL accept the content types image/jpeg, image/png and image/webp, ignoring case and surrounding spaces, and SHALL fail with InvalidArgument for any other type.
 
-#### Scenario: Image is stored and served
+#### Scenario: Upper-case type
+- **WHEN** the declared type is " IMAGE/PNG "
+- **THEN** an upload authorization is returned
 
-- **WHEN** an organizer requests to upload an image of a supported type (JPEG,
-  PNG, or WebP) for a concert they own
-- **THEN** the system SHALL return a short-lived upload authorization and a media
-  identifier, and — once the client confirms the upload — record the image as
-  belonging to that concert, process it asynchronously (see "Uploaded images are
-  processed into safe, responsive variants"), and serve the resulting variants
+#### Scenario: SVG
+- **WHEN** the declared type is image/svg+xml
+- **THEN** CreateMediaUploadURL fails with InvalidArgument
 
-#### Scenario: Invalid image is rejected
+### Requirement: Short-lived, size-limited authorization
 
-- **WHEN** an organizer requests an upload for an unsupported content type, or
-  the uploaded object exceeds the maximum byte size
-- **THEN** the system SHALL reject it (invalid-argument at authorization; the
-  storage upload itself SHALL reject an over-size object)
+CreateMediaUploadURL SHALL mint a new Media id and return an authorization valid for 15 minutes to upload exactly one object of the declared type and at most 10 MiB, scoped to the caller's Organizer, together with the Media id and the 10 MiB limit. No concert is named at this step and nothing is stored. When upload storage is not available it SHALL fail with Internal.
 
-#### Scenario: Only the owning organizer can attach an image to a concert
+#### Scenario: Authorization issued
+- **WHEN** an operator asks to upload a JPEG
+- **THEN** an authorization valid for 15 minutes, a new Media id and a 10 MiB limit are returned
 
-- **WHEN** an organizer attempts to attach an uploaded image to a concert they
-  do not own (the attach step carries the concert; the upload-authorization step
-  does not)
-- **THEN** the system SHALL deny the attach without revealing the concert's
-  existence
+#### Scenario: Upload over the limit
+- **WHEN** the operator uploads 11 MiB with the authorization
+- **THEN** storage refuses the upload

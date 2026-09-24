@@ -2,55 +2,34 @@
 
 ## Purpose
 
-Lets a vetted organizer author and publish first-party concert event pages
-for the artists it represents, as informational pages that supersede
-scraped data and take those artists out of the discovery pipeline.
+AttachMedia lets the owning organizer operator record an uploaded image as the next cover of one of its concerts (Series). The image becomes the cover only once it has been processed into servable variants.
 
 ## Requirements
 
-### Requirement: Uploaded images are processed into safe, responsive variants
+### Requirement: Ids required
 
-After an original is uploaded, the system SHALL asynchronously process it before
-serving: it SHALL verify the actual image content (not merely the declared
-type), reject images whose pixel dimensions exceed a safe limit **before** full
-decoding (decompression-bomb defense), remove all embedded metadata (EXIF), and
-produce responsive next-generation-format (WebP) variants — a thumbnail and a
-large size — served publicly via the CDN with long-lived immutable caching. The
-served image SHALL be represented as a media object exposing the variant URLs.
-The system SHALL NOT serve the unprocessed original.
+AttachMedia SHALL fail with InvalidArgument when the Series id or the Media id is empty.
 
-#### Scenario: A valid image becomes servable variants
+#### Scenario: Missing media id
+- **WHEN** AttachMedia is called with no Media id
+- **THEN** it fails with InvalidArgument
 
-- **WHEN** processing completes for a valid uploaded image
-- **THEN** the system SHALL make thumbnail and large WebP variants available at
-  stable CDN URLs with EXIF removed, and the concert's `media` SHALL expose those
-  variant URLs
+### Requirement: Only the owner
 
-#### Scenario: A malformed or oversized-dimension image yields no variants
+AttachMedia SHALL fail with PermissionDenied, without revealing whether the Series exists, when the Series does not exist or is not owned by the caller's Organizer. A Series in any publish state SHALL be accepted.
 
-- **WHEN** the uploaded bytes are not a valid supported image, or exceed the
-  pixel/dimension limit
-- **THEN** the system SHALL not produce variants and SHALL not retry
-  indefinitely; the image simply does not become available and the organizer can
-  re-upload
+#### Scenario: Another organizer's series
+- **WHEN** an operator attaches an image to another Organizer's Series
+- **THEN** AttachMedia fails with PermissionDenied and nothing is recorded
 
-#### Scenario: Readiness is observable without a stored status
+### Requirement: Record and hand over for processing
 
-- **WHEN** an image has been uploaded but processing is not yet complete
-- **THEN** the served variant URLs SHALL not yet resolve, and the organizer
-  console MAY show an optimistic local preview until the variants become
-  available (no processing-status field is exposed)
+AttachMedia SHALL record the Media as an IMAGE of the caller's Organizer (Media.InsertMedia) and announce the upload for the Series so it is processed; the Series' current cover SHALL stay until processing succeeds. Repeating AttachMedia for the same Media SHALL succeed. A failed announcement SHALL NOT fail AttachMedia.
 
-### Requirement: Replacing an image reclaims the previous one
+#### Scenario: Cover replaced later
+- **WHEN** the owner attaches a new image to a Series that has a cover
+- **THEN** the Series still shows its old cover until the new image is processed
 
-The system SHALL let an organizer replace a concert's image by uploading a new
-one; the previously served variants SHALL be reclaimed (deleted) so stale objects
-do not accumulate, but ONLY after the replacement's variants exist, so an
-already-published concert never serves a broken image during a replace.
-
-#### Scenario: New image supersedes and reclaims the old without a gap
-
-- **WHEN** an organizer replaces the image of an already-published concert
-- **THEN** the concert SHALL keep serving the old variants until the new variants
-  are ready, then reference the new variants, and only then SHALL the previous
-  variants be deleted
+#### Scenario: Repeated attach
+- **WHEN** the same Media is attached twice
+- **THEN** both calls succeed and one Media is recorded

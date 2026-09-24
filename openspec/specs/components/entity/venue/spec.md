@@ -2,71 +2,66 @@
 
 ## Purpose
 
-Defines the Venue entity, constructed from scraped source data, its normalized administrative area, and the uniqueness constraint that prevents duplicate venues for the same listed name and area.
+A Venue is a physical place where Events are held, known by a canonical name, the administrative area it lies in, its location and, when resolved, its map place identity. The name a source used for it is kept so the same place is recognised again.
+
+| attribute | meaning | constraint |
+|-----------|---------|------------|
+| id | venue identifier | required |
+| name | canonical name; the listed venue name when the place was not resolved | required, non-empty |
+| admin area | ISO 3166-2 subdivision the venue lies in | optional, matches `^[A-Z]{2}-[A-Z0-9]{1,3}$`; absent means unknown |
+| place id | map place identity | optional; at most one Venue per place id |
+| coordinates | location | optional Coordinates |
+| listed venue name | the name as first listed by a source or organizer, normalized | optional; with the admin area, identifies the Venue |
+
+```mermaid
+erDiagram
+  Venue ||--o{ Event : "hosts"
+  Venue ||--o{ DraftEvent : "hosts draft"
+  Venue ||--o| Coordinates : "located at"
+```
 
 ## Requirements
 
-### Requirement: Admin Area Normalization Function
+### Requirement: Admin area format
 
-The system SHALL provide a normalization function that converts free-text administrative area strings into ISO 3166-2 subdivision codes.
+A Venue's admin area, when present, SHALL be an ISO 3166-2 subdivision code: two uppercase letters, a hyphen and 1–3 uppercase letters or digits.
 
-#### Scenario: Japanese prefecture name to ISO code
+#### Scenario: Valid admin area
+- **WHEN** the admin area is JP-13
+- **THEN** it is valid
 
-- **WHEN** the normalization function receives a Japanese prefecture name (e.g., "東京都", "東京", "愛知県", "愛知")
-- **THEN** it SHALL return the corresponding ISO 3166-2 code (e.g., `JP-13`, `JP-23`)
+#### Scenario: Free-text admin area is invalid
+- **WHEN** the admin area is "東京都"
+- **THEN** it is invalid
 
-#### Scenario: English prefecture name to ISO code
+### Requirement: Listed venue name normalization
 
-- **WHEN** the normalization function receives an English name (e.g., "Tokyo", "tokyo", "Aichi")
-- **THEN** it SHALL return the corresponding ISO 3166-2 code (e.g., `JP-13`, `JP-23`)
+A listed venue name SHALL be normalized by folding full-width and half-width forms to one form, collapsing runs of whitespace to a single space and trimming the ends, removing a leading "〈city〉公演 ＠" prefix, and then removing a leading "〈prefecture〉・" prefix where the prefecture is one of Japan's 47 prefectures, with or without its 都/道/府/県 suffix. A name that is blank after normalization SHALL be treated as missing. Normalizing an already-normalized name SHALL leave it unchanged.
 
-#### Scenario: Unrecognized input
+#### Scenario: Prefecture prefix removed
+- **WHEN** the listed venue name is "大阪・フェスティバルホール"
+- **THEN** the normalized name is "フェスティバルホール"
 
-- **WHEN** the normalization function receives text that does not match any known administrative area
-- **THEN** it SHALL return nil (no value)
-- **AND** the caller SHALL treat this as "admin area unknown"
+#### Scenario: Performance-city prefix removed
+- **WHEN** the listed venue name is "大阪公演 ＠フェスティバルホール"
+- **THEN** the normalized name is "フェスティバルホール"
 
-#### Scenario: Empty or whitespace-only input
+#### Scenario: Middle dot after a non-prefecture word is kept
+- **WHEN** the listed venue name is "東京文化会館・大ホール"
+- **THEN** the normalized name is "東京文化会館・大ホール"
 
-- **WHEN** the normalization function receives an empty string or whitespace-only string
-- **THEN** it SHALL return nil
+#### Scenario: Whitespace-only name is missing
+- **WHEN** the listed venue name is "　 "
+- **THEN** the normalized name is empty and the name is treated as missing
 
-### Requirement: Venue AdminArea Persistence
+#### Scenario: Already normalized name is unchanged
+- **WHEN** the listed venue name is "日本武道館"
+- **THEN** the normalized name is "日本武道館"
 
-The system SHALL store the administrative area extracted by Gemini on the Venue record when available.
+### Requirement: Canonical name falls back to the listed name
 
-#### Scenario: AdminArea stored on new venue creation
+When a Venue is made without a resolved place, its name SHALL be its listed venue name and it SHALL have no place id and no coordinates.
 
-- **WHEN** a new venue is created and the scraped concert includes a non-empty `admin_area`
-- **THEN** the venue record SHALL have `admin_area` set to that value
-
-#### Scenario: AdminArea is NULL when not extracted
-
-- **WHEN** a new venue is created and the scraped concert has no `admin_area` (empty or absent)
-- **THEN** the venue record SHALL have `admin_area` set to `NULL`
-
-### Requirement: Venue constructor from scraped data
-
-The entity package SHALL provide `NewVenueFromScraped(name string) *Venue` that creates a Venue with auto-generated UUIDv7 ID, Name=name, EnrichmentStatus=pending, and RawName=name.
-
-#### Scenario: Constructor sets defaults
-
-- **WHEN** NewVenueFromScraped("Zepp Tokyo") is called
-- **THEN** returned Venue has non-empty ID, Name="Zepp Tokyo", RawName="Zepp Tokyo", EnrichmentStatus=EnrichmentStatusPending
-
----
-
-### Requirement: Unique index on venue listed name and admin area
-
-The `venues` table SHALL have a unique index on `(listed_venue_name, admin_area)` to prevent duplicate venue records for the same scraped name and area combination, and to support efficient lookup.
-
-#### Scenario: Duplicate listed name and admin area rejected
-
-- **WHEN** a venue is inserted with the same `listed_venue_name` and `admin_area` as an existing record
-- **THEN** the database SHALL reject the insert via the unique constraint
-- **AND** `VenueRepository.Create` SHALL handle the conflict gracefully (return the existing venue or ignore)
-
-#### Scenario: Same listed name with different admin area allowed
-
-- **WHEN** two venues share the same `listed_venue_name` but have different `admin_area` values (or one is NULL)
-- **THEN** both records SHALL be permitted by the unique index
+#### Scenario: Unresolved venue
+- **WHEN** a Venue is made for listed name "ライブハウスX" with no resolved place
+- **THEN** its name is "ライブハウスX" and it has no place id and no coordinates

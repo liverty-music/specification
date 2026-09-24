@@ -2,353 +2,134 @@
 
 ## Purpose
 
-Turns a discovered concert into a persisted event, grouping related tour dates into a series, deduplicating against existing records on a natural key, resolving the venue to a canonical record, and either publishing, staging for review, or skipping when the venue cannot be resolved.
+CreateFromDiscovered takes one Artist's batch of newly discovered series, triggered when a discovery is announced. For each event it does one of four things: publishes it under its Series and announces it to followers; stages it for admin review when its venue is unresolved or its slot collides with an Event already in the catalog; skips it when its slot is suppressed; or fills an announced start time onto the Artist's existing Event.
 
 ## Requirements
 
-### Requirement: Normalization in Concert Discovery Pipeline
+### Requirement: Triggered by a discovery announcement
 
-The concert discovery pipeline SHALL normalize Gemini's free-text `admin_area` output to an ISO 3166-2 code before persisting venue data.
+CreateFromDiscovered SHALL run once for each discovery announced for an Artist, with that Artist and its DiscoveredSeries. When it fails, the same discovery SHALL be processed again; every step SHALL be safe to repeat.
 
-#### Scenario: Gemini returns recognizable admin_area
+#### Scenario: Redelivered discovery
+- **WHEN** a discovery that was already fully processed is processed again
+- **THEN** no Event, Series or StagedConcert is added a second time
 
-- **WHEN** the Gemini concert searcher returns a scraped event with `admin_area = "愛知県"`
-- **THEN** the pipeline SHALL normalize the value to `JP-23` before creating or updating the venue record
+### Requirement: Unusable input is skipped
 
-#### Scenario: Gemini returns unrecognizable admin_area
+CreateFromDiscovered SHALL skip a series with no title or no events, and an event whose listed venue name is blank after normalization, and continue with the rest. It SHALL normalize every listed venue name before using or storing it.
 
-- **WHEN** the Gemini concert searcher returns a scraped event with an unrecognizable `admin_area`
-- **THEN** the pipeline SHALL set `admin_area` to NULL on the venue record
+#### Scenario: Untitled series
+- **WHEN** a discovered series has an empty title
+- **THEN** none of its events is published or staged and the other series are processed
 
-#### Scenario: Gemini prompt unchanged
+#### Scenario: Venue to be announced
+- **WHEN** an event's listed venue name is blank
+- **THEN** that event is skipped
 
-- **WHEN** the Gemini concert searcher constructs its prompt
-- **THEN** the prompt text and response schema SHALL remain unchanged from the current implementation
-- **AND** normalization SHALL occur after parsing the Gemini response, not within the LLM interaction
+#### Scenario: Prefixed venue name stored normalized
+- **WHEN** an event lists "大阪・フェスティバルホール"
+- **THEN** whatever is stored for it lists "フェスティバルホール"
 
-### Requirement: Tour Events Group Into a Single Series
+### Requirement: One Series per discovered series
 
-The system SHALL persist all events that Gemini grouped under one `<tour>` block as a single `Series` with `SeriesType = SERIES_TYPE_TOUR`, shared by every event in the group. This replaces the prior 1-`Series`-per-`Event` SINGLE fallback for tours.
+For each discovered series, CreateFromDiscovered SHALL look up the Artist's Events on the series' dates (Concert.FindEventsByArtistAndDate). When any of them has the same date and normalized listed venue name as one of the series' events, the series SHALL join that Event's Series — the one with the smallest id when several match. Otherwise a new Series SHALL be created with the discovered title, type and source page (Series.Create) before any of its events is stored or staged. The Series type SHALL come from the discovery, never from the number of events.
 
-#### Scenario: Multi-stop tour creates one TOUR series
+#### Scenario: Re-discovered tour joins its series
+- **WHEN** a tour is discovered again and one of its dates matches an Event of the Artist at the same venue
+- **THEN** all its events go under that Event's Series and no Series is created
 
-- **WHEN** a discovered tour group contains three events at different venues/dates
-- **THEN** exactly one `Series` row SHALL be created with `type = SERIES_TYPE_TOUR`
-- **AND** all three `Event` rows SHALL reference that single `series_id`
-- **AND** the tour title and source URL SHALL be stored once on that `Series`
+#### Scenario: New tour
+- **WHEN** none of a tour's events matches an Event of the Artist
+- **THEN** one TOUR Series is created and all its events go under it
 
-#### Scenario: Single-date tour block still yields a TOUR series
+#### Scenario: Same-day show at another venue does not join
+- **WHEN** the Artist has an Event on one of the tour's dates at a different venue
+- **THEN** the tour does not join that Event's Series
 
-- **WHEN** a `<tour>` group contains only one event within the search window
-- **THEN** the created `Series` SHALL have `type = SERIES_TYPE_TOUR`
-- **AND** the SeriesType SHALL NOT be downgraded based on the event count
+### Requirement: Re-discovery of the artist's own event
 
-### Requirement: Series Identity Is Adopted From Member Events
+When the Artist already has an Event on an event's date at the same normalized listed venue, CreateFromDiscovered SHALL NOT look up the venue. When that Event has the same start time (or both have none), nothing is stored. When the event brings a start time and that Event has none, the time SHALL be filled onto it (Concert.FillEventStartTimes) and nothing else stored; one unknown-start Event SHALL be filled by at most one event of the batch. Otherwise the event SHALL be handled as a resolved event at that Event's Venue.
 
-The system SHALL establish a `Series`'s cross-run identity from the events that already belong to it, not from any content-derived key. When persisting a tour group, the system SHALL reuse the `series_id` carried by the group's already-persisted events (matched by the events' physical natural key); only when no member event yet exists SHALL it mint a fresh `UUIDv7` `Series`. A `Series` SHALL have no content-derived database key and no database-level uniqueness constraint, and `series.id` SHALL be a `UUIDv7`.
+#### Scenario: Exact re-discovery
+- **WHEN** the event matches the Artist's Event at the same venue, date and start time
+- **THEN** nothing is stored and no venue is looked up
 
-#### Scenario: Re-discovery adopts the existing series
+#### Scenario: Start time announced
+- **WHEN** the Artist's Event at that venue and date has no start time and the event starts at 18:00
+- **THEN** the Event now starts at 18:00 and no new Event is stored
 
-- **WHEN** a tour is discovered again on a later run and at least one of its events already exists
-- **THEN** the tour group SHALL reuse the existing event's `series_id`
-- **AND** no duplicate `Series` row SHALL be created
+#### Scenario: Two new start times for one unknown-start event
+- **WHEN** the Artist's Event has no start time and the batch brings 13:00 and 18:00 at that venue and date
+- **THEN** the Event is filled with 13:00 and 18:00 is handled as a new event
 
-#### Scenario: A genuinely new tour mints a fresh series
+### Requirement: Venue resolution
 
-- **WHEN** a tour group's events do not yet exist in the database
-- **THEN** a new `Series` row SHALL be created with a `UUIDv7` identifier
-- **AND** every event in the group SHALL reference that new `series_id`
+For any other event, CreateFromDiscovered SHALL look up the venue by its listed name and admin area (Venue.SearchPlace), at most once per name and admin area within the batch. When the place is found, the Venue SHALL be found or created in this order: by place id (Venue.GetByPlaceID); by listed venue name and admin area (Venue.GetByListedName), giving that Venue the place id when it has none (Venue.BackfillPlaceID); otherwise created with the place's canonical name, place id, coordinates, the listed venue name and the discovered admin area (Venue.Create). Any lookup failure other than no match SHALL fail the whole batch.
 
-#### Scenario: Divergent-title co-headline tour converges to one series
+#### Scenario: Known place
+- **WHEN** the place is found and a Venue holds its place id
+- **THEN** that Venue is used and no Venue is created
 
-- **WHEN** the same real tour is discovered via two artists with divergent titles and no shared `source_url`
-- **THEN** the second discovery's events SHALL match the first's by physical natural key
-- **AND** SHALL adopt the existing `series_id`
-- **AND** exactly one TOUR `Series` SHALL exist for the tour, with both artists linked via `event_performers`
+#### Scenario: Place id differs from the stored venue
+- **WHEN** the place's id matches no Venue but a Venue holds the listed venue name and admin area without a place id
+- **THEN** that Venue is used and takes the place id
 
-### Requirement: Events Deduplicate On Physical Natural Key
+#### Scenario: Catalog unavailable
+- **WHEN** the venue lookup fails with Unavailable
+- **THEN** CreateFromDiscovered fails and the discovery is processed again later
 
-The events natural key SHALL be `(venue_id, local_event_date, start_at)`, enforced as a unique constraint that treats NULL `start_at` values as equal (`NULLS NOT DISTINCT`). The key SHALL NOT include `series_id`. Two performances at the same venue and date with different start times SHALL be distinct events; two with the same venue, date, and start time SHALL be the same event regardless of which series or artist discovered them.
+### Requirement: Unresolved venue is staged
 
-#### Scenario: Matinee and evening shows are distinct events
+When the venue lookup finds no match, CreateFromDiscovered SHALL stage the event (StagedConcert.Upsert) with no resolved preview, SHALL NOT create a Venue and SHALL NOT publish it.
 
-- **WHEN** two performances occur at the same venue on the same date with different `start_at` values
-- **THEN** two distinct `Event` rows SHALL be persisted
+#### Scenario: Venue not found
+- **WHEN** the venue lookup finds no match
+- **THEN** a StagedConcert without resolved place is stored and nothing is published
 
-#### Scenario: Same physical show discovered via two artists is one event
+### Requirement: Suppressed slot is skipped
 
-- **WHEN** the same `(venue_id, local_event_date, start_at)` show is discovered separately via two followed artists
-- **THEN** it SHALL resolve to a single `Event` row
-- **AND** both artists SHALL be linked via `event_performers`
+For a resolved event, CreateFromDiscovered SHALL check its Venue, date and start time (SuppressedConcert.Exists) and, when suppressed, SHALL neither publish nor stage it.
 
-#### Scenario: Two unpublished-time shows at one venue/date collapse
+#### Scenario: Deleted concert rediscovered
+- **WHEN** the event's slot was suppressed by an admin's delete
+- **THEN** it is neither published nor staged
 
-- **WHEN** two discovered events share `(venue_id, local_event_date)` and both lack a published `start_at`
-- **THEN** they SHALL collapse to a single `Event` row
+### Requirement: Collision is staged, anything else is published
 
-### Requirement: Event Identity Is Resolved In The Application
+For a resolved, unsuppressed event, CreateFromDiscovered SHALL look up the Events at its Venue and date (Concert.FindEventsByVenueAndDate). The event collides when an Event there has the same start time (or both have none), or when the event has no start time and an Event there has one. A colliding event SHALL be staged (StagedConcert.Upsert) and not published; its resolved preview is included when its venue was looked up, and omitted when it reused the Artist's existing Event's Venue. Any other event SHALL be published under the series' Series with the Artist as performer (Concert.Create). The RejectedConcertLog SHALL NOT be consulted.
 
-The system SHALL resolve each scraped event against existing rows before writing, so that a later-announced `start_at` updates the row first seen with a NULL start rather than inserting a duplicate, while a genuinely new start time at the same venue/date is inserted as a new event.
+#### Scenario: Same slot as an existing event
+- **WHEN** an Event at the resolved Venue, date and start time exists
+- **THEN** the event is staged with its resolved preview and not published
 
-#### Scenario: Later-announced start time fills the existing row
+#### Scenario: Unknown start next to a known start
+- **WHEN** the event has no start time and an Event at that Venue and date starts at 18:00
+- **THEN** the event is staged
 
-- **WHEN** an event was first persisted with a NULL `start_at`
-- **AND** a subsequent discovery provides a concrete `start_at` for the same `(venue_id, local_event_date)`
-- **THEN** the existing row's `start_at` SHALL be filled in
-- **AND** no duplicate `Event` row SHALL be created
+#### Scenario: Known start next to an unknown-start event
+- **WHEN** the event starts at 18:00 and the only Event at that Venue and date has no start time
+- **THEN** a new Event starting at 18:00 is published
 
-#### Scenario: A new start time at a known venue/date is a new event
+#### Scenario: Genuinely new
+- **WHEN** no Event is at the resolved Venue and date
+- **THEN** the event is published under the series' Series
 
-- **WHEN** an existing row at `(venue_id, local_event_date)` already has a concrete `start_at`
-- **AND** a discovery provides a different concrete `start_at` for the same venue and date
-- **THEN** a new `Event` row SHALL be inserted (a distinct session)
+### Requirement: One announcement per series
 
-### Requirement: SeriesType Assigned From Source Classification
+After processing a series, CreateFromDiscovered SHALL announce the new concerts to followers once, for the Artist, carrying every Event id that Concert.Create reported for that series. A series that published nothing SHALL announce nothing. A failed announcement SHALL NOT fail the batch.
 
-The system SHALL assign `SeriesType` from the Gemini block the event originated in — TOUR for `<tour>`, SINGLE for `<standalone>` — and SHALL NOT infer it from the number of events.
+#### Scenario: Three-stop tour
+- **WHEN** three events of a tour are published
+- **THEN** one announcement carrying the three Event ids is made
 
-#### Scenario: Multi-day standalone stays SINGLE
+#### Scenario: Everything staged
+- **WHEN** every event of a series is staged
+- **THEN** no announcement is made
 
-- **WHEN** a `<standalone>` block describes a multi-day single-venue run
-- **THEN** its `Series` SHALL have `type = SERIES_TYPE_SINGLE`
-
-#### Scenario: Standalone is not grouped into a tour
+### Requirement: Empty new series are removed
 
-- **WHEN** a `<standalone>` event shares a title with a tour
-- **THEN** it SHALL NOT be folded into the tour's `Series`
-- **AND** it SHALL receive its own SINGLE series
+At the end of the batch, CreateFromDiscovered SHALL remove the Series it created in this batch that have no Event and no StagedConcert (Series.DeleteOrphaned); it SHALL NOT touch other Series. A failure here SHALL NOT fail the batch.
 
-### Requirement: Multi-Hall Venues Are Disambiguated By venue_id
-
-The system SHALL rely on `venue_id` resolution to distinguish concurrent performances in different halls of the same building. The events natural key SHALL NOT include raw venue text. When a source names the hall, distinct halls SHALL resolve to distinct `venue_id`s; when a source omits the hall, the reference MAY resolve to the building-level venue.
-
-#### Scenario: Different halls on the same date are distinct events
-
-- **WHEN** two performances on the same date are listed with distinct hall names of the same building (e.g. ホールA and ホールC)
-- **THEN** they SHALL resolve to distinct `venue_id`s
-- **AND** SHALL be persisted as two distinct `Event` rows
-
-### Requirement: Residual Grouping Ambiguities Are Logged, Not Fatal
-
-The system SHALL treat residual grouping ambiguities as non-fatal and SHALL log them rather than failing discovery.
-
-#### Scenario: Late additional dates after full rotation may split
-
-- **WHEN** a tour's previously-seen dates have all passed and been range-filtered before newly-announced dates are discovered
-- **THEN** the system MAY create a second TOUR `Series` for the new dates
-- **AND** discovery SHALL complete successfully without error
-
-#### Scenario: Hall name omitted by one source may split
-
-- **WHEN** the same physical show is discovered once with a hall name and once without
-- **THEN** it MAY resolve to two `venue_id`s and two `Event` rows
-- **AND** discovery SHALL complete successfully, logging the anomaly
-
-#### Scenario: Cross-source start-time disagreement may split
-
-- **WHEN** the same physical show is discovered via two sources that publish different concrete `start_at` values (e.g. door time vs performance time)
-- **THEN** it MAY resolve to two `Event` rows under two series (a consequence of `start_at` being part of the key)
-- **AND** discovery SHALL complete successfully, logging the anomaly
-
-### Requirement: Discovery Consumer Auto-Publish, Conflict Staging, and Rejection Log
-
-The `CONCERT.discovered` consumer SHALL resolve the venue and evaluate the
-discovered concert for a same-slot conflict against the published catalog
-BEFORE deciding how to persist it. When the discovered concert is genuinely
-new — no existing published event at the resolved `(venue_id,
-local_event_date, start_at)` (the known-start "fill" of an existing
-unknown-start row counts as new, not a conflict) — the consumer SHALL publish
-it directly: create or reuse the `venues` row, insert the published
-`series`/`events`/`event_performers` rows (reusing the existing bulk-insert
-and natural-key UPSERT behavior), and publish `CONCERT.created` so follower
-notifications fire immediately; it SHALL NOT write a `pending` staged row for
-a new concert. When a same-slot conflict IS detected, the consumer SHALL
-instead persist a `pending` `staged_concert` row (carrying the scraped fields
-and the resolved-venue preview) and SHALL NOT insert any published row or
-publish `CONCERT.created`; that staged row is resolved later through the
-existing approval reconciliation. A `venues` row SHALL be created only on the
-auto-publish path — the conflict-staging path SHALL NOT create a new `venues`
-row, because a same-slot conflict necessarily resolves to the venue of the
-already-published event, so rejected or never-approved concerts SHALL NOT
-create orphan `venues` rows. Auto-publish requires a resolved venue: when the
-scraped venue name does NOT resolve against the venue provider, the consumer
-SHALL stage the concert for review rather than auto-publishing it, and SHALL
-NOT create a `venues` row — publishing a venue with no provider identity and
-no coordinates would exclude the concert from proximity matching and publish
-an unreviewed venue. A resolved venue is necessary but not sufficient for
-auto-publish: a resolved venue that collides with an existing event is still
-staged as a conflict. A concert in `pending` state SHALL NOT be returned by
-any consumer-facing read RPC (`List`, `ListByFollower`,
-`ListWithProximity`). The system SHALL maintain a `rejected_concerts_log`
-that is append-only and used solely for searcher-quality analysis; it SHALL
-NOT participate in discovery dedup or otherwise suppress future staging.
-
-#### Scenario: Log does not affect staging
-
-- **WHEN** the discovery pipeline evaluates whether to stage a concert
-- **THEN** the presence of a matching `rejected_concerts_log` entry SHALL have no effect on the
-  staging decision
-
-#### Scenario: New concert is auto-published without staging
-
-- **WHEN** the `CONCERT.discovered` consumer processes a discovered concert whose resolved
-  `(venue_id, local_event_date, start_at)` has no existing published event
-- **THEN** it SHALL create or reuse the `venues` row and insert the published event (with its
-  series and performers)
-- **AND** it SHALL publish `CONCERT.created`
-- **AND** it SHALL NOT write a `pending` staged row
-
-#### Scenario: Conflicting concert is staged for reconciliation
-
-- **WHEN** the `CONCERT.discovered` consumer processes a discovered concert that maps onto an
-  existing published event at the resolved `(venue_id, local_event_date, start_at)`
-- **THEN** it SHALL persist a `pending` `staged_concert` row carrying the scraped fields and
-  resolved-venue preview
-- **AND** it SHALL NOT insert any published row and SHALL NOT publish `CONCERT.created`
-
-#### Scenario: Known-start fill is treated as new, not a conflict
-
-- **WHEN** a discovered concert has a known start time and the only existing published event at
-  that venue and date has an unknown (NULL) start time
-- **THEN** the consumer SHALL treat it as the new/publish path (filling the existing row per the
-  established fill behavior) rather than staging it as a conflict
-
-#### Scenario: Unresolved venue is staged, not auto-published
-
-- **WHEN** the `CONCERT.discovered` consumer processes a discovered concert whose scraped venue name
-  cannot be resolved against the venue provider
-- **THEN** it SHALL persist a `pending` `staged_concert` row for review
-- **AND** it SHALL NOT auto-publish the concert and SHALL NOT create a `venues` row
-
-#### Scenario: Pending concerts are not fan-visible
-
-- **WHEN** a concert is in `pending` state in the approval queue
-- **THEN** it SHALL NOT be returned by any consumer-facing read RPC (`List`, `ListByFollower`,
-  `ListWithProximity`)
-
-### Requirement: Venue lookup by listed name before Places API call
-
-The `VenueRepository` SHALL provide a `GetByListedName` method that looks up a venue by the exact `listed_venue_name` and optional `admin_area` as stored in the `venues` table. The `ConcertCreationUseCase` SHALL call this method before invoking the Google Places API during venue resolution.
-
-#### Scenario: Venue found by listed name — API call skipped
-
-- **WHEN** venue resolution is performed with a `listed_venue_name` and optional `admin_area`
-- **AND** a venue with the same `listed_venue_name` and `admin_area` already exists in the database
-- **THEN** the system SHALL return that existing venue immediately
-- **AND** the system SHALL NOT call the Google Places API
-
-#### Scenario: Venue not found by listed name — resolution continues
-
-- **WHEN** venue resolution is performed with a `listed_venue_name` and optional `admin_area`
-- **AND** no venue with that combination exists in the database
-- **THEN** the system SHALL proceed to call the Google Places API as before
-
-#### Scenario: Listed name match is case-sensitive and exact
-
-- **WHEN** `GetByListedName` is called
-- **THEN** the lookup SHALL use exact string equality on `listed_venue_name`
-- **AND** variations in casing or whitespace SHALL result in a miss (falling through to the API)
-
-### Requirement: Venue Resolution During Concert Creation
-
-The concert creation pipeline SHALL resolve venues via a DB-first lookup before calling the Google Places API. The `placeSearcher` dependency remains required (not optional). When a venue is found by listed name in the database, the Places API SHALL NOT be called.
-
-#### Scenario: Venue found by listed name in DB — API skipped
-
-- **WHEN** the concert creation pipeline processes a scraped concert
-- **AND** a venue with the same `listed_venue_name` and `admin_area` already exists in the database
-- **THEN** the system SHALL return that existing venue immediately
-- **AND** the system SHALL NOT call the Google Places API
-
-#### Scenario: Venue found by listed name in batch-local cache — API skipped
-
-- **WHEN** the concert creation pipeline processes a scraped concert
-- **AND** the venue's `listed_venue_name` matches a venue already resolved in the current batch (via `newVenues` map keyed by `listed_venue_name`)
-- **THEN** the cached venue SHALL be reused without additional database or API calls
-
-#### Scenario: Venue not in DB — Places API called
-
-- **WHEN** the concert creation pipeline processes a scraped concert
-- **AND** no venue with the same `listed_venue_name` and `admin_area` exists in the database
-- **THEN** the system SHALL call the Google Places API to obtain a canonical `google_place_id`
-- **AND** proceed with the existing `GetByPlaceID` → create flow
-
-#### Scenario: Successful venue resolution via Places API
-
-- **WHEN** the concert creation pipeline processes a scraped concert
-- **AND** no DB match was found for the listed name
-- **AND** Google Places API returns a match
-- **THEN** the system SHALL look up an existing venue by `google_place_id` via `GetByPlaceID`
-- **AND** if no existing venue is found, the system SHALL create a new venue with canonical name, coordinates, and `google_place_id` from the Places API result
-
-#### Scenario: Venue already exists by place_id
-
-- **WHEN** the concert creation pipeline processes a scraped concert
-- **AND** no DB match was found for the listed name
-- **AND** Google Places API returns a match
-- **AND** a venue with the same `google_place_id` already exists in the database
-- **THEN** the existing venue SHALL be reused (no new venue created)
-
-### Requirement: Skip Unresolvable Venues
-
-The concert creation pipeline SHALL skip concerts whose venues cannot be resolved via Google Places API, rather than creating venue records with incomplete data.
-
-#### Scenario: Places API returns NotFound
-
-- **WHEN** `resolveVenue` calls Google Places API for a scraped venue name
-- **AND** the API returns NotFound
-- **THEN** the concert SHALL NOT be persisted to the database
-- **AND** the system SHALL emit a structured Warn log containing all fields of the `ScrapedConcert` (title, local_date, start_time, open_time, listed_venue_name, admin_area, source_url)
-- **AND** processing SHALL continue with the next concert in the batch
-
-#### Scenario: Places API returns a non-retryable error
-
-- **WHEN** `resolveVenue` calls Google Places API for a scraped venue name
-- **AND** the API returns an error that is not NotFound (e.g., InvalidArgument)
-- **THEN** the concert SHALL NOT be persisted to the database
-- **AND** the system SHALL emit a structured Warn log with the error and all `ScrapedConcert` fields
-- **AND** processing SHALL continue with the next concert in the batch
-
-### Requirement: Google Places API Request Includes Language Code
-
-When the concert creation pipeline calls Google Places `SearchPlace`, the request SHALL include a `languageCode` field derived from the venue's country code. The country code SHALL be extracted from the ISO 3166-2 `admin_area` field (e.g., `"JP-13"` → `"JP"`). The mapping from country code to BCP 47 language tag SHALL follow a static lookup table with `"en"` as the default.
-
-#### Scenario: Japanese venue resolves with Japanese language code
-
-- **WHEN** the concert creation pipeline calls `SearchPlace` for a venue with `admin_area` starting with `"JP"`
-- **THEN** the Places API request SHALL include `languageCode: "ja"`
-- **AND** the returned canonical `venue.name` SHALL be in Japanese when available
-
-#### Scenario: Korean venue resolves with Korean language code
-
-- **WHEN** the concert creation pipeline calls `SearchPlace` for a venue with `admin_area` starting with `"KR"`
-- **THEN** the Places API request SHALL include `languageCode: "ko"`
-
-#### Scenario: Unknown country defaults to English language code
-
-- **WHEN** the concert creation pipeline calls `SearchPlace` for a venue whose country code is not in the static mapping
-- **THEN** the Places API request SHALL include `languageCode: "en"`
-
-#### Scenario: Absent admin_area defaults to English language code
-
-- **WHEN** the concert creation pipeline calls `SearchPlace` for a venue with no `admin_area`
-- **THEN** the Places API request SHALL include `languageCode: "en"`
-
-### Requirement: listed_venue_name Is Normalized Before Storage
-
-The concert creation pipeline SHALL apply `NormalizeVenueName` to the scraped `listed_venue_name` before storing it in the `staged_concerts` row. The raw (unnormalized) value SHALL NOT be persisted.
-
-#### Scenario: Prefecture prefix stripped before storage
-
-- **WHEN** the concert creation pipeline processes a scraped concert with `listed_venue_name` equal to `"大阪・フェスティバルホール"`
-- **THEN** the stored `listed_venue_name` SHALL be `"フェスティバルホール"`
-
-#### Scenario: Whitespace-only listed_venue_name is rejected
-
-- **WHEN** `NormalizeVenueName` reduces the scraped venue name to an empty string after normalization
-- **THEN** the concert SHALL be treated the same as having a missing `listed_venue_name`
-
-#### Scenario: Already-normalized name is stored unchanged
-
-- **WHEN** the concert creation pipeline processes a scraped concert with `listed_venue_name` equal to `"日本武道館"`
-- **THEN** the stored `listed_venue_name` SHALL be `"日本武道館"` (unchanged, normalization is idempotent)
+#### Scenario: Created series left empty
+- **WHEN** a Series created in this batch ended up with no Event and no StagedConcert
+- **THEN** it is removed

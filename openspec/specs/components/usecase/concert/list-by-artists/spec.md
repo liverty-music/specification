@@ -2,47 +2,34 @@
 
 ## Purpose
 
-The Concert Service manages the lifecycle of concert data, including artist management, automated discovery via search, and persistent storage of concert and venue information.
+ListByArtists gives any caller, signed in or not, the Concerts of chosen Artists, grouped by date and sorted into HOME, NEARBY and AWAY relative to a home area the caller supplies.
 
 ## Requirements
 
-### Requirement: List Concerts with Proximity for Unauthenticated Users
+### Requirement: Chosen artists' concerts in proximity groups
 
-The system SHALL provide a public RPC `ListWithProximity` that accepts a list of artist IDs and a Home, returning concerts grouped by date and classified by proximity. This RPC does not require authentication and shares the same `GroupByDateAndProximity` logic as `ListByFollower`.
+ListByArtists SHALL read the Artists' Concerts (Concert.ListByArtists) — past and upcoming — and return them as proximity groups relative to the supplied home area (Concert.GroupByDateAndProximity), in date order. No Concerts SHALL yield no groups.
 
-#### Scenario: Successful proximity-grouped listing
+#### Scenario: Concerts across two dates
+- **WHEN** the chosen Artists have Concerts on two dates
+- **THEN** two proximity groups are returned, earlier date first
 
-- **WHEN** `ListWithProximity` is called with one or more `artist_ids` and a valid `Home` (country_code + level_1)
-- **THEN** it SHALL return concerts grouped by date using `ProximityGroup` messages
-- **AND** each `ProximityGroup` SHALL contain concerts classified into `home`, `nearby`, and `away` fields based on `Concert.ProximityTo(home)`
-- **AND** each concert SHALL include a resolved `Venue` object with `name`, `admin_area`, and coordinates
-- **AND** each concert SHALL include `listed_venue_name` with the raw scraped venue name
-- **AND** groups SHALL be ordered by date ascending
+#### Scenario: No concerts
+- **WHEN** none of the chosen Artists has a Concert
+- **THEN** no groups are returned, without error
 
-#### Scenario: Home centroid resolved server-side
+### Requirement: Centroid looked up when missing
 
-- **WHEN** `ListWithProximity` is called with `Home.level_1` (e.g., "JP-40")
-- **THEN** the backend SHALL resolve the centroid from `level_1` using `geo.ResolveCentroid()`
-- **AND** the resolved centroid SHALL be used for Haversine distance calculation in proximity classification
+When the supplied home area has no centroid, ListByArtists SHALL look it up from the home area's level-1 code. When the lookup fails or the code has no known centroid, the home area SHALL stay without a centroid, so only admin-area matches are HOME and everything else is AWAY.
 
-#### Scenario: Empty artist list
+#### Scenario: Home given by prefecture only
+- **WHEN** the home area is JP-40 with no centroid
+- **THEN** the centroid of JP-40 is used and a Concert 80 km away in JP-41 is NEARBY
 
-- **WHEN** `ListWithProximity` is called with an empty `artist_ids` list
-- **THEN** it SHALL return an `INVALID_ARGUMENT` error
+#### Scenario: Unknown level-1 code
+- **WHEN** the home area's level-1 code has no known centroid
+- **THEN** Concerts outside that admin area are AWAY
 
-#### Scenario: No concerts found for any artist
-
-- **WHEN** `ListWithProximity` is called with valid artist IDs
-- **AND** no concerts exist for any of the specified artists
-- **THEN** it SHALL return an empty `groups` list without error
-
-#### Scenario: Artist ID validation limit
-
-- **WHEN** `ListWithProximity` is called with more than 50 artist IDs
-- **THEN** it SHALL return an `INVALID_ARGUMENT` error via protovalidate
-
-#### Scenario: Home with unsupported country code
-
-- **WHEN** `ListWithProximity` is called with a `Home` whose `level_1` has no known centroid
-- **THEN** the centroid SHALL be nil
-- **AND** all concerts SHALL be classified as `AWAY` (except those matching by `admin_area`)
+#### Scenario: No home area
+- **WHEN** no home area is supplied
+- **THEN** every Concert is AWAY
