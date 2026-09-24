@@ -2,85 +2,112 @@
 
 ## Purpose
 
-The organizer-facing API surface: a dedicated Connect server at
-`api.organizer.{base}` serving `OrganizerService.Get` and
-`OrganizerService.ListArtists`, isolated from the fan and admin servers,
-with org-scoped role-claim authorization so an operator can read only their own
-Organizer and the artists it represents.
+An Organizer is a vetted seller - a record label, management agency, promoter or self-publishing artist - that an admin creates to sell tickets for the Artists it represents. Being created by an admin is the vetting; an Organizer is an identity separate from any Artist, and its operators sign in to the Organizer's own isolated tenant.
+
+| attribute | meaning | constraint |
+|-----------|---------|------------|
+| id | unique identity of the Organizer | required; UUID; assigned at creation; never the same value as an ArtistId |
+| name | public display name, such as the label or promoter name | required; 1 to 200 characters |
+| operator email | email of the initial operator, captured at creation to seed the operator's sign-in | required; an email address; never shown to the organizer or fan audiences |
+| tenant link | the Organizer's isolated sign-in tenant | optional; empty until provisioning links the tenant; once set, no other Organizer has the same tenant |
+| status | lifecycle | provisioning, active or deactivated |
+
+```mermaid
+erDiagram
+  Organizer |o--o{ Artist : "represents"
+  Organizer ||--o| OrganizerConnectedAccount : "is paid out through"
+  Organizer |o--o{ Series : "authors"
+  Organizer ||--o{ Media : "uploads"
+  Organizer ||--o{ Settlement : "is paid by"
+```
+
+```mermaid
+stateDiagram-v2
+  [*] --> provisioning
+  provisioning --> active
+  provisioning --> deactivated
+  active --> deactivated
+  deactivated --> [*]
+```
 
 ## Requirements
 
-### Requirement: Org-scoped authorization from the role claim
+### Requirement: Name and operator email are well-formed
 
-The system SHALL authorize organizer requests from the token. It SHALL
-validate the JWT, require the organizer-console project id in the token `aud`,
-and read the roles claim (`role → { orgId → domain }`, where each `orgId` is a
-Zitadel org id). The caller's Zitadel org SHALL be the org id that appears BOTH
-in the session's login-scope scope (`urn:zitadel:iam:org:id:<orgId>`) — of
-which exactly one SHALL be present — AND as an `orgId` under which the operator
-holds a role; the two SHALL agree. Holding any role for that org is sufficient
-(the top role is `owner`; no specific role is required in this phase). The
-system SHALL resolve the caller's Organizer via the `zitadel_org_id` link to
-that Zitadel org; for `ListArtists`, the supplied `OrganizerId` MUST equal that
-resolved Organizer.
+An Organizer's name SHALL be 1 to 200 characters long, and its operator email SHALL be an email address.
 
-A request against an `active` resolved Organizer SHALL be served. If the
-caller's own resolved Organizer is `deactivated`, the system SHALL reject with
-`FAILED_PRECONDITION` and MAY state that it is deactivated — this is the
-caller's own org, so its state is not concealed. All other authorization
-failures — no role for the org, `aud` without the project id, login-scope and
-role-claim orgs disagreeing, zero or multiple login-scope orgs, a supplied
-`OrganizerId` resolving to a different org, or no Organizer linked to the
-caller's Zitadel org — SHALL return `PERMISSION_DENIED`, SHALL NOT execute
-handler business logic, and SHALL NOT reveal whether such an Organizer exists.
-An absent or invalid token SHALL return `UNAUTHENTICATED`. A missing or
-malformed `OrganizerId` on `ListArtists` SHALL return `INVALID_ARGUMENT` via
-protovalidate.
+#### Scenario: Empty name
 
-#### Scenario: Missing or empty roles claim is denied
+- **WHEN** the name is empty
+- **THEN** the Organizer is invalid
 
-- **WHEN** a request's token carries no role for the caller's Zitadel org
-- **THEN** the system SHALL reject it with `PERMISSION_DENIED`
+#### Scenario: Name too long
 
-#### Scenario: Token audience without the project id is denied
+- **WHEN** the name is 201 characters long
+- **THEN** the Organizer is invalid
 
-- **WHEN** a request's token `aud` does not include the organizer-console
-  project id
-- **THEN** the system SHALL reject it with `PERMISSION_DENIED`
+#### Scenario: Malformed operator email
 
-#### Scenario: Login-scope org and role-claim org must agree
+- **WHEN** the operator email is not an email address
+- **THEN** the Organizer is invalid
 
-- **WHEN** the login-scope org id and the `orgId` under which the operator
-  holds a role are not the same Zitadel org
-- **THEN** the system SHALL reject it with `PERMISSION_DENIED`
+### Requirement: A new Organizer starts provisioning with its own identity
 
-#### Scenario: Absent or ambiguous login-scope org is denied
+A new Organizer SHALL start in status provisioning with no tenant link, and SHALL receive a new id of its own. An Organizer made for a self-publishing artist SHALL still have an id different from that Artist's ArtistId; there is no separate verified flag, because existence is the vetting.
 
-- **WHEN** the token carries no `urn:zitadel:iam:org:id:<orgId>` scope, or more
-  than one
-- **THEN** the system SHALL reject it with `PERMISSION_DENIED`
+#### Scenario: New Organizer
 
-#### Scenario: Deactivated own organizer returns a precondition failure
+- **WHEN** an Organizer is created
+- **THEN** its status is provisioning and it has no tenant link
 
-- **WHEN** the Organizer resolved for the caller's Zitadel org is deactivated
-- **THEN** the system SHALL reject the request with `FAILED_PRECONDITION`
-- **AND** the response MAY state that the Organizer is deactivated (it is the
-  caller's own org, so the state is not concealed)
+#### Scenario: Organizer identity is separate from artist identity
 
-#### Scenario: Caller's Zitadel org has no linked Organizer
+- **WHEN** an Organizer is created for a self-publishing artist
+- **THEN** the Organizer's id differs from the Artist's ArtistId
 
-- **WHEN** no Organizer has a `zitadel_org_id` matching the caller's Zitadel
-  org (e.g. the link is not yet established)
-- **THEN** the system SHALL reject the request with `PERMISSION_DENIED`
-- **AND** the response SHALL NOT reveal whether an Organizer exists
+### Requirement: Only an active Organizer serves its operators
 
-#### Scenario: Missing or malformed OrganizerId on ListArtists is rejected
+An Organizer SHALL serve requests from its own operators only while its status is active.
 
-- **WHEN** a `ListArtists` request omits `OrganizerId` or supplies a malformed
-  value
-- **THEN** the system SHALL reject it with `INVALID_ARGUMENT` via protovalidate
+#### Scenario: Active Organizer
 
-#### Scenario: Unauthenticated request is rejected
+- **WHEN** the status is active
+- **THEN** the Organizer serves its operators
 
-- **WHEN** a request has no valid token
-- **THEN** the system SHALL reject it with `UNAUTHENTICATED`
+#### Scenario: Provisioning Organizer
+
+- **WHEN** the status is provisioning
+- **THEN** the Organizer does not serve its operators
+
+#### Scenario: Deactivated Organizer
+
+- **WHEN** the status is deactivated
+- **THEN** the Organizer does not serve its operators
+
+### Requirement: The roster is fixed once deactivated
+
+The Artists an Organizer represents SHALL be changeable while its status is provisioning or active, and SHALL NOT be changeable once it is deactivated.
+
+#### Scenario: Roster of a provisioning or active Organizer
+
+- **WHEN** the status is provisioning or active
+- **THEN** Artists can be associated with and disassociated from the Organizer
+
+#### Scenario: Roster of a deactivated Organizer
+
+- **WHEN** the status is deactivated
+- **THEN** Artists can be neither associated with nor disassociated from the Organizer
+
+### Requirement: Deactivation is final
+
+An Organizer SHALL become active only from provisioning, and a deactivated Organizer SHALL never leave deactivated.
+
+#### Scenario: Deactivated Organizer cannot be activated
+
+- **WHEN** the status is deactivated
+- **THEN** the Organizer cannot become active or provisioning again
+
+#### Scenario: Active Organizer cannot return to provisioning
+
+- **WHEN** the status is active
+- **THEN** the Organizer cannot become provisioning again

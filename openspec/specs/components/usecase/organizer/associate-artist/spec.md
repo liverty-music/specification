@@ -1,60 +1,45 @@
-# Associate Artist
+# OrganizerUseCase.AssociateArtist
 
 ## Purpose
 
-Links an artist to the single organizer authorized to represent it, excluding that artist from automated discovery once represented so the organizer's own event pages take precedence.
+OrganizerUseCase.AssociateArtist links an existing Artist to an Organizer so the Organizer represents it. Each Artist can be represented by at most one Organizer, so reassigning an Artist is DisassociateArtist followed by AssociateArtist.
 
 ## Requirements
 
-### Requirement: Associate an artist with at most one organizer
+### Requirement: AssociateArtist links an existing Artist to a changeable roster
 
-The system SHALL associate an Organizer with zero or more Artists, and each
-Artist SHALL be represented by **at most one** Organizer. Associating an
-Artist that does not exist SHALL be rejected (no create-on-demand);
-associating an Artist already represented SHALL be rejected. An admin SHALL
-be able to disassociate an Artist; reassignment is disassociate followed by
-associate.
+AssociateArtist SHALL load the Organizer through Organizer.Get, failing with NotFound when it does not exist, and SHALL fail with FailedPrecondition when the Organizer's roster is fixed because it is deactivated. It SHALL load the Artist through Artist.Get, failing with NotFound when it does not exist; it never creates an Artist. It SHALL then link them through Organizer.AssociateArtist, failing with AlreadyExists when the Artist is already represented. An Organizer that is still provisioning can be given Artists.
 
-#### Scenario: A label organizer represents multiple artists
+#### Scenario: A label represents several Artists
 
-- **WHEN** an Organizer is associated with several existing Artists
-- **THEN** all associated Artists SHALL be retrievable for that Organizer
+- **WHEN** several existing Artists are associated with one active Organizer
+- **THEN** the Organizer represents all of them
 
-#### Scenario: Associating a non-existent artist is rejected
+#### Scenario: Unknown Artist
 
-- **WHEN** an admin associates an ArtistId that does not exist
-- **THEN** the system SHALL reject it with a not-found error and SHALL NOT
-  create the artist
+- **WHEN** the Artist does not exist
+- **THEN** AssociateArtist fails with NotFound and no Artist is created
 
-#### Scenario: An artist cannot be claimed by a second organizer
+#### Scenario: Artist claimed by another Organizer
 
-- **WHEN** an Artist already represented by one Organizer is associated with
-  a different Organizer
-- **THEN** the system SHALL reject it with an already-exists error
+- **WHEN** the Artist is already represented by another Organizer
+- **THEN** AssociateArtist fails with AlreadyExists
 
-#### Scenario: Disassociate frees the artist
+#### Scenario: Deactivated Organizer
 
-- **WHEN** an admin disassociates an Artist from its Organizer
-- **THEN** the association SHALL be removed and the Artist SHALL be
-  associable to another Organizer
+- **WHEN** the Organizer is deactivated
+- **THEN** AssociateArtist fails with FailedPrecondition and nothing is linked
 
-### Requirement: Represented artists are excluded from scraping
+#### Scenario: Unknown Organizer
 
-While an artist is associated with an organizer, the system SHALL exclude
-that artist from concert-search scraping (first-party is authoritative). The
-exclusion SHALL be keyed on the **Organizer↔Artist association**, not on the
-existence of a published concert: associating an artist starts the
-exclusion, and disassociating it (or deactivating the organizer) resumes
-scraping.
+- **WHEN** no Organizer has the id
+- **THEN** AssociateArtist fails with NotFound
 
-#### Scenario: Associated artist is excluded from discovery scraping
+### Requirement: A new association is announced
 
-- **WHEN** the discovery pipeline runs for an artist associated with an
-  active organizer
-- **THEN** the system SHALL skip scraping that artist's concerts
+When the Artist is linked, AssociateArtist SHALL announce that the Organizer now represents the Artist. A failure to announce SHALL NOT fail AssociateArtist.
 
-#### Scenario: Disassociation resumes scraping
+#### Scenario: Announcement fails
 
-- **WHEN** an artist is disassociated from its organizer (or the organizer
-  is deactivated)
-- **THEN** the system SHALL resume scraping that artist's concerts
+- **WHEN** the link is stored but the announcement cannot be made
+- **THEN** AssociateArtist still succeeds and the link is kept

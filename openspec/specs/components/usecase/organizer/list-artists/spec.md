@@ -1,44 +1,26 @@
-# List Artists
+# OrganizerUseCase.ListArtists
 
 ## Purpose
 
-The organizer-facing API surface: a dedicated Connect server at
-`api.organizer.{base}` serving `OrganizerService.Get` and
-`OrganizerService.ListArtists`, isolated from the fan and admin servers,
-with org-scoped role-claim authorization so an operator can read only their own
-Organizer and the artists it represents.
+OrganizerUseCase.ListArtists returns the Artists an Organizer currently represents, for the admin's organizer screen and for the Organizer's own roster.
 
 ## Requirements
 
-### Requirement: OrganizerService.ListArtists returns the caller's roster
+### Requirement: ListArtists returns the roster of an existing Organizer
 
-The system SHALL expose a bare-verb `ListArtists` returning the artists the
-caller's own Organizer represents. The request SHALL carry an `OrganizerId`
-that MUST resolve to the caller's own Organizer (as defined for `Get`); any
-other `OrganizerId` SHALL be rejected. The response SHALL be empty when the
-Organizer represents no artists. The artists SHALL be returned in a stable
-order, ascending by artist id — a UUID v7, so effectively artist-creation order
-— giving a deterministic, unique ordering a later pagination phase can page
-over. (This orders by when the artist was created, not when it was added to the
-roster; a roster-add ordinal is a future concern.) The roster is unbounded on
-the wire; pagination is deferred to a later phase, acceptable because an
-Organizer's roster is admin-curated and small.
+ListArtists SHALL check that the Organizer exists through Organizer.Get, failing with NotFound when it does not, and SHALL return its roster through Organizer.ListArtists, whatever its status.
 
-#### Scenario: Operator lists their own roster
+#### Scenario: Organizer with Artists
 
-- **WHEN** an operator calls `ListArtists` with the `OrganizerId` of their own
-  Organizer
-- **THEN** the system SHALL return the artists that Organizer represents,
-  ascending by artist id
-- **AND** the list SHALL be empty when it represents none
+- **WHEN** ListArtists is called for an Organizer that represents two Artists
+- **THEN** it returns the two Artists
 
-#### Scenario: Roster order is stable across calls
+#### Scenario: Deactivated Organizer
 
-- **WHEN** an operator calls `ListArtists` twice with no change to the roster
-- **THEN** the system SHALL return the artists in the same order both times
+- **WHEN** ListArtists is called for a deactivated Organizer
+- **THEN** it returns an empty list, because deactivation freed its Artists
 
-#### Scenario: Operator cannot list a different organizer's roster
+#### Scenario: Unknown Organizer
 
-- **WHEN** an operator calls `ListArtists` with an `OrganizerId` that does not
-  resolve to their own Organizer
-- **THEN** the system SHALL reject it with a permission-denied error
+- **WHEN** no Organizer has the id
+- **THEN** ListArtists fails with NotFound

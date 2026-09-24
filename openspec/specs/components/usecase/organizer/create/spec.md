@@ -1,38 +1,53 @@
-# Create
+# OrganizerUseCase.Create
 
 ## Purpose
 
-The Organizer domain: the vetted seller an admin creates, its link to the
-artists it represents, the runtime provisioning that gives each Organizer an
-isolated Zitadel tenant its operator can sign into, and the admin surface to
-manage them. The organizer-facing API and console are separate capabilities.
+OrganizerUseCase.Create registers a new Organizer from a name and an initial operator email and provisions its isolated sign-in tenant with that operator as owner, so the Organizer becomes active and its operator can sign in.
 
 ## Requirements
 
-### Requirement: Admin creates an organizer with an initial operator
+### Requirement: Create stores, provisions and activates the Organizer
 
-The system SHALL let an operator holding the platform `admin` role create an
-Organizer with a name and an initial operator email. Creation is the vetting
-— there is no separate `verified` flag and no self-serve registration. An
-Organizer is distinct from an Artist and has its own OrganizerId. On success
-the Organizer is provisioned an isolated Zitadel tenant (see idempotent
-provisioning) with the initial operator seeded as its `owner`.
+Create SHALL take a name and an initial operator email, store a new Organizer with them through Organizer.Create (it starts provisioning), provision its tenant through Organizer.ProvisionTenant, record the tenant through Organizer.SetZitadelOrgID, and move the Organizer from provisioning to active through Organizer.CompareAndSetStatus. It SHALL return the created Organizer. Create does not look for an existing Organizer with the same name or operator email.
 
-#### Scenario: Admin creates an organizer
+#### Scenario: Organizer is created
 
-- **WHEN** an operator with the `admin` role creates an Organizer with a name
-  and an initial operator email
-- **THEN** the Organizer SHALL exist with an isolated tenant and a `owner`
-  operator, and SHALL become an active organizer
+- **WHEN** Create runs with a name and an operator email
+- **THEN** the Organizer is active, linked to a new tenant in which the operator holds the owner role
 
-#### Scenario: Non-admin cannot create an organizer
+#### Scenario: Same name and operator email again
 
-- **WHEN** a create request is made without the `admin` role
-- **THEN** the system SHALL reject it with a permission-denied error
+- **WHEN** Create runs twice with the same name and operator email
+- **THEN** two Organizers exist, each with its own tenant
 
-#### Scenario: Organizer identity is separate from artist identity
+### Requirement: A failed provisioning leaves the Organizer provisioning
 
-- **WHEN** an artist self-publishes and an Organizer account is created for
-  them
-- **THEN** the Organizer SHALL have its own OrganizerId distinct from the
-  Artist's ArtistId
+When Organizer.ProvisionTenant or Organizer.SetZitadelOrgID fails, Create SHALL fail with that error and leave the stored Organizer in status provisioning; ReconcileProvisioning completes it later.
+
+#### Scenario: Provisioning fails
+
+- **WHEN** Organizer.ProvisionTenant fails
+- **THEN** Create fails and the Organizer stays provisioning
+
+### Requirement: Deactivation during provisioning wins
+
+When the Organizer was deactivated while its tenant was being provisioned, Create SHALL leave it deactivated, SHALL NOT announce it, and SHALL still succeed.
+
+#### Scenario: Deactivated meanwhile
+
+- **WHEN** the Organizer is deactivated before Create moves it to active
+- **THEN** Create succeeds, the Organizer stays deactivated and no creation is announced
+
+### Requirement: Activation is announced
+
+When Create moves the Organizer to active, it SHALL announce that the Organizer was created. A failure to announce SHALL NOT fail Create.
+
+#### Scenario: Organizer becomes active
+
+- **WHEN** the Organizer is moved to active
+- **THEN** its creation is announced
+
+#### Scenario: Announcement fails
+
+- **WHEN** the announcement cannot be made
+- **THEN** Create still succeeds and the Organizer stays active

@@ -1,29 +1,49 @@
-# Deactivate
+# OrganizerUseCase.Deactivate
 
 ## Purpose
 
-The Organizer domain: the vetted seller an admin creates, its link to the
-artists it represents, the runtime provisioning that gives each Organizer an
-isolated Zitadel tenant its operator can sign into, and the admin surface to
-manage them. The organizer-facing API and console are separate capabilities.
+OrganizerUseCase.Deactivate turns an Organizer off at an admin's request: its operators can no longer sign in, its Artists are released for re-association, and the Organizer becomes deactivated.
 
 ## Requirements
 
-### Requirement: An organizer can be deactivated
+### Requirement: Deactivate turns off operators, frees Artists, then marks the Organizer
 
-The system SHALL support deactivating an Organizer. For a deactivated
-Organizer, the backend SHALL reject all organizer operations, its operators
-SHALL be deactivated in Zitadel, and its artist associations SHALL be freed
-so the artists can be re-associated. Full teardown of the tenant org and
-grants is out of scope for this change.
+Deactivate SHALL load the Organizer through Organizer.Get, failing with NotFound when it does not exist. When the Organizer has a tenant link, it SHALL turn off its operators through Organizer.DeactivateOperators; an Organizer still provisioning without a tenant link skips this step. It SHALL then release its roster through Organizer.FreeArtists and set its status to deactivated through Organizer.SetStatus. The tenant itself is kept.
 
-#### Scenario: Deactivated organizer's operations are rejected
+#### Scenario: Active Organizer is deactivated
 
-- **WHEN** an Organizer is deactivated and a request targets it
-- **THEN** the system SHALL reject the request and the Organizer's operators
-  SHALL no longer be able to act
+- **WHEN** an active Organizer that represents Artists is deactivated
+- **THEN** its operators can no longer sign in, its Artists can be associated with another Organizer, and its status is deactivated
 
-#### Scenario: Deactivation frees the organizer's artists
+#### Scenario: Provisioning Organizer without a tenant
 
-- **WHEN** an Organizer with associated artists is deactivated
-- **THEN** those artists SHALL become associable to another Organizer
+- **WHEN** an Organizer that is provisioning and has no tenant link is deactivated
+- **THEN** its Artists are freed and its status becomes deactivated
+
+#### Scenario: Unknown Organizer
+
+- **WHEN** no Organizer has the id
+- **THEN** Deactivate fails with NotFound
+
+### Requirement: Deactivate is idempotent
+
+Deactivate SHALL succeed and change nothing when the Organizer is already deactivated.
+
+#### Scenario: Already deactivated
+
+- **WHEN** a deactivated Organizer is deactivated again
+- **THEN** Deactivate succeeds and nothing changes
+
+### Requirement: A failed step leaves the Organizer undeactivated for a retry
+
+When turning off the operators or freeing the Artists fails, Deactivate SHALL fail with that error and SHALL NOT set the status to deactivated, so calling it again completes the deactivation.
+
+#### Scenario: Operators cannot be turned off
+
+- **WHEN** Organizer.DeactivateOperators fails
+- **THEN** Deactivate fails, the Artists stay represented and the status is unchanged
+
+#### Scenario: Retry after a failure
+
+- **WHEN** Deactivate is called again after a failed attempt
+- **THEN** the Organizer is deactivated
