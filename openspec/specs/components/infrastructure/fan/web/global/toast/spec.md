@@ -6,53 +6,6 @@ Provides transient toast notifications that surface live-event updates and backg
 
 ## Requirements
 
-### Requirement: Dynamic Toast Notifications for Live Events
-The system SHALL provide instant feedback about available live events using dynamic toast notifications.
-
-#### Scenario: Live event notification on artist follow
-- **WHEN** a user taps an artist bubble
-- **AND** the artist has upcoming live events in the database
-- **THEN** the system SHALL display a dynamic toast notification from the top of the screen
-- **AND** the toast SHALL show the message: "🎫 [Artist Name] has upcoming live events!"
-- **AND** the toast SHALL remain visible for 2-3 seconds
-- **AND** the toast SHALL fade out smoothly
-
-#### Scenario: No notification for artists without events
-- **WHEN** a user taps an artist bubble
-- **AND** the artist has no upcoming live events in the database
-- **THEN** the system SHALL NOT display a toast notification
-- **AND** the bubble absorption animation SHALL proceed normally
-
----
-
-### Requirement: Fire-and-forget failures show a toast and revert optimistic UI
-The system SHALL replace silent error swallowing in services with explicit error states that callers can distinguish from empty-data states.
-
-#### Scenario: Service method returns error result instead of empty fallback
-- **WHEN** a service method fails to fetch data from the backend
-- **THEN** the method SHALL throw the error to the caller (not silently return an empty array or false)
-- **AND** the caller SHALL handle the error via `promise.bind` catch block or explicit try/catch with user feedback
-
-#### Scenario: Fire-and-forget operations provide user feedback on failure
-- **WHEN** a fire-and-forget RPC operation (e.g., artist follow) fails
-- **THEN** the system SHALL display a toast notification informing the user of the failure
-- **AND** the system SHALL revert any optimistic UI updates
-
-### Requirement: Toast notification service manages toast lifecycle
-The `ToastNotification.show` method SHALL add a toast, animate it visible, auto-dismiss after the specified duration, and remove it after the exit animation.
-
-#### Scenario: Show a toast
-- **WHEN** `show` is called with a message
-- **THEN** a toast item SHALL be added to `toasts` array and become `visible` after the next animation frame
-
-#### Scenario: Auto-dismiss after duration
-- **WHEN** `durationMs` elapses after showing a toast
-- **THEN** the toast `visible` SHALL be set to `false`
-
-#### Scenario: Remove after exit animation
-- **WHEN** 400ms elapses after a toast is dismissed
-- **THEN** the toast SHALL be removed from the `toasts` array
-
 ### Requirement: Toast custom element as a top-positioned popover banner
 The system SHALL provide a `<toast>` custom element as a top-positioned popover banner for user-action prompts (notification permission, PWA install).
 

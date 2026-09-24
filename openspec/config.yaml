@@ -1,28 +1,33 @@
 schema: liverty-clean-arch
 
 context: |
-  Tech Stack:
-    - Serialization: Protocol Buffers (proto3)
-    - Schema Registry: Buf (BSR, Lint, Format, Breaking)
-    - RPC: Connect (Go, TypeScript)
-    - Languages: Go (Backend), TypeScript (Frontend)
-    - Validation: Protovalidate
+  Product: Liverty Music - a personalized concert notification and ticketing platform.
+  Stack: proto3 on Buf/BSR with protovalidate, Connect RPC, Go backend (Clean Architecture), Aurelia 2 PWA frontend.
+  Audiences: fan, admin, organizer.
 
-  Domain:
-    - Liverty Music: Personalized concert notification platform
-    - User: Music fan
-    - Concert: Music event
-    - Artist: Performer
+  openspec/specs/
+  ├── stories/<story>/                  one user goal across all layers; verified by an E2E test
+  └── components/
+      ├── entity/<entity>/              the noun -> proto message, Go and TS entity
+      │   └── <operation>/              one operation on it -> interface method declared in backend/internal/entity
+      ├── usecase/<entity>/<method>/    -> usecase method in backend/internal/usecase (exposed as a Connect RPC)
+      ├── adapter/<audience>/api/
+      │   ├── rpc/<handler>/            the audience gate of an RPC handler
+      │   └── webhook/<component>/      a call from an external system (audience: fan)
+      └── infrastructure/
+          ├── fan/api/server/<component>/   a server-wide rule (rate limiting)
+          └── <audience>/web/
+              ├── route/<screen>/           one screen
+              └── global/<surface>/         a surface shared by screens (shell, sheets, hosted login, service worker, i18n)
 
-  Architecture:
-    - Layered Design: `entity` (core types), `rpc` (services)
-    - API Style: Resource-Oriented (Google AIP), Type-safe IDs
-
-  Constraints:
-    - Remote Gen: Code generated via BSR, do not commit `gen/`
-    - Versioning: Strict semantic versioning for breaking changes
+  Error vocabulary: NotFound, AlreadyExists, InvalidArgument, FailedPrecondition, PermissionDenied,
+  Unauthenticated, Unavailable, ResourceExhausted, DeadlineExceeded, Internal.
 
 rules:
   specs:
-    - "Documentation: All messages/services must have purpose comments"
-    - "Style: PascalCase messages, lower_snake_case fields (Buf Style)"
+    - Legal and commercial terms are written in Japanese with an English gloss on first use (特定興行入場券 covered ticket, 本人確認 identity check, 収納代行 collection agency, 特商法 表記, 中止, 延期, 繰上げ); enum values and channel names are English.
+
+operations:
+  archive:
+    guidance:
+      - Confirm every implementing PR is merged and cite them before archiving.

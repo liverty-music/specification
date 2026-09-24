@@ -18,9 +18,7 @@ Paid ticketing (roadmap ⑤ `ticket-purchase-and-issuance`) is implemented and v
 
 ### New Capabilities
 
-- `components/infrastructure/fan/api/payment/livemode-gate`: Livemode launch gate
-- `components/infrastructure/fan/api/payment/no-pan-handling`: PCI SAQ A — no PAN handling
-- `components/infrastructure/fan/api/payment/receipts`: Receipts and qualified invoices (適格請求書)
+- `components/entity/order`: card numbers never reach the platform (PCI SAQ A); an Order's receipt is a qualified invoice (適格請求書). The livemode launch gate is a launch decision recorded in design.md.
 - `components/infrastructure/fan/web/route/order`: Total-price display (総額表示); 特定商取引法 final confirmation
 
 ### Modified Capabilities

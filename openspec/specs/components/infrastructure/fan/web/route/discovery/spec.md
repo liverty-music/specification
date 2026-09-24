@@ -841,3 +841,20 @@ When a user follows an artist from the search results, the system SHALL transiti
 - **AND** the system SHALL NOT spawn or absorb a bubble
 - **AND** the system SHALL display an error toast notification
 - **AND** the search results SHALL remain visible and interactive
+
+### Requirement: Snack announces an artist's upcoming live events
+The system SHALL provide instant feedback about available live events with a snack.
+
+#### Scenario: Live event notification on artist follow
+- **WHEN** a user taps an artist bubble
+- **AND** the artist has upcoming live events in the database
+- **THEN** the system SHALL display a snack
+- **AND** the snack SHALL show the message: "🎫 [Artist Name] has upcoming live events!"
+- **AND** the snack SHALL remain visible for 2-3 seconds
+- **AND** the snack SHALL fade out smoothly
+
+#### Scenario: No notification for artists without events
+- **WHEN** a user taps an artist bubble
+- **AND** the artist has no upcoming live events in the database
+- **THEN** the system SHALL NOT display a snack
+- **AND** the bubble absorption animation SHALL proceed normally

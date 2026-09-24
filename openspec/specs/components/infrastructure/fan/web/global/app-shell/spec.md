@@ -285,3 +285,22 @@ The document root (`html` and `body`) SHALL be a non-scrolling frame so that it 
 - **WHEN** the user scrolls the concert list to its top or bottom boundary
 - **THEN** the concert scroll container SHALL declare `overscroll-behavior: contain`
 - **AND** the scroll SHALL NOT chain into the document root
+
+### Requirement: A request that gets no answer fails within a bounded time
+
+Every request the web apps (fan, admin, organizer) send to the backend SHALL fail after the default request timeout if no answer arrives, and the failure SHALL reach the user through the normal error display rather than leaving the screen waiting. The timeout is read from `/config.json`; when it is missing or not a positive number, it is 10 seconds and the app still starts. A timed-out request is not retried automatically.
+
+#### Scenario: Backend does not answer
+
+- **WHEN** a request gets no answer within the default timeout
+- **THEN** it fails with DeadlineExceeded and the user sees the error
+
+#### Scenario: Backend answers in time
+
+- **WHEN** a request is answered within the default timeout
+- **THEN** the answer is used unchanged
+
+#### Scenario: No valid timeout configured
+
+- **WHEN** `/config.json` has no timeout or a non-positive one
+- **THEN** the timeout is 10 seconds and the app starts normally

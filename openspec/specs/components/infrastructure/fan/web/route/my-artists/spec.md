@@ -363,3 +363,22 @@ The My Artists page SHALL display a persistent fixed banner above the bottom nav
 
 - **WHEN** the user completes signup (isAuthenticated becomes true) while on the My Artists page
 - **THEN** the signup banner SHALL be removed from the DOM
+
+### Requirement: Each artist has a stable color
+
+Each artist in the My Artists list SHALL be shown in a color derived from the artist's name alone, so the same artist always appears in the same color and different artists appear in different hues.
+
+#### Scenario: Same artist, same color
+
+- **WHEN** the same artist is shown twice, in the same session or a later one
+- **THEN** both show the identical color
+
+#### Scenario: Different artists, different hues
+
+- **WHEN** two artists with different names are shown
+- **THEN** their colors have different hues
+
+#### Scenario: Artist with an empty name
+
+- **WHEN** an artist's name is empty
+- **THEN** the artist is still shown in a valid color

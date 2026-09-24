@@ -116,3 +116,22 @@ The `UserService.Create` RPC SHALL accept an optional `preferred_language` field
 - **WHEN** `Create`'s INSERT fails with `unique_violation`
 - **AND** the idempotent retry `GetByExternalID(claims.sub)` returns `NotFound`
 - **THEN** the backend SHALL respond with the original `AlreadyExists`
+
+### Requirement: A verification email follows every new user
+
+When Create stores a new user, User.SendVerification SHALL run for that user; when the user already existed, nothing is sent. A failed send SHALL be retried up to 3 times and then given up, and the user stays created. If announcing the new user fails, no verification email is sent for it.
+
+#### Scenario: New user
+
+- **WHEN** Create stores a new user
+- **THEN** a verification email is sent to the user's address
+
+#### Scenario: User already existed
+
+- **WHEN** Create finds the user already stored
+- **THEN** no verification email is sent
+
+#### Scenario: Sending keeps failing
+
+- **WHEN** sending the verification email fails 3 more times after the first attempt
+- **THEN** the send is given up and the user stays created

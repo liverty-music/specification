@@ -119,3 +119,16 @@ When the update snack is displayed, its action button (labelled with `pwa.update
 - **WHEN** the user's OS has `prefers-reduced-motion: reduce` set
 - **THEN** the pulse animation SHALL NOT play
 - **AND** the pill border and background fill SHALL still be applied (static emphasis)
+
+### Requirement: Fire-and-forget failures show a snack and revert optimistic UI
+The system SHALL replace silent error swallowing in services with explicit error states that callers can distinguish from empty-data states.
+
+#### Scenario: Service method returns error result instead of empty fallback
+- **WHEN** a service method fails to fetch data from the backend
+- **THEN** the method SHALL throw the error to the caller (not silently return an empty array or false)
+- **AND** the caller SHALL handle the error via `promise.bind` catch block or explicit try/catch with user feedback
+
+#### Scenario: Fire-and-forget operations provide user feedback on failure
+- **WHEN** a fire-and-forget RPC operation (e.g., artist follow) fails
+- **THEN** the system SHALL display an error snack informing the user of the failure
+- **AND** the system SHALL revert any optimistic UI updates
