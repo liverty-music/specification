@@ -2,130 +2,93 @@
 
 ## Purpose
 
-Defines the Artist entity, its identity, official site, imagery collected from external sources, derived logo color profile, and the standalone surface for artist operations independent of concerts.
+An Artist is a musical performer or group that fans follow for concert news. It is registered once per music-catalog identity (MBID) and carries community-curated images of itself together with a color profile of its logo.
+
+| attribute | meaning | constraint |
+|-----------|---------|------------|
+| id | the artist's identity in Liverty Music | required; a UUID, fresh for every new artist |
+| name | display name of the performer or group | required; at least 1 character |
+| mbid | the artist's identifier in the music catalog | required; a UUID of 36 characters; one artist per MBID |
+| fanart | the artist's community-curated images, grouped by kind: artist_thumb (square portrait), artist_background (wide backdrop), hd_music_logo (high-definition transparent logo), music_logo (standard transparent logo), music_banner (wide banner) | optional; absent when the images were never checked or the last check found none; each kind holds zero or more images |
+| fanart image | one image of a kind: its catalog id, URL, like count and language | URL required; like count 0 or more |
+| fanart.logo_color_profile | color summary of the artist's best logo: dominant_hue, dominant_lightness, is_chromatic | optional; absent when there is no logo or it could not be analyzed |
+| fanart_sync_time | when the artist's images were last checked | optional; absent means never checked |
+
+```mermaid
+erDiagram
+  Artist ||--o| OfficialSite : "has"
+  User ||--o{ Follow : "makes"
+  Follow }o--|| Artist : "targets"
+  Event }o--o{ Artist : "is performed by"
+  Series }o--o{ Artist : "drafts as performers"
+  Organizer |o--o{ Artist : "represents"
+```
 
 ## Requirements
 
-### Requirement: Artist fanart image collection
-The system SHALL define a `Fanart` entity that mirrors the fanart.tv API response structure. The entity SHALL contain the following image collection fields: `ArtistThumb`, `ArtistBackground`, `HDMusicLogo`, `MusicLogo`, `MusicBanner`. Each collection SHALL contain zero or more `FanartImage` entries with `ID`, `URL`, `Likes`, and `Lang` fields. The entity SHALL also contain an optional `LogoColorProfile` field holding the extracted dominant color properties of the best logo image.
+### Requirement: Artist identity and name are well-formed
+An Artist SHALL have an MBID that is a UUID of 36 characters and a name of at least 1 character.
 
-#### Scenario: Fanart with all image types populated
-- **WHEN** fanart.tv returns data for an artist with all image types
-- **THEN** the `Fanart` entity SHALL contain non-empty slices for `ArtistThumb`, `ArtistBackground`, `HDMusicLogo`, `MusicLogo`, and `MusicBanner`
+#### Scenario: Missing MBID
+- **WHEN** an artist has no MBID
+- **THEN** the artist is invalid
 
-#### Scenario: Fanart with partial image types
-- **WHEN** fanart.tv returns data with only some image types (e.g., only `ArtistThumb` and `HDMusicLogo`)
-- **THEN** the `Fanart` entity SHALL contain non-empty slices for the available types and empty slices for the missing types
+#### Scenario: Malformed MBID
+- **WHEN** an artist's MBID is not a UUID of 36 characters
+- **THEN** the artist is invalid
 
-#### Scenario: Fanart with logo analysis
-- **WHEN** fanart data includes a logo image that has been analyzed
-- **THEN** the `Fanart` entity SHALL contain a non-nil `LogoColorProfile` with `DominantHue`, `DominantLightness`, and `IsChromatic` fields
+#### Scenario: Empty name
+- **WHEN** an artist's name is empty
+- **THEN** the artist is invalid
 
-### Requirement: Fanart Image Selection and Mapping
+### Requirement: A new artist starts without images
+A new Artist SHALL get a fresh unique id and SHALL start with no fanart and no fanart_sync_time.
 
-The system SHALL select, for each fanart image type, the image with the
-highest likes count from the available images of that type, returning an
-empty string when no images are available for that type. When mapping the
-domain `Fanart` entity (with full image arrays) to the proto `Fanart` message
-(with a single best-by-likes URL per image type), the system SHALL apply this
-selection for every image field. The system SHALL also convert the domain
-`LogoColorProfile` to the proto `LogoColorProfile` message when present.
+#### Scenario: New artist
+- **WHEN** an artist is created from a name and an MBID
+- **THEN** it has a fresh id, that name and MBID, no fanart and no fanart_sync_time
 
-#### Scenario: Multiple images with different likes
-- **WHEN** images with likes values [3, 7, 1] are available for selection
-- **THEN** the function SHALL return the URL of the image with 7 likes
+#### Scenario: Two new artists
+- **WHEN** two artists are created from the same name and MBID
+- **THEN** their ids differ
 
-#### Scenario: Empty image slice
-- **WHEN** no images are available for selection
-- **THEN** the function SHALL return an empty string
+### Requirement: The best image of a kind is the most liked
+For each image kind, the best image SHALL be the image with the highest like count; when several images share the highest count, the one listed first SHALL be the best; a kind with no images SHALL have no best image. Wherever an artist is presented to a client, each image kind SHALL show only its best image.
 
-#### Scenario: Mapper selects best images
-- **WHEN** a domain Artist with Fanart data is mapped to proto
-- **THEN** each proto Fanart field SHALL contain the URL of the image with the highest likes count from the corresponding domain field
+#### Scenario: Different like counts
+- **WHEN** a kind has images with like counts 3, 7 and 1
+- **THEN** the image with 7 likes is the best
 
-#### Scenario: Mapper includes logo analysis
-- **WHEN** a domain Artist with Fanart and LogoColorProfile is mapped to proto
-- **THEN** the proto Fanart message SHALL include the `logo_color_profile` field with dominant hue, lightness, and chromaticity
+#### Scenario: Equal like counts
+- **WHEN** two images of a kind have the same highest like count
+- **THEN** the one listed first is the best
 
-### Requirement: Artist fanart proto shape
-The system SHALL define a `Fanart` protobuf message within `liverty_music.entity.v1` containing optional URL fields for each image type: `artist_thumb`, `artist_background`, `hd_music_logo`, `music_logo`, `music_banner`. Each field SHALL use a dedicated wrapper message with URI validation. The message SHALL also include an `optional LogoColorProfile logo_color_profile` field. The `Artist` message SHALL include an `optional Fanart fanart` field.
+#### Scenario: No images of a kind
+- **WHEN** a kind has no images
+- **THEN** the kind has no best image and the artist shows no image of that kind
 
-#### Scenario: Artist with fanart data
-- **WHEN** an Artist is serialized to proto and fanart data exists
-- **THEN** the `fanart` field SHALL contain a `Fanart` message with best image URLs populated for each available image type
+### Requirement: The best logo prefers high definition
+The artist's best logo SHALL be the best hd_music_logo image; when there is none, the best music_logo image; otherwise the artist SHALL have no best logo.
 
-#### Scenario: Artist without fanart data
-- **WHEN** an Artist is serialized to proto and no fanart data exists
-- **THEN** the `fanart` field SHALL be absent (optional not set)
+#### Scenario: High-definition logo available
+- **WHEN** the artist has hd_music_logo images
+- **THEN** the best logo is the best hd_music_logo image
 
-#### Scenario: Artist with logo analysis in fanart
-- **WHEN** an Artist is serialized to proto and logo analysis data exists
-- **THEN** the `fanart.logo_color_profile` field SHALL contain a `LogoColorProfile` message
+#### Scenario: Only a standard logo
+- **WHEN** the artist has no hd_music_logo image but has music_logo images
+- **THEN** the best logo is the best music_logo image
 
-### Requirement: Standalone Artist Service
-The system SHALL provide a dedicated `ArtistService` that is independent of the `ConcertService` for managing artist-related operations. The service SHALL return Artist entities with populated Fanart data when available.
+#### Scenario: No logo
+- **WHEN** the artist has neither hd_music_logo nor music_logo images
+- **THEN** the artist has no best logo
 
-#### Scenario: Service initialization
-- **WHEN** the backend application starts
-- **THEN** the `ArtistService` SHALL be registered as a separate RPC handler with its own set of dependencies (repositories, external clients)
+### Requirement: Logo color profile values are in range
+A logo color profile SHALL have a dominant_lightness between 0 and 1. It SHALL have a dominant_hue between 0 and 360 degrees when is_chromatic is true, and no dominant_hue when is_chromatic is false.
 
-#### Scenario: Artist response includes fanart
-- **WHEN** any Artist RPC method returns an Artist entity that has Fanart data in the database
-- **THEN** the response SHALL include the `fanart` field with best image URLs selected by likes count
+#### Scenario: Chromatic profile
+- **WHEN** a logo color profile is chromatic
+- **THEN** it has a dominant_hue between 0 and 360 and a dominant_lightness between 0 and 1
 
-#### Scenario: Artist response without fanart
-- **WHEN** any Artist RPC method returns an Artist entity without Fanart data
-- **THEN** the response SHALL omit the `fanart` field (optional not set)
-
-### Requirement: Artist filtering by MBID
-
-The entity package SHALL provide a `FilterArtistsByMBID(artists []*Artist) []*Artist` function that removes artists with empty MBID and deduplicates by MBID keeping the first occurrence.
-
-#### Scenario: Mixed valid and empty MBIDs
-
-- **WHEN** input contains artists with MBIDs ["abc", "", "def", "abc"]
-- **THEN** returns artists with MBIDs ["abc", "def"] in order
-
-#### Scenario: All empty MBIDs
-
-- **WHEN** all artists have empty MBID
-- **THEN** returns empty slice
-
-#### Scenario: No duplicates
-
-- **WHEN** all artists have unique non-empty MBIDs
-- **THEN** returns all artists unchanged
-
-#### Scenario: Empty input
-
-- **WHEN** input is nil or empty
-- **THEN** returns empty slice
-
----
-
-### Requirement: OfficialSite constructor
-
-The entity package SHALL provide `NewOfficialSite(artistID, url string) *OfficialSite` that creates an OfficialSite with an auto-generated UUIDv7 ID.
-
-#### Scenario: Constructor generates ID
-
-- **WHEN** NewOfficialSite("artist-123", "https://example.com") is called
-- **THEN** returned OfficialSite has non-empty ID, ArtistID="artist-123", URL="https://example.com"
-
-#### Scenario: ID is unique per call
-
-- **WHEN** NewOfficialSite is called twice with the same arguments
-- **THEN** each call returns a different ID
-
----
-
-### Requirement: LogoColorProfile Proto Message
-The system SHALL define a `LogoColorProfile` protobuf message within `liverty_music.entity.v1` containing `dominant_hue` (optional float, 0-360, present only for chromatic logos), `dominant_lightness` (float, 0-1), and `is_chromatic` (bool). The `Fanart` message SHALL include an `optional LogoColorProfile logo_color_profile` field.
-
-#### Scenario: Artist with logo analysis data
-- **WHEN** an Artist with logo analysis is serialized to proto
-- **THEN** the `fanart.logo_color_profile` field SHALL contain a `LogoColorProfile` message with the extracted values
-
-#### Scenario: Artist without logo analysis data
-- **WHEN** an Artist without logo analysis is serialized to proto
-- **THEN** the `fanart.logo_color_profile` field SHALL be absent (optional not set)
+#### Scenario: Achromatic profile
+- **WHEN** a logo color profile is not chromatic
+- **THEN** it has no dominant_hue and a dominant_lightness between 0 and 1

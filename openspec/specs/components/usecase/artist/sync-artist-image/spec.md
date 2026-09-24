@@ -1,139 +1,74 @@
-# Sync Artist Image
+# ArtistImageSyncUseCase.SyncArtistImage
 
 ## Purpose
 
-Fetches and keeps an artist's images up to date, fetching immediately when the artist is created and periodically refreshing stale images, deriving logo color data and degrading gracefully when images are unavailable.
+ArtistImageSyncUseCase.SyncArtistImage fetches an artist's community images and records the result, profiling the best logo's colors along the way. It runs when an artist is newly registered and daily for artists whose images were never checked or were last checked more than 7 days ago.
 
 ## Requirements
 
-### Requirement: Artist image sync resolves found/absent/unavailable outcomes
+### Requirement: SyncArtistImage records the artist's images and logo profile
+ArtistImageSyncUseCase.SyncArtistImage SHALL take an artist id and MBID, look the images up with Artist.ResolveImages and record the result with Artist.UpdateFanart at the current time. When images are found and the artist has a best logo, it SHALL obtain the logo with Artist.FetchImage and record its Artist.AnalyzeLogo profile with the images. When the MBID is empty, SyncArtistImage SHALL do nothing and SHALL NOT fail.
 
-Artist image sync SHALL fetch image data from an external source using the artist's MusicBrainz ID, resolving to one of three outcomes: images found, no images found, or the external service unavailable.
+#### Scenario: Images and logo found
+- **WHEN** Artist.ResolveImages returns fanart with an hd_music_logo image and the logo is obtained
+- **THEN** the fanart is recorded with the logo's color profile and the current check time
 
-#### Scenario: Successful image resolution
-- **WHEN** artist image sync runs for an artist with a valid MusicBrainz ID that has matching fanart data
-- **THEN** it SHALL return the resolved image data
+#### Scenario: Images without a logo
+- **WHEN** Artist.ResolveImages returns fanart with no logo image
+- **THEN** the fanart is recorded without a color profile
 
-#### Scenario: No images found
-- **WHEN** artist image sync runs for an artist with a valid MusicBrainz ID that has no matching fanart data
-- **THEN** it SHALL complete with no images and no error
+#### Scenario: No images
+- **WHEN** Artist.ResolveImages returns no fanart
+- **THEN** the artist is recorded with no fanart and the current check time, and SyncArtistImage does not fail
 
-#### Scenario: External service failure
-- **WHEN** the external image service is unavailable
-- **THEN** artist image sync SHALL report an unavailable error
+#### Scenario: Empty MBID
+- **WHEN** SyncArtistImage is called with an empty MBID
+- **THEN** no lookup is made, nothing is recorded, and SyncArtistImage does not fail
 
-### Requirement: Immediate image fetch on artist creation
-The system SHALL subscribe to `ARTIST.created` events and asynchronously fetch fanart data for newly created artists. This ensures images are available shortly after onboarding when artists are followed.
+### Requirement: A logo failure does not stop the sync
+When Artist.FetchImage fails or returns no image, ArtistImageSyncUseCase.SyncArtistImage SHALL record the images without a color profile and SHALL NOT fail.
 
-#### Scenario: New artist created with MBID
-- **WHEN** an `ARTIST.created` event is received with a non-empty MBID
-- **THEN** the consumer SHALL call `ArtistImageResolver.ResolveImages` and persist the result via `ArtistRepository.UpdateFanart`
+#### Scenario: Logo cannot be obtained
+- **WHEN** Artist.FetchImage fails with Unavailable
+- **THEN** the fanart is recorded without a color profile and SyncArtistImage succeeds
 
-#### Scenario: fanart.tv has no data for the artist
-- **WHEN** `ResolveImages` returns nil for the new artist
-- **THEN** the consumer SHALL update `fanart_synced_at` to the current time without setting fanart data
+#### Scenario: Logo missing
+- **WHEN** Artist.FetchImage returns no image
+- **THEN** the fanart is recorded without a color profile and SyncArtistImage succeeds
 
-#### Scenario: fanart.tv is unavailable
-- **WHEN** `ResolveImages` returns an error
-- **THEN** the consumer SHALL return the error (Watermill retry middleware will retry with exponential backoff, eventually sending to poison queue)
+### Requirement: SyncArtistImage reports lookup and recording failures
+ArtistImageSyncUseCase.SyncArtistImage SHALL fail with the error of Artist.ResolveImages without recording anything, and SHALL fail with the error of Artist.UpdateFanart.
 
-### Requirement: Periodic sync refreshes stale artist images
-The system SHALL run a daily job (`artist-image-sync`) that refreshes stale fanart data and backfills artists without fanart data. The job SHALL select artists where `fanart IS NULL` (prioritized) or `fanart_synced_at` is older than 7 days. The job SHALL use a circuit breaker pattern (stop after 3 consecutive failures).
+#### Scenario: Image catalog unavailable
+- **WHEN** Artist.ResolveImages fails with Unavailable
+- **THEN** SyncArtistImage fails and nothing is recorded
 
-#### Scenario: Backfill artist without fanart
-- **WHEN** the job runs and finds artists with `fanart IS NULL`
-- **THEN** it SHALL fetch fanart data for each and persist the result
+#### Scenario: Recording fails
+- **WHEN** Artist.UpdateFanart fails with NotFound
+- **THEN** SyncArtistImage fails with NotFound
 
-#### Scenario: Refresh stale fanart
-- **WHEN** the job runs and finds artists with `fanart_synced_at` older than 7 days
-- **THEN** it SHALL re-fetch fanart data and overwrite the existing record
+### Requirement: SyncArtistImage runs when an artist is newly registered
+When an artist-created announcement is made, SyncArtistImage SHALL run for the announced artist id and MBID. When the run fails, it SHALL be retried up to 3 more times.
 
-#### Scenario: Circuit breaker activation
-- **WHEN** 3 consecutive fanart.tv API calls fail
-- **THEN** the job SHALL stop processing remaining artists and exit with code 0
+#### Scenario: Artist announced
+- **WHEN** an artist-created announcement is made for an artist
+- **THEN** SyncArtistImage runs for that artist
 
-#### Scenario: SIGTERM during processing
-- **WHEN** the job receives SIGTERM while processing
-- **THEN** the job SHALL stop processing and exit gracefully
+#### Scenario: Run fails
+- **WHEN** SyncArtistImage fails for an announced artist
+- **THEN** it is run again, at most 3 more times
 
-### Requirement: Logo Color Analysis and Sync Pipeline Integration
+### Requirement: SyncArtistImage runs daily for due artists
+Once a day, SyncArtistImage SHALL run for up to 500 artists returned by Artist.ListStaleOrMissingFanart with an age of 7 days, in the returned order. The daily run SHALL stop after 3 consecutive failed artists, and SHALL stop when it is asked to shut down; a failed artist does not stop the run otherwise.
 
-The system SHALL analyze artist logo images (clearLOGO PNGs) to extract
-dominant color properties. The analysis SHALL decode the PNG, iterate all
-non-transparent pixels (alpha >= 10), convert each pixel from sRGB to OKLCH
-color space, and classify pixels as chromatic (chroma > 0.04) or achromatic.
-The fanart sync pipeline (CronJob and ARTIST.created consumer) SHALL perform
-this logo color analysis after fetching fanart data, using the best logo
-image selected by highest likes count from `HDMusicLogo`, falling back to
-`MusicLogo` if `HDMusicLogo` is empty.
+#### Scenario: Due artists
+- **WHEN** the daily run starts and 20 artists are due
+- **THEN** SyncArtistImage runs for each of the 20 artists
 
-#### Scenario: Chromatic logo (e.g., colored text/symbol)
-- **WHEN** a logo image has more than 30% of non-transparent pixels with OKLCH chroma > 0.04
-- **THEN** the analysis SHALL return `isChromatic = true`, `dominantHue` as the peak of a 36-bin (10° each) hue histogram, and `dominantLightness` as the mean lightness of all non-transparent pixels
+#### Scenario: Three consecutive failures
+- **WHEN** SyncArtistImage fails for 3 artists in a row
+- **THEN** the daily run stops without processing the remaining artists
 
-#### Scenario: Achromatic light logo (e.g., white text)
-- **WHEN** a logo image has 30% or fewer chromatic pixels and a mean lightness > 0.6
-- **THEN** the analysis SHALL return `isChromatic = false`, `dominantHue` absent (not set), and `dominantLightness` reflecting the high lightness value
-
-#### Scenario: Achromatic dark logo (e.g., black text)
-- **WHEN** a logo image has 30% or fewer chromatic pixels and a mean lightness ≤ 0.6
-- **THEN** the analysis SHALL return `isChromatic = false`, `dominantHue` absent (not set), and `dominantLightness` reflecting the low lightness value
-
-#### Scenario: Fully transparent image
-- **WHEN** a logo image has no non-transparent pixels (alpha >= 10)
-- **THEN** the analysis SHALL return nil (no analysis possible)
-
-#### Scenario: Artist has HDMusicLogo
-- **WHEN** fanart data is fetched and HDMusicLogo contains images
-- **THEN** the sync pipeline SHALL download the best HDMusicLogo image (by likes), run color analysis, and store the result in the `logoColorProfile` field of the fanart JSONB
-
-#### Scenario: Artist has only MusicLogo
-- **WHEN** fanart data is fetched and HDMusicLogo is empty but MusicLogo contains images
-- **THEN** the sync pipeline SHALL download the best MusicLogo image and run color analysis
-
-#### Scenario: Artist has no logo images
-- **WHEN** fanart data is fetched but neither HDMusicLogo nor MusicLogo contain images
-- **THEN** the sync pipeline SHALL store fanart data without a `logoColorProfile` field
-
-#### Scenario: Logo image download fails
-- **WHEN** the logo image HTTP request fails or returns non-200
-- **THEN** the sync pipeline SHALL log a warning and store fanart data without a `logoColorProfile` field (non-fatal)
-
-### Requirement: Artist image sync resolves image, logo color, and fanart update with graceful degradation
-
-The test suite SHALL verify that `ArtistImageSyncUsecase.SyncArtistImage()` correctly orchestrates artist fetch, image resolution, logo color analysis, and fanart update.
-
-#### Scenario: Sync with valid MBID
-
-- **WHEN** `SyncArtistImage()` is called for an artist with a valid MusicBrainz ID
-- **THEN** the image resolver SHALL be called to resolve the image URL
-- **AND** the logo image fetcher SHALL be called to download and analyze the logo
-- **AND** the fanart record SHALL be updated with the resolved image URL and logo color
-
-#### Scenario: Sync with empty MBID
-
-- **WHEN** `SyncArtistImage()` is called for an artist with an empty MusicBrainz ID
-- **THEN** the system SHALL return early without error
-- **AND** the image resolver SHALL NOT be called
-
-#### Scenario: Sync when image resolver returns NotFound
-
-- **WHEN** `SyncArtistImage()` is called for a valid artist
-- **AND** the image resolver returns a `NotFound` error
-- **THEN** the fanart record SHALL be updated with nil image URL (marking the artist as synced)
-- **AND** the system SHALL NOT return an error
-
-#### Scenario: Sync when logo fetch fails
-
-- **WHEN** `SyncArtistImage()` is called for a valid artist
-- **AND** the image is resolved successfully
-- **AND** the logo image fetcher returns an error
-- **THEN** the fanart record SHALL be updated with the resolved image URL but without logo color data
-- **AND** the system SHALL NOT return an error
-
-#### Scenario: Sync when artist repository returns error
-
-- **WHEN** `SyncArtistImage()` is called
-- **AND** the artist repository returns an error when fetching the artist
-- **THEN** the system SHALL propagate the error
-- **AND** no fanart update SHALL occur
+#### Scenario: Isolated failure
+- **WHEN** SyncArtistImage fails for one artist and succeeds for the next
+- **THEN** the daily run continues
