@@ -71,9 +71,8 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 
 #### Scenario: Set ticket journey status from detail view
 
-- **WHEN** the user selects a new status from the journey status controls
-- **THEN** the system SHALL call `TicketJourneyService.SetStatus` with the event_id and selected status
-- **AND** the displayed status SHALL update to reflect the change
+- **WHEN** the user selects a new status from the journey status controls and the change is saved
+- **THEN** the displayed status SHALL update to reflect the change, on the sheet and on the Dashboard as the story stories/track-ticket-journey describes
 
 #### Scenario: Start tracking from detail view
 
@@ -83,9 +82,8 @@ The system SHALL provide a detail view for a selected concert using a popover-ba
 
 #### Scenario: Remove ticket journey from detail view
 
-- **WHEN** the user removes the journey status from the detail view controls
-- **THEN** the system SHALL call `TicketJourneyService.Delete` with the event_id
-- **AND** the status display SHALL revert to the untracked state
+- **WHEN** the user removes the journey status from the detail view controls and the removal is saved
+- **THEN** the status display SHALL revert to the untracked state
 - **AND** the remove control's label SHALL be sourced from the `eventDetail.stopTracking` i18n key
 
 #### Scenario: Dismiss sheet via light dismiss (non-onboarding)
@@ -873,21 +871,38 @@ The Dashboard page SHALL display a persistent fixed banner above the bottom navi
 - **WHEN** an authenticated user views the Dashboard
 - **THEN** the signup banner SHALL NOT be rendered
 
-### Requirement: Dashboard auth guard for journey fetch
+### Requirement: Concert cards show the fan's journey status
 
-The Dashboard SHALL NOT call authenticated RPC endpoints when the user is unauthenticated.
+Each concert card on the Dashboard SHALL show a badge with the fan's ticket journey status for that concert, and no badge when the fan has none. A guest sees no badges, as the story stories/track-ticket-journey states. When the fan's journey statuses cannot be loaded, the Dashboard SHALL still show the concerts, without badges and without an error message.
 
-#### Scenario: Journey data skipped for unauthenticated users
+#### Scenario: Tracked concert
 
-- **WHEN** an unauthenticated user views the Dashboard
-- **THEN** the system SHALL NOT call `TicketJourneyService/ListByUser`
-- **AND** the system SHALL use an empty journey map as fallback
-- **AND** no 401 errors SHALL appear in the browser console
+- **WHEN** a signed-in fan's journey for a concert is Applied
+- **THEN** that concert's card shows the Applied badge
 
-#### Scenario: Journey data fetched for authenticated users
+#### Scenario: Concert without a journey
 
-- **WHEN** an authenticated user views the Dashboard
-- **THEN** the system SHALL call `TicketJourneyService/ListByUser` to populate ticket journey statuses
+- **WHEN** the fan has no journey for a concert
+- **THEN** that concert's card shows no badge
+
+#### Scenario: Statuses cannot be loaded
+
+- **WHEN** the concerts load but the fan's journey statuses fail to load
+- **THEN** the concerts are shown without badges and no error is shown
+
+### Requirement: Concerts the fan's hype level covers are highlighted
+
+A concert card SHALL be highlighted when the fan's hype level for its artist covers the lane the concert is in: Home covers the home lane, Nearby the home and nearby lanes, Away every lane, Watch none. Other cards SHALL be shown without the highlight. The hype level does not change which concerts are shown or their order.
+
+#### Scenario: Nearby artist with a distant concert
+
+- **WHEN** the fan follows an artist at Nearby and the artist has one concert in the nearby lane and one in the away lane
+- **THEN** the nearby concert's card is highlighted and the away concert's card is not
+
+#### Scenario: Watch artist
+
+- **WHEN** the fan follows an artist at Watch
+- **THEN** the artist's concerts are shown and none is highlighted
 
 ### Requirement: Timetable rendering cost is bounded and must not dominate the main thread
 

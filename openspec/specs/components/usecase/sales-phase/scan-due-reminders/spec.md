@@ -27,21 +27,16 @@ ScanDueReminders SHALL run every 15 minutes, which is shorter than the tightest 
 
 ### Requirement: The audience is the fans tracking the series
 
-For each phase ScanDueReminders SHALL consider the fans returned by TicketJourney.ListUserIDsTrackingSeries for the phase's series, that is, the fans whose journey on an event of the series is still Tracking. A fan who follows the artist without tracking, or whose journey on the series has moved to Applied or later, SHALL NOT be reminded. A fan whose profile cannot be read SHALL be skipped.
+For each phase ScanDueReminders SHALL consider exactly the fans returned by TicketJourney.ListUserIDsTrackingSeries for the phase's series, and nobody else. A fan whose profile cannot be read SHALL be skipped.
 
 #### Scenario: Tracking fan
 
-- **WHEN** a fan tracks one event of the phase's series and a stage is due
+- **WHEN** ListUserIDsTrackingSeries returns a fan for the phase's series and a stage is due
 - **THEN** a reminder is requested for that fan
 
-#### Scenario: Follower who does not track
+#### Scenario: Fan no longer listed
 
-- **WHEN** a fan follows the artist but tracks no event of the series
-- **THEN** no reminder is requested for that fan
-
-#### Scenario: Fan who has applied
-
-- **WHEN** a fan's only journey on the series is Applied and the result day arrives
+- **WHEN** a fan was listed on an earlier run but ListUserIDsTrackingSeries no longer returns them when the result day arrives
 - **THEN** no `RESULT_DAY` reminder is requested for that fan
 
 ### Requirement: A stage is requested once its due time has passed

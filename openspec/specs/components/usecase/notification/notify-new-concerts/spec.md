@@ -77,7 +77,7 @@ Known defect: liverty-music/backend#469
 
 ### Requirement: The message names the artist, counts the concerts in the fan's language and links to the earliest
 
-For each matched follower, NotifyNewConcerts SHALL build one message: the title is the artist's name; the body counts the matched concerts in the follower's preferred language, "1 new concert found" or "N new concerts found" in English and "新しいライブがN件見つかりました" in Japanese, with English for any other or no language; the link is `/concerts/<id>` of the earliest matched concert; the tag is one per artist, so a later message about the same artist replaces the earlier one on the device. The earliest concert is the one with the earliest date, then the earliest start time, a known start time before an unknown one, then the lowest id. The title, link and tag do not depend on the language.
+For each matched follower, NotifyNewConcerts SHALL build one message: the title is the artist's name; the body counts the matched concerts in the follower's preferred language, "1 new concert found" or "N new concerts found" in English and "新しいライブがN件見つかりました" in Japanese, with English for any other or no language; the link is `/concerts/<id>` of the earliest matched concert; the tag is one per artist, so a later message about the same artist replaces the earlier one on the device. The earliest concert is the earliest of the set as Concert defines it. The title, link and tag do not depend on the language.
 
 #### Scenario: One concert in English
 
@@ -114,9 +114,9 @@ For each matched follower, NotifyNewConcerts SHALL build one message: the title 
 - **WHEN** concerts are added in JP-40 on 2026-09-01 and in JP-13 on 2026-09-05, and a follower's hype level is Home with home area JP-13
 - **THEN** that follower's link points to the JP-13 concert
 
-### Requirement: Delivery is delegated per follower
+### Requirement: One new_concerts notification per matched follower
 
-For each matched follower, NotifyNewConcerts SHALL hand the message to notification delivery as one Notification of type new_concerts for that fan; recording, sending and the delivery outcome belong to NotificationUseCase.Notify. A failed delivery to a follower SHALL NOT fail NotifyNewConcerts. When a follower's Notification cannot be recorded, NotifyNewConcerts SHALL stop and fail so the trigger is retried; followers notified before the failure may then be notified again, and the per-artist tag replaces the repeated message on their devices. When the followers cannot be read, NotifyNewConcerts SHALL fail and send nothing. When the request is cancelled, no further follower SHALL be notified.
+For each matched follower, NotifyNewConcerts SHALL issue one notification of type new_concerts carrying that follower's message. A failed delivery to a follower SHALL NOT fail NotifyNewConcerts. The story stories/get-notified-of-new-concerts covers the whole flow from the added concerts to the fan's browsers. When a follower's Notification cannot be recorded, NotifyNewConcerts SHALL stop and fail so the trigger is retried; followers notified before the failure may then be notified again, and the per-artist tag replaces the repeated message on their devices. When the followers cannot be read, NotifyNewConcerts SHALL fail and send nothing. When the request is cancelled, no further follower SHALL be notified.
 
 #### Scenario: One follower's browser rejects the push
 

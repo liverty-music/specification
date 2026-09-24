@@ -8,7 +8,7 @@ DiscoverForArtist finds the currently open or upcoming ticket sales phases for o
 
 ### Requirement: Daily discovery over every followed artist
 
-DiscoverForArtist SHALL run once a day at 21:00 Japan time for each artist that at least one fan follows, one artist at a time.
+DiscoverForArtist SHALL run once a day at 21:00 Japan time for each artist that at least one fan follows (Follow.ListAll), one artist at a time.
 
 #### Scenario: Daily run
 

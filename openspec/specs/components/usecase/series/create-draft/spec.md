@@ -24,7 +24,7 @@ CreateDraft SHALL fail with InvalidArgument, storing nothing, when the title is 
 
 ### Requirement: Only represented artists
 
-CreateDraft SHALL fail with PermissionDenied, without saying which Artist, when any performer is not an Artist the caller's Organizer represents.
+CreateDraft SHALL fail with PermissionDenied, without saying which Artist, when any performer is not among the Artists the caller's Organizer represents (Organizer.ListArtists).
 
 #### Scenario: Unrepresented artist
 - **WHEN** the draft names an Artist the Organizer does not represent

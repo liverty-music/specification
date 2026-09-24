@@ -56,7 +56,7 @@ When the phase requires verification, IssueFromCapturedWin SHALL bind every Tick
 
 ### Requirement: Ticket journey becomes Paid
 
-After the Order is stored, IssueFromCapturedWin SHALL set the buyer's TicketJourney for the phase's event to Paid with TicketJourney.Upsert. When that fails, the Order and Tickets stay issued and the Order is still returned.
+After the Order is stored, IssueFromCapturedWin SHALL set the buyer's TicketJourney for the phase's event to Paid with TicketJourney.Upsert, replacing whatever status the fan had set, and SHALL NOT announce the change as a ticket journey status change. When that fails, the Order and Tickets stay issued and the Order is still returned.
 
 #### Scenario: Journey updated
 

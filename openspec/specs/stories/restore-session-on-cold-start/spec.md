@@ -34,3 +34,22 @@ This requirement exists because `oidc-client-ts` `automaticSilentRenew` only sch
 - **WHEN** the app cold-starts and a stored user is loaded whose access token is still valid
 - **THEN** the system SHALL NOT trigger a boot-time silent renewal
 - **AND** the system SHALL resolve to the authenticated state using the existing tokens
+
+### Requirement: The remembered account is restored on launch
+
+On every launch with a signed-in session, the app SHALL restore the fan's account from the account remembered for the signed-in identity (UserUseCase.Get) before it makes any other per-fan request. When the account has no preferred language, the app SHALL set it to the app's current display language (UserUseCase.UpdatePreferredLanguage) without asking the fan. Once the account's preferred language is in use, the language the app kept on the device before sign-in is dropped, and the account's language wins from then on.
+
+#### Scenario: Reopen with a remembered account
+
+- **WHEN** a signed-in fan reopens the app
+- **THEN** the fan's follows, home and language are those of their account
+
+#### Scenario: Account without a language
+
+- **WHEN** a signed-in fan whose account has no preferred language opens the app in Japanese
+- **THEN** the account's preferred language becomes `ja`
+
+#### Scenario: Language chosen on another device
+
+- **WHEN** a fan's account language is `en` and the device kept `ja` from before sign-in
+- **THEN** after the next launch the app is shown in English

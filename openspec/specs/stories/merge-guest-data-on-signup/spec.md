@@ -143,15 +143,14 @@ written). Partial failures SHALL be healed by boot reconciliation (see the
 #### Scenario: Successful data merge
 
 - **WHEN** authentication completes successfully for a guest who has onboarding data
-- **THEN** **on sign-up** the system SHALL call `UserService.Create` with the
+- **THEN** the system SHALL call `UserService.Create` with the
   user's email, home, and preferred language (home/language read from the
-  guest's stored preferences) — a returning sign-in skips `Create` because the
-  account already exists
+  guest's stored preferences); for a returning sign-in `Create` returns the
+  existing account unchanged
 - **AND** on sign-up the system SHALL switch to the authenticated entity and
   clear its own guest home/language localStorage
 - **AND** on a returning sign-in the system SHALL also switch to the
-  authenticated entity (reusing the existing account-loading behavior, no
-  `Create` call) and clear its own guest home/language localStorage — guest
+  authenticated entity and clear its own guest home/language localStorage — guest
   preferences are discarded, the existing account's saved values win
 - **AND** on **every** successful authentication (sign-up AND returning sign-in)
   the system SHALL publish a `GuestMigrationRequested` event
@@ -159,14 +158,24 @@ written). Partial failures SHALL be healed by boot reconciliation (see the
   non-default hype) for each artist in `guest.followedArtists`, then clear its
   own guest follow localStorage on success
 
-#### Scenario: User already exists during merge
+#### Scenario: Identity already has an account
 
-- **WHEN** `UserService.Create` returns `ALREADY_EXISTS`
-- **THEN** the system SHALL treat this as success and continue with the follow
-  migration
+- **WHEN** a guest signs in with an identity that already has an account
+- **THEN** `UserService.Create` returns that account unchanged and the follow
+  migration continues
 - **AND** the guest-chosen home and preferred language SHALL NOT be applied to
   the pre-existing account — the returning user's saved account preferences win
   (only follows merge, as they are additive)
+
+#### Scenario: Guest follow at the default level does not overwrite the account's level
+
+- **WHEN** the account already follows an artist at Away and the guest followed
+  the same artist at the default Nearby
+- **THEN** after the merge the account still follows the artist at Away
+- **AND** a guest's explicit choice of Nearby cannot be told apart from the
+  default and is treated the same (known limitation)
+- **AND** follows the account stored before the default became Nearby keep
+  their stored level
 
 #### Scenario: Follow call fails during merge
 

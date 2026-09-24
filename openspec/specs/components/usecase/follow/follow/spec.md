@@ -2,7 +2,7 @@
 
 ## Purpose
 
-FollowUseCase.Follow records that a fan follows an artist, announces the follow, and in the background completes what the artist is missing: its official site and, when the artist has never been searched, a first concert search. No failure in the background work changes the result of the follow.
+FollowUseCase.Follow records that a fan follows an artist, announces the follow, and in the background stores the artist's official site when it is missing and, when the artist has never been searched, starts a first concert search. No failure in the background work changes the result of the follow.
 
 ## Requirements
 
@@ -60,26 +60,26 @@ After a new Follow is stored, Follow SHALL, in the background and after answerin
 - **WHEN** resolving the site fails
 - **THEN** nothing is stored and the follow is unaffected
 
-### Requirement: First concert search requested in the background
+### Requirement: First concert search started in the background
 
-After a new Follow is stored, Follow SHALL, in the background and after answering the fan, read the artist's search history (SearchLog.GetByArtistID). When the artist has never been searched (NotFound), Follow SHALL request a concert search for the artist; the search itself belongs to concert search. When the history exists, or cannot be read for any other reason, no search is requested. A failed search SHALL NOT affect the follow.
+After a new Follow is stored, Follow SHALL, in the background and after answering the fan, read the artist's search history (SearchLog.GetByArtistID). When the artist has never been searched (NotFound), Follow SHALL start a concert search for the artist and ignore its outcome. When the history exists, or cannot be read for any other reason, no search is started. Nothing that happens after the search is started SHALL affect the follow. The story stories/follow-an-artist covers the whole flow from the follow to the concerts the search finds.
 
 #### Scenario: Artist never searched
 
 - **WHEN** a fan follows an artist with no search history
-- **THEN** a concert search for the artist is requested after the follow has been answered
+- **THEN** a concert search for the artist is started after the follow has been answered
 
 #### Scenario: Artist searched before
 
 - **WHEN** a fan follows an artist that has a search history
-- **THEN** no concert search is requested
+- **THEN** no concert search is started
 
 #### Scenario: Search history unreadable
 
 - **WHEN** reading the search history fails with an error other than NotFound
-- **THEN** no concert search is requested and the follow is unaffected
+- **THEN** no concert search is started and the follow is unaffected
 
 #### Scenario: Search fails
 
-- **WHEN** the requested concert search fails
+- **WHEN** the started concert search fails
 - **THEN** the follow has already succeeded and is unaffected

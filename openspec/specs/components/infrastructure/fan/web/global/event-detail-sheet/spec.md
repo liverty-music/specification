@@ -165,3 +165,17 @@ The Ticket Journey status UI (concert-card badge and detail-sheet status control
 
 - **WHEN** a user has not completed any ticket purchase or NFT minting
 - **THEN** the user SHALL still be able to set and view their journey status (e.g. `tracking`, `applied`, `lost`, `unpaid`, `paid`) via the UI
+
+### Requirement: Ticket Status saving failures and double taps
+
+When saving or removing a journey status fails, the sheet SHALL keep showing the status the fan had before and SHALL show no error message. While a change is being saved, further status selections in the sheet SHALL be ignored.
+
+#### Scenario: Saving fails
+
+- **WHEN** a signed-in fan picks Paid for an event whose status is Unpaid and saving fails
+- **THEN** the sheet still shows Unpaid and no error message appears
+
+#### Scenario: Second tap while saving
+
+- **WHEN** the fan picks Applied and, before it is saved, picks Lost
+- **THEN** the second pick is ignored and the sheet shows Applied once the first change is saved

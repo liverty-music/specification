@@ -32,14 +32,14 @@ This scenario bounds only the VAPID-key `fetch()`; it does not change how the Se
 
 ### Requirement: Service Worker renews the subscription on pushsubscriptionchange
 
-The Service Worker SHALL handle the `pushsubscriptionchange` event. When the push service rotates or expires the subscription, the Service Worker SHALL obtain a new subscription using the configured VAPID application server key and re-register it with the backend via `PushNotificationService.Create`, so that browser-initiated subscription churn does not silently end delivery. Renewal SHALL run without any user interaction and SHALL NOT require the app UI to be open.
+The Service Worker SHALL handle the `pushsubscriptionchange` event. When the push service rotates or expires the subscription, the Service Worker SHALL obtain a new subscription using the configured VAPID application server key, without any user interaction and without the app UI being open, and SHALL tell any open app window that the subscription changed. The Service Worker cannot act for the signed-in fan, so the new subscription SHALL be registered with the server by an open app window at once, or otherwise the next time the app opens (see the app shell), so that browser-initiated subscription churn does not silently end delivery.
 
 #### Scenario: Browser rotates the subscription
 
 - **WHEN** the browser fires `pushsubscriptionchange` in the Service Worker
 - **AND** a new subscription can be obtained with the configured VAPID application server key
 - **THEN** the Service Worker SHALL subscribe to the push service for the new subscription
-- **AND** SHALL register the new subscription with the backend via `PushNotificationService.Create`
+- **AND** the new subscription SHALL be registered with the server by an open app window, or when the app next opens
 - **AND** the user SHALL continue to receive push notifications without re-enabling them
 
 #### Scenario: Renewal cannot obtain a new subscription

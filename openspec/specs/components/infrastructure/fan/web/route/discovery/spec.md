@@ -627,20 +627,20 @@ The tap and landing sounds SHALL honor the user's existing mute and volume prefe
 
 ### Requirement: Interactive Artist Discovery (Bubble Network UI)
 
-The system SHALL provide an engaging, gamified interface for users to discover and follow artists using Last.fm API data. During onboarding, followed artists are stored locally (not via backend RPC). The system SHALL trigger a background concert search for each followed artist and track which artists have concerts. The Coach Mark SHALL appear when the progression condition is reached and SHALL hint that the personal timetable is ready; it is owned by `CoachMarkService` (see `onboarding-spotlight`). Navigation to the Dashboard is never forced — the dashboard is always reachable and the user taps the Home nav tab at their own pace. Tapping the coach mark target SHALL navigate only; it SHALL NOT advance any onboarding step (there is no step machine).
+The system SHALL provide an engaging, gamified interface for users to discover and follow artists using Last.fm API data. During onboarding, followed artists are stored locally (not via backend RPC). After each follow the system SHALL look up the artist's concerts already in the catalog and count the followed artists that have upcoming concerts; it SHALL NOT start a concert search itself (a first follow starts one on the server, as the story stories/follow-an-artist describes). A follow SHALL show at once; following an artist that is already followed SHALL change nothing; when a signed-in fan's follow fails, it SHALL be undone and the artist's bubble returns. The Coach Mark SHALL appear when the progression condition is reached and SHALL hint that the personal timetable is ready; it is owned by `CoachMarkService` (see `onboarding-spotlight`). Navigation to the Dashboard is never forced — the dashboard is always reachable and the user taps the Home nav tab at their own pace. Tapping the coach mark target SHALL navigate only; it SHALL NOT advance any onboarding step (there is no step machine).
 
 #### Scenario: Guest user follows artist via bubble tap
 
 - **WHEN** a guest user (in onboarding) taps an artist bubble
 - **THEN** the system SHALL trigger the absorption animation
 - **AND** the system SHALL store the artist locally (routed to the guest follow queue for unauthenticated users)
-- **AND** the system SHALL initiate a background concert search/track for the artist via `ConcertService`
+- **AND** the system SHALL look up the artist's concerts already in the catalog
 - **AND** the system SHALL NOT call any backend RPC for the follow operation itself
 
 #### Scenario: Guest follow default hype level
 
-- **WHEN** a guest user (in onboarding) requests the list of followed artists
-- **THEN** the system SHALL return each followed artist with hype level `'watch'` (observation tier)
+- **WHEN** a guest follows an artist
+- **THEN** the follow is kept on the device at hype level Nearby
 
 #### Scenario: Discover to Dashboard coach-mark trigger
 
@@ -661,13 +661,22 @@ The system SHALL provide an engaging, gamified interface for users to discover a
 
 - **WHEN** the discovery page loads during onboarding
 - **THEN** the system SHALL hydrate follows from the locally stored guest follows into the active follow list
-- **AND** the system SHALL initiate a concert search via `ConcertService` for any artists not yet tracked
+- **AND** the system SHALL look up the catalog's concerts for any artist not yet counted
 
 #### Scenario: Snack notification on concert found
 
-- **WHEN** a followed artist's search completes with status `completed`
-- **AND** `listConcerts(artistId)` returns at least one concert
+- **WHEN** the lookup for a followed artist finds at least one concert in the catalog
 - **THEN** the system SHALL display a snack notification indicating the artist has upcoming events
+
+#### Scenario: Following an already-followed artist
+
+- **WHEN** a fan taps an artist they already follow
+- **THEN** nothing changes and no request is sent
+
+#### Scenario: Signed-in follow fails
+
+- **WHEN** a signed-in fan follows an artist and the follow fails
+- **THEN** the artist is no longer shown as followed and its bubble returns to the field
 
 ### Requirement: Artist discovery service manages bubble state with optimistic follow
 The `ArtistDiscoveryService` SHALL manage artist bubbles, track seen artists across three deduplication sets, and perform optimistic follow/unfollow with retry and rollback.

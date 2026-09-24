@@ -22,26 +22,26 @@ AnnounceDiscoveredPhase SHALL run when DiscoverForArtist requests the announceme
 
 ### Requirement: The audience is the fans tracking the series
 
-AnnounceDiscoveredPhase SHALL announce the phase to the fans returned by TicketJourney.ListUserIDsTrackingSeries for the phase's series, that is, the fans whose journey on an event of the series is still Tracking. When nobody is tracking the series, it SHALL announce to nobody and succeed. A fan whose profile cannot be read SHALL be skipped and the others SHALL still be announced to.
+AnnounceDiscoveredPhase SHALL announce the phase to exactly the fans returned by TicketJourney.ListUserIDsTrackingSeries for the phase's series, and to nobody else; when that list is empty it SHALL succeed without announcing. A fan whose profile cannot be read SHALL be skipped and the others SHALL still be announced to.
 
 #### Scenario: Tracking fan
 
-- **WHEN** a fan tracks one event of the series
+- **WHEN** ListUserIDsTrackingSeries returns a fan for the series
 - **THEN** the fan receives the announcement
 
-#### Scenario: Follower who does not track
+#### Scenario: Nobody tracking
 
-- **WHEN** a fan follows the artist but tracks no event of the series
-- **THEN** the fan does not receive the announcement
+- **WHEN** ListUserIDsTrackingSeries returns no fan
+- **THEN** nothing is announced and AnnounceDiscoveredPhase succeeds
 
-#### Scenario: Fan who already applied
+#### Scenario: Profile unreadable
 
-- **WHEN** a fan's only journey on the series is Applied
-- **THEN** the fan does not receive the announcement
+- **WHEN** one of two tracking fans' profile cannot be read
+- **THEN** the other fan still receives the announcement
 
 ### Requirement: The announcement is generic and links to the series
 
-Each recipient's announcement SHALL have a title and a text in the recipient's preferred language, Japanese for `ja` and English for any other or no language, and SHALL name neither the artist, the tour, the channel nor a time. It SHALL link to the series page, even when the phase has its own url. Repeated deliveries of the same phase's announcement SHALL replace each other on the device.
+Each recipient's announcement SHALL have a title and a text in the recipient's preferred language, Japanese for `ja` and English for any other or no language, and SHALL name neither the artist, the tour, the channel nor a time. It SHALL link to the series page, even when the phase has its own url; the link and the grouping tag do not depend on the language. Repeated deliveries of the same phase's announcement SHALL replace each other on the device.
 
 #### Scenario: Japanese-speaking fan
 
@@ -67,9 +67,9 @@ AnnounceDiscoveredPhase SHALL send the announcement as soon as it runs, whatever
 - **WHEN** AnnounceDiscoveredPhase runs at 23:00 in a recipient's time zone
 - **THEN** the recipient is sent the announcement at once
 
-### Requirement: Delivery is delegated to the Notification capability
+### Requirement: One sales-phase announcement notification per recipient
 
-For each recipient AnnounceDiscoveredPhase SHALL hand the announcement to the Notification capability as a notification of type sales-phase announcement, which records it and pushes it to the recipient's devices. When a recipient's notification cannot be recorded, AnnounceDiscoveredPhase SHALL fail so the whole announcement runs again; recipients already sent may then receive it again, and the repeat replaces the earlier one on their device.
+For each recipient AnnounceDiscoveredPhase SHALL issue one notification of type sales-phase announcement carrying that recipient's message. Whether it reaches the recipient's devices does not change the result. When a recipient's notification cannot be recorded, AnnounceDiscoveredPhase SHALL fail so the whole announcement runs again; recipients already sent may then receive it again, and the repeat replaces the earlier one on their device. The story stories/hear-about-a-new-ticket-sale covers the whole flow from discovery to the fan's device.
 
 #### Scenario: Two recipients
 

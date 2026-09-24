@@ -112,6 +112,25 @@ The My Artists route SHALL display artists in list view only. The grid toggle bu
 - **WHEN** the My Artists stylesheet is loaded
 - **THEN** it SHALL NOT contain `.artist-grid`, `.grid-tile`, or related grid layout rules
 
+### Requirement: Followed artists and their hype levels
+
+My Artists SHALL list the fan's followed artists, each with its hype level active on the hype control, and SHALL show the empty state, with a way to discover artists, when the fan follows none. A newly followed artist SHALL show Nearby active. When a signed-in fan picks a hype level, it SHALL show at once; when saving fails and one retry also fails, the previous level SHALL show again and a message SHALL say the change failed.
+
+#### Scenario: Newly followed artist
+
+- **WHEN** a fan opens My Artists right after following an artist
+- **THEN** the artist is listed with Nearby active
+
+#### Scenario: No followed artists
+
+- **WHEN** a fan who follows no artist opens My Artists
+- **THEN** the empty state is shown
+
+#### Scenario: Hype change fails
+
+- **WHEN** a signed-in fan picks Away for an artist at Home and saving fails twice
+- **THEN** the artist shows Home again and a message says the change failed
+
 ### Requirement: Sticky Header Legend
 
 The My Artists list view SHALL display a sticky header row showing hype tier icons and emotion-based labels, aligned with slider stop positions using a shared grid column definition.
@@ -120,7 +139,7 @@ The My Artists list view SHALL display a sticky header row showing hype tier ico
 
 - **WHEN** the My Artists page renders in list view
 - **THEN** the system SHALL display a sticky header row below the page title
-- **AND** the header SHALL contain 4 equally-spaced columns: 👀 チェック, 🔥 地元, 🔥🔥 近くも, 🔥🔥🔥 どこでも！
+- **AND** the header SHALL contain 4 equally-spaced columns: 👀 Watch, 🔥 Home, 🔥🔥 Nearby, 🔥🔥🔥 Away, the same in every language
 - **AND** the header SHALL use `position: sticky; inset-block-start: 0` with `backdrop-filter: blur(8px)` on the surface-raised background
 - **AND** each column SHALL vertically align with the corresponding dot stop on artist row sliders
 - **AND** the header and artist row content SHALL share the same `grid-template-columns: 2fr repeat(4, 1fr)` definition with `grid-template-areas` to ensure column alignment

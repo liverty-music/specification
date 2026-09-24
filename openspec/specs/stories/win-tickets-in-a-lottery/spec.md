@@ -32,3 +32,14 @@ A fan SHALL be able to withdraw with LotteryUseCase.WithdrawApplication before t
 
 - **WHEN** a fan withdraws their application while the window is open and applies again with a new hold
 - **THEN** the first hold is released and only the new application takes part in the draw
+
+### Requirement: The Organizer's payout readiness never blocks the sale
+
+Fans SHALL be able to apply, win and receive tickets for an Organizer's lottery whatever the state of the Organizer's payout account; only the Organizer's payout waits until the account is Active, as PayoutSweeperUseCase.ReleaseDueSettlements states.
+
+Known defect: liverty-music/backend#468
+
+#### Scenario: Organizer still in identity check
+
+- **WHEN** an Organizer whose payout account is Pending runs a lottery and a fan's application wins
+- **THEN** the fan is charged and holds Issued Tickets, while the Organizer's payout stays Held until the account is Active

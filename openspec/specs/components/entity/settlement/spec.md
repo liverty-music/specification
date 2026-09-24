@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A Settlement is the payout record for one Order's captured money under the 収納代行 (collection agency) scheme: the money stays with the platform while the Settlement is Held, each payee's split is paid out when it is Released, the platform keeps the remainder as its fee, and payouts are clawed back when it is Reversed.
+A Settlement is the payout record for one Order's captured money under the 収納代行 (collection agency) scheme, with the Organizer as seller of record: the money stays with the platform while the Settlement is Held, each payee's split is paid out to the payee's payout account when it is Released, the platform keeps the remainder as its fee, and payouts are clawed back when it is Reversed. The platform bears any negative balance on an Organizer's payout account.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|

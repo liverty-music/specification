@@ -43,13 +43,32 @@ The system SHALL provide Passkey authentication via Zitadel. For new users, auth
 
 #### Scenario: Registration Callback API Failure
 
-- **WHEN** the `Create` RPC call fails during the registration callback (except `ALREADY_EXISTS`)
+- **WHEN** the `Create` RPC call fails during the registration callback, including `ALREADY_EXISTS` because the email belongs to another identity
 - **THEN** the system SHALL log the error
 - **AND** the system SHALL still complete the authentication flow (user can use the app)
 - **AND** the local user record will be created on a subsequent provisioning attempt
 
-#### Scenario: Registration Callback Duplicate User
+#### Scenario: Registration Callback for an already registered identity
 
-- **WHEN** the `Create` RPC returns `ALREADY_EXISTS` during the registration callback
-- **THEN** the system SHALL treat this as a successful provisioning (no error logged)
-- **AND** the system SHALL continue the normal authentication flow
+- **WHEN** the signed-in identity already has an account and `Create` is called during the callback
+- **THEN** `Create` returns the existing account unchanged
+- **AND** the system SHALL continue exactly as for a newly created account
+
+### Requirement: Every sign-in resolves the account with Create
+
+After a sign-in, whether at the end of the tutorial or through the Login link, when the app remembers no account for the signed-in identity, it SHALL call UserUseCase.Create with the app's current display language as preferred language and, when the guest chose a home during onboarding, that home, and SHALL remember the returned account for that identity. Create is the one call that both registers a new identity and returns an existing one, so a returning fan is treated the same as a new one. Signing out SHALL forget the remembered account, so the next sign-in resolves it with Create again. After the account is resolved, the guest's follows and hype levels are merged as the story stories/merge-guest-data-on-signup describes.
+
+#### Scenario: New fan finishes the tutorial
+
+- **WHEN** a guest who chose home JP-13 during onboarding and uses the app in Japanese signs up at the end of the tutorial
+- **THEN** a new account is created with home JP-13 and preferred language `ja`, and the app uses it from then on
+
+#### Scenario: Returning fan signs in on a new device
+
+- **WHEN** a fan with an account whose language is `en` signs in through the Login link on a device set to Japanese
+- **THEN** the app uses the existing account and its preferred language stays `en`
+
+#### Scenario: Sign out and back in
+
+- **WHEN** a fan signs out and signs in again with the same identity
+- **THEN** the app resolves the same account again and shows the fan's own follows

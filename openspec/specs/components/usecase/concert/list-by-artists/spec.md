@@ -20,7 +20,7 @@ ListByArtists SHALL read the Artists' Concerts (Concert.ListByArtists) — past 
 
 ### Requirement: Centroid looked up when missing
 
-When the supplied home area has no centroid, ListByArtists SHALL look it up from the home area's level-1 code. When the lookup fails or the code has no known centroid, the home area SHALL stay without a centroid, so only admin-area matches are HOME and everything else is AWAY.
+When the supplied home area has no centroid, ListByArtists SHALL look it up with User.ResolveCentroid. When the lookup fails or the code has no known centroid, the home area SHALL stay without a centroid, so only admin-area matches are HOME and everything else is AWAY.
 
 #### Scenario: Home given by prefecture only
 - **WHEN** the home area is JP-40 with no centroid

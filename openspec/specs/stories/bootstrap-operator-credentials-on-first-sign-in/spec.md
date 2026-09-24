@@ -2,25 +2,27 @@
 
 ## Purpose
 
-The Organizer domain: the vetted seller an admin creates, its link to the
-artists it represents, the runtime provisioning that gives each Organizer an
-isolated Zitadel tenant its operator can sign into, and the admin surface to
-manage them. The organizer-facing API and console are separate capabilities.
+The first operator of a newly created Organizer sets up a passkey from a
+single invitation email and lands in the organizer console signed in to their
+own Organizer, without ever typing a code; an admin re-invites them when they
+lose access.
 
 ## Requirements
 
 ### Requirement: Operator bootstraps credentials on first sign-in
 
-The system SHALL create the initial operator as a human user in the Organizer's
-tenant org with a **verified email and no password**, and onboard them using
-Zitadel's **standard invitation flow**: the system creates an invite code for
-the operator and has Zitadel send **one** branded invitation email whose
+When an admin creates an Organizer (OrganizerUseCase.Create), its tenant
+provisioning (Organizer.ProvisionTenant) SHALL create the initial operator as a
+human user in the Organizer's tenant with a **verified email and no password**,
+and onboard them using the identity provider's **standard invitation flow**: the
+system creates an invite code for the operator and has the identity provider
+send **one** branded invitation email whose
 "accept" link opens the identity provider's own credential-setup page with the
 code already carried in the link. The operator SHALL complete first sign-in by
 **clicking that link** (never by transcribing a code) and registering a passkey.
 On completion the operator SHALL be returned to the organizer console
-authenticated (the tenant login policy's post-setup redirect targets the
-console — see `organizer-tenancy`), landing on the owner-gated placeholder.
+authenticated (the tenant's post-setup redirect targets the console, as
+Organizer.ProvisionTenant sets it up), landing on the owner-gated placeholder.
 
 The invitation email SHALL be the **only** message the operator must act on for
 first sign-in (no separate "transport" email, and no second code email under the
@@ -29,8 +31,8 @@ remain on the identity-provider surface and SHALL NOT be exposed in a
 console/application URL.
 
 Recovery SHALL be an **admin-initiated re-invite** (the system re-issues the
-operator's invitation), consistent with the tenant org's passkey-primary policy
-and its recovery path in `organizer-tenancy`. Org resolution is bound to the
+operator's invitation), consistent with the tenant's passkey-primary policy
+that Organizer.ProvisionTenant sets up. Org resolution is bound to the
 operator's account by the invitation itself — the operator cannot be routed to a
 different org by supplying a different email (no cross-org access).
 

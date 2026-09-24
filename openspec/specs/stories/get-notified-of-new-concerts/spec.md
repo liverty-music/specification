@@ -30,3 +30,22 @@ When concerts are added for an artist, PushNotificationUseCase.NotifyNewConcerts
 
 - **WHEN** the push service of a matched fan's only browser reports it gone
 - **THEN** the fan's Notification is Failed and that browser's PushSubscription is removed
+
+### Requirement: Every way a concert is added reaches followers the same way
+
+Concerts added by the daily discovery, by an admin approving a held concert, and by an Organizer publishing a PUBLIC concert SHALL reach matched followers alike: one message per artist for the concerts added together. Concerts of an UNLISTED concert SHALL reach nobody.
+
+#### Scenario: Organizer publishes a co-headlined concert
+
+- **WHEN** an Organizer publishes a PUBLIC concert performed by two artists, and a fan follows both at Away
+- **THEN** the fan receives two messages, one titled with each artist's name
+
+#### Scenario: Unlisted concert
+
+- **WHEN** an Organizer publishes an UNLISTED concert of an artist a fan follows at Away
+- **THEN** the fan receives nothing about it
+
+#### Scenario: Tour found by discovery
+
+- **WHEN** the daily discovery adds three concerts of one tour for an artist a fan follows at Away
+- **THEN** the fan receives one message that counts 3 new concerts

@@ -8,7 +8,7 @@ SearchNewConcerts searches external sources for one Artist's newly announced con
 
 ### Requirement: Daily run over followed artists
 
-Every day at 18:00 JST, SearchNewConcerts SHALL be run for each Artist that at least one User follows, one Artist at a time. A failure for one Artist SHALL NOT stop the run, but the run SHALL stop after 3 consecutive Artists fail; a success SHALL reset that count.
+Every day at 18:00 JST, SearchNewConcerts SHALL be run for each Artist that at least one User follows (Follow.ListAll), one Artist at a time. A failure for one Artist SHALL NOT stop the run, but the run SHALL stop after 3 consecutive Artists fail; a success SHALL reset that count.
 
 #### Scenario: Isolated failure
 - **WHEN** the search fails for one Artist and succeeds for the next
