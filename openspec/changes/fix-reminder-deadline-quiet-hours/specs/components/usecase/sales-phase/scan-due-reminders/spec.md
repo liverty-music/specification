@@ -52,7 +52,7 @@ When the sent stages cannot be read, ScanDueReminders SHALL request the due remi
 
 ### Requirement: Quiet hours
 
-ScanDueReminders SHALL NOT send a reminder in the fan's quiet window, 22:00 to 08:00 in the fan's time zone, falling back to Asia/Tokyo when the fan's time zone is unset or not recognised. A stage due inside the window SHALL be deferred as follows: `APPLY_OPEN` and `RESULT_DAY` to the next 08:00; `APPLY_CLOSE_24H` and `APPLY_CLOSE_1H` to the next 08:00 when that is strictly before the apply end time, and otherwise to 21:00 — one hour before the quiet window begins — on the last run before the window, so the reminder itself never lands inside quiet hours. When even 21:00 is not strictly before the apply end time, no moment remains outside quiet hours before the deadline, and the stage SHALL NOT be requested on that run. A close-stage reminder SHALL never be requested at or after the apply end time.
+ScanDueReminders SHALL NOT send a reminder in the fan's quiet window, 22:00 to 08:00 in the fan's time zone, falling back to Asia/Tokyo when the fan's time zone is unset or not recognised. A stage due inside the window SHALL be deferred as follows: `APPLY_OPEN` and `RESULT_DAY` to the next 08:00; `APPLY_CLOSE_24H` and `APPLY_CLOSE_1H` to the next 08:00 when that is strictly before the apply end time, and otherwise to 21:00 — one hour before the quiet window begins — so the reminder's own due time never falls inside quiet hours. A close-stage reminder SHALL never be requested at or after the apply end time.
 
 #### Scenario: Opening during the night
 
@@ -67,7 +67,7 @@ ScanDueReminders SHALL NOT send a reminder in the fan's quiet window, 22:00 to 0
 #### Scenario: Close before the morning
 
 - **WHEN** the apply end time is 02:00, so the `APPLY_CLOSE_1H` anchor is 01:00
-- **THEN** the reminder is requested on the last run before 21:00 the evening before
+- **THEN** the reminder becomes due at 21:00 the evening before
 
 #### Scenario: Close already passed
 
