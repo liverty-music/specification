@@ -17,7 +17,7 @@ This repository is also the **OpenSpec store** `openspec-store`: every spec and 
 ### Local setup (once per machine)
 
 ```bash
-npm install -g @fission-ai/openspec@1.8.0      # the version the committed /opsx files were generated with
+npm install -g @fission-ai/openspec@1.13.2      # the version the committed /opsx files were generated with
 L=~/dev/src/github.com/liverty-music           # any layout works; siblings are just convenient
 for r in specification backend frontend cloud-provisioning; do gh repo clone liverty-music/$r "$L/$r"; done
 openspec store register "$L/specification" --id openspec-store
@@ -54,7 +54,7 @@ Use a **Claude Project** that contains all four repositories: each thread clones
 - **Environment setup script** (Project settings → Environment), Trusted network access is enough:
 
   ```bash
-  npm install -g @fission-ai/openspec@1.8.0
+  npm install -g @fission-ai/openspec@1.13.2
   ```
 
 - **Store registration** happens at the start of a thread, because the clone path is only known then. From inside any repository clone:
