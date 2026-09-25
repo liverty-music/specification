@@ -12,3 +12,6 @@
 
 tmp/*
 !tmp/.gitkeep
+
+# Claude Code worktrees (claude --worktree / EnterWorktree)
+.claude/worktrees/

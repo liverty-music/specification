@@ -1,8 +1,8 @@
 <poly-repo-workspace>
   <description>
-    Liverty Music poly-repo workspace managed as git worktrees.
-    Each repo's AGENTS.md contains detailed coding conventions.
-    Read the target repo's AGENTS.md before making changes.
+    Liverty Music poly-repo workspace: four GitHub repositories worked on side by
+    side, locally or in Claude Code on the web. Each repo's AGENTS.md contains
+    detailed coding conventions. Read the target repo's AGENTS.md before making changes.
     All planning (OpenSpec specs and changes) lives in this repository, which is
     registered as the OpenSpec store `openspec-store`. backend, frontend and
     cloud-provisioning carry no planning of their own: their `openspec/config.yaml`
@@ -21,6 +21,26 @@
         ├── src/               ← Pulumi code (GCP, Cloudflare, GitHub resources)
         └── k8s/               ← Kubernetes manifests (Kustomize base/overlays)
   </structure>
+
+  <workflow>
+    Full human-readable version: README.md "Development workflow". Needs only
+    Claude Code, the OpenSpec CLI (1.8.0) and gh; no machine-specific tooling.
+    1. Plan here: /opsx:propose <change>, tasks split by repository, PR, merge.
+    2. Implement one Claude session per affected repository (only that repo's
+       AGENTS.md is loaded): /opsx:apply <change>. Locally, isolate with
+       `claude --worktree <change>` (<repo>/.claude/worktrees/<change>, branch
+       worktree-<change>); gitignored files come in via .worktreeinclude.
+       Optionally view all worktrees + the store with `openspec workset`.
+    3. Proto first when the contract changes (see dependency-order below).
+    4. One PR per repository, each citing the change in its OpenSpec
+       Traceability section.
+    5. After the implementation PRs merge: /opsx:verify then /opsx:archive here.
+    Cloud (Claude Project with all four repos): the environment setup script
+    installs the OpenSpec CLI; at thread start run `openspec doctor` and, if the
+    store is missing, `openspec store register <path-to-specification-clone>
+    --id openspec-store`. Multi-repo threads run no repository hooks, so run
+    `make check` before committing; CI is the gate.
+  </workflow>
 
   <dependency-order>
     specification PR merge → GitHub Release → BSR gen completes
@@ -123,7 +143,7 @@ Generated code is hosted on BSR at `buf.build/liverty-music/schema`. Do not comm
 This repo is the OpenSpec **store** `openspec-store` (identity file: `.openspec-store/store.yaml`). Every change and spec for backend, frontend, cloud-provisioning and this repo lives under `openspec/` here; the other repos only carry a pointer (`openspec/config.yaml` with `store: openspec-store`). Changes follow the artifact workflow (proposal → design → specs → tasks) via the `/opsx:*` commands.
 
 - **Inside this repo** commands resolve to the local `openspec/` root as usual. **Anywhere else** they resolve through the store registry; pass `--store openspec-store` when in doubt. The `Using OpenSpec root: openspec-store` banner confirms which root is in use.
-- **Per-machine registration** (once per laptop or fresh cloud VM): `openspec store register <path-to-this-checkout> --id openspec-store`. `openspec doctor` reports a missing registration and prints the exact fix (clone URL comes from `store.yaml`).
+- **Per-machine registration** (once per laptop, or at the start of every cloud thread): `openspec store register <path-to-this-checkout> --id openspec-store`. `openspec doctor` reports a missing registration; in a cloud thread the sibling `specification` clone is the path to register. Keep the registered checkout on `main` and pull it before planning: OpenSpec never pulls.
 - **Task progress and archive are recorded here.** Implementation repos never write to the store; their PRs cite the change (`OpenSpec-Change: <id>`) and the store commit they were built against, and the change is verified/archived in this repo once those PRs merge.
 - **Sharing is plain git.** OpenSpec never pulls or pushes; commit and push planning like code, and review it via PRs on this repo.
 
