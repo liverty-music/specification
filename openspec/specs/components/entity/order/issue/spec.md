@@ -6,21 +6,22 @@ Stores a new Order together with the Tickets it issues.
 
 ## Requirements
 
-### Requirement: Order and tickets together, once per application
+### Requirement: Order, tickets and settlement together, once per application
 
-Issue SHALL store the Order and all of its Tickets together or not at all, and SHALL fail with AlreadyExists when an Order already exists for the same application.
+Issue SHALL store the Order, all of its Tickets, and a Held Settlement for the Order's event and Organizer — with one split paying that Organizer its net share of the Order's amount (the platform fee kept from the Order's amount is TODO(threshold)) — together or not at all, and SHALL fail with AlreadyExists when an Order already exists for the same application.
 
 #### Scenario: Order issued
 
-- **WHEN** Issue is called with an Order and its 3 Tickets
-- **THEN** the Order and the 3 Tickets are stored
+- **WHEN** Issue is called with an Order, its 3 Tickets, and a Settlement for the event's Organizer
+- **THEN** the Order, the 3 Tickets, and a Held Settlement with one Organizer split are stored
 
 #### Scenario: Failure stores nothing
 
-- **WHEN** storing any Ticket fails
-- **THEN** neither the Order nor any Ticket is stored
+- **WHEN** storing any Ticket or the Settlement fails
+- **THEN** neither the Order, any Ticket, nor the Settlement is stored
 
 #### Scenario: Second order for the application
 
 - **WHEN** an Order already exists for the application
 - **THEN** Issue fails with AlreadyExists and stores nothing
+

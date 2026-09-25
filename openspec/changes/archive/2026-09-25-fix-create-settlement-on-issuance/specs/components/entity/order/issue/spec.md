@@ -1,5 +1,10 @@
 # Spec Delta
 
+## RENAMED Requirements
+
+- FROM: `### Requirement: Order and tickets together, once per application`
+- TO: `### Requirement: Order, tickets and settlement together, once per application`
+
 ## MODIFIED Requirements
 
 ### Requirement: Order, tickets and settlement together, once per application
