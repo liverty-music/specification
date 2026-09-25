@@ -24,7 +24,7 @@
 
   <workflow>
     Full human-readable version: README.md "Development workflow". Needs only
-    Claude Code, the OpenSpec CLI (1.8.0) and gh; no machine-specific tooling.
+    Claude Code, the OpenSpec CLI (1.13.2) and gh; no machine-specific tooling.
     1. Plan here: /opsx:propose <change>, tasks split by repository, PR, merge.
     2. Implement one Claude session per affected repository (only that repo's
        AGENTS.md is loaded): /opsx:apply <change>. Locally, isolate with
