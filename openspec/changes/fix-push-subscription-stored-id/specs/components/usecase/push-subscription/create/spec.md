@@ -1,10 +1,6 @@
-# Create
+# Spec Delta
 
-## Purpose
-
-PushNotificationUseCase.Create registers the fan's current browser to receive push messages, or refreshes it if that browser is already registered, and returns the stored subscription.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Create registers the browser and announces it
 

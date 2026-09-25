@@ -10,8 +10,6 @@ ListByFollowerGrouped gives a User the Concerts of every Artist they follow, on 
 
 ListByFollowerGrouped SHALL read the Concerts of the User's followed Artists from the given date, or from the current date when none is given (Concert.ListByFollower), and return them as proximity groups relative to the User's home area (Concert.GroupByDateAndProximity), in date order. Concerts of first-party Series that are not publicly visible SHALL NOT be returned.
 
-Known defect: liverty-music/backend#475
-
 #### Scenario: Upcoming by default
 - **WHEN** no date is given
 - **THEN** only Concerts from the current date onward are grouped

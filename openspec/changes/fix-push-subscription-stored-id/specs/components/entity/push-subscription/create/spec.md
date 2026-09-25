@@ -1,10 +1,6 @@
-# PushSubscription.Create
+# Spec Delta
 
-## Purpose
-
-Registers a browser's push subscription for a fan, or refreshes it when that browser's push address is already registered.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Create registers each push address once
 
