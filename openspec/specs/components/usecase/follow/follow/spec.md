@@ -3,7 +3,9 @@
 ## Purpose
 
 FollowUseCase.Follow records that a fan follows an artist, announces the follow, and in the background stores the artist's official site when it is missing and, when the artist has never been searched, starts a first concert search. No failure in the background work changes the result of the follow.
+
 ## Requirements
+
 ### Requirement: Follow creates the fan's Follow of the artist
 
 Follow SHALL create the fan's Follow of the artist through Follow.Follow and succeed once it is stored. When the Follow cannot be stored, including when the artist does not exist, Follow SHALL fail with Internal and do nothing else.

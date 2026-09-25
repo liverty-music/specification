@@ -3,7 +3,9 @@
 ## Purpose
 
 Records that a Held Settlement was paid out: its charge reference, released time and each split's payout reference.
+
 ## Requirements
+
 ### Requirement: Release recorded once
 
 MarkReleased SHALL set a Held Settlement to Released with the given charge reference and released time, and record each given split's payout reference, all together or not at all. It SHALL fail with FailedPrecondition, changing nothing, when the Settlement is not Held or no Settlement has the id.
