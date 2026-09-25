@@ -30,6 +30,8 @@ jobs:
           filters: |
             openspec:
               - "openspec/**"
+              - "scripts/check-spec-layout.py"
+              - "scripts/check-scenario-coverage.py"
               - ".github/workflows/openspec-checks.yml"
 
   openspec-checks:
@@ -56,25 +58,35 @@ jobs:
       - name: Validate specs and changes
         run: openspec validate --all --no-interactive
 
+      # Every main spec and active delta sits on a liverty-clean-arch path.
+      # Also a pre-commit hook, which does not run where pre-commit is not
+      # installed (Claude Code on the web, fresh clones).
+      - name: Check spec layout
+        run: python3 scripts/check-spec-layout.py
+
       # Active changes meet the same bar as the pre-archive hook.
       - name: Validate active changes (strict)
         run: openspec validate --changes --strict --no-interactive
 
-      # A change archived in this PR must have every task checked. Older
-      # archives are not re-judged: only directories this PR adds count.
-      - name: Check changes archived in this PR are complete
+      # Only directories this PR adds under changes/archive/ are judged below,
+      # so older archives do not block unrelated PRs.
+      - name: Find changes archived in this PR
+        id: archived
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          mapfile -t archived < <(
-            git diff --name-only --diff-filter=A "${BASE_SHA}...HEAD" -- openspec/changes/archive/ \
-              | cut -d/ -f4 | sort -u
-          )
-          if [ "${#archived[@]}" -eq 0 ]; then
-            echo "No change archived in this PR."
-            exit 0
-          fi
-          printf 'Archived in this PR:\n'; printf '  %s\n' "${archived[@]}"
+          names=$(git diff --name-only --diff-filter=A "${BASE_SHA}...HEAD" -- openspec/changes/archive/ \
+            | cut -d/ -f4 | sort -u | paste -sd' ' -)
+          echo "names=${names}" >> "$GITHUB_OUTPUT"
+          echo "Archived in this PR: ${names:-none}"
+
+      # An archived change must have every task checked.
+      - name: Check archived changes are complete
+        if: steps.archived.outputs.names != ''
+        env:
+          ARCHIVED: ${{ steps.archived.outputs.names }}
+        run: |
+          read -ra archived <<< "$ARCHIVED"
           openspec validate --archived --json --no-interactive > archived.json || true
           incomplete=$(jq -r --args '
             ($ARGS.positional) as $ids
@@ -89,3 +101,26 @@ jobs:
             exit 1
           fi
           echo "All changes archived in this PR have every task completed."
+
+      # Archive happens after the implementation PRs merge, so their main
+      # branches must carry an @spec-annotated test for every ADDED/MODIFIED
+      # scenario (or an @spec-manual exemption in the change). The repos are
+      # public: a shallow anonymous clone is enough.
+      - name: Clone implementing repositories
+        if: steps.archived.outputs.names != ''
+        run: |
+          for r in backend frontend cloud-provisioning; do
+            git clone --quiet --depth 1 "https://github.com/liverty-music/${r}.git" "${RUNNER_TEMP}/repos/${r}"
+          done
+
+      - name: Check archived scenarios are covered by tests
+        if: steps.archived.outputs.names != ''
+        env:
+          ARCHIVED: ${{ steps.archived.outputs.names }}
+        run: |
+          read -ra archived <<< "$ARCHIVED"
+          status=0
+          for c in "${archived[@]}"; do
+            python3 scripts/check-scenario-coverage.py "archive/${c}" --repos "${RUNNER_TEMP}"/repos/* || status=1
+          done
+          exit "$status"

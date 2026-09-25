@@ -12,7 +12,7 @@ This repository is also the **OpenSpec store** `openspec-store`: every spec and 
 2. **Implement** in each affected repository, one Claude session per repository (each session only loads its own repository's `AGENTS.md`). Start with `/opsx:apply <change>`; it reads the change from the store.
 3. **Proto first** when the contract changes: the `specification` PR merges, a GitHub Release (`vX.Y.Z`) triggers BSR generation, then `backend` / `frontend` consume the generated types. Downstream work starts early against placeholder types; see [AGENTS.md](AGENTS.md) for the rules.
 4. **Open one PR per repository.** Every PR fills the *OpenSpec Traceability* section of its template (`OpenSpec-Change`, store commit). Merge order: `specification` → Release/BSR → `backend` / `frontend`; `cloud-provisioning` is independent.
-5. **Close out** here once the implementation PRs have merged: `/opsx:verify <change>`, then `/opsx:archive <change>`, and merge that PR. CI rejects an archive whose `tasks.md` still has unchecked tasks.
+5. **Close out** here once the implementation PRs have merged: `/opsx:verify <change>`, then `/opsx:archive <change>`, and merge that PR. CI rejects an archive whose `tasks.md` still has unchecked tasks, or whose added or modified scenarios have no `@spec`-annotated test on the implementing repositories' `main`.
 
 ### Local setup (once per machine)
 
