@@ -8,7 +8,7 @@ The artist service as the admin console reaches it: the admin console uses Searc
 
 ### Requirement: Every artist call on the admin console needs the admin role
 
-Every artist call reached through the admin console SHALL require a signed-in caller holding the admin role, and SHALL fail with PermissionDenied otherwise. The one exception is List, Create, CreateOfficialSite and DeleteOfficialSite without any sign-in, which fail with Unauthenticated as on the fan boundary. These checks come before the request is validated and before any usecase runs. The browsing calls that the fan boundary serves without sign-in (ListTop, ListSimilar, Search) are not open here.
+Every artist call reached through the admin console SHALL require a signed-in caller holding the admin role. A caller who is not signed in SHALL fail with Unauthenticated; a signed-in caller without the admin role SHALL fail with PermissionDenied. Both checks come before the request is validated and before any usecase runs. The browsing calls that the fan boundary serves without sign-in (ListTop, ListSimilar, Search) are not open here — the admin console requires sign-in and the admin role for every artist call, browsing included.
 
 #### Scenario: Admin searches for an artist
 
@@ -23,7 +23,7 @@ Every artist call reached through the admin console SHALL require a signed-in ca
 #### Scenario: Guest browses
 
 - **WHEN** a caller who is not signed in calls ListTop
-- **THEN** the call fails with PermissionDenied and no usecase runs
+- **THEN** the call fails with Unauthenticated and no usecase runs
 
 #### Scenario: Guest creates
 
