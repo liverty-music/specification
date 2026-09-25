@@ -11,7 +11,7 @@ ProcessMedia SHALL accept a JPEG, PNG or WebP original whose width and height ar
 - **THEN** an 800 px wide thumb and a 1920 px wide large WebP are produced without EXIF
 
 #### Scenario: WebP original
-- **WHEN** a WebP image is processed
+- **WHEN** a 4000×3000 WebP is processed
 - **THEN** an 800 px wide thumb and a 1920 px wide large WebP are produced without EXIF, the same as for JPEG or PNG
 
 #### Scenario: Decompression bomb
