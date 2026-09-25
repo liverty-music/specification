@@ -41,7 +41,11 @@ For each phase ScanDueReminders SHALL consider exactly the fans returned by Tick
 
 ### Requirement: A stage is requested once its due time has passed
 
-For each fan and each stage that applies to the phase, ScanDueReminders SHALL request a reminder once the stage's due time has passed and SalesPhaseReminder.ListSentStages does not show that stage as sent to that fan. The due time of `APPLY_OPEN`, `APPLY_CLOSE_24H` and `APPLY_CLOSE_1H` SHALL be the stage's anchor; the due time of `RESULT_DAY` SHALL be 09:00 in the fan's time zone on the calendar day, in that time zone, of the lottery result time, whether or not the result time has a precise hour. A stage whose anchor is earlier than the phase's discovered time SHALL NOT be requested. A fan who starts tracking after a stage's due time SHALL still be reminded of it on the next run while the phase is listed. When the sent stages cannot be read, ScanDueReminders SHALL request the due reminders anyway and rely on DeliverReminder not to repeat a sent one. A request that cannot be queued SHALL be skipped and retried by a later run.
+For each fan and each stage that applies to the phase, ScanDueReminders SHALL request a reminder once the stage's due time has passed, the stage has not expired, and SalesPhaseReminder.ListSentStages does not show that stage as sent to that fan. The due time of `APPLY_OPEN`, `APPLY_CLOSE_24H` and `APPLY_CLOSE_1H` SHALL be the stage's anchor; the due time of `RESULT_DAY` SHALL be 09:00 in the fan's time zone on the calendar day, in that time zone, of the lottery result time, whether or not the result time has a precise hour. A stage whose anchor is earlier than the phase's discovered time SHALL NOT be requested.
+
+A stage expires as follows: `APPLY_CLOSE_24H` and `APPLY_CLOSE_1H` at the apply end time; `APPLY_OPEN` at the apply end time when it is known, otherwise it never expires; `RESULT_DAY` at the end of the calendar day, in the fan's time zone, of the lottery result time. A fan who starts tracking after a stage's due time but before it expires SHALL still be reminded of it on the next run while the phase is listed; a fan who starts tracking after a stage has expired SHALL NOT be reminded of it.
+
+When the sent stages cannot be read, ScanDueReminders SHALL request the due reminders anyway and rely on DeliverReminder not to repeat a sent one. A request that cannot be queued SHALL be skipped and retried by a later run.
 
 #### Scenario: Application opens
 
@@ -73,11 +77,19 @@ For each fan and each stage that applies to the phase, ScanDueReminders SHALL re
 - **WHEN** a phase has a payment deadline time
 - **THEN** no reminder is requested for the payment deadline
 
+#### Scenario: Application window closed before the open reminder was sent
+
+- **WHEN** a fan starts tracking after a phase's apply end time and `APPLY_OPEN` was never sent to that fan
+- **THEN** no `APPLY_OPEN` reminder is requested for that fan
+
+#### Scenario: Result day has ended
+
+- **WHEN** the current time is past the end of the lottery result day in the fan's time zone and `RESULT_DAY` was never sent to that fan
+- **THEN** no `RESULT_DAY` reminder is requested for that fan
+
 ### Requirement: Quiet hours
 
-ScanDueReminders SHALL NOT send a reminder in the fan's quiet window, 22:00 to 08:00 in the fan's time zone, falling back to Asia/Tokyo when the fan's time zone is unset or not recognised. A stage due inside the window SHALL be deferred as follows: `APPLY_OPEN` and `RESULT_DAY` to the next 08:00; `APPLY_CLOSE_24H` and `APPLY_CLOSE_1H` to the next 08:00 when that is strictly before the apply end time, and otherwise to the last run before the window begins. A close-stage reminder SHALL never be requested at or after the apply end time.
-
-Known defect: liverty-music/backend#472
+ScanDueReminders SHALL NOT send a reminder in the fan's quiet window, 22:00 to 08:00 in the fan's time zone, falling back to Asia/Tokyo when the fan's time zone is unset or not recognised. A stage due inside the window SHALL be deferred as follows: `APPLY_OPEN` and `RESULT_DAY` to the next 08:00; `APPLY_CLOSE_24H` and `APPLY_CLOSE_1H` to the next 08:00 when that is strictly before the apply end time, and otherwise to 21:00 — one hour before the quiet window begins — so the reminder's own due time never falls inside quiet hours. A close-stage reminder SHALL never be requested at or after the apply end time.
 
 #### Scenario: Opening during the night
 
@@ -92,7 +104,7 @@ Known defect: liverty-music/backend#472
 #### Scenario: Close before the morning
 
 - **WHEN** the apply end time is 02:00, so the `APPLY_CLOSE_1H` anchor is 01:00
-- **THEN** the reminder is requested on the last run before 22:00 the evening before
+- **THEN** the reminder becomes due at 21:00 the evening before
 
 #### Scenario: Close already passed
 
