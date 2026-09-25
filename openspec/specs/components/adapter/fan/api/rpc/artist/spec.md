@@ -48,8 +48,6 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 
 CreateOfficialSite SHALL hand the artist id and URL to ArtistUseCase.CreateOfficialSite. DeleteOfficialSite SHALL fail with Unimplemented for every signed-in caller; there is no usecase behind it.
 
-Known defect: liverty-music/backend#470
-
 #### Scenario: Create a site
 
 - **WHEN** a signed-in caller calls CreateOfficialSite for an artist without a site with a valid URL
