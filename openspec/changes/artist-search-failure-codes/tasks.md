@@ -8,10 +8,10 @@ No proto/schema change — this change only corrects the "Search reports failure
 
 ## 2. Backend fix (liverty-music/backend#504, tracked and merged in the backend repo)
 
-- [ ] 2.1 `ArtistUseCase.Search` stops wrapping `artistSearcher.Search`'s error with `codes.Internal` and returns it unchanged, mirroring `ListSimilar`/`ListTop`
-- [ ] 2.2 `ArtistUseCase.Search`'s interface doc comment's "Possible errors" lists Unavailable, ResourceExhausted and DeadlineExceeded alongside NotFound
-- [ ] 2.3 Table-driven usecase test asserting the catalog port's error code (NotFound, Unavailable, ResourceExhausted, DeadlineExceeded, Internal) survives unchanged through Search
-- [ ] 2.4 `make check` passes
+- [x] 2.1 `ArtistUseCase.Search` stops wrapping `artistSearcher.Search`'s error with `codes.Internal` and returns it unchanged, mirroring `ListSimilar`/`ListTop` (liverty-music/backend#505)
+- [x] 2.2 `ArtistUseCase.Search`'s interface doc comment's "Possible errors" lists Unavailable, ResourceExhausted and DeadlineExceeded alongside NotFound
+- [x] 2.3 Table-driven usecase test asserting the catalog port's error code (NotFound, Unavailable, ResourceExhausted, DeadlineExceeded, Internal) survives unchanged through Search, annotated with `@spec` markers for this change's scenarios
+- [x] 2.4 `make check` (lint + test) passes; merged via liverty-music/backend#505
 
 ## 3. Archive (only after the backend PR merges)
 
