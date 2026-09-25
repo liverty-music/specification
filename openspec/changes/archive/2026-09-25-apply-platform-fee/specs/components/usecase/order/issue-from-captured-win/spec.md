@@ -1,10 +1,4 @@
-# IssuanceUseCase.IssueFromCapturedWin
-
-## Purpose
-
-IssuanceUseCase.IssueFromCapturedWin turns one Won TicketApplication into a Paid Order and its account-bound covered tickets, exactly once, and marks the buyer's ticket journey for the event as Paid.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Issue an order and its tickets from a won application
 
@@ -39,36 +33,3 @@ IssueFromCapturedWin SHALL take an application. When Order.GetByApplicationID fi
 
 - **WHEN** Event.GetOrganizerID fails with NotFound
 - **THEN** IssueFromCapturedWin fails with NotFound and creates nothing
-
-### Requirement: Verified identity binding
-
-When the phase requires verification, IssueFromCapturedWin SHALL bind every Ticket to the applicant's verified identity, read with VerifiedIdentity.GetByUserID whatever its status; the holder name on the Ticket stays the applicant's declared name. When the applicant has no verified identity, it SHALL fail with that error and create nothing.
-
-#### Scenario: Phase required verification
-
-- **WHEN** the phase requires JPKI-only and the applicant has a verified identity
-- **THEN** every Ticket is bound to that verified identity and shows the applicant's declared name
-
-#### Scenario: Verified identity missing
-
-- **WHEN** the phase requires verification and VerifiedIdentity.GetByUserID fails with NotFound
-- **THEN** IssueFromCapturedWin fails with NotFound and creates nothing
-
-#### Scenario: No requirement
-
-- **WHEN** the phase's requirement is None
-- **THEN** the Tickets have no verified identity
-
-### Requirement: Ticket journey becomes Paid
-
-After the Order is stored, IssueFromCapturedWin SHALL set the buyer's TicketJourney for the phase's event to Paid with TicketJourney.Upsert, replacing whatever status the fan had set, and SHALL NOT announce the change as a ticket journey status change. When that fails, the Order and Tickets stay issued and the Order is still returned.
-
-#### Scenario: Journey updated
-
-- **WHEN** an Order is issued
-- **THEN** the buyer's ticket journey for the event is Paid
-
-#### Scenario: Journey update fails
-
-- **WHEN** TicketJourney.Upsert fails
-- **THEN** the Order and its Tickets remain and the Order is returned

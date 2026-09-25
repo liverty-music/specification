@@ -1,10 +1,4 @@
-# Order.Issue
-
-## Purpose
-
-Stores a new Order together with the Tickets it issues.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Order, tickets and settlement together, once per application
 
