@@ -15,4 +15,4 @@ No proto/schema change — this change only corrects the "Search reports failure
 
 ## 3. Archive (only after the backend PR merges)
 
-- [ ] 3.1 Archive this change so the delta from section 1 is synced into the main spec
+- [x] 3.1 Archive this change so the delta from section 1 is synced into the main spec
