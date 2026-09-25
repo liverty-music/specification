@@ -40,8 +40,16 @@ ArtistUseCase.Search SHALL return the earlier result, without consulting the cat
 - **THEN** the second call returns the first call's result without a catalog lookup
 
 ### Requirement: Search reports failures
-ArtistUseCase.Search SHALL fail with Internal when Artist.Search fails, whatever its error, and SHALL return errors of Artist.ListByMBIDs and Artist.Create unchanged.
+ArtistUseCase.Search SHALL return the errors of Artist.Search, Artist.ListByMBIDs, and Artist.Create unchanged, preserving each port's failure code rather than replacing it with Internal.
 
 #### Scenario: Catalog unavailable
 - **WHEN** Artist.Search fails with Unavailable
-- **THEN** Search fails with Internal
+- **THEN** Search fails with Unavailable
+
+#### Scenario: Catalog rate-limited
+- **WHEN** Artist.Search fails with ResourceExhausted
+- **THEN** Search fails with ResourceExhausted
+
+#### Scenario: Catalog request timed out
+- **WHEN** Artist.Search fails with DeadlineExceeded
+- **THEN** Search fails with DeadlineExceeded
