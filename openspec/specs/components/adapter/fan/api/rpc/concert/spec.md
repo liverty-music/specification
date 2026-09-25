@@ -24,8 +24,6 @@ List, ListByArtists, ListByLocation and SearchNewConcerts SHALL be callable with
 
 ListByFollower SHALL resolve the signed-in caller to their stored User (User.GetByExternalID) and call ConcertUseCase.ListByFollowerGrouped with that User, the User's stored Home and the optional from-date of the request; the request carries no fan and no home. When the caller has no stored account, the call SHALL fail with NotFound.
 
-Known defect: liverty-music/backend#471
-
 #### Scenario: Fan with a home
 
 - **WHEN** a signed-in fan whose Home is JP-13 calls ListByFollower
