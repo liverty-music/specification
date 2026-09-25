@@ -16,3 +16,7 @@
 - [x] 3.1 Integration test for `ListEventsBySeries` against local Postgres
 - [x] 3.2 Unit tests for the link-resolution helper: earliest upcoming, fallback to earliest, fallback to dashboard (no events), fallback to dashboard (repository error)
 - [x] 3.3 Update `SalesPhaseAnnouncementUseCase` and `SalesReminderUseCase` unit tests for the new URL behavior
+
+## 4. Spec coverage exemptions
+
+@spec-manual components/usecase/sales-phase/announce-discovered-phase "Phase with an application url" -- AnnounceDiscoveredPhase's input, entity.SalesPhaseDiscoveredData, carries only PhaseID and SeriesID; it has no application-url field at all, so the announcement can never read one regardless of what the underlying SalesPhase row holds. There is no way to construct a test input that represents "the phase has an application url" from this use case's perspective — every test of AnnounceDiscoveredPhase already exercises the code path this scenario describes, since the phase's own url is structurally unreachable. Verified by inspection of `entity.SalesPhaseDiscoveredData` (internal/entity/event_data.go) and `salesPhaseAnnouncementUseCase.AnnounceDiscoveredPhase` (internal/usecase/sales_phase_announcement_uc.go), which never reference a phase url.
