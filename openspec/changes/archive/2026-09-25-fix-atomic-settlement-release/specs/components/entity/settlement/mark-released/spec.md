@@ -1,10 +1,6 @@
-# Settlement.MarkReleased
+# Spec Delta
 
-## Purpose
-
-Records that a Held Settlement was paid out: its charge reference, released time and each split's payout reference.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Release recorded once
 
@@ -29,4 +25,3 @@ MarkReleased SHALL set a Held Settlement to Released with the given charge refer
 
 - **WHEN** recording any split's payout reference fails
 - **THEN** the Settlement stays Held, with no charge reference or released time recorded and no split's payout reference recorded
-
