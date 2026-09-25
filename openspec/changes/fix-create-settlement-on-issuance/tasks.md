@@ -21,6 +21,10 @@
 - [ ] 4.2 Integration test on `IssuanceRepository.Issue` against a real local Postgres asserting the Order, Tickets, Settlement and its split are all committed atomically, and that a failure leaves none of them.
 - [ ] 4.3 Update/remove the now-gone `EnsureSettlementExists` test cases in `internal/usecase/settlement_uc_test.go`.
 
-## 5. Archive cleanup (after the backend PR merges)
+## 5. Known-defect note
 
-- [ ] 5.1 After `openspec archive`, check whether `specs/components/usecase/settlement/ensure-settlement-exists/spec.md` and `specs/components/entity/settlement/upsert/spec.md` were left with an empty `## Requirements` section (their only requirement was REMOVED); if so, delete those now-empty capability spec files/directories as a follow-up commit.
+- [ ] 5.1 `stories/win-tickets-in-a-lottery` delta drops the `Known defect: liverty-music/backend#468` note (the requirement and scenario are otherwise unchanged); confirm no other `grep -rn "backend#468" openspec/specs/` hits remain after archive.
+
+## 6. Archive cleanup (after the backend PR merges)
+
+- [ ] 6.1 After `openspec archive`, check whether `specs/components/usecase/settlement/ensure-settlement-exists/spec.md` and `specs/components/entity/settlement/upsert/spec.md` were left with an empty `## Requirements` section (their only requirement was REMOVED); if so, delete those now-empty capability spec files/directories as a follow-up commit.

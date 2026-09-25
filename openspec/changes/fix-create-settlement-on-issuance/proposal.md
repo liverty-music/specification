@@ -22,6 +22,7 @@ No production code ever creates a Settlement, so `ReleaseDueSettlements` always 
 - `components/usecase/order/issue-from-captured-win`: Resolves the event's Organizer and builds the Held Settlement passed to `Order.Issue`.
 - `components/usecase/settlement/ensure-settlement-exists`: REMOVED — superseded by `Order.Issue`.
 - `components/entity/settlement/upsert`: REMOVED — no longer called; `Order.Issue` is the sole settlement-creation path.
+- `stories/win-tickets-in-a-lottery`: Drops the `Known defect: liverty-music/backend#468` note now that a Settlement is recorded at issuance; the requirement text and scenario are otherwise unchanged.
 
 ## Impact
 
