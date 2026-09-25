@@ -1,0 +1,91 @@
+name: OpenSpec Checks
+
+# Gate planning changes in the openspec-store store the same way everywhere:
+# local sessions have a pre-archive hook, but multi-repo Claude Code on the web
+# threads run no repository hooks, so CI is the only check that always runs.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+env:
+  # Keep in sync with the version pinned in README.md / AGENTS.md.
+  OPENSPEC_VERSION: 1.13.2
+  OPENSPEC_TELEMETRY: "0"
+  DO_NOT_TRACK: "1"
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      openspec: ${{ steps.filter.outputs.openspec }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
+        id: filter
+        with:
+          filters: |
+            openspec:
+              - "openspec/**"
+              - ".github/workflows/openspec-checks.yml"
+
+  openspec-checks:
+    needs: changes
+    if: needs.changes.outputs.openspec == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: Install OpenSpec CLI
+        run: npm install -g --no-audit --no-fund "@fission-ai/openspec@${OPENSPEC_VERSION}"
+
+      # Structural validity of every main spec and active change. Strict mode
+      # is not used here because some existing main specs still carry a short
+      # or placeholder Purpose (warnings, not errors).
+      - name: Validate specs and changes
+        run: openspec validate --all --no-interactive
+
+      # Active changes meet the same bar as the pre-archive hook.
+      - name: Validate active changes (strict)
+        run: openspec validate --changes --strict --no-interactive
+
+      # A change archived in this PR must have every task checked. Older
+      # archives are not re-judged: only directories this PR adds count.
+      - name: Check changes archived in this PR are complete
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          mapfile -t archived < <(
+            git diff --name-only --diff-filter=A "${BASE_SHA}...HEAD" -- openspec/changes/archive/ \
+              | cut -d/ -f4 | sort -u
+          )
+          if [ "${#archived[@]}" -eq 0 ]; then
+            echo "No change archived in this PR."
+            exit 0
+          fi
+          printf 'Archived in this PR:\n'; printf '  %s\n' "${archived[@]}"
+          openspec validate --archived --json --no-interactive > archived.json || true
+          incomplete=$(jq -r --args '
+            ($ARGS.positional) as $ids
+            | .items[]
+            | select(.id as $id | $ids | index($id))
+            | select(.valid == false)
+            | "\(.id): \([.issues[].message] | join("; "))"
+          ' "${archived[@]}" < archived.json)
+          if [ -n "$incomplete" ]; then
+            echo "::error::Archived with unfinished tasks. Finish them (or move the leftovers to a follow-up change) before archiving."
+            echo "$incomplete"
+            exit 1
+          fi
+          echo "All changes archived in this PR have every task completed."
