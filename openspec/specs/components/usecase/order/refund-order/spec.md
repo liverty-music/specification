@@ -60,7 +60,7 @@ For the reasons Cancellation and PostponementWindow, RefundOrder SHALL refund th
 
 ### Requirement: Payout clawed back
 
-When the Order's Settlement, read with Settlement.GetByOrderID, is Released, RefundOrder SHALL reverse every paid split that is not yet reversed with Settlement.ReverseTransfer for the split's amount. When it is Held, no payout is reversed and the Settlement becomes Reversed, so it is never paid out later. When the Order has no Settlement, nothing is clawed back.
+When the Order's Settlement, read with Settlement.GetByOrderID, is Released, RefundOrder SHALL reverse every paid split that is not yet reversed with Settlement.ReverseTransfer for the split's amount. When it is Held, no payout is reversed and the Settlement becomes Reversed, so it is never paid out later. When the Order has no Settlement, nothing is clawed back. Only the paid splits are reversed: the platform fee was never paid out, so it is not recovered from the Organizer, and when a Released Order is refunded — in practice a Dispute that arrives after the release — the platform bears its fee.
 
 #### Scenario: Payout already released
 
