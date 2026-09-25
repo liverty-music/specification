@@ -10,8 +10,6 @@ Returns the User registered for a given identity at the identity provider, so a 
 
 GetByExternalID SHALL call User.GetByExternalID with the given external id and return the User, with its Home when one is set and with no home otherwise. An identity with no User SHALL fail with NotFound, and any other failure to read SHALL be returned with its own code.
 
-Known defect: liverty-music/backend#471
-
 #### Scenario: User with a home
 
 - **WHEN** GetByExternalID is called for a registered identity whose User's home is `JP-13`

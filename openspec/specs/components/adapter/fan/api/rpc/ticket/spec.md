@@ -10,8 +10,6 @@ The fan-facing ticket service boundary: a fan reads only their own orders and ti
 
 GetOrder and GetMyTickets SHALL require a signed-in caller and fail with Unauthenticated otherwise. They SHALL resolve the caller to their stored User (User.GetByExternalID) and pass that User to TicketUseCase.GetOrder and TicketUseCase.GetMyTickets; the request never names a buyer. When the caller has no stored account, the call SHALL fail with NotFound. GetOrder SHALL fail with InvalidArgument when no order is given.
 
-Known defect: liverty-music/backend#471
-
 #### Scenario: Fan lists their tickets
 
 - **WHEN** a signed-in fan calls GetMyTickets
