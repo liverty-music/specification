@@ -1,43 +1,6 @@
-# Scan Due Reminders
+# Spec Delta
 
-## Purpose
-
-ScanDueReminders runs every 15 minutes. For each sales phase with a pending milestone, it works out which reminder stages have become due for each fan tracking that phase's series, and requests one reminder for each fan, phase and stage not yet sent, with due times adjusted to the fan's time zone and quiet hours. It returns the number of reminders requested.
-
-## Requirements
-
-### Requirement: Runs every 15 minutes over phases with a pending milestone
-
-ScanDueReminders SHALL run every 15 minutes, which is shorter than the tightest reminder stage (1 hour before close). Each run SHALL evaluate the phases returned by SalesPhase.ListPhasesWithPendingMilestones with a lookahead of 7 days and a lookback of 2 hours, and SHALL return the number of reminders it requested. When listing the phases fails, the run SHALL fail; when evaluating one phase fails, that phase SHALL be skipped and the others evaluated.
-
-#### Scenario: Scan cadence
-
-- **WHEN** 15 minutes have passed since the last run
-- **THEN** ScanDueReminders runs again
-
-#### Scenario: Phase opening in 3 days
-
-- **WHEN** a phase opens in 3 days
-- **THEN** the phase is evaluated on every run from now on
-
-#### Scenario: One phase fails
-
-- **WHEN** the audience of one phase cannot be read
-- **THEN** that phase is skipped and the other phases are evaluated
-
-### Requirement: The audience is the fans tracking the series
-
-For each phase ScanDueReminders SHALL consider exactly the fans returned by TicketJourney.ListUserIDsTrackingSeries for the phase's series, and nobody else. A fan whose profile cannot be read SHALL be skipped.
-
-#### Scenario: Tracking fan
-
-- **WHEN** ListUserIDsTrackingSeries returns a fan for the phase's series and a stage is due
-- **THEN** a reminder is requested for that fan
-
-#### Scenario: Fan no longer listed
-
-- **WHEN** a fan was listed on an earlier run but ListUserIDsTrackingSeries no longer returns them when the result day arrives
-- **THEN** no `RESULT_DAY` reminder is requested for that fan
+## MODIFIED Requirements
 
 ### Requirement: A stage is requested once its due time has passed
 
@@ -115,41 +78,3 @@ ScanDueReminders SHALL NOT send a reminder in the fan's quiet window, 22:00 to 0
 
 - **WHEN** a fan's time zone is unset or not a recognised time zone
 - **THEN** the quiet window and due times are evaluated in Asia/Tokyo
-
-### Requirement: Reminder content
-
-Each requested reminder SHALL carry a title that names the stage, a text that names the sales channel and the stage's milestone time, a link and a grouping tag, in the fan's preferred language: Japanese for `ja` and English for any other or no language. The channel label SHALL be the phase's provider name when it has one, otherwise the channel's name, and a generic ticket label (チケット / Ticket) when the channel is not yet determined. The milestone time SHALL be shown as month, day and hour:minute in the fan's time zone. The link SHALL be the phase's url when it has one; otherwise the concert page of the series' earliest upcoming Event, or its earliest Event when none is upcoming; when the series has no Event it SHALL be the dashboard. Repeated deliveries of the same phase and stage SHALL replace each other on the device, and different stages SHALL NOT.
-
-#### Scenario: Play-guide presale opens
-
-- **WHEN** an `APPLY_OPEN` reminder is built in English for a phase with provider name イープラス opening on 1 July 10:00 in the fan's time zone
-- **THEN** the title is Ticket Sales Open and the text is イープラス sales open at Jul 1 10:00
-
-#### Scenario: Channel not determined
-
-- **WHEN** a reminder is built in Japanese for a phase with no provider name and channel `UNSPECIFIED`
-- **THEN** the text names the channel as チケット
-
-#### Scenario: No application url
-
-- **WHEN** the phase has no url
-- **THEN** the reminder links to the concert page of the series' earliest upcoming Event
-
-#### Scenario: No application url and no upcoming event
-
-- **WHEN** the phase has no url and every Event of the series is in the past
-- **THEN** the reminder links to the concert page of the series' earliest Event
-
-#### Scenario: No application url and no event
-
-- **WHEN** the phase has no url and the series has no Event
-- **THEN** the reminder links to the dashboard
-
-### Requirement: Delivery is delegated to DeliverReminder
-
-ScanDueReminders SHALL NOT deliver reminders or record them as sent; each requested reminder, with its fan, phase, stage and content, SHALL be delivered by DeliverReminder.
-
-#### Scenario: Reminder requested
-
-- **WHEN** ScanDueReminders requests a reminder
-- **THEN** DeliverReminder runs once for it and nothing is recorded as sent by the scan
