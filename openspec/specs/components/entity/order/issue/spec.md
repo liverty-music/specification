@@ -8,7 +8,7 @@ Stores a new Order together with the Tickets it issues.
 
 ### Requirement: Order, tickets and settlement together, once per application
 
-Issue SHALL store the Order, all of its Tickets, and a Held Settlement for the Order's event and Organizer — with one split paying that Organizer its net share of the Order's amount (the platform fee kept from the Order's amount is TODO(threshold)) — together or not at all, and SHALL fail with AlreadyExists when an Order already exists for the same application.
+Issue SHALL store the Order, all of its Tickets, and a Held Settlement for the Order's event and Organizer — with one split paying that Organizer its net share of the Order's amount, after deducting the platform fee (a flat 5% of the Order's amount, rounded down) — together or not at all, and SHALL fail with AlreadyExists when an Order already exists for the same application.
 
 #### Scenario: Order issued
 
@@ -24,4 +24,3 @@ Issue SHALL store the Order, all of its Tickets, and a Held Settlement for the O
 
 - **WHEN** an Order already exists for the application
 - **THEN** Issue fails with AlreadyExists and stores nothing
-

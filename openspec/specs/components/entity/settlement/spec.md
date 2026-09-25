@@ -55,8 +55,8 @@ A Settlement SHALL have at least one split, every split amount SHALL be greater 
 
 #### Scenario: Single Organizer split
 
-- **WHEN** the Order's amount is 16000 yen and the only split pays the Organizer 14400 yen
-- **THEN** the splits are valid and the platform fee is 1600 yen
+- **WHEN** the Order's amount is 16000 yen and the only split pays the Organizer 15200 yen
+- **THEN** the splits are valid and the platform fee is 800 yen
 
 #### Scenario: No split
 
@@ -100,3 +100,22 @@ A Settlement SHALL be releasable only while Held; a Released or Reversed Settlem
 
 - **WHEN** the status is Reversed
 - **THEN** the Settlement is not releasable
+
+### Requirement: Platform fee rate
+
+The platform fee SHALL be a flat 5% of the Order's amount, rounded down to the nearest whole yen (`floor(amount × 5 ÷ 100)`, computed with integer arithmetic). The Organizer's split SHALL be the Order's amount minus this fee, so rounding favours the Organizer.
+
+#### Scenario: Round order amount
+
+- **WHEN** the Order's amount is 10000 yen
+- **THEN** the platform fee is 500 yen and the Organizer's split is 9500 yen
+
+#### Scenario: Amount that does not divide evenly
+
+- **WHEN** the Order's amount is 3333 yen
+- **THEN** the platform fee is 166 yen and the Organizer's split is 3167 yen
+
+#### Scenario: Fee rounds down to zero
+
+- **WHEN** the Order's amount is 19 yen or less
+- **THEN** the platform fee is 0 yen and the Organizer's split is the full amount

@@ -8,12 +8,12 @@ IssuanceUseCase.IssueFromCapturedWin turns one Won TicketApplication into a Paid
 
 ### Requirement: Issue an order and its tickets from a won application
 
-IssueFromCapturedWin SHALL take an application. When Order.GetByApplicationID finds an Order for it, it SHALL return that Order and issue nothing. Otherwise it SHALL read the application with TicketApplication.Get, failing with NotFound when it does not exist, and fail with FailedPrecondition, creating nothing, when the application is not Won. It SHALL read the phase with LotterySalesPhase.Get and the captured payment with Order.GetCapturedPayment, returning their failures unchanged; it never charges the card. It SHALL resolve the phase's event's Organizer with Event.GetOrganizerID, returning its failure unchanged and creating nothing. It SHALL build a Paid Order for the applicant whose amount, currency, payment service and card facets are those of the captured payment and whose paid time is the time of issuance, exactly as many Tickets as the requested ticket count, each bound to the applicant, for the phase's event, carrying the applicant's full name and phone number, Issued at the same time, and a Held Settlement for the phase's event and its Organizer with one split paying that Organizer the Order's amount. It SHALL store them with Order.Issue; when Order.Issue fails with AlreadyExists it SHALL return the Order found by Order.GetByApplicationID.
+IssueFromCapturedWin SHALL take an application. When Order.GetByApplicationID finds an Order for it, it SHALL return that Order and issue nothing. Otherwise it SHALL read the application with TicketApplication.Get, failing with NotFound when it does not exist, and fail with FailedPrecondition, creating nothing, when the application is not Won. It SHALL read the phase with LotterySalesPhase.Get and the captured payment with Order.GetCapturedPayment, returning their failures unchanged; it never charges the card. It SHALL resolve the phase's event's Organizer with Event.GetOrganizerID, returning its failure unchanged and creating nothing. It SHALL build a Paid Order for the applicant whose amount, currency, payment service and card facets are those of the captured payment and whose paid time is the time of issuance, exactly as many Tickets as the requested ticket count, each bound to the applicant, for the phase's event, carrying the applicant's full name and phone number, Issued at the same time, and a Held Settlement for the phase's event and its Organizer with one split paying that Organizer the Order's amount minus the platform fee (a flat 5% of the Order's amount, rounded down). It SHALL store them with Order.Issue; when Order.Issue fails with AlreadyExists it SHALL return the Order found by Order.GetByApplicationID.
 
 #### Scenario: Won application issued
 
 - **WHEN** IssueFromCapturedWin runs for a Won application for 2 tickets whose 16000 yen payment was captured
-- **THEN** a Paid 16000 yen Order, 2 Issued Tickets bound to the applicant for the phase's event, and a Held Settlement with one 16000 yen split for the event's Organizer are created and the Order is returned
+- **THEN** a Paid 16000 yen Order, 2 Issued Tickets bound to the applicant for the phase's event, and a Held Settlement with one 15200 yen split for the event's Organizer are created and the Order is returned
 
 #### Scenario: Replayed issuance
 
@@ -72,4 +72,3 @@ After the Order is stored, IssueFromCapturedWin SHALL set the buyer's TicketJour
 
 - **WHEN** TicketJourney.Upsert fails
 - **THEN** the Order and its Tickets remain and the Order is returned
-
