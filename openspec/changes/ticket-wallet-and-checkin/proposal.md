@@ -38,6 +38,11 @@ MVP baseline (see design Non-Goals). Roadmap:
   distribution URL**; in-app (not OS-shareable) → no off-platform vector.
 - **Reception (check-in) PWA** — staff scan with the **web camera (`getUserMedia`)**,
   no native app, **no NFC reader hardware**.
+- **Admission record as attendance evidence** — every admit stores the instant and
+  the scanning organizer operator, and every rejected scan its reason, append-only.
+  Cheap to add now and impossible to backfill later; it is the evidence a future
+  chargeback representment (`dispute-representment`) needs to show the holder
+  attended.
 - **Entry status + no double-entry**; **void → invalidate at server validation**.
 
 Scope guardrails (MVP): electronic tickets only; **online-first, fail-closed**

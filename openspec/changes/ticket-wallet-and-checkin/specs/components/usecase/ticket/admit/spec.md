@@ -64,6 +64,27 @@ ticket SHALL be **rejected**.
 - **WHEN** an already-entered ticket is scanned again
 - **THEN** the scan is rejected as already used
 
+### Requirement: Admission is recorded as attendance evidence
+
+On a successful admit the system SHALL record, with the ticket, the instant of
+admission and the organizer operator whose reception session scanned it, next to
+the event and the holder the ticket already carries. A rejected scan SHALL be
+recorded with the instant, the operator and the reason (stale, forged, voided or
+already used), and SHALL leave the admission record unchanged. Neither record
+SHALL be changed after it is written, so that it can later be offered as
+evidence that the holder attended — for example against a chargeback claiming
+the ticket was not received or not authorised.
+
+#### Scenario: Admission recorded
+
+- **WHEN** operator S admits a ticket at 18:32 on the event day
+- **THEN** the ticket's admission record holds 18:32, operator S, the event and the holder
+
+#### Scenario: Rejected re-scan recorded
+
+- **WHEN** the same ticket is scanned again at 18:40
+- **THEN** the rejection is recorded with 18:40, the operator and the reason already used, and the 18:32 admission record is unchanged
+
 ### Requirement: Void invalidates the entry credential
 
 When a ticket is **voided** (e.g. ⑦ official-resale reissues the seat to a new

@@ -6,7 +6,7 @@
 
 ## 1. Proto / entity (specification → BSR)
 
-- [ ] 1.1 Add entry state to `Ticket` (not_entered / entered, entered_at) + a void marker (references ⑤ Ticket)
+- [ ] 1.1 Add entry state to `Ticket` (not_entered / entered, entered_at, admitted-by operator) + a void marker (references ⑤ Ticket)
 - [ ] 1.2 Signed short-TTL entry token: issue RPC (claims set {ticket_id, event_id, holder_ref, epoch}) + validate/admit RPC (reception)
 - [ ] 1.3 Wallet RPCs: list my tickets + status + covered-ticket face; reception RPC: scan → verify signature+TTL → atomic dedup → admit
 - [ ] 1.4 protovalidate (type-safe IDs, enum entry state); buf lint/breaking; merge PR → Release → BSR gen
@@ -22,6 +22,7 @@
 - [ ] 3.1 **Atomic check-and-set** on entry state (conditional update / unique constraint / **per-ticket** row lock, not table-level); exactly-one-admit for concurrent same-ticket scans across gates; decision returned before admit
 - [ ] 3.2 Entry status surfaced (wallet + reception views)
 - [ ] 3.3 Same-time group entry: present the group in the lead's session; subset M-of-N admits only those scanned; unadmitted stay valid
+- [ ] 3.4 Append-only admission record: on admit store instant + scanning organizer operator; on reject store instant + operator + reason (stale / forged / voided / already used); never updated after write (attendance evidence for a future dispute representment — see change `dispute-representment`)
 
 ## 4. Frontend — wallet (Aurelia PWA)
 
