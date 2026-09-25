@@ -10,8 +10,6 @@ ListByFollower returns, ungrouped, the Concerts of every Artist a User follows o
 
 ListByFollower SHALL return the result of Concert.ListByFollower for the User and date unchanged, the current date being used when no date is given.
 
-Known defect: liverty-music/backend#475
-
 #### Scenario: Default date
 - **WHEN** no date is given
 - **THEN** the followed Artists' Concerts from the current date onward are returned, oldest first
