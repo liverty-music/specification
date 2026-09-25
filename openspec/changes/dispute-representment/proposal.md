@@ -10,8 +10,9 @@ A dispute (chargeback) is conceded the moment it opens: on the payment provider'
 RefundOrderUseCase.RefundOrder with the reason Dispute — voiding the Tickets,
 reversing the Organizer's payout and marking the Order Refunded — and never
 contests it. A dispute can arrive long after the event (card networks allow
-months), i.e. after the Settlement was Released, so the platform loses the
-charge, the dispute fee and its 5% platform fee even when the holder attended.
+months), i.e. after the Settlement was Released; the Organizer's split is clawed
+back, so the platform still loses its 5% platform fee and the provider's dispute
+fee — even when the holder attended.
 
 Tickets are bound to the buyer's account (and, for verified phases, to a
 本人確認 identity), and once `ticket-wallet-and-checkin` records admissions the
@@ -21,11 +22,10 @@ platform should contest those instead of conceding.
 
 ## What Changes
 
-- **Hold instead of concede.** A newly opened dispute puts the Order into a
-  disputed state instead of refunding it; Tickets are not voided and no payout is
-  reversed yet. (Whether a disputed ticket may still be used for entry is a
-  design question — e.g. block entry while disputed when the event has not
-  happened yet.)
+- **Hold instead of concede — only when there is evidence.** A newly opened
+  dispute on an Order with at least one admitted Ticket puts the Order into a
+  disputed state instead of refunding it; no payout is reversed yet. Such an
+  Order's event has already happened, so entry is not a concern.
 - **Submit evidence automatically.** For an Order whose Tickets were admitted,
   the platform submits evidence to the payment provider: the admission records
   (instant, operator, event), the account and 本人確認 binding of the holder, and
@@ -36,9 +36,9 @@ platform should contest those instead of conceding.
     `components/usecase/order/refund-order`);
   - **won** — the funds return to the platform; the Order returns to Paid and
     nothing is reversed.
-- **Concede when there is no case.** A dispute on an Order with no admission
-  (event not held yet, or ticket never used) keeps today's behaviour: refund
-  immediately.
+- **Concede when there is no case.** A dispute on an Order with no admitted
+  Ticket — the event has not happened yet, or the ticket was never used — keeps
+  today's behaviour: refund immediately (voiding the Tickets).
 - **Operator visibility.** Admins can see open disputes and their outcome; the
   Organizer's payout statement shows reversals caused by lost disputes.
 
@@ -57,7 +57,7 @@ To be confirmed in the specs phase; the likely scope is:
 - `components/entity/order` (Purpose): a Disputed status between Paid and Refunded in the state diagram.
 - `components/adapter/fan/api/webhook/payment-events`: "dispute created" starts a response instead of a refund; "dispute closed" settles it (today it is acknowledged without effect).
 - `components/usecase/order/refund-order`: the Dispute reason is applied only for a lost or conceded dispute.
-- `components/entity/ticket` / `components/usecase/ticket/admit` (from `ticket-wallet-and-checkin`): read the admission record as evidence; possibly reject entry while a dispute is open.
+- `components/entity/ticket` / `components/usecase/ticket/admit` (from `ticket-wallet-and-checkin`): read the admission record as evidence.
 
 ## Impact
 
