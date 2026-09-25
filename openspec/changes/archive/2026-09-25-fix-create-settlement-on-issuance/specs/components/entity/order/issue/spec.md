@@ -1,10 +1,11 @@
-# Order.Issue
+# Spec Delta
 
-## Purpose
+## RENAMED Requirements
 
-Stores a new Order together with the Tickets it issues.
+- FROM: `### Requirement: Order and tickets together, once per application`
+- TO: `### Requirement: Order, tickets and settlement together, once per application`
 
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Order, tickets and settlement together, once per application
 
@@ -24,4 +25,3 @@ Issue SHALL store the Order, all of its Tickets, and a Held Settlement for the O
 
 - **WHEN** an Order already exists for the application
 - **THEN** Issue fails with AlreadyExists and stores nothing
-
