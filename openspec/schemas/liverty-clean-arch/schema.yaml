@@ -84,11 +84,9 @@ artifacts:
           correspond to E2E tests.
 
         components/entity/<entity>/spec.md
-          The noun. Purpose: what it is, its attribute table and, when it has
-          a state attribute, its states. Requirements: the rules the entity
-          enforces on itself. The project's data schemas and language types
-          are derived from it. Scenarios correspond to entity unit tests or
-          to schema validation rules.
+          The noun. The project's data schemas and language types are
+          derived from it. Scenarios correspond to entity unit tests or to
+          schema validation rules.
 
         components/entity/<entity>/<operation>/spec.md
           One named operation on the entity: a store access (create, get,
@@ -175,9 +173,8 @@ artifacts:
           Ids are rows; derived values are requirements, not rows. When the
           entity refers to other entities, draw its direct relationships in a
           `mermaid` erDiagram fence - this entity and its neighbours only,
-          each line with its cardinality (`||--o{` one-to-many, `}o--o{`
-          many-to-many); the diagram is the only place cardinality is
-          stated. A many-to-many relation that carries attributes of its own
+          each line with its cardinality; the diagram is the only place
+          cardinality is stated. A many-to-many relation that carries attributes of its own
           (a level, a status, a timestamp) is an entity in its own right and
           is drawn as one (User ||--o{ Follow }o--|| Artist); only a
           many-to-many relation without attributes is drawn directly. Join
@@ -186,14 +183,11 @@ artifacts:
           stateDiagram-v2 fence; the state set is vocabulary, what drives
           each transition is a usecase concern. States and attributes come
           from the requirements' own conditions; none is added that no
-          requirement mentions. An entity's Purpose is therefore one or two
-          sentences followed by the table and the fence - longer than any
-          other Purpose, by design.
+          requirement mentions.
           Tables and closed fences are fine; never an HTML comment or an
           extra `##` heading, or archive cannot carry the Purpose into a new
           main spec. A new entity puts the table in its delta's Purpose
-          (archive carries it over); an existing entity's Purpose is edited
-          directly in the main spec, never through a delta.
+          (archive carries it over).
 
         ## Requirements
           Only rules the entity answers by itself, with no caller, clock or
@@ -269,11 +263,6 @@ artifacts:
                                                  order for it is refunded and
                                                  their orders screen shows it
                                                  Refunded"
-
-      A change that adds or modifies a usecase spec reviews the entity spec
-      and the operation specs it relies on, and the reverse. Touch all of
-      them, or say in the proposal's Capabilities why the others are
-      unchanged.
 
       ## What may be named in a spec
 
@@ -493,9 +482,8 @@ artifacts:
         contract test per scenario; a usecase yields the method and one unit
         test per scenario; an outer component yields the component and its
         tests; a story yields its E2E test. Every test task names the
-        scenarios it covers, each test carrying the
-        `@spec <capability-path> "<scenario name>"` marker. Design decisions
-        add their own tasks (migrations, indexes, configuration).
+        scenarios it covers. Design decisions add their own tasks
+        (migrations, indexes, configuration).
       - Each task MUST state how to verify completion (a test, command,
         observable behavior, or delivered artifact). Put the verification in
         that task's checkbox description. Use a separate verification task only
