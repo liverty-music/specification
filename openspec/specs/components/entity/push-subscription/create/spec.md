@@ -10,8 +10,6 @@ Registers a browser's push subscription for a fan, or refreshes it when that bro
 
 Create SHALL store a PushSubscription for the fan with the given endpoint and keys. When a PushSubscription with the same endpoint already exists, Create SHALL update it in place instead of adding a second one: its keys are replaced, its owner becomes the given fan, and its id is kept. Create SHALL return the stored PushSubscription, carrying the id it is stored under.
 
-Known defect: liverty-music/backend#474
-
 #### Scenario: New browser
 
 - **WHEN** Create runs with an endpoint that is not registered

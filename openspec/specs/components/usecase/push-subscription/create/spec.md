@@ -10,8 +10,6 @@ PushNotificationUseCase.Create registers the fan's current browser to receive pu
 
 Create SHALL store the fan's browser through PushSubscription.Create with the given push address and keys, and return the stored PushSubscription. After storing, it SHALL announce that the fan subscribed, carrying only the browser's device family, never its push address. A failure to store SHALL fail Create and announce nothing; a failure to announce SHALL NOT fail Create.
 
-Known defect: liverty-music/backend#474
-
 #### Scenario: Fan enables push on a new browser
 
 - **WHEN** a fan registers a browser that is not registered
