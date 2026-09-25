@@ -1,10 +1,6 @@
-# Admin Artist RPC
+# Spec Delta
 
-## Purpose
-
-The artist service as the admin console reaches it: the admin console uses Search to pick an artist to associate with an Organizer, through the same calls the fan boundary offers but only for admins.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Every artist call on the admin console needs the admin role
 
@@ -29,12 +25,3 @@ Every artist call reached through the admin console SHALL require a signed-in ca
 
 - **WHEN** a caller who is not signed in calls Create
 - **THEN** the call fails with Unauthenticated
-
-### Requirement: Admin artist requests are validated as on the fan boundary
-
-After the role check, the admin boundary SHALL validate each request by the same rules as the fan artist boundary and fail with InvalidArgument on the same requests.
-
-#### Scenario: Empty query
-
-- **WHEN** an admin calls Search with an empty query
-- **THEN** it fails with InvalidArgument
