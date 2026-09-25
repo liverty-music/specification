@@ -2,10 +2,10 @@
 
 No proto/schema change — this change only removes a stale known-defect note from two existing specs; no BSR/specification-release coordination is required.
 
-## 1. Specs (this repo)
+## 1. Delta specs (this PR)
 
-- [ ] 1.1 Remove the `Known defect: liverty-music/backend#474` note from `components/entity/push-subscription/create`, verified by `openspec validate fix-push-subscription-stored-id --strict`
-- [ ] 1.2 Remove the `Known defect: liverty-music/backend#474` note from `components/usecase/push-subscription/create`, verified by `openspec validate fix-push-subscription-stored-id --strict`
+- [x] 1.1 Author the `components/entity/push-subscription/create` MODIFIED Requirements delta, carrying the full existing requirement and its scenarios without the `Known defect: liverty-music/backend#474` line, verified by `openspec validate fix-push-subscription-stored-id --strict`
+- [x] 1.2 Author the `components/usecase/push-subscription/create` MODIFIED Requirements delta, carrying the full existing requirement and its scenarios without the `Known defect: liverty-music/backend#474` line, verified by `openspec validate fix-push-subscription-stored-id --strict`
 
 ## 2. Backend fix (liverty-music/backend#474, tracked and merged in the backend repo)
 
@@ -14,6 +14,6 @@ No proto/schema change — this change only removes a stale known-defect note fr
 - [ ] 2.3 Integration test for re-registration: same user registers the same endpoint again → same id returned; a different user registers the same endpoint → same id returned, and the row's `user_id` moves to the new user
 - [ ] 2.4 `make check` passes
 
-## 3. Archive
+## 3. Archive (only after the backend PR merges)
 
-- [ ] 3.1 After the backend PR merges, archive this change so the known-defect note is cleared from the main specs
+- [ ] 3.1 Archive this change so the delta from section 1 is synced into the main specs, which is what actually removes the `Known defect` note there — the delta specs cannot be applied to the main specs before the fix they document has shipped
