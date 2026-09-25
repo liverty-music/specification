@@ -1,9 +1,7 @@
-# Follow.Follow
+# Spec Delta
 
-## Purpose
+## MODIFIED Requirements
 
-Stores a new Follow of an artist by a fan, starting at hype level Nearby, and leaves an existing Follow for the same fan and artist untouched.
-## Requirements
 ### Requirement: Follow creates at most one Follow per fan and artist
 
 Follow SHALL store a Follow for the fan and the artist at hype level Nearby. When the fan already follows the artist, Follow SHALL fail with AlreadyExists and leave the existing Follow and its hype level unchanged. When the fan or the artist does not exist, Follow SHALL fail with FailedPrecondition and store nothing.
@@ -22,4 +20,3 @@ Follow SHALL store a Follow for the fan and the artist at hype level Nearby. Whe
 
 - **WHEN** the artist does not exist
 - **THEN** Follow fails with FailedPrecondition and nothing is stored
-

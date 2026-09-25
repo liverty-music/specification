@@ -3,9 +3,7 @@
 ## Purpose
 
 FollowUseCase.Follow records that a fan follows an artist, announces the follow, and in the background stores the artist's official site when it is missing and, when the artist has never been searched, starts a first concert search. No failure in the background work changes the result of the follow.
-
 ## Requirements
-
 ### Requirement: Follow creates the fan's Follow of the artist
 
 Follow SHALL create the fan's Follow of the artist through Follow.Follow and succeed once it is stored. When the Follow cannot be stored, including when the artist does not exist, Follow SHALL fail with Internal and do nothing else.
@@ -24,8 +22,6 @@ Follow SHALL create the fan's Follow of the artist through Follow.Follow and suc
 
 When the fan already follows the artist, Follow SHALL succeed without changing the Follow or its hype level, without announcing the follow again and without starting any background work.
 
-Known defect: liverty-music/backend#473
-
 #### Scenario: Fan follows the same artist twice
 
 - **WHEN** a fan who follows an artist at Away follows it again
@@ -43,7 +39,6 @@ After a new Follow is stored, Follow SHALL announce that the fan followed the ar
 ### Requirement: Official site resolved in the background
 
 After a new Follow is stored, Follow SHALL, in the background and after answering the fan, look up the artist's official site when none is stored (Artist.GetOfficialSite returns NotFound) and the artist has an MBID: it reads the artist (Artist.Get), resolves the site from the MBID (Artist.ResolveOfficialSiteURL) and, when a site is found, stores it (Artist.CreateOfficialSite). An artist that already has a site, has no MBID, or has no site in the catalog is left as is. Every failure in this work SHALL be ignored.
-
 
 #### Scenario: Artist without an official site
 
@@ -83,3 +78,4 @@ After a new Follow is stored, Follow SHALL, in the background and after answerin
 
 - **WHEN** the started concert search fails
 - **THEN** the follow has already succeeded and is unaffected
+
