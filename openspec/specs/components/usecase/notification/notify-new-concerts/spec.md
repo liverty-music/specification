@@ -43,8 +43,6 @@ Before notifying anyone, NotifyNewConcerts SHALL check that every given concert 
 
 NotifyNewConcerts SHALL read the artist's followers (Follow.ListFollowers) and, for each, take the concerts that the follower's hype level matches among the new concerts, given the follower's home. A follower whose matched set is empty SHALL NOT be notified. The message count and the link SHALL come from the follower's matched set only. When the artist has no followers, or no follower matches, nothing is sent and NotifyNewConcerts succeeds.
 
-Known defect: liverty-music/backend#469
-
 #### Scenario: Home follower and a new concert elsewhere
 
 - **WHEN** a concert is added in JP-40, the artist has an older upcoming concert in JP-13, and a follower's hype level is Home with home area JP-13
