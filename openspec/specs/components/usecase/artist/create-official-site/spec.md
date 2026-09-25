@@ -8,7 +8,6 @@ ArtistUseCase.CreateOfficialSite records the official website of an artist, so c
 
 ### Requirement: CreateOfficialSite stores a new official site for the artist
 ArtistUseCase.CreateOfficialSite SHALL take an artist id and a URL, store them as a new OfficialSite with a fresh id through Artist.CreateOfficialSite, and return the error of Artist.CreateOfficialSite unchanged.
-Known defect: liverty-music/backend#470
 
 #### Scenario: Artist without a site
 - **WHEN** CreateOfficialSite is called for an artist that has no official site
