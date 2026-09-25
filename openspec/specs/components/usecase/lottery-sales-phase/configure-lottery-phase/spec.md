@@ -34,8 +34,6 @@ ConfigureLotteryPhase SHALL take an event, an open time, a close time, a ticket 
 
 ConfigureLotteryPhase SHALL fail with PermissionDenied when the calling Organizer does not own the event.
 
-Known defect: liverty-music/backend#467
-
 #### Scenario: Another Organizer's event
 
 - **WHEN** an Organizer configures a phase for an event owned by a different Organizer

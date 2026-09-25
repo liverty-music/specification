@@ -24,8 +24,6 @@ GetLotteryPhaseStatus SHALL read the phase with LotterySalesPhase.Get, failing w
 
 GetLotteryPhaseStatus SHALL fail with PermissionDenied when the calling Organizer does not own the phase's event.
 
-Known defect: liverty-music/backend#467
-
 #### Scenario: Another Organizer's phase
 
 - **WHEN** an Organizer asks for the status of a phase on an event owned by a different Organizer

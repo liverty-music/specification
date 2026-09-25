@@ -29,8 +29,6 @@ SetPhaseVerificationRequirement SHALL set the phase's verification requirement w
 
 SetPhaseVerificationRequirement SHALL fail with PermissionDenied when the calling Organizer does not own the phase's event.
 
-Known defect: liverty-music/backend#467
-
 #### Scenario: Another Organizer's phase
 
 - **WHEN** an Organizer changes the requirement of a phase on an event owned by a different Organizer
