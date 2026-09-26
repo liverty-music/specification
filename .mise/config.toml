@@ -4,4 +4,4 @@
 # silently drifted. Concrete versions make each bump a reviewable pull request.
 # See OpenSpec change `automate-dependency-updates`, task 5.2a.
 buf = "1.73.0"
-pre-commit = "4.3.0"
+pre-commit = "4.6.2"
