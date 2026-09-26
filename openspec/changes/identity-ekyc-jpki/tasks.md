@@ -73,3 +73,29 @@
 - [ ] 7.6 **Reachable prod entry point for the gate**: the apply route is currently reachable only via the explicit `lottery/:phaseId/apply/…/:verificationRequired?` path (not nav-wired). For E2E, configure a real **verification-required LotterySalesPhase** (organizer `SetPhaseVerificationRequirement` / `ConfigureLotteryPhase`) and provide a way to reach its apply URL with `verificationRequired=true` (deep link or temporary nav entry). Coordinate with ④ `lottery-application`, which owns the production entry point.
 - [ ] 7.7 **End-to-end on the live prod sandbox** (via Stamp + PocketSign app): verify (card + スマホJPKI) upgrades account; second User.id → rejected; per-person limit spans two accounts of one person; **event-requires-verification prompts the fan before applying (5.2)**; no 個人番号/serial/基本4情報 stored (only User.id); 現況確認 flags a revoked cert; deletion works. <!-- MVP JPKI-only: fallback/licence E2E dropped (POST-MVP). Confirm the Stamp Session flow (CreateSession redirectUrl → PocketSign app → FinalizeSession) and that identify_user resolves the User.id (cert must be >90min old, else ERROR_REASON_IDENTIFY_USER_TOO_EARLY). CAVEAT (mock-in-prod): mock cards are NOT a genuine 公的個人認証, so "**same User.id after a simulated renewal**" (spike S1) may not be reproducible on the sandbox — defer that specific assertion to the POST-MVP prod-tenant cutover. -->
 - [ ] 7.8 Sync delta specs to main specs and archive the change
+
+## 8. Test hardening (follow-up — /opsx:explore coverage audit 2026-09-04)
+
+<!-- Gap audit of the eKYC / lottery-verification modules (fe + be). Only MEANINGFUL,
+verified gaps are listed. Dismissed as false-alarms/by-design (do NOT add): entity
+RequiresVerification() "undefined" (it IS defined on the lottery phase entity, used +
+tested via lottery_uc_test); config look-alike-domain rejection (a non-p8n.app host IS
+rejected-tested at config_test.go:583 — only suffix-trick hosts are untested and the
+allowlist logic is provably safe); MemoryCache.Close double-close "deadlock" (the
+Close_IsSafeToCallTwice test passes — not a real gap); verify-session non-SecurityError,
+label-key one-liners, AbortSignal propagation, verifiedAt=epoch, extreme enum ints.
+The recently-shipped fixes ARE covered (requireManualReturn/callbackWithSessionId pinned;
+FE persisted-session-id path). -->
+
+### TIER 1 — meaningful (entry points / real behavior)
+- [x] 8.1 **FE `settings-route` has NO spec file at all** (`src/routes/settings/settings-route.spec.ts` does not exist). Add one covering: `verifyIdentity()` (the Stamp entry point — calls `identity.verify('jpki')`; handles `redirecting` / `notAuthenticated` outcomes), the verification-status display getters (`isIdentityVerified` / method / dedupe keys derived from `identity.status`), and `loadVerificationStatus()`'s error path (logs, does not crash the route). Mock `IIdentityVerificationService` in DI.
+- [x] 8.2 **BE lottery Apply gate — non-NotFound error from `GetByUserID`.** `lottery_uc_test` only ever returns NotFound (the `getByUserIDFn` stub hook exists but is never used to inject a failure). Add a case: a requiring phase + `GetByUserID` returns `Unavailable` (DB outage) → assert the error PROPAGATES (retryable) and is NOT collapsed to `FAILED_PRECONDITION` (which would misreport an outage as "not verified").
+- [x] 8.3 **BE `verified_identity_repo` integration test (real DB).** Currently only incidentally touched by `lottery_pipeline_integration_test.go`; the repo's own invariants are unexercised. Add an rdb integration test (per the codebase's integration-not-unit convention for repos): Create dedupe — a 2nd ACTIVE row with the same `pocket_sign_user_id` → `AlreadyExists` (the partial unique index `uq_active_pocket_sign_user_id`, the core 1-person-1-account lever); Create with a missing user → `FailedPrecondition` (FK); `GetByUserID`/`GetByPocketSignUserID` → `NotFound`; `UpdateStatus`/`Delete` on a missing id → `NotFound` (RowsAffected==0).
+- [x] 8.4 **FE `identity-verification-service.verify()` — no partial navigation on error.** Assert that when `startVerify()` throws, `window.location.href` is NOT assigned (the browser must not navigate to a half-built URL). The success-path order (persist session id BEFORE navigating) is already covered.
+
+### TIER 2 — defensive / cheap (pin behavior, prevent regressions)
+- [x] 8.5 **BE `verify_client.CompleteVerify` — nonce restore semantics.** Pin that the nonce is re-stored ONLY on `FailedPrecondition` (session-not-yet-completed, retryable) and is NOT restored on other error codes (e.g. `Unavailable`/`Internal`) — so a genuinely consumed nonce cannot be replayed.
+- [x] 8.6 **BE `verify_client.StartVerify` — empty response guards.** Cover CreateSession returning an empty `id` or empty `redirectUrl` → `Internal` (currently only valid responses are tested).
+- [x] 8.7 **FE `lottery-apply` gate — negative + fail-open paths.** `verificationRequired='false'` (and other non-`'true'` strings) parsed as false → no `GetMyVerificationStatus` call, no gate; and on a status-load error assert `step` stays `'count'` (fails open, NOT `'verify-required'`).
+- [x] 8.8 **FE `verify-callback` `connectErrorKey` — unmapped ConnectError code.** Add a case for a ConnectError whose code is not in the switch (e.g. `Code.Internal`) → falls through to the generic key (distinct from the non-ConnectError generic case already tested).
+- [x] 8.9 **FE `verified-identity-mapper` — enum default fall-throughs.** Ensure each proto→entity enum map (level / method / dedupe strength / status) degrades an `UNSPECIFIED`/unknown value to its safe default rather than a wrong lane.
