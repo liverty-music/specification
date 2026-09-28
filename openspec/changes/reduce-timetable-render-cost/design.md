@@ -142,11 +142,14 @@ bounded by the window.
   and `timeline-scope` use the same names. No script touches a card.
 - The `beam-timeline` custom attribute is deleted.
 
-**Safari**: typed `attr()` is not supported there, so the declaration is
-invalid, no timeline exists, and the beams stay at their `scaleY(0)` base —
-i.e. absent. That is accepted (product decision): the spec already requires
-the effect to degrade to no beams where the platform cannot drive it, with the
-toggle and everything else unchanged.
+**Browsers without typed `attr()`** (Safari as of 27.0; it ships in Safari
+Technology Preview and is an Interop 2026 focus area): the declaration is
+invalid and ignored, no timeline exists, and the beams stay at their
+`scaleY(0)` base — i.e. absent — which is the degradation the spec already
+requires, with the toggle and everything else unchanged. There is no browser
+or OS detection, no `@supports` branch and no Safari-specific switch: the same
+stylesheet starts drawing beams in a browser the day it ships typed `attr()`,
+with no code change.
 
 - *Alternative — the highway queries the matched cards and sets
   `view-timeline` on them*: works in Safari, but keeps a DOM query and style
@@ -187,7 +190,9 @@ for identical data.
   tap interaction. If D0's after-trace shows scroll jank at depth, reinstate
   `content-visibility` on built groups (it no longer affects restore, since the
   anchor is always built).
-- [No beams in Safari] → Accepted product decision (D3).
+- [No beams until a browser ships typed `attr()` (Safari as of 27.0)] →
+  Accepted: the stylesheet degrades on its own and lights up when support
+  lands; nothing is written per browser (D3).
 - [Typed `attr()` with `<custom-ident>` behaves differently than expected in
   Chromium] → Spike S2 before building D3; fallback is the rejected
   highway-query alternative.
