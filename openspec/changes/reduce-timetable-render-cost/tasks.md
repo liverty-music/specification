@@ -1,0 +1,27 @@
+## 1. Baseline and spike (design.md D0, S1)
+
+- [ ] 1.1 Record the D0 baseline trace on the reference profile with the production account (≥200 dates): Timetable re-entry from Discovery — INP, Scripting / Rendering / Painting self-time, and time under `repeat` + `event-card` activation; also cold-load render time after data arrives. Verify by attaching the numbers to this change's design.md under D0
+- [ ] 1.2 Spike S1: in a Storybook story of `concert-highway` with 225 groups, insert 12 groups above a scrolled position and confirm the viewed group stays put under default scroll anchoring, with sticky date separators; record whether `overflow-anchor: none` on the separator is needed. Verify by recording the result under D1
+- [ ] 1.3 Spike S2: in current Chrome, confirm `view-timeline: attr(data-beam-name type(<custom-ident>)) block` on a card resolves a named `ViewTimeline` usable from the beam overlay through `timeline-scope`, and that Safari ignores it without error. Verify by recording the result under D3
+
+## 2. Per-card cost (app-shell: "Press is acknowledged by a state layer and shape morph"; live-highway: "The beam effect is presentational and costs nothing to render")
+
+- [ ] 2.1 Add the shared pressed-state utility (state layer + corner morph on `:active`, `position: relative`, reduced-motion fallback) and remove `press-feedback` from `event-card.html`, `dashboard-route.html` and `my-artists-route.html`; delete `custom-attributes/press-feedback.ts`, its tests and registration. Verify with component tests for "Pressing a control shows the state layer and shape change" (computed `:active` style), "Reduced motion still acknowledges", and "Building a screen does no press-related work" (no listener or style read on attach)
+- [ ] 2.2 Add `artistHue` to the UI-only `Concert` fields, computed once where timetable concerts are built; bind it as `--artist-hue` inline in `event-card.html` and `event-detail-sheet.html`; delete the `artist-color` attribute and its registration; amend the frontend CUBE CSS convention to allow inline custom properties from data. Verify with a unit test on the mapping and the existing card/detail-sheet colour stories unchanged
+- [ ] 2.3 Remove `beam-index`, `data-beam-index` and `beam-timeline` from `event-card`; add a one-time `data-beam-name` on matched cards and the beams-on CSS rule deriving `view-timeline` from it with typed `attr()`; make `buildBeamIndexMap()` run only while `showBeams` is true and name beams by concert (D3); delete `custom-attributes/view-timeline.ts`. Verify with highway tests for "Disabled beams cost nothing" (no beam attribute on any card, no beam set computed) and the existing beam stories ("Only concerts on screen are lit", beams land on their cards) passing
+- [ ] 2.4 Re-take the D0 trace after group 2 and record the delta. Verify by numbers recorded under D0
+
+## 3. Date window (route/dashboard: "The timetable renders a window of dates around the fan", "Timetable rendering cost is bounded…")
+
+- [ ] 3.1 Render `visibleGroups` (initial window around an `initialAnchor` bindable, 12 groups) with top and bottom sentinels grown by one `IntersectionObserver` (D1); recompute the window around the current top date when `dateGroups` is replaced; point the beam map and `scrollAnchor` getter at `visibleGroups`. Verify with highway tests for "Only the window is built" (225 groups in, ≤24 built), "Scrolling down reaches every later date", "Scrolling up from a restored date reaches earlier dates without a jump" and "Lanes stay aligned in every built group" (three-lane and two-lane)
+- [ ] 3.2 Remove `content-visibility` / `contain-intrinsic-size` from the date group and rewrite the Storybook regression guard that asserts them to assert the window instead. Verify the story guard and `make lint` pass
+
+## 4. Re-entry (route/dashboard: "Re-entry restores the date the fan was looking at", "Page identity paints independent of the timetable render"; bottom-nav-bar: "Menu-tab navigation never waits on data")
+
+- [ ] 4.1 Move cached-group reflection from `attached()` to `bound()` in `dashboard-route.ts`, pass the saved anchor to the highway's `initialAnchor`, restore in the highway's `attached()`, and remove `runTasks()` from the re-entry path (D2). Verify with dashboard/highway tests for "Re-entry restores the same date, at any depth" (first render already positioned, no skeleton rendered), "The anchored date is gone" (nearest later date), "A cached result is reflected from the component lifecycle", and "Deferring the render preserves load-path side effects" (background refresh, celebration latch, deep-link)
+- [ ] 4.2 Confirm `scripts/verify-route-loading` still passes unchanged (nothing is assigned in `loading()`) and update its explanatory comment and the `instant-page-switch` E2E expectation that the skeleton is seen on re-entry. Verify `make lint` and the functional Playwright project pass
+
+## 5. Verification on the reference profile
+
+- [ ] 5.1 Re-take the D0 trace after groups 3–4 on production and verify the modified dashboard scenarios: re-entry INP ≤ 200 ms with header, nav and timetable in the same next paint ("Tab-switch re-entry does not freeze on rendering", "Header and nav switch before the timetable renders"), cold-load render ≤ 200 ms, CLS 0 while scrolling across added groups. Record the numbers under D0 and in the PR description
+- [ ] 5.2 Settle the window size from 5.1 and record it in design.md, closing the Open Question
