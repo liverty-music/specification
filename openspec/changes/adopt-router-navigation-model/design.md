@@ -17,9 +17,11 @@ See proposal.md — Why. The relevant current code, in `frontend/`:
 Router facts this design relies on, verified in `@aurelia/router` 2.0.0-rc.2:
 
 - `RouterOptions.useNavigationModel` defaults to `true`.
-- `IRouteContext.navigationModel.routes` lists every child route configured
-  with `nav: true` (and no `redirectTo`), each as a `NavigationRoute` exposing
-  `id`, `path` (array), `title`, `data` and `isActive`.
+- `IRouteContext.routeConfigContext.navigationModel.routes` lists every child
+  route whose `nav` is true (and has no `redirectTo`), each as a
+  `NavigationRoute` exposing `id`, `path` (array), `title`, `data` and
+  `isActive`. `RouteConfig.nav` defaults to `true` (corrected by spike S2; see
+  D1).
 - `NavigationRoute.isActive` is recomputed on `au:router:navigation-end` as
   "does the current route tree contain any of this route's paths".
 - `ICurrentRoute` is updated on `au:router:navigation-end`; its
@@ -53,6 +55,10 @@ route's `data` (`data.icon`, `data.labelKey`) next to the existing
 `navigationModel.routes`, binding `data-active` to `route.isActive` and the
 link to the route's first path. Tab order is the order of the route table.
 
+Because `RouteConfig.nav` defaults to `true` in rc.2, the shell's route table
+applies `nav: false` as its own default and only the five tab routes set
+`nav: true`. A new route therefore stays out of the bar unless it opts in.
+
 - *Alternative — keep the `tabs` array, only replace the active computation
   with `router.isActive(...)`*: keeps two lists that must agree, which is how
   the current bar and route table already drifted into a hand-written
@@ -82,6 +88,11 @@ the dashboard route stays `nav: true` with path `dashboard` only, and
 `concerts/:id` becomes a child route of it, which `contains` with
 `includeChildren = true` covers by construction.
 
+*Result (holds)*: with one route `path: ['dashboard', 'concerts/:id']`,
+`nav: true`, navigating to `concerts/abc` leaves that route's `isActive` true
+(and false for the other tabs). D2 stands; the child-route fallback is not
+needed.
+
 ### D3. Header title comes from the current route's configuration
 
 The shell binds the header to `ICurrentRoute`: the title key is
@@ -96,6 +107,15 @@ outside `<au-viewport>`, as children of the shell. Confirm that resolving
 top-level routes) and that `ICurrentRoute`'s fields are observed by bindings
 (they are reassigned on navigation-end). If the context does not resolve, the
 shell resolves it and passes `navigationModel` to the bar as a bindable.
+
+*Result (holds, with a path correction)*: a custom element rendered beside
+`<au-viewport>` in the root component resolves the root `IRouteContext`; its
+navigation model is at `routeConfigContext.navigationModel` (not directly on
+the context) and lists the top-level routes, with `isActive` observed by
+bindings. A getter over `ICurrentRoute.parameterInformation[0].config.data.titleKey`
+re-renders after each navigation. The bindable fallback is not needed. The
+spike also showed that routes without an explicit `nav` appear in the model,
+which D1 now accounts for.
 
 ### D4. Identity changes on navigation-end only
 
