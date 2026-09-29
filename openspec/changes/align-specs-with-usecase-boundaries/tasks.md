@@ -134,7 +134,7 @@ Every test named below is in liverty-music/backend. Mark each test with `// @spe
 
 ## 16. Stories (stories/follow-an-artist, stories/get-notified-of-new-concerts)
 
-- [ ] 16.1 Run each `@spec-manual` check listed in design.md on the dev environment, after the backend PR is deployed there. Record the outcome of each in the backend PR description.
+- [ ] 16.1 Run each `@spec-manual` check listed in design.md on prod, after the first backend release that contains backend#520 is deployed (dev is decommissioned). Record the outcome of each on this change's archive PR.
 
 ## 17. Integration
 
