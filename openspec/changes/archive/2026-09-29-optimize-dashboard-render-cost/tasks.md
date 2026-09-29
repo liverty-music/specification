@@ -35,13 +35,40 @@ style-recalc is gone); the remaining ~2.5 s is the synchronous DOM build of the
 timetable, addressed by P4 (and it is the same synchronous render behind the
 header/nav paint-starvation follow-up).
 
-**Still not captured:** PostHog `web.vitals` field data (task 1.2); the P2 Layout
-win is moot in prod (reverted).
+**C. PostHog field data, `/dashboard` (task 1.2, queried 2026-09-26).** `web.vitals`
+events with `route = /dashboard`, split by frontend release. Sample counts are very
+small, so these numbers cannot confirm or rule out an effect on their own.
+
+| Window | INP p75 (n) | LCP p75 (n) |
+| --- | --- | --- |
+| Before (up to v1.72.0, before 2026-09-13 09:09Z) | 4716 ms (11) | 4591 ms (20) |
+| P1 + P2 (v1.72.1–v1.72.2) | 2768 ms (7) | 4372 ms (3) |
+| P1 only, as shipped by this change (v1.72.3–v1.72.4) | 4856 ms (9) | 5255 ms (4) |
+| v1.72.5 and later (includes `defer-dashboard-reentry-render`) | 1504 ms (9) | 3167 ms (6) |
+
+The field data shows no improvement in the window that reflects this change alone. The
+clear field improvement starts with v1.72.5, which carries later rendering work. The
+lab evidence for this change is the re-entry trace in B.
+
+**Delta scope at archive.** The delta keeps only "Highlighted card visuals must not
+drive continuous rendering work". This change delivered that requirement, and its two
+scenarios are verified by stories (frontend#674).
+
+"Timetable rendering cost is bounded…" is dropped from the delta, because this change
+does not claim it:
+- Its viewport-scoping scenarios shipped with `defer-dashboard-reentry-render` after P2
+  was reverted here.
+- Its first-load LCP scenario was never measured for this change, and the field data
+  above does not show it.
+- Its re-entry INP improvement (−66%, B) is recorded here.
+
+The requirement is already in the main spec word for word (5.1), so dropping it from
+the delta leaves the main spec unchanged.
 
 ## 1. Baseline measurement
 
 - [x] 1.1 Record a DevTools performance trace of a dashboard tab-switch re-entry on the reference profile (Pixel 8 emulation, 4× CPU) with a populated timetable; capture INP, LCP, and the Bottom-up self-time for Layout, Recalculate Style, and Paint as the before-baseline.
-- [ ] 1.2 Capture the current PostHog `web.vitals` (LCP/INP) and `perf.long_animation_frame` for route `/dashboard` as the field before-baseline.
+- [x] 1.2 Capture the current PostHog `web.vitals` (LCP/INP) and `perf.long_animation_frame` for route `/dashboard` as the field before-baseline. DONE retroactively from retained `web.vitals` data, split by release (Measurement results C). `perf.long_animation_frame` was not needed: the field numbers are too sparse to attribute, and the lab trace (B) is the evidence.
 
 ## 2. P1 — Remove the continuous style-recalc driver
 
