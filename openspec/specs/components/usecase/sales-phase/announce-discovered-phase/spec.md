@@ -77,16 +77,21 @@ AnnounceDiscoveredPhase SHALL send the announcement as soon as it runs, whatever
 - **WHEN** AnnounceDiscoveredPhase runs at 23:00 in a recipient's time zone
 - **THEN** the recipient is sent the announcement at once
 
-### Requirement: One sales-phase announcement notification per recipient
+### Requirement: One sales-phase announcement notification requested per recipient
 
-For each recipient AnnounceDiscoveredPhase SHALL issue one notification of type sales-phase announcement carrying that recipient's message. Whether it reaches the recipient's devices does not change the result. When a recipient's notification cannot be recorded, AnnounceDiscoveredPhase SHALL fail so the whole announcement runs again; recipients already sent may then receive it again, and the repeat replaces the earlier one on their device. The story stories/hear-about-a-new-ticket-sale covers the whole flow from discovery to the fan's device.
+For each recipient AnnounceDiscoveredPhase SHALL request one notification of type sales-phase announcement carrying that recipient's message; NotificationUseCase.Deliver records and delivers each requested notification afterwards, for each recipient on its own, and whether it reaches the recipient's devices does not change the result. When a recipient's request cannot be made, AnnounceDiscoveredPhase SHALL fail so the whole announcement runs again; a request repeated within 2 minutes for the same phase and recipient SHALL reach the recipient only once, and a later repeat replaces the earlier one on their device. The story stories/hear-about-a-new-ticket-sale covers the whole flow from discovery to the fan's device.
 
 #### Scenario: Two recipients
 
 - **WHEN** two fans track the series
-- **THEN** one sales-phase announcement notification is created for each of them
+- **THEN** one sales-phase announcement notification is requested for each of them
 
-#### Scenario: Recording fails
+#### Scenario: Request fails
 
-- **WHEN** the second of three recipients' notifications cannot be recorded
-- **THEN** AnnounceDiscoveredPhase fails and runs again for all three recipients
+- **WHEN** the notification for the second of three recipients cannot be requested
+- **THEN** the third recipient's notification is not requested, AnnounceDiscoveredPhase fails, and the announcement runs again for all three recipients
+
+#### Scenario: Same phase announced twice
+
+- **WHEN** AnnounceDiscoveredPhase runs twice within 2 minutes for the same phase and the same recipient
+- **THEN** the recipient's two requests are the same request and the recipient receives the announcement once

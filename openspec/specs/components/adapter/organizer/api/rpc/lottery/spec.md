@@ -8,7 +8,7 @@ The organizer-facing lottery service boundary: how an operator's sign-in is turn
 
 ### Requirement: Every lottery call acts for the caller's own active Organizer
 
-ConfigureLotteryPhase, GetLotteryPhaseStatus and SetPhaseVerificationRequirement SHALL pass the same organizer-console sign-in checks as the organizer Organizer service, and SHALL then resolve the caller's own Organizer through OrganizerUseCase.GetByZitadelOrgID with the caller's tenant. When the caller has no tenant, no Organizer is linked to it, or the Organizer is provisioning, the call SHALL fail with PermissionDenied. When the Organizer is deactivated, the call SHALL fail with FailedPrecondition. Only then SHALL the boundary call LotteryUseCase.ConfigureLotteryPhase, GetLotteryPhaseStatus or SetPhaseVerificationRequirement. That the event or phase belongs to the caller's Organizer is a precondition of the usecase, not of the boundary.
+ConfigureLotteryPhase, GetLotteryPhaseStatus and SetPhaseVerificationRequirement SHALL pass the same organizer-console sign-in checks as the organizer Organizer service, and SHALL then resolve the caller's own Organizer through OrganizerUseCase.ResolveCaller with the caller's tenant. When the caller has no tenant, the call SHALL fail with PermissionDenied. A failure of ResolveCaller SHALL be returned unchanged: PermissionDenied when no Organizer is linked to the tenant or the Organizer is provisioning, and FailedPrecondition when it is deactivated. Only then SHALL the boundary call LotteryUseCase.ConfigureLotteryPhase, GetLotteryPhaseStatus or SetPhaseVerificationRequirement. That the event or phase belongs to the caller's Organizer is a precondition of the usecase, not of the boundary.
 
 #### Scenario: Active Organizer configures a phase
 

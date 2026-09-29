@@ -8,7 +8,7 @@ The organizer-facing payout onboarding boundary: it resolves the caller's own Or
 
 ### Requirement: The caller must be an operator of their own active Organizer
 
-Every request SHALL carry a valid sign-in, or fail with Unauthenticated. The sign-in SHALL be issued for the organizer console and grant organizer-console roles in exactly one tenant, or the request fails with PermissionDenied. The boundary SHALL resolve the caller's Organizer through OrganizerUseCase.GetByZitadelOrgID with that tenant: when no Organizer is linked, or it is provisioning, the request SHALL fail with PermissionDenied without revealing whether an Organizer exists; when it is deactivated, the request SHALL fail with FailedPrecondition.
+Every request SHALL carry a valid sign-in, or fail with Unauthenticated. The sign-in SHALL be issued for the organizer console and grant organizer-console roles in exactly one tenant, or the request fails with PermissionDenied. The boundary SHALL resolve the caller's Organizer through OrganizerUseCase.ResolveCaller with that tenant and return its failure unchanged: PermissionDenied when no Organizer is linked or it is provisioning, without revealing whether an Organizer exists, and FailedPrecondition when it is deactivated.
 
 #### Scenario: Not signed in
 

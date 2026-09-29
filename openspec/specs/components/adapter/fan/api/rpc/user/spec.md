@@ -17,7 +17,7 @@ Every call to the user service SHALL fail with Unauthenticated when the caller p
 
 ### Requirement: Per-user calls act only on the caller's own account
 
-Get, UpdatePreferredLanguage, UpdateHome and ResendEmailVerification SHALL each name the target User by id. The boundary SHALL fail with InvalidArgument when the id is missing or is not a well-formed id. It SHALL then resolve the caller through UserUseCase.GetByExternalID with the caller's identity and fail with NotFound when the caller has no User. It SHALL then fail with PermissionDenied when the named id is not the caller's, before any other read or any change, so the response reveals nothing about the named User.
+Get, UpdatePreferredLanguage, UpdateHome and ResendEmailVerification SHALL each name the target User by id. The boundary SHALL fail with InvalidArgument when the id is missing or is not a well-formed id. Get, UpdatePreferredLanguage and UpdateHome SHALL then resolve the caller through UserUseCase.ResolveCaller with the caller's identity and the named id, and return its failure unchanged: NotFound when the caller has no User, and PermissionDenied when the named id is not the caller's, before any other read or any change. ResendEmailVerification leaves the same check to UserUseCase.ResendEmailVerification.
 
 #### Scenario: Own account
 
@@ -119,36 +119,16 @@ UpdateHome SHALL fail with InvalidArgument when the request carries no Home, or 
 - **WHEN** the named User id is not the caller's
 - **THEN** UpdateHome fails with PermissionDenied and no home is changed
 
-### Requirement: Resending the caller's verification email
+### Requirement: ResendEmailVerification is decided by the usecase
 
-ResendEmailVerification SHALL send a fresh verification email to the caller's own address by calling User.ResendVerification with the caller's external id. It SHALL fail with Unavailable when email verification is not configured, checked after sign-in and request checks and before the caller is resolved. After the per-user check, each allowed request SHALL count toward a limit of 3 per 10 minutes per User, whether or not the send then succeeds; a request over the limit SHALL fail with ResourceExhausted, send nothing and not count. A FailedPrecondition or Internal failure of User.ResendVerification SHALL be returned as it is.
+ResendEmailVerification SHALL call UserUseCase.ResendEmailVerification with the caller's sign-in identity and the named User id, and return its failure unchanged. Whether verification is available, the caller check, and the limit of 3 resends per 10 minutes per User are that usecase's rules.
 
 #### Scenario: Caller resends their own email
 
 - **WHEN** a signed-in caller requests a resend for their own unverified account
 - **THEN** a fresh verification email is sent
 
-#### Scenario: Another user's account
+#### Scenario: Usecase failure returned unchanged
 
-- **WHEN** the named User id is not the caller's
-- **THEN** it fails with PermissionDenied and nothing is sent
-
-#### Scenario: Too many requests
-
-- **WHEN** the same User makes a fourth request within 10 minutes
-- **THEN** it fails with ResourceExhausted and nothing is sent
-
-#### Scenario: Failed attempts count
-
-- **WHEN** a User's first 3 requests within 10 minutes each fail with FailedPrecondition because the address is already verified
-- **THEN** a fourth request within those 10 minutes fails with ResourceExhausted
-
-#### Scenario: Already verified
-
-- **WHEN** the caller's address is already verified
-- **THEN** it fails with FailedPrecondition
-
-#### Scenario: Verification unavailable
-
-- **WHEN** a signed-in caller requests a resend while email verification is not configured
-- **THEN** it fails with Unavailable, even when the caller has no User
+- **WHEN** UserUseCase.ResendEmailVerification fails with ResourceExhausted
+- **THEN** ResendEmailVerification fails with ResourceExhausted
