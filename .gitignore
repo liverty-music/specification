@@ -15,3 +15,7 @@ tmp/*
 
 # Claude Code worktrees (claude --worktree / EnterWorktree)
 .claude/worktrees/
+
+# Python bytecode from running scripts/*.py locally
+__pycache__/
+*.pyc
