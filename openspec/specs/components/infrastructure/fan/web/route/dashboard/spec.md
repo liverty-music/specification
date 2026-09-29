@@ -613,7 +613,7 @@ Side effects that must only run once a route's data is genuinely present (e.g. t
 
 ### Requirement: Dashboard Mode Toggle
 
-The Dashboard SHALL provide a segment toggle control that switches between "My Timetable" mode (current behavior — concerts for followed artists) and "All Nearby" mode (new — all concerts in the DB near a given location within a date range).
+The Dashboard SHALL provide a segment toggle control that switches between "My Timetable" mode (current behavior — concerts for followed artists) and "All Nearby" mode (new — all concerts in the DB near a given location within a date range). The toggle is what tells the fan which mode is active: the page header title SHALL remain the dashboard's title in both modes.
 
 #### Scenario: Default mode is My Timetable
 
@@ -636,7 +636,11 @@ The Dashboard SHALL provide a segment toggle control that switches between "My T
 - **WHEN** the user switches back to My Timetable
 - **THEN** the Dashboard SHALL revert to the cached `ListByFollower` / `ListByArtists` result
 
----
+#### Scenario: Header title does not change with the mode
+
+- **WHEN** the user switches between My Timetable and All Nearby
+- **THEN** the page header title SHALL stay the dashboard's title
+- **AND** the toggle SHALL indicate the newly selected mode
 
 ### Requirement: Date Preset Selector
 
@@ -818,7 +822,7 @@ All user-facing Japanese strings on the All Nearby surface SHALL read as natural
 
 #### Scenario: All Nearby strings are natural Japanese
 
-- **WHEN** the All Nearby mode title, mode toggle labels, area prompt, empty-state text, date-preset labels, and range hint are displayed in Japanese
+- **WHEN** the mode toggle labels, area prompt, empty-state text, date-preset labels, and range hint are displayed in Japanese
 - **THEN** each SHALL be phrased in natural Japanese
 - **AND** every `allNearby.*` key present in the Japanese bundle SHALL also exist in the English bundle (and vice versa)
 

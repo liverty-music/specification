@@ -21,49 +21,6 @@ The system SHALL display authentication status with a cohesive, dark-themed desi
 
 ---
 
-### Requirement: Instant page-identity switch on navigation intent
-
-The system SHALL switch page identity — the page header title and the active
-bottom-nav tab — at navigation intent, independent of the incoming route's
-loading and entrance transition. Page identity SHALL be driven by a single
-shared reactive state that both the shell-hosted page header and the bottom
-navigation bar read from, and SHALL NOT be derived by reading the router's route
-tree directly in the navigation bar.
-
-The shared state SHALL be updated optimistically when navigation begins,
-confirmed when navigation completes, and rolled back if navigation fails, so the
-tap is acknowledged immediately while content continues to load or animate.
-
-#### Scenario: Header title and active tab switch on tap before content loads
-- **WHEN** the user taps a bottom-nav tab
-- **THEN** the bottom-nav highlight SHALL move to the tapped tab immediately, before the incoming route's content has attached or finished its entrance transition
-- **AND** the page header title SHALL change to the target page's title in the same immediate step
-- **AND** the previous page's content MAY still be visible or animating out during this step
-
-#### Scenario: Optimistic switch on navigation start
-- **WHEN** an `au:router:navigation-start` event fires (from a tap, an in-app link, a programmatic load, or browser back/forward)
-- **THEN** the shared page-identity state SHALL be set from the target route so the header title and active tab reflect the destination immediately
-
-#### Scenario: Confirmation on navigation end
-- **WHEN** an `au:router:navigation-end` event fires
-- **THEN** the shared page-identity state SHALL be reconciled to the resolved current route
-- **AND** the reconciled value SHALL take precedence over the optimistic value so redirects, fallback routes, and dynamic titles are reflected correctly
-
-#### Scenario: Rollback on navigation error
-- **WHEN** an `au:router:navigation-error` event fires
-- **THEN** the shared page-identity state SHALL be restored to the last confirmed page identity
-- **AND** the header title and active tab SHALL match the route that remains displayed
-
-#### Scenario: Header and nav are not gated by the content transition
-- **WHEN** the incoming route content performs its entrance transition (fade/slide)
-- **THEN** the page header and the bottom navigation bar SHALL NOT be subject to that transition
-- **AND** the header title and active tab SHALL already reflect the target page while the content transition is still in progress
-
-#### Scenario: Dynamic route titles update the shared state
-- **WHEN** a route changes its own title while it is the active route (e.g. the dashboard My Timetable ↔ All Nearby swap)
-- **THEN** the route SHALL update the shared page-identity state
-- **AND** the shell-hosted page header SHALL reflect the new title, preserving any opted-in title View-Transition morph
-
 ### Requirement: Page header renders i18n title
 The `page-header` CE SHALL render a `<header>` element containing an `<h1>` whose text content is resolved from the `title-key` bindable via the i18n `t` binding.
 
@@ -108,19 +65,52 @@ The `<page-header>` custom element SHALL be registered globally so all routes ca
 - **WHEN** a route template uses `<page-header title-key="...">` without an `<import>` tag
 - **THEN** the component resolves and renders correctly
 
-### Requirement: Page header is a single shell-hosted instance bound to shared state
-The `page-header` CE SHALL be rendered as a single persistent instance owned by the app shell (not one instance per route), and its `title-key` and `morph-title` bindables SHALL be bound to the shared page-identity state rather than authored per route. As the shared state changes, the header SHALL update in place without being unmounted and remounted across route changes.
+### Requirement: Page identity follows the displayed route
+
+The page header title and the active bottom-nav tab SHALL always describe the
+route that is displayed. Both SHALL be taken from that route's own
+configuration, so there is one source of page identity for the whole app and
+no second copy of it to keep in step. They SHALL change when a navigation
+completes. A navigation that fails or is cancelled leaves the previous route
+displayed, and its identity SHALL remain on screen unchanged.
+
+#### Scenario: Header title and active tab match the route shown
+
+- **WHEN** the fan taps a bottom-nav tab and the target route is displayed
+- **THEN** the page header SHALL show that route's title
+- **AND** the bottom-nav highlight SHALL be on that route's tab
+
+#### Scenario: A failed navigation leaves identity unchanged
+
+- **WHEN** a navigation fails or is cancelled and the previous route remains
+  displayed
+- **THEN** the page header title and the active tab SHALL still be those of the
+  previous route
+- **AND** at no point SHALL they have shown the failed target
+
+#### Scenario: Redirects and the fallback route are reflected
+
+- **WHEN** a navigation resolves to a different route than the one requested
+  (a redirect, or the not-found fallback)
+- **THEN** the page header title and the active tab SHALL be those of the route
+  actually displayed
+
+#### Scenario: Routes without a title show no header
+
+- **WHEN** the displayed route declares no page title (legal documents, About,
+  not-found)
+- **THEN** no page header SHALL be rendered
+
+### Requirement: Page header is a single shell-hosted instance bound to the displayed route
+The `page-header` CE SHALL be rendered as a single persistent instance owned by the app shell (not one instance per route), and its title SHALL be bound to the displayed route's configured title rather than authored per route. As the displayed route changes, the header SHALL update in place without being unmounted and remounted across route changes.
 
 #### Scenario: Single shell-hosted instance across route changes
 - **WHEN** the user navigates between routes that show the navigation bar
 - **THEN** the same `page-header` instance SHALL remain mounted in the shell
-- **AND** its `<h1>` text SHALL update from the shared state's current title key without the element being destroyed and recreated
+- **AND** its `<h1>` text SHALL update to the displayed route's title without the element being destroyed and recreated
 
-#### Scenario: Title bound to shared state, not per-route markup
+#### Scenario: Title bound to the displayed route, not per-route markup
 - **WHEN** a route becomes active
-- **THEN** the header title SHALL be sourced from the shared page-identity state
+- **THEN** the header title SHALL be sourced from that route's configuration
 - **AND** no route template SHALL author its own `<page-header>` element to supply the title
-
-#### Scenario: Title morph preserved for in-place title swaps
-- **WHEN** the shared state's title changes while the header stays mounted and `morph-title` is enabled (e.g. the dashboard My Timetable ↔ All Nearby swap)
-- **THEN** the `<h1>` SHALL carry the stable `view-transition-name` so the title text can morph across a same-document View Transition
+- **AND** no route SHALL change the header title while it is displayed
