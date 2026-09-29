@@ -16,16 +16,23 @@ tests, of the implementing repositories: every sibling
 checkout of this store whose `openspec/config.yaml` points at this store
 (`store: <id>`), or the directories given with --repos.
 
+A sibling checkout is searched at its `origin/main`, not its working tree, so
+the result matches CI whatever branch the checkout is on (run `git fetch` in it
+first; this script never fetches). A sibling without an `origin/main` ref, a
+directory given with --repos, or any repository under --worktree is searched
+as it is on disk.
+
 A scenario that cannot be verified by an automated test is exempted by a line
 anywhere in the change's own files (proposal, design, tasks):
 
     @spec-manual <capability-path> "<scenario name>" -- <how it is verified>
 
-Usage: check-scenario-coverage.py <change> [--repos DIR ...]
+Usage: check-scenario-coverage.py <change> [--repos DIR ...] [--worktree]
 Exit status 1 lists the uncovered scenarios."""
 import argparse
 import pathlib
 import re
+import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -74,23 +81,41 @@ def scenarios(change_dir):
     return out
 
 
-def test_files(repo):
+def is_test_file(rel_parts):
+    return bool(TEST_FILE.search(rel_parts[-1]) or TEST_DIRS & set(rel_parts[:-1]))
+
+
+def worktree_texts(repo):
     for p in repo.rglob("*"):
         if not p.is_file() or SKIP_DIRS & set(p.parts):
             continue
-        rel = p.relative_to(repo).parts
-        if TEST_FILE.search(p.name) or TEST_DIRS & set(rel[:-1]):
-            yield p
-
-
-def annotations(repos, pattern):
-    found = set()
-    for repo in repos:
-        for f in test_files(repo):
+        if is_test_file(p.relative_to(repo).parts):
             try:
-                text = f.read_text(errors="ignore")
+                yield p.read_text(errors="ignore")
             except OSError:
                 continue
+
+
+def has_ref(repo, ref):
+    return subprocess.run(["git", "-C", str(repo), "rev-parse", "--verify", "--quiet", ref],
+                          capture_output=True).returncode == 0
+
+
+def ref_texts(repo, ref):
+    # Only files that mention @spec are read, so the search stays cheap on large repositories.
+    grep = subprocess.run(["git", "-C", str(repo), "grep", "-I", "-l", "-F", "@spec", ref, "--"],
+                          capture_output=True, text=True)
+    for line in grep.stdout.splitlines():
+        path = line.split(":", 1)[1]
+        if is_test_file(tuple(path.split("/"))):
+            yield subprocess.run(["git", "-C", str(repo), "show", f"{ref}:{path}"],
+                                 capture_output=True, text=True, errors="ignore").stdout
+
+
+def annotations(sources, pattern):
+    found = set()
+    for texts in sources:
+        for text in texts:
             found.update(norm(a, b) for a, b in pattern.findall(text))
     return found
 
@@ -99,6 +124,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("change")
     ap.add_argument("--repos", nargs="*", type=pathlib.Path)
+    ap.add_argument("--worktree", action="store_true",
+                    help="search sibling checkouts as they are on disk instead of at origin/main")
     args = ap.parse_args()
 
     change_dir = ROOT / "openspec" / "changes" / args.change
@@ -108,15 +135,23 @@ def main():
     if not wanted:
         print(f"{args.change}: no added or modified scenarios")
         return
-    repos = args.repos if args.repos else implementing_repos()
-    covered = annotations(repos, ANNOTATION)
+    if args.repos:
+        searched = [(r, r.name, worktree_texts(r)) for r in args.repos]
+    else:
+        searched = []
+        for r in implementing_repos():
+            if not args.worktree and has_ref(r, "origin/main"):
+                searched.append((r, f"{r.name}@origin/main", ref_texts(r, "origin/main")))
+            else:
+                searched.append((r, r.name, worktree_texts(r)))
+    covered = annotations((texts for _, _, texts in searched), ANNOTATION)
     manual = set()
     for f in change_dir.glob("*.md"):
         manual.update(norm(a, b) for a, b in MANUAL.findall(f.read_text()))
 
     missing = [(c, s) for c, s in wanted if norm(c, s) not in covered and norm(c, s) not in manual]
     print(f"{args.change}: {len(wanted) - len(missing)}/{len(wanted)} scenarios covered "
-          f"(searched {', '.join(r.name for r in repos) or 'no repositories'})")
+          f"(searched {', '.join(label for _, label, _ in searched) or 'no repositories'})")
     if missing:
         print("scenarios with no test carrying `@spec <capability-path> \"<scenario name>\"`:")
         for c, s in missing:
