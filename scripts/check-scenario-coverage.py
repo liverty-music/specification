@@ -11,7 +11,8 @@ in a comment or in its name, e.g.
 
 The scenarios checked are those under `## ADDED Requirements` and
 `## MODIFIED Requirements` in the change's delta specs. The annotations are
-searched in the test files of the implementing repositories: every sibling
+searched in the test files, including Storybook stories run as component
+tests, of the implementing repositories: every sibling
 checkout of this store whose `openspec/config.yaml` points at this store
 (`store: <id>`), or the directories given with --repos.
 
@@ -28,7 +29,7 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-TEST_FILE = re.compile(r"(_test\.go|\.(test|spec)\.[cm]?[jt]sx?|_test\.py|test_[^/]*\.py)$")
+TEST_FILE = re.compile(r"(_test\.go|\.(test|spec|stories)\.[cm]?[jt]sx?|_test\.py|test_[^/]*\.py)$")
 TEST_DIRS = {"e2e", "test", "tests"}
 SKIP_DIRS = {".git", "node_modules", "dist", "build", "coverage", "vendor", ".venv"}
 DELTA = re.compile(r"^## (ADDED|MODIFIED|REMOVED|RENAMED) Requirements\s*$")
