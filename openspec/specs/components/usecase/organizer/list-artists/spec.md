@@ -2,7 +2,7 @@
 
 ## Purpose
 
-OrganizerUseCase.ListArtists returns the Artists an Organizer currently represents, for the admin's organizer screen and for the Organizer's own roster.
+OrganizerUseCase.ListArtists returns the Artists any Organizer currently represents, for the admin's organizer screen. It checks no ownership; an Organizer's operators read their own roster through OrganizerUseCase.ListOwnArtists.
 
 ## Requirements
 

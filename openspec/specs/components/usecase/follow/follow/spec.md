@@ -2,7 +2,7 @@
 
 ## Purpose
 
-FollowUseCase.Follow records that a fan follows an artist, announces the follow, and in the background stores the artist's official site when it is missing and, when the artist has never been searched, starts a first concert search. No failure in the background work changes the result of the follow.
+FollowUseCase.Follow records that a fan follows an artist, announces the follow, and in the background stores the artist's official site when it is missing. The announcement is what starts a first concert search for a never-searched artist (ConcertUseCase.SearchNewConcertsOnFirstFollow). No failure in the background work changes the result of the follow.
 
 ## Requirements
 
