@@ -8,7 +8,7 @@ A fan who follows an artist gets one push message on each of their registered br
 
 ### Requirement: New concerts reach matched followers' browsers and are recorded
 
-When concerts are added for an artist, PushNotificationUseCase.NotifyNewConcerts SHALL choose the followers whose hype level matches the new concerts and build each one's message, and NotificationUseCase.Notify SHALL record one new_concerts Notification per chosen follower and push its message to every browser that follower has registered. Each follower's Notification SHALL end Delivered when at least one of their browsers' push services accepts the message, and Failed otherwise.
+When concerts are added for an artist, PushNotificationUseCase.NotifyNewConcerts SHALL choose the followers whose hype level matches the new concerts, build each one's message and request one new_concerts notification per chosen follower, and NotificationUseCase.Deliver SHALL record each requested notification as a Notification and push its message to every browser that follower has registered. Each follower's Notification SHALL end Delivered when at least one of their browsers' push services accepts the message, and Failed otherwise.
 
 #### Scenario: Away follower with one browser
 

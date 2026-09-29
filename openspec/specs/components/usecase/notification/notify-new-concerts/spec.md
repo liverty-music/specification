@@ -112,16 +112,21 @@ For each matched follower, NotifyNewConcerts SHALL build one message: the title 
 - **WHEN** concerts are added in JP-40 on 2026-09-01 and in JP-13 on 2026-09-05, and a follower's hype level is Home with home area JP-13
 - **THEN** that follower's link points to the JP-13 concert
 
-### Requirement: One new_concerts notification per matched follower
+### Requirement: One new_concerts notification requested per matched follower
 
-For each matched follower, NotifyNewConcerts SHALL issue one notification of type new_concerts carrying that follower's message. A failed delivery to a follower SHALL NOT fail NotifyNewConcerts. The story stories/get-notified-of-new-concerts covers the whole flow from the added concerts to the fan's browsers. When a follower's Notification cannot be recorded, NotifyNewConcerts SHALL stop and fail so the trigger is retried; followers notified before the failure may then be notified again, and the per-artist tag replaces the repeated message on their devices. When the followers cannot be read, NotifyNewConcerts SHALL fail and send nothing. When the request is cancelled, no further follower SHALL be notified.
+For each matched follower, NotifyNewConcerts SHALL request one notification of type new_concerts carrying that follower's message; NotificationUseCase.Deliver records and delivers each requested notification after NotifyNewConcerts has made the request, for each follower on its own. A follower whose Notification cannot be recorded, or whose delivery fails, SHALL NOT affect the other followers or fail NotifyNewConcerts. The story stories/get-notified-of-new-concerts covers the whole flow from the added concerts to the fan's browsers. When a follower's request cannot be made, NotifyNewConcerts SHALL stop and fail so the trigger is retried; a request repeated within 2 minutes for the same follower, artist and concerts SHALL reach the follower only once, and a later repeat is replaced on the follower's devices by the per-artist tag. When the followers cannot be read, NotifyNewConcerts SHALL fail and request nothing. When the call is cancelled, no further follower's notification SHALL be requested.
 
-#### Scenario: One follower's browser rejects the push
+#### Scenario: Every matched follower is requested
 
-- **WHEN** one matched follower's delivery fails
-- **THEN** the other matched followers are still notified and NotifyNewConcerts succeeds
+- **WHEN** three followers are matched
+- **THEN** one new_concerts notification is requested for each of the three, carrying that follower's message
 
-#### Scenario: Recording fails for one follower
+#### Scenario: Request fails for one follower
 
-- **WHEN** the Notification for the second of three matched followers cannot be recorded
-- **THEN** the third follower is not notified and NotifyNewConcerts fails so the trigger is retried
+- **WHEN** the notification for the second of three matched followers cannot be requested
+- **THEN** the third follower's notification is not requested and NotifyNewConcerts fails so the trigger is retried
+
+#### Scenario: Same concerts notified twice
+
+- **WHEN** NotifyNewConcerts runs twice within 2 minutes for the same artist and concerts and matches the same follower
+- **THEN** the follower's two requests are the same request and the follower is notified once

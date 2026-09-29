@@ -8,7 +8,7 @@ The organizer-facing concert service boundary: how an operator's sign-in is turn
 
 ### Requirement: Every authoring call acts for the caller's own active Organizer
 
-Every call of the organizer concert service — Create, Update, Publish, Cancel, List, RegenerateToken, CreateMediaUploadURL and AttachMedia — SHALL pass the same organizer-console sign-in checks as the organizer Organizer service, and SHALL then resolve the caller's own Organizer through OrganizerUseCase.GetByZitadelOrgID with the caller's tenant. When no Organizer is linked to the tenant, or the Organizer is provisioning, the call SHALL fail with PermissionDenied without revealing whether an Organizer exists. When the Organizer is deactivated, the call SHALL fail with FailedPrecondition. Ownership of the Series named in a request is checked by the usecase, not here.
+Every call of the organizer concert service — Create, Update, Publish, Cancel, List, RegenerateToken, CreateMediaUploadURL and AttachMedia — SHALL pass the same organizer-console sign-in checks as the organizer Organizer service, and SHALL then resolve the caller's own Organizer through OrganizerUseCase.ResolveCaller with the caller's tenant. A failure of ResolveCaller SHALL be returned unchanged and nothing is stored: PermissionDenied when no Organizer is linked to the tenant or the Organizer is provisioning, without revealing whether an Organizer exists, and FailedPrecondition when the Organizer is deactivated. Ownership of the Series named in a request is checked by the usecase, not here.
 
 #### Scenario: Operator of an active Organizer lists concerts
 

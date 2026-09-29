@@ -31,7 +31,12 @@ When the fan already follows the artist, Follow SHALL succeed without changing t
 
 ### Requirement: Follow announces the new follow
 
-After a new Follow is stored, Follow SHALL announce that the fan followed the artist. A failure to announce SHALL NOT fail the follow.
+After a new Follow is stored, Follow SHALL announce that the fan followed the artist. The announcement is also what starts a first concert search for an artist that has never been searched (ConcertUseCase.SearchNewConcertsOnFirstFollow). A failure to announce SHALL NOT fail the follow; the artist is then not searched on this follow and is left to the daily concert search.
+
+#### Scenario: New follow announced
+
+- **WHEN** a fan follows an artist they do not follow
+- **THEN** the follow is announced once, carrying the fan and the artist
 
 #### Scenario: Announcement fails
 
@@ -56,28 +61,3 @@ After a new Follow is stored, Follow SHALL, in the background and after answerin
 
 - **WHEN** resolving the site fails
 - **THEN** nothing is stored and the follow is unaffected
-
-### Requirement: First concert search started in the background
-
-After a new Follow is stored, Follow SHALL, in the background and after answering the fan, read the artist's search history (SearchLog.GetByArtistID). When the artist has never been searched (NotFound), Follow SHALL start a concert search for the artist and ignore its outcome. When the history exists, or cannot be read for any other reason, no search is started. Nothing that happens after the search is started SHALL affect the follow. The story stories/follow-an-artist covers the whole flow from the follow to the concerts the search finds.
-
-#### Scenario: Artist never searched
-
-- **WHEN** a fan follows an artist with no search history
-- **THEN** a concert search for the artist is started after the follow has been answered
-
-#### Scenario: Artist searched before
-
-- **WHEN** a fan follows an artist that has a search history
-- **THEN** no concert search is started
-
-#### Scenario: Search history unreadable
-
-- **WHEN** reading the search history fails with an error other than NotFound
-- **THEN** no concert search is started and the follow is unaffected
-
-#### Scenario: Search fails
-
-- **WHEN** the started concert search fails
-- **THEN** the follow has already succeeded and is unaffected
-

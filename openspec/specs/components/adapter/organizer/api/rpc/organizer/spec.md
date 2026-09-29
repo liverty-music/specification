@@ -32,7 +32,7 @@ Every request SHALL carry a valid sign-in, or fail with Unauthenticated. The sig
 
 ### Requirement: Only the caller's own active Organizer is served
 
-The boundary SHALL resolve the caller's own Organizer through OrganizerUseCase.GetByZitadelOrgID with the caller's tenant, and serve the request only when that Organizer serves its operators. When no Organizer is linked to the tenant, or the Organizer is provisioning, the request SHALL fail with PermissionDenied without revealing whether an Organizer exists. When the Organizer is deactivated, the request SHALL fail with FailedPrecondition and may say that the Organizer is deactivated, since it is the caller's own.
+The boundary SHALL resolve the caller's own Organizer through OrganizerUseCase.ResolveCaller with the caller's tenant and serve the request only for the Organizer it returns. A failure of ResolveCaller SHALL be returned unchanged and nothing else runs: PermissionDenied when no Organizer is linked to the tenant or the Organizer is provisioning, without revealing whether an Organizer exists, and FailedPrecondition when the Organizer is deactivated.
 
 #### Scenario: Tenant with no Organizer
 
@@ -60,7 +60,7 @@ Get SHALL take no input and SHALL return the caller's own Organizer's id and nam
 
 ### Requirement: ListArtists lists only the caller's own roster
 
-ListArtists SHALL require an OrganizerId, failing with InvalidArgument when it is missing or malformed. The OrganizerId SHALL be the caller's own Organizer's id, or the request fails with PermissionDenied and nothing is listed. It SHALL return the result of OrganizerUseCase.ListArtists for that Organizer, every represented Artist in one response.
+ListArtists SHALL require an OrganizerId, failing with InvalidArgument when it is missing or malformed. It SHALL return the result of OrganizerUseCase.ListOwnArtists for the caller's own Organizer and the requested OrganizerId, every represented Artist in one response; when the OrganizerId is not the caller's own Organizer's id, ListOwnArtists fails with PermissionDenied and nothing is listed.
 
 #### Scenario: Operator lists their own roster
 
