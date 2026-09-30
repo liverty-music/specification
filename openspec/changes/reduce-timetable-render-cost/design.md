@@ -105,6 +105,52 @@ account.
   reference profile (4× CPU). The after-traces (5.1) must be taken the same
   way, preferably without extensions.
 
+**Baseline caveat.** v1.72.9 (released 2026-09-30 01:35 UTC, between these
+baselines and this change) already removed `press-feedback`'s computed-style
+read (frontend#675). The after-traces below therefore measure that fix and
+this change together.
+
+**After-trace, cold load (v1.72.11, 2026-09-30).** Trace
+`Trace-20260930T124842.json.gz`, a reload of `/dashboard`, 4× CPU.
+- From `ListByFollower` finishing to the first frame showing concerts:
+  **≈ 1.4 s** (baseline ≈ 9.4 s).
+- No forced reflow from `press-feedback` remains.
+- The spec bound (≤ 200 ms) is **not met**. What remains:
+  - 340 ms converting the response for all loaded dates
+    (`protoGroupToDateGroup` alone is 113 ms);
+  - 198 ms rendering the window;
+  - 344 ms for the first layout and paint;
+  - 182 ms for the next paint.
+- The trace also showed the loading placeholder and the first concerts in the
+  same frame, then the concerts jumping up. See the fixes below.
+
+**After-trace, tab-switch re-entry (v1.72.11, 2026-09-30).** Trace
+`Trace-20260930T170512.json.gz`, Discovery → Timetable, 4× CPU.
+- INP **602 ms** (baseline 265 ms). The timetable now renders inside the tap's
+  task, as D2 intends; the baseline painted only the shell and then froze for
+  5.4 s.
+- Tap to the timetable on screen: ≈ 0.6 s (baseline > 6.5 s).
+- The spec bound (INP ≤ 200 ms) is **not met**. The 511 ms task breaks down
+  into:
+  - ≈ 100 ms of forced layout for the restore's `scrollIntoView`;
+  - 55 ms of template creation (`innerHTML`) per navigation;
+  - ≈ 80 ms of `showPopover` plus another forced style recalculation, both
+    from an `attached()`;
+  - ≈ 280 ms rendering the window.
+
+**Fixes after release.**
+- **frontend#679 (v1.72.11).** The deep-link path's `runTasks()` (see D2)
+  exceeded Aurelia's 100 ms synchronous budget on slow devices. It threw
+  "Potential deadlock" and dropped every queued task, the render included.
+  This was reproduced at 10× CPU on the release before this change as well.
+  The sheet now opens in a task queued behind the filter's URL write.
+- **frontend#680 (v1.72.12).** The window's groups were inserted when the
+  window was sliced, while the placeholder's `if` read a getter that
+  re-evaluated a task later. One frame painted both, which caused CLS 0.56 on
+  a cold load (0.60 before this change) and, from #679 on, on a deep-link too.
+  `showSkeleton` is now a field set in the same step as the window.
+  Production v1.72.12 records CLS 0 on both.
+
 @spec-manual components/infrastructure/fan/web/route/dashboard "Tab-switch re-entry does not freeze on rendering" -- the D0 after-trace (task 5.1) on the reference profile with the production account (≥200 dates): Timetable re-entry from Discovery, INP ≤ 200 ms. Its second clause, the timetable in the same next paint with no skeleton between, is also asserted frame by frame by the functional E2E for "Header and nav switch before the timetable renders".
 
 @spec-manual components/infrastructure/fan/web/route/dashboard "First dashboard load render cost is reduced" -- the D0 after-trace (task 5.1): main-thread time to render the timetable once its data arrives on a cold load, ≤ 200 ms on the reference profile. A number measured on a throttled reference device, which the CI browsers cannot stand in for.
@@ -186,10 +232,11 @@ receives the anchor as a bindable (`initialAnchor`), builds its first window
 around it, and in its own `attached()` — where its repeated groups are already
 in the DOM — calls `scrollIntoView` on the anchored group and applies the
 remembered offset. Nothing is forced to flush, so the `runTasks()` in the
-re-entry path (`reflectCachedGroups`) is removed. The two other `runTasks()`
-call sites in the dashboard (deep-link filter before opening the sheet, and the
-mode-switch View Transition callback, which must capture new DOM synchronously)
-are not on the tab-switch path and are left to a separate change.
+re-entry path (`reflectCachedGroups`) is removed. The deep-link one was removed
+after release (frontend#679, see D0): it deadlocked on slow devices. The
+mode-switch View Transition callback keeps its `runTasks()`, because it must
+capture the new DOM synchronously. It is not on the tab-switch path and is left
+to a separate change.
 
 This is allowed by the modified bottom-nav-bar requirement: `loading()` still
 assigns nothing; the reflection is in the component lifecycle and its render is
