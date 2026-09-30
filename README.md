@@ -9,10 +9,20 @@ This repository is also the **OpenSpec store** `openspec-store`: every spec and 
 ### Lifecycle of a change
 
 1. **Plan** in this repository: `/opsx:propose <change>` writes `openspec/changes/<change>/` (proposal, design, delta specs, tasks). Split `tasks.md` by repository. Review it as a normal PR here and merge it; the *OpenSpec Checks* workflow validates it, and a change that modifies existing requirements carries `openspec show <change> --diff` in the PR body.
-2. **Implement** in each affected repository, one Claude session per repository (each session only loads its own repository's `AGENTS.md`). Start with `/opsx:apply <change>`; it reads the change from the store.
+2. **Implement** in each affected repository, one Claude session per repository (each session only loads its own repository's `AGENTS.md`). Start with `/opsx:apply <change>`; it reads the change from the store. Task check-offs and spike results land directly in the `specification` checkout's working tree (on `main`, uncommitted) through the store pointer; nothing in that checkout is committed until close-out.
 3. **Proto first** when the contract changes: the `specification` PR merges, a GitHub Release (`vX.Y.Z`) triggers BSR generation, then `backend` / `frontend` consume the generated types. Downstream work starts early against placeholder types; see [AGENTS.md](AGENTS.md) for the rules.
 4. **Open one PR per repository.** Every PR fills the *OpenSpec Traceability* section of its template (`OpenSpec-Change`, store commit). Merge order: `specification` → Release/BSR → `backend` / `frontend`; `cloud-provisioning` is independent.
-5. **Close out** here once the implementation PRs have merged: `/opsx:verify <change>`, then `/opsx:archive <change>`, and merge that PR. CI rejects an archive whose `tasks.md` still has unchecked tasks, or whose added or modified scenarios have no `@spec`-annotated test on the implementing repositories' `main`.
+5. **Close out** here once the implementation PRs have merged and the release is confirmed in production: `/opsx:verify <change>`, then cut a branch and archive on it, committing only that change's paths:
+
+   ```bash
+   git switch -c <change>-archive          # uncommitted work of other changes carries over untouched
+   openspec archive <change>
+   git add openspec/changes/<change> openspec/changes/archive openspec/specs
+   git commit && git push -u origin <change>-archive && gh pr create
+   git switch main
+   ```
+
+   One `specification` PR per change, at archive time. CI rejects an archive whose `tasks.md` still has unchecked tasks, or whose added or modified scenarios have no `@spec`-annotated test on the implementing repositories' `main`.
 
 ### Local setup (once per machine)
 
@@ -28,20 +38,22 @@ Keep this checkout of `specification` on `main` and pull it before planning or i
 
 ### Local: parallel work with worktrees
 
-Use Claude Code's built-in worktrees, one per repository you touch. Each lands in `<repo>/.claude/worktrees/<change>/` on branch `worktree-<change>` (rename it before pushing if you like):
+Worktrees are for the implementation repositories only. `specification` stays a single checkout on `main`: every change writes to its own `openspec/changes/<change>/` folder, so parallel changes share the working tree without touching each other's files. Branch only at close-out (see *Lifecycle of a change*, step 5), and never run `git stash`, `git reset --hard`, `git restore .` or `git clean` there: they discard other changes' progress.
+
+Use Claude Code's built-in worktrees, one per implementation repository you touch. Each lands in `<repo>/.claude/worktrees/<change>/` on branch `worktree-<change>` (rename it before pushing if you like):
 
 ```bash
 cd "$L/backend"  && claude --worktree <change>    # one terminal per repository
 cd "$L/frontend" && claude --worktree <change>
 ```
 
-Gitignored files a worktree needs (e.g. the Playwright auth session in `frontend`) are copied in automatically via each repository's `.worktreeinclude`. To see all the worktrees together with the store in one VS Code window, compose an OpenSpec workset:
+Gitignored files a worktree needs (e.g. the Playwright auth session in `frontend`) are copied in automatically via each repository's `.worktreeinclude`. To see all the worktrees together with the store in one VS Code window, compose an OpenSpec workset. The first member is where VS Code's terminal and the Claude panel start, so list an implementation worktree first:
 
 ```bash
 openspec workset create <change> --tool code \
-  --member specification="$L/specification" \
+  --member frontend="$L/frontend/.claude/worktrees/<change>" \
   --member backend="$L/backend/.claude/worktrees/<change>" \
-  --member frontend="$L/frontend/.claude/worktrees/<change>"
+  --member specification="$L/specification"
 openspec workset open <change>
 ```
 

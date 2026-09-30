@@ -30,11 +30,16 @@
        AGENTS.md is loaded): /opsx:apply <change>. Locally, isolate with
        `claude --worktree <change>` (<repo>/.claude/worktrees/<change>, branch
        worktree-<change>); gitignored files come in via .worktreeinclude.
-       Optionally view all worktrees + the store with `openspec workset`.
+       Optionally view all worktrees + the store with `openspec workset`
+       (implementation worktree as the first member). specification itself
+       gets no worktree: it stays one checkout on main (see "Shared working
+       tree rules" below).
     3. Proto first when the contract changes (see dependency-order below).
     4. One PR per repository, each citing the change in its OpenSpec
        Traceability section.
-    5. After the implementation PRs merge: /opsx:verify then /opsx:archive here.
+    5. After the implementation PRs merge and production is confirmed:
+       /opsx:verify, then archive on a `<change>-archive` branch here, adding
+       only that change's paths (README "Lifecycle of a change" step 5).
     Cloud (Claude Project with all four repos): the environment setup script
     installs the OpenSpec CLI; at thread start run `openspec doctor` and, if the
     store is missing, `openspec store register <path-to-specification-clone>
@@ -144,7 +149,8 @@ This repo is the OpenSpec **store** `openspec-store` (identity file: `.openspec-
 
 - **Inside this repo** commands resolve to the local `openspec/` root as usual. **Anywhere else** they resolve through the store registry; pass `--store openspec-store` when in doubt. The `Using OpenSpec root: openspec-store` banner confirms which root is in use.
 - **Per-machine registration** (once per laptop, or at the start of every cloud thread): `openspec store register <path-to-this-checkout> --id openspec-store`. `openspec doctor` reports a missing registration; in a cloud thread the sibling `specification` clone is the path to register. Keep the registered checkout on `main` and pull it before planning: OpenSpec never pulls.
-- **Task progress and archive are recorded here.** Implementation repos never write to the store; their PRs cite the change (`OpenSpec-Change: <id>`) and the store commit they were built against, and the change is verified/archived in this repo once those PRs merge.
+- **Task progress and archive are recorded here, on `main`'s working tree.** `/opsx:apply` from an implementation repo updates `tasks.md` / `design.md` in this checkout through the store pointer and never commits them; implementation PRs cite the change (`OpenSpec-Change: <id>`) and the store commit they were built against. Several changes may be in progress in this working tree at once, one folder each; the change is verified and archived here once its PRs merge.
+- **Shared working tree rules.** In this checkout never run `git stash`, `git reset --hard`, `git checkout -- .` / `git restore .` or `git clean`: they discard other changes' progress. Stage by path (`git add openspec/changes/<change> …`), never `git add -A` or `git add .`. Switch branches only to cut a close-out branch from `main`, and switch back to `main` right after pushing.
 - **Sharing is plain git.** OpenSpec never pulls or pushes; commit and push planning like code, and review it via PRs on this repo.
 - **Plan PR bodies show real spec diffs.** When a change carries `MODIFIED`, `REMOVED` or `RENAMED` requirements, append the part of `openspec show <change> --diff` from `Specifications Changed (diffs)` onward to the PR body inside a collapsed `<details>` block (the PR file diff only shows the delta file, not what it changes in the main spec). Skip it for changes that only add requirements. Refresh it with `gh pr edit` whenever the artifacts change during review.
 - **CI gate (`.github/workflows/openspec-checks.yml`)** runs on every PR touching `openspec/`: `openspec validate --specs`, `scripts/check-spec-layout.py`, `openspec validate <change> --strict` for each change the PR touches (deferred with a notice while its delta specs are not written yet, so a proposal-only PR passes and an in-progress change on `main` never blocks unrelated PRs), and, for every change archived in the PR, that all tasks are checked and that `scripts/check-scenario-coverage.py` finds an `@spec`-annotated test for each ADDED/MODIFIED scenario on the implementing repositories' `main` (or an `@spec-manual` exemption). It is the only gate in cloud threads, where repository hooks do not run.
