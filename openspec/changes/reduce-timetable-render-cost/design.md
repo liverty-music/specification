@@ -64,6 +64,51 @@ the interaction, and the time spent under the `repeat`/`event-card` activation.
 Taken before any code change and after each of D1–D4, so each decision's effect
 is separately attributable.
 
+**Baseline (2026-09-29, production, before this change).** DevTools trace
+`Trace-20260929T170418.json.gz`, soft navigation Discovery → Timetable on the
+production account.
+- Conditions: iPhone SE emulation, 4× CPU throttling. The person who
+  recorded it set 4×, but that trace's metadata does not record the setting.
+  Two browser extensions were active (≈ 40 ms in total).
+- Tap: INP **265 ms** (pointerdown 53 ms; click to next paint 265 ms). That
+  paint is the shell's header and nav only.
+- About 1.0 s after the tap, a single task of **5,438 ms** runs: one
+  `RunMicrotasks`, which is the dashboard's activation. No frame is produced
+  during it. The Frames track shows a single 12.2 s frame, and soft-navigation
+  LCP is **6.78 s**. CLS is 0.
+- Inside that task:
+  - **487 forced style recalculations (2,197 ms) and 487 forced layouts
+    (1,864 ms), 4,061 ms in total, or 75% of the task.** All 974 have the same
+    top frame: the `press-feedback` custom attribute's `attached()`
+    (`main-50IWXAAP.js:1450:19476`). It sets `data-press-feedback` and then
+    reads `getComputedStyle(el).position` for each of the 487 tappable
+    elements, as Aurelia activates them.
+  - The remaining ≈ 1.3 s is building and binding every date group and card
+    (the `repeat` / `event-card` activation), plus GC.
+- Main thread over the whole recording (183 ms – 13.57 s): Rendering
+  5,144 ms, Scripting 3,369 ms, System 957 ms, Painting 181 ms.
+
+**Baseline, cold load (2026-09-29, production, before this change).** Trace
+`Trace-20260929T171652.json.gz`, a reload of `/dashboard` on the production
+account.
+- Conditions: **4× CPU throttling** (recorded in the trace metadata), iPhone
+  SE emulation. Two extensions were still active.
+- `ListByFollower` finished at 99,427 ms. A single task (`TimerFire`) then ran
+  for **9,100 ms**, and the next frame came 160 ms after it ended. From data
+  arrival to the timetable's first frame: **≈ 9.4 s** (the spec bound is
+  ≤ 200 ms).
+- Inside that task: **486 forced style recalculations (3,937 ms) and 486
+  forced layouts (2,943 ms), 6,879 ms or 76%**. All of them come from
+  `press-feedback`'s `attached()` (`main-50IWXAAP.js:1450:19476`); the rest
+  is building every date group and card.
+- The re-entry above and this cold load together are the D0 baseline on the
+  reference profile (4× CPU). The after-traces (5.1) must be taken the same
+  way, preferably without extensions.
+
+@spec-manual components/infrastructure/fan/web/route/dashboard "Tab-switch re-entry does not freeze on rendering" -- the D0 after-trace (task 5.1) on the reference profile with the production account (≥200 dates): Timetable re-entry from Discovery, INP ≤ 200 ms. Its second clause, the timetable in the same next paint with no skeleton between, is also asserted frame by frame by the functional E2E for "Header and nav switch before the timetable renders".
+
+@spec-manual components/infrastructure/fan/web/route/dashboard "First dashboard load render cost is reduced" -- the D0 after-trace (task 5.1): main-thread time to render the timetable once its data arrives on a cold load, ≤ 200 ms on the reference profile. A number measured on a throttled reference device, which the CI browsers cannot stand in for.
+
 ### D1. A date window in `concert-highway`, grown by sentinels
 
 The highway renders `visibleGroups`, a slice `[start, end)` of `dateGroups`,
@@ -77,11 +122,36 @@ instead of `dateGroups`.
   `IntersectionObserver` rooted at the scroll container with a `rootMargin` of
   one screen. When the bottom sentinel intersects, `end += 12`; when the top one
   does, `start -= 12`. Clamped to the list.
-- Prepend stability: the browser's CSS scroll anchoring (`overflow-anchor:
-  auto`, the default) keeps the viewed content in place when content is
-  inserted above it. The date separator stays out of anchor selection only if
-  it is `position: sticky`; verify in the spike (S1), and set
-  `overflow-anchor: none` on sticky separators if the browser picks them.
+- Prepend stability: the highway keeps the fan's place itself. Before a change
+  that adds dates above the fan (top growth, or `dateGroups` replaced while
+  attached), it reads the date at the top edge and the offset into it (the
+  `scrollAnchor` getter). It then applies the change and puts that date back
+  (the setter: `scrollIntoView` on the group, plus the offset). Aurelia's
+  keyed `repeat` finishes the window's DOM synchronously when `visibleGroups`
+  is assigned: cards, text and final heights are there before the method
+  returns. So no flush and no scheduling is needed. Reading the position after
+  the change lays out the new groups before the next frame would have. That is
+  the same layout work done earlier, not extra work, and it happens once per
+  growth step during a scroll, never on a tap. The scroll container sets
+  `overflow-anchor: none`, so browser scroll anchoring never corrects the same
+  change a second time.
+
+**Spike S1 result (2026-09-28).** Browser scroll anchoring was tried first and
+rejected for this list. Setup: Chromium 153, E2E on the guest dashboard with
+225 dates, re-entry deep in the list, scrolling up 150px per step.
+- Groups of uniform height: every prepend was anchored (18 of 18).
+- Groups of uneven height (1–3 cards per date): about 40% of prepends were
+  corrected by a fixed +285px instead of the 1740–1790px added, so the view
+  jumped by 1400–1900px. The same steps failed on every run.
+- Setting `overflow-anchor: none` on the sticky separators, on the edge
+  markers, or on the cards, lanes, lane grids or month separators changed
+  nothing. So did making the separators static. The root cause was not found.
+- A prepend at scroll offset 0 is never anchored.
+- Safari does not implement scroll anchoring, as far as is known, so the CSS
+  route would jump there on every prepend.
+With the highway keeping its place, every step of the same E2E stays within
+2px ("Scrolling up from a restored date reaches earlier dates without a
+jump").
 - The window only grows during a visit. Re-entry recreates the route and starts
   a fresh window at the anchor, which is the case the budget is about. Deep
   scrolling within one visit builds groups 12 at a time, each growth being a
@@ -135,11 +205,22 @@ bounded by the window.
   `visibleGroups`, and names each beam after its concert
   (`--beam-<concertId>`) instead of a running index.
 - Cards lose `beam-index`, `data-beam-index` and the `beam-timeline` custom
-  attribute. A matched card carries its timeline name as data
-  (`data-beam-name`, bound one-time from the concert). A stylesheet rule, scoped
-  to the highway only while beams are on, declares the view timeline from it:
-  `view-timeline: attr(data-beam-name type(<custom-ident>)) block`. The overlay
-  and `timeline-scope` use the same names. No script touches a card.
+  attribute. **Every** card carries a fixed timeline name as data,
+  `data-beam-name="--beam-<concertId>"`, bound one-time. One-time is safe
+  because the lane `repeat` is keyed by `ev.id`, so a view never changes
+  concert, and the name depends on the id alone. Whether the concert is
+  matched stays on the live `data-matched`, so a background refresh that
+  changes the match is still reflected. A stylesheet rule that applies only
+  while the highway host carries its beams-on marker declares the view
+  timeline:
+  `concert-highway[data-beams] .event-card[data-matched][data-beam-name] {
+  view-timeline: attr(data-beam-name type(<custom-ident>)) block }`. The
+  overlay and `timeline-scope` use the same names. No script touches a card.
+- Turning beams on or off only flips the host marker and builds or clears the
+  beam set, a cost proportional to the number of beams. No date group or card
+  is rebuilt, and cards added as the window grows arrive already named. This
+  is what the fab-menu "Enabling the beam effect" scenario needs: the toggle
+  is on the dashboard, so the beams must appear without leaving the page.
 - The `beam-timeline` custom attribute is deleted.
 
 **Browsers without typed `attr()`** (Safari as of 27.0; it ships in Safari
@@ -151,10 +232,44 @@ or OS detection, no `@supports` branch and no Safari-specific switch: the same
 stylesheet starts drawing beams in a browser the day it ships typed `attr()`,
 with no code change.
 
+**Spike S2 result (2026-09-28).** Chromium 153 (Playwright headless shell,
+standalone page): a card carrying `data-beam-name="--beam-c-1"` under a rule
+`#host[data-beams] .card[data-beam-name] { view-timeline:
+attr(data-beam-name type(<custom-ident>)) block }` computes
+`view-timeline-name: --beam-c-1`, and a beam in a sibling overlay with
+`animation-timeline: --beam-c-1`, scoped by `timeline-scope` on the common
+ancestor, gets a `ViewTimeline` and follows it (scaleY 0.5 at the midpoint of
+its range). Removing the host's beams-on attribute leaves the card with
+`view-timeline-name: none` and the beam with no timeline, so scoping the rule
+to "beams on" works. No Safari device is available to the team, so there is
+no check on Safari hardware. By CSS error handling, a browser that does not
+parse typed `attr()` drops the declaration at parse time with no script
+error. The functional E2E `beam-degradation` reproduces that browser in
+Chromium by deleting exactly that one rule. It then checks, with the effect
+on, that no card declares a timeline and no beam is lit, that the toggle is
+still offered and still persists `liverty:beams:enabled`, and that the
+timetable builds the same groups and opens the detail sheet as with the
+effect off.
+
+
 - *Alternative — the highway queries the matched cards and sets
   `view-timeline` on them*: works in Safari, but keeps a DOM query and style
-  writes into child elements for an opt-in effect. Rejected in favour of the
-  CSS-only form once Safari support was ruled out of scope.
+  writes into child elements for an opt-in effect. It would also have to redo
+  those writes on every window growth, data refresh and keyed view reuse.
+  Rejected in favour of the CSS-only form once Safari support was ruled out of
+  scope.
+- *Alternative — name only matched cards, one-time, and rebuild on toggle*
+  (add `showBeams` to the group `repeat` key): the name then cannot reach
+  cards that are already built without a rebuild. The window only grows during
+  a visit, so the rebuild has no upper bound after deep scrolling, and the key
+  hides a dependency. Rejected.
+- *Alternative — a live `data-beam-name.bind` per card*: toggling works, but
+  every card keeps an observer while beams are off, which is the default.
+  Rejected.
+- *Future — CSS `ident()`*: `ident("--beam-" attr(data-concert-id))` would let
+  a card carry only a generic concert id. It is not supported in Chromium 153
+  (checked 2026-09-28: `CSS.supports` false, no timeline created). Revisit
+  once it ships.
 
 ### D4. Press acknowledgement in CSS; artist hue in data
 
@@ -183,8 +298,13 @@ for identical data.
 
 ## Risks / Trade-offs
 
-- [Scroll anchoring picks the sticky date separator and prepends jump] →
-  Spike S1 before building D1; `overflow-anchor: none` on the separator.
+- [Browser scroll anchoring is unreliable on this list and absent in Safari]
+  → Measured in S1. The highway keeps its place itself (D1) and the scroll
+  container opts out of browser anchoring.
+- [`keepingPlace` relies on the keyed `repeat` updating the DOM synchronously
+  when `visibleGroups` is assigned] → Verified in S1 on Aurelia 2.0.0-rc.2 and
+  covered by the scroll-up E2E, which fails at the first jump if a framework
+  upgrade makes the update asynchronous.
 - [A fan who scrolls through all 225 dates in one visit ends with every group
   built, without containment] → Accepted: each growth is 12 groups, off the
   tap interaction. If D0's after-trace shows scroll jank at depth, reinstate
