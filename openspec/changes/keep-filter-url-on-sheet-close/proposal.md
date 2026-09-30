@@ -16,7 +16,7 @@ Closing a concert's detail sheet always rewrites the URL to a bare `/dashboard`,
 
 ### Modified Capabilities
 
-- `components/infrastructure/fan/web/route/dashboard`: "Concert Detail View" (dismiss scenarios revert to the URL the fan was on; new scenario for keeping filters in the URL) and "Deep-link auto-open of a concert detail sheet" (closing reverts to the filtered dashboard URL).
+- `components/infrastructure/fan/web/route/dashboard`: new requirement "Closing the detail sheet keeps the dashboard's filters in the URL". The existing dismiss and deep-link close scenarios already say the URL reverts to the dashboard URL via `replaceState`; the filtered URL is still that, so they stay as they are and this requirement pins down which dashboard URL it is.
 
 ## Impact
 
