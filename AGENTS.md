@@ -96,48 +96,22 @@
   <responsibilities>Protocol Buffers schema repository. Defines entity and RPC interfaces
   using Buf. Single source of truth for API contracts consumed by backend and frontend.
   Also the OpenSpec store `openspec-store`: hosts every spec and change for all repos.</responsibilities>
-  <essential-commands>
-    buf lint                                  # Lint proto files
-    buf format -w                             # Auto-format proto files
-    buf breaking --against '.git#branch=main' # Check breaking changes
-  </essential-commands>
 </poly-repo-context>
 
 <agent-rules>
 
 ## Pre-commit Hooks
 
-Pre-commit hooks run `buf lint`, `buf format -w`, and `buf breaking` automatically on commit.
 If a breaking change is intentional, add the `buf skip breaking` label to the PR.
 
 ## Architecture
-
-### Layered Proto Structure
-
-```
-proto/liverty_music/
-├── entity/v1/    # Core business entities — the domain model
-│   ├── entity.proto   # Package-level doc (no messages)
-│   ├── user.proto     # User, UserId, UserEmail
-│   ├── artist.proto   # Artist, ArtistId, OfficialSite, Mbid
-│   ├── concert.proto  # Concert
-│   ├── event.proto    # Event, EventId
-│   └── venue.proto    # Venue, VenueId, VenueName
-└── rpc/          # Service definitions — one service per subdirectory
-    ├── user/v1/user_service.proto       # UserService (Get, Create)
-    ├── artist/v1/artist_service.proto   # ArtistService (CRUD, Search, Follow, Similar, Top)
-    └── concert/v1/concert_service.proto # ConcertService (List, SearchNewConcerts)
-```
 
 - **Entity layer** (`entity/v1/`): Pure data types. No service logic. Every domain concept gets a wrapper message (e.g., `UserId` wraps `string` with UUID validation) — never use raw primitives for domain types.
 - **RPC layer** (`rpc/*/v1/`): Service definitions that import entity types. Follow Google AIP resource-oriented patterns.
 
 ### Key Design Conventions
 
-- **Type-safe IDs**: All identifiers are wrapper messages (`UserId`, `ArtistId`, etc.) with `protovalidate` constraints, not bare `string` fields.
 - **Validation**: Uses `buf.validate` (protovalidate) for field-level constraints. All required fields are annotated.
-- **Dependencies**: `buf.build/googleapis/googleapis` (field_behavior, common types) and `buf.build/bufbuild/protovalidate`.
-- **Buf config**: `buf.yaml` enables `STANDARD` + `COMMENTS` lint rules (except `PACKAGE_SAME_GO_PACKAGE`); breaking change detection uses `FILE` strategy.
 
 ### Code Generation
 
@@ -152,25 +126,18 @@ This repo is the OpenSpec **store** `openspec-store` (identity file: `.openspec-
 - **Task progress and archive are recorded here, on `main`'s working tree.** `/opsx:apply` from an implementation repo updates `tasks.md` / `design.md` in this checkout through the store pointer and never commits them; implementation PRs cite the change (`OpenSpec-Change: <id>`) and the store commit they were built against. Several changes may be in progress in this working tree at once, one folder each; the change is verified and archived here once its PRs merge.
 - **Shared working tree rules.** In this checkout never run `git stash`, `git reset --hard`, `git checkout -- .` / `git restore .` or `git clean`: they discard other changes' progress. Stage by path (`git add openspec/changes/<change> …`), never `git add -A` or `git add .`. Switch branches only to cut a close-out branch from `main`, and switch back to `main` right after pushing.
 - **Sharing is plain git.** OpenSpec never pulls or pushes; commit and push planning like code, and review it via PRs on this repo.
-- **Plan PR bodies show real spec diffs.** When a change carries `MODIFIED`, `REMOVED` or `RENAMED` requirements, append the part of `openspec show <change> --diff` from `Specifications Changed (diffs)` onward to the PR body inside a collapsed `<details>` block (the PR file diff only shows the delta file, not what it changes in the main spec). Skip it for changes that only add requirements. Refresh it with `gh pr edit` whenever the artifacts change during review.
+- **Plan PR bodies show real spec diffs**: see `openspec/CLAUDE.md`.
 - **CI gate (`.github/workflows/openspec-checks.yml`)** runs on every PR touching `openspec/`: `openspec validate --specs`, `scripts/check-spec-layout.py`, `openspec validate <change> --strict` for each change the PR touches (deferred with a notice while its delta specs are not written yet, so a proposal-only PR passes and an in-progress change on `main` never blocks unrelated PRs), and, for every change archived in the PR, that all tasks are checked and that `scripts/check-scenario-coverage.py` finds an `@spec`-annotated test for each ADDED/MODIFIED scenario on the implementing repositories' `main` (or an `@spec-manual` exemption). It is the only gate in cloud threads, where repository hooks do not run.
 
 ### Spec tree
 
-Specs follow the `liverty-clean-arch` schema (`openspec/schemas/liverty-clean-arch/`), whose `specs` instruction is the authoritative description of the tree and the writing rules. In short:
+The spec tree layout and writing rules are in `openspec/CLAUDE.md` (authoritative: the `liverty-clean-arch` schema's `specs` instruction).
 
-- `specs/stories/<story>/` — one user goal, named as a verb phrase, verified end to end.
-- `specs/components/entity/<entity>/` — the ubiquitous language; language-independent, proto/Go/TS are derived from it. Write entities first.
-- `specs/components/usecase/<entity>/<method>/` — one exported usecase method each.
-- `specs/components/{adapter,infrastructure}/<audience>/<web|api>/.../<component>/` — outer layers, always from one audience's point of view (`fan`, `admin`, `organizer`); flows that cross audiences are stories.
 - Only product behavior belongs in a spec. CI, deployment, code conventions and implementation design go in the change's `design.md` or outside OpenSpec. Subjects are entities, interfaces, routes, surfaces and ubiquitous-language nouns, never implementation types or file paths; thresholds are numbers.
-- `scripts/check-spec-layout.py` (pre-commit) rejects any spec outside this layout.
 
 ## Pre-implementation Checklist
 
-Before modifying `.proto` files, read:
-1. `docs/product-design.md` — domain concepts and product vision
-2. This file — project rules and core design constraints
+Before modifying `.proto` files, follow the checklist in `proto/CLAUDE.md`.
 
 ## Review criteria (flag violations)
 
