@@ -39,8 +39,9 @@ primitive, no forced flush, no virtualization plugin.
     acknowledgement is a state layer and shape change on `:active`, in CSS. The
     ripple attribute read computed style for every card on attach.
   - The beam effect costs nothing while it is off (the default). Cards carry no
-    beam-specific binding or attribute; when the fan turns beams on, only the
-    handful of matched cards on screen are wired to a beam.
+    beam timeline and no observed beam binding; each card has a fixed,
+    identity-derived name, and turning beams on is a stylesheet switch that
+    lights the matched cards on screen without rebuilding anything.
   - A card's artist colour is computed once per concert when the timetable
     data is built and handed to CSS as a custom property, instead of by a
     per-card attribute.

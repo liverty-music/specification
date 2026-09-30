@@ -8,9 +8,13 @@ any concert card. Reading card geometry to position the beams forces layout, so
 it costs main-thread time proportional to the number of concerts.
 
 The effect is off unless the fan turns it on. While it is off it SHALL add no
-work to building or rendering the timetable: no concert card SHALL carry
-anything that exists only for the beams. While it is on, its cost SHALL be
-proportional to the number of beams drawn, not to the number of cards.
+work to building or rendering the timetable: no concert card SHALL declare a
+beam timeline or carry a beam binding that is observed for changes, and no beam
+set SHALL be computed. A card MAY carry a fixed name derived from its concert's
+identity, set once when the card is built, so that turning the effect on needs
+nothing from the cards. Turning the effect on or off SHALL NOT rebuild the
+timetable, and while it is on its cost SHALL be proportional to the number of
+beams drawn, not to the number of cards.
 
 The effect SHALL degrade to no beams where the platform cannot drive it, and its
 absence SHALL change nothing else: the timetable, the toggle and the persisted
@@ -46,9 +50,16 @@ preference SHALL behave identically.
 #### Scenario: Disabled beams cost nothing
 
 - **WHEN** the beam effect is off and the timetable is built
-- **THEN** no concert card SHALL carry a beam timeline, beam index or any other
-  beam-only attribute or binding
+- **THEN** no concert card SHALL declare a beam timeline
+- **AND** no card SHALL carry a beam binding that is observed for changes
 - **AND** no beam set SHALL be computed
+
+#### Scenario: Turning beams on reaches the concerts already on screen
+
+- **WHEN** the fan turns the beam effect on while the timetable is displayed
+- **THEN** the matched concerts already on screen SHALL be lit without leaving
+  the page
+- **AND** no date group or concert card SHALL be rebuilt
 
 ## REMOVED Requirements
 
