@@ -4,7 +4,7 @@ Closing a concert's detail sheet always rewrites the URL to a bare `/dashboard`,
 
 ## What Changes
 
-- Closing the detail sheet (light dismiss, swipe down, or its close control) returns the URL to the dashboard URL the fan was on when the sheet opened, query parameters included.
+- Closing the detail sheet (light dismiss or swipe down) returns the URL to the dashboard URL the fan was on when the sheet opened, query parameters included.
 - A deep-linked sheet closes to `/dashboard?artists=<concert.artistId>`, the filter the deep-link derived.
 - The browser-back path is unchanged: the browser already returns to the entry before the sheet's push.
 
