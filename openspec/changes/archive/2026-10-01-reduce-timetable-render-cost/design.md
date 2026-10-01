@@ -151,9 +151,9 @@ this change together.
   `showSkeleton` is now a field set in the same step as the window.
   Production v1.72.12 records CLS 0 on both.
 
-@spec-manual components/infrastructure/fan/web/route/dashboard "Tab-switch re-entry does not freeze on rendering" -- the D0 after-trace (task 5.1) on the reference profile with the production account (≥200 dates): Timetable re-entry from Discovery, INP ≤ 200 ms. Its second clause, the timetable in the same next paint with no skeleton between, is also asserted frame by frame by the functional E2E for "Header and nav switch before the timetable renders".
+@spec-manual components/infrastructure/fan/web/route/dashboard "Tab-switch re-entry does not freeze on rendering" -- measured by the D0 after-trace on the reference profile (production account, 4× CPU, Discovery → Timetable). Not yet met: INP 602 ms against the 200 ms bound. Meeting it is the follow-up change `meet-timetable-render-budget`. The second clause, the timetable in the same next paint with no skeleton between, holds and is asserted frame by frame by the functional E2E for "Header and nav switch before the timetable renders".
 
-@spec-manual components/infrastructure/fan/web/route/dashboard "First dashboard load render cost is reduced" -- the D0 after-trace (task 5.1): main-thread time to render the timetable once its data arrives on a cold load, ≤ 200 ms on the reference profile. A number measured on a throttled reference device, which the CI browsers cannot stand in for.
+@spec-manual components/infrastructure/fan/web/route/dashboard "First dashboard load render cost is reduced" -- measured by the D0 after-trace on the reference profile (cold load, 4× CPU): reduced from ≈ 9.4 s to ≈ 1.4 s from data arrival to first frame, but not yet within the 200 ms bound. Meeting it is the follow-up change `meet-timetable-render-budget`. The number is measured on a throttled reference device, which the CI browsers cannot stand in for.
 
 ### D1. A date window in `concert-highway`, grown by sentinels
 
@@ -376,5 +376,6 @@ keeps its `{ dateKey, offset }` shape. Rollback is a revert.
 
 ## Open Questions
 
-- Final window size and growth step — start at 12/12, tune from D0 within the
-  spec's bound of 24.
+- Final window size and growth step: shipped at 12/12, within the spec's bound
+  of 24. Tuning them against the 200 ms bounds moves to
+  `meet-timetable-render-budget` with task 5.2.
