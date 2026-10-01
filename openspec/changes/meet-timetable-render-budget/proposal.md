@@ -1,6 +1,6 @@
 ## Why
 
-`reduce-timetable-render-cost` removed the freeze: on the reference profile (4× CPU, production account, about 212 dates) a Timetable re-entry went from a 5.4 s stall to about 0.6 s, and a cold load from 9.4 s to about 1.4 s between data arrival and the first frame. Both are still above the 200 ms bounds the dashboard spec sets ("Tab-switch re-entry does not freeze on rendering", "First dashboard load render cost is reduced"). This change meets those bounds. It carries tasks 5.1 and 5.2 moved out of that change.
+`reduce-timetable-render-cost` removed the freeze: on the reference profile (4× CPU, production account, about 212 dates) a Timetable re-entry went from a 5.4 s stall to about 0.6 s, and a cold load from 9.4 s to about 1.4 s between data arrival and the first frame (≈ 1.06 s of that on the main thread). Both are still above the 200 ms bounds the dashboard spec sets: INP for re-entry ("Tab-switch re-entry does not freeze on rendering"), and main-thread time to render once the data arrives for a cold load ("First dashboard load render cost is reduced"). The page-load LCP is a separate measure and not one of these bounds. This change meets those bounds. It carries tasks 5.1 and 5.2 moved out of that change.
 
 ## What Changes
 
