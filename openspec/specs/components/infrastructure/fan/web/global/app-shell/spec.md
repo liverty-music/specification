@@ -176,30 +176,6 @@ The auth retry interceptor SHALL intercept `Code.Unauthenticated` errors, attemp
 - **AND** the new access token later expires
 - **THEN** the next `Unauthenticated` response SHALL start a new `signinSilent()` call
 
-### Requirement: Immediate tactile acknowledgement on press
-
-Tappable controls (buttons and interactive cards) across the app SHALL acknowledge a press within the short
-motion band via a shared primitive: a contact-point ripple and a round↔squircle corner morph on `:active`,
-using a spatial spring. The primitive SHALL be applied app-wide (not only in discovery) via a reusable
-mechanism, and SHALL keep the clickable hit area stable while the visual shape morphs.
-
-#### Scenario: Button press ripples and morphs
-
-- **WHEN** a user presses a button or tappable card
-- **THEN** a ripple originates at the contact point and the corner radius morphs with a spatial spring, then
-  settles on release
-
-#### Scenario: Hit target is preserved during morph
-
-- **WHEN** the press-morph animates the visual shape
-- **THEN** the interactive/clickable bounds remain unchanged and the target stays ≥ 44–48px
-
-#### Scenario: Reduced motion still acknowledges
-
-- **WHEN** `prefers-reduced-motion: reduce` is set
-- **THEN** the ripple/morph animation is suppressed but a non-motion acknowledgement (e.g. state-layer or
-  opacity change) still confirms the tap
-
 ### Requirement: Haptic feedback for meaningful confirmations
 
 The app SHALL provide a shared haptic feedback capability (generalized from the discovery orb) and invoke it
@@ -318,3 +294,37 @@ When the app opens, and again whenever the Service Worker reports that the brows
 
 - **WHEN** the fan has not granted notification permission
 - **THEN** nothing is registered and no prompt is shown
+
+### Requirement: Press is acknowledged by a state layer and shape morph
+
+Tappable controls (buttons and interactive cards) across the app SHALL
+acknowledge a press within the short motion band while they are pressed: a
+state layer over the control and a shape change (corner morph or slight scale)
+that settles on release. The acknowledgement SHALL be expressed in stylesheets
+keyed off the pressed state, so it costs nothing until a control is pressed and
+adds no per-control work when a screen is built. The clickable hit area SHALL
+stay stable while the visual shape changes.
+
+#### Scenario: Pressing a control shows the state layer and shape change
+
+- **WHEN** a user presses a button or tappable card
+- **THEN** a state layer appears over it and its shape changes, then both
+  settle on release
+
+#### Scenario: Hit target is preserved during the shape change
+
+- **WHEN** the shape change animates
+- **THEN** the interactive/clickable bounds remain unchanged and the target
+  stays at least 44px
+
+#### Scenario: Reduced motion still acknowledges
+
+- **WHEN** `prefers-reduced-motion: reduce` is set
+- **THEN** the shape change is not animated but the state layer still confirms
+  the press
+
+#### Scenario: Building a screen does no press-related work
+
+- **WHEN** a screen with many tappable cards is built
+- **THEN** no work SHALL be performed per control for press acknowledgement
+  until a control is pressed
