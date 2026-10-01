@@ -1,6 +1,6 @@
 ## Context
 
-See proposal.md — Why. The detail sheet pushes `/concerts/:id` when it opens and, on a programmatic close (light dismiss, swipe, close control), calls `history.replaceState(null, '', '/dashboard')`. On browser back it only closes, since the browser has already navigated back. The dashboard writes its filter URL (`/dashboard?artists=…&journey=…&from=…`) from one `@watch` that runs as a queued task; on a deep-link the sheet opens in a task queued behind it (frontend#679), so the filtered URL is in place before the sheet pushes.
+See proposal.md — Why. The detail sheet pushes `/concerts/:id` when it opens and, on a programmatic close (light dismiss or swipe), calls `history.replaceState(null, '', '/dashboard')`. On browser back it only closes, since the browser has already navigated back. The dashboard writes its filter URL (`/dashboard?artists=…&journey=…&from=…`) from one `@watch` that runs as a queued task; on a deep-link the sheet opens in a task queued behind it (frontend#679), so the filtered URL is in place before the sheet pushes.
 
 ## Goals / Non-Goals
 
