@@ -14,7 +14,7 @@ See proposal.md — Why. Current state that shapes the approach (all in `liverty
 **Goals:**
 - Every ArgoCD-detectable incident starts a Claude investigation within minutes, with no human action.
 - The investigation is strictly read-only against GKE and GCP; Claude's only output is text, which a deterministic step posts as an Issue.
-- No long-lived credential anywhere in the trigger path, and no cluster-resident credential that can change code.
+- No long-lived PAT, and every credential presented to ArgoCD or the workflow is short-lived (1-hour App installation token, WIF-issued GCP token). The one long-lived secret is the `liverty-music-cluster-bot` private key. It lives only in Secret Manager and the `argocd` namespace, and its App can only start or re-run workflows (D3), never change code.
 - Reuse the existing ArgoCD / ESO / WIF / claude-code-action patterns; add no new runtime infrastructure (no relay service).
 - Bounded cost and noise: one active investigation per Application, no duplicate Issues, an instant off switch.
 
@@ -51,7 +51,16 @@ trigger.on-health-progressing-stuck: |
 
 **Chosen:** `POST /repos/liverty-music/cloud-provisioning/actions/workflows/incident-triage.yml/dispatches` with `{"ref":"main","inputs":{...}}`.
 
-**Why:** `repository_dispatch` requires **Contents: write**; a leaked token could push branches to the repo that is prod's source of truth. `workflow_dispatch` requires only **Actions: write**: the holder can start, cancel or disable existing workflows on existing refs, but cannot introduce code. The worst case is CI disruption, not a prod change. It also lets the workflow live in `cloud-provisioning` next to the runbooks, so no extra repository and no cross-repo read token are needed.
+**Why:** `repository_dispatch` requires **Contents: write**; a leaked token could push branches to the repo that is prod's source of truth. `workflow_dispatch` requires only **Actions: write**. The holder cannot write Contents directly. It can start, re-run, cancel or disable *existing* workflows on existing refs, so its reach is whatever those workflows can do behind their own gates. As of this change, the privileged workflows in `cloud-provisioning` are:
+
+| Workflow | Reachable by Actions: write | Gate that still holds |
+|---|---|---|
+| `bump-prod-pin.yml` (ci-bot credential, pushes `main`) | `workflow_dispatch` | Runs in the `prod-pin` Environment, which needs admin approval |
+| `bump-prod-pin.yml` | re-run of a past `repository_dispatch` run | Replays that run's tag: either a no-op (idempotent) or rejected by the fail-closed no-downgrade guard |
+| `claude.yml` (Claude App credential) | re-run of a past run; not dispatchable (comment / issue triggers only) | Repeats a request a human already made; cannot reach `main` (ruleset) |
+| `ci.yml`, `lint.yml`, `claude-code-review.yml` | re-run only | Read-only checks |
+
+So no path changes prod without an existing human or machine gate. The invariant this relies on is recorded as a rule in the runbook and audited in tasks: **every `cloud-provisioning` workflow that holds a write-capable credential and accepts `workflow_dispatch` must be Environment-gated.** It also lets the workflow live in `cloud-provisioning` next to the runbooks, so no extra repository and no cross-repo read token are needed.
 
 **Alternative rejected:** a dedicated `incident-response` repository as the dispatch target — needed only to contain a Contents-write token, which D3 avoids.
 
@@ -121,11 +130,16 @@ Cloud Monitoring time series are not read in this tier: `gcloud` has no time-ser
 
 - `google-github-actions/get-gke-credentials` writes a kubeconfig for `autopilot-cluster-osaka` from the D8 credentials. The prod control plane uses its public endpoint, IAM-gated, with no authorized-networks list, so hosted runners reach it the same way operators do. `gcloud` and `kubectl` are preinstalled on `ubuntu-latest`.
 - `Bash` is allowed only for read-only commands: `kubectl get`, `kubectl describe`, `kubectl events`, `gcloud logging read`, `gcloud container clusters describe`, `git log`, `git show`. Claude Code checks each part of a compound command (`&&`, `;`, `|`) against these rules.
-- Deny rules block flags that redirect where credentials are sent: `kubectl` `--server` / `-s`, `--kubeconfig`, `--token`; `gcloud` `--access-token-file`, `--impersonate-service-account`. `env` / `printenv` are not allowed, so the Claude OAuth token in the environment is not reachable through Bash.
-- Built-in `Read`, `Glob`, `Grep` cover the checked-out repo (manifests, runbooks); `Write` is limited to `triage-report.md`.
-- Claude never receives a GitHub write token. A later deterministic step creates or comments on the Issue from `triage-report.md`, using `GITHUB_TOKEN` (`issues: write`, `contents: read`).
+- Deny rules block flags that redirect where credentials are sent: `kubectl` `--server` / `-s`, `--kubeconfig`, `--token`; `gcloud` `--access-token-file`, `--impersonate-service-account`.
+- **The Claude credential is absent from the Bash subprocess environment.** Permission rules match the command text, not expanded values, so an allowlisted command could still print `$CLAUDE_CODE_OAUTH_TOKEN` (e.g. `kubectl get pods -n "$CLAUDE_CODE_OAUTH_TOKEN"`). Denying `env` / `printenv` is therefore not a control. Claude Code's subprocess environment scrubbing removes the Anthropic credentials from Bash subprocesses; the exact setting is confirmed at implementation and proven by test (task 3.4).
+- Built-in `Read`, `Glob`, `Grep` are limited to repo paths (manifests, runbooks), excluding `.git/` and the `gha-creds-*.json` file written by `google-github-actions/auth`. `Write` is limited to `triage-report.md`.
+- **Claude never holds a GitHub write token. This is enforced by job isolation, not by step ordering:**
+  - The `triage` job has `permissions: {contents: read, id-token: write}`, checks out with `persist-credentials: false`, and passes this read-only `GITHUB_TOKEN` as `github_token` explicitly. When `github_token` is omitted, `claude-code-action` exchanges OIDC for a Claude App token with Contents and PR write.
+  - The `triage` job uploads `triage-report.md` as an artifact.
+  - A separate `report` job (`needs: triage`, `if: always()`, `permissions: {issues: write}`) downloads the artifact and creates or comments on the Issue.
+- **Last check before anything leaves the job:** the `report` job refuses to post a report that contains the OAuth token value or a GCP access-token pattern (`ya29.`). It posts a stub saying the report was withheld instead.
 
-The security boundary is D8's read-only identity, not the tool list. If the allowlist is bypassed, the worst outcome is that the 1-hour GCP access token leaks. That token reads Kubernetes objects and logs only: no Secrets, no writes.
+The security boundary is D8's read-only identity, plus the absence of long-lived secrets from Claude's reach. If the allowlist is bypassed, the worst outcome is that the WIF-issued GCP access token leaks. That token expires within the job's lifetime (at most 1 hour) and reads Kubernetes objects and logs only: no Secrets, no writes.
 
 **Alternative rejected:** Google-managed remote MCP servers (GKE, Cloud Logging, Cloud Monitoring) with no `Bash`. They are structurally tighter (no shell, no credential-redirect vector) and add metrics, but cost an extra dependency chain:
 - per-project MCP endpoint enablement,
@@ -143,7 +157,7 @@ They also make Claude translate the gcloud-based runbooks into MCP tool calls. T
 - **Budget:** `--max-turns 25` and job `timeout-minutes: 15`.
   - A typical investigation needs about 10–19 turns: Skill/runbook 1–2, Application 1–2, workload/events 2–4 (parallel calls in one turn), Cloud Logging 2–4, recent changes 2–3, report 1–2.
   - Because the cap is tight, D11 has Claude write a draft report early.
-  - When the run stops at the cap or the timeout, the Issue step still posts whatever report exists, marked as truncated.
+  - When the run stops at the cap or the timeout, the `report` job still posts whatever report exists, marked as truncated.
 - **Untrusted input:** `inputs.*` reach the prompt only through environment variables and are never interpolated into `run:` scripts. The Skill tells Claude that Application messages, logs, events and commit text are data, never instructions. The real boundary is structural: a read-only identity, allowlisted read-only commands, and no GitHub write.
 
 ### D11: Skill `incident-triage`
@@ -174,7 +188,11 @@ A new alert policy in `src/gcp/components/monitoring.ts` on GKE system metrics f
 - [Progressing-stuck noise during long but healthy operations (e.g. Zitadel / NATS StatefulSet rollouts)] → 15m threshold; tune from observed data; the trigger can be removed from a specific Application via annotations if needed.
 - [Prompt injection via cluster-controlled text] → read-only identity, allowlisted read-only commands, no GitHub token in Claude's session, report-only output reviewed by a human.
 - [Investigation quality is wrong but confident] → Tier 0 is advisory by design; the report must state confidence and what was not checked.
-- [cluster-bot key compromise] → worst case: start / cancel / disable workflows in `cloud-provisioning`; rotate the key in Secret Manager and revoke via the App settings.
+- [cluster-bot key compromise] → The attacker can start, re-run, cancel or disable workflows in `cloud-provisioning`. Mitigations: rotate the key in Secret Manager and revoke it via the App settings, as described in the runbook.
+- [Workflow-chaining escalation: Actions: write starts or re-runs a workflow that holds a stronger credential] → Every such path is gated today (D3 table). Task 1.4 audits this, and the runbook rule requires Environment gating for any future privileged `workflow_dispatch`.
+- [Claude credential exposed through an expanded variable in an allowed command] → Mitigations:
+  - the credential is scrubbed from the Bash subprocess environment (D9), proven by a test;
+  - the `report` job scans the report for credential values before posting.
 
 ## Migration Plan
 
