@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Upsert stores a discovered sales phase: it updates the known phase of the same series with the same apply start time, or creates a new phase when there is none. It reports whether the phase was inserted (newly created), updated or skipped, together with the phase's id.
+Upsert stores a discovered sales phase. It updates the known phase that has the same series, method and apply start date, or creates a new phase when there is none. It reports whether the phase was inserted (newly created), updated or skipped, together with the phase's id.
 
 ## Requirements
 

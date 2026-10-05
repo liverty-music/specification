@@ -2,7 +2,7 @@
 
 ## Purpose
 
-DiscoverForArtist finds the currently open or upcoming ticket sales phases for one artist's upcoming series and stores them, updating phases already known and creating new ones. Each newly created phase is handed on to be announced to the fans tracking its series, and the method returns the number of new phases.
+DiscoverForArtist finds the ticket sales that have not opened yet for the series of one artist that fans track and that need a search, and stores them. It updates phases already known, creates new ones and records each searched series. Each newly created phase is handed on to be announced to the fans tracking its series, and the method returns the number of new phases.
 
 ## Requirements
 

@@ -8,7 +8,7 @@ A Sales Phase Reminder records that one reminder stage of one Sales Phase has be
 |---|---|---|
 | user | The fan the reminder was sent to | required |
 | sales phase | The sales phase the reminder is about | required |
-| stage | Which point of the phase's timeline the reminder marks: `APPLY_OPEN`, `APPLY_CLOSE_24H`, `APPLY_CLOSE_1H`, `RESULT_DAY` | required; only defined values |
+| stage | Which point of the phase's timeline the reminder marks: `APPLY_OPEN`, `APPLY_CLOSE_24H`, `RESULT_DAY` | required; only defined values |
 | sent time | When the reminder was recorded as sent | required, set when the record is created |
 
 ```mermaid

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-ScanDueReminders runs every 15 minutes. For each sales phase with a pending milestone, it works out which reminder stages have become due for each fan tracking that phase's series, and requests one reminder for each fan, phase and stage not yet sent, with due times adjusted to the fan's time zone and quiet hours. It returns the number of reminders requested.
+ScanDueReminders runs every 15 minutes. For each sales phase with a pending milestone, it works out which reminder stages have become due for each fan tracking that phase's series. It requests one reminder for each fan, phase and stage not yet sent, with due times adjusted to the fan's time zone and quiet hours, and returns the number of reminders requested.
 
 ## Requirements
 
