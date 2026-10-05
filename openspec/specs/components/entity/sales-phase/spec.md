@@ -2,21 +2,16 @@
 
 ## Purpose
 
-A Sales Phase is one ticket-sales opportunity (a fan-club presale, a play-guide lottery, a general on-sale, and so on) announced for a Series (tour) as a whole; it records how and through whom tickets are sold and the milestones of its timeline, so that fans tracking the series can be told when to apply and when results come out. It is discovered from the artist's published ticket information and is unrelated to the organizer-authored lottery sales phase of an Event, which shares the words but none of the attributes.
+A Sales Phase is one ticket-sales opportunity (a fan-club lottery, a presale, a general on-sale, and so on) announced for a Series (tour) as a whole; it records how tickets are allocated and the milestones of its timeline, so that fans tracking the series can be told when to apply and when results come out. It is discovered from the artist's published ticket information and is unrelated to the organizer-authored lottery sales phase of an Event, which shares the words but none of the attributes.
 
 | attribute | meaning | constraint |
 |---|---|---|
 | id | The sales phase's identity; the handle reminders refer to | required, UUID, assigned by the system, never changes |
 | series | The tour the phase sells tickets for | required |
-| method | How tickets are allocated: `LOTTERY` (抽選 lottery) or `FIRST_COME` (先着 first come) | optional; `UNSPECIFIED` means not yet determined; only defined values |
-| channel | Who sells the tickets, the gate a fan passes: `FAN_CLUB`, `OFFICIAL`, `PLAYGUIDE`, `CREDIT_CARD`, `MOBILE_CARRIER`, `GENERAL` | optional; `UNSPECIFIED` means not yet determined; only defined values |
-| provider name | The named ticket outlet (for example イープラス, チケットぴあ), mainly for `PLAYGUIDE` | optional free text, at most 255 characters; empty means none or unknown |
-| sequence | The 0-based ordinal of the round within its channel, when a channel runs several rounds | integer, at least 0; 0 when the channel has one round |
+| method | How tickets are allocated: `LOTTERY` (抽選 lottery) or `FIRST_COME` (先着 first come) | required; only these values |
 | apply start time | When applications or sales open (受付開始) | required, an absolute instant |
-| apply end time | When applications or sales close (受付終了) | optional; empty means not yet announced |
-| lottery result time | When lottery results are announced (当落発表) | optional; empty means not announced or not a lottery |
-| payment deadline time | The payment deadline for winners (入金期限) | optional; empty means not announced or not applicable |
-| url | The page where fans apply for this phase | optional; empty means none known |
+| apply end time | When applications or sales close (受付終了) | required for `LOTTERY`; optional for `FIRST_COME`, where empty means the sale ends when tickets run out; after the apply start time |
+| lottery result time | When lottery results are announced (当落発表) | optional; `LOTTERY` only; empty means not announced; not before the apply end time |
 | discovered time | When the system first learned of the phase | required, set once when the phase is created |
 
 ```mermaid

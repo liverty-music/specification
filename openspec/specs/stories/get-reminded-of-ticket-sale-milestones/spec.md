@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A fan tracking a tour is reminded when a sales phase opens, 24 hours and 1 hour before it closes, and on the lottery result day, once per milestone and never between 22:00 and 08:00 in their time zone.
+A fan tracking a tour is reminded of each ticket sale: 30 minutes before a first-come sale opens, and when a lottery opens, 24 hours before it closes and on its result day. Each milestone is reminded once, and never between 22:00 and 08:00 in the fan's time zone.
 
 ## Requirements
 

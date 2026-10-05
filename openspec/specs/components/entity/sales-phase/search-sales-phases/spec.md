@@ -2,7 +2,7 @@
 
 ## Purpose
 
-SearchSalesPhases looks up, in one search per artist, the ticket sales a fan can still apply for across the artist's upcoming series, reading the artist's official site and the ticket pages it links to, and returns each sale found as a discovered phase attributed to one of those series. Extraction is best-effort: its results are verified by an integration test against real pages, not guaranteed per page.
+SearchSalesPhases looks up, in one search per artist, the ticket sales that have not opened yet for the given series of the artist. It reads the artist's official site and official ticket pages and returns each sale as a discovered phase attributed to one of those series. Extraction is best-effort: its results are verified by an integration test against real pages, not guaranteed per page.
 
 ## Requirements
 

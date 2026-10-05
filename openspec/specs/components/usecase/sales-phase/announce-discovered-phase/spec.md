@@ -2,7 +2,7 @@
 
 ## Purpose
 
-AnnounceDiscoveredPhase tells every fan who is tracking a series that a new ticket sales phase has been published for it. It runs once for each newly created sales phase and sends each recipient a short, generic message in their language that links to the series.
+AnnounceDiscoveredPhase tells every fan who is tracking a series that a new ticket sales phase has been published for it. It runs once for each newly created sales phase. It sends each recipient a short message in their language that names the opening time, the method and the tour, and opens the recipient's tracked event.
 
 ## Requirements
 
