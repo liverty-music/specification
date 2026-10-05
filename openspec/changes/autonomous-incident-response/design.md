@@ -32,7 +32,9 @@ See proposal.md — Why. Current state that shapes the approach (all in `liverty
 
 **Alternatives:** Cloud Monitoring → Pub/Sub / webhook channel. The webhook channel only supports Basic auth or a query-string token and Pub/Sub push only an OIDC token, so neither can call the GitHub API without a relay service — rejected. A scheduled patrol workflow catches more classes but costs a Claude run per interval and is a separate design — deferred.
 
-**Accepted gap:** application-level failures invisible to Kubernetes health (ERROR logs, JetStream backlog stall, poison messages, goroutine leak, Web Push failures) stay on the existing Cloud Monitoring → human path; so do Pulumi-managed resources.
+**Accepted gaps:**
+- Application-level failures invisible to Kubernetes health (ERROR logs, JetStream backlog stall, poison messages, goroutine leak, Web Push failures) stay on the existing Cloud Monitoring → human path; so do Pulumi-managed resources.
+- **A crash loop whose container passes readiness before each exit** (OOM under load, a panic after minutes, a dropped dependency). Argo CD's `getAppsv1DeploymentHealth` reports Healthy whenever `AvailableReplicas == UpdatedReplicas` at evaluation time, so each restart flips the Application back to Healthy and resets `on-health-progressing-stuck`'s timer: neither Google Chat nor triage hears about it. Observed in the 2026-10-05 end-to-end test (a fixture healthy for 120s per start). A container that exits before readiness on every restart stays Progressing and is caught (the same test, 15 minutes to the trigger). Covered for humans by a `Container Crash Loop` Cloud Monitoring alert: `kubernetes.io/container/restart_count` delta > 3 in 30 minutes, cluster-wide, grouped by namespace and container (baseline zero restarts in every namespace).
 
 ### D2: `on-health-progressing-stuck` at 15 minutes
 
@@ -68,6 +70,8 @@ So no path changes prod without an existing human or machine gate. The invariant
 
 **Chosen:** new org App, Repository permissions **Actions: write** (plus mandatory Metadata: read), webhook inactive, installed on `cloud-provisioning` only. Created out-of-band like `ci-bot`; App ID and installation ID are non-secret and live in the generator manifest.
 
+**Actual reach (verified 2026-10-05):** a contents write with a cluster-bot installation token returns `403 Resource not accessible by integration`. Like any GitHub account, the bot can still open issues and comments on **public** repositories, including `cloud-provisioning` (a test created #574); App permissions cannot remove that ("any actor, including a GitHub App using an installation access token, can open an issue in a public repository unless the repository has disabled the 'Issues' feature" — GitHub, community discussion #157656).
+
 **Why not reuse `liverty-music-ci-bot`:** whoever holds an App's private key can mint a token with *all* of that App's permissions, regardless of the scoping requested at mint time. ci-bot can push `cloud-provisioning:main` past the ruleset; putting its key in the cluster would let a cluster compromise rewrite prod manifests. The ci-bot runbook already prescribes a separate App for a different trust boundary. The name follows ci-bot's convention of naming by where the key lives (trust level), not by single use.
 
 ### D5: Short-lived token via the ESO `GithubAccessToken` generator
@@ -101,7 +105,7 @@ template.incident-triage-dispatch: |
         {"ref":"main","inputs":{"app":"{{.app.metadata.name}}","trigger":"...","payload":{{ toJson ... }}}}
 ```
 
-Each of the four triggers `send`s both its existing Google Chat template and `incident-triage-dispatch`; the subscription list gains `webhook:incident-triage`. Inputs are kept to three strings: `app`, `trigger` and `payload` (a JSON string with health status/message, sync status, operation message, revision and conditions), well within the `workflow_dispatch` input limits. The exact per-trigger template wiring (one template with the trigger name injected vs one per trigger) is settled in implementation; it does not change the contract above.
+**Wiring (settled in implementation):** each trigger keeps sending **one** template, which now carries both its Google Chat `message` and a `webhook.incident-triage` part; each service reads only its own part. Separate templates do not work: notifications-engine sends every template of a trigger to every subscribed service, so a webhook-only template makes Google Chat post an empty message and a message-only one makes the webhook service send a GET. One template per trigger also carries the trigger name, which the template context does not provide. The subscription recipient is `incident-triage` — `service.webhook.<name>` registers the service under `<name>`, so `webhook:incident-triage` would address a non-existent `webhook` service. Inputs are kept to three strings: `app`, `trigger` and `payload` (a JSON string with health status/message, sync status, operation phase/message, revision, conditions and destination namespace, truncated to 16000 characters), well within the `workflow_dispatch` input limits.
 
 ArgoCD Notifications already deduplicates per trigger condition (it notifies once when a condition becomes true and records that on the Application), so a persistently broken app does not re-dispatch every reconcile.
 
@@ -109,7 +113,7 @@ ArgoCD Notifications already deduplicates per trigger condition (it notifies onc
 
 **Chosen:** `anthropics/claude-code-action@v1` pinned by SHA (same pin as `claude.yml`), `prompt` set (automation mode), `claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}`. No new Anthropic credential.
 
-**Fallback:** if the action does not run on `workflow_dispatch` (its docs marked that event "coming soon"), install Claude Code and run `claude -p --bare` in a step with the same flags. The workflow contract (inputs → report file → Issue) is unchanged either way.
+**Fallback not needed:** the pinned action lists `workflow_dispatch` among its automation events. Its agent mode rejects non-human actors, so `allowed_bots: liverty-music-cluster-bot` is required for ArgoCD's dispatches.
 
 ### D8: Read-only GCP identity
 
@@ -129,10 +133,12 @@ Cloud Monitoring time series are not read in this tier: `gcloud` has no time-ser
 **Chosen:** the CLIs the runbooks are already written in.
 
 - `google-github-actions/get-gke-credentials` writes a kubeconfig for `autopilot-cluster-osaka` from the D8 credentials. The prod control plane uses its public endpoint, IAM-gated, with no authorized-networks list, so hosted runners reach it the same way operators do. `gcloud` and `kubectl` are preinstalled on `ubuntu-latest`.
-- `Bash` is allowed only for read-only commands: `kubectl get`, `kubectl describe`, `kubectl events`, `gcloud logging read`, `gcloud container clusters describe`, `git log`, `git show`. Claude Code checks each part of a compound command (`&&`, `;`, `|`) against these rules.
+- Subprocess env scrubbing (below) also removes the credential environment variables the auth actions set (`CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE`, `KUBECONFIG`). So `setup-gcloud` registers the credential in gcloud's own config, as `bump-prod-pin.yml` does, and the kubeconfig is copied to `~/.kube/config`.
+- Scrubbing requires bubblewrap; without it Claude Code refuses to start. `claude-code-action` installs it only when `allowed_non_write_users` is set, so the job installs `bubblewrap` and `socat` itself (mirroring the action's step) and fails if that fails.
+- `Bash` is allowed only for read-only commands: `kubectl get`, `kubectl describe`, `kubectl events`, `gcloud logging read`, `gcloud container clusters describe`, `git log`, `git show`. Claude Code checks each part of a compound command (`&&`, `;`, `|`) against these rules. The rules are prefix matches, so the Skill writes the subcommand first (`kubectl get pods -n x`, not `kubectl -n x get pods`, which "requires approval", i.e. is denied headless).
 - Deny rules block flags that redirect where credentials are sent: `kubectl` `--server` / `-s`, `--kubeconfig`, `--token`; `gcloud` `--access-token-file`, `--impersonate-service-account`.
 - **The Claude credential is absent from the Bash subprocess environment.** Permission rules match the command text, not expanded values, so an allowlisted command could still print `$CLAUDE_CODE_OAUTH_TOKEN` (e.g. `kubectl get pods -n "$CLAUDE_CODE_OAUTH_TOKEN"`). Denying `env` / `printenv` is therefore not a control. Claude Code's subprocess environment scrubbing removes the Anthropic credentials from Bash subprocesses; the exact setting is confirmed at implementation and proven by test (task 3.4).
-- Built-in `Read`, `Glob`, `Grep` are limited to repo paths (manifests, runbooks), excluding `.git/` and the `gha-creds-*.json` file written by `google-github-actions/auth`. `Write` is limited to `triage-report.md`.
+- Built-in `Read`, `Glob`, `Grep` are limited to repo paths (manifests, runbooks), excluding the `gha-creds-*.json` and `gha-kubeconfig-*` files the auth steps write. `Write` is limited to `triage-report.md`. **With scrubbing on, Claude Code also enforces the `Read(...)` deny rules as OS-level read denials for every Bash subprocess**, so the deny list must not contain a path an allowed command needs: denying `.git`, `~/.kube` or `~/.config/gcloud` broke `git`, `kubectl` and `gcloud`. Those paths are outside the Read tool's reach anyway (Read is allowed only in the workspace), and `.git` holds no token (`persist-credentials: false`).
 - **Claude never holds a GitHub write token. This is enforced by job isolation, not by step ordering:**
   - The `triage` job has `permissions: {contents: read, id-token: write}`, checks out with `persist-credentials: false`, and passes this read-only `GITHUB_TOKEN` as `github_token` explicitly. When `github_token` is omitted, `claude-code-action` exchanges OIDC for a Claude App token with Contents and PR write.
   - The `triage` job uploads `triage-report.md` as an artifact.
@@ -140,6 +146,8 @@ Cloud Monitoring time series are not read in this tier: `gcloud` has no time-ser
 - **Last check before anything leaves the job:** the `report` job refuses to post a report that contains the OAuth token value or a GCP access-token pattern (`ya29.`). It posts a stub saying the report was withheld instead.
 
 The security boundary is D8's read-only identity, plus the absence of long-lived secrets from Claude's reach. If the allowlist is bypassed, the worst outcome is that the WIF-issued GCP access token leaks. That token expires within the job's lifetime (at most 1 hour) and reads Kubernetes objects and logs only: no Secrets, no writes.
+
+**Verified (2026-10-05, with the production settings and a test prompt; runs 37328784276, 37329349428, 37329806391):** `kubectl --server` / `-s` / `--server=` / `--token`, `gcloud --impersonate-service-account` and `env` were denied by rule; Read of `gha-creds-*` / `gha-kubeconfig-*` was denied; `${...}` expansions were refused by Claude Code before execution ("Contains expansion"); the OAuth token never appeared in the session logs. **Residual risk:** a plain `"$CLAUDE_CODE_OAUTH_TOKEN"` expansion was declined by the model in both attempts, so whether a rule or only the model blocks it, and the scrubbing of that variable itself, are not directly confirmed. The report job's credential scan and the token's limited reach remain behind it.
 
 **Alternative rejected:** Google-managed remote MCP servers (GKE, Cloud Logging, Cloud Monitoring) with no `Bash`. They are structurally tighter (no shell, no credential-redirect vector) and add metrics, but cost an extra dependency chain:
 - per-project MCP endpoint enablement,
@@ -151,9 +159,10 @@ They also make Claude translate the gcloud-based runbooks into MCP tool calls. T
 
 ### D10: Guardrails
 
-- **Kill switch:** repository variable `INCIDENT_TRIAGE_ENABLED` (Pulumi `github.ActionsVariable`); the job runs only when it is `true`. Created as `false`.
+- **Kill switch:** `INCIDENT_TRIAGE_ENABLED` as a `prod` **environment** variable. The Pulumi GitHub token cannot create repository variables (403, as for the bump workflow), and a job-level `if:` cannot read environment variables, so a `gate` job in the `prod` environment reads it and passes it on. Created as `false` with `ignoreChanges`, so flipping it in the UI is not reverted by `pulumi up`. The WIF provider and project come from the environment's existing variables; `INCIDENT_TRIAGE_SA_EMAIL` is added.
 - **Concurrency:** `group: incident-triage-${{ inputs.app }}`, `cancel-in-progress: false` — one investigation per Application at a time.
-- **Dedup:** Issue title `[incident] <app>: <trigger>`; if an open `incident` Issue for the same `<app>` exists, the report is added as a comment instead of a new Issue.
+- **Dedup:** Issue title `[incident] <app>: <trigger>`; if an open `incident` Issue for the same `<app>` exists, the report is added as a comment instead of a new Issue. Runs dispatched by anyone other than the cluster-bot are titled `[incident] [manual] <app>: …`, so they never merge with a real incident. The `incident` label is created by the report job (`gh label create --force`): label writes need Issues: write, which the Pulumi GitHub token lacks and the job's `GITHUB_TOKEN` has.
+- **Failed runs:** the post names the stage a failed run stopped at (setup before Claude, Claude Code failing to start, Claude not finishing, timeout) and always ends with the ArgoCD status snapshot from `payload`, so the Issue carries the incident even when Claude produced nothing.
 - **Budget:** `--max-turns 25` and job `timeout-minutes: 15`.
   - A typical investigation needs about 10–19 turns: Skill/runbook 1–2, Application 1–2, workload/events 2–4 (parallel calls in one turn), Cloud Logging 2–4, recent changes 2–3, report 1–2.
   - Because the cap is tight, D11 has Claude write a draft report early.
@@ -178,6 +187,12 @@ They also make Claude translate the gcloud-based runbooks into MCP tool calls. T
 
 A new alert policy in `src/gcp/components/monitoring.ts` on GKE system metrics for namespace `argocd` (containers `application-controller`, `notifications-controller`): fires when `kubernetes.io/container/uptime` is absent for 10m **or** `kubernetes.io/container/restart_count` increases by more than 3 in 15m. Routed to the existing Slack / Google Chat channels — it must not depend on the component it watches.
 
+### D13: Compute Engine quota for the GKE nodes
+
+Autopilot manages the nodes, but their VMs and boot disks draw on the project's Compute Engine quota: "GKE can only provision infrastructure for your workloads if your project has enough quota for that hardware" (GKE Autopilot overview). Each node boots from a pd-balanced disk (about 100 GB; Autopilot sizes some larger), which counts against the regional `SSD-TOTAL-GB` quota. At the new-project default of 500 GB the four prod nodes (447 GB with a 10 GB PVC) left no room for a fifth, so every node auto-upgrade surge and scale-up failed from 2026-09-27 (550–870 rejected inserts a day; nodes stuck on the previous patch). Raising it exposed the next cap, `CPUS-ALL-REGIONS` (32).
+
+**Chosen:** Cloud Quotas API preferences in Pulumi: `SSD-TOTAL-GB-per-project-region` (asia-northeast2) 1000 GB (about nine nodes including the upgrade surge, approved) and `CPUS-ALL-REGIONS-per-project` 100 (matching the single region's `CPUS` limit). An increase needs a contact email, so the preferences exist only where `gcp.quotaContactEmail` is set in ESC (prod).
+
 ## Risks / Trade-offs
 
 - [Notifications controller keeps a stale token after ESO rotation] → Verify in the end-to-end test that a dispatch succeeds more than 60 minutes after the first token was minted; if it caches, add a Reloader annotation to restart the notifications controller on Secret change.
@@ -199,12 +214,12 @@ A new alert policy in `src/gcp/components/monitoring.ts` on GKE system metrics f
 1. Create the `liverty-music-cluster-bot` App, install it on `cloud-provisioning`, generate a private key, store it in Pulumi ESC.
 2. Pulumi (prod, manual `pulumi up`): Secret Manager secret, `incident-triage` SA + roles + WIF binding, `incident` label, `INCIDENT_TRIAGE_ENABLED=false`, ArgoCD-down alert.
 3. Merge the workflow and Skill (inert while the variable is `false`; can be exercised by a manual `workflow_dispatch`).
-4. Merge the ArgoCD manifests (generator, ExternalSecrets, notifier, trigger). ArgoCD self-syncs.
+4. Merge the ArgoCD manifests (generator, ExternalSecrets, notifier, trigger). ArgoCD self-syncs. **Only after step 2 is applied:** when the manifests landed first, the generator failed (no key in Secret Manager), `argocd-notifications-secret` and with it the `argocd` Application turned Degraded, Google Chat reported it, and the webhook retried with an empty token (401) until the secret existed. The dev overlay patches all triage pieces out, so a restarted dev cluster neither fails that sync nor dispatches triage of prod.
 5. Flip `INCIDENT_TRIAGE_ENABLED=true`; run the end-to-end test in prod (prod has no users yet and verification there is approved): a throwaway Application in a scratch namespace that crash-loops after becoming Available, confirming Google Chat + dispatch + Issue; then delete it.
 
 **Rollback:** set `INCIDENT_TRIAGE_ENABLED=false` (instant). Full removal: revert the ArgoCD manifest commit (Google Chat routing is untouched by design), then the Pulumi resources.
 
 ## Open Questions
 
-- Whether a single template can carry the trigger name, or one dispatch template per trigger is needed (D6) — implementation detail.
-- Final `--max-turns` / timeout values after the first real investigations.
+- ~~Whether a single template can carry the trigger name~~ — resolved in D6: one template per trigger with both parts.
+- `--max-turns 25` and `timeout-minutes: 15` sufficed in every run so far (triage took 2–4 minutes); revisit after real incidents.
