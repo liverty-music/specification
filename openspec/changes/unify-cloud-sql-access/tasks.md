@@ -21,4 +21,3 @@
 ## 4. End-to-end check
 
 - [x] 4.1 In prod, follow the runbook exactly: `apply -k`, `port-forward`, log in as `pannpers@pannpers.dev` with a token, verify that `SELECT` on an `app` table succeeds and `INSERT` fails with permission denied, and that `pg_stat_activity` shows the session as `pannpers@pannpers.dev`; then `delete -k` and verify the Pod is gone
-- [ ] 4.2 On the next dev start, repeat 4.1 with the dev overlay and record the result in this change before archiving
