@@ -51,4 +51,4 @@ The spec tree describes product behavior. Developer database access is not produ
 - **Runtime**: no workload changes. The dev standing proxy (10m / 32Mi) goes away; the ephemeral Pod costs only while in use.
 - **Dependencies**
   - Lands after `optimize-prod-gke-cost` removes the prod proxy Deployment.
-  - The dev instance is stopped while dev workloads are disabled, so dev verification waits for the next dev window; prod is verified first.
+  - The dev instance is stopped indefinitely to save cost, so only prod is verified.

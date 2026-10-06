@@ -149,7 +149,7 @@ A one-person team does not justify a repeating grant Job. IAM groups (Open Quest
 - [A forgotten Pod keeps a tunnel open] → `activeDeadlineSeconds: 7200`. Spot preemption also ends it.
 - [`kubectl apply -k` needs Pod-create rights in `backend`] → Only cluster admins hold them today. Acceptable for one developer.
 - [Token expiry interrupts long sessions] → Only new connections need a token. Documented in the runbook.
-- [Dev cannot be verified while dev is down] → Prod is verified first. The dev overlay is a single-field change; it is verified on the next dev start (a task left open until then).
+- [Dev cannot be verified while dev is down] → Dev is stopped indefinitely to save cost, so only prod is verified. The dev overlay differs from prod only in the instance connection name and GSA email, and has no verification task.
 
 ## Migration Plan
 
@@ -163,7 +163,6 @@ A one-person team does not justify a repeating grant Job. IAM groups (Open Quest
    Merge; the user runs the prod `pulumi up`.
 3. **backend PR:** the human read-only grant migration and the `docs/dev-db-access.md` pointer. Merge; the prod migration applies through atlas-operator.
 4. **Verify (prod)** with the real manifest: `apply -k`, `port-forward`, log in, `SELECT` on an `app` table succeeds, `INSERT` fails, then `delete -k`.
-5. **Verify (dev)** on the next dev start.
 
 **Rollback:** delete the Pod, revert the PRs. The grant migration is additive; revoking is a follow-up migration if ever needed.
 
