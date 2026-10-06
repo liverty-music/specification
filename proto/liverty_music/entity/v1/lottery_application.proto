@@ -144,8 +144,8 @@ message ApplicantIdentity {
   // the account alongside the name; used for covered-ticket contactability, not
   // as a login identity.
   string phone_number = 2 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 20
+    max_len: 16
+    pattern: "^\\+[1-9][0-9]{1,14}$"
   }];
 }
 

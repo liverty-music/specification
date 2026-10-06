@@ -24,7 +24,6 @@ jobs:
             src:
               - "proto/**"
               - "buf.yaml"
-              - "buf.gen.yaml"
               - "Makefile"
               - ".github/workflows/**"
 
@@ -38,21 +37,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup buf CLI
+      # Native mode: annotations on the diff plus a summary comment. Breaking
+      # detection compares against the PR base and is skipped when the
+      # `buf skip breaking` label is applied. Push stays release-only
+      # (buf-release.yml), so push and archive are off here.
+      - name: Buf lint, format and breaking
         uses: bufbuild/buf-action@8c6a16e16f12ba20b6470afa9c2ba9b5ba8c97c3 # v1
         with:
           token: ${{ secrets.BUF_TOKEN }}
-          setup_only: true
-
-      - name: Run buf lint
-        run: buf lint
-
-      - name: Check buf format
-        run: buf format -d --exit-code
-
-      - name: Check breaking changes
-        if: "!contains(github.event.pull_request.labels.*.name, 'buf skip breaking')"
-        run: buf breaking --against '.git#branch=origin/main'
+          lint: true
+          format: true
+          breaking: ${{ !contains(github.event.pull_request.labels.*.name, 'buf skip breaking') }}
+          push: false
+          archive: false
+          pr_comment: true
 
   buf-checks-skip:
     needs: changes
