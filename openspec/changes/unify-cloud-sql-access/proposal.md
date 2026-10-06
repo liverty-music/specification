@@ -41,6 +41,7 @@ The spec tree describes product behavior. Developer database access is not produ
 
 - **liverty-music/cloud-provisioning**
   - New: `k8s/tools/db-proxy/` (base and dev/prod overlays) and a runbook.
+  - New: a `db-proxy` service account in `src/gcp/` that can connect to Cloud SQL (`roles/cloudsql.client`) but cannot log in. It is bound to the Pod through Workload Identity.
   - Removed: `k8s/namespaces/backend/overlays/dev/sql-proxy/`.
   - Updated: `docs/runbooks/setup-prod-credentials.md` and `docs/runbooks/zitadel-break-glass.md`.
   - Possibly updated: the Cloud SQL IAM user list in ESC (prod and dev), if more developers are added.
