@@ -11,7 +11,7 @@ A TicketApplication is one fan account's entry into one LotterySalesPhase: a req
 | applicant | the fan account that applied | required |
 | requested ticket count | size of the companion group, allocated all-or-nothing | required, 1 to the phase's max tickets per application |
 | applicant full name | the applicant's real full name (氏名) for the covered ticket | required, 1-200 characters |
-| applicant phone number | the applicant's contact phone (連絡先) | required, 1-20 characters |
+| applicant phone number | the applicant's contact phone (連絡先) | required, E.164: `+` then 2-15 digits, first digit not 0 |
 | authorization | reference to the hold placed on the applicant's card | required, 1-255 characters, opaque |
 | state | lifecycle | Applied, Won, Lost or Withdrawn |
 | draw position | the application's position in the draw's random order | absent before the draw; set only by the draw |
