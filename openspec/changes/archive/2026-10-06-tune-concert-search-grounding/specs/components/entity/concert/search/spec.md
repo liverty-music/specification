@@ -18,6 +18,30 @@ Search SHALL return only the solo shows, co-headliner bills (対バン) and tour
 
 ## MODIFIED Requirements
 
+### Requirement: Search returns grouped future events
+
+Search SHALL return the Artist's concerts dated on or after the given date as DiscoveredSeries, one per tour or show, and two separately announced shows SHALL be two series even when they share a title. A series whose events are at two or more venues SHALL be a TOUR series; any other series, a one-off show or several days at one venue, SHALL be a SINGLE series. A venue not yet announced SHALL NOT count as a venue. Events dated before the given date SHALL be left out. An Artist with no official site SHALL still be searched by name.
+
+#### Scenario: Past event left out
+- **WHEN** the source lists a show dated before the given date
+- **THEN** Search does not return it
+
+#### Scenario: Two standalone shows with one title
+- **WHEN** the source lists two separately announced one-off shows with the same title
+- **THEN** Search returns two SINGLE series
+
+#### Scenario: Tour across venues
+- **WHEN** the source lists a tour with dates at Zepp Nagoya and Taipei Arena
+- **THEN** Search returns one TOUR series with both events
+
+#### Scenario: Two days at one venue
+- **WHEN** the source lists one show on 2026-11-25 and 2026-11-26 at LaLa arena TOKYO-BAY
+- **THEN** Search returns one SINGLE series with both events
+
+#### Scenario: No official site
+- **WHEN** the Artist has no official site
+- **THEN** Search still searches by the Artist's name
+
 ### Requirement: Search removes repeated events
 
 Search SHALL return at most one event per local date, normalized venue name and start time, keeping the first; two events at one venue on one date with different start times SHALL both be returned, and two with no start time SHALL collapse to one. Venue names that differ only in notation SHALL normalize to the same name: full-width versus half-width characters, compatibility characters (such as the radical ⽇ for 日), middle-dot variants, and whitespace.
@@ -36,11 +60,19 @@ Search SHALL return at most one event per local date, normalized venue name and 
 
 ### Requirement: Search returns source text as written
 
-Search SHALL return each event's venue name as the source wrote it, in its original language, without translating or romanizing it and without replacing it with another name for the same venue; annotations the source includes, such as a former name in parentheses, SHALL be kept. Each series' source page SHALL be the page dedicated to that tour when one exists, otherwise the official site's detail page for the concert. A date written without a year SHALL be returned with the year inferred from the page's context.
+Search SHALL return each event's venue name as the source wrote it, in its original language, without translating or romanizing it and without replacing it with another name for the same venue; annotations the source includes about the venue itself, such as a former name in parentheses, SHALL be kept, while show titles or subtitles printed next to the venue SHALL NOT be part of it. When the source is offered in several languages, its default-language version SHALL be the one copied. Each series' source page SHALL be the page dedicated to that tour when one exists, otherwise the official site's detail page for the concert. A date written without a year SHALL be returned with the year inferred from the page's context.
 
 #### Scenario: Japanese venue on a multilingual page
 - **WHEN** the source writes the venue as "幕張メッセ 9・11ホール" and also offers an English view
 - **THEN** Search returns "幕張メッセ 9・11ホール"
+
+#### Scenario: Default language of a multilingual tour page
+- **WHEN** a tour page shows "北九州メッセ" by default and "Kitakyushu Messe" in its English version
+- **THEN** Search returns "北九州メッセ"
+
+#### Scenario: Show subtitle kept out of the venue
+- **WHEN** the source lists "日本武道館" followed by the show subtitle "～PREMIUM LIVE on Xmas～"
+- **THEN** Search returns the venue "日本武道館"
 
 #### Scenario: Former name kept
 - **WHEN** the source writes the venue as "クロコくんホール（旧 日本ガイシホール）"
@@ -72,7 +104,7 @@ Search SHALL return a venue's admin area only when the source states it or the v
 
 ### Requirement: Transient failures degrade to no results
 
-Search SHALL retry a transient external failure — a timeout, rate limit, server error, temporary authorization failure or incomplete response — for up to 3 attempts in total. When every attempt fails transiently, Search SHALL return no concerts and no error. A permanent failure, a structurally broken response, a response that carries no candidate result, or the caller's own deadline or cancellation SHALL fail Search with an error; a response with no candidate result SHALL NOT be retried within the same Search.
+Search SHALL retry a transient external failure — a timeout, rate limit, server error, temporary authorization failure or incomplete response — for up to 3 attempts in total. When every attempt fails transiently, Search SHALL return no concerts and no error. A permanent failure, a structurally broken response, a response that carries no candidate result, a response stopped because the model made too many tool calls, or the caller's own deadline or cancellation SHALL fail Search with an error; a response with no candidate result or stopped for too many tool calls SHALL NOT be retried within the same Search.
 
 #### Scenario: Recovered on retry
 - **WHEN** the first attempt times out and the second succeeds
@@ -84,6 +116,10 @@ Search SHALL retry a transient external failure — a timeout, rate limit, serve
 
 #### Scenario: Response without a candidate
 - **WHEN** the external service answers successfully but with no candidate result
+- **THEN** Search fails with an error after that one attempt
+
+#### Scenario: Too many tool calls
+- **WHEN** the external service stops the response because the model made too many tool calls
 - **THEN** Search fails with an error after that one attempt
 
 #### Scenario: Caller deadline expires
