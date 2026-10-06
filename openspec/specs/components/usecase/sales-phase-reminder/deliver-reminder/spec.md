@@ -12,7 +12,7 @@ DeliverReminder SHALL run for each reminder that ScanDueReminders requests, with
 
 #### Scenario: Reminder requested
 
-- **WHEN** ScanDueReminders requests an `APPLY_CLOSE_1H` reminder for a fan
+- **WHEN** ScanDueReminders requests an `APPLY_CLOSE_24H` reminder for a fan
 - **THEN** DeliverReminder runs for that fan, phase and stage
 
 #### Scenario: Empty request

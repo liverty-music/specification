@@ -8,16 +8,16 @@ SearchSalesPhases looks up, in one search per artist, the ticket sales that have
 
 ### Requirement: One search covers all of an artist's upcoming series
 
-SearchSalesPhases SHALL take the artist, the artist's official site, and the artist's upcoming series (each with its title and known event dates), and SHALL return discovered phases, each attributed to exactly one of the given series. A sale that cannot be attributed to one of the given series SHALL be discarded. The search SHALL NOT resolve which events of a series a phase covers. When no series is given, SearchSalesPhases SHALL return no phases without searching.
+SearchSalesPhases SHALL take the artist, the artist's official site, and the series to search. Each series SHALL be given with its title and its event period (the dates of its first and last events). SearchSalesPhases SHALL return discovered phases, each attributed to exactly one of the given series. A sale that cannot be attributed to one of the given series SHALL be discarded. The search SHALL NOT resolve which events of a series a phase covers. When no series is given, SearchSalesPhases SHALL return no phases without searching.
 
 #### Scenario: Artist with two tours
 
-- **WHEN** SearchSalesPhases runs for an artist with two upcoming series and the official site lists a presale for each
-- **THEN** it returns two discovered phases, each attributed to its own series
+- **WHEN** SearchSalesPhases runs for an artist with two series and the pages announce an upcoming presale for one of them
+- **THEN** it returns one discovered phase, attributed to that series
 
 #### Scenario: Unattributable sale
 
-- **WHEN** the official site lists a sale that matches none of the given series
+- **WHEN** the pages announce an upcoming sale that matches none of the given series
 - **THEN** that sale is not returned
 
 #### Scenario: No series given
@@ -25,77 +25,108 @@ SearchSalesPhases SHALL take the artist, the artist's official site, and the art
 - **WHEN** SearchSalesPhases is called with no series
 - **THEN** it returns no phases
 
-### Requirement: Values come only from the source pages
+### Requirement: Only sales that have not opened are returned
 
-Every date, time, classification and name in a discovered phase SHALL come from the searched pages; a value that is not on the pages SHALL be left unknown rather than guessed. A sale whose apply start time cannot be determined SHALL be discarded.
+SearchSalesPhases SHALL return only sales whose apply start time is after the current time, including lotteries and first-come sales, presales and general on-sales, and every later round (2次, 3次, …) of a series that has not opened yet. A sale that has already opened, whether still open or closed, SHALL NOT be returned. Ticket trades and resales between ticket holders (公式トレード, リセール) SHALL NOT be returned.
 
-#### Scenario: Lottery with published deadline and result date
+#### Scenario: Two rounds announced ahead
 
-- **WHEN** a lottery phase's page publishes the application deadline and the result-announcement date
-- **THEN** the discovered phase has both an apply end time and a lottery result time
+- **WHEN** a fan-club page announces a first round opening tomorrow and a second round opening next month
+- **THEN** both rounds are returned as two discovered phases
+
+#### Scenario: Sale already open
+
+- **WHEN** a page lists a presale that opened yesterday and closes next week
+- **THEN** that presale is not returned
+
+#### Scenario: Official ticket trade
+
+- **WHEN** a page lists an official ticket trade for the series that opens tomorrow
+- **THEN** the trade is not returned
+
+### Requirement: Times are read in the time zone of the page
+
+Every milestone time SHALL be read in the time zone the source page uses and returned as an absolute instant. When a page omits the year of a date, the year SHALL be the one that places the date before the end of the series' event period.
+
+#### Scenario: Sale abroad
+
+- **WHEN** a page for a Taipei show states that a sale opens on 1 November at 12:00 local time
+- **THEN** the discovered phase opens at 1 November 13:00 Japan time
+
+#### Scenario: Year omitted
+
+- **WHEN** the series' events run from February to March 2027 and the page states a sale opening on 10 November without a year
+- **THEN** the discovered phase opens on 10 November 2026
+
+### Requirement: Required values come from the source pages
+
+Every value in a discovered phase SHALL come from the searched pages; a value SHALL never be guessed. A sale SHALL be returned only when the pages state its method and its apply start time, and for a lottery also its apply end time. Otherwise the sale SHALL be discarded. A first-come sale whose pages state no end SHALL be returned without an apply end time. A lottery result time SHALL be returned when the pages state it and left unknown otherwise.
+
+#### Scenario: Lottery with a published result date
+
+- **WHEN** a lottery's page states its application period and its result-announcement date
+- **THEN** the discovered phase has an apply start time, an apply end time and a lottery result time
 
 #### Scenario: Lottery without a published result date
 
-- **WHEN** a lottery phase's page publishes no result-announcement date
-- **THEN** the discovered phase's lottery result time is unknown
+- **WHEN** a lottery's page states its application period and no result-announcement date
+- **THEN** the discovered phase has no lottery result time
 
-#### Scenario: No start date on the page
+#### Scenario: First-come sale until sold out
 
-- **WHEN** a page mentions a sale without an application start date
+- **WHEN** a page announces a fan-club first-come sale that opens tomorrow at 18:30 and ends when tickets run out
+- **THEN** the discovered phase has method `FIRST_COME`, an apply start time and no apply end time
+
+#### Scenario: Lottery without a stated close
+
+- **WHEN** a page announces a lottery with a start date and no end date
+- **THEN** that sale is not returned
+
+#### Scenario: Method not stated
+
+- **WHEN** a page announces a sale without saying whether it is a lottery or first come
 - **THEN** that sale is not returned
 
 #### Scenario: Nothing usable found
 
-- **WHEN** the pages contain no usable sales schedule
+- **WHEN** the pages contain no sale that has not opened
 - **THEN** SearchSalesPhases returns no phases without an error
 
-### Requirement: Play-guide sales are classified as PLAYGUIDE
+### Requirement: Inconsistent sales are discarded
 
-A sale conducted through a named play guide (プレイガイド, for example イープラス, ローチケ, チケットぴあ, CN Playguide) SHALL be classified with channel `PLAYGUIDE` and the guide's name as provider name, even when it is a general on-sale. Channel `GENERAL` (一般) SHALL be used only for a general on-sale that names no play guide.
+A sale SHALL be discarded when its milestones break the Sales Phase rules, or when its apply start time is after the last day of its series' event period.
 
-#### Scenario: General on-sale through a play guide
+#### Scenario: Close before open
 
-- **WHEN** a general on-sale for a series is sold through イープラス
-- **THEN** the discovered phase has channel `PLAYGUIDE` and provider name イープラス
+- **WHEN** a page yields an apply start time of 10 July and an apply end time of 5 July
+- **THEN** that sale is not returned
 
-#### Scenario: Direct general on-sale
+#### Scenario: Opening after the last show
 
-- **WHEN** a general on-sale is sold directly on the official site with no play guide named
-- **THEN** the discovered phase has channel `GENERAL`
+- **WHEN** a series' last event is on 20 December and a sale is read as opening on 10 January
+- **THEN** that sale is not returned
 
-### Requirement: Closed sales are excluded
+### Requirement: A failed search fails
 
-SearchSalesPhases SHALL NOT return a sale whose apply end time is known and before now. A sale whose apply end time is unknown SHALL be returned.
+SearchSalesPhases SHALL call the search service once per search. SearchSalesPhases SHALL fail with an error, and return no phases, in these cases:
 
-#### Scenario: Sale already closed
+- The service is unreachable or overloaded: Unavailable.
+- The service rejects the request: the matching error (InvalidArgument, Unauthenticated, ResourceExhausted including a spend cap, or DeadlineExceeded).
+- The service returns no result, or a result that cannot be read: Internal.
 
-- **WHEN** a page lists a presale that closed yesterday
-- **THEN** that presale is not returned
+A readable result that lists no sale SHALL return no phases without an error.
 
-#### Scenario: Close not announced
+#### Scenario: Spend cap reached
 
-- **WHEN** a page lists a presale with a start date and no end date
-- **THEN** that presale is returned
+- **WHEN** the search service rejects the request because the monthly spend cap is reached
+- **THEN** SearchSalesPhases fails with ResourceExhausted
 
-### Requirement: Milestones are in timeline order
+#### Scenario: No result
 
-In a discovered phase, apply start time, apply end time, lottery result time and payment deadline time SHALL be non-decreasing in that order. A later milestone that is earlier than the milestone before it SHALL be returned as unknown.
+- **WHEN** the search service answers without a result
+- **THEN** SearchSalesPhases fails with Internal
 
-#### Scenario: Result before close
+#### Scenario: Service unreachable
 
-- **WHEN** a page yields an apply end time of 10 July and a lottery result time of 5 July
-- **THEN** the discovered phase has the apply end time of 10 July and an unknown lottery result time
-
-### Requirement: Search failures
-
-SearchSalesPhases SHALL try a failing search up to 3 times. When the search service stays unreachable or overloaded after the last attempt, it SHALL return no phases without an error. When the search service rejects the request, it SHALL fail with the matching error (InvalidArgument, Unauthenticated, ResourceExhausted, Unavailable or DeadlineExceeded), or Internal for an unexpected failure. A search that finds nothing SHALL return no phases without an error.
-
-#### Scenario: Service down on every attempt
-
-- **WHEN** the search service is unreachable on all 3 attempts
-- **THEN** SearchSalesPhases returns no phases without an error
-
-#### Scenario: Request rejected
-
-- **WHEN** the search service rejects the request as unauthenticated
-- **THEN** SearchSalesPhases fails with Unauthenticated
+- **WHEN** the search service is unreachable
+- **THEN** SearchSalesPhases fails with Unavailable

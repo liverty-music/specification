@@ -179,6 +179,10 @@ The PR carries the `buf skip breaking` label. No RPC references the message.
 - [Deleting stored phases loses nothing visible] → no screen or RPC reads them and no reminder was sent; still-upcoming sales are re-discovered.
 - [The line break may render differently on iOS] → Chrome on Android shows it as a space when collapsed and as a line break when expanded (verified in Chromium's notification builder); iOS is accepted untested by decision.
 
+## Manual verification
+
+@spec-manual components/usecase/sales-phase/scan-due-reminders "Scan cadence" -- the sales-reminders CronJob in cloud-provisioning runs on schedule "*/15 * * * *" (k8s/namespaces/backend/base/cronjob/sales-reminders/cronjob.yaml); checked with kubectl kustomize.
+
 ## Migration Plan
 
 1. specification PR: this change plus the proto edit (`buf skip breaking`). Merge, release, wait for BSR gen.

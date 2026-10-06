@@ -8,7 +8,7 @@ ListPhasesWithPendingMilestones returns the sales phases that may still have a r
 
 ### Requirement: Phases are selected by opening time and latest milestone
 
-ListPhasesWithPendingMilestones SHALL return every sales phase whose apply start time is no later than now plus the lookahead, and whose latest known milestone among apply start time, apply end time and lottery result time is no earlier than now minus the lookback, ordered by apply start time, earliest first. The payment deadline time SHALL NOT count as a milestone.
+ListPhasesWithPendingMilestones SHALL return every sales phase whose apply start time is no later than now plus the lookahead, and whose latest known milestone among apply start time, apply end time and lottery result time is no earlier than now minus the lookback, ordered by apply start time, earliest first.
 
 #### Scenario: Opened weeks ago, result tomorrow
 
