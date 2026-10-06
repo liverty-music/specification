@@ -78,7 +78,7 @@ Alternative considered: adding the work to `artist-image-sync`. Rejected: that j
    - Merge and release.
 2. cloud-provisioning:
    - The `cronjob/official-site-refresh` base (CronJob, kustomization, configmap.env), dev and prod overlays (config, image, Spot patch), the prod image pin and `bump-prod-pin` coverage.
-   - After ArgoCD sync, confirm the first run's summary log and the replacements it logs.
+   - After ArgoCD sync, run the CronJob once by hand rather than waiting for 04:00 JST, and confirm its summary log and the replacements it logs.
 3. The first runs work through the 133 followed artists in about 7 days. The 5 label-page artists and 羊文学 are corrected as they come up.
 
 Rollback: suspend the CronJob. The selection change can be reverted with the image pin. The new column is unused by the other workloads, so it can stay.
