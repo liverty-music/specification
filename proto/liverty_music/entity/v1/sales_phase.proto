@@ -6,7 +6,6 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
-import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/series.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
@@ -21,13 +20,10 @@ message SalesPhaseId {
 }
 
 // SalesMethod classifies how tickets are allocated within a sales phase. It is
-// orthogonal to SalesChannel (who/where sells them) and to the round ordinal
-// (SalesPhase.sequence), so reclassifying the method never collapses two phases
-// into one. New values may be appended; existing values must not be renumbered.
+// the only classification of a phase. New values may be appended; existing
+// values must not be renumbered.
 enum SalesMethod {
-  // Default value; permitted to mean "not yet determined" because the method is
-  // often unknown when a phase is first discovered. Unlike most enums in this
-  // package, the zero value is a valid persisted state, not a rejected boundary.
+  // Default value; never a valid state for a stored phase.
   SALES_METHOD_UNSPECIFIED = 0;
   // Tickets are allocated by lottery (抽選販売): applicants enter a draw and only
   // winners proceed to payment. The dominant method in the Japanese live market.
@@ -36,121 +32,72 @@ enum SalesMethod {
   SALES_METHOD_FIRST_COME = 2;
 }
 
-// SalesChannel classifies who sells the tickets and through which gate a fan
-// must pass to apply. It is orthogonal to SalesMethod and SalesPhase.sequence:
-// the channel captures the slowly-changing "who/where" eligibility, while the
-// round ordering lives in `sequence`. New values may be appended; existing
-// values must not be renumbered.
-enum SalesChannel {
-  // Default value; permitted to mean "not yet determined" because the channel is
-  // often unknown when a phase is first discovered.
-  SALES_CHANNEL_UNSPECIFIED = 0;
-  // Sold through the artist's fan club (ファンクラブ先行), usually requiring a paid
-  // membership to apply. Typically the earliest presale.
-  SALES_CHANNEL_FAN_CLUB = 1;
-  // Sold through an official-but-non-fan-club gate such as the artist or label's
-  // own site or an official app (オフィシャル先行).
-  SALES_CHANNEL_OFFICIAL = 2;
-  // Sold through a third-party play guide platform (プレイガイド) such as e+,
-  // ぴあ, or ローチケ; the concrete provider is named in `provider_name`.
-  SALES_CHANNEL_PLAYGUIDE = 3;
-  // Sold through a credit-card company presale (クレジットカード会員先行).
-  SALES_CHANNEL_CREDIT_CARD = 4;
-  // Sold through a mobile carrier presale (キャリア先行) such as a docomo/au/
-  // SoftBank membership gate.
-  SALES_CHANNEL_MOBILE_CARRIER = 5;
-  // Sold through the general on-sale (一般販売) open to everyone without a
-  // membership gate. Typically the latest phase.
-  SALES_CHANNEL_GENERAL = 6;
-}
-
-// SalesPhase models one ticket-sales opportunity for a series (tour). A single
-// tour can announce several phases — distinct rounds (fan-club presale, general
-// on-sale) — and each phase belongs to one Series and applies to that series as
-// a whole. There is no per-event coverage subset: notification targeting is
-// driven by an explicit fan signal (a `Tracking` ticket journey on the series'
-// events) and notification content is generic (a series link), so the precise
-// set of covered events is never consumed.
+// SalesPhase models one ticket-sales opportunity for a series (tour): one
+// application period under one method, such as a fan-club lottery, a playguide
+// presale or a general on-sale. A single tour can announce several phases, and
+// each phase belongs to one Series and applies to that series as a whole.
 //
-// The row's existence signals "this phase is happening"; a null timeline field
-// unambiguously means "that date is not yet announced", so no separate
-// to-be-determined flag is needed. `apply_start_time` is mandatory because a
-// phase with no known start cannot anchor a reminder and signals the phase is
-// not yet actionable for a fan.
+// The required milestones depend on the method. Every phase has an apply start
+// time. A lottery also has an apply end time and may have a lottery result time.
+// A first-come phase may omit its apply end time, which means the sale ends when
+// tickets run out, and never has a lottery result time.
 message SalesPhase {
+  // A lottery has a close; only a lottery has a result time. CEL sees enums as
+  // integers, so 1 is SALES_METHOD_LOTTERY.
+  option (buf.validate.message).cel = {
+    id: "sales_phase.method_milestones"
+    message: "a lottery requires apply_end_time, and only a lottery may have lottery_result_time"
+    expression: "this.method == 1 ? has(this.apply_end_time) : !has(this.lottery_result_time)"
+  };
+
   // The unique identifier for this sales phase. Server-generated surrogate id;
-  // it is the phase's only hard identity. Re-discovery converges to it on a
-  // best-effort basis via the `(series_id, apply_start_time)` match, not via any
-  // other business-field equality.
+  // it is the phase's only hard identity. Re-discovery converges to it through
+  // the series, the method and the apply start date in Japan time.
   SalesPhaseId id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
 
-  // The series (tour) this phase belongs to. The only required entity reference;
-  // a phase applies to its series as a whole, and the phases relevant to an event
-  // are resolved via that event's series (event → series → the series' phases).
+  // The series (tour) this phase belongs to. A phase applies to its series as a
+  // whole, and the phases relevant to an event are resolved via that event's
+  // series (event → series → the series' phases).
   SeriesId series_id = 2 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
 
-  // How tickets are allocated. Optional: UNSPECIFIED means "not yet determined"
-  // and is never used as a hard match key, so a later reclassification updates
-  // the existing row in place rather than forking a duplicate.
+  // How tickets are allocated. Required: a phase is either a lottery or a
+  // first-come sale.
   SalesMethod method = 4 [
-    (google.api.field_behavior) = OPTIONAL,
-    (buf.validate.field).enum.defined_only = true
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }
   ];
 
-  // Who sells the tickets / which gate applies. Optional with the same
-  // "not yet determined" semantics and non-key status as `method`.
-  SalesChannel channel = 5 [
-    (google.api.field_behavior) = OPTIONAL,
-    (buf.validate.field).enum.defined_only = true
-  ];
-
-  // The concrete provider name when relevant, primarily for PLAYGUIDE channels
-  // (e.g. "イープラス", "チケットぴあ", "ローソンチケット"). Free text shown in copy;
-  // optional because many phases (e.g. fan-club) have no separate provider.
-  optional string provider_name = 6 [(buf.validate.field).string.max_len = 255];
-
-  // The round ordinal within the series: 0 = earliest, 1 = first round, 2 =
-  // second, and so on. Ordinals (not enum values) carry round/leg ordering so
-  // additional rounds or a first/second-half split need no schema change.
-  // Like channel, it disambiguates clearly-different sales but is not a hard
-  // match key.
-  int32 sequence = 7;
-
-  // When applications open (受付開始). Required — a phase is never persisted
-  // without it, because an unknown start cannot anchor the "application open"
-  // reminder and signals the phase is not yet actionable for a fan.
+  // When applications open (受付開始). Required — it anchors the "application
+  // open" reminder.
   google.protobuf.Timestamp apply_start_time = 8 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
 
-  // When applications close (受付終了). Nullable: null means "not yet announced".
-  // Anchors the 24-hour-before and 1-hour-before reminder stages when present.
+  // When applications close (受付終了). Required for a lottery, where it anchors
+  // the 24-hour-before reminder. Absent on a first-come phase that ends when
+  // tickets run out. Must be after `apply_start_time`.
   google.protobuf.Timestamp apply_end_time = 9 [(google.api.field_behavior) = OPTIONAL];
 
-  // When lottery results are announced (当落発表). Nullable: null means "not yet
-  // announced" or "not a lottery phase". Anchors the result-day reminder stage.
+  // When lottery results are announced (当落発表). Only on a lottery, and absent
+  // when not yet announced. Anchors the result-day reminder; must not be before
+  // `apply_end_time`.
   google.protobuf.Timestamp lottery_result_time = 10 [(google.api.field_behavior) = OPTIONAL];
 
-  // The payment deadline for winners (入金期限). Nullable; captured for
-  // completeness but does NOT drive a reminder stage yet, because only lottery
-  // winners owe payment and win/loss gating is out of scope for now.
-  google.protobuf.Timestamp payment_deadline_time = 11 [(google.api.field_behavior) = OPTIONAL];
-
-  // The application URL fans follow to apply for this phase. Optional: a nil
-  // wrapper skips inner-Url validation (matching Series.source_url semantics),
-  // and notifications deep-link here when present, else to the series detail
-  // (a phase is series-level and has no single covered concert to fall back to).
-  Url url = 12 [(google.api.field_behavior) = OPTIONAL];
-
   // Field 3 was `repeated EventId event_ids` (per-event coverage subset),
-  // removed when the phase became series-level. Reserved to prevent reuse.
-  reserved 3;
-  reserved "event_ids";
+  // removed when the phase became series-level. Fields 5, 6, 7, 11 and 12 were
+  // `channel`, `provider_name`, `sequence`, `payment_deadline_time` and `url`,
+  // removed when the method became the only classification. Reserved to
+  // prevent reuse.
+  reserved 3, 5, 6, 7, 11, 12;
+  reserved "event_ids", "channel", "provider_name", "sequence", "payment_deadline_time", "url";
 }
