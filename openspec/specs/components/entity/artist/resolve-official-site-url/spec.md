@@ -18,7 +18,7 @@ Among the catalog's official-homepage links for the MBID that have not ended, Re
 - **THEN** the first of the two top pages is returned
 
 #### Scenario: No top page
-- **WHEN** every active link has a path, as for an artist listed only on label pages
+- **WHEN** every active link has a path other than `/`, as for an artist listed only on label pages
 - **THEN** the first uncredited link among them is returned
 
 #### Scenario: Link credited to the artist's name
