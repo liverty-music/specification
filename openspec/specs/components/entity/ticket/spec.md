@@ -11,7 +11,7 @@ A Ticket is one account-bound admission right to an event, issued from an Order.
 | holder | the account the ticket is currently bound to | required |
 | event | the event it admits to, which gives the date and venue on its face | required |
 | holder full name | the holder's name noted on the face (本人確認) | required, 1-200 characters |
-| holder phone number | the holder's contact phone noted on the face (本人確認) | required, 1-20 characters |
+| holder phone number | the holder's contact phone noted on the face (本人確認) | required, E.164: `+` then 2-15 digits, first digit not 0 |
 | verified identity | the verified identity the ticket is bound to | optional; set only when the phase required verification |
 | resale without consent prohibited | the face states that resale without the organizer's consent is prohibited | always true |
 | status | lifecycle; a Voided ticket is no longer valid for entry | Issued or Voided |
