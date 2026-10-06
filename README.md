@@ -181,7 +181,6 @@ The commit and push hooks run automatically to ensure code quality. BSR synchron
 │       │   └── api/     # Service definitions
 │       └── buf.yaml     # Module configuration
 ├── buf.yaml         # Workspace configuration
-├── buf.gen.yaml     # Code generation plugin configuration for BSR
 ├── .pre-commit-config.yaml  # pre-commit configuration
 └── README.md        # This file
 ```
