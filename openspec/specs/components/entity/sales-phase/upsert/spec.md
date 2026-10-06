@@ -6,31 +6,6 @@ Upsert stores a discovered sales phase. It updates the known phase that has the 
 
 ## Requirements
 
-### Requirement: Same series and same apply start time is the same sales phase
-
-Upsert SHALL treat a discovered phase as the known phase of its series whose apply start time is the same instant, whatever its method, channel, sequence, provider name, other milestones or url. On a match it SHALL replace those descriptive attributes with the discovered values, keep the id, series, apply start time and discovered time, and return Updated with the existing id. Without a match it SHALL create a new phase with a new id and the current time as discovered time, and return Inserted with the new id. A discovered value that is absent SHALL clear the previously stored value.
-
-#### Scenario: Re-discovery with more detail
-
-- **WHEN** a phase already stored for a series is discovered again with the same apply start time and a newly announced apply end time
-- **THEN** Upsert updates that phase with the apply end time and returns Updated with its id
-- **AND** no second phase is created
-
-#### Scenario: Reclassification does not duplicate
-
-- **WHEN** a phase stored with channel `UNSPECIFIED` and sequence 0 is discovered again as channel `FAN_CLUB`, sequence 1, with the same apply start time
-- **THEN** Upsert updates that phase in place and returns Updated
-
-#### Scenario: Different start times stay separate
-
-- **WHEN** a series has a stored fan-club presale and a general on-sale is discovered with a different apply start time
-- **THEN** Upsert creates a new phase and returns Inserted with the new id
-
-#### Scenario: Omitted value clears the stored one
-
-- **WHEN** a stored phase has a url and is discovered again with the same apply start time and no url
-- **THEN** Upsert updates the phase and its url becomes empty
-
 ### Requirement: A phase without a known start is skipped
 
 Upsert SHALL store nothing for a discovered phase whose apply start time is unknown, and SHALL return Skipped with no id and no error.
@@ -62,3 +37,33 @@ Upsert SHALL fail with InvalidArgument when the discovered phase names no series
 
 - **WHEN** Upsert receives a discovered phase for a series that does not exist
 - **THEN** it fails with FailedPrecondition and stores nothing
+
+### Requirement: Same series, method and apply start date is the same sales phase
+
+Upsert SHALL treat a discovered phase as the known phase that has the same series and method, and an apply start time on the same calendar day in Japan time (Asia/Tokyo). On a match it SHALL replace the apply start time, apply end time and lottery result time with the discovered values. It SHALL keep the id, series, method and discovered time, and return Updated with the existing id. Without a match it SHALL create a new phase with a new id and the current time as discovered time, and return Inserted with the new id. A discovered value that is absent SHALL clear the previously stored value.
+
+#### Scenario: Re-discovery with a corrected time
+
+- **WHEN** a lottery stored as opening on 5 October 16:00 is discovered again as opening on 5 October 18:00
+- **THEN** Upsert updates that phase to open at 18:00 and returns Updated with its id
+- **AND** no second phase is created
+
+#### Scenario: Re-discovery with more detail
+
+- **WHEN** a stored lottery is discovered again with the same series and start date and a newly announced lottery result time
+- **THEN** Upsert updates that phase with the lottery result time and returns Updated
+
+#### Scenario: Different start dates stay separate
+
+- **WHEN** a series has a stored lottery opening on 5 October and a lottery opening on 10 November is discovered
+- **THEN** Upsert creates a new phase and returns Inserted with the new id
+
+#### Scenario: Different methods on one day stay separate
+
+- **WHEN** a series has a stored lottery opening on 5 October and a first-come sale opening on 5 October is discovered
+- **THEN** Upsert creates a new phase and returns Inserted
+
+#### Scenario: Omitted value clears the stored one
+
+- **WHEN** a stored lottery has a lottery result time and is discovered again on the same start date without one
+- **THEN** Upsert updates the phase and its lottery result time becomes empty
