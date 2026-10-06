@@ -28,6 +28,11 @@ rules:
     - Legal and commercial terms are written in Japanese with an English gloss on first use (特定興行入場券 covered ticket, 本人確認 identity check, 収納代行 collection agency, 特商法 表記, 中止, 延期, 繰上げ); enum values and channel names are English.
 
 operations:
+  apply:
+    guidance:
+      - Record task progress in this store's working tree on main (check off tasks.md, update design.md) and never commit it; implementation repositories only cite the change and store commit in their PRs.
+      - Several changes share the store's working tree. Never run git stash, git reset --hard, git checkout -- . / git restore . or git clean there, never git add -A / git add ., and never switch its branch.
   archive:
     guidance:
       - Confirm every implementing PR is merged and cite them before archiving.
+      - Archive on a <change>-archive branch cut from an up-to-date main, stage only openspec/changes/<change>, openspec/changes/archive and openspec/specs, then push, open one PR and switch back to main.
