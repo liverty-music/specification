@@ -6,8 +6,9 @@ Gemini grounding (Google Search) queries are the main cost of concert discovery:
 
 - Concert discovery calls gemini-3.8-flash with thinking `low` and no temperature, a short system instruction (scope, sources, output contract only), the official site's full URL, and a Google Search time range of the last 2 months.
 - The grounded call returns the final events as structured JSON; the separate parse call (Step 2, flash-lite) and the XML envelope are removed.
+- The model returns one list of series; the series type (TOUR or SINGLE) is set from the number of venues instead of the model's tour/standalone judgment.
 - Admin areas are returned as ISO 3166-2 codes for venues in any country, not only Japan's 47 prefectures.
-- Venue names are kept as printed, including former-name annotations (e.g. 「クロコくんホール（旧 日本ガイシホール）」); notation variants across official pages (full/half-width, compatibility characters, spacing) no longer split one venue when removing repeats.
+- Venue names are kept as printed, including former-name annotations (e.g. 「クロコくんホール（旧 日本ガイシホール）」) but not show subtitles, and are taken from a multilingual page's default-language version; notation variants across official pages (full/half-width, compatibility characters, spacing) no longer split one venue when removing repeats.
 - A response with no candidates fails the search instead of returning no concerts, so the Artist's SearchLog becomes failed and the next daily run searches again. It is not retried within the same search.
 - Each Gemini response log includes the search queries the model ran, alongside the existing token and finish metadata.
 - Prod reuses a completed search for 96h instead of 72h (configuration).
