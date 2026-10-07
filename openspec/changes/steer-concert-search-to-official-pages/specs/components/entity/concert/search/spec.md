@@ -2,7 +2,7 @@
 
 ### Requirement: Search reads the official site's concert pages
 
-When the Artist has an official site, Search SHALL read the site's top page once before searching. The top page's links to pages of the same registrable domain whose path names a live, schedule, tour, concert or show page SHALL be the pages Search reads first, at most 8 of them. Links to other domains, and links whose path names none of those pages, SHALL be ignored. If the top page cannot be read — it fails to load within 5 seconds, is larger than 2 MB, answers with an error, or its host resolves to a private, loopback or link-local address — or it carries no such links, Search SHALL search as it does without them. If the site's host starts with `www.` and does not resolve, Search SHALL read the top page of the host without `www.` instead. A top page that cannot be read SHALL NOT fail Search.
+When the Artist has an official site, Search SHALL read the site's top page once before searching. The top page's links to pages of the official site's registrable domain whose path names a live, schedule, tour, concert or show page SHALL be the pages Search reads first, at most 8 of them, in the order the page lists them. Links to other domains, and links whose path names none of those pages, SHALL be ignored. Search SHALL read at most the first 2 MB of the top page and take links from that part only. If the top page cannot be read — it fails to load within 5 seconds, answers with an error, redirects to a page of another registrable domain, or its host resolves to a private, loopback or link-local address — or it carries no such links, Search SHALL search as it does without them. If the site's host starts with `www.` and does not resolve, Search SHALL read the top page of the host without `www.` instead, and the registrable domain of that host SHALL be the official site's. A top page that cannot be read SHALL NOT fail Search.
 
 #### Scenario: Concert pages linked from the top page
 - **WHEN** the official top page `https://vaundy.jp/` links to `https://vaundy.jp/live/`, `https://member.vaundy.jp/feature/ASIAARENATOUR_2026` and `https://vaundy.jp/news/`
@@ -15,6 +15,14 @@ When the Artist has an official site, Search SHALL read the site's top page once
 #### Scenario: More than 8 concert links
 - **WHEN** the official top page links to 12 same-domain live pages
 - **THEN** Search reads the first 8 of them in page order
+
+#### Scenario: Top page larger than 2 MB
+- **WHEN** the official top page is 3 MB long and links to `https://vaundy.jp/live/` within its first 2 MB
+- **THEN** Search reads `https://vaundy.jp/live/` first and does not fail
+
+#### Scenario: Redirect to another domain
+- **WHEN** the official top page redirects to a page on a link-sharing service's domain
+- **THEN** Search searches as it does without links and does not fail
 
 #### Scenario: Top page unavailable
 - **WHEN** the official top page answers with HTTP 403
