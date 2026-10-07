@@ -75,3 +75,15 @@ Hand-written copies are removed only where they restate a proto rule and nothing
 4. **backend** PR (opened after step 2 is live for at least 24 hours): both schema SDKs to `vX.Y.Z`, `connectrpc.com/validate` v0.7.0, backfill + CHECK migrations, SDK-commit CI check → deploy.
 
 Rollback: backend revert restores the old SDK (pattern no longer enforced) and validate v0.6.0; the backfill is not reverted (E.164 values satisfy the old length rule). The CHECK constraint is dropped by a revert migration if needed. Frontend revert re-sends typed numbers, which a backend on the new SDK rejects — so roll back backend before frontend.
+
+## Implementation Notes
+
+- **Releases**: specification v0.66.0 (#1059), frontend v1.73.0 (#688), backend v1.62.0 (#546). All three consumers are on schema commit `e1f8da3822a6`. v0.66.0 also carries v0.65.0 (SalesPhase method-only classification), which needed no backend code change.
+- **5.1 production pre-check** (2026-10-07, read-only): `ticket_applications` 2 rows and `tickets` 1 row, all domestic, none in neither form. After the backend merge all three are E.164 and both CHECK constraints are validated.
+- **24-hour hold skipped** (deviation from the Migration Plan, step 4): the only production user is the project owner and the last application predated the change by a month, so no stale PWA could be caught out. The backend PR opened and deployed the same day as the frontend.
+- **Migrations apply at merge, not at release**: the `backend-migrations` ArgoCD Application tracks backend `main`, so the backfill and CHECK constraints reach production when the PR merges; the application image follows at the GitHub Release.
+- **E2E fixtures** (frontend): the validation interceptor rejects requests whose IDs break `string.uuid`, so mocks that handed the app IDs like `artist-1` made mocked RPCs never leave the page. Fixture IDs became UUIDs (`e2e/support/fake-id.ts`).
+- **ApplicantIdentity rule tests** live in `backend/internal/adapter/rpc/` (not `internal/entity/`) so entity tests keep no proto dependency.
+- **"Zero tickets"** had no marked test before this change; `lottery_handler_boundary_test.go` adds one alongside the two phone scenarios.
+- **3.4 verified without a production Apply**: no lottery phase is open in production (all three are drawn) and the organizer console cannot create one yet, so no new application could be stored. A production Apply would also prove nothing any more: since backend v1.62.0, Apply rejects a non-E.164 number at the protovalidate boundary and the CHECK constraints refuse one in storage, so every stored number is E.164 by construction. That the frontend sends E.164 is covered by the `toE164` and Apply-payload unit tests, the fixture test rendering the real template, and a check that the bundle served from production contains the new lottery-apply code.
+- **Post-deploy monitoring task dropped**: the original 6.1 (24 hours of backend logs, Apply InvalidArgument rate and p50 latency) was removed. With no users besides the project owner there is no traffic to measure, so it could not show a regression either way. The schema-commit check that was 6.2 is now 6.1.
