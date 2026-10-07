@@ -15,9 +15,9 @@ All consumer-facing prices SHALL be shown as a tax-inclusive (税込) amount, an
 
 ### Requirement: 特定商取引法 final confirmation
 
-Before a purchase is committed, the platform SHALL present a final-confirmation screen (最終確認画面) that states the return/refund policy (返品特約: no returns except event cancellation/postponement per the ⑤ refund taxonomy) and the responsible business's information (事業者情報) for the applicable Organizer.
+Before a purchase is committed, the platform SHALL present a final-confirmation screen (最終確認画面) that states the return/refund policy (返品特約: no returns except event cancellation (中止) per the ⑤ refund taxonomy) and the responsible business's information (事業者情報) for the applicable Organizer.
 
 #### Scenario: Final confirmation before commit
 
 - **WHEN** a fan reaches the last step before their payment is committed
-- **THEN** they see the 返品特約 (cancellation/postponement-only refunds) and the per-Organizer 事業者情報, and must pass this screen to complete the purchase
+- **THEN** they see the 返品特約 (cancellation-only refunds) and the per-Organizer 事業者情報, and must pass this screen to complete the purchase

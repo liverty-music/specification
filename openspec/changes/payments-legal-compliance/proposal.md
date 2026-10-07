@@ -9,7 +9,7 @@ Paid ticketing (roadmap ⑤ `ticket-purchase-and-issuance`) is implemented and v
   - **収納代行 counsel opinion** (資金決済法): discharge clause (弁済免責) + hold-to-event escrow + no cross-border. (Stripe Connect onboarding execution is owned by `ticket-settlement-and-payout`.)
   - **適格請求書発行事業者 registration** + 媒介者交付特例 stance (インボイス制度).
   - **総額表示** (税込 lines + grand total) on all consumer-facing prices.
-  - **特商法 最終確認画面** + 返品特約 (no returns except cancellation/postponement) + per-Organizer 事業者情報.
+  - **特商法 最終確認画面** + 返品特約 (no returns except event cancellation 中止) + per-Organizer 事業者情報.
   - **PCI SAQ A** (Stripe Elements, no PAN) + EMV 3DS attestation.
   - **個人情報 越境移転** (Stripe US 委託) privacy disclosure + DPA; 電子帳簿保存法 record retention; 領収書/適格請求書 (クレカ決済表記, 登録番号).
 - No new proto/RPC surface. A few items have consumer-facing UI surfaces (総額表示, 特商法 最終確認画面) that partly live in ④'s apply/checkout and ⑤'s Order views.

@@ -101,7 +101,8 @@ Confirmed against 文化庁 / 警察庁 / 古物営業法 / 消費者庁 (2024-2
    チケプラ phrases it ("トレード購入手数料 / システム利用料") and lowers §9/§10 void
    risk. Pre-disclose "not guaranteed to sell / ticket returns to you if unsold";
    the original purchase-side processing fee is non-refundable (JP norm).
-9. **Cancellation/postponement refund** is a SEPARATE matter from the §15-3
+9. **Cancellation refund** (a postponed show is cancelled and re-listed as a
+   new event) is a SEPARATE matter from the §15-3
    return right — a voluntary/organizer refund on event cancellation, governed by
    the original ticket's cancellation policy. Keep it distinct from the 返品特約 so
    the two do not contradict (国民生活センター messaging: official resale + a

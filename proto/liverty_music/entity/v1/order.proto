@@ -101,8 +101,8 @@ enum OrderStatus {
   // balance) when the Order exists.
   ORDER_STATUS_PAID = 1;
 
-  // Refunded — the captured payment was refunded (event cancellation 中止, a
-  // postponement holder-initiated refund, or dispute) via a provider Refund plus
+  // Refunded — the captured payment was refunded (event cancellation 中止 or
+  // dispute) via a provider Refund plus
   // transfer_reversal clawback of the Organizer's share.
   ORDER_STATUS_REFUNDED = 2;
 

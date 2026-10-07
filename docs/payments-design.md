@@ -345,7 +345,7 @@ implements/holds the duty.
 | # | Obligation | Blocking | Owner | What to build / disclose |
 |---|-----------|----------|-------|--------------------------|
 | 1 | **総額表示義務** (消費税法 §63, since 2021-04) | **Yes** | Platform | Render every consumer-facing price **tax-inclusive** (ticket AND system/payment fee, each as its own 税込 line) + a clear grand total on listing/cart/confirmation. |
-| 2 | **特商法 通信販売: 最終確認画面 + 返品特約 + no cooling-off** (§11, §12-6 2022) | **Yes** | Platform (screen) / Organizer (事業者情報) | Confirmation screen showing 分量・価格(税込)・**支払時期方法**・**引渡時期**・**返品特約**・per-Organizer **事業者情報**; make the **charge-on-lottery-win timing/amount unambiguous**; state "通信販売 = クーリングオフ無し". **Omitting 返品特約 triggers an 8-day statutory return right** — so spell out "no returns except event cancellation/postponement". |
+| 2 | **特商法 通信販売: 最終確認画面 + 返品特約 + no cooling-off** (§11, §12-6 2022) | **Yes** | Platform (screen) / Organizer (事業者情報) | Confirmation screen showing 分量・価格(税込)・**支払時期方法**・**引渡時期**・**返品特約**・per-Organizer **事業者情報**; make the **charge-on-lottery-win timing/amount unambiguous**; state "通信販売 = クーリングオフ無し". **Omitting 返品特約 triggers an 8-day statutory return right** — so spell out "no returns except event cancellation (中止)". |
 | 3 | **割賦販売法 (2018): card-data 非保持化 / PCI** | **Yes (precondition)** | Platform (加盟店) / Stripe | Stripe Elements so **no PAN touches our systems** (store only Stripe tokens/customer ids — incl. the saved-card-at-draw flow); keep **PCI SAQ A** + EMV 3DS on file. |
 | 4 | **個人情報保護法 (2022): 越境移転 to Stripe (US)** | **Yes** | Platform | Privacy policy: personal/card data is **entrusted (委託) to an overseas processor (Stripe, USA)** + **外的環境の把握** (US regime + Stripe safeguards); hold a **Stripe DPA** as 委託先監督 evidence. |
 | 5 | **犯収法 / AML-KYC** | Confirm | Stripe (card-level) | A pure 収納代行 that does **not** perform 為替取引 is generally **not** a 犯収法 特定事業者. Document why the flow is 収納代行, not remittance. **Same determination as the 資金決済法 boundary** — close it once. |
@@ -366,9 +366,9 @@ Non-regulatory gaps to specify when ⑤ is authored:
   (adult/child sharing the capacity pool), any price cap.
 - **Order ↔ Ticket ↔ Payment linkage:** one Order = N tickets (companion,
   ≤ `max_tickets_per_application`); a successful charge issues N tickets.
-- **Refund taxonomy:** **postponement (延期, event still happens) vs
-  cancellation (中止)**, partial refunds, and the "no returns except
-  cancellation" 返品特約 wording (ties to §2 above).
+- **Refund taxonomy:** **cancellation (中止) only**; a postponed show (延期)
+  is cancelled and re-listed as a new event. Partial refunds, and the "no
+  returns except cancellation" 返品特約 wording (ties to §2 above).
 - **Payout mechanics:** payout schedule, per-Organizer **settlement
   statement (支払明細)**, failed-payout + negative-balance handling, Stripe
   KYC bank onboarding.

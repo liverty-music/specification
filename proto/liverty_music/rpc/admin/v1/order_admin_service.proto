@@ -16,15 +16,15 @@ option go_package = "github.com/liverty-music/specification/gen/go/liverty_music
 // The Organizer PAYOUT is deliberately NOT an RPC here: buyer funds are held on
 // the platform balance (separate charges & transfers) and the Organizer's net
 // share is transferred by an INTERNAL SCHEDULED platform job only after the
-// event's occurrence AND a dispute-safety window (and re-gated on the new date on
-// a postponement) — it is never a manual admin/organizer action, mirroring the
+// event's occurrence AND a dispute-safety window (gated on the event's current
+// start time) — it is never a manual admin/organizer action, mirroring the
 // lottery draw-job precedent.
 service OrderAdminService {
   // RefundOrder refunds the ticket's current holder the face value + system/発券
   // fee (retaining the payment-processor fee, the JP norm) via a provider Refund,
   // and claws back the Organizer's share via transfer_reversal. It covers event
-  // cancellation (中止), a postponement (延期) holder-initiated refund within the
-  // refund window, and dispute/chargeback handling (see RefundReason). It is
+  // cancellation (中止) and dispute/chargeback handling (see RefundReason). A
+  // postponed show is handled as a cancellation followed by a new event. It is
   // idempotent: a replay records the refund once (no double-refund). On a
   // cancellation while the ticket is listed for ⑦ resale, the listing is
   // cancelled and this path refunds the holder (the resale fresh-sale leg does
@@ -32,8 +32,7 @@ service OrderAdminService {
   //
   // Possible errors:
   // - FAILED_PRECONDITION: The Order is not refundable in its current state
-  //   (e.g. already refunded), or a postponement-window refund is requested
-  //   outside the window.
+  //   (e.g. not paid).
   // - INVALID_ARGUMENT: The order_id is missing/malformed or the reason is
   //   UNSPECIFIED.
   // - NOT_FOUND: No such Order.
@@ -45,17 +44,17 @@ service OrderAdminService {
 // policy and the operational audit trail. New values may be appended; existing
 // values must not be renumbered.
 enum RefundReason {
+  // Value 2 was previously REFUND_REASON_POSTPONEMENT_WINDOW, a postponement
+  // (延期) refund window that was never built. Reserved to prevent accidental reuse.
+  reserved 2;
+  reserved "REFUND_REASON_POSTPONEMENT_WINDOW";
+
   // Default value, rejected at the boundary.
   REFUND_REASON_UNSPECIFIED = 0;
 
   // Event cancellation (中止): the holder is refunded face + system/発券 fee and
   // the Organizer's share is clawed back. Any live ⑦ resale listing is cancelled.
   REFUND_REASON_CANCELLATION = 1;
-
-  // A postponement (延期) holder-initiated refund within the bounded refund
-  // window, for a holder who cannot attend the rescheduled date. Same amount as a
-  // cancellation (face + system/発券 fee, processor fee retained).
-  REFUND_REASON_POSTPONEMENT_WINDOW = 2;
 
   // A chargeback / dispute: the captured payment is reversed and the Organizer's
   // share clawed back via transfer_reversal.

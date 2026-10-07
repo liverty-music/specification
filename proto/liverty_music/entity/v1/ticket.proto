@@ -22,8 +22,8 @@ message TicketId {
 }
 
 // TicketStatus is the lifecycle of an issued Ticket as owned by ⑤. ⑤ issues a
-// ticket as ISSUED and voids it when its Order is refunded (event cancellation,
-// a postponement holder-initiated refund, or dispute). ⑥ ticket-wallet-and-checkin
+// ticket as ISSUED and voids it when its Order is refunded (event cancellation
+// or dispute). ⑥ ticket-wallet-and-checkin
 // appends wallet / check-in states (e.g. CHECKED_IN) on top of this — so new
 // values may be appended and existing values must not be renumbered.
 enum TicketStatus {
@@ -34,8 +34,8 @@ enum TicketStatus {
   // Issued and valid — the normal state on issuance from a captured win.
   TICKET_STATUS_ISSUED = 1;
 
-  // Voided — the ticket's Order was refunded (cancellation / postponement refund
-  // window / dispute), so the ticket is no longer valid for entry.
+  // Voided — the ticket's Order was refunded (cancellation / dispute), so the
+  // ticket is no longer valid for entry.
   TICKET_STATUS_VOIDED = 2;
 }
 
@@ -77,8 +77,8 @@ message Ticket {
   ];
 
   // The event this ticket admits to. Supplies the covered-ticket face's
-  // date/venue (condition ii); the event's currently-scheduled date also gates
-  // the Organizer payout and survives a postponement reschedule.
+  // date/venue (condition ii); the event's current start time also gates the
+  // Organizer payout.
   EventId event_id = 4 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true

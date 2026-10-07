@@ -7,7 +7,7 @@
 ## 2. Consumer-facing compliance UI + copy
 
 - [ ] 2.1 総額表示: tax-inclusive (税込) line amounts + tax-inclusive grand total on ALL consumer-facing prices (④ apply/checkout + ⑤ Order surfaces). Owns the obligation; the pixels land in ④/⑤.
-- [ ] 2.2 特商法 最終確認画面: final pre-commit confirmation showing 返品特約 (no returns except cancellation/postponement per ⑤'s refund taxonomy) + per-Organizer 事業者情報.
+- [ ] 2.2 特商法 最終確認画面: final pre-commit confirmation showing 返品特約 (no returns except event cancellation 中止, per ⑤'s refund taxonomy) + per-Organizer 事業者情報.
 - [ ] 2.3 PCI SAQ A: verify card entry is Stripe Elements only (no PAN reaches the platform); EMV 3DS available on the card flow; SAQ A attestation on file.
 
 ## 3. Records, receipts & data-transfer disclosures

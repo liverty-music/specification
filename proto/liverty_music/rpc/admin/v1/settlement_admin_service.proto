@@ -16,7 +16,7 @@ option go_package = "github.com/liverty-music/specification/gen/go/liverty_music
 //
 // Releasing funds is deliberately NOT an RPC here: the Organizer payout is created
 // by an INTERNAL SCHEDULED platform job only after the event's occurrence AND a
-// dispute-safety window (re-gated on the new date on a postponement), never a manual
+// dispute-safety window (gated on the event's current start time), never a manual
 // admin action — mirroring the lottery draw-job precedent and OrderAdminService. The
 // refund/clawback entry point is ⑤'s OrderAdminService.RefundOrder. This service only
 // reads settlement state for support and reconciliation.
