@@ -185,7 +185,7 @@ If V1 fails (class rejected or no migration), fall back to required Spot (`nodeS
 ## Risks / Trade-offs
 
 - [Spot shortage makes NATS Pending] → Accepted before launch. Alerts surface it (ArgoCD health, crash-loop alert). Other workloads fall back under D1.
-- [Active migration evicts single replicas while moving back to Spot] → Accepted (no users). The 15-second Spot grace cap applies anyway.
+- [Active migration evicts single replicas while moving back to Spot] → Accepted (no users). Spot preemption bounds the shutdown anyway (Autopilot caps the grace period at 25s for Pods with the Spot toleration).
 - [`podFamily` + `spot` behaves differently from the docs' `machineFamily` examples] → V1 proves it before anything depends on it.
 - [The default class unexpectedly applies the 0.5 vCPU minimum] → V3 checks live requests on one workload before V4.
 - [kube-scheduler places Pods on existing on-demand nodes] → Active migration corrects it. Watch billing for on-demand mCPU.
@@ -223,4 +223,13 @@ If V1 fails (class rejected or no migration), fall back to required Spot (`nodeS
 ## Open Questions
 
 - The Pulumi field for the Autopilot general profile (`no-performance`). If the provider lacks it, apply it with gcloud and record it in the runbook, as with other out-of-band settings.
+  - **Resolved:** no provider has it (`@pulumi/gcp` 9.37 and 10.0.0; hashicorp/terraform-provider-google#26958). Applied with gcloud, recorded in `docs/runbooks/gke-autopilot-general-profile.md`. A `command.local.Command` wrapper was considered and not adopted.
 - Artifact Registry retention numbers (versions to keep, age). To be chosen from rollback needs during implementation, with a dry-run first.
+  - **Resolved:** prod keeps 30 versions and deletes older than 60 days; dev keeps 15 and deletes older than 14 days. `keepCount` counts versions, and each release pushes three (index, image, attestation), so this keeps about 10 / 5 releases. The dry run logged nothing (Data Access audit logs are off), so the policies were replayed over the version listings before enforcing.
+
+## Implementation findings
+
+- **ArgoCD diff/apply mismatch.** Six Applications synced with client-side apply under the cluster-wide Server-Side Diff, which never detects a change that only removes fields (argoproj/argo-cd#23845). Dropping a Spot patch therefore stayed `Synced` without applying. Fixed by moving every Application to Server-Side Apply (cloud-provisioning#594).
+- **Prod Applications were not GitOps-managed.** Prod had no root app, so `k8s/argocd-apps/prod` never reached the cluster. A root app per environment now ships in the argocd overlay (cloud-provisioning#595).
+- **Default-class Spot nodes need no Spot toleration.** Pods placed by the `default` class run on Spot without one (V3), and Autopilot's 25s grace-period cap for Spot-tolerating Pods no longer applies.
+- **Soft podAntiAffinity kept the 50m minimum** on the default class (observed on the Argo CD Pods, which carry the chart's preferred podAntiAffinity).
