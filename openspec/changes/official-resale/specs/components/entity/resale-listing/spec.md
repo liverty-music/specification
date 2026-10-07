@@ -50,27 +50,18 @@ flags are ticket-type metadata defined by ⑤/⑥ (see design.md dependency).
 - **WHEN** an administrator records a documented resale exception for a specific event
 - **THEN** listing is disabled for that event, LISTED listings are withdrawn, and any in-flight OFFERED offer is voided with no charge (admin action overrides the OFFERED lock, which only blocks the *seller*'s own withdrawal); already-SOLD resales are unaffected
 
-### Requirement: Event cancellation or postponement while listed
+### Requirement: Event cancellation while listed
 
 When an event is **cancelled** while a ticket is in `LISTED` or `OFFERED` state
 (fresh-sale leg not yet completed), the system SHALL cancel the listing/offer and
 route the ticket to the **normal cancellation-refund path** — the resale
-fresh-sale leg MUST NOT execute. When an event is **postponed**, existing `LISTED`
-listings SHALL remain valid and any **in-flight `OFFERED` offer SHALL continue**
-against the **recomputed** resale **deadline** (new `start_time − 1h`), and any
-already-completed resale SHALL be unaffected (the reissued ticket stays valid for
-the new date). Because the seller refund is keyed
-on resale completion (not the event), postponement does not change settled refunds.
+fresh-sale leg MUST NOT execute. A postponed show is handled as a cancellation
+followed by a new event, so it takes this same path.
 
 #### Scenario: Cancellation supersedes a live listing
 
 - **WHEN** an event is cancelled while a ticket is in LISTED or OFFERED state
 - **THEN** the listing/offer is cancelled and the holder receives the standard cancellation refund, not a resale outcome
-
-#### Scenario: Postponement recomputes the deadline and preserves settled resales
-
-- **WHEN** an event is postponed
-- **THEN** open listings stay valid with the deadline recomputed to the new start time, and any completed resale and its settled refund are unaffected
 
 ### Requirement: Anonymity and no person-to-person contact
 

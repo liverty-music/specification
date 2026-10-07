@@ -1,0 +1,43 @@
+# Spec Delta
+
+## MODIFIED Requirements
+
+### Requirement: Reason and refundable order
+
+RefundOrder SHALL take an Order, a reason — Cancellation or Dispute — and the current time. It SHALL fail with InvalidArgument when no reason is given. It SHALL read the Order with Order.Get, failing with NotFound when it does not exist. When the Order is already Refunded it SHALL return it unchanged and move no money. When the Order is not refundable it SHALL fail with FailedPrecondition.
+
+#### Scenario: Reason missing
+
+- **WHEN** RefundOrder is called without a reason
+- **THEN** it fails with InvalidArgument and nothing changes
+
+#### Scenario: Repeated refund
+
+- **WHEN** RefundOrder is called for an Order that is already Refunded
+- **THEN** the Order is returned unchanged and no refund or claw-back is made
+
+#### Scenario: Unknown order
+
+- **WHEN** the Order does not exist
+- **THEN** RefundOrder fails with NotFound
+
+### Requirement: Buyer refunded the full amount
+
+For the reason Cancellation, RefundOrder SHALL refund the Order's full amount to the buyer's original payment with Order.CreateRefund, against the charge recorded on the Order's Settlement or, when none is recorded, the charge found by Order.ResolveChargeRef. It SHALL fail with FailedPrecondition when the Order's payment service cannot issue refunds or the Order has no payment reference. For the reason Dispute it SHALL issue no refund, because the dispute has already returned the money to the cardholder.
+
+#### Scenario: Cancellation refund
+
+- **WHEN** an event is cancelled and a 16000 yen Order is refunded with the reason Cancellation
+- **THEN** 16000 yen is refunded to the buyer's card
+
+#### Scenario: Dispute
+
+- **WHEN** RefundOrder runs with the reason Dispute
+- **THEN** no refund is issued to the buyer and the rest of the refund still happens
+
+## REMOVED Requirements
+
+### Requirement: Postponement refund window
+
+**Reason**: 延期 (postponement) is not a state an Event can be in. A postponed show is handled as a 中止 (cancellation) of the event, refunded with the reason Cancellation, followed by a new event. Nothing ever recorded a reschedule time, so the window never applied.
+**Migration**: Refund buyers of a postponed show with the reason Cancellation. The PostponementWindow reason is withdrawn from the admin refund request; no stored Order carries it.

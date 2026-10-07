@@ -88,7 +88,7 @@ enum SettlementStatus {
   SETTLEMENT_STATUS_RELEASED = 2;
 
   // Reversed — a refund or dispute reversed the transferred split(s) via
-  // transfer_reversal (event cancellation, postponement refund, or chargeback).
+  // transfer_reversal (event cancellation or chargeback).
   SETTLEMENT_STATUS_REVERSED = 3;
 }
 

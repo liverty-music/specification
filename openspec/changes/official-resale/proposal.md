@@ -44,8 +44,8 @@ change turns that design into a specced capability.
   (including `start_time`) to be set, so the `start_time − 1h` deadline is
   computable.
 - Event **cancellation** while a ticket is listed routes to the normal
-  cancellation-refund path; **postponement** recomputes the deadline and keeps
-  listings/settled resales valid.
+  cancellation-refund path. A postponed show is a cancellation followed by a new
+  event, so it takes the same path.
 - **Unsold at deadline = return-only** (no organizer buyback in MVP). **Match
   notification** (push/email) is a **future** enhancement.
 
@@ -58,7 +58,7 @@ buyer-side markup. Provider/payment mechanics reuse ⑤'s Stripe Connect /
 
 ### New Capabilities
 
-- `components/entity/resale-listing`: Resale deadline; Resale is enabled by default with structural exclusions only; Event cancellation or postponement while listed; Anonymity and no person-to-person contact
+- `components/entity/resale-listing`: Resale deadline; Resale is enabled by default with structural exclusions only; Event cancellation while listed; Anonymity and no person-to-person contact
 - `components/infrastructure/fan/web/route/order`: Buyer return policy on the final confirmation screen
 - `components/usecase/resale-listing/create`: List a ticket for resale
 - `components/usecase/resale-listing/expire`: Unsold listing returns to the holder

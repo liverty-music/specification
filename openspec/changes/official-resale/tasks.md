@@ -58,7 +58,7 @@
 ## 8. Release & verification
 
 - [ ] 8.1 Cross-repo release order: spec → BSR → backend → frontend; provision any new consumers/streams
-- [ ] 8.2 End-to-end verify: list → (public queue, loser priority) match → void+reissue → **seller refund on completion (hold-back)**; queue-exhausted-alive; unsold-return; cancellation + postponement paths; anti-double-seat
+- [ ] 8.2 End-to-end verify: list → (public queue, loser priority) match → void+reissue → **seller refund on completion (hold-back)**; queue-exhausted-alive; unsold-return; cancellation path; anti-double-seat
 - [ ] 8.3 Sync delta specs to main specs and archive the change
 
 ## 9. Future (out of MVP scope — do not implement now)
