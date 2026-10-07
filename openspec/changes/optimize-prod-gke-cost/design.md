@@ -185,7 +185,7 @@ If V1 fails (class rejected or no migration), fall back to required Spot (`nodeS
 ## Risks / Trade-offs
 
 - [Spot shortage makes NATS Pending] → Accepted before launch. Alerts surface it (ArgoCD health, crash-loop alert). Other workloads fall back under D1.
-- [Active migration evicts single replicas while moving back to Spot] → Accepted (no users). The 15-second Spot grace cap applies anyway.
+- [Active migration evicts single replicas while moving back to Spot] → Accepted (no users). Spot preemption bounds the shutdown anyway (Autopilot caps the grace period at 25s for Pods with the Spot toleration).
 - [`podFamily` + `spot` behaves differently from the docs' `machineFamily` examples] → V1 proves it before anything depends on it.
 - [The default class unexpectedly applies the 0.5 vCPU minimum] → V3 checks live requests on one workload before V4.
 - [kube-scheduler places Pods on existing on-demand nodes] → Active migration corrects it. Watch billing for on-demand mCPU.
