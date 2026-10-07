@@ -2,7 +2,7 @@
 
 ### Requirement: A failed search fails
 
-SearchSalesPhases SHALL call the search service once per search. When the service rejects that request as invalid, SearchSalesPhases SHALL send it once more without the optional report of the search service's own tool calls. SearchSalesPhases SHALL fail with an error, and return no phases, in these cases:
+SearchSalesPhases SHALL call the search service once per search, and a second time only when the service rejects the first request as invalid: that second request SHALL be the same request without the optional report of the search service's own tool calls. SearchSalesPhases SHALL fail with an error, and return no phases, in these cases:
 
 - The service is unreachable or overloaded: Unavailable.
 - The service rejects the request: the matching error (InvalidArgument when the request without the tool-call report is rejected as invalid too, Unauthenticated, ResourceExhausted including a spend cap, or DeadlineExceeded).

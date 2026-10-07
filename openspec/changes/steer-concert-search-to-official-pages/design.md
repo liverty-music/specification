@@ -77,7 +77,7 @@ Alternative considered: turning the report off globally. Rejected because the re
 **D7. URL context counts.**
 - While walking the parts, count `ToolCall` parts with `ToolType == URL_CONTEXT` as `url_context_calls`. Count `ToolResponse` parts for URL context whose per-URL status is `URL_RETRIEVAL_STATUS_SUCCESS` as `url_context_succeeded`. The exact field path is pinned by a recorded response in a unit test.
 - Both searchers log the two counts. ConcertSearcher also puts them in `PassMetadata` and its `successfully received Gemini response` log; SalesPhaseSearcher puts them in `logResponseMetadata`.
-- ConcertSearcher logs `linked_pages` (the number of links put in the prompt) and `linked_page_urls` (the links themselves) at Info. At most 8 URLs per call keep the log small, and the URLs are what a misselected link is diagnosed from.
+- ConcertSearcher also records `linked_pages` (the number of links put in the prompt) and `linked_page_urls` (the links themselves) in `PassMetadata`, where the evaluation harness aggregates them, and logs both at Info. At most 8 URLs per call keep the log small, and the URLs are what a misselected link is diagnosed from.
 - `url_context_retrieved` stays for comparison and is documented as excluding failed-only fetches.
 
 **D8. Evaluation gate.** Before release, the harness gains two variants of the production prompt, LINKS (tier 1 only) and LINKS+NEWS (tier 1, then news indexes as tier 2). Both are run with `GEMINI_GROUNDING_EVAL_TOOL_CALLS=1`, at least 3 reps each, on:
