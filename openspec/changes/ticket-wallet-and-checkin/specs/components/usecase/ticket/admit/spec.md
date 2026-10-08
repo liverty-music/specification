@@ -1,98 +1,102 @@
+# Spec Delta
+
 ## Purpose
 
-Validates a scanned entry credential's signature and freshness and then admits its ticket through an atomic check that guarantees exactly one admission per ticket, supporting partial group entry and rejecting a voided, stale, or already-used ticket.
+TicketUseCase.Admit decides one scan at the venue: through a ReceptionLink, from the device it is bound to, during its event's reception window, it admits each Ticket a genuine and fresh AdmissionCode presents exactly once, records every outcome, and tells staff the result without any personal data.
 
 ## ADDED Requirements
 
-### Requirement: Validate signature + freshness, then atomic duplicate-check at admit
+### Requirement: Only the bound device, through a usable link, during the window
 
-On each scan the reception SHALL send the token to the **server**, which SHALL
-**(1) verify the signature and TTL/epoch freshness** (rejecting forged or stale
-tokens) and **(2) perform an atomic check-and-set** on the ticket's entry state
-(conditional update / unique constraint / row lock, keyed **per ticket** — never a
-table-level lock), returning **allow or deny BEFORE the attendee is admitted**.
-Signature+freshness is the forgery/screenshot control; the atomic check-and-set
-resolves the 1:1 concurrency race. Two concurrent scans of the same ticket — at
-the same or different gates — MUST result in **exactly one admit**. If the server
-is unreachable the reception SHALL **fail closed** (show a retry), not admit
-blindly.
+Admit SHALL take a link token, a call signature with its signed time, the scanned text and the current time. It SHALL find the link with ReceptionLink.GetByToken and fail with PermissionDenied when no link holds the token, when the link is Revoked, or when the call is not proven by the link's bound device. It SHALL read the link's event with Event.Get and fail with FailedPrecondition, recording nothing, when the current time is outside the link's reception window. A link revoked while a scan is being decided SHALL be treated as Revoked.
 
-#### Scenario: First scan wins, duplicate is denied
+#### Scenario: Revoked link
 
-- **WHEN** the same ticket is scanned twice (same or different gates), even simultaneously
-- **THEN** the server verifies the token then admits exactly one (the atomic check-and-set succeeds once) and denies the other as already-entered
+- **WHEN** a scan arrives through a Revoked link
+- **THEN** Admit fails with PermissionDenied and no Ticket is admitted
 
-#### Scenario: Stale or forged token is rejected before dedup
+#### Scenario: Call from another device
 
-- **WHEN** a token fails signature or freshness verification
-- **THEN** it is rejected without consuming the ticket's entry state
+- **WHEN** a scan arrives signed by a device other than the one the link is bound to
+- **THEN** Admit fails with PermissionDenied and no Ticket is admitted
 
-#### Scenario: Server unreachable fails closed
+#### Scenario: After the window
 
-- **WHEN** the reception cannot reach the server
-- **THEN** it shows a retry and does not admit (no blind offline admit in MVP)
+- **WHEN** a scan arrives at 04:30 the day after the event
+- **THEN** Admit fails with FailedPrecondition and nothing is recorded
 
-### Requirement: Same-time companion group entry
+### Requirement: Only a genuine, fresh code for this event
 
-For a multi-ticket order, the fan's authenticated wallet session SHALL present the
-group's credentials together for **same-time group entry**, and the system SHALL
-build **no first-party distribution URL** or transferable per-companion code (the
-sanctioned hand-off is ⑦ official resale). Admitting a **subset (M of N)** SHALL
-mark entered **only the M actually scanned**; the remaining N−M stay valid for a
-later scan (per-ticket atomic dedup applies). Because the credentials live only in
-the lead's authenticated in-app session (not OS-shareable passes), the group is
-not an off-platform distribution vector.
+Admit SHALL read the scanned text with AdmissionCode.Decode; a Malformed text SHALL be rejected with reason Forged. It SHALL read the code's user's key with WalletPublicKey.GetActiveByUser, rejecting with reason Forged when the user has none, and check the code with AdmissionCode.Verify at the current time: Forged is rejected with reason Forged, Expired with reason Expired. A code whose event is not the link's event SHALL be rejected with reason OtherEvent. In these cases no Ticket's admission SHALL be attempted.
 
-#### Scenario: Partial group arrival admits only those present
+#### Scenario: Screenshot shown later
 
-- **WHEN** only M of N companions are present and M credentials are scanned
-- **THEN** exactly M tickets are marked entered and the remaining N−M stay valid for a later scan
+- **WHEN** a QR code captured a minute earlier is scanned
+- **THEN** the scan is rejected with reason Expired and no Ticket is admitted
 
-#### Scenario: No first-party distribution mechanism
+#### Scenario: Code from a replaced phone
 
-- **WHEN** a holder wants to hand a ticket to another person
-- **THEN** the system offers no first-party distribution URL or transferable per-companion code (the sanctioned path is ⑦ official resale)
+- **WHEN** a code made on the fan's old phone is scanned after the fan registered a new phone
+- **THEN** the scan is rejected with reason Forged
 
-### Requirement: Entry status and no double-entry
+#### Scenario: Not an entry code
 
-On a successful admit the system SHALL mark the ticket **entered** and surface the
-status in the wallet and reception. A subsequent scan of an **already-entered**
-ticket SHALL be **rejected**.
+- **WHEN** a QR code holding a web address is scanned
+- **THEN** the scan is rejected with reason Forged
 
-#### Scenario: Re-scan is rejected
+#### Scenario: Ticket for another event
 
-- **WHEN** an already-entered ticket is scanned again
-- **THEN** the scan is rejected as already used
+- **WHEN** a genuine code for another event is scanned through this event's link
+- **THEN** the scan is rejected with reason OtherEvent
 
-### Requirement: Admission is recorded as attendance evidence
+### Requirement: Each presented ticket admitted exactly once
 
-On a successful admit the system SHALL record, with the ticket, the instant of
-admission and the organizer operator whose reception session scanned it, next to
-the event and the holder the ticket already carries. A rejected scan SHALL be
-recorded with the instant, the operator and the reason (stale, forged, voided or
-already used), and SHALL leave the admission record unchanged. Neither record
-SHALL be changed after it is written, so that it can later be offered as
-evidence that the holder attended — for example against a chargeback claiming
-the ticket was not received or not authorised.
+For a genuine, fresh code for the link's event, Admit SHALL decide each presented Ticket independently, so a group can be partly admitted. It SHALL read the code's user's Tickets for the event with Ticket.ListByHolderAndEvent; a presented Ticket that is not among them SHALL be rejected with reason NotHolder. Otherwise Admit SHALL call Ticket.Admit with the link and the current time: a Ticket reported Admitted is admitted; one reported AlreadyAdmitted is rejected with reason AlreadyAdmitted, together with the time and link name read with AdmissionRecord.GetAdmissionByTicket; one reported Voided is rejected with reason Voided.
+
+#### Scenario: Group of three admitted
+
+- **WHEN** a code presenting 3 admissible Tickets is scanned
+- **THEN** all 3 are admitted
+
+#### Scenario: Same code at two entrances
+
+- **WHEN** the same code is scanned through `受付A` and `受付B` at the same time
+- **THEN** each Ticket is admitted through exactly one of them and rejected with reason AlreadyAdmitted through the other
+
+#### Scenario: Already used earlier
+
+- **WHEN** a Ticket admitted at 18:32 through `受付A` is presented again
+- **THEN** it is rejected with reason AlreadyAdmitted, 18:32 and `受付A`
+
+#### Scenario: Someone else's ticket
+
+- **WHEN** a fan's genuine code presents a Ticket held by another account
+- **THEN** that Ticket is rejected with reason NotHolder and the fan's own Tickets in the code are decided as usual
+
+#### Scenario: Refunded ticket
+
+- **WHEN** a code presents a Ticket that was Voided by a refund
+- **THEN** the Ticket is rejected with reason Voided
+
+### Requirement: Every outcome recorded
+
+Each admission SHALL be recorded by Ticket.Admit itself. Admit SHALL append every rejection with AdmissionRecord.Append: one Rejected record per rejected Ticket, and one Rejected record without a Ticket for a scan rejected as Forged, each naming the link and the current time. When appending a rejection fails, Admit SHALL still return the result; when Ticket.Admit fails, Admit SHALL fail with Unavailable and staff scan again, and a Ticket admitted before the failure is reported AlreadyAdmitted on that next scan.
 
 #### Scenario: Admission recorded
 
-- **WHEN** operator S admits a ticket at 18:32 on the event day
-- **THEN** the ticket's admission record holds 18:32, operator S, the event and the holder
+- **WHEN** a Ticket is admitted through `受付A` at 18:32
+- **THEN** an Admitted record with that Ticket, `受付A` and 18:32 is stored
 
-#### Scenario: Rejected re-scan recorded
+#### Scenario: Rejection recorded
 
-- **WHEN** the same ticket is scanned again at 18:40
-- **THEN** the rejection is recorded with 18:40, the operator and the reason already used, and the 18:32 admission record is unchanged
+- **WHEN** the same Ticket is presented again at 18:40
+- **THEN** a Rejected record with reason AlreadyAdmitted, `受付A` and 18:40 is stored and the 18:32 record is unchanged
 
-### Requirement: Void invalidates the entry credential
+### Requirement: The result carries no personal data
 
-When a ticket is **voided** (e.g. ⑦ official-resale reissues the seat to a new
-buyer, or an admin action), the **server-side validation SHALL reject** the voided
-ticket's token at admit (regardless of what the device still renders), so the
-voided ticket can no longer be admitted.
+Admit SHALL return, for the scan, the number of Tickets admitted and, for each rejected Ticket or for the whole scan, the reason, with the earlier admission time and link name for AlreadyAdmitted. It SHALL NOT return the holder's name, phone number, account or any other personal data.
 
-#### Scenario: Voided ticket cannot enter
+#### Scenario: Result of a group scan
 
-- **WHEN** a ticket is voided
-- **THEN** its token no longer validates at admission and it cannot be admitted at the gate
+- **WHEN** 2 Tickets are admitted and 1 is rejected as AlreadyAdmitted at 18:32 through `受付A`
+- **THEN** the result says 2 admitted and 1 already admitted at 18:32 through `受付A`, and contains no name or phone number
