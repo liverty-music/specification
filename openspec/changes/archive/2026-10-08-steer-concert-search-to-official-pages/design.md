@@ -112,3 +112,13 @@ Result (2026-10-07, 54 calls, $17.79; table in the backend harness README): LINK
 3. After the first prod runs, check per concert search call `linked_pages`, `linked_page_urls`, `url_context_calls` / `url_context_succeeded` and `web_search_queries`, that go!go!vanillas succeeds, and that the sales phase discovery job logs the URL context counts and no INVALID_ARGUMENT.
 
 Rollback: revert the backend release (pin to the previous tag). No data or config change is involved.
+
+## Production Check (2026-10-08)
+
+v1.64.0 reached prod through `bump-prod-pin`. A manual run of both discovery jobs right after the release searched only go!go!vanillas (the other artists were within the 72 h search cache):
+
+- It succeeded with 3 series and 27 events, 23 search queries, 8 linked pages (all from the news tier) and 9 URLs retrieved by URL context. On v1.63.0 it had failed with 400 twice, then stopped at 85 queries.
+- The 400 did not occur, so the reduced retry was not exercised in prod; it is covered by unit tests.
+- The sales phase run found no series due for a search and made no Gemini call.
+
+The user accepted task 5.1 on this evidence. The query reduction across artists is left to the next scheduled runs.
