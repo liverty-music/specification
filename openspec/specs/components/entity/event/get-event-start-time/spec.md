@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Returns an Event's current start time, read afresh so that a 延期 (postponement) is seen at once.
+Returns an Event's current start time, read afresh so that a start time filled in after publish is seen at once.
 
 ## Requirements
 
