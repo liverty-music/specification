@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.ticket_sale.v1 provides the fan-facing
+// TicketSaleService: how an event's tickets are on sale first come, first
+// served. Anyone may read it, signed in or not.
+package liverty_music.rpc.ticket_sale.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/ticket_sale.proto";
+
+// TicketSaleService is the public read of an event's first-come TicketSale, for
+// the ticket section of the event page. It never reveals the quantity, the sold
+// count or the remaining count: a sale with few tickets left is only flagged as
+// low on stock. Buying goes through liverty_music.rpc.reservation.v1.
+service TicketSaleService {
+  // Get returns the sale of one event with its state now. It needs no sign-in.
+  // The sale's start and end are shown in Japan time by the client.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The event_id is missing or malformed.
+  // - NOT_FOUND: The event has no TicketSale, or the event's concert is not
+  //   published (for example a cancelled 中止 concert), whose sale is neither
+  //   shown nor sold.
+  rpc Get(GetRequest) returns (GetResponse);
+}
+
+// GetRequest names the event whose sale to read.
+message GetRequest {
+  // Required. The event whose sale to read.
+  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+}
+
+// GetResponse returns the sale and where it stands now.
+message GetResponse {
+  // The sale: its window, price, per-account limit and method. The quantity and
+  // the sold count are left unset.
+  entity.v1.TicketSale ticket_sale = 1 [(buf.validate.field).required = true];
+
+  // The sale's state now.
+  entity.v1.TicketSaleState state = 2 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+
+  // True when the sale is ON_SALE and its remaining tickets are at most one
+  // tenth of its quantity, rounded up (残りわずか). Never an exact count. False
+  // in every other state.
+  bool low_stock = 3;
+}

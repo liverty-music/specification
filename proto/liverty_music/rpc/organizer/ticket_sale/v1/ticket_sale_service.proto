@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.ticket_sale.v1 provides the
+// organizer-facing TicketSaleService, the surface an operator uses from the
+// organizer console to put one of its published events on sale first come,
+// first served, and to see how it is selling. It is served by the dedicated
+// organizer Connect server behind org-scoped role-claim authorization; fans
+// read and buy through liverty_music.rpc.ticket_sale.v1 and
+// liverty_music.rpc.reservation.v1.
+package liverty_music.rpc.organizer.ticket_sale.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/ticket_sale.proto";
+
+// TicketSaleService is the organizer-facing first-come sale surface: an
+// authenticated operator configures the TicketSale of one of its own published
+// events and reads it back with its counts. Every call passes the same
+// organizer-console sign-in checks as the organizer OrganizerService and
+// resolves the caller's own Organizer from the token (never carried in the
+// request). Failures that would concern another org's event never reveal
+// whether it exists.
+service TicketSaleService {
+  // Configure puts one of the caller's published events on sale, or changes its
+  // sale: a sale window that ends no later than the event's start time, a
+  // tax-inclusive (税込) price per ticket, a quantity and a per-account limit.
+  // When the sale end is omitted the event's start time is used, and when the
+  // per-account limit is omitted it is 4. The event must have a start time, and
+  // the caller's Organizer must have complete seller details. Once any checkout
+  // has started the price is locked, and the quantity can shrink only down to
+  // the tickets sold and held.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The event_id, the sale start, the price or the quantity
+  //   is missing or malformed, the sale end is not after the sale start or is
+  //   after the event's start time, or the per-account limit is not 1 to 10.
+  // - PERMISSION_DENIED: The event does not exist or is not owned by the
+  //   caller's Organizer, or any organizer-console authorization failure.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The event's concert is not published, the event has
+  //   no start time, the caller's Organizer has no complete seller details or
+  //   has been deactivated, the price changes after a checkout started, or the
+  //   quantity is below the tickets sold and held.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Configure(ConfigureRequest) returns (ConfigureResponse);
+
+  // Get returns the sale of one of the caller's events with its counts: the
+  // quantity, the tickets sold and held, its state now, and whether the price
+  // is locked because a checkout has started.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The event_id is missing or malformed.
+  // - PERMISSION_DENIED: The event does not exist or is not owned by the
+  //   caller's Organizer, or any organizer-console authorization failure.
+  //   Non-revealing.
+  // - NOT_FOUND: The event has no TicketSale.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Get(GetRequest) returns (GetResponse);
+}
+
+// ConfigureRequest carries the event and the sale's settings.
+message ConfigureRequest {
+  // Required. The published event to sell. Its concert MUST be owned by the
+  // caller's Organizer.
+  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+
+  // Required. When the sale opens.
+  google.protobuf.Timestamp sale_start_time = 2 [(buf.validate.field).required = true];
+
+  // Optional. When the sale closes: after the sale start and no later than the
+  // event's start time. The event's start time when omitted.
+  google.protobuf.Timestamp sale_end_time = 3;
+
+  // Required. The price of one ticket in yen, tax-inclusive (税込). 1 to
+  // 1,000,000.
+  int64 price = 4 [(buf.validate.field).int64 = {
+    gte: 1
+    lte: 1000000
+  }];
+
+  // Required. The tickets offered, at least 1.
+  int32 quantity = 5 [(buf.validate.field).int32.gte = 1];
+
+  // Optional. The most tickets one fan may buy, 1 to 10. 4 when omitted.
+  optional int32 per_account_limit = 6 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 10
+  }];
+}
+
+// ConfigureResponse returns the sale as stored.
+message ConfigureResponse {
+  // The created or changed sale, with its quantity and sold count.
+  entity.v1.TicketSale ticket_sale = 1 [(buf.validate.field).required = true];
+}
+
+// GetRequest names the event whose sale to read.
+message GetRequest {
+  // Required. The event whose sale to read. Its concert MUST be owned by the
+  // caller's Organizer.
+  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+}
+
+// GetResponse returns the sale with its counts.
+message GetResponse {
+  // The sale, with its quantity and sold count.
+  entity.v1.TicketSale ticket_sale = 1 [(buf.validate.field).required = true];
+
+  // The tickets held now by fans' checkouts whose hold has not lapsed.
+  int32 held_count = 2 [(buf.validate.field).int32.gte = 0];
+
+  // The sale's state now.
+  entity.v1.TicketSaleState state = 3 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+
+  // True once any checkout has been started for the sale, which locks the
+  // price.
+  bool price_locked = 4;
+}
