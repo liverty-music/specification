@@ -13,12 +13,12 @@ option go_package = "github.com/liverty-music/specification/gen/go/liverty_music
 
 // WalletPublicKey is the public key of the device a fan shows tickets from.
 // The device creates the key pair with WebCrypto as a non-extractable key,
-// keeps the private half in IndexedDB, and registers only this public key on
-// its first online visit; at the venue it signs AdmissionCodes without a
-// connection, and the server verifies them against this key. A User has at
-// most one: registering another device's key replaces it, so tickets are
-// shown from one device at a time and codes from the replaced device are
-// refused as forged.
+// keeps the private half in IndexedDB, and registers only this public key;
+// at the venue it signs AdmissionCodes without a connection, and the server
+// verifies them against this key. A User has at most one, so one device (the
+// entry device) shows valid codes at a time: the fan's first device registers
+// automatically, and another device replaces it only when the fan confirms.
+// Codes from a replaced device are refused as forged.
 //
 // It is the fan-side counterpart of a ReceptionLink's `bound_public_key`: the
 // same PublicKey, held per User and replaceable, where a reception link's key
