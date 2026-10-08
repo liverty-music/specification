@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.wallet_public_key.v1 provides the fan-facing
+// WalletPublicKeyService: how the signed-in fan's device reads and registers the
+// public key of the device that shows their entry QR code (the entry device).
+package liverty_music.rpc.wallet_public_key.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/public_key.proto";
+import "liverty_music/entity/v1/wallet_public_key.proto";
+
+// WalletPublicKeyService is the fan-facing surface over the caller's
+// WalletPublicKey. The caller is resolved from the token; a request never names a
+// User. The tickets screen calls Get on every online visit to learn whether this
+// device is the entry device, and calls Register only for the fan's first device
+// or after the fan confirms moving the entry QR code to this device.
+service WalletPublicKeyService {
+  // Get returns the caller's WalletPublicKey, so the device can compare it with
+  // its own key without changing anything.
+  //
+  // Possible errors:
+  // - NOT_FOUND: The caller has no WalletPublicKey yet, or no stored account.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Get(GetRequest) returns (GetResponse);
+
+  // Register records the public key of the ECDSA P-256 key pair the caller's
+  // device created (WebCrypto, non-extractable) for showing tickets, so the
+  // device can sign AdmissionCodes at the venue without a connection. The key
+  // becomes the caller's WalletPublicKey, replacing the key of any device that
+  // was the entry device before; codes signed on that device are refused from
+  // then on. Registering the key the caller already has changes nothing.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The public key is missing, or is not a valid P-256
+  //   point (the caller's key is then unchanged).
+  // - NOT_FOUND: The caller has no stored account.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+}
+
+// GetRequest carries no fields: the caller is resolved from the token.
+message GetRequest {}
+
+// GetResponse returns the caller's key.
+message GetResponse {
+  // The caller's WalletPublicKey, with its register time.
+  entity.v1.WalletPublicKey wallet_public_key = 1 [(buf.validate.field).required = true];
+}
+
+// RegisterRequest carries the public key of the caller's device.
+message RegisterRequest {
+  // Required. The device's public key: the uncompressed SEC1 point that
+  // WebCrypto `exportKey("raw", publicKey)` returns.
+  entity.v1.PublicKey public_key = 1 [(buf.validate.field).required = true];
+}
+
+// RegisterResponse returns the registered key.
+message RegisterResponse {
+  // The caller's WalletPublicKey, with its register time.
+  entity.v1.WalletPublicKey wallet_public_key = 1 [(buf.validate.field).required = true];
+
+  // True when this registration replaced a different device's key, so the
+  // screen can say that the QR code now works on this device only.
+  bool replaced_other_key = 2;
+}
