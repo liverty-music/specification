@@ -14,7 +14,9 @@ The scenarios checked are those under `## ADDED Requirements` and
 searched in the test files, including Storybook stories run as component
 tests, of the implementing repositories: every sibling
 checkout of this store whose `openspec/config.yaml` points at this store
-(`store: <id>`), or the directories given with --repos.
+(`store: <id>`), or the directories given with --repos. When this store is
+run from a git worktree (e.g. `.claude/worktrees/<name>`), the siblings are
+those of the store's main checkout, not of the worktree.
 
 A sibling checkout is searched at its `origin/main`, not its working tree, so
 the result matches CI whatever branch the checkout is on (run `git fetch` in it
@@ -54,12 +56,24 @@ def store_id():
     return m.group(1) if m else None
 
 
+def main_checkout():
+    # A linked worktree shares the main checkout's git dir; its parent is the
+    # main checkout, whose siblings are the implementing repositories.
+    res = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--path-format=absolute", "--git-common-dir"],
+                         capture_output=True, text=True)
+    if res.returncode != 0:
+        return ROOT
+    common = pathlib.Path(res.stdout.strip())
+    return common.parent if common.name == ".git" else ROOT
+
+
 def implementing_repos():
     sid = store_id()
+    base = main_checkout()
     repos = []
-    for d in ROOT.parent.iterdir():
+    for d in base.parent.iterdir():
         cfg = d / "openspec" / "config.yaml"
-        if d != ROOT and cfg.is_file() and sid and re.search(rf"^store:\s*{re.escape(sid)}\s*$", cfg.read_text(), re.M):
+        if d not in (ROOT, base) and cfg.is_file() and sid and re.search(rf"^store:\s*{re.escape(sid)}\s*$", cfg.read_text(), re.M):
             repos.append(d)
     return repos
 
