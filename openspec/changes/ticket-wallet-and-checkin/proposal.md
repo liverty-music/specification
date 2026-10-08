@@ -4,10 +4,16 @@ Phase 3 step ⑥ — the last ticketing MVP capability. ⑤ issues **account-bou
 Tickets**, but a fan cannot yet *use* one: there is no wallet to show it, no
 forge-resistant entry credential, and no way for staff to admit attendees. This
 change adds the **wallet + entry** layer: view your ticket (incl. its
-covered-ticket face), enter with an **in-app dynamic QR backed by a server-signed
-short-TTL token**, companion **same-time group entry**, and a **reception PWA**
+covered-ticket face), enter with an **in-app dynamic QR made and signed on the fan's own
+device**, companion **same-time group entry**, and a **reception screen**
 that scans via the web camera and validates each scan with **signature + freshness
-then an online atomic duplicate-check**.
+then an online atomic admission**.
+
+The pilot with an independent artist (liverty-music/specification#1074) needs this
+at the venue, where **reception is run by venue staff from outside the Organizer**.
+They have no account and must not get the Organizer's console rights, so admission
+goes through an **Organizer-issued, event-scoped reception link** bound to one
+device (decided 2026-10-07).
 
 Anti-scalp is **not** enforced by a gate-time re-authentication (explored and
 rejected — see design.md); it rests on the platform's tiered model (account
@@ -18,76 +24,93 @@ MVP baseline (see design Non-Goals). Roadmap:
 
 ## What Changes
 
-- **Ticket wallet UI** — a fan views their issued (⑤) ticket: event details, entry
-  status, and the **covered-ticket (特定興行入場券) face** (⑤ owns the content;
-  ⑥ renders it on the presented credential, so 不正転売禁止法 §2③ "stated on its
-  face" holds where the holder presents it).
-- **Entry credential = in-app dynamic QR from a server-signed short-TTL token** —
-  signed over {ticket_id, event_id, holder_ref, epoch}, ~30s TTL, secret
-  server-side; rendered live in the authenticated wallet; cross-platform; **not an
-  OS-shareable pass**. A screenshot is stale after the TTL; a leaked ticket-id
-  can't be forged without the signing secret.
-- **No gate-time re-auth** to display the credential (rejected — it can't close
-  the device hand-off it targeted and is costly; design.md).
-- **Validation = signature + freshness, THEN online atomic duplicate-check** — the
-  reception sends the token; the server verifies it, then does an atomic
-  check-and-set (allow/deny before admit); two concurrent scans → exactly one
-  admit; server-unreachable **fails closed**.
-- **Same-time group entry** — the lead's authenticated session presents the
-  group's credentials; subset M-of-N admits only those scanned. **No first-party
-  distribution URL**; in-app (not OS-shareable) → no off-platform vector.
-- **Reception (check-in) PWA** — staff scan with the **web camera (`getUserMedia`)**,
-  no native app, **no NFC reader hardware**.
-- **Admission record as attendance evidence** — every admit stores the instant and
-  the scanning organizer operator, and every rejected scan its reason, append-only.
-  Cheap to add now and impossible to backfill later; it is the evidence a future
-  chargeback representment (`dispute-representment`) needs to show the holder
-  attended.
-- **Entry status + no double-entry**; **void → invalidate at server validation**.
+- **Ticket wallet** — a fan views their issued tickets grouped by event, each with
+  its **covered-ticket (特定興行入場券) face** (resale-without-consent notice, holder
+  name, no seat) and its state (未入場 / 入場済み / 無効); the last loaded list stays
+  viewable offline.
+- **Entry QR code made on the fan's phone, offline (2026-10-08)** — on the first online
+  visit the phone creates a non-extractable key pair and registers only its public key
+  (`WalletPublicKey`); at the venue it signs an **AdmissionCode** every 15 seconds with
+  no connection. The server checks the signature and freshness, so a screenshot or a
+  code from another device admits no one. One active key per fan. **Not an
+  OS-shareable pass; no gate-time re-auth.**
+- **Same-time group entry with one QR** — one code presents up to 10 not-yet-entered
+  tickets of the event (the fan may untick companions arriving later); one scan admits
+  the group and staff see the head count. **No first-party distribution URL.**
+- **Admission = signature + freshness, then a per-ticket atomic admit** — the ticket's
+  admitted time and its admission record are stored together, so concurrent scans at
+  two entrances admit each ticket exactly once; a voided (refunded or resold) ticket
+  and someone else's ticket are refused; server unreachable **fails closed**.
+- **Reception links** — the Organizer issues named links (受付A, 受付B …) per event in
+  the console; the first device that opens a link **binds its own public key** and
+  signs every later call; the link works only inside a **fixed reception window**
+  (3 hours before doors, or before the start when doors are not announced, until 04:00 JST the next day) and can be **revoked or
+  revoked-and-reissued** at once. No account, no PIN, no organizer rights for staff.
+- **Reception screen** — opened from the link in the phone's browser tab without a
+  sign-in or install; scans with the rear camera (`BarcodeDetector` where available,
+  a small decoder otherwise); shows **OK + head count or NG + reason and next step,
+  never any personal data**.
+- **Admission record as attendance evidence** — every admission and every rejected
+  scan is recorded append-only with the reception link and the time, for a future
+  chargeback representment (`dispute-representment`).
 
-Scope guardrails (MVP): electronic tickets only; **online-first, fail-closed**
-(reception network isolated from attendee traffic — transport is a deployment
-choice). **OS Wallet passes, NFC tap, offline scanning, and per-event 顔認証/ID are
-out of scope** (future — see design Non-Goals + roadmap). MVP anti-scalp =
-account passkey + signed-credential/dedup + the ⑤-captured 本人確認 identity;
-bulk-scalp resistance arrives with `identity-ekyc-jpki`.
+Scope guardrails (MVP): electronic tickets only; the fan side works offline, the
+reception side is **online-first, fail-closed**. **OS Wallet passes, NFC tap, offline
+reception, per-event 顔認証/ID, a Zitadel `reception` role and a reception test mode
+are out of scope** (rehearsals use a separate test event). MVP anti-scalp = account
+passkey + device-bound codes with online atomic admission + the ⑤-captured 本人確認
+identity; bulk-scalp resistance arrives with `identity-ekyc-jpki`.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `components/infrastructure/fan/web/route/tickets`: Ticket wallet renders the ticket and its covered-ticket face
-- `components/infrastructure/organizer/web/route/reception`: Reception check-in PWA (web camera)
-- `components/usecase/ticket/admit`: Validate signature + freshness, then atomic duplicate-check at admit; Same-time companion group entry; Entry status and no double-entry; Void invalidates the entry credential
-- `components/usecase/ticket/get-entry-credential`: Entry credential is an in-app dynamic QR from a signed short-TTL token
+- `components/entity/admission-code`: the device-signed, short-lived code the entry QR carries
+- `components/entity/admission-code/decode`, `verify`
+- `components/entity/wallet-public-key`: the public key of the fan's device that shows tickets, one active per User
+- `components/entity/wallet-public-key/register`, `get-active-by-user`
+- `components/entity/reception-link`: the link venue staff admit through; name rule, lifecycle, device proof, reception window
+- `components/entity/reception-link/create`, `get`, `get-by-token`, `list-by-event`, `bind-device`, `revoke`
+- `components/entity/admission-record`: append-only admission and rejection records
+- `components/entity/admission-record/append`, `get-admission-by-ticket`
+- `components/entity/ticket/admit`: admit a ticket once, together with its admission record
+- `components/entity/ticket/list-by-holder-and-event`
+- `components/entity/event/get`: an event's current date, open and start times
+- `components/usecase/wallet-public-key/register`
+- `components/usecase/reception-link/issue`, `revoke`, `list-by-event`, `open`
+- `components/usecase/ticket/admit`
+- `components/adapter/organizer/api/rpc/reception-link`: operator gate for issuing, listing and revoking links
+- `components/adapter/organizer/api/rpc/reception`: the link-and-device-signature gate for reception calls, no sign-in
+- `components/infrastructure/fan/web/route/tickets`: the wallet and the offline entry QR code
+- `components/infrastructure/organizer/web/route/reception`: the reception screen
+- `components/infrastructure/organizer/web/route/reception-links`: the console screen for reception links
+- `stories/enter-a-venue-with-a-ticket`
 
 ### Modified Capabilities
 
-<!-- This capability operates on the `Ticket` entity defined by ⑤
-     ticket-purchase-and-issuance (account-bound, 本人確認-bound, covered-ticket
-     face CONTENT); ⑥ adds entry state + credential/check-in behavior and RENDERS
-     ⑤'s covered-ticket face. NOTE: an earlier draft added a WebAuthn step-up
-     primitive to identity-management — that is WITHDRAWN (no gate-time step-up;
-     see design). -->
-(none)
+- `components/entity/ticket`: "A ticket is admissible only once and only while Issued" (added). (Purpose) attribute table gains a row **admitted time** — when the ticket was admitted; optional, absent until admitted, kept when the ticket is later Voided; updated in the main spec at archive.
+- `components/usecase/lottery-sales-phase/configure-lottery-phase`: "Configure a phase for a published event" (modified) — a lottery phase can be configured only for an event with a start time; the open time stays optional.
+- `components/infrastructure/organizer/web/route/lottery-phase-editor`: "An event goes on sale only with its start time" (added).
+- `components/adapter/fan/api/rpc/ticket`: "RegisterWalletPublicKey is for the signed-in fan only" (added). (Purpose) now covers registering the wallet public key; updated in the main spec at archive.
 
 ## Impact
 
-- **Depends on:** ⑤ `ticket-purchase-and-issuance` (the issued **Ticket** entity +
-  its 本人確認 + covered-ticket face **content**). Hard dependency on ⑤.
-- **Enables:** ⑦ `official-resale` void semantics (a resold seat's credential is
-  invalidated at validation — the void→invalidate mechanism lives here).
-- **New:** signed short-TTL token signer + server-side secret store, in-app dynamic
-  QR rendering (+ covered-ticket face), validate (signature+TTL) + **atomic
-  check-and-set** dedup, `entered` state on the Ticket, the reception PWA surface.
-- **Product constraints honored:** **Web-First / No Native App** (PWA
-  `getUserMedia`, no NFC hardware); **no first-party distribution URL**.
-- **Anti-scalp (tiered, NOT a gate re-auth):** signed short-TTL credential +
-  online atomic dedup defeat forgery/screenshot/multi-sale; bulk scalping is
-  blocked upstream by JPKI eKYC (backlog); the 1:1 device-transfer residual is
-  closed for top-demand shows by a **future per-event 顔認証/ID mode**
-  (`face-auth-entry`), not by this layer.
-- **Deferred (future):** OS Wallet convenience passes (caveats: OS-shareable, iOS
-  static, 個情法 §28 越境移転 to Apple/Google, must render the covered-ticket face);
-  NFC tap; offline scanning; per-event 顔認証.
+- **Depends on:** ⑤ `ticket-purchase-and-issuance` (archived; the issued Ticket,
+  its 本人確認 and covered-ticket face). Works the same for tickets issued by the
+  lottery and by the planned first-come sale.
+- **Enables:** ⑦ `official-resale` — a resold seat's old ticket is Voided and its
+  credential refused at admission; `dispute-representment` — admission records as
+  attendance evidence.
+- **New:** wallet public keys and signature verification, per-ticket atomic admit
+  with its record, reception links bound to a device key, reception screen in the
+  organizer web app reachable without a sign-in, console screen for links.
+- **Sales rule (in this change for the lottery):** a lottery phase can only be set up
+  for an event with a start time (the open time stays optional); the planned `first-come-ticket-sales`
+  must carry the same rule (recorded in liverty-music/specification#1074). A reception
+  link cannot be issued for an event without a start time.
+- **Product constraints honored:** **Web-First / No Native App**; **no first-party
+  distribution URL**; no personal data shown to external staff.
+- **Deferred (future):** OS Wallet passes; NFC tap; offline scanning; per-event
+  顔認証; a Zitadel `reception` role for standing reception teams (can coexist
+  with links).
 - **Withdrawn:** the previously-proposed identity-management **step-up primitive**.
