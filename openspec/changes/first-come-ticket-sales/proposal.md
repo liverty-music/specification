@@ -9,13 +9,13 @@ The pilot with an independent artist (liverty-music/specification#1074) sells ti
   1. Starting a checkout holds the chosen count for exactly 15 minutes, never extended. It returns the fan's existing holding Reservation for the same sale, so a double tap, a retry or a reload never holds twice.
   2. The fan enters their 本人確認 (identity check) name and phone number, prefilled from their account, and authorizes the card with 3D Secure.
   3. While the hold lasts, the server commits the tickets in one conditional step, charges the card once, records the charge and issues the Order and Tickets. A lapsed hold cannot be committed; the fan starts again and is not charged.
-  4. Placing the purchase is handled one call at a time per checkout, and a cancelled concert is never charged. A charged checkout is never charged again or released. If issuing fails it is retried every minute and reported to an operator after 10 minutes. Card holds of every ended checkout are released within 2 minutes after its hold ends, and a charged hold on an ended checkout is reported.
+  4. Placing the order is handled one call at a time per checkout, and a cancelled concert is never charged. A charged checkout is never charged again or released. If issuing fails it is retried every minute and reported to an operator after 10 minutes. Card holds of every ended checkout are released within 2 minutes after its hold ends, and a charged hold on an ended checkout is reported.
 - **Per-account limit counted cumulatively** over completed purchases and held Reservations, so splitting purchases cannot exceed it.
 - **Card payments only**, including Apple Pay and Google Pay, which are card wallets. American Express is accepted, because the hold lasts seconds, not days. **No buyer fee**: the fan pays the price × count.
 - **Sale states on the event page**: not yet on sale (with the start time in Japan time), on sale (with "残りわずか" at 10% or less rounded up, never an exact count), sold out (with a message while other fans hold the last tickets), sale ended. A cancelled concert's sale is neither shown nor sold.
-- **特商法 final confirmation step** before the purchase is placed: quantity, price and total 税込, payment method and timing, delivery timing, sale period, the resale prohibition (チケット不正転売禁止法), the no-cancellation and no-cooling-off statement, the Organizer's seller details, and a way back to correct the count and identity.
+- **特商法 final confirmation step** before the order is placed: quantity, price and total 税込, payment method and timing, delivery timing, sale period, the resale prohibition (チケット不正転売禁止法), the no-cancellation and no-cooling-off statement, the Organizer's seller details, and a way back to correct the count and identity.
 - **Purchase completed notifications**: an email (new, sent through the existing mail provider, once per Order) and a push notification of a new type, both after the purchase is recorded and independent of it. Lottery winners receive them too.
-- **Reliable post-purchase events**: issuing a purchase records a `TicketPurchased` event in the same transaction (transactional outbox). Two consumers run from it: the confirmation email and push, and the ticket journey update to PAID, which moves out of the lottery issuance path. Analytics and a sold-out signal are left until official resale needs them.
+- **Reliable post-purchase events**: issuing an Order records an `ORDER.paid` event in the same transaction (transactional outbox). Two consumers run from it: the confirmation email and push, and the ticket journey update to PAID, which moves out of the lottery issuance path. Analytics and a sold-out signal are left until official resale needs them.
 - **Organizer seller details** (legal name, representative, address, phone, contact email), entered by an admin during vetting.
 - **Per-Organizer platform fee rate**: the default becomes 8% (was 5%). An admin can set a different rate, and the pilot Organizer is set to 5%. **BREAKING** for the fee computation: the rate is read from the Organizer instead of a constant.
 - **Fan identity on the account**: the 本人確認 name and phone number are kept on the User, prefilled at checkout and updated when the fan edits them. Each Ticket keeps its own copy for its face, as today.
@@ -36,9 +36,9 @@ The pilot with an independent artist (liverty-music/specification#1074) sells ti
 - `components/entity/user/update-holder-identity`
 - `components/usecase/ticket-sale/configure`, `get`, `get-own` (the Organizer's view with quantity and sold count)
 - `components/usecase/reservation/start`, `get`, `authorize`, `release-expired`
-- `components/usecase/order/issue-from-reservation`: commit, charge and issue; the fan's place-purchase action
+- `components/usecase/order/issue-from-reservation`: commit, charge and issue; the fan's place-order action
 - `components/usecase/order/issue-due-reservations`: finishes committed checkouts whose charge or issuance did not complete
-- `components/usecase/notification/notify-ticket-purchased`: confirmation email and push for each recorded purchase
+- `components/usecase/notification/send-order-confirmation`: confirmation email and push for each paid Order
 - `components/usecase/ticket-journey/mark-paid`: the PAID update for each recorded purchase
 - `components/usecase/organizer/update-seller-details`, `set-platform-fee-rate`
 - `components/adapter/fan/api/rpc/ticket-sale`: public sale read, no sign-in
@@ -55,8 +55,8 @@ The pilot with an independent artist (liverty-music/specification#1074) sells ti
 - `components/entity/settlement`: "Platform fee rate" (modified) — the Organizer's rate, kept on the Settlement. (Purpose) attribute table gains the fee rate applied.
 - `components/entity/organizer`: "Seller details" and "Platform fee rate" (added). (Purpose) attribute table gains the five seller details and the platform fee rate.
 - `components/entity/user`: "Holder identity on the account" (added). (Purpose) attribute table gains the holder full name and holder phone number.
-- `components/entity/notification`: Purpose-only, no delta file — the type row gains `ticket_purchased`.
-- `components/usecase/notification/deliver`: "Runs for each requested notification" (modified) — NotificationUseCase.NotifyTicketPurchased is a caller.
+- `components/entity/notification`: Purpose-only, no delta file — the type row gains `order_confirmation`.
+- `components/usecase/notification/deliver`: "Runs for each requested notification" (modified) — NotificationUseCase.SendOrderConfirmation is a caller.
 - `components/usecase/order/issue-from-captured-win`: "Issue an order and its tickets from a won application" (modified, fee at the Organizer's rate, purchase recorded); "Ticket journey becomes Paid" (removed, moved to `ticket-journey/mark-paid`). (Purpose) drops "and marks the buyer's ticket journey for the event as Paid".
 - `components/adapter/admin/api/rpc/organizer`: "Only admins manage Organizers", "Requests are validated before any usecase runs" and "Each call runs one OrganizerUseCase method" (modified) — two calls added, their validation, and the Organizer returned with its seller details and rate.
 - `components/infrastructure/fan/web/route/event`: "Ticket section shows the sale" (added). This capability is created by `public-event-page`; this change is archived after it.

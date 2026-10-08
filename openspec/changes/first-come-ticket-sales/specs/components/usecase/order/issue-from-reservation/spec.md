@@ -8,7 +8,7 @@ IssuanceUseCase.IssueFromReservation finishes a fan's checkout: it commits the h
 
 ### Requirement: Only the fan's own checkout, committed while holding
 
-IssueFromReservation SHALL take a Reservation, the calling fan when a fan places the purchase, and the current time. Calls for the same Reservation SHALL be handled one after the other, so a second call waits for the first and then returns its outcome. The call proceeds as follows:
+IssueFromReservation SHALL take a Reservation, the calling fan when a fan places the order, and the current time. Calls for the same Reservation SHALL be handled one after the other, so a second call waits for the first and then returns its outcome. The call proceeds as follows:
 1. It SHALL read the Reservation with Reservation.Get and fail with PermissionDenied, without revealing whether it exists, when it does not exist or a calling fan is not its User.
 2. When Order.GetByReservationID then finds an Order, it SHALL return that Order and do nothing else.
 3. While the Reservation is Held, it SHALL fail with FailedPrecondition, changing nothing, when:
@@ -20,29 +20,29 @@ IssueFromReservation SHALL take a Reservation, the calling fan when a fan places
 
 The card hold of a Reservation that is not committed is given back by ReservationUseCase.ReleaseExpired. The fan learns which case applied from ReservationUseCase.Get.
 
-#### Scenario: Fan places the purchase within the hold
+#### Scenario: Fan places the order within the hold
 
-- **WHEN** a fan places the purchase for their holding, authorized Reservation for 2 tickets
+- **WHEN** a fan places the order for their holding, authorized Reservation for 2 tickets
 - **THEN** the tickets are committed, the card is charged and the Order is returned
 
 #### Scenario: Hold lapsed before placing
 
-- **WHEN** a fan places the purchase after their hold expired
+- **WHEN** a fan places the order after their hold expired
 - **THEN** IssueFromReservation fails with FailedPrecondition, nothing is charged and the card is not checked
 
 #### Scenario: Concert cancelled during the checkout
 
-- **WHEN** the concert is cancelled while a fan's hold lasts and the fan then places the purchase
+- **WHEN** the concert is cancelled while a fan's hold lasts and the fan then places the order
 - **THEN** IssueFromReservation fails with FailedPrecondition, the Reservation stays Held and nothing is charged
 
 #### Scenario: Card not yet authenticated
 
-- **WHEN** the fan places the purchase before completing card authentication
+- **WHEN** the fan places the order before completing card authentication
 - **THEN** IssueFromReservation fails with FailedPrecondition and the Reservation stays Held
 
 #### Scenario: Double tap on the action
 
-- **WHEN** the fan places the purchase twice at the same time
+- **WHEN** the fan places the order twice at the same time
 - **THEN** one Order is issued, the card is charged once, and both calls return that Order
 
 #### Scenario: Fan and the stalled-checkout job at once
@@ -52,7 +52,7 @@ The card hold of a Reservation that is not committed is given back by Reservatio
 
 #### Scenario: Someone else's checkout
 
-- **WHEN** a fan places the purchase for a Reservation of another User, whether or not it was paid
+- **WHEN** a fan places the order for a Reservation of another User, whether or not it was paid
 - **THEN** IssueFromReservation fails with PermissionDenied and returns no Order
 
 ### Requirement: Charge once, then issue

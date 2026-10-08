@@ -11,7 +11,7 @@ A fan buys tickets for an Organizer's event first come, first served: they hold 
 After an Organizer puts a published event on sale with TicketSaleUseCase.Configure, a signed-in fan SHALL be able to:
 1. hold tickets with ReservationUseCase.Start;
 2. authorize their card with ReservationUseCase.Authorize and complete card authentication;
-3. place the purchase with IssuanceUseCase.IssueFromReservation.
+3. place the order with IssuanceUseCase.IssueFromReservation.
 
 Their Tickets SHALL then be in TicketUseCase.GetMyTickets, and a confirmation email SHALL arrive within 5 minutes.
 
@@ -31,7 +31,7 @@ A sale SHALL never sell more tickets than its quantity. A fan who does not get t
 
 #### Scenario: Hold ran out
 
-- **WHEN** a fan places the purchase 1 minute after their hold expired
+- **WHEN** a fan places the order 1 minute after their hold expired
 - **THEN** the purchase is refused, the fan is not charged and their card hold is released within 2 minutes
 
 ### Requirement: Retries never double
@@ -40,12 +40,12 @@ Repeating any step of the checkout, whether by a double tap, a retry, a reload o
 
 #### Scenario: Double tap everywhere
 
-- **WHEN** a fan taps continue twice and place-purchase twice
+- **WHEN** a fan taps continue twice and place order twice
 - **THEN** they hold their tickets once, are charged once and receive one Order
 
 ### Requirement: Walking away gives the tickets back
 
-A checkout abandoned before placing the purchase SHALL return its tickets to the sale within 1 minute after its hold expires, and SHALL release any card hold within 2 minutes after its hold expires.
+A checkout abandoned before placing the order SHALL return its tickets to the sale within 1 minute after its hold expires, and SHALL release any card hold within 2 minutes after its hold expires.
 
 #### Scenario: Fan closes the tab
 

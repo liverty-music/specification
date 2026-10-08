@@ -4,7 +4,7 @@
 
 ### Requirement: Runs for each requested notification
 
-Deliver SHALL run once for each notification requested for one fan, by PushNotificationUseCase.NotifyNewConcerts, SalesPhaseAnnouncementUseCase.AnnounceDiscoveredPhase or NotificationUseCase.NotifyTicketPurchased, with that fan, the notification type and the finished message. When Deliver fails, that request SHALL be processed again; a failure for one fan's request SHALL NOT affect the requests of any other fan.
+Deliver SHALL run once for each notification requested for one fan, by PushNotificationUseCase.NotifyNewConcerts, SalesPhaseAnnouncementUseCase.AnnounceDiscoveredPhase or NotificationUseCase.SendOrderConfirmation, with that fan, the notification type and the finished message. When Deliver fails, that request SHALL be processed again; a failure for one fan's request SHALL NOT affect the requests of any other fan.
 
 #### Scenario: Notification requested
 
@@ -13,8 +13,8 @@ Deliver SHALL run once for each notification requested for one fan, by PushNotif
 
 #### Scenario: Purchase notification requested
 
-- **WHEN** a ticket_purchased notification is requested for a buyer
-- **THEN** Deliver runs for that buyer with the type ticket_purchased
+- **WHEN** an order_confirmation notification is requested for a buyer
+- **THEN** Deliver runs for that buyer with the type order_confirmation
 
 #### Scenario: Recording fails for one request
 

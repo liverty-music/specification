@@ -7,7 +7,7 @@
 
 - [ ] 1.1 Add `entity.v1.TicketSale` from the `components/entity/ticket-sale` attribute table: ids as wrapper messages, `sale_start_time` / `sale_end_time`, a `TicketSaleMethod` enum with FIRST_COME, price 1-1,000,000, quantity >= 1, per-account limit 1-10, and a `TicketSaleState` enum (NOT_YET_ON_SALE, ON_SALE, ALL_HELD, SOLD_OUT, ENDED); verify `buf lint` and `buf format` pass
 - [ ] 1.2 Add `entity.v1.Reservation` from `components/entity/reservation`: `ReservationId`, a status enum, `hold_expire_time`, `commit_time`, `capture_time`, amount and holder identity. Move `ApplicantIdentity` to a shared `HolderIdentity`, keeping a deprecated alias for one release; verify `buf lint` passes
-- [ ] 1.3 `Order`: `oneof source { application_id; reservation_id }` (D5). `Organizer`: a seller details message and `platform_fee_rate_bps` (0-3000). `User`: holder full name and phone (E.164 pattern). `NotificationType`: gains TICKET_PURCHASED. Verify the protovalidate rules match the entity specs
+- [ ] 1.3 `Order`: `oneof source { application_id; reservation_id }` (D5). `Organizer`: a seller details message and `platform_fee_rate_bps` (0-3000). `User`: holder full name and phone (E.164 pattern). Verify the protovalidate rules match the entity specs
 - [ ] 1.4 Add the services, each with doc comments matching the adapter specs:
   - `rpc.ticket_sale.v1.TicketSaleService.Get`
   - `rpc.reservation.v1.ReservationService.Start / Get / Authorize / Confirm`
@@ -53,7 +53,7 @@
 - [ ] 4.1 `TicketSaleUseCase.Configure / Get / GetOwn`; verify one unit test per scenario of `components/usecase/ticket-sale/{configure,get,get-own}`, including Concert cancelled
 - [ ] 4.2 `ReservationUseCase.Start / Get / Authorize / ReleaseExpired`; verify one unit test per scenario of `components/usecase/reservation/*`, including Fan reloads mid-checkout, Count changed after authorizing, Committed at the last moment, Replaced by a newer checkout and Money taken on an ended checkout
 - [ ] 4.3 Extract the shared issuance core (D5) and implement `IssuanceUseCase.IssueFromReservation` and `IssueDueReservations`. The ownership check comes first, the call holds the Reservation row lock throughout (D3), the holding and published-event checks precede the card check, a charged Reservation is never captured again, and capture errors are mapped as in D3/D7. Concurrency tests cover Double tap on the action and Fan and the stalled-checkout job at once against Postgres. Move the ticket journey update out of `IssueFromCapturedWin`. Verify unit tests per scenario of `components/usecase/order/{issue-from-reservation,issue-due-reservations,issue-from-captured-win}`, and that the existing lottery issuance tests still pass
-- [ ] 4.4 `NotificationUseCase.NotifyTicketPurchased` (email then push, Japanese and English copy, lottery wins included), the `Deliver` caller change and `TicketJourneyUseCase.MarkPaid`; verify unit tests per scenario of `components/usecase/notification/{notify-ticket-purchased,deliver}` and `components/usecase/ticket-journey/mark-paid`
+- [ ] 4.4 `NotificationUseCase.SendOrderConfirmation` (email then push with the `order_confirmation` notification type, Japanese and English copy, lottery wins included), the `Deliver` caller change and `TicketJourneyUseCase.MarkPaid`; verify unit tests per scenario of `components/usecase/notification/{send-order-confirmation,deliver}` and `components/usecase/ticket-journey/mark-paid`
 - [ ] 4.5 `OrganizerUseCase.UpdateSellerDetails / SetPlatformFeeRate`; verify unit tests per scenario
 
 ## 5. Backend — boundaries, consumers and jobs
@@ -61,7 +61,7 @@
 - [ ] 5.1 Fan handlers `TicketSaleService.Get` (no sign-in) and `ReservationService.Start / Get / Authorize / Confirm` (`components/adapter/fan/api/rpc/{ticket-sale,reservation}`); verify handler tests per scenario
 - [ ] 5.2 Organizer handler `TicketSaleService.Configure / Get` (Get runs `GetOwn`), behind the organizer-console sign-in and `ResolveCaller` (`components/adapter/organizer/api/rpc/ticket-sale`); verify handler tests per scenario
 - [ ] 5.3 Admin handler additions (`components/adapter/admin/api/rpc/organizer`); verify handler tests for Non-admin sets a rate, Missing OrganizerId, Missing rate, Admin reads any Organizer and Admin records seller details
-- [ ] 5.4 JetStream consumers for `TicketPurchased`, one for notification and one for the ticket journey, idempotent by Order id, with the poison queue after the redelivery limit; verify consumer tests that a redelivery produces one email and leaves the journey Paid
+- [ ] 5.4 JetStream consumers for `ORDER.paid`, one for notification and one for the ticket journey, idempotent by Order id, with the poison queue after the redelivery limit; verify consumer tests that a redelivery produces one email and leaves the journey Paid
 - [ ] 5.5 1-minute jobs for `ReleaseExpired` and `IssueDueReservations`, wired like the existing issuance sweeper. Add an error log and an alert for the two operator reports — charged more than 10 minutes ago and not Completed, and a charged hold on an ended checkout (D7) — plus a runbook entry for the manual refund. Verify the jobs run in the API process, and that a test row that cannot be issued fires the alert in dev logs
 - [ ] 5.6 Postmark sender identity for transactional mail: the cloud-provisioning secret and DNS are already in place; add the server token for the backend through ESO. Verify the backend pod reads the token in prod
 - [ ] 5.7 `make check` passes in backend
@@ -74,7 +74,7 @@
   - the prefilled identity, with the lottery-apply phone rule;
   - the card form, with Apple Pay and Google Pay through the Payment Element;
   - the 特商法 final confirmation, listing every item, with a way back to correct the details;
-  - the place-purchase action, showing the amount, with a double-submit guard;
+  - the place-order action, showing the amount, with a double-submit guard;
   - the outcome screens, chosen through `ReservationService.Get`.
 - [ ] 6.3 Switch the lottery screens to `HolderIdentity` before the deprecated alias is removed; verify `make check`
 - [ ] 6.4 Register the fan app's domain for Apple Pay with the payment provider in test and live mode; verify the Apple Pay button appears in Safari on an iPhone on the test sale
