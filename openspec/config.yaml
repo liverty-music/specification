@@ -31,8 +31,8 @@ operations:
   apply:
     guidance:
       - Record task progress in this store's working tree on main (check off tasks.md, update design.md) and never commit it; implementation repositories only cite the change and store commit in their PRs.
-      - Several changes share the store's working tree. Never run git stash, git reset --hard, git checkout -- . / git restore . or git clean there, never git add -A / git add ., and never switch its branch.
+      - Several changes share the store's working tree. Never run git stash, git reset --hard, git checkout -- . / git restore . or git clean there, never git add -A / git add ., never git pull, and never switch its branch; branch work happens in a worktree (README "Branch work in this repository").
   archive:
     guidance:
       - Confirm every implementing PR is merged and cite them before archiving.
-      - Archive on a <change>-archive branch cut from an up-to-date main, stage only openspec/changes/<change>, openspec/changes/archive and openspec/specs, then push, open one PR and switch back to main.
+      - Archive in a worktree on a <change>-archive branch cut from origin/main (git worktree add .claude/worktrees/<change>-archive -b <change>-archive origin/main), after copying the change's latest progress from the store's working tree into it; stage only openspec/changes/<change>, openspec/changes/archive and openspec/specs, then push and open one PR. After it merges, sync the store's working tree for that change only (README "Branch work in this repository").
