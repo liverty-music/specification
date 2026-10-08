@@ -3,6 +3,7 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
 
 // Organizer represents a vetted seller that an admin creates to manage the
 // artists it represents. Existence is the vetting: an Organizer exists only
@@ -20,6 +21,61 @@ message Organizer {
 
   // The display name of the organizer (e.g., the label or promoter name).
   OrganizerName name = 2 [(buf.validate.field).required = true];
+
+  // The 特商法 (Specified Commercial Transactions Act) 販売業者 disclosure shown
+  // to fans when they buy the Organizer's tickets. Entered by an admin during
+  // vetting. Absent until entered; the Organizer's events can go on sale only
+  // once it is present.
+  SellerDetails seller_details = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // The platform fee applied to the Organizer's future Orders, in basis points
+  // (hundredths of a percent): 0 to 3000, i.e. 0% to 30%. 800 (8%) for a new
+  // Organizer. Set by an admin. Each Settlement keeps the rate it was created
+  // with, so a change never alters an issued Order's split.
+  int32 platform_fee_rate_bps = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).int32 = {
+      gte: 0
+      lte: 3000
+    }
+  ];
+}
+
+// SellerDetails is an Organizer's 特商法 (Specified Commercial Transactions Act)
+// 販売業者 (seller) disclosure: who sells the tickets and how to reach them. It
+// is shown on the checkout's final confirmation and in the purchase
+// confirmation email. Complete only when all five values are present and valid;
+// it is always replaced as a whole.
+message SellerDetails {
+  // The seller's legal name (販売業者の名称), e.g. the registered company name.
+  // 1 to 200 characters.
+  string legal_name = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+
+  // The representative or the person responsible for the business
+  // (代表者または業務責任者). 1 to 100 characters.
+  string representative_name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 100
+  }];
+
+  // The seller's address (所在地). 1 to 300 characters.
+  string address = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 300
+  }];
+
+  // The seller's phone number (電話番号) in E.164 form (e.g. "+81312345678").
+  // A domestic format such as "03-1234-5678" is rejected.
+  string phone_number = 4 [(buf.validate.field).string = {
+    max_len: 16
+    pattern: "^\\+[1-9][0-9]{1,14}$"
+  }];
+
+  // The seller's contact email address (メールアドレス).
+  string contact_email = 5 [(buf.validate.field).string.email = true];
 }
 
 // OrganizerId is a globally unique identifier for an organizer.

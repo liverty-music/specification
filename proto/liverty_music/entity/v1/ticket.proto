@@ -7,7 +7,7 @@ import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/event.proto";
-import "liverty_music/entity/v1/lottery_application.proto";
+import "liverty_music/entity/v1/holder_identity.proto";
 import "liverty_music/entity/v1/order.proto";
 import "liverty_music/entity/v1/user.proto";
 import "liverty_music/entity/v1/verified_identity.proto";
@@ -89,10 +89,10 @@ message Ticket {
 
   // The holder's 本人確認 (name + contact) noted on the face and bound to the
   // account — covered-ticket condition (iii), and the eligible person of
-  // condition (ii). Carried through from ④'s application. Where the phase
-  // required identity verification, this MUST match the verified 本人確認
-  // (see verified_identity_ref).
-  ApplicantIdentity holder_identity = 5 [
+  // condition (ii). Carried through from ④'s application or from the
+  // checkout's Reservation. Where the phase required identity verification,
+  // this MUST match the verified 本人確認 (see verified_identity_ref).
+  HolderIdentity holder_identity = 5 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];

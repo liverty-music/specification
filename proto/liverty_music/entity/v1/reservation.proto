@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/holder_identity.proto";
+import "liverty_music/entity/v1/ticket_sale.proto";
+import "liverty_music/entity/v1/user.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// ReservationId is a globally unique identifier for a single Reservation (one
+// checkout). Server-generated (UUIDv7).
+message ReservationId {
+  // A UUID string mapping to the reservation's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// ReservationStatus is the lifecycle of a Reservation. New values may be
+// appended; existing values must not be renumbered.
+//
+//   HELD --> COMMITTED --> COMPLETED
+//   HELD --> EXPIRED | RELEASED
+//   COMMITTED --> RELEASED   (only when the card was never charged)
+enum ReservationStatus {
+  // Default value, rejected at the boundary: a persisted Reservation always
+  // records a concrete status.
+  RESERVATION_STATUS_UNSPECIFIED = 0;
+
+  // The tickets are held for the fan until the hold expiry. Counted against the
+  // sale's remaining tickets only while the hold has not lapsed.
+  RESERVATION_STATUS_HELD = 1;
+
+  // The tickets were committed against the sale's stock while the hold lasted.
+  // The card is then charged and the Order issued.
+  RESERVATION_STATUS_COMMITTED = 2;
+
+  // The card was charged and the Order and its Tickets were issued.
+  RESERVATION_STATUS_COMPLETED = 3;
+
+  // The hold lapsed before the tickets were committed. The fan was not charged.
+  RESERVATION_STATUS_EXPIRED = 4;
+
+  // The checkout ended without a charge: the fan started again with another
+  // count, or the card could no longer be charged after the commit and the
+  // tickets were given back.
+  RESERVATION_STATUS_RELEASED = 5;
+}
+
+// Reservation is one fan's checkout on a TicketSale: it holds a count of tickets
+// for exactly 15 minutes, never extended, while the fan enters their 本人確認
+// (identity check) details and authorizes their card. It ends with the tickets
+// committed, charged and issued as an Order, or with the hold released and any
+// card hold given back. A fan has at most one holding Reservation per sale, and
+// a charged Reservation is never released.
+message Reservation {
+  // The unique identifier for this checkout. Server-generated.
+  ReservationId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The sale this checkout buys from.
+  TicketSaleId ticket_sale_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The fan checking out. Always the signed-in caller, never named in a request.
+  UserId user_id = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The tickets held, 1 to the sale's per-account limit (at most 10).
+  int32 ticket_count = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).int32 = {
+      gte: 1
+      lte: 10
+    }
+  ];
+
+  // The total to pay in yen: the sale's price × ticket_count, fixed when the
+  // checkout starts. Server-owned.
+  int64 amount = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).int64.gt = 0
+  ];
+
+  // The 本人確認 name and phone for the tickets' face. Absent until the fan
+  // authorizes their card.
+  HolderIdentity holder_identity = 6 [(google.api.field_behavior) = OPTIONAL];
+
+  // The checkout's lifecycle status. Server-owned.
+  ReservationStatus status = 7 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // When the hold lapses: exactly 15 minutes after create_time, never extended.
+  // The tickets can be committed only before this instant. Server-owned.
+  google.protobuf.Timestamp hold_expire_time = 8 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // When the checkout started. Server-owned.
+  google.protobuf.Timestamp create_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When the tickets were committed against the stock. Unset unless the
+  // checkout was ever committed; it stays set on a commit that was later given
+  // back. Server-owned.
+  google.protobuf.Timestamp commit_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When the card was charged. Unset until charged, and set at most once.
+  // Server-owned.
+  google.protobuf.Timestamp capture_time = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

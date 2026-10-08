@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/event.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// TicketSaleId is a globally unique identifier for a single TicketSale.
+message TicketSaleId {
+  // A UUID string mapping to the ticket sale's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// TicketSaleMethod is how a TicketSale allocates its tickets. New values may be
+// appended; existing values must not be renumbered.
+enum TicketSaleMethod {
+  // Default value, rejected at the boundary: a persisted sale always records a
+  // concrete method.
+  TICKET_SALE_METHOD_UNSPECIFIED = 0;
+
+  // First come, first served: a fan who starts a checkout while tickets remain
+  // holds them for 15 minutes and buys them by completing the checkout.
+  TICKET_SALE_METHOD_FIRST_COME = 1;
+}
+
+// TicketSaleState is where a TicketSale stands at a given time. It is derived,
+// never stored. New values may be appended; existing values must not be
+// renumbered.
+enum TicketSaleState {
+  // Default value, never returned.
+  TICKET_SALE_STATE_UNSPECIFIED = 0;
+
+  // Before the sale start. The sale start is shown in Japan time.
+  TICKET_SALE_STATE_NOT_YET_ON_SALE = 1;
+
+  // Inside the sale window with tickets remaining.
+  TICKET_SALE_STATE_ON_SALE = 2;
+
+  // Inside the sale window, not sold out, but every remaining ticket is held by
+  // other fans' checkouts. Tickets may come back when those holds lapse.
+  TICKET_SALE_STATE_ALL_HELD = 3;
+
+  // Inside the sale window and the sold count equals the quantity. Raising the
+  // quantity reopens the sale.
+  TICKET_SALE_STATE_SOLD_OUT = 4;
+
+  // At or after the sale end. Takes precedence over SOLD_OUT and ALL_HELD.
+  TICKET_SALE_STATE_ENDED = 5;
+}
+
+// TicketSale is the platform's own sale of one event's tickets, first come,
+// first served: an Organizer offers a quantity of tickets at one tax-inclusive
+// (税込) price during a sale window, and each fan may buy up to a per-account
+// limit. An event has at most one TicketSale. It is distinct from SalesPhase,
+// which records sales announced elsewhere, and from LotterySalesPhase.
+//
+// The quantity and the sold count are shown only to the owning Organizer; a
+// fan-facing read leaves them unset and reports only the state and whether
+// stock is low.
+message TicketSale {
+  // The sale window must end after it starts.
+  option (buf.validate.message).cel = {
+    id: "ticket_sale.window"
+    message: "sale_end_time must be after sale_start_time"
+    expression: "this.sale_end_time > this.sale_start_time"
+  };
+
+  // The unique identifier for this sale. Server-generated surrogate id.
+  TicketSaleId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The event whose tickets are sold. One TicketSale per event.
+  EventId event_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // How the sale allocates its tickets. FIRST_COME for now.
+  TicketSaleMethod method = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }
+  ];
+
+  // When the sale opens. Entered and shown in Japan time.
+  google.protobuf.Timestamp sale_start_time = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // When the sale closes. After the sale start, and no later than the event's
+  // start time (checked server-side). Entered and shown in Japan time.
+  google.protobuf.Timestamp sale_end_time = 5 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The price of one ticket in yen, tax-inclusive (税込). 1 to 1,000,000. The
+  // fan pays price × count, with no buyer fee. It cannot change once any
+  // checkout has started for the sale.
+  int64 price = 6 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).int64 = {
+      gte: 1
+      lte: 1000000
+    }
+  ];
+
+  // The most tickets one fan may hold or have bought from the sale, counted
+  // over all of their checkouts. 1 to 10.
+  int32 per_account_limit = 7 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).int32 = {
+      gte: 1
+      lte: 10
+    }
+  ];
+
+  // The tickets offered, at least 1. Set only in the owning Organizer's view.
+  // It can grow, or shrink down to what is sold and held.
+  optional int32 quantity = 8 [(buf.validate.field).int32.gte = 1];
+
+  // The tickets on the sale's committed and completed checkouts, 0 to the
+  // quantity. Set only in the owning Organizer's view. Server-owned.
+  optional int32 sold_count = 9 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).int32.gte = 0
+  ];
+
+  // When the sale was set up. Server-owned.
+  google.protobuf.Timestamp create_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

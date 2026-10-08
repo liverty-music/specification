@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// HolderIdentity is the 本人確認 (identity check) a fan gives for the tickets
+// they buy: the real name and contact phone printed on the covered ticket's
+// face (特定興行入場券). It is given when applying to a lottery or when
+// authorizing a first-come checkout, is kept on the User to prefill the next
+// checkout, and is copied onto each Ticket. It is a value object, not a
+// standalone addressable entity.
+message HolderIdentity {
+  // The holder's real full name (氏名) as it is bound to the covered ticket.
+  // 1 to 200 characters.
+  string full_name = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+
+  // The holder's contact phone number (連絡先) in E.164 form: "+" then 2 to 15
+  // digits, the first not 0 (e.g. "+819012345678"). A domestic format such as
+  // "090-1234-5678" is rejected. Used for covered-ticket contactability, not as
+  // a login identity.
+  string phone_number = 2 [(buf.validate.field).string = {
+    max_len: 16
+    pattern: "^\\+[1-9][0-9]{1,14}$"
+  }];
+}

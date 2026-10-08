@@ -7,6 +7,7 @@ import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/holder_identity.proto";
 import "liverty_music/entity/v1/user.proto";
 import "liverty_music/entity/v1/verified_identity.proto";
 
@@ -127,22 +128,20 @@ message TicketApplicationId {
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
-// ApplicantIdentity captures the 本人確認 an applicant provides at application
-// time: the real name and contact bound to the account. Capturing it is what
-// makes the eventual issued ticket a covered ticket (特定興行入場券) — the
-// identity is carried through to ⑤'s issuance so the ticket can be bound to a
-// verified holder. It is a value object embedded in the application, not a
-// standalone addressable entity.
+// ApplicantIdentity is the former name of HolderIdentity, kept with the same
+// fields for one release so clients can switch over. No field uses it any more.
+//
+// Deprecated: use HolderIdentity.
 message ApplicantIdentity {
+  option deprecated = true;
+
   // The applicant's real full name (氏名) as it will bind to the covered ticket.
   string full_name = 1 [(buf.validate.field).string = {
     min_len: 1
     max_len: 200
   }];
 
-  // A contact phone number (連絡先) for the applicant, in E.164 form. Bound to
-  // the account alongside the name; used for covered-ticket contactability, not
-  // as a login identity.
+  // A contact phone number (連絡先) for the applicant, in E.164 form.
   string phone_number = 2 [(buf.validate.field).string = {
     max_len: 16
     pattern: "^\\+[1-9][0-9]{1,14}$"
@@ -227,7 +226,7 @@ message TicketApplication {
 
   // The 本人確認 captured at application, bound to the account and carried to ⑤
   // issuance so the ticket can be a covered ticket (特定興行入場券).
-  ApplicantIdentity identity = 5 [
+  HolderIdentity identity = 5 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
