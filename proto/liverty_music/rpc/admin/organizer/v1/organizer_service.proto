@@ -16,7 +16,8 @@ import "liverty_music/entity/v1/user.proto";
 // isolated Zitadel tenant with an initial `owner` operator), manages the
 // Organizer↔Artist association (each artist is represented by at most one
 // Organizer), lists organizers and the artists an organizer represents for the
-// admin console, and deactivates an Organizer as a minimal off-switch.
+// admin console, deactivates an Organizer as a minimal off-switch, and permanently deletes a
+// deactivated Organizer.
 //
 // All RPCs are authorized only for the admin organization; callers outside it
 // are rejected with PERMISSION_DENIED at the admin server boundary.
@@ -95,6 +96,30 @@ service OrganizerService {
   // - INVALID_ARGUMENT: The organizer id is missing or malformed.
   // - NOT_FOUND: The organizer does not exist.
   rpc Deactivate(DeactivateRequest) returns (DeactivateResponse);
+
+  // Delete permanently removes a deactivated Organizer together with
+  // everything kept for it: its first-party Series and their Events (with
+  // their lottery sales phases, ticket applications, ticket journeys,
+  // performers and reception records), the Orders, Tickets and reversed
+  // settlements for those Events, its media records and files, its Zitadel
+  // tenant with the tenant's operators, its artist associations and its
+  // payout-account record. Records in the payment provider are kept.
+  //
+  // Nothing is removed when the Organizer is not deactivated, when any of its
+  // Events has an Order that is not refunded or a settlement that is not
+  // reversed, or when the Organizer has a payout account. Files and the tenant
+  // are removed before the database records and an already removed file or
+  // tenant counts as removed, so a call that failed partway is completed by
+  // calling Delete again.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The organizer id is missing or malformed.
+  // - NOT_FOUND: The organizer does not exist.
+  // - FAILED_PRECONDITION: The organizer is not deactivated, or an unrefunded
+  //   order, an unreversed settlement or a payout account blocks deletion.
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
 }
 
 // CreateRequest carries the new Organizer's name and its initial operator's
@@ -184,3 +209,13 @@ message DeactivateRequest {
 // DeactivateResponse is returned upon a successful deactivation (including the
 // idempotent case where the organizer was already deactivated).
 message DeactivateResponse {}
+
+// DeleteRequest identifies the deactivated Organizer to delete.
+message DeleteRequest {
+  // Required. The unique identifier of the organizer to delete.
+  entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteResponse is returned once the Organizer and everything kept for it
+// have been removed.
+message DeleteResponse {}

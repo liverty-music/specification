@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.admin.user.v1 provides the admin-only UserService
+// for removing fan Users from the developer admin tooling. It is served by the
+// admin Connect server behind the admin-role gate.
+package liverty_music.rpc.admin.user.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/user.proto";
+
+// UserService is the admin surface over fan Users. It is authorized only for
+// the admin organization and is never reachable by the consumer product.
+service UserService {
+  // Delete permanently removes a fan User: the User with its follows, ticket
+  // journeys, notifications, push subscriptions, sales-phase reminders,
+  // verified identity and home area, plus its Zitadel sign-in identity. The
+  // User's other Orders, Tickets and ticket applications are kept.
+  //
+  // Nothing is removed while the User holds an issued Ticket or has an Order
+  // that is not refunded. The sign-in identity is removed before the User
+  // record and an identity that is already gone counts as removed, so a call
+  // that failed partway is completed by calling Delete again.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The user id is missing or not a UUID.
+  // - NOT_FOUND: The user does not exist.
+  // - FAILED_PRECONDITION: The user holds an issued ticket or has an order
+  //   that is not refunded.
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+}
+
+// DeleteRequest identifies the fan User to delete.
+message DeleteRequest {
+  // Required. The unique identifier of the user to delete.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteResponse is returned once the User and its sign-in identity have been
+// removed.
+message DeleteResponse {}
