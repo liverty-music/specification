@@ -2,13 +2,13 @@
 
 ## Purpose
 
-RefundOrderUseCase.RefundOrder refunds one Paid Order for a stated reason — 中止 (cancellation), a 延期 (postponement) refund within its window, or a dispute — voiding its tickets, clawing back any payout already made, and marking the Order Refunded.
+RefundOrderUseCase.RefundOrder refunds one Paid Order for a stated reason — 中止 (cancellation) or a dispute — voiding its tickets, clawing back any payout already made, and marking the Order Refunded.
 
 ## Requirements
 
 ### Requirement: Reason and refundable order
 
-RefundOrder SHALL take an Order, a reason — Cancellation, PostponementWindow or Dispute — and the current time. It SHALL fail with InvalidArgument when no reason is given. It SHALL read the Order with Order.Get, failing with NotFound when it does not exist. When the Order is already Refunded it SHALL return it unchanged and move no money. When the Order is not refundable it SHALL fail with FailedPrecondition.
+RefundOrder SHALL take an Order, a reason — Cancellation or Dispute — and the current time. It SHALL fail with InvalidArgument when no reason is given. It SHALL read the Order with Order.Get, failing with NotFound when it does not exist. When the Order is already Refunded it SHALL return it unchanged and move no money. When the Order is not refundable it SHALL fail with FailedPrecondition.
 
 #### Scenario: Reason missing
 
@@ -25,28 +25,9 @@ RefundOrder SHALL take an Order, a reason — Cancellation, PostponementWindow o
 - **WHEN** the Order does not exist
 - **THEN** RefundOrder fails with NotFound
 
-### Requirement: Postponement refund window
-
-For the reason PostponementWindow, RefundOrder SHALL read the reschedule time of the Order's event with Event.GetRescheduleTimeByOrder and SHALL fail with FailedPrecondition when the current time is more than 14 days after it. When the event has no reschedule time, the refund SHALL proceed.
-
-#### Scenario: Within the window
-
-- **WHEN** a postponement refund is requested 10 days after the event was rescheduled
-- **THEN** the Order is refunded
-
-#### Scenario: Window closed
-
-- **WHEN** a postponement refund is requested 15 days after the event was rescheduled
-- **THEN** RefundOrder fails with FailedPrecondition and nothing changes
-
-#### Scenario: No reschedule time
-
-- **WHEN** a postponement refund is requested for an event that has no reschedule time
-- **THEN** the Order is refunded
-
 ### Requirement: Buyer refunded the full amount
 
-For the reasons Cancellation and PostponementWindow, RefundOrder SHALL refund the Order's full amount to the buyer's original payment with Order.CreateRefund, against the charge recorded on the Order's Settlement or, when none is recorded, the charge found by Order.ResolveChargeRef. It SHALL fail with FailedPrecondition when the Order's payment service cannot issue refunds or the Order has no payment reference. For the reason Dispute it SHALL issue no refund, because the dispute has already returned the money to the cardholder.
+For the reason Cancellation, RefundOrder SHALL refund the Order's full amount to the buyer's original payment with Order.CreateRefund, against the charge recorded on the Order's Settlement or, when none is recorded, the charge found by Order.ResolveChargeRef. It SHALL fail with FailedPrecondition when the Order's payment service cannot issue refunds or the Order has no payment reference. For the reason Dispute it SHALL issue no refund, because the dispute has already returned the money to the cardholder.
 
 #### Scenario: Cancellation refund
 

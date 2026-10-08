@@ -79,6 +79,6 @@ Purpose sections cannot be changed by a delta. The Purpose edits listed in the p
    - Upgrade the schema package (`consume-proto-release`).
    - Remove the code and add the migration.
    - Merge. ArgoCD applies the migration (sync-wave 1) before rolling out fan-api.
-3. Verify in prod: `\d events` shows no `rescheduled_at`; an admin Cancellation refund still succeeds in dev.
+3. Verify in prod: the AtlasMigration has applied the drop, so `events` has no `rescheduled_at`, and the API workloads run the new release without errors. The dev environment is suspended indefinitely, so the Cancellation refund path is covered by the refund use-case unit tests and the Stripe Sandbox E2E instead of a manual dev refund.
 
 Rollback: revert the backend PR, and add a forward migration that re-adds the nullable column if the old code must run again. The old code only reads the column on the unused path, so a rollback without re-adding it fails only for a `POSTPONEMENT_WINDOW` refund, which nobody sends.

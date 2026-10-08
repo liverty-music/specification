@@ -6,25 +6,6 @@ PayoutSweeperUseCase.ReleaseDueSettlements pays out every Held Settlement whose 
 
 ## Requirements
 
-### Requirement: Release after the event plus 7 days
-
-ReleaseDueSettlements SHALL run every 5 minutes over the Settlements from Settlement.ListHeld. For each, it SHALL read the Order with Order.Get and the event's current start time with Event.GetEventStartTime, and SHALL withhold the Settlement unless it is eligible for release with a dispute buffer of 7 days. Because the start time is read on every run, a 延期 (postponement) moves the release to 7 days after the new start. A Settlement whose event does not exist is skipped.
-
-#### Scenario: Before the event plus 7 days
-
-- **WHEN** the event started 3 days ago
-- **THEN** the Settlement stays Held
-
-#### Scenario: Event start unknown
-
-- **WHEN** the event has no start time
-- **THEN** the Settlement stays Held
-
-#### Scenario: Event postponed
-
-- **WHEN** the event is rescheduled to a later date before its payout is released
-- **THEN** the Settlement stays Held until 7 days after the new start
-
 ### Requirement: Payout waits for the Organizer's payout account
 
 ReleaseDueSettlements SHALL withhold the Settlement, without failing it, when the Organizer has no payout account, found with OrganizerConnectedAccount.GetByOrganizerID, or when the account is not Active. It SHALL refresh the account's status with OrganizerConnectedAccount.GetAccountStatus before deciding, and use the stored status when the refresh fails.
@@ -66,3 +47,22 @@ A Settlement whose release fails SHALL NOT stop the others and stays Held for th
 
 - **WHEN** paying one Settlement fails with Unavailable
 - **THEN** the other due Settlements are still released and the failed one is tried again 5 minutes later
+
+### Requirement: Release 7 days after the event's current start
+
+ReleaseDueSettlements SHALL run every 5 minutes over the Settlements from Settlement.ListHeld. For each, it SHALL read the Order with Order.Get and the event's current start time with Event.GetEventStartTime, and SHALL withhold the Settlement unless it is eligible for release with a dispute buffer of 7 days. Because the start time is read on every run, a start time that is filled in after the purchase is used from the next run. A Settlement whose event does not exist is skipped.
+
+#### Scenario: Before the event plus 7 days
+
+- **WHEN** the event started 3 days ago
+- **THEN** the Settlement stays Held
+
+#### Scenario: Event start unknown
+
+- **WHEN** the event has no start time
+- **THEN** the Settlement stays Held
+
+#### Scenario: Start time filled in after the purchase
+
+- **WHEN** the event had no start time when the Order was paid and its start time is later set to 8 days ago
+- **THEN** on the next run the Settlement is eligible for release

@@ -13,7 +13,6 @@ An Event is one performance at one Venue on one local date, at an optional start
 | local date | calendar date at the venue | required; a date without a time of day |
 | start time | performance start | optional; absent means unknown |
 | open time | doors open | optional; absent means unknown |
-| reschedule time | when the organizer announced a 延期 (postponement) | optional, set by the system; absent means never postponed |
 | performers | Artists performing | at least 1 |
 
 ```mermaid

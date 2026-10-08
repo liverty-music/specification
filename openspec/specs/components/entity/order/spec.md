@@ -18,7 +18,7 @@ An Order is the purchase record of one winning TicketApplication: a reference to
 | amount | total paid, in the currency's smallest unit (whole yen) | required, greater than 0 |
 | currency | ISO 4217 currency of the amount | required, 3 uppercase letters |
 | paid time | when the Order was created from the captured payment | required |
-| refund reference | reference to the refund issued to the buyer | empty unless refunded for a cancellation or a postponement |
+| refund reference | reference to the refund issued to the buyer | empty unless refunded for a cancellation |
 
 ```mermaid
 erDiagram
