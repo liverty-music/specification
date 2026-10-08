@@ -10,6 +10,7 @@ syntax = "proto3";
 package liverty_music.rpc.lottery.v1;
 
 import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/holder_identity.proto";
 import "liverty_music/entity/v1/lottery_application.proto";
 
 // LotteryService is the fan-facing lottery-application surface. An authenticated
@@ -120,7 +121,7 @@ message ApplyRequest {
   int32 requested_ticket_count = 2 [(buf.validate.field).int32.gt = 0];
 
   // Required. The 本人確認 bound to the account (name + contact).
-  entity.v1.ApplicantIdentity identity = 3 [(buf.validate.field).required = true];
+  entity.v1.HolderIdentity identity = 3 [(buf.validate.field).required = true];
 
   // Required. The confirmed card authorization (hold) from CreateAuthorization.
   entity.v1.PaymentAuthorization authorization = 4 [(buf.validate.field).required = true];

@@ -7,12 +7,13 @@ import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/lottery_application.proto";
+import "liverty_music/entity/v1/reservation.proto";
 import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
-// OrderId is a globally unique identifier for a single Order — one winning
-// lottery application's purchase record. Server-generated surrogate id; it never
+// OrderId is a globally unique identifier for a single Order — the purchase
+// record of one winning lottery application or one completed checkout. Server-generated surrogate id; it never
 // encodes any payment data.
 message OrderId {
   // A UUID string mapping to the order's unique identity.
@@ -71,8 +72,9 @@ message Payment {
   ];
 
   // Display-only card brand facet (e.g. "visa", "mastercard"), safe to show the
-  // buyer. Optional, never used for authorization. American Express is rejected
-  // upstream at ④'s authorization, not here.
+  // buyer. Optional, never used for authorization. Brand policy is applied
+  // upstream at the authorization (the lottery rejects American Express; a
+  // first-come checkout accepts every brand), not here.
   string card_brand = 4 [
     (google.api.field_behavior) = OPTIONAL,
     (buf.validate.field).string.max_len = 40
@@ -113,15 +115,15 @@ enum OrderStatus {
   ORDER_STATUS_FAILED = 3;
 }
 
-// Order is a provider- and method-agnostic purchase record for one winning
-// lottery application: the opaque reference to ④'s captured winning payment, the
-// Order's own status, its total amount and currency, the capture time, and
-// display-only facets. ONE Order covers the N tickets of the winning application
-// (the companion group, ≤ the phase's max_tickets_per_application).
+// Order is a provider- and method-agnostic purchase record: the opaque reference
+// to the captured payment, the Order's own status, its total amount and
+// currency, the capture time, and display-only facets. It has exactly one
+// source — a winning lottery application or a completed first-come checkout
+// (Reservation) — and ONE Order covers all N tickets of that source. At most one
+// Order exists per source (issuance idempotency).
 //
-// It is created only from ④'s Won-captured signal (④ owns the PaymentIntent and
-// its authorize/capture/cancel webhooks); ⑤ performs no separate off-session
-// charge. The Order NEVER stores a PAN, CVC, or expiry — only opaque provider
+// It is created only from an already-captured payment (④'s Won-captured
+// signal, or the checkout's charge); ⑤ performs no separate off-session charge. The Order NEVER stores a PAN, CVC, or expiry — only opaque provider
 // tokens and safe display facets (PCI SAQ A).
 message Order {
   // The unique identifier for this order. Server-generated surrogate id.
@@ -130,20 +132,26 @@ message Order {
     (buf.validate.field).required = true
   ];
 
-  // The account that bought — the winning applicant. The tickets this Order
-  // issues are bound to this account.
+  // The account that bought — the winning applicant or the fan who checked
+  // out. The tickets this Order issues are bound to this account.
   UserId buyer_id = 2 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
 
-  // The winning application this Order derives from (④'s Won-captured record).
-  // The one-Order-per-captured-application invariant (issuance idempotency) is
-  // keyed on this reference server-side.
-  TicketApplicationId application_id = 3 [
-    (google.api.field_behavior) = REQUIRED,
-    (buf.validate.field).required = true
-  ];
+  // What this Order was bought through. Exactly one is set, and at most one
+  // Order exists per source (issuance idempotency, enforced server-side).
+  oneof source {
+    option (buf.validate.oneof).required = true;
+
+    // The winning lottery application this Order derives from (④'s Won-captured
+    // record).
+    TicketApplicationId application_id = 3;
+
+    // The first-come checkout this Order completes: a Reservation that was
+    // committed and charged.
+    ReservationId reservation_id = 9;
+  }
 
   // The opaque reference to ④'s captured winning payment plus safe display
   // facets. Never raw card data.
@@ -160,7 +168,7 @@ message Order {
 
   // The total captured amount, a positive whole number in the currency's
   // smallest unit. For the MVP (JPY) this is yen, which has no minor unit, so the
-  // value is the yen total (ticket_price × ticket count).
+  // value is the yen total (the per-ticket price × ticket count).
   int64 amount = 6 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).int64.gt = 0
@@ -176,8 +184,9 @@ message Order {
     }
   ];
 
-  // When the payment was captured (= ④'s capture time at the draw). Because the
-  // Order is created already paid, this is effectively its creation time.
+  // When the Order was recorded as paid (after the lottery draw's capture or the
+  // checkout's charge). Because the Order is created already paid, this is
+  // effectively its creation time.
   // Server-owned.
   google.protobuf.Timestamp pay_time = 8 [
     (google.api.field_behavior) = OUTPUT_ONLY,

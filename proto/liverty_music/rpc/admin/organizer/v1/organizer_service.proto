@@ -16,8 +16,10 @@ import "liverty_music/entity/v1/user.proto";
 // isolated Zitadel tenant with an initial `owner` operator), manages the
 // Organizer↔Artist association (each artist is represented by at most one
 // Organizer), lists organizers and the artists an organizer represents for the
-// admin console, deactivates an Organizer as a minimal off-switch, and permanently deletes a
-// deactivated Organizer.
+// admin console, records an Organizer's 特商法 seller details and its platform
+// fee rate at vetting, deactivates an Organizer as a minimal off-switch, and
+// permanently deletes a deactivated Organizer. An Organizer is returned with
+// its id, name, seller details and platform fee rate.
 //
 // All RPCs are authorized only for the admin organization; callers outside it
 // are rejected with PERMISSION_DENIED at the admin server boundary.
@@ -67,7 +69,7 @@ service OrganizerService {
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
   rpc List(ListRequest) returns (ListResponse);
 
-  // Get returns a single Organizer by id.
+  // Get returns a single Organizer by id, including a deactivated one.
   //
   // Possible errors:
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
@@ -120,6 +122,32 @@ service OrganizerService {
   // - FAILED_PRECONDITION: The organizer is not deactivated, or an unrefunded
   //   order, an unreversed settlement or a payout account blocks deletion.
   rpc Delete(DeleteRequest) returns (DeleteResponse);
+
+  // UpdateSellerDetails records an Organizer's 特商法 (Specified Commercial
+  // Transactions Act) seller details, checked by an admin during vetting. The
+  // details are replaced as a whole. An Organizer's events can go on sale only
+  // once its seller details are complete.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The organizer id is missing or malformed, or any of the
+  //   seller details is missing or malformed.
+  // - NOT_FOUND: The organizer does not exist.
+  // - FAILED_PRECONDITION: The organizer is deactivated.
+  rpc UpdateSellerDetails(UpdateSellerDetailsRequest) returns (UpdateSellerDetailsResponse);
+
+  // SetPlatformFeeRate sets the platform fee rate applied to an Organizer's
+  // future Orders, for example a pilot rate. Orders already issued keep the
+  // rate of their Settlement.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The organizer id is missing or malformed, or the rate is
+  //   missing or outside 0 to 3000 basis points.
+  // - NOT_FOUND: The organizer does not exist.
+  rpc SetPlatformFeeRate(SetPlatformFeeRateRequest) returns (SetPlatformFeeRateResponse);
 }
 
 // CreateRequest carries the new Organizer's name and its initial operator's
@@ -219,3 +247,43 @@ message DeleteRequest {
 // DeleteResponse is returned once the Organizer and everything kept for it
 // have been removed.
 message DeleteResponse {}
+
+// UpdateSellerDetailsRequest identifies the Organizer and carries its seller
+// details.
+message UpdateSellerDetailsRequest {
+  // Required. The organizer whose seller details to record.
+  entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The complete seller details, replacing any recorded before.
+  entity.v1.SellerDetails seller_details = 2 [(buf.validate.field).required = true];
+}
+
+// UpdateSellerDetailsResponse returns the Organizer with its new seller
+// details.
+message UpdateSellerDetailsResponse {
+  // The organizer with its seller details.
+  entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
+}
+
+// SetPlatformFeeRateRequest identifies the Organizer and carries its new rate.
+message SetPlatformFeeRateRequest {
+  // Required. The organizer whose rate to set.
+  entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The platform fee rate in basis points (hundredths of a percent):
+  // 0 to 3000, i.e. 0% to 30%. For example 500 is 5%. 0 is a valid rate, so the
+  // field tracks presence and an omitted rate is rejected.
+  optional int32 platform_fee_rate_bps = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).int32 = {
+      gte: 0
+      lte: 3000
+    }
+  ];
+}
+
+// SetPlatformFeeRateResponse returns the Organizer with its new rate.
+message SetPlatformFeeRateResponse {
+  // The organizer with its platform fee rate.
+  entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
+}

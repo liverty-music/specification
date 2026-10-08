@@ -1,0 +1,190 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.reservation.v1 provides the fan-facing
+// ReservationService: the signed-in fan's first-come checkout, from holding
+// tickets to placing the order.
+package liverty_music.rpc.reservation.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/holder_identity.proto";
+import "liverty_music/entity/v1/order.proto";
+import "liverty_music/entity/v1/reservation.proto";
+import "liverty_music/entity/v1/ticket_sale.proto";
+
+// ReservationService runs one fan's checkout on a first-come TicketSale:
+//
+//   1. Start holds the chosen count for exactly 15 minutes (never extended).
+//   2. Authorize records the 本人確認 name and phone and opens a card hold for
+//      the amount, which the browser authenticates (3D Secure) with the
+//      returned client secret.
+//   3. Confirm places the order while the hold lasts: the tickets are
+//      committed, the card is charged once and the Order and its Tickets are
+//      issued.
+//
+// Get reads the checkout so the client can tell the fan what happened after a
+// step fails. Every call requires a signed-in fan, who is always the caller;
+// the fan is resolved from the token and is never named in a request. A
+// Reservation of another fan is reported as PERMISSION_DENIED without
+// revealing whether it exists.
+service ReservationService {
+  // Start holds a count of tickets on a sale for the caller for 15 minutes and
+  // returns the checkout. It returns the caller's existing holding Reservation
+  // for the sale when the count is the same, so a double tap, a retry or a
+  // reload never holds twice. Starting again with another count replaces the
+  // hold only when the new one can be made; the replaced checkout's card hold is
+  // given back. The count, together with the caller's earlier purchases from the
+  // sale, must stay within the sale's per-account limit.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - NOT_FOUND: The sale does not exist, or the caller has no stored account.
+  // - INVALID_ARGUMENT: The ticket_sale_id is missing or malformed, or the
+  //   ticket_count is missing or above the sale's per-account limit.
+  // - FAILED_PRECONDITION: The sale is not on sale (not yet open, sold out or
+  //   ended), its event's concert is not published (for example cancelled), or
+  //   the caller's earlier purchases plus the count exceed the per-account
+  //   limit.
+  // - RESOURCE_EXHAUSTED: Not enough tickets remain, including when every
+  //   remaining ticket is held by other fans. The caller keeps any hold they
+  //   already had.
+  rpc Start(StartRequest) returns (StartResponse);
+
+  // Get returns the caller's checkout and what became of it: its status,
+  // whether it is still holding, whether a card hold was opened, whether it was
+  // ever committed or charged, and the Order once it is completed. The checkout
+  // screen uses it to choose the outcome it shows.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - NOT_FOUND: The caller has no stored account.
+  // - INVALID_ARGUMENT: The reservation_id is missing or malformed.
+  // - PERMISSION_DENIED: The Reservation does not exist or is another fan's.
+  //   Non-revealing.
+  rpc Get(GetRequest) returns (GetResponse);
+
+  // Authorize records the 本人確認 name and phone number for the caller's
+  // holding checkout, saves them on the caller's account for the next
+  // checkout's prefill, and opens a manual-capture card hold for the checkout's
+  // amount. It returns the hold's client secret, which the browser confirms with
+  // the payment provider (3D Secure); the secret is never stored. Every card
+  // brand is accepted, including American Express and card wallets (Apple Pay,
+  // Google Pay). Authorizing the same checkout again, for example after a
+  // declined card, returns the same hold for another attempt.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - NOT_FOUND: The caller has no stored account.
+  // - INVALID_ARGUMENT: The reservation_id is missing or malformed, or the name
+  //   or phone number is missing or malformed.
+  // - PERMISSION_DENIED: The Reservation does not exist or is another fan's.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The hold has lapsed; the fan starts again.
+  // - UNAVAILABLE: Card payments are temporarily unavailable.
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
+
+  // Confirm places the order for the caller's checkout: while the hold
+  // lasts, the tickets are committed, the card is charged once, and the Order
+  // and its account-bound covered tickets are issued. Calls for the same
+  // checkout are handled one after another, and a checkout that already has an
+  // Order returns it, so a double tap or a retry never charges twice. A lapsed
+  // hold, a cancelled concert or a card not yet authenticated fails before
+  // anything is charged. A charged checkout is never charged again; if issuing
+  // its Order fails, it is retried in the background and the Order is found
+  // later through Get.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - NOT_FOUND: The caller has no stored account.
+  // - INVALID_ARGUMENT: The reservation_id is missing or malformed.
+  // - PERMISSION_DENIED: The Reservation does not exist or is another fan's.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The hold has lapsed, the concert is not published
+  //   (for example cancelled), the card was not authenticated, or the card
+  //   could no longer be charged (the tickets were given back). Nothing was
+  //   charged.
+  // - UNAVAILABLE: Card payments or issuance were temporarily unavailable. The
+  //   checkout is finished in the background; Get reports the Order once
+  //   issued.
+  rpc Confirm(ConfirmRequest) returns (ConfirmResponse);
+}
+
+// StartRequest names the sale and how many tickets to hold.
+message StartRequest {
+  // Required. The sale to buy from.
+  entity.v1.TicketSaleId ticket_sale_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The tickets to hold, at least 1 and at most the sale's
+  // per-account limit (never above 10).
+  int32 ticket_count = 2 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 10
+  }];
+}
+
+// StartResponse returns what the checkout shows.
+message StartResponse {
+  // The holding checkout: its id, ticket count, amount (price × count, 税込)
+  // and hold expiry, from which the client counts down. A resumed checkout
+  // keeps its original hold expiry.
+  entity.v1.Reservation reservation = 1 [(buf.validate.field).required = true];
+
+  // The price of one ticket in yen, tax-inclusive (税込).
+  int64 ticket_price = 2 [(buf.validate.field).int64.gte = 1];
+
+  // The 本人確認 name and phone number saved on the caller's account, to
+  // prefill the checkout. Unset when the caller has not checked out before.
+  entity.v1.HolderIdentity saved_holder_identity = 3;
+}
+
+// GetRequest names the checkout to read.
+message GetRequest {
+  // Required. The caller's checkout.
+  entity.v1.ReservationId reservation_id = 1 [(buf.validate.field).required = true];
+}
+
+// GetResponse returns the checkout and what became of it.
+message GetResponse {
+  // The checkout. Its commit_time is set when it was ever committed, and its
+  // capture_time when it was charged.
+  entity.v1.Reservation reservation = 1 [(buf.validate.field).required = true];
+
+  // True when the checkout is HELD and its hold has not lapsed now.
+  bool holding = 2;
+
+  // True when a card hold has been opened for the checkout (Authorize ran).
+  bool authorized = 3;
+
+  // The Order the checkout completed as. Set only when the status is COMPLETED.
+  entity.v1.OrderId order_id = 4;
+}
+
+// AuthorizeRequest carries the checkout and the 本人確認 details for its
+// tickets.
+message AuthorizeRequest {
+  // Required. The caller's holding checkout.
+  entity.v1.ReservationId reservation_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The holder's real full name and E.164 phone number, printed on
+  // the tickets' face and saved on the caller's account.
+  entity.v1.HolderIdentity holder_identity = 2 [(buf.validate.field).required = true];
+}
+
+// AuthorizeResponse returns the card hold for the browser to authenticate.
+message AuthorizeResponse {
+  // The payment provider's client secret for the card hold, which the browser
+  // confirms with the provider's payment form (3D Secure). Opaque and
+  // short-lived; never stored by the client or the server.
+  string client_secret = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+// ConfirmRequest names the checkout whose order to place.
+message ConfirmRequest {
+  // Required. The caller's authorized, holding checkout.
+  entity.v1.ReservationId reservation_id = 1 [(buf.validate.field).required = true];
+}
+
+// ConfirmResponse returns the issued Order.
+message ConfirmResponse {
+  // The paid Order the checkout completed as, whose source is the Reservation.
+  entity.v1.Order order = 1 [(buf.validate.field).required = true];
+}

@@ -47,4 +47,4 @@ It SHALL store them with Order.Issue, which also records the purchase; when Orde
 
 **Reason**: The ticket journey update now runs for every recorded purchase, whatever its source, in TicketJourneyUseCase.MarkPaid, so a failure there is retried on its own instead of being skipped.
 
-**Migration**: TicketJourneyUseCase.MarkPaid runs for each announced TicketPurchased; a lottery win sets the buyer's journey to Paid as before.
+**Migration**: TicketJourneyUseCase.MarkPaid runs for each Order announced as paid; a lottery win sets the buyer's journey to Paid as before.

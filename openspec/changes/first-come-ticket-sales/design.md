@@ -22,7 +22,7 @@ See proposal.md for motivation. The paid pipeline built for the lottery is reuse
 Payments use separate charges and transfers with the platform as the Stripe merchant (payments-design.md). Connected accounts are transfer-only recipients. Mail goes through the Postmark account already used by Zitadel.
 
 The design was revised on 2026-10-08 after a review found:
-- a race between the expiry sweeper and placing a purchase (B1, B2);
+- a race between the expiry sweeper and placing the order (B1, B2);
 - leaked card holds (B3);
 - an ownership check after the Order lookup (B4);
 - a charged-but-unissued dead end (M1);
@@ -51,7 +51,7 @@ D2, D3, D4, D6 and D7 below carry the fixes.
 ### D1 — Names: `TicketSale` and `Reservation`
 
 - **`TicketSale` is the first-party sale.** Industry terms for this are "on-sale", "release" and "ticket type", and schema.org has `Offer`. "Sales phase" is an internal term, and `SalesPhase` is already the scraped entity. `TicketSale` carries a sale method so that the lottery can be folded in later.
-- **`Reservation` is one checkout.** Its essence is the hold on stock. `Purchase` was rejected because it overlaps with `Order`, which already means "paid".
+- **`Reservation` is one checkout.** Its essence is the hold on stock. `Purchase` was rejected because it overlaps with `Order`, which already means "paid". It is rejected only as an entity name: "purchase" is still used as a verb and in prose (the fan purchases tickets), and the fan's final action places the order.
 
 ### D2 — Authorize, commit while holding, capture
 
@@ -82,8 +82,8 @@ Place purchase (IssuanceUseCase.IssueFromReservation)                           
 - **Start is idempotent by its natural key.** "Get or create the holding Reservation for (user, sale)" is backed by a partial unique index on Held rows. A concurrent second insert loses and reads the winner. Starting again with another count replaces the hold only when the new one can be created; the replaced Reservation's card hold is released by the sweeper (D7). The server generates the id (UUIDv7, `entity.NewID`).
   - Considered: a client-generated id. The browser cannot generate UUIDv7 natively, the id would need validating, and its embedded clock could not be trusted.
   - Considered: an AIP-155 `request_id`. A second key adds nothing over the natural key.
-- **Placing the purchase is serialised per Reservation (re-review N1).** `IssueFromReservation` takes a row lock on the Reservation (`SELECT ... FOR UPDATE` on `reservations`) for the whole call: verify, commit, capture, `RecordCapture` and `Order.Issue`. The lock is held across the Stripe capture call, which is acceptable at pilot volume and only blocks callers of the same Reservation. A concurrent fan double tap, or the stalled-checkout job, waits and then takes the idempotent path: an existing Order or a recorded `capture_at`.
-- **Placing the purchase is idempotent by state.**
+- **Placing the order is serialised per Reservation (re-review N1).** `IssueFromReservation` takes a row lock on the Reservation (`SELECT ... FOR UPDATE` on `reservations`) for the whole call: verify, commit, capture, `RecordCapture` and `Order.Issue`. The lock is held across the Stripe capture call, which is acceptable at pilot volume and only blocks callers of the same Reservation. A concurrent fan double tap, or the stalled-checkout job, waits and then takes the idempotent path: an existing Order or a recorded `capture_at`.
+- **Placing the order is idempotent by state.**
   - `IssueFromReservation` checks ownership first, then returns an existing Order (spec: `usecase/order/issue-from-reservation`).
   - `Commit` reports Committed again for a Committed or Completed Reservation.
   - The `capture_at` recorded by `RecordCapture` stops any second capture, so the 24-hour Stripe idempotency window never matters.
@@ -118,15 +118,15 @@ Place purchase (IssuanceUseCase.IssueFromReservation)                           
 
 ### D6 — Transactional outbox, two consumers
 
-- **The outbox row is written in the issuance transaction** (`Order.Issue`: "the purchase, announced as TicketPurchased"). Its payload carries the Order id, buyer, event, ticket count, amount and source. A stable id (the Order id) lets JetStream deduplicate.
+- **The outbox row is written in the issuance transaction** (`Order.Issue`: "the announcement that the Order is paid"), published on the subject `ORDER.paid`, following the existing `<AGGREGATE>.<past participle>` subjects. Order is paid on creation, so the name fits lottery wins and checkouts alike, and pairs with a later `ORDER.refunded`. Its payload carries the Order id, buyer, event, ticket count, amount and source. A stable id (the Order id) lets JetStream deduplicate.
 - **A relay publishes it.** The relay runs in the API process, polls with `FOR UPDATE SKIP LOCKED`, publishes with `PublishEventWithID` and marks the row sent. This is a shared mechanism that resale and check-in will reuse; existing best-effort publishers are not migrated in this change.
 - **Consumers (decided 2026-10-08: only these two):**
-  - **`NotificationUseCase.NotifyTicketPurchased`** sends the email, then the push.
+  - **`NotificationUseCase.SendOrderConfirmation`** sends the email, then the push.
     - The email is deduplicated by `orders.confirmation_sent_at`, set right after a successful Postmark send. Postmark has no idempotency key, so a crash between the send and the update can send twice; nothing else can.
-    - The push goes through `NotificationUseCase.Deliver` (type `ticket_purchased`). A rerun after the push can push twice, which is accepted.
+    - The push goes through `NotificationUseCase.Deliver` (type `order_confirmation`, named after the message like the existing types). A rerun after the push can push twice, which is accepted.
   - **`TicketJourneyUseCase.MarkPaid`**.
 
-  Lottery wins produce `TicketPurchased` too, so winners get the email and push. Failed messages go back through JetStream redelivery and then to the existing poison queue, which is alerted on.
+  Lottery wins produce `ORDER.paid` too, so winners get the email and push. Failed messages go back through JetStream redelivery and then to the existing poison queue, which is alerted on.
 - **Considered: a confirmation sweeper instead of the outbox** (`confirmation_sent_at` IS NULL, every minute). It is simpler for two side effects, but the user chose event-driven delivery for retry isolation and per-consumer responsibility, and the outbox is needed again for resale and check-in.
 
 ### D7 — Sweepers
@@ -201,7 +201,7 @@ The proto conventions settled in `ticket-wallet-and-checkin` (one service per pa
 - **[Risk] Charged but not issued.** → Never re-charged or released; alerted after 10 minutes; the runbook covers manual refund (D7).
 - **[Risk] Outbox relay lag delays emails.** → The relay polls every second, and the outbox depth and poison queue are alerted on.
 - **[Risk] The default fee changes from 5% to 8%.** → The rate is snapshotted per Settlement, existing Organizers are set explicitly in the migration, and the pilot Organizer gets 500.
-- **[Risk] The lottery issuance is refactored, and winners now get an email.** → Its existing tests stay green, and a regression test is added for a lottery win producing `TicketPurchased` and one email.
+- **[Risk] The lottery issuance is refactored, and winners now get an email.** → Its existing tests stay green, and a regression test is added for a lottery win producing `ORDER.paid` and one email.
 - **[Trade-off] One sale per event and one ticket type.** → Enough for the pilot. Tiers come with the lottery fold-in.
 - **[Risk] `public-event-page` is still in flight.** → The event route delta in this change is applied after it archives. The checkout route is self-contained.
 

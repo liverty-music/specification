@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The fan's checkout screens for a first-come ticket sale: choosing how many tickets, confirming the 本人確認 (identity check) details, paying by card, and the 特商法 (Specified Commercial Transactions Act) final confirmation before the purchase is placed, ending on a completion screen.
+The fan's checkout screens for a first-come ticket sale: choosing how many tickets, confirming the 本人確認 (identity check) details, paying by card, and the 特商法 (Specified Commercial Transactions Act) final confirmation before the order is placed, ending on a completion screen.
 
 ## ADDED Requirements
 
@@ -46,7 +46,7 @@ The checkout SHALL ask for the 本人確認 full name and phone number, prefille
 
 ### Requirement: Card payment
 
-The checkout SHALL take the card through a card form that also offers Apple Pay or Google Pay where the device supports them. It SHALL authorize the card with ReservationUseCase.Authorize and complete the card issuer's authentication in the page. It SHALL say that the card is not charged until the purchase is placed.
+The checkout SHALL take the card through a card form that also offers Apple Pay or Google Pay where the device supports them. It SHALL authorize the card with ReservationUseCase.Authorize and complete the card issuer's authentication in the page. It SHALL say that the card is not charged until the order is placed.
 
 #### Scenario: Card declined
 
@@ -60,17 +60,17 @@ The checkout SHALL take the card through a card form that also offers Apple Pay 
 
 ### Requirement: 特商法 final confirmation
 
-Before placing the purchase, the checkout SHALL show on one screen:
+Before placing the order, the checkout SHALL show on one screen:
 - the event, its date, venue, and open and start times;
 - the number of tickets, with the price per ticket and the total to pay, 税込;
-- the payment method, credit card, with the card brand and last four digits, and that the card is charged when the purchase is placed;
+- the payment method, credit card, with the card brand and last four digits, and that the card is charged when the order is placed;
 - that the tickets are available in the app's Tickets screen immediately after purchase;
 - the sale period;
 - that resale of the tickets without the organizer's consent is prohibited, and that the tickets are issued to the buyer's name;
 - that the purchase cannot be cancelled or refunded except when the event is 中止 (cancelled), that no cooling-off applies, and that official resale opens only if the event sells out;
 - the Organizer's seller details: legal name, representative, address, phone number and contact email.
 
-It SHALL offer to go back and change the number of tickets or the identity details from this screen. The place-purchase action SHALL state that it pays, with the amount, and SHALL be disabled while the purchase is being placed.
+It SHALL offer to go back and change the number of tickets or the identity details from this screen. The place-order action SHALL state that it pays, with the amount, and SHALL be disabled while the order is being placed.
 
 #### Scenario: Final confirmation shown
 
@@ -85,11 +85,11 @@ It SHALL offer to go back and change the number of tickets or the identity detai
 #### Scenario: Double tap on the action
 
 - **WHEN** the fan taps the action twice
-- **THEN** the purchase is placed once
+- **THEN** the order is placed once
 
-### Requirement: Outcome of placing the purchase
+### Requirement: Outcome of placing the order
 
-Placing the purchase SHALL call IssuanceUseCase.IssueFromReservation. On success, the checkout SHALL show the completion screen with the event, the number of tickets, the total paid and a link to the Tickets screen. It SHALL then offer to allow notifications when the fan has not allowed them, and to add the app to the home screen when it is not installed. On failure, it SHALL read the checkout with ReservationUseCase.Get and say:
+Placing the order SHALL call IssuanceUseCase.IssueFromReservation. On success, the checkout SHALL show the completion screen with the event, the number of tickets, the total paid and a link to the Tickets screen. It SHALL then offer to allow notifications when the fan has not allowed them, and to add the app to the home screen when it is not installed. On failure, it SHALL read the checkout with ReservationUseCase.Get and say:
 - when the hold has ended without a commit: that the 15 minutes passed, that the card was not charged, that a temporary hold may show on the card statement for a few days, and offer to start again;
 - when the checkout was released after being committed: that the card could not be charged, and offer to start again;
 - when the checkout was released without being committed: that it was replaced by a newer checkout, for example in another tab, and offer to go to it;
@@ -103,10 +103,10 @@ Placing the purchase SHALL call IssuanceUseCase.IssueFromReservation. On success
 
 #### Scenario: Hold ended at the last step
 
-- **WHEN** placing the purchase fails because the hold has ended
+- **WHEN** placing the order fails because the hold has ended
 - **THEN** the screen says the 15 minutes passed and the card was not charged, and offers to start again
 
 #### Scenario: Charge still completing
 
-- **WHEN** placing the purchase fails with Unavailable after the commit
+- **WHEN** placing the order fails with Unavailable after the commit
 - **THEN** the screen says the purchase is being completed and the tickets will appear shortly
