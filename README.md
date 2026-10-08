@@ -8,21 +8,56 @@ This repository is also the **OpenSpec store** `openspec-store`: every spec and 
 
 ### Lifecycle of a change
 
-1. **Plan** in this repository: `/opsx:propose <change>` writes `openspec/changes/<change>/` (proposal, design, delta specs, tasks). Split `tasks.md` by repository. Review it as a normal PR here and merge it; the *OpenSpec Checks* workflow validates it, and a change that modifies existing requirements carries `openspec show <change> --diff` in the PR body.
+1. **Plan** in this repository: `/opsx:propose <change>` writes `openspec/changes/<change>/` (proposal, design, delta specs, tasks). Split `tasks.md` by repository. Open the PR from a worktree (see [Branch work in this repository](#branch-work-in-this-repository)), review it as a normal PR and merge it; the *OpenSpec Checks* workflow validates it, and a change that modifies existing requirements carries `openspec show <change> --diff` in the PR body.
 2. **Implement** in each affected repository, one Claude session per repository (each session only loads its own repository's `AGENTS.md`). Start with `/opsx:apply <change>`; it reads the change from the store. Task check-offs and spike results land directly in the `specification` checkout's working tree (on `main`, uncommitted) through the store pointer; nothing in that checkout is committed until close-out.
 3. **Proto first** when the contract changes: the `specification` PR merges, a GitHub Release (`vX.Y.Z`) triggers BSR generation, then `backend` / `frontend` consume the generated types. Downstream work starts early against placeholder types; see [AGENTS.md](AGENTS.md) for the rules.
 4. **Open one PR per repository.** Every PR fills the *OpenSpec Traceability* section of its template (`OpenSpec-Change`, store commit). Merge order: `specification` → Release/BSR → `backend` / `frontend`; `cloud-provisioning` is independent.
-5. **Close out** here once the implementation PRs have merged and the release is confirmed in production: `/opsx:verify <change>`, then cut a branch and archive on it, committing only that change's paths:
+5. **Close out** here once the implementation PRs have merged and the release is confirmed in production: `/opsx:verify <change>`, then archive in a worktree that carries the change's latest progress, committing only that change's paths:
 
    ```bash
-   git switch -c <change>-archive          # uncommitted work of other changes carries over untouched
+   S=<path-to-this-checkout>
+   git -C "$S" fetch origin
+   git -C "$S" worktree add .claude/worktrees/<change>-archive -b <change>-archive origin/main
+   cd "$S/.claude/worktrees/<change>-archive"
+   rsync -a --delete "$S/openspec/changes/<change>/" openspec/changes/<change>/   # the progress /opsx:apply recorded
    openspec archive <change>
    git add openspec/changes/<change> openspec/changes/archive openspec/specs
    git commit && git push -u origin <change>-archive && gh pr create
-   git switch main
    ```
 
+   After it merges, sync this checkout (see below) and remove the worktree.
+
    One `specification` PR per change, at archive time. CI rejects an archive whose `tasks.md` still has unchecked tasks, or whose added or modified scenarios have no `@spec`-annotated test on the implementing repositories' `main`.
+
+### Branch work in this repository
+
+This checkout is the store. It stays on `main` and holds the uncommitted progress of every change in flight, so it never switches branches. Everything that needs a branch here — a plan PR, a proto PR, an archive — happens in a worktree cut from `origin/main`:
+
+```bash
+S=<path-to-this-checkout>
+git -C "$S" fetch origin
+git -C "$S" worktree add .claude/worktrees/<branch> -b <branch> origin/main
+cd "$S/.claude/worktrees/<branch>"
+```
+
+- **Plan PR:** copy the change in with `cp -r "$S/openspec/changes/<change>" openspec/changes/`, then commit, push and open the PR.
+- **Proto or docs PR:** edit in the worktree directly.
+- **Archive:** step 5 above.
+
+Commit hooks and `openspec archive` run in the worktree, so run them from inside it. The scenario coverage check finds the implementing repositories next to this checkout, wherever the worktree is.
+
+After the PR merges, sync this checkout. Touch only that change's paths, because the rest of the working tree is other changes' progress:
+
+```bash
+cd "$S" && git fetch origin
+# plan PR: move the untracked copy aside so the committed one can land, then restore the progress on top
+mv openspec/changes/<change> /tmp/<change> && git merge --ff-only origin/main && cp -r /tmp/<change>/. openspec/changes/<change>/
+# archive PR: drop the archived change's leftover edits, then fast-forward
+git restore --worktree -- openspec/changes/<change> && git merge --ff-only origin/main
+git worktree remove .claude/worktrees/<branch>
+```
+
+`git merge --ff-only` stops when another change's untracked plan was merged upstream and not yet synced. That change's owner syncs it as above.
 
 ### Local setup (once per machine)
 
@@ -34,7 +69,7 @@ openspec store register "$L/specification" --id openspec-store
 openspec config set defaultStore openspec-store  # optional: resolve to the store from anywhere
 ```
 
-Keep this checkout of `specification` on `main` and pull it before planning or implementing: it *is* the store, and OpenSpec never pulls for you. `openspec doctor` from any repository reports whether the store resolves.
+Keep this checkout of `specification` on `main` and update it with `git fetch origin && git merge --ff-only origin/main` before planning or implementing (not `git pull`, which rebases and can autostash other changes' progress): it *is* the store, and OpenSpec never pulls for you. `openspec doctor` from any repository reports whether the store resolves.
 
 ### Local: parallel work with worktrees
 
