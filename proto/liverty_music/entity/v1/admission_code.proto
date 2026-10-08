@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/public_key.proto";
+import "liverty_music/entity/v1/ticket.proto";
+import "liverty_music/entity/v1/user.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// AdmissionCode is what a fan's device shows as the entry QR code at the venue:
+// a statement that one User presents 1 to 10 of their Tickets for one event,
+// signed on the device with the private half of the User's
+// WalletPublicKey. The device makes it without a connection, renews it every
+// 15 seconds and never stores it. The server trusts it only after verifying
+// the signature with the User's WalletPublicKey and checking that it is fresh: the
+// signed time is at most 30 seconds before and at most 15 seconds after the
+// server time.
+//
+// This message is the decoded form. On the wire (inside the QR code) the code
+// is NOT protobuf; it is the compact binary payload below, encoded as text with
+// Base45 (RFC 9285) so the QR code uses alphanumeric mode, error correction
+// level M. All integers are big-endian; ids are the 16 raw bytes of the UUID.
+//
+//   offset      size  field
+//   0           1     version, 0x01 for this layout
+//   1           16    user id (UserId)
+//   17          16    event id (EventId)
+//   33          1     ticket count N, 1 to 10
+//   34          16*N  ticket ids (TicketId), distinct, in the fan's order
+//   34+16N      4     signed time, unsigned Unix seconds by the device's clock
+//   38+16N      64    signature, Signature (`r || s`)
+//
+// The signature is ECDSA P-256 with SHA-256 over bytes [0, 38+16N), i.e. the
+// whole payload before the signature, version byte included. A payload is
+// Malformed when the text is not Base45, the version is unknown, N is 0 or
+// above 10, a ticket id repeats, or the length is not exactly 102+16N bytes
+// (118 bytes for one ticket, 262 bytes / 393 Base45 characters for ten).
+// Decoding never checks the signature; verification is a separate step.
+message AdmissionCode {
+  // The ticket ids presented together must be distinct.
+  option (buf.validate.message).cel = {
+    id: "admission_code.distinct_tickets"
+    message: "ticket_ids must not repeat a ticket"
+    expression: "this.ticket_ids.map(t, t.value).unique()"
+  };
+
+  // The User presenting the tickets; must be the holder of each.
+  UserId user_id = 1 [(buf.validate.field).required = true];
+
+  // The event the presented tickets admit to.
+  EventId event_id = 2 [(buf.validate.field).required = true];
+
+  // The tickets presented together for same-time group entry: 1 to 10 distinct
+  // tickets, all for event_id. Each is admitted or rejected independently.
+  repeated TicketId ticket_ids = 3 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 10
+  }];
+
+  // When the device signed the code, by the device's clock. Whole seconds.
+  google.protobuf.Timestamp sign_time = 4 [(buf.validate.field).required = true];
+
+  // The device's signature over the payload (see the layout above), made with
+  // the private half of the user's WalletPublicKey.
+  Signature signature = 5 [(buf.validate.field).required = true];
+}
+
+// ScannedText is the text a reception device read from a scanned QR code,
+// passed to the server undecoded. It may hold anything a QR code can carry (for
+// example a web address); the server decodes it and rejects text that is not an
+// AdmissionCode as forged rather than failing the call. Bounded by the largest
+// QR code's alphanumeric capacity.
+message ScannedText {
+  // The scanned text. Between 1 and 4296 characters.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 4296
+  }];
+}

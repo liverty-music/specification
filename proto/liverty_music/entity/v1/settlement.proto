@@ -172,5 +172,5 @@ message Settlement {
 
   // When the payout was released (the split Transfers were created). Empty while the
   // settlement is still held. Server-owned.
-  google.protobuf.Timestamp released_at = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp release_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

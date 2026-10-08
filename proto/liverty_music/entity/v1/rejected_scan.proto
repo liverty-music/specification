@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/reception_link.proto";
+import "liverty_music/entity/v1/ticket.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// RejectedScanReason is why a scan, or one ticket presented in it, was refused
+// at reception. New values may be appended; existing values must not be
+// renumbered.
+enum RejectedScanReason {
+  // Default value, rejected at the boundary: a RejectedScan always has a
+  // reason.
+  REJECTED_SCAN_REASON_UNSPECIFIED = 0;
+
+  // The scanned text is not an AdmissionCode, the code's user has no wallet
+  // key, or the signature does not verify with it (changed content or a code
+  // from a replaced device). Applies to the whole scan; names no ticket.
+  REJECTED_SCAN_REASON_FORGED = 1;
+
+  // The signature verifies but the code is not fresh (for example a
+  // screenshot shown later). Applies to the whole scan.
+  REJECTED_SCAN_REASON_EXPIRED = 2;
+
+  // A genuine, fresh code for an event other than the reception link's event.
+  // Applies to the whole scan.
+  REJECTED_SCAN_REASON_OTHER_EVENT = 3;
+
+  // The presented ticket is not held by the code's user for this event.
+  REJECTED_SCAN_REASON_NOT_HOLDER = 4;
+
+  // The presented ticket was voided (refunded or resold).
+  REJECTED_SCAN_REASON_VOIDED = 5;
+
+  // The presented ticket was already let in earlier.
+  REJECTED_SCAN_REASON_ALREADY_ADMITTED = 6;
+}
+
+// RejectedScan is the permanent note that a scan at the venue, or one ticket in
+// it, was refused: why, through which ReceptionLink and when. RejectedScans are
+// append-only. Unlike an Admission, losing one is acceptable, so they are
+// stored apart from the ticket.
+//
+// A FORGED scan names no ticket: a forged or unreadable code proves nothing
+// about the tickets it lists. Any other reason names one: the code's signature
+// verified, so the tickets it presents are known. EXPIRED and OTHER_EVENT
+// therefore produce one RejectedScan per presented ticket.
+message RejectedScan {
+  // A ticket is named exactly when the reason is not FORGED.
+  option (buf.validate.message).cel = {
+    id: "rejected_scan.ticket_unless_forged"
+    message: "ticket_id must be absent for FORGED and present for every other reason"
+    expression: "(this.reason == 1) == !has(this.ticket_id)"
+  };
+
+  // The event of the ReceptionLink that scanned.
+  EventId event_id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The ReceptionLink that scanned.
+  ReceptionLinkId reception_link_id = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The ticket the refusal is about. Absent only when the reason is FORGED.
+  TicketId ticket_id = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Why it was refused.
+  RejectedScanReason reason = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }
+  ];
+
+  // When the scan was decided.
+  google.protobuf.Timestamp scan_time = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+}

@@ -1,13 +1,11 @@
 syntax = "proto3";
 
-// Package liverty_music.rpc.admin.v1 provides admin-only gRPC service definitions
-// for internal tooling exposed through the developer admin console.
-//
-// These services are authorized solely for the admin organization and are never
-// reachable by the consumer product. The first capability is concert management:
-// reviewing AI-discovered concerts before they are published to fans, and
-// managing the published catalog thereafter.
-package liverty_music.rpc.admin.v1;
+// Package liverty_music.rpc.admin.concert.v1 provides the admin-only
+// ConcertService for internal tooling exposed through the developer admin
+// console: reviewing AI-discovered concerts before they are published to fans,
+// and managing the published catalog thereafter. It is authorized solely for
+// the admin organization and never reachable by the consumer product.
+package liverty_music.rpc.admin.concert.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
@@ -21,7 +19,7 @@ import "liverty_music/entity/v1/venue.proto";
 
 // ConcertService is the admin-side counterpart to the consumer
 // liverty_music.rpc.concert.v1.ConcertService: it manages concerts across their
-// full lifecycle for internal developers. The proto package (admin.v1) conveys
+// full lifecycle for internal developers. The proto package (admin.concert.v1) conveys
 // the admin audience, so the service name carries no role qualifier and the two
 // ConcertService definitions are distinguished by package alone.
 //

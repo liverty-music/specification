@@ -23,9 +23,10 @@ message TicketId {
 
 // TicketStatus is the lifecycle of an issued Ticket as owned by ⑤. ⑤ issues a
 // ticket as ISSUED and voids it when its Order is refunded (event cancellation
-// or dispute). ⑥ ticket-wallet-and-checkin
-// appends wallet / check-in states (e.g. CHECKED_IN) on top of this — so new
-// values may be appended and existing values must not be renumbered.
+// or dispute). Admission at the venue is not a status: ⑥
+// ticket-wallet-and-checkin records it as the ticket's `admit_time`, which is
+// kept when the ticket is later voided. New values may be appended and
+// existing values must not be renumbered.
 enum TicketStatus {
   // Default value, rejected at the boundary: a persisted Ticket always records a
   // concrete status.
@@ -40,9 +41,11 @@ enum TicketStatus {
 }
 
 // Ticket is a Web2, account-bound admission right issued from a captured lottery
-// win. ⑤ DEFINES this entity; ⑥ ticket-wallet-and-checkin later adds the
-// wallet / rotating-QR / check-in behavior on top of it (hence the minimal
-// surface here).
+// win. ⑤ DEFINES this entity; ⑥ ticket-wallet-and-checkin adds admission at
+// the venue on top of it (`admit_time`).
+//
+// A ticket is admissible exactly when it is ISSUED and has no `admit_time`:
+// a VOIDED ticket is refused, and an admitted ticket is never admitted again.
 //
 // Every issued Ticket is a covered ticket (特定興行入場券) carrying ALL THREE legal
 // conditions:
@@ -114,8 +117,14 @@ message Ticket {
   ];
 
   // When the ticket was issued (= the Order's capture/issuance time). Server-owned.
-  google.protobuf.Timestamp issued_at = 9 [
+  google.protobuf.Timestamp issue_time = 9 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
+
+  // When the ticket was admitted at the venue (⑥). Absent until admitted; set
+  // once, together with its Admission, and kept when the ticket
+  // is later VOIDED (a refund after entry does not erase that the holder was
+  // admitted). Server-owned.
+  google.protobuf.Timestamp admit_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

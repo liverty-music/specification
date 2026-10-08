@@ -1,14 +1,12 @@
 syntax = "proto3";
 
-// Package liverty_music.rpc.organizer.v1 provides the organizer-facing
-// services an operator uses from the organizer console. Beyond the identity
-// OrganizerService (Get + ListArtists), this file adds ConcertService, the
-// authoring surface an organizer uses to create and publish first-party
-// concerts for the artists it represents. Both services are served by the
-// dedicated organizer Connect server behind org-scoped role-claim
+// Package liverty_music.rpc.organizer.concert.v1 provides the organizer-facing
+// ConcertService, the authoring surface an organizer uses to create and
+// publish first-party concerts for the artists it represents. It is served by
+// the dedicated organizer Connect server behind org-scoped role-claim
 // authorization; the admin-facing catalog management lives separately in
-// liverty_music.rpc.admin.v1.ConcertService.
-package liverty_music.rpc.organizer.v1;
+// liverty_music.rpc.admin.concert.v1.ConcertService.
+package liverty_music.rpc.organizer.concert.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/artist.proto";
@@ -29,7 +27,7 @@ import "liverty_music/entity/v1/venue.proto";
 // is scoped to), so requests never carry an organizer_id; a series is
 // addressed by its SeriesId. An organizer may author only for artists it
 // represents (the same represented-artists set returned by
-// OrganizerService.ListArtists). Authorization is org-scoped from the token's
+// liverty_music.rpc.organizer.v1.OrganizerService.ListArtists). Authorization is org-scoped from the token's
 // role claim, and failures that would concern another org's series never
 // reveal whether such a series exists.
 //

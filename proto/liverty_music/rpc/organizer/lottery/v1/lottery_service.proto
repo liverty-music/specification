@@ -1,12 +1,10 @@
 syntax = "proto3";
 
-// Package liverty_music.rpc.organizer.v1 provides the organizer-facing services
-// an operator uses from the organizer console. Alongside the identity
-// OrganizerService and the authoring ConcertService, this file adds
-// LotteryService, the surface an organizer uses to put a published event on sale
-// by lottery and to watch the draw outcome. It is served by the dedicated
+// Package liverty_music.rpc.organizer.lottery.v1 provides the organizer-facing
+// LotteryService, the surface an organizer uses to put a published event on
+// sale by lottery and to watch the draw outcome. It is served by the dedicated
 // organizer Connect server behind org-scoped role-claim authorization.
-package liverty_music.rpc.organizer.v1;
+package liverty_music.rpc.organizer.lottery.v1;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
@@ -28,7 +26,7 @@ import "liverty_music/entity/v1/verified_identity.proto";
 // (which captures winners and cancels losers) runs as an internal backend job,
 // not an RPC on this surface.
 service LotteryService {
-  // ConfigureLotteryPhase attaches a new lottery sales phase to a published
+  // Configure attaches a new lottery sales phase to a published
   // event the caller owns: an application window (1–14 days long), a ticket
   // capacity, a max-tickets-per-application, and a per-ticket price in JPY. The
   // phase is not yet open unless its open_time has passed; fans can apply only
@@ -44,9 +42,9 @@ service LotteryService {
   // - FAILED_PRECONDITION: The event's concert is still a DRAFT (must be
   //   published first), or the caller's own Organizer has been deactivated.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  rpc ConfigureLotteryPhase(ConfigureLotteryPhaseRequest) returns (ConfigureLotteryPhaseResponse);
+  rpc Configure(ConfigureRequest) returns (ConfigureResponse);
 
-  // GetLotteryPhaseStatus returns the phase together with a summary of where it
+  // GetStatus returns the phase together with a summary of where it
   // stands: whether the window is open or closed and, once the draw has run, the
   // outcome tallies (applications, tickets requested, winners, waitlisted). It
   // lets the console render the sale dashboard and the post-draw summary.
@@ -55,14 +53,14 @@ service LotteryService {
   // - PERMISSION_DENIED: The phase's event is not owned by the caller's
   //   Organizer. Non-revealing.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  rpc GetLotteryPhaseStatus(GetLotteryPhaseStatusRequest) returns (GetLotteryPhaseStatusResponse);
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
 
-  // SetPhaseVerificationRequirement sets or changes the identity-verification
+  // SetVerificationRequirement sets or changes the identity-verification
   // gate on a phase the caller owns (identity-ekyc): none (the default),
   // verified-any (admits the driver's-licence fallback), or JPKI-only (admits
   // only STRONG-dedupe accounts). It lets an organizer raise the bar on a
   // high-demand phase after configuring it, without recreating the phase. The
-  // requirement may also be set at ConfigureLotteryPhase.
+  // requirement may also be set at Configure.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: phase_id is missing/malformed or the requirement is not
@@ -71,15 +69,15 @@ service LotteryService {
   //   Organizer, or the caller lacks the organizer-console role. Non-revealing.
   // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  rpc SetPhaseVerificationRequirement(SetPhaseVerificationRequirementRequest) returns (SetPhaseVerificationRequirementResponse);
+  rpc SetVerificationRequirement(SetVerificationRequirementRequest) returns (SetVerificationRequirementResponse);
 }
 
-// ConfigureLotteryPhaseRequest carries the configuration for a new lottery phase
+// ConfigureRequest carries the configuration for a new lottery phase
 // on one of the caller's published events. The phase's identity is
 // server-minted; the caller supplies only the event target and the sale
 // parameters. The console defaults the window duration to 10 days; the accepted
 // range (1–14 days) is enforced here.
-message ConfigureLotteryPhaseRequest {
+message ConfigureRequest {
   // Required. The published event to put on sale. Its concert MUST be owned by
   // the caller's Organizer and already PUBLISHED.
   entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
@@ -107,26 +105,26 @@ message ConfigureLotteryPhaseRequest {
   // UNSPECIFIED (the default) means no verification is required; VERIFIED_ANY
   // admits any verified person (including the driver's-licence fallback);
   // JPKI_ONLY admits only STRONG-dedupe accounts. May be changed later via
-  // SetPhaseVerificationRequirement.
+  // SetVerificationRequirement.
   entity.v1.VerificationRequirement verification_requirement = 7 [(buf.validate.field).enum.defined_only = true];
 }
 
-// ConfigureLotteryPhaseResponse returns the newly-created phase.
-message ConfigureLotteryPhaseResponse {
+// ConfigureResponse returns the newly-created phase.
+message ConfigureResponse {
   // The created lottery sales phase, with its server-minted id.
   entity.v1.LotterySalesPhase phase = 1 [(buf.validate.field).required = true];
 }
 
-// GetLotteryPhaseStatusRequest identifies the phase to inspect.
-message GetLotteryPhaseStatusRequest {
+// GetStatusRequest identifies the phase to inspect.
+message GetStatusRequest {
   // Required. The lottery phase to inspect. Its event MUST be owned by the
   // caller's Organizer.
   entity.v1.LotterySalesPhaseId phase_id = 1 [(buf.validate.field).required = true];
 }
 
-// GetLotteryPhaseStatusResponse returns the phase and a summary of its progress.
+// GetStatusResponse returns the phase and a summary of its progress.
 // The outcome tallies are populated only once the draw has run.
-message GetLotteryPhaseStatusResponse {
+message GetStatusResponse {
   // The lottery phase.
   entity.v1.LotterySalesPhase phase = 1 [(buf.validate.field).required = true];
 
@@ -154,9 +152,9 @@ message GetLotteryPhaseStatusResponse {
   int32 waitlisted_application_count = 7;
 }
 
-// SetPhaseVerificationRequirementRequest identifies the phase to gate and the
+// SetVerificationRequirementRequest identifies the phase to gate and the
 // requirement to apply.
-message SetPhaseVerificationRequirementRequest {
+message SetVerificationRequirementRequest {
   // Required. The lottery phase to gate. Its event MUST be owned by the caller's
   // Organizer.
   entity.v1.LotterySalesPhaseId phase_id = 1 [(buf.validate.field).required = true];
@@ -166,9 +164,9 @@ message SetPhaseVerificationRequirementRequest {
   entity.v1.VerificationRequirement verification_requirement = 2 [(buf.validate.field).enum.defined_only = true];
 }
 
-// SetPhaseVerificationRequirementResponse returns the phase with its updated
+// SetVerificationRequirementResponse returns the phase with its updated
 // verification requirement applied.
-message SetPhaseVerificationRequirementResponse {
+message SetVerificationRequirementResponse {
   // The updated lottery phase.
   entity.v1.LotterySalesPhase phase = 1 [(buf.validate.field).required = true];
 }

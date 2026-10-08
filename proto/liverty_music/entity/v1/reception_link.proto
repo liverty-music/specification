@@ -1,0 +1,132 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/public_key.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// ReceptionLinkId is a globally unique identifier for a ReceptionLink.
+// Server-generated surrogate id.
+message ReceptionLinkId {
+  // A UUID string mapping to the link's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// ReceptionLinkNumber is the number the server gives a ReceptionLink within
+// its event, in issue order: the event's first link is 1, the next 2, and so
+// on. A number is never reused, even after its link is REVOKED, so a number
+// always means the same device in admission records. Staff and the Organizer
+// see it as a label such as 受付1; the label is rendered by the client.
+message ReceptionLinkNumber {
+  // The number, 1 or more.
+  int32 value = 1 [(buf.validate.field).int32.gte = 1];
+}
+
+// ReceptionLinkToken is the secret part of a ReceptionLink's URL. The server
+// mints it from at least 128 random bits (32 random bytes, base64url without
+// padding, 43 characters), compares it in constant time, and returns it only
+// while the link is UNUSED. Holding it alone is not enough to admit: every
+// call through the link must also be signed by the device it is bound to.
+message ReceptionLinkToken {
+  // The base64url token. Between 22 and 64 characters of the base64url alphabet.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 22
+    max_len: 64
+    pattern: "^[A-Za-z0-9_-]+$"
+  }];
+}
+
+// ReceptionLinkStatus is the lifecycle of a ReceptionLink:
+// UNUSED → IN_USE → REVOKED, or UNUSED → REVOKED.
+enum ReceptionLinkStatus {
+  // Default value, rejected at the boundary: a persisted link always records a
+  // concrete status.
+  RECEPTION_LINK_STATUS_UNSPECIFIED = 0;
+
+  // Issued but no device has opened it yet. Every new link starts UNUSED; its
+  // token is still returned to the Organizer.
+  RECEPTION_LINK_STATUS_UNUSED = 1;
+
+  // A device opened the link and bound its public key; only that device can
+  // call through it. The token is no longer returned.
+  RECEPTION_LINK_STATUS_IN_USE = 2;
+
+  // The Organizer revoked the link; every call through it is refused,
+  // including a scan already sent but not yet decided. Terminal.
+  RECEPTION_LINK_STATUS_REVOKED = 3;
+}
+
+// ReceptionLink is the link an Organizer issues so that one device, held by
+// venue staff without an account of their own, can admit fans to one event
+// during that event's reception window. It grants nothing but admission to
+// that event. The first device that opens it creates an ECDSA P-256 key pair
+// and binds the public key; every later call must be signed with that
+// device's private key, so a forwarded link is useless on another device.
+message ReceptionLink {
+  // The unique identifier for this link. Server-generated surrogate id.
+  ReceptionLinkId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The one event the link admits to. Its concert must be owned by the issuing
+  // Organizer and published.
+  EventId event_id = 2 [
+    (google.api.field_behavior) = IMMUTABLE,
+    (buf.validate.field).required = true
+  ];
+
+  // The link's number within its event, assigned on issue.
+  ReceptionLinkNumber number = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The secret part of the link's URL. Set only while the link is UNUSED, in
+  // the responses that return it to the owning Organizer (Issue and List);
+  // never returned once a device is bound, and never to the reception device.
+  ReceptionLinkToken token = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The public key of the device the link is bound to. Absent until a device
+  // opens the link; set once and never changed.
+  PublicKey bound_public_key = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The link's lifecycle status. Server-owned.
+  ReceptionLinkStatus status = 6 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // When a device first opened the link. Absent until the link is bound.
+  google.protobuf.Timestamp bind_time = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When the Organizer revoked the link. Absent until revoked.
+  google.protobuf.Timestamp revoke_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// ReceptionWindow is when a ReceptionLink can admit, derived from its event's
+// current local date, open time and start time in Japan time: from 3 hours
+// before the open time (or before the start time when the event has no open
+// time) until 04:00 on the day after the local date. A time is inside it when
+// it is at or after open_time and before close_time. An event without a start
+// time has no reception window. The window is fixed, not configurable.
+message ReceptionWindow {
+  // The window always closes after it opens.
+  option (buf.validate.message).cel = {
+    id: "reception_window.order"
+    message: "close_time must be after open_time"
+    expression: "this.close_time > this.open_time"
+  };
+
+  // When reception opens (inclusive).
+  google.protobuf.Timestamp open_time = 1 [(buf.validate.field).required = true];
+
+  // When reception closes (exclusive).
+  google.protobuf.Timestamp close_time = 2 [(buf.validate.field).required = true];
+}

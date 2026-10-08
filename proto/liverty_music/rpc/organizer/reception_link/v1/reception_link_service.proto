@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.reception_link.v1 provides the
+// organizer-facing ReceptionLinkService, the surface an operator uses from the
+// organizer console to hand admission for one event to venue staff who have no
+// account: one ReceptionLink per reception device. It is served by the
+// dedicated organizer Connect server behind org-scoped role-claim
+// authorization; the reception device itself calls
+// liverty_music.rpc.organizer.reception.v1.
+package liverty_music.rpc.organizer.reception_link.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/reception_link.proto";
+
+// ReceptionLinkService is the organizer-facing surface over reception links: an
+// authenticated operator issues, lists and revokes the ReceptionLinks of its
+// own published events. Every call passes the same organizer-console sign-in
+// checks as the organizer OrganizerService and resolves the caller's own
+// Organizer from the token (never carried in the request). Failures that would
+// concern another org's event or link never reveal whether it exists.
+service ReceptionLinkService {
+  // Issue creates a ReceptionLink for one of the caller's published events, to
+  // hand to one reception device. The server numbers it after the event's
+  // earlier links (1, 2, ...). The link starts UNUSED and is returned with its
+  // token, which the console turns into the link's URL. A link can be issued
+  // any time before the event, whether or not its reception window has opened,
+  // but only for an event with a start time (without one the event has no
+  // reception window).
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The event_id is missing or malformed.
+  // - PERMISSION_DENIED: The event does not exist or is not owned by the
+  //   caller's Organizer, or any organizer-console authorization failure.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The event's concert is still a DRAFT, the event has
+  //   no start time, or the caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Issue(IssueRequest) returns (IssueResponse);
+
+  // List returns every ReceptionLink of one of the caller's events with its
+  // state: number, status, bind and revoke times, and the token only for a
+  // link that is still UNUSED. An event has a handful of links, so the list is
+  // not paginated.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The event_id is missing or malformed.
+  // - PERMISSION_DENIED: The event does not exist or is not owned by the
+  //   caller's Organizer, or any organizer-console authorization failure.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc List(ListRequest) returns (ListResponse);
+
+  // Revoke stops a ReceptionLink at once, for example when its device is lost
+  // or replaced. From then on every call through the link is refused,
+  // including a scan already sent but not yet decided. Revoking an already
+  // REVOKED link returns it unchanged. To replace a device, revoke its link and
+  // issue a new one.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The reception_link_id is missing or malformed.
+  // - PERMISSION_DENIED: The link does not exist or its event is not owned by
+  //   the caller's Organizer, or any organizer-console authorization failure.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Revoke(RevokeRequest) returns (RevokeResponse);
+}
+
+// IssueRequest names the event to issue a link for.
+message IssueRequest {
+  // Required. The published event the link admits to. Its concert MUST be
+  // owned by the caller's Organizer.
+  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+}
+
+// IssueResponse returns the new link.
+message IssueResponse {
+  // The new UNUSED link, with its server-minted id, its number and its token.
+  entity.v1.ReceptionLink reception_link = 1 [(buf.validate.field).required = true];
+}
+
+// ListRequest names the event whose links to list.
+message ListRequest {
+  // Required. The event whose links to list. Its concert MUST be owned by the
+  // caller's Organizer.
+  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+}
+
+// ListResponse returns the event's links.
+message ListResponse {
+  // Every link of the event, REVOKED ones included, by number. The token is set
+  // only on UNUSED links. Empty when the event has none.
+  repeated entity.v1.ReceptionLink reception_links = 1;
+}
+
+// RevokeRequest names the link to revoke.
+message RevokeRequest {
+  // Required. The link to revoke. Its event MUST be owned by the caller's
+  // Organizer.
+  entity.v1.ReceptionLinkId reception_link_id = 1 [(buf.validate.field).required = true];
+}
+
+// RevokeResponse returns the revoked link.
+message RevokeResponse {
+  // The link, now REVOKED, with its revoke time.
+  entity.v1.ReceptionLink reception_link = 1 [(buf.validate.field).required = true];
+}

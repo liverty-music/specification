@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/public_key.proto";
+import "liverty_music/entity/v1/user.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// WalletPublicKey is the public key of the device a fan shows tickets from.
+// The device creates the key pair with WebCrypto as a non-extractable key,
+// keeps the private half in IndexedDB, and registers only this public key on
+// its first online visit; at the venue it signs AdmissionCodes without a
+// connection, and the server verifies them against this key. A User has at
+// most one: registering another device's key replaces it, so tickets are
+// shown from one device at a time and codes from the replaced device are
+// refused as forged.
+//
+// It is the fan-side counterpart of a ReceptionLink's `bound_public_key`: the
+// same PublicKey, held per User and replaceable, where a reception link's key
+// is bound once.
+message WalletPublicKey {
+  // The User whose device created the key. Identifies the WalletPublicKey: a
+  // User has at most one. Resolved from the caller's token at registration;
+  // never named in a request.
+  UserId user_id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The device's public key.
+  PublicKey public_key = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // When the device registered the key. Server-owned.
+  google.protobuf.Timestamp register_time = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+}

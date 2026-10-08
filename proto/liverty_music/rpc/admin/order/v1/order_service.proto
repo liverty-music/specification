@@ -1,15 +1,14 @@
 syntax = "proto3";
 
-// Package liverty_music.rpc.admin.v1 provides admin-only gRPC service definitions
-// for internal tooling exposed through the developer admin console.
-package liverty_music.rpc.admin.v1;
+// Package liverty_music.rpc.admin.order.v1 provides the admin-only
+// OrderService for internal tooling exposed through the developer admin
+// console.
+package liverty_music.rpc.admin.order.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/order.proto";
 
-option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/admin/v1;adminv1";
-
-// OrderAdminService is the admin-only operations surface over ⑤'s Orders: the
+// OrderService is the admin-only operations surface over ⑤'s Orders: the
 // refund / dispute-clawback path. It is authorized solely for the admin
 // organization and never reachable by the consumer product.
 //
@@ -19,8 +18,8 @@ option go_package = "github.com/liverty-music/specification/gen/go/liverty_music
 // event's occurrence AND a dispute-safety window (gated on the event's current
 // start time) — it is never a manual admin/organizer action, mirroring the
 // lottery draw-job precedent.
-service OrderAdminService {
-  // RefundOrder refunds the ticket's current holder the face value + system/発券
+service OrderService {
+  // Refund refunds the ticket's current holder the face value + system/発券
   // fee (retaining the payment-processor fee, the JP norm) via a provider Refund,
   // and claws back the Organizer's share via transfer_reversal. It covers event
   // cancellation (中止) and dispute/chargeback handling (see RefundReason). A
@@ -37,7 +36,7 @@ service OrderAdminService {
   //   UNSPECIFIED.
   // - NOT_FOUND: No such Order.
   // - UNAUTHENTICATED: The request lacks valid admin credentials.
-  rpc RefundOrder(RefundOrderRequest) returns (RefundOrderResponse);
+  rpc Refund(RefundRequest) returns (RefundResponse);
 }
 
 // RefundReason classifies why an Order is being refunded — it selects the refund
@@ -61,8 +60,8 @@ enum RefundReason {
   REFUND_REASON_DISPUTE = 3;
 }
 
-// RefundOrderRequest identifies the Order to refund and why.
-message RefundOrderRequest {
+// RefundRequest identifies the Order to refund and why.
+message RefundRequest {
   // Required. The Order to refund. Its tickets are voided and the holder is
   // refunded per the reason's policy.
   entity.v1.OrderId order_id = 1 [(buf.validate.field).required = true];
@@ -74,8 +73,8 @@ message RefundOrderRequest {
   }];
 }
 
-// RefundOrderResponse returns the refunded Order.
-message RefundOrderResponse {
+// RefundResponse returns the refunded Order.
+message RefundResponse {
   // The Order after the refund, with status `refunded`.
   entity.v1.Order order = 1 [(buf.validate.field).required = true];
 }

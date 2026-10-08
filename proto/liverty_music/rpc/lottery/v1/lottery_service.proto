@@ -5,7 +5,7 @@ syntax = "proto3";
 // authorized/held at application), withdraw before the draw, and see their
 // result. It imports entity types and follows Google AIP resource-oriented
 // conventions. The organizer-facing configuration surface lives separately in
-// liverty_music.rpc.organizer.v1.LotteryService, and the draw (which captures
+// liverty_music.rpc.organizer.lottery.v1.LotteryService, and the draw (which captures
 // winners and cancels losers) runs as an internal backend job, not an RPC here.
 package liverty_music.rpc.lottery.v1;
 
@@ -52,7 +52,7 @@ service LotteryService {
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Apply(ApplyRequest) returns (ApplyResponse);
 
-  // WithdrawApplication withdraws the caller's application before the draw,
+  // Withdraw withdraws the caller's application before the draw,
   // releasing (cancelling) the card authorization. The fan may re-apply while the
   // window is still open. There is no post-draw winner decline; once tickets are
   // issued the application is no longer withdrawable here (the sanctioned exit is
@@ -63,16 +63,16 @@ service LotteryService {
   //   the application can no longer be withdrawn.
   // - NOT_FOUND: The caller has no application for this phase. Non-revealing.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  rpc WithdrawApplication(WithdrawApplicationRequest) returns (WithdrawApplicationResponse);
+  rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
 
-  // GetMyApplication returns the caller's own application for a phase in full:
+  // GetApplication returns the caller's own application for a phase in full:
   // requested count, authorization status, and current state. It serves the
   // "my application" view both before and after the draw.
   //
   // Possible errors:
   // - NOT_FOUND: The caller has no application for this phase. Non-revealing.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  rpc GetMyApplication(GetMyApplicationRequest) returns (GetMyApplicationResponse);
+  rpc GetApplication(GetApplicationRequest) returns (GetApplicationResponse);
 
   // GetResult returns the caller's post-draw result for a phase — won, lost, or
   // withdrawn. It is the focused result view; before the draw has run no result
@@ -133,26 +133,26 @@ message ApplyResponse {
   entity.v1.TicketApplication application = 1 [(buf.validate.field).required = true];
 }
 
-// WithdrawApplicationRequest identifies the phase whose application the caller
+// WithdrawRequest identifies the phase whose application the caller
 // withdraws; the application is resolved from the caller's token and the phase.
-message WithdrawApplicationRequest {
+message WithdrawRequest {
   // Required. The phase whose application the caller withdraws.
   entity.v1.LotterySalesPhaseId phase_id = 1 [(buf.validate.field).required = true];
 }
 
-// WithdrawApplicationResponse is empty: a successful withdrawal returns nothing
+// WithdrawResponse is empty: a successful withdrawal returns nothing
 // beyond the OK status.
-message WithdrawApplicationResponse {}
+message WithdrawResponse {}
 
-// GetMyApplicationRequest identifies the phase whose application the caller
+// GetApplicationRequest identifies the phase whose application the caller
 // wants; the application is resolved from the caller's token and the phase.
-message GetMyApplicationRequest {
+message GetApplicationRequest {
   // Required. The phase whose application to return.
   entity.v1.LotterySalesPhaseId phase_id = 1 [(buf.validate.field).required = true];
 }
 
-// GetMyApplicationResponse returns the caller's application in full.
-message GetMyApplicationResponse {
+// GetApplicationResponse returns the caller's application in full.
+message GetApplicationResponse {
   // The caller's application, including its current state.
   entity.v1.TicketApplication application = 1 [(buf.validate.field).required = true];
 }
