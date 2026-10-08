@@ -2,11 +2,15 @@
 
 ### Requirement: Search reads the official site's concert pages
 
-When the Artist has an official site, Search SHALL read the site's top page once before searching. The top page's links to pages of the official site's registrable domain whose path names a live, schedule, tour, concert or show page SHALL be the pages Search reads first, at most 8 of them, in the order the page lists them. Links to other domains, and links whose path names none of those pages, SHALL be ignored. Search SHALL read at most the first 2 MB of the top page and take links from that part only. If the top page cannot be read — it fails to load within 5 seconds, answers with an error, redirects to a page of another registrable domain, or its host resolves to a private, loopback or link-local address — or it carries no such links, Search SHALL search as it does without them. If the site's host starts with `www.` and does not resolve, Search SHALL read the top page of the host without `www.` instead, and the registrable domain of that host SHALL be the official site's. A top page that cannot be read SHALL NOT fail Search.
+When the Artist has an official site, Search SHALL read the site's top page once before searching. Of the top page's links to pages of the official site's registrable domain, those whose path names a live, schedule, tour, concert or show page, and after them those whose path names a news page, SHALL be the pages Search reads first, at most 8 of them in total, each group in the order the page lists them. Links to other domains, and links whose path names none of those pages, SHALL be ignored. Search SHALL read at most the first 2 MB of the top page and take links from that part only. If the top page cannot be read — it fails to load within 5 seconds, answers with an error, redirects to a page of another registrable domain, or its host resolves to a private, loopback or link-local address — or it carries no such links, Search SHALL search as it does without them. If the site's host starts with `www.` and does not resolve, Search SHALL read the top page of the host without `www.` instead, and the registrable domain of that host SHALL be the official site's. A top page that cannot be read SHALL NOT fail Search.
 
 #### Scenario: Concert pages linked from the top page
 - **WHEN** the official top page `https://vaundy.jp/` links to `https://vaundy.jp/live/`, `https://member.vaundy.jp/feature/ASIAARENATOUR_2026` and `https://vaundy.jp/news/`
-- **THEN** Search reads `https://vaundy.jp/live/` and `https://member.vaundy.jp/feature/ASIAARENATOUR_2026` first, and not `https://vaundy.jp/news/`
+- **THEN** Search reads `https://vaundy.jp/live/` and `https://member.vaundy.jp/feature/ASIAARENATOUR_2026` first, then `https://vaundy.jp/news/`
+
+#### Scenario: News pages after concert pages
+- **WHEN** the official top page lists a news article before 8 same-domain live pages
+- **THEN** Search reads the 8 live pages first and not the news article
 
 #### Scenario: Link to another domain ignored
 - **WHEN** the official top page links to a tour page on a ticket vendor's domain

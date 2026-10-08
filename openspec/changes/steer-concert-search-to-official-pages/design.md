@@ -36,7 +36,7 @@ The repo's only outbound-fetch guard is an allowlist (`fanarttv/logo_fetcher.go`
 **D1. Shared link extraction with per-searcher profiles, inside the gemini package.**
 - An unexported `officialPageLinks(ctx, siteURL, profile) []string` helper does the fetch (D2, D5) and the selection (D3). It is an input to one grounded call, not a domain operation, so it gets no entity interface.
 - A `linkProfile` holds the path keywords as ordered tiers and the link cap. Profiles are named after the searcher entity and operation they serve: `concertSearchProfile` now, `salesPhaseSearchProfile` in the follow-up change.
-- `concertSearchProfile`: tier 1 is `live`, `schedule`, `tour`, `concert`, `show`; the cap is 8. A tier 2 for news indexes is added only if the D8 LINKS+NEWS variant passes.
+- `concertSearchProfile`: tier 1 is `live`, `schedule`, `tour`, `concert`, `show`; tier 2 is `news`; the cap is 8. The news tier was adopted after the D8 evaluation (LINKS+NEWS cut queries a further 13% against tier 1 alone, and lists news for sites whose tour pages sit on another domain).
 - The fetch has its own guarded `*http.Client`, passed to `NewConcertSearcher` as a second client next to the existing genai one, and built in the job, consumer and server DI. It is never the shared `extHTTPClient` of the consumer.
 - Alternative considered: a new `Artist.ListConcertPages` entity operation. Rejected because no caller outside the searchers needs it, and the spec requirement already binds the observable behavior to Concert.Search.
 
@@ -55,7 +55,7 @@ Alternative considered: resolving the host first and checking the IP before the 
 **D3. Link selection.**
 - Parse `<a href>` with `golang.org/x/net/html` (already in the module graph; it becomes a direct dependency).
 - Resolve each href against the final response URL. Keep only `http(s)` links whose registrable domain equals the official site's, computed with `golang.org/x/net/publicsuffix.EffectiveTLDPlusOne` (so `member.vaundy.jp` counts for `vaundy.jp`). The official site's domain is taken from the stored URL before any redirect, or from the apex host after the D5 fallback, never from the redirect target.
-- A link matches a tier when its path contains one of the tier's keywords, case-insensitively, as a path segment or a segment prefix (`/live/`, `/tour2026`, `/schedule/list`).
+- A link matches a tier when its path contains one of the tier's keywords, case-insensitively, anywhere in the path (`/live/`, `/tour2026`, `/schedule/list`, `/feature/ASIAARENATOUR_2026`). A segment-prefix match would miss tour pages named like the last one, which the spec scenario requires.
 - Drop the fragment and the `lang` / `_normalbrowse_*` query parameters, de-duplicate, and keep page order.
 - Fill the cap tier by tier: all tier-1 links in page order, then tier-2 links, and so on. A link matching several tiers counts in the first. This keeps a run of news articles from pushing the concert pages out.
 
@@ -75,10 +75,10 @@ Alternative considered: resolving the host first and checking the IP before the 
 Alternative considered: turning the report off globally. Rejected because the report is the only source of search queries when groundingMetadata is absent (common on Gemini 3), and cost monitoring depends on it.
 
 **D7. URL context counts.**
-- While walking the parts, count `ToolCall` parts with `ToolType == URL_CONTEXT` as `url_context_calls`. Count `ToolResponse` parts for URL context whose per-URL status is `URL_RETRIEVAL_STATUS_SUCCESS` as `url_context_succeeded`. The exact field path is pinned by a recorded response in a unit test.
+- While walking the parts, count `ToolCall` parts with `ToolType == URL_CONTEXT` as `url_context_calls`. Count `ToolResponse` parts for URL context whose per-URL status is `URL_RETRIEVAL_STATUS_SUCCESS` as `url_context_succeeded`. The tool response carries `response.url_metadata[].url_retrieval_status` (recorded from gemini-3.8-flash on 2026-10-07 and pinned in unit tests of both searchers).
 - Both searchers log the two counts. ConcertSearcher also puts them in `PassMetadata` and its `successfully received Gemini response` log; SalesPhaseSearcher puts them in `logResponseMetadata`.
 - ConcertSearcher also records `linked_pages` (the number of links put in the prompt) and `linked_page_urls` (the links themselves) in `PassMetadata`, where the evaluation harness aggregates them, and logs both at Info. At most 8 URLs per call keep the log small, and the URLs are what a misselected link is diagnosed from.
-- `url_context_retrieved` stays for comparison and is documented as excluding failed-only fetches.
+- `url_context_retrieved` stays for comparison and is documented as possibly omitting failed-only fetches. A call recorded while implementing (2026-10-07) listed a failed fetch in `urlContextMetadata`, so the omission is not systematic; the tool-part counts are the reliable ones.
 
 **D8. Evaluation gate.** Before release, the harness gains two variants of the production prompt, LINKS (tier 1 only) and LINKS+NEWS (tier 1, then news indexes as tier 2). Both are run with `GEMINI_GROUNDING_EVAL_TOOL_CALLS=1`, at least 3 reps each, on:
 - the 4 fixture artists;
@@ -92,6 +92,8 @@ A variant passes when:
 - on the site without links, search queries per call stay within ±30% of FINAL's.
 
 LINKS must pass for the release. LINKS+NEWS is adopted only if it passes and saves search queries against LINKS; then tier 2 is added to `concertSearchProfile`, and the spec requirement and D3 name news indexes before the PR.
+
+Result (2026-10-07, 54 calls, $17.79; table in the backend harness README): LINKS cut queries on UVERworld 40→2.7, Vaundy 25→1.7, SUPER BEAVER 72→0, Novelbright 18–64 (prod)→10.3 and Ed Sheeran 5.7→3.7, with fixture recall 0.92→0.99. LINKS+NEWS kept recall and cut queries a further 13% and was adopted. Two criteria were not met to the letter and were accepted as noise by the user: BRADIO's queries did not fall (reps 3, 14, 33; its 0.97 recall is a venue copied with a prefecture prefix), and YOASOBI, whose prompt is byte-identical to FINAL, ran 41.7 queries against the prod run's 19 (reps 25–56). The #542 400 did not reproduce in the 54 calls.
 
 ## Risks / Trade-offs
 
