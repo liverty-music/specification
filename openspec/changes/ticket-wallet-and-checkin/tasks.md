@@ -2,7 +2,7 @@
 
 - [ ] 0.1 Confirm ⑤ `ticket-purchase-and-issuance` is shipped (archived; the account-bound `Ticket` with 本人確認 and the covered-ticket face content this renders)
 - [ ] 0.2 (No identity step-up prerequisite — gate-time passkey re-auth is NOT adopted; see design)
-- [ ] 0.3 Confirm `first-come-ticket-sales`, when proposed, requires an open and a start time when a sale is set up, like the lottery rule in section 3 (#1074)
+- [ ] 0.3 Confirm `first-come-ticket-sales`, when proposed, requires a start time (open time optional) when a sale is set up, like the lottery rule in section 3 (#1074)
 - [ ] 0.4 Spike on real devices: a Base45 AdmissionCode for 1, 3 and 10 tickets rendered by `@paulmillr/qr` on an iPhone and an Android phone, decoded by the reception screen's camera path (`BarcodeDetector` on Chrome for Android, `@paulmillr/qr` in a Worker on Safari for iOS) at normal and low screen brightness; record time-to-decode and failures in design.md. If the library decoder falls short on iOS, switch to ZXing WebAssembly behind the same interface before section 5
 
 ## 1. Proto / entity (specification → BSR)
@@ -26,11 +26,11 @@
 ## 3. Backend — usecases and boundaries
 
 - [ ] 3.1 `WalletPublicKeyUseCase.Register` and `TicketUseCase.Admit` per `components/usecase/**`; unit tests for every scenario, including partial groups, someone else's ticket, voided tickets and a link revoked mid-scan
-- [ ] 3.2 `ReceptionLinkUseCase.Issue` (refuses events without an open time), `Revoke`, `ListByEvent`, `Open`
+- [ ] 3.2 `ReceptionLinkUseCase.Issue` (refuses events without a start time), `Revoke`, `ListByEvent`, `Open`
 - [ ] 3.3 Fan `RegisterWalletPublicKey` handler gate (`components/adapter/fan/api/rpc/ticket`)
 - [ ] 3.4 Organizer reception-link handlers behind the organizer-console sign-in and `ResolveCaller` (`components/adapter/organizer/api/rpc/reception-link`)
 - [ ] 3.5 Reception handlers without sign-in, with link token + call signature and throttling of unknown tokens (`components/adapter/organizer/api/rpc/reception`); CORS for the organizer web origin
-- [ ] 3.6 `LotteryUseCase.ConfigureLotteryPhase` fails with FailedPrecondition for an event without an open time or a start time (`components/usecase/lottery-sales-phase/configure-lottery-phase`); unit test
+- [ ] 3.6 `LotteryUseCase.ConfigureLotteryPhase` fails with FailedPrecondition for an event without a start time, and still accepts one without an open time (`components/usecase/lottery-sales-phase/configure-lottery-phase`); unit test
 - [ ] 3.7 `make check` passes
 
 ## 4. Frontend — fan tickets screen (fan web app)
@@ -43,10 +43,10 @@
 
 ## 5. Frontend — organizer web app
 
-- [ ] 5.1 Reception-links screen per `components/infrastructure/organizer/web/route/reception-links`, reached from the event in the console: issue with suggested names, copy / share URL, state, revoke and revoke-and-reissue with confirmation, reception window shown, no-open-time and draft messages
+- [ ] 5.1 Reception-links screen per `components/infrastructure/organizer/web/route/reception-links`, reached from the event in the console: issue with suggested names, copy / share URL, state, revoke and revoke-and-reissue with confirmation, reception window shown, no-start-time and draft messages
 - [ ] 5.2 Reception screen per `components/infrastructure/organizer/web/route/reception`: route exempt from the console sign-in, used in a browser tab (not installed); device key pair created on first open and every call signed; outside-window, revoked and other-device messages
 - [ ] 5.3 Scanning: rear camera via `getUserMedia` (`facingMode: { ideal: 'environment' }`) requested on tap; `BarcodeDetector` when it supports QR, else `@paulmillr/qr` in a Web Worker; OK + head count / NG + reason and next step, no personal data; fail closed when unreachable
-- [ ] 5.4 Lottery phase editor: message and link to the concert editor when the event has no open or start time, no save (`components/infrastructure/organizer/web/route/lottery-phase-editor`)
+- [ ] 5.4 Lottery phase editor: message and link to the concert editor when the event has no start time, no save (`components/infrastructure/organizer/web/route/lottery-phase-editor`)
 - [ ] 5.5 Verify on the current and previous major Safari for iOS and Chrome for Android; `make check` passes
 
 ## 6. Anti-scalp / product constraints

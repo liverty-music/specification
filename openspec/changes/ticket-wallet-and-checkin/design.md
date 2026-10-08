@@ -131,19 +131,19 @@ prevention + covered-ticket identity", not a claim of full anti-scalp at MVP.
   used from another device. Chosen over a random device secret sent with each call,
   which page script could read and which travels on every call.
 - **Fixed reception window, not organizer-configurable.** From 3 hours before the open
-  time to 04:00 JST on the day after the event date, from the event's current date
-  and open time. Events have no end time, and a configurable window is one more field
+  time, or before the start time when the event has no open time, to 04:00 JST on the
+  day after the event date, from the event's current date and times. Events have no end time, and a configurable window is one more field
   to get wrong on the day. Links can be issued any time before; outside the window the
-  screen says when reception starts. A link cannot be issued for an event without an
-  open time.
-- **Open and start times are required when a sale is set up.** Publishing an event
-  keeps both optional (dates are often announced before times), but a ticketed event
-  must have them: the ticket face shows them and the reception window needs the open
-  time. This change adds the rule to the lottery (`ConfigureLotteryPhase` and the
+  screen says when reception starts. A link cannot be issued for an event without a
+  start time.
+- **The start time is required when a sale is set up; the open time stays optional.**
+  Publishing an event keeps both optional (dates are often announced before times),
+  but a ticketed event must have a start time: the ticket face shows it and the
+  reception window falls back to it when doors are not announced. This change adds the rule to the lottery (`ConfigureLotteryPhase` and the
   lottery phase editor), because no other active change owns it; the planned
   first-come sale must carry the same rule (#1074). Phases configured before this
   change are not revisited: the pilot sells first come, first served, and a reception
-  link still refuses an event without an open time.
+  link still refuses an event without a start time.
 - **Decoding: `BarcodeDetector` when it supports QR, otherwise `@paulmillr/qr`, in a
   Web Worker.** Chrome's guidance treats the Shape Detection API as an optimisation
   to combine with one's own decoder. It is available on Chrome for Android but

@@ -96,12 +96,17 @@ A call through an InUse ReceptionLink SHALL be proven when it carries a signatur
 
 ### Requirement: Reception window
 
-The reception window of a ReceptionLink SHALL be derived from its event's current local date and open time, in Japan time. It SHALL open 3 hours before the open time and close at 04:00 on the day after the local date. A time is inside the window when it is at or after the opening and before the closing. An event without an open time SHALL have no reception window.
+The reception window of a ReceptionLink SHALL be derived from its event's current local date, open time and start time, in Japan time. It SHALL open 3 hours before the open time, or 3 hours before the start time when the event has no open time, and close at 04:00 on the day after the local date. A time is inside the window when it is at or after the opening and before the closing. An event without a start time SHALL have no reception window.
 
 #### Scenario: Usual evening show
 
-- **WHEN** the event is on 2026-11-20 with open time 18:00
+- **WHEN** the event is on 2026-11-20 with open time 18:00 and start time 19:00
 - **THEN** the window is from 2026-11-20 15:00 to 2026-11-21 04:00
+
+#### Scenario: No open time
+
+- **WHEN** the event is on 2026-11-20 with start time 19:00 and no open time
+- **THEN** the window opens at 2026-11-20 16:00
 
 #### Scenario: Before the window
 
@@ -113,7 +118,7 @@ The reception window of a ReceptionLink SHALL be derived from its event's curren
 - **WHEN** the window closes at 2026-11-21 04:00 and the time is 2026-11-21 04:00
 - **THEN** the time is outside the window
 
-#### Scenario: No open time
+#### Scenario: No start time
 
-- **WHEN** the event has no open time
+- **WHEN** the event has no start time
 - **THEN** it has no reception window

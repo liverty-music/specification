@@ -8,7 +8,7 @@ ReceptionLinkUseCase.Issue lets the owning organizer operator issue a named Rece
 
 ### Requirement: Only the owner of a published event
 
-Issue SHALL take the caller's Organizer, an event and a name. It SHALL fail with PermissionDenied, without revealing whether the event exists, when Event.GetOrganizerID fails with NotFound or returns another Organizer. It SHALL fail with FailedPrecondition when Event.IsEventPublished reports false, or when Event.Get returns no open time, because such an event has no reception window.
+Issue SHALL take the caller's Organizer, an event and a name. It SHALL fail with PermissionDenied, without revealing whether the event exists, when Event.GetOrganizerID fails with NotFound or returns another Organizer. It SHALL fail with FailedPrecondition when Event.IsEventPublished reports false, or when Event.Get returns no start time, because such an event has no reception window.
 
 #### Scenario: Another organizer's event
 
@@ -20,9 +20,9 @@ Issue SHALL take the caller's Organizer, an event and a name. It SHALL fail with
 - **WHEN** the owner issues a link for an event whose Series is DRAFT
 - **THEN** Issue fails with FailedPrecondition
 
-#### Scenario: Event without an open time
+#### Scenario: Event without a start time
 
-- **WHEN** the owner issues a link for a published event that has no open time
+- **WHEN** the owner issues a link for a published event that has no start time
 - **THEN** Issue fails with FailedPrecondition
 
 ### Requirement: Issued at any time before the event

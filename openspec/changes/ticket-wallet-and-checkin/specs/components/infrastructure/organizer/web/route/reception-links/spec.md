@@ -34,7 +34,7 @@ For a link that is not revoked the screen SHALL offer to revoke it, and to revok
 - **WHEN** the operator opens the screen for a DRAFT event
 - **THEN** the screen says the event must be published before links can be issued
 
-#### Scenario: Event without an open time
+#### Scenario: Event without a start time
 
-- **WHEN** the operator opens the screen for a published event without an open time
-- **THEN** the screen says the event needs an open time before links can be issued
+- **WHEN** the operator opens the screen for a published event without a start time
+- **THEN** the screen says the event needs a start time before links can be issued

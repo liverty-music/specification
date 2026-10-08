@@ -44,7 +44,7 @@ MVP baseline (see design Non-Goals). Roadmap:
 - **Reception links** — the Organizer issues named links (受付A, 受付B …) per event in
   the console; the first device that opens a link **binds its own public key** and
   signs every later call; the link works only inside a **fixed reception window**
-  (3 hours before doors until 04:00 JST the next day) and can be **revoked or
+  (3 hours before doors, or before the start when doors are not announced, until 04:00 JST the next day) and can be **revoked or
   revoked-and-reissued** at once. No account, no PIN, no organizer rights for staff.
 - **Reception screen** — opened from the link in the phone's browser tab without a
   sign-in or install; scans with the rear camera (`BarcodeDetector` where available,
@@ -89,8 +89,8 @@ identity; bulk-scalp resistance arrives with `identity-ekyc-jpki`.
 ### Modified Capabilities
 
 - `components/entity/ticket`: "A ticket is admissible only once and only while Issued" (added). (Purpose) attribute table gains a row **admitted time** — when the ticket was admitted; optional, absent until admitted, kept when the ticket is later Voided; updated in the main spec at archive.
-- `components/usecase/lottery-sales-phase/configure-lottery-phase`: "Configure a phase for a published event" (modified) — a lottery phase can be configured only for an event with an open time and a start time.
-- `components/infrastructure/organizer/web/route/lottery-phase-editor`: "An event goes on sale only with its times" (added).
+- `components/usecase/lottery-sales-phase/configure-lottery-phase`: "Configure a phase for a published event" (modified) — a lottery phase can be configured only for an event with a start time; the open time stays optional.
+- `components/infrastructure/organizer/web/route/lottery-phase-editor`: "An event goes on sale only with its start time" (added).
 - `components/adapter/fan/api/rpc/ticket`: "RegisterWalletPublicKey is for the signed-in fan only" (added). (Purpose) now covers registering the wallet public key; updated in the main spec at archive.
 
 ## Impact
@@ -105,9 +105,9 @@ identity; bulk-scalp resistance arrives with `identity-ekyc-jpki`.
   with its record, reception links bound to a device key, reception screen in the
   organizer web app reachable without a sign-in, console screen for links.
 - **Sales rule (in this change for the lottery):** a lottery phase can only be set up
-  for an event with an open time and a start time; the planned `first-come-ticket-sales`
+  for an event with a start time (the open time stays optional); the planned `first-come-ticket-sales`
   must carry the same rule (recorded in liverty-music/specification#1074). A reception
-  link cannot be issued for an event without an open time.
+  link cannot be issued for an event without a start time.
 - **Product constraints honored:** **Web-First / No Native App**; **no first-party
   distribution URL**; no personal data shown to external staff.
 - **Deferred (future):** OS Wallet passes; NFC tap; offline scanning; per-event
