@@ -179,7 +179,7 @@ message Order {
   // When the payment was captured (= ④'s capture time at the draw). Because the
   // Order is created already paid, this is effectively its creation time.
   // Server-owned.
-  google.protobuf.Timestamp paid_at = 8 [
+  google.protobuf.Timestamp pay_time = 8 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];

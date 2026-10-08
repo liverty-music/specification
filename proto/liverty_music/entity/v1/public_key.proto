@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// PublicKey is the public half of an ECDSA key pair over the P-256 curve
+// (secp256r1) that a device created with WebCrypto as a non-extractable signing
+// key. The private half never leaves the device; the platform keeps only this
+// public key and verifies the device's Signatures with it. The field that
+// holds it says whose device it is: a fan's WalletPublicKey `public_key`, or a
+// ReceptionLink's `bound_public_key`.
+//
+// Encoding: the uncompressed SEC1 point `0x04 || X || Y` (65 bytes), exactly
+// what WebCrypto `exportKey("raw", publicKey)` returns. The schema checks only
+// the length and the prefix; the server rejects a value that is not a point on
+// the curve.
+message PublicKey {
+  // The 65-byte uncompressed SEC1 encoding of the public key.
+  bytes value = 1 [(buf.validate.field).bytes = {
+    len: 65
+    prefix: "\x04"
+  }];
+}
+
+// Signature is an ECDSA signature over P-256 with SHA-256, made on a device with
+// the private half of a PublicKey.
+//
+// Encoding: the IEEE P1363 form `r || s` (64 bytes, each 32-byte big-endian),
+// exactly what WebCrypto `sign({name: "ECDSA", hash: "SHA-256"}, ...)` returns.
+// Not DER.
+message Signature {
+  // The 64-byte `r || s` signature.
+  bytes value = 1 [(buf.validate.field).bytes.len = 64];
+}

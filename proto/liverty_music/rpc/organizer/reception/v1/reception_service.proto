@@ -1,0 +1,191 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.reception.v1 provides ReceptionService,
+// the surface the organizer web app's reception screen calls from a venue
+// staff member's phone. It is served by the organizer Connect server but is
+// exempt from the organizer-console sign-in: the caller is a ReceptionLink
+// token plus a signature made by the device the link is bound to.
+package liverty_music.rpc.organizer.reception.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/admission_code.proto";
+import "liverty_music/entity/v1/public_key.proto";
+import "liverty_music/entity/v1/reception_link.proto";
+import "liverty_music/entity/v1/rejected_scan.proto";
+
+// ReceptionService is what a reception device calls: open a ReceptionLink
+// (binding it to the device on first use) and admit the tickets an entry QR
+// code presents. It accepts calls with no sign-in, so venue staff need no
+// account. Every request carries the link token, a sign time and the device's
+// signature; the server refuses a call unless the link is usable and the call
+// is proven by the link's bound device.
+//
+// A call is proven when the signature verifies with the link's bound public
+// key and sign_time is at most 30 seconds before and at most 15 seconds after
+// the server time. The signature is ECDSA P-256 with SHA-256 (IEEE P1363
+// `r || s`) over the UTF-8 bytes of these five lines joined by a single "\n"
+// (0x0A), with no trailing newline:
+//
+//   liverty-music.reception.v1
+//   <Connect procedure, e.g. /liverty_music.rpc.organizer.reception.v1.ReceptionService/Admit>
+//   <link token>
+//   <sign_time as decimal Unix seconds, nanos ignored>
+//   <call content>
+//
+// The call content is, for Open, the public key's 65 bytes in base64url
+// without padding; for Admit, the scanned text exactly as sent.
+//
+// The boundary throttles clients that try unknown link tokens: after more than
+// 10 calls with unknown tokens within 10 minutes, further calls fail with
+// RESOURCE_EXHAUSTED until those 10 minutes pass. Results never carry personal
+// data: no holder name, phone number or account.
+service ReceptionService {
+  // Open is called when staff open a link on a device. On first use it binds
+  // the link to the device's public key (UNUSED → IN_USE); later opens must
+  // come from that same device. The signature must verify with the key being
+  // bound, so the device must hold its private half. It returns the link and
+  // its reception window, and whether the current time is inside it; opening
+  // outside the window still binds the link.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The link token, sign time, signature or public key is
+  //   missing or malformed.
+  // - PERMISSION_DENIED: No link holds the token, the link is REVOKED, or the
+  //   call is not proven. These are not told apart.
+  // - FAILED_PRECONDITION: The link is already bound to another device.
+  // - RESOURCE_EXHAUSTED: The client tried too many unknown link tokens.
+  rpc Open(OpenRequest) returns (OpenResponse);
+
+  // Admit decides one scan. Through a usable link, from its bound device,
+  // inside its event's reception window, it decodes the scanned text as an
+  // AdmissionCode, verifies it against the code's user's
+  // WalletPublicKey and freshness, and admits each presented ticket exactly
+  // once (each decided independently, so a group can be partly admitted).
+  // Every admission is stored as an Admission and every refusal as a
+  // RejectedScan. A
+  // rejected code or ticket is a normal result, not an error.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The link token, sign time, signature or scanned text is
+  //   missing or malformed.
+  // - PERMISSION_DENIED: No link holds the token, the link is REVOKED (also
+  //   when revoked while the scan is being decided), or the call is not proven.
+  //   Nothing is admitted.
+  // - FAILED_PRECONDITION: The current time is outside the link's reception
+  //   window. Nothing is admitted or recorded.
+  // - RESOURCE_EXHAUSTED: The client tried too many unknown link tokens.
+  // - UNAVAILABLE: Admitting a ticket failed; scan again. A ticket admitted
+  //   before the failure is reported ALREADY_ADMITTED on the next scan.
+  rpc Admit(AdmitRequest) returns (AdmitResponse);
+}
+
+// OpenRequest opens a link on the calling device.
+message OpenRequest {
+  // Required. The secret part of the link's URL.
+  entity.v1.ReceptionLinkToken link_token = 1 [(buf.validate.field).required = true];
+
+  // Required. When the device signed the call, by the device's clock.
+  google.protobuf.Timestamp sign_time = 2 [(buf.validate.field).required = true];
+
+  // Required. The device's signature over the call (see ReceptionService).
+  entity.v1.Signature signature = 3 [(buf.validate.field).required = true];
+
+  // Required. The public key of the key pair the device created for this link
+  // (WebCrypto, non-extractable). Bound to the link on first use; must equal
+  // the bound key on later opens.
+  entity.v1.PublicKey public_key = 4 [(buf.validate.field).required = true];
+}
+
+// OpenResponse tells the device what it can admit and when.
+message OpenResponse {
+  // The link, IN_USE and bound to the calling device: its number and event.
+  // The token is never returned here.
+  entity.v1.ReceptionLink reception_link = 1 [(buf.validate.field).required = true];
+
+  // The reception window from the event's current date and times. Absent when
+  // the event no longer has a start time.
+  entity.v1.ReceptionWindow reception_window = 2;
+
+  // Whether the current server time is inside reception_window. False when the
+  // window is absent.
+  bool inside_window = 3;
+}
+
+// AdmitRequest carries one scan.
+message AdmitRequest {
+  // Required. The secret part of the link's URL.
+  entity.v1.ReceptionLinkToken link_token = 1 [(buf.validate.field).required = true];
+
+  // Required. When the device signed the call, by the device's clock.
+  google.protobuf.Timestamp sign_time = 2 [(buf.validate.field).required = true];
+
+  // Required. The device's signature over the call (see ReceptionService).
+  entity.v1.Signature signature = 3 [(buf.validate.field).required = true];
+
+  // Required. The text read from the scanned QR code, sent undecoded.
+  entity.v1.ScannedText scanned_text = 4 [(buf.validate.field).required = true];
+}
+
+// AdmitResponse is what staff see for one scan: a head count, and the reason
+// for anything rejected. It never carries personal data.
+message AdmitResponse {
+  // A scan rejected as a whole admits nothing and lists no rejected ticket.
+  option (buf.validate.message).cel = {
+    id: "admit_response.rejected_scan"
+    message: "a scan rejected as a whole admits nothing and lists no rejected ticket"
+    expression: "this.rejected_scan_reason == 0 || (this.admitted_ticket_count == 0 && size(this.rejected_tickets) == 0)"
+  };
+
+  // The number of tickets admitted by this scan: the head count staff let in.
+  int32 admitted_ticket_count = 1 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 10
+  }];
+
+  // Set when the whole scan was rejected before any ticket was considered:
+  // FORGED (not an entry code, no wallet key, or a signature that does not
+  // verify), EXPIRED (not fresh) or OTHER_EVENT. Unset otherwise.
+  entity.v1.RejectedScanReason rejected_scan_reason = 2 [(buf.validate.field).enum = {
+    defined_only: true
+    in: [
+      0,
+      1,
+      2,
+      3
+    ]
+  }];
+
+  // One entry per presented ticket that was rejected, in the order the code
+  // presents them. Empty when every presented ticket was admitted or the scan
+  // was rejected as a whole.
+  repeated RejectedTicket rejected_tickets = 3 [(buf.validate.field).repeated.max_items = 10];
+}
+
+// RejectedTicket is why one presented ticket was rejected. It does not identify
+// the ticket or its holder.
+message RejectedTicket {
+  // The earlier admission is reported only for ALREADY_ADMITTED.
+  option (buf.validate.message).cel = {
+    id: "rejected_ticket.earlier_admission"
+    message: "earlier_admit_time and earlier_reception_link_number are set only for ALREADY_ADMITTED"
+    expression: "this.reason == 6 || (!has(this.earlier_admit_time) && !has(this.earlier_reception_link_number))"
+  };
+
+  // NOT_HOLDER (the code's user does not hold this ticket), VOIDED (refunded or
+  // resold) or ALREADY_ADMITTED.
+  entity.v1.RejectedScanReason reason = 1 [(buf.validate.field).enum = {
+    defined_only: true
+    in: [
+      4,
+      5,
+      6
+    ]
+  }];
+
+  // For ALREADY_ADMITTED: when the ticket was admitted earlier.
+  google.protobuf.Timestamp earlier_admit_time = 2;
+
+  // For ALREADY_ADMITTED: the number of the link it was admitted through.
+  entity.v1.ReceptionLinkNumber earlier_reception_link_number = 3;
+}

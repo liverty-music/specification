@@ -171,7 +171,7 @@ message VerifiedIdentity {
   ];
 
   // When the verification was established. Server-owned.
-  google.protobuf.Timestamp verified_at = 6 [
+  google.protobuf.Timestamp verify_time = 6 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
