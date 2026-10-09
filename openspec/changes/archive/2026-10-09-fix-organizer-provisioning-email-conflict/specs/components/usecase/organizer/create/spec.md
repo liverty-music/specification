@@ -1,10 +1,25 @@
-# OrganizerUseCase.Create
+# Spec Delta
 
-## Purpose
+## REMOVED Requirements
 
-OrganizerUseCase.Create registers a new Organizer from a name and an initial operator email and provisions its isolated sign-in tenant with that operator as owner, so the Organizer becomes active and its operator can sign in.
+### Requirement: Create stores, provisions and activates the Organizer
 
-## Requirements
+**Reason**: Its scenario "Same name and operator email again" no longer holds: the first Create makes the operator email a sign-in user, so a second Create with the same email fails with AlreadyExists.
+
+**Migration**: Replaced by "Create checks the operator email, then stores, provisions and activates the Organizer", which keeps the same steps, adds the email check and early tenant recording, and covers repeated names with different emails.
+
+## MODIFIED Requirements
+
+### Requirement: A failed provisioning leaves the Organizer provisioning
+
+When creating, recording or completing the tenant fails with Internal, Create SHALL fail with that error and leave the stored Organizer in status provisioning, keeping any recorded tenant; ReconcileProvisioning completes it later.
+
+#### Scenario: Provisioning fails
+
+- **WHEN** Organizer.ProvisionTenant fails with Internal
+- **THEN** Create fails and the Organizer stays provisioning, linked to its tenant
+
+## ADDED Requirements
 
 ### Requirement: Create checks the operator email, then stores, provisions and activates the Organizer
 
@@ -31,38 +46,6 @@ It SHALL return the created Organizer. Create does not look for an existing Orga
 
 - **WHEN** Create runs with an operator email that another sign-in account already uses
 - **THEN** it fails with AlreadyExists and no Organizer or tenant exists
-
-### Requirement: A failed provisioning leaves the Organizer provisioning
-
-When creating, recording or completing the tenant fails with Internal, Create SHALL fail with that error and leave the stored Organizer in status provisioning, keeping any recorded tenant; ReconcileProvisioning completes it later.
-
-#### Scenario: Provisioning fails
-
-- **WHEN** Organizer.ProvisionTenant fails with Internal
-- **THEN** Create fails and the Organizer stays provisioning, linked to its tenant
-
-### Requirement: Deactivation during provisioning wins
-
-When the Organizer was deactivated while its tenant was being provisioned, Create SHALL leave it deactivated, SHALL NOT announce it, and SHALL still succeed.
-
-#### Scenario: Deactivated meanwhile
-
-- **WHEN** the Organizer is deactivated before Create moves it to active
-- **THEN** Create succeeds, the Organizer stays deactivated and no creation is announced
-
-### Requirement: Activation is announced
-
-When Create moves the Organizer to active, it SHALL announce that the Organizer was created. A failure to announce SHALL NOT fail Create.
-
-#### Scenario: Organizer becomes active
-
-- **WHEN** the Organizer is moved to active
-- **THEN** its creation is announced
-
-#### Scenario: Announcement fails
-
-- **WHEN** the announcement cannot be made
-- **THEN** Create still succeeds and the Organizer stays active
 
 ### Requirement: A permanent provisioning failure discards the Organizer
 

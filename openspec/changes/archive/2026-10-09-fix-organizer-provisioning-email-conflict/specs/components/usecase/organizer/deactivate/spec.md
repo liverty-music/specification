@@ -1,10 +1,6 @@
-# OrganizerUseCase.Deactivate
+# Spec Delta
 
-## Purpose
-
-OrganizerUseCase.Deactivate turns an Organizer off at an admin's request: its operators can no longer sign in, its Artists are released for re-association, and the Organizer becomes deactivated.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Deactivate turns off operators, frees Artists, then marks the Organizer
 
@@ -29,26 +25,3 @@ Deactivate SHALL load the Organizer through Organizer.Get, failing with NotFound
 
 - **WHEN** no Organizer has the id
 - **THEN** Deactivate fails with NotFound
-
-### Requirement: Deactivate is idempotent
-
-Deactivate SHALL succeed and change nothing when the Organizer is already deactivated.
-
-#### Scenario: Already deactivated
-
-- **WHEN** a deactivated Organizer is deactivated again
-- **THEN** Deactivate succeeds and nothing changes
-
-### Requirement: A failed step leaves the Organizer undeactivated for a retry
-
-When turning off the operators or freeing the Artists fails, Deactivate SHALL fail with that error and SHALL NOT set the status to deactivated, so calling it again completes the deactivation.
-
-#### Scenario: Operators cannot be turned off
-
-- **WHEN** Organizer.DeactivateOperators fails
-- **THEN** Deactivate fails, the Artists stay represented and the status is unchanged
-
-#### Scenario: Retry after a failure
-
-- **WHEN** Deactivate is called again after a failed attempt
-- **THEN** the Organizer is deactivated
