@@ -1,10 +1,6 @@
-# Organizer.ProvisionTenant
+# Spec Delta
 
-## Purpose
-
-Gives an Organizer its isolated sign-in tenant, with the initial operator as the tenant's owner, and returns that tenant.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: ProvisionTenant sets up the tenant and its owner
 
