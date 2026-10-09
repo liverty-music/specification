@@ -38,7 +38,7 @@ Delete needs no confirmation beyond the deactivated status, which only Deactivat
 
 ### Requirement: Purchases block deletion before anything is removed
 
-Before removing any file or the tenant, Delete SHALL check what Organizer.Delete would refuse: any of the Organizer's Events with an Order that is not Refunded or with a Settlement, or a payout-account record. When one exists Delete SHALL fail with FailedPrecondition and remove nothing. A blocker that appears after the check SHALL still be refused by Organizer.Delete, leaving the Organizer's records in place.
+Before removing any file or the tenant, Delete SHALL check what Organizer.Delete would refuse: any of the Organizer's Events with an Order that is not Refunded or with a Settlement that is not Reversed, or a payout-account record. When one exists Delete SHALL fail with FailedPrecondition and remove nothing. A blocker that appears after the check SHALL still be refused by Organizer.Delete, leaving the Organizer's records in place.
 
 #### Scenario: Paid order
 
