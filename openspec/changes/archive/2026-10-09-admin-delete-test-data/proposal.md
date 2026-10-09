@@ -13,14 +13,15 @@ No interface can remove any of it. Organizers can only be deactivated, and `User
 
 - **Admin `OrganizerService.Delete`** permanently removes a **deactivated** Organizer together with:
   - its first-party Series and their Events, with each Event's lottery sales phases, ticket applications, ticket journeys and performer links;
-  - the Orders and Tickets for those Events, allowed only when every Order is Refunded;
+  - the Orders and Tickets for those Events (with their Reversed Settlements), allowed only when every Order is Refunded;
+  - the reception links of those Events, with their admissions and rejected scans;
   - its Media records and the media objects in GCS (originals and served variants);
   - its Zitadel tenant, with the tenant's operators;
   - its artist associations and its payout-account record.
 - **Organizer deletion is refused (FailedPrecondition, nothing removed) when:**
   - the Organizer is not deactivated;
   - any of its Events has an Order that is not Refunded;
-  - any of its Events has a Settlement;
+  - any of its Events has a Settlement that is not Reversed;
   - the Organizer has a connected payout account.
 - **New admin `UserService.Delete`** permanently removes a fan User: the User with its follows, ticket journeys, notifications, push subscriptions, sales-phase reminders, verified identity and home area, plus its Zitadel user.
   - It is refused (FailedPrecondition) while the User holds an Issued Ticket or an Order that is not Refunded.

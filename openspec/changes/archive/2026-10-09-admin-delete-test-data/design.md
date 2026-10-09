@@ -48,6 +48,8 @@ See proposal.md for the motivation. The approach is shaped by these facts:
   1. Lock the organizer row (`SELECT … FOR UPDATE`).
   2. Re-check the status is deactivated and that there are no blockers; otherwise return FailedPrecondition.
   3. Delete in RESTRICT-safe order:
+     - `admissions`, `rejected_scans` and `reception_links` for the Organizer's events (added by `ticket-wallet-and-checkin`, all RESTRICT on `events`; `admissions` is also RESTRICT on `tickets`);
+     - the Reversed `settlements` for the Organizer's events (cascades `settlement_splits`);
      - `tickets` for the Organizer's events;
      - `orders` whose application belongs to those events' phases;
      - `series` of the Organizer (cascades events, phases, applications, journeys, `series_media`);
@@ -55,8 +57,9 @@ See proposal.md for the motivation. The approach is shaped by these facts:
      - the `organizers` row (cascades `organizer_artists`; `organizer_connected_accounts` is already guaranteed empty by the check).
 - **Blocker query:**
   - an order for the Organizer's events with `status <> Refunded`;
-  - a settlement for those events;
+  - a settlement for those events that is not Reversed. Issuance creates a Settlement with every Order (backend#468) and a refund only flips it to Reversed, so a Reversed settlement is deleted with its refunded Order (`settlement_splits` cascade) instead of blocking (decided during apply, 2026-10-08);
   - a row in `organizer_connected_accounts`.
+- **Reception records (decided during apply, 2026-10-08):** the reception links, admissions and rejected scans of the Organizer's events are removed with them. They exist only for those events, and keeping any of them would make every Organizer with a reception link undeletable.
 - **Rejected:** changing the foreign keys to CASCADE. That is a migration, and it would make a plain `DELETE` on events silently remove purchases anywhere else in the code.
 
 ### D3 — The blocker check is shared
@@ -72,6 +75,10 @@ See proposal.md for the motivation. The approach is shaped by these facts:
   - It removes the product-org human user by the User's `external_id` (`RemoveUser`, or `user/v2 DeleteUser`); NotFound counts as success.
   - The interface `IdentityRemover` is declared in `internal/entity`, beside `EmailVerifier`, per the rule that interfaces are defined where consumed.
   - It is realized in `internal/infrastructure/zitadel` with the client that holds rights over product-org users.
+- **Verified rights (task 1.1, 2026-10-08):** prod Zitadel is v4.15.3 (`cloud-provisioning/k8s/namespaces/zitadel/overlays/prod/kustomization.yaml`). In its `cmd/defaults.yaml`, `IAM_ORG_MANAGER` carries `org.delete` and `user.delete`, and `ORG_USER_MANAGER` carries `user.delete`.
+  - `organizer-provisioner` is an instance member with `IAM_ORG_MANAGER` (`src/zitadel/components/organizer-provisioner.ts`), so `RemoveOrg` with `x-zitadel-orgid` set to the tenant works.
+  - `backend-app` is a product-org member with `ORG_USER_MANAGER` (`src/zitadel/components/machine-user.ts`). **Chosen for `User.DeleteIdentity`** as the least-privileged client: `user/v2 DeleteUser` by `external_id`, which needs no org header.
+  - Both keys are already mounted in `admin-console-api` (`k8s/namespaces/backend/base/admin-console-api/deployment.yaml`; paths from `ZITADEL_MACHINE_KEY_FOR_BACKEND_APP_PATH` and `ZITADEL_MACHINE_KEY_FOR_ORGANIZER_PROVISIONER_PATH`). Nothing to add for Zitadel.
 - **Rate:** the cleanup run removes one Organizer or User at a time. Each call writes at most a handful of events, which stays far from the burst that triggered the deadlock.
 
 ### D5 — Media file removal reuses `ImageStorer`
@@ -79,6 +86,12 @@ See proposal.md for the motivation. The approach is shaped by these facts:
 - For each Media from `MediaRepository.ListByOrganizer`, the usecase calls `ImageStorer.DeleteOriginal(internalBucket, organizerID, mediaID)` and `ImageStorer.DeleteVariants(servedBucket, organizerID, mediaID)`.
 - The bucket names come from the existing config: `ORGANIZER_MEDIA_INTERNAL_BUCKET` and `ORGANIZER_MEDIA_BUCKET`. `admin-console-api` needs both, so check its ConfigMap.
 - The spec names these operations `Media.DeleteOriginal` and `Media.DeleteVariants`, matching the existing method names.
+- `Media.ListByOrganizer` is implemented as `MediaRepository.ListMediaByOrganizer`: `SeriesRepository` implements `MediaRepository` and already has a `ListByOrganizer` for Series, so the media method follows the interface's `InsertMedia` / `FindMediaByID` / `DeleteMedia` naming.
+- **Checked (task 1.2, 2026-10-08):**
+  - `ORGANIZER_MEDIA_BUCKET` reaches `admin-console-api` through the shared `fan-api-config` (prod and dev overlays).
+  - `ORGANIZER_MEDIA_INTERNAL_BUCKET` is **missing** for `admin-console-api` in every overlay. It is set only for `media-consumer` and `organizer-console-api`.
+  - The `admin-console-api` GSA has **no** storage role on either bucket. `src/gcp/components/organizer-media.ts` grants `objectAdmin` only to `organizer-console-api` and `media-consumer`.
+  - Both are added in task 7.1: `roles/storage.objectUser` (list, get and delete; `DeleteVariants` lists a prefix) on both buckets for the `admin-console-api` GSA, and the env var in the prod and dev `admin-console-api` patches.
 
 ### D6 — RPC shape
 

@@ -41,12 +41,12 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when a re
 
 #### Scenario: Missing OrganizerId
 
-- **WHEN** Get, ListArtists, AssociateArtist, DisassociateArtist or Deactivate is called without an OrganizerId
+- **WHEN** Get, ListArtists, AssociateArtist, DisassociateArtist, Deactivate or Delete is called without an OrganizerId
 - **THEN** it fails with InvalidArgument
 
 ### Requirement: Each call runs one OrganizerUseCase method
 
-Create SHALL run OrganizerUseCase.Create and return the created Organizer; Get, List and ListArtists SHALL run OrganizerUseCase.Get, OrganizerUseCase.List and OrganizerUseCase.ListArtists for any Organizer the admin names; AssociateArtist, DisassociateArtist and Deactivate SHALL run the usecase method of the same name. Errors from the usecase SHALL be returned unchanged. An Organizer is returned with its id and name only.
+Create SHALL run OrganizerUseCase.Create and return the created Organizer; Get, List and ListArtists SHALL run OrganizerUseCase.Get, OrganizerUseCase.List and OrganizerUseCase.ListArtists for any Organizer the admin names; AssociateArtist, DisassociateArtist, Deactivate and Delete SHALL run the usecase method of the same name. Errors from the usecase SHALL be returned unchanged. An Organizer is returned with its id and name only.
 
 #### Scenario: Admin lists Organizers and inspects a roster
 
@@ -57,3 +57,13 @@ Create SHALL run OrganizerUseCase.Create and return the created Organizer; Get, 
 
 - **WHEN** an admin calls Get for a deactivated Organizer
 - **THEN** it returns that Organizer's id and name
+
+#### Scenario: Admin deletes a deactivated Organizer
+
+- **WHEN** an admin calls Delete for a deactivated Organizer
+- **THEN** OrganizerUseCase.Delete runs and the call succeeds with an empty response
+
+#### Scenario: Delete refused
+
+- **WHEN** OrganizerUseCase.Delete fails with FailedPrecondition
+- **THEN** Delete fails with FailedPrecondition
