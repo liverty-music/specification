@@ -68,7 +68,7 @@ Before placing the order, the checkout SHALL show on one screen:
 - the sale period;
 - that resale of the tickets without the organizer's consent is prohibited, and that the tickets are issued to the buyer's name;
 - that the purchase cannot be cancelled or refunded except when the event is 中止 (cancelled), that no cooling-off applies, and that official resale opens only if the event sells out;
-- the Organizer's seller details: legal name, representative, address, phone number and contact email.
+- the Organizer's seller details, as returned by TicketSaleUseCase.Get: legal name, representative, address, phone number and contact email.
 
 It SHALL offer to go back and change the number of tickets or the identity details from this screen. The place-order action SHALL state that it pays, with the amount, and SHALL be disabled while the order is being placed.
 

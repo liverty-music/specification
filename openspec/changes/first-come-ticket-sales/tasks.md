@@ -1,70 +1,73 @@
 ## 0. Dependency gate
 
 - [ ] 0.1 Confirm `public-event-page` is archived, so the `components/infrastructure/fan/web/route/event` delta in this change has a main spec to apply to; verify `openspec/specs/components/infrastructure/fan/web/route/event/spec.md` exists on main
-- [ ] 0.2 Confirm the proto conventions of `ticket-wallet-and-checkin` (one service per package, bare verbs, `*_time`) are released, and build on that release; verify the BSR version in use contains `rpc.organizer.reception_link.v1`
+- [x] 0.2 Confirm the proto conventions of `ticket-wallet-and-checkin` (one service per package, bare verbs, `*_time`) are released, and build on that release; verify the BSR version in use contains `rpc.organizer.reception_link.v1`
 
 ## 1. Proto (specification → BSR)
 
-- [ ] 1.1 Add `entity.v1.TicketSale` from the `components/entity/ticket-sale` attribute table: ids as wrapper messages, `sale_start_time` / `sale_end_time`, a `TicketSaleMethod` enum with FIRST_COME, price 1-1,000,000, quantity >= 1, per-account limit 1-10, and a `TicketSaleState` enum (NOT_YET_ON_SALE, ON_SALE, ALL_HELD, SOLD_OUT, ENDED); verify `buf lint` and `buf format` pass
-- [ ] 1.2 Add `entity.v1.Reservation` from `components/entity/reservation`: `ReservationId`, a status enum, `hold_expire_time`, `commit_time`, `capture_time`, amount and holder identity. Move `ApplicantIdentity` to a shared `HolderIdentity`, keeping a deprecated alias for one release; verify `buf lint` passes
-- [ ] 1.3 `Order`: `oneof source { application_id; reservation_id }` (D5). `Organizer`: a seller details message and `platform_fee_rate_bps` (0-3000). `User`: holder full name and phone (E.164 pattern). Verify the protovalidate rules match the entity specs
-- [ ] 1.4 Add the services, each with doc comments matching the adapter specs:
+- [x] 1.1 Add `entity.v1.TicketSale` from the `components/entity/ticket-sale` attribute table: ids as wrapper messages, `sale_start_time` / `sale_end_time`, a `TicketSaleMethod` enum with FIRST_COME, price 1-1,000,000, quantity >= 1, per-account limit 1-10, and a `TicketSaleState` enum (NOT_YET_ON_SALE, ON_SALE, ALL_HELD, SOLD_OUT, ENDED); verify `buf lint` and `buf format` pass
+- [x] 1.2 Add `entity.v1.Reservation` from `components/entity/reservation`: `ReservationId`, a status enum, `hold_expire_time`, `commit_time`, `capture_time`, amount and holder identity. Move `ApplicantIdentity` to a shared `HolderIdentity`, keeping a deprecated alias for one release; verify `buf lint` passes
+- [x] 1.3 `Order`: `oneof source { application_id; reservation_id }` (D5). `Organizer`: a seller details message and `platform_fee_rate_bps` (0-3000). `User`: holder full name and phone (E.164 pattern). Verify the protovalidate rules match the entity specs
+- [x] 1.4 Add the services, each with doc comments matching the adapter specs:
   - `rpc.ticket_sale.v1.TicketSaleService.Get`
   - `rpc.reservation.v1.ReservationService.Start / Get / Authorize / Confirm`
   - `rpc.organizer.ticket_sale.v1.TicketSaleService.Configure / Get`
   - `rpc.admin.organizer.v1.OrganizerService.UpdateSellerDetails / SetPlatformFeeRate`
 
   Verify `buf lint` passes
-- [ ] 1.5 Open the specification PR from a worktree, with `buf skip breaking` if `Order.application_id` moving into a oneof is flagged; merge and cut a Release; verify `buf-release.yml` succeeds and BSR has the new version
+- [x] 1.5 Open the specification PR from a worktree, with `buf skip breaking` if `Order.application_id` moving into a oneof is flagged; merge and cut a Release; verify `buf-release.yml` succeeds and BSR has the new version
+- [ ] 1.6 Trim the proto to what a caller reads and add the seller details for the checkout (D7b), released as v0.73.0 with `buf skip breaking`: remove `TicketSale.create_time`, `Reservation.user_id` / `holder_identity` / `create_time`, `User.holder_identity` and `Settlement.platform_fee_rate_bps` (fields reserved); add `seller_details` to the fan `TicketSaleService.GetResponse`; verify `buf lint` and that BSR has the new version
 
 ## 2. Backend — schema and entities
 
-- [ ] 2.1 Write the migration (D4, D5, D9, Migration Plan); verify `atlas migrate lint` passes and the prod Atlas overlay registers the file. It contains:
+- [ ] 2.1 Write the migration (D4, D5, D9, Migration Plan); verify it applies to a fresh database with every earlier migration, `make lint-schema` passes and the prod Atlas overlay registers the file (`atlas migrate lint` needs Atlas Pro). It contains:
   - `ticket_sales` with `sold_count`;
-  - `reservations`, with a partial unique index on Held rows per (user, sale) and `capture_at`, `authorization_released_at`, payment reference and card facets;
-  - `outbox`;
+  - `reservations`, with a partial unique index on Held rows per (user, sale), `capture_at` and `authorization_released_at`, and no created time, payment reference, card facets or trace id;
   - `orders.application_id` made nullable, `orders.reservation_id` with the exactly-one CHECK and a unique index per source, and `orders.confirmation_sent_at`;
   - organizer seller-detail columns and `platform_fee_rate_bps`, 500 for existing rows and 800 by default;
-  - user holder-identity columns;
-  - `settlements.platform_fee_rate_bps`.
-- [ ] 2.2 `TicketSale` entity: rules, remaining count, sale state, LowStock (rounded up) and price lock (`components/entity/ticket-sale`); verify one unit test per scenario: Usual sale, End before start, Limit over 10, Some sold some held, Before opening, Last tickets held by others, Sold out, Few left, Small sale last ticket, Closed, Price change before anyone checked out, Price change after a checkout
-- [ ] 2.3 `Reservation` entity (`components/entity/reservation`): new hold, holding, a charged checkout never released, holder identity; verify unit tests for New checkout, Within the hold, Hold lapsed, Charged checkout, Domestic-format phone number
-- [ ] 2.4 `Order` exactly-one-source, `Organizer` seller details and fee rate, and `User` holder identity rules (`components/entity/order`, `organizer`, `user`); verify unit tests for Order from a checkout, Two sources, Corporation with all details, Address missing, New Organizer, Rate over the bound, Saved identity, Domestic-format phone number
-- [ ] 2.5 Settlement fee from the Organizer's rate, snapshotted on the Settlement (`components/entity/settlement` "Platform fee rate"); verify unit tests for Round order amount, Pilot rate, Amount that does not divide evenly, Fee rounds down to zero, Rate changed after issuance
+  - user holder-identity columns.
+- [x] 2.2 `TicketSale` entity: rules, remaining count, sale state, LowStock (rounded up) and price lock (`components/entity/ticket-sale`); verify one unit test per scenario: Usual sale, End before start, Limit over 10, Some sold some held, Before opening, Last tickets held by others, Sold out, Few left, Small sale last ticket, Closed, Price change before anyone checked out, Price change after a checkout
+- [x] 2.3 `Reservation` entity (`components/entity/reservation`): new hold, holding, a charged checkout never released, holder identity; verify unit tests for New checkout, Within the hold, Hold lapsed, Charged checkout, Domestic-format phone number
+- [x] 2.4 `Order` exactly-one-source, `Organizer` seller details and fee rate, and `User` holder identity rules (`components/entity/order`, `organizer`, `user`); verify unit tests for Order from a checkout, Two sources, Corporation with all details, Address missing, New Organizer, Rate over the bound, Saved identity, Domestic-format phone number
+- [ ] 2.5 Settlement fee from the Organizer's rate, with the split fixed at issuance (`components/entity/settlement` "Platform fee rate"); verify unit tests for Round order amount, Pilot rate, Amount that does not divide evenly, Fee rounds down to zero, Rate changed after issuance
 
 ## 3. Backend — entity operations (contract tests against Postgres and Stripe test mode)
 
-- [ ] 3.1 `TicketSale.Create / Get / GetByEvent / Update`, with Update as one conditional statement under the sale-row lock; verify one contract test per scenario of `components/entity/ticket-sale/{create,get,get-by-event,update}`, including Fewer than sold and held under a concurrent hold
+- [x] 3.1 `TicketSale.Create / Get / GetByEvent / Update`, with Update as one conditional statement under the sale-row lock; verify one contract test per scenario of `components/entity/ticket-sale/{create,get,get-by-event,update}`, including Fewer than sold and held under a concurrent hold
 - [ ] 3.2 `Reservation` store operations, with contract tests for every scenario of `components/entity/reservation/{get-or-create-held,get,set-authorization,commit,release,revert-commit,record-capture,record-authorization-release,list-due}`. Double tap and Two fans last ticket are run concurrently, and Committed just before the sweep runs as a concurrent Commit and Release around the hold expiry. The operations are:
   - `GetOrCreateHeld`: sale-row lock, stock and limit check, replace only on success (D4);
   - `Get` and `SetAuthorization`;
   - `Commit`: conditional on Held and before the expiry;
   - `Release`: conditional on Held, and for Expired after the expiry;
   - `RevertCommit`: conditional on Committed and no `capture_at`;
-  - `RecordCapture`, `RecordAuthorizationRelease` and `ListDue`.
-- [ ] 3.3 `Order.Issue` writes the Order, Tickets, Settlement and the outbox row, and completes the Reservation, in one transaction; it refuses a Reservation that is not Committed and charged. Add `Order.GetByReservationID`. Verify contract tests for Order issued, Order issued from a checkout, Reservation not charged, Failure stores nothing, Second order for the application, Second order for the reservation, Paid checkout, Checkout not paid
-- [ ] 3.4 `Organizer.SetSellerDetails / SetPlatformFeeRate` and `User.UpdateHolderIdentity`; verify contract tests per scenario
-- [ ] 3.5 Parameterise the card-hold port per caller (D3), and classify capture outcomes by PaymentIntent status for the ticket-sale path: `succeeded` → success with facets, `canceled` → FailedPrecondition, in-flight/409/network/5xx → Unavailable. Cover Repeated a day later and Capture already in progress with a stubbed client. The lottery passes "reject American Express" and the prefix `lottery`, which is today's behaviour. The ticket sale passes "accept all" and the prefix `ticket-sale`. PaymentIntent metadata carries `reservation_id`, `ticket_sale_id`, `event_id` and `trace_id`. Verify contract tests in Stripe test mode for every scenario of `components/entity/reservation/{create,verify,capture,cancel}-authorization`, and that the lottery's port tests still pass
-- [ ] 3.6 `Order.SendConfirmationEmail` through Postmark's transactional stream: it sends only when `confirmation_sent_at` is unset and then sets it. Verify contract tests for Email sent, Redelivered event and Mail unavailable against a Postmark test server token
-- [ ] 3.7 Outbox relay (D6): poll with `FOR UPDATE SKIP LOCKED`, publish with `PublishEventWithID` (the Order id) and mark the row sent. Verify an integration test that a row written in a committed transaction is published once even when the first publish fails, and that a rolled-back transaction publishes nothing
+  - `RecordCapture` (the capture time only), `RecordAuthorizationRelease`, `ListDue` and `GetByAuthorizationRef`.
+- [ ] 3.3 `Order.Issue` writes the Order, Tickets and Settlement, and completes the Reservation, in one transaction; it refuses a Reservation that is not Committed and charged. Add `Order.GetByReservationID` and `TicketApplication.GetByPaymentIntentRef`. Verify contract tests for Order issued, Order issued from a checkout, Reservation not charged, Failure stores nothing, Second order for the application, Second order for the reservation, Paid checkout, Checkout not paid
+- [x] 3.4 `Organizer.SetSellerDetails / SetPlatformFeeRate` and `User.UpdateHolderIdentity`; verify contract tests per scenario
+- [ ] 3.5 Parameterise the card-hold port per caller (D3), and classify capture outcomes by PaymentIntent status for the ticket-sale path: `succeeded` → success with facets, `canceled` → FailedPrecondition, in-flight/409/network/5xx → Unavailable. Cover Repeated a day later and Capture already in progress with a stubbed client. The lottery passes "reject American Express" and the prefix `lottery`, which is today's behaviour. The ticket sale passes "accept all" and the prefix `ticket-sale`. PaymentIntent metadata carries `reservation_id`, `ticket_sale_id` and `event_id`. Verify contract tests in Stripe test mode for every scenario of `components/entity/reservation/{create,verify,capture,cancel}-authorization`, and that the lottery's port tests still pass
+- [x] 3.6 `Order.SendConfirmationEmail` through Postmark's transactional stream: it sends only when `confirmation_sent_at` is unset and then sets it. Verify contract tests for Email sent, Redelivered event and Mail unavailable against a Postmark test server token
+- [ ] 3.7 Remove the outbox (table, relay and its job) from the first implementation: `ORDER.paid` is published by `IssuanceUseCase.FulfillPayment` (D6); verify `make check`
 
 ## 4. Backend — usecases (unit tests with operations mocked)
 
-- [ ] 4.1 `TicketSaleUseCase.Configure / Get / GetOwn`; verify one unit test per scenario of `components/usecase/ticket-sale/{configure,get,get-own}`, including Concert cancelled
-- [ ] 4.2 `ReservationUseCase.Start / Get / Authorize / ReleaseExpired`; verify one unit test per scenario of `components/usecase/reservation/*`, including Fan reloads mid-checkout, Count changed after authorizing, Committed at the last moment, Replaced by a newer checkout and Money taken on an ended checkout
-- [ ] 4.3 Extract the shared issuance core (D5) and implement `IssuanceUseCase.IssueFromReservation` and `IssueDueReservations`. The ownership check comes first, the call holds the Reservation row lock throughout (D3), the holding and published-event checks precede the card check, a charged Reservation is never captured again, and capture errors are mapped as in D3/D7. Concurrency tests cover Double tap on the action and Fan and the stalled-checkout job at once against Postgres. Move the ticket journey update out of `IssueFromCapturedWin`. Verify unit tests per scenario of `components/usecase/order/{issue-from-reservation,issue-due-reservations,issue-from-captured-win}`, and that the existing lottery issuance tests still pass
-- [ ] 4.4 `NotificationUseCase.SendOrderConfirmation` (email then push with the `order_confirmation` notification type, Japanese and English copy, lottery wins included), the `Deliver` caller change and `TicketJourneyUseCase.MarkPaid`; verify unit tests per scenario of `components/usecase/notification/{send-order-confirmation,deliver}` and `components/usecase/ticket-journey/mark-paid`
-- [ ] 4.5 `OrganizerUseCase.UpdateSellerDetails / SetPlatformFeeRate`; verify unit tests per scenario
+- [ ] 4.1 `TicketSaleUseCase.Configure / Get / GetOwn`, Get returning the Organizer's seller details; verify one unit test per scenario of `components/usecase/ticket-sale/{configure,get,get-own}`, including Concert cancelled
+- [x] 4.2 `ReservationUseCase.Start / Get / Authorize / ReleaseExpired`; verify one unit test per scenario of `components/usecase/reservation/*`, including Fan reloads mid-checkout, Count changed after authorizing, Committed at the last moment, Replaced by a newer checkout and Money taken on an ended checkout
+- [ ] 4.3 Extract the shared issuance core (D5) and implement `IssuanceUseCase.IssueFromReservation`, `IssueDueReservations` and `FulfillPayment`. Card facets are read with `Order.GetCapturedPayment`. The ownership check comes first, the call holds the Reservation row lock throughout (D3), the holding and published-event checks precede the card check, a charged Reservation is never captured again, and capture errors are mapped as in D3/D7. Concurrency tests cover Double tap on the action and Fan and the stalled-checkout job at once against Postgres. Move the ticket journey update out of `IssueFromCapturedWin`. Verify unit tests per scenario of `components/usecase/order/{issue-from-reservation,issue-due-reservations,issue-from-captured-win,fulfill-payment}`, and that the existing lottery issuance tests still pass
+- [x] 4.4 `NotificationUseCase.SendOrderConfirmation` (email then push with the `order_confirmation` notification type, Japanese and English copy, lottery wins included), the `Deliver` caller change and `TicketJourneyUseCase.MarkPaid`; verify unit tests per scenario of `components/usecase/notification/{send-order-confirmation,deliver}` and `components/usecase/ticket-journey/mark-paid`
+- [x] 4.5 `OrganizerUseCase.UpdateSellerDetails / SetPlatformFeeRate`; verify unit tests per scenario
 
 ## 5. Backend — boundaries, consumers and jobs
 
 - [ ] 5.1 Fan handlers `TicketSaleService.Get` (no sign-in) and `ReservationService.Start / Get / Authorize / Confirm` (`components/adapter/fan/api/rpc/{ticket-sale,reservation}`); verify handler tests per scenario
-- [ ] 5.2 Organizer handler `TicketSaleService.Configure / Get` (Get runs `GetOwn`), behind the organizer-console sign-in and `ResolveCaller` (`components/adapter/organizer/api/rpc/ticket-sale`); verify handler tests per scenario
-- [ ] 5.3 Admin handler additions (`components/adapter/admin/api/rpc/organizer`); verify handler tests for Non-admin sets a rate, Missing OrganizerId, Missing rate, Admin reads any Organizer and Admin records seller details
-- [ ] 5.4 JetStream consumers for `ORDER.paid`, one for notification and one for the ticket journey, idempotent by Order id, with the poison queue after the redelivery limit; verify consumer tests that a redelivery produces one email and leaves the journey Paid
+- [x] 5.2 Organizer handler `TicketSaleService.Configure / Get` (Get runs `GetOwn`), behind the organizer-console sign-in and `ResolveCaller` (`components/adapter/organizer/api/rpc/ticket-sale`); verify handler tests per scenario
+- [x] 5.3 Admin handler additions (`components/adapter/admin/api/rpc/organizer`); verify handler tests for Non-admin sets a rate, Missing OrganizerId, Missing rate, Admin reads any Organizer and Admin records seller details
+- [x] 5.4 JetStream consumers for `ORDER.paid`, one for notification and one for the ticket journey, idempotent by Order id, with the poison queue after the redelivery limit; verify consumer tests that a redelivery produces one email and leaves the journey Paid
 - [ ] 5.5 1-minute jobs for `ReleaseExpired` and `IssueDueReservations`, wired like the existing issuance sweeper. Add an error log and an alert for the two operator reports — charged more than 10 minutes ago and not Completed, and a charged hold on an ended checkout (D7) — plus a runbook entry for the manual refund. Verify the jobs run in the API process, and that a test row that cannot be issued fires the alert in dev logs
 - [ ] 5.6 Postmark sender identity for transactional mail: the cloud-provisioning secret and DNS are already in place; add the server token for the backend through ESO. Verify the backend pod reads the token in prod
 - [ ] 5.7 `make check` passes in backend
+- [x] 5.8 cloud-provisioning: the JetStream `ORDER` stream and the `send-order-confirmation` and `mark-ticket-journey-paid` pull durables (NACK), plus KEDA triggers so the event-consumer scales up on either backlog; verify `kubectl kustomize` renders both NATS and backend overlays
+- [x] 5.9 cloud-provisioning: provision the Postmark Server API token as GSM secret `postmark-server-token` and set `POSTMARK_FROM_ADDRESS` per environment; the `backend-secrets` ExternalSecret entry follows once the secret exists in both environments (part of 5.6)
+- [x] 5.10 cloud-provisioning: a "Checkout Needs Operator" log-based alert on `reservation needs an operator`, re-notifying hourly, and the runbook `docs/runbooks/checkout-needs-operator.md`; verify `tsc` and `biome check` pass
+- [ ] 5.11 Payment-events webhook: a `payment_intent.succeeded` notice runs `IssuanceUseCase.FulfillPayment` and answers Internal on failure (`components/adapter/fan/api/webhook/payment-events`); add the event type to the Stripe webhook endpoint in test and live mode. Verify handler tests for Checkout charge completes and Fulfillment fails, and on prod (test mode) that a checkout's charge produces one confirmation email
 
 ## 6. Frontend — fan app
 

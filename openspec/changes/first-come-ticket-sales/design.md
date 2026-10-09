@@ -61,7 +61,7 @@ Start ------> Reservation Held (exactly 15 min, counted in stock) ------> Author
                                                                                 |
 Place purchase (IssuanceUseCase.IssueFromReservation)                           v
   --> Reservation.Commit: UPDATE ... WHERE status = 'held' AND hold_expire_at > now
-        |-- Committed --> capture --> RecordCapture --> Order.Issue (Order + Tickets + Settlement + outbox row,
+        |-- Committed --> capture --> RecordCapture --> Order.Issue (Order + Tickets + Settlement,
         |                                                Reservation Completed, one transaction)
         +-- NotHeld   --> fail; the expiry sweeper releases the hold and the card hold
 ```
@@ -82,7 +82,7 @@ Place purchase (IssuanceUseCase.IssueFromReservation)                           
 - **Start is idempotent by its natural key.** "Get or create the holding Reservation for (user, sale)" is backed by a partial unique index on Held rows. A concurrent second insert loses and reads the winner. Starting again with another count replaces the hold only when the new one can be created; the replaced Reservation's card hold is released by the sweeper (D7). The server generates the id (UUIDv7, `entity.NewID`).
   - Considered: a client-generated id. The browser cannot generate UUIDv7 natively, the id would need validating, and its embedded clock could not be trusted.
   - Considered: an AIP-155 `request_id`. A second key adds nothing over the natural key.
-- **Placing the order is serialised per Reservation (re-review N1).** `IssueFromReservation` takes a row lock on the Reservation (`SELECT ... FOR UPDATE` on `reservations`) for the whole call: verify, commit, capture, `RecordCapture` and `Order.Issue`. The lock is held across the Stripe capture call, which is acceptable at pilot volume and only blocks callers of the same Reservation. A concurrent fan double tap, or the stalled-checkout job, waits and then takes the idempotent path: an existing Order or a recorded `capture_at`.
+- **Placing the order is serialised per Reservation (re-review N1).** `IssueFromReservation` holds an exclusive lock keyed on the Reservation for the whole call: verify, commit, capture, `RecordCapture` and `Order.Issue`. It is a PostgreSQL advisory lock (`pg_advisory_xact_lock`) taken in a transaction on its own connection, released at the end of the call or when the connection drops. A row lock (`SELECT ... FOR UPDATE` on `reservations`) does not work here: the repository writes inside the call (Commit, RecordCapture, Order.Issue) run on other connections and would wait for the lock their own call holds. The lock is held across the Stripe capture call, which is acceptable at pilot volume and only blocks callers of the same Reservation. A concurrent fan double tap, the stalled-checkout job, or the charge webhook waits and then takes the idempotent path: an existing Order or a recorded `capture_at`.
 - **Placing the order is idempotent by state.**
   - `IssueFromReservation` checks ownership first, then returns an existing Order (spec: `usecase/order/issue-from-reservation`).
   - `Commit` reports Committed again for a Committed or Completed Reservation.
@@ -99,13 +99,12 @@ Place purchase (IssuanceUseCase.IssueFromReservation)                           
   - The ticket sale passes "accept every brand" and the prefix `ticket-sale`.
   - Keys: `ticket-sale-authorize:<reservation_id>`, `ticket-sale-capture:<pi>`, `ticket-sale-cancel:<pi>`.
 
-  One PaymentIntent per Reservation; a declined card retries on the same PaymentIntent, as Stripe recommends. Metadata carries `reservation_id`, `ticket_sale_id`, `event_id` and `trace_id`, and never personal data.
-- **The OTel trace id is not a dedupe key.** The fan app's fetch instrumentation starts a new trace per request, so a retry has a different trace id. It is recorded on the Reservation and in the Stripe metadata only, for correlation.
+  One PaymentIntent per Reservation; a declined card retries on the same PaymentIntent, as Stripe recommends. Metadata carries `reservation_id`, `ticket_sale_id` and `event_id`, and never personal data. Every create parameter derives from the Reservation, so a retried create with the same idempotency key is accepted. The request's trace id is not put in the metadata (it changes per request, which Stripe would reject as a different request under the same key); `reservation_id` already correlates the PaymentIntent with the backend logs.
 
 ### D4 — Stock and limits
 
 - **Counts.** `ticket_sales.sold_count` holds the tickets on Committed and Completed Reservations. Held = the sum of counts of Held rows with `hold_expire_at > now`. Remaining = quantity − sold_count − held.
-- **Concurrency for Start (review M9).** `GetOrCreateHeld` runs in one transaction that first locks the sale row (`SELECT ... FOR UPDATE` on `ticket_sales`). It then computes held and the user's committed tickets, checks stock and limit, expires or releases the user's previous Held row, and inserts the new one. Serialising Starts per sale is cheap at pilot volumes and makes "two fans, last ticket" exact.
+- **Concurrency for Start (review M9).** `GetOrCreateHeld` runs in one transaction that first locks the sale row (`SELECT ... FOR UPDATE` on `ticket_sales`). It then computes held and the user's committed tickets in a separate, later statement (under READ COMMITTED, a statement that waited for the lock still evaluates its subqueries with the snapshot taken before it waited, so counting in the locking statement misses the holds of the transaction it waited for), checks stock and limit, expires or releases the user's previous Held row, and inserts the new one. Serialising Starts per sale is cheap at pilot volumes and makes "two fans, last ticket" exact.
 - **Commit and revert.** `Commit` moves Held to Committed and adds the count to `sold_count` in the same statement batch under the sale-row lock. `RevertCommit` does the reverse for an uncharged commit.
 - **Per-account limit.** Checked once at Start against Committed and Completed tickets plus the new count. A user holds at most one Reservation per sale, so Commit does not check it again.
 - **Sold out.** Derived as `sold_count = quantity`. Raising the quantity reopens the sale. A refund or dispute of a first-come Order voids its tickets but does not return them to the stock; the seats are covered by official resale later.
@@ -113,21 +112,26 @@ Place purchase (IssuanceUseCase.IssueFromReservation)                           
 ### D5 — Order source and issuance
 
 - **Order source.** `orders.application_id` becomes nullable, and a nullable `reservation_id` is added. A CHECK requires exactly one of the two, and each has its own unique index. Proto `Order` gets a `oneof source`. Each Order also gets `confirmation_sent_at` (D6).
-- **Issuance.** The shared core is extracted: Order, N Tickets, a Held Settlement with the Organizer split at the Organizer's fee rate, and the outbox row. `IssueFromCapturedWin` and `IssueFromReservation` load their sources and call it. For a Reservation, the amount is the Reservation's amount, which `VerifyAuthorization` has already matched against the hold; the payment reference and card facets come from `RecordCapture`.
+- **Issuance.** The shared core is extracted: Order, N Tickets and a Held Settlement with the Organizer split at the Organizer's fee rate. `IssueFromCapturedWin` and `IssueFromReservation` load their sources and call it. For a Reservation, the amount is the Reservation's amount, which `VerifyAuthorization` has already matched against the hold. The payment reference is the authorization reference (the charge is the hold), and the card facets are read from the provider with `Order.GetCapturedPayment`, as for a lottery win; the Reservation keeps only its `capture_at`.
 - **Identity type.** `ApplicantIdentity` becomes `HolderIdentity` in a shared file. The lottery's proto keeps a deprecated alias for one release; the frontend lottery screens switch to the new name in this change.
 
-### D6 — Transactional outbox, two consumers
+### D6 — The charge webhook announces each paid Order, two consumers
 
-- **The outbox row is written in the issuance transaction** (`Order.Issue`: "the announcement that the Order is paid"), published on the subject `ORDER.paid`, following the existing `<AGGREGATE>.<past participle>` subjects. Order is paid on creation, so the name fits lottery wins and checkouts alike, and pairs with a later `ORDER.refunded`. Its payload carries the Order id, buyer, event, ticket count, amount and source. A stable id (the Order id) lets JetStream deduplicate.
-- **A relay publishes it.** The relay runs in the API process, polls with `FOR UPDATE SKIP LOCKED`, publishes with `PublishEventWithID` and marks the row sent. This is a shared mechanism that resale and check-in will reuse; existing best-effort publishers are not migrated in this change.
+- **Every completed charge is reported by Stripe's `payment_intent.succeeded` webhook**, which Stripe redelivers until it is acknowledged (for up to three days). This is Stripe's recommended fulfillment pattern. The existing payment-events endpoint verifies and deduplicates the notice (`processed_webhook_events`) and runs `IssuanceUseCase.FulfillPayment`.
+- **FulfillPayment traces the charge to its source** (a Reservation by `authorization_ref`, else a TicketApplication by `payment_intent_ref`), runs the idempotent issuance for it (`IssueFromReservation` without a caller, under the Reservation lock, or `IssueFromCapturedWin`), and publishes `ORDER.paid` with the Order id as the JetStream message id. Only then is the notice acknowledged; a failed issue or publish answers Internal and Stripe delivers the notice again. A charge of no source (another system's PaymentIntent) is acknowledged without effect.
+- **Subject.** `ORDER.paid` follows the existing `<AGGREGATE>.<past participle>` subjects. Order is paid on creation, so the name fits lottery wins and checkouts alike, and pairs with a later `ORDER.refunded`. The payload carries the Order id, buyer, event, ticket count, amount and source.
 - **Consumers (decided 2026-10-08: only these two):**
   - **`NotificationUseCase.SendOrderConfirmation`** sends the email, then the push.
     - The email is deduplicated by `orders.confirmation_sent_at`, set right after a successful Postmark send. Postmark has no idempotency key, so a crash between the send and the update can send twice; nothing else can.
     - The push goes through `NotificationUseCase.Deliver` (type `order_confirmation`, named after the message like the existing types). A rerun after the push can push twice, which is accepted.
   - **`TicketJourneyUseCase.MarkPaid`**.
 
-  Lottery wins produce `ORDER.paid` too, so winners get the email and push. Failed messages go back through JetStream redelivery and then to the existing poison queue, which is alerted on.
-- **Considered: a confirmation sweeper instead of the outbox** (`confirmation_sent_at` IS NULL, every minute). It is simpler for two side effects, but the user chose event-driven delivery for retry isolation and per-consumer responsibility, and the outbox is needed again for resale and check-in.
+  Lottery wins produce `ORDER.paid` too, so winners get the email and push. Failed messages go back through JetStream redelivery and then to the existing poison queue, which is alerted on. A republished `ORDER.paid` outside JetStream's 2-minute duplicate window reaches the consumers again; both are idempotent by the Order.
+- **Considered (2026-10-09):**
+  - *Transactional outbox* (an outbox table written in the issuance transaction, published by a relay). Durable without a provider, but it adds a table, a relay and its placement for two side effects; Stripe's webhook already gives a durable, redelivered trigger for exactly the charges that produce Orders.
+  - *A confirmation sweeper* (`confirmation_sent_at` IS NULL, every minute). Simpler, but not event-driven and couples the side effects.
+  - *CDC* (logical replication to NATS). Durable and generic, but Debezium and logical decoding on Cloud SQL are too heavy for the pilot.
+- **Dependency.** The Stripe webhook endpoint subscribes to `payment_intent.succeeded`. Dev has no Stripe account, so no ORDER.paid is produced there.
 
 ### D7 — Sweepers
 
@@ -155,9 +159,10 @@ The proto conventions settled in `ticket-wallet-and-checkin` (one service per pa
 - **Fan services.** `rpc.ticket_sale.v1.TicketSaleService` (Get) and `rpc.reservation.v1.ReservationService` (Start, Get, Authorize, Confirm). `ReservationService.Get` lets the checkout explain a failed step (review M2), instead of overloading error codes.
 - **Organizer service.** `rpc.organizer.ticket_sale.v1.TicketSaleService` (Configure, Get). Get runs `TicketSaleUseCase.GetOwn`, which returns the counts the fan-facing Get hides.
 - **Admin service.** `rpc.admin.organizer.v1.OrganizerService` gains UpdateSellerDetails and SetPlatformFeeRate.
-- **Entities.**
-  - `entity.v1.TicketSale` with `sale_start_time` and `sale_end_time`.
-  - `entity.v1.Reservation` with `hold_expire_time`, `commit_time` and `capture_time`.
+- **Entities.** Fields no screen or caller reads are left out.
+  - `entity.v1.TicketSale` with `sale_start_time` and `sale_end_time`, no create time.
+  - `entity.v1.Reservation` with `ticket_sale_id`, `ticket_count`, `amount`, `status`, `hold_expire_time`, `commit_time` and `capture_time`; no user (always the caller), holder identity (`Start` returns the saved one) or create time.
+  - The fan `TicketSaleService.Get` returns the Organizer's seller details for the checkout's 特商法 final confirmation.
   - `Order` gets `oneof source { TicketApplicationId application_id; ReservationId reservation_id; }`.
 - **Fee rate.** It is an integer in basis points with a protovalidate range of 0 to 3000.
 
@@ -170,7 +175,7 @@ The proto conventions settled in `ticket-wallet-and-checkin` (one service per pa
 
 - **Rate.** `Organizer.platform_fee_rate` is stored in basis points (the specs' "hundredths of a percent"): 0 to 3000, default 800 for new Organizers, pilot 500.
 - **Split.** The Organizer's split is `amount − floor(amount × rate ÷ 10000)`, so rounding still favours the Organizer.
-- **Snapshot.** The rate is copied onto the Settlement at issuance, so a later rate change never alters an issued Order's split.
+- **Fixed at issuance.** The Settlement's split is computed at issuance and stored as an amount, so a later rate change never alters an issued Order's split; the rate itself is not kept.
 - **Cancellation refunds.** On a cancellation refund, the platform keeps bearing the unreturned card fee during the pilot. Making the Organizer bear it needs a deduction mechanism, tracked under payments-legal-compliance / #996.
 
 ### D10 — Emails, receipts and legal copy
@@ -199,8 +204,8 @@ The proto conventions settled in `ticket-wallet-and-checkin` (one service per pa
 - **[Risk] A fan finishing card authentication right at 15 minutes loses the hold.** → Accepted (option (a)). The countdown is visible from the first step, and the copy says "not charged".
 - **[Risk] A cancelled authorization shows on a debit card for days.** → The copy says "not charged", and the sweeper releases holds within 2 minutes of the hold ending.
 - **[Risk] Charged but not issued.** → Never re-charged or released; alerted after 10 minutes; the runbook covers manual refund (D7).
-- **[Risk] Outbox relay lag delays emails.** → The relay polls every second, and the outbox depth and poison queue are alerted on.
-- **[Risk] The default fee changes from 5% to 8%.** → The rate is snapshotted per Settlement, existing Organizers are set explicitly in the migration, and the pilot Organizer gets 500.
+- **[Risk] NATS is down when the charge webhook arrives.** → The notice is answered Internal and Stripe redelivers it with backoff (minutes to hours); the email is delayed, never lost.
+- **[Risk] The default fee changes from 5% to 8%.** → Each Settlement's split is fixed at issuance, existing Organizers are set explicitly in the migration, and the pilot Organizer gets 500.
 - **[Risk] The lottery issuance is refactored, and winners now get an email.** → Its existing tests stay green, and a regression test is added for a lottery win producing `ORDER.paid` and one email.
 - **[Trade-off] One sale per event and one ticket type.** → Enough for the pilot. Tiers come with the lottery fold-in.
 - **[Risk] `public-event-page` is still in flight.** → The event route delta in this change is applied after it archives. The checkout route is self-contained.
@@ -209,13 +214,12 @@ The proto conventions settled in `ticket-wallet-and-checkin` (one service per pa
 
 1. specification: proto changes → Release → BSR.
 2. backend: in one migration,
-   - add `ticket_sales`, `reservations` and `outbox`;
+   - add `ticket_sales` and `reservations`;
    - make `orders.application_id` nullable, add `reservation_id` with the CHECK and the unique indexes, and add `confirmation_sent_at`;
    - add the organizer seller and fee columns, setting `platform_fee_rate` to 500 for existing Organizers, so nothing changes until an admin sets it;
-   - add the user identity columns;
-   - add `settlements.platform_fee_rate`.
+   - add the user identity columns.
 
-   Then the relay, the consumers, the usecases and the sweepers.
+   Then the webhook fulfillment, the consumers, the usecases and the sweepers.
 3. frontend: the checkout and event ticket section, the organizer sale editor, and the admin fields.
 4. Stripe stays in test mode until the payments-legal-compliance launch gate (verified by task 8.2).
 
@@ -226,4 +230,4 @@ Rollback:
 ## Open Questions
 
 - The exact Postmark message stream and template ids. They are fixed at implementation.
-- The outbox relay's poll interval and its alert threshold. They are tuned after the first load test.
+- The Stripe webhook endpoint's event types are managed outside IaC today; `payment_intent.succeeded` is added to it before the pilot.
