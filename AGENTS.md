@@ -127,18 +127,18 @@ This repo is the OpenSpec **store** `openspec-store` (identity file: `.openspec-
 - **Task progress and archive are recorded here, on `main`'s working tree.** `/opsx:apply` from an implementation repo updates `tasks.md` / `design.md` in this checkout through the store pointer and never commits them; implementation PRs cite the change (`OpenSpec-Change: <id>`) and the store commit they were built against. Several changes may be in progress in this working tree at once, one folder each; the change is verified and archived here once its PRs merge.
 - **Shared working tree rules.** In this checkout never run `git stash`, `git reset --hard`, `git checkout -- .` / `git restore .` or `git clean`: they discard other changes' progress. Stage by path (`git add openspec/changes/<change> …`), never `git add -A` or `git add .`. Never switch its branch: do branch work in a worktree (`git worktree add .claude/worktrees/<branch> -b <branch> origin/main`). Update it with `git fetch origin && git merge --ff-only origin/main`, not `git pull` (which rebases with autostash), and after a PR merges sync only that change's paths (README "Branch work in this repository").
 - **Sharing is plain git.** OpenSpec never pulls or pushes; commit and push planning like code, and review it via PRs on this repo.
-- **Plan PR bodies show real spec diffs**: see `openspec/CLAUDE.md`.
+- **Plan PR bodies show real spec diffs**: see `openspec/AGENTS.md`.
 - **CI gate (`.github/workflows/openspec-checks.yml`)** runs on every PR touching `openspec/`: `openspec validate --specs`, `scripts/check-spec-layout.py`, `openspec validate <change> --strict` for each change the PR touches (deferred with a notice while its delta specs are not written yet, so a proposal-only PR passes and an in-progress change on `main` never blocks unrelated PRs), and, for every change archived in the PR, that all tasks are checked and that `scripts/check-scenario-coverage.py` finds an `@spec`-annotated test for each ADDED/MODIFIED scenario on the implementing repositories' `main` (or an `@spec-manual` exemption). It is the only gate in cloud threads, where repository hooks do not run.
 
 ### Spec tree
 
-The spec tree layout and writing rules are in `openspec/CLAUDE.md` (authoritative: the `liverty-clean-arch` schema's `specs` instruction).
+The spec tree layout and writing rules are in `openspec/AGENTS.md` (authoritative: the `liverty-clean-arch` schema's `specs` instruction).
 
 - Only product behavior belongs in a spec. CI, deployment, code conventions and implementation design go in the change's `design.md` or outside OpenSpec. Subjects are entities, interfaces, routes, surfaces and ubiquitous-language nouns, never implementation types or file paths; thresholds are numbers.
 
 ## Pre-implementation Checklist
 
-Before modifying `.proto` files, follow the checklist in `proto/CLAUDE.md`.
+Before modifying `.proto` files, follow the checklist in `proto/AGENTS.md`.
 
 ## Review criteria (flag violations)
 
