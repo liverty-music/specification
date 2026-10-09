@@ -7,10 +7,12 @@ package liverty_music.rpc.ticket_sale.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/organizer.proto";
 import "liverty_music/entity/v1/ticket_sale.proto";
 
 // TicketSaleService is the public read of an event's first-come TicketSale, for
-// the ticket section of the event page. It never reveals the quantity, the sold
+// the ticket section of the event page and the checkout's 特商法 final
+// confirmation. It never reveals the quantity, the sold
 // count or the remaining count: a sale with few tickets left is only flagged as
 // low on stock. Buying goes through liverty_music.rpc.reservation.v1.
 service TicketSaleService {
@@ -47,4 +49,9 @@ message GetResponse {
   // tenth of its quantity, rounded up (残りわずか). Never an exact count. False
   // in every other state.
   bool low_stock = 3;
+
+  // The seller details of the event's Organizer: the 特商法 (Specified
+  // Commercial Transactions Act) disclosure the checkout shows before the order
+  // is placed. Public by law.
+  entity.v1.SellerDetails seller_details = 4 [(buf.validate.field).required = true];
 }

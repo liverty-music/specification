@@ -9,12 +9,12 @@ IssueFromCapturedWin SHALL take an application. When Order.GetByApplicationID fi
 - exactly as many Tickets as the requested ticket count, each bound to the applicant, for the phase's event, carrying the applicant's full name and phone number, and Issued at the same time;
 - a Held Settlement for the phase's event and its Organizer, with one split paying that Organizer the Order's amount minus the platform fee at the Organizer's rate.
 
-It SHALL store them with Order.Issue, which also records the purchase; when Order.Issue fails with AlreadyExists it SHALL return the Order found by Order.GetByApplicationID.
+It SHALL store them with Order.Issue; when Order.Issue fails with AlreadyExists it SHALL return the Order found by Order.GetByApplicationID.
 
 #### Scenario: Won application issued
 
 - **WHEN** IssueFromCapturedWin runs for a Won application for 2 tickets whose 16000 yen payment was captured, for an Organizer at 5%
-- **THEN** a Paid 16000 yen Order, 2 Issued Tickets bound to the applicant for the phase's event, and a Held Settlement with one 15200 yen split for the event's Organizer are created, the purchase is recorded, and the Order is returned
+- **THEN** a Paid 16000 yen Order, 2 Issued Tickets bound to the applicant for the phase's event, and a Held Settlement with one 15200 yen split for the event's Organizer are created, and the Order is returned
 
 #### Scenario: Replayed issuance
 

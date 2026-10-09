@@ -16,11 +16,9 @@ A Reservation is one fan's checkout on a TicketSale: it holds a count of tickets
 | authorization reference | the card hold opened for the amount | absent until the fan authorizes; set once |
 | authorization release time | when the card hold was given back without charging | absent unless released; set once |
 | status | lifecycle | Held, Committed, Completed, Expired or Released |
-| hold expiry | when the hold lapses; it is never extended | required; 15 minutes after creation |
-| created time | when the checkout started | required |
+| hold expiry | when the hold lapses; it is never extended | required; 15 minutes after the checkout starts |
 | committed time | when its tickets were committed against the stock | absent until Committed |
 | capture time | when the card was charged | absent until charged; set once |
-| payment reference, card brand, card last four | the charged payment and its display facets | absent until charged |
 
 ```mermaid
 erDiagram

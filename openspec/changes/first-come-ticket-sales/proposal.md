@@ -15,7 +15,7 @@ The pilot with an independent artist (liverty-music/specification#1074) sells ti
 - **Sale states on the event page**: not yet on sale (with the start time in Japan time), on sale (with "残りわずか" at 10% or less rounded up, never an exact count), sold out (with a message while other fans hold the last tickets), sale ended. A cancelled concert's sale is neither shown nor sold.
 - **特商法 final confirmation step** before the order is placed: quantity, price and total 税込, payment method and timing, delivery timing, sale period, the resale prohibition (チケット不正転売禁止法), the no-cancellation and no-cooling-off statement, the Organizer's seller details, and a way back to correct the count and identity.
 - **Purchase completed notifications**: an email (new, sent through the existing mail provider, once per Order) and a push notification of a new type, both after the purchase is recorded and independent of it. Lottery winners receive them too.
-- **Reliable post-purchase events**: issuing an Order records an `ORDER.paid` event in the same transaction (transactional outbox). Two consumers run from it: the confirmation email and push, and the ticket journey update to PAID, which moves out of the lottery issuance path. Analytics and a sold-out signal are left until official resale needs them.
+- **Reliable post-purchase events**: every completed charge, reported by the payment provider's webhook (redelivered until acknowledged), ends in an issued Order announced as `ORDER.paid`. Two consumers run from it: the confirmation email and push, and the ticket journey update to PAID, which moves out of the lottery issuance path. Analytics and a sold-out signal are left until official resale needs them.
 - **Organizer seller details** (legal name, representative, address, phone, contact email), entered by an admin during vetting.
 - **Per-Organizer platform fee rate**: the default becomes 8% (was 5%). An admin can set a different rate, and the pilot Organizer is set to 5%. **BREAKING** for the fee computation: the rate is read from the Organizer instead of a constant.
 - **Fan identity on the account**: the 本人確認 name and phone number are kept on the User, prefilled at checkout and updated when the fan edits them. Each Ticket keeps its own copy for its face, as today.
@@ -32,14 +32,16 @@ The pilot with an independent artist (liverty-music/specification#1074) sells ti
 - `components/entity/reservation/get`, `set-authorization`, `commit` (only while holding), `release` (only a Held one), `revert-commit` (only an uncharged one), `record-capture`, `record-authorization-release`, `list-due`
 - `components/entity/reservation/create-authorization`, `verify-authorization`, `capture-authorization`, `cancel-authorization`: the card hold of a checkout; American Express accepted
 - `components/entity/order/get-by-reservation-id`, `send-confirmation-email`
+- `components/entity/reservation/get-by-authorization-ref` and `components/entity/ticket-application/get-by-payment-intent-ref`: trace a reported charge back to its source
 - `components/entity/organizer/set-seller-details`, `set-platform-fee-rate`
 - `components/entity/user/update-holder-identity`
 - `components/usecase/ticket-sale/configure`, `get`, `get-own` (the Organizer's view with quantity and sold count)
 - `components/usecase/reservation/start`, `get`, `authorize`, `release-expired`
 - `components/usecase/order/issue-from-reservation`: commit, charge and issue; the fan's place-order action
 - `components/usecase/order/issue-due-reservations`: finishes committed checkouts whose charge or issuance did not complete
+- `components/usecase/order/fulfill-payment`: turns each completed charge into an issued Order and announces it
 - `components/usecase/notification/send-order-confirmation`: confirmation email and push for each paid Order
-- `components/usecase/ticket-journey/mark-paid`: the PAID update for each recorded purchase
+- `components/usecase/ticket-journey/mark-paid`: the PAID update for each paid Order
 - `components/usecase/organizer/update-seller-details`, `set-platform-fee-rate`
 - `components/adapter/fan/api/rpc/ticket-sale`: public sale read, no sign-in
 - `components/adapter/fan/api/rpc/reservation`: the signed-in fan's checkout calls (Start, Get, Authorize, Confirm)
@@ -52,12 +54,13 @@ The pilot with an independent artist (liverty-music/specification#1074) sells ti
 
 - `components/entity/order`: "An Order has exactly one source" (added). (Purpose) the `application` row becomes a source — a won TicketApplication or a Committed Reservation, one Order per source — a `confirmation-sent time` row is added, and the Purpose sentence no longer says "of one winning TicketApplication".
 - `components/entity/order/issue`: "Order, tickets and settlement together, once per application" (renamed to "... once per source" and modified) — fee at the Organizer's rate, the purchase recorded with its content, a Reservation completed only when Committed and charged.
-- `components/entity/settlement`: "Platform fee rate" (modified) — the Organizer's rate, kept on the Settlement. (Purpose) attribute table gains the fee rate applied.
+- `components/entity/settlement`: "Platform fee rate" (modified) — the fee at the Organizer's rate, with the split fixed when the Settlement is created.
 - `components/entity/organizer`: "Seller details" and "Platform fee rate" (added). (Purpose) attribute table gains the five seller details and the platform fee rate.
 - `components/entity/user`: "Holder identity on the account" (added). (Purpose) attribute table gains the holder full name and holder phone number.
 - `components/entity/notification`: Purpose-only, no delta file — the type row gains `order_confirmation`.
 - `components/usecase/notification/deliver`: "Runs for each requested notification" (modified) — NotificationUseCase.SendOrderConfirmation is a caller.
 - `components/usecase/order/issue-from-captured-win`: "Issue an order and its tickets from a won application" (modified, fee at the Organizer's rate, purchase recorded); "Ticket journey becomes Paid" (removed, moved to `ticket-journey/mark-paid`). (Purpose) drops "and marks the buyer's ticket journey for the event as Paid".
+- `components/adapter/fan/api/webhook/payment-events`: "A completed charge is fulfilled" (added) and "Other notices are acknowledged" (modified) — a completed charge runs IssuanceUseCase.FulfillPayment.
 - `components/adapter/admin/api/rpc/organizer`: "Only admins manage Organizers", "Requests are validated before any usecase runs" and "Each call runs one OrganizerUseCase method" (modified) — two calls added, their validation, and the Organizer returned with its seller details and rate.
 - `components/infrastructure/fan/web/route/event`: "Ticket section shows the sale" (added). This capability is created by `public-event-page`; this change is archived after it.
 
@@ -67,9 +70,9 @@ Purpose edits are made to the main specs at archive. Capabilities with no spec y
 
 - **specification:** new proto entities and services (`TicketSale`, `Reservation`, the fan and organizer sale services); `Order` gets a source that is not only a lottery application; `Organizer` gets seller details and a fee rate; the `ApplicantIdentity` type moves out of the lottery files.
 - **backend:**
-  - new tables for ticket sales, reservations and the outbox, and a nullable source on orders with a unique key per source;
+  - new tables for ticket sales and reservations, and a nullable source on orders with a unique key per source;
   - Stripe PaymentIntents get metadata and per-operation idempotency keys;
-  - the outbox relay;
+  - the `payment_intent.succeeded` webhook notice fulfils and announces each paid Order;
   - new consumers: email and push, ticket journey;
   - sweepers for expired holds, leftover card holds and stalled commits, with an alert for charged-but-unissued checkouts;
   - the card-hold port parameterised per caller (brand policy, idempotency key prefix);

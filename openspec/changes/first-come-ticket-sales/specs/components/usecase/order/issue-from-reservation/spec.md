@@ -63,8 +63,8 @@ For a Committed Reservation without a capture time, IssueFromReservation SHALL c
 
 A Reservation that already has a capture time SHALL never be charged again.
 
-It SHALL then read the sale with TicketSale.Get, resolve the sale's event's Organizer with Event.GetOrganizerID, and read the Organizer with Organizer.Get for its platform fee rate. It SHALL build:
-- a Paid Order for the Reservation's User, whose source is the Reservation, with the Reservation's amount in yen, the recorded payment reference and card facets, and a paid time of the time of issuance;
+It SHALL then read the charged payment with Order.GetCapturedPayment for the Reservation's authorization reference, read the sale with TicketSale.Get, resolve the sale's event's Organizer with Event.GetOrganizerID, and read the Organizer with Organizer.Get for its platform fee rate. It SHALL build:
+- a Paid Order for the Reservation's User, whose source is the Reservation, with the Reservation's amount in yen, the authorization reference as its payment reference and the charged payment's card brand and last four digits, and a paid time of the time of issuance;
 - exactly as many Tickets as the Reservation's count, each bound to that User, for the sale's event, carrying the Reservation's holder full name and phone number, and Issued at the same time;
 - a Held Settlement for the event and its Organizer, with one split paying that Organizer the Order's amount minus the platform fee at the Organizer's rate.
 

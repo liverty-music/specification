@@ -6,9 +6,7 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
-import "liverty_music/entity/v1/holder_identity.proto";
 import "liverty_music/entity/v1/ticket_sale.proto";
-import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
@@ -69,12 +67,6 @@ message Reservation {
     (buf.validate.field).required = true
   ];
 
-  // The fan checking out. Always the signed-in caller, never named in a request.
-  UserId user_id = 3 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (buf.validate.field).required = true
-  ];
-
   // The tickets held, 1 to the sale's per-account limit (at most 10).
   int32 ticket_count = 4 [
     (google.api.field_behavior) = REQUIRED,
@@ -91,25 +83,18 @@ message Reservation {
     (buf.validate.field).int64.gt = 0
   ];
 
-  // The 本人確認 name and phone for the tickets' face. Absent until the fan
-  // authorizes their card.
-  HolderIdentity holder_identity = 6 [(google.api.field_behavior) = OPTIONAL];
-
   // The checkout's lifecycle status. Server-owned.
   ReservationStatus status = 7 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).enum.defined_only = true
   ];
 
-  // When the hold lapses: exactly 15 minutes after create_time, never extended.
+  // When the hold lapses: exactly 15 minutes after the checkout started, never extended.
   // The tickets can be committed only before this instant. Server-owned.
   google.protobuf.Timestamp hold_expire_time = 8 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
-
-  // When the checkout started. Server-owned.
-  google.protobuf.Timestamp create_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // When the tickets were committed against the stock. Unset unless the
   // checkout was ever committed; it stays set on a commit that was later given
@@ -119,4 +104,9 @@ message Reservation {
   // When the card was charged. Unset until charged, and set at most once.
   // Server-owned.
   google.protobuf.Timestamp capture_time = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The fan (always the caller), the holder identity (the checkout prefills
+  // from the account) and the start time are not exposed.
+  reserved 3, 6, 9;
+  reserved "user_id", "holder_identity", "create_time";
 }

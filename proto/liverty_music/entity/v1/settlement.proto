@@ -174,16 +174,6 @@ message Settlement {
   // settlement is still held. Server-owned.
   google.protobuf.Timestamp release_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
 
-  // The Organizer's platform fee rate applied when this settlement was created,
-  // in basis points (0 to 3000). Kept here so a later change to the Organizer's
-  // rate never alters this settlement. The platform fee is
-  // floor(amount × rate ÷ 10000), and the Organizer's split is the rest.
-  // Server-owned.
-  int32 platform_fee_rate_bps = 7 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (buf.validate.field).int32 = {
-      gte: 0
-      lte: 3000
-    }
-  ];
+  reserved 7;
+  reserved "platform_fee_rate_bps";
 }

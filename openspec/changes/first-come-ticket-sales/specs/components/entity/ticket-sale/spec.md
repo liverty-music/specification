@@ -15,7 +15,6 @@ A TicketSale is the platform's own sale of one event's tickets, first come, firs
 | quantity | tickets offered | required; at least 1 |
 | per-account limit | most tickets one User may hold or have bought from the sale | required; 1 to 10; 4 when not given |
 | sold count | tickets on the sale's Committed and Completed Reservations | required; 0 to the quantity; starts at 0 |
-| created time | when the sale was set up | required |
 
 ```mermaid
 erDiagram
