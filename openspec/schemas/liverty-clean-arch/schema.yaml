@@ -145,7 +145,13 @@ artifacts:
         An <operation> or <method> directory name is the method name in
         kebab-case (void-by-order → VoidByOrder). A contract several
         audiences rely on is written under each audience; a flow that crosses
-        audiences is a story. There is no shared slot.
+        audiences is a story. There is one shared slot,
+        components/infrastructure/backend/process/<component>, and it is only
+        for rules that bind every backend process (API servers, event
+        consumers, jobs): how a process starts, what its health checks
+        report, what it logs. Such a rule serves no single audience, and
+        consumers and jobs have none. Anything an audience can observe
+        through its own delivery is still written under that audience.
 
       ## Writing order
 

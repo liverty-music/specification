@@ -16,6 +16,8 @@ context: |
       │   └── webhook/<component>/      a call from an external system (audience: fan)
       └── infrastructure/
           ├── fan/api/server/<component>/   a server-wide rule (rate limiting)
+          ├── backend/process/<component>/  a rule every backend process obeys (startup, health checks, logging);
+          │                                 the one shared slot: API servers, event consumers and jobs serve no single audience
           └── <audience>/web/
               ├── route/<screen>/           one screen
               └── global/<surface>/         a surface shared by screens (shell, sheets, hosted login, service worker, i18n)
