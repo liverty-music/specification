@@ -1,0 +1,55 @@
+# Spec Delta
+
+## MODIFIED Requirements
+
+### Requirement: The applicant is the signed-in caller
+
+Every lottery call SHALL require a signed-in caller and fail with Unauthenticated otherwise. Apply, Withdraw, GetApplication and GetResult SHALL resolve the caller to their stored User (User.GetByExternalID) and pass that User as the applicant to LotteryUseCase.Apply, WithdrawApplication, GetMyApplication and GetResult; the request never names an applicant. When the caller has no stored account, these calls SHALL fail with NotFound. CreateAuthorization only opens a card hold for a phase and ticket count, so it requires the sign-in but looks up no account and passes no applicant.
+
+#### Scenario: Fan applies
+
+- **WHEN** a signed-in fan calls Apply for a phase
+- **THEN** the application is made with that fan as applicant
+
+#### Scenario: Not signed in
+
+- **WHEN** a caller who is not signed in calls GetResult
+- **THEN** the call fails with Unauthenticated and no usecase runs
+
+#### Scenario: Caller without an account
+
+- **WHEN** a signed-in caller with no stored account calls Apply
+- **THEN** the call fails with NotFound and nothing is applied
+
+### Requirement: Withdrawal names the phase, not the application
+
+Withdraw SHALL take a phase; the boundary SHALL find the caller's own application for that phase with LotteryUseCase.GetMyApplication and withdraw it with LotteryUseCase.WithdrawApplication. When the caller has no application for the phase, the call SHALL fail with NotFound and nothing is withdrawn.
+
+#### Scenario: Withdraw own application
+
+- **WHEN** a fan with an application for the phase calls Withdraw for it
+- **THEN** that application is withdrawn
+
+#### Scenario: No application
+
+- **WHEN** a fan with no application for the phase calls Withdraw
+- **THEN** it fails with NotFound
+
+### Requirement: Lottery requests are validated at the boundary
+
+Every lottery call SHALL fail with InvalidArgument, before any usecase runs, when no phase is given. CreateAuthorization and Apply SHALL fail with InvalidArgument when the requested ticket count is not greater than 0; Apply SHALL also fail with InvalidArgument when the applicant's identity details or the card authorization are missing, or when the applicant identity breaks the TicketApplication identity rule, including a phone number that is not in E.164 form.
+
+#### Scenario: Zero tickets
+
+- **WHEN** Apply is called with a requested ticket count of 0
+- **THEN** it fails with InvalidArgument and nothing is applied
+
+#### Scenario: Domestic-format phone number
+
+- **WHEN** Apply is called with the applicant phone number `090-1234-5678`
+- **THEN** it fails with InvalidArgument and nothing is applied
+
+#### Scenario: E.164 phone number
+
+- **WHEN** Apply is called with the applicant phone number `+819012345678` and every other field valid
+- **THEN** the request passes the boundary and LotteryUseCase.Apply runs
