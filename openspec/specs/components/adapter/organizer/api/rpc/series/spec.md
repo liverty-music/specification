@@ -1,8 +1,8 @@
-# Organizer Concert RPC
+# Organizer Series RPC
 
 ## Purpose
 
-The organizer-facing concert service boundary: how an operator's sign-in is turned into their own Organizer before any authoring call runs, and which drafts the boundary rejects before the usecase sees them.
+The organizer-facing Series service boundary: how an operator's sign-in is turned into their own Organizer before any authoring call runs, and which drafts the boundary rejects before the usecase sees them.
 
 ## Requirements
 

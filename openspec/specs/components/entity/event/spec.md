@@ -2,7 +2,7 @@
 
 ## Purpose
 
-An Event is one performance at one Venue on one local date, at an optional start time, belonging to exactly one Series. Two Events are the same performance exactly when their Venue, date and start time coincide.
+An Event is one performance at one Venue on one local date, at an optional start time, belonging to exactly one Series. Two Events are the same performance exactly when their Venue, date and start time coincide. An Event holds only what every kind of event has; what belongs to one kind lives in the type that extends it, such as the performing Artists of a Concert.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -13,14 +13,12 @@ An Event is one performance at one Venue on one local date, at an optional start
 | local date | calendar date at the venue | required; a date without a time of day |
 | start time | performance start | optional; absent means unknown |
 | open time | doors open | optional; absent means unknown |
-| performers | Artists performing | at least 1 |
 
 ```mermaid
 erDiagram
   Series ||--o{ Event : "groups"
   Venue ||--o{ Event : "hosts"
-  Event }o--o{ Artist : "performed by"
-  Event ||--|| Concert : "is shown as"
+  Event ||--o| Concert : "is extended by"
   Event ||--o{ Ticket : "admits with"
   Event ||--o{ TicketJourney : "is tracked by"
 ```

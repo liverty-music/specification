@@ -79,7 +79,7 @@
 
 ## 7. Backend — adapter, story and release
 
-- [ ] 7.1 Organizer concert handler: map `EventDraft.event_id`, `PublishRequest.event_ids`, `CancelRequest.event_ids` and the per-Event `publish_state` on `AuthoredConcert` events; the fan concert mapper sets `Concert.publish_state`. Verify the existing handler tests of `components/adapter/organizer/api/rpc/concert` pass and a new handler test maps each field
+- [ ] 7.1 Organizer concert handler: map `EventDraft.event_id`, `PublishRequest.event_ids`, `CancelRequest.event_ids` and the per-Event `publish_state` on `AuthoredConcert` events; the fan concert mapper sets `Concert.publish_state`. Verify the existing handler tests of `components/adapter/organizer/api/rpc/series` pass and a new handler test maps each field
 - [ ] 7.2 Extend the story test for `stories/publish-an-organizer-concert` (rdb integration with the usecases, like `sales_phase_story_test.go`); verify it passes for: Public concert goes live, Unlisted concert stays off lists, Discovered concert claimed, Cancel after publish, Tour adds a date, Doors-open time announced after publish, Venue cannot move after publish
 - [ ] 7.3 Upgrade the generated package to the 2.3 release, run `make check` and `make test-integration`, open the backend PR citing the change, and merge; verify the AtlasMigration applies in production and the rollout is healthy
 
