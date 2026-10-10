@@ -11,8 +11,11 @@ Clean-Architecture paths the liverty-clean-arch schema defines:
   components/adapter/<audience>/api/{rpc,webhook}/<component>/spec.md
   components/infrastructure/fan/api/server/<component>/spec.md
   components/infrastructure/<audience>/web/{route,global}/<component>/spec.md
+  components/infrastructure/backend/process/<component>/spec.md
 
-with audience in {fan, admin, organizer}. Flat depth-1 specs and a root
+with audience in {fan, admin, organizer}. backend/process is the one shared
+slot: rules that bind every backend process (API servers, event consumers,
+jobs), which serve no single audience. Flat depth-1 specs and a root
 specs/spec.md are rejected so the pre-migration layout cannot come back.
 Archived changes are left as history and not checked."""
 import re, sys, pathlib
@@ -24,6 +27,7 @@ OK = re.compile(
     rf"|components/usecase/{SLUG}/{SLUG}"
     rf"|components/adapter/(?:fan|admin|organizer)/api/(?:rpc|webhook)/{SLUG}"
     rf"|components/infrastructure/fan/api/server/{SLUG}"
+    rf"|components/infrastructure/backend/process/{SLUG}"
     rf"|components/infrastructure/(?:fan|admin|organizer)/web/(?:route|global)/{SLUG})/spec\.md$")
 root = pathlib.Path(__file__).resolve().parent.parent / "openspec"
 roots = [root / "specs"] + [d / "specs" for d in (root / "changes").iterdir() if d.is_dir() and d.name != "archive"]
@@ -35,6 +39,6 @@ for base in roots:
         if not OK.match(rel): bad.append(f"{p.relative_to(root.parent)}")
 if bad:
     print("spec files outside the liverty-clean-arch layout:"); [print("  ", b) for b in bad]
-    print("allowed: stories/<story>, components/entity/<e>, components/entity/<e>/<op>, components/usecase/<e>/<m>, components/adapter/<a>/api/{rpc,webhook}/<c>, components/infrastructure/fan/api/server/<c>, components/infrastructure/<a>/web/{route,global}/<c>")
+    print("allowed: stories/<story>, components/entity/<e>, components/entity/<e>/<op>, components/usecase/<e>/<m>, components/adapter/<a>/api/{rpc,webhook}/<c>, components/infrastructure/fan/api/server/<c>, components/infrastructure/<a>/web/{route,global}/<c>, components/infrastructure/backend/process/<c>")
     sys.exit(1)
 print("spec layout OK")
