@@ -2,7 +2,7 @@
 
 - [ ] 1.1 `series.proto` / `event.proto`: gallery images, `video_url`, external links, streaming mode (`venue`/`online`/`hybrid`) + stream URL, category, keywords, notices, contact, `age_restriction`, per-event `description`, `publish_at`
 - [ ] 1.2 `series.proto` `Visibility`: add `PASSWORD`; carry a password hash (backend-only)
-- [ ] 1.3 `event_performers`: performer `role` + `order`
+- [ ] 1.3 `concert_artists`: performer `role` + `order`
 - [ ] 1.4 authoring RPC fields for the above; `buf` checks; Release → BSR gen
 
 ## 2. Backend

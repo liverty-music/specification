@@ -21,7 +21,7 @@ blocklist).
 - **All additive.** New fields are nullable columns / new enum values /
   new join columns; no migration of existing ② data. `PASSWORD` is a new
   `Visibility` enum value; streaming mode is a new `Event`/`Series`
-  attribute; performer role/order are new `event_performers` columns;
+  attribute; performer role/order are new `concert_artists` columns;
   per-event description is a new `Event` column; `publish_at` extends the
   publish flow.
 - **Password gate reuses the unlisted read-path guard** (② already gates

@@ -13,7 +13,7 @@ Current state (verified on backend, frontend and specification `main`, 2026-10-1
   - The usecase rejects only CANCELLED (`backend/internal/usecase/concert_authoring_uc.go:303`).
   - The repository's update matches only DRAFT rows (`rdb/series_repo.go:99-103`) and returns FailedPrecondition when no row matched (`series_repo.go:579`). That happens before the draft rows are rewritten, inside a transaction that rolls back.
   - So a save of a published concert fails. It does not silently lose edits.
-  - The proto promises the opposite. `Update` is "a correction" once published (`specification/proto/liverty_music/rpc/organizer/concert/v1/concert_service.proto:57-71`), and `Publish` can add later dates (`:73-90`).
+  - The proto promises the opposite. `Update` is "a correction" once published (`specification/proto/liverty_music/rpc/organizer/series/v1/series_service.proto:64-77`), and `Publish` can add later dates (`:79-96`).
   - The organizer editor lets the operator edit and then shows "Published concerts only allow correction edits; this change was rejected." (`frontend/organizer/concert-editor/concert-editor-route.ts:308-309`).
   - `PublishDraft` rejects a Series that is not DRAFT (`series_repo.go:886`), so a published Series can never gain a date.
 - **Fan-facing filters**:
@@ -48,7 +48,7 @@ Current state (verified on backend, frontend and specification `main`, 2026-10-1
 ### D1 — One `events` table with a nullable `publish_state`
 
 - Add an enum type `event_publish_state` (`DRAFT`, `PUBLISHED`, `CANCELLED`) and a nullable column `events.publish_state`. NULL marks a discovered Event.
-- A DRAFT Event gets its `concerts` row and `event_performers` rows when it is created, like any Event. So publish only flips the state.
+- A DRAFT Event gets its `concerts` row and `concert_artists` rows when it is created, like any Event. So publish only flips the state.
 - The rule "NULL exactly when the Series is discovered" spans two tables, so a CHECK cannot enforce it. The Series repository is the only writer of first-party Events, and it always sets the state. The migration test and the leakage test cover the rule.
 - **Why one table:** a published Series must hold draft dates (decision 3). The draft tables are keyed on a Series that is entirely DRAFT. Keeping them would mean a second copy step and a second performer model for published Series.
 - **Rejected — keep `draft_events` and allow rows for published Series:** every read of "the Series' dates" would union two tables, and the claim logic would stay a copy step.
@@ -177,7 +177,7 @@ The brief did not settle these. Each is the simplest option, and the specs are w
    1. Create `event_publish_state` and add `events.publish_state`.
    2. Copy each first-party Series' state onto its events.
    3. Drop the constraint `uq_events_natural_key` and create the partial index under the same name.
-   4. Insert `draft_events` of DRAFT Series into `events` as `DRAFT`, keeping their ids, with `concerts` rows. Insert their performers from `draft_series_performers` into `event_performers`.
+   4. Insert `draft_events` of DRAFT Series into `events` as `DRAFT`, keeping their ids, with `concerts` rows. Insert their performers from `draft_series_performers` into `concert_artists`.
    5. Delete CANCELLED Series that have no events. Their draft rows cascade.
    6. Drop `draft_series_performers`, `draft_events`, `series.publish_state`, `published_at`, `cancelled_at` and the type `series_publish_state`. Rewrite `chk_series_first_party_state`.
 4. Frontend PR: organizer editor, concert list, reception links and the fan event page.

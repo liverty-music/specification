@@ -6,7 +6,7 @@ Current state, verified in the code on 2026-10-10 (frontend `main` at `e0f6c3d`)
 
 - **Shell and routes.** `frontend/organizer/organizer-shell/organizer-shell.ts:23-87` is one flat route list (`concerts`, `concerts/new`, `concerts/edit/:seriesId`, `lottery/configure/:eventId`, `lottery/status/:phaseId`, `reception-links/:eventId`, `welcome`, `denied`, `auth/callback`); the comment at `:46-51` admits the lottery editor is reachable only by deep link. `organizer-shell.html` is a bare `<au-viewport>`. No organizer file calls `IAuthService.signOut` (`shared/services/auth-service.ts:348`), so there is no sign-out.
 - **Publish without confirmation.** `concerts/concerts-route.ts:209-224` publishes on one click; the class comment at `:156-157` says Publish and Cancel are confirmed, but only Cancel has a two-step reveal (`concerts-route.html:79-133`).
-- **Venue field.** The editor asks for a raw place id (`concert-editor/concert-editor-route.html:134-139`, placeholder `ChIJ…`), and `concert-editor-route.ts:230` hydrates every event with `placeId: ''`, so each save resends the venue by name only. The read side cannot do better today: `entity/v1/venue.proto:9-21` has no place id although the Venue entity has one (`specs/components/entity/venue`), while `EventDraft.place_id` exists on write (`rpc/organizer/concert/v1/concert_service.proto`, `EventDraft`).
+- **Venue field.** The editor asks for a raw place id (`concert-editor/concert-editor-route.html:134-139`, placeholder `ChIJ…`), and `concert-editor-route.ts:230` hydrates every event with `placeId: ''`, so each save resends the venue by name only. The read side cannot do better today: `entity/v1/venue.proto:9-21` has no place id although the Venue entity has one (`specs/components/entity/venue`), while `EventDraft.place_id` exists on write (`rpc/organizer/series/v1/series_service.proto`, `EventDraft`).
 - **Save feedback.** `concert-editor-route.ts:283-315` sets `saveError` on failure and shows nothing on success.
 - **Time zone.** `concert-editor/concert-form.ts:92-105` builds event times in the browser's time zone; `lottery-phase-editor/lottery-phase-form.ts:60-80` does the same for the window; `lottery-status/lottery-status-route.ts:35` uses `toLocaleString()`. A Japan-time formatter already exists for the reception screens (`shared/lib/reception/jst-format.ts`).
 - **No i18n.** `organizer/main.ts:147-162` registers "NO i18n machinery"; every string is English. The fan app's set-up is `src/main.ts:166-190` (`I18nConfiguration`, `fallbackLng: 'ja'`, detection querystring → localStorage → navigator).
@@ -64,7 +64,7 @@ Constraints: bundle isolation (`make verify-bundle-isolation`, `lint-boundaries`
 | Event | `ConcertService.List` (find the event), `TicketSaleService.List(event_id)`, `OrganizerService.Get` (business details prerequisite), scanner list |
 | Settings | `OrganizerService.Get`, `OrganizerService.ListArtists`, `PayoutOnboardingService.Get` (re-read on `visibilitychange` to visible) |
 
-- **Sale state on lists** costs one `TicketSaleService.List` per published event. With the current catalog (tens of events) this is acceptable; the plan's alternative (a sale summary on `AuthoredConcert`) is the follow-up if lists get slow. Recorded, not built.
+- **Sale state on lists** costs one `TicketSaleService.List` per published event. With the current catalog (tens of events) this is acceptable; the plan's alternative (a sale summary on the `SeriesService` List response) is the follow-up if lists get slow. Recorded, not built.
 - Countdown and "open/closed" are computed on the client from the sale's times and the clock, refreshed every 60 s; the server stays the source of truth for whether an entry is accepted.
 
 ### D3 — Responsive layout: window class for navigation, container class for lists
@@ -163,7 +163,7 @@ The owner decides whether that change is deleted or archived as superseded (task
 
 ## Risks / Trade-offs
 
-- [One sale read per published event on lists (D2)] → Acceptable at tens of events; add a sale summary to `AuthoredConcert` if Concerts takes over 1 s to show sale states.
+- [One sale read per published event on lists (D2)] → Acceptable at tens of events; add a sale summary to the `SeriesService` List response if Concerts takes over 1 s to show sale states.
 - [The console checks business details before a lottery, the server does not (`usecase/ticket-sale/create` has no such precondition)] → The console gate is a UX gate only; see "Assumptions to confirm" 3.
 - [Fan visual change from 12 % to 10 % state layers] → Small and intended (M3 values); the fan functional test `press-state.spec.ts` is updated in task 3.1.
 - [View Transitions not in every browser] → Progressive enhancement; navigation works without it.

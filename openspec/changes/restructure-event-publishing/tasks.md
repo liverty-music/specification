@@ -19,12 +19,12 @@
 ## 2. Proto (specification → BSR)
 
 - [ ] 2.1 Entity protos (design D3, D6):
-  - `event.proto` and `concert.proto` gain `PublishState publish_state` (`OUTPUT_ONLY`, optional, unspecified on a discovered Event);
+  - `event.proto` gains `PublishState publish_state` (`OUTPUT_ONLY`, optional, unspecified on a discovered Event); a Concert carries it through its `event` (`split-concert-from-event`), so `concert.proto` does not change;
   - `series.proto` `publish_state` becomes `OUTPUT_ONLY` and is documented as derived from the Events (Series spec "Publish state is derived from the events");
   - the `PublishState` enum comments describe an Event.
 
   Verify `buf lint` and `buf format -d` pass
-- [ ] 2.2 `rpc/organizer/concert/v1/concert_service.proto` (design D6):
+- [ ] 2.2 `rpc/organizer/series/v1/series_service.proto` (design D6):
   - `EventDraft.event_id` (optional `EventId`);
   - `PublishRequest.event_ids` and `CancelRequest.event_ids` (`repeated EventId`, unique items, empty meaning all);
   - rewrite the doc comments of the service, `Update`, `Publish` and `Cancel` from `components/usecase/series/{update,publish,cancel}`, including every FAILED_PRECONDITION case.
@@ -79,7 +79,7 @@
 
 ## 7. Backend — adapter, story and release
 
-- [ ] 7.1 Organizer concert handler: map `EventDraft.event_id`, `PublishRequest.event_ids`, `CancelRequest.event_ids` and the per-Event `publish_state` on `AuthoredConcert` events; the fan concert mapper sets `Concert.publish_state`. Verify the existing handler tests of `components/adapter/organizer/api/rpc/series` pass and a new handler test maps each field
+- [ ] 7.1 Organizer series handler (`organizer_series_handler.go`): map `EventDraft.event_id`, `PublishRequest.event_ids`, `CancelRequest.event_ids` and the per-Event `publish_state` on the `event` of each returned Concert; the fan concert mapper sets `publish_state` on each Concert's `event`. Verify the existing handler tests of `components/adapter/organizer/api/rpc/series` pass and a new handler test maps each field
 - [ ] 7.2 Extend the story test for `stories/publish-an-organizer-concert` (rdb integration with the usecases, like `sales_phase_story_test.go`); verify it passes for: Public concert goes live, Unlisted concert stays off lists, Discovered concert claimed, Cancel after publish, Tour adds a date, Doors-open time announced after publish, Venue cannot move after publish
 - [ ] 7.3 Upgrade the generated package to the 2.3 release, run `make check` and `make test-integration`, open the backend PR citing the change, and merge; verify the AtlasMigration applies in production and the rollout is healthy
 
@@ -96,7 +96,7 @@
   Verify component tests: Published event's venue is fixed, Additional date saved as a draft, Start time already on sale, and the existing cover image scenarios
 - [ ] 8.2 Organizer concert list (`components/infrastructure/organizer/web/route/concerts`): Publish offered while any event is DRAFT, Cancel while any event is PUBLISHED or DRAFT, and the lottery and ticket sale entry points gated on the event's own state; verify component tests: Published tour with a new date, Nothing left to publish, Organizer reaches lottery configuration from a published event, No lottery entry point for a draft event
 - [ ] 8.3 Reception links screen: read the event's own publish state instead of the Series'; verify its existing component tests pass with a DRAFT and a CANCELLED date of a PUBLISHED Series
-- [ ] 8.4 Fan event page (`components/infrastructure/fan/web/route/event`): the 中止 banner follows `Concert.publish_state`, and a cancelled sibling date is marked 中止 in the date list; verify component tests: Shared link after cancellation, Other date of a partly cancelled tour
+- [ ] 8.4 Fan event page (`components/infrastructure/fan/web/route/event`): the 中止 banner follows the Concert's `event.publish_state`, and a cancelled sibling date is marked 中止 in the date list; verify component tests: Shared link after cancellation, Other date of a partly cancelled tour
 - [ ] 8.5 Upgrade the generated clients to the 2.3 release, run `make check`, open the frontend PR citing the change, and merge; verify the production rollout is healthy
 
 ## 9. Production verification

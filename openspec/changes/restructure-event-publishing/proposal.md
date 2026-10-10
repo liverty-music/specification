@@ -11,7 +11,7 @@ The pilot Organizer needs to correct published pages and add dates before its fi
 
 - **Each first-party Event has a publish state**: DRAFT, PUBLISHED or CANCELLED. A discovered Event has none. A draft is an ordinary Event in DRAFT. It holds no slot of the catalog and is not a Concert, so no fan or discovery read sees it.
 - **BREAKING** The Series loses its stored publish state. Its displayed state is derived from its Events: Published when one Event is published, Cancelled when none is published and one is cancelled, Draft when all its Events are drafts.
-- **BREAKING** `DraftEvent` is removed. Its performances become DRAFT Events, and their performers become the Event's performers.
+- **BREAKING** `DraftEvent` is removed. Its performances become DRAFT Events, and their performers become the performers of each Event's Concert.
 - **Publish per event.** `Publish` publishes the named DRAFT Events of a Series, or all of them when none is named. A published Series can gain new dates: each starts as DRAFT and is published on its own. The claim, suppressed-slot and other-Organizer rules stay as they are. Followers of a PUBLIC Series are told only about the newly added Events.
 - **Corrections after publish.** `Update` accepts a Series with published Events:
   - The title, description, cover image and doors-open time can change.
@@ -64,11 +64,11 @@ These are written as REMOVED deltas:
 ## Impact
 
 - **specification** (proto, breaking on BSR, `buf skip breaking`):
-  - `entity/v1/event.proto` and `concert.proto` gain `publish_state`.
+  - `entity/v1/event.proto` gains `publish_state`, which a Concert carries through its `event`.
   - `Series.publish_state` becomes derived and output-only.
-  - The organizer `ConcertService`: `EventDraft` gains an optional `event_id`, `PublishRequest` and `CancelRequest` gain `event_ids`, and the doc comments of `Update`, `Publish` and `Cancel` are corrected.
+  - The organizer `SeriesService`: `EventDraft` gains an optional `event_id`, `PublishRequest` and `CancelRequest` gain `event_ids`, and the doc comments of `Update`, `Publish` and `Cancel` are corrected.
 - **backend**:
-  - One migration: `events.publish_state` is added and filled. `draft_events` and `draft_series_performers` move into `events` and `event_performers`. The full unique constraint `uq_events_natural_key` becomes a partial unique index that skips DRAFT rows. `series.publish_state`, `published_at` and `cancelled_at` are dropped.
+  - One migration: `events.publish_state` is added and filled. `draft_events` and `draft_series_performers` move into `events` and `concert_artists`. The full unique constraint `uq_events_natural_key` becomes a partial unique index that skips DRAFT rows. `series.publish_state`, `published_at` and `cancelled_at` are dropped.
   - Series repository: create, update, publish, cancel and get-authored.
   - Concert repository: one shared catalog condition and one fan-visibility condition replace the Series-state guard.
   - `EventPublishStateRepository`.

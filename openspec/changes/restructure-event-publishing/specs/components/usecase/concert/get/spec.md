@@ -4,7 +4,7 @@
 
 ### Requirement: Concert with an event page
 
-Get SHALL take an Event id and read the Concert with Concert.ListByIDs, with its Venue, performers, publish state and Series, and the Series with Series.Get. When the Event has an event page (see Series), Get SHALL return the Concert with its own publish state and its Series' description, cover image, visibility and publish state. Get needs no signed-in caller.
+Get SHALL take an Event id and read the Concert with Concert.ListByIDs, with its Venue, performers, publish state and Series, the Series including its description, cover image, visibility and publish state (`split-concert-from-event` removed the second read with Series.Get). When the Event has an event page (see Series), Get SHALL return the Concert with its own publish state and that Series. Get needs no signed-in caller.
 
 #### Scenario: Published public concert
 
