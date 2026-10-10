@@ -35,8 +35,9 @@ See proposal.md for the motivation. The current state that shapes the approach (
 - Renaming the discovery pipeline, NATS subjects, the `concert-discovery` job, metrics, analytics events, notification types or the `/concerts/:id` URL (proposal: naming rule).
 - The organizer console route names (`concerts`, `concert-editor`). `redesign-organizer-console` aligns them.
 - `draft_series_performers`. `restructure-event-publishing` removes the draft tables.
-- Fixing the sales notification link `/concerts/<id>`, which cannot reach an event that is not in the fan's dashboard list. This is tracked as a separate issue (task 1.2).
+- Fixing the sales notification link `/concerts/<id>`, which cannot reach an event that is not in the fan's dashboard list. Tracked in [specification#1110](https://github.com/liverty-music/specification/issues/1110).
 - A fan club event type.
+- `stories/complete-onboarding`, which still describes polling after a `SearchNewConcerts` RPC this change removes. Tracked in [specification#1033](https://github.com/liverty-music/specification/issues/1033).
 
 ## Decisions
 
@@ -50,7 +51,7 @@ message Event {            // entity/v1/event.proto
   StartTime start_time = 5;
   OpenTime open_time = 6;
   SeriesId series_id = 8;
-  ListedVenueName listed_venue_name = 9;   // new
+  ListedVenueName listed_venue_name = 10;  // new; 9 is reserved (rescheduled_time)
 }
 
 message Concert {          // entity/v1/concert.proto
@@ -107,14 +108,20 @@ ListResponse           { repeated Concert concerts; repeated Series series; repe
 ### D5 — The organizer `ConcertService` becomes `SeriesService`
 
 - **Package.** `rpc/organizer/concert/v1` → `rpc/organizer/series/v1`. The service keeps the same eight RPCs: Create, Update, Publish, Cancel, CreateMediaUploadURL, AttachMedia, RegenerateToken and List.
-- **Responses.** `AuthoredConcert` is removed. Create, Update, Publish, Cancel and AttachMedia return `{ series, concerts, artists }`, and List returns `{ repeated series, concerts, artists }`.
+- **Responses.** `AuthoredConcert` is removed. The RPCs that returned it now return the side-list shape: Create, Update and Publish return `{ series, concerts, artists }`, and List returns `{ repeated series, concerts, artists }`. Cancel and AttachMedia keep their empty responses: they never returned `AuthoredConcert`, their usecases return no Series, the console reloads List after Cancel, and AttachMedia returns before the new cover is processed.
 - **A DRAFT Series' dates are DraftEvents.** They are returned as Concerts whose `event.id` is the DraftEvent id. Their `artist_ids` are the Series' draft performers, which is what `AuthoredConcert` shows today. `restructure-event-publishing` later makes them real DRAFT Events.
 - **Code.** The backend handler moves to `organizer_series_handler.go`, with its registration in `internal/di/provider.go`. `ConcertAuthoringUseCase` keeps its name; renaming the usecase is out of scope.
 - **Organizer console.** The console groups `concerts` by `event.series_id` to rebuild one page per Series.
 
 ### D6 — `event_performers` becomes `concert_artists`, keyed by the Concert
 
-The constraint names below are the expected defaults; task 2.1 records the actual ones from prod.
+Prod check (task 2.1, 2026-10-10, read-only through db-proxy):
+
+- `event_performers` has 1620 rows; 0 of them lack a `concerts` row, so no backfill is needed.
+- Constraints: `event_performers_pkey` (PK `event_id, artist_id`), `event_performers_event_id_fkey` (→ `events(id)` ON DELETE CASCADE), `event_performers_artist_id_fkey` (→ `artists(id)` ON DELETE CASCADE), and the Postgres 18 not-null constraints `event_performers_event_id_not_null` and `event_performers_artist_id_not_null`.
+- Index: `idx_event_performers_artist_id` on `artist_id`, besides the primary key.
+
+The migration therefore also renames the two not-null constraints and the `artist_id` index, so the names match a freshly created `concert_artists`.
 
 ```sql
 ALTER TABLE event_performers RENAME TO concert_artists;
@@ -123,6 +130,9 @@ ALTER TABLE concert_artists DROP CONSTRAINT event_performers_event_id_fkey;
 ALTER TABLE concert_artists ADD CONSTRAINT concert_artists_event_id_fkey
   FOREIGN KEY (event_id) REFERENCES concerts(event_id) ON DELETE CASCADE;
 ALTER TABLE concert_artists RENAME CONSTRAINT event_performers_artist_id_fkey TO concert_artists_artist_id_fkey;
+ALTER TABLE concert_artists RENAME CONSTRAINT event_performers_event_id_not_null TO concert_artists_event_id_not_null;
+ALTER TABLE concert_artists RENAME CONSTRAINT event_performers_artist_id_not_null TO concert_artists_artist_id_not_null;
+ALTER INDEX idx_event_performers_artist_id RENAME TO idx_concert_artists_artist_id;
 ```
 
 - **Why a foreign key to `concerts`.** It makes "Artists attach only to a Concert" a database guarantee. A future fan club event gets its own link table, so one column never holds two kinds of key.

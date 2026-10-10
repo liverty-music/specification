@@ -1,17 +1,17 @@
 ## 1. Specification prerequisites
 
-- [ ] 1.1 In the plan PR, add a commit before the change that moves the main spec `components/adapter/organizer/api/rpc/concert` to `components/adapter/organizer/api/rpc/series` (design D8):
+- [x] 1.1 In the plan PR, add a commit before the change that moves the main spec `components/adapter/organizer/api/rpc/concert` to `components/adapter/organizer/api/rpc/series` (design D8):
   - Reword its Purpose to "the organizer Series service boundary".
   - Move `redesign-organizer-console`'s delta directory at that path to the new path.
   - Put the mapping table (old path → new path) in the commit message.
   - Verify `openspec validate split-concert-from-event --strict` and `openspec validate redesign-organizer-console --strict` both pass, with no "target spec does not exist" notice.
-- [ ] 1.2 Open two issues in liverty-music/specification and verify both are open. Link them from design.md Non-Goals.
+- [x] 1.2 Open two issues in liverty-music/specification and verify both are open. Link them from design.md Non-Goals.
   - One for the sales-phase notification link `/concerts/<id>`, which cannot reach an event that is not in the fan's dashboard list. Cite `sales_phase_copy.go:78` and `dashboard-route.ts` `resolvePendingDeepLink`.
   - One for `stories/complete-onboarding`, which still describes polling after a `SearchNewConcerts` RPC the frontend never calls and this change removes.
 
 ## 2. Database (backend, design D6)
 
-- [ ] 2.1 Run read-only checks in prod through the db-proxy runbook and record the results in design.md D6.
+- [x] 2.1 Run read-only checks in prod through the db-proxy runbook and record the results in design.md D6.
   - The count of `event_performers` rows without a `concerts` row must be 0.
   - Record the actual constraint names of `event_performers` (`pg_constraint`).
   - If the count is not 0, stop and add a backfill step to D6 before 2.2.
@@ -32,7 +32,7 @@
   - Verify `buf lint` and `buf format -d` pass.
 - [ ] 3.2 In the fan `ConcertService`, add `repeated Series series` and `repeated Artist artists` to the Get, List, ListBySeries, ListByFollower, ListByArtists and ListByLocation responses, and remove `SearchNewConcerts` with its messages. Verify `buf lint` passes, and that `buf breaking` reports only the intended breaks.
 - [ ] 3.3 Move the organizer service to `rpc/organizer/series/v1` as `SeriesService`, with the same eight RPCs.
-  - Create, Update, Publish, Cancel and AttachMedia return `{ series, concerts, artists }`, and List returns `{ repeated series, concerts, artists }`.
+  - Create, Update and Publish return `{ series, concerts, artists }`, and List returns `{ repeated series, concerts, artists }`. Cancel and AttachMedia keep their empty responses (design D5).
   - Remove `AuthoredConcert`, and add the side lists to the admin `ConcertService.List` response.
   - Verify `buf lint` passes.
 - [ ] 3.4 Open the specification PR citing this change, merge it and cut a Release. Verify `buf-release.yml` succeeds and the BSR Go and ES packages carry the new `Concert` and `SeriesService`.

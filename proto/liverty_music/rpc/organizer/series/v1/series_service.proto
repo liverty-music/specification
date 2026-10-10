@@ -1,27 +1,33 @@
 syntax = "proto3";
 
-// Package liverty_music.rpc.organizer.concert.v1 provides the organizer-facing
-// ConcertService, the authoring surface an organizer uses to create and
-// publish first-party concerts for the artists it represents. It is served by
+// Package liverty_music.rpc.organizer.series.v1 provides the organizer-facing
+// SeriesService, the authoring surface an organizer uses to create and
+// publish first-party series for the artists it represents. It is served by
 // the dedicated organizer Connect server behind org-scoped role-claim
 // authorization; the admin-facing catalog management lives separately in
 // liverty_music.rpc.admin.concert.v1.ConcertService.
-package liverty_music.rpc.organizer.concert.v1;
+package liverty_music.rpc.organizer.series.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/concert.proto";
 import "liverty_music/entity/v1/entity.proto";
-import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/media.proto";
 import "liverty_music/entity/v1/series.proto";
 import "liverty_music/entity/v1/venue.proto";
 
-// ConcertService is the organizer-facing authoring surface: an authenticated
-// operator creates a first-party concert as an informational event page,
+// SeriesService is the organizer-facing authoring surface: an authenticated
+// operator creates a first-party Series as an informational event page,
 // edits it while it is a draft, publishes it to fans, and manages its
-// lifecycle thereafter. A first-party concert is modelled as a Series (a
-// single show, a multi-day run, or a tour) with one or more Events; times live
-// on the Event, so a 2部制 day is two Events under one Series.
+// lifecycle thereafter. A Series is a single show, a multi-day run, or a tour
+// with one or more dates; times live on each date, so a 2部制 day is two dates
+// under one Series.
+//
+// Create, Update, Publish and List return each Series together with its dates
+// as Concerts and, once each, every Artist those Concerts refer to. A Concert
+// carries only the id of its Series (through its Event) and the ids of its
+// Artists. A DRAFT Series' dates are returned as Concerts whose event id is
+// the draft date's id and whose artist ids are the Series' draft performers.
 //
 // The caller's Organizer is resolved from the token (the Zitadel org the token
 // is scoped to), so requests never carry an organizer_id; a series is
@@ -36,8 +42,8 @@ import "liverty_music/entity/v1/venue.proto";
 // push; DRAFT and UNLISTED series never emit. UNLISTED series are reachable
 // only through a signed tokenized share URL and are excluded from discovery,
 // lists, and notifications.
-service ConcertService {
-  // Create authors a new first-party concert in the DRAFT state: it mints a
+service SeriesService {
+  // Create authors a new first-party series in the DRAFT state: it mints a
   // Series (title, type, visibility, optional description) with its
   // performers and one or more Events (venue, date, optional start/open
   // times). Nothing is announced to fans — a draft is visible only in the
@@ -147,7 +153,7 @@ service ConcertService {
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc RegenerateToken(RegenerateTokenRequest) returns (RegenerateTokenResponse);
 
-  // List returns the concerts authored by the caller's own Organizer, both
+  // List returns the series authored by the caller's own Organizer, both
   // drafts and published, so the console can render the authoring dashboard.
   // The Organizer is resolved from the token; the list is unbounded on the
   // wire because an organizer's own catalog is small.
@@ -229,34 +235,24 @@ message SeriesDraft {
   repeated EventDraft events = 7 [(buf.validate.field).repeated.min_items = 1];
 }
 
-// AuthoredConcert is the organizer-console read projection of a first-party
-// concert: the authored Series together with its Events and performing
-// artists. One AuthoredConcert corresponds to one Series, so the console
-// renders the whole page from a single response.
-message AuthoredConcert {
-  // The authored series, including its authoring fields (description, cover
-  // image, visibility, publish state, organizer id).
-  entity.v1.Series series = 1 [(buf.validate.field).required = true];
-
-  // The events under the series, in date order. Always contains at least one
-  // event.
-  repeated entity.v1.Event events = 2 [(buf.validate.field).repeated.min_items = 1];
-
-  // The performing artists, in display order. Always contains at least one
-  // performer.
-  repeated entity.v1.Artist performers = 3 [(buf.validate.field).repeated.min_items = 1];
-}
-
 // CreateRequest carries the authoring payload for a new draft series.
 message CreateRequest {
   // Required. The series to author. It is created in the DRAFT state.
   SeriesDraft draft = 1 [(buf.validate.field).required = true];
 }
 
-// CreateResponse returns the newly-created draft concert.
+// CreateResponse returns the newly-created draft series with its dates.
 message CreateResponse {
-  // The created concert, in the DRAFT state.
-  AuthoredConcert concert = 1 [(buf.validate.field).required = true];
+  // The created series, in the DRAFT state, including its authoring fields
+  // (description, cover image, visibility, publish state, organizer id).
+  entity.v1.Series series = 1 [(buf.validate.field).required = true];
+
+  // The dates of the series, as Concerts in date order. Always contains at
+  // least one Concert.
+  repeated entity.v1.Concert concerts = 2 [(buf.validate.field).repeated.min_items = 1];
+
+  // Every Artist the concerts refer to, once each, in display order.
+  repeated entity.v1.Artist artists = 3 [(buf.validate.field).repeated.min_items = 1];
 }
 
 // UpdateRequest identifies the series to edit and supplies the full authoring
@@ -269,10 +265,17 @@ message UpdateRequest {
   SeriesDraft draft = 2 [(buf.validate.field).required = true];
 }
 
-// UpdateResponse returns the updated concert.
+// UpdateResponse returns the updated series with its dates.
 message UpdateResponse {
-  // The updated concert.
-  AuthoredConcert concert = 1 [(buf.validate.field).required = true];
+  // The updated series, including its authoring fields.
+  entity.v1.Series series = 1 [(buf.validate.field).required = true];
+
+  // The dates of the series, as Concerts in date order. Always contains at
+  // least one Concert.
+  repeated entity.v1.Concert concerts = 2 [(buf.validate.field).repeated.min_items = 1];
+
+  // Every Artist the concerts refer to, once each, in display order.
+  repeated entity.v1.Artist artists = 3 [(buf.validate.field).repeated.min_items = 1];
 }
 
 // PublishRequest identifies the series to publish.
@@ -282,10 +285,17 @@ message PublishRequest {
   entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
 }
 
-// PublishResponse returns the published concert.
+// PublishResponse returns the published series with its dates.
 message PublishResponse {
-  // The published concert.
-  AuthoredConcert concert = 1 [(buf.validate.field).required = true];
+  // The published series, including its authoring fields.
+  entity.v1.Series series = 1 [(buf.validate.field).required = true];
+
+  // The dates of the series, as Concerts in date order. Always contains at
+  // least one Concert.
+  repeated entity.v1.Concert concerts = 2 [(buf.validate.field).repeated.min_items = 1];
+
+  // Every Artist the concerts refer to, once each, in display order.
+  repeated entity.v1.Artist artists = 3 [(buf.validate.field).repeated.min_items = 1];
 }
 
 // CancelRequest identifies the series to cancel.
@@ -365,8 +375,18 @@ message RegenerateTokenResponse {
 // the full own catalog (drafts and published) is returned.
 message ListRequest {}
 
-// ListResponse contains the concerts authored by the caller's Organizer.
+// ListResponse contains the series authored by the caller's Organizer with
+// their dates.
 message ListResponse {
-  // The concerts authored by the caller's Organizer, drafts and published.
-  repeated AuthoredConcert concerts = 1;
+  // The series authored by the caller's Organizer, drafts and published,
+  // including their authoring fields.
+  repeated entity.v1.Series series = 1;
+
+  // The dates of every listed series, as Concerts. A Concert's series is the
+  // one its event's series_id names; within a series they are in date order.
+  repeated entity.v1.Concert concerts = 2;
+
+  // Every Artist the concerts refer to, once each, in the order the concerts
+  // first refer to them.
+  repeated entity.v1.Artist artists = 3;
 }

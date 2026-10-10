@@ -13,6 +13,12 @@ import "liverty_music/entity/v1/user.proto";
 
 // ConcertService provides operations for managing the catalog of musical concerts.
 // It acts as the primary data source for upcoming live music events.
+//
+// Every response that returns concerts also returns, once each, every Series and
+// Artist those concerts refer to, in its `series` and `artists` lists. A concert
+// carries only the id of its Series (through its Event) and the ids of its
+// Artists. Every returned Series carries its organizer id, description, cover
+// media, visibility and publish state when it has them, on every call alike.
 service ConcertService {
   // List retrieves a collection of concert events, filtered by the performing artist.
   //
@@ -23,9 +29,7 @@ service ConcertService {
 
   // Get retrieves the concert of one event for its public event page.
   // Authentication is not required. Only an event of a first-party series that
-  // is PUBLIC and PUBLISHED or CANCELLED has an event page; the returned
-  // concert's series carries its organizer id, description, cover media,
-  // visibility and publish state.
+  // is PUBLIC and PUBLISHED or CANCELLED has an event page.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The event ID is missing or is not a UUID.
@@ -71,17 +75,6 @@ service ConcertService {
   // - INVALID_ARGUMENT: The request is missing required fields, the location is invalid,
   //   from is after to, or the date range exceeds 30 days.
   rpc ListByLocation(ListByLocationRequest) returns (ListByLocationResponse);
-
-  // SearchNewConcerts discovers new concerts for a given artist using generative AI.
-  // The call blocks until the search completes (up to 60 seconds) and returns any
-  // newly discovered concerts. If a recent search exists (within 24 hours), the
-  // external API call is skipped and an empty list is returned.
-  //
-  // Possible errors:
-  // - INVALID_ARGUMENT: The artist ID is missing or invalid.
-  // - NOT_FOUND: The specified artist does not exist.
-  // - DEADLINE_EXCEEDED: The search did not complete within the timeout.
-  rpc SearchNewConcerts(SearchNewConcertsRequest) returns (SearchNewConcertsResponse);
 }
 
 // ListRequest is the request for retrieving concerts associated with a specific artist.
@@ -94,6 +87,14 @@ message ListRequest {
 message ListResponse {
   // The collection of concert events found.
   repeated entity.v1.Concert concerts = 1;
+
+  // Every Series the returned concerts refer to, once each, in the order the
+  // concerts first refer to them.
+  repeated entity.v1.Series series = 2;
+
+  // Every Artist the returned concerts refer to, once each, in the order the
+  // concerts first refer to them.
+  repeated entity.v1.Artist artists = 3;
 }
 
 // GetRequest is the request for retrieving the concert of one event.
@@ -106,6 +107,12 @@ message GetRequest {
 message GetResponse {
   // The concert of the requested event.
   entity.v1.Concert concert = 1;
+
+  // The Series the returned concert refers to.
+  repeated entity.v1.Series series = 2;
+
+  // Every Artist the returned concert refers to, once each.
+  repeated entity.v1.Artist artists = 3;
 }
 
 // ListBySeriesRequest is the request for retrieving the concerts of one series.
@@ -119,6 +126,14 @@ message ListBySeriesResponse {
   // The concerts of the series, ordered by date and, on the same date, by
   // start time.
   repeated entity.v1.Concert concerts = 1;
+
+  // Every Series the returned concerts refer to, once each, in the order the
+  // concerts first refer to them.
+  repeated entity.v1.Series series = 2;
+
+  // Every Artist the returned concerts refer to, once each, in the order the
+  // concerts first refer to them.
+  repeated entity.v1.Artist artists = 3;
 }
 
 // ListByFollowerRequest is the request for retrieving concerts for all artists
@@ -144,6 +159,14 @@ message ListByFollowerResponse {
   // for a single date, classified into home/nearby/away buckets based on
   // the geographic proximity between the user's home area and each venue.
   repeated ProximityGroup groups = 2;
+
+  // Every Series the returned concerts refer to, once each, in the order the
+  // concerts first refer to them.
+  repeated entity.v1.Series series = 3;
+
+  // Every Artist the returned concerts refer to, once each, in the order the
+  // concerts first refer to them.
+  repeated entity.v1.Artist artists = 4;
 }
 
 // ProximityGroup contains concerts for a single calendar date, classified into
@@ -185,6 +208,14 @@ message ListByArtistsResponse {
   // for a single date, classified into home/nearby/away buckets based on
   // the geographic proximity between the provided home area and each venue.
   repeated ProximityGroup groups = 1;
+
+  // Every Series the returned concerts refer to, once each, in the order the
+  // concerts first refer to them.
+  repeated entity.v1.Series series = 2;
+
+  // Every Artist the returned concerts refer to, once each, in the order the
+  // concerts first refer to them.
+  repeated entity.v1.Artist artists = 3;
 }
 
 // ListByLocationRequest specifies a geographic reference point and a date range for
@@ -227,18 +258,12 @@ message ListByLocationResponse {
   // date, classified into home/nearby buckets based on the geographic proximity between
   // the reference point and each venue. Groups with no HOME or NEARBY concerts are omitted.
   repeated ProximityGroup groups = 1;
-}
 
-// SearchNewConcertsRequest specifies the artist for whom to search for new concerts.
-message SearchNewConcertsRequest {
-  // Required. The unique identifier of the artist.
-  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
-}
+  // Every Series the returned concerts refer to, once each, in the order the
+  // concerts first refer to them.
+  repeated entity.v1.Series series = 2;
 
-// SearchNewConcertsResponse contains the concerts discovered by the search.
-// The list includes only newly discovered concerts (after deduplication against
-// existing data). An empty list indicates no new concerts were found.
-message SearchNewConcertsResponse {
-  // The newly discovered concerts for the requested artist.
-  repeated entity.v1.Concert concerts = 1;
+  // Every Artist the returned concerts refer to, once each, in the order the
+  // concerts first refer to them.
+  repeated entity.v1.Artist artists = 3;
 }
