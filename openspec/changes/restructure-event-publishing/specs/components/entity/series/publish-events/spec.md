@@ -11,7 +11,7 @@ Publishes chosen DRAFT Events of a first-party Series into the catalog, claiming
 PublishEvents SHALL take a Series and one or more of its DRAFT Events. For each given Event, at its Venue, date and start time (an unknown start matching only an unknown start), it SHALL:
 - make the Event PUBLISHED when no Event that is not DRAFT is at that slot;
 - remove the DRAFT Event when a PUBLISHED Event of this Series is already at that slot;
-- claim the Event at that slot when it belongs to a discovered Series or to another Series of the same Organizer and is not CANCELLED: move it to this Series, keep its id, make it PUBLISHED, add the DRAFT Event's performers to it, and remove the DRAFT Event.
+- claim the Event at that slot when it belongs to a discovered Series or to another Series of the same Organizer and is not CANCELLED: move it to this Series, keep its id, make it PUBLISHED, add the performers of the DRAFT Event's Concert to its Concert, and remove the DRAFT Event.
 
 It SHALL return the ids of the Events it made PUBLISHED in place; claimed Events SHALL NOT be returned. Together with the Events, it SHALL remove the StagedConcerts that belong to the Series.
 
@@ -21,7 +21,7 @@ It SHALL return the ids of the Events it made PUBLISHED in place; claimed Events
 
 #### Scenario: Claim a discovered event
 - **WHEN** a discovered Event with id E is at a given DRAFT Event's slot
-- **THEN** E moves to the Series, keeps its id, becomes PUBLISHED, gains the draft's performers, is not returned, and the DRAFT Event is gone
+- **THEN** E moves to the Series, keeps its id, becomes PUBLISHED, its Concert gains the draft's performers, is not returned, and the DRAFT Event is gone
 
 #### Scenario: Known start next to unknown-start event
 - **WHEN** a given DRAFT Event starts at 18:00 and the only Event at its Venue and date has no start time

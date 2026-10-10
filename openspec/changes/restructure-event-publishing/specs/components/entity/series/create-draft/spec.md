@@ -4,7 +4,7 @@
 
 ### Requirement: Draft stored whole
 
-CreateDraft SHALL store the first-party Series with its organizer, title, type, source page, description and visibility, and its Events, each DRAFT and each with the given performers, all together or none of them. It SHALL fail with FailedPrecondition when a referenced Organizer, Venue or Artist does not exist.
+CreateDraft SHALL store the first-party Series with its organizer, title, type, source page, description and visibility, and its Events, each DRAFT and each a Concert with the given performers, all together or none of them. It SHALL fail with FailedPrecondition when a referenced Organizer, Venue or Artist does not exist.
 
 #### Scenario: Draft with two events
 - **WHEN** a draft with two events and one performer is created

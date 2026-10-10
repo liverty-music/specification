@@ -43,7 +43,7 @@ Extends the `organizer-event-authoring` capability with:
 ## Impact
 
 - **specification**: additive fields on `series.proto` / `event.proto` /
-  `event_performers` (images, video_url, links, stream mode+url, category,
+  `concert_artists` (images, video_url, links, stream mode+url, category,
   keywords, notices, contact, age_restriction, password hash, per-event
   description, performer role+order, publish_at) + authoring RPC fields. All
   additive/non-breaking.
