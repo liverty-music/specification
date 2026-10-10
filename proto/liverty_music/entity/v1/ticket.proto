@@ -72,8 +72,9 @@ message Ticket {
     (buf.validate.field).required = true
   ];
 
-  // The account the ticket is bound to — the current holder. At issuance this is
-  // the winning buyer; ⑦ official resale is the sanctioned path that reassigns it.
+  // The account the ticket is bound to: the buyer it was issued to. It never
+  // changes. ⑦ official resale voids this ticket and issues a new one to the
+  // resale buyer instead of reassigning it.
   UserId holder_id = 3 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true

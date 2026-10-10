@@ -21,8 +21,10 @@ enum RejectedScanReason {
   REJECTED_SCAN_REASON_UNSPECIFIED = 0;
 
   // The scanned text is not an AdmissionCode, the code's user has no wallet
-  // key, or the signature does not verify with it (changed content or a code
-  // from a replaced device). Applies to the whole scan; names no ticket.
+  // key, the signature does not verify with it (changed content or a code from
+  // a replaced device), or the code presents a ticket that is not the user's own
+  // for its event (the tickets screen never makes such a code). Applies to the
+  // whole scan; names no ticket.
   REJECTED_SCAN_REASON_FORGED = 1;
 
   // The signature verifies but the code is not fresh (for example a
@@ -33,7 +35,8 @@ enum RejectedScanReason {
   // Applies to the whole scan.
   REJECTED_SCAN_REASON_OTHER_EVENT = 3;
 
-  // The presented ticket is not held by the code's user for this event.
+  // Unused. A code presenting a ticket the user does not hold for the event is
+  // refused as a whole with FORGED. Kept so the value is never reused.
   REJECTED_SCAN_REASON_NOT_HOLDER = 4;
 
   // The presented ticket was voided (refunded or resold).

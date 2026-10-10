@@ -144,8 +144,9 @@ message AdmitResponse {
   }];
 
   // Set when the whole scan was rejected before any ticket was considered:
-  // FORGED (not an entry code, no wallet key, or a signature that does not
-  // verify), EXPIRED (not fresh) or OTHER_EVENT. Unset otherwise.
+  // FORGED (not an entry code, no wallet key, a signature that does not
+  // verify, or a ticket that is not the user's own for the event), EXPIRED (not
+  // fresh) or OTHER_EVENT. Unset otherwise.
   entity.v1.RejectedScanReason rejected_scan_reason = 2 [(buf.validate.field).enum = {
     defined_only: true
     in: [
@@ -172,8 +173,9 @@ message RejectedTicket {
     expression: "this.reason == 6 || (!has(this.earlier_admit_time) && !has(this.earlier_reception_link_number))"
   };
 
-  // NOT_HOLDER (the code's user does not hold this ticket), VOIDED (refunded or
-  // resold) or ALREADY_ADMITTED.
+  // VOIDED (refunded or resold) or ALREADY_ADMITTED. NOT_HOLDER is no longer
+  // returned (such a scan is refused as a whole with FORGED); the value stays
+  // accepted so older responses still validate.
   entity.v1.RejectedScanReason reason = 1 [(buf.validate.field).enum = {
     defined_only: true
     in: [
