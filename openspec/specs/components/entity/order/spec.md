@@ -2,28 +2,28 @@
 
 ## Purpose
 
-An Order is the purchase record of one winning TicketApplication: a reference to its captured payment, the amount paid and its own status. One Order covers all tickets of that application, and an Order exists only after the payment has been captured.
+An Order is the purchase record of one winning LotteryEntry: a reference to its captured payment, the amount paid and its own status. One Order covers all tickets of that entry, and an Order exists only after the payment has been captured.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | id | the order's identity | required, assigned on creation |
-| buyer | the winning applicant's account | required |
-| application | the winning TicketApplication it was created from | required, one Order per application |
+| user | the account of the fan who won the entry | required |
+| lottery entry | the winning LotteryEntry it was created from | required, one Order per entry |
 | payment service | which of the platform's payment services holds the payment | required |
 | payment reference | reference to the captured payment | required, 1-255 characters, opaque |
 | payment method reference | reference to the payment method used | optional, at most 255 characters, opaque |
-| card brand | card brand shown to the buyer | optional, at most 40 characters |
-| card last four | last four card digits shown to the buyer | optional, exactly 4 digits or empty |
+| card brand | card brand shown to the user | optional, at most 40 characters |
+| card last four | last four card digits shown to the user | optional, exactly 4 digits or empty |
 | status | lifecycle | Paid or Refunded |
 | amount | total paid, in the currency's smallest unit (whole yen) | required, greater than 0 |
 | currency | ISO 4217 currency of the amount | required, 3 uppercase letters |
 | paid time | when the Order was created from the captured payment | required |
-| refund reference | reference to the refund issued to the buyer | empty unless refunded for a cancellation |
+| refund reference | reference to the refund issued to the user | empty unless refunded for a cancellation |
 
 ```mermaid
 erDiagram
   User ||--o{ Order : "buys"
-  TicketApplication ||--o| Order : "is purchased by"
+  LotteryEntry ||--o| Order : "is purchased by"
   Order ||--|{ Ticket : "issues"
   Order ||--o| Settlement : "is paid out by"
 ```

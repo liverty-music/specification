@@ -12,6 +12,8 @@ User
 | external id | the user's identifier at the identity provider | required; non-empty; no two Users share it |
 | email | primary contact and account address | required; an email address; no two Users share it |
 | name | display name taken from the identity provider | required; may be empty text |
+| full name | the person's name, as given at a lottery entry or checkout and shown on their tickets (本人確認) | optional; 1-200 characters when present; absent until first given |
+| phone number | the person's contact phone, as given at a lottery entry or checkout and shown on their tickets (本人確認) | optional; E.164 when present: `+` then 2-15 digits, first digit not 0; absent until first given |
 | preferred language | display language for the UI and notifications | optional; when present exactly two lowercase letters (ISO 639-1, e.g. `ja`, `en`); absent means no client has asserted a language yet |
 | home | the user's home area | optional; absent until the user selects an area |
 
@@ -35,7 +37,7 @@ erDiagram
   User ||--o{ VerifiedIdentity : "is verified by"
   User ||--o{ Order : "buys"
   User ||--o{ Ticket : "holds"
-  User ||--o{ TicketApplication : "applies with"
+  User ||--o{ LotteryEntry : "enters"
 ```
 
 ## Requirements

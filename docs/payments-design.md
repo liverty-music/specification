@@ -265,6 +265,13 @@ Points 1/5/6 are self-assessable; **2/3/4 need a written 弁護士 opinion**
 4. MoR / 特商法 seller-of-record + domestic-fee 課税 (10%) → register as
    適格請求書発行事業者; 媒介者交付特例 only if organizers are registered.
 5. 消費者契約法 enforceability of refund/cancellation clauses.
+6. **特定興行入場券 evidence of the 本人確認 details** (`unify-ticket-sales` D8).
+   The fan's full name and phone number are stored once, on the User, and the
+   ticket face shows their current values, so a fan can correct them after
+   the sale. Does the covered-ticket status under 特定興行入場券不正転売禁止法
+   require keeping the values confirmed at the time of sale? If yes, add an
+   append-only history of changes to the User's details. A copy on each
+   Ticket is not the answer.
 
 ### Official-resale counsel addenda (from `resale-design.md`)
 

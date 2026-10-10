@@ -2,17 +2,15 @@
 
 ## Purpose
 
-A Ticket is one account-bound admission right to an event, issued from an Order. Every Ticket is a 特定興行入場券 (covered ticket): it names the event and its holder and states that resale without the organizer's consent is prohibited.
+A Ticket is one account-bound admission right to an event, issued from an Order. Every Ticket is a 特定興行入場券 (covered ticket): it names the event and its user and states that resale without the organizer's consent is prohibited.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | id | the ticket's identity | required, assigned on issuance |
 | order | the Order that issued it | required |
-| holder | the account the ticket is currently bound to | required |
+| user | the account the ticket is bound to | required |
 | event | the event it admits to, which gives the date and venue on its face | required |
-| holder full name | the holder's name noted on the face (本人確認) | required, 1-200 characters |
-| holder phone number | the holder's contact phone noted on the face (本人確認) | required, E.164: `+` then 2-15 digits, first digit not 0 |
-| verified identity | the verified identity the ticket is bound to | optional; set only when the phase required verification |
+| verified identity | the verified identity the ticket is bound to | optional; set only when the sale required verification |
 | resale without consent prohibited | the face states that resale without the organizer's consent is prohibited | always true |
 | status | lifecycle; a Voided ticket is no longer valid for entry | Issued or Voided |
 | issued time | when the ticket was issued | required |

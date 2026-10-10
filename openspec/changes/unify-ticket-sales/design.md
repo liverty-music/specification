@@ -173,6 +173,18 @@ The lottery specs change their subject (phase → sale and type), their attribut
 
 ## Migration Plan
 
+Production rows before the migration (read-only through the db-proxy runbook, 2026-10-10 17:58 JST):
+
+| Table | Rows | Content |
+|---|---|---|
+| `lottery_sales_phases` | 1 | The E2E Test Organizer's event 「3人グループの入場」: capacity 10, at most 3 per application, price 50, window 2026-10-09 16:51 to 2026-10-20 17:04 JST, not drawn, no verification requirement |
+| `ticket_applications` | 1 | The owner's own test entry on that phase: state 1 (Applied), 1 ticket, name and phone set |
+| `orders` | 0 | |
+| `tickets` | 0 | |
+| `users` | 4 | The owner, a friend tester and the E2E test users |
+
+Only test data exists. After the migration: one sale named 抽選 with one ticket type, one entry (state 1, Entered), and the owner's name and phone on the owner's User.
+
 1. Specification PR: protos and this change's plan. Then release → BSR gen.
 2. Backend PR with one Atlas migration:
    1. Create `ticket_sales` and `ticket_types`.
