@@ -139,6 +139,11 @@ SHALL highlight that tab.
 - **WHEN** the displayed route is a concert deep-link (`/concerts/:id`)
 - **THEN** the Home tab SHALL be highlighted
 
+#### Scenario: Event page highlights Home
+
+- **WHEN** the displayed route is an Event page (`/events/:id`)
+- **THEN** the Home tab SHALL be highlighted
+
 #### Scenario: Route outside every tab
 
 - **WHEN** the displayed route belongs to no tab (for example an order detail

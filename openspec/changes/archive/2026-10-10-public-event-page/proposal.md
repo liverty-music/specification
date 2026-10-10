@@ -77,7 +77,7 @@ A public, shareable event page is the entry point that ticket sales, referral at
 - `components/infrastructure/fan/web/global/post-signup-dialog`: a sign-up started from the event page shows neither the celebration overlay nor the dialog.
 - `components/infrastructure/fan/web/global/bottom-nav-bar`: `/events/:id` highlights the Home tab.
 
-The entity operations Get and ListBySeries rely on already exist and do not change:
+The entity operations Get and ListBySeries rely on already exist. Their signatures do not change; Concert reads additionally fill the Series' organizer id, description, visibility and publish state (see design.md Context):
 
 - Concert.ListByIDs, which ignores visibility so the usecases apply the event-page rule.
 - Series.Get, which returns the first-party attributes and the cover.

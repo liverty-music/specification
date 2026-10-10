@@ -9,6 +9,7 @@ See proposal.md for the motivation. The approach is shaped by these facts:
   - `Concert.ListByIDs` returns concerts regardless of visibility.
   - `Series.Get` returns the first-party attributes and the cover Media.
   - `Concert.ListEventsBySeries` returns id, date and start time per Event.
+- **Concert reads carry only part of the Series.** Every Concert read (`ListByIDs` and the fan lists) filled only the Series' title, type and source URL, so `Series.OrganizerID` was always nil on a Concert. Implementation adds the Series' `organizer_id`, `description`, `visibility` and `publish_state` to those reads, without the cover Media (a join) or the share token. The notification link (D9) and the dashboard card routing (D7) depend on this; `Get` and `ListBySeries` still replace the Series with the `Series.Get` result, which carries the cover.
 - **Guests can already open every route.** The frontend `AuthHook` lets them through, and `data.auth === false` skips the wait for auth readiness.
 - **The OIDC callback already supports a return path.** It honours `authService.takeReturnTo()` (built for involuntary re-auth) and calls `onboarding.finish()`. The post-signup dialog is armed through the `postSignupShown = 'pending'` flag on a sign-up flow.
 - **fan-web is served by Caddy.** It uses `file_server` with `try_files {path} /index.html`, and `index.html` has no Open Graph tags.
@@ -17,6 +18,7 @@ See proposal.md for the motivation. The approach is shaped by these facts:
   - The webhook server (`fan-api-webhook-svc:9090`) receives calls from external systems (Stripe, Zitadel); the public gateway routes only `/stripe-webhook` to it.
 - **Rate limiting is a Connect interceptor.** It is keyed per IP for public RPCs, so a plain HTTP handler on the Connect server's mux is outside it.
 - **No Kubernetes NetworkPolicy** restricts traffic between the frontend and backend namespaces.
+  - Verified in prod on 2026-10-08 (task 1.2): from the `fan-web-app` Pod in `frontend`, `wget http://fan-api-svc.backend.svc.cluster.local:80/link-preview/events/<uuid>` returns 200 from fan-api v1.65.0. (`/healthz` is not a fan-api path and answers 401; the health check is the gRPC health service.) The `backend` namespace has no NetworkPolicy.
 - **The backend layers** put handlers that receive calls and map entities to an output format in `internal/adapter/` (`rpc/` with `mapper/`, `webhook/`), and server wiring in `internal/infrastructure/server`.
 - **Aurelia 2 has no production-ready server-side rendering** (as of 2026-10). The only option is the community package `aurelia2-ssr` v0.0.3.
 
@@ -108,11 +110,60 @@ Both methods return the same NotFound on every miss, so a DRAFT or UNLISTED even
   - Building the tags in Caddy templates from `ConcertService.Get` JSON, where escaping HTML correctly is hard and fragile.
   - Placing the endpoint on the internal webhook server, which would mix in a second role for no security gain since the data is public.
 
+- **Spike result (task 1.1, 2026-10-08, `caddy:2-alpine` as pinned in the fan Dockerfile, stub upstream):**
+
+  | Upstream answer | Plain `reverse_proxy` | With the settings below |
+  |---|---|---|
+  | 200 with tags | page, event tags first | page, event tags first |
+  | 200, empty body | page, site defaults | page, site defaults |
+  | 404 | **500, empty page** | page, site defaults |
+  | 500 | **500, empty page** | page, site defaults |
+  | no response (10 s) | page after **10 s** | page after 1 s, site defaults |
+  | upstream down | **500, empty page** | page, site defaults |
+
+  - `httpInclude` fails the whole response on any non-2xx sub-response or dial error, so the hardening is required, not optional.
+  - Strip the prefix with `handle_path` and rewrite to `/link-preview{path}`: `uri strip_prefix /__` leaves a request target without a leading `/` (`link-preview/events/<id>`), which fan-api's mux would not match (found while verifying task 11.2).
+  - The `@event` matcher must test the original path (`expression {http.request.orig_uri.path}.startsWith("/events/")`), because `try_files` has already rewritten the path to `/index.html` when `templates` runs. On other routes the placeholder comment is served unchanged and is inert.
+  - Resulting settings for task 11.2:
+
+    ```caddyfile
+    handle_path /__link-preview/* {
+    	rewrite * /link-preview{path}
+    	reverse_proxy fan-api-svc.backend.svc.cluster.local:80 {
+    		transport http {
+    			dial_timeout 500ms
+    			response_header_timeout 1s
+    		}
+    		@notok status 1xx 3xx 4xx 5xx
+    		handle_response @notok {
+    			respond "" 200
+    		}
+    	}
+    }
+    handle_errors {
+    	@preview path /__link-preview/*
+    	respond @preview "" 200
+    }
+    ```
+
 ### D5 — WebP `og:image`, verified before adding JPEG
 
 - X and Facebook render WebP previews despite Facebook's documentation. LINE is unverified.
 - The rollout task checks LINE Page Poker, the Facebook Sharing Debugger and a real X post.
 - A JPEG og variant in `ProcessMedia` (plus a backfill) is added only if a platform fails. That would be a follow-up change, so the specs here state no image format.
+
+- **Rollout check (task 12.2), 2026-10-08**, event `01a06666-04fe-7b59-ab7b-f6bf330c6a32` (series「テスト1」, cover served as `large.webp`):
+
+  | Platform | Card | WebP cover |
+  |---|---|---|
+  | LINE (app, shared in a chat) | shown | shown |
+  | Slack (unfurl) | 「テスト1 \| UVERworld」, 「2026年9月25日(金) テスト」, Liverty Music | shown |
+  | Facebook Sharing Debugger | skipped (owner's decision) | — |
+  | X (real post) | skipped (owner's decision) | — |
+
+  - LINE Page Poker no longer resolves (`poker.line.naver.jp`), so LINE was checked in the app itself.
+  - Crawler user agents (`facebookexternalhit`, `Twitterbot`, `Line`, `Slackbot`) all receive the event tags first, with `og:url` stripped of `?ref=`.
+  - **Conclusion:** the WebP `large` variant is enough for the pilot. The JPEG og variant follow-up is not opened; revisit it only if a Facebook or X share shows no image.
 
 ### D6 — Sign-up from the event page reuses return-to
 
