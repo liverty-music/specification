@@ -2,24 +2,17 @@
 
 ## Purpose
 
-A Concert is the fan-facing view of one music Event: the performance (venue, date, start and doors-open time) together with its parent Series and the Artists who perform at it. It stores nothing of its own beyond the Event it extends; title, type and source page come from the Series.
+A Concert is the music kind of Event: one Event together with the Artists who perform at it. Everything else - Series, venue, date and times - belongs to the Event it extends; title, type and source page come from the Event's Series. Another kind of event, such as a fan club event, is a type of its own that extends an Event in the same way.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | id | identifier shared with the Event it extends | required |
-| venue | resolved place where it is held | required on every catalog read; absent only on a discovery preview |
-| listed venue name | the venue text as the source or organizer listed it, normalized | optional, 1–255 characters; absent on concerts stored before the name was kept |
-| local date | calendar date at the venue | required |
-| start time | performance start | optional; absent means not announced |
-| open time | doors open | optional; absent means not announced |
-| series | parent Series (title, type, source page) | required |
-| performers | Artists performing | at least 1 |
+| event | the Event it extends: its Series, venue, listed venue name, local date, start and open time | required; its venue is absent only on a discovery preview |
+| artists | the Artists performing | at least 1 |
 
 ```mermaid
 erDiagram
-  Event ||--|| Concert : "is shown as"
-  Series ||--o{ Concert : "groups"
-  Venue ||--o{ Concert : "hosts"
+  Event ||--o| Concert : "is extended by"
   Concert }o--o{ Artist : "performed by"
 ```
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A server-wide limit on how long the fan API works on one call before giving up, with a longer limit for concert calls because a concert search can take close to two minutes.
+A server-wide limit on how long the fan API works on one call before giving up.
 
 ## Requirements
 
