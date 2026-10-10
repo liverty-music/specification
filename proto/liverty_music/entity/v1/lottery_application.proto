@@ -90,11 +90,16 @@ message LotterySalesPhase {
   ];
 
   // The maximum tickets a single application may request (the companion-group
-  // ceiling), a positive integer that must not exceed ticket_capacity. A fan
-  // applies for 1..max_tickets_per_application tickets in one application.
+  // ceiling), 1 to 10 and not above ticket_capacity. A fan applies for
+  // 1..max_tickets_per_application tickets in one application. The ceiling of 10
+  // matches the entry QR code (AdmissionCode presents at most 10 tickets): a
+  // companion group enters together with one code.
   int32 max_tickets_per_application = 6 [
     (google.api.field_behavior) = REQUIRED,
-    (buf.validate.field).int32.gt = 0
+    (buf.validate.field).int32 = {
+      gt: 0
+      lte: 10
+    }
   ];
 
   // The price of one ticket, in JPY (yen — a whole number, JPY has no minor
