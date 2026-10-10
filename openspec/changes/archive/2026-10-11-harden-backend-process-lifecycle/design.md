@@ -54,10 +54,11 @@ Rejected alternative: duplicating each rule under every audience. That gives fou
   - With this option, `Connect` returns a connection in RECONNECTING state instead of an error (nats.go v1.49 `nats.go:528-536`, `2693-2698`). `conn.JetStream()` does no network I/O, so `NewPublisher` succeeds.
   - Publishing while disconnected is buffered, and the JetStream publish times out after 5 s.
   - Existing usecases log a failed publish and continue (e.g. `follow_uc.go:105-109`). So a call returns within 10 s and keeps its own effect (spec: "An API server serves without the message broker").
-- **Consumers.** `ConnectNATS` blocks until the connection is actually up, with a 5-minute budget bounded by ctx. It does this with `RetryOnFailedConnect`, waiting for the first `ConnectedHandler`/`ReconnectHandler`. It must wait before the router binds durables, because `js.Consumer` is an API request.
+- **Consumers.** `ConnectNATS` blocks until the connection is actually up, with a 5-minute budget bounded by ctx. It does this with `RetryOnFailedConnect`, waiting for the first `ConnectHandler` (nats.go calls it, not `ReconnectHandler`, when the first connect succeeds through the retry). It must wait before the router binds durables, because `js.Consumer` is an API request.
   - This replaces the 30 s `connectBackoff`.
   - The health server already runs before DI, so waiting does not trip liveness.
-- **Logging.** Connection state changes on the publisher connection are logged at WARNING (disconnect) and INFO (reconnect).
+- **Reconnect backoff.** Every NATS connection waits 1 s, doubling up to 15 s, between failed attempts of one outage (`nats.CustomReconnectDelay`, with up to 20 % jitter), like the database wait in D4. A fixed 1 s wait would make about 300 attempts, each logged, over 5 minutes; the backoff makes about 25. The cost is up to 15 s of extra delay before reconnecting after NATS returns.
+- **Logging.** Connection state changes on the publisher connection are logged at WARNING (disconnect) and INFO (reconnect). A disconnect with a nil error is the process closing the connection itself (shutdown, a job finishing) and is not logged. Each failed attempt of the consumer connection is logged at WARNING (`ReconnectErrHandler`), at startup and during later outages.
 
 Rejected alternatives:
 - **An initContainer that waits for NATS.** It is an extra piece per workload, the pod still crashes if NATS drops between init and connect, and the API stays down even for calls that do not need NATS.
@@ -68,6 +69,11 @@ Rejected alternatives:
 Build each client's token source with `profile.NewJWTProfileTokenSource(..., profile.WithStaticTokenEndpoint(issuer, issuer+"/oauth/v2/token"))` and pass it through `zitadelconn.WithJWTProfileTokenSource`.
 
 The prod discovery document confirms `token_endpoint = https://auth.liverty-music.app/oauth/v2/token`. The token is fetched on the first RPC. A Zitadel outage then surfaces as an error of that RPC, which maps to Internal per the operation specs. The next call after recovery succeeds.
+
+**JWT validation** (missed in the first implementation; on 2026-10-10 10:31Z a Zitadel reschedule after a Spot preemption made all four API servers exit with `failed to fetch JWKS ... 503`). `auth.NewJWTValidator` fetched the JWKS while it was built and failed the startup on error. It now only registers the JWKS URL with the jwx cache, which makes no request. Validation fetches the keys:
+- httprc v1.0.6 marks an entry fetched when a fetch starts, so after a failed fetch `Get` returns an empty entry until the next scheduled refresh (`JWKS_REFRESH_INTERVAL`, 15 min). `ValidateToken` therefore calls `Refresh` whenever `Get` fails: while the keys have never been fetched, every validation fetches, and the first one after Zitadel recovers succeeds.
+- Once fetched, the cached keys keep serving; a failed background refresh keeps the old set.
+- While the keys cannot be fetched, a signed-in call fails with Unauthenticated, as the RPC boundary specs state for a sign-in that cannot be verified. The frontend does not sign out on Unauthenticated, so the session survives the outage.
 
 Rejected alternatives:
 - **A retry loop around construction.** It still blocks startup, and a long outage still exits the process.
@@ -103,6 +109,8 @@ Change `ConsumerHealth` so that a NATS disconnection which is still reconnecting
 
 This keeps the 2026-07 wedge detection (connected, consuming nothing) and stops restarts during a NATS reschedule.
 
+media-consumer gets the same health server and liveness. Its Deployment already probes `/readyz` and `/healthz` on :8081, but the binary never listened there, so a pod that KEDA scaled up could never become Ready and was killed about 70 s after start. Prod has had no media-consumer pod in the 40 days before 2026-10-10, which is why it went unnoticed.
+
 `readyz` is unchanged. Consumers receive no Service traffic, so readiness only gates the rollout.
 
 ### D7. Logging: one bootstrap logger built from the logging config, with the documented severity key
@@ -116,8 +124,10 @@ This keeps the 2026-07 wedge detection (connected, consuming nothing) and stops 
 - `connectWithRetry` takes the injected `*logging.Logger` instead of package-level `slog`.
 - golangci-lint `forbidigo` rejects `slog.(Debug|Info|Warn|Error|Log|Default)` and `log.Print*` / `log.Fatal*` outside `_test.go` and the analysis CLIs.
 - **Normal stops** (spec: "Normal stops and retries are not errors"):
-  - `cmd/consumer/main.go` and `media-consumer`: ignore `http.ErrServerClosed` from `HealthServer.Start()`, which `http.Server` returns on every normal shutdown.
+  - `HealthServer.Start()` returns nil on `http.ErrServerClosed`, which `http.Server` returns on every normal shutdown, so the event consumer and media-consumer log only real failures.
   - `pkg/shutdown.Shutdown` returns nil when `Init` was never called. If start-up failed before `Init`, there is nothing to clean up, and the cause is already logged by `main`.
+- **Failed jobs exit 1** (spec: a process that gives up "exits with a failure"). The jobs used to exit 0 so that the CronJob would not retry a systemic failure; that also recorded every failed run as Succeeded. The retry is now stopped where Kubernetes provides for it: `backoffLimit: 0` on the five CronJobs (`restartPolicy: Never` is already set). media-consumer, which exited 0 on a failed start, also exits 1.
+- **Testing the DI logger.** Every binary links both the Pocket Sign and the Zitadel SDKs, which register the same protobuf extension, and protobuf panics at init unless `GOLANG_PROTOBUF_REGISTRATION_CONFLICT=ignore` is set. The Dockerfile and the ConfigMaps already set it for the deployed binaries; the Makefile now exports it too, so `make test` and CI (`make test-integration`) can run tests in `internal/di`.
 
 ### D8. Verification without dev
 
@@ -128,9 +138,10 @@ The dev environment is stopped, so verification uses unit tests, plus checks in 
 - A fake clock for D6.
 - A logger written to a buffer and parsed as JSON for D7.
 - In prod after release:
-  - `kubectl delete pod nats-0 -n nats` produces no backend restarts.
+  - `kubectl delete pod nats-0 -n nats` produces no backend restarts, and a read call to the fan API succeeds while NATS is down.
+  - Deleting the Zitadel API pod produces no backend restarts.
   - `textPayload:"level="` returns nothing for the new revision.
-  - `jsonPayload.severity` is present.
+  - Entries of the new revision have the right `severity` and no `level` key in `jsonPayload`. (Cloud Logging moves the `severity` field into the entry's severity and removes it from `jsonPayload`, so `jsonPayload.severity` is never present.)
 
 ## Risks / Trade-offs
 
@@ -143,8 +154,15 @@ The dev environment is stopped, so verification uses unit tests, plus checks in 
 ## Migration Plan
 
 1. specification: plan PR with this change and the D1 layout updates. Merge.
-2. backend: one PR with D2–D7. Release.
-3. cloud-provisioning: one PR with the liveness `service: liveness` and the startupProbe for the four API Deployments. Merge it only after the backend release is deployed: before that, the `liveness` service does not exist, and probes would fail.
-4. Verify in prod (D8), then `/opsx:verify` and archive.
+2. cloud-provisioning: one PR with `backoffLimit: 0` on the five CronJobs. Merge it before the backend release: with the current exit 0 it changes nothing, and once jobs exit 1 it keeps them from being retried up to the default 6 times.
+3. backend: one PR with D2–D7. Release.
+4. cloud-provisioning: one PR with the liveness `service: liveness` and the startupProbe for the four API Deployments. Merge it only after the backend release is deployed: before that, the `liveness` service does not exist, and probes would fail.
+5. Verify in prod (D8), then `/opsx:verify` and archive.
 
 Rollback: revert the cloud-provisioning PR first (probes back to the default service), then roll the backend image back to the previous tag.
+
+## Implementation Notes
+
+- `rdb`'s readiness check pings the pool directly (`db.Pool`), so its 10 s timeout (D5) is not cut to `Database.Ping`'s 5 s.
+- The embedded nats-server for the D2 tests is pinned to v2.12.6, the newest release that requires nats.go v1.49; later releases would upgrade nats.go in the application.
+- The scenario "Start while the broker is down" is tested up to the step that needs the broker: `NewPublisher` succeeds without it (`internal/infrastructure/messaging/connect_test.go`). The rest of the API's DI cannot run in a unit test; a read call to fan-api succeeding while NATS was down was checked in prod (task 7.1).
