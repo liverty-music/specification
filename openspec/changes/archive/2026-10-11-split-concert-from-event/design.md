@@ -92,6 +92,8 @@ ListResponse           { repeated Concert concerts; repeated Series series; repe
 
 - The Concert reads add the cover image with the same `LEFT JOIN series_media ... media` the Series reads use (`series_repo.go:50`).
 - `ConcertUseCase.Get` and `ListBySeries` then stop replacing the Series with `Series.Get`. They still apply the event-page check to the Series they read.
+  - `Get` checks the Series that `Concert.ListByIDs` returns and no longer calls `Series.Get`; the `components/usecase/concert/get` delta records this.
+  - `ListBySeries` keeps `Series.Get` for its check, because it must report NotFound for a Series with no Events.
 - The fan `SeriesToProto` sets `media` whenever the Series has a cover. The share token stays out, as before (it has no proto field).
 - **Cost.** One extra left join per Concert row, on a primary-key lookup. The lists are bounded by the follow set or the location window.
 
@@ -144,9 +146,9 @@ ALTER INDEX idx_event_performers_artist_id RENAME TO idx_concert_artists_artist_
   - `atlas migrate diff` emits DROP and CREATE for a rename, so the migration file is hand-edited to `RENAME` (as `20260310000000_rename_passion_level_to_hype.sql` did for a column), then hashed.
   - `schema.sql`, its comments (`lint-schema.sh`) and the integration test's table cleanup list follow.
 - **Grants.** `organizer-console-api` writes `event_performers` through the publish path. `ALTER TABLE ... RENAME` keeps grants, which are bound to the table's OID. Task 2.4 updates the expected-grants map in `migration_grants_integration_test.go` and runs it.
-- **Release order.** The migration and the code that writes `concert_artists` ship in one backend release. The Atlas Operator applies the migration before the new pods roll.
-  - The old pods write `event_performers` until they stop. Postgres resolves a table name at query time, so those writes fail once the table is renamed.
-  - The window is the rollout of `fan-api`, `admin-console-api`, `organizer-console-api`, `event-consumer` and the jobs. With no users, a failed discovery write is retried by the next run; this is accepted.
+- **Release order.** Prod `backend-migrations` follows backend `main` (cloud-provisioning `k8s/argocd-apps/prod/backend-migrations.yaml`), not the release pin. Merging the backend PR applies the rename to prod at once, while the pinned pods still read and write `event_performers`. The backend PR therefore stays unmerged until the frontend PR is ready; both are merged and released together (tasks 8.2, 9.3).
+  - The old pods read and write `event_performers` until they stop. Postgres resolves a table name at query time, so their concert reads and writes fail once the table is renamed.
+  - The window runs from the merge to the end of the rollout of `fan-api`, `admin-console-api`, `organizer-console-api`, `event-consumer` and the jobs. With no users, a failed discovery write is retried by the next run; this is accepted.
 
 ### D7 — Remove the fan `SearchNewConcerts` RPC and the 120-second limit
 
@@ -156,6 +158,7 @@ ALTER INDEX idx_event_performers_artist_id RENAME TO idx_concert_artists_artist_
   - Delete `ServerSettings.ConcertHandlerTimeout`, `SERVER_CONCERT_HANDLER_TIMEOUT` and the per-service timeout branch (`provider.go:620`), so the 30-second `SERVER_HANDLER_TIMEOUT` covers the concert service.
   - `ConcertUseCase.SearchNewConcerts` stays, for `cmd/job/concert-discovery` and `SearchNewConcertsOnFirstFollow`.
 - **cloud-provisioning.** Removes `SERVER_CONCERT_HANDLER_TIMEOUT` from the fan-api ConfigMap after the backend release. An unknown variable is ignored by envconfig, so the order is safe.
+  - The same ConfigMap set `SERVER_HANDLER_TIMEOUT=60s` and the fan-api GCPBackendPolicy `timeoutSec: 150`, both for the synchronous SearchNewConcerts (cloud-provisioning 156df21). With it gone they return to 30s and 60s, so prod meets "Every fan call gets 30 seconds".
 
 ### D8 — The organizer spec moves in its own commit
 

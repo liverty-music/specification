@@ -52,11 +52,3 @@ An Event SHALL carry no title, type or source page; those belong to its Series a
 #### Scenario: Tour stops share one title
 - **WHEN** three Events belong to the same TOUR Series
 - **THEN** all three have the Series' title and none has a title of its own
-
-### Requirement: Performers of an event
-
-An Event SHALL have one or more performing Artists, each at most once. Co-headliners and support acts are all performers of the same Event.
-
-#### Scenario: Co-headliners on one event
-- **WHEN** two Artists co-headline one performance
-- **THEN** the Event has both Artists as performers, each once

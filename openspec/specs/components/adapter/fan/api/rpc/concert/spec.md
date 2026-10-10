@@ -8,7 +8,7 @@ The fan-facing concert service boundary: which concert calls need a signed-in fa
 
 ### Requirement: Public concert calls need no sign-in
 
-Get, ListBySeries, List, ListByArtists, ListByLocation and SearchNewConcerts SHALL be callable without sign-in. ListByFollower SHALL require a signed-in fan and fail with Unauthenticated otherwise. Get SHALL call ConcertUseCase.Get and ListBySeries SHALL call ConcertUseCase.ListBySeries, each returning the usecase's result.
+Get, ListBySeries, List, ListByArtists and ListByLocation SHALL be callable without sign-in. ListByFollower SHALL require a signed-in fan and fail with Unauthenticated otherwise. Get SHALL call ConcertUseCase.Get and ListBySeries SHALL call ConcertUseCase.ListBySeries, each returning the usecase's result.
 
 #### Scenario: Guest lists concerts of chosen artists
 
@@ -44,39 +44,9 @@ ListByFollower SHALL resolve the signed-in caller to their stored User (User.Get
 - **WHEN** the signed-in caller has no stored account
 - **THEN** the call fails with NotFound
 
-### Requirement: Concert requests are validated at the boundary
-
-The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
-- Get has no event id, or an event id that is not a UUID;
-- ListBySeries has no series id, or a series id that is not a UUID;
-- List has no artist id;
-- ListByArtists has fewer than 1 or more than 50 artist ids, or no home area;
-- ListByLocation has no location, no from-date or no to-date, or a from-date later than its to-date (the limit on the length of the range belongs to ConcertUseCase.ListByLocation);
-- SearchNewConcerts has no artist id.
-
-#### Scenario: Too many artists
-
-- **WHEN** ListByArtists is called with 51 artist ids
-- **THEN** it fails with InvalidArgument
-
-#### Scenario: Range backwards
-
-- **WHEN** ListByLocation is called with from 2026-10-02 and to 2026-10-01
-- **THEN** it fails with InvalidArgument
-
-#### Scenario: Search without an artist
-
-- **WHEN** SearchNewConcerts is called without an artist id
-- **THEN** it fails with InvalidArgument and no search runs
-
-#### Scenario: Event page without an id
-
-- **WHEN** Get is called without an event id
-- **THEN** it fails with InvalidArgument and no usecase runs
-
 ### Requirement: What a returned concert carries
 
-The Venue of every Concert returned by the fan boundary SHALL carry its id, name and admin area, and never its coordinates. A concert preview returned by SearchNewConcerts SHALL carry no Venue. When there are no concerts, List SHALL return an empty list, not NotFound. The Series of every returned Concert SHALL carry the id of its Organizer when it is first-party, so the fan app can tell first-party concerts from discovered ones, and SHALL carry its description, cover image, visibility and publish state when it has them. A Series' share token SHALL never be returned.
+Every response of the fan concert service that returns Concerts SHALL also return, once each, every Series and every Artist those Concerts refer to; a Concert carries only the id of its Series (through its Event) and the ids of its Artists. Every returned Venue SHALL carry its id, name and admin area, and never its coordinates. When there are no concerts, List SHALL return an empty list, not NotFound. Every returned Series SHALL carry the id of its Organizer when it is first-party, so the fan app can tell first-party concerts from discovered ones, and SHALL carry its description, cover image, visibility and publish state when it has them, on every call alike. A Series' share token SHALL never be returned.
 
 #### Scenario: Venue without coordinates
 
@@ -91,9 +61,43 @@ The Venue of every Concert returned by the fan boundary SHALL carry its id, name
 #### Scenario: First-party concert in a list
 
 - **WHEN** ListByFollower returns a Concert whose Series belongs to an Organizer
-- **THEN** the Concert's Series carries that Organizer's id
+- **THEN** the Series returned with it carries that Organizer's id
 
 #### Scenario: Discovered concert in a list
 
 - **WHEN** ListByFollower returns a Concert whose Series has no organizer
-- **THEN** the Concert's Series carries no Organizer id
+- **THEN** the Series returned with it carries no Organizer id
+
+#### Scenario: Tour in one list
+
+- **WHEN** ListByFollower returns three Concerts of one Series, all performed by the same Artist
+- **THEN** the response carries that Series once and that Artist once
+
+#### Scenario: Cover image in a list
+
+- **WHEN** ListByArtists returns a Concert whose first-party Series has a cover image
+- **THEN** the Series returned with it carries the cover image, as Get does
+
+### Requirement: Concert requests are validated before the usecase runs
+
+The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
+- Get has no event id, or an event id that is not a UUID;
+- ListBySeries has no series id, or a series id that is not a UUID;
+- List has no artist id;
+- ListByArtists has fewer than 1 or more than 50 artist ids, or no home area;
+- ListByLocation has no location, no from-date or no to-date, or a from-date later than its to-date (the limit on the length of the range belongs to ConcertUseCase.ListByLocation).
+
+#### Scenario: Too many artists
+
+- **WHEN** ListByArtists is called with 51 artist ids
+- **THEN** it fails with InvalidArgument
+
+#### Scenario: Range backwards
+
+- **WHEN** ListByLocation is called with from 2026-10-02 and to 2026-10-01
+- **THEN** it fails with InvalidArgument
+
+#### Scenario: Event page without an id
+
+- **WHEN** Get is called without an event id
+- **THEN** it fails with InvalidArgument and no usecase runs
