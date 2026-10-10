@@ -27,9 +27,9 @@ service TicketSaleService {
   // tax-inclusive (税込) price per ticket, a quantity and a per-account limit.
   // When the sale end is omitted the event's start time is used, and when the
   // per-account limit is omitted it is 4. The event must have a start time, and
-  // the caller's Organizer must have complete seller details. Once any checkout
-  // has started the price is locked, and the quantity can shrink only down to
-  // the tickets sold and held.
+  // the caller's Organizer must have complete seller details. While any ticket
+  // is sold or held the price cannot change, and the quantity can shrink only
+  // down to the tickets sold and held.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The event_id, the sale start, the price or the quantity
@@ -40,14 +40,14 @@ service TicketSaleService {
   //   Non-revealing.
   // - FAILED_PRECONDITION: The event's concert is not published, the event has
   //   no start time, the caller's Organizer has no complete seller details or
-  //   has been deactivated, the price changes after a checkout started, or the
+  //   has been deactivated, the price changes while tickets are sold or held, or the
   //   quantity is below the tickets sold and held.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Configure(ConfigureRequest) returns (ConfigureResponse);
 
   // Get returns the sale of one of the caller's events with its counts: the
-  // quantity, the tickets sold and held, its state now, and whether the price
-  // is locked because a checkout has started.
+  // quantity, the tickets sold and held, and its state now. The price is fixed
+  // while the sold or held count is above 0.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The event_id is missing or malformed.
@@ -105,19 +105,9 @@ message GetRequest {
 
 // GetResponse returns the sale with its counts.
 message GetResponse {
-  // The sale, with its quantity and sold count.
+  // The sale with its quantity, sold count, held count and state now.
   entity.v1.TicketSale ticket_sale = 1 [(buf.validate.field).required = true];
 
-  // The tickets held now by fans' checkouts whose hold has not lapsed.
-  int32 held_count = 2 [(buf.validate.field).int32.gte = 0];
-
-  // The sale's state now.
-  entity.v1.TicketSaleState state = 3 [(buf.validate.field).enum = {
-    defined_only: true
-    not_in: [0]
-  }];
-
-  // True once any checkout has been started for the sale, which locks the
-  // price.
-  bool price_locked = 4;
+  reserved 2, 3, 4;
+  reserved "held_count", "state", "price_locked";
 }

@@ -28,8 +28,8 @@ enum TicketSaleMethod {
   TICKET_SALE_METHOD_FIRST_COME = 1;
 }
 
-// TicketSaleState is where a TicketSale stands at a given time. It is derived,
-// never stored. New values may be appended; existing values must not be
+// TicketSaleState is where a TicketSale stands at a given time. It is derived
+// when the sale is read, never stored. New values may be appended; existing values must not be
 // renumbered.
 enum TicketSaleState {
   // Default value, never returned.
@@ -59,9 +59,10 @@ enum TicketSaleState {
 // limit. An event has at most one TicketSale. It is distinct from SalesPhase,
 // which records sales announced elsewhere, and from LotterySalesPhase.
 //
-// The quantity and the sold count are shown only to the owning Organizer; a
-// fan-facing read leaves them unset and reports only the state and whether
-// stock is low.
+// The state, whether stock is low and the held count are evaluated by the
+// server when the sale is read. The quantity, the sold count and the held count
+// are shown only to the owning Organizer; a fan-facing read leaves them unset,
+// so no fan learns how many tickets remain.
 message TicketSale {
   // The sale window must end after it starts.
   option (buf.validate.message).cel = {
@@ -105,8 +106,8 @@ message TicketSale {
   ];
 
   // The price of one ticket in yen, tax-inclusive (税込). 1 to 1,000,000. The
-  // fan pays price × count, with no buyer fee. It cannot change once any
-  // checkout has started for the sale.
+  // fan pays price × count, with no buyer fee. It cannot change while any
+  // ticket is sold or held.
   int64 price = 6 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).int64 = {
@@ -135,6 +136,25 @@ message TicketSale {
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).int32.gte = 0
   ];
+
+  // The tickets held now by fans' checkouts whose hold has not lapsed, 0 to the
+  // quantity. Set only in the owning Organizer's view. Server-owned.
+  optional int32 held_count = 11 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).int32.gte = 0
+  ];
+
+  // Where the sale stands at the time it was read. Server-owned; never
+  // UNSPECIFIED in a response.
+  TicketSaleState state = 12 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // True when the sale is ON_SALE and at most a tenth of its quantity, rounded
+  // up, remains at the time it was read, so the event page shows 残りわずか
+  // (few left) without a count. Server-owned.
+  bool low_stock = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   reserved 10;
   reserved "create_time";

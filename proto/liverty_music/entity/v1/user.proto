@@ -5,6 +5,7 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/coordinates.proto";
+import "liverty_music/entity/v1/holder_identity.proto";
 
 // UserId is a globally unique identifier for a platform user.
 message UserId {
@@ -96,8 +97,11 @@ message User {
     (buf.validate.field).enum.defined_only = true
   ];
 
-  reserved 9;
-  reserved "holder_identity";
+  // The 本人確認 name and phone number the user last checked out with, kept to
+  // prefill their next checkout. Absent until the user first authorizes a
+  // checkout; replaced as a whole whenever they check out with different
+  // details. Server-owned: it changes only through a checkout.
+  HolderIdentity holder_identity = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // Home represents the user's home area as a structured geographic location,
