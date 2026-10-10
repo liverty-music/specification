@@ -12,7 +12,7 @@ Current state, verified in the code on 2026-10-10 (frontend `main` at `e0f6c3d`)
 - **No i18n.** `organizer/main.ts:147-162` registers "NO i18n machinery"; every string is English. The fan app's set-up is `src/main.ts:166-190` (`I18nConfiguration`, `fallbackLng: 'ja'`, detection querystring → localStorage → navigator).
 - **Styles.** `organizer/styles/main.css` (245 lines) copies a subset of the fan tokens with the fan app's dark navy surface. The fan tokens have `--md-easing-emphasized-accelerate: cubic-bezier(0.3, 0.8, 0.15, 1)` at `src/styles/tokens.css:146` (wrong), state layers focus and pressed 12 % at `:251-252`, and only `long2`/`long4` of the long durations.
 - **Fan primitives.** `<loading-spinner>` is registered at `src/main.ts:291` and used only at `src/routes/verify-callback/verify-callback-route.html:6`. `<snack-bar>` lives in `src/components/snack-bar/` (default 2500 ms, `snack.ts:29`; `Infinity` supported, `snack-bar.ts:62-68`) and is mounted in `src/app-shell.html:28`.
-- **Backend reads the console can use.** `OrganizerService.Get` / `ListArtists`, `PayoutOnboardingService.Get` (account status plus `onboarding_url` while not active), `ConcertService.List` (authored concerts with events and their ids) and `RegenerateToken` (returns the new share token; the Series' token is "never shown on reads", `specs/components/entity/series`). After `unify-ticket-sales`: `TicketSaleService.List(event_id)` with tallies per TicketType (`usecase/ticket-sale/list-own-by-event`: entries, requested tickets, Won entries, Won tickets, Lost entries) and `SetVerificationRequirement`.
+- **Backend reads the console can use.** `OrganizerService.Get` / `ListArtists`, `PayoutOnboardingService.Get` (account status plus `onboarding_url` while not active), `SeriesService.List` (each authored Series with its dates as Concerts, which carry their event ids, and each Artist once) and `RegenerateToken` (returns the new share token; the Series' token is "never shown on reads", `specs/components/entity/series`). After `unify-ticket-sales`: `TicketSaleService.List(event_id)` with tallies per TicketType (`usecase/ticket-sale/list-own-by-event`: entries, requested tickets, Won entries, Won tickets, Lost entries) and `SetVerificationRequirement`.
 - **Map catalog.** The backend already calls Places Text Search with Application Default Credentials (`backend/internal/infrastructure/maps/google/client.go:27,90`, `SearchPlace` returns one best match). No browser Maps key exists.
 - **M3 values**, fetched today from AndroidX sources: `StateTokens.kt` hover 0.08, focus 0.10, pressed 0.10, dragged 0.16 (no selected value); `MotionTokens.kt` durations 50-1000 ms and easings standard (0.2,0,0,1), standard-accelerate (0.3,0,1,1), standard-decelerate (0,0,0,1), emphasized-accelerate (0.3,0,0.8,0.15), emphasized-decelerate (0.05,0.7,0.1,1); `SnackbarHost.kt` Short 4000 ms, Long 10000 ms, Indefinite. Window size classes (compact < 600, medium 600-839, expanded 840-1199 dp) and the 48 dp target come from the brief's check of the Android Developers docs; not re-fetched here.
 
@@ -30,7 +30,7 @@ Constraints: bundle isolation (`make verify-bundle-isolation`, `lint-boundaries`
 - The reception screen staff use at the door and the reception guide (`ticket-wallet-and-checkin`, `isolate-venue-reception`).
 - Editing a sale after creation, refunds, settlement statements, a pre-publish preview, a sales checklist (story-map items without an RPC; listed in the plan).
 - Changing the fan app's colors, type or components beyond the shared tokens, the snack bar move and the spinner replacement.
-- A `ConcertService.Get`: `List` is enough for an Organizer's small catalog (the plan's decision).
+- A `SeriesService.Get`: `List` is enough for an Organizer's small catalog (the plan's decision).
 
 ## Decisions
 
@@ -51,7 +51,7 @@ Constraints: bundle isolation (`make verify-bundle-isolation`, `lint-boundaries`
 | `denied`, `auth/callback` | unchanged | — | — |
 
 - Removed: `lottery/configure/:eventId`, `lottery/status/:phaseId`, `reception-links/:eventId`, `welcome`, `concerts/edit/:seriesId`. No redirects: there are no users, and the fallback opens Home.
-- **Why the event id stays under the concert:** the breadcrumb needs the concert, and `ConcertService.List` is the only read; a flat `events/:eventId` would need a reverse lookup across all concerts.
+- **Why the event id stays under the concert:** the breadcrumb needs the concert, and `SeriesService.List` is the only read; a flat `events/:eventId` would need a reverse lookup across all concerts.
 - Tabs are child routes so a tab is a shareable address (spec "Reception tab address"). The tab bar is an M3 primary tabs component driving the router.
 - Each route declares its parent in route `data`; one breadcrumb component in the shell renders it (compact: the parent only).
 
@@ -59,9 +59,9 @@ Constraints: bundle isolation (`make verify-bundle-isolation`, `lint-boundaries`
 
 | Screen | Reads |
 |---|---|
-| Home | `ConcertService.List`, `PayoutOnboardingService.Get`, and for each published event starting within 7 days the scanner list of `rename-reception-to-scanner` (an Organizer has a handful of such events; calls run in parallel) |
-| Concerts, Concert | `ConcertService.List`; sale state per event from `TicketSaleService.List` for published events only, lazily per visible event |
-| Event | `ConcertService.List` (find the event), `TicketSaleService.List(event_id)`, `OrganizerService.Get` (business details prerequisite), scanner list |
+| Home | `SeriesService.List`, `PayoutOnboardingService.Get`, and for each published event starting within 7 days the scanner list of `rename-reception-to-scanner` (an Organizer has a handful of such events; calls run in parallel) |
+| Concerts, Concert | `SeriesService.List`; sale state per event from `TicketSaleService.List` for published events only, lazily per visible event |
+| Event | `SeriesService.List` (find the event), `TicketSaleService.List(event_id)`, `OrganizerService.Get` (business details prerequisite), scanner list |
 | Settings | `OrganizerService.Get`, `OrganizerService.ListArtists`, `PayoutOnboardingService.Get` (re-read on `visibilitychange` to visible) |
 
 - **Sale state on lists** costs one `TicketSaleService.List` per published event. With the current catalog (tens of events) this is acceptable; the plan's alternative (a sale summary on the `SeriesService` List response) is the follow-up if lists get slow. Recorded, not built.
@@ -117,10 +117,11 @@ Navigation bar/rail, top app bar with account menu, breadcrumb, button (filled, 
 
 ### D9 — Venue search through the backend
 
-- New `ConcertService.SearchVenues(text) → repeated VenueCandidate {place_id, name, address}` on the organizer concert service; `ConcertAuthoringUseCase.SearchPlaces` validates the text and calls `Venue.SearchPlaces`, implemented on the existing Google client with `places:searchText`, `pageSize: 5`, `languageCode: ja`, `regionCode: JP`, field mask `places.id,places.displayName,places.formattedAddress`.
+- New `SeriesService.SearchVenues(text) → repeated VenueCandidate {place_id, name, address}` on the organizer Series service; `ConcertAuthoringUseCase.SearchPlaces` validates the text and calls `Venue.SearchPlaces`, implemented on the existing Google client with `places:searchText`, `pageSize: 5`, `languageCode: ja`, `regionCode: JP`, field mask `places.id,places.displayName,places.formattedAddress`.
+- **A new interface for the map catalog, not `entity.VenuePlaceSearcher`.** `Venue.SearchPlaces` and `Venue.GetPlace` are declared on a new interface implemented only by `infrastructure/maps/google`. `VenuePlaceSearcher` (`backend/internal/entity/venue.go:47`, one best match) is also implemented by MusicBrainz (`infrastructure/music/musicbrainz/place_searcher.go`) for discovered concerts, which has no candidate list or place details to offer; widening it would force stub methods there.
 - The field searches on an explicit action (search button or Enter), not on every keystroke: operators enter a few venues a month, and this keeps calls to one per search with no debounce state.
-- `Venue` gains an optional `place_id` on reads and the authored-concert mapper fills it, so the editor resends the place of an unchanged row (spec "An unchanged venue is kept on save"). Today the mapper sets no venue at all on authored events (`backend/internal/adapter/rpc/mapper/organizer_concert.go:117` `AuthoredEventsToProto`), which is why every reload empties the field; the mapper now sets `Event.venue` (id, name, place id) from the authored read.
-- **A picked place is required (owner decision, 2026-10-10).** `EventDraft.place_id` becomes required in the proto, and `usecase/series/create-draft` rejects an event without one. A typed name alone used to create a Venue keyed by name with no admin area (`seriesDraftToInputs` never sets one), so same-named halls in different cities merged into one Venue, and new Venues had no coordinates, so location-based fan lists missed them.
+- `Venue` gains an optional `place_id` on reads, so the editor resends the place of an unchanged row (spec "An unchanged venue is kept on save"). Today an authored event carries no venue on the wire: since `split-concert-from-event` the `SeriesService` responses go through `mapper.EventToProto` (`backend/internal/adapter/rpc/mapper/concert.go:100`), which sets `Event.venue` only when the Event carries one, and the authored read selects only `venue_id` for draft and published events (`backend/internal/infrastructure/database/rdb/series_repo.go:106,117`). That is why every reload empties the field. The fix is in the read: `Series.GetAuthored` (and `ListOwn` through it) joins `venues` and fills the Event's Venue (id, name, place id), and `VenueToProto` sets `place_id`.
+- **A picked place is required (owner decision, 2026-10-10).** `EventDraft.place_id` becomes required in the proto, and `usecase/series/create-draft` rejects an event without one. The operator never sees or types a place id: the editor sends the id of the candidate the operator picked from `SearchVenues` (spec `route/concert-editor` "The venue is found by search"). The required field is the API's guarantee that every saved venue came from a pick. Until the console's venue field ships (task 6.8), the current editor's raw place id field is the only way to satisfy it; the owner accepted that gap (2026-10-11). A typed name alone used to create a Venue keyed by name with no admin area (`seriesDraftToInputs` never sets one), so same-named halls in different cities merged into one Venue, and new Venues had no coordinates, so location-based fan lists missed them.
 - **New Venue from the catalog's place.** When no Venue holds the picked place id, `Venue.GetPlace` reads the place with Places Details (`GET places/{id}`, field mask `id,displayName,location,addressComponents`, `languageCode: ja`); the admin area is the ISO 3166-2 code of the `administrative_area_level_1` component (the existing prefecture-name mapping in `internal/infrastructure/geo` covers JP). One Details call per new venue; the search already paid for the pick.
 - **Rejected — keep the typed name when nothing matches:** it is the path that produced merged and location-less Venues. A venue the catalog does not know is not expected for the pilot; if one appears, the fix is to add it to the map catalog, not to accept free text.
 - **Rejected — Maps JavaScript Places Autocomplete in the browser:** a new browser API key to provision and restrict, a third-party script and CSP entries in the console, for an action the backend can already serve with its existing credentials.
@@ -129,7 +130,7 @@ Navigation bar/rail, top app bar with account menu, breadcrumb, button (filled, 
 ### D9a — Cover preview until the processed image replaces it
 
 - Today the editor clears `coverImageUrl` after AttachMedia and never reads again (`frontend/organizer/concert-editor/concert-editor-route.ts:347-350`), so the processing note stays until a reload. The backend keeps the previous media on the Series until the processor cuts over (`MediaUseCase.ProcessMedia` → `CutOverSeriesMedia`), so a save before processing re-hydrates the editor with the previous cover's URL.
-- After AttachMedia the editor re-reads the concert (the existing `ConcertService.List` read) every 3 s for up to 60 s and swaps to the processed image once the Series' media id equals the uploaded one. While the returned media id differs, `hydrate` keeps the local preview. After 60 s the note says processing is taking longer and the next open shows the result.
+- After AttachMedia the editor re-reads the concert (the existing `SeriesService.List` read) every 3 s for up to 60 s and swaps to the processed image once the Series' media id equals the uploaded one. While the returned media id differs, `hydrate` keeps the local preview. After 60 s the note says processing is taking longer and the next open shows the result.
 - **Rejected — a media status RPC:** one more read surface for a few uploads a month; the authored read already carries the media id.
 
 ### D10 — Testing approach
@@ -165,23 +166,23 @@ The owner decides whether that change is deleted or archived as superseded (task
 
 - [One sale read per published event on lists (D2)] → Acceptable at tens of events; add a sale summary to the `SeriesService` List response if Concerts takes over 1 s to show sale states.
 - [The console checks business details before a lottery, the server does not (`usecase/ticket-sale/create` has no such precondition)] → The console gate is a UX gate only; see "Assumptions to confirm" 3.
-- [Fan visual change from 12 % to 10 % state layers] → Small and intended (M3 values); the fan functional test `press-state.spec.ts` is updated in task 3.1.
+- [Fan visual change from 12 % to 10 % state layers] → Small and intended (M3 values); the fan functional test `e2e/functional/press-state.spec.ts` asserts only that a layer appears (opacity above 0), so it passes unchanged.
 - [View Transitions not in every browser] → Progressive enhancement; navigation works without it.
 - [Large frontend rewrite of one app] → The console has no users; screens land in one PR per group behind no flag, and each group's tests gate it.
 - [Three predecessors must land first] → Group 0 blocks the work; the shared-code group (3) and the venue search (1-2) do not depend on them and can start at once.
 
 ## Migration Plan
 
-1. Proto PR (Venue `place_id`, `SearchVenues`), Release, BSR gen.
-2. Backend PR (venue search, mapper), deploy; verify `SearchVenues` with a read-only call from the console after step 4.
+1. Proto PR (Venue `place_id`, `SearchVenues`, `EventDraft.place_id` required), Release, BSR gen.
+2. Backend PR (venue search, venue on the authored read, place required in draft creation), deploy; the first console search is checked in the logs after step 4 (task 6.10).
 3. Frontend PR: shared tokens, snack bar move, circular progress (fan app). Can ship before the console.
 4. Frontend PRs: console foundation and shell, then screens. Old routes and components are deleted in the same PRs that replace them.
 5. Production: the owner's walk-through (task 7.2); read-only checks of the rollout.
-6. Rollback: revert the frontend PR; the proto and backend additions are additive and can stay.
+6. Rollback: revert the frontend PR. `Venue.place_id` and `SearchVenues` are additive and can stay. The required `EventDraft.place_id` is not: between steps 2 and 4 the current editor saves only when its raw place id field is filled, and reverting the console after step 4 needs the backend requirement reverted too.
 
 ## Assumptions to confirm
 
-1. **Venue search runs through a new backend call** (`ConcertService.SearchVenues`) on an explicit search action, with Japanese names and places in Japan ranked first (D9), rather than browser-side Maps autocomplete. The plan had filed the place id bug as a separate issue; the brief puts the fix here, which adds a proto and backend part to this change.
+1. **Venue search runs through a new backend call** (`SeriesService.SearchVenues`) on an explicit search action, with Japanese names and places in Japan ranked first (D9), rather than browser-side Maps autocomplete. The plan had filed the place id bug as a separate issue; the brief puts the fix here, which adds a proto and backend part to this change.
 2. **The Venue read exposes its place id** so that an unchanged row is resent with it; without this the editor cannot keep the venue match.
 3. **Missing business details block both methods in the console.** `first-come-ticket-sales` requires them for first-come; `unify-ticket-sales` does not check them for a lottery. The seller disclosure (特商法 表記) applies to any paid sale, so the console shows the prerequisite for both. Recommended: add the same precondition to `TicketSaleUseCase.Create` for Lottery (not in this change).
 4. **Publish and cancel act per event** (after `restructure-event-publishing`). Whether a concert-wide cancel remains is that change's decision; the concert page in this change has no cancel action.

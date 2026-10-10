@@ -19,6 +19,10 @@ message Venue {
   // Absent when the area cannot be determined — an incorrect value is strictly worse
   // than an absent one.
   AdminArea admin_area = 3;
+
+  // The map place the venue was matched to. Present when the venue was matched
+  // to a map place; absent for a venue known only by the name a source listed.
+  PlaceId place_id = 4;
 }
 
 // VenueId is a globally unique identifier for a concert venue.

@@ -47,17 +47,20 @@ service SeriesService {
   // Series (title, type, visibility, optional description) with its
   // performers and one or more Events (venue, date, optional start/open
   // times). Nothing is announced to fans — a draft is visible only in the
-  // organizer console until Publish. The venue of each event is resolved via
-  // the Places get-or-create helper.
+  // organizer console until Publish. The venue of each event is the Venue
+  // holding the event's picked place id, or a new Venue created from the map
+  // catalog's place.
   //
   // Possible errors:
-  // - INVALID_ARGUMENT: A required field is missing or malformed, the event
-  //   list is empty, or a time is inconsistent (e.g. open time after start
-  //   time, or a date in the past).
+  // - INVALID_ARGUMENT: A required field is missing or malformed (including an
+  //   event without a picked place id), the event list is empty, a time is
+  //   inconsistent (e.g. open time after start time, or a date in the past),
+  //   or the map catalog has no place with a given place id.
   // - PERMISSION_DENIED: The caller lacks the organizer-console role, or a
   //   requested performer is not among the artists the caller's Organizer
   //   represents. Non-revealing.
   // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAVAILABLE: The map catalog could not be reached to read a new place.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Create(CreateRequest) returns (CreateResponse);
 
@@ -67,12 +70,17 @@ service SeriesService {
   // re-notify followers. The whole authoring payload is supplied and replaces
   // the prior draft content.
   //
+  // Each event's venue is found or created from its picked place id exactly as
+  // in Create.
+  //
   // Possible errors:
-  // - INVALID_ARGUMENT: A required field is missing or malformed, or a time is
-  //   inconsistent.
+  // - INVALID_ARGUMENT: A required field is missing or malformed (including an
+  //   event without a picked place id), a time is inconsistent, or the map
+  //   catalog has no place with a given place id.
   // - PERMISSION_DENIED: The series is not owned by the caller's Organizer, or
   //   a requested performer is not represented. Non-revealing.
   // - FAILED_PRECONDITION: The series has been CANCELLED (terminal).
+  // - UNAVAILABLE: The map catalog could not be reached to read a new place.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Update(UpdateRequest) returns (UpdateResponse);
 
@@ -164,21 +172,39 @@ service SeriesService {
   //   Non-revealing.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc List(ListRequest) returns (ListResponse);
+
+  // SearchVenues looks up a venue name in the map catalog while an operator
+  // authors a series, and returns up to 5 candidate places, best match first,
+  // with places in Japan ranked first. The operator picks one and its place id
+  // goes into EventDraft.place_id. Nothing is stored: a Venue is matched or
+  // created only when a series is saved with the picked place.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The text is shorter than 2 or longer than 100
+  //   characters after trimming spaces.
+  // - PERMISSION_DENIED: The caller lacks the organizer-console role, or no
+  //   Organizer is linked to the caller's tenant or it is provisioning.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAVAILABLE: The map catalog could not be reached.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc SearchVenues(SearchVenuesRequest) returns (SearchVenuesResponse);
 }
 
 // EventDraft is one performance being authored under a series: its calendar
-// date, optional start and open times, and the venue to resolve. The venue is
-// supplied by name (resolved via the Places get-or-create helper); a Google
-// place id may accompany it for precise resolution when the console captured
-// one from autocomplete.
+// date, optional start and open times, and its venue. The venue is the map
+// place the operator picked from SearchVenues; a typed name alone is never
+// saved.
 message EventDraft {
-  // Required. The venue name, resolved against Google Places to a canonical
-  // Venue on write.
+  // Required. The venue name as the operator saw it for the picked place, kept
+  // as the event's listed venue name.
   entity.v1.VenueName venue_name = 1 [(buf.validate.field).required = true];
 
-  // Optional. The Google Places place id captured by the console, used to
-  // resolve the venue precisely instead of by name alone.
-  entity.v1.PlaceId place_id = 2;
+  // Required. The place id of the candidate the operator picked from
+  // SearchVenues; the operator never types it. The Venue holding this place id
+  // is used, or a new Venue is created from the map catalog's place (name,
+  // coordinates and admin area). There is no resolution by name.
+  entity.v1.PlaceId place_id = 2 [(buf.validate.field).required = true];
 
   // Required. The calendar date of this performance in the venue's local
   // timezone.
@@ -389,4 +415,38 @@ message ListResponse {
   // Every Artist the concerts refer to, once each, in the order the concerts
   // first refer to them.
   repeated entity.v1.Artist artists = 3;
+}
+
+// SearchVenuesRequest carries the venue name an operator typed.
+message SearchVenuesRequest {
+  // Required. The venue name to look up, 2 to 100 characters after trimming
+  // spaces. The schema bounds the raw length; the usecase trims and applies
+  // the exact bounds.
+  string text = 1 [(buf.validate.field).string = {
+    min_len: 2
+    max_len: 100
+  }];
+}
+
+// SearchVenuesResponse returns the candidate places for the typed name.
+message SearchVenuesResponse {
+  // Up to 5 candidate places, best match first. Empty when the map catalog has
+  // no match.
+  repeated VenueCandidate candidates = 1 [(buf.validate.field).repeated.max_items = 5];
+}
+
+// VenueCandidate is one map place an operator can pick as an event's venue.
+message VenueCandidate {
+  // The map place id; sent back as EventDraft.place_id when picked.
+  entity.v1.PlaceId place_id = 1 [(buf.validate.field).required = true];
+
+  // The place's canonical name, in Japanese when the map catalog has one.
+  entity.v1.VenueName name = 2 [(buf.validate.field).required = true];
+
+  // The place's formatted address as the map catalog gives it, shown so the
+  // operator can tell same-named places apart.
+  string address = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 300
+  }];
 }
