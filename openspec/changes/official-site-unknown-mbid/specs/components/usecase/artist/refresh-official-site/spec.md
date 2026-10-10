@@ -1,0 +1,39 @@
+## MODIFIED Requirements
+
+### Requirement: RefreshOfficialSite brings the stored site in line with the catalog
+OfficialSiteRefreshUseCase.RefreshOfficialSite SHALL take an artist id and MBID, look the homepage up with Artist.ResolveOfficialSiteURL and then:
+- when a URL is found and the artist has no official site (Artist.GetOfficialSite returns NotFound), store it as a new OfficialSite with Artist.CreateOfficialSite;
+- when a URL is found and it differs from the stored site's url, replace it with Artist.UpdateOfficialSiteURL;
+- when the found URL equals the stored url, when no URL is found, or when Artist.ResolveOfficialSiteURL fails with NotFound (the catalog has no artist for the MBID), leave the stored site as it is.
+After that it SHALL record the check with Artist.MarkOfficialSiteChecked at the current time.
+
+#### Scenario: Catalog resolves to a different site
+- **WHEN** the stored site is `http://hitsujibungaku.jimdo.com/` and the catalog resolves to `https://www.hitsujibungaku.info/`
+- **THEN** the stored site keeps its id, its url becomes `https://www.hitsujibungaku.info/`, and the check time is now
+
+#### Scenario: Catalog resolves to the stored site
+- **WHEN** the catalog resolves to the URL already stored
+- **THEN** the stored site is unchanged and the check time is now
+
+#### Scenario: Artist without a site gets one
+- **WHEN** the artist has no official site and the catalog resolves to a URL
+- **THEN** that URL is stored as the artist's official site with a fresh id, and the check time is now
+
+#### Scenario: Catalog lists no active homepage
+- **WHEN** the artist has a stored site and the catalog resolves to no URL
+- **THEN** the stored site is kept and the check time is now
+
+#### Scenario: No site anywhere
+- **WHEN** the artist has no official site and the catalog resolves to no URL
+- **THEN** no site is stored and the check time is now
+
+#### Scenario: MBID unknown to the catalog
+- **WHEN** Artist.ResolveOfficialSiteURL fails with NotFound
+- **THEN** RefreshOfficialSite succeeds, the stored site is unchanged, and the check time is now, so the artist is not due again until 7 days later
+
+### Requirement: RefreshOfficialSite reports failures without recording a check
+When Artist.ResolveOfficialSiteURL (other than NotFound), Artist.GetOfficialSite (other than NotFound), Artist.CreateOfficialSite or Artist.UpdateOfficialSiteURL fails, OfficialSiteRefreshUseCase.RefreshOfficialSite SHALL fail with that error and SHALL NOT record a check, so the artist stays due. It SHALL fail with the error of Artist.MarkOfficialSiteChecked.
+
+#### Scenario: Catalog unreachable
+- **WHEN** Artist.ResolveOfficialSiteURL fails with Unavailable
+- **THEN** RefreshOfficialSite fails with Unavailable, the stored site is unchanged and no check time is recorded
