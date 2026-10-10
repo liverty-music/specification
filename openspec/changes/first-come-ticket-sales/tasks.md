@@ -17,7 +17,7 @@
   Verify `buf lint` passes
 - [x] 1.5 Open the specification PR from a worktree, with `buf skip breaking` if `Order.application_id` moving into a oneof is flagged; merge and cut a Release; verify `buf-release.yml` succeeds and BSR has the new version
 - [x] 1.6 Trim the proto to what a caller reads and add the seller details for the checkout (D7b), released as v0.73.0 with `buf skip breaking`: remove `TicketSale.create_time`, `Reservation.user_id` / `holder_identity` / `create_time`, `User.holder_identity` and `Settlement.platform_fee_rate_bps` (fields reserved); add `seller_details` to the fan `TicketSaleService.GetResponse`; verify `buf lint` and that BSR has the new version
-- [ ] 1.7 Make every read return its entity alone (D7b), released as v0.74.0 with `buf skip breaking`: `TicketSale` gains `OUTPUT_ONLY` `held_count`, `state` and `low_stock`; `Series` embeds `organizer`; `User.holder_identity` is restored on field 9; the fan and organizer `TicketSaleService.GetResponse`, `ReservationService.GetResponse` and `StartResponse` keep only the entity (other fields reserved); verify `buf lint` and that BSR has the new version
+- [ ] 1.7 Make every read return its entity alone (D7b), released as v0.75.0 with `buf skip breaking`: `TicketSale` gains `OUTPUT_ONLY` `held_count`, `state` and `low_stock`; `Series` embeds `organizer`; `User.holder_identity` is restored on field 9; the fan and organizer `TicketSaleService.GetResponse`, `ReservationService.GetResponse` and `StartResponse` keep only the entity (other fields reserved); verify `buf lint` and that BSR has the new version
 
 ## 2. Backend — schema and entities
 
@@ -72,7 +72,7 @@
 - [x] 5.9 cloud-provisioning: provision the Postmark Server API token as GSM secret `postmark-server-token` and set `POSTMARK_FROM_ADDRESS` per environment; the `backend-secrets` ExternalSecret entry follows once the secret exists in both environments (part of 5.6)
 - [x] 5.10 cloud-provisioning: a "Checkout Needs Operator" log-based alert on `reservation needs an operator`, re-notifying hourly, and the runbook `docs/runbooks/checkout-needs-operator.md`; verify `tsc` and `biome check` pass
 - [ ] 5.11 Payment-events webhook: a `payment_intent.succeeded` notice runs `IssuanceUseCase.FulfillPayment` and answers Internal on failure (`components/adapter/fan/api/webhook/payment-events`); add the event type to the Stripe webhook endpoint in test and live mode. Verify handler tests for Checkout charge completes and Fulfillment fails, and on prod (test mode) that a checkout's charge produces one confirmation email
-- [ ] 5.12 Boundaries on v0.74.0: the fan `TicketSaleService.Get` never returns the quantity, sold count or held count; the organizer Get returns them; `ReservationService.Get` and `Start` return the Reservation alone; `UserService` returns the holder identity; fan concert reads carry the Series' Organizer without its fee rate; verify handler tests for Few left without a count, Returning buyer and Seller shown for a first-party concert, and `make check`
+- [ ] 5.12 Boundaries on v0.75.0: the fan `TicketSaleService.Get` never returns the quantity, sold count or held count; the organizer Get returns them; `ReservationService.Get` and `Start` return the Reservation alone; `UserService` returns the holder identity; fan concert reads carry the Series' Organizer without its fee rate; verify handler tests for Few left without a count, Returning buyer and Seller shown for a first-party concert, and `make check`
 
 ## 6. Frontend — fan app
 
