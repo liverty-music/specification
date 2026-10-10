@@ -14,6 +14,7 @@ import "liverty_music/entity/v1/concert.proto";
 import "liverty_music/entity/v1/coordinates.proto";
 import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/series.proto";
 import "liverty_music/entity/v1/staged_concert.proto";
 import "liverty_music/entity/v1/venue.proto";
 
@@ -35,8 +36,9 @@ import "liverty_music/entity/v1/venue.proto";
 service ConcertService {
   // List returns every published concert, with no follower or proximity
   // filtering, so an operator can review the full catalog and act on it. Each
-  // concert carries its event id (for deletion) and performing artists (for
-  // client-side grouping).
+  // concert carries its event id (for deletion) and the ids of its performing
+  // artists (for client-side grouping); the response carries each referenced
+  // Series and Artist once.
   //
   // Possible errors:
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
@@ -151,10 +153,20 @@ message PendingConcert {
 message ListRequest {}
 
 // ListResponse contains the published concerts. Each concert carries its event id
-// and performing artists; the admin console groups by artist client-side.
+// and the ids of its performing artists; the admin console groups by artist
+// client-side.
 message ListResponse {
   // The published concerts, in catalog order.
   repeated entity.v1.Concert concerts = 1;
+
+  // Every Series the concerts refer to, once each, in the order the concerts
+  // first refer to them. A Series carries the same fields as on the fan
+  // ConcertService and never its share token.
+  repeated entity.v1.Series series = 2;
+
+  // Every Artist the concerts refer to, once each, in the order the concerts
+  // first refer to them.
+  repeated entity.v1.Artist artists = 3;
 }
 
 // ListPendingRequest is the request for retrieving all concerts awaiting review.

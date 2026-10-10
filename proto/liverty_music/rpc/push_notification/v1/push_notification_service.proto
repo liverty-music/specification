@@ -174,7 +174,7 @@ message DeleteResponse {}
 // the entire request is rejected with INVALID_ARGUMENT (no partial delivery).
 message NotifyNewConcertsRequest {
   // INVARIANT: every id in `concert_ids` MUST appear in the
-  // `event_performers` set for `artist_id`. This set-membership check
+  // `concert_artists` set for `artist_id`. This set-membership check
   // cannot be expressed as a per-field protovalidate / CEL rule because
   // it requires a DB lookup; the server enforces it before sending any
   // notifications and rejects the entire request with INVALID_ARGUMENT

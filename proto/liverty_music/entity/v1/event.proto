@@ -19,12 +19,12 @@ message EventId {
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
-// Event represents a single performance occurring on a specific date at a specific venue.
+// Event represents a single occurrence on a specific date at a specific venue.
 // Every Event belongs to a parent Series that owns shared metadata such as the tour or
 // festival title. Series-level fields (title, source URL, type) are intentionally absent
 // from Event to avoid duplication across multiple events that share the same series.
-// Performing artists are modelled as an M:N relation outside this message; consumers
-// should consult `event_performers` to resolve who is performing.
+// Event is generic: it carries no data specific to one kind of event. A kind of event
+// holds an Event and adds its own data, as Concert adds the performing Artists.
 message Event {
   // Field number 3 was previously occupied by `Title title`, which has been
   // promoted to the parent Series. Reserved to prevent accidental reuse.
@@ -79,4 +79,8 @@ message Event {
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
+
+  // listed_venue_name is the venue name as the source listed it, preserved
+  // separately from the normalised Venue.name.
+  ListedVenueName listed_venue_name = 10;
 }

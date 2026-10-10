@@ -5,77 +5,44 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/artist.proto";
-import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/event.proto";
-import "liverty_music/entity/v1/series.proto";
-import "liverty_music/entity/v1/venue.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
-// Concert is the user-facing DTO for a music live event.
-// It serves as the primary projection for scheduling and user notifications,
-// composing the underlying Event with its parent Series and the full list of
-// performing artists so that a single RPC response carries everything the UI
-// needs without follow-up fetches.
+// Concert is the music kind of Event: one Event together with the Artists
+// performing at it. The generic Event holds the date, venue and Series
+// reference; Concert adds only what is specific to music.
 //
-// Series-level metadata (title, source URL, type) is sourced from the embedded
-// `series` field. Performing artists are exposed via the repeated `performers`
-// field, which supports festival lineups, co-headliners, and support acts.
+// A Concert carries ids, not the Series or Artists themselves. Every response
+// that returns Concerts also returns each Series and Artist they refer to,
+// once each, in its `series` and `artists` lists; the Concert reaches its
+// Series through `event.series_id` and its Artists through `artist_ids`.
 message Concert {
-  // Field numbers 2, 7, 8 were previously occupied by `artist_id`, `title`,
-  // and `source_url` respectively. `artist_id` has been replaced by the
-  // repeated `performers` field below; `title` and `source_url` have been
-  // promoted to the parent Series. Reserved to prevent accidental reuse.
-  reserved 2, 7, 8;
-  reserved "artist_id", "title", "source_url";
+  option (buf.validate.message).cel = {
+    id: "concert.distinct_artists"
+    message: "artist_ids must not repeat an artist"
+    expression: "this.artist_ids.map(a, a.value).unique()"
+  };
 
-  // The unique identifier of the underlying event.
-  EventId id = 1 [
+  // Field numbers 1-12 held the previous flat shape (id, venue, dates, the
+  // embedded Series and the performing Artists), now carried by `event`,
+  // `artist_ids` and the response's side lists. Reserved so a stale client
+  // fails loudly instead of misreading.
+  reserved 1 to 12;
+  reserved "id", "artist_id", "venue_id", "local_date", "start_time", "open_time", "title", "source_url", "venue", "listed_venue_name", "series", "performers";
+
+  // The Event this Concert is. The Concert's id is the Event's id, and its
+  // Series is the one `event.series_id` names.
+  Event event = 13 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
 
-  // The unique identifier of the venue where the concert is hosted.
-  // Retained for backward compatibility; prefer the embedded `venue` field.
-  VenueId venue_id = 3 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (buf.validate.field).required = true
-  ];
-
-  // The scheduled calendar date of the concert event in the venue's local timezone.
-  LocalDate local_date = 4 [(buf.validate.field).required = true];
-
-  // The scheduled time when the performance starts.
-  // This field is optional and may be omitted for concerts where the start time is not yet confirmed.
-  StartTime start_time = 5;
-
-  // The time when the venue doors open to the audience.
-  OpenTime open_time = 6;
-
-  // The resolved venue where the concert is hosted.
-  // Populated by the server on every response; includes name and admin_area when available.
-  Venue venue = 9 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (buf.validate.field).required = true
-  ];
-
-  // The raw venue name as scraped from the source.
-  // Preserves the original text separately from the normalised Venue.name.
-  ListedVenueName listed_venue_name = 10;
-
-  // The parent series that aggregates this concert with any sibling events
-  // sharing the same tour, festival, or multi-day run. Title, source URL, and
-  // series type are exposed through this embedded message rather than being
-  // duplicated on Concert.
-  Series series = 11 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (buf.validate.field).required = true
-  ];
-
-  // The artists performing at this concert, in display order. Always contains
-  // at least one performer; multi-performer values are used for festivals,
-  // co-headlining bills, and support acts.
-  repeated Artist performers = 12 [
+  // The ids of the Artists performing at this Concert, in display order.
+  // Always contains at least one id, each at most once; more than one is used
+  // for festivals, co-headlining bills and support acts. The Artists
+  // themselves are in the response's `artists` list.
+  repeated ArtistId artist_ids = 14 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).repeated.min_items = 1
   ];
