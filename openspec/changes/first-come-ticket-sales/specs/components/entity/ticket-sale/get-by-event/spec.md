@@ -8,7 +8,7 @@ Reads the TicketSale of an event, if it has one, with its held count at a given 
 
 ### Requirement: The event's sale
 
-GetByEvent SHALL return the event's TicketSale, together with the number of tickets its Reservations hold at the given time, and SHALL fail with NotFound when the event has none.
+GetByEvent SHALL return the event's TicketSale, with its held count at the given time, and SHALL fail with NotFound when the event has none.
 
 #### Scenario: Event on sale
 

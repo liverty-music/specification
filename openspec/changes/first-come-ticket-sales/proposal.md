@@ -25,7 +25,7 @@ The pilot with an independent artist (liverty-music/specification#1074) sells ti
 
 ### New Capabilities
 
-- `components/entity/ticket-sale`: the platform's own sale of an event's tickets; window, price, quantity, per-account limit, remaining count, sale state, price lock
+- `components/entity/ticket-sale`: the platform's own sale of an event's tickets; window, price, quantity, per-account limit, remaining count, sale state, and the price fixed while tickets are held or sold
 - `components/entity/ticket-sale/create`, `get`, `get-by-event`, `update`
 - `components/entity/reservation`: one checkout's 15-minute hold; states Held, Committed, Completed, Expired, Released; a charged checkout is never released
 - `components/entity/reservation/get-or-create-held`: at most one holding Reservation per fan and sale, within the stock and the per-account limit
@@ -61,6 +61,8 @@ The pilot with an independent artist (liverty-music/specification#1074) sells ti
 - `components/usecase/notification/deliver`: "Runs for each requested notification" (modified) — NotificationUseCase.SendOrderConfirmation is a caller.
 - `components/usecase/order/issue-from-captured-win`: "Issue an order and its tickets from a won application" (modified, fee at the Organizer's rate, purchase recorded); "Ticket journey becomes Paid" (removed, moved to `ticket-journey/mark-paid`). (Purpose) drops "and marks the buyer's ticket journey for the event as Paid".
 - `components/adapter/fan/api/webhook/payment-events`: "A completed charge is fulfilled" (added) and "Other notices are acknowledged" (modified) — a completed charge runs IssuanceUseCase.FulfillPayment.
+- `components/adapter/fan/api/rpc/concert`: "What a returned concert carries" (modified) — a first-party Series carries its Organizer's id, name and seller details, never its fee rate, for the checkout's 特商法 disclosure.
+- `components/adapter/fan/api/rpc/user`: "A returned user shows the profile fields" (modified) — the holder full name and phone number, for the checkout's prefill.
 - `components/adapter/admin/api/rpc/organizer`: "Only admins manage Organizers", "Requests are validated before any usecase runs" and "Each call runs one OrganizerUseCase method" (modified) — two calls added, their validation, and the Organizer returned with its seller details and rate.
 - `components/infrastructure/fan/web/route/event`: "Ticket section shows the sale" (added). This capability is created by `public-event-page`; this change is archived after it.
 
@@ -68,7 +70,7 @@ Purpose edits are made to the main specs at archive. Capabilities with no spec y
 
 ## Impact
 
-- **specification:** new proto entities and services (`TicketSale`, `Reservation`, the fan and organizer sale services); `Order` gets a source that is not only a lottery application; `Organizer` gets seller details and a fee rate; the `ApplicantIdentity` type moves out of the lottery files.
+- **specification:** new proto entities and services (`TicketSale`, `Reservation`, the fan and organizer sale services); `Order` gets a source that is not only a lottery application; `Organizer` gets seller details and a fee rate, and a first-party `Series` carries its `Organizer`; `User` carries the holder identity; the `ApplicantIdentity` type moves out of the lottery files.
 - **backend:**
   - new tables for ticket sales and reservations, and a nullable source on orders with a unique key per source;
   - Stripe PaymentIntents get metadata and per-operation idempotency keys;
@@ -77,6 +79,7 @@ Purpose edits are made to the main specs at archive. Capabilities with no spec y
   - sweepers for expired holds, leftover card holds and stalled commits, with an alert for charged-but-unissued checkouts;
   - the card-hold port parameterised per caller (brand policy, idempotency key prefix);
   - mail sending through the existing Postmark account.
+  - concert reads carry a first-party Series' Organizer.
 - **frontend:** the checkout route in the fan app, the sale-settings screen in the organizer app, the seller-details and fee-rate fields in the admin app.
 - **Depends on:** `public-event-page` (the ticket section's place on the page and the sign-up return), `payments-legal-compliance` (counsel review of the 特商法 copy, receipts and the livemode gate).
 - **Out of scope:** convenience-store and other non-card payments; buyer fees; ticket types and tiers; waitlists; a fan's own cancellation; receipts as 適格請求書 (qualified invoices), pending the 媒介者交付特例 decision; SMS phone verification; eKYC requirements on a sale; folding the lottery into `TicketSale` and renaming the scraped `SalesPhase`, which are left to a later change.

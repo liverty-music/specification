@@ -15,6 +15,9 @@ A TicketSale is the platform's own sale of one event's tickets, first come, firs
 | quantity | tickets offered | required; at least 1 |
 | per-account limit | most tickets one User may hold or have bought from the sale | required; 1 to 10; 4 when not given |
 | sold count | tickets on the sale's Committed and Completed Reservations | required; 0 to the quantity; starts at 0 |
+| held count | tickets on the sale's Reservations that are holding when the sale is read | derived when read; 0 to the quantity |
+| state | where the sale stands when it is read: NotYetOnSale, OnSale, AllHeld, SoldOut or Ended | derived when read ("Sale state at a time") |
+| low stock | whether an OnSale sale has few tickets left when it is read | derived when read ("Sale state at a time") |
 
 ```mermaid
 erDiagram
@@ -93,16 +96,26 @@ Ended takes precedence over SoldOut and AllHeld. An OnSale sale SHALL be LowStoc
 - **WHEN** a sale is checked at its sale end
 - **THEN** it is Ended
 
-### Requirement: Price fixed once checkout has started
+### Requirement: Price fixed while tickets are held or sold
 
-A TicketSale's price SHALL be changeable only while no Reservation has ever been created for it.
+A TicketSale's price SHALL be changeable only while its sold count and its held count are both 0, so every fan who pays for a sale's tickets pays the same price.
 
-#### Scenario: Price change before anyone checked out
+#### Scenario: Price change before any ticket is held
 
-- **WHEN** a sale with no Reservation changes its price from 3000 to 3500 yen
+- **WHEN** a sale with nothing sold or held changes its price from 3000 to 3500 yen
 - **THEN** the change is allowed
 
-#### Scenario: Price change after a checkout
+#### Scenario: Price change while tickets are held
 
-- **WHEN** a sale with one Reservation changes its price
+- **WHEN** a sale with nothing sold and Reservations holding 2 tickets changes its price
 - **THEN** the change is not allowed
+
+#### Scenario: Price change after tickets sold
+
+- **WHEN** a sale with 1 ticket sold changes its price
+- **THEN** the change is not allowed
+
+#### Scenario: Price change after every checkout lapsed
+
+- **WHEN** a sale whose only Reservation expired without a commit changes its price
+- **THEN** the change is allowed

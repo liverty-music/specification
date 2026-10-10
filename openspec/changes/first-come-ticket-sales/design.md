@@ -107,6 +107,7 @@ Place purchase (IssuanceUseCase.IssueFromReservation)                           
 - **Concurrency for Start (review M9).** `GetOrCreateHeld` runs in one transaction that first locks the sale row (`SELECT ... FOR UPDATE` on `ticket_sales`). It then computes held and the user's committed tickets in a separate, later statement (under READ COMMITTED, a statement that waited for the lock still evaluates its subqueries with the snapshot taken before it waited, so counting in the locking statement misses the holds of the transaction it waited for), checks stock and limit, expires or releases the user's previous Held row, and inserts the new one. Serialising Starts per sale is cheap at pilot volumes and makes "two fans, last ticket" exact.
 - **Commit and revert.** `Commit` moves Held to Committed and adds the count to `sold_count` in the same statement batch under the sale-row lock. `RevertCommit` does the reverse for an uncharged commit.
 - **Per-account limit.** Checked once at Start against Committed and Completed tickets plus the new count. A user holds at most one Reservation per sale, so Commit does not check it again.
+- **Price fixed while tickets are held or sold.** The price may change only while `sold_count` and held are both 0, checked in Update's conditional statement. A Reservation that expired or was released without a charge cost no one anything, so it does not lock the price, and the rule needs only the counts the sale already has.
 - **Sold out.** Derived as `sold_count = quantity`. Raising the quantity reopens the sale. A refund or dispute of a first-come Order voids its tickets but does not return them to the stock; the seats are covered by official resale later.
 
 ### D5 — Order source and issuance
@@ -155,21 +156,24 @@ Two 1-minute jobs, like the existing `IssueDueWins` and payout sweepers, both dr
 
 ### D7b — Proto shape
 
-The proto conventions settled in `ticket-wallet-and-checkin` (one service per package, bare-verb RPCs, AIP-142 `*_time`) apply:
+The proto conventions settled in `ticket-wallet-and-checkin` (one service per package, bare-verb RPCs, AIP-142 `*_time`) apply, and every read returns the entity alone (`GetResponse { <entity> }`, as `ConcertService.Get`, `OrganizerService.Get` and the admin `SettlementService.Get` do):
 - **Fan services.** `rpc.ticket_sale.v1.TicketSaleService` (Get) and `rpc.reservation.v1.ReservationService` (Start, Get, Authorize, Confirm). `ReservationService.Get` lets the checkout explain a failed step (review M2), instead of overloading error codes.
-- **Organizer service.** `rpc.organizer.ticket_sale.v1.TicketSaleService` (Configure, Get). Get runs `TicketSaleUseCase.GetOwn`, which returns the counts the fan-facing Get hides.
+- **Organizer service.** `rpc.organizer.ticket_sale.v1.TicketSaleService` (Configure, Get). Get runs `TicketSaleUseCase.GetOwn`.
 - **Admin service.** `rpc.admin.organizer.v1.OrganizerService` gains UpdateSellerDetails and SetPlatformFeeRate.
-- **Entities.** Fields no screen or caller reads are left out.
-  - `entity.v1.TicketSale` with `sale_start_time` and `sale_end_time`, no create time.
-  - `entity.v1.Reservation` with `ticket_sale_id`, `ticket_count`, `amount`, `status`, `hold_expire_time`, `commit_time` and `capture_time`; no user (always the caller), holder identity (`Start` returns the saved one) or create time.
-  - The fan `TicketSaleService.Get` returns the Organizer's seller details for the checkout's 特商法 final confirmation.
+- **Entities carry what the entity specs define, including values derived when read.** A value that depends on the time is evaluated by the server when the entity is read, and set as an `OUTPUT_ONLY` field, as `Concert` already embeds its `venue` and `series`.
+  - `entity.v1.TicketSale` with `sale_start_time`, `sale_end_time`, `quantity`, `sold_count`, `held_count`, `state` and `low_stock`; no create time.
+  - `entity.v1.Reservation` with `ticket_sale_id`, `ticket_count`, `amount`, `status`, `hold_expire_time`, `commit_time` and `capture_time`; no user (always the caller) or create time. `ReservationUseCase.Get` returns a Held Reservation whose hold has lapsed as Expired, so the client reads one status instead of comparing clocks.
+  - `entity.v1.User` carries `holder_identity`; the checkout prefills from `UserService.Get`.
+  - `entity.v1.Series` embeds its `Organizer` when first-party; the checkout reads the seller details from the event's `Concert`, which it reads anyway for the event, date and venue.
   - `Order` gets `oneof source { TicketApplicationId application_id; ReservationId reservation_id; }`.
+- **Visibility per audience.** As the fan boundary already omits a Venue's coordinates and a Series' share token, it omits a TicketSale's `quantity`, `sold_count` and `held_count` and an Organizer's `platform_fee_rate_bps`. The entity is the same for every audience; only the fan boundary leaves those fields unset.
+- **Rejected: response fields beside the entity** (`state`, `low_stock`, `held_count`, `price_locked`, `seller_details` on the sale reads; `holding`, `authorized`, `order_id` on the Reservation read; `ticket_price`, `saved_holder_identity` on Start), released in v0.72.0 and v0.73.0. Each response was shaped by one screen, so the reads disagreed with each other and with the rest of the API, and the seller details, which belong to the Organizer, were copied onto the sale. `authorized` is implied by a Held Reservation after a failed Confirm, and `order_id` had no reader. Removed in v0.74.0.
 - **Fee rate.** It is an integer in basis points with a protovalidate range of 0 to 3000.
 
 ### D8 — Fan identity and seller details
 
 - **Fan identity.** The 本人確認 name and phone (E.164) are stored on `User` in the application database, as `User` already mirrors email and name from Zitadel. This keeps checkout and issuance in one database and transaction and works while Zitadel is degraded. It also keeps identity data for business use out of the IdP. SMS verification can later use Zitadel's phone verification or a direct SMS and mirror the verified flag. The checkout prefills from `User`, and an edit updates it. Each Ticket keeps a copy for its face.
-- **Seller details.** Seller details live on `Organizer` and are entered by an admin at vetting. Omitting the address and phone number "on request" for individual sellers is not offered; the pilot Organizer is a corporation.
+- **Seller details.** Seller details live on `Organizer` and are entered by an admin at vetting. Fans read them through the event's first-party `Series`, which carries its `Organizer` (D7b); the 特商法 disclosure is public by law, so the fan boundary returns them without a sign-in. Omitting the address and phone number "on request" for individual sellers is not offered; the pilot Organizer is a corporation.
 
 ### D9 — Fee rate
 

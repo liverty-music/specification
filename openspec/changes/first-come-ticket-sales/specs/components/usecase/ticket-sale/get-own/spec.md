@@ -8,7 +8,7 @@ TicketSaleUseCase.GetOwn shows an Organizer the sale of one of its events, inclu
 
 ### Requirement: The owner sees its sale with the counts
 
-GetOwn SHALL take the caller's Organizer, an event and the current time. It SHALL fail with PermissionDenied, without revealing whether the event exists, when Event.GetOrganizerID fails with NotFound or returns another Organizer. It SHALL read the sale with TicketSale.GetByEvent, failing with NotFound when the event has none, and return the sale with its quantity, sold count, held count, state at that time, and whether any Reservation has been created, which locks the price.
+GetOwn SHALL take the caller's Organizer, an event and the current time. It SHALL fail with PermissionDenied, without revealing whether the event exists, when Event.GetOrganizerID fails with NotFound or returns another Organizer. It SHALL read the sale with TicketSale.GetByEvent, failing with NotFound when the event has none, and return the sale with its quantity, sold count, and held count and state at that time.
 
 #### Scenario: Owner checks sales
 

@@ -22,12 +22,12 @@ For an event without a sale, the screen SHALL offer the sale start and sale end,
 
 ### Requirement: What can change once the sale has started
 
-For an event with a sale, the screen SHALL show the quantity and the sold count. Once any checkout has started, it SHALL show the price as fixed, and SHALL refuse a quantity below what is sold and held, saying why.
+For an event with a sale, the screen SHALL show the quantity, the sold count and the held count. While any ticket is sold or held, it SHALL show the price as fixed, and it SHALL refuse a quantity below what is sold and held, saying why.
 
 #### Scenario: Price locked
 
-- **WHEN** the operator opens the editor after the first checkout
-- **THEN** the price cannot be edited and the screen says it is fixed once sales start
+- **WHEN** the operator opens the editor while a fan's checkout holds 2 tickets
+- **THEN** the price cannot be edited and the screen says it is fixed while tickets are held or sold
 
 ### Requirement: Prerequisites explained
 
