@@ -8,11 +8,11 @@ The fan-facing ticket service boundary: a fan reads only their own orders and ti
 
 ### Requirement: The buyer is the signed-in caller
 
-GetOrder and GetMyTickets SHALL require a signed-in caller and fail with Unauthenticated otherwise. They SHALL resolve the caller to their stored User (User.GetByExternalID) and pass that User to TicketUseCase.GetOrder and TicketUseCase.GetMyTickets; the request never names a buyer. When the caller has no stored account, the call SHALL fail with NotFound. GetOrder SHALL fail with InvalidArgument when no order is given.
+GetOrder and List SHALL require a signed-in caller and fail with Unauthenticated otherwise. They SHALL resolve the caller to their stored User (User.GetByExternalID) and pass that User to TicketUseCase.GetOrder and TicketUseCase.GetMyTickets; the request never names a buyer. When the caller has no stored account, the call SHALL fail with NotFound. GetOrder SHALL fail with InvalidArgument when no order is given.
 
 #### Scenario: Fan lists their tickets
 
-- **WHEN** a signed-in fan calls GetMyTickets
+- **WHEN** a signed-in fan calls List
 - **THEN** the tickets that fan holds are returned
 
 #### Scenario: Not signed in

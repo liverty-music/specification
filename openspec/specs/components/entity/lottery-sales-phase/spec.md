@@ -11,7 +11,7 @@ A LotterySalesPhase is an Organizer-configured lottery sale of one event's ticke
 | open time | when applications open | required, before close time |
 | close time | when applications close | required, 1 to 14 days after open time inclusive |
 | ticket capacity | tickets available in the phase | required, greater than 0 |
-| max tickets per application | largest companion group one application may request | required, 1 to ticket capacity |
+| max tickets per application | largest companion group one application may request | required, 1 to 10 and not above ticket capacity |
 | ticket price | per-ticket price in whole yen | required, greater than 0 |
 | verification requirement | whether applicants must hold a verified identity | None (the default), Verified-any or JPKI-only |
 | drawn time | when the draw ran | absent until the draw runs |
@@ -50,7 +50,7 @@ The close time SHALL be after the open time, and the window SHALL last at least 
 
 ### Requirement: Capacity, group size and price
 
-The ticket capacity, the max tickets per application and the ticket price SHALL each be greater than 0, and the max tickets per application SHALL NOT exceed the ticket capacity. Capacity is counted in tickets, not applications.
+The ticket capacity, the max tickets per application and the ticket price SHALL each be greater than 0, the max tickets per application SHALL NOT exceed the ticket capacity, and it SHALL be at most 10, because one entry QR code presents at most 10 tickets and a companion group enters together with one code. Capacity is counted in tickets, not applications.
 
 #### Scenario: Valid sizing
 
@@ -60,6 +60,11 @@ The ticket capacity, the max tickets per application and the ticket price SHALL 
 #### Scenario: Group larger than capacity
 
 - **WHEN** capacity is 3 and max tickets per application is 4
+- **THEN** the phase is invalid
+
+#### Scenario: Group larger than one entry code
+
+- **WHEN** capacity is 100 and max tickets per application is 11
 - **THEN** the phase is invalid
 
 #### Scenario: Non-positive value
