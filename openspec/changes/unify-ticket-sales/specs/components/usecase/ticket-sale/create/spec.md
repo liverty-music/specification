@@ -13,7 +13,8 @@ Create SHALL take the caller's Organizer, a Series, a name, the method Lottery, 
 - read the Series with Series.GetAuthored and fail with PermissionDenied, without revealing whether it exists, when it does not exist or is owned by another Organizer;
 - fail with InvalidArgument when a TicketType's event is not one of the Series' Events;
 - fail with FailedPrecondition when Event.IsEventPublished reports false for an event;
-- fail with FailedPrecondition when Event.GetEventStartTime returns no start time for an event.
+- fail with FailedPrecondition when Event.GetEventStartTime returns no start time for an event;
+- fail with FailedPrecondition when the sale's end time is not before the start time of every event it covers, so a lottery is drawn and its tickets issued before the doors open.
 
 #### Scenario: Another organizer's series
 - **WHEN** an operator creates a sale for a Series owned by another Organizer
@@ -29,6 +30,10 @@ Create SHALL take the caller's Organizer, a Series, a name, the method Lottery, 
 
 #### Scenario: Start time not yet announced
 - **WHEN** an event has a date but no start time
+- **THEN** Create fails with FailedPrecondition and nothing is stored
+
+#### Scenario: Sale ends after the event starts
+- **WHEN** an event starts at 19:00 on 20 November and the sale's end time is 20:00 on 20 November
 - **THEN** Create fails with FailedPrecondition and nothing is stored
 
 #### Scenario: Doors-open time not announced

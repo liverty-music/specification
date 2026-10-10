@@ -4,7 +4,7 @@
 
 ### Requirement: The venue is found by search
 
-For each event the editor SHALL offer a venue field that searches the map catalog: the operator types a venue name and starts the search, the field lists up to 5 matching places with their name and address, and the operator picks one. The editor SHALL never ask for a place id. When nothing matches, the field SHALL say so and let the operator keep the typed name as the venue. When the search is unavailable, the field SHALL say so and keep the typed name.
+For each event the editor SHALL offer a venue field that searches the map catalog: the operator types a venue name and starts the search, the field lists up to 5 matching places with their name and address, and the operator picks one. The editor SHALL never ask for a place id, and an event's venue SHALL be a picked place: a typed name alone is never saved. When nothing matches, the field SHALL say so and ask for another name. When the search is unavailable, the field SHALL say so and offer 再試行. The editor SHALL NOT save while an event has no picked place; the field in error SHALL say a venue must be picked from the results.
 
 #### Scenario: Pick a venue
 
@@ -14,7 +14,17 @@ For each event the editor SHALL offer a venue field that searches the map catalo
 #### Scenario: No match
 
 - **WHEN** the search for a typed name finds no place
-- **THEN** the field says no place was found and the typed name is kept as the venue
+- **THEN** the field says no place was found and asks for another name, and the event has no venue
+
+#### Scenario: Search unavailable
+
+- **WHEN** the map catalog cannot be reached during a search
+- **THEN** the field says the search is unavailable and offers 再試行, and the event has no venue
+
+#### Scenario: Typed name not picked
+
+- **WHEN** an operator types a venue name, does not pick a result and saves
+- **THEN** nothing is saved, the venue field says a venue must be picked from the results, and focus moves there
 
 ### Requirement: An unchanged venue is kept on save
 
@@ -52,3 +62,25 @@ Saving SHALL show progress in the save button and ignore repeated presses. A suc
 
 - **WHEN** an operator saves without a performer
 - **THEN** the error is shown next to the performers and focus moves there
+
+## MODIFIED Requirements
+
+### Requirement: A new cover image is previewed while it is processed
+
+After the operator picks a cover image, the editor SHALL show that image from the operator's device at once and SHALL say that the optimised image is still being processed. Once the processed image is available, the editor SHALL show it instead, without the operator reloading the editor. There is no processing status to wait for; the preview simply gives way to the processed image. Until then, saving the concert SHALL keep showing the picked image, never the previous cover.
+
+#### Scenario: Image just uploaded
+
+- **WHEN** an operator picks a new cover image for a concert
+- **THEN** the editor shows the picked image with a note that the optimised image is still being processed
+
+#### Scenario: Processed image available
+
+- **WHEN** the processed cover image becomes available while the editor is open
+- **THEN** the editor shows the processed image and the note is gone
+
+#### Scenario: Saved before processing finished
+
+- **WHEN** an operator picks a new cover image for a concert that has a cover and saves before the new image is processed
+- **THEN** the editor still shows the picked image with the processing note, not the previous cover
+

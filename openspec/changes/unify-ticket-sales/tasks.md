@@ -82,7 +82,7 @@
 
 ## 6. Backend — usecases (unit tests with the operations mocked)
 
-- [ ] 6.1 `TicketSaleUseCase.Create` (`components/usecase/ticket-sale/create`); verify unit tests: Another organizer's series, Event of another series, Event not published, Start time not yet announced, Doors-open time not announced, Invalid configuration, General sale after the presale, Overlapping sale, Other events are not affected, Tour presale
+- [ ] 6.1 `TicketSaleUseCase.Create` (`components/usecase/ticket-sale/create`); verify unit tests: Another organizer's series, Event of another series, Event not published, Start time not yet announced, Sale ends after the event starts, Doors-open time not announced, Invalid configuration, General sale after the presale, Overlapping sale, Other events are not affected, Tour presale
 - [ ] 6.2 `TicketSaleUseCase.ListOwnByEvent` and `SetVerificationRequirement`; verify unit tests: Drawn presale and upcoming general sale, Event without a sale, Another organizer's event, Requirement tightened while open, After the draw, Unknown sale, Another Organizer's sale
 - [ ] 6.3 `LotteryUseCase.Enter` and `CreateAuthorization` (`components/usecase/lottery-entry/{enter,create-authorization}`); verify unit tests:
   - enter: Fan enters within the window, Window closed, Count over the limit, Presale winner reaches the limit, Missing identity details, Second entry, Hold does not verify, Re-entry after withdrawal, No verified identity, Verification not active, Active verification
