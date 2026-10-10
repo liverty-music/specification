@@ -55,10 +55,11 @@ None. The organizer boundary keeps its requirements under a new path (below).
   - List returns Series with their Concerts.
   - A new requirement states what a returned Series carries.
 - `components/infrastructure/fan/api/server/request-timeout`: every fan call gets 30 seconds, now that no concert call runs a search.
+- `components/usecase/concert/get`: Get reads the Series, cover image included, through Concert.ListByIDs instead of a second Series.Get (design D3), so a Series.Get failure no longer applies.
 
 Unchanged, and relied on:
 
-- The usecases (`components/usecase/concert/*`, `components/usecase/series/*`) keep their behavior. They still return Concerts with their Series and Artists; only the wire shape changes at the boundary.
+- The usecases (`components/usecase/concert/*` other than `get`, `components/usecase/series/*`) keep their behavior. They still return Concerts with their Series and Artists; only the wire shape changes at the boundary.
 - `components/entity/concert/create` keeps its promise. It reports new Events and newly linked Artists through the same `concerts` insert and artist link.
 - The Concert read operations (`list`, `list-by-ids`, `list-by-follower`, `list-by-artists`, `list-by-location`, `list-by-artist`) still return each Concert with its Venue, Series and performing Artists. Their Series additionally carries the cover image; this is a read detail, not a change of promise.
 - `components/entity/series` and its operations.

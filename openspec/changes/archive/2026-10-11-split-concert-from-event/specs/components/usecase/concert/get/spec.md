@@ -1,9 +1,4 @@
-# components/usecase/concert/get Specification
-
-## Purpose
-ConcertUseCase.Get returns one Concert by its Event id, for a fan or a link preview opening that Event's page, when its Series has an event page.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Concert with an event page
 
@@ -18,25 +13,6 @@ Get SHALL take an Event id and read the Concert with Concert.ListByIDs, with its
 
 - **WHEN** Get is called for an Event of a CANCELLED PUBLIC first-party Series
 - **THEN** it returns the Concert with its Series' publish state CANCELLED
-
-### Requirement: No event page is reported as not found
-
-Get SHALL fail with NotFound, without saying why, when no Concert has the id or when the Concert's Series has no event page. The same failure SHALL be returned for an unknown id, a discovered concert, a DRAFT Series and an UNLISTED Series, so a caller cannot learn whether an unpublished or unlisted event exists.
-
-#### Scenario: Unknown id
-
-- **WHEN** Get is called with an id that matches no Concert
-- **THEN** it fails with NotFound
-
-#### Scenario: Unlisted series
-
-- **WHEN** Get is called for an Event of a PUBLISHED UNLISTED Series
-- **THEN** it fails with NotFound, exactly as for an unknown id
-
-#### Scenario: Discovered concert
-
-- **WHEN** Get is called for a Concert whose Series has no organizer
-- **THEN** it fails with NotFound
 
 ### Requirement: Read failures
 

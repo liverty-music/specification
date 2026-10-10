@@ -15,81 +15,81 @@
   - The count of `event_performers` rows without a `concerts` row must be 0.
   - Record the actual constraint names of `event_performers` (`pg_constraint`).
   - If the count is not 0, stop and add a backfill step to D6 before 2.2.
-- [ ] 2.2 Rename `event_performers` to `concert_artists` in `schema.sql`, with the foreign key on `concerts(event_id)` and the table and column comments.
+- [x] 2.2 Rename `event_performers` to `concert_artists` in `schema.sql`, with the foreign key on `concerts(event_id)` and the table and column comments.
   - Hand-edit the generated migration to `RENAME` with the constraint names from 2.1, run `atlas migrate hash`, and add the file to `k8s/atlas/base/kustomization.yaml`.
   - Verify `atlas migrate apply --env local` succeeds on a database with existing rows, and that `make lint-schema` passes.
-- [ ] 2.3 Point every SQL that reads or writes `event_performers` at `concert_artists`: `concert_repo.go`, `series_repo.go`, the organizer delete and the test cleanup list.
+- [x] 2.3 Point every SQL that reads or writes `event_performers` at `concert_artists`: `concert_repo.go`, `series_repo.go`, the organizer delete and the test cleanup list.
   - Verify the `components/entity/concert/create` integration tests pass: New slot, Existing slot keeps its id, Known open time is not overwritten, Unknown open time is filled, Different start time is a new event, Co-headliner found later, Repeated create, Unknown series, No performer.
   - Verify the Concert read, delete-and-suppress and Organizer.Delete integration tests still pass.
-- [ ] 2.4 Update the expected grants in `migration_grants_integration_test.go`: `concert_artists` gets INSERT for `organizer-console-api`, and `event_performers` leaves. Verify the test passes against the migrated local database.
+- [x] 2.4 Update the expected grants in `migration_grants_integration_test.go`: `concert_artists` gets INSERT for `organizer-console-api`, and `event_performers` leaves. Verify the test passes against the migrated local database.
 
 ## 3. Proto (specification → BSR, design D1, D2, D5, D7)
 
-- [ ] 3.1 Change the entity messages:
+- [x] 3.1 Change the entity messages:
   - `entity.v1.Event` gains `listed_venue_name`.
   - `entity.v1.Concert` becomes `{ Event event; repeated ArtistId artist_ids }`, with at least 1 and unique ids, and fields 1–12 reserved.
   - Every doc comment states that a Concert's Series and Artists come in the response's `series` and `artists` lists.
   - Verify `buf lint` and `buf format -d` pass.
-- [ ] 3.2 In the fan `ConcertService`, add `repeated Series series` and `repeated Artist artists` to the Get, List, ListBySeries, ListByFollower, ListByArtists and ListByLocation responses, and remove `SearchNewConcerts` with its messages. Verify `buf lint` passes, and that `buf breaking` reports only the intended breaks.
-- [ ] 3.3 Move the organizer service to `rpc/organizer/series/v1` as `SeriesService`, with the same eight RPCs.
+- [x] 3.2 In the fan `ConcertService`, add `repeated Series series` and `repeated Artist artists` to the Get, List, ListBySeries, ListByFollower, ListByArtists and ListByLocation responses, and remove `SearchNewConcerts` with its messages. Verify `buf lint` passes, and that `buf breaking` reports only the intended breaks.
+- [x] 3.3 Move the organizer service to `rpc/organizer/series/v1` as `SeriesService`, with the same eight RPCs.
   - Create, Update and Publish return `{ series, concerts, artists }`, and List returns `{ repeated series, concerts, artists }`. Cancel and AttachMedia keep their empty responses (design D5).
   - Remove `AuthoredConcert`, and add the side lists to the admin `ConcertService.List` response.
   - Verify `buf lint` passes.
-- [ ] 3.4 Open the specification PR citing this change, merge it and cut a Release. Verify `buf-release.yml` succeeds and the BSR Go and ES packages carry the new `Concert` and `SeriesService`.
+- [x] 3.4 Open the specification PR citing this change, merge it and cut a Release. Verify `buf-release.yml` succeeds and the BSR Go and ES packages carry the new `Concert` and `SeriesService`.
 
 ## 4. Entity (components/entity/event, components/entity/concert)
 
-- [ ] 4.1 Rename `entity.Concert.Performers` to `Artists` in the backend.
+- [x] 4.1 Rename `entity.Concert.Performers` to `Artists` in the backend.
   - Verify unit tests carrying `@spec` markers pass for "Title comes from the series", "Concert id is its event id" and "Co-headlined concert".
   - Verify the existing Concert entity tests (proximity, earliest, visibility) still pass.
 
 ## 5. Fan boundary (components/adapter/fan/api/rpc/concert, design D2, D3, D7)
 
-- [ ] 5.1 Add the Series cover join to the Concert reads (design D3). Drop the `Series.Get` replacement from `ConcertUseCase.Get` and `ListBySeries`, keeping their event-page check.
+- [x] 5.1 Add the Series cover join to the Concert reads (design D3). Drop the `Series.Get` replacement from `ConcertUseCase.Get` and `ListBySeries`, keeping their event-page check.
   - Verify the `components/usecase/concert/get` tests pass: Published public concert, Cancelled series, Unknown id, Unlisted series, Discovered concert, Store unavailable.
   - Verify the `components/usecase/concert/list-by-series` tests still pass.
-- [ ] 5.2 Build the `series` and `artists` side lists in the mapper (each distinct id once, first-seen order) for every fan response that returns Concerts. The fan `SeriesToProto` always sets the cover when the Series has one.
+- [x] 5.2 Build the `series` and `artists` side lists in the mapper (each distinct id once, first-seen order) for every fan response that returns Concerts. The fan `SeriesToProto` always sets the cover when the Series has one.
   - Verify handler tests with `@spec` markers pass: Venue without coordinates, Artist without concerts, First-party concert in a list, Discovered concert in a list, Tour in one list, Cover image in a list.
-- [ ] 5.3 Remove the `SearchNewConcerts` handler and its `FanPublicProcedures()` entry.
+- [x] 5.3 Remove the `SearchNewConcerts` handler and its `FanPublicProcedures()` entry.
   - Verify boundary tests with `@spec` markers pass: Guest lists concerts of chosen artists, Guest asks for followed artists' concerts, Guest opens an event page, Guest lists the dates of a series, Too many artists, Range backwards, Event page without an id.
   - Verify `ConcertUseCase.SearchNewConcerts` still runs from `cmd/job/concert-discovery` (the job's existing test).
 
 ## 6. Request timeout (components/infrastructure/fan/api/server/request-timeout, design D7)
 
-- [ ] 6.1 Remove `ServerSettings.ConcertHandlerTimeout`, `SERVER_CONCERT_HANDLER_TIMEOUT` and the per-service timeout in `provider.go`. Verify tests with `@spec` markers pass for "Concert call over the limit" (30 s) and "Other call over the limit".
+- [x] 6.1 Remove `ServerSettings.ConcertHandlerTimeout`, `SERVER_CONCERT_HANDLER_TIMEOUT` and the per-service timeout in `provider.go`. Verify tests with `@spec` markers pass for "Concert call over the limit" (30 s) and "Other call over the limit".
 
 ## 7. Admin boundary (components/adapter/admin/api/rpc/concert)
 
-- [ ] 7.1 Return the side lists from the admin `ConcertService.List`. Verify a handler test with an `@spec` marker passes for "Two approved concerts of one series", and the existing admin concert tests still pass.
+- [x] 7.1 Return the side lists from the admin `ConcertService.List`. Verify a handler test with an `@spec` marker passes for "Two approved concerts of one series", and the existing admin concert tests still pass.
 
 ## 8. Organizer boundary (components/adapter/organizer/api/rpc/series, design D5)
 
-- [ ] 8.1 Move the organizer handler to `SeriesService`, register it in the organizer handler list in `internal/di/provider.go`, and return `{ series, concerts, artists }`. A DRAFT Series' DraftEvents become Concerts carrying the draft performers.
+- [x] 8.1 Move the organizer handler to `SeriesService`, register it in the organizer handler list in `internal/di/provider.go`, and return `{ series, concerts, artists }`. A DRAFT Series' DraftEvents become Concerts carrying the draft performers.
   - Move the existing `@spec components/adapter/organizer/api/rpc/concert` markers in `organizer_concert_handler_test.go` to the new path.
   - Verify handler tests with `@spec` markers pass: Operator of an active Organizer lists concerts, Provisioning Organizer, Deactivated Organizer, Draft without events, New token, Tour with one performer, Draft series.
-- [ ] 8.2 Open the backend PR citing this change (after 3.4), covering groups 2 and 4–8. Get `make check` and CI green and merge. Do not release yet (see 9.3).
+- [x] 8.2 Open the backend PR citing this change (after 3.4), covering groups 2 and 4–8, and get `make check` and CI green. Do not merge it yet: prod `backend-migrations` follows backend `main`, so merging applies the `concert_artists` rename to prod at once (design D6). Merge it in 9.3, right before the release.
 
 ## 9. Frontend (fan, admin, organizer)
 
-- [ ] 9.1 Fan app: read the new shape through one shared step that indexes `series` and `artists` by id and turns each Concert into its view model. Use it in `ConcertStore` (dashboard, welcome), the event page and the tickets page.
+- [x] 9.1 Fan app: read the new shape through one shared step that indexes `series` and `artists` by id and turns each Concert into its view model. Use it in `ConcertStore` (dashboard, welcome), the event page and the tickets page.
   - Verify the unit tests of `concert-store`, `event-route`, `tickets-route` and `dashboard-route` pass.
   - Verify the e2e functional fixtures of the ConcertService shape are updated and pass.
-- [ ] 9.2 Admin and organizer apps:
+- [x] 9.2 Admin and organizer apps:
   - Move `admin/approved-concerts` to the side lists.
   - Move the organizer console client to `SeriesService`, grouping `concerts` by `event.series_id` into one page per Series.
   - Verify their unit tests pass and that `make check` passes.
-- [ ] 9.3 Open the frontend PR citing this change, merge it, then release the backend and the frontend together. Verify:
+- [x] 9.3 Open the frontend PR citing this change. Once it is green, merge the backend PR and the frontend PR, then release both together. Verify:
   - the prod pins move;
   - `e2e/prod/open-a-shared-event-link` (guest and authenticated) passes against prod;
   - the dashboard, the admin approved-concerts list and the organizer concert list render in prod.
 
 ## 10. Cloud provisioning
 
-- [ ] 10.1 Remove `SERVER_CONCERT_HANDLER_TIMEOUT` from the fan-api ConfigMap (prod and dev overlays) after 9.3. Verify `make lint-k8s` passes and fan-api rolls out healthy in prod.
+- [x] 10.1 Remove `SERVER_CONCERT_HANDLER_TIMEOUT` from the fan-api ConfigMap after 9.3, and return the timeout chain that SearchNewConcerts had stretched: `SERVER_HANDLER_TIMEOUT` 60s → 30s (the request-timeout spec) and the fan-api GCPBackendPolicy `timeoutSec` 150 → 60. Verify `make lint-k8s` passes and fan-api rolls out healthy in prod with the 30s value.
 
 ## 11. Changes in flight (specification store)
 
-- [ ] 11.1 Rewrite the artifacts of the following changes to the new names: `concert_artists`, organizer `SeriesService`, `Concert { event, artist_ids }`, and responses with side lists.
+- [x] 11.1 Rewrite the artifacts of the following changes to the new names: `concert_artists`, organizer `SeriesService`, `Concert { event, artist_ids }`, and responses with side lists.
   - `restructure-event-publishing`
   - `redesign-organizer-console`
   - `migrate-discovered-sales`

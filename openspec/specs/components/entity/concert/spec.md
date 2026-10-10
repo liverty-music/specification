@@ -20,10 +20,10 @@ erDiagram
 
 ### Requirement: A concert is exactly one event
 
-A Concert SHALL be exactly one Event: it carries the Event's id, venue, listed venue name, date and times, and adds only the embedded Series and the performing Artists. A Concert SHALL have no title or source page of its own; they are read from its Series.
+A Concert SHALL extend exactly one Event and carry that Event's id; it adds only the performing Artists. A Concert SHALL have no title, type or source page of its own; they are read from the Series of the Event it extends.
 
 #### Scenario: Title comes from the series
-- **WHEN** a Concert belongs to a Series titled "ARENA TOUR 2026"
+- **WHEN** a Concert extends an Event of a Series titled "ARENA TOUR 2026"
 - **THEN** the Concert's title is "ARENA TOUR 2026"
 
 #### Scenario: Concert id is its event id
