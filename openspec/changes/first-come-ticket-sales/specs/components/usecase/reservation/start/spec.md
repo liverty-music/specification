@@ -2,7 +2,7 @@
 
 ## Purpose
 
-ReservationUseCase.Start begins a fan's checkout, or resumes it: it holds the chosen number of tickets for 15 minutes and returns what the fan needs to finish, including their saved 本人確認 (identity check) details.
+ReservationUseCase.Start begins a fan's checkout, or resumes it: it holds the chosen number of tickets for 15 minutes and returns the holding Reservation.
 
 ## ADDED Requirements
 
@@ -12,7 +12,7 @@ Start SHALL take the calling fan, a TicketSale, a count and the current time:
 - It SHALL read the sale with TicketSale.Get, failing with NotFound when it does not exist.
 - It SHALL fail with FailedPrecondition when Event.IsEventPublished reports false for the sale's event, as for a 中止 (cancelled) concert, or when the sale's state is not OnSale or AllHeld.
 - It SHALL fail with InvalidArgument when the count is below 1 or above the sale's per-account limit.
-- It SHALL then call Reservation.GetOrCreateHeld, whose failures are returned unchanged.
+- It SHALL then call Reservation.GetOrCreateHeld and return the Reservation it gives; its failures are returned unchanged.
 
 Starting again with the same count while the hold lasts SHALL resume the same Reservation.
 
@@ -40,12 +40,3 @@ Starting again with the same count while the hold lasts SHALL resume the same Re
 
 - **WHEN** the sale is AllHeld
 - **THEN** Start fails with ResourceExhausted and nothing is held
-
-### Requirement: Returns what the checkout shows
-
-Start SHALL return the Reservation's id, count, amount and hold expiry, the sale's price, and the fan's holder full name and phone number as stored on the User, or none when the fan has not checked out before.
-
-#### Scenario: Returning buyer
-
-- **WHEN** a fan who checked out before starts a checkout
-- **THEN** their saved name and phone number are returned for the checkout to prefill

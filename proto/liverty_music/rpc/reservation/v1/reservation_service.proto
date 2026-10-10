@@ -49,9 +49,9 @@ service ReservationService {
   //   already had.
   rpc Start(StartRequest) returns (StartResponse);
 
-  // Get returns the caller's checkout and what became of it: its status,
-  // whether it is still holding, whether a card hold was opened, whether it was
-  // ever committed or charged, and the Order once it is completed. The checkout
+  // Get returns the caller's checkout as it stands now. A HELD checkout whose
+  // hold has lapsed is returned EXPIRED. Its commit_time tells whether it was
+  // ever committed and its capture_time whether it was charged. The checkout
   // screen uses it to choose the outcome it shows.
   //
   // Possible errors:
@@ -121,19 +121,15 @@ message StartRequest {
   }];
 }
 
-// StartResponse returns what the checkout shows.
+// StartResponse returns the holding checkout.
 message StartResponse {
   // The holding checkout: its id, ticket count, amount (price × count, 税込)
   // and hold expiry, from which the client counts down. A resumed checkout
   // keeps its original hold expiry.
   entity.v1.Reservation reservation = 1 [(buf.validate.field).required = true];
 
-  // The price of one ticket in yen, tax-inclusive (税込).
-  int64 ticket_price = 2 [(buf.validate.field).int64.gte = 1];
-
-  // The 本人確認 name and phone number saved on the caller's account, to
-  // prefill the checkout. Unset when the caller has not checked out before.
-  entity.v1.HolderIdentity saved_holder_identity = 3;
+  reserved 2, 3;
+  reserved "ticket_price", "saved_holder_identity";
 }
 
 // GetRequest names the checkout to read.
@@ -142,20 +138,15 @@ message GetRequest {
   entity.v1.ReservationId reservation_id = 1 [(buf.validate.field).required = true];
 }
 
-// GetResponse returns the checkout and what became of it.
+// GetResponse returns the checkout as it stands now.
 message GetResponse {
-  // The checkout. Its commit_time is set when it was ever committed, and its
-  // capture_time when it was charged.
+  // The checkout. A HELD checkout whose hold has lapsed is returned EXPIRED.
+  // Its commit_time is set when it was ever committed, and its capture_time
+  // when it was charged.
   entity.v1.Reservation reservation = 1 [(buf.validate.field).required = true];
 
-  // True when the checkout is HELD and its hold has not lapsed now.
-  bool holding = 2;
-
-  // True when a card hold has been opened for the checkout (Authorize ran).
-  bool authorized = 3;
-
-  // The Order the checkout completed as. Set only when the status is COMPLETED.
-  entity.v1.OrderId order_id = 4;
+  reserved 2, 3, 4;
+  reserved "holding", "authorized", "order_id";
 }
 
 // AuthorizeRequest carries the checkout and the 本人確認 details for its

@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Reads one TicketSale by its id, with the count its state at a given time depends on.
+Reads one TicketSale by its id, with its held count at a given time.
 
 ## ADDED Requirements
 
 ### Requirement: Get returns the sale and its held count
 
-Get SHALL return the TicketSale with the given id, together with the number of tickets its Reservations hold at the given time, and SHALL fail with NotFound when no TicketSale has the id.
+Get SHALL return the TicketSale with the given id, with its held count at the given time, and SHALL fail with NotFound when no TicketSale has the id.
 
 #### Scenario: Sale with holds
 

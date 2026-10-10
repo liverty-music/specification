@@ -7,14 +7,14 @@ package liverty_music.rpc.ticket_sale.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/event.proto";
-import "liverty_music/entity/v1/organizer.proto";
 import "liverty_music/entity/v1/ticket_sale.proto";
 
 // TicketSaleService is the public read of an event's first-come TicketSale, for
-// the ticket section of the event page and the checkout's 特商法 final
-// confirmation. It never reveals the quantity, the sold
-// count or the remaining count: a sale with few tickets left is only flagged as
-// low on stock. Buying goes through liverty_music.rpc.reservation.v1.
+// the ticket section of the event page and the checkout. It never reveals the
+// quantity, the sold count or the held count: a sale with few tickets left is
+// only flagged as low on stock. The seller details come with the event's
+// Concert, through its Series' Organizer. Buying goes through
+// liverty_music.rpc.reservation.v1.
 service TicketSaleService {
   // Get returns the sale of one event with its state now. It needs no sign-in.
   // The sale's start and end are shown in Japan time by the client.
@@ -33,25 +33,12 @@ message GetRequest {
   entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
 }
 
-// GetResponse returns the sale and where it stands now.
+// GetResponse returns the sale.
 message GetResponse {
-  // The sale: its window, price, per-account limit and method. The quantity and
-  // the sold count are left unset.
+  // The sale with its state and whether stock is low now. The quantity, the
+  // sold count and the held count are left unset.
   entity.v1.TicketSale ticket_sale = 1 [(buf.validate.field).required = true];
 
-  // The sale's state now.
-  entity.v1.TicketSaleState state = 2 [(buf.validate.field).enum = {
-    defined_only: true
-    not_in: [0]
-  }];
-
-  // True when the sale is ON_SALE and its remaining tickets are at most one
-  // tenth of its quantity, rounded up (残りわずか). Never an exact count. False
-  // in every other state.
-  bool low_stock = 3;
-
-  // The seller details of the event's Organizer: the 特商法 (Specified
-  // Commercial Transactions Act) disclosure the checkout shows before the order
-  // is placed. Public by law.
-  entity.v1.SellerDetails seller_details = 4 [(buf.validate.field).required = true];
+  reserved 2, 3, 4;
+  reserved "state", "low_stock", "seller_details";
 }

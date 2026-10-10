@@ -164,4 +164,10 @@ message Series {
   // pipeline. Optional for that reason. The unlisted share token is a
   // backend-only concern and is intentionally absent from this read entity.
   OrganizerId organizer_id = 10 [(google.api.field_behavior) = OPTIONAL];
+
+  // The organizer that authored this series, resolved by the server and set
+  // exactly when organizer_id is set: its id, name and, once entered, the
+  // 特商法 seller details a fan's checkout shows. A fan-facing read never sets
+  // its platform fee rate.
+  Organizer organizer = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

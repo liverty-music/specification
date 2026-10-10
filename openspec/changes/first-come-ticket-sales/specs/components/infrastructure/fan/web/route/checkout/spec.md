@@ -37,7 +37,7 @@ The checkout SHALL open from an event's ticket section for a signed-in fan. It S
 
 ### Requirement: Identity details, prefilled
 
-The checkout SHALL ask for the 本人確認 full name and phone number, prefilled with the fan's saved details. The phone number field SHALL accept a Japanese domestic number or an E.164 number, with or without separators, and send it in E.164 form, as the lottery application screen does. It SHALL state that the name is printed on the tickets and checked at entry.
+The checkout SHALL ask for the 本人確認 full name and phone number, prefilled with the holder full name and phone number on the fan's User. The phone number field SHALL accept a Japanese domestic number or an E.164 number, with or without separators, and send it in E.164 form, as the lottery application screen does. It SHALL state that the name is printed on the tickets and checked at entry.
 
 #### Scenario: Returning buyer
 
@@ -68,7 +68,7 @@ Before placing the order, the checkout SHALL show on one screen:
 - the sale period;
 - that resale of the tickets without the organizer's consent is prohibited, and that the tickets are issued to the buyer's name;
 - that the purchase cannot be cancelled or refunded except when the event is 中止 (cancelled), that no cooling-off applies, and that official resale opens only if the event sells out;
-- the Organizer's seller details, as returned by TicketSaleUseCase.Get: legal name, representative, address, phone number and contact email.
+- the Organizer's seller details, carried by the Series of the event's Concert: legal name, representative, address, phone number and contact email.
 
 It SHALL offer to go back and change the number of tickets or the identity details from this screen. The place-order action SHALL state that it pays, with the amount, and SHALL be disabled while the order is being placed.
 
@@ -89,12 +89,12 @@ It SHALL offer to go back and change the number of tickets or the identity detai
 
 ### Requirement: Outcome of placing the order
 
-Placing the order SHALL call IssuanceUseCase.IssueFromReservation. On success, the checkout SHALL show the completion screen with the event, the number of tickets, the total paid and a link to the Tickets screen. It SHALL then offer to allow notifications when the fan has not allowed them, and to add the app to the home screen when it is not installed. On failure, it SHALL read the checkout with ReservationUseCase.Get and say:
-- when the hold has ended without a commit: that the 15 minutes passed, that the card was not charged, that a temporary hold may show on the card statement for a few days, and offer to start again;
-- when the checkout was released after being committed: that the card could not be charged, and offer to start again;
-- when the checkout was released without being committed: that it was replaced by a newer checkout, for example in another tab, and offer to go to it;
-- when the card authentication is not complete: to finish it and try again;
-- otherwise: that the purchase is being completed and the tickets will appear in the Tickets screen shortly.
+Placing the order SHALL call IssuanceUseCase.IssueFromReservation. On success, the checkout SHALL show the completion screen with the event, the number of tickets, the total paid and a link to the Tickets screen. It SHALL then offer to allow notifications when the fan has not allowed them, and to add the app to the home screen when it is not installed. On failure, it SHALL read the checkout with ReservationUseCase.Get and say, by its status:
+- Expired: that the 15 minutes passed, that the card was not charged, that a temporary hold may show on the card statement for a few days, and offer to start again;
+- Released with a commit time: that the card could not be charged, and offer to start again;
+- Released without a commit time: that it was replaced by a newer checkout, for example in another tab, and offer to go to it;
+- Held: that the card authentication is not complete, to finish it and try again;
+- Committed or Completed: that the purchase is being completed and the tickets will appear in the Tickets screen shortly.
 
 #### Scenario: Purchase placed
 

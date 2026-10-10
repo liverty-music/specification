@@ -60,7 +60,7 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 Each call SHALL run one usecase method:
 - Create SHALL run OrganizerUseCase.Create and return the created Organizer.
 - Get, List and ListArtists SHALL run OrganizerUseCase.Get, OrganizerUseCase.List and OrganizerUseCase.ListArtists for any Organizer the admin names.
-- AssociateArtist, DisassociateArtist, Deactivate, UpdateSellerDetails and SetPlatformFeeRate SHALL run the usecase method of the same name.
+- AssociateArtist, DisassociateArtist, Deactivate, Delete, UpdateSellerDetails and SetPlatformFeeRate SHALL run the usecase method of the same name.
 
 Errors from the usecase SHALL be returned unchanged. An Organizer is returned with its id, name, seller details and platform fee rate.
 
@@ -73,6 +73,16 @@ Errors from the usecase SHALL be returned unchanged. An Organizer is returned wi
 
 - **WHEN** an admin calls Get for a deactivated Organizer
 - **THEN** it returns that Organizer's id, name, seller details and platform fee rate
+
+#### Scenario: Admin deletes a deactivated Organizer
+
+- **WHEN** an admin calls Delete for a deactivated Organizer
+- **THEN** OrganizerUseCase.Delete runs and the call succeeds with an empty response
+
+#### Scenario: Delete refused
+
+- **WHEN** OrganizerUseCase.Delete fails with FailedPrecondition
+- **THEN** Delete fails with FailedPrecondition
 
 #### Scenario: Admin records seller details
 

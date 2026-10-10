@@ -31,7 +31,8 @@ message Organizer {
   // The platform fee applied to the Organizer's future Orders, in basis points
   // (hundredths of a percent): 0 to 3000, i.e. 0% to 30%. 800 (8%) for a new
   // Organizer. Set by an admin. Each Settlement keeps the rate it was created
-  // with, so a change never alters an issued Order's split.
+  // with, so a change never alters an issued Order's split. A fan-facing read
+  // never sets it.
   int32 platform_fee_rate_bps = 4 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).int32 = {
