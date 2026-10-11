@@ -1,27 +1,23 @@
 # components/entity/ticket-sale Specification
 
 ## Purpose
-A TicketSale is the platform's own sale of one event's tickets, first come, first served: an Organizer offers a quantity of tickets at one tax-inclusive price during a sale window, and each fan may buy up to a per-account limit. It is distinct from the SalesPhase entity, which records sales announced elsewhere.
+A TicketSale is the platform's own sale opportunity for some or all events of an Organizer's Series, such as a fan-club presale or a general sale (受付): its name, how tickets are allocated, the window in which fans take part and whether they must hold an Active Kyc. What it offers for each event - price, quantity, per-account limit and, first come, first served, the stock - is a TicketType. It is distinct from the SalesPhase entity, which records sales announced elsewhere.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | id | the sale's identity | required, assigned on creation |
-| event | the event whose tickets are sold | required; one TicketSale per event |
-| method | how tickets are allocated | FirstCome |
-| sale start | when the sale opens, an instant entered and shown in Japan time | required |
-| sale end | when the sale closes, an instant entered and shown in Japan time | required; after the sale start and no later than the event's start time |
-| price | price of one ticket, 税込 (tax-inclusive), in yen | required; 1 to 1,000,000 |
-| quantity | tickets offered | required; at least 1 |
-| per-account limit | most tickets one User may hold or have bought from the sale | required; 1 to 10; 4 when not given |
-| sold count | tickets on the sale's Committed and Completed Reservations | required; 0 to the quantity; starts at 0 |
-| held count | tickets on the sale's Reservations that are holding when the sale is read | derived when read; 0 to the quantity |
-| state | where the sale stands when it is read: NotYetOnSale, OnSale, AllHeld, SoldOut or Ended | derived when read ("Sale state at a time") |
-| low stock | whether an OnSale sale has few tickets left when it is read | derived when read ("Sale state at a time") |
+| series | the Series whose events the sale offers | required |
+| name | the label fans and operators see, for example ファンクラブ先行 | required, 1-100 characters |
+| method | how tickets are allocated | Lottery or FirstCome |
+| start time | when the sale opens, an instant entered and shown in Japan time | required, before the end time |
+| end time | when the sale closes, an instant entered and shown in Japan time | required; for Lottery, 1 to 14 days after the start time inclusive |
+| verification requirement | whether fans must hold an Active Kyc to take part | None (the default), Verified-any or JPKI-only |
+| drawn time | when the lottery draw ran | absent until the draw runs; Lottery only |
 
 ```mermaid
 erDiagram
-  Event ||--o| TicketSale : "is sold through"
-  TicketSale ||--o{ Reservation : "is checked out by"
+  Series ||--o{ TicketSale : "is sold through"
+  TicketSale ||--|{ TicketType : "offers"
 ```
 
 ## Requirements

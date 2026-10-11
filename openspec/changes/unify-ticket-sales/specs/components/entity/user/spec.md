@@ -21,3 +21,9 @@ A User's full name, when present, SHALL be 1 to 200 characters. A User's phone n
 #### Scenario: Not given yet
 - **WHEN** a User has never given a full name or phone number
 - **THEN** both are absent and the User is valid
+
+## REMOVED Requirements
+
+### Requirement: Holder identity on the account
+**Reason**: A fan's full name and phone number are stored once, on the User, under the User's own attributes; "holder" is not an entity, and the values are no longer copied onto checkouts, lottery entries or tickets.
+**Migration**: The rule continues as the requirement "Personal details" of this spec; the stored holder name and phone become the User's full name and phone number in this change's migration.

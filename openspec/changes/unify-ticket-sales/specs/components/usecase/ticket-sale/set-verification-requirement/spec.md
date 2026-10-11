@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TicketSaleUseCase.SetVerificationRequirement lets an Organizer change whether fans taking part in one of its TicketSales must hold a verified identity.
+TicketSaleUseCase.SetVerificationRequirement lets an Organizer change whether fans taking part in one of its TicketSales must hold an Active Kyc.
 
 ## ADDED Requirements
 

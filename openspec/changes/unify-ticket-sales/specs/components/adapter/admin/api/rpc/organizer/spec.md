@@ -1,0 +1,66 @@
+# Spec Delta
+
+## MODIFIED Requirements
+
+### Requirement: Requests are validated before any usecase runs
+
+The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
+- a required OrganizerId or ArtistId is missing or malformed;
+- Create's name is not 1 to 200 characters;
+- Create's operator email is not an email address;
+- any of SetBusinessDetails' legal name, representative name, business address, business phone number and contact email is missing;
+- SetPlatformFeeRate's rate is missing.
+
+#### Scenario: Name too long
+
+- **WHEN** Create is called with a 201-character name
+- **THEN** it fails with InvalidArgument and no Organizer is created
+
+#### Scenario: Malformed operator email
+
+- **WHEN** Create is called with an operator email that is not an email address
+- **THEN** it fails with InvalidArgument
+
+#### Scenario: Missing OrganizerId
+
+- **WHEN** Get, AssociateArtist, DisassociateArtist, Deactivate, SetBusinessDetails or SetPlatformFeeRate is called without an OrganizerId
+- **THEN** it fails with InvalidArgument
+
+#### Scenario: Missing rate
+
+- **WHEN** SetPlatformFeeRate is called without a rate
+- **THEN** it fails with InvalidArgument and the rate is unchanged
+
+### Requirement: Each call runs one OrganizerUseCase method
+
+Each call SHALL run one usecase method:
+- Create SHALL run OrganizerUseCase.Create and return the created Organizer.
+- Get and List SHALL run OrganizerUseCase.Get and OrganizerUseCase.List for any Organizer the admin names.
+- AssociateArtist, DisassociateArtist, Deactivate, Delete, SetBusinessDetails and SetPlatformFeeRate SHALL run the usecase method of the same name.
+
+The admin Organizer service SHALL NOT list an Organizer's Artists; the admin artist service does (ListByOrganizer). Errors from the usecase SHALL be returned unchanged. An Organizer is returned with its id, name, legal name, representative name, business address, business phone number, contact email and platform fee rate.
+
+#### Scenario: Admin lists Organizers and inspects a roster
+
+- **WHEN** an admin lists Organizers and then requests one Organizer's Artists
+- **THEN** it returns every Organizer, and the Artists that Organizer represents come from the admin artist service's ListByOrganizer, not from the Organizer service
+
+#### Scenario: Admin reads any Organizer
+
+- **WHEN** an admin calls Get for a deactivated Organizer
+- **THEN** it returns that Organizer's id, name, business details and platform fee rate
+
+#### Scenario: Admin deletes a deactivated Organizer
+
+- **WHEN** an admin calls Delete for a deactivated Organizer
+- **THEN** OrganizerUseCase.Delete runs and the call succeeds with an empty response
+
+#### Scenario: Delete refused
+
+- **WHEN** OrganizerUseCase.Delete fails with FailedPrecondition
+- **THEN** Delete fails with FailedPrecondition
+
+#### Scenario: Admin records seller details
+
+- **WHEN** an admin calls SetBusinessDetails with all five business details
+- **THEN** OrganizerUseCase.SetBusinessDetails runs and the Organizer is returned with them

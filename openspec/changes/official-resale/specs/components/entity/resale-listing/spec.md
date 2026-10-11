@@ -1,6 +1,6 @@
 ## Purpose
 
-A resale listing represents one ticket its holder has offered back to the platform for a sanctioned face-value resale, tracking its price, deadline, and lifecycle from listed through matched, withdrawn, or expired, so no seat changes hands off-platform or above face value.
+A resale listing represents one ticket its user has offered back to the platform for a sanctioned face-value resale, tracking its price, deadline, and lifecycle from listed through matched, withdrawn, or expired, so no seat changes hands off-platform or above face value.
 
 ## ADDED Requirements
 
@@ -13,7 +13,7 @@ later one.
 
 #### Scenario: Listing after the deadline is rejected
 
-- **WHEN** the owner attempts to list a ticket at or after `start_time − 1h` (or the organizer's earlier cutoff)
+- **WHEN** the ticket's user attempts to list a ticket at or after `start_time − 1h` (or the organizer's earlier cutoff)
 - **THEN** the system rejects the listing because the resale window has closed
 
 #### Scenario: Organizer sets an earlier cutoff
@@ -30,7 +30,7 @@ off-switch**. A ticket SHALL be **non-resellable only** when an automatic
 **structural exclusion** applies — the ticket is **free (¥0)**, a **comp/invite**,
 **bundled with physical goods**, or a **name-locked special ticket** (a ticket
 type flagged as non-transferable by design — e.g. an FC-restricted or
-named-holder-only ticket — which is distinct from the ordinary 本人確認 binding
+named-user-only ticket — which is distinct from the ordinary 本人確認 binding
 that every covered ticket, including reissued resale tickets, carries) — or when an
 **administrator** grants a documented exception for the event. These exclusion
 flags are ticket-type metadata defined by ⑤/⑥ (see design.md dependency).
@@ -42,13 +42,13 @@ flags are ticket-type metadata defined by ⑤/⑥ (see design.md dependency).
 
 #### Scenario: Structurally excluded ticket cannot be listed
 
-- **WHEN** the owner attempts to list a free, comp, goods-bundled, or name-locked ticket
+- **WHEN** the ticket's user attempts to list a free, comp, goods-bundled, or name-locked ticket
 - **THEN** the system rejects the listing because the ticket is structurally excluded from resale
 
 #### Scenario: Administrator excludes an event by exception
 
 - **WHEN** an administrator records a documented resale exception for a specific event
-- **THEN** listing is disabled for that event, LISTED listings are withdrawn, and any in-flight OFFERED offer is voided with no charge (admin action overrides the OFFERED lock, which only blocks the *seller*'s own withdrawal); already-SOLD resales are unaffected
+- **THEN** listing is disabled for that event, LISTED listings are withdrawn, and any in-flight OFFERED offer is voided with no charge (admin action overrides the OFFERED lock, which only blocks the *listing user*'s own withdrawal); already-SOLD resales are unaffected
 
 ### Requirement: Event cancellation while listed
 
@@ -61,11 +61,11 @@ followed by a new event, so it takes this same path.
 #### Scenario: Cancellation supersedes a live listing
 
 - **WHEN** an event is cancelled while a ticket is in LISTED or OFFERED state
-- **THEN** the listing/offer is cancelled and the holder receives the standard cancellation refund, not a resale outcome
+- **THEN** the listing/offer is cancelled and the ticket's user receives the standard cancellation refund, not a resale outcome
 
 ### Requirement: Anonymity and no person-to-person contact
 
-The system SHALL keep sellers and buyers **anonymous to each other**: they MUST
+The system SHALL keep the listing's user and the matched user **anonymous to each other**: they MUST
 NOT exchange personal information and money MUST NOT move person-to-person. All
 matching happens through the platform pool.
 

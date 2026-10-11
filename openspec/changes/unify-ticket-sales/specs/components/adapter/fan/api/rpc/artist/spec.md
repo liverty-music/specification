@@ -1,0 +1,46 @@
+# Spec Delta
+
+## MODIFIED Requirements
+
+### Requirement: Browsing artists needs no sign-in
+
+ListTop, ListSimilar and Search SHALL be callable without sign-in. List and Create SHALL require a signed-in caller and SHALL fail with Unauthenticated, before any usecase runs, when the caller is not signed in. None of these calls acts for a particular fan, so no account is looked up.
+
+#### Scenario: Guest searches
+
+- **WHEN** a caller who is not signed in calls Search
+- **THEN** ArtistUseCase.Search runs and its result is returned
+
+#### Scenario: Guest creates an artist
+
+- **WHEN** a caller who is not signed in calls Create
+- **THEN** the call fails with Unauthenticated and no usecase runs
+
+### Requirement: Artist requests are validated at the boundary
+
+The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
+- Create has no name, an empty name, or an MBID that is not a UUID;
+- Search has an empty query;
+- ListSimilar has no artist id, an artist id that is not a UUID, or a limit outside 0 to 100;
+- ListTop has a tag longer than 50 characters or a limit outside 0 to 100.
+
+#### Scenario: Empty search query
+
+- **WHEN** Search is called with an empty query
+- **THEN** it fails with InvalidArgument and no catalog lookup is made
+
+#### Scenario: Limit too large
+
+- **WHEN** ListTop is called with a limit of 101
+- **THEN** it fails with InvalidArgument
+
+#### Scenario: Malformed MBID
+
+- **WHEN** Create is called with an MBID that is not a UUID
+- **THEN** it fails with InvalidArgument and no artist is created
+
+## REMOVED Requirements
+
+### Requirement: Official sites are created through the boundary but never deleted
+**Reason**: An artist's official site is its own resource, so its create and delete move from ArtistService (`CreateOfficialSite`, `DeleteOfficialSite`) to OfficialSiteService (`Create`, `Delete`) under the RPC naming rule.
+**Migration**: The behavior continues unchanged in `components/adapter/fan/api/rpc/official-site`; clients call `OfficialSiteService.Create` and `OfficialSiteService.Delete`.

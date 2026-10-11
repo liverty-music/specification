@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A LotteryEntry is one fan account's entry into the lottery for one TicketType: a request for a companion group of tickets allocated all-or-nothing, and the reference to the authorization (hold) placed on the fan's card for the amount until the draw. The fan's 本人確認 (identity check) details are the User's full name and phone number.
+A LotteryEntry is one fan account's entry into the lottery for one TicketType: a request for a companion group of tickets allocated all-or-nothing, and the reference to the authorization (hold) placed on the fan's card for the amount until the draw. A fan builds the entry as a Draft, authorizes the hold on it, and confirms it; only a confirmed (Entered) entry takes part in the draw. The fan's 本人確認 (identity check) details are the User's full name and phone number.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -10,8 +10,8 @@ A LotteryEntry is one fan account's entry into the lottery for one TicketType: a
 | ticket type | the TicketType entered | required; its sale's method is Lottery |
 | user | the fan account that entered | required |
 | requested ticket count | size of the companion group, allocated all-or-nothing | required, 1 to the ticket type's per-account limit |
-| authorization | reference to the hold placed on the fan's card | required, 1-255 characters, opaque |
-| state | lifecycle | Entered, Won, Lost or Withdrawn |
+| authorization | reference to the hold placed on the fan's card | absent on a Draft until the hold is opened; required from Entered on; 1-255 characters, opaque |
+| state | lifecycle | Draft, Entered, Won, Lost or Withdrawn |
 | draw position | the entry's position in its ticket type's random draw order | absent before the draw; set only by the draw |
 
 ```mermaid
@@ -23,7 +23,9 @@ erDiagram
 
 ```mermaid
 stateDiagram-v2
-  [*] --> Entered
+  [*] --> Draft
+  Draft --> Entered
+  Draft --> Withdrawn
   Entered --> Won
   Entered --> Lost
   Entered --> Withdrawn
@@ -34,13 +36,29 @@ stateDiagram-v2
 
 ## ADDED Requirements
 
-### Requirement: A new entry starts Entered
+### Requirement: A new entry starts as a Draft
 
-A LotteryEntry SHALL start in state Entered, with no draw position.
+A LotteryEntry SHALL start in state Draft, with no authorization and no draw position.
 
 #### Scenario: New entry
 - **WHEN** a LotteryEntry is created
-- **THEN** its state is Entered and it has no draw position
+- **THEN** its state is Draft and it has no authorization and no draw position
+
+### Requirement: Confirmable only as an authorized Draft
+
+An entry SHALL be confirmable, that is able to become Entered, only while its state is Draft and it has an authorization.
+
+#### Scenario: Authorized draft
+- **WHEN** the entry is a Draft with an authorization
+- **THEN** it is confirmable
+
+#### Scenario: Draft without a hold
+- **WHEN** the entry is a Draft with no authorization
+- **THEN** it is not confirmable
+
+#### Scenario: Already entered
+- **WHEN** the entry is Entered, Won, Lost or Withdrawn
+- **THEN** it is not confirmable
 
 ### Requirement: Requested ticket count fits the ticket type
 
@@ -60,22 +78,22 @@ The requested ticket count SHALL be at least 1 and at most the ticket type's per
 
 ### Requirement: Active entries
 
-An entry SHALL be active unless its state is Withdrawn; Won and Lost entries stay active.
+An entry SHALL be active unless its state is Withdrawn; Draft, Won and Lost entries stay active.
 
 #### Scenario: Withdrawn entry is not active
 - **WHEN** the state is Withdrawn
 - **THEN** the entry is not active
 
-#### Scenario: Drawn entry is active
-- **WHEN** the state is Won or Lost
+#### Scenario: Draft or drawn entry is active
+- **WHEN** the state is Draft, Won or Lost
 - **THEN** the entry is active
 
-### Requirement: Withdrawable only while Entered
+### Requirement: Withdrawable only before the draw
 
-An entry SHALL be withdrawable only while its state is Entered, that is before the draw has run for it.
+An entry SHALL be withdrawable only while its state is Draft or Entered, that is before the draw has run for it.
 
-#### Scenario: Entered entry
-- **WHEN** the state is Entered
+#### Scenario: Draft or entered entry
+- **WHEN** the state is Draft or Entered
 - **THEN** the entry is withdrawable
 
 #### Scenario: Drawn or withdrawn entry

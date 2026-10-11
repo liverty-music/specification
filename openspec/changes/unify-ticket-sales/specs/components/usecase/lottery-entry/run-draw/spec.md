@@ -8,7 +8,11 @@ LotteryUseCase.RunDraw draws one closed Lottery TicketSale: for each of its Tick
 
 ### Requirement: Draw a sale
 
-RunDraw SHALL read the sale and its TicketTypes with TicketSale.Get, failing with NotFound when it does not exist. For each TicketType it SHALL take the Entered entries from LotteryEntry.ListEnteredForTicketType and compute the outcome with LotteryEntry.RunLotteryDraw against the TicketType's quantity, using an unpredictable random order. It SHALL capture each winner's hold with LotteryEntry.CaptureAuthorization, release each waitlisted entry's hold with LotteryEntry.CancelAuthorization, and record the outcome of all TicketTypes with LotteryEntry.PersistDrawOutcome: captured winners Won, every other entry Lost, each with its draw position. When the sale has no Entered entry, it SHALL only mark the sale drawn.
+RunDraw SHALL read the sale and its TicketTypes with TicketSale.Get, failing with NotFound when it does not exist. For each TicketType it SHALL take the entries from LotteryEntry.ListUndrawnForTicketType, release the hold of each Draft that has one with LotteryEntry.CancelAuthorization, and compute the outcome over the Entered entries with LotteryEntry.RunLotteryDraw against the TicketType's quantity, using an unpredictable random order. It SHALL capture each winner's hold with LotteryEntry.CaptureAuthorization, release each waitlisted entry's hold with LotteryEntry.CancelAuthorization, and record the outcome of all TicketTypes with LotteryEntry.PersistDrawOutcome: captured winners Won, every other Entered entry Lost, each with its draw position, and every Draft Withdrawn. When the sale has no Entered entry, it SHALL withdraw its Drafts and mark the sale drawn.
+
+#### Scenario: Unconfirmed draft at the draw
+- **WHEN** a fan authorized a hold on a Draft but never confirmed it, and the window closes
+- **THEN** the Draft's hold is released, the Draft is Withdrawn and takes no part in the draw
 
 #### Scenario: Winners charged, losers released
 - **WHEN** a closed sale's TicketType with a quantity of 4 has entries for 2, 2 and 3 tickets and the random order admits the two 2-ticket entries
@@ -23,7 +27,7 @@ RunDraw SHALL read the sale and its TicketTypes with TicketSale.Get, failing wit
 - **THEN** each Lost entry carries its draw position within its TicketType, so the waitlist can be read in draw order
 
 #### Scenario: No entries
-- **WHEN** the sale has no Entered entry
+- **WHEN** the sale has no Draft and no Entered entry
 - **THEN** the sale is marked drawn and nothing is captured or released
 
 ### Requirement: Capture failure

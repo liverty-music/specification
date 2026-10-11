@@ -1,13 +1,13 @@
 ## Purpose
 
-Matches a listed ticket to a buyer drawn from the public resale queue, giving lottery-losers priority over the general public, and settles the buyer's face-value payment while voiding and reissuing the ticket atomically so money never passes directly between seller and buyer.
+Matches a listed ticket to a user drawn from the public resale queue, giving lottery-losers priority over the general public, and settles the matched user's face-value payment while voiding and reissuing the ticket atomically so money never passes directly between the listing's user and the matched user.
 
 ## ADDED Requirements
 
 ### Requirement: Public resale marketplace with lottery-loser priority
 
 The system SHALL expose resale inventory as a **publicly visible, publicly
-joinable marketplace** — any buyer can discover available resale seats and join
+joinable marketplace** — any user can discover available resale seats and join
 the demand queue (not hidden behind a pre-registered waitlist). Matching SHALL be
 **priority-ordered, NOT first-come**: **lottery-losers first in draw order, then
 the general public in join order**. "Draw order" is the stable loser ordering
@@ -19,14 +19,14 @@ ineligible while OFFERED** (e.g. they separately win the event's lottery or buy 
 primary ticket, tripping the per-person limit) — the offer SHALL be voided and
 pass to the next candidate (an ineligible candidate MUST NOT be allowed to
 complete). The system **MUST NOT start an offer whose window would extend past the
-resale deadline**. If the offer reaches the end of the queue with no buyer and the
+resale deadline**. If the offer reaches the end of the queue with no matched user and the
 deadline has not passed, the listing SHALL **return to `LISTED` (it MUST NOT go
-dead)** and be re-offered as new candidates join. Buyers SHALL NOT be able to
-designate a particular seller (the pool is anonymous).
+dead)** and be re-offered as new candidates join. Candidates SHALL NOT be able to
+designate a particular listing user (the pool is anonymous).
 
 #### Scenario: Inventory is publicly discoverable
 
-- **WHEN** any eligible buyer views an event with resale seats available
+- **WHEN** any eligible user views an event with resale seats available
 - **THEN** they can see resale availability and join the demand queue without prior registration
 
 #### Scenario: Loser is offered ahead of the general public
@@ -51,54 +51,54 @@ designate a particular seller (the pool is anonymous).
 
 #### Scenario: Queue exhausted before deadline keeps the listing alive
 
-- **WHEN** the offer reaches the end of the current queue with no buyer and the deadline has not passed
+- **WHEN** the offer reaches the end of the current queue with no matched user and the deadline has not passed
 - **THEN** the listing returns to LISTED and is re-offered when new candidates join (the seat does not silently go dead)
 
-#### Scenario: Buyer cannot pick a seller
+#### Scenario: Candidate cannot pick a listing user
 
-- **WHEN** a buyer joins the demand queue
-- **THEN** they receive an anonymous match and cannot select or contact a specific seller
+- **WHEN** a user joins the demand queue
+- **THEN** they receive an anonymous match and cannot select or contact a specific listing user
 
 ### Requirement: Two-leg money model at match time
 
 On a successful match the system SHALL, **in one atomic transaction**: (1) settle
-the **buyer's fresh face-value payment** to the Organizer/platform (収納代行,
-payee = Organizer, same scheme as the primary sale), (2) **void** the seller's
+the **matched user's fresh face-value payment** to the Organizer/platform (収納代行,
+payee = Organizer, same scheme as the primary sale), (2) **void** the listing user's
 original ticket so its rotating QR can no longer enter, and (3) **issue a new
-ticket** to the buyer. The buyer SHALL pay **exactly face value** (券面代金) with no
-buyer-side markup or fee. **Money MUST NEVER move directly from the buyer to the
-seller** — the two legs are decoupled: the seller is only ever **refunded their
-own original payment**, never paid as the transferee of the buyer's funds. (Legal
-detail — including the 資金決済法 2条の2第2号 escrow-exclusion backstop if the seller
-is nonetheless viewed as a payee — lives in `docs/resale-design.md`, not this spec.)
+ticket** to the matched user. The matched user SHALL pay **exactly face value** (券面代金)
+with no added markup or fee. **Money MUST NEVER move directly from the matched user
+to the listing's user** — the two legs are decoupled: the listing's user is only ever **refunded their
+own original payment**, never paid as the transferee of the matched user's funds. (Legal
+detail — including the 資金決済法 2条の2第2号 escrow-exclusion backstop if the listing's
+user is nonetheless viewed as a payee — lives in `docs/resale-design.md`, not this spec.)
 
-#### Scenario: Match settles buyer and voids seller atomically
+#### Scenario: Match settles payment and voids the listed ticket atomically
 
-- **WHEN** a buyer completes the offered face-value purchase
-- **THEN** the buyer's payment settles, the seller's original ticket is voided, and a new ticket is issued to the buyer — all or nothing
+- **WHEN** a candidate completes the offered face-value purchase
+- **THEN** the matched user's payment settles, the listing user's original ticket is voided, and a new ticket is issued to the matched user — all or nothing
 
-#### Scenario: Buyer pays exactly face value
+#### Scenario: Matched user pays exactly face value
 
-- **WHEN** a buyer is charged for a resold seat
-- **THEN** the amount equals the ticket's face value with no buyer-side resale markup
+- **WHEN** the matched user is charged for a resold seat
+- **THEN** the amount equals the ticket's face value with no resale markup
 
-#### Scenario: Failed buyer payment leaves the seat listed
+#### Scenario: Failed resale payment leaves the seat listed
 
-- **WHEN** the buyer's payment fails during a match
+- **WHEN** the matched user's payment fails during a match
 - **THEN** no ticket is voided or issued and the listing remains LISTED for the next candidate
 
 ### Requirement: Covered-ticket re-bind on reissue
 
-On reissue to the buyer the system SHALL capture the **new holder's 本人確認**
+On reissue to the matched user the system SHALL capture the **matched user's 本人確認**
 (name + contact) and SHALL keep the reissued ticket a **特定興行入場券**: its face
 states that resale without organizer consent is prohibited, specifies
-date/venue + seat-or-eligible-person, and records the holder's identity. The
+date/venue + seat-or-eligible-person, and records the identity of the ticket's user. The
 voided original MUST NOT remain usable for entry.
 
-#### Scenario: Reissued ticket is identity-bound to the buyer
+#### Scenario: Reissued ticket is identity-bound to the matched user
 
-- **WHEN** a new ticket is issued to the resale buyer
-- **THEN** it carries the buyer's 本人確認 and the covered-ticket face conditions, and the seller's voided ticket cannot enter
+- **WHEN** a new ticket is issued to the matched user
+- **THEN** it carries the matched user's 本人確認 and the covered-ticket face conditions, and the listing user's voided ticket cannot enter
 
 ### Requirement: No double-seat or double-charge across lottery and resale
 
@@ -114,7 +114,7 @@ that event's resale demand queue**.
 - **WHEN** a lottery-loser accepts a resale offer for an event that still has an unresolved draw
 - **THEN** the user is removed from that event's pending draw so they cannot also win and be charged twice
 
-#### Scenario: Existing holder is excluded from the demand queue
+#### Scenario: User who already holds a ticket is excluded from the demand queue
 
 - **WHEN** a user who already holds a ticket for the event tries to join that event's resale demand queue
 - **THEN** the system excludes them (respecting the per-person limit)

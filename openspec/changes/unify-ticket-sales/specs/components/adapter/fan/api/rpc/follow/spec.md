@@ -1,0 +1,22 @@
+# Spec Delta
+
+## MODIFIED Requirements
+
+### Requirement: Every follow call acts for the signed-in caller
+
+Follow, Unfollow, List and SetHype SHALL act only for the signed-in caller, resolved to their stored User (User.GetByExternalID) before the usecase runs; no call accepts another fan. They SHALL fail with Unauthenticated when the caller is not signed in, and with NotFound when the caller has no account (the fan must finish registration first).
+
+#### Scenario: Signed-in fan follows
+
+- **WHEN** a signed-in fan with an account calls Follow for an artist
+- **THEN** FollowUseCase.Follow runs for that fan
+
+#### Scenario: Not signed in
+
+- **WHEN** the caller is not authenticated
+- **THEN** the call fails with Unauthenticated and no usecase runs
+
+#### Scenario: Caller has no account
+
+- **WHEN** the signed-in caller has no stored account
+- **THEN** the call fails with NotFound and no usecase runs

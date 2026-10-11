@@ -1,7 +1,7 @@
 # components/entity/ticket-sale/create Specification
 
 ## Purpose
-Stores a new TicketSale for an event, one per event.
+Stores a new TicketSale together with its TicketTypes.
 
 ## Requirements
 

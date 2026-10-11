@@ -24,7 +24,7 @@
 - [ ] 2.2 `admission.proto` and `rejected_scan.proto`: `reception_link_id` → `scanner_id` (type `ScannerId`, same field numbers), and comments say Scanner (design D3). Verify `buf lint` passes
 - [ ] 2.3 Replace `rpc/organizer/reception_link/v1` with `rpc/organizer/scanner/v1/scanner_service.proto` (design D4):
   - `ScannerService.Create(CreateRequest{event_id}) → CreateResponse{scanner}`;
-  - `List(ListRequest{event_id}) → ListResponse{scanners}`;
+  - `ListByEvent(ListByEventRequest{event_id}) → ListByEventResponse{scanners}` (replaces `List`, `unify-ticket-sales` design D11);
   - `Revoke(RevokeRequest{scanner_id}) → RevokeResponse{scanner}`;
   - doc comments and error lists carried over from the old service, worded per `components/adapter/organizer/api/rpc/scanner`.
 
@@ -81,7 +81,7 @@
 
 - [ ] 4.1 Console screen (`components/infrastructure/organizer/web/route/scanners`):
   - `organizer/reception-links/*` → `organizer/scanners/*`;
-  - `reception-link-client.ts` → `scanner-client.ts` calling `rpc.organizer.scanner.v1.ScannerService` (`Create`, `List`, `Revoke`);
+  - `reception-link-client.ts` → `scanner-client.ts` calling `rpc.organizer.scanner.v1.ScannerService` (`Create`, `ListByEvent`, `Revoke`);
   - `reception-window.ts` → `admission-window.ts`;
   - the route path and the console's link to it renamed;
   - the Japanese copy unchanged.

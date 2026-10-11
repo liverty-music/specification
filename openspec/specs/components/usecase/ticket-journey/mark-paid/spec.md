@@ -1,7 +1,7 @@
 # components/usecase/ticket-journey/mark-paid Specification
 
 ## Purpose
-TicketJourneyUseCase.MarkPaid sets a buyer's ticket journey for an event to Paid once their purchase is recorded, whether the tickets came from a lottery or a checkout.
+TicketJourneyUseCase.MarkPaid sets a user's ticket journey for an event to Paid once their purchase is recorded, whether the tickets came from a lottery or a checkout.
 
 ## Requirements
 
