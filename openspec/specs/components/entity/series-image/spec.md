@@ -8,7 +8,6 @@ A SeriesImage is an image an organizer uploaded for one of its Series, served to
 |-----------|---------|------------|
 | id | series image identifier, also the version of its served addresses | required |
 | organizer | the Organizer that uploaded it | required |
-| kind | IMAGE | required |
 | thumb | address of the thumbnail variant | required when shown as a cover |
 | large | address of the large variant | required when shown as a cover |
 
@@ -22,7 +21,7 @@ erDiagram
 
 ### Requirement: A shown image exposes both variants
 
-A SeriesImage of kind IMAGE, when shown as a Series cover, SHALL expose both a thumb and a large variant address.
+A SeriesImage, when shown as a Series cover, SHALL expose both a thumb and a large variant address.
 
 #### Scenario: Cover with both variants
 - **WHEN** a Series cover is an IMAGE with thumb and large addresses
