@@ -1,44 +1,49 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.ticket_sale.v1 provides the fan-facing
-// TicketSaleService: how an event's tickets are on sale first come, first
-// served. Anyone may read it, signed in or not.
+// TicketSaleService: which sales offer an event's tickets, by lottery or first
+// come, first served. Anyone may read it, signed in or not.
 package liverty_music.rpc.ticket_sale.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/ticket_sale.proto";
 
-// TicketSaleService is the public read of an event's first-come TicketSale, for
-// the ticket section of the event page and the checkout. It never reveals the
-// quantity, the sold count or the held count: a sale with few tickets left is
-// only flagged as low on stock. The seller details come with the event's
-// Concert, through its Series' Organizer. Buying goes through
-// liverty_music.rpc.reservation.v1.
+// TicketSaleService is the public read of an event's TicketSales, for the
+// ticket section of the event page, the lottery entry and the checkout. It
+// never reveals a TicketType's quantity, sold count or held count: a
+// first-come TicketType with few tickets left is only flagged as low on stock.
+// The Organizer's business details come with the event's Concert, through its
+// Series' Organizer. Entering goes through liverty_music.rpc.lottery_entry.v1
+// and buying through liverty_music.rpc.checkout.v1.
 service TicketSaleService {
-  // Get returns the sale of one event with its state now. It needs no sign-in.
-  // The sale's start and end are shown in Japan time by the client.
+  // ListByEvent returns the sales that offer one event's tickets, ordered by
+  // start time, each with only its TicketType for that event: its price,
+  // per-account limit and, for a FIRST_COME sale, its state and whether it is
+  // low on stock now. It needs no sign-in. An event that no sale offers, or
+  // whose concert is not published (for example a cancelled 中止 concert),
+  // returns an empty list. The sales' start and end are shown in Japan time by
+  // the client.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The event_id is missing or malformed.
-  // - NOT_FOUND: The event has no TicketSale, or the event's concert is not
-  //   published (for example a cancelled 中止 concert), whose sale is neither
-  //   shown nor sold.
-  rpc Get(GetRequest) returns (GetResponse);
+  rpc ListByEvent(ListByEventRequest) returns (ListByEventResponse);
 }
 
-// GetRequest names the event whose sale to read.
-message GetRequest {
-  // Required. The event whose sale to read.
+// ListByEventRequest names the event whose sales to read.
+message ListByEventRequest {
+  // Required. The event whose sales to read.
   entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
 }
 
-// GetResponse returns the sale.
-message GetResponse {
-  // The sale with its state and whether stock is low now. The quantity, the
-  // sold count and the held count are left unset.
-  entity.v1.TicketSale ticket_sale = 1 [(buf.validate.field).required = true];
-
-  reserved 2, 3, 4;
-  reserved "state", "low_stock", "seller_details";
+// ListByEventResponse returns the event's sales.
+message ListByEventResponse {
+  // The event's sales in start order. Each carries its id, Series, name,
+  // method, start and end time and verification requirement, and its one
+  // TicketType for the event with the TicketType's id, event, price,
+  // per-account limit and, for a FIRST_COME sale, its state and low-stock
+  // flag. The TicketType's quantity, sold count and held count and the
+  // TicketTypes of the sale's other events are left out. Empty when no sale
+  // offers the event or its concert is not published.
+  repeated entity.v1.TicketSale ticket_sales = 1;
 }

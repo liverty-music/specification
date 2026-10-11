@@ -6,7 +6,6 @@ syntax = "proto3";
 package liverty_music.rpc.admin.settlement.v1;
 
 import "buf/validate/validate.proto";
-import "liverty_music/entity/v1/order.proto";
 import "liverty_music/entity/v1/settlement.proto";
 
 // SettlementService is the admin-only, read-only observability surface over
@@ -18,18 +17,10 @@ import "liverty_music/entity/v1/settlement.proto";
 // dispute-safety window (gated on the event's current start time), never a manual
 // admin action — mirroring the lottery draw-job precedent and the admin
 // OrderService. The refund/clawback entry point is ⑤'s
-// liverty_music.rpc.admin.order.v1.OrderService.Refund. This service only reads
+// liverty_music.rpc.admin.order.v1.OrderService.Refund, and one Order's
+// Settlement is read with that service's Get. This service only lists
 // settlement state for support and reconciliation.
 service SettlementService {
-  // Get returns the Settlement for one Order — its payout status, splits,
-  // and opaque transfer/reversal references — for support and reconciliation.
-  //
-  // Possible errors:
-  // - INVALID_ARGUMENT: The order_id is missing or malformed.
-  // - NOT_FOUND: No Settlement exists for the Order yet.
-  // - UNAUTHENTICATED: The request lacks valid admin credentials.
-  rpc Get(GetRequest) returns (GetResponse);
-
   // List returns Settlements filtered by payout status, so the admin
   // console can review held / released / reversed payouts. The list is unbounded on
   // the wire: pagination is deferred to a later phase.
@@ -38,18 +29,6 @@ service SettlementService {
   // - INVALID_ARGUMENT: The status filter is malformed.
   // - UNAUTHENTICATED: The request lacks valid admin credentials.
   rpc List(ListRequest) returns (ListResponse);
-}
-
-// GetRequest identifies the Order whose Settlement to read.
-message GetRequest {
-  // Required. The Order whose payout record is being read.
-  entity.v1.OrderId order_id = 1 [(buf.validate.field).required = true];
-}
-
-// GetResponse returns the Order's Settlement.
-message GetResponse {
-  // The Order's payout record.
-  entity.v1.Settlement settlement = 1 [(buf.validate.field).required = true];
 }
 
 // ListRequest filters Settlements by payout status.

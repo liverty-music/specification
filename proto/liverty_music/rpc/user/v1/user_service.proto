@@ -6,17 +6,19 @@ import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/user.proto";
 
 // UserService provides operations for managing user accounts and profiles.
+//
+// Every per-user call acts on the signed-in caller's own User: no request
+// names a User, and the backend resolves the caller from the sign-in identity.
+// A returned User carries its id, email, external id, name, preferred language
+// when set, home (country code, level 1 and, when set, level 2, without a
+// centroid), and its full name and phone number when set; it never carries a
+// verification level.
 service UserService {
-  // Get retrieves the profile of the authenticated user.
-  //
-  // Per the rpc-auth-scoping convention, the request carries an explicit
-  // user_id that the backend verifies against the userID derived from the
-  // JWT context; mismatches are rejected with PERMISSION_DENIED.
+  // Get retrieves the profile of the authenticated user, so the same profile
+  // is restored on every device.
   //
   // Possible errors:
-  // - INVALID_ARGUMENT: The request is missing user_id or the field is malformed.
   // - NOT_FOUND: No user record exists for the authenticated identity.
-  // - PERMISSION_DENIED: The supplied user_id does not match the authenticated caller.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Get(GetRequest) returns (GetResponse);
 
@@ -24,24 +26,21 @@ service UserService {
   // existing profile when the caller's external_id (Zitadel sub) is already
   // provisioned.
   //
-  // Create is the sanctioned exception to the rpc-auth-scoping convention:
-  // the caller's internal user_id does not yet exist at call time, so the
-  // request does NOT carry one. The backend identifies the caller via
-  // external_id extracted from the JWT.
+  // Like every per-user call, the request carries no user id: the backend
+  // identifies the caller via the external_id extracted from the JWT.
   //
   // Create is idempotent on duplicate external_id: a second call for the
   // same external_id returns the existing user as a successful response
   // (CreateResponse.user populated) rather than ALREADY_EXISTS. The
   // pre-existing email and name fields on the stored row are NOT overwritten
   // — the duplicate call is a read, not an upsert. This gives the frontend a
-  // uniform "resolve-or-provision" bootstrap RPC when its local userID cache
-  // is empty (e.g., fresh device).
+  // uniform "resolve-or-provision" bootstrap RPC (e.g., on a fresh device).
   //
   // The home field may be provided when the user has already selected their
   // home area during the onboarding flow (before account creation). Supplying
   // it here persists the home area atomically with the initial user record,
-  // avoiding a separate UpdateHome call immediately after sign-up. On the
-  // idempotent-return path, home is ignored — use UpdateHome to change an
+  // avoiding a separate SetHome call immediately after sign-up. On the
+  // idempotent-return path, home is ignored — use SetHome to change an
   // already-provisioned user's home area.
   //
   // The preferred_language field is optional on the wire so this RPC
@@ -50,11 +49,11 @@ service UserService {
   // Updated clients MUST send their currently effective locale; the
   // value, when present, is persisted atomically with the new user row.
   // Absent values are stored as NULL and trigger the same client-side
-  // backfill path as legacy rows (see UpdatePreferredLanguage and the
+  // backfill path as legacy rows (see SetPreferredLanguage and the
   // user-profile-hydration capability). On the idempotent-return path,
   // preferred_language is IGNORED — the existing row's language is not
   // overwritten, mirroring the rule for home. Use
-  // UpdatePreferredLanguage to change an already-provisioned user's
+  // SetPreferredLanguage to change an already-provisioned user's
   // preferred display language.
   //
   // Possible errors:
@@ -62,53 +61,53 @@ service UserService {
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Create(CreateRequest) returns (CreateResponse);
 
-  // UpdatePreferredLanguage sets or changes the authenticated user's
+  // Update changes the authenticated user's full name, phone number or both;
+  // a field left unset keeps its value. The lottery entry and checkout screens
+  // prefill these values, and the ticket face shows the current ones.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: Neither field is given, or a given value breaks the
+  //   User's personal details rule (for example a phone number not in E.164
+  //   form).
+  // - NOT_FOUND: No user record exists for the authenticated identity.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Update(UpdateRequest) returns (UpdateResponse);
+
+  // SetPreferredLanguage sets or changes the authenticated user's
   // preferred display language.
   //
   // The preferred language determines the locale used to render the UI and
   // user-facing notifications. Users typically set this at signup (carried
-  // in the Create RPC) and may update it later from settings.
-  //
-  // Per the rpc-auth-scoping convention, the request carries an explicit
-  // user_id that the backend verifies against the userID derived from the
-  // JWT context; mismatches are rejected with PERMISSION_DENIED.
+  // in the Create RPC) and may update it later from settings. A malformed
+  // language is rejected before the caller is resolved, so it fails the same
+  // way for every caller.
   //
   // Possible errors:
-  // - INVALID_ARGUMENT: user_id is missing or malformed, or preferred_language is empty or not a valid ISO 639-1 two-letter code.
+  // - INVALID_ARGUMENT: preferred_language is empty or not a valid ISO 639-1 two-letter code.
   // - NOT_FOUND: No user record exists for the authenticated identity.
-  // - PERMISSION_DENIED: The supplied user_id does not match the authenticated caller.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  rpc UpdatePreferredLanguage(UpdatePreferredLanguageRequest) returns (UpdatePreferredLanguageResponse);
+  rpc SetPreferredLanguage(SetPreferredLanguageRequest) returns (SetPreferredLanguageResponse);
 
-  // UpdateHome sets or changes the authenticated user's home area.
+  // SetHome sets or changes the authenticated user's home area.
   //
   // The home area determines how the dashboard classifies live events into
   // "Home", "Nearby", and "Away" lanes. Users typically set this during
   // onboarding and may update it later from settings.
   //
-  // Per the rpc-auth-scoping convention, the request carries an explicit
-  // user_id that the backend verifies against the userID derived from the
-  // JWT context; mismatches are rejected with PERMISSION_DENIED.
-  //
   // Possible errors:
-  // - INVALID_ARGUMENT: user_id is missing, or the home value contains an unrecognized or malformed code.
+  // - INVALID_ARGUMENT: The home is missing, or contains an unrecognized or malformed code.
   // - NOT_FOUND: No user record exists for the authenticated identity.
-  // - PERMISSION_DENIED: The supplied user_id does not match the authenticated caller.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  rpc UpdateHome(UpdateHomeRequest) returns (UpdateHomeResponse);
+  rpc SetHome(SetHomeRequest) returns (SetHomeResponse);
 
   // ResendEmailVerification triggers a new email verification message for the
-  // authenticated user via the identity provider (Zitadel).
-  //
-  // Per the rpc-auth-scoping convention, the request carries an explicit
-  // user_id that the backend verifies against the userID derived from the
-  // JWT context; mismatches are rejected with PERMISSION_DENIED before any
-  // Zitadel API call is made.
+  // authenticated user via the identity provider (Zitadel). Whether
+  // verification is available, resolving the caller, and the limit of 3
+  // resends per 10 minutes per User are decided by the backend usecase.
   //
   // Possible errors:
-  // - INVALID_ARGUMENT: The request is missing user_id or the field is malformed.
   // - FAILED_PRECONDITION: The user's email is already verified.
-  // - PERMISSION_DENIED: The supplied user_id does not match the authenticated caller.
+  // - NOT_FOUND: No user record exists for the authenticated identity.
   // - RESOURCE_EXHAUSTED: The user has exceeded the resend rate limit.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   // - UNAVAILABLE: The email verification service is not configured.
@@ -116,10 +115,10 @@ service UserService {
 }
 
 // GetRequest is the request for retrieving the authenticated user's profile.
+// It names no User; the caller is taken from the sign-in.
 message GetRequest {
-  // The caller's user identifier. Must match the userID derived from the
-  // authenticated session; mismatches are rejected with PERMISSION_DENIED.
-  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+  reserved 1;
+  reserved "user_id";
 }
 
 // GetResponse contains the profile information of the requested user.
@@ -131,12 +130,8 @@ message GetResponse {
 // CreateRequest provides the necessary details to register a new user profile.
 // The external_id (Zitadel sub claim) and name are extracted from the authenticated JWT context
 // by the backend and MUST NOT be provided by the client.
-//
-// Unlike the other per-user RPCs, CreateRequest does NOT carry a user_id —
-// the caller's internal user_id has not yet been minted. Create is the
-// sanctioned exception to the rpc-auth-scoping convention. See the Create
-// RPC documentation for the idempotent-return semantics on duplicate
-// external_id.
+// See the Create RPC documentation for the idempotent-return semantics on
+// duplicate external_id.
 message CreateRequest {
   // Required. The user's email address for account identity.
   entity.v1.UserEmail email = 1 [(buf.validate.field).required = true];
@@ -145,7 +140,7 @@ message CreateRequest {
   // the onboarding flow before account creation. Providing this field here
   // persists the home area atomically with the initial user record. When
   // absent, the home area remains unset and can be configured later via
-  // UpdateHome. Ignored on the idempotent-return path (duplicate
+  // SetHome. Ignored on the idempotent-return path (duplicate
   // external_id) — the existing row's home is not overwritten.
   entity.v1.Home home = 2;
 
@@ -159,7 +154,7 @@ message CreateRequest {
   //
   // When absent, the user row is created with a NULL preferred_language
   // — semantically equivalent to a legacy row pending backfill — and the
-  // client backfills it on next hydration via UpdatePreferredLanguage.
+  // client backfills it on next hydration via SetPreferredLanguage.
   // This keeps the old-client transition window safe without requiring
   // perfectly synchronized deploys.
   //
@@ -178,29 +173,56 @@ message CreateResponse {
   entity.v1.User user = 1 [(buf.validate.field).required = true];
 }
 
-// UpdateHomeRequest provides the new home area for the authenticated user.
-message UpdateHomeRequest {
-  // The caller's user identifier. Must match the userID derived from the
-  // authenticated session; mismatches are rejected with PERMISSION_DENIED.
-  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+// UpdateRequest carries the caller's new full name and phone number and the
+// mask naming which of them to change.
+//
+// The nested User's own rules (its required id, email and external id) are
+// not evaluated, because the request names no User and carries only the
+// fields to change. The backend validates each value the mask names by its
+// entity rule (FullName, PhoneNumber) before any change and rejects a
+// malformed one with INVALID_ARGUMENT.
+message UpdateRequest {
+  option (buf.validate.message).cel = {
+    id: "update.some_field"
+    message: "at least one of full_name and phone_number must be given"
+    expression: "has(this.full_name) || has(this.phone_number)"
+  };
+
+  // The new full name. Unset keeps the current one.
+  optional entity.v1.FullName full_name = 1;
+
+  // The new phone number, in E.164 form. Unset keeps the current one.
+  optional entity.v1.PhoneNumber phone_number = 2;
+}
+
+// UpdateResponse returns the user profile after the change.
+message UpdateResponse {
+  // The updated user entity.
+  entity.v1.User user = 1 [(buf.validate.field).required = true];
+}
+
+// SetHomeRequest provides the new home area for the authenticated user. It
+// names no User; the caller is taken from the sign-in.
+message SetHomeRequest {
+  reserved 1;
+  reserved "user_id";
 
   // Required. The structured home area representing the user's geographic base
   // for live event attendance. See entity.v1.Home for the full code system contract.
   entity.v1.Home home = 2 [(buf.validate.field).required = true];
 }
 
-// UpdateHomeResponse returns the updated user profile after the home area change.
-message UpdateHomeResponse {
+// SetHomeResponse returns the updated user profile after the home area change.
+message SetHomeResponse {
   // The updated user entity with the new home area applied.
   entity.v1.User user = 1 [(buf.validate.field).required = true];
 }
 
-// UpdatePreferredLanguageRequest provides the new preferred language for the
-// authenticated user.
-message UpdatePreferredLanguageRequest {
-  // The caller's user identifier. Must match the userID derived from the
-  // authenticated session; mismatches are rejected with PERMISSION_DENIED.
-  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+// SetPreferredLanguageRequest provides the new preferred language for the
+// authenticated user. It names no User; the caller is taken from the sign-in.
+message SetPreferredLanguageRequest {
+  reserved 1;
+  reserved "user_id";
 
   // Required. The new preferred display language as an ISO 639-1 two-letter
   // code (e.g., "ja", "en"). Empty values and codes outside the
@@ -211,20 +233,19 @@ message UpdatePreferredLanguageRequest {
   }];
 }
 
-// UpdatePreferredLanguageResponse returns the updated user profile after the
+// SetPreferredLanguageResponse returns the updated user profile after the
 // preferred language change.
-message UpdatePreferredLanguageResponse {
+message SetPreferredLanguageResponse {
   // The updated user entity with the new preferred language applied.
   entity.v1.User user = 1 [(buf.validate.field).required = true];
 }
 
 // ResendEmailVerificationRequest is the request for resending the email
-// verification message.
+// verification message. It names no User; the caller is taken from the
+// sign-in.
 message ResendEmailVerificationRequest {
-  // The caller's user identifier. Must match the userID derived from the
-  // authenticated session; mismatches are rejected with PERMISSION_DENIED
-  // before any Zitadel API call is made.
-  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+  reserved 1;
+  reserved "user_id";
 }
 
 // ResendEmailVerificationResponse is returned when the verification email has

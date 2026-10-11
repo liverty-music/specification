@@ -40,7 +40,7 @@ enum PayoutOnboardingStatus {
 // OrganizerConnectedAccount is the opaque, provider-agnostic reference to an
 // Organizer's payout-recipient account plus its onboarding status. The account is
 // provisioned as a RECIPIENT (it holds only the transfers capability, never
-// card_payments): the platform is the settlement merchant and holds buyer funds,
+// card_payments): the platform is the settlement merchant and holds fans' funds,
 // while this account only receives the post-event Transfer. It stores only a token
 // meaningful to the provider (a Stripe "acct_..." id), never bank or identity data.
 message OrganizerConnectedAccount {

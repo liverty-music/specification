@@ -6,14 +6,19 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
-import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/series.proto";
+import "liverty_music/entity/v1/ticket_type.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
-// TicketSaleId is a globally unique identifier for a single TicketSale.
-message TicketSaleId {
-  // A UUID string mapping to the ticket sale's unique identity.
-  string value = 1 [(buf.validate.field).string.uuid = true];
+// TicketSaleName is the label of a TicketSale that fans and operators see, for
+// example ファンクラブ先行 (fan-club presale) or 一般発売 (general sale).
+message TicketSaleName {
+  // The name, 1 to 100 characters.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 100
+  }];
 }
 
 // TicketSaleMethod is how a TicketSale allocates its tickets. New values may be
@@ -23,46 +28,41 @@ enum TicketSaleMethod {
   // concrete method.
   TICKET_SALE_METHOD_UNSPECIFIED = 0;
 
-  // First come, first served: a fan who starts a checkout while tickets remain
-  // holds them for 15 minutes and buys them by completing the checkout.
+  // First come, first served: a fan who starts a Checkout while tickets remain
+  // holds them for 15 minutes and buys them by completing the Checkout.
   TICKET_SALE_METHOD_FIRST_COME = 1;
+
+  // Lottery (抽選): fans enter a LotteryEntry with a hold on their card during
+  // the window, and after the window closes one draw per TicketType allocates
+  // its quantity. Winners are charged; the other holds are given back.
+  TICKET_SALE_METHOD_LOTTERY = 2;
 }
 
-// TicketSaleState is where a TicketSale stands at a given time. It is derived
-// when the sale is read, never stored. New values may be appended; existing values must not be
-// renumbered.
-enum TicketSaleState {
-  // Default value, never returned.
-  TICKET_SALE_STATE_UNSPECIFIED = 0;
+// VerificationRequirement is whether fans must hold an Active Kyc to take part
+// in a TicketSale, and if so whether the driver's-licence method is admitted.
+// The zero value means no requirement and is the valid default. New values may
+// be appended; existing values must not be renumbered.
+enum VerificationRequirement {
+  // No verification is required (None, the default). Anyone may take part; only
+  // per-account limits apply.
+  VERIFICATION_REQUIREMENT_UNSPECIFIED = 0;
 
-  // Before the sale start. The sale start is shown in Japan time.
-  TICKET_SALE_STATE_NOT_YET_ON_SALE = 1;
+  // Verified-any: an Active Kyc by any method is required, including the
+  // driver's licence (weaker dedupe).
+  VERIFICATION_REQUIREMENT_VERIFIED_ANY = 1;
 
-  // Inside the sale window with tickets remaining.
-  TICKET_SALE_STATE_ON_SALE = 2;
-
-  // Inside the sale window, not sold out, but every remaining ticket is held by
-  // other fans' checkouts. Tickets may come back when those holds lapse.
-  TICKET_SALE_STATE_ALL_HELD = 3;
-
-  // Inside the sale window and the sold count equals the quantity. Raising the
-  // quantity reopens the sale.
-  TICKET_SALE_STATE_SOLD_OUT = 4;
-
-  // At or after the sale end. Takes precedence over SOLD_OUT and ALL_HELD.
-  TICKET_SALE_STATE_ENDED = 5;
+  // JPKI-only: an Active Kyc by マイナンバーカード (My Number Card, JPKI) is
+  // required; the driver's licence is not admitted. For the highest-demand
+  // shows.
+  VERIFICATION_REQUIREMENT_JPKI_ONLY = 2;
 }
 
-// TicketSale is the platform's own sale of one event's tickets, first come,
-// first served: an Organizer offers a quantity of tickets at one tax-inclusive
-// (税込) price during a sale window, and each fan may buy up to a per-account
-// limit. An event has at most one TicketSale. It is distinct from SalesPhase,
-// which records sales announced elsewhere, and from LotterySalesPhase.
-//
-// The state, whether stock is low and the held count are evaluated by the
-// server when the sale is read. The quantity, the sold count and the held count
-// are shown only to the owning Organizer; a fan-facing read leaves them unset,
-// so no fan learns how many tickets remain.
+// TicketSale is the platform's own sale opportunity for some or all events of
+// an Organizer's Series, such as a fan-club presale or a general sale (受付):
+// its name, how tickets are allocated, the window in which fans take part and
+// whether they must hold an Active Kyc. What it offers for each event is a
+// TicketType. Two sales of one event never overlap (checked server-side). It is
+// distinct from SalesPhase, which records sales announced elsewhere.
 message TicketSale {
   // The sale window must end after it starts.
   option (buf.validate.message).cel = {
@@ -71,21 +71,41 @@ message TicketSale {
     expression: "this.sale_end_time > this.sale_start_time"
   };
 
+  // A lottery window lasts 1 to 14 days inclusive. CEL has no day unit, so 1
+  // day is 24h and 14 days are 336h; CEL sees enums as integers, so 2 is
+  // TICKET_SALE_METHOD_LOTTERY.
+  option (buf.validate.message).cel = {
+    id: "ticket_sale.lottery_window"
+    message: "a lottery window must last 1 to 14 days"
+    expression:
+      "this.method != 2"
+      "|| (this.sale_end_time - this.sale_start_time >= duration('24h')"
+      "&& this.sale_end_time - this.sale_start_time <= duration('336h'))"
+  };
+
+  // Only a lottery sale is drawn.
+  option (buf.validate.message).cel = {
+    id: "ticket_sale.drawn_time_lottery_only"
+    message: "only a lottery sale may have drawn_time"
+    expression: "!has(this.drawn_time) || this.method == 2"
+  };
+
+  // A sale has at most one ticket type per event.
+  option (buf.validate.message).cel = {
+    id: "ticket_sale.one_ticket_type_per_event"
+    message: "ticket_types must name each event at most once"
+    expression: "this.ticket_types.map(t, t.event_id.value).unique()"
+  };
+
   // The unique identifier for this sale. Server-generated surrogate id.
   TicketSaleId id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
 
-  // The event whose tickets are sold. One TicketSale per event.
-  EventId event_id = 2 [
-    (google.api.field_behavior) = REQUIRED,
-    (buf.validate.field).required = true
-  ];
-
-  // How the sale allocates its tickets. FIRST_COME for now.
+  // How the sale allocates its tickets. Chosen when the sale is created.
   TicketSaleMethod method = 3 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).enum = {
       defined_only: true
       not_in: [0]
@@ -98,64 +118,48 @@ message TicketSale {
     (buf.validate.field).required = true
   ];
 
-  // When the sale closes. After the sale start, and no later than the event's
-  // start time (checked server-side). Entered and shown in Japan time.
+  // When the sale closes. After the sale start; for a lottery, 1 to 14 days
+  // after it. Before the start of every event the sale offers (checked
+  // server-side). Entered and shown in Japan time.
   google.protobuf.Timestamp sale_end_time = 5 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
 
-  // The price of one ticket in yen, tax-inclusive (税込). 1 to 1,000,000. The
-  // fan pays price × count, with no buyer fee. It cannot change while any
-  // ticket is sold or held.
-  int64 price = 6 [
+  // The Series whose events the sale offers.
+  SeriesId series_id = 14 [
     (google.api.field_behavior) = REQUIRED,
-    (buf.validate.field).int64 = {
-      gte: 1
-      lte: 1000000
-    }
+    (buf.validate.field).required = true
   ];
 
-  // The most tickets one fan may hold or have bought from the sale, counted
-  // over all of their checkouts. 1 to 10.
-  int32 per_account_limit = 7 [
+  // The label fans and operators see, for example ファンクラブ先行.
+  TicketSaleName name = 15 [
     (google.api.field_behavior) = REQUIRED,
-    (buf.validate.field).int32 = {
-      gte: 1
-      lte: 10
-    }
+    (buf.validate.field).required = true
   ];
 
-  // The tickets offered, at least 1. Set only in the owning Organizer's view.
-  // It can grow, or shrink down to what is sold and held.
-  optional int32 quantity = 8 [(buf.validate.field).int32.gte = 1];
-
-  // The tickets on the sale's committed and completed checkouts, 0 to the
-  // quantity. Set only in the owning Organizer's view. Server-owned.
-  optional int32 sold_count = 9 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (buf.validate.field).int32.gte = 0
-  ];
-
-  // The tickets held now by fans' checkouts whose hold has not lapsed, 0 to the
-  // quantity. Set only in the owning Organizer's view. Server-owned.
-  optional int32 held_count = 11 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (buf.validate.field).int32.gte = 0
-  ];
-
-  // Where the sale stands at the time it was read. Server-owned; never
-  // UNSPECIFIED in a response.
-  TicketSaleState state = 12 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
+  // Whether fans must hold an Active Kyc to take part. UNSPECIFIED (None) when
+  // not given.
+  VerificationRequirement verification_requirement = 16 [
+    (google.api.field_behavior) = OPTIONAL,
     (buf.validate.field).enum.defined_only = true
   ];
 
-  // True when the sale is ON_SALE and at most a tenth of its quantity, rounded
-  // up, remains at the time it was read, so the event page shows 残りわずか
-  // (few left) without a count. Server-owned.
-  bool low_stock = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // When the lottery draw ran. Absent until the draw runs; a lottery sale is
+  // drawn once it is set. Lottery only. Server-owned.
+  google.protobuf.Timestamp drawn_time = 17 [(google.api.field_behavior) = OUTPUT_ONLY];
 
-  reserved 10;
-  reserved "create_time";
+  // What the sale offers, one TicketType per event, at least one. A fan-facing
+  // read of an event's sales carries only the ticket type for that event.
+  repeated TicketType ticket_types = 18 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).repeated.min_items = 1
+  ];
+
+  // Fields 2, 6 to 9 and 11 to 13 were the per-event sale's event, price,
+  // per-account limit, quantity, sold count, held count, state and low stock,
+  // which moved to TicketType. Field 10 was a creation time that was never
+  // exposed.
+  reserved 2, 6 to 13;
+  reserved "event_id", "price", "per_account_limit", "quantity", "sold_count", "create_time", "held_count", "state", "low_stock";
 }

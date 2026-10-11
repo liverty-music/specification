@@ -6,15 +6,15 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
-import "liverty_music/entity/v1/lottery_application.proto";
-import "liverty_music/entity/v1/reservation.proto";
+import "liverty_music/entity/v1/checkout.proto";
+import "liverty_music/entity/v1/lottery_entry.proto";
 import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
 // OrderId is a globally unique identifier for a single Order — the purchase
-// record of one winning lottery application or one completed checkout. Server-generated surrogate id; it never
-// encodes any payment data.
+// record of one won LotteryEntry or one Committed Checkout. Server-generated
+// surrogate id; it never encodes any payment data.
 message OrderId {
   // A UUID string mapping to the order's unique identity.
   string value = 1 [(buf.validate.field).string.uuid = true];
@@ -30,8 +30,9 @@ enum PaymentProvider {
   PAYMENT_PROVIDER_UNSPECIFIED = 0;
 
   // Stripe Connect (separate charges & transfers, platform-held) — the MVP
-  // provider. ④ owns the PaymentIntent (manual-capture authorize/capture); ⑤
-  // records only the opaque references to it.
+  // provider. The LotteryEntry or Checkout owns the PaymentIntent
+  // (manual-capture authorize/capture); the Order records only the opaque
+  // references to it.
   PAYMENT_PROVIDER_STRIPE = 1;
 
   // KOMOJU — a PoC challenger kept swappable behind the opaque references (#778).
@@ -39,11 +40,11 @@ enum PaymentProvider {
   PAYMENT_PROVIDER_KOMOJU = 2;
 }
 
-// Payment is the opaque, provider-agnostic reference to ④'s captured winning
-// payment, plus the display-only facets safe to retain. It holds only tokens
-// meaningful to the provider and never raw card data: NEVER a PAN, CVC, or
-// expiry. ⑤ records this from ④'s captured PaymentIntent — it performs no
-// separate charge of its own. It is a value object embedded in an Order, not a
+// Payment is the opaque, provider-agnostic reference to the captured payment of
+// an Order's source, plus the display-only facets safe to retain. It holds only
+// tokens meaningful to the provider and never raw card data: NEVER a PAN, CVC,
+// or expiry. It is recorded from the source's captured PaymentIntent — the
+// Order performs no separate charge of its own. It is a value object embedded in an Order, not a
 // standalone addressable entity.
 message Payment {
   // Which provider backs the captured payment. Drives which adapter interprets
@@ -56,9 +57,9 @@ message Payment {
     }
   ];
 
-  // The provider's PaymentIntent reference (e.g. a Stripe "pi_..." id) for ④'s
-  // captured manual-capture authorization. Opaque; meaningful only to the
-  // provider. This is ④'s PaymentIntent — ⑤ references, never re-charges, it.
+  // The provider's PaymentIntent reference (e.g. a Stripe "pi_..." id) for the
+  // source's captured manual-capture authorization. Opaque; meaningful only to
+  // the provider. The Order references it and never charges it again.
   string payment_intent_ref = 2 [(buf.validate.field).string = {
     min_len: 1
     max_len: 255
@@ -72,7 +73,7 @@ message Payment {
   ];
 
   // Display-only card brand facet (e.g. "visa", "mastercard"), safe to show the
-  // buyer. Optional, never used for authorization. Brand policy is applied
+  // User. Optional, never used for authorization. Brand policy is applied
   // upstream at the authorization (the lottery rejects American Express; a
   // first-come checkout accepts every brand), not here.
   string card_brand = 4 [
@@ -80,7 +81,7 @@ message Payment {
     (buf.validate.field).string.max_len = 40
   ];
 
-  // Display-only last four digits of the card, safe to show the buyer. Optional;
+  // Display-only last four digits of the card, safe to show the User. Optional;
   // this is NOT the PAN (only the trailing four, which providers permit storing).
   string card_last4 = 5 [
     (google.api.field_behavior) = OPTIONAL,
@@ -89,17 +90,17 @@ message Payment {
 }
 
 // OrderStatus is the lifecycle of an Order. There is deliberately NO `pending`
-// state: ⑤ creates the Order from an already-captured payment, so it is `paid`
-// on creation (the pre-capture authorize/hold state lives on ④'s
-// TicketApplication, not here). New values may be appended; existing values must
+// state: the Order is created from an already-captured payment, so it is `paid`
+// on creation (the pre-capture hold state lives on the LotteryEntry or the
+// Checkout, not here). New values may be appended; existing values must
 // not be renumbered.
 enum OrderStatus {
   // Default value, rejected at the boundary: a persisted Order always records a
   // concrete status.
   ORDER_STATUS_UNSPECIFIED = 0;
 
-  // Paid — the normal state on creation. The Order is built from ④'s captured
-  // winning payment, so funds are already captured (held on the platform
+  // Paid — the normal state on creation. The Order is built from its source's
+  // captured payment, so funds are already captured (held on the platform
   // balance) when the Order exists.
   ORDER_STATUS_PAID = 1;
 
@@ -109,7 +110,7 @@ enum OrderStatus {
   ORDER_STATUS_REFUNDED = 2;
 
   // Failed — the capture-succeeded-but-issuance-refunded edge: the capture
-  // succeeded but ⑤ could not complete issuance, so it refunded the captured
+  // succeeded but the Tickets could not be issued, so it refunded the captured
   // payment to avoid money-captured-with-no-ticket. Distinct from `refunded`,
   // which follows a successfully issued Order.
   ORDER_STATUS_FAILED = 3;
@@ -118,13 +119,14 @@ enum OrderStatus {
 // Order is a provider- and method-agnostic purchase record: the opaque reference
 // to the captured payment, the Order's own status, its total amount and
 // currency, the capture time, and display-only facets. It has exactly one
-// source — a winning lottery application or a completed first-come checkout
-// (Reservation) — and ONE Order covers all N tickets of that source. At most one
-// Order exists per source (issuance idempotency).
+// source — a won LotteryEntry or a Committed Checkout — and ONE Order covers all
+// N tickets of that source. At most one Order exists per source (issuance
+// idempotency).
 //
-// It is created only from an already-captured payment (④'s Won-captured
-// signal, or the checkout's charge); ⑤ performs no separate off-session charge. The Order NEVER stores a PAN, CVC, or expiry — only opaque provider
-// tokens and safe display facets (PCI SAQ A).
+// It is created only from an already-captured payment (the won entry's
+// captured hold, or the checkout's charge); the Order performs no separate
+// off-session charge. The Order NEVER stores a PAN, CVC, or expiry — only
+// opaque provider tokens and safe display facets (PCI SAQ A).
 message Order {
   // The unique identifier for this order. Server-generated surrogate id.
   OrderId id = 1 [
@@ -132,9 +134,9 @@ message Order {
     (buf.validate.field).required = true
   ];
 
-  // The account that bought — the winning applicant or the fan who checked
-  // out. The tickets this Order issues are bound to this account.
-  UserId buyer_id = 2 [
+  // The User account that bought the tickets: the user of the won LotteryEntry
+  // or of the Checkout. The tickets this Order issues are bound to this account.
+  UserId user_id = 2 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
@@ -144,16 +146,15 @@ message Order {
   oneof source {
     option (buf.validate.oneof).required = true;
 
-    // The winning lottery application this Order derives from (④'s Won-captured
-    // record).
-    TicketApplicationId application_id = 3;
+    // The won LotteryEntry this Order is purchased by.
+    LotteryEntryId lottery_entry_id = 10;
 
-    // The first-come checkout this Order completes: a Reservation that was
-    // committed and charged.
-    ReservationId reservation_id = 9;
+    // The first-come Checkout this Order completes: one that was committed and
+    // charged.
+    CheckoutId checkout_id = 11;
   }
 
-  // The opaque reference to ④'s captured winning payment plus safe display
+  // The opaque reference to the source's captured payment plus safe display
   // facets. Never raw card data.
   Payment payment = 4 [
     (google.api.field_behavior) = REQUIRED,
@@ -192,4 +193,10 @@ message Order {
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
+
+  // Fields 3 and 9 were the lottery application and the reservation sources,
+  // replaced by lottery_entry_id and checkout_id. Field 2 was renamed from
+  // buyer_id.
+  reserved 3, 9;
+  reserved "application_id", "reservation_id", "buyer_id";
 }

@@ -20,12 +20,14 @@ import "liverty_music/entity/v1/user.proto";
 // Artists. Every returned Series carries its organizer id, description, cover
 // media, visibility and publish state when it has them, on every call alike.
 service ConcertService {
-  // List retrieves a collection of concert events, filtered by the performing artist.
+  // ListByArtist retrieves every concert the given artist performs at, as a
+  // flat list. Authentication is not required. The discovery screen calls it
+  // after a follow to tell whether the artist has concerts; an artist without
+  // concerts yields an empty list, not an error.
   //
   // Possible errors:
-  // - INVALID_ARGUMENT: The request is missing a required field or contains invalid data.
-  // - NOT_FOUND: No concerts were found for the specified artist.
-  rpc List(ListRequest) returns (ListResponse);
+  // - INVALID_ARGUMENT: The artist ID is missing.
+  rpc ListByArtist(ListByArtistRequest) returns (ListByArtistResponse);
 
   // Get retrieves the concert of one event for its public event page.
   // Authentication is not required. Only an event of a first-party series that
@@ -48,12 +50,15 @@ service ConcertService {
   //   same error is returned in every case.
   rpc ListBySeries(ListBySeriesRequest) returns (ListBySeriesResponse);
 
-  // ListByFollower retrieves all concerts for artists followed by the authenticated user.
-  // The caller's identity is determined from the authentication context.
+  // ListFollowed retrieves the concerts of every artist the signed-in fan
+  // follows, grouped by date and classified by geographic proximity to the
+  // fan's stored home area. The fan and the home are taken from the sign-in
+  // and the stored User; the request names neither.
   //
   // Possible errors:
-  // - UNAUTHENTICATED: The user identity could not be verified.
-  rpc ListByFollower(ListByFollowerRequest) returns (ListByFollowerResponse);
+  // - UNAUTHENTICATED: The caller is not signed in.
+  // - NOT_FOUND: The signed-in caller has no stored account.
+  rpc ListFollowed(ListFollowedRequest) returns (ListFollowedResponse);
 
   // ListByArtists retrieves concerts for the specified artists, grouped by date
   // and classified by geographic proximity to the caller's home area.
@@ -77,15 +82,15 @@ service ConcertService {
   rpc ListByLocation(ListByLocationRequest) returns (ListByLocationResponse);
 }
 
-// ListRequest is the request for retrieving concerts associated with a specific artist.
-message ListRequest {
+// ListByArtistRequest is the request for retrieving the concerts of one artist.
+message ListByArtistRequest {
   // Required. The unique identifier of the artist whose concerts are to be listed.
   entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
 }
 
-// ListResponse contains the collection of concerts matching the ListRequest.
-message ListResponse {
-  // The collection of concert events found.
+// ListByArtistResponse contains the concerts of the requested artist.
+message ListByArtistResponse {
+  // The concerts the artist performs at. Empty when the artist has none.
   repeated entity.v1.Concert concerts = 1;
 
   // Every Series the returned concerts refer to, once each, in the order the
@@ -136,10 +141,10 @@ message ListBySeriesResponse {
   repeated entity.v1.Artist artists = 3;
 }
 
-// ListByFollowerRequest is the request for retrieving concerts for all artists
-// followed by the authenticated user. The user identity is determined from the
-// authentication context.
-message ListByFollowerRequest {
+// ListFollowedRequest is the request for retrieving the concerts of every
+// artist the signed-in fan follows. The fan is taken from the sign-in; the
+// request names no fan and no home.
+message ListFollowedRequest {
   // Optional. The inclusive start of the date range (venue-local calendar date).
   // When provided, only concerts whose local event date is on or after this date
   // are returned, including dates in the past when it precedes the current date.
@@ -149,9 +154,9 @@ message ListByFollowerRequest {
   entity.v1.LocalDate from = 1;
 }
 
-// ListByFollowerResponse contains concerts for all artists followed by the caller,
-// grouped by date and classified by geographic proximity.
-message ListByFollowerResponse {
+// ListFollowedResponse contains the concerts of every artist the caller
+// follows, grouped by date and classified by geographic proximity.
+message ListFollowedResponse {
   reserved 1;
   reserved "concerts";
 

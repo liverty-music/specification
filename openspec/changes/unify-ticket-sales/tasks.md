@@ -27,28 +27,28 @@
 - [x] 1.4 Once 0.3 holds, write MODIFIED deltas for the specs renamed by the RPC naming rule (proposal "Capabilities renamed by the RPC naming rule", design D11): the method names in `adapter/fan/api/rpc/{concert,artist,follow,ticket,ticket-journey,user,notification,push-notification}`, `adapter/admin/api/rpc/{concert,organizer,artist,user}`, `adapter/organizer/api/rpc/organizer` and the routes that name them, and the removal of `user_id` from their requests (design D15). Behavior is unchanged. Verify `openspec validate unify-ticket-sales --strict` passes and every old RPC name (`TicketService.GetOrder`, `FollowService.ListFollowed`, `ConcertService.ListPending`, `OrganizerService.ListArtists`, `ArtistService.CreateOfficialSite`, `ListByFollower`) appears in the change's specs only in REMOVED, RENAMED or Migration text
 - [x] 1.5 Write the RPC naming rule of design D11 (rule table, entity-named services, packages, AIP-132/136 deviation and its rejected alternatives, worked examples) as a repository skill in `specification/.claude/skills/` that loads when a `.proto` file or an adapter spec is written and overrides the user-scope protobuf skill where they differ; shorten `AGENTS.md:148` to the review criteria with a pointer to the skill, and update the `agent-rules` block of `CLAUDE.md` that copies it; verify the skill's rule table matches design D11
 - [ ] 1.6 Move `openspec/specs/components/entity/verified-identity` to `entity/kyc` and rename `VerifiedIdentity` to `Kyc` in every main spec that names it (design D16), as a pure rename; rename the requirement "Verified identity binding" and its scenario "Verified identity missing" of `usecase/order/issue-from-captured-win` once the move lands (a MODIFIED block cannot drop a scenario); verify `openspec validate --specs`, `scripts/check-spec-layout.py` and `openspec validate unify-ticket-sales --strict` pass and `grep -rni "verified identit" openspec/specs` finds nothing
-- [ ] 1.7 Open the plan follow-up PR from a worktree cut from origin/main (README "Branch work in this repository"; the plan itself merged in #1102), staging only `openspec/changes/unify-ticket-sales`, `openspec/changes/rename-reception-to-scanner` (task 8.3), the main specs edited in 1.1, `AGENTS.md`, `CLAUDE.md` and `docs/payments-design.md`; verify `openspec-checks.yml` passes and the PR merges
+- [x] 1.7 Open the plan follow-up PR from a worktree cut from origin/main (README "Branch work in this repository"; the plan itself merged in #1102), staging only `openspec/changes/unify-ticket-sales`, `openspec/changes/rename-reception-to-scanner` (task 8.3), the main specs edited in 1.1, `AGENTS.md`, `CLAUDE.md` and `docs/payments-design.md`; verify `openspec-checks.yml` passes and the PR merges
 
 ## 2. Proto (specification → BSR)
 
-- [ ] 2.1 Rewrite `entity/v1/ticket_sale.proto` from `components/entity/ticket-sale`, and add `entity/v1/ticket_type.proto` from `components/entity/ticket-type`:
+- [x] 2.1 Rewrite `entity/v1/ticket_sale.proto` from `components/entity/ticket-sale`, and add `entity/v1/ticket_type.proto` from `components/entity/ticket-type`:
   - `TicketSale`: `TicketSaleId`, `SeriesId`, a `TicketSaleName` value message (1-100), `TicketSaleMethod` (`FIRST_COME = 1` kept, `LOTTERY = 2` added), `sale_start_time` and `sale_end_time` (names kept), `VerificationRequirement`, `drawn_time`, and `repeated TicketType ticket_types`;
   - `TicketType`: `TicketTypeId`, `TicketSaleId`, `EventId`, price 1-1,000,000, quantity >= 1, `per_account_limit` 1-10, and OUTPUT_ONLY `sold_count`, `held_count`, `state` and `low_stock` for a first-come type;
   - reserve the per-event field numbers of the old `TicketSale`.
 
   Verify `buf lint` and `buf format -d` pass
-- [ ] 2.2 Replace `entity/v1/lottery_application.proto` with `lottery_entry.proto` and `reservation.proto` with `checkout.proto` (design D7):
+- [x] 2.2 Replace `entity/v1/lottery_application.proto` with `lottery_entry.proto` and `reservation.proto` with `checkout.proto` (design D7):
   - `LotteryEntry`, `LotteryEntryId`, `LotteryEntryState` with ENTERED=1, WON=2, LOST=3, WITHDRAWN=4, DRAFT=5 (design D7, D14); fields `ticket_type_id`, `user_id`, `requested_ticket_count`, `authorization` (optional on a Draft), `state`, `draw_position`;
   - `Checkout`, `CheckoutId`, `CheckoutStatus`, keyed by `ticket_type_id`;
   - remove `LotterySalesPhase`, `LotterySalesPhaseId`, the deprecated `ApplicantIdentity` and `holder_identity.proto`.
 
   Verify `buf lint` passes
-- [ ] 2.3 Entity fields (design D8, D9), and verify the protovalidate rules match the entity specs and `buf lint` passes:
+- [x] 2.3 Entity fields (design D8, D9), and verify the protovalidate rules match the entity specs and `buf lint` passes:
   - `user.proto`: add `FullName` (1-200) and `PhoneNumber` (E.164 pattern) value messages and the `full_name` and `phone_number` fields; remove `holder_identity = 9` and reserve 9;
   - `order.proto`: `buyer_id` → `user_id`; in the `source` oneof, `application_id` → `lottery_entry_id` and `reservation_id` → `checkout_id`;
   - `ticket.proto`: `holder_id` → `user_id`, remove `holder_identity`;
   - `organizer.proto`: replace `seller_details` with `legal_name`, `representative_name`, `business_address`, `business_phone_number`, `contact_email`; this also changes the Organizer embedded in `series.proto`.
-- [ ] 2.4 Services (design D11), each with doc comments matching the adapter specs:
+- [x] 2.4 Services (design D11), each with doc comments matching the adapter specs:
   - `rpc/organizer/ticket_sale/v1/ticket_sale_service.proto`: `Create`, `ListByEvent`, `SetWindow`, `SetVerificationRequirement`; remove `Configure` and `Get`;
   - `rpc/organizer/ticket_type/v1/ticket_type_service.proto`: `Update` (price, quantity, per-account limit);
   - remove `rpc/organizer/lottery/v1`;
@@ -61,14 +61,14 @@
   - remove `rpc/issuance/v1`.
 
   Verify `buf lint` passes and `grep -rn -i "seller\|holder\|buyer\|applicant\|reservation" proto/` finds only reserved names, and `grep -rn "TicketApplication\|application_id" proto/` finds only reserved names
-- [ ] 2.5 Rename the other services' methods and remove the caller's `user_id` (design D11 "Other services", D15), each with doc comments matching the adapter specs of task 1.4:
+- [x] 2.5 Rename the other services' methods and remove the caller's `user_id` (design D11 "Other services", D15), each with doc comments matching the adapter specs of task 1.4:
   - `ConcertService`: `List(artist_id)` → `ListByArtist(artist_id)`, `ListByFollower` → `ListFollowed`;
   - admin `ArtistService.ListByOrganizer(organizer_id)` and organizer `ArtistService.List()`, removing both `OrganizerService.ListArtists`;
   - `FollowService.List`; `TicketJourneyService.List`;
   - `rpc/kyc/v1` `KycService` with `Start`, `Create`, `Recheck`, `Get()`, removing `rpc/identity/v1`; entity `VerifiedIdentity`/`VerifiedIdentityId` → `Kyc`/`KycId`, `VerificationLevel.IDENTITY_VERIFIED` → `KYC_VERIFIED`, the Ticket's verified identity reference → `kyc_id` (design D16);
   - `PushSubscriptionService`; `NotifyNewConcerts` on admin `NotificationService`;
   - admin `StagedConcertService`; `OfficialSiteService`;
-  - `UserService.SetHome`, `SetPreferredLanguage`, and a new `UserService.Update` with a field mask over `full_name` and `phone_number` (design D8); `NotificationService.Dismiss`; `SeriesService.RegenerateShareUrl`, `CreateMediaUploadUrl`;
+  - `UserService.SetHome`, `SetPreferredLanguage`, and a new `UserService.Update` taking an optional `full_name` and `phone_number`, at least one (design D8); `NotificationService.Dismiss`; `SeriesService.RegenerateShareUrl`, `CreateMediaUploadUrl`;
   - no `user_id` on `UserService`, `NotificationService`, `PushSubscriptionService` or `KycService` requests.
 
   Verify `buf lint` passes, that no request of a per-user fan RPC has a `user_id` field, and that every service name is an entity name under `openspec/specs/components/entity/`

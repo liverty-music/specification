@@ -167,7 +167,7 @@ message Series {
 
   // The organizer that authored this series, resolved by the server and set
   // exactly when organizer_id is set: its id, name and, once entered, the
-  // 特商法 seller details a fan's checkout shows. A fan-facing read never sets
+  // 特商法 business details a fan's checkout shows. A fan-facing read never sets
   // its platform fee rate.
   Organizer organizer = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

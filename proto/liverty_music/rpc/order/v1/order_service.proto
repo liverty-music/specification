@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.order.v1 provides the fan-facing OrderService: the
+// signed-in fan's read of their own Orders. Orders are issued by the checkout
+// (liverty_music.rpc.checkout.v1) and by the lottery draw's issuance job; their
+// tickets are read through liverty_music.rpc.ticket.v1, and refunds are admin
+// operations (liverty_music.rpc.admin.order.v1).
+package liverty_music.rpc.order.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/order.proto";
+
+// OrderService is the fan-facing surface over a fan's own Orders. Every call
+// requires a signed-in fan, who is always the caller; the fan is resolved from
+// the token to their stored account and is never named in a request. No money
+// moves here.
+service OrderService {
+  // Get returns one of the caller's own Orders: its payment result (status,
+  // amount, paid time and card display details).
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - INVALID_ARGUMENT: The order_id is missing or malformed.
+  // - NOT_FOUND: The caller has no stored account, or no such Order exists for
+  //   the caller. Non-revealing: an Order of another account is reported the
+  //   same as a missing one.
+  rpc Get(GetRequest) returns (GetResponse);
+}
+
+// GetRequest names the Order to return.
+message GetRequest {
+  // Required. The caller's Order.
+  entity.v1.OrderId order_id = 1 [(buf.validate.field).required = true];
+}
+
+// GetResponse returns the caller's Order.
+message GetResponse {
+  // The requested Order, including its payment result.
+  entity.v1.Order order = 1 [(buf.validate.field).required = true];
+}

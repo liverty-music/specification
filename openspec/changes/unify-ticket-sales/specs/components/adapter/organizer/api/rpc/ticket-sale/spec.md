@@ -37,7 +37,7 @@ Each call SHALL fail with InvalidArgument, before any usecase runs, when a value
 - Create, when no Series, name, method, start time or TicketType is given, or when a TicketType has no event, price or quantity; the end time and the per-account limit may be left out;
 - ListByEvent, when no event is given;
 - SetWindow, when no sale, start time or end time is given;
-- SetVerificationRequirement, when no sale or requirement is given.
+- SetVerificationRequirement, when no sale is given. A request that gives no requirement sets None.
 
 #### Scenario: Missing price
 

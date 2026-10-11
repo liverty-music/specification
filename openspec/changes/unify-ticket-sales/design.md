@@ -109,7 +109,7 @@ A `TicketSale` (受付) holds what is common to one sale opportunity: Series, na
 
 - `users.holder_full_name` / `holder_phone_number` are renamed `full_name` / `phone_number`, with their CHECKs. A user without values gets them from their newest lottery application or ticket. `ticket_applications.applicant_*`, `tickets.holder_*` and `reservations.holder_*` are dropped.
 - `LotteryUseCase.Authorize` and the first-come checkout's `Authorize` take the name and phone, validate them by the User rule and store them with `User.UpdatePersonalDetails` before they open the hold. The entry and checkout screens prefill them from the User.
-- The ticket face reads the User's current values. The fan can change them at any time on the settings screen with `UserService.Update` (a field mask over the full name and phone number; decided with the user), as well as at lottery entry and checkout.
+- The ticket face reads the User's current values. The fan can change them at any time on the settings screen with `UserService.Update` (a new full name, phone number or both; decided with the user), as well as at lottery entry and checkout.
 - **Why no copy on the Ticket:** the door never reads the name (Context). Account binding and the admission code control entry. A copy per ticket stored the same value N times for a companion group.
 - **Rejected — locking changes while tickets are valid** (discussed with the user): it blocks real corrections (a marriage name, a new phone) and protects nothing that the door checks.
 - **Legal follow-up:** whether 特定興行入場券 (covered ticket) evidence needs the value confirmed at sale goes to the counsel list in `docs/payments-design.md`. If counsel says yes, an append-only history of changes is added then. A copy on each Ticket is not the answer to that.
@@ -199,7 +199,7 @@ A `TicketSale` (受付) holds what is common to one sale opportunity: Series, na
 | `PushNotificationService.NotifyNewConcerts` | admin `NotificationService.NotifyNewConcerts` (a test hook) |
 | admin `ConcertService.ListPending`/`Approve`/`Reject` | `StagedConcertService.List`/`Approve`/`Reject` |
 | `ArtistService.CreateOfficialSite`/`DeleteOfficialSite` | `OfficialSiteService.Create`/`Delete` |
-| `UserService.UpdateHome`/`UpdatePreferredLanguage` | `SetHome`/`SetPreferredLanguage`; new `UserService.Update` (field mask: full name, phone number, D8) |
+| `UserService.UpdateHome`/`UpdatePreferredLanguage` | `SetHome`/`SetPreferredLanguage`; new `UserService.Update` (full name, phone number or both, D8) |
 | `NotificationService.MarkDismissed` | `Dismiss` (`MarkRead` stays: "read" is not a good imperative) |
 | `SeriesService.RegenerateToken`, `CreateMediaUploadURL` | `RegenerateShareUrl`, `CreateMediaUploadUrl` |
 | `user_id` on `UserService`, `NotificationService`, push subscription and KYC requests | removed (D15) |

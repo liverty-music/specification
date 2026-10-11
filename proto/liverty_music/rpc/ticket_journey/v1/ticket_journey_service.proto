@@ -12,8 +12,11 @@ option go_package = "github.com/liverty-music/specification/gen/go/liverty_music
 
 // TicketJourneyService manages a fan's personal ticket acquisition journey for events.
 // It allows fans to track their progress through the ticket purchase lifecycle — from
-// monitoring ticket sales announcements, through lottery applications and payment, to
-// securing the ticket. All operations are scoped to the authenticated user.
+// monitoring ticket sales announcements, through lottery entries and payment, to
+// securing the ticket. All operations are scoped to the signed-in fan; no
+// request names a fan. Every call fails with UNAUTHENTICATED when the caller is
+// not signed in, and with NOT_FOUND when the caller has no account, before any
+// journey is read or changed.
 service TicketJourneyService {
   // SetStatus creates or updates the fan's ticket journey status for a specific event.
   // If no journey exists for the given event, one is created. If a journey already exists,
@@ -22,7 +25,8 @@ service TicketJourneyService {
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The event_id is missing/invalid or the status is UNSPECIFIED/undefined.
-  // - UNAUTHENTICATED: The user identity could not be verified.
+  // - UNAUTHENTICATED: The caller is not signed in.
+  // - NOT_FOUND: The signed-in caller has no account.
   rpc SetStatus(SetStatusRequest) returns (SetStatusResponse);
 
   // Delete removes the fan's ticket journey for a specific event.
@@ -30,16 +34,19 @@ service TicketJourneyService {
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The event_id is missing or invalid.
-  // - UNAUTHENTICATED: The user identity could not be verified.
+  // - UNAUTHENTICATED: The caller is not signed in.
+  // - NOT_FOUND: The signed-in caller has no account.
   rpc Delete(DeleteRequest) returns (DeleteResponse);
 
-  // ListByUser retrieves all ticket journeys for the authenticated fan.
-  // Returns a lightweight list of (event_id, status) pairs intended to be joined
-  // with concert data on the client side.
+  // List retrieves all ticket journeys of the authenticated fan, each with its
+  // event, its status and the caller as its owner, intended to be joined with
+  // concert data on the client side. A fan with no journeys gets an empty
+  // list, not an error.
   //
   // Possible errors:
-  // - UNAUTHENTICATED: The user identity could not be verified.
-  rpc ListByUser(ListByUserRequest) returns (ListByUserResponse);
+  // - UNAUTHENTICATED: The caller is not signed in.
+  // - NOT_FOUND: The signed-in caller has no account.
+  rpc List(ListRequest) returns (ListResponse);
 }
 
 // SetStatusRequest specifies the event and desired status for the fan's ticket journey.
@@ -66,12 +73,12 @@ message DeleteRequest {
 // DeleteResponse is returned upon a successful delete operation.
 message DeleteResponse {}
 
-// ListByUserRequest is the request for listing the authenticated fan's ticket journeys.
-// No fields are required; the user identity is determined from the authentication context.
-message ListByUserRequest {}
+// ListRequest is the request for listing the authenticated fan's ticket
+// journeys. It names no fan; the fan is taken from the sign-in.
+message ListRequest {}
 
-// ListByUserResponse contains all ticket journeys for the authenticated fan.
-message ListByUserResponse {
+// ListResponse contains all ticket journeys of the authenticated fan.
+message ListResponse {
   // The fan's ticket journeys across all events.
   repeated liverty_music.entity.v1.TicketJourney journeys = 1;
 }

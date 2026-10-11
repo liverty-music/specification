@@ -7,10 +7,9 @@ import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/event.proto";
-import "liverty_music/entity/v1/holder_identity.proto";
+import "liverty_music/entity/v1/kyc.proto";
 import "liverty_music/entity/v1/order.proto";
 import "liverty_music/entity/v1/user.proto";
-import "liverty_music/entity/v1/verified_identity.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
@@ -21,18 +20,17 @@ message TicketId {
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
-// TicketStatus is the lifecycle of an issued Ticket as owned by ⑤. ⑤ issues a
-// ticket as ISSUED and voids it when its Order is refunded (event cancellation
-// or dispute). Admission at the venue is not a status: ⑥
-// ticket-wallet-and-checkin records it as the ticket's `admit_time`, which is
-// kept when the ticket is later voided. New values may be appended and
+// TicketStatus is the lifecycle of an issued Ticket. A ticket is issued as
+// ISSUED and voided when its Order is refunded (event cancellation or
+// dispute). Admission at the venue is not a status: it is recorded as the
+// ticket's `admit_time`, which is kept when the ticket is later voided. New values may be appended and
 // existing values must not be renumbered.
 enum TicketStatus {
   // Default value, rejected at the boundary: a persisted Ticket always records a
   // concrete status.
   TICKET_STATUS_UNSPECIFIED = 0;
 
-  // Issued and valid — the normal state on issuance from a captured win.
+  // Issued and valid — the normal state on issuance from an Order.
   TICKET_STATUS_ISSUED = 1;
 
   // Voided — the ticket's Order was refunded (cancellation / dispute), so the
@@ -40,9 +38,9 @@ enum TicketStatus {
   TICKET_STATUS_VOIDED = 2;
 }
 
-// Ticket is a Web2, account-bound admission right issued from a captured lottery
-// win. ⑤ DEFINES this entity; ⑥ ticket-wallet-and-checkin adds admission at
-// the venue on top of it (`admit_time`).
+// Ticket is one account-bound admission right to an event, issued from an
+// Order (a won LotteryEntry or a Committed Checkout). Admission at the venue is
+// recorded on it as `admit_time`.
 //
 // A ticket is admissible exactly when it is ISSUED and has no `admit_time`:
 // a VOIDED ticket is refused, and an admitted ticket is never admitted again.
@@ -52,12 +50,10 @@ enum TicketStatus {
 //   (i)   the face states resale without the organizer's consent is prohibited
 //         (`resale_without_consent_prohibited`, always true);
 //   (ii)  the face specifies date/venue (via `event_id`) + the eligible person
-//         (the bound `holder_identity`; the lottery is a common pool with no seat
-//         map, so admission is general and the eligible person is the holder);
-//   (iii) the holder's 本人確認 is captured and bound to the account
-//         (`holder_identity`, with `verified_identity_ref` set where the phase
-//         required identity verification — then the verified identity is
-//         authoritative over any self-declared name).
+//         (the ticket's User; admission is general with no seat map);
+//   (iii) the User's 本人確認 is bound to the account: the face shows the User's
+//         current full name and phone number, and `kyc_id` is set where the
+//         sale required verification.
 message Ticket {
   // The unique identifier for this ticket. Server-generated surrogate id.
   TicketId id = 1 [
@@ -65,17 +61,17 @@ message Ticket {
     (buf.validate.field).required = true
   ];
 
-  // The Order that issued this ticket. One Order issues the N tickets of the
-  // winning companion group, each referencing that Order here.
+  // The Order that issued this ticket. One Order issues all tickets of its
+  // source, each referencing that Order here.
   OrderId order_id = 2 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
 
-  // The account the ticket is bound to: the buyer it was issued to. It never
-  // changes. ⑦ official resale voids this ticket and issues a new one to the
-  // resale buyer instead of reassigning it.
-  UserId holder_id = 3 [
+  // The User account the ticket is bound to: the user of the Order that issued
+  // it. It never changes; official resale voids this ticket and issues a new
+  // one on the new Order instead of reassigning it.
+  UserId user_id = 3 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
@@ -88,22 +84,9 @@ message Ticket {
     (buf.validate.field).required = true
   ];
 
-  // The holder's 本人確認 (name + contact) noted on the face and bound to the
-  // account — covered-ticket condition (iii), and the eligible person of
-  // condition (ii). Carried through from ④'s application or from the
-  // checkout's Reservation. Where the phase required identity verification,
-  // this MUST match the verified 本人確認 (see verified_identity_ref).
-  HolderIdentity holder_identity = 5 [
-    (google.api.field_behavior) = REQUIRED,
-    (buf.validate.field).required = true
-  ];
-
-  // The authoritative verified identity this ticket is bound to, set only when
-  // the phase required identity verification (identity-ekyc). When set, the
-  // verified identity is authoritative and `holder_identity` reflects it (no
-  // conflicting self-declared name). Unset when the phase required no
-  // verification (then `holder_identity` is ④'s self-declared name + contact).
-  VerifiedIdentityId verified_identity_ref = 6 [(google.api.field_behavior) = OPTIONAL];
+  // The Kyc this ticket is bound to, set only when the sale required
+  // verification. Unset otherwise.
+  KycId kyc_id = 6 [(google.api.field_behavior) = OPTIONAL];
 
   // Covered-ticket condition (i): the face states resale without the organizer's
   // consent is prohibited. Constrained to true — every issued ticket asserts this
@@ -117,15 +100,21 @@ message Ticket {
     (buf.validate.field).enum.defined_only = true
   ];
 
-  // When the ticket was issued (= the Order's capture/issuance time). Server-owned.
+  // When the ticket was issued (the Order's capture and issuance time). Server-owned.
   google.protobuf.Timestamp issue_time = 9 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
 
-  // When the ticket was admitted at the venue (⑥). Absent until admitted; set
+  // When the ticket was admitted at the venue. Absent until admitted; set
   // once, together with its Admission, and kept when the ticket
-  // is later VOIDED (a refund after entry does not erase that the holder was
+  // is later VOIDED (a refund after entry does not erase that the User was
   // admitted). Server-owned.
   google.protobuf.Timestamp admit_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Field 5 was the 本人確認 details copied onto the ticket, which now live on
+  // the User. Fields 3 and 6 were renamed from holder_id and
+  // verified_identity_ref.
+  reserved 5;
+  reserved "holder_identity", "holder_id", "verified_identity_ref";
 }
