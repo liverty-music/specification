@@ -16,6 +16,11 @@ The same review found names that confuse readers, and RPC method names that do n
 - **BREAKING** Every reference to the User in a ticketing record is named `user`: Order `buyer`, Ticket `holder` and the applicant become `user`. Order and Ticket operations are renamed to match.
 - **BREAKING** The organizer lottery RPCs (`Configure`, `GetStatus`, `SetVerificationRequirement`) are replaced by an organizer ticket sale service. The fan lottery RPCs become `LotteryEntryService` with `Start`, `Authorize`, `Confirm`, `Withdraw` and `ListByTicketType`.
 - **BREAKING** RPC method names follow one rule across every service (design D11): every service is named after an entity, `Get` takes the resource's own id, `ListBy<Key>` names a required request field, one-attribute writes are `Set<Attribute>`, a service's standard methods return only its own resource, and a request never names the calling user. Outside ticketing this renames methods of Concert, Artist, Follow, TicketJourney, Settlement, Order, push subscription, User, Notification, Series and the admin Concert and Organizer services, folds `IdentityVerificationService` into `VerifiedIdentityService`, and removes the unused `IssuanceService`.
+- **BREAKING** One name per concept in every layer (design D16, D17), shipped in a second release after v0.78.0:
+  - Entities get natural English names: `IdentityVerification` (本人確認; v0.78.0 shipped `Kyc`), `PayoutAccount`, `ConcertCandidate`, `RejectedConcert`, `SeriesImage` (the Series cover image, was `Media`) and `ConcertSearch`.
+  - The card authorization becomes the entity `CardAuthorization`, which LotteryEntry and Checkout reference; the middle purchase step is `AuthorizeCard`, returning the card authorization secret.
+  - IDs that a provider assigns are `provider_<concept>_id` (`provider_payment_id`, `provider_user_id`, `provider_organizer_id`, …); `_ref`, `external_id` and vendor names (`zitadel_org_id`, `pocket_sign_user_id`, `payment_intent_ref`) leave the domain.
+  - Usecases, Go and TS names, time-field stems, and the lottery `ticket_count` match the spec and proto; unused fields and methods are removed.
 - The organizer console's lottery editor creates a lottery `TicketSale` for one event.
 - **BREAKING** The first-come sale that `first-come-ticket-sales` shipped moves onto the new model without new behavior:
   - Each existing first-come sale becomes one `FirstCome` `TicketSale` named "一般発売" with one `TicketType`.
@@ -34,7 +39,7 @@ The same review found names that confuse readers, and RPC method names that do n
 - `components/entity/ticket-sale/get`: reads one sale with its ticket types
 - `components/entity/ticket-sale/list-by-event`: lists the sales that offer a ticket type for one event
 - `components/entity/ticket-sale/list-due-for-draw`: lists the lottery sales whose window has closed and that are not drawn
-- `components/entity/ticket-sale/update-verification-requirement`: changes a sale's verification requirement
+- `components/entity/ticket-sale/set-verification-requirement`: changes a sale's verification requirement
 - `components/entity/ticket-type`: what a sale offers for one event: price, quantity and per-account limit
 - `components/entity/ticket-type/get`: reads one ticket type with its sale
 - `components/entity/lottery-entry`: one fan's entry into a lottery ticket type
@@ -45,7 +50,7 @@ The same review found names that confuse readers, and RPC method names that do n
 - `components/usecase/ticket-sale/create`: an Organizer creates a lottery sale for its published events
 - `components/usecase/ticket-sale/list-own-by-event`: an Organizer reads the sales of one event with their tallies
 - `components/usecase/ticket-sale/set-verification-requirement`: an Organizer changes a sale's verification requirement
-- `components/usecase/lottery-entry/start`, `authorize`, `confirm`, `draw-due-sales`, `run-draw`, `list-own-by-ticket-type`, `withdraw-entry`: the lottery usecase methods, keyed by ticket type
+- `components/usecase/lottery-entry/start`, `authorize-card`, `confirm`, `draw-due-sales`, `run-draw`, `list-own-by-ticket-type`, `withdraw-entry`: the lottery usecase methods, keyed by ticket type
 - `components/adapter/organizer/api/rpc/ticket-sale`: the organizer ticket sale service boundary
 - `components/adapter/fan/api/rpc/lottery-entry`: the fan lottery entry service boundary
 - `components/entity/ticket-sale/{list-by-event,set-window}`, `components/entity/ticket-type/update`, `components/usecase/ticket-sale/{list-by-event,set-window}`, `components/usecase/ticket-type/update`, `components/adapter/organizer/api/rpc/ticket-type`: the sale and ticket type edits (design D11)
@@ -59,11 +64,11 @@ The same review found names that confuse readers, and RPC method names that do n
 - `components/entity/user` (Purpose and requirement): gains full name and phone number with their validation
 - `components/usecase/order/issue-from-captured-win`: issues from a won lottery entry and its ticket type, binds tickets to the user, and copies no name or phone
 - `components/usecase/order/issue-due-wins`: lists won lottery entries without an Order
-- `components/usecase/order/get-order`: the caller is the Order's user
-- `components/usecase/ticket/get-my-tickets`: lists by user
+- `components/usecase/order/get` (moved from `get-order`): the caller is the Order's user
+- `components/usecase/ticket/list` (moved from `get-my-tickets`): lists by user
 - `components/adapter/fan/api/rpc/lottery`: REMOVED; the boundary moves to the new `components/adapter/fan/api/rpc/lottery-entry` (`LotteryEntryService` with Start, Authorize, Confirm, Withdraw and ListByTicketType), and the identity rule is the User's
-- `components/infrastructure/fan/web/route/lottery-apply`: the screen enters a ticket type and prefills the fan's saved name and phone
-- `components/infrastructure/organizer/web/route/lottery-phase-editor`: the editor creates a named lottery sale for one event
+- `components/infrastructure/fan/web/route/lottery-entry` (moved from `lottery-apply`): the screen enters a ticket type and prefills the fan's saved name and phone
+- `components/infrastructure/organizer/web/route/lottery-sale-editor` (moved from `lottery-phase-editor`): the editor creates a named lottery sale for one event
 - `stories/win-tickets-in-a-lottery`: the story runs on a lottery ticket sale
 - `components/entity/concert/delete-and-suppress`, `components/entity/organizer/delete`, `components/entity/user/delete`: the deleted or kept records are named TicketSale, TicketType and LotteryEntry, and a deleted User takes its full name and phone number with it
 - `components/usecase/user/delete`: reads `Ticket.ListByUser` and `Order.ListByUser`
@@ -88,6 +93,12 @@ These are written as REMOVED deltas:
 - Replaced (REMOVED at the old path, ADDED at the new one, design D12): `entity/reservation/*` and `usecase/reservation/*` → `checkout/*`; `adapter/fan/api/rpc/reservation` → `rpc/checkout`; `entity/ticket-application/get-by-payment-intent-ref` → `entity/lottery-entry/get-by-payment-intent-ref`; `entity/order/get-by-reservation-id` → `get-by-checkout-id`; `entity/organizer/set-seller-details` and `usecase/organizer/update-seller-details` → operations named after the Organizer fields.
 - Removed: `entity/user/update-holder-identity`, replaced by `user/update-personal-details`.
 
+### Capabilities added or moved by one name per concept (design D16, D17)
+
+- New: `components/entity/card-authorization` with `create`, `get`, `capture` and `release`; `components/adapter/organizer/api/rpc/series-image`; fan `global/{i18n,bottom-sheet,user-home-selector}` MODIFIED for renamed RPCs.
+- Removed: `components/entity/order/get-captured-payment` (CardAuthorization.Get replaces it), `components/usecase/concert/list-by-follower` (unused), `components/usecase/organizer/list-own-artists` (ArtistUseCase.ListByOrganizer serves both callers); this change's own `*-authorization` operations of LotteryEntry and Checkout.
+- Moved directly on the main specs as pure renames (no change, schema rule), each with a mapping table in its commit: the six entity renames of D17 with their operations and usecases; usecases renamed after their RPCs (`follow/list`, `ticket-journey/list`, `notification/dismiss`, `user/set-home`, `user/set-preferred-language`, `concert/list-followed`, `ticket/list`, `order/get`, `order/refund`, `artist/list-by-organizer`, `series/{create,update,list,regenerate-share-url,set-cover-image}`, `concert-candidate/{list,approve,reject}`, `official-site/create`, `payout-account/get`); the routes `lottery-entry` and `lottery-sale-editor`; the provider ID operations.
+
 ### Capabilities renamed by the RPC naming rule
 
 These adapter and route specs are MODIFIED to the new method names (task 1.4); their behavior does not change, except that a request no longer names the calling user:
@@ -95,12 +106,12 @@ These adapter and route specs are MODIFIED to the new method names (task 1.4); t
 - `components/adapter/admin/api/rpc/{concert,organizer,artist,user,order}`
 - `components/adapter/organizer/api/rpc/organizer`
 - the routes and surfaces that name them: `fan/web/route/{discovery,dashboard,settings}`, `fan/web/global/{post-signup-dialog,app-shell,live-highway}`, `admin/web/route/approval-queue`
-- new boundaries, one per service: `adapter/fan/api/rpc/{official-site,order,push-subscription}`, `adapter/admin/api/rpc/{notification,staged-concert}`, `adapter/organizer/api/rpc/artist`; the moved requirements are REMOVED from the old boundary
+- new boundaries, one per service: `adapter/fan/api/rpc/{official-site,order,push-subscription}`, `adapter/admin/api/rpc/{notification,concert-candidate}`, `adapter/organizer/api/rpc/artist`; the moved requirements are REMOVED from the old boundary
 - `usecase/user/{resolve-caller,resend-email-verification}`: the request no longer names a User id (design D15)
 
 `ReceptionLinkService.List` is renamed in `rename-reception-to-scanner` (`ScannerService.ListByEvent`), which renames the service.
 
-Entity operations that this change relies on and does not change: `Event.IsEventPublished`, `Event.Get`, `Event.GetOrganizerID`, `Event.GetEventStartTime`, `Series.GetAuthored`, `VerifiedIdentity.GetByUserID`, `Order.GetCapturedPayment`, `Order.Issue`, `TicketJourney.Upsert`, `User.GetByExternalID`, `OrganizerUseCase.ResolveCaller`. `restructure-event-publishing` later makes `Event.IsEventPublished` answer per Event instead of per Series. The rule here, that a sale needs a published event, holds under both answers.
+Entity operations that this change relies on and does not change: `Event.IsEventPublished`, `Event.Get`, `Event.GetOrganizerID`, `Event.GetEventStartTime`, `Series.GetAuthored`, `VerifiedIdentity.GetByUserID` (renamed `IdentityVerification.GetByUserID`), `Order.GetCapturedPayment` (replaced by `CardAuthorization.Capture`, D17), `Order.Issue`, `TicketJourney.Upsert`, `User.GetByExternalID` (renamed `GetByProviderUserID`, D17), `OrganizerUseCase.ResolveCaller`. `restructure-event-publishing` later makes `Event.IsEventPublished` answer per Event instead of per Series. The rule here, that a sale needs a published event, holds under both answers.
 
 ## Impact
 
@@ -108,6 +119,7 @@ Entity operations that this change relies on and does not change: `Event.IsEvent
   - Entity protos: `ticket_sale.proto` (rewritten), new `ticket_type.proto`, `lottery_entry.proto` (from `lottery_application.proto`), `checkout.proto` (from `reservation.proto`), `user.proto`, `order.proto`, `ticket.proto`, `organizer.proto` (seller details flattened, also inside the Organizer embedded in `series.proto`).
   - RPC protos for the naming rule: `rpc/concert/v1`, `rpc/artist/v1`, `rpc/follow/v1`, `rpc/ticket/v1` (`GetOrder` → new `rpc/order/v1`), `rpc/ticket_journey/v1`, `rpc/user/v1`, `rpc/notification/v1`, `rpc/push_notification/v1`, `rpc/identity/v1` (into `rpc/verified_identity/v1`), `rpc/issuance/v1` (removed), `rpc/admin/{concert,organizer,settlement,order,notification}/v1`, `rpc/organizer/v1`, `rpc/organizer/series/v1`, new `rpc/organizer/ticket_type/v1`.
   - RPC protos: `rpc/organizer/ticket_sale/v1` (rewritten), `rpc/organizer/lottery/v1` (removed), `rpc/lottery/v1` (fan, replaced), `rpc/reservation/v1` (replaced by `rpc/checkout/v1`), `rpc/ticket_sale/v1` (fan), `rpc/admin/organizer/v1` (`UpdateSellerDetails`).
+  - The D16 and D17 renames: entity protos and their RPC packages, in a second breaking release (task 11.2).
   - These are breaking changes on BSR. No client outside this product consumes them.
 - **backend**:
   - Migration:

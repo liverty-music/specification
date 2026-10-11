@@ -8,7 +8,7 @@ The fan-facing order service boundary: a fan reads only their own Orders, and th
 
 ### Requirement: A fan reads their own order
 
-Get SHALL require a signed-in caller and fail with Unauthenticated otherwise. It SHALL resolve the caller to their stored User (User.GetByExternalID) and pass that User and the requested Order to TicketUseCase.GetOrder; the request never names a user. When the caller has no stored account, the call SHALL fail with NotFound. Get SHALL fail with InvalidArgument when no order is given.
+Get SHALL require a signed-in caller and fail with Unauthenticated otherwise. It SHALL resolve the caller to their stored User (User.GetByProviderUserID) and pass that User and the requested Order to OrderUseCase.Get; the request never names a user. When the caller has no stored account, the call SHALL fail with NotFound. Get SHALL fail with InvalidArgument when no order is given.
 
 #### Scenario: Fan reads their order
 

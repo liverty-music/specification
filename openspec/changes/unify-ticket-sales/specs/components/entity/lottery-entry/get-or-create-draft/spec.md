@@ -8,7 +8,7 @@ Returns a user's Draft LotteryEntry for a TicketType, or creates one, so a repea
 
 ### Requirement: At most one active entry per account per ticket type
 
-GetOrCreateDraft SHALL take a TicketType, a user and a requested ticket count:
+GetOrCreateDraft SHALL take a TicketType, a user and a ticket count:
 - When the user has a Draft for the TicketType with the same count, it SHALL return it and change nothing.
 - When the user has a Draft for the TicketType with another count, it SHALL make that Draft Withdrawn and create a new Draft in the same step.
 - When the user has no active entry for the TicketType, it SHALL create a new Draft.

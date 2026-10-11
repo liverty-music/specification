@@ -4,7 +4,7 @@
 
 ### Requirement: The caller's own User
 
-ResolveCaller SHALL read the caller's User by the sign-in identity (User.GetByExternalID) and return it, failing with NotFound when the identity has no User. A request never names a User id, so a per-user call always acts on the caller's own User.
+ResolveCaller SHALL read the caller's User by the sign-in identity (User.GetByProviderUserID) and return it, failing with NotFound when the identity has no User. A request never names a User id, so a per-user call always acts on the caller's own User.
 
 #### Scenario: Signed-in caller with an account
 - **WHEN** a signed-in caller with a User makes a per-user request

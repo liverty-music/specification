@@ -4,7 +4,7 @@
 
 ### Requirement: Tickets grouped by event with their face
 
-The screen SHALL list the signed-in fan's tickets grouped by event, nearest event first. Each ticket SHALL show its event's title, date, venue, open and start times, and its covered-ticket face: that resale without the organizer's consent is prohibited, the eligible person's full name and phone number as the fan's User currently records them, and that no seat is assigned. Each ticket SHALL show its state: 未入場 (not yet entered), 入場済み (entered) with the admitted time, or 無効 (void). The last loaded list SHALL stay viewable without a connection.
+The screen SHALL list the signed-in fan's tickets grouped by event, nearest event first. Each ticket SHALL show its event's title, date, venue, open and start times, and its covered-ticket face: that resale without the organizer's consent is prohibited, the eligible person's full name and phone number as the fan's User currently records them, and that no seat is assigned. Each ticket SHALL show its state: 未入場 (not yet entered), 入場済み (entered) with the admit time, or 無効 (void). The last loaded list SHALL stay viewable without a connection.
 
 #### Scenario: Fan opens their tickets
 

@@ -26,6 +26,25 @@ Update SHALL take a new full name, a new phone number or both, and fail with Inv
 - **WHEN** Update is called with the phone number `090-9876-5432`
 - **THEN** it fails with InvalidArgument and nothing changes
 
+### Requirement: A returned User carries its profile fields
+
+Every user service call that returns a User SHALL return its id, email, provider user ID, name, preferred language when set, home as country code, level 1 and, when set, level 2, and the User's full name and phone number when set, which the lottery entry and checkout screens prefill. It SHALL NOT return the home's centroid or a verification level.
+
+#### Scenario: User with home and language
+
+- **WHEN** a call returns a User with preferred language `ja` and home `JP-13`
+- **THEN** the response carries preferred language `ja` and home country code `JP`, level 1 `JP-13`, without a centroid
+
+#### Scenario: User without optional values
+
+- **WHEN** a call returns a User with no preferred language, no home, no full name and no phone number
+- **THEN** the response carries none of them
+
+#### Scenario: Returning fan
+
+- **WHEN** Get returns a User who gave the full name `山田 花子` and the phone number `+819012345678` in an earlier lottery entry or checkout
+- **THEN** the response carries that full name and phone number
+
 ## MODIFIED Requirements
 
 ### Requirement: Per-user calls act only on the caller's own account
@@ -52,25 +71,6 @@ Get, Update, SetPreferredLanguage, SetHome and ResendEmailVerification SHALL nam
 - **WHEN** the signed-in caller's identity has no User
 - **THEN** the call fails with NotFound
 
-### Requirement: A returned user shows the profile fields
-
-Every user service call that returns a User SHALL return its id, email, external id, name, preferred language when set, home as country code, level 1 and, when set, level 2, and the User's full name and phone number when set, which the lottery entry and checkout screens prefill. It SHALL NOT return the home's centroid or a verification level.
-
-#### Scenario: User with home and language
-
-- **WHEN** a call returns a User with preferred language `ja` and home `JP-13`
-- **THEN** the response carries preferred language `ja` and home country code `JP`, level 1 `JP-13`, without a centroid
-
-#### Scenario: User without optional values
-
-- **WHEN** a call returns a User with no preferred language, no home, no full name and no phone number
-- **THEN** the response carries none of them
-
-#### Scenario: Returning buyer
-
-- **WHEN** Get returns a User who gave the full name `山田 花子` and the phone number `+819012345678` in an earlier lottery entry or checkout
-- **THEN** the response carries that full name and phone number
-
 ### Requirement: Get returns the caller's profile
 
 Get SHALL return the caller's User as resolved by the per-user check, so the same profile is restored on every device.
@@ -82,7 +82,7 @@ Get SHALL return the caller's User as resolved by the per-user check, so the sam
 
 ### Requirement: SetPreferredLanguage checks the language first
 
-SetPreferredLanguage SHALL fail with InvalidArgument when the language is not exactly two lowercase letters, before the caller is resolved, so a malformed request fails the same way for every caller. It SHALL then apply the per-user check and call UserUseCase.UpdatePreferredLanguage for the caller's User.
+SetPreferredLanguage SHALL fail with InvalidArgument when the language is not exactly two lowercase letters, before the caller is resolved, so a malformed request fails the same way for every caller. It SHALL then apply the per-user check and call UserUseCase.SetPreferredLanguage for the caller's User.
 
 #### Scenario: Language changed
 
@@ -96,7 +96,7 @@ SetPreferredLanguage SHALL fail with InvalidArgument when the language is not ex
 
 ### Requirement: SetHome requires a well-formed home
 
-SetHome SHALL fail with InvalidArgument when the request carries no Home, or a Home whose country code, level 1 or level 2 is malformed. It SHALL then apply the per-user check and call UserUseCase.UpdateHome for the caller's User.
+SetHome SHALL fail with InvalidArgument when the request carries no Home, or a Home whose country code, level 1 or level 2 is malformed. It SHALL then apply the per-user check and call UserUseCase.SetHome for the caller's User.
 
 #### Scenario: Home set
 
@@ -126,3 +126,9 @@ ResendEmailVerification SHALL call UserUseCase.ResendEmailVerification with the 
 
 - **WHEN** UserUseCase.ResendEmailVerification fails with ResourceExhausted
 - **THEN** ResendEmailVerification fails with ResourceExhausted
+
+## REMOVED Requirements
+
+### Requirement: A returned user shows the profile fields
+**Reason**: The scenario "Returning buyer" is renamed "Returning fan": a fan who gave their details in a lottery entry or a checkout is a User, not a buyer (design D17). A MODIFIED block cannot drop a scenario, so the requirement is replaced.
+**Migration**: The same rule continues as "A returned User carries its profile fields" above.

@@ -15,7 +15,7 @@ After the role check, the admin boundary SHALL validate each request of a call t
 
 ### Requirement: ListByOrganizer returns an Organizer's roster
 
-ListByOrganizer, which only the admin console offers, SHALL take an OrganizerId and fail with InvalidArgument, before any usecase runs, when it is missing or malformed. It SHALL run OrganizerUseCase.ListArtists for the named Organizer, whatever its status, and return the Artists it returns; errors from the usecase SHALL be returned unchanged.
+ListByOrganizer, which only the admin console offers, SHALL take an OrganizerId and fail with InvalidArgument, before any usecase runs, when it is missing or malformed. It SHALL run ArtistUseCase.ListByOrganizer for the named Organizer, whatever its status, and return the Artists it returns; errors from the usecase SHALL be returned unchanged.
 
 #### Scenario: Admin inspects a roster
 
@@ -29,7 +29,7 @@ ListByOrganizer, which only the admin console offers, SHALL take an OrganizerId 
 
 #### Scenario: Unknown Organizer
 
-- **WHEN** OrganizerUseCase.ListArtists fails with NotFound
+- **WHEN** ArtistUseCase.ListByOrganizer fails with NotFound
 - **THEN** ListByOrganizer fails with NotFound
 
 #### Scenario: Non-admin reads a roster

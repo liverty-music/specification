@@ -38,7 +38,7 @@ Admit SHALL read the scanned text with AdmissionCode.Decode; a Malformed text SH
 
 ### Requirement: The result carries no personal data
 
-Admit SHALL return, for the scan, the number of Tickets admitted and, for each rejected Ticket or for the whole scan, the reason, with the earlier admission time and link number for AlreadyAdmitted. It SHALL NOT return the user's full name, phone number, account or any other personal data.
+Admit SHALL return, for the scan, the number of Tickets admitted and, for each rejected Ticket or for the whole scan, the reason, with the earlier admit time and link number for AlreadyAdmitted. It SHALL NOT return the user's full name, phone number, account or any other personal data.
 
 #### Scenario: Result of a group scan
 

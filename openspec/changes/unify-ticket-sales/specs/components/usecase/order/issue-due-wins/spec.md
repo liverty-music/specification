@@ -4,7 +4,7 @@
 
 ### Requirement: Issue within one minute after the draw
 
-IssueDueWins SHALL run every 1 minute. It SHALL list the Won LotteryEntries without an Order with Order.ListLotteryEntryIDsAwaitingIssuance and run IssuanceUseCase.IssueFromCapturedWin for each. An entry whose issuance fails SHALL NOT stop the others and is tried again on the next run, without limit. When the listing fails, IssueDueWins SHALL fail with that error and issue nothing.
+IssueDueWins SHALL run every 1 minute. It SHALL list the Won LotteryEntries without an Order with Order.ListLotteryEntryIDsAwaitingIssuance and run OrderUseCase.IssueFromCapturedWin for each. An entry whose issuance fails SHALL NOT stop the others and is tried again on the next run, without limit. When the listing fails, IssueDueWins SHALL fail with that error and issue nothing.
 
 #### Scenario: Won application
 - **WHEN** a draw records an entry Won

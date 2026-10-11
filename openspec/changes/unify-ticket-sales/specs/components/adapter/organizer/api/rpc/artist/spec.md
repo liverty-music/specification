@@ -22,7 +22,7 @@ Every call of the organizer Artist service SHALL pass the same organizer-console
 
 ### Requirement: List returns the caller's own roster
 
-List SHALL take no input and SHALL return the result of OrganizerUseCase.ListOwnArtists for the caller's own Organizer, every represented Artist in one response; the request never names an Organizer, so an operator cannot ask for another Organizer's roster.
+List SHALL take no input and SHALL return the result of ArtistUseCase.ListByOrganizer for the caller's own Organizer, every represented Artist in one response; the request never names an Organizer, so an operator cannot ask for another Organizer's roster.
 
 #### Scenario: Operator lists their own roster
 

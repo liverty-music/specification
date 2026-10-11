@@ -4,4 +4,4 @@
 
 ### Requirement: Release recorded once
 **Reason**: Reservation is renamed Checkout, belongs to a TicketType instead of a TicketSale and no longer stores a holder name or phone number; the fan's full name and phone number are the User's.
-**Migration**: The behavior continues in `components/entity/checkout/record-authorization-release`; the data moves in this change's migration.
+**Migration**: The behavior continues in `components/entity/checkout/record-card-authorization-release`; the data moves in this change's migration.

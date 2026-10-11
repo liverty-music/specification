@@ -53,7 +53,7 @@ A TicketType's price SHALL be 1 to 1,000,000 yen and its quantity SHALL be at le
 
 ### Requirement: Amount for a requested count
 
-The amount for a requested ticket count SHALL be the price multiplied by the count, in yen.
+The amount for a ticket count SHALL be the price multiplied by the count, in yen.
 
 #### Scenario: Two tickets
 - **WHEN** the price is 8000 yen and 2 tickets are requested
@@ -61,7 +61,7 @@ The amount for a requested ticket count SHALL be the price multiplied by the cou
 
 ### Requirement: Room under the per-account limit
 
-A requested ticket count SHALL fit the per-account limit for an account when the tickets the account already holds for the event plus the requested count are at most the limit.
+A ticket count SHALL fit the per-account limit for an account when the tickets the account already holds for the event plus the ticket count are at most the limit.
 
 #### Scenario: Presale winner in a general sale with the same limit
 - **WHEN** the per-account limit is 4, the account holds 4 tickets for the event and requests 1 more

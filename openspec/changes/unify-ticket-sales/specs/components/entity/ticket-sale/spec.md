@@ -40,7 +40,7 @@ A TicketSale's name SHALL be 1 to 100 characters.
 
 ### Requirement: Verification requirement
 
-A sale SHALL require verification when its verification requirement is Verified-any or JPKI-only; both require the fan to hold an Active Kyc. A sale created without a requirement SHALL have the requirement None.
+A sale SHALL require verification when its verification requirement is Verified-any or JPKI-only; both require the fan to hold an Active IdentityVerification. A sale created without a requirement SHALL have the requirement None.
 
 #### Scenario: No requirement given
 - **WHEN** a sale is created without a verification requirement
@@ -48,7 +48,7 @@ A sale SHALL require verification when its verification requirement is Verified-
 
 #### Scenario: Verified-any or JPKI-only
 - **WHEN** the requirement is Verified-any or JPKI-only
-- **THEN** the sale requires an Active Kyc
+- **THEN** the sale requires an Active IdentityVerification
 
 ### Requirement: Window open at an instant
 
@@ -80,14 +80,14 @@ Two sales' windows SHALL overlap when each one starts before the other ends.
 
 ### Requirement: Drawn sale
 
-A Lottery sale SHALL count as drawn once its drawn time is set.
+A Lottery sale SHALL count as drawn once its draw time is set.
 
-#### Scenario: Drawn time set
-- **WHEN** the drawn time is set
+#### Scenario: Draw time set
+- **WHEN** the draw time is set
 - **THEN** the sale is drawn
 
-#### Scenario: Drawn time absent
-- **WHEN** the drawn time is absent
+#### Scenario: Draw time absent
+- **WHEN** the draw time is absent
 - **THEN** the sale is not drawn
 
 ## REMOVED Requirements

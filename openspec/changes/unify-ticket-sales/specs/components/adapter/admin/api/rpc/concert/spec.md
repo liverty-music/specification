@@ -28,13 +28,13 @@ Delete SHALL fail with InvalidArgument when no event id is given.
 ## REMOVED Requirements
 
 ### Requirement: Only admins reach the admin concert calls
-**Reason**: The review calls act on a StagedConcert, not a Concert, so `ListPending`, `Approve` and `Reject` move from the admin ConcertService to the admin StagedConcertService (`List`, `Approve`, `Reject`) under the RPC naming rule. The admin ConcertService keeps List and Delete.
-**Migration**: The role gate for List and Delete continues in "Only admins list and delete concerts" above; the gate for the review calls, with the scenarios "Admin lists pending concerts" and "Non-admin approves", continues in `components/adapter/admin/api/rpc/staged-concert`.
+**Reason**: The review calls act on a ConcertCandidate, not a Concert, so `ListPending`, `Approve` and `Reject` move from the admin ConcertService to the admin ConcertCandidateService (`List`, `Approve`, `Reject`) under the RPC naming rule. The admin ConcertService keeps List and Delete.
+**Migration**: The role gate for List and Delete continues in "Only admins list and delete concerts" above; the gate for the review calls, with the scenarios "Admin lists pending concerts" and "Non-admin approves", continues in `components/adapter/admin/api/rpc/concert-candidate`.
 
 ### Requirement: Reviews carry the reviewer
-**Reason**: Approve and Reject move from the admin ConcertService to the admin StagedConcertService under the RPC naming rule.
-**Migration**: The behavior continues unchanged in `components/adapter/admin/api/rpc/staged-concert`; the admin console calls `StagedConcertService.Approve` and `StagedConcertService.Reject`.
+**Reason**: Approve and Reject move from the admin ConcertService to the admin ConcertCandidateService under the RPC naming rule.
+**Migration**: The behavior continues unchanged in `components/adapter/admin/api/rpc/concert-candidate`; the admin console calls `ConcertCandidateService.Approve` and `ConcertCandidateService.Reject`.
 
 ### Requirement: Admin concert requests are validated at the boundary
-**Reason**: The Approve and Reject checks move with those calls to the admin StagedConcertService.
-**Migration**: The Approve and Reject checks continue in `components/adapter/admin/api/rpc/staged-concert`; the Delete check continues in "Delete names an event" above.
+**Reason**: The Approve and Reject checks move with those calls to the admin ConcertCandidateService.
+**Migration**: The Approve and Reject checks continue in `components/adapter/admin/api/rpc/concert-candidate`; the Delete check continues in "Delete names an event" above.

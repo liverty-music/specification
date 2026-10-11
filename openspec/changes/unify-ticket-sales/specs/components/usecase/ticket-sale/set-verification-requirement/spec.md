@@ -2,13 +2,13 @@
 
 ## Purpose
 
-TicketSaleUseCase.SetVerificationRequirement lets an Organizer change whether fans taking part in one of its TicketSales must hold an Active Kyc.
+TicketSaleUseCase.SetVerificationRequirement lets an Organizer change whether fans taking part in one of its TicketSales must hold an Active IdentityVerification.
 
 ## ADDED Requirements
 
 ### Requirement: Change the requirement at any time
 
-SetVerificationRequirement SHALL set the sale's verification requirement with TicketSale.UpdateVerificationRequirement and return the updated sale, whether or not the window is open and whether or not the sale is drawn. It SHALL fail with InvalidArgument when no sale is given. Entries already made are not re-checked.
+SetVerificationRequirement SHALL set the sale's verification requirement with TicketSale.SetVerificationRequirement and return the updated sale, whether or not the window is open and whether or not the sale is drawn. It SHALL fail with InvalidArgument when no sale is given. Entries already made are not re-checked.
 
 #### Scenario: Requirement tightened while open
 - **WHEN** an Organizer sets JPKI-only on an open sale

@@ -10,15 +10,15 @@ Delete SHALL remove, together or not at all:
 - its first-party Series with their TicketSales, and their Events, with each Event's TicketTypes, lottery entries, ticket journeys and performers;
 - the Orders and Tickets for those Events, with their Reversed Settlements;
 - the reception links of those Events, with their admissions and rejected scans;
-- its Media records and the Series' cover links;
+- its SeriesImage records and the Series' cover links;
 - its Artist associations and its payout-account record.
 
 Fans' follows of the Artists, and every record unrelated to the Organizer, SHALL remain.
 
 #### Scenario: Organizer with a published Series
 
-- **WHEN** Delete runs for a deactivated Organizer with one Series, one Event, a cover Media and one associated Artist
-- **THEN** none of the Organizer, Series, Event, Media record or association exists afterwards, and the Artist and its followers remain
+- **WHEN** Delete runs for a deactivated Organizer with one Series, one Event, a cover SeriesImage and one associated Artist
+- **THEN** none of the Organizer, Series, Event, SeriesImage record or association exists afterwards, and the Artist and its followers remain
 
 #### Scenario: Refunded purchase
 

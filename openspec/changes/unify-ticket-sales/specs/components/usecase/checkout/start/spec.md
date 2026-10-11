@@ -47,12 +47,12 @@ Starting again with the same count while the hold lasts SHALL resume the same Ch
 
 ### Requirement: Verification gate
 
-When the sale requires verification, Start SHALL require the fan to hold a Kyc whose status is Active, read with Kyc.GetByUserID, and SHALL fail with FailedPrecondition otherwise, holding nothing. When the sale's requirement is None, no Kyc is needed.
+When the sale requires verification, Start SHALL require the fan to hold an IdentityVerification whose status is Active, read with IdentityVerification.GetByUserID, and SHALL fail with FailedPrecondition otherwise, holding nothing. When the sale's requirement is None, no IdentityVerification is needed.
 
 #### Scenario: First-come sale requires verification
 - **WHEN** a FirstCome sale requires JPKI-only and the fan has never verified
 - **THEN** Start fails with FailedPrecondition and nothing is held
 
 #### Scenario: Verified fan starts a checkout
-- **WHEN** a FirstCome sale requires verification and the fan's Kyc is Active
+- **WHEN** a FirstCome sale requires verification and the fan's IdentityVerification is Active
 - **THEN** Start continues with the other checks

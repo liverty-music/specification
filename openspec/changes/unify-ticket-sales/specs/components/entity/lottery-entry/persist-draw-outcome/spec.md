@@ -8,7 +8,7 @@ Records the outcome of one TicketSale's draw: each winner Won, each loser Lost, 
 
 ### Requirement: Draw outcome is recorded together
 
-PersistDrawOutcome SHALL set every given winner to Won and every given loser to Lost with their draw positions, and every given unconfirmed Draft to Withdrawn, across all TicketTypes of the sale, and set the sale's drawn time, all together or not at all. With no winners, losers or Drafts it SHALL only set the sale's drawn time.
+PersistDrawOutcome SHALL set every given winner to Won and every given loser to Lost with their draw positions, and every given unconfirmed Draft to Withdrawn, across all TicketTypes of the sale, and set the sale's draw time, all together or not at all. With no winners, losers or Drafts it SHALL only set the sale's draw time.
 
 #### Scenario: Outcome recorded
 - **WHEN** PersistDrawOutcome is called with winners, losers and one Draft for two TicketTypes of a sale
@@ -16,7 +16,7 @@ PersistDrawOutcome SHALL set every given winner to Won and every given loser to 
 
 #### Scenario: Failure leaves nothing recorded
 - **WHEN** recording any part of the outcome fails
-- **THEN** no entry state, draw position or drawn time is changed
+- **THEN** no entry state, draw position or draw time is changed
 
 #### Scenario: Empty draw
 - **WHEN** PersistDrawOutcome is called with no winners and no losers
