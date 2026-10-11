@@ -16,7 +16,7 @@ SendOrderConfirmation SHALL run for each Order announced as paid, with its buyer
 It SHALL send, with Order.SendConfirmationEmail to the buyer's email address and in the buyer's preferred language (Japanese when none), a message stating:
 - the concert's title, date, venue, and open and start times;
 - the number of tickets and the total paid, 税込 (tax-inclusive);
-- the paid time, the payment method (card) and the card brand and last four digits;
+- the pay time, the payment method (card) and the card brand and last four digits;
 - the Organizer's seller details;
 - that resale of the tickets without the organizer's consent is prohibited;
 - that tickets cannot be cancelled or refunded except when the concert is 中止 (cancelled);

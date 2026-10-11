@@ -19,7 +19,7 @@ ReconcileProvisioning SHALL run every 5 minutes, the first run 5 minutes after t
 
 ReconcileProvisioning SHALL find the Organizers in status provisioning through Organizer.ListByStatus and complete each the way Create does, reusing the recorded tenant when there is one:
 
-1. create and record the tenant through Organizer.EnsureTenantOrg and Organizer.SetZitadelOrgID, only when none is recorded;
+1. create and record the tenant through Organizer.EnsureTenantOrg and Organizer.SetProviderOrganizerID, only when none is recorded;
 2. complete it through Organizer.ProvisionTenant;
 3. move the Organizer from provisioning to active through Organizer.CompareAndSetStatus;
 4. announce that the Organizer was created.

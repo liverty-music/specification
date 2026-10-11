@@ -88,7 +88,7 @@ It SHALL offer to go back and change the number of tickets or the identity detai
 
 ### Requirement: Outcome of placing the order
 
-Placing the order SHALL call IssuanceUseCase.IssueFromReservation. On success, the checkout SHALL show the completion screen with the event, the number of tickets, the total paid and a link to the Tickets screen. It SHALL then offer to allow notifications when the fan has not allowed them, and to add the app to the home screen when it is not installed. On failure, it SHALL read the checkout with ReservationUseCase.Get and say, by its status:
+Placing the order SHALL call OrderUseCase.IssueFromReservation. On success, the checkout SHALL show the completion screen with the event, the number of tickets, the total paid and a link to the Tickets screen. It SHALL then offer to allow notifications when the fan has not allowed them, and to add the app to the home screen when it is not installed. On failure, it SHALL read the checkout with ReservationUseCase.Get and say, by its status:
 - Expired: that the 15 minutes passed, that the card was not charged, that a temporary hold may show on the card statement for a few days, and offer to start again;
 - Released with a commit time: that the card could not be charged, and offer to start again;
 - Released without a commit time: that it was replaced by a newer checkout, for example in another tab, and offer to go to it;

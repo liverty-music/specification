@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Finds an Organizer's sign-in tenant by its Organizer-derived name, for an Organizer whose tenant link was never recorded.
+Finds an Organizer's sign-in tenant by its Organizer-derived name, for an Organizer whose provider organizer ID was never recorded.
 
 ## Requirements
 

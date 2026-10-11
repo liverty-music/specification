@@ -8,7 +8,7 @@ Stores an Organizer's payout account, replacing the one already stored for that 
 
 ### Requirement: Upsert keeps one account per Organizer
 
-Upsert SHALL store the account when the Organizer has none, and SHALL replace the account reference and status of the stored account when the Organizer already has one, so an Organizer never has two accounts.
+Upsert SHALL store the account when the Organizer has none, and SHALL replace the provider account ID and status of the stored account when the Organizer already has one, so an Organizer never has two accounts.
 
 #### Scenario: First account
 
@@ -18,4 +18,4 @@ Upsert SHALL store the account when the Organizer has none, and SHALL replace th
 #### Scenario: Account already stored
 
 - **WHEN** the Organizer already has a stored account
-- **THEN** its account reference and status are replaced and no second account is stored
+- **THEN** its provider account ID and status are replaced and no second account is stored

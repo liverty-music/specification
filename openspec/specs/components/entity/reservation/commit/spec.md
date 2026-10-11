@@ -8,7 +8,7 @@ Commits a holding Reservation's tickets against its TicketSale's stock before th
 ### Requirement: Commit only while holding
 
 Commit SHALL take a Reservation and a time:
-- When the Reservation is holding at that time, Commit SHALL make it Committed with that committed time, add its count to the sale's sold count and report Committed.
+- When the Reservation is holding at that time, Commit SHALL make it Committed with that commit time, add its count to the sale's sold count and report Committed.
 - When it is already Committed or Completed, it SHALL change nothing and report Committed.
 - Otherwise — Held with its hold lapsed, Expired or Released — it SHALL change nothing and report NotHeld.
 

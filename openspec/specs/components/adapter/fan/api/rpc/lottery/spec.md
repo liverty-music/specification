@@ -8,7 +8,7 @@ The fan-facing lottery service boundary: every lottery call needs a signed-in fa
 
 ### Requirement: The applicant is the signed-in caller
 
-Every lottery call SHALL require a signed-in caller and fail with Unauthenticated otherwise. Apply, Withdraw, GetApplication and GetResult SHALL resolve the caller to their stored User (User.GetByExternalID) and pass that User as the applicant to LotteryUseCase.Apply, WithdrawApplication, GetMyApplication and GetResult; the request never names an applicant. When the caller has no stored account, these calls SHALL fail with NotFound. CreateAuthorization only opens a card hold for a phase and ticket count, so it requires the sign-in but looks up no account and passes no applicant.
+Every lottery call SHALL require a signed-in caller and fail with Unauthenticated otherwise. Apply, Withdraw, GetApplication and GetResult SHALL resolve the caller to their stored User (User.GetByProviderUserID) and pass that User as the applicant to LotteryUseCase.Apply, WithdrawApplication, GetMyApplication and GetResult; the request never names an applicant. When the caller has no stored account, these calls SHALL fail with NotFound. CreateAuthorization only opens a card hold for a phase and ticket count, so it requires the sign-in but looks up no account and passes no applicant.
 
 #### Scenario: Fan applies
 

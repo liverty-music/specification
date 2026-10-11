@@ -36,12 +36,12 @@ Each notice SHALL be applied at most once however often it is delivered. A notic
 
 ### Requirement: A dispute refunds the Order
 
-On a notice that a buyer opened a dispute, the endpoint SHALL find the Order with Order.GetByPaymentIntentRef using the notice's payment reference and call RefundOrderUseCase.RefundOrder for it with the reason Dispute and the time the notice was received. A dispute notice without a payment reference, or whose payment belongs to no Order, SHALL be acknowledged and left for manual review. When RefundOrder fails with anything other than NotFound, the endpoint SHALL answer with Internal.
+On a notice that a buyer opened a dispute, the endpoint SHALL find the Order with Order.GetByProviderPaymentID using the notice's provider payment ID and call OrderUseCase.Refund for it with the reason Dispute and the time the notice was received. A dispute notice without a provider payment ID, or whose payment belongs to no Order, SHALL be acknowledged and left for manual review. When OrderUseCase.Refund fails with anything other than NotFound, the endpoint SHALL answer with Internal.
 
 #### Scenario: Dispute on a platform order
 
 - **WHEN** a dispute notice names the payment of a Paid Order
-- **THEN** RefundOrderUseCase.RefundOrder runs for that Order with the reason Dispute
+- **THEN** OrderUseCase.Refund runs for that Order with the reason Dispute
 
 #### Scenario: Dispute on an unknown payment
 
@@ -64,12 +64,12 @@ Notices that a refund was applied, that a payout was reversed, or that the platf
 
 ### Requirement: A completed charge is fulfilled
 
-On a notice that a charge completed, the endpoint SHALL call IssuanceUseCase.FulfillPayment with the notice's payment reference. When FulfillPayment fails, the endpoint SHALL answer with Internal, so the provider delivers the notice again.
+On a notice that a charge completed, the endpoint SHALL call OrderUseCase.FulfillPayment with the notice's provider payment ID. When FulfillPayment fails, the endpoint SHALL answer with Internal, so the provider delivers the notice again.
 
 #### Scenario: Checkout charge completes
 
 - **WHEN** a notice reports that the charge of a fan's checkout completed
-- **THEN** IssuanceUseCase.FulfillPayment runs for its payment reference
+- **THEN** OrderUseCase.FulfillPayment runs for its provider payment ID
 
 #### Scenario: Fulfillment fails
 

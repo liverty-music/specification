@@ -7,7 +7,7 @@ The fan's tickets screen: the tickets issued to their account, each showing its 
 
 ### Requirement: Tickets grouped by event with their face
 
-The screen SHALL list the signed-in fan's tickets grouped by event, nearest event first. Each ticket SHALL show its event's title, date, venue, open and start times, and its covered-ticket face: that resale without the organizer's consent is prohibited, the eligible person's name (the holder full name) and that no seat is assigned. Each ticket SHALL show its state: 未入場 (not yet entered), 入場済み (entered) with the admitted time, or 無効 (void). The last loaded list SHALL stay viewable without a connection.
+The screen SHALL list the signed-in fan's tickets grouped by event, nearest event first. Each ticket SHALL show its event's title, date, venue, open and start times, and its covered-ticket face: that resale without the organizer's consent is prohibited, the eligible person's name (the holder full name) and that no seat is assigned. Each ticket SHALL show its state: 未入場 (not yet entered), 入場済み (entered) with the admit time, or 無効 (void). The last loaded list SHALL stay viewable without a connection.
 
 #### Scenario: Fan opens their tickets
 
@@ -100,7 +100,7 @@ For an event with tickets that are not yet entered, the screen SHALL offer to sh
 #### Scenario: After entry
 
 - **WHEN** the fan's tickets are admitted while the code is shown and the device has a connection
-- **THEN** the screen shows them as 入場済み with the admitted time
+- **THEN** the screen shows them as 入場済み with the admit time
 
 ### Requirement: Supported browsers
 

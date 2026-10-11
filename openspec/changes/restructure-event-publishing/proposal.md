@@ -2,7 +2,7 @@
 
 An Organizer's concert can only be published as a whole, once. After publish it cannot be corrected and cannot gain dates:
 
-- `ConcertService.Update` is documented as a correction on a published concert, and `Publish` is documented as adding later dates to a published Series. The spec `usecase/series/update-draft` rejects both, and so does the code: every save of a published concert fails with FailedPrecondition. A doors-open time or start time announced after publish cannot be entered, and a tour cannot add 追加公演 (additional dates).
+- `ConcertService.Update` is documented as a correction on a published concert, and `Publish` is documented as adding later dates to a published Series. The spec `usecase/series/update` (then `update-draft`) rejects both, and so does the code: every save of a published concert fails with FailedPrecondition. A doors-open time or start time announced after publish cannot be entered, and a tour cannot add 追加公演 (additional dates).
 - The draft lives in separate tables (`draft_events`, `draft_series_performers`) that exist only to keep draft rows out of the event natural key. Every rule about publishing is therefore a copy step between two models. Every fan-facing read filters by the Series' state, so one date of a tour cannot be cancelled or kept back on its own.
 
 The pilot Organizer needs to correct published pages and add dates before its first sale. The product has no users yet and only test data, so the cheapest time to move publishing onto the Event is now.
@@ -40,7 +40,7 @@ The pilot Organizer needs to correct published pages and add dates before its fi
 - `components/entity/event/is-event-published` (Purpose and requirement): reads the Event's own publish state
 - `components/entity/concert` (Purpose and requirements): a DRAFT Event is not a Concert; a Concert carries its Event's publish state; fan visibility follows the Event
 - `components/entity/concert/list`, `list-by-artist`, `list-by-artists`, `list-by-follower`, `list-by-location`: leave out Concerts by the Concert's fan visibility, with a draft or cancelled date of a published Series excluded
-- `components/usecase/series/create-draft` (Purpose and requirement): each event is stored as a DRAFT Event
+- `components/usecase/series/create` (Purpose and requirement): each event is stored as a DRAFT Event
 - `components/usecase/series/publish` (Purpose and requirements): publishes named DRAFT Events; a published Series can publish new dates; the share token is set on the first publish only
 - `components/usecase/series/cancel` (Purpose and requirements): cancels named Events or the whole Series; drafts are removed; the announcement carries only the cancelled Events
 - `components/usecase/concert/get` (added by `public-event-page`): returns the Event's publish state
@@ -59,7 +59,7 @@ These are written as REMOVED deltas:
 - `components/entity/series/update-draft` (replaced by `series/update`)
 - `components/entity/series/publish-draft` (replaced by `series/publish-events`)
 - `components/entity/series/mark-cancelled` (replaced by `series/cancel-events`)
-- `components/usecase/series/update-draft` (replaced by `usecase/series/update`)
+- `components/usecase/series/update` (moved from `update-draft` on main; its draft-only requirements are replaced)
 
 ## Impact
 

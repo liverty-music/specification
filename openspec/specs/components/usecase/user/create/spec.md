@@ -8,7 +8,7 @@ Registers the signed-in person as a User, or returns their existing User when th
 
 ### Requirement: Input is checked before anything is stored
 
-Create SHALL take a new User's external id, email, name and, optionally, a Home and a preferred language. It SHALL fail with InvalidArgument and store nothing when the Home is invalid or when a preferred language is given that is not valid, in the terms of the User entity.
+Create SHALL take a new User's provider user ID, email, name and, optionally, a Home and a preferred language. It SHALL fail with InvalidArgument and store nothing when the Home is invalid or when a preferred language is given that is not valid, in the terms of the User entity.
 
 #### Scenario: Invalid home
 
@@ -22,7 +22,7 @@ Create SHALL take a new User's external id, email, name and, optionally, a Home 
 
 ### Requirement: A new identity is registered
 
-When no User exists for the external id or the email, Create SHALL call User.Create with the given values and return the stored User, with its Home when one was given and with the preferred language when one was given.
+When no User exists for the provider user ID or the email, Create SHALL call User.Create with the given values and return the stored User, with its Home when one was given and with the preferred language when one was given.
 
 #### Scenario: New user with home and language
 
@@ -36,26 +36,26 @@ When no User exists for the external id or the email, Create SHALL call User.Cre
 
 ### Requirement: A registered identity gets its existing user back
 
-When User.Create fails with AlreadyExists, Create SHALL look the identity up with User.GetByExternalID. When a User is found, Create SHALL return that User unchanged: its email, name, home and preferred language are not overwritten by the new values. When no User has the external id, the email belongs to another identity and Create SHALL fail with AlreadyExists. When the lookup fails for any other reason, Create SHALL fail with the lookup's error.
+When User.Create fails with AlreadyExists, Create SHALL look the identity up with User.GetByProviderUserID. When a User is found, Create SHALL return that User unchanged: its email, name, home and preferred language are not overwritten by the new values. When no User has the provider user ID, the email belongs to another identity and Create SHALL fail with AlreadyExists. When the lookup fails for any other reason, Create SHALL fail with the lookup's error.
 
 #### Scenario: Same identity again
 
-- **WHEN** Create is called for an external id that is already registered, with preferred language `en`, and the stored User's preferred language is `ja`
+- **WHEN** Create is called for an provider user ID that is already registered, with preferred language `en`, and the stored User's preferred language is `ja`
 - **THEN** it returns the stored User, whose preferred language stays `ja`
 
 #### Scenario: Email used by another identity
 
-- **WHEN** Create is called with an email that a User with a different external id already has
+- **WHEN** Create is called with an email that a User with a different provider user ID already has
 - **THEN** it fails with AlreadyExists
 
 #### Scenario: Lookup after the conflict fails
 
-- **WHEN** User.Create fails with AlreadyExists and the following User.GetByExternalID fails with Unavailable
+- **WHEN** User.Create fails with AlreadyExists and the following User.GetByProviderUserID fails with Unavailable
 - **THEN** Create fails with Unavailable
 
 ### Requirement: A verification email follows every new user
 
-When Create stores a new User, it SHALL announce the new User, and each announcement SHALL cause User.SendVerification to run for that User's external id; when Create returns an existing User, nothing is announced or sent. A failed send SHALL be retried up to 3 more times and then given up, and the User stays created. If announcing the new User fails, Create still succeeds and no verification email is sent for it. When email verification is not configured, the announcement is accepted and no email is sent.
+When Create stores a new User, it SHALL announce the new User, and each announcement SHALL cause User.SendVerification to run for that User's provider user ID; when Create returns an existing User, nothing is announced or sent. A failed send SHALL be retried up to 3 more times and then given up, and the User stays created. If announcing the new User fails, Create still succeeds and no verification email is sent for it. When email verification is not configured, the announcement is accepted and no email is sent.
 
 #### Scenario: New user
 

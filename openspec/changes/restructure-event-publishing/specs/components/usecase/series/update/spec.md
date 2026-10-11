@@ -4,7 +4,7 @@
 
 Update lets the owning organizer operator edit a concert: everything while it is a draft, and corrections — title, description, doors-open and start times, and new draft dates — once it has published dates.
 
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Only the owner
 
@@ -20,7 +20,7 @@ Update SHALL fail with PermissionDenied, without revealing whether the Series ex
 
 ### Requirement: Same validation as a new draft
 
-Update SHALL reject unrepresented performers with PermissionDenied and invalid input with InvalidArgument exactly as CreateDraft does, except that the date of a PUBLISHED or CANCELLED Event is not checked against the current day. It SHALL find or create the Venue of each new or DRAFT event as CreateDraft does.
+Update SHALL reject unrepresented performers with PermissionDenied and invalid input with InvalidArgument exactly as Create does, except that the date of a PUBLISHED or CANCELLED Event is not checked against the current day. It SHALL find or create the Venue of each new or DRAFT event as Create does.
 
 #### Scenario: Doors after start
 - **WHEN** an updated event opens after it starts
@@ -29,6 +29,8 @@ Update SHALL reject unrepresented performers with PermissionDenied and invalid i
 #### Scenario: Correcting a past published date
 - **WHEN** a PUBLISHED Event dated yesterday is given unchanged with a new open time
 - **THEN** Update does not fail for the date
+
+## ADDED Requirements
 
 ### Requirement: Corrections keep what publish fixed
 
@@ -74,3 +76,15 @@ Update SHALL apply the edit (Series.Update), keeping the Series' id, Organizer a
 #### Scenario: Additional date added as a draft
 - **WHEN** the owner adds an event without an id to a Series with PUBLISHED Events
 - **THEN** the returned Series has the new Event as DRAFT and no follower is notified
+
+## REMOVED Requirements
+
+### Requirement: Only a draft
+
+**Reason**: A published concert can now be corrected within what the Series and Event specs fix after publish.
+**Migration**: "Corrections keep what publish fixed".
+
+### Requirement: Content replaced
+
+**Reason**: Replaced by "Edit applied", which also applies corrections to a concert with published Events.
+**Migration**: "Edit applied".

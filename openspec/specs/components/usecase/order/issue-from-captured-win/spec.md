@@ -1,15 +1,15 @@
-# IssuanceUseCase.IssueFromCapturedWin
+# OrderUseCase.IssueFromCapturedWin
 
 ## Purpose
 
-IssuanceUseCase.IssueFromCapturedWin turns one Won TicketApplication into a Paid Order and its account-bound covered tickets, exactly once.
+OrderUseCase.IssueFromCapturedWin turns one Won TicketApplication into a Paid Order and its account-bound covered tickets, exactly once.
 
 ## Requirements
 
 ### Requirement: Issue an order and its tickets from a won application
 
 IssueFromCapturedWin SHALL take an application. When Order.GetByApplicationID finds an Order for it, it SHALL return that Order and issue nothing. Otherwise it SHALL read the application with TicketApplication.Get, failing with NotFound when it does not exist, and fail with FailedPrecondition, creating nothing, when the application is not Won. It SHALL read the phase with LotterySalesPhase.Get and the captured payment with Order.GetCapturedPayment, returning their failures unchanged; it never charges the card. It SHALL resolve the phase's event's Organizer with Event.GetOrganizerID and read it with Organizer.Get for its platform fee rate, returning their failures unchanged and creating nothing. It SHALL build:
-- a Paid Order for the applicant, whose source is the application, whose amount, currency, payment service and card facets are those of the captured payment, and whose paid time is the time of issuance;
+- a Paid Order for the applicant, whose source is the application, whose amount, currency, payment service and card facets are those of the captured payment, and whose pay time is the time of issuance;
 - exactly as many Tickets as the requested ticket count, each bound to the applicant, for the phase's event, carrying the applicant's full name and phone number, and Issued at the same time;
 - a Held Settlement for the phase's event and its Organizer, with one split paying that Organizer the Order's amount minus the platform fee at the Organizer's rate.
 

@@ -8,7 +8,7 @@ An admin reviews concerts held back from automatic publishing, publishing the go
 
 ### Requirement: Concert candidates are reviewed through the queue
 
-A concert staged by ConcertCreationUseCase.CreateFromDiscovered SHALL appear in AdminConcertUseCase.ListPending until AdminConcertUseCase.Approve or AdminConcertUseCase.Reject removes it, and SHALL appear in no fan-facing list meanwhile.
+A concert staged by ConcertCreationUseCase.CreateFromDiscovered SHALL appear in ConcertCandidateUseCase.List until ConcertCandidateUseCase.Approve or ConcertCandidateUseCase.Reject removes it, and SHALL appear in no fan-facing list meanwhile.
 
 #### Scenario: Approve publishes
 - **WHEN** an admin approves a ConcertCandidate with no collision
@@ -20,7 +20,7 @@ A concert staged by ConcertCreationUseCase.CreateFromDiscovered SHALL appear in 
 
 ### Requirement: Rejection is not permanent
 
-A concert rejected with AdminConcertUseCase.Reject SHALL, when discovered again, be handled like any new discovery by ConcertCreationUseCase.CreateFromDiscovered.
+A concert rejected with ConcertCandidateUseCase.Reject SHALL, when discovered again, be handled like any new discovery by ConcertCreationUseCase.CreateFromDiscovered.
 
 #### Scenario: Rejected concert found again
 - **WHEN** a rejected concert is found again at a resolvable venue with a free slot

@@ -33,7 +33,7 @@ platform should contest those instead of conceding.
 - **Settle on the outcome.** On the provider's "dispute closed" notice:
   - **lost** — do what is done today: void the Tickets, reverse the Organizer's
     paid splits, mark the Order Refunded (the platform bears its fee, see
-    `components/usecase/order/refund-order`);
+    `components/usecase/order/refund`);
   - **won** — the funds return to the platform; the Order returns to Paid and
     nothing is reversed.
 - **Concede when there is no case.** A dispute on an Order with no admitted
@@ -56,7 +56,7 @@ To be confirmed in the specs phase; the likely scope is:
 
 - `components/entity/order` (Purpose): a Disputed status between Paid and Refunded in the state diagram.
 - `components/adapter/fan/api/webhook/payment-events`: "dispute created" starts a response instead of a refund; "dispute closed" settles it (today it is acknowledged without effect).
-- `components/usecase/order/refund-order`: the Dispute reason is applied only for a lost or conceded dispute.
+- `components/usecase/order/refund`: the Dispute reason is applied only for a lost or conceded dispute.
 - `components/entity/ticket` / `components/usecase/ticket/admit` (from `ticket-wallet-and-checkin`): read the admission record as evidence.
 
 ## Impact

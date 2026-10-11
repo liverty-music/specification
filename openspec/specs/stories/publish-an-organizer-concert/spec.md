@@ -8,7 +8,7 @@ An organizer authors a concert for an Artist it represents, edits it while it is
 
 ### Requirement: Draft to published
 
-A concert created with ConcertAuthoringUseCase.CreateDraft and edited with ConcertAuthoringUseCase.UpdateDraft SHALL stay out of every fan list until ConcertAuthoringUseCase.Publish succeeds; after that a PUBLIC concert SHALL appear in ConcertUseCase.ListByArtist for its performers, and an UNLISTED one SHALL NOT.
+A concert created with SeriesUseCase.Create and edited with SeriesUseCase.Update SHALL stay out of every fan list until SeriesUseCase.Publish succeeds; after that a PUBLIC concert SHALL appear in ConcertUseCase.ListByArtist for its performers, and an UNLISTED one SHALL NOT.
 
 #### Scenario: Public concert goes live
 - **WHEN** an organizer creates, edits and publishes a PUBLIC concert
@@ -28,7 +28,7 @@ When a published PUBLIC concert's performance matches a discovered Concert's slo
 
 ### Requirement: Cancelled concert leaves fan lists
 
-After ConcertAuthoringUseCase.Cancel, the concert SHALL no longer appear in ConcertUseCase.ListByArtist.
+After SeriesUseCase.Cancel, the concert SHALL no longer appear in ConcertUseCase.ListByArtist.
 
 #### Scenario: Cancel after publish
 - **WHEN** the organizer cancels a published PUBLIC concert

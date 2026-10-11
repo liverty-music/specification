@@ -51,7 +51,7 @@ The Sales tab SHALL list every TicketSale that offers a TicketType for the event
 - scheduled (受付開始前), before the start time: the time remaining until it opens, updated at least once a minute (for example あと 2日 3時間);
 - open (受付中), within the window: for a lottery, the number of entries, the number of requested tickets and the quantity, and when requested tickets exceed the quantity, the ratio as a percentage;
 - closed and not drawn (抽選待ち), for a lottery after the end time before the draw;
-- drawn (抽選済み), for a lottery: the number of winning entries, the number of tickets won and the number of waitlisted (Lost) entries.
+- drawn (抽選済み), for a lottery: the number of winning entries, the number of tickets won and the number of losers (Lost entries).
 
 When the event has no sale the tab SHALL say so and offer 抽選で販売する (sell by lottery) and 先着で販売する (sell first come). When the event has sales, the tab SHALL still offer to start another sale after them. A first-come sale shows what the first-come sale editor specifies.
 
@@ -73,7 +73,7 @@ When the event has no sale the tab SHALL say so and offer 抽選で販売する 
 #### Scenario: Drawn lottery
 
 - **WHEN** a drawn lottery has 318 winning entries for 1,198 tickets and 94 Lost entries
-- **THEN** the sale shows 当選 318, 1,198 tickets won and 94 waitlisted
+- **THEN** the sale shows 当選 318, 1,198 tickets won and 94 losers
 
 #### Scenario: Presale drawn, general sale scheduled
 

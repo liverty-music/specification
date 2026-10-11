@@ -8,7 +8,7 @@ Sends a verification email to the registered address of the User linked to a giv
 
 ### Requirement: Sending a verification email
 
-SendVerification SHALL send a verification email to the registered address of the User with the given external id. Any failure to send SHALL fail with Internal.
+SendVerification SHALL send a verification email to the registered address of the User with the given provider user ID. Any failure to send SHALL fail with Internal.
 
 #### Scenario: Unverified user
 

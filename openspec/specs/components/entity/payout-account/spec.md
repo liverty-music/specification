@@ -2,12 +2,12 @@
 
 ## Purpose
 
-A PayoutAccount is an Organizer's account at the payment provider (not its bank account) for receiving payouts, together with how far the Organizer is through the provider's 本人確認 (identity check) for it. It only receives the Organizer's share after an event; it never accepts card payments, and it holds an opaque reference only, never bank or identity data.
+A PayoutAccount is an Organizer's account at the payment provider (not its bank account) for receiving payouts, together with how far the Organizer is through the provider's 本人確認 (identity check) for it. It only receives the Organizer's share after an event; it never accepts card payments, and it holds only the payment provider's ID for the account, never bank or identity data.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | organizer | the Organizer that owns the account | required; one account per Organizer |
-| account reference | the payment provider's opaque reference to the account | required; 1 to 255 characters; meaningful only to the provider |
+| provider account ID | the payment provider's ID for the account | required; 1 to 255 characters; opaque, meaningful only to the provider |
 | status | payout onboarding status: how ready the account is to receive payouts | pending, active or restricted |
 
 ```mermaid

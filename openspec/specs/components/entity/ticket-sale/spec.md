@@ -12,7 +12,7 @@ A TicketSale is the platform's own sale opportunity for some or all events of an
 | start time | when the sale opens, an instant entered and shown in Japan time | required, before the end time |
 | end time | when the sale closes, an instant entered and shown in Japan time | required; for Lottery, 1 to 14 days after the start time inclusive |
 | verification requirement | whether fans must hold an Active IdentityVerification to take part | None (the default), Verified-any or JPKI-only |
-| drawn time | when the lottery draw ran | absent until the draw runs; Lottery only |
+| draw time | when the lottery draw ran | absent until the draw runs; Lottery only |
 
 ```mermaid
 erDiagram

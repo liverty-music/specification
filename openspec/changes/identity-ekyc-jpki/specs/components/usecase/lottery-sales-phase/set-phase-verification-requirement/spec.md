@@ -9,8 +9,8 @@ only JPKI-verified (strong-dedupe) fans may apply, and non-card-holders are excl
 by design (the 任意/平等 fairness of this is a legal-review item). Unverified fans
 SHALL be **clearly informed** of the requirement and how to satisfy it (JPKI).
 
-**POST-MVP:** a **運転免許証 IC fallback** (Pocket Sign's separate **Verify CardInfo**
-product) for non-card fans, which would be **substantively non-disadvantaging**.
+**POST-MVP:** a **運転免許証 IC fallback** (a separate product of the verification
+provider) for non-card fans, which would be **substantively non-disadvantaging**.
 **Honest limitation (why it is deferred, not free):** the driver's licence path
 proves identity but **does not yield an equivalent stable per-person dedupe key**
 (only a document number, which can change) — so a licence-fallback account has a

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The admin-facing concert service boundary: who may list and delete concerts from the admin console. Reviewing concert candidates is the admin StagedConcertService boundary.
+The admin-facing concert service boundary: who may list and delete concerts from the admin console. Reviewing concert candidates is the admin ConcertCandidateService boundary (`components/adapter/admin/api/rpc/concert-candidate`).
 
 ## Requirements
 
@@ -13,7 +13,7 @@ List, ListPending, Approve, Reject and Delete SHALL require a signed-in caller h
 #### Scenario: Admin lists pending concerts
 
 - **WHEN** a signed-in admin calls ListPending
-- **THEN** ConcertUseCase.ListPending runs and the pending concerts are returned
+- **THEN** ConcertCandidateUseCase.List runs and the pending concerts are returned
 
 #### Scenario: Non-admin approves
 
@@ -22,7 +22,7 @@ List, ListPending, Approve, Reject and Delete SHALL require a signed-in caller h
 
 ### Requirement: Reviews carry the reviewer
 
-Approve SHALL pass the ConcertCandidate id, the requested resolution — keep the existing Event, adopt the staged one, or none — and the caller's identity as reviewer to ConcertUseCase.Approve, and SHALL return the duplicate conflict the usecase reports, if any. Reject SHALL pass the ConcertCandidate id, the reason and the caller's identity as reviewer to ConcertUseCase.Reject.
+Approve SHALL pass the ConcertCandidate id, the requested resolution — keep the existing Event, adopt the staged one, or none — and the caller's identity as reviewer to ConcertCandidateUseCase.Approve, and SHALL return the duplicate conflict the usecase reports, if any. Reject SHALL pass the ConcertCandidate id, the reason and the caller's identity as reviewer to ConcertCandidateUseCase.Reject.
 
 #### Scenario: Approve without a resolution
 

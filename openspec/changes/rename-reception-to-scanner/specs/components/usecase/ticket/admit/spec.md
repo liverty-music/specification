@@ -67,7 +67,7 @@ Admit SHALL read the scanned text with AdmissionCode.Decode; a Malformed text SH
 
 ### Requirement: Each presented ticket admitted exactly once
 
-For a genuine, fresh code for the Scanner's event whose Tickets are all the user's own, Admit SHALL decide each presented Ticket independently, so a group can be partly admitted. Admit SHALL call Ticket.Admit with the Scanner and the current time: a Ticket reported Admitted is admitted; one reported AlreadyAdmitted is rejected with reason AlreadyAdmitted, together with its admitted time and the Scanner number read with Admission.GetByTicket, or the admitted time alone when that read fails; one reported Voided is rejected with reason Voided.
+For a genuine, fresh code for the Scanner's event whose Tickets are all the user's own, Admit SHALL decide each presented Ticket independently, so a group can be partly admitted. Admit SHALL call Ticket.Admit with the Scanner and the current time: a Ticket reported Admitted is admitted; one reported AlreadyAdmitted is rejected with reason AlreadyAdmitted, together with its admit time and the Scanner number read with Admission.GetByTicket, or the admit time alone when that read fails; one reported Voided is rejected with reason Voided.
 
 #### Scenario: Group of three admitted
 
@@ -105,7 +105,7 @@ Each Admission SHALL be stored by Ticket.Admit itself. Admit SHALL append every 
 
 ### Requirement: The result carries no personal data
 
-Admit SHALL return, for the scan, the number of Tickets admitted and, for each rejected Ticket or for the whole scan, the reason, with the earlier admission time and Scanner number for AlreadyAdmitted. It SHALL NOT return the user's name, phone number, account or any other personal data.
+Admit SHALL return, for the scan, the number of Tickets admitted and, for each rejected Ticket or for the whole scan, the reason, with the earlier admit time and Scanner number for AlreadyAdmitted. It SHALL NOT return the user's name, phone number, account or any other personal data.
 
 #### Scenario: Result of a group scan
 

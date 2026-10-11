@@ -8,7 +8,7 @@ Returns the payout account stored for an Organizer.
 
 ### Requirement: GetByOrganizerID returns the Organizer's account
 
-GetByOrganizerID SHALL return the Organizer's stored account with its account reference and last stored status, and SHALL fail with NotFound when the Organizer has no stored account.
+GetByOrganizerID SHALL return the Organizer's stored account with its provider account ID and last stored status, and SHALL fail with NotFound when the Organizer has no stored account.
 
 #### Scenario: Stored account
 

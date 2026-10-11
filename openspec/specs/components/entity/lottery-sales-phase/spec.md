@@ -14,7 +14,7 @@ A LotterySalesPhase is an Organizer-configured lottery sale of one event's ticke
 | max tickets per application | largest companion group one application may request | required, 1 to 10 and not above ticket capacity |
 | ticket price | per-ticket price in whole yen | required, greater than 0 |
 | verification requirement | whether applicants must hold an identity verification | None (the default), Verified-any or JPKI-only |
-| drawn time | when the draw ran | absent until the draw runs |
+| draw time | when the draw ran | absent until the draw runs |
 
 ```mermaid
 erDiagram
@@ -116,14 +116,14 @@ The amount held for an application SHALL be the ticket price multiplied by the r
 
 ### Requirement: Drawn phase
 
-A phase SHALL count as drawn once its drawn time is set.
+A phase SHALL count as drawn once its draw time is set.
 
-#### Scenario: Drawn time set
+#### Scenario: Draw time set
 
-- **WHEN** the drawn time is set
+- **WHEN** the draw time is set
 - **THEN** the phase is drawn
 
-#### Scenario: Drawn time absent
+#### Scenario: Draw time absent
 
-- **WHEN** the drawn time is absent
+- **WHEN** the draw time is absent
 - **THEN** the phase is not drawn

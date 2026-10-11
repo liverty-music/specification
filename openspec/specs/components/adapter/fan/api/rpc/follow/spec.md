@@ -8,7 +8,7 @@ The fan-facing follow service boundary: who may follow, unfollow, list follows a
 
 ### Requirement: Every follow call acts for the signed-in caller
 
-Follow, Unfollow, ListFollowed and SetHype SHALL act only for the signed-in caller, resolved to their stored User (User.GetByExternalID) before the usecase runs; no call accepts another fan. They SHALL fail with Unauthenticated when the caller is not signed in, and with NotFound when the caller has no account (the fan must finish registration first).
+Follow, Unfollow, ListFollowed and SetHype SHALL act only for the signed-in caller, resolved to their stored User (User.GetByProviderUserID) before the usecase runs; no call accepts another fan. They SHALL fail with Unauthenticated when the caller is not signed in, and with NotFound when the caller has no account (the fan must finish registration first).
 
 #### Scenario: Signed-in fan follows
 

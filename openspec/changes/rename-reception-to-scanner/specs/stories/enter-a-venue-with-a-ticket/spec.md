@@ -4,7 +4,7 @@
 
 ### Requirement: Fan and companions enter together
 
-After an Organizer creates a Scanner with ScannerUseCase.Create and venue staff open its link on a device with ScannerUseCase.Open, a fan whose phone registered its key with WalletPublicKeyUseCase.Register and who holds Issued tickets for the event SHALL be able to show the QR code their phone makes and be admitted with TicketUseCase.Admit during the admission window; their tickets SHALL then be shown as entered in TicketUseCase.GetMyTickets.
+After an Organizer creates a Scanner with ScannerUseCase.Create and venue staff open its link on a device with ScannerUseCase.Open, a fan whose phone registered its key with WalletPublicKeyUseCase.Register and who holds Issued tickets for the event SHALL be able to show the QR code their phone makes and be admitted with TicketUseCase.Admit during the admission window; their tickets SHALL then be shown as entered in TicketUseCase.List.
 
 #### Scenario: Group of three enters
 

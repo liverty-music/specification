@@ -73,7 +73,7 @@ markup charged to the matched user. Provider/payment mechanics reuse ⑤'s Strip
      deltas below only add resale-specific requirements to them. -->
 - `components/entity/event`: Ticket sales require complete event info
 - `components/entity/ticket-journey`: Resold companion seat leaves the same-time-entry group
-- `components/usecase/order/refund-order`: Listing user's refund triggered on resale completion; Resale fee
+- `components/usecase/order/refund`: Listing user's refund triggered on resale completion; Resale fee
 
 ## Impact
 

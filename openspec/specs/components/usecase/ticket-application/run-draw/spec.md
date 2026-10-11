@@ -45,7 +45,7 @@ When releasing a loser's hold fails, RunDraw SHALL still record the application 
 
 ### Requirement: The draw issues nothing
 
-RunDraw SHALL NOT create an Order or a Ticket; a Won application is the only input to IssuanceUseCase.IssueFromCapturedWin.
+RunDraw SHALL NOT create an Order or a Ticket; a Won application is the only input to OrderUseCase.IssueFromCapturedWin.
 
 #### Scenario: After the draw
 

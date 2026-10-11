@@ -1,7 +1,7 @@
 # components/usecase/order/issue-from-reservation Specification
 
 ## Purpose
-IssuanceUseCase.IssueFromReservation finishes a fan's checkout: it commits the held tickets, charges the card and issues the Order and its account-bound covered tickets, exactly once.
+OrderUseCase.IssueFromReservation finishes a fan's checkout: it commits the held tickets, charges the card and issues the Order and its account-bound covered tickets, exactly once.
 
 ## Requirements
 
@@ -46,7 +46,7 @@ The card hold of a Reservation that is not committed is given back by Reservatio
 
 #### Scenario: Fan and the stalled-checkout job at once
 
-- **WHEN** a fan's slow placement and IssuanceUseCase.IssueDueReservations handle the same Reservation at the same time
+- **WHEN** a fan's slow placement and OrderUseCase.IssueDueReservations handle the same Reservation at the same time
 - **THEN** the card is charged once and both end with the same Order
 
 #### Scenario: Someone else's checkout
@@ -58,16 +58,16 @@ The card hold of a Reservation that is not committed is given back by Reservatio
 
 For a Committed Reservation without a capture time, IssueFromReservation SHALL charge the card with Reservation.CaptureAuthorization and record the charge with Reservation.RecordCapture:
 - When the capture fails with FailedPrecondition, meaning the hold can no longer be charged, it SHALL give the tickets back with Reservation.RevertCommit and fail with FailedPrecondition.
-- When it fails with any other error, it SHALL leave the Reservation Committed and fail with that error; IssuanceUseCase.IssueDueReservations finishes the checkout later.
+- When it fails with any other error, it SHALL leave the Reservation Committed and fail with that error; OrderUseCase.IssueDueReservations finishes the checkout later.
 
 A Reservation that already has a capture time SHALL never be charged again.
 
 It SHALL then read the charged payment with Order.GetCapturedPayment for the Reservation's authorization reference, read the sale with TicketSale.Get, resolve the sale's event's Organizer with Event.GetOrganizerID, and read the Organizer with Organizer.Get for its platform fee rate. It SHALL build:
-- a Paid Order for the Reservation's User, whose source is the Reservation, with the Reservation's amount in yen, the authorization reference as its payment reference and the charged payment's card brand and last four digits, and a paid time of the time of issuance;
+- a Paid Order for the Reservation's User, whose source is the Reservation, with the Reservation's amount in yen, the authorization reference as its payment reference and the charged payment's card brand and last four digits, and a pay time of the time of issuance;
 - exactly as many Tickets as the Reservation's count, each bound to that User, for the sale's event, carrying the Reservation's holder full name and phone number, and Issued at the same time;
 - a Held Settlement for the event and its Organizer, with one split paying that Organizer the Order's amount minus the platform fee at the Organizer's rate.
 
-It SHALL store them with Order.Issue. When Order.Issue fails with AlreadyExists, it SHALL return the Order found by Order.GetByReservationID. Any other failure leaves the charged Reservation Committed for IssuanceUseCase.IssueDueReservations.
+It SHALL store them with Order.Issue. When Order.Issue fails with AlreadyExists, it SHALL return the Order found by Order.GetByReservationID. Any other failure leaves the charged Reservation Committed for OrderUseCase.IssueDueReservations.
 
 #### Scenario: Checkout issued
 

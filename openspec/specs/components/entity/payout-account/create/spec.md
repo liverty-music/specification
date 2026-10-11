@@ -2,18 +2,18 @@
 
 ## Purpose
 
-Opens an Organizer's payout-receiving account at the payment provider and returns its account reference.
+Opens an Organizer's payout-receiving account at the payment provider and returns its provider account ID.
 
 ## Requirements
 
 ### Requirement: Create opens a receive-only account
 
-Create SHALL open an account at the payment provider for the Organizer, in Japan and in JPY, that can receive transfers from the platform and cannot accept card payments, with the platform bearing any negative balance on it and collecting its fees. The account SHALL carry the given contact email and no other personal data: the Organizer gives their identity details directly to the provider during the identity check, so the account starts unverified. It SHALL return the account reference.
+Create SHALL open an account at the payment provider for the Organizer, in Japan and in JPY, that can receive payouts from the platform and cannot accept card payments, with the platform bearing any negative balance on it and collecting its fees. The account SHALL carry the given contact email and no other personal data: the Organizer gives their identity details directly to the provider during the identity check, so the account starts unverified. It SHALL return the provider account ID.
 
 #### Scenario: Account is opened
 
 - **WHEN** Create runs for an Organizer with a contact email
-- **THEN** it returns the reference of a new unverified account that can receive transfers only
+- **THEN** it returns the provider account ID of a new unverified account that can receive payouts only
 
 ### Requirement: Create does not open a second account on retry
 
@@ -22,7 +22,7 @@ A repeated call for the same Organizer within 24 hours SHALL return the account 
 #### Scenario: Retried call
 
 - **WHEN** Create runs twice for the same Organizer within 24 hours
-- **THEN** both calls return the same account reference
+- **THEN** both calls return the same provider account ID
 
 ### Requirement: Create failures
 

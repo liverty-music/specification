@@ -9,8 +9,8 @@ An IdentityVerification binds one User's account to a real person who passed a �
 | id | identifier of the verification | required; assigned on creation |
 | user | the account it verifies | required |
 | method | how the person proved their identity | required; マイナンバーカード (My Number Card) or 運転免許証 (driver's licence) |
-| person key | the identity-check service's stable key for the person | required; the only person-identifying value kept |
-| verified time | when the check succeeded | required |
+| provider user ID | the verification provider's ID for the User: its stable key for the person | required; the only person-identifying value kept |
+| verify time | when the check succeeded | required |
 | status | whether the verification still holds | required; Active or NeedsReverification |
 
 ```mermaid
@@ -29,7 +29,7 @@ stateDiagram-v2
 
 ### Requirement: A new verification starts Active
 
-A new IdentityVerification SHALL start Active, with its verified time set to the time it is created.
+A new IdentityVerification SHALL start Active, with its verify time set to the time it is created.
 
 #### Scenario: Fan passes the identity check
 
@@ -38,7 +38,7 @@ A new IdentityVerification SHALL start Active, with its verified time set to the
 
 ### Requirement: Strength of the one-person guarantee follows the method
 
-An IdentityVerification's one-person guarantee SHALL be strong when the method is My Number Card, because its person key survives card renewal, and weak when the method is driver's licence, because its key can change.
+An IdentityVerification's one-person guarantee SHALL be strong when the method is My Number Card, because its provider user ID survives card renewal, and weak when the method is driver's licence, because its key can change.
 
 #### Scenario: My Number Card
 

@@ -7,7 +7,7 @@ OrganizerUseCase.ListOwnArtists returns the roster of the caller's own Organizer
 
 ### Requirement: Only the caller's own roster is listed
 
-ListOwnArtists SHALL take the caller's own Organizer, as OrganizerUseCase.ResolveCaller returned it, and the Organizer the request names. When the named Organizer is not the caller's own, ListOwnArtists SHALL fail with PermissionDenied and list nothing. Otherwise it SHALL return what OrganizerUseCase.ListArtists returns for the caller's own Organizer, including NotFound when that Organizer no longer exists.
+ListOwnArtists SHALL take the caller's own Organizer, as OrganizerUseCase.ResolveCaller returned it, and the Organizer the request names. When the named Organizer is not the caller's own, ListOwnArtists SHALL fail with PermissionDenied and list nothing. Otherwise it SHALL return what ArtistUseCase.ListByOrganizer returns for the caller's own Organizer, including NotFound when that Organizer no longer exists.
 
 #### Scenario: Own roster
 

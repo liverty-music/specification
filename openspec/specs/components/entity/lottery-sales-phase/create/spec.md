@@ -8,7 +8,7 @@ Stores a new LotterySalesPhase for an event and returns it as stored, not yet dr
 
 ### Requirement: Store a phase
 
-Create SHALL store the phase without a drawn time and return it. It SHALL fail with FailedPrecondition when the event does not exist.
+Create SHALL store the phase without a draw time and return it. It SHALL fail with FailedPrecondition when the event does not exist.
 
 #### Scenario: Phase stored
 

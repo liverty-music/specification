@@ -4,7 +4,7 @@
 
 ### Requirement: Draft to published
 
-A concert created with ConcertAuthoringUseCase.CreateDraft and edited with ConcertAuthoringUseCase.Update SHALL stay out of every fan list until ConcertAuthoringUseCase.Publish succeeds; after that a PUBLIC concert SHALL appear in ConcertUseCase.ListByArtist for its performers, and an UNLISTED one SHALL NOT.
+A concert created with SeriesUseCase.Create and edited with SeriesUseCase.Update SHALL stay out of every fan list until SeriesUseCase.Publish succeeds; after that a PUBLIC concert SHALL appear in ConcertUseCase.ListByArtist for its performers, and an UNLISTED one SHALL NOT.
 
 #### Scenario: Public concert goes live
 - **WHEN** an organizer creates, edits and publishes a PUBLIC concert
@@ -18,7 +18,7 @@ A concert created with ConcertAuthoringUseCase.CreateDraft and edited with Conce
 
 ### Requirement: A published concert gains a date
 
-A date added with ConcertAuthoringUseCase.Update to a published PUBLIC concert SHALL stay out of every fan list until ConcertAuthoringUseCase.Publish publishes it; then it SHALL appear in ConcertUseCase.ListByArtist next to the earlier dates, and followers of the performers SHALL be told about the new date only.
+A date added with SeriesUseCase.Update to a published PUBLIC concert SHALL stay out of every fan list until SeriesUseCase.Publish publishes it; then it SHALL appear in ConcertUseCase.ListByArtist next to the earlier dates, and followers of the performers SHALL be told about the new date only.
 
 #### Scenario: Tour adds a date
 - **WHEN** an organizer adds a date to a published PUBLIC tour, checks ListByArtist, then publishes the date
@@ -26,7 +26,7 @@ A date added with ConcertAuthoringUseCase.Update to a published PUBLIC concert S
 
 ### Requirement: A published concert is corrected
 
-ConcertAuthoringUseCase.Update on a published concert SHALL change the title and doors-open time that ConcertUseCase.ListByArtist returns, and SHALL refuse to change a published date's venue.
+SeriesUseCase.Update on a published concert SHALL change the title and doors-open time that ConcertUseCase.ListByArtist returns, and SHALL refuse to change a published date's venue.
 
 #### Scenario: Doors-open time announced after publish
 - **WHEN** an organizer publishes a concert without a doors-open time and later sets it with Update

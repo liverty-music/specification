@@ -8,7 +8,7 @@ Issues a fresh verification code for the User linked to a given identity at the 
 
 ### Requirement: Resending issues a fresh code
 
-ResendVerification SHALL issue a new verification code and send it to the registered address of the User with the given external id, even when no earlier code was ever issued. It SHALL fail with FailedPrecondition when the address is already verified, and with Internal on any other failure to issue or send.
+ResendVerification SHALL issue a new verification code and send it to the registered address of the User with the given provider user ID, even when no earlier code was ever issued. It SHALL fail with FailedPrecondition when the address is already verified, and with Internal on any other failure to issue or send.
 
 #### Scenario: Earlier code exists
 

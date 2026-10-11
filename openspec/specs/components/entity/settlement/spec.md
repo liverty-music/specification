@@ -10,15 +10,15 @@ A Settlement is the payout record for one Order's captured money under the ÂèéÁ¥
 | order | the Order whose money it pays out | required, one Settlement per Order |
 | organizer | the Organizer receiving the payout | required |
 | event | the event whose start gates the release | required |
-| charge reference | reference to the captured charge the payouts are tied to | empty until resolved at release |
+| provider charge ID | the payment provider's ID for the captured charge the payouts are tied to | empty until resolved at release |
 | splits | the payees' shares | at least one |
 | split payee | the Organizer receiving the split | required |
 | split amount | the payee's net share, in whole yen | required, greater than 0 |
-| split payout reference | reference to the payout of the split | empty until released |
-| split reversal reference | reference to the claw-back of the split | empty unless reversed |
+| split provider payout ID | the payment provider's ID for the payout of the split | empty until released |
+| split provider payout reversal ID | the payment provider's ID for the claw-back of the split | empty unless reversed |
 | status | lifecycle | Held, Released or Reversed |
-| released time | when the splits were paid out | empty while Held |
-| created time | when the Settlement was recorded | required |
+| release time | when the splits were paid out | empty while Held |
+| create time | when the Settlement was recorded | required |
 
 ```mermaid
 erDiagram
@@ -47,7 +47,7 @@ While a Settlement is Held, none of its Order's money SHALL have been paid to an
 #### Scenario: Held settlement
 
 - **WHEN** a Settlement is Held
-- **THEN** no split has a payout reference
+- **THEN** no split has a provider payout ID
 
 ### Requirement: Splits and platform fee
 

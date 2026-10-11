@@ -41,16 +41,16 @@ When Create stores a Home, it SHALL set the Home's centroid to the centre of its
 
 ### Requirement: Create rejects a taken identity or email
 
-Create SHALL fail with AlreadyExists and store nothing when another User already has the same external id or the same email.
+Create SHALL fail with AlreadyExists and store nothing when another User already has the same provider user ID or the same email.
 
-#### Scenario: Same external id
+#### Scenario: Same provider user ID
 
-- **WHEN** a User with the same external id already exists
+- **WHEN** a User with the same provider user ID already exists
 - **THEN** Create fails with AlreadyExists and stores nothing
 
 #### Scenario: Same email
 
-- **WHEN** a User with a different external id already has the same email
+- **WHEN** a User with a different provider user ID already has the same email
 - **THEN** Create fails with AlreadyExists and stores nothing
 
 ### Requirement: Absent preferred language is stored absent
