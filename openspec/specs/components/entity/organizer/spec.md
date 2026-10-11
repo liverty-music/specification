@@ -11,6 +11,12 @@ An Organizer is a vetted seller - a record label, management agency, promoter or
 | operator email | email of the initial operator, captured at creation to seed the operator's sign-in | required; an email address; never shown to the organizer or fan audiences |
 | tenant link | the Organizer's isolated sign-in tenant | optional; empty until provisioning links the tenant; once set, no other Organizer has the same tenant |
 | status | lifecycle | provisioning, active or deactivated |
+| seller legal name | 販売業者の名称 shown in the 特商法 (Specified Commercial Transactions Act) disclosure | optional until entered by an admin at vetting; 1 to 200 characters |
+| seller representative | 代表者 of the seller | optional until entered; 1 to 100 characters |
+| seller address | the seller's address | optional until entered; 1 to 300 characters |
+| seller phone number | the seller's phone number | optional until entered; E.164 |
+| seller contact email | the seller's contact email | optional until entered; an email address |
+| platform fee rate | the platform fee applied to the Organizer's future Orders, in hundredths of a percent | required; 0 to 3000; 800 for a new Organizer; never shown to the fan audience |
 
 ```mermaid
 erDiagram
@@ -111,3 +117,31 @@ An Organizer SHALL become active only from provisioning, and a deactivated Organ
 
 - **WHEN** the status is active
 - **THEN** the Organizer cannot become provisioning again
+
+### Requirement: Seller details
+
+An Organizer's seller details, shown to fans as the 特商法 (Specified Commercial Transactions Act) 販売業者 (seller) disclosure, SHALL consist of a legal name of 1 to 200 characters, a representative or responsible person of 1 to 100 characters, an address of 1 to 300 characters, a phone number in E.164 form and a contact email address. An Organizer SHALL have complete seller details only when all five are present and valid.
+
+#### Scenario: Corporation with all details
+
+- **WHEN** an Organizer has a legal name, a representative, an address, the phone `+81312345678` and a contact email
+- **THEN** its seller details are complete
+
+#### Scenario: Address missing
+
+- **WHEN** an Organizer's seller details have no address
+- **THEN** its seller details are not complete
+
+### Requirement: Platform fee rate
+
+An Organizer's platform fee rate SHALL be 0 to 30% in hundredths of a percent, and a new Organizer's rate SHALL be 8%.
+
+#### Scenario: New Organizer
+
+- **WHEN** an Organizer is created
+- **THEN** its platform fee rate is 8%
+
+#### Scenario: Rate over the bound
+
+- **WHEN** an Organizer's rate is set to 31%
+- **THEN** the rate is invalid

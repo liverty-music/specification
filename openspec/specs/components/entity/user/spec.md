@@ -14,6 +14,8 @@ User
 | name | display name taken from the identity provider | required; may be empty text |
 | preferred language | display language for the UI and notifications | optional; when present exactly two lowercase letters (ISO 639-1, e.g. `ja`, `en`); absent means no client has asserted a language yet |
 | home | the user's home area | optional; absent until the user selects an area |
+| holder full name | the 本人確認 (identity check) name the user last checked out with, prefilled at the next checkout | optional; absent until the user first checks out; 1 to 200 characters |
+| holder phone number | the 本人確認 phone number the user last checked out with | optional; absent until the user first checks out; E.164 |
 
 Home
 
@@ -101,3 +103,17 @@ A Home SHALL be valid only when its country code is two uppercase letters, its l
 
 - **WHEN** a Home has a level 2 of 21 bytes, such as 21 ASCII characters or 7 kanji
 - **THEN** it is invalid
+
+### Requirement: Holder identity on the account
+
+A User's holder full name, when present, SHALL be 1 to 200 characters, and their holder phone number, when present, SHALL be in E.164 form. Both are absent until the User first checks out.
+
+#### Scenario: Saved identity
+
+- **WHEN** a User's holder full name is `山田 花子` and their phone number is `+819012345678`
+- **THEN** the identity is valid
+
+#### Scenario: Domestic-format phone number
+
+- **WHEN** a User's holder phone number is `09012345678`
+- **THEN** the identity is invalid
