@@ -25,9 +25,19 @@ Every request SHALL carry a valid sign-in, or fail with Unauthenticated, and the
 - **WHEN** a caller without the admin role calls List or Get
 - **THEN** it fails with PermissionDenied
 
+#### Scenario: Non-admin sets a rate
+
+- **WHEN** a caller without the admin role calls SetPlatformFeeRate
+- **THEN** it fails with PermissionDenied and the rate is unchanged
+
 ### Requirement: Requests are validated before any usecase runs
 
-The boundary SHALL fail with InvalidArgument, before any usecase runs, when a required OrganizerId or ArtistId is missing or malformed, when Create's name is not 1 to 200 characters, or when Create's operator email is not an email address.
+The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
+- a required OrganizerId or ArtistId is missing or malformed;
+- Create's name is not 1 to 200 characters;
+- Create's operator email is not an email address;
+- any of UpdateSellerDetails' seller details is missing;
+- SetPlatformFeeRate's rate is missing.
 
 #### Scenario: Name too long
 
@@ -41,12 +51,22 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when a re
 
 #### Scenario: Missing OrganizerId
 
-- **WHEN** Get, ListArtists, AssociateArtist, DisassociateArtist, Deactivate or Delete is called without an OrganizerId
+- **WHEN** Get, ListArtists, AssociateArtist, DisassociateArtist, Deactivate, UpdateSellerDetails or SetPlatformFeeRate is called without an OrganizerId
 - **THEN** it fails with InvalidArgument
+
+#### Scenario: Missing rate
+
+- **WHEN** SetPlatformFeeRate is called without a rate
+- **THEN** it fails with InvalidArgument and the rate is unchanged
 
 ### Requirement: Each call runs one OrganizerUseCase method
 
-Create SHALL run OrganizerUseCase.Create and return the created Organizer; Get, List and ListArtists SHALL run OrganizerUseCase.Get, OrganizerUseCase.List and OrganizerUseCase.ListArtists for any Organizer the admin names; AssociateArtist, DisassociateArtist, Deactivate and Delete SHALL run the usecase method of the same name. Errors from the usecase SHALL be returned unchanged. An Organizer is returned with its id and name only.
+Each call SHALL run one usecase method:
+- Create SHALL run OrganizerUseCase.Create and return the created Organizer.
+- Get, List and ListArtists SHALL run OrganizerUseCase.Get, OrganizerUseCase.List and OrganizerUseCase.ListArtists for any Organizer the admin names.
+- AssociateArtist, DisassociateArtist, Deactivate, Delete, UpdateSellerDetails and SetPlatformFeeRate SHALL run the usecase method of the same name.
+
+Errors from the usecase SHALL be returned unchanged. An Organizer is returned with its id, name, seller details and platform fee rate.
 
 #### Scenario: Admin lists Organizers and inspects a roster
 
@@ -56,7 +76,7 @@ Create SHALL run OrganizerUseCase.Create and return the created Organizer; Get, 
 #### Scenario: Admin reads any Organizer
 
 - **WHEN** an admin calls Get for a deactivated Organizer
-- **THEN** it returns that Organizer's id and name
+- **THEN** it returns that Organizer's id, name, seller details and platform fee rate
 
 #### Scenario: Admin deletes a deactivated Organizer
 
@@ -67,3 +87,8 @@ Create SHALL run OrganizerUseCase.Create and return the created Organizer; Get, 
 
 - **WHEN** OrganizerUseCase.Delete fails with FailedPrecondition
 - **THEN** Delete fails with FailedPrecondition
+
+#### Scenario: Admin records seller details
+
+- **WHEN** an admin calls UpdateSellerDetails with complete details
+- **THEN** OrganizerUseCase.UpdateSellerDetails runs and the Organizer is returned with them

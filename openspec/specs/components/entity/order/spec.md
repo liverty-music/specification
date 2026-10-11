@@ -2,13 +2,13 @@
 
 ## Purpose
 
-An Order is the purchase record of one winning TicketApplication: a reference to its captured payment, the amount paid and its own status. One Order covers all tickets of that application, and an Order exists only after the payment has been captured.
+An Order is the purchase record of one source, a won TicketApplication or a Committed Reservation: a reference to its captured payment, the amount paid and its own status. One Order covers all tickets of its source, and an Order exists only after the payment has been captured.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | id | the order's identity | required, assigned on creation |
-| buyer | the winning applicant's account | required |
-| application | the winning TicketApplication it was created from | required, one Order per application |
+| buyer | the account that bought the tickets | required |
+| source | what it was created from: a won TicketApplication or a Committed Reservation | required, exactly one; one Order per source |
 | payment service | which of the platform's payment services holds the payment | required |
 | payment reference | reference to the captured payment | required, 1-255 characters, opaque |
 | payment method reference | reference to the payment method used | optional, at most 255 characters, opaque |
@@ -19,11 +19,13 @@ An Order is the purchase record of one winning TicketApplication: a reference to
 | currency | ISO 4217 currency of the amount | required, 3 uppercase letters |
 | paid time | when the Order was created from the captured payment | required |
 | refund reference | reference to the refund issued to the buyer | empty unless refunded for a cancellation |
+| confirmation-sent time | when the purchase confirmation email was sent to the buyer | empty until sent; set once |
 
 ```mermaid
 erDiagram
   User ||--o{ Order : "buys"
   TicketApplication ||--o| Order : "is purchased by"
+  Reservation ||--o| Order : "is purchased by"
   Order ||--|{ Ticket : "issues"
   Order ||--o| Settlement : "is paid out by"
 ```
@@ -87,3 +89,17 @@ An Order SHALL be refundable only while its status is Paid.
 
 - **WHEN** the status is Refunded
 - **THEN** the Order is not refundable
+
+### Requirement: An Order has exactly one source
+
+An Order SHALL come from exactly one source: a won TicketApplication, or a Reservation that was Committed and charged and is Completed by the Order's issuance. An Order that names both, or neither, SHALL be invalid. At most one Order SHALL exist per source.
+
+#### Scenario: Order from a checkout
+
+- **WHEN** an Order names a Reservation and no TicketApplication
+- **THEN** its source is valid
+
+#### Scenario: Two sources
+
+- **WHEN** an Order names both a TicketApplication and a Reservation
+- **THEN** the Order is invalid

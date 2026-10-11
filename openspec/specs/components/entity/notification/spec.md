@@ -8,7 +8,7 @@ A Notification is the durable record of one message sent to one fan, such as new
 |-----------|---------|------------|
 | id | the notification's identity, also carried inside the pushed message so the fan's response can be traced back to it | required; assigned when recorded |
 | user_id | the fan it is for | required |
-| type | what produced it | required; one of new_concerts, sales_reminder, sales_phase_announcement |
+| type | what produced it | required; one of new_concerts, sales_reminder, sales_phase_announcement, order_confirmation |
 | message | the pushed content: title, body, a tag (a later message with the same tag replaces an earlier one on the device) and data holding the in-app link and the notification id | required |
 | delivery_status | whether the push channel accepted the message | required; Queued, Delivered or Failed |
 | failure_reason | why delivery failed | present only when Failed |
