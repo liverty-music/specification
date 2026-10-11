@@ -8,7 +8,7 @@
 - **BREAKING** The reception window becomes the **admission window**. The rule does not change: it opens 3 hours before the open time (or before the start time when the event has no open time) and closes at 04:00 Japan time on the day after the event date.
 - **BREAKING** An `Admission` and a `RejectedScan` name the Scanner that scanned, not "the reception link" (`scanner_id` in proto and DB).
 - **BREAKING** RPC services are named after the entity, one service per caller:
-  - `rpc.organizer.scanner.v1.ScannerService` with `Create`, `List` and the custom method `Revoke` replaces `rpc.organizer.reception_link.v1.ReceptionLinkService` (`Issue`, `List`, `Revoke`). The operator console calls it on the organizer API.
+  - `rpc.organizer.scanner.v1.ScannerService` with `Create`, `ListByEvent` and the custom method `Revoke` replaces `rpc.organizer.reception_link.v1.ReceptionLinkService` (`Issue`, `List`, `Revoke`). The operator console calls it on the organizer API.
   - `rpc.scanner.v1.ScannerService` with the custom methods `Open` and `Admit` replaces `rpc.organizer.reception.v1.ReceptionService`. The scanner device calls it on the `reception-api` workload that `isolate-venue-reception` set up.
 - `AdmissionCode` keeps its name. It is the signed statement; the QR code is only how it is shown today. The fan app's `EntryCode*` code names become `AdmissionCode*`. The words the fan and staff see ("入場用QRコード", "entry QR code") do not change.
 - Unchanged:

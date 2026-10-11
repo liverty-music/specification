@@ -8,11 +8,15 @@ LotteryUseCase.WithdrawEntry lets a fan give up their own LotteryEntry before th
 
 ### Requirement: Withdraw before the draw
 
-WithdrawEntry SHALL take an entry and the calling fan. It SHALL read the entry with LotteryEntry.Get, failing with NotFound when it does not exist; fail with PermissionDenied when the entry belongs to another fan; and fail with FailedPrecondition when the entry is not withdrawable. It SHALL then release the hold with LotteryEntry.CancelAuthorization and only after that set the state to Withdrawn with LotteryEntry.UpdateState. When the release fails, its error SHALL be returned and the entry stays Entered. Withdrawal is possible until the draw runs, also after the window has closed.
+WithdrawEntry SHALL take an entry and the calling fan. It SHALL read the entry with LotteryEntry.Get, failing with NotFound when it does not exist; fail with PermissionDenied when the entry belongs to another fan; and fail with FailedPrecondition when the entry is not withdrawable. It SHALL then release the hold with LotteryEntry.CancelAuthorization, when the entry has one, and only after that set the state to Withdrawn with LotteryEntry.UpdateState. When the release fails, its error SHALL be returned and the entry keeps its state. Withdrawal is possible until the draw runs, also after the window has closed.
 
 #### Scenario: Withdraw before the draw
 - **WHEN** a fan withdraws their Entered entry
 - **THEN** its hold is released and its state is Withdrawn, and the fan may enter again while the window is open
+
+#### Scenario: Withdraw a draft
+- **WHEN** a fan withdraws their Draft that has no hold
+- **THEN** its state is Withdrawn and no hold is released
 
 #### Scenario: Window closed but not drawn
 - **WHEN** a fan withdraws an Entered entry after the end time and before the draw

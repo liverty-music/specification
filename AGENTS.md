@@ -143,9 +143,14 @@ Before modifying `.proto` files, follow the checklist in `proto/AGENTS.md`.
 ## Review criteria (flag violations)
 
 - Domain concepts are wrapper messages with protovalidate (`UserId`, `VenueName`…), never bare `string`/`int` (cf. `entity/v1/*.proto`).
-- `entity/v1/` holds pure data types (no service logic); `rpc/*/v1/` imports entities and follows Google AIP.
+- `entity/v1/` holds pure data types (no service logic); `rpc/*/v1/` imports entities and follows Google AIP, except where the `rpc-design` skill (`.claude/skills/rpc-design/SKILL.md`) differs.
 - Timestamp fields end in `_time` (`google.protobuf.Timestamp`, AIP-142), never `_at`; creation time is `create_time` (AIP-148). A timestamp field exists only when a spec requirement reads it.
-- Standard methods are bare verbs on the resource's own service with matching messages: `TicketService.List(ListRequest)`, not `GetMyTickets` or `ListTickets`. Whose items are returned comes from the authenticated caller, not the method name. Custom methods are verbs (`Publish`, `Refund`).
+- RPC names follow the `rpc-design` skill (`.claude/skills/rpc-design/SKILL.md`). In short:
+  - Services are entity names, and their standard methods take and return only their own resource.
+  - Standard methods are bare verbs with matching messages (`TicketService.List(ListRequest)`), never `GetMyTickets`, `ListTickets`, `Get<Noun>` or `Update<Field>`.
+  - `Get` takes the resource's own id. `ListBy<Key>` names a required request field (`ListByEvent`). `Set<Attribute>` replaces one attribute.
+  - The caller is never named: no `user_id` on a fan's own request.
+  - Other operations are domain verbs (`Publish`, `Withdraw`, `Follow`).
 - Message, field, file and RPC names use entity names from `openspec/specs/components/entity/` (the ubiquitous language). A term no entity defines ("holder", "device key") is a violation: use the entity's name, or raise the missing entity.
 
 </agent-rules>

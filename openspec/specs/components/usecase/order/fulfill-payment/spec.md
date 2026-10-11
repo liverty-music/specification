@@ -1,7 +1,7 @@
 # components/usecase/order/fulfill-payment Specification
 
 ## Purpose
-IssuanceUseCase.FulfillPayment turns a completed charge reported by the payment provider into a paid Order and announces it, so every paid Order's confirmation and ticket journey update run, whether the charge came from a checkout or a won lottery.
+IssuanceUseCase.FulfillPayment turns a completed charge reported by the payment provider into a paid Order and announces it, so every paid Order's confirmation and ticket journey update run, whether the charge came from a checkout or a won lottery entry.
 
 ## Requirements
 

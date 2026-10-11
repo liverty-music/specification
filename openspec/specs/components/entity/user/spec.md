@@ -14,8 +14,8 @@ User
 | name | display name taken from the identity provider | required; may be empty text |
 | preferred language | display language for the UI and notifications | optional; when present exactly two lowercase letters (ISO 639-1, e.g. `ja`, `en`); absent means no client has asserted a language yet |
 | home | the user's home area | optional; absent until the user selects an area |
-| holder full name | the 本人確認 (identity check) name the user last checked out with, prefilled at the next checkout | optional; absent until the user first checks out; 1 to 200 characters |
-| holder phone number | the 本人確認 phone number the user last checked out with | optional; absent until the user first checks out; E.164 |
+| full name | the 本人確認 (identity check) name shown on the user's tickets and prefilled at lottery entry and checkout | optional; absent until the user first gives it; 1 to 200 characters |
+| phone number | the 本人確認 contact phone shown on the user's tickets | optional; absent until the user first gives it; E.164: `+` then 2-15 digits, first digit not 0 |
 
 Home
 
@@ -37,7 +37,8 @@ erDiagram
   User ||--o{ VerifiedIdentity : "is verified by"
   User ||--o{ Order : "buys"
   User ||--o{ Ticket : "holds"
-  User ||--o{ TicketApplication : "applies with"
+  User ||--o{ LotteryEntry : "enters"
+  User ||--o{ Checkout : "checks out with"
 ```
 
 ## Requirements

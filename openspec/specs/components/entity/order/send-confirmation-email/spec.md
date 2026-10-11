@@ -1,7 +1,7 @@
 # components/entity/order/send-confirmation-email Specification
 
 ## Purpose
-Emails the buyer the confirmation of one Order and records that it was sent, so it is sent once per Order.
+Emails the Order's user the confirmation of one Order and records that it was sent, so it is sent once per Order.
 
 ## Requirements
 

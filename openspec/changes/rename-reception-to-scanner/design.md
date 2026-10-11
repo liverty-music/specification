@@ -71,12 +71,12 @@ See proposal.md - Why. State verified on 2026-10-10 (specification `d272bcd7`, b
 
 | Caller | Service | Methods | Served by |
 |---|---|---|---|
-| organizer operator, signed in | `rpc.organizer.scanner.v1.ScannerService` | `Create`, `List`, `Revoke` | organizer server (`organizer-console-api`) |
+| organizer operator, signed in | `rpc.organizer.scanner.v1.ScannerService` | `Create`, `ListByEvent`, `Revoke` | organizer server (`organizer-console-api`) |
 | scanner device, link token + signature | `rpc.scanner.v1.ScannerService` | `Open`, `Admit` | reception server (`reception-api`) |
 
 - **Console methods:**
   - `Create(CreateRequest{event_id}) → CreateResponse{scanner}` replaces `Issue`. It is the standard create method on the resource's own service (specification `CLAUDE.md:148`).
-  - `List(ListRequest{event_id}) → ListResponse{scanners}` is unchanged.
+  - `ListByEvent(ListByEventRequest{event_id}) → ListByEventResponse{scanners}` replaces `List`. A list narrowed by one required entity is named `ListBy<Entity>` (`unify-ticket-sales` design D11).
   - `Revoke(RevokeRequest{scanner_id}) → RevokeResponse{scanner}` stays a custom method.
 - **Device methods:** `Open` and `Admit` are custom methods.
   - `OpenRequest.link_token` and `AdmitRequest.link_token` keep their names, with the type `ScannerLinkToken`.

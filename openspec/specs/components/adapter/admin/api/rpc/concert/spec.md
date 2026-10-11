@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The admin-facing concert service boundary: who may list, review and delete concerts from the admin console, and what the boundary passes to ConcertUseCase for a review.
+The admin-facing concert service boundary: who may list and delete concerts from the admin console. Reviewing staged concerts is the admin StagedConcertService boundary.
 
 ## Requirements
 

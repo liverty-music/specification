@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Receives notices from the payment provider about the platform's charges and payouts, applies each at most once, and turns a dispute opened by a buyer's card issuer into a refund of the disputed Order.
+Receives notices from the payment provider about the platform's charges and payouts, applies each at most once, and turns a dispute opened by the card issuer of an Order's user into a refund of the disputed Order.
 
 ## Requirements
 

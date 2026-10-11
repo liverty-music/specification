@@ -4,7 +4,7 @@
 
 ### Requirement: Saved details are prefilled
 
-When the fan has given a full name and phone number before, the screen SHALL open with them filled in, and SHALL say that the details are saved on the account and shown on the face of the fan's tickets. A change the fan makes on the screen SHALL be saved on the account when the entry is made.
+When the fan has given a full name and phone number before, the screen SHALL open with them filled in, and SHALL say that the details are saved on the account and shown on the face of the fan's tickets. A change the fan makes on the screen SHALL be saved on the account when the card hold is opened (LotteryEntryService.Authorize). The screen SHALL make the entry with LotteryEntryService.Start, Authorize and Confirm, and SHALL show the entry as made only after Confirm succeeds.
 
 #### Scenario: Returning fan
 - **WHEN** a fan who entered a lottery before with 山田 花子 and `+819012345678` opens the entry screen for another TicketType

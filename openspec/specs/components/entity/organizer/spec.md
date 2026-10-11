@@ -2,7 +2,7 @@
 
 ## Purpose
 
-An Organizer is a vetted seller - a record label, management agency, promoter or self-publishing artist - that an admin creates to sell tickets for the Artists it represents. Being created by an admin is the vetting; an Organizer is an identity separate from any Artist, and its operators sign in to the Organizer's own isolated tenant.
+An Organizer is a vetted seller - a record label, management agency, promoter or self-publishing artist - that an admin creates to sell tickets for the Artists it represents. Being created by an admin is the vetting; an Organizer is an entity separate from any Artist, and its operators sign in to the Organizer's own isolated tenant.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -11,11 +11,11 @@ An Organizer is a vetted seller - a record label, management agency, promoter or
 | operator email | email of the initial operator, captured at creation to seed the operator's sign-in | required; an email address; never shown to the organizer or fan audiences |
 | tenant link | the Organizer's isolated sign-in tenant | optional; empty until provisioning links the tenant; once set, no other Organizer has the same tenant |
 | status | lifecycle | provisioning, active or deactivated |
-| seller legal name | 販売業者の名称 shown in the 特商法 (Specified Commercial Transactions Act) disclosure | optional until entered by an admin at vetting; 1 to 200 characters |
-| seller representative | 代表者 of the seller | optional until entered; 1 to 100 characters |
-| seller address | the seller's address | optional until entered; 1 to 300 characters |
-| seller phone number | the seller's phone number | optional until entered; E.164 |
-| seller contact email | the seller's contact email | optional until entered; an email address |
+| legal name | 販売業者の名称 (the seller of record) shown in the 特商法 (Specified Commercial Transactions Act) disclosure | optional until entered by an admin at vetting; 1 to 200 characters |
+| representative name | 代表者 of the Organizer | optional until entered; 1 to 100 characters |
+| business address | the Organizer's business address | optional until entered; 1 to 300 characters |
+| business phone number | the Organizer's business phone number | optional until entered; E.164 |
+| contact email | the Organizer's contact email | optional until entered; an email address |
 | platform fee rate | the platform fee applied to the Organizer's future Orders, in hundredths of a percent | required; 0 to 3000; 800 for a new Organizer; never shown to the fan audience |
 
 ```mermaid

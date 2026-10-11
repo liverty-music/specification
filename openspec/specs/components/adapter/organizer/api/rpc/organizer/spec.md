@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The organizer-facing Organizer service boundary: how an operator's sign-in is turned into their own Organizer, and what the boundary decides before OrganizerUseCase runs for Get and ListArtists.
+The organizer-facing Organizer service boundary: how an operator's sign-in is turned into their own Organizer, and what the boundary decides before OrganizerUseCase runs for Get.
 
 ## Requirements
 

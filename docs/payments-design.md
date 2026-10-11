@@ -265,6 +265,13 @@ Points 1/5/6 are self-assessable; **2/3/4 need a written 弁護士 opinion**
 4. MoR / 特商法 seller-of-record + domestic-fee 課税 (10%) → register as
    適格請求書発行事業者; 媒介者交付特例 only if organizers are registered.
 5. 消費者契約法 enforceability of refund/cancellation clauses.
+6. **特定興行入場券 本人確認 evidence after a name or phone change.** The
+   ticket face shows the User's current full name and phone number, and the
+   fan can change them at any time (`unify-ticket-sales` design D8); no copy
+   is kept on the Ticket. Confirm that the 不正転売禁止法 covered-ticket
+   conditions do not require the name and contact confirmed at sale to be
+   kept. If they do, add an append-only history of the User's changes rather
+   than a copy per Ticket.
 
 ### Official-resale counsel addenda (from `resale-design.md`)
 
@@ -330,7 +337,7 @@ provider switch (KOMOJU) or added methods.
 
 ## Open decisions (business / counsel, long lead — start now)
 
-- KOMOJU-vs-Stripe PoC outcome; Stripe Connect account type + KYC/審査 apply.
+- KOMOJU-vs-Stripe PoC outcome; Stripe Connect account type + payout account verification (審査) apply.
 - MoR designation + 特商法 seller wording; fee rate; payout schedule
   (event-end-keyed, like the incumbents — the escrow *gate* matters, not a
   bright-line duration); refund/cancellation policy; 適格請求書発行事業者
@@ -356,7 +363,7 @@ implements/holds the duty.
 **Highest-leverage counsel question (closes #5 + reinforces 資金決済法):**
 confirm our payout timing/holding keeps 収納代行 **out of 為替取引 /
 資金移動業** — this single determination decides both the license question and
-whether 犯収法 KYC applies to the platform.
+whether 犯収法 AML-KYC applies to the platform.
 
 ## Commerce spec still to define (in ⑤ `ticket-purchase-and-issuance`)
 
@@ -371,7 +378,7 @@ Non-regulatory gaps to specify when ⑤ is authored:
   returns except cancellation" 返品特約 wording (ties to §2 above).
 - **Payout mechanics:** payout schedule, per-Organizer **settlement
   statement (支払明細)**, failed-payout + negative-balance handling, Stripe
-  KYC bank onboarding.
+  payout account verification and bank onboarding.
 - **Dispute/chargeback ops:** evidence/representment, Organizer↔platform
   liability split via `transfer_reversal`, reserve past the dispute window.
 - **Platform-fee 適格請求書** to the Organizer + Stripe-balance
