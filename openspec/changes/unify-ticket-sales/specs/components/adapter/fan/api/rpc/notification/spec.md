@@ -4,7 +4,7 @@
 
 ### Requirement: Read and dismiss act for the signed-in caller
 
-MarkRead and Dismiss SHALL act for the signed-in caller, resolved to their stored User (User.GetByExternalID); the request names no fan. MarkRead SHALL hand that User and the notification to NotificationUseCase.MarkRead, and Dismiss to NotificationUseCase.MarkDismissed, which refuse a Notification of another fan. They SHALL fail with Unauthenticated when the caller is not signed in, with NotFound when the caller has no account, and with InvalidArgument when no notification is given, before any Notification changes.
+MarkRead and Dismiss SHALL act for the signed-in caller, resolved to their stored User (User.GetByProviderUserID); the request names no fan. MarkRead SHALL hand that User and the notification to NotificationUseCase.MarkRead, and Dismiss to NotificationUseCase.Dismiss, which refuse a Notification of another fan. They SHALL fail with Unauthenticated when the caller is not signed in, with NotFound when the caller has no account, and with InvalidArgument when no notification is given, before any Notification changes.
 
 #### Scenario: Fan marks their notification read
 
@@ -14,7 +14,7 @@ MarkRead and Dismiss SHALL act for the signed-in caller, resolved to their store
 #### Scenario: Fan dismisses their notification
 
 - **WHEN** a signed-in fan calls Dismiss with one of their Notifications
-- **THEN** NotificationUseCase.MarkDismissed runs for that fan
+- **THEN** NotificationUseCase.Dismiss runs for that fan
 
 #### Scenario: Not signed in
 

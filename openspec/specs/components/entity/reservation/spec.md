@@ -16,7 +16,7 @@ A Reservation is one fan's checkout on a TicketSale: it holds a count of tickets
 | authorization release time | when the card hold was given back without charging | absent unless released; set once |
 | status | lifecycle | Held, Committed, Completed, Expired or Released |
 | hold expiry | when the hold lapses; it is never extended | required; 15 minutes after the checkout starts |
-| committed time | when its tickets were committed against the stock | absent until Committed |
+| commit time | when its tickets were committed against the stock | absent until Committed |
 | capture time | when the card was charged | absent until charged; set once |
 
 ```mermaid
@@ -43,7 +43,7 @@ stateDiagram-v2
 
 ### Requirement: A new reservation holds for 15 minutes
 
-A new Reservation SHALL start Held, with a hold expiry 15 minutes after its created time and an amount equal to the sale's price times its count.
+A new Reservation SHALL start Held, with a hold expiry 15 minutes after its create time and an amount equal to the sale's price times its count.
 
 #### Scenario: New checkout
 

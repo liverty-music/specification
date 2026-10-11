@@ -33,7 +33,7 @@ Get, ListBySeries, ListByArtist, ListByArtists and ListByLocation SHALL be calla
 
 ### Requirement: ListFollowed acts for the signed-in fan with their stored home
 
-ListFollowed SHALL resolve the signed-in caller to their stored User (User.GetByExternalID) and call ConcertUseCase.ListByFollowerGrouped with that User, the User's stored Home and the optional from-date of the request; the request carries no fan and no home. When the caller has no stored account, the call SHALL fail with NotFound.
+ListFollowed SHALL resolve the signed-in caller to their stored User (User.GetByProviderUserID) and call ConcertUseCase.ListFollowed with that User, the User's stored Home and the optional from-date of the request; the request carries no fan and no home. When the caller has no stored account, the call SHALL fail with NotFound.
 
 #### Scenario: Fan with a home
 

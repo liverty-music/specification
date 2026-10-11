@@ -8,7 +8,7 @@ An Artist's newly announced concerts reach the catalog without anyone entering t
 
 ### Requirement: A found concert is published or held for review
 
-When ConcertUseCase.SearchNewConcerts announces new concerts for an Artist, ConcertCreationUseCase.CreateFromDiscovered SHALL process that discovery, so that each new concert at a resolvable venue with a free slot becomes a Concert in the catalog, and each concert at an unresolvable venue or colliding slot becomes a StagedConcert.
+When ConcertUseCase.SearchNewConcerts announces new concerts for an Artist, ConcertCreationUseCase.CreateFromDiscovered SHALL process that discovery, so that each new concert at a resolvable venue with a free slot becomes a Concert in the catalog, and each concert at an unresolvable venue or colliding slot becomes a ConcertCandidate.
 
 #### Scenario: New tour announced
 - **WHEN** a followed Artist announces a three-stop tour at known venues and the daily search runs
@@ -16,7 +16,7 @@ When ConcertUseCase.SearchNewConcerts announces new concerts for an Artist, Conc
 
 #### Scenario: Unknown venue
 - **WHEN** a found concert's venue cannot be resolved
-- **THEN** it is a StagedConcert and not a Concert
+- **THEN** it is a ConcertCandidate and not a Concert
 
 ### Requirement: Rediscovery changes nothing
 
@@ -24,7 +24,7 @@ A concert found again by a later search SHALL NOT be announced or stored a secon
 
 #### Scenario: Same tour found next week
 - **WHEN** the search runs again after the freshness window and the tour is unchanged
-- **THEN** no new Concert, StagedConcert or Series exists
+- **THEN** no new Concert, ConcertCandidate or Series exists
 
 #### Scenario: Start time published later
 - **WHEN** a stop first found without a start time is found again starting at 18:00

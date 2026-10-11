@@ -2,34 +2,42 @@
 
 ## Purpose
 
-LotteryUseCase.Confirm turns a fan's authorized Draft LotteryEntry into an Entered entry that takes part in the draw, after checking that the hold matches the amount.
+LotteryEntryUseCase.Confirm turns a fan's Draft LotteryEntry into an Entered entry that takes part in the draw, after checking that its card authorization confirms it.
 
 ## ADDED Requirements
 
-### Requirement: Confirm one's own authorized draft
+### Requirement: Confirm one's own draft once its card is authorized
 
 Confirm SHALL take a LotteryEntry and the calling fan. It SHALL:
 - read the entry with LotteryEntry.Get and fail with PermissionDenied, without revealing whether it exists, when it does not exist or belongs to another fan;
 - fail with FailedPrecondition when the entry is not confirmable or its sale's window is not open at the current time;
-- verify the hold with LotteryEntry.VerifyAuthorization for the TicketType's amount for the requested count, returning its failure unchanged;
+- read the entry's card authorization with CardAuthorization.Get, returning its failure unchanged, and check that it confirms the entry for the TicketType's price times the ticket count: fail with FailedPrecondition when it is not Authorized or its card brand is not accepted, and with InvalidArgument when its amount differs;
 - set the state to Entered with LotteryEntry.UpdateState and return the entry.
 
 Confirming an Entered entry again SHALL return it unchanged. No money is captured at entry.
 
 #### Scenario: Fan confirms
-- **WHEN** a fan confirms their Draft whose authenticated 16000 yen hold matches 2 tickets at 8000 yen
-- **THEN** the entry is Entered with the hold's reference and nothing is charged
+- **WHEN** a fan confirms their Draft whose Authorized 16000 yen card authorization matches 2 tickets at 8000 yen
+- **THEN** the entry is Entered with that card authorization and nothing is charged
 
 #### Scenario: Confirmed twice
 - **WHEN** the fan confirms an entry that is already Entered
 - **THEN** the entry is returned unchanged
 
-#### Scenario: Hold does not verify
-- **WHEN** LotteryEntry.VerifyAuthorization fails, for example because the card is American Express or card authentication is not complete
-- **THEN** Confirm fails with the same error and the entry stays a Draft
+#### Scenario: Card authentication not completed
+- **WHEN** the entry's card authorization is still Pending
+- **THEN** Confirm fails with FailedPrecondition and the entry stays a Draft
 
-#### Scenario: Draft without a hold
-- **WHEN** the Draft has no authorization
+#### Scenario: American Express card
+- **WHEN** the entry's Authorized card authorization is on an American Express card
+- **THEN** Confirm fails with FailedPrecondition and the entry stays a Draft
+
+#### Scenario: Amount differs
+- **WHEN** the card authorization is for 8000 yen and the entry is for 16000 yen
+- **THEN** Confirm fails with InvalidArgument and the entry stays a Draft
+
+#### Scenario: Draft without a card authorization
+- **WHEN** the Draft has no card authorization
 - **THEN** Confirm fails with FailedPrecondition
 
 #### Scenario: Window closed

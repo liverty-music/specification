@@ -2,13 +2,13 @@
 
 ## Purpose
 
-The admin-facing notification service boundary: who may trigger new-concert pushes directly, a test hook that runs only outside production, and what the boundary checks before PushNotificationUseCase runs.
+The admin-facing notification service boundary: who may trigger new-concert pushes directly, a test hook that runs only outside production, and what the boundary checks before PushSubscriptionUseCase runs.
 
 ## ADDED Requirements
 
 ### Requirement: Direct new-concert push only outside production
 
-NotifyNewConcerts SHALL be callable only by a signed-in caller holding the admin role and only when the server does not run in production. It SHALL fail with Unauthenticated when the caller is not signed in, whatever the environment, so an unauthenticated caller cannot learn the environment, and with PermissionDenied when the caller lacks the admin role. In production it SHALL fail with PermissionDenied whatever the caller's credentials, and nothing is sent. It SHALL fail with InvalidArgument when no artist is given, when no concert is given, when more than 1000 concerts are given, or when a concert id is empty. Otherwise it SHALL run PushNotificationUseCase.NotifyNewConcerts with the artist and exactly the given concerts and return once it completes.
+NotifyNewConcerts SHALL be callable only by a signed-in caller holding the admin role and only when the server does not run in production. It SHALL fail with Unauthenticated when the caller is not signed in, whatever the environment, so an unauthenticated caller cannot learn the environment, and with PermissionDenied when the caller lacks the admin role. In production it SHALL fail with PermissionDenied whatever the caller's credentials, and nothing is sent. It SHALL fail with InvalidArgument when no artist is given, when no concert is given, when more than 1000 concerts are given, or when a concert id is empty. Otherwise it SHALL run NotificationUseCase.NotifyNewConcerts with the artist and exactly the given concerts and return once it completes.
 
 #### Scenario: Non-production call
 

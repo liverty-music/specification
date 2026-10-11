@@ -9,7 +9,7 @@ User
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | id | the user's platform identifier | required; assigned when the User is created and never changes |
-| external id | the user's identifier at the identity provider | required; non-empty; no two Users share it |
+| provider user ID | the identity provider's ID for the User | required; non-empty; no two Users share it |
 | email | primary contact and account address | required; an email address; no two Users share it |
 | name | display name taken from the identity provider | required; may be empty text |
 | preferred language | display language for the UI and notifications | optional; when present exactly two lowercase letters (ISO 639-1, e.g. `ja`, `en`); absent means no client has asserted a language yet |
@@ -34,7 +34,7 @@ erDiagram
   User ||--o{ TicketJourney : "tracks events through"
   User ||--o{ PushSubscription : "receives push on"
   User ||--o{ Notification : "receives"
-  User ||--o{ VerifiedIdentity : "is verified by"
+  User ||--o{ IdentityVerification : "is verified by"
   User ||--o{ Order : "buys"
   User ||--o{ Ticket : "holds"
   User ||--o{ LotteryEntry : "enters"
@@ -45,12 +45,12 @@ erDiagram
 
 ### Requirement: A new User gets a fresh identifier
 
-A new User SHALL receive a fresh id when it is created, distinct from every other User's id, and SHALL keep the external id, email, name and preferred language it was created with.
+A new User SHALL receive a fresh id when it is created, distinct from every other User's id, and SHALL keep the provider user ID, email, name and preferred language it was created with.
 
 #### Scenario: New User
 
-- **WHEN** a User is created for external id `abc`, email `fan@example.com` and preferred language `ja`
-- **THEN** it has a fresh id, external id `abc`, email `fan@example.com` and preferred language `ja`
+- **WHEN** a User is created for provider user ID `abc`, email `fan@example.com` and preferred language `ja`
+- **THEN** it has a fresh id, provider user ID `abc`, email `fan@example.com` and preferred language `ja`
 
 ### Requirement: Preferred language format
 

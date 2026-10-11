@@ -9,7 +9,7 @@ An Organizer is a vetted seller - a record label, management agency, promoter or
 | id | unique identity of the Organizer | required; UUID; assigned at creation; never the same value as an ArtistId |
 | name | public display name, such as the label or promoter name | required; 1 to 200 characters |
 | operator email | email of the initial operator, captured at creation to seed the operator's sign-in | required; an email address; never shown to the organizer or fan audiences |
-| tenant link | the Organizer's isolated sign-in tenant | optional; empty until provisioning links the tenant; once set, no other Organizer has the same tenant |
+| provider organizer ID | the identity provider's ID for the Organizer: its isolated sign-in tenant | optional; empty until provisioning links the tenant; once set, no other Organizer has the same one |
 | status | lifecycle | provisioning, active or deactivated |
 | legal name | 販売業者の名称 (the seller of record) shown in the 特商法 (Specified Commercial Transactions Act) disclosure | optional until entered by an admin at vetting; 1 to 200 characters |
 | representative name | 代表者 of the Organizer | optional until entered; 1 to 100 characters |
@@ -21,9 +21,9 @@ An Organizer is a vetted seller - a record label, management agency, promoter or
 ```mermaid
 erDiagram
   Organizer |o--o{ Artist : "represents"
-  Organizer ||--o| OrganizerConnectedAccount : "is paid out through"
+  Organizer ||--o| PayoutAccount : "is paid out through"
   Organizer |o--o{ Series : "authors"
-  Organizer ||--o{ Media : "uploads"
+  Organizer ||--o{ SeriesImage : "uploads"
   Organizer ||--o{ Settlement : "is paid by"
 ```
 
@@ -59,12 +59,12 @@ An Organizer's name SHALL be 1 to 200 characters long, and its operator email SH
 
 ### Requirement: A new Organizer starts provisioning with its own identity
 
-A new Organizer SHALL start in status provisioning with no tenant link, and SHALL receive a new id of its own. An Organizer made for a self-publishing artist SHALL still have an id different from that Artist's ArtistId; there is no separate verified flag, because existence is the vetting.
+A new Organizer SHALL start in status provisioning with no provider organizer ID, and SHALL receive a new id of its own. An Organizer made for a self-publishing artist SHALL still have an id different from that Artist's ArtistId; there is no separate verified flag, because existence is the vetting.
 
 #### Scenario: New Organizer
 
 - **WHEN** an Organizer is created
-- **THEN** its status is provisioning and it has no tenant link
+- **THEN** its status is provisioning and it has no provider organizer ID
 
 #### Scenario: Organizer identity is separate from artist identity
 

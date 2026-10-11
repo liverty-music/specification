@@ -2,7 +2,7 @@
 
 ## Purpose
 
-PushNotificationUseCase.Get tells the fan's browser whether it is still registered for push, by returning the fan's PushSubscription for that browser's push address.
+PushSubscriptionUseCase.Get tells the fan's browser whether it is still registered for push, by returning the fan's PushSubscription for that browser's push address.
 
 ## Requirements
 

@@ -17,12 +17,12 @@ Refund SHALL require a signed-in caller holding the admin role. A caller who is 
 
 ### Requirement: Refund passes the reason and the current time
 
-Refund SHALL fail with InvalidArgument, before any usecase runs, when no Order is given or the reason is unspecified. Otherwise it SHALL call RefundOrderUseCase.RefundOrder with the Order, the requested reason and the current time, and return the refunded Order. The usecase's NotFound, FailedPrecondition and InvalidArgument SHALL be returned with the same codes.
+Refund SHALL fail with InvalidArgument, before any usecase runs, when no Order is given or the reason is unspecified. Otherwise it SHALL call OrderUseCase.Refund with the Order, the requested reason and the current time, and return the refunded Order. The usecase's NotFound, FailedPrecondition and InvalidArgument SHALL be returned with the same codes.
 
 #### Scenario: Admin refunds a cancelled event's order
 
 - **WHEN** an admin calls Refund for a Paid Order with the reason 中止 (cancellation)
-- **THEN** RefundOrderUseCase.RefundOrder runs with that reason and the current time and the refunded Order is returned
+- **THEN** OrderUseCase.Refund runs with that reason and the current time and the refunded Order is returned
 
 #### Scenario: Reason missing
 

@@ -7,7 +7,7 @@ UserUseCase.ResolveCaller turns a signed-in identity into its User and admits a 
 
 ### Requirement: The named User must be the caller
 
-ResolveCaller SHALL read the caller's User by the sign-in identity (User.GetByExternalID) and fail with NotFound when the identity has no User. It SHALL then fail with InvalidArgument when the request names no User id, and with PermissionDenied when the named id is not the caller's User's id, before any other read or any change, so the failure reveals nothing about the named User. Otherwise it SHALL return the caller's User.
+ResolveCaller SHALL read the caller's User by the sign-in identity (User.GetByProviderUserID) and fail with NotFound when the identity has no User. It SHALL then fail with InvalidArgument when the request names no User id, and with PermissionDenied when the named id is not the caller's User's id, before any other read or any change, so the failure reveals nothing about the named User. Otherwise it SHALL return the caller's User.
 
 #### Scenario: Own account
 

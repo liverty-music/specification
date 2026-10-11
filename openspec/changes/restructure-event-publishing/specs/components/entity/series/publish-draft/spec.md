@@ -15,4 +15,4 @@
 ### Requirement: Publish completes the draft
 
 **Reason**: The Series no longer has a publish state to set, and there is no separate draft content to remove.
-**Migration**: `components/entity/series/publish-events` sets each published Event PUBLISHED and removes the Series' StagedConcerts.
+**Migration**: `components/entity/series/publish-events` sets each published Event PUBLISHED and removes the Series' ConcertCandidates.

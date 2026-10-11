@@ -8,7 +8,7 @@ CheckoutUseCase.Get lets a fan read the state of their own Checkout, so the chec
 
 ### Requirement: The fan's own checkout
 
-Get SHALL take the calling fan, a Checkout and the current time, read it with Checkout.Get and fail with PermissionDenied, without revealing whether it exists, when it does not exist or belongs to another User. It SHALL return the Checkout as of that time: a Held Checkout that is not holding at that time SHALL be returned Expired, since its hold has lapsed for good; any other Checkout SHALL be returned with its stored status. Its committed time tells whether it was ever committed, and its capture time whether it was charged.
+Get SHALL take the calling fan, a Checkout and the current time, read it with Checkout.Get and fail with PermissionDenied, without revealing whether it exists, when it does not exist or belongs to another User. It SHALL return the Checkout as of that time: a Held Checkout that is not holding at that time SHALL be returned Expired, since its hold has lapsed for good; any other Checkout SHALL be returned with its stored status. Its commit time tells whether it was ever committed, and its capture time whether it was charged.
 
 #### Scenario: Within the hold
 - **WHEN** a fan reads their Held Checkout 5 minutes into the hold
@@ -20,11 +20,11 @@ Get SHALL take the calling fan, a Checkout and the current time, read it with Ch
 
 #### Scenario: Card no longer chargeable
 - **WHEN** a fan reads a Checkout released because its card could not be charged after the commit
-- **THEN** it is returned Released, with a committed time and no capture time
+- **THEN** it is returned Released, with a commit time and no capture time
 
 #### Scenario: Replaced by a newer checkout
 - **WHEN** a fan reads a Checkout released because they started again in another tab
-- **THEN** it is returned Released without a committed time
+- **THEN** it is returned Released without a commit time
 
 #### Scenario: Someone else's checkout
 - **WHEN** a fan reads a Checkout of another User

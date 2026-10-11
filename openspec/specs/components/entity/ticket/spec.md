@@ -10,18 +10,18 @@ A Ticket is one account-bound admission right to an event, issued from an Order.
 | order | the Order that issued it | required |
 | user | the account the ticket is bound to | required; never changes (official resale voids the ticket and issues a new one) |
 | event | the event it admits to, which gives the date and venue on its face | required |
-| verified identity | the verified identity the ticket is bound to | optional; set only when the sale required verification |
+| identity verification | the identity verification the ticket is bound to | optional; set only when the sale required verification |
 | resale without consent prohibited | the face states that resale without the organizer's consent is prohibited | always true |
 | status | lifecycle; a Voided ticket is no longer valid for entry | Issued or Voided |
-| issued time | when the ticket was issued | required |
-| admitted time | when the ticket was let in at the venue | optional; absent until admitted, set once and kept when the ticket is later Voided |
+| issue time | when the ticket was issued | required |
+| admit time | when the ticket was let in at the venue | optional; absent until admitted, set once and kept when the ticket is later Voided |
 
 ```mermaid
 erDiagram
   Order ||--|{ Ticket : "issues"
   User ||--o{ Ticket : "holds"
   Event ||--o{ Ticket : "is admitted by"
-  VerifiedIdentity |o--o{ Ticket : "binds"
+  IdentityVerification |o--o{ Ticket : "binds"
 ```
 
 ```mermaid
@@ -58,11 +58,11 @@ A Ticket SHALL start in status Issued.
 
 ### Requirement: A ticket is admissible only once and only while Issued
 
-A Ticket SHALL be admissible exactly when its status is Issued and it has no admitted time. A Voided Ticket SHALL NOT be admissible, and a Ticket that has an admitted time SHALL NOT be admissible again. Voiding a Ticket SHALL keep its admitted time, so a refund after entry does not erase that the holder was admitted.
+A Ticket SHALL be admissible exactly when its status is Issued and it has no admit time. A Voided Ticket SHALL NOT be admissible, and a Ticket that has an admit time SHALL NOT be admissible again. Voiding a Ticket SHALL keep its admit time, so a refund after entry does not erase that the holder was admitted.
 
 #### Scenario: Issued and not yet admitted
 
-- **WHEN** a Ticket is Issued and has no admitted time
+- **WHEN** a Ticket is Issued and has no admit time
 - **THEN** it is admissible
 
 #### Scenario: Already admitted
@@ -72,10 +72,10 @@ A Ticket SHALL be admissible exactly when its status is Issued and it has no adm
 
 #### Scenario: Voided
 
-- **WHEN** a Ticket is Voided and has no admitted time
+- **WHEN** a Ticket is Voided and has no admit time
 - **THEN** it is not admissible
 
 #### Scenario: Voided after entry
 
 - **WHEN** a Ticket admitted at 18:32 is Voided by a dispute refund
-- **THEN** its status is Voided and its admitted time is still 18:32
+- **THEN** its status is Voided and its admit time is still 18:32

@@ -8,7 +8,7 @@ A fan applies to an Organizer's lottery with a card hold, the draw runs after th
 
 ### Requirement: Winning fan receives tickets
 
-After an Organizer configures a LotterySalesPhase for a published event with LotteryUseCase.ConfigureLotteryPhase, a fan SHALL be able to open a hold with LotteryUseCase.CreateAuthorization, complete card authentication, apply with LotteryUseCase.Apply while the window is open, and — when their application wins — find it Won with LotteryUseCase.GetResult within 1 minute after the window closes and find its Tickets with TicketUseCase.GetMyTickets within 1 more minute.
+After an Organizer configures a LotterySalesPhase for a published event with LotteryUseCase.ConfigureLotteryPhase, a fan SHALL be able to open a hold with LotteryUseCase.CreateAuthorization, complete card authentication, apply with LotteryUseCase.Apply while the window is open, and — when their application wins — find it Won with LotteryUseCase.GetResult within 1 minute after the window closes and find its Tickets with TicketUseCase.List within 1 more minute.
 
 #### Scenario: Demand within capacity
 

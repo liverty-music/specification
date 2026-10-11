@@ -12,7 +12,7 @@ CreateFromDiscovered SHALL run once for each discovery announced for an Artist, 
 
 #### Scenario: Redelivered discovery
 - **WHEN** a discovery that was already fully processed is processed again
-- **THEN** no Event, Series or StagedConcert is added a second time
+- **THEN** no Event, Series or ConcertCandidate is added a second time
 
 ### Requirement: Unusable input is skipped
 
@@ -80,11 +80,11 @@ For any other event, CreateFromDiscovered SHALL look up the venue by its listed 
 
 ### Requirement: Unresolved venue is staged
 
-When the venue lookup finds no match, CreateFromDiscovered SHALL stage the event (StagedConcert.Upsert) with no resolved preview, SHALL NOT create a Venue and SHALL NOT publish it.
+When the venue lookup finds no match, CreateFromDiscovered SHALL stage the event (ConcertCandidate.Upsert) with no resolved preview, SHALL NOT create a Venue and SHALL NOT publish it.
 
 #### Scenario: Venue not found
 - **WHEN** the venue lookup finds no match
-- **THEN** a StagedConcert without resolved place is stored and nothing is published
+- **THEN** a ConcertCandidate without resolved place is stored and nothing is published
 
 ### Requirement: Suppressed slot is skipped
 
@@ -96,7 +96,7 @@ For a resolved event, CreateFromDiscovered SHALL check its Venue, date and start
 
 ### Requirement: Collision is staged, anything else is published
 
-For a resolved, unsuppressed event, CreateFromDiscovered SHALL look up the Events at its Venue and date (Concert.FindEventsByVenueAndDate). The event collides when an Event there has the same start time (or both have none), or when the event has no start time and an Event there has one. A colliding event SHALL be staged (StagedConcert.Upsert) and not published; its resolved preview is included when its venue was looked up, and omitted when it reused the Artist's existing Event's Venue. Any other event SHALL be published under the series' Series with the Artist as performer (Concert.Create). The RejectedConcertLog SHALL NOT be consulted.
+For a resolved, unsuppressed event, CreateFromDiscovered SHALL look up the Events at its Venue and date (Concert.FindEventsByVenueAndDate). The event collides when an Event there has the same start time (or both have none), or when the event has no start time and an Event there has one. A colliding event SHALL be staged (ConcertCandidate.Upsert) and not published; its resolved preview is included when its venue was looked up, and omitted when it reused the Artist's existing Event's Venue. Any other event SHALL be published under the series' Series with the Artist as performer (Concert.Create). The RejectedConcert SHALL NOT be consulted.
 
 #### Scenario: Same slot as an existing event
 - **WHEN** an Event at the resolved Venue, date and start time exists
@@ -128,8 +128,8 @@ After processing a series, CreateFromDiscovered SHALL announce the new concerts 
 
 ### Requirement: Empty new series are removed
 
-At the end of the batch, CreateFromDiscovered SHALL remove the Series it created in this batch that have no Event and no StagedConcert (Series.DeleteOrphaned); it SHALL NOT touch other Series. A failure here SHALL NOT fail the batch.
+At the end of the batch, CreateFromDiscovered SHALL remove the Series it created in this batch that have no Event and no ConcertCandidate (Series.DeleteOrphaned); it SHALL NOT touch other Series. A failure here SHALL NOT fail the batch.
 
 #### Scenario: Created series left empty
-- **WHEN** a Series created in this batch ended up with no Event and no StagedConcert
+- **WHEN** a Series created in this batch ended up with no Event and no ConcertCandidate
 - **THEN** it is removed

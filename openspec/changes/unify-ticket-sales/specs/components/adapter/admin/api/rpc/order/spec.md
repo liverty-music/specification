@@ -4,7 +4,7 @@
 
 ### Requirement: Admins read an order with its settlement
 
-Get SHALL require a signed-in caller holding the admin role. A caller who is not signed in SHALL fail with Unauthenticated; a signed-in caller without the admin role SHALL fail with PermissionDenied; both checks come before anything is read. Get SHALL fail with InvalidArgument when no Order is given, and with NotFound when the Order does not exist. Otherwise it SHALL return the Order together with its Settlement and the Settlement's splits, or the Order alone when it has no Settlement; an Order without a Settlement is not an error.
+Get SHALL require a signed-in caller holding the admin role. A caller who is not signed in SHALL fail with Unauthenticated; a signed-in caller without the admin role SHALL fail with PermissionDenied; both checks come before anything is read. Get SHALL fail with InvalidArgument when no Order is given, and with NotFound when the Order does not exist. Otherwise it SHALL run OrderUseCase.GetWithSettlement and return the Order together with its Settlement and the Settlement's splits, or the Order alone when it has no Settlement; an Order without a Settlement is not an error.
 
 #### Scenario: Paid order of a first-party concert
 

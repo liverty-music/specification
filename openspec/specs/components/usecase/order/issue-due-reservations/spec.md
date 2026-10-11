@@ -1,13 +1,13 @@
 # components/usecase/order/issue-due-reservations Specification
 
 ## Purpose
-IssuanceUseCase.IssueDueReservations finishes checkouts whose tickets were committed but whose charge or issuance did not complete, and reports charged checkouts that stay unissued.
+OrderUseCase.IssueDueReservations finishes checkouts whose tickets were committed but whose charge or issuance did not complete, and reports charged checkouts that stay unissued.
 
 ## Requirements
 
 ### Requirement: Stalled checkouts finished within one minute
 
-IssueDueReservations SHALL run every 1 minute. For each Committed Reservation returned by Reservation.ListDue, it SHALL run IssuanceUseCase.IssueFromReservation without a calling fan. A Reservation whose issuance fails SHALL NOT stop the others and is tried again on the next run, until it is Completed or, if it was never charged, Released. When the listing fails, IssueDueReservations SHALL fail with that error and issue nothing.
+IssueDueReservations SHALL run every 1 minute. For each Committed Reservation returned by Reservation.ListDue, it SHALL run OrderUseCase.IssueFromReservation without a calling fan. A Reservation whose issuance fails SHALL NOT stop the others and is tried again on the next run, until it is Completed or, if it was never charged, Released. When the listing fails, IssueDueReservations SHALL fail with that error and issue nothing.
 
 #### Scenario: Capture interrupted
 

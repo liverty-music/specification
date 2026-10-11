@@ -2,13 +2,13 @@
 
 ## Purpose
 
-LotteryUseCase.Start begins a fan's LotteryEntry for a TicketType of an open Lottery sale, or resumes it, after checking the requested count, the sale's verification requirement and the per-account limit. It returns the Draft entry; nothing is held on the card yet.
+LotteryEntryUseCase.Start begins a fan's LotteryEntry for a TicketType of an open Lottery sale, or resumes it, after checking the ticket count, the sale's verification requirement and the per-account limit. It returns the Draft entry; nothing is held on the card yet.
 
 ## ADDED Requirements
 
 ### Requirement: Start an entry while the window is open
 
-Start SHALL take a TicketType, the calling fan as user and a requested ticket count. In this order it SHALL:
+Start SHALL take a TicketType, the calling fan as user and a ticket count. In this order it SHALL:
 - read the TicketType and its sale with TicketType.Get, failing with NotFound when it does not exist, and fail with FailedPrecondition when the sale's method is not Lottery;
 - fail with InvalidArgument when the count breaks the LotteryEntry count rule;
 - fail with FailedPrecondition when the sale's window is not open at the current time;
@@ -48,16 +48,16 @@ Starting again with the same count SHALL resume the same Draft.
 
 ### Requirement: Verification gate
 
-When the sale requires verification, Start SHALL require the fan to hold a Kyc whose status is Active, read with Kyc.GetByUserID, and SHALL fail with FailedPrecondition otherwise. When the sale's requirement is None, no Kyc is needed.
+When the sale requires verification, Start SHALL require the fan to hold an IdentityVerification whose status is Active, read with IdentityVerification.GetByUserID, and SHALL fail with FailedPrecondition otherwise. When the sale's requirement is None, no IdentityVerification is needed.
 
-#### Scenario: No Kyc
+#### Scenario: No IdentityVerification
 - **WHEN** the sale requires JPKI-only and the fan has never verified
 - **THEN** Start fails with FailedPrecondition and stores nothing
 
 #### Scenario: Verification not active
-- **WHEN** the sale requires verification and the fan's Kyc needs re-verification
+- **WHEN** the sale requires verification and the fan's IdentityVerification needs re-verification
 - **THEN** Start fails with FailedPrecondition
 
 #### Scenario: Active verification
-- **WHEN** the sale requires verification and the fan's Kyc is Active
+- **WHEN** the sale requires verification and the fan's IdentityVerification is Active
 - **THEN** Start continues with the other checks

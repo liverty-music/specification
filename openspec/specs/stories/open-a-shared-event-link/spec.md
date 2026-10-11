@@ -7,7 +7,7 @@ A fan who taps an event link that an artist shared, or a new-concert notificatio
 
 ### Requirement: A shared link shows the event to anyone
 
-After an Organizer publishes a PUBLIC Series with ConcertAuthoringUseCase.Publish, the link `/events/<id>` of each of its Events SHALL show that event's Event page, with the Concert ConcertUseCase.Get returns and the Series' dates ConcertUseCase.ListBySeries returns, to a guest who has never used the app and to a signed-in fan who does not follow the performers; the link's preview card SHALL show the event's title, date, venue and cover image.
+After an Organizer publishes a PUBLIC Series with SeriesUseCase.Publish, the link `/events/<id>` of each of its Events SHALL show that event's Event page, with the Concert ConcertUseCase.Get returns and the Series' dates ConcertUseCase.ListBySeries returns, to a guest who has never used the app and to a signed-in fan who does not follow the performers; the link's preview card SHALL show the event's title, date, venue and cover image.
 
 #### Scenario: Guest from a social post
 
@@ -30,7 +30,7 @@ A guest SHALL be able to follow a performer on the Event page, and after signing
 
 ### Requirement: Notification leads to the event page
 
-A follower notified of a first-party concert by PushNotificationUseCase.NotifyNewConcerts SHALL reach that concert's Event page by tapping the notification.
+A follower notified of a first-party concert by NotificationUseCase.NotifyNewConcerts SHALL reach that concert's Event page by tapping the notification.
 
 #### Scenario: Follower taps the notification
 
@@ -39,7 +39,7 @@ A follower notified of a first-party concert by PushNotificationUseCase.NotifyNe
 
 ### Requirement: Cancelled event stays explained
 
-After an Organizer cancels a published PUBLIC Series with ConcertAuthoringUseCase.Cancel, the links of its Events SHALL still open their Event pages, showing that the concert is 中止 (cancelled) and selling nothing.
+After an Organizer cancels a published PUBLIC Series with SeriesUseCase.Cancel, the links of its Events SHALL still open their Event pages, showing that the concert is 中止 (cancelled) and selling nothing.
 
 #### Scenario: Link opened after cancellation
 

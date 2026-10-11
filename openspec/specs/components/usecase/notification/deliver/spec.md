@@ -88,7 +88,7 @@ When the outcome is Delivered, Deliver SHALL announce once that the fan's Notifi
 
 ### Requirement: Runs for each requested notification
 
-Deliver SHALL run once for each notification requested for one fan, by PushNotificationUseCase.NotifyNewConcerts, SalesPhaseAnnouncementUseCase.AnnounceDiscoveredPhase or NotificationUseCase.SendOrderConfirmation, with that fan, the notification type and the finished message. When Deliver fails, that request SHALL be processed again; a failure for one fan's request SHALL NOT affect the requests of any other fan.
+Deliver SHALL run once for each notification requested for one fan, by NotificationUseCase.NotifyNewConcerts, SalesPhaseAnnouncementUseCase.AnnounceDiscoveredPhase or NotificationUseCase.SendOrderConfirmation, with that fan, the notification type and the finished message. When Deliver fails, that request SHALL be processed again; a failure for one fan's request SHALL NOT affect the requests of any other fan.
 
 #### Scenario: Notification requested
 

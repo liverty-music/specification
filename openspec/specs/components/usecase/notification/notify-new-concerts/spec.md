@@ -2,7 +2,7 @@
 
 ## Purpose
 
-PushNotificationUseCase.NotifyNewConcerts tells each follower of an artist about concerts just added for that artist, when the follower's hype level matches at least one of them, with a message in the fan's language that counts the matching concerts and links to the earliest one.
+NotificationUseCase.NotifyNewConcerts tells each follower of an artist about concerts just added for that artist, when the follower's hype level matches at least one of them, with a message in the fan's language that counts the matching concerts and links to the earliest one.
 
 ## Requirements
 

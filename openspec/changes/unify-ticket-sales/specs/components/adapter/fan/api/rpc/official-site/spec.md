@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The fan-facing official site service boundary: who may create or delete an artist's official site, and which requests the boundary rejects before ArtistUseCase runs.
+The fan-facing official site service boundary: who may create or delete an artist's official site, and which requests the boundary rejects before OfficialSiteUseCase runs.
 
 ## ADDED Requirements
 
@@ -26,7 +26,7 @@ Create SHALL fail with InvalidArgument, before any usecase runs, when it has no 
 
 ### Requirement: Official sites are created through the boundary but never deleted
 
-Create SHALL hand the artist id and URL to ArtistUseCase.CreateOfficialSite. Delete SHALL fail with Unimplemented for every signed-in caller; there is no usecase behind it.
+Create SHALL hand the artist id and URL to OfficialSiteUseCase.Create. Delete SHALL fail with Unimplemented for every signed-in caller; there is no usecase behind it.
 
 #### Scenario: Create a site
 

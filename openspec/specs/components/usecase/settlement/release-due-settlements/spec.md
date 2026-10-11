@@ -1,14 +1,14 @@
-# PayoutSweeperUseCase.ReleaseDueSettlements
+# SettlementUseCase.ReleaseDueSettlements
 
 ## Purpose
 
-PayoutSweeperUseCase.ReleaseDueSettlements pays out every Held Settlement whose event started more than 7 days ago and whose Organizer can receive payouts, then marks it Released.
+SettlementUseCase.ReleaseDueSettlements pays out every Held Settlement whose event started more than 7 days ago and whose Organizer can receive payouts, then marks it Released.
 
 ## Requirements
 
 ### Requirement: Payout waits for the Organizer's payout account
 
-ReleaseDueSettlements SHALL withhold the Settlement, without failing it, when the Organizer has no payout account, found with OrganizerConnectedAccount.GetByOrganizerID, or when the account is not Active. It SHALL refresh the account's status with OrganizerConnectedAccount.GetAccountStatus before deciding, and use the stored status when the refresh fails.
+ReleaseDueSettlements SHALL withhold the Settlement, without failing it, when the Organizer has no payout account, found with PayoutAccount.GetByOrganizerID, or when the account is not Active. It SHALL refresh the account's status with PayoutAccount.GetStatus before deciding, and use the stored status when the refresh fails.
 
 #### Scenario: No payout account
 
@@ -22,7 +22,7 @@ ReleaseDueSettlements SHALL withhold the Settlement, without failing it, when th
 
 ### Requirement: Pay out and mark Released
 
-For an eligible Settlement with an Active payout account, ReleaseDueSettlements SHALL fail that Settlement, leaving it Held, when its splits break the Settlement split rules against the Order's amount. Otherwise it SHALL resolve the Order's charge with Order.ResolveChargeRef, pay each split to the Organizer's payout account with Settlement.CreateTransfer in the Order's currency, and record the release with Settlement.MarkReleased. When Settlement.MarkReleased fails with FailedPrecondition because the Settlement is no longer Held, the Settlement is skipped without error.
+For an eligible Settlement with an Active payout account, ReleaseDueSettlements SHALL fail that Settlement, leaving it Held, when its splits break the Settlement split rules against the Order's amount. Otherwise it SHALL resolve the Order's charge with Order.GetProviderChargeID, pay each split to the Organizer's payout account with Settlement.CreatePayout in the Order's currency, and record the release with Settlement.MarkReleased. When Settlement.MarkReleased fails with FailedPrecondition because the Settlement is no longer Held, the Settlement is skipped without error.
 
 #### Scenario: Settlement released
 

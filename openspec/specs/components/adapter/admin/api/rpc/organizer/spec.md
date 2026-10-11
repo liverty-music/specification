@@ -63,7 +63,7 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 
 Each call SHALL run one usecase method:
 - Create SHALL run OrganizerUseCase.Create and return the created Organizer.
-- Get, List and ListArtists SHALL run OrganizerUseCase.Get, OrganizerUseCase.List and OrganizerUseCase.ListArtists for any Organizer the admin names.
+- Get, List and ListArtists SHALL run OrganizerUseCase.Get, OrganizerUseCase.List and ArtistUseCase.ListByOrganizer for any Organizer the admin names.
 - AssociateArtist, DisassociateArtist, Deactivate, Delete, UpdateSellerDetails and SetPlatformFeeRate SHALL run the usecase method of the same name.
 
 Errors from the usecase SHALL be returned unchanged. An Organizer is returned with its id, name, seller details and platform fee rate.

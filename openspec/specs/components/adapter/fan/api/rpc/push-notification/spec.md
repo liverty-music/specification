@@ -2,18 +2,18 @@
 
 ## Purpose
 
-The fan-facing push notification service boundary: who may register, check and remove a browser's push subscription, who may trigger new-concert pushes directly, and what the boundary itself decides before PushNotificationUseCase runs.
+The fan-facing push notification service boundary: who may register, check and remove a browser's push subscription, who may trigger new-concert pushes directly, and what the boundary itself decides before PushSubscriptionUseCase runs.
 
 ## Requirements
 
 ### Requirement: Registering a browser is always for the caller
 
-Create SHALL register the browser for the signed-in caller, resolved to their stored User (User.GetByExternalID); the request names no fan. It SHALL fail with Unauthenticated when the caller is not signed in, with NotFound when the caller has no account, and with InvalidArgument when the push address or the keys are missing or not well formed.
+Create SHALL register the browser for the signed-in caller, resolved to their stored User (User.GetByProviderUserID); the request names no fan. It SHALL fail with Unauthenticated when the caller is not signed in, with NotFound when the caller has no account, and with InvalidArgument when the push address or the keys are missing or not well formed.
 
 #### Scenario: Fan registers their browser
 
 - **WHEN** a signed-in fan calls Create with their browser's push address and keys
-- **THEN** PushNotificationUseCase.Create runs for that fan
+- **THEN** PushSubscriptionUseCase.Create runs for that fan
 
 #### Scenario: Missing keys
 
@@ -32,7 +32,7 @@ Get and Delete SHALL resolve the signed-in caller to their stored User and requi
 #### Scenario: Fan checks their browser
 
 - **WHEN** a signed-in fan calls Get naming themselves and their push address
-- **THEN** PushNotificationUseCase.Get runs for that fan
+- **THEN** PushSubscriptionUseCase.Get runs for that fan
 
 #### Scenario: Request names another fan
 
@@ -46,7 +46,7 @@ Get and Delete SHALL resolve the signed-in caller to their stored User and requi
 
 ### Requirement: Direct new-concert push only outside production
 
-NotifyNewConcerts SHALL be callable only by a signed-in caller and only when the server does not run in production. It SHALL fail with Unauthenticated when the caller is not signed in, whatever the environment, so an unauthenticated caller cannot learn the environment. In production it SHALL fail with PermissionDenied whatever the caller's credentials, and nothing is sent. It SHALL fail with InvalidArgument when no artist is given, when no concert is given, when more than 1000 concerts are given, or when a concert id is empty. Otherwise it SHALL run PushNotificationUseCase.NotifyNewConcerts with the artist and exactly the given concerts and return once it completes.
+NotifyNewConcerts SHALL be callable only by a signed-in caller and only when the server does not run in production. It SHALL fail with Unauthenticated when the caller is not signed in, whatever the environment, so an unauthenticated caller cannot learn the environment. In production it SHALL fail with PermissionDenied whatever the caller's credentials, and nothing is sent. It SHALL fail with InvalidArgument when no artist is given, when no concert is given, when more than 1000 concerts are given, or when a concert id is empty. Otherwise it SHALL run NotificationUseCase.NotifyNewConcerts with the artist and exactly the given concerts and return once it completes.
 
 #### Scenario: Non-production call
 

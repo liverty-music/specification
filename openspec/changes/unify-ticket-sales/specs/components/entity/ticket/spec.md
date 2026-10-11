@@ -20,11 +20,11 @@ Every Ticket SHALL carry the three conditions of a 特定興行入場券 (covere
 
 ### Requirement: A ticket is admissible only once and only while Issued
 
-A Ticket SHALL be admissible exactly when its status is Issued and it has no admitted time. A Voided Ticket SHALL NOT be admissible, and a Ticket that has an admitted time SHALL NOT be admissible again. Voiding a Ticket SHALL keep its admitted time, so a refund after entry does not erase that the user was admitted.
+A Ticket SHALL be admissible exactly when its status is Issued and it has no admit time. A Voided Ticket SHALL NOT be admissible, and a Ticket that has an admit time SHALL NOT be admissible again. Voiding a Ticket SHALL keep its admit time, so a refund after entry does not erase that the user was admitted.
 
 #### Scenario: Issued and not yet admitted
 
-- **WHEN** a Ticket is Issued and has no admitted time
+- **WHEN** a Ticket is Issued and has no admit time
 - **THEN** it is admissible
 
 #### Scenario: Already admitted
@@ -34,10 +34,10 @@ A Ticket SHALL be admissible exactly when its status is Issued and it has no adm
 
 #### Scenario: Voided
 
-- **WHEN** a Ticket is Voided and has no admitted time
+- **WHEN** a Ticket is Voided and has no admit time
 - **THEN** it is not admissible
 
 #### Scenario: Voided after entry
 
 - **WHEN** a Ticket admitted at 18:32 is Voided by a dispute refund
-- **THEN** its status is Voided and its admitted time is still 18:32
+- **THEN** its status is Voided and its admit time is still 18:32

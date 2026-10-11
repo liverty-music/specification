@@ -8,7 +8,7 @@ An organizer operator takes one event from draft to the door in the organizer co
 
 ### Requirement: From draft to the door by navigation
 
-Starting from Home, an operator SHALL be able to reach a draft event of their concert through Concerts and the concert page, publish it after confirming (ConcertAuthoringUseCase.Publish for that event), start a lottery from its Sales tab (TicketSaleUseCase.Create), see the sale on the Sales tab (TicketSaleUseCase.ListOwnByEvent), and issue a scanner from its Reception tab, without typing any address, and Home SHALL stop listing each item once it is resolved.
+Starting from Home, an operator SHALL be able to reach a draft event of their concert through Concerts and the concert page, publish it after confirming (SeriesUseCase.Publish for that event), start a lottery from its Sales tab (TicketSaleUseCase.Create), see the sale on the Sales tab (TicketSaleUseCase.ListOwnByEvent), and issue a scanner from its Reception tab, without typing any address, and Home SHALL stop listing each item once it is resolved.
 
 #### Scenario: Whole flow on a PC
 

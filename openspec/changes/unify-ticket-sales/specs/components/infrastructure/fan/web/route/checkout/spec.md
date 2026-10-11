@@ -1,5 +1,28 @@
 # Spec Delta
 
+## ADDED Requirements
+
+### Requirement: A sale that requires verification
+
+When the sale requires verification, the checkout SHALL say so before the fan starts, and when the fan has no Active IdentityVerification it SHALL offer the way to verify instead of starting the checkout. A FailedPrecondition from CheckoutService.Start for a fan without an Active IdentityVerification SHALL be shown as the missing verification, not as a reached limit.
+
+#### Scenario: Unverified fan on a verified sale
+- **WHEN** a fan without an IdentityVerification opens the checkout of a sale that requires JPKI-only
+- **THEN** the screen says the sale requires マイナンバーカード verification and offers to verify, and no checkout is started
+
+#### Scenario: Verified fan on a verified sale
+- **WHEN** a fan with an Active JPKI IdentityVerification opens the same checkout
+- **THEN** the checkout starts as usual
+
+### Requirement: Personal details, prefilled
+
+The checkout SHALL ask for the 本人確認 full name and phone number, prefilled with the full name and phone number on the fan's User. The phone number field SHALL accept a Japanese domestic number or an E.164 number, with or without separators, and send it in E.164 form, as the lottery entry screen does. It SHALL state that the name and phone number are saved on the fan's account and shown on the face of their tickets.
+
+#### Scenario: Returning fan
+
+- **WHEN** a fan whose User has a full name and phone number reaches the personal details step
+- **THEN** their name and phone number are already filled in and can be edited
+
 ## MODIFIED Requirements
 
 ### Requirement: Choose the count and hold the tickets
@@ -31,18 +54,9 @@ The checkout SHALL open from an event's ticket section for a signed-in fan, on t
 - **WHEN** continuing fails because the sale ended or sold out after the fan opened the checkout
 - **THEN** the screen re-reads the sale and says it has ended or sold out, not that the limit was reached
 
-### Requirement: Identity details, prefilled
-
-The checkout SHALL ask for the 本人確認 full name and phone number, prefilled with the full name and phone number on the fan's User. The phone number field SHALL accept a Japanese domestic number or an E.164 number, with or without separators, and send it in E.164 form, as the lottery entry screen does. It SHALL state that the name and phone number are saved on the fan's account and shown on the face of their tickets.
-
-#### Scenario: Returning buyer
-
-- **WHEN** a fan whose User has a full name and phone number reaches the identity step
-- **THEN** their name and phone number are already filled in and can be edited
-
 ### Requirement: Card payment
 
-The checkout SHALL take the card through a card form that also offers Apple Pay or Google Pay where the device supports them. It SHALL authorize the card with CheckoutUseCase.Authorize, sending the full name and phone number, and complete the card issuer's authentication in the page. It SHALL say that the card is not charged until the order is placed.
+The checkout SHALL take the card through a card form that also offers Apple Pay or Google Pay where the device supports them. It SHALL authorize the card with CheckoutUseCase.AuthorizeCard, sending the full name and phone number, and complete the card issuer's authentication in the page. It SHALL say that the card is not charged until the order is placed.
 
 #### Scenario: Card declined
 
@@ -66,7 +80,7 @@ Before placing the order, the checkout SHALL show on one screen:
 - that the purchase cannot be cancelled or refunded except when the event is 中止 (cancelled), that no cooling-off applies, and that official resale opens only if the event sells out;
 - the Organizer's business details, carried by the Series of the event's Concert: legal name, representative name, business address, business phone number and contact email.
 
-It SHALL offer to go back and change the number of tickets or the identity details from this screen. The place-order action SHALL state that it pays, with the amount, and SHALL be disabled while the order is being placed.
+It SHALL offer to go back and change the number of tickets or the personal details from this screen. The place-order action SHALL state that it pays, with the amount, and SHALL be disabled while the order is being placed.
 
 #### Scenario: Final confirmation shown
 
@@ -85,10 +99,10 @@ It SHALL offer to go back and change the number of tickets or the identity detai
 
 ### Requirement: Outcome of placing the order
 
-Placing the order SHALL call IssuanceUseCase.IssueFromCheckout. On success, the checkout SHALL show the completion screen with the event, the number of tickets, the total paid and a link to the Tickets screen. It SHALL then offer to allow notifications when the fan has not allowed them, and to add the app to the home screen when it is not installed. On failure, it SHALL read the Checkout with CheckoutUseCase.Get and say, by its status:
-- Expired: that the 15 minutes passed, that the card was not charged, that a temporary hold may show on the card statement for a few days, and offer to start again;
-- Released with a committed time: that the card could not be charged, and offer to start again;
-- Released without a committed time: that it was replaced by a newer checkout, for example in another tab, and offer to go to it;
+Placing the order SHALL call OrderUseCase.IssueFromCheckout. On success, the checkout SHALL show the completion screen with the event, the number of tickets, the total paid and a link to the Tickets screen. It SHALL then offer to allow notifications when the fan has not allowed them, and to add the app to the home screen when it is not installed. On failure, it SHALL read the Checkout with CheckoutUseCase.Get and say, by its status:
+- Expired: that the 15 minutes passed, that the card was not charged, that the released card authorization may still show on the card statement for a few days, and offer to start again;
+- Released with a commit time: that the card could not be charged, and offer to start again;
+- Released without a commit time: that it was replaced by a newer checkout, for example in another tab, and offer to go to it;
 - Held: that the card authentication is not complete, to finish it and try again;
 - Committed or Completed: that the purchase is being completed and the tickets will appear in the Tickets screen shortly.
 
@@ -106,3 +120,9 @@ Placing the order SHALL call IssuanceUseCase.IssueFromCheckout. On success, the 
 
 - **WHEN** placing the order fails with Unavailable after the commit
 - **THEN** the screen says the purchase is being completed and the tickets will appear shortly
+
+## REMOVED Requirements
+
+### Requirement: Identity details, prefilled
+**Reason**: The scenario "Returning buyer" is renamed "Returning fan" and the requirement "Personal details, prefilled": "buyer" is not an entity, and the fan's full name and phone number are their personal details (design D17). A MODIFIED block cannot drop a scenario, so the requirement is replaced.
+**Migration**: The same rule continues as "Personal details, prefilled" above.

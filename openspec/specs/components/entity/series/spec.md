@@ -12,7 +12,7 @@ A Series groups the Events of one engagement — a tour, a single-venue run, or 
 | source page | official page for the engagement | optional; a URI of at most 2048 characters |
 | organizer | owning Organizer | optional; present exactly when the Series is first-party |
 | description | organizer-written body text | optional, 1–10000 characters; first-party only |
-| cover image | current cover Media | optional; first-party only |
+| cover image | current cover SeriesImage | optional; first-party only |
 | visibility | PUBLIC or UNLISTED | first-party only |
 | publish state | DRAFT, PUBLISHED or CANCELLED | first-party only |
 | share token | token that opens an UNLISTED Series | present only on a published UNLISTED Series; never shown on reads |
@@ -24,9 +24,9 @@ erDiagram
   Series ||--o{ Event : "groups"
   Series ||--o{ DraftEvent : "drafts"
   Organizer |o--o{ Series : "authors"
-  Series |o--o| Media : "has cover"
+  Series |o--o| SeriesImage : "has cover"
   Series }o--o{ Artist : "drafts performers"
-  Series ||--o{ StagedConcert : "holds pending"
+  Series ||--o{ ConcertCandidate : "holds pending"
   Series ||--o{ SalesPhase : "sells through"
 ```
 

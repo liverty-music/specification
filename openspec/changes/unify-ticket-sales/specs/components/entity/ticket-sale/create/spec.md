@@ -4,7 +4,7 @@
 
 ### Requirement: Store a sale with its ticket types
 
-Create SHALL store the sale without a drawn time and every one of its TicketTypes together, or nothing, and return the sale with its TicketTypes; each TicketType of a FirstCome sale SHALL start with a sold count of 0. It SHALL fail with InvalidArgument when the sale or a TicketType breaks the TicketSale or TicketType rules, or when two of its TicketTypes are for the same event, and with FailedPrecondition when the Series or an event of a TicketType does not exist.
+Create SHALL store the sale without a draw time and every one of its TicketTypes together, or nothing, and return the sale with its TicketTypes; each TicketType of a FirstCome sale SHALL start with a sold count of 0. It SHALL fail with InvalidArgument when the sale or a TicketType breaks the TicketSale or TicketType rules, or when two of its TicketTypes are for the same event, and with FailedPrecondition when the Series or an event of a TicketType does not exist.
 
 #### Scenario: Sale stored
 - **WHEN** Create is called for an existing Series with TicketTypes for two of its events

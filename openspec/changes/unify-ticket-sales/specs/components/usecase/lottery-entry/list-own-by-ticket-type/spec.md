@@ -2,7 +2,7 @@
 
 ## Purpose
 
-LotteryUseCase.ListOwnByTicketType returns the calling fan's LotteryEntries for a TicketType, so the fan sees whether they have entered and, after the draw, whether they won.
+LotteryEntryUseCase.ListOwnByTicketType returns the calling fan's LotteryEntries for a TicketType, so the fan sees whether they have entered and, after the draw, whether they won.
 
 ## ADDED Requirements
 

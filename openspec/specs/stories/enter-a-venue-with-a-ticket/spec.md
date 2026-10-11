@@ -7,7 +7,7 @@ A fan holding tickets enters the venue with their companions by showing one QR c
 
 ### Requirement: Fan and companions enter together
 
-After an Organizer issues a link with ReceptionLinkUseCase.Issue and venue staff open it on a device with ReceptionLinkUseCase.Open, a fan whose phone registered its key with WalletPublicKeyUseCase.Register and who holds Issued tickets for the event SHALL be able to show the QR code their phone makes and be admitted with TicketUseCase.Admit during the reception window; their tickets SHALL then be shown as entered in TicketUseCase.GetMyTickets.
+After an Organizer issues a link with ReceptionLinkUseCase.Issue and venue staff open it on a device with ReceptionLinkUseCase.Open, a fan whose phone registered its key with WalletPublicKeyUseCase.Register and who holds Issued tickets for the event SHALL be able to show the QR code their phone makes and be admitted with TicketUseCase.Admit during the reception window; their tickets SHALL then be shown as entered in TicketUseCase.List.
 
 #### Scenario: Group of three enters
 

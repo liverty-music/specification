@@ -37,7 +37,7 @@ This requirement exists because `oidc-client-ts` `automaticSilentRenew` only sch
 
 ### Requirement: The remembered account is restored on launch
 
-On every launch with a signed-in session, the app SHALL restore the fan's account from the account remembered for the signed-in identity (UserUseCase.Get) before it makes any other per-fan request. When the account has no preferred language, the app SHALL set it to the app's current display language (UserUseCase.UpdatePreferredLanguage) without asking the fan. Once the account's preferred language is in use, the language the app kept on the device before sign-in is dropped, and the account's language wins from then on.
+On every launch with a signed-in session, the app SHALL restore the fan's account from the account remembered for the signed-in identity (UserUseCase.Get) before it makes any other per-fan request. When the account has no preferred language, the app SHALL set it to the app's current display language (UserUseCase.SetPreferredLanguage) without asking the fan. Once the account's preferred language is in use, the language the app kept on the device before sign-in is dropped, and the account's language wins from then on.
 
 #### Scenario: Reopen with a remembered account
 

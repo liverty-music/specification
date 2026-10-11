@@ -12,7 +12,7 @@ ListPhasesDueForDraw SHALL return every phase whose close time is at or before t
 
 #### Scenario: Closed and undrawn
 
-- **WHEN** a phase closed before the instant and has no drawn time
+- **WHEN** a phase closed before the instant and has no draw time
 - **THEN** it is returned
 
 #### Scenario: Still open
@@ -22,5 +22,5 @@ ListPhasesDueForDraw SHALL return every phase whose close time is at or before t
 
 #### Scenario: Already drawn
 
-- **WHEN** a closed phase has a drawn time
+- **WHEN** a closed phase has a draw time
 - **THEN** it is not returned

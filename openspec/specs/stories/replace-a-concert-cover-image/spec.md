@@ -8,7 +8,7 @@ An organizer uploads an image and makes it the cover of its concert, without the
 
 ### Requirement: Upload, attach, process
 
-An image uploaded with the authorization from MediaUseCase.CreateMediaUploadURL and attached with MediaUseCase.AttachMedia SHALL become the concert's cover once ProcessMedia has produced its variants, and the previous cover SHALL be served until then and deleted afterwards.
+An image uploaded with the authorization from SeriesImageUseCase.CreateUploadUrl and attached with SeriesUseCase.SetCoverImage SHALL become the concert's cover once SeriesImageUseCase.Process has produced its variants, and the previous cover SHALL be served until then and deleted afterwards.
 
 #### Scenario: New cover on a published concert
 - **WHEN** an organizer uploads and attaches a JPEG to a published concert with a cover

@@ -31,7 +31,7 @@ The organizer console is where an Organizer's operators create concerts, put eve
 - `components/infrastructure/organizer/web/route/event`: one event's page with its Sales and Reception tabs
 - `components/infrastructure/organizer/web/route/settings`: the Organizer, represented Artists, business details and payout account
 - `components/entity/venue/search-places`: looks up candidate places for a venue name in the map catalog
-- `components/usecase/venue/search-places`: an operator searches the map catalog for a venue while authoring a concert
+- `components/usecase/venue/search`: an operator searches the map catalog for a venue while authoring a concert
 - `components/entity/venue/get-place`: reads the picked place's name, coordinates and admin area from the map catalog
 - `stories/run-an-event-from-the-organizer-console`: publish an event, open a sale, issue scanners, all reached by navigation
 
@@ -40,7 +40,7 @@ The organizer console is where an Organizer's operators create concerts, put eve
 - `components/infrastructure/organizer/web/global/organizer-shell`: the route guard lands on Home; persistent navigation, breadcrumbs, sign-out and the responsive layout
 - `components/infrastructure/organizer/web/route/concerts`: the list of concerts with responsive cards and table; the per-row lottery entry point moves to the event page
 - `components/infrastructure/organizer/web/route/concert-editor`: venue search with a required pick, Japan time entry, save feedback, the unsaved-changes guard, and the cover preview kept until the processed image replaces it
-- `components/usecase/series/create-draft`: "Each event's venue is found or created" is replaced by "Each event's venue is a picked place": every event gives a picked place id; a new Venue is created from the catalog's place with coordinates and admin area, never from a typed name (`restructure-event-publishing` modifies another requirement of this spec, "Draft stored as DRAFT")
+- `components/usecase/series/create`: "Each event's venue is found or created" is replaced by "Each event's venue is a picked place": every event gives a picked place id; a new Venue is created from the catalog's place with coordinates and admin area, never from a typed name (`restructure-event-publishing` modifies another requirement of this spec, "Draft stored as DRAFT")
 - `components/infrastructure/organizer/web/route/lottery-phase-editor`: opened from the event's Sales tab and returns there; window entered in Japan time
 - `components/infrastructure/organizer/web/route/reception-links`: removed; its requirements move to the event page's Reception tab. The spec is added by `ticket-wallet-and-checkin` and is in the main specs once that change archives (task 0.4)
 - `components/adapter/organizer/api/rpc/series`: the venue search call passes the same sign-in checks as the other authoring calls

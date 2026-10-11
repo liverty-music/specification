@@ -69,7 +69,7 @@ Get SHALL return the caller's User as resolved by the per-user check, so the sam
 
 ### Requirement: Create registers the signed-in identity
 
-Create SHALL name no User id. It SHALL take the external id, email and name from the caller's sign-in identity and never from the request; the request SHALL still carry a well-formed email, which is ignored. It SHALL take the optional Home and optional preferred language from the request, fail with InvalidArgument when a Home in the request is malformed or a given preferred language is not exactly two lowercase letters, and otherwise call UserUseCase.Create and return the User it returns.
+Create SHALL name no User id. It SHALL take the provider user ID, email and name from the caller's sign-in identity and never from the request; the request SHALL still carry a well-formed email, which is ignored. It SHALL take the optional Home and optional preferred language from the request, fail with InvalidArgument when a Home in the request is malformed or a given preferred language is not exactly two lowercase letters, and otherwise call UserUseCase.Create and return the User it returns.
 
 #### Scenario: First sign-in
 
@@ -93,7 +93,7 @@ Create SHALL name no User id. It SHALL take the external id, email and name from
 
 ### Requirement: UpdatePreferredLanguage checks the language first
 
-UpdatePreferredLanguage SHALL fail with InvalidArgument when the language is not exactly two lowercase letters, before the caller is resolved, so a malformed request fails the same way for every caller. It SHALL then apply the per-user check and call UserUseCase.UpdatePreferredLanguage for the caller's User.
+UpdatePreferredLanguage SHALL fail with InvalidArgument when the language is not exactly two lowercase letters, before the caller is resolved, so a malformed request fails the same way for every caller. It SHALL then apply the per-user check and call UserUseCase.SetPreferredLanguage for the caller's User.
 
 #### Scenario: Language changed
 
@@ -107,7 +107,7 @@ UpdatePreferredLanguage SHALL fail with InvalidArgument when the language is not
 
 ### Requirement: UpdateHome requires a well-formed home
 
-UpdateHome SHALL fail with InvalidArgument when the request carries no Home, or a Home whose country code, level 1 or level 2 is malformed. It SHALL then apply the per-user check and call UserUseCase.UpdateHome for the caller's User.
+UpdateHome SHALL fail with InvalidArgument when the request carries no Home, or a Home whose country code, level 1 or level 2 is malformed. It SHALL then apply the per-user check and call UserUseCase.SetHome for the caller's User.
 
 #### Scenario: Home set
 

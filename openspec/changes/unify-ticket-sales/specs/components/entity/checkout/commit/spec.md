@@ -9,7 +9,7 @@ Commits a holding Checkout's tickets against its TicketType's stock before the c
 ### Requirement: Commit only while holding
 
 Commit SHALL take a Checkout and a time:
-- When the Checkout is holding at that time, Commit SHALL make it Committed with that committed time, add its count to the TicketType's sold count and report Committed.
+- When the Checkout is holding at that time, Commit SHALL make it Committed with that commit time, add its count to the TicketType's sold count and report Committed.
 - When it is already Committed or Completed, it SHALL change nothing and report Committed.
 - Otherwise — Held with its hold lapsed, Expired or Released — it SHALL change nothing and report NotHeld.
 

@@ -41,7 +41,7 @@ PublishDraft SHALL fail with FailedPrecondition, changing nothing, when any Draf
 
 ### Requirement: Publish completes the draft
 
-On success PublishDraft SHALL, together with the Events: remove the Series' DraftEvents and draft performers, remove StagedConcerts that belong to the Series, and set the Series PUBLISHED with the given published-at time. It SHALL fail with FailedPrecondition when the Series is not DRAFT, and with NotFound when it does not exist.
+On success PublishDraft SHALL, together with the Events: remove the Series' DraftEvents and draft performers, remove ConcertCandidates that belong to the Series, and set the Series PUBLISHED with the given published-at time. It SHALL fail with FailedPrecondition when the Series is not DRAFT, and with NotFound when it does not exist.
 
 #### Scenario: Draft cleared
 - **WHEN** PublishDraft succeeds

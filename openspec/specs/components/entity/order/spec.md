@@ -2,24 +2,24 @@
 
 ## Purpose
 
-An Order is the purchase record of one source, a won LotteryEntry or a Committed Checkout: a reference to its captured payment, the amount paid and its own status. One Order covers all tickets of its source, and an Order exists only after the payment has been captured.
+An Order is the purchase record of one source, a won LotteryEntry or a Committed Checkout: the payment provider's ID for its captured payment, the amount paid and its own status. One Order covers all tickets of its source, and an Order exists only after the payment has been captured.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | id | the order's identity | required, assigned on creation |
 | user | the account that bought the tickets | required |
 | source | what it was created from: a won LotteryEntry or a Committed Checkout | required, exactly one; one Order per source |
-| payment service | which of the platform's payment services holds the payment | required |
-| payment reference | reference to the captured payment | required, 1-255 characters, opaque |
-| payment method reference | reference to the payment method used | optional, at most 255 characters, opaque |
+| payment provider | which of the platform's payment providers holds the payment | required |
+| provider payment ID | the payment provider's ID for the captured payment | required, 1-255 characters, opaque |
+| provider payment method ID | the payment provider's ID for the payment method used | optional, at most 255 characters, opaque |
 | card brand | card brand shown to the user | optional, at most 40 characters |
 | card last four | last four card digits shown to the user | optional, exactly 4 digits or empty |
 | status | lifecycle | Paid or Refunded |
 | amount | total paid, in the currency's smallest unit (whole yen) | required, greater than 0 |
 | currency | ISO 4217 currency of the amount | required, 3 uppercase letters |
-| paid time | when the Order was created from the captured payment | required |
-| refund reference | reference to the refund issued to the user | empty unless refunded for a cancellation |
-| confirmation-sent time | when the purchase confirmation email was sent to the user | empty until sent; set once |
+| pay time | when the Order was created from the captured payment | required |
+| provider refund ID | the payment provider's ID for the refund issued to the user | empty unless refunded for a cancellation |
+| confirmation send time | when the purchase confirmation email was sent to the user | empty until sent; set once |
 
 ```mermaid
 erDiagram
@@ -46,11 +46,11 @@ An Order SHALL start in status Paid, because it is created from an already captu
 #### Scenario: New order
 
 - **WHEN** an Order is created
-- **THEN** its status is Paid and its refund reference is empty
+- **THEN** its status is Paid and its provider refund ID is empty
 
 ### Requirement: No card data is stored
 
-An Order SHALL hold only references to the payment and the display facets card brand and card last four; it SHALL NOT hold the card number, security code or expiry. Card last four SHALL be exactly 4 digits or empty.
+An Order SHALL hold only the payment provider's IDs for the payment and the display facets card brand and card last four; it SHALL NOT hold the card number, security code or expiry. Card last four SHALL be exactly 4 digits or empty.
 
 #### Scenario: Display facets only
 

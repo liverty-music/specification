@@ -9,7 +9,7 @@ The goal: a developer predicts a method's input and behavior from its name alone
 
 ## Services
 
-- A service is named after an entity in `openspec/specs/components/entity/` (`TicketSaleService`, `KycService`). A service with no entity behind it is not created; put its methods on the entity they act on, or remove them.
+- A service is named after an entity in `openspec/specs/components/entity/` (`TicketSaleService`, `IdentityVerificationService`). A service with no entity behind it is not created; put its methods on the entity they act on, or remove them.
 - A service's standard methods take and return only its own resource. A read of another resource goes to that resource's service (`OrderService.Get`, not `TicketService.GetOrder`).
   - A read may carry related resources as side lists (`ConcertService` responses carry `series` and `artists`).
   - A create may carry child resources created with the parent (`TicketSaleService.Create` with its ticket types).
@@ -20,7 +20,7 @@ The goal: a developer predicts a method's input and behavior from its name alone
 | Form | Use | Example |
 |---|---|---|
 | `Get(<own id or natural key>)` | read one resource | `CheckoutService.Get(checkout_id)`, `PushSubscriptionService.Get(endpoint)` |
-| `Get()` | the one resource the caller has | `OrganizerService.Get()`, `KycService.Get()` |
+| `Get()` | the one resource the caller has | `OrganizerService.Get()`, `IdentityVerificationService.Get()` |
 | `List()` | every resource the caller can see; optional narrowing (state, period) is a field | `TicketService.List()`, `SettlementService.List(status)` |
 | `ListBy<Key>` | narrowed by one required request field | `TicketSaleService.ListByEvent(event_id)`, `ConcertService.ListByArtists(artist_ids, home)` |
 | `List<Qualifier>` | a computed set no request field selects | `ArtistService.ListTop`, `ListSimilar`, `ConcertService.ListFollowed` |
@@ -35,9 +35,15 @@ Rules behind the table:
 - **A Key in a `ListBy` name is always a field in the request.** The caller's relation is never a Key: a list of the concerts of artists the caller follows is `ListFollowed()`, not `ListByFollower()`. Otherwise the same name would take an id on the admin API and nothing on the organizer API.
 - Key is an entity (singular for one id, plural for several) or a value object (`ListByLocation`). The singular and the plural are separate methods and may return different shapes (`ListByArtist` a flat list, `ListByArtists` grouped by date and proximity).
 - Not used: `Get<Noun>` (`GetStatus`, `GetResult`, `GetOrder`), `Update<Field>` (`UpdateHome`), `List<Resource>` (`ListTickets`), `GetMy*`.
-- **The caller is never named.** When the caller owns the resource, neither the method name nor the request names them; the server takes the user from the sign-in (`User.GetByExternalID`). No `user_id` on a fan's own request. A request names a user or an Organizer only when an admin acts on another one.
-- A multi-step purchase uses the same verbs everywhere: `Start` (create or resume a draft resource), `Authorize` (open the card hold, return the client secret), `Confirm` (finalize). `CheckoutService` and `LotteryEntryService` both follow it. A card hold is an attribute of the resource, never a resource-less `CreateAuthorization`.
+- **The caller is never named.** When the caller owns the resource, neither the method name nor the request names them; the server takes the user from the sign-in (`User.GetByProviderUserID`). No `user_id` on a fan's own request. A request names a user or an Organizer only when an admin acts on another one.
+- A multi-step purchase uses the same verbs everywhere: `Start` (create or resume a draft resource), `AuthorizeCard` (open the resource's CardAuthorization, return the `card_authorization_secret`), `Confirm` (finalize). `CheckoutService` and `LotteryEntryService` both follow it. The CardAuthorization is an entity the purchase resource references (`card_authorization_id`); it has no fan service of its own.
 - Request fields with the same meaning have the same name across services (`ticket_count` on both `Start` methods).
+
+## Identifiers
+
+- A reference to an entity of this domain is `<entity>_id` (`order_id`, `card_authorization_id`).
+- An ID that an outside provider assigns is `provider_<concept>_id`, where the concept is this domain's noun, not the provider's object name: `provider_payment_id` (not `payment_intent_ref`), `provider_user_id` (not `external_id`, `pocket_sign_user_id`), `provider_organizer_id` (not `zitadel_org_id`). The entity spec says which provider assigns it.
+- No `_ref` suffix and no vendor names (Stripe, Zitadel, Pocket Sign) in proto, specs or domain code; they stay inside the provider adapters.
 
 ## Deviation from Google AIP
 
@@ -45,11 +51,13 @@ AIP-132 narrows a `List` with `parent` plus `filter`, and AIP-136 forbids standa
 
 ## Vocabulary traps
 
-- "identity" means the account at the identity provider (Zitadel). The result of a fan's 本人確認 is the entity `Kyc`; the payment provider's check of an Organizer's payout account is "payout account verification", not KYC. Do not name anything else "identity" or "Kyc".
+- Bare "identity" means the account at the identity provider (Zitadel). The result of a fan's 本人確認 is the entity `IdentityVerification`; the payment provider's check of an Organizer's account is "payout account verification". "KYC" is only the legal term "AML-KYC".
+- The hold on a fan's card is a "card authorization", never bare "authorization" (access control) or "hold" (the Checkout's reservation of tickets and Settlement's Held status). Stripe's "client secret" is the `card_authorization_secret`.
 - "holder", "buyer", "applicant" and "seller" are not entities. A ticketing record's User is `user`; the Organizer's legal seller details are plain Organizer fields.
 
 ## Before you finish
 
 - Each method name passes the table; each service name is an entity name.
 - No fan request has a `user_id`; no `Get` takes another entity's id.
+- Every ID field is `<entity>_id` or `provider_<concept>_id`.
 - The adapter spec under `openspec/specs/components/adapter/<audience>/api/rpc/<handler>/` uses the same method names as the proto.

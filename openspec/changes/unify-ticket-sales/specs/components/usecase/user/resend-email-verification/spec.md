@@ -4,7 +4,7 @@
 
 ### Requirement: A fresh verification email goes to the caller's own address
 
-ResendEmailVerification SHALL fail with Unavailable when email verification is not configured, before the caller is resolved. It SHALL then resolve the caller as UserUseCase.ResolveCaller does, with the same failures, and send a fresh verification email through User.ResendVerification with the caller's external id. A FailedPrecondition or Internal failure of User.ResendVerification SHALL be returned unchanged.
+ResendEmailVerification SHALL fail with Unavailable when email verification is not configured, before the caller is resolved. It SHALL then resolve the caller as UserUseCase.ResolveCaller does, with the same failures, and send a fresh verification email through User.ResendVerification with the caller's provider user ID. A FailedPrecondition or Internal failure of User.ResendVerification SHALL be returned unchanged.
 
 #### Scenario: Caller resends their own email
 - **WHEN** a signed-in caller requests a resend for their own unverified account

@@ -13,8 +13,8 @@ A LotterySalesPhase is an Organizer-configured lottery sale of one event's ticke
 | ticket capacity | tickets available in the phase | required, greater than 0 |
 | max tickets per application | largest companion group one application may request | required, 1 to 10 and not above ticket capacity |
 | ticket price | per-ticket price in whole yen | required, greater than 0 |
-| verification requirement | whether applicants must hold a verified identity | None (the default), Verified-any or JPKI-only |
-| drawn time | when the draw ran | absent until the draw runs |
+| verification requirement | whether applicants must hold an identity verification | None (the default), Verified-any or JPKI-only |
+| draw time | when the draw ran | absent until the draw runs |
 
 ```mermaid
 erDiagram
@@ -74,7 +74,7 @@ The ticket capacity, the max tickets per application and the ticket price SHALL 
 
 ### Requirement: Verification requirement
 
-A phase SHALL require verification when its verification requirement is Verified-any or JPKI-only; both require the applicant to hold an Active verified identity. A phase created without a requirement SHALL have the requirement None.
+A phase SHALL require verification when its verification requirement is Verified-any or JPKI-only; both require the applicant to hold an Active identity verification. A phase created without a requirement SHALL have the requirement None.
 
 #### Scenario: No requirement given
 
@@ -84,7 +84,7 @@ A phase SHALL require verification when its verification requirement is Verified
 #### Scenario: Verified-any or JPKI-only
 
 - **WHEN** the requirement is Verified-any or JPKI-only
-- **THEN** the phase requires an Active verified identity
+- **THEN** the phase requires an Active identity verification
 
 ### Requirement: Window open at an instant
 
@@ -116,14 +116,14 @@ The amount held for an application SHALL be the ticket price multiplied by the r
 
 ### Requirement: Drawn phase
 
-A phase SHALL count as drawn once its drawn time is set.
+A phase SHALL count as drawn once its draw time is set.
 
-#### Scenario: Drawn time set
+#### Scenario: Draw time set
 
-- **WHEN** the drawn time is set
+- **WHEN** the draw time is set
 - **THEN** the phase is drawn
 
-#### Scenario: Drawn time absent
+#### Scenario: Draw time absent
 
-- **WHEN** the drawn time is absent
+- **WHEN** the draw time is absent
 - **THEN** the phase is not drawn

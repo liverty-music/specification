@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A SuppressedConcert records the slot — Venue, local date and start time — of a published Concert an admin deleted, so that discovery and organizer publishing do not bring it back. It is independent of the performing Artist and is distinct from the analysis-only RejectedConcertLog.
+A SuppressedConcert records the slot — Venue, local date and start time — of a published Concert an admin deleted, so that discovery and organizer publishing do not bring it back. It is independent of the performing Artist and is distinct from the analysis-only RejectedConcert.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -37,8 +37,8 @@ A SuppressedConcert SHALL match a slot when the Venue and local date are equal a
 
 ### Requirement: Suppression is not a rejection
 
-A SuppressedConcert SHALL NOT be written to or read from the RejectedConcertLog, and a RejectedConcertLog entry SHALL NOT suppress anything.
+A SuppressedConcert SHALL NOT be written to or read from the RejectedConcert, and a RejectedConcert entry SHALL NOT suppress anything.
 
 #### Scenario: Rejected concert is not suppressed
-- **WHEN** a staged concert was rejected and no SuppressedConcert holds its slot
+- **WHEN** a concert candidate was rejected and no SuppressedConcert holds its slot
 - **THEN** its slot is not suppressed

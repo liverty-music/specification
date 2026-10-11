@@ -7,7 +7,7 @@ OrganizerUseCase.ResolveCaller turns an organizer-console operator's sign-in ten
 
 ### Requirement: Only an active Organizer is resolved
 
-ResolveCaller SHALL read the Organizer linked to the tenant (Organizer.GetByZitadelOrgID) and return it when it is active. When no Organizer is linked to the tenant, or the Organizer is in any status other than active and deactivated, such as provisioning, ResolveCaller SHALL fail with PermissionDenied without revealing whether an Organizer exists. When the Organizer is deactivated, ResolveCaller SHALL fail with FailedPrecondition and may say that the Organizer is deactivated, since it is the caller's own. Any other failure to read the Organizer SHALL be returned unchanged.
+ResolveCaller SHALL read the Organizer linked to the tenant (Organizer.GetByProviderOrganizerID) and return it when it is active. When no Organizer is linked to the tenant, or the Organizer is in any status other than active and deactivated, such as provisioning, ResolveCaller SHALL fail with PermissionDenied without revealing whether an Organizer exists. When the Organizer is deactivated, ResolveCaller SHALL fail with FailedPrecondition and may say that the Organizer is deactivated, since it is the caller's own. Any other failure to read the Organizer SHALL be returned unchanged.
 
 #### Scenario: Active Organizer
 

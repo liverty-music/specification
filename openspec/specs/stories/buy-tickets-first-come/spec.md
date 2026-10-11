@@ -10,9 +10,9 @@ A fan buys tickets for an Organizer's event first come, first served: they hold 
 After an Organizer puts a published event on sale with TicketSaleUseCase.Configure, a signed-in fan SHALL be able to:
 1. hold tickets with ReservationUseCase.Start;
 2. authorize their card with ReservationUseCase.Authorize and complete card authentication;
-3. place the order with IssuanceUseCase.IssueFromReservation.
+3. place the order with OrderUseCase.IssueFromReservation.
 
-Their Tickets SHALL then be in TicketUseCase.GetMyTickets, and a confirmation email SHALL arrive within 5 minutes.
+Their Tickets SHALL then be in TicketUseCase.List, and a confirmation email SHALL arrive within 5 minutes.
 
 #### Scenario: Two tickets bought
 

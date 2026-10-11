@@ -1,7 +1,7 @@
 # components/entity/ticket-sale Specification
 
 ## Purpose
-A TicketSale is the platform's own sale opportunity for some or all events of an Organizer's Series, such as a fan-club presale or a general sale (受付): its name, how tickets are allocated, the window in which fans take part and whether they must hold an Active Kyc. What it offers for each event - price, quantity, per-account limit and, first come, first served, the stock - is a TicketType. It is distinct from the SalesPhase entity, which records sales announced elsewhere.
+A TicketSale is the platform's own sale opportunity for some or all events of an Organizer's Series, such as a fan-club presale or a general sale (受付): its name, how tickets are allocated, the window in which fans take part and whether they must hold an Active IdentityVerification. What it offers for each event - price, quantity, per-account limit and, first come, first served, the stock - is a TicketType. It is distinct from the SalesPhase entity, which records sales announced elsewhere.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -11,8 +11,8 @@ A TicketSale is the platform's own sale opportunity for some or all events of an
 | method | how tickets are allocated | Lottery or FirstCome |
 | start time | when the sale opens, an instant entered and shown in Japan time | required, before the end time |
 | end time | when the sale closes, an instant entered and shown in Japan time | required; for Lottery, 1 to 14 days after the start time inclusive |
-| verification requirement | whether fans must hold an Active Kyc to take part | None (the default), Verified-any or JPKI-only |
-| drawn time | when the lottery draw ran | absent until the draw runs; Lottery only |
+| verification requirement | whether fans must hold an Active IdentityVerification to take part | None (the default), Verified-any or JPKI-only |
+| draw time | when the lottery draw ran | absent until the draw runs; Lottery only |
 
 ```mermaid
 erDiagram

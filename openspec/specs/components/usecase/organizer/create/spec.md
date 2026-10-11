@@ -11,7 +11,7 @@ OrganizerUseCase.Create registers a new Organizer from a name and an initial ope
 Create SHALL take a name and an initial operator email. It SHALL first check the email through Organizer.CheckOperatorEmailAvailable, and fail with that error, storing nothing, when the check fails. It SHALL then:
 
 1. store a new Organizer through Organizer.Create (it starts provisioning);
-2. create its tenant through Organizer.EnsureTenantOrg and record it at once through Organizer.SetZitadelOrgID;
+2. create its tenant through Organizer.EnsureTenantOrg and record it at once through Organizer.SetProviderOrganizerID;
 3. complete the tenant through Organizer.ProvisionTenant;
 4. move the Organizer from provisioning to active through Organizer.CompareAndSetStatus.
 

@@ -8,10 +8,10 @@ List gives an admin the whole Concert catalog — every Concert regardless of fo
 
 ### Requirement: Whole catalog for admins
 
-List SHALL return the result of Concert.List unchanged. StagedConcerts SHALL be returned only by ListPending.
+List SHALL return the result of Concert.List unchanged. ConcertCandidates SHALL be returned only by ListPending.
 
 #### Scenario: Catalog and queue both populated
-- **WHEN** the catalog holds Concerts and StagedConcerts are pending
+- **WHEN** the catalog holds Concerts and ConcertCandidates are pending
 - **THEN** List returns only the Concerts
 
 #### Scenario: Unlisted organizer concert

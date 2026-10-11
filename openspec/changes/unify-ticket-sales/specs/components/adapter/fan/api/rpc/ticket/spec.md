@@ -4,7 +4,7 @@
 
 ### Requirement: The ticket's user is the signed-in caller
 
-List SHALL require a signed-in caller and fail with Unauthenticated otherwise. It SHALL resolve the caller to their stored User (User.GetByExternalID) and pass that User to TicketUseCase.GetMyTickets; the request never names a user. When the caller has no stored account, the call SHALL fail with NotFound.
+List SHALL require a signed-in caller and fail with Unauthenticated otherwise. It SHALL resolve the caller to their stored User (User.GetByProviderUserID) and pass that User to TicketUseCase.List; the request never names a user. When the caller has no stored account, the call SHALL fail with NotFound.
 
 #### Scenario: Fan lists their tickets
 

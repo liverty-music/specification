@@ -46,7 +46,7 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 
 ### Requirement: Official sites are created through the boundary but never deleted
 
-CreateOfficialSite SHALL hand the artist id and URL to ArtistUseCase.CreateOfficialSite. DeleteOfficialSite SHALL fail with Unimplemented for every signed-in caller; there is no usecase behind it.
+CreateOfficialSite SHALL hand the artist id and URL to OfficialSiteUseCase.Create. DeleteOfficialSite SHALL fail with Unimplemented for every signed-in caller; there is no usecase behind it.
 
 #### Scenario: Create a site
 
