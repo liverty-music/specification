@@ -319,7 +319,7 @@ Kept, with reasons recorded in the review: `SalesPhase`, `SalesPhaseReminder` an
 | Checkout commit time | `commit_time`/`commit_at`/`CommitTime` |
 | Settlement creation and release time | `create_time`/`created_at`/`CreateTime` (AGENTS.md creation rule); `release_time`/`release_at`/`ReleaseTime` |
 | Entry tallies | `LotteryEntryStats`; operation `lottery-entry/get-stats-by-ticket-type` (was ticket type stats, tallies) |
-| Verification requirement change | `SetVerificationRequirement` at every layer; entity operation `ticket-sale/set-verification-requirement`; `VERIFICATION_REQUIREMENT_NONE = 0` |
+| Verification requirement change | `SetVerificationRequirement` at every layer; entity operation `ticket-sale/set-verification-requirement`; the zero value stays `VERIFICATION_REQUIREMENT_UNSPECIFIED`, documented as None, because buf lint requires the `_UNSPECIFIED` suffix (ENUM_ZERO_VALUE_SUFFIX) |
 | Ticket count | `ticket_count` on both `Start` requests and both entities (LotteryEntry's `requested_ticket_count` renamed); spec "ticket count" |
 | Create input of a ticket type | `TicketTypeInput` (proto and Go; "Draft" is a LotteryEntry state); price wrapper `TicketTypePrice` |
 | Draw | `quantity` (no "capacity"); Lost entries are "losers" (no "waitlist") |
