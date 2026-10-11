@@ -9,11 +9,11 @@ After `unify-ticket-sales` and `first-come-ticket-sales`, one sale (受付) is m
 - **A lottery has a result time.** It is the lottery result time when the sale has one. For an Organizer's Lottery sale it is the end time, because the draw runs within 1 minute after the end time.
 - **The Organizer's sales get reminders too (new behavior).** Fans get the open, closing-in-24-hours and result-day reminders for the Organizer's sales as well as for discovered sales, while the Series is Published. For a discovered sale the audience stays every fan tracking an event of the Series. For an Organizer's sale it is the fans tracking an event the sale offers, because such a sale can cover only some events of the tour. Only discovered sales are announced when they appear, as today.
 - **BREAKING** `SalesPhase` is removed. Its operations move onto `TicketSale`: `UpsertDiscovered`, `ListBySeries`, `ListWithPendingMilestones` and `SearchPublishedSales`. `SalesMethod` is merged into `TicketSaleMethod` (Lottery, FirstCome).
-- **BREAKING** `SalesPhaseReminder` → `TicketSaleReminder` and `SalesPhaseSearchLog` → `TicketSaleSearchLog`, with the same rules.
+- **BREAKING** `SalesPhaseReminder` → `TicketSaleReminder` and `SalesPhaseSearchLog` → `TicketSaleSearch`, with the same rules.
 - **BREAKING** The usecases are renamed. `SalesPhaseDiscoveryUseCase.DiscoverForArtist` → `TicketSaleDiscoveryUseCase.DiscoverForArtist`. `SalesPhaseAnnouncementUseCase.AnnounceDiscoveredPhase` → `TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale`. `SalesReminderUseCase.ScanDueReminders` → `TicketSaleReminderUseCase.ScanDueReminders`. `SalesReminderDeliveryUseCase.DeliverReminder` → `TicketSaleReminderDeliveryUseCase.DeliverReminder`.
 - The notification type `sales_phase_announcement` becomes `ticket_sale_announcement`.
 - The lottery draw skips discovered sales. A discovered Lottery sale closes like any lottery, but the platform has nothing to draw.
-- Production data moves: every stored sales phase becomes a discovered sale with the same id, and the stored reminder records and search logs come with it.
+- Production data moves: every stored sales phase becomes a discovered sale with the same id, and the stored reminder records and searches come with it.
 
 Fans see the same notifications for discovered sales as before. No fan screen shows a discovered sale today, and none starts to.
 
@@ -23,8 +23,8 @@ Fans see the same notifications for discovered sales as before. No fan screen sh
 
 - `components/entity/ticket-sale-reminder`: the record that one reminder stage of one TicketSale was sent to one User; the stages and their anchors
 - `components/entity/ticket-sale-reminder/already-sent`, `list-sent-stages`, `record-sent`: the operations of `SalesPhaseReminder`, keyed by TicketSale
-- `components/entity/ticket-sale-search-log`: when a Series was last searched for published ticket sales
-- `components/entity/ticket-sale-search-log/list-by-series`, `record`: the operations of `SalesPhaseSearchLog`
+- `components/entity/ticket-sale-search`: when a Series was last searched for published ticket sales
+- `components/entity/ticket-sale-search/list-by-series`, `record`: the operations of `SalesPhaseSearchLog`
 - `components/entity/ticket-sale/upsert-discovered`: stores a discovered sale, converging on series, method and start date in Japan time
 - `components/entity/ticket-sale/list-by-series`: every sale of one Series
 - `components/entity/ticket-sale/list-with-pending-milestones`: the sales, discovered or the Organizer's, that may have a reminder to act on
@@ -63,7 +63,7 @@ These are written as REMOVED deltas:
 
 - **specification**: `entity/v1/sales_phase.proto` is deleted (`SalesPhase`, `SalesPhaseId`, `SalesMethod`). No RPC and no client uses it. This is a breaking change on BSR, released with the `buf skip breaking` label. `TicketSale` in `ticket_sale.proto` is unchanged, because no RPC returns a discovered sale. Its doc comment says so.
 - **backend**:
-  - One Atlas migration: `ticket_sales` gains `lottery_result_at` and `discovered_at`, and `name` and `end_at` become nullable for discovered rows. Every `sales_phases` row is copied with its id. `sales_phase_reminders` → `ticket_sale_reminders`, `sales_phase_search_logs` → `ticket_sale_search_logs`. `sales_phases` is dropped. Stored notification types are rewritten.
+  - One Atlas migration: `ticket_sales` gains `lottery_result_at` and `discovered_at`, and `name` and `end_at` become nullable for discovered rows. Every `sales_phases` row is copied with its id. `sales_phase_reminders` → `ticket_sale_reminders`, `sales_phase_search_logs` → `ticket_sale_searches`. `sales_phases` is dropped. Stored notification types are rewritten.
   - The discovery, announcement, reminder-scan and delivery code moves onto `TicketSale`. The Gemini searcher returns discovered sales. The draw query excludes discovered sales.
 - **frontend**: none. No screen shows a discovered sale, and the generated clients drop an unused type.
 - **cloud-provisioning**: none required. The NATS stream `SALES_PHASE`, its subjects, the CronJob `sales-phase-discovery` and the log-based metric keep their names (design.md "Non-Goals").

@@ -41,7 +41,7 @@ The organizer console is where an Organizer's operators create concerts, put eve
 - `components/infrastructure/organizer/web/route/concerts`: the list of concerts with responsive cards and table; the per-row lottery entry point moves to the event page
 - `components/infrastructure/organizer/web/route/concert-editor`: venue search with a required pick, Japan time entry, save feedback, the unsaved-changes guard, and the cover preview kept until the processed image replaces it
 - `components/usecase/series/create`: "Each event's venue is found or created" is replaced by "Each event's venue is a picked place": every event gives a picked place id; a new Venue is created from the catalog's place with coordinates and admin area, never from a typed name (`restructure-event-publishing` modifies another requirement of this spec, "Draft stored as DRAFT")
-- `components/infrastructure/organizer/web/route/lottery-phase-editor`: opened from the event's Sales tab and returns there; window entered in Japan time
+- `components/infrastructure/organizer/web/route/lottery-sale-editor` (moved from `lottery-phase-editor`): opened from the event's Sales tab and returns there; window entered in Japan time
 - `components/infrastructure/organizer/web/route/reception-links`: removed; its requirements move to the event page's Reception tab. The spec is added by `ticket-wallet-and-checkin` and is in the main specs once that change archives (task 0.4)
 - `components/adapter/organizer/api/rpc/series`: the venue search call passes the same sign-in checks as the other authoring calls
 - `components/infrastructure/fan/web/global/design-tokens`: state layers at the M3 values, M3 easing values, and the system tokens shared with the console

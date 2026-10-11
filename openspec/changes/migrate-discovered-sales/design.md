@@ -120,13 +120,13 @@ In Go, `TicketSale.Validate` takes the kind (derived from `discovered_at` / the 
 | `SalesPhaseRepository.Upsert / GetBySeries / ListPhasesWithPendingMilestones` | `TicketSaleRepository.UpsertDiscovered / ListBySeries / ListWithPendingMilestones` |
 | `SalesPhaseSearcher.Search…` | `TicketSaleSearcher.SearchPublishedSales` |
 | `SalesPhaseReminder(Repository)` | `TicketSaleReminder(Repository)` |
-| `SalesPhaseSearchLog(Repository)` | `TicketSaleSearchLog(Repository)` |
+| `SalesPhaseSearchLog(Repository)` | `TicketSaleSearch(Repository)` |
 | `SalesPhaseDiscoveryUseCase` | `TicketSaleDiscoveryUseCase` |
 | `SalesPhaseAnnouncementUseCase.AnnounceDiscoveredPhase` | `TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale` |
 | `SalesReminderUseCase` | `TicketSaleReminderUseCase` |
 | `SalesReminderDeliveryUseCase` | `TicketSaleReminderDeliveryUseCase` |
 | notification type `sales_phase_announcement` | `ticket_sale_announcement` |
-| tables `sales_phase_reminders`, `sales_phase_search_logs` | `ticket_sale_reminders`, `ticket_sale_search_logs` |
+| tables `sales_phase_reminders`, `sales_phase_search_logs` | `ticket_sale_reminders`, `ticket_sale_searches` |
 
 - `GetBySeries` → `ListBySeries`: it returns a list, as the other list operations do.
 - The searcher operation is named for what it reads, the sales published on the official pages. `Search` alone would read as a store query on `TicketSale`.
@@ -141,7 +141,7 @@ In Go, `TicketSale.Validate` takes the kind (derived from `discovered_at` / the 
 
 ### D8 — Specs are replaced, not moved
 
-The subject changes (phase → sale, and reminders now cover the Organizer's sales), so the old capabilities are REMOVED and the new ones ADDED at `entity/ticket-sale/*`, `entity/ticket-sale-reminder/*`, `entity/ticket-sale-search-log/*`, `usecase/ticket-sale/*` and `usecase/ticket-sale-reminder/*`, following unify D12. Each REMOVED requirement names where its behavior continues. Two old scenarios are corrected on the way:
+The subject changes (phase → sale, and reminders now cover the Organizer's sales), so the old capabilities are REMOVED and the new ones ADDED at `entity/ticket-sale/*`, `entity/ticket-sale-reminder/*`, `entity/ticket-sale-search/*`, `usecase/ticket-sale/*` and `usecase/ticket-sale-reminder/*`, following unify D12. Each REMOVED requirement names where its behavior continues. Two old scenarios are corrected on the way:
 - `sales-phase-reminder/already-sent` "Recorded" used the undefined stage `APPLY_CLOSE_1H`. The new spec uses `APPLY_CLOSE_24H`.
 - `discover-for-artist` had two scenarios named "Search fails". The second is now "Search fails with a spend cap".
 
@@ -167,7 +167,7 @@ The subject changes (phase → sale, and reminders now cover the Organizer's sal
    1. Alter `ticket_sales` as in D2.
    2. `INSERT INTO ticket_sales (id, series_id, name, method, start_at, end_at, lottery_result_at, discovered_at, verification_requirement, drawn_at) SELECT id, series_id, NULL, CASE method WHEN 1 THEN <Lottery> WHEN 2 THEN <FirstCome> END, apply_start_at, apply_end_at, lottery_result_at, discovered_at, <None>, NULL FROM sales_phases`.
    3. `ALTER TABLE sales_phase_reminders RENAME TO ticket_sale_reminders`, rename `sales_phase_id` → `ticket_sale_id`, and repoint its foreign key to `ticket_sales(id) ON DELETE CASCADE`. The ids match, so no row changes.
-   4. `ALTER TABLE sales_phase_search_logs RENAME TO ticket_sale_search_logs`.
+   4. `ALTER TABLE sales_phase_search_logs RENAME TO ticket_sale_searches`.
    5. `UPDATE notifications SET type = 'ticket_sale_announcement' WHERE type = 'sales_phase_announcement'`.
    6. `DROP TABLE sales_phases`.
 3. Deploy the backend: discovery job, reminder job and consumers together. No frontend PR.
