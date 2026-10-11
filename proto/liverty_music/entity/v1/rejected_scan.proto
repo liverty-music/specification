@@ -35,15 +35,16 @@ enum RejectedScanReason {
   // Applies to the whole scan.
   REJECTED_SCAN_REASON_OTHER_EVENT = 3;
 
-  // Unused. A code presenting a ticket the user does not hold for the event is
-  // refused as a whole with FORGED. Kept so the value is never reused.
-  REJECTED_SCAN_REASON_NOT_HOLDER = 4;
-
   // The presented ticket was voided (refunded or resold).
   REJECTED_SCAN_REASON_VOIDED = 5;
 
   // The presented ticket was already let in earlier.
   REJECTED_SCAN_REASON_ALREADY_ADMITTED = 6;
+
+  // Value 4 was never used: a code presenting a ticket the user does not have
+  // for the event is refused as a whole with FORGED.
+  reserved 4;
+  reserved "REJECTED_SCAN_REASON_NOT_HOLDER";
 }
 
 // RejectedScan is the permanent note that a scan at the venue, or one ticket in

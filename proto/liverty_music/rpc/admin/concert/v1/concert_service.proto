@@ -2,9 +2,9 @@ syntax = "proto3";
 
 // Package liverty_music.rpc.admin.concert.v1 provides the admin-only
 // ConcertService for internal tooling exposed through the developer admin
-// console: managing the published concert catalog. Reviewing AI-discovered
-// concerts before they are published lives in
-// liverty_music.rpc.admin.staged_concert.v1.StagedConcertService. It is
+// console: managing the published concert catalog. Reviewing ConcertCandidates
+// before they are published lives in
+// liverty_music.rpc.admin.concert_candidate.v1.ConcertCandidateService. It is
 // authorized solely for the admin organization and never reachable by the
 // consumer product.
 package liverty_music.rpc.admin.concert.v1;
@@ -23,7 +23,7 @@ import "liverty_music/entity/v1/series.proto";
 //
 // A published concert can be listed and, if it was approved in error, deleted.
 // The review of discovered concerts before publication is on
-// liverty_music.rpc.admin.staged_concert.v1.StagedConcertService.
+// liverty_music.rpc.admin.concert_candidate.v1.ConcertCandidateService.
 //
 // All RPCs require a signed-in caller holding the admin role: a caller who is
 // not signed in is rejected with UNAUTHENTICATED, and one outside the admin

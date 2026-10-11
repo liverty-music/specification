@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "liverty_music/entity/v1/organizer.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// PayoutOnboardingStatus is how ready a PayoutAccount is to receive payouts, as
+// far as the Organizer is through the payment provider's 本人確認 (identity
+// check) for it. It is the platform's own status, never a raw provider status
+// string, so switching provider is an adapter change, not a proto break. An
+// Organizer that is not payout-ready never blocks ticket sale or issuance —
+// only the payout waits. New values may be appended; existing values must not
+// be renumbered.
+enum PayoutOnboardingStatus {
+  // Default value, rejected at the boundary: a persisted account always records a
+  // concrete status.
+  PAYOUT_ONBOARDING_STATUS_UNSPECIFIED = 0;
+
+  // Pending — the account exists but the Organizer has not yet completed the
+  // payment provider's identity check. Payouts are withheld (not failed) until
+  // it becomes active.
+  PAYOUT_ONBOARDING_STATUS_PENDING = 1;
+
+  // Active — the account can receive payouts; the Organizer is payout-eligible
+  // and the scheduled post-event payout may settle to it.
+  PAYOUT_ONBOARDING_STATUS_ACTIVE = 2;
+
+  // Restricted — the account is disabled or rejected and requires remediation
+  // before payouts can resume. Payouts stay withheld.
+  PAYOUT_ONBOARDING_STATUS_RESTRICTED = 3;
+}
+
+// PayoutAccount is an Organizer's account at the payment provider (not its bank
+// account) for receiving payouts, together with its payout onboarding status.
+// It only receives the Organizer's share after an event; it never accepts card
+// payments: the platform holds fans' funds and pays this account out. It holds
+// only the payment provider's ID for the account, never bank or identity data.
+// One account per Organizer.
+message PayoutAccount {
+  // ProviderAccountId is the payment provider's ID for a PayoutAccount. Opaque;
+  // meaningful only to the provider.
+  message ProviderAccountId {
+    // The provider's account id, 1 to 255 characters.
+    string value = 1 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 255
+    }];
+  }
+
+  // The Organizer that owns this account.
+  OrganizerId organizer_id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The account's payout onboarding status. Payout eligibility is exactly
+  // `status == ACTIVE`. Server-owned.
+  PayoutOnboardingStatus status = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // The payment provider's ID for the account.
+  ProviderAccountId provider_account_id = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // Field 2 was the provider's account id as a bare string, replaced by
+  // provider_account_id.
+  reserved 2;
+  reserved "account_ref";
+}

@@ -6,6 +6,7 @@ syntax = "proto3";
 package liverty_music.rpc.checkout.v1;
 
 import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/card_authorization.proto";
 import "liverty_music/entity/v1/checkout.proto";
 import "liverty_music/entity/v1/order.proto";
 import "liverty_music/entity/v1/ticket_type.proto";
@@ -14,9 +15,10 @@ import "liverty_music/entity/v1/user.proto";
 // CheckoutService runs one fan's checkout on a first-come TicketType:
 //
 //   1. Start holds the chosen count for exactly 15 minutes (never extended).
-//   2. Authorize records the 本人確認 name and phone number on the fan's
-//      account and opens a card hold for the amount, which the browser
-//      authenticates (3D Secure) with the returned client secret.
+//   2. AuthorizeCard records the 本人確認 name and phone number on the fan's
+//      account and opens a card authorization for the amount, which the
+//      browser authenticates (3D Secure) with the returned card authorization
+//      secret.
 //   3. Confirm places the order while the hold lasts: the tickets are
 //      committed, the card is charged once and the Order and its Tickets are
 //      issued.
@@ -33,11 +35,11 @@ service CheckoutService {
   // same count while the hold lasts returns the same Checkout, so a double
   // tap, a retry or a reload never holds twice. Starting with another count
   // replaces the hold only when the new one can be made; the replaced
-  // checkout's card hold is given back. The count must be at most the
+  // checkout's card authorization is released. The count must be at most the
   // TicketType's per-account limit and, together with the caller's Issued
   // tickets for the event and the tickets of their committed checkouts not yet
   // issued, must still fit it. When the sale requires verification, the caller
-  // must hold an Active Kyc.
+  // must hold an Active IdentityVerification.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
@@ -49,8 +51,9 @@ service CheckoutService {
   // - FAILED_PRECONDITION: The TicketType's sale is not a FIRST_COME sale, its
   //   event's concert is not published (for example cancelled), the TicketType
   //   is not on sale (not yet open, sold out or ended), the sale requires
-  //   verification and the caller holds no Active Kyc, or the caller's tickets
-  //   for the event plus the count exceed the per-account limit.
+  //   verification and the caller holds no Active IdentityVerification, or the
+  //   caller's tickets for the event plus the count exceed the per-account
+  //   limit.
   // - RESOURCE_EXHAUSTED: Not enough tickets remain, including when every
   //   remaining ticket is held by other fans. The caller keeps any hold they
   //   already had.
@@ -70,15 +73,15 @@ service CheckoutService {
   //   Non-revealing.
   rpc Get(GetRequest) returns (GetResponse);
 
-  // Authorize records the 本人確認 full name and phone number on the caller's
-  // account, for the next checkout's prefill and the ticket face, and opens a
-  // manual-capture card hold for the holding Checkout's amount. It returns the
-  // hold's client secret, which the browser confirms with the payment provider
-  // (3D Secure); the secret is never stored. Every card brand is accepted,
-  // including American Express and card wallets (Apple Pay, Google Pay).
-  // Authorizing the same Checkout again, for example after a declined card,
-  // returns the same hold for another attempt. The Checkout carries no name or
-  // phone number.
+  // AuthorizeCard records the 本人確認 full name and phone number on the
+  // caller's account, for the next checkout's prefill and the ticket face, and
+  // opens a CardAuthorization for the holding Checkout's amount. It returns the
+  // card authorization secret, which the browser confirms with the payment
+  // provider (3D Secure); the secret is never stored. Every card brand is
+  // accepted, including American Express and card wallets (Apple Pay, Google
+  // Pay). Authorizing the same Checkout again, for example after a declined
+  // card, returns the same card authorization for another attempt. The Checkout
+  // carries no name or phone number.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
@@ -90,31 +93,32 @@ service CheckoutService {
   //   Non-revealing.
   // - FAILED_PRECONDITION: The hold has lapsed; the fan starts again.
   // - UNAVAILABLE: Card payments are temporarily unavailable.
-  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
+  rpc AuthorizeCard(AuthorizeCardRequest) returns (AuthorizeCardResponse);
 
   // Confirm places the order for the caller's Checkout: while the hold lasts,
-  // the tickets are committed, the card is charged once, and the Order and
-  // its account-bound covered tickets are issued, bound to the caller's Kyc
-  // when the sale requires verification. Calls for the same Checkout are
-  // handled one after another, and a Checkout that already has an Order
-  // returns it, so a double tap or a retry never charges twice. A lapsed hold,
-  // a cancelled concert or a card not yet authenticated fails before anything
-  // is charged. A charged Checkout is never charged again; if issuing its
-  // Order fails, it is finished in the background and the Order is found
-  // later through Get.
+  // the tickets are committed, the card is charged once, and the Order and its
+  // account-bound covered tickets are issued, bound to the caller's
+  // IdentityVerification when the sale requires verification. Calls for the
+  // same Checkout are handled one after another, and a Checkout that already
+  // has an Order returns it, so a double tap or a retry never charges twice. A
+  // lapsed hold, a cancelled concert or a card not yet authenticated fails
+  // before anything is charged. A charged Checkout is never charged again; if
+  // issuing its Order fails, it is finished in the background and the Order is
+  // found later through Get.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  // - NOT_FOUND: The caller has no stored account, the Checkout's hold is not
-  //   known to the payment provider, or the sale requires verification and the
-  //   caller has no Kyc. Nothing was charged.
-  // - INVALID_ARGUMENT: The checkout_id is missing or malformed, or the hold's
-  //   amount or currency does not match the Checkout.
+  // - NOT_FOUND: The caller has no stored account, the Checkout's card
+  //   authorization is not known to the payment provider, or the sale requires
+  //   verification and the caller has no IdentityVerification. Nothing was
+  //   charged.
+  // - INVALID_ARGUMENT: The checkout_id is missing or malformed, or the card
+  //   authorization's amount or currency does not match the Checkout.
   // - PERMISSION_DENIED: The Checkout does not exist or is another fan's.
   //   Non-revealing.
   // - FAILED_PRECONDITION: The hold has lapsed or the Checkout was released,
   //   the concert is not published (for example cancelled), the Checkout has
-  //   no card hold, the card was not authenticated, or the card could no
+  //   no card authorization, the card was not authenticated, or the card could no
   //   longer be charged (the tickets were given back). Nothing was charged.
   // - UNAVAILABLE: Card payments or issuance were temporarily unavailable. A
   //   committed Checkout is finished in the background; Get reports it once
@@ -157,8 +161,8 @@ message GetResponse {
   entity.v1.Checkout checkout = 1 [(buf.validate.field).required = true];
 }
 
-// AuthorizeRequest carries the Checkout and the 本人確認 details.
-message AuthorizeRequest {
+// AuthorizeCardRequest carries the Checkout and the 本人確認 details.
+message AuthorizeCardRequest {
   // Required. The caller's holding Checkout.
   entity.v1.CheckoutId checkout_id = 1 [(buf.validate.field).required = true];
 
@@ -171,12 +175,18 @@ message AuthorizeRequest {
   entity.v1.PhoneNumber phone_number = 3 [(buf.validate.field).required = true];
 }
 
-// AuthorizeResponse returns the card hold for the browser to authenticate.
-message AuthorizeResponse {
-  // The payment provider's client secret for the card hold, which the browser
-  // confirms with the provider's payment form (3D Secure). Opaque and
-  // short-lived; never stored by the client or the server.
-  string client_secret = 1 [(buf.validate.field).string.min_len = 1];
+// AuthorizeCardResponse returns the card authorization for the browser to
+// authenticate.
+message AuthorizeCardResponse {
+  // The card authorization secret, which the browser confirms with the payment
+  // provider's payment form (3D Secure). Short-lived; never stored by the
+  // client or the server.
+  entity.v1.CardAuthorizationSecret card_authorization_secret = 2 [(buf.validate.field).required = true];
+
+  // Field 1 was the secret as a bare string under the provider's own name,
+  // replaced by card_authorization_secret.
+  reserved 1;
+  reserved "client_secret";
 }
 
 // ConfirmRequest names the Checkout whose order to place.

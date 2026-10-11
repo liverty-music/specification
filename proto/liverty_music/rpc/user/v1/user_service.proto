@@ -9,10 +9,11 @@ import "liverty_music/entity/v1/user.proto";
 //
 // Every per-user call acts on the signed-in caller's own User: no request
 // names a User, and the backend resolves the caller from the sign-in identity.
-// A returned User carries its id, email, external id, name, preferred language
-// when set, home (country code, level 1 and, when set, level 2, without a
-// centroid), and its full name and phone number when set; it never carries a
-// verification level.
+// A returned User carries its id, email, provider user ID, name, preferred
+// language when set, home (country code, level 1 and, when set, level 2,
+// without a centroid), and its full name and phone number when set. Whether the
+// User is verified is read from
+// liverty_music.rpc.identity_verification.v1.IdentityVerificationService.Get.
 service UserService {
   // Get retrieves the profile of the authenticated user, so the same profile
   // is restored on every device.
@@ -23,14 +24,14 @@ service UserService {
   rpc Get(GetRequest) returns (GetResponse);
 
   // Create registers a new user profile in the system, or returns the
-  // existing profile when the caller's external_id (Zitadel sub) is already
-  // provisioned.
+  // existing profile when the caller's provider user ID (the identity
+  // provider's ID for the User, the token's subject) is already provisioned.
   //
   // Like every per-user call, the request carries no user id: the backend
-  // identifies the caller via the external_id extracted from the JWT.
+  // identifies the caller via the provider user ID extracted from the JWT.
   //
-  // Create is idempotent on duplicate external_id: a second call for the
-  // same external_id returns the existing user as a successful response
+  // Create is idempotent on a duplicate provider user ID: a second call for
+  // the same provider user ID returns the existing user as a successful response
   // (CreateResponse.user populated) rather than ALREADY_EXISTS. The
   // pre-existing email and name fields on the stored row are NOT overwritten
   // — the duplicate call is a read, not an upsert. This gives the frontend a
@@ -101,7 +102,7 @@ service UserService {
   rpc SetHome(SetHomeRequest) returns (SetHomeResponse);
 
   // ResendEmailVerification triggers a new email verification message for the
-  // authenticated user via the identity provider (Zitadel). Whether
+  // authenticated user via the identity provider. Whether
   // verification is available, resolving the caller, and the limit of 3
   // resends per 10 minutes per User are decided by the backend usecase.
   //
@@ -128,10 +129,10 @@ message GetResponse {
 }
 
 // CreateRequest provides the necessary details to register a new user profile.
-// The external_id (Zitadel sub claim) and name are extracted from the authenticated JWT context
-// by the backend and MUST NOT be provided by the client.
-// See the Create RPC documentation for the idempotent-return semantics on
-// duplicate external_id.
+// The provider user ID (the token's subject) and name are extracted from the
+// authenticated JWT context by the backend and MUST NOT be provided by the
+// client. See the Create RPC documentation for the idempotent-return semantics
+// on a duplicate provider user ID.
 message CreateRequest {
   // Required. The user's email address for account identity.
   entity.v1.UserEmail email = 1 [(buf.validate.field).required = true];
@@ -140,8 +141,8 @@ message CreateRequest {
   // the onboarding flow before account creation. Providing this field here
   // persists the home area atomically with the initial user record. When
   // absent, the home area remains unset and can be configured later via
-  // SetHome. Ignored on the idempotent-return path (duplicate
-  // external_id) — the existing row's home is not overwritten.
+  // SetHome. Ignored on the idempotent-return path (duplicate provider user
+  // ID) — the existing row's home is not overwritten.
   entity.v1.Home home = 2;
 
   // Optional on the wire to keep this RPC backward-compatible during a
@@ -158,7 +159,7 @@ message CreateRequest {
   // This keeps the old-client transition window safe without requiring
   // perfectly synchronized deploys.
   //
-  // Ignored on the idempotent-return path (duplicate external_id) — the
+  // Ignored on the idempotent-return path (duplicate provider user ID) — the
   // existing row's preferred_language is not overwritten, mirroring the
   // rule for home.
   optional string preferred_language = 3 [(buf.validate.field).string = {

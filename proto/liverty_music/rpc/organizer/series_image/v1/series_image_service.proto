@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.series_image.v1 provides the
+// organizer-facing SeriesImageService, which an operator uses from the
+// organizer console to upload an image for one of their Organizer's Series.
+package liverty_music.rpc.organizer.series_image.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/series_image.proto";
+
+// SeriesImageService authorizes the upload of a SeriesImage for the caller's
+// own Organizer. The caller's Organizer is resolved from the token, with the
+// same organizer-console sign-in checks as the organizer OrganizerService;
+// failures that would concern another org never reveal whether such an
+// Organizer exists. The uploaded image becomes a Series' cover through
+// liverty_music.rpc.organizer.series.v1.SeriesService.SetCoverImage.
+service SeriesImageService {
+  // CreateUploadUrl authorizes a direct-to-storage upload: it mints a new
+  // SeriesImageId and returns a short-lived signed URL the client PUTs the
+  // original image bytes to, without the bytes ever passing through this
+  // service. The authorization is scoped to the caller's Organizer and to a
+  // fixed content type and maximum byte size; it does not reference a series
+  // yet, so ownership of the target series is enforced later by
+  // SeriesService.SetCoverImage. The client MUST send the same Content-Type it
+  // declared here and a body within max_bytes; the storage upload itself
+  // rejects a mismatching or over-size object.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The content type is not an accepted image type.
+  // - PERMISSION_DENIED: The caller lacks the organizer-console role, or no
+  //   Organizer is linked to the caller's tenant or it is provisioning.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc CreateUploadUrl(CreateUploadUrlRequest) returns (CreateUploadUrlResponse);
+}
+
+// CreateUploadUrlRequest declares the content type of the image the client
+// intends to upload directly to storage.
+message CreateUploadUrlRequest {
+  // Required. The IANA media type of the image the client will upload. Only
+  // common web image types are accepted; the signed URL is bound to this type.
+  string content_type = 1 [(buf.validate.field).string = {
+    in: [
+      "image/jpeg",
+      "image/png",
+      "image/webp"
+    ]
+  }];
+}
+
+// CreateUploadUrlResponse returns everything the client needs to upload the
+// original bytes directly to storage and later set them as a Series' cover.
+message CreateUploadUrlResponse {
+  // The short-lived signed URL the client PUTs the original image bytes to.
+  entity.v1.Url upload_url = 1 [(buf.validate.field).required = true];
+
+  // The identifier minted for this upload, passed to SeriesService.SetCoverImage
+  // as series_image_id once the client has uploaded the bytes.
+  entity.v1.SeriesImageId series_image_id = 2 [(buf.validate.field).required = true];
+
+  // The maximum size, in bytes, the uploaded object may be. The client MUST
+  // keep its body within this bound (the signed URL enforces the same limit);
+  // it is the single source of truth for the size cap.
+  int64 max_bytes = 3 [(buf.validate.field).int64.gt = 0];
+}

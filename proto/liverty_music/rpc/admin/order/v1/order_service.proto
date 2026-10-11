@@ -16,9 +16,9 @@ import "liverty_music/entity/v1/settlement.proto";
 // and a signed-in caller without the admin role fails with PERMISSION_DENIED,
 // before anything is read.
 //
-// The Organizer PAYOUT is deliberately NOT an RPC here: fans' payments are held on
-// the platform balance (separate charges & transfers) and the Organizer's net
-// share is transferred by an INTERNAL SCHEDULED platform job only after the
+// The Organizer PAYOUT is deliberately NOT an RPC here: fans' payments stay with
+// the platform and the Organizer's net share is paid out to its PayoutAccount
+// by an INTERNAL SCHEDULED platform job only after the
 // event's occurrence AND a dispute-safety window (gated on the event's current
 // start time) — it is never a manual admin/organizer action, mirroring the
 // lottery draw-job precedent.
@@ -35,8 +35,8 @@ service OrderService {
   rpc Get(GetRequest) returns (GetResponse);
 
   // Refund refunds the Order's user the face value + system/発券
-  // fee (retaining the payment-processor fee, the JP norm) via a provider Refund,
-  // and claws back the Organizer's share via transfer_reversal. It covers event
+  // fee (retaining the payment-processor fee, the JP norm) with a payment
+  // provider refund, and claws back the Organizer's payout. It covers event
   // cancellation (中止) and dispute/chargeback handling (see RefundReason). A
   // postponed show is handled as a cancellation followed by a new event. It is
   // idempotent: a replay records the refund once (no double-refund). On a
@@ -71,7 +71,7 @@ enum RefundReason {
   REFUND_REASON_CANCELLATION = 1;
 
   // A chargeback / dispute: the captured payment is reversed and the Organizer's
-  // share clawed back via transfer_reversal.
+  // payout clawed back.
   REFUND_REASON_DISPUTE = 3;
 }
 

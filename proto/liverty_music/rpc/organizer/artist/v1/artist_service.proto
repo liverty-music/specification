@@ -9,12 +9,12 @@ package liverty_music.rpc.organizer.artist.v1;
 import "liverty_music/entity/v1/artist.proto";
 
 // ArtistService is the organizer-facing surface over Artists. The caller's
-// Organizer is resolved from the token (the Zitadel org the token is scoped
-// to), so requests never carry an organizer_id and an operator cannot ask for
-// another Organizer's roster. Every call passes the same organizer-console
-// sign-in checks as liverty_music.rpc.organizer.v1.OrganizerService, and
-// failures that would concern another org never reveal whether such an
-// Organizer exists.
+// Organizer is resolved from the token (the identity provider organization the
+// token is scoped to), so requests never carry an organizer_id and an operator
+// cannot ask for another Organizer's roster. Every call passes the same
+// organizer-console sign-in checks as
+// liverty_music.rpc.organizer.v1.OrganizerService, and failures that would
+// concern another org never reveal whether such an Organizer exists.
 service ArtistService {
   // List returns every Artist the caller's own Organizer represents, ascending
   // by artist id (stable), so the organizer console can render the roster.
@@ -26,8 +26,8 @@ service ArtistService {
   // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
   // - PERMISSION_DENIED: The token carries no organizer-console role, its
   //   audience lacks the organizer-console project id, its login-scope org and
-  //   role-claim org disagree, no Organizer is linked to the caller's Zitadel
-  //   org, or the Organizer is still provisioning. Non-revealing.
+  //   role-claim org disagree, no Organizer is linked to the caller's identity
+  //   provider organization, or the Organizer is still provisioning. Non-revealing.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc List(ListRequest) returns (ListResponse);
 }

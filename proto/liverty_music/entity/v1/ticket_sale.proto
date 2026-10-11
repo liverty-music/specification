@@ -32,37 +32,40 @@ enum TicketSaleMethod {
   // holds them for 15 minutes and buys them by completing the Checkout.
   TICKET_SALE_METHOD_FIRST_COME = 1;
 
-  // Lottery (抽選): fans enter a LotteryEntry with a hold on their card during
+  // Lottery (抽選): fans enter a LotteryEntry with a card authorization during
   // the window, and after the window closes one draw per TicketType allocates
-  // its quantity. Winners are charged; the other holds are given back.
+  // its quantity. Winners are charged; the other card authorizations are
+  // released.
   TICKET_SALE_METHOD_LOTTERY = 2;
 }
 
-// VerificationRequirement is whether fans must hold an Active Kyc to take part
-// in a TicketSale, and if so whether the driver's-licence method is admitted.
-// The zero value means no requirement and is the valid default. New values may
-// be appended; existing values must not be renumbered.
+// VerificationRequirement is whether fans must hold an Active
+// IdentityVerification to take part in a TicketSale, and if so whether the
+// driver's-licence method is admitted. The zero value means no requirement and
+// is the valid default. New values may be appended; existing values must not be
+// renumbered.
 enum VerificationRequirement {
   // No verification is required (None, the default). Anyone may take part; only
   // per-account limits apply.
   VERIFICATION_REQUIREMENT_UNSPECIFIED = 0;
 
-  // Verified-any: an Active Kyc by any method is required, including the
-  // driver's licence (weaker dedupe).
+  // Verified-any: an Active IdentityVerification by any method is required,
+  // including the driver's licence (weaker dedupe).
   VERIFICATION_REQUIREMENT_VERIFIED_ANY = 1;
 
-  // JPKI-only: an Active Kyc by マイナンバーカード (My Number Card, JPKI) is
-  // required; the driver's licence is not admitted. For the highest-demand
-  // shows.
+  // JPKI-only: an Active IdentityVerification by マイナンバーカード (My Number
+  // Card, JPKI) is required; the driver's licence is not admitted. For the
+  // highest-demand shows.
   VERIFICATION_REQUIREMENT_JPKI_ONLY = 2;
 }
 
 // TicketSale is the platform's own sale opportunity for some or all events of
 // an Organizer's Series, such as a fan-club presale or a general sale (受付):
 // its name, how tickets are allocated, the window in which fans take part and
-// whether they must hold an Active Kyc. What it offers for each event is a
-// TicketType. Two sales of one event never overlap (checked server-side). It is
-// distinct from SalesPhase, which records sales announced elsewhere.
+// whether they must hold an Active IdentityVerification. What it offers for
+// each event is a TicketType. Two sales of one event never overlap (checked
+// server-side). It is distinct from SalesPhase, which records sales announced
+// elsewhere.
 message TicketSale {
   // The sale window must end after it starts.
   option (buf.validate.message).cel = {
@@ -85,9 +88,9 @@ message TicketSale {
 
   // Only a lottery sale is drawn.
   option (buf.validate.message).cel = {
-    id: "ticket_sale.drawn_time_lottery_only"
-    message: "only a lottery sale may have drawn_time"
-    expression: "!has(this.drawn_time) || this.method == 2"
+    id: "ticket_sale.draw_time_lottery_only"
+    message: "only a lottery sale may have draw_time"
+    expression: "!has(this.draw_time) || this.method == 2"
   };
 
   // A sale has at most one ticket type per event.
@@ -138,8 +141,8 @@ message TicketSale {
     (buf.validate.field).required = true
   ];
 
-  // Whether fans must hold an Active Kyc to take part. UNSPECIFIED (None) when
-  // not given.
+  // Whether fans must hold an Active IdentityVerification to take part.
+  // UNSPECIFIED (None) when not given.
   VerificationRequirement verification_requirement = 16 [
     (google.api.field_behavior) = OPTIONAL,
     (buf.validate.field).enum.defined_only = true
@@ -147,7 +150,7 @@ message TicketSale {
 
   // When the lottery draw ran. Absent until the draw runs; a lottery sale is
   // drawn once it is set. Lottery only. Server-owned.
-  google.protobuf.Timestamp drawn_time = 17 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp draw_time = 19 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // What the sale offers, one TicketType per event, at least one. A fan-facing
   // read of an event's sales carries only the ticket type for that event.
@@ -160,6 +163,7 @@ message TicketSale {
   // per-account limit, quantity, sold count, held count, state and low stock,
   // which moved to TicketType. Field 10 was a creation time that was never
   // exposed.
-  reserved 2, 6 to 13;
-  reserved "event_id", "price", "per_account_limit", "quantity", "sold_count", "create_time", "held_count", "state", "low_stock";
+  // Field 17 was the draw time under its former name, replaced by draw_time.
+  reserved 2, 6 to 13, 17;
+  reserved "event_id", "price", "per_account_limit", "quantity", "sold_count", "create_time", "held_count", "state", "low_stock", "drawn_time";
 }

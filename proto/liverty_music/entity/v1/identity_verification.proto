@@ -1,0 +1,165 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/user.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// IdentityVerificationId is a globally unique identifier for a single
+// IdentityVerification. It is the platform's own surrogate id (distinct from
+// the provider user ID, which the verification provider assigns); it never
+// encodes any personal data.
+message IdentityVerificationId {
+  // A UUID string mapping to the IdentityVerification's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// VerificationMethod records how a person proved their identity. It drives the
+// dedupe guarantee (see DedupeStrength) and whether a JPKI-only TicketSale admits the
+// verification. New values may be appended; existing values must not be
+// renumbered.
+enum VerificationMethod {
+  // Default value, rejected at the boundary: a persisted IdentityVerification
+  // always records a concrete method.
+  VERIFICATION_METHOD_UNSPECIFIED = 0;
+
+  // マイナンバーカード 公的個人認証 (JPKI) — the high-assurance method. The
+  // verification provider returns a stable per-person key (the provider user
+  // ID), so it carries the STRONG dedupe guarantee.
+  VERIFICATION_METHOD_JPKI = 1;
+
+  // 運転免許証 IC — the fallback for fans without a My Number Card. Proves
+  // identity but yields NO equivalent stable per-person key (only a document
+  // number that can change), so it carries the WEAK dedupe guarantee.
+  VERIFICATION_METHOD_DRIVER_LICENCE = 2;
+}
+
+// DedupeStrength states how strong the "one person = one account" guarantee is
+// for a given IdentityVerification. It follows from the method: JPKI yields a
+// stable per-person key (STRONG); the driver's-licence fallback does not (WEAK).
+// LotteryEntry and Checkout starts read it to decide whether an account may take
+// part in a JPKI-only TicketSale.
+// New values may be appended; existing values must not be renumbered.
+enum DedupeStrength {
+  // Default value, rejected at the boundary: a persisted IdentityVerification
+  // always records a concrete dedupe strength.
+  DEDUPE_STRENGTH_UNSPECIFIED = 0;
+
+  // Backed by a stable per-person key (the provider user ID) that survives card
+  // renewal/re-issue — the JPKI path. One person maps to one account reliably.
+  DEDUPE_STRENGTH_STRONG = 1;
+
+  // Backed only by a document-scoped identifier that can change (the driver's
+  // licence fallback). The one-person guarantee is weaker; such accounts are
+  // flagged and may be limited, and are excluded from JPKI-only TicketSales.
+  DEDUPE_STRENGTH_WEAK = 2;
+}
+
+// VerificationStatus is the freshness lifecycle of an IdentityVerification,
+// driven by the periodic 現況確認 (liveness) re-check. A revoked/changed result
+// flags the record for re-verification rather than hard-locking the account.
+// New values may be appended; existing values must not be renumbered.
+enum VerificationStatus {
+  // Default value, rejected at the boundary: a persisted IdentityVerification
+  // always records a concrete status.
+  VERIFICATION_STATUS_UNSPECIFIED = 0;
+
+  // The verification is current: the most recent 現況確認 found the certificate
+  // valid (not revoked, 基本4情報 unchanged, not expired).
+  VERIFICATION_STATUS_ACTIVE = 1;
+
+  // A 現況確認 reported the certificate revoked, or the 基本4情報 changed
+  // (move/name change), or it expired. The account is flagged to re-verify; it
+  // is not silently kept verified and not hard-locked.
+  VERIFICATION_STATUS_NEEDS_REVERIFICATION = 2;
+}
+
+// IdentityVerification binds one User's account to a real person who passed a
+// 本人確認 (identity check) at the verification provider. It retains ONLY the
+// result of a check — never the raw certificate/response, never the 個人番号,
+// never the certificate 発行番号/serial, and no 基本4情報. The person key is the
+// verification provider's ID for the User (`provider_user_id`), on which the
+// platform enforces "at most one account per person with an Active
+// IdentityVerification".
+message IdentityVerification {
+  // ProviderUserId is the verification provider's ID for the User: its stable,
+  // tenant-scoped key for the person, the SAME value across card renewal,
+  // re-issue, certificate generation and certificate type. It is the only
+  // person-identifying value the platform stores: never the certificate
+  // 発行番号/serial, never the 個人番号. Because it is tenant-scoped it does NOT
+  // enable cross-platform scalper detection (an accepted limitation). It is a
+  // bounded opaque string: the platform does not parse or interpret it.
+  message ProviderUserId {
+    // The opaque person key as returned by the verification provider, stored
+    // verbatim as the dedupe key.
+    string value = 1 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 255
+    }];
+  }
+
+  // The unique identifier for this IdentityVerification. Server-generated
+  // surrogate id; it never encodes personal data.
+  IdentityVerificationId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The User account this IdentityVerification is bound to. The
+  // one-person-one-account invariant is keyed on provider_user_id, not on this
+  // reference.
+  UserId user_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // How the person proved their identity (JPKI or the driver's-licence
+  // fallback). Determines dedupe_strength and JPKI-only admissibility.
+  VerificationMethod method = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }
+  ];
+
+  // The strength of the one-person guarantee this record carries, derived from
+  // `method` (STRONG for JPKI, WEAK for the licence fallback).
+  DedupeStrength dedupe_strength = 5 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }
+  ];
+
+  // When the check succeeded. Server-owned.
+  google.protobuf.Timestamp verify_time = 6 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The freshness lifecycle of the verification, maintained by the periodic
+  // 現況確認 re-check. Server-owned.
+  VerificationStatus status = 7 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // The verification provider's ID for the User: the dedupe key. The platform
+  // stores only this; never the serial or 個人番号.
+  ProviderUserId provider_user_id = 8 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // Field 4 was the provider's person key under its vendor-specific name and
+  // wrapper, replaced by provider_user_id.
+  reserved 4;
+  reserved "account_ref", "pocket_sign_user_id";
+}

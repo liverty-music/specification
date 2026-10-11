@@ -1,0 +1,197 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.identity_verification.v1 provides the fan-facing
+// 本人確認 (identity check) surface. A fan verifies that they are a real person
+// with their マイナンバーカード 公的個人認証 (JPKI) at the verification provider:
+// Start opens a verification session and returns a redirect URL; the fan reads
+// and signs their card in the verification provider's app (installed
+// separately) — the platform never reads the card itself — and is returned to
+// the platform's callback, which calls Create to finalize the session. The
+// result is the verification provider's stable ID for the person (the provider
+// user ID), with NO 基本4情報 requested (MVP). The raw certificate/response is
+// validated by the provider and never persisted here; only the result (an
+// IdentityVerification keyed on the provider user ID) is retained. The service
+// also exposes the periodic 現況確認 re-check and a read of the caller's
+// IdentityVerification for the client. (MVP is JPKI-only; the 運転免許証
+// fallback is post-MVP.)
+package liverty_music.rpc.identity_verification.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/identity_verification.proto";
+
+// IdentityVerificationService is the signed-in fan's surface for binding their
+// account to a verified real person and reading the result. It is a redirect
+// flow: Start opens a verification session and returns a redirect URL; the fan
+// signs in the verification provider's app and is returned to the platform's
+// callback; Create finalizes the session and, on success, records the fan's
+// IdentityVerification. A client treats an Active IdentityVerification as
+// verified, and NOT_FOUND from Get or a non-Active one as not verified. Every
+// call acts for the signed-in caller, resolved to their stored User; no request
+// names a fan.
+service IdentityVerificationService {
+  // Start opens a verification attempt (a session at the verification
+  // provider) and returns a **redirect URL** the client MUST open so the fan
+  // can read and sign their card in the provider's app. The chosen method
+  // selects the credential (MVP: JPKI → a stable provider user ID, no
+  // 基本4情報). The session is short-lived and is finalized by exactly one
+  // Create call. An anti-redirect nonce is bound to the caller's session
+  // server-side and validated at Create.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: method is UNSPECIFIED or not a defined enum value.
+  // - NOT_FOUND: The signed-in caller has no account.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - UNAVAILABLE: The verification provider is not reachable.
+  rpc Start(StartRequest) returns (StartResponse);
+
+  // Create finalizes the verification session identified by session_id
+  // (received on the provider's callback). On success the backend records the
+  // caller's IdentityVerification (keyed on the returned provider user ID) and
+  // retains only the result (the raw certificate/response is validated by the
+  // provider and never persisted here). On failure or abandonment no
+  // IdentityVerification is recorded. If the returned provider user ID already
+  // backs another account with an Active IdentityVerification, the call is
+  // rejected (one person maps to one verified account) with a recovery path.
+  // The server also validates the anti-redirect nonce bound at Start.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: session_id is missing or malformed.
+  // - NOT_FOUND: The signed-in caller has no account.
+  // - PERMISSION_DENIED: The session's anti-redirect nonce does not match the
+  //   caller's.
+  // - FAILED_PRECONDITION: The session is not yet completed, expired, or its
+  //   verification result was not OK (e.g. signature mismatch / revoked / expired).
+  // - ALREADY_EXISTS: The verified person already backs another account with an
+  //   Active IdentityVerification; use account recovery instead of creating a
+  //   second one.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - UNAVAILABLE: The verification provider is not reachable.
+  rpc Create(CreateRequest) returns (CreateResponse);
+
+  // Recheck runs a 現況確認 (liveness) check for the caller's
+  // IdentityVerification to detect certificate revocation, a 基本4情報 change
+  // (move/name change), or expiry. On a revoked/changed result it flags the
+  // IdentityVerification as NEEDS_REVERIFICATION (prompting re-verification)
+  // rather than hard-locking the account. This mirrors the periodic backend
+  // re-check but lets the client refresh on demand.
+  //
+  // Possible errors:
+  // - NOT_FOUND: The signed-in caller has no account.
+  // - FAILED_PRECONDITION: The account has no IdentityVerification to re-check.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - UNAVAILABLE: The verification provider is not reachable.
+  rpc Recheck(RecheckRequest) returns (RecheckResponse);
+
+  // Get returns the caller's IdentityVerification (method, dedupe strength,
+  // freshness status). The client uses it to render verification state: an
+  // Active IdentityVerification means verified.
+  //
+  // Possible errors:
+  // - NOT_FOUND: The signed-in caller has no account, or has never verified.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Get(GetRequest) returns (GetResponse);
+}
+
+// StartRequest opens a verification attempt for the signed-in caller.
+message StartRequest {
+  reserved 1;
+  reserved "user_id";
+
+  // Which credential the fan will present: JPKI (high assurance, strong dedupe)
+  // or the 運転免許証 IC fallback (weaker dedupe). UNSPECIFIED is rejected.
+  entity.v1.VerificationMethod method = 2 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+}
+
+// StartResponse carries the session handle and the URL the client opens.
+message StartResponse {
+  // An opaque handle for this verification attempt, correlating it with the
+  // eventual Create call. Short-lived; consumed by exactly one Create. (Backed
+  // by a session at the verification provider.)
+  string session_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+
+  // The URL the client MUST open so the fan can read and sign their card in the
+  // verification provider's app. On completion the app returns the fan to the
+  // platform's callback with this attempt's session id; the client then calls
+  // Create. The client does NOT read the card itself.
+  entity.v1.Url redirect_url = 2 [(buf.validate.field).required = true];
+}
+
+// CreateRequest finalizes the verification attempt opened by Start.
+message CreateRequest {
+  reserved 1;
+  reserved "user_id";
+
+  // The opaque handle returned by Start (the session id the platform received
+  // on the provider's callback). The backend finalizes this session with the
+  // verification provider to obtain the verified result; the raw
+  // certificate/response is validated by the provider and never persisted
+  // here. The card signature happens in the provider's app, so no signed
+  // payload is sent on this request.
+  string session_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+
+  // Field 3 was `bytes signed_response` (the signed payload of an earlier
+  // embedded challenge–response flow), removed when the flow moved to the
+  // redirect model (the provider's app signs; the backend finalizes by
+  // session_id). Reserved to prevent reuse.
+  reserved 3;
+  reserved "signed_response";
+}
+
+// CreateResponse returns the recorded IdentityVerification.
+message CreateResponse {
+  // The IdentityVerification recorded on success. Retains only the result
+  // (provider user ID, method, dedupe strength, status) — no raw certificate,
+  // no 個人番号.
+  entity.v1.IdentityVerification identity_verification = 3 [(buf.validate.field).required = true];
+
+  // Field 1 was the result under its former name, replaced by
+  // identity_verification. Field 2 was a verification level that was never
+  // populated; a client reads the status of the IdentityVerification instead.
+  reserved 1, 2;
+  reserved "kyc", "verification_level";
+}
+
+// RecheckRequest requests a 現況確認 (liveness) re-check for the caller's
+// IdentityVerification.
+message RecheckRequest {
+  reserved 1;
+  reserved "user_id";
+}
+
+// RecheckResponse returns the freshness outcome of the re-check.
+message RecheckResponse {
+  // The IdentityVerification's freshness status after the re-check (ACTIVE, or
+  // NEEDS_REVERIFICATION when revoked/changed/expired). A revoked/changed
+  // result does not hard-lock the account.
+  entity.v1.VerificationStatus status = 1 [(buf.validate.field).enum.defined_only = true];
+
+  // Field 2 was a verification level that was never populated; the status
+  // above is what a client reads.
+  reserved 2;
+  reserved "verification_level";
+}
+
+// GetRequest reads the caller's IdentityVerification. It names no fan; the
+// caller is taken from the sign-in.
+message GetRequest {}
+
+// GetResponse returns the caller's IdentityVerification.
+message GetResponse {
+  // The caller's IdentityVerification.
+  entity.v1.IdentityVerification identity_verification = 2 [(buf.validate.field).required = true];
+
+  // Field 1 was the result under its former name, replaced by
+  // identity_verification.
+  reserved 1;
+  reserved "kyc";
+}
