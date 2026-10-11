@@ -5,8 +5,8 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/entity.proto";
-import "liverty_music/entity/v1/media.proto";
 import "liverty_music/entity/v1/organizer.proto";
+import "liverty_music/entity/v1/series_image.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
@@ -135,18 +135,12 @@ message Series {
   // default presence semantics.
   Description description = 6 [(google.api.field_behavior) = OPTIONAL];
 
-  // The image shown on the series page, authored by an organizer and served
-  // from the CDN as responsive WebP variants. Optional: absent for discovered
-  // series and for organizer series without an uploaded image. A nil wrapper
-  // skips inner-Media validation by protovalidate's default presence semantics.
-  // Field 7 previously held a single served Url named `cover_image`; it was
-  // renamed and retyped to Media by the organizer-media-pipeline change (the
-  // variant URLs now live inside Media.attributes). A later authoring extension
-  // generalizes this to a repeated Media gallery.
-  Media media = 7 [(google.api.field_behavior) = OPTIONAL];
-
-  // Field 7's former name, retired when the single served Url became a Media.
-  reserved "cover_image";
+  // Field 7 held the cover image, first as a single served Url and then as a
+  // kind-tagged media object; it is replaced by cover_image (field 12). The
+  // name cover_image is reused with a new number and type, so the old
+  // field 7 Url never decodes as a SeriesImage.
+  reserved 7;
+  reserved "media";
 
   // Who can reach this series. Set only for first-party (organizer-authored)
   // series; discovered series leave it VISIBILITY_UNSPECIFIED. Not constrained
@@ -170,4 +164,10 @@ message Series {
   // 特商法 business details a fan's checkout shows. A fan-facing read never sets
   // its platform fee rate.
   Organizer organizer = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The cover image shown on the series page, uploaded by its organizer and
+  // served as processed variants. Optional: absent for discovered series and
+  // for organizer series without an uploaded image. A nil message skips the
+  // inner SeriesImage validation by protovalidate's default presence semantics.
+  SeriesImage cover_image = 12 [(google.api.field_behavior) = OPTIONAL];
 }

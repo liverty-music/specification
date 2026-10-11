@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.payout_account.v1 provides the
+// organizer-facing PayoutAccountService that an operator uses from the
+// organizer console; the Organizer identity surface lives in
+// liverty_music.rpc.organizer.v1.
+package liverty_music.rpc.organizer.payout_account.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "liverty_music/entity/v1/payout_account.proto";
+
+// PayoutAccountService is the organizer-facing surface for the Organizer's
+// PayoutAccount: an authenticated operator reads its own account at the payment
+// provider and its payout onboarding status. The caller's Organizer is resolved
+// from the token (org-scoped from the role claim; failures that would concern
+// another org never reveal whether such an Organizer exists), mirroring the
+// organizer OrganizerService.
+service PayoutAccountService {
+  // Get returns the caller's own PayoutAccount and its payout onboarding
+  // status, plus a provider-hosted URL to (re)start or complete the payment
+  // provider's identity check when action is still required. Onboarding status
+  // never blocks ticket sale or issuance; only the payout waits until the
+  // account is active.
+  //
+  // Possible errors:
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated. Because
+  //   this is the caller's own org, the state is not concealed.
+  // - PERMISSION_DENIED: The token carries no organizer-console role, its audience
+  //   lacks the organizer-console project id, or its login-scope org and role-claim
+  //   org disagree, or the caller's Organizer is no longer found. The response
+  //   never reveals whether such an Organizer exists.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Get(GetRequest) returns (GetResponse);
+}
+
+// GetRequest is empty: the caller's Organizer, and its PayoutAccount, are
+// resolved from the authenticated token.
+message GetRequest {}
+
+// GetResponse returns the caller's PayoutAccount plus an optional
+// onboarding-continuation URL.
+message GetResponse {
+  // The caller's PayoutAccount and its payout onboarding status.
+  entity.v1.PayoutAccount payout_account = 3 [(buf.validate.field).required = true];
+
+  // A provider-hosted onboarding URL to (re)start or complete the identity
+  // check, present only when action is still required (status is not ACTIVE).
+  // Empty once the account is active.
+  string onboarding_url = 2 [
+    (google.api.field_behavior) = OPTIONAL,
+    (buf.validate.field).string.max_len = 2048
+  ];
+
+  // Field 1 was the account under its former name and type, replaced by
+  // payout_account.
+  reserved 1;
+  reserved "account";
+}

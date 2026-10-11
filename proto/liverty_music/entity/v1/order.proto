@@ -20,35 +20,53 @@ message OrderId {
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
-// PaymentProvider names which payment provider backs an Order's captured payment.
-// The Order is deliberately provider-agnostic (it stores only opaque references),
-// so switching provider is a config/adapter change, not a proto break. New values
-// may be appended; existing values must not be renumbered.
+// PaymentProvider names which payment provider holds an Order's captured
+// payment. The Order stores only the payment provider's IDs, so switching
+// provider is a config/adapter change, not a proto break. New values may be
+// appended; existing values must not be renumbered.
 enum PaymentProvider {
   // Default value, rejected at the boundary: a persisted Order always records a
   // concrete provider.
   PAYMENT_PROVIDER_UNSPECIFIED = 0;
 
-  // Stripe Connect (separate charges & transfers, platform-held) — the MVP
-  // provider. The LotteryEntry or Checkout owns the PaymentIntent
-  // (manual-capture authorize/capture); the Order records only the opaque
-  // references to it.
+  // The MVP payment provider. The LotteryEntry or Checkout owns the
+  // CardAuthorization that is captured; the Order records only the provider's
+  // IDs for the captured payment.
   PAYMENT_PROVIDER_STRIPE = 1;
 
-  // KOMOJU — a PoC challenger kept swappable behind the opaque references (#778).
+  // A challenger provider kept swappable behind the provider IDs (#778).
   // Reserved so adopting it is a no-proto-break provider switch.
   PAYMENT_PROVIDER_KOMOJU = 2;
 }
 
-// Payment is the opaque, provider-agnostic reference to the captured payment of
-// an Order's source, plus the display-only facets safe to retain. It holds only
-// tokens meaningful to the provider and never raw card data: NEVER a PAN, CVC,
-// or expiry. It is recorded from the source's captured PaymentIntent — the
-// Order performs no separate charge of its own. It is a value object embedded in an Order, not a
-// standalone addressable entity.
+// Payment is the payment provider's IDs for the captured payment of an Order's
+// source, plus the display-only facets safe to retain. It never holds raw card
+// data: NEVER a PAN, CVC, or expiry. It is recorded from the source's captured
+// CardAuthorization — the Order performs no separate charge of its own. It is
+// a value object embedded in an Order, not a standalone addressable entity.
 message Payment {
-  // Which provider backs the captured payment. Drives which adapter interprets
-  // the opaque references below.
+  // ProviderPaymentId is the payment provider's ID for a captured payment.
+  // Opaque; meaningful only to the provider.
+  message ProviderPaymentId {
+    // The provider's payment id, 1 to 255 characters.
+    string value = 1 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 255
+    }];
+  }
+
+  // ProviderPaymentMethodId is the payment provider's ID for the payment method
+  // used. Opaque; meaningful only to the provider.
+  message ProviderPaymentMethodId {
+    // The provider's payment method id, 1 to 255 characters.
+    string value = 1 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 255
+    }];
+  }
+
+  // Which provider holds the captured payment. Drives which adapter interprets
+  // the provider IDs below.
   PaymentProvider provider = 1 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).enum = {
@@ -57,25 +75,10 @@ message Payment {
     }
   ];
 
-  // The provider's PaymentIntent reference (e.g. a Stripe "pi_..." id) for the
-  // source's captured manual-capture authorization. Opaque; meaningful only to
-  // the provider. The Order references it and never charges it again.
-  string payment_intent_ref = 2 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 255
-  }];
-
-  // The provider's PaymentMethod reference (e.g. a Stripe "pm_..." id), when the
-  // provider exposes one distinct from the PaymentIntent. Opaque and optional.
-  string payment_method_ref = 3 [
-    (google.api.field_behavior) = OPTIONAL,
-    (buf.validate.field).string.max_len = 255
-  ];
-
   // Display-only card brand facet (e.g. "visa", "mastercard"), safe to show the
-  // User. Optional, never used for authorization. Brand policy is applied
-  // upstream at the authorization (the lottery rejects American Express; a
-  // first-come checkout accepts every brand), not here.
+  // User. Optional, never used for authorization. The accepted card brands rule
+  // is the CardAuthorization's (a lottery entry rejects American Express; a
+  // first-come checkout accepts every brand), not applied here.
   string card_brand = 4 [
     (google.api.field_behavior) = OPTIONAL,
     (buf.validate.field).string.max_len = 40
@@ -87,13 +90,30 @@ message Payment {
     (google.api.field_behavior) = OPTIONAL,
     (buf.validate.field).string = {pattern: "^([0-9]{4})?$"}
   ];
+
+  // The payment provider's ID for the captured payment. The Order references it
+  // and never charges it again.
+  ProviderPaymentId provider_payment_id = 6 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The payment provider's ID for the payment method used, when the provider
+  // exposes one. Optional.
+  ProviderPaymentMethodId provider_payment_method_id = 7 [(google.api.field_behavior) = OPTIONAL];
+
+  // Fields 2 and 3 were the provider's ids as bare strings under the provider's
+  // own object names, replaced by provider_payment_id and
+  // provider_payment_method_id.
+  reserved 2, 3;
+  reserved "payment_intent_ref", "payment_method_ref";
 }
 
 // OrderStatus is the lifecycle of an Order. There is deliberately NO `pending`
 // state: the Order is created from an already-captured payment, so it is `paid`
-// on creation (the pre-capture hold state lives on the LotteryEntry or the
-// Checkout, not here). New values may be appended; existing values must
-// not be renumbered.
+// on creation (the state before capture lives on the CardAuthorization of the
+// LotteryEntry or the Checkout, not here). New values may be appended; existing
+// values must not be renumbered.
 enum OrderStatus {
   // Default value, rejected at the boundary: a persisted Order always records a
   // concrete status.
@@ -105,8 +125,8 @@ enum OrderStatus {
   ORDER_STATUS_PAID = 1;
 
   // Refunded — the captured payment was refunded (event cancellation 中止 or
-  // dispute) via a provider Refund plus
-  // transfer_reversal clawback of the Organizer's share.
+  // dispute) with a payment provider refund plus a claw-back of the
+  // Organizer's payout.
   ORDER_STATUS_REFUNDED = 2;
 
   // Failed — the capture-succeeded-but-issuance-refunded edge: the capture
@@ -116,18 +136,28 @@ enum OrderStatus {
   ORDER_STATUS_FAILED = 3;
 }
 
-// Order is a provider- and method-agnostic purchase record: the opaque reference
-// to the captured payment, the Order's own status, its total amount and
-// currency, the capture time, and display-only facets. It has exactly one
-// source — a won LotteryEntry or a Committed Checkout — and ONE Order covers all
-// N tickets of that source. At most one Order exists per source (issuance
-// idempotency).
+// Order is a provider- and method-agnostic purchase record: the payment
+// provider's IDs for the captured payment, the Order's own status, its total
+// amount and currency, the capture time, and display-only facets. It has
+// exactly one source — a won LotteryEntry or a Committed Checkout — and ONE
+// Order covers all N tickets of that source. At most one Order exists per
+// source (issuance idempotency).
 //
-// It is created only from an already-captured payment (the won entry's
-// captured hold, or the checkout's charge); the Order performs no separate
-// off-session charge. The Order NEVER stores a PAN, CVC, or expiry — only
-// opaque provider tokens and safe display facets (PCI SAQ A).
+// It is created only from an already-captured payment (the won entry's or the
+// checkout's captured CardAuthorization); the Order performs no separate
+// off-session charge. The Order NEVER stores a PAN, CVC, or expiry — only the
+// payment provider's IDs and safe display facets (PCI SAQ A).
 message Order {
+  // ProviderRefundId is the payment provider's ID for a refund of an Order.
+  // Opaque; meaningful only to the provider.
+  message ProviderRefundId {
+    // The provider's refund id, 1 to 255 characters.
+    string value = 1 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 255
+    }];
+  }
+
   // The unique identifier for this order. Server-generated surrogate id.
   OrderId id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
@@ -154,8 +184,8 @@ message Order {
     CheckoutId checkout_id = 11;
   }
 
-  // The opaque reference to the source's captured payment plus safe display
-  // facets. Never raw card data.
+  // The payment provider's IDs for the source's captured payment plus safe
+  // display facets. Never raw card data.
   Payment payment = 4 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
@@ -193,6 +223,14 @@ message Order {
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
+
+  // The payment provider's ID for the refund issued to the user. Absent unless
+  // the Order was refunded for a cancellation. Server-owned.
+  ProviderRefundId provider_refund_id = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When the purchase confirmation email was sent to the user. Absent until
+  // sent; set once. Server-owned.
+  google.protobuf.Timestamp confirmation_send_time = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // Fields 3 and 9 were the lottery application and the reservation sources,
   // replaced by lottery_entry_id and checkout_id. Field 2 was renamed from

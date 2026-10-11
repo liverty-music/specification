@@ -13,7 +13,8 @@ import "liverty_music/entity/v1/user.proto";
 
 // OrganizerService is the admin surface for managing Organizers — the vetted
 // businesses that represent artists. It creates an Organizer (provisioning an
-// isolated Zitadel tenant with an initial `owner` operator), manages the
+// isolated identity provider tenant with an initial `owner` operator), manages
+// the
 // Organizer↔Artist association (each artist is represented by at most one
 // Organizer), lists organizers for the admin console, records an Organizer's
 // 特商法 business details and its platform fee rate at vetting, deactivates an
@@ -27,18 +28,20 @@ import "liverty_music/entity/v1/user.proto";
 // are rejected with PERMISSION_DENIED at the admin server boundary.
 service OrganizerService {
   // Create registers a new Organizer with a display name and an initial
-  // operator email, then provisions its isolated Zitadel tenant (org,
+  // operator email, then provisions its isolated identity provider tenant (org,
   // passkey-primary login policy, organizer-console project grant) and seeds
   // the initial operator as its `owner`. Provisioning is idempotent and
   // compensating: retrying a Create that failed partway never creates a
   // duplicate Organizer or tenant org and never leaves the Organizer without an
   // `owner` operator. The initial operator is created without a password and
-  // receives a Zitadel passkey-registration init link to register a passkey on
+  // receives a passkey-registration init link from the identity provider to
+  // register a passkey on
   // first sign-in.
   //
   // Possible errors:
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
-  // - INVALID_ARGUMENT: The name is empty/too long or the operator email is malformed.
+  // - INVALID_ARGUMENT: The name is empty/too long or the operator email is
+  //   malformed.
   rpc Create(CreateRequest) returns (CreateResponse);
 
   // AssociateArtist links an existing Artist to an Organizer. There is no
@@ -81,7 +84,8 @@ service OrganizerService {
   rpc Get(GetRequest) returns (GetResponse);
 
   // Deactivate turns an Organizer off: the backend thereafter rejects all
-  // operations targeting it, its operators are deactivated in Zitadel, and its
+  // operations targeting it, its operators are deactivated at the identity
+  // provider, and its
   // artist associations are freed so the artists can be re-associated. Full
   // teardown of the tenant org and grants is out of scope. It is idempotent:
   // deactivating an already-deactivated Organizer succeeds.
@@ -92,14 +96,14 @@ service OrganizerService {
   // - NOT_FOUND: The organizer does not exist.
   rpc Deactivate(DeactivateRequest) returns (DeactivateResponse);
 
-  // Delete permanently removes a deactivated Organizer together with
-  // everything kept for it: its first-party Series with their ticket sales
-  // and ticket types, and their Events (with their lottery entries,
-  // checkouts, ticket journeys, performers and reception records), the
-  // Orders, Tickets and reversed
-  // settlements for those Events, its media records and files, its Zitadel
-  // tenant with the tenant's operators, its artist associations and its
-  // payout-account record. Records in the payment provider are kept.
+  // Delete permanently removes a deactivated Organizer together with everything
+  // kept for it: its first-party Series with their ticket sales and ticket
+  // types, and their Events (with their lottery entries, checkouts, ticket
+  // journeys, performers and reception records), the Orders, Tickets and
+  // reversed settlements for those Events, its series images and their files,
+  // its identity provider tenant with the tenant's operators, its artist
+  // associations and its PayoutAccount record. Records in the payment provider
+  // are kept.
   //
   // Nothing is removed when the Organizer is not deactivated, when any of its
   // Events has an Order that is not refunded or a settlement that is not
@@ -153,7 +157,8 @@ message CreateRequest {
   entity.v1.OrganizerName name = 1 [(buf.validate.field).required = true];
 
   // Required. The email of the initial operator, seeded as the organizer's
-  // `owner` and sent a Zitadel passkey-registration init link.
+  // `owner` and sent a passkey-registration init link from the identity
+  // provider.
   entity.v1.UserEmail operator_email = 2 [(buf.validate.field).required = true];
 }
 

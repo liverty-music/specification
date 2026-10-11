@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "liverty_music/entity/v1/entity.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// SeriesImageId is a globally unique identifier for an image an organizer
+// uploaded for one of its Series. The value doubles as the object-key basename
+// in storage and, being a time-ordered UUIDv7, as the creation-time source and
+// the version of its served addresses: a new upload mints a new
+// SeriesImageId and therefore new addresses.
+message SeriesImageId {
+  // A UUID string mapping to the series image's unique identity. Applications
+  // mint a UUIDv7 so the id is time-ordered; only the UUID format is validated
+  // here (protovalidate has no version-specific rule).
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// SeriesImage is an image an organizer uploaded for one of its Series, served
+// to fans only as processed variants: a thumbnail at most 800 px wide and a
+// large image at most 1920 px wide, both WebP from the CDN. The original upload
+// is never served. The variant addresses are derived at read time from the
+// owning organizer and the id, so they are never stored and never change; a
+// replaced cover is a new SeriesImage with new addresses.
+message SeriesImage {
+  // The unique identifier for this series image.
+  SeriesImageId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The address of the thumbnail variant (at most 800 px wide). A shown image
+  // always exposes it.
+  Url thumb = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The address of the large variant (at most 1920 px wide). A shown image
+  // always exposes it.
+  Url large = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // Field 2 was the media kind, which had a single value (image). Field 3 held
+  // the variant addresses in a kind-specific attributes message; they are now
+  // the thumb and large fields.
+  reserved 2, 3;
+  reserved "kind", "attributes";
+}

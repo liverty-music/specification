@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// ConcertCandidateId uniquely identifies a ConcertCandidate: a discovered
+// performance held for admin review instead of being published. It is distinct
+// from EventId because a ConcertCandidate is not a Concert and has no Event yet;
+// the id is assigned when the discovery pipeline first holds it for review.
+message ConcertCandidateId {
+  // A UUID string representing the unique identity of the concert candidate.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}

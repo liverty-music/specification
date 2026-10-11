@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// CardAuthorizationId identifies a CardAuthorization: the authorization placed
+// on a fan's card for the amount of one purchase, a LotteryEntry or a Checkout,
+// which reserves the amount without charging it until it is captured or
+// released. The payment provider assigns it and is the card authorization's
+// only record, so the id is the payment provider's ID for the card
+// authorization, not a platform UUID. Opaque; meaningful only to the provider.
+message CardAuthorizationId {
+  // The payment provider's ID for the card authorization, 1 to 255 characters.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+}
+
+// CardAuthorizationSecret is the short-lived secret of a CardAuthorization that
+// the fan's browser passes to the payment provider's payment form to complete
+// card authentication (3D Secure). It is returned when a card authorization is
+// opened and is never stored by the client or the server. Opaque.
+message CardAuthorizationSecret {
+  // The opaque secret, at least 1 character.
+  string value = 1 [(buf.validate.field).string.min_len = 1];
+}

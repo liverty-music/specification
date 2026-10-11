@@ -12,8 +12,9 @@ import "liverty_music/entity/v1/user.proto";
 // the admin organization and is never reachable by the consumer product.
 service UserService {
   // Delete permanently removes a fan User: the User with its follows, ticket
-  // journeys, notifications, push subscriptions, sales-phase reminders, Kyc
-  // and home area, plus its Zitadel sign-in identity. The
+  // journeys, notifications, push subscriptions, sales-phase reminders,
+  // IdentityVerifications and home area, plus its sign-in identity at the
+  // identity provider. The
   // User's other Orders, Tickets and lottery entries are kept.
   //
   // Nothing is removed while the User holds an issued Ticket or has an Order

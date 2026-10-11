@@ -52,9 +52,9 @@ enum CheckoutStatus {
 // TicketSale: it holds a count of tickets for exactly 15 minutes, never
 // extended, while the fan confirms their 本人確認 (identity check) details and
 // authorizes their card. It ends with the tickets committed, charged and issued
-// as an Order, or with the hold released and any card hold given back. A fan
-// has at most one holding Checkout per ticket type, and a charged Checkout is
-// never released. The fan's full name and phone number are the User's.
+// as an Order, or with the hold released and any card authorization released. A
+// fan has at most one holding Checkout per ticket type, and a charged Checkout
+// is never released. The fan's full name and phone number are the User's.
 message Checkout {
   // The unique identifier for this checkout. Server-generated.
   CheckoutId id = 1 [

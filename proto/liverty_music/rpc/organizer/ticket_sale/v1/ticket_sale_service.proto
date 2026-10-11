@@ -65,8 +65,8 @@ service TicketSaleService {
 
   // ListByEvent returns every sale of one of the caller's events in start
   // order, each with its TicketTypes and their counts: for a LOTTERY sale
-  // whether it is drawn and, per TicketType, its entry, requested ticket,
-  // winner and waitlist tallies (returned beside the sales); for a FIRST_COME
+  // whether it is drawn and, per TicketType, its LotteryEntryStats (entry,
+  // ticket, winner and loser counts, returned beside the sales); for a FIRST_COME
   // sale, per TicketType, its quantity, sold count, held count and state now.
   // An event that no sale offers returns an empty list.
   //
@@ -103,11 +103,11 @@ service TicketSaleService {
   rpc SetWindow(SetWindowRequest) returns (SetWindowResponse);
 
   // SetVerificationRequirement changes whether fans taking part in one of the
-  // caller's sales must hold an Active Kyc: none, VERIFIED_ANY (admits the
-  // driver's-licence fallback) or JPKI_ONLY. It may be changed at any time,
-  // whether or not the window is open and whether or not the sale is drawn;
-  // entries and checkouts already made are not re-checked. The updated sale is
-  // returned with its TicketTypes.
+  // caller's sales must hold an Active IdentityVerification: none, VERIFIED_ANY
+  // (admits the driver's-licence fallback) or JPKI_ONLY. It may be changed at
+  // any time, whether or not the window is open and whether or not the sale is
+  // drawn; entries and checkouts already made are not re-checked. The updated
+  // sale is returned with its TicketTypes.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The ticket_sale_id is missing or malformed, or the
@@ -167,8 +167,8 @@ message CreateRequest {
   // its events when omitted.
   google.protobuf.Timestamp sale_end_time = 5;
 
-  // Optional. Whether fans taking part must hold an Active Kyc. UNSPECIFIED
-  // (the default) requires none.
+  // Optional. Whether fans taking part must hold an Active
+  // IdentityVerification. UNSPECIFIED (the default) requires none.
   entity.v1.VerificationRequirement verification_requirement = 6 [(buf.validate.field).enum.defined_only = true];
 
   // Required. One ticket type for each event the sale covers, at least one.
@@ -199,9 +199,9 @@ message LotteryEntryStats {
   // The number of entries.
   int32 entry_count = 2 [(buf.validate.field).int32.gte = 0];
 
-  // The sum of the entries' requested ticket counts: the demand to compare
-  // with the TicketType's quantity.
-  int32 requested_ticket_count = 3 [(buf.validate.field).int32.gte = 0];
+  // The sum of the entries' ticket counts: the demand to compare with the
+  // TicketType's quantity.
+  int32 ticket_count = 7 [(buf.validate.field).int32.gte = 0];
 
   // The number of Won entries.
   int32 won_entry_count = 4 [(buf.validate.field).int32.gte = 0];
@@ -209,8 +209,13 @@ message LotteryEntryStats {
   // The sum of the Won entries' ticket counts, never above the quantity.
   int32 won_ticket_count = 5 [(buf.validate.field).int32.gte = 0];
 
-  // The number of Lost entries, which form the waitlist.
+  // The number of Lost entries: the TicketType's losers.
   int32 lost_entry_count = 6 [(buf.validate.field).int32.gte = 0];
+
+  // Field 3 was the sum of ticket counts under its former name, replaced by
+  // ticket_count.
+  reserved 3;
+  reserved "requested_ticket_count";
 }
 
 // ListByEventResponse returns the event's sales with their counts.
@@ -252,7 +257,7 @@ message SetVerificationRequirementRequest {
   entity.v1.TicketSaleId ticket_sale_id = 1 [(buf.validate.field).required = true];
 
   // The requirement to set. UNSPECIFIED requires no verification; VERIFIED_ANY
-  // and JPKI_ONLY require an Active Kyc.
+  // and JPKI_ONLY require an Active IdentityVerification.
   entity.v1.VerificationRequirement verification_requirement = 2 [(buf.validate.field).enum.defined_only = true];
 }
 

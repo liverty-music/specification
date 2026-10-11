@@ -4,12 +4,13 @@ syntax = "proto3";
 // LotteryEntryService: the signed-in fan's entry into the lottery for one
 // TicketType of a LOTTERY TicketSale, from the Draft to the confirmed entry,
 // its withdrawal before the draw and its result. The draw itself (which
-// captures the winners' holds and releases the others) runs as an internal
-// backend job, not an RPC. Sales are configured through
+// captures the winners' card authorizations and releases the others) runs as an
+// internal backend job, not an RPC. Sales are configured through
 // liverty_music.rpc.organizer.ticket_sale.v1.
 package liverty_music.rpc.lottery_entry.v1;
 
 import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/card_authorization.proto";
 import "liverty_music/entity/v1/lottery_entry.proto";
 import "liverty_music/entity/v1/ticket_type.proto";
 import "liverty_music/entity/v1/user.proto";
@@ -17,13 +18,14 @@ import "liverty_music/entity/v1/user.proto";
 // LotteryEntryService runs one fan's lottery entry, in the same steps as a
 // first-come checkout:
 //
-//   1. Start makes a Draft entry for a count of tickets; nothing is held on the
-//      card yet.
-//   2. Authorize records the 本人確認 name and phone number on the fan's
-//      account and opens a card hold for the amount, which the browser
-//      authenticates (3D Secure) with the returned client secret.
-//   3. Confirm checks the hold and makes the entry Entered, so it takes part
-//      in the draw.
+//   1. Start makes a Draft entry for a count of tickets; nothing is
+//      authorized on the card yet.
+//   2. AuthorizeCard records the 本人確認 name and phone number on the fan's
+//      account and opens a card authorization for the amount, which the
+//      browser authenticates (3D Secure) with the returned card authorization
+//      secret.
+//   3. Confirm checks the card authorization and makes the entry Entered, so
+//      it takes part in the draw.
 //
 // Withdraw gives up an entry before the draw, and ListByTicketType reads the
 // fan's entries, whose state after the draw is the result. No money is
@@ -34,13 +36,13 @@ import "liverty_music/entity/v1/user.proto";
 service LotteryEntryService {
   // Start makes a Draft entry for the caller on a TicketType of a LOTTERY sale
   // whose window is open, or resumes it: starting again with the same count
-  // returns the same Draft, and starting with another count withdraws the
-  // Draft and makes a new one. The count must be at most the TicketType's
-  // per-account limit and, together with the caller's Issued tickets for the
-  // TicketType's event, must still fit it. When the sale requires
-  // verification, the caller must hold an Active Kyc. A caller whose entry for
-  // the TicketType is already Entered, Won or Lost cannot start another; one
-  // whose only earlier entry is Withdrawn can.
+  // returns the same Draft, and starting with another count withdraws the Draft
+  // and makes a new one. The count must be at most the TicketType's per-account
+  // limit and, together with the caller's Issued tickets for the TicketType's
+  // event, must still fit it. When the sale requires verification, the caller
+  // must hold an Active IdentityVerification. A caller whose entry for the
+  // TicketType is already Entered, Won or Lost cannot start another; one whose
+  // only earlier entry is Withdrawn can.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
@@ -51,18 +53,19 @@ service LotteryEntryService {
   //   per-account limit.
   // - FAILED_PRECONDITION: The TicketType's sale is not a LOTTERY sale or its
   //   window is not open, the sale requires verification and the caller holds
-  //   no Active Kyc, the caller's Issued tickets for the event plus the count
+  //   no Active IdentityVerification, the caller's Issued tickets for the event plus the count
   //   exceed the per-account limit, or the caller already has an Entered, Won
   //   or Lost entry for the TicketType.
   rpc Start(StartRequest) returns (StartResponse);
 
-  // Authorize records the 本人確認 full name and phone number on the caller's
-  // account, then opens a card hold for the TicketType's price times the
-  // entry's ticket count on the caller's Draft entry and returns the hold's
-  // client secret, which the browser confirms with the payment provider (3D
-  // Secure); the secret is never stored. Authorizing a Draft that already has
-  // a hold, for example after a declined card, returns that hold for another
-  // attempt. No money is captured.
+  // AuthorizeCard records the 本人確認 full name and phone number on the
+  // caller's account, then opens a CardAuthorization for the TicketType's
+  // price times the entry's ticket count on the caller's Draft entry and
+  // returns the card authorization secret, which the browser confirms with the
+  // payment provider (3D Secure); the secret is never stored. Authorizing a
+  // Draft that already has a card authorization, for example after a declined
+  // card, returns that card authorization for another attempt. No money is
+  // captured.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
@@ -75,33 +78,33 @@ service LotteryEntryService {
   // - FAILED_PRECONDITION: The entry is not a Draft, or its sale's window is
   //   not open.
   // - UNAVAILABLE: Card payments are temporarily unavailable; the Draft has no
-  //   hold.
-  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
+  //   card authorization.
+  rpc AuthorizeCard(AuthorizeCardRequest) returns (AuthorizeCardResponse);
 
-  // Confirm makes the caller's authorized Draft entry Entered, so it takes
-  // part in the draw, after checking that its hold has completed card
-  // authentication and is held in yen for the TicketType's price times the
-  // entry's ticket count on an accepted card (every brand except American
-  // Express). Confirming an Entered entry again returns it unchanged. No money
-  // is captured at entry.
+  // Confirm makes the caller's authorized Draft entry Entered, so it takes part
+  // in the draw, after checking that its card authorization is Authorized, in
+  // yen, for the TicketType's price times the entry's ticket count, on an
+  // accepted card (every brand except American Express). Confirming an Entered
+  // entry again returns it unchanged. No money is captured at entry.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  // - NOT_FOUND: The caller has no stored account, or the entry's hold is not
-  //   known to the payment provider.
+  // - NOT_FOUND: The caller has no stored account, or the entry's card
+  //   authorization is not known to the payment provider.
   // - INVALID_ARGUMENT: The lottery_entry_id is missing or malformed, or the
-  //   hold's amount or currency does not match the entry.
+  //   card authorization's amount or currency does not match the entry.
   // - PERMISSION_DENIED: The entry does not exist or is another fan's.
   //   Non-revealing.
-  // - FAILED_PRECONDITION: The entry is not a Draft with a hold, its sale's
-  //   window is not open, the card was not authenticated or its hold is not
-  //   waiting to be captured, or the card is American Express.
+  // - FAILED_PRECONDITION: The entry is not a Draft with a card authorization,
+  //   its sale's window is not open, the card authorization is not Authorized
+  //   (card authentication not completed, or already captured or released),
+  //   or the card is American Express.
   // - UNAVAILABLE: Card payments are temporarily unavailable.
   rpc Confirm(ConfirmRequest) returns (ConfirmResponse);
 
-  // Withdraw gives up the caller's Draft or Entered entry before the draw,
-  // also after the window has closed: it releases the entry's card hold, when
-  // it has one, and only then makes the entry Withdrawn. When the release
+  // Withdraw gives up the caller's Draft or Entered entry before the draw, also
+  // after the window has closed: it releases the entry's card authorization,
+  // when it has one, and only then makes the entry Withdrawn. When the release
   // fails, its error is returned and the entry keeps its state. The caller may
   // start a new entry while the window is still open.
   //
@@ -145,13 +148,13 @@ message StartRequest {
 
 // StartResponse returns the Draft entry.
 message StartResponse {
-  // The caller's Draft entry, with no hold yet unless a resumed Draft already
-  // has one.
+  // The caller's Draft entry, with no card authorization yet unless a resumed
+  // Draft already has one.
   entity.v1.LotteryEntry lottery_entry = 1 [(buf.validate.field).required = true];
 }
 
-// AuthorizeRequest carries the Draft entry and the 本人確認 details.
-message AuthorizeRequest {
+// AuthorizeCardRequest carries the Draft entry and the 本人確認 details.
+message AuthorizeCardRequest {
   // Required. The caller's Draft entry.
   entity.v1.LotteryEntryId lottery_entry_id = 1 [(buf.validate.field).required = true];
 
@@ -163,12 +166,18 @@ message AuthorizeRequest {
   entity.v1.PhoneNumber phone_number = 3 [(buf.validate.field).required = true];
 }
 
-// AuthorizeResponse returns the card hold for the browser to authenticate.
-message AuthorizeResponse {
-  // The payment provider's client secret for the card hold, which the browser
-  // confirms with the provider's payment form (3D Secure). Opaque and
-  // short-lived; never stored by the client or the server.
-  string client_secret = 1 [(buf.validate.field).string.min_len = 1];
+// AuthorizeCardResponse returns the card authorization for the browser to
+// authenticate.
+message AuthorizeCardResponse {
+  // The card authorization secret, which the browser confirms with the payment
+  // provider's payment form (3D Secure). Short-lived; never stored by the
+  // client or the server.
+  entity.v1.CardAuthorizationSecret card_authorization_secret = 2 [(buf.validate.field).required = true];
+
+  // Field 1 was the secret as a bare string under the provider's own name,
+  // replaced by card_authorization_secret.
+  reserved 1;
+  reserved "client_secret";
 }
 
 // ConfirmRequest names the entry to confirm.

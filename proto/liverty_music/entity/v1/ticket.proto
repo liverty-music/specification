@@ -7,7 +7,7 @@ import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/event.proto";
-import "liverty_music/entity/v1/kyc.proto";
+import "liverty_music/entity/v1/identity_verification.proto";
 import "liverty_music/entity/v1/order.proto";
 import "liverty_music/entity/v1/user.proto";
 
@@ -52,8 +52,8 @@ enum TicketStatus {
 //   (ii)  the face specifies date/venue (via `event_id`) + the eligible person
 //         (the ticket's User; admission is general with no seat map);
 //   (iii) the User's 本人確認 is bound to the account: the face shows the User's
-//         current full name and phone number, and `kyc_id` is set where the
-//         sale required verification.
+//         current full name and phone number, and `identity_verification_id`
+//         is set where the sale required verification.
 message Ticket {
   // The unique identifier for this ticket. Server-generated surrogate id.
   TicketId id = 1 [
@@ -84,10 +84,6 @@ message Ticket {
     (buf.validate.field).required = true
   ];
 
-  // The Kyc this ticket is bound to, set only when the sale required
-  // verification. Unset otherwise.
-  KycId kyc_id = 6 [(google.api.field_behavior) = OPTIONAL];
-
   // Covered-ticket condition (i): the face states resale without the organizer's
   // consent is prohibited. Constrained to true — every issued ticket asserts this
   // so it qualifies as a 特定興行入場券.
@@ -112,9 +108,14 @@ message Ticket {
   // admitted). Server-owned.
   google.protobuf.Timestamp admit_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
 
+  // The IdentityVerification this ticket is bound to, set only when the sale
+  // required verification. Unset otherwise.
+  IdentityVerificationId identity_verification_id = 11 [(google.api.field_behavior) = OPTIONAL];
+
   // Field 5 was the 本人確認 details copied onto the ticket, which now live on
-  // the User. Fields 3 and 6 were renamed from holder_id and
-  // verified_identity_ref.
-  reserved 5;
-  reserved "holder_identity", "holder_id", "verified_identity_ref";
+  // the User. Field 3 was renamed from holder_id. Field 6 was the
+  // IdentityVerification reference under its former names, replaced by
+  // identity_verification_id.
+  reserved 5, 6;
+  reserved "holder_identity", "holder_id", "verified_identity_ref", "kyc_id";
 }

@@ -12,13 +12,6 @@ message UserId {
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
-// UserExternalId is the identity provider's unique identifier for a user.
-// This maps to the Zitadel `sub` claim and links the external identity to the local user record.
-message UserExternalId {
-  // The identity provider's user identifier (e.g., Zitadel snowflake ID).
-  string value = 1 [(buf.validate.field).string.min_len = 1];
-}
-
 // FullName is the 本人確認 (identity check) name of a User, shown on their
 // tickets and prefilled at lottery entry and checkout.
 message FullName {
@@ -46,31 +39,16 @@ message UserEmail {
   string value = 1 [(buf.validate.field).string.email = true];
 }
 
-// VerificationLevel is the account-level 本人確認 (identity check) assurance
-// that a lottery entry or a checkout reads to gate a TicketSale with a
-// verification requirement. It is derived from whether an Active Kyc (see
-// kyc.proto) backs the account. Verification is a lane, not a universal
-// mandate, so most accounts sit at UNVERIFIED. New values may be appended;
-// existing values must not be renumbered.
-enum VerificationLevel {
-  // Default value, rejected at the boundary: the server always sets a concrete
-  // level (this OUTPUT_ONLY field is never persisted unset).
-  VERIFICATION_LEVEL_UNSPECIFIED = 0;
-
-  // The account has no Active Kyc — the ordinary state until a fan opts into
-  // verification.
-  VERIFICATION_LEVEL_UNVERIFIED = 1;
-
-  // The account is bound to a verified real person (an Active Kyc exists), so
-  // TicketSales with a verification requirement admit it.
-  VERIFICATION_LEVEL_KYC_VERIFIED = 2;
-
-  reserved "VERIFICATION_LEVEL_IDENTITY_VERIFIED";
-}
-
 // User represents a registered person on the Liverty Music platform.
 // Users are notified of upcoming concerts based on their following and favorite artists.
 message User {
+  // ProviderUserId is the identity provider's ID for a User: the subject of the
+  // User's sign-in token. It links the sign-in account to the local User.
+  message ProviderUserId {
+    // The identity provider's user id, at least 1 character.
+    string value = 1 [(buf.validate.field).string.min_len = 1];
+  }
+
   // The unique identifier for the user.
   UserId id = 1 [(buf.validate.field).required = true];
 
@@ -78,10 +56,6 @@ message User {
   UserEmail email = 2 [(buf.validate.field).required = true];
 
   reserved 3;
-
-  // The identity provider's user identifier (Zitadel sub claim).
-  // Used to link the external identity to the local user record.
-  UserExternalId external_id = 4 [(buf.validate.field).required = true];
 
   // The user's display name, synced from the identity provider.
   string name = 5;
@@ -108,17 +82,6 @@ message User {
     pattern: "^[a-z]{2}$"
   }];
 
-  // The account's 本人確認 assurance level, derived server-side from whether an
-  // Active Kyc backs this account. Surfaced here so a lottery entry or a
-  // checkout can gate a TicketSale with a verification requirement without a
-  // second lookup.
-  // OUTPUT_ONLY: clients never set it; the server always populates a concrete
-  // value (UNVERIFIED for accounts that have not verified).
-  VerificationLevel verification_level = 8 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (buf.validate.field).enum.defined_only = true
-  ];
-
   // The 本人確認 (identity check) name shown on the user's tickets and
   // prefilled at lottery entry and checkout. Absent until the user first gives
   // it, at lottery entry, at checkout or in their settings.
@@ -128,10 +91,16 @@ message User {
   // the user first gives it, at lottery entry, at checkout or in their settings.
   PhoneNumber phone_number = 11 [(google.api.field_behavior) = OPTIONAL];
 
+  // The identity provider's ID for the User.
+  ProviderUserId provider_user_id = 12 [(buf.validate.field).required = true];
+
   // Field 9 was the 本人確認 details as one value, replaced by full_name and
-  // phone_number.
-  reserved 9;
-  reserved "holder_identity";
+  // phone_number. Field 4 was the identity provider's id under its former name,
+  // replaced by provider_user_id. Field 8 was a verification level that was
+  // never populated; a client reads the caller's Active IdentityVerification
+  // instead.
+  reserved 4, 8, 9;
+  reserved "holder_identity", "external_id", "verification_level";
 }
 
 // Home represents the user's home area as a structured geographic location,
