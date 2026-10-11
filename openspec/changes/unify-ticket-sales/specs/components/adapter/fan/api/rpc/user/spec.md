@@ -12,14 +12,14 @@
 
 ### Requirement: Update changes the caller's full name and phone number
 
-Update SHALL take the fields to change, named by a field mask, and fail with InvalidArgument, before any usecase runs, when the mask is empty, names a field other than the full name and the phone number, or a named value breaks the User's personal details rule, including a phone number not in E.164 form. It SHALL then run UserUseCase.Update for the caller's User and return the User.
+Update SHALL take a new full name, a new phone number or both, and fail with InvalidArgument, before any usecase runs, when neither is given or a given value breaks the User's personal details rule, including a phone number not in E.164 form; a value not given keeps the current one. It SHALL then run UserUseCase.Update for the caller's User and return the User.
 
 #### Scenario: Fan corrects their phone number
-- **WHEN** a signed-in fan calls Update with the phone number `+819098765432` named in the mask
+- **WHEN** a signed-in fan calls Update with only the phone number `+819098765432`
 - **THEN** the caller's User carries the new phone number and the other fields are unchanged
 
-#### Scenario: Field not open to Update
-- **WHEN** Update names the email in its mask
+#### Scenario: Nothing to update
+- **WHEN** Update is called with neither a full name nor a phone number
 - **THEN** it fails with InvalidArgument and nothing changes
 
 #### Scenario: Domestic-format phone number on update

@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.admin.notification.v1 provides the admin-only
+// NotificationService for internal tooling: delivering new-concert
+// notifications directly, as a test hook outside production. It is served by
+// the admin Connect server behind the admin-role gate.
+package liverty_music.rpc.admin.notification.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/event.proto";
+
+// NotificationService is the admin surface over fan notifications. It is
+// authorized only for the admin organization and is never reachable by the
+// consumer product.
+service NotificationService {
+  // NotifyNewConcerts triggers the push notification delivery pipeline for a
+  // specific set of newly created concerts belonging to an artist. This RPC
+  // invokes the same code path as the CONCERT.created event consumer, but
+  // bypasses the NATS event bus for deterministic integration testing and
+  // operator-initiated re-delivery. It returns once the delivery pipeline
+  // completes.
+  //
+  // This RPC is restricted to non-production environments. In production the
+  // server returns PERMISSION_DENIED regardless of the caller's credentials,
+  // and nobody is notified. An unauthenticated caller gets UNAUTHENTICATED in
+  // every environment, so it cannot learn the environment.
+  //
+  // Possible errors:
+  //   - UNAUTHENTICATED: The request does not carry a valid sign-in.
+  //   - PERMISSION_DENIED: The caller is not a member of the admin
+  //     organization, or the server is running in a production environment.
+  //   - INVALID_ARGUMENT: The artist is missing, no concert or more than 1000
+  //     concerts are given, a concert id is empty, or a concert does not
+  //     feature the specified artist among its performers.
+  rpc NotifyNewConcerts(NotifyNewConcertsRequest) returns (NotifyNewConcertsResponse);
+}
+
+// NotifyNewConcertsRequest identifies the artist and the specific set of
+// newly created concerts for which push notifications should be delivered.
+//
+// The caller must supply at least one concert identifier, and every supplied
+// identifier must reference a concert at which the specified artist is one of
+// the performers (the artist may share the bill with co-headliners or support
+// acts). If any identifier does not resolve to a concert featuring the artist,
+// the entire request is rejected with INVALID_ARGUMENT (no partial delivery).
+message NotifyNewConcertsRequest {
+  // INVARIANT: every id in `concert_ids` MUST appear in the
+  // `concert_artists` set for `artist_id`. This set-membership check
+  // cannot be expressed as a per-field protovalidate / CEL rule because
+  // it requires a DB lookup; the server enforces it before sending any
+  // notifications and rejects the entire request with INVALID_ARGUMENT
+  // when any id fails the check.
+
+  // Required. The artist whose followers should be notified.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The identifiers of the concerts that were just created. Each
+  // must be a valid event UUID for a concert at which the specified artist
+  // appears in the performers M:N relation. The delivery pipeline computes
+  // hype-level filtering and notification payloads exclusively from this set —
+  // pre-existing concerts for the same artist are excluded.
+  repeated entity.v1.EventId concert_ids = 2 [(buf.validate.field) = {
+    required: true
+    repeated: {
+      min_items: 1
+      max_items: 1000
+    }
+  }];
+}
+
+// NotifyNewConcertsResponse is returned after the delivery pipeline completes.
+// Currently empty; reserved for future delivery statistics.
+message NotifyNewConcertsResponse {}

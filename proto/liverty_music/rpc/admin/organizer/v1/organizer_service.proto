@@ -12,14 +12,16 @@ import "liverty_music/entity/v1/organizer.proto";
 import "liverty_music/entity/v1/user.proto";
 
 // OrganizerService is the admin surface for managing Organizers — the vetted
-// sellers that represent artists. It creates an Organizer (provisioning an
+// businesses that represent artists. It creates an Organizer (provisioning an
 // isolated Zitadel tenant with an initial `owner` operator), manages the
 // Organizer↔Artist association (each artist is represented by at most one
-// Organizer), lists organizers and the artists an organizer represents for the
-// admin console, records an Organizer's 特商法 seller details and its platform
-// fee rate at vetting, deactivates an Organizer as a minimal off-switch, and
-// permanently deletes a deactivated Organizer. An Organizer is returned with
-// its id, name, seller details and platform fee rate.
+// Organizer), lists organizers for the admin console, records an Organizer's
+// 特商法 business details and its platform fee rate at vetting, deactivates an
+// Organizer as a minimal off-switch, and permanently deletes a deactivated
+// Organizer. An Organizer is returned with its id, name, legal name,
+// representative name, business address, business phone number, contact email
+// and platform fee rate. The artists an Organizer represents are listed by
+// liverty_music.rpc.admin.artist.v1.ArtistService.ListByOrganizer, not here.
 //
 // All RPCs are authorized only for the admin organization; callers outside it
 // are rejected with PERMISSION_DENIED at the admin server boundary.
@@ -63,7 +65,8 @@ service OrganizerService {
 
   // List returns every Organizer so the admin console can render the
   // organizer-management screen. The artists an Organizer represents are
-  // retrieved separately via ListArtists.
+  // retrieved separately via
+  // liverty_music.rpc.admin.artist.v1.ArtistService.ListByOrganizer.
   //
   // Possible errors:
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
@@ -76,16 +79,6 @@ service OrganizerService {
   // - INVALID_ARGUMENT: The organizer id is missing or malformed.
   // - NOT_FOUND: The organizer does not exist.
   rpc Get(GetRequest) returns (GetResponse);
-
-  // ListArtists returns the artists an Organizer currently represents, so the
-  // admin console can inspect an organizer's roster. Empty when it represents
-  // none (or its associations were freed by deactivation).
-  //
-  // Possible errors:
-  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
-  // - INVALID_ARGUMENT: The organizer id is missing or malformed.
-  // - NOT_FOUND: The organizer does not exist.
-  rpc ListArtists(ListArtistsRequest) returns (ListArtistsResponse);
 
   // Deactivate turns an Organizer off: the backend thereafter rejects all
   // operations targeting it, its operators are deactivated in Zitadel, and its
@@ -100,9 +93,10 @@ service OrganizerService {
   rpc Deactivate(DeactivateRequest) returns (DeactivateResponse);
 
   // Delete permanently removes a deactivated Organizer together with
-  // everything kept for it: its first-party Series and their Events (with
-  // their lottery sales phases, ticket applications, ticket journeys,
-  // performers and reception records), the Orders, Tickets and reversed
+  // everything kept for it: its first-party Series with their ticket sales
+  // and ticket types, and their Events (with their lottery entries,
+  // checkouts, ticket journeys, performers and reception records), the
+  // Orders, Tickets and reversed
   // settlements for those Events, its media records and files, its Zitadel
   // tenant with the tenant's operators, its artist associations and its
   // payout-account record. Records in the payment provider are kept.
@@ -123,19 +117,21 @@ service OrganizerService {
   //   order, an unreversed settlement or a payout account blocks deletion.
   rpc Delete(DeleteRequest) returns (DeleteResponse);
 
-  // UpdateSellerDetails records an Organizer's 特商法 (Specified Commercial
-  // Transactions Act) seller details, checked by an admin during vetting. The
-  // details are replaced as a whole. An Organizer's events can go on sale only
-  // once its seller details are complete.
+  // SetBusinessDetails records an Organizer's 特商法 (Specified Commercial
+  // Transactions Act) business details — legal name, representative name,
+  // business address, business phone number and contact email — checked by an
+  // admin during vetting. The five details are replaced together. An
+  // Organizer's events can go on sale only once its business details are
+  // complete.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request carries no valid sign-in.
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
   // - INVALID_ARGUMENT: The organizer id is missing or malformed, or any of the
-  //   seller details is missing or malformed.
+  //   business details is missing or malformed.
   // - NOT_FOUND: The organizer does not exist.
   // - FAILED_PRECONDITION: The organizer is deactivated.
-  rpc UpdateSellerDetails(UpdateSellerDetailsRequest) returns (UpdateSellerDetailsResponse);
+  rpc SetBusinessDetails(SetBusinessDetailsRequest) returns (SetBusinessDetailsResponse);
 
   // SetPlatformFeeRate sets the platform fee rate applied to an Organizer's
   // future Orders, for example a pilot rate. Orders already issued keep the
@@ -215,19 +211,6 @@ message GetResponse {
   entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
 }
 
-// ListArtistsRequest identifies the Organizer whose represented artists to
-// list.
-message ListArtistsRequest {
-  // Required. The organizer whose represented artists to return.
-  entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
-}
-
-// ListArtistsResponse contains the artists the Organizer currently represents.
-message ListArtistsResponse {
-  // The artists represented by the organizer. Empty when it represents none.
-  repeated entity.v1.Artist artists = 1;
-}
-
 // DeactivateRequest identifies the Organizer to deactivate.
 message DeactivateRequest {
   // Required. The unique identifier of the organizer to deactivate.
@@ -248,20 +231,32 @@ message DeleteRequest {
 // have been removed.
 message DeleteResponse {}
 
-// UpdateSellerDetailsRequest identifies the Organizer and carries its seller
-// details.
-message UpdateSellerDetailsRequest {
-  // Required. The organizer whose seller details to record.
+// SetBusinessDetailsRequest identifies the Organizer and carries its five
+// business details, replacing any recorded before.
+message SetBusinessDetailsRequest {
+  // Required. The organizer whose business details to record.
   entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
 
-  // Required. The complete seller details, replacing any recorded before.
-  entity.v1.SellerDetails seller_details = 2 [(buf.validate.field).required = true];
+  // Required. The legal name of the business, shown in the 特商法 disclosure.
+  entity.v1.LegalName legal_name = 2 [(buf.validate.field).required = true];
+
+  // Required. The name of the business's representative.
+  entity.v1.RepresentativeName representative_name = 3 [(buf.validate.field).required = true];
+
+  // Required. The business address.
+  entity.v1.BusinessAddress business_address = 4 [(buf.validate.field).required = true];
+
+  // Required. The business phone number, in E.164 form.
+  entity.v1.PhoneNumber business_phone_number = 5 [(buf.validate.field).required = true];
+
+  // Required. The email address fans contact the business at.
+  entity.v1.ContactEmail contact_email = 6 [(buf.validate.field).required = true];
 }
 
-// UpdateSellerDetailsResponse returns the Organizer with its new seller
+// SetBusinessDetailsResponse returns the Organizer with its new business
 // details.
-message UpdateSellerDetailsResponse {
-  // The organizer with its seller details.
+message SetBusinessDetailsResponse {
+  // The organizer with its business details.
   entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
 }
 

@@ -33,9 +33,9 @@ import "liverty_music/entity/v1/venue.proto";
 // is scoped to), so requests never carry an organizer_id; a series is
 // addressed by its SeriesId. An organizer may author only for artists it
 // represents (the same represented-artists set returned by
-// liverty_music.rpc.organizer.v1.OrganizerService.ListArtists). Authorization is org-scoped from the token's
-// role claim, and failures that would concern another org's series never
-// reveal whether such a series exists.
+// liverty_music.rpc.organizer.artist.v1.ArtistService.List). Authorization is
+// org-scoped from the token's role claim, and failures that would concern
+// another org's series never reveal whether such a series exists.
 //
 // Publishing a PUBLIC series emits exactly one CONCERT.created per series
 // (carrying the newly-published event ids), which drives the existing follower
@@ -114,7 +114,7 @@ service SeriesService {
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Cancel(CancelRequest) returns (CancelResponse);
 
-  // CreateMediaUploadURL authorizes a direct-to-storage upload: it mints a new
+  // CreateMediaUploadUrl authorizes a direct-to-storage upload: it mints a new
   // MediaId and returns a short-lived signed URL the client PUTs the original
   // image bytes to, without the bytes ever passing through this service. The
   // authorization is scoped to the caller's Organizer and to a fixed content
@@ -129,7 +129,7 @@ service SeriesService {
   //   Non-revealing.
   // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  rpc CreateMediaUploadURL(CreateMediaUploadURLRequest) returns (CreateMediaUploadURLResponse);
+  rpc CreateMediaUploadUrl(CreateMediaUploadUrlRequest) returns (CreateMediaUploadUrlResponse);
 
   // AttachMedia records a previously uploaded media object as belonging to a
   // series the caller owns and enqueues asynchronous processing. It records the
@@ -150,7 +150,7 @@ service SeriesService {
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc AttachMedia(AttachMediaRequest) returns (AttachMediaResponse);
 
-  // RegenerateToken issues a fresh signed share token for an UNLISTED series,
+  // RegenerateShareUrl issues a fresh signed share token for an UNLISTED series,
   // invalidating the previous share URL, and returns the new URL. It applies
   // only to UNLISTED series.
   //
@@ -159,7 +159,7 @@ service SeriesService {
   //   Non-revealing.
   // - FAILED_PRECONDITION: The series is not UNLISTED, so it has no share token.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  rpc RegenerateToken(RegenerateTokenRequest) returns (RegenerateTokenResponse);
+  rpc RegenerateShareUrl(RegenerateShareUrlRequest) returns (RegenerateShareUrlResponse);
 
   // List returns the series authored by the caller's own Organizer, both
   // drafts and published, so the console can render the authoring dashboard.
@@ -220,8 +220,8 @@ message EventDraft {
 // SeriesDraft is the authoring payload for a first-party series, shared by
 // Create and Update. It carries the series-level metadata, the performers, and
 // the events being authored. The image and unlisted share token are managed
-// out of band (the CreateMediaUploadURL/AttachMedia flow and the
-// publish/RegenerateToken flow), so they are not part of this payload.
+// out of band (the CreateMediaUploadUrl/AttachMedia flow and the
+// publish/RegenerateShareUrl flow), so they are not part of this payload.
 message SeriesDraft {
   // Required. The title shared by every event in the series.
   entity.v1.Title title = 1 [(buf.validate.field).required = true];
@@ -334,9 +334,9 @@ message CancelRequest {
 // CancelResponse is returned upon successful cancellation.
 message CancelResponse {}
 
-// CreateMediaUploadURLRequest declares the content type of the image the client
+// CreateMediaUploadUrlRequest declares the content type of the image the client
 // intends to upload directly to storage.
-message CreateMediaUploadURLRequest {
+message CreateMediaUploadUrlRequest {
   // Required. The IANA media type of the image the client will upload. Only
   // common web image types are accepted; the signed URL is bound to this type.
   string content_type = 1 [(buf.validate.field).string = {
@@ -348,9 +348,9 @@ message CreateMediaUploadURLRequest {
   }];
 }
 
-// CreateMediaUploadURLResponse returns everything the client needs to upload the
+// CreateMediaUploadUrlResponse returns everything the client needs to upload the
 // original bytes directly to storage and later attach them.
-message CreateMediaUploadURLResponse {
+message CreateMediaUploadUrlResponse {
   // The short-lived signed URL the client PUTs the original image bytes to.
   entity.v1.Url upload_url = 1 [(buf.validate.field).required = true];
 
@@ -371,7 +371,7 @@ message AttachMediaRequest {
   // caller's Organizer.
   entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
 
-  // Required. The media object previously minted by CreateMediaUploadURL and
+  // Required. The media object previously minted by CreateMediaUploadUrl and
   // uploaded by the client.
   entity.v1.MediaId media_id = 2 [(buf.validate.field).required = true];
 }
@@ -382,17 +382,17 @@ message AttachMediaRequest {
 // available.
 message AttachMediaResponse {}
 
-// RegenerateTokenRequest identifies the UNLISTED series whose share token is
+// RegenerateShareUrlRequest identifies the UNLISTED series whose share token is
 // being rotated.
-message RegenerateTokenRequest {
+message RegenerateShareUrlRequest {
   // Required. The UNLISTED series to rotate the share token for. It MUST be
   // owned by the caller's Organizer.
   entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
 }
 
-// RegenerateTokenResponse returns the new signed share URL; the previous URL is
+// RegenerateShareUrlResponse returns the new signed share URL; the previous URL is
 // invalidated.
-message RegenerateTokenResponse {
+message RegenerateShareUrlResponse {
   // The new signed share URL for the UNLISTED series.
   entity.v1.Url share_url = 1 [(buf.validate.field).required = true];
 }

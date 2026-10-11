@@ -25,7 +25,7 @@ message SalesPhaseId {
 enum SalesMethod {
   // Default value; never a valid state for a stored phase.
   SALES_METHOD_UNSPECIFIED = 0;
-  // Tickets are allocated by lottery (抽選販売): applicants enter a draw and only
+  // Tickets are allocated by lottery (抽選販売): fans enter a draw and only
   // winners proceed to payment. The dominant method in the Japanese live market.
   SALES_METHOD_LOTTERY = 1;
   // Tickets are sold first-come, first-served (先着販売) until they sell out.

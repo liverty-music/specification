@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.admin.artist.v1 provides the admin-only
+// ArtistService for reading artists from the developer admin console. It is
+// served by the admin Connect server behind the admin-role gate.
+package liverty_music.rpc.admin.artist.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/organizer.proto";
+
+// ArtistService is the admin surface over Artists for the calls only the admin
+// console offers. The browsing and search calls the admin console shares with
+// the fan app stay on liverty_music.rpc.artist.v1.ArtistService, reached
+// through the admin server with the same admin-role gate.
+//
+// All RPCs are authorized only for the admin organization; callers outside it
+// are rejected with PERMISSION_DENIED at the admin server boundary.
+service ArtistService {
+  // ListByOrganizer returns the Artists an Organizer currently represents,
+  // whatever the Organizer's status, so the admin console can inspect its
+  // roster. Empty when it represents none (or its associations were freed by
+  // deactivation).
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The organizer id is missing or malformed.
+  // - NOT_FOUND: The organizer does not exist.
+  rpc ListByOrganizer(ListByOrganizerRequest) returns (ListByOrganizerResponse);
+}
+
+// ListByOrganizerRequest identifies the Organizer whose represented Artists to
+// list.
+message ListByOrganizerRequest {
+  // Required. The organizer whose represented artists to return.
+  entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
+}
+
+// ListByOrganizerResponse contains the Artists the Organizer currently
+// represents.
+message ListByOrganizerResponse {
+  // The artists represented by the organizer. Empty when it represents none.
+  repeated entity.v1.Artist artists = 1;
+}

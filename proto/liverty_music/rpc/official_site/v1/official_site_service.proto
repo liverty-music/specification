@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.official_site.v1 provides the OfficialSiteService
+// for managing the official sites of artists.
+package liverty_music.rpc.official_site.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/entity.proto";
+
+// OfficialSiteService creates and deletes an artist's official site: the
+// official website or social media channel the artist is reached at. Every
+// call requires a signed-in caller; none acts for a particular fan, so no
+// account is looked up.
+service OfficialSiteService {
+  // Create stores an official site for an artist.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The caller is not signed in.
+  // - INVALID_ARGUMENT: The artist ID is missing or not a UUID, or the URL is
+  //   not a valid URI of 1 to 2048 characters.
+  // - NOT_FOUND: The specified artist does not exist.
+  rpc Create(CreateRequest) returns (CreateResponse);
+
+  // Delete is reserved for removing an official site. No site is deleted yet:
+  // every signed-in call fails with UNIMPLEMENTED and nothing changes.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The caller is not signed in.
+  // - UNIMPLEMENTED: Deleting an official site is not supported.
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+}
+
+// CreateRequest specifies the artist and the URL of its new official site.
+message CreateRequest {
+  // Required. The unique identifier of the artist the official site belongs to.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The URL of the official site.
+  entity.v1.Url url = 2 [(buf.validate.field).required = true];
+}
+
+// CreateResponse is returned once the official site is stored.
+message CreateResponse {}
+
+// DeleteRequest identifies the official site to remove.
+message DeleteRequest {
+  // Required. The unique identifier of the official site to delete.
+  entity.v1.OfficialSiteId official_site_id = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteResponse is returned once the official site is removed.
+message DeleteResponse {}

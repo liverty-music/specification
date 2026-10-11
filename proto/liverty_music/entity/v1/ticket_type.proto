@@ -1,0 +1,154 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "liverty_music/entity/v1/event.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// TicketSaleId is a globally unique identifier for a single TicketSale. It is
+// defined here rather than next to TicketSale because a TicketType names its
+// TicketSale and a TicketSale embeds its TicketTypes, and proto files cannot
+// import each other.
+message TicketSaleId {
+  // A UUID string mapping to the ticket sale's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// TicketTypeId is a globally unique identifier for a single TicketType.
+message TicketTypeId {
+  // A UUID string mapping to the ticket type's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// TicketTypeState is where a TicketType of a first-come TicketSale stands at a
+// given time. It is derived when the ticket type is read, never stored. New
+// values may be appended; existing values must not be renumbered.
+enum TicketTypeState {
+  // Default value. Returned only for a TicketType of a lottery TicketSale,
+  // which has no state.
+  TICKET_TYPE_STATE_UNSPECIFIED = 0;
+
+  // Before the sale's start time. The start time is shown in Japan time.
+  TICKET_TYPE_STATE_NOT_YET_ON_SALE = 1;
+
+  // Inside the sale's window with tickets remaining.
+  TICKET_TYPE_STATE_ON_SALE = 2;
+
+  // Inside the sale's window, not sold out, but every remaining ticket is held
+  // by other fans' Checkouts. Tickets may come back when those holds lapse.
+  TICKET_TYPE_STATE_ALL_HELD = 3;
+
+  // Inside the sale's window and the sold count equals the quantity. Raising
+  // the quantity reopens the ticket type.
+  TICKET_TYPE_STATE_SOLD_OUT = 4;
+
+  // At or after the sale's end time. Takes precedence over SOLD_OUT and
+  // ALL_HELD.
+  TICKET_TYPE_STATE_ENDED = 5;
+}
+
+// TicketType is what one TicketSale offers for one event: the tax-inclusive
+// (税込) price of one ticket, how many tickets are offered and how many tickets
+// one account may hold for the event. A TicketSale has at most one TicketType
+// per event. For a first-come sale it also carries that event's stock: the
+// tickets sold and the tickets held in Checkouts.
+//
+// The state, whether stock is low and the held count are evaluated by the
+// server when the ticket type is read, for a first-come sale only. The
+// quantity, the sold count and the held count are shown only to the owning
+// Organizer; a fan-facing read leaves them unset, so no fan learns how many
+// tickets remain.
+message TicketType {
+  // The per-account limit never exceeds the quantity. The quantity is unset in
+  // a fan-facing read, where the rule is not checked.
+  option (buf.validate.message).cel = {
+    id: "ticket_type.per_account_limit_within_quantity"
+    message: "per_account_limit must not exceed quantity"
+    expression: "!has(this.quantity) || this.per_account_limit <= this.quantity"
+  };
+
+  // The unique identifier for this ticket type. Server-generated surrogate id.
+  TicketTypeId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The TicketSale that offers this ticket type.
+  TicketSaleId ticket_sale_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The event this ticket type admits to: an event of the sale's Series (checked
+  // server-side). One ticket type per event in a sale.
+  EventId event_id = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The price of one ticket in whole yen, tax-inclusive (税込). 1 to 1,000,000.
+  // The fan pays price × count, with no fee on top. For a first-come sale it
+  // cannot change while any ticket is sold or held.
+  TicketPrice price = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The tickets offered, at least 1. Set only in the owning Organizer's view.
+  // For a first-come sale it can grow, or shrink down to what is sold and held.
+  optional int32 quantity = 5 [(buf.validate.field).int32.gte = 1];
+
+  // The most tickets one account may hold for the event once this sale is done,
+  // counting the tickets it already holds for the event. 1 to 10, because one
+  // admission code presents at most 10 tickets, and at most the quantity. 4
+  // when not given at creation.
+  int32 per_account_limit = 6 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).int32 = {
+      gte: 1
+      lte: 10
+    }
+  ];
+
+  // The tickets on the ticket type's Committed and Completed Checkouts, 0 to the
+  // quantity. First-come sale only; set only in the owning Organizer's view.
+  // Server-owned.
+  optional int32 sold_count = 7 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).int32.gte = 0
+  ];
+
+  // The tickets on the ticket type's Checkouts whose hold has not lapsed at the
+  // time it was read, 0 to the quantity. First-come sale only; set only in the
+  // owning Organizer's view. Server-owned.
+  optional int32 held_count = 8 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).int32.gte = 0
+  ];
+
+  // Where the ticket type stands at the time it was read. Server-owned. Set for a
+  // first-come sale, and UNSPECIFIED for a lottery sale.
+  TicketTypeState state = 9 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // True when a first-come ticket type is ON_SALE and at most a tenth of its
+  // quantity, rounded up, remains at the time it was read, so the event page
+  // shows 残りわずか (few left) without a count. Always false for a lottery
+  // sale. Server-owned.
+  bool low_stock = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// TicketPrice is the price of one ticket in whole yen, tax-inclusive (税込).
+message TicketPrice {
+  // The amount in yen, 1 to 1,000,000.
+  int64 value = 1 [(buf.validate.field).int64 = {
+    gte: 1
+    lte: 1000000
+  }];
+}

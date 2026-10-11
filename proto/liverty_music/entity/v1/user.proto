@@ -5,7 +5,6 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/coordinates.proto";
-import "liverty_music/entity/v1/holder_identity.proto";
 
 // UserId is a globally unique identifier for a platform user.
 message UserId {
@@ -20,30 +19,53 @@ message UserExternalId {
   string value = 1 [(buf.validate.field).string.min_len = 1];
 }
 
+// FullName is the 本人確認 (identity check) name of a User, shown on their
+// tickets and prefilled at lottery entry and checkout.
+message FullName {
+  // The full name (氏名), 1 to 200 characters.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
+// PhoneNumber is a phone number in E.164 form: "+" then 2 to 15 digits, the
+// first not 0 (e.g. "+819012345678"). A domestic format such as "090-1234-5678"
+// is rejected.
+message PhoneNumber {
+  // The E.164 phone number, at most 16 characters.
+  string value = 1 [(buf.validate.field).string = {
+    max_len: 16
+    pattern: "^\\+[1-9][0-9]{1,14}$"
+  }];
+}
+
 // UserEmail represents a validated email address for communications.
 message UserEmail {
   // The email address string, validated against standard email formats.
   string value = 1 [(buf.validate.field).string.email = true];
 }
 
-// VerificationLevel is the account-level identity assurance that ④
-// lottery-application and ⑤ ticket-purchase consumers read to gate an
-// apply/purchase. It is derived from whether an active VerifiedIdentity (see
-// verified_identity.proto) backs the account. Verification is a lane, not a
-// universal mandate, so most accounts sit at UNVERIFIED. New values may be
-// appended; existing values must not be renumbered.
+// VerificationLevel is the account-level 本人確認 (identity check) assurance
+// that a lottery entry or a checkout reads to gate a TicketSale with a
+// verification requirement. It is derived from whether an Active Kyc (see
+// kyc.proto) backs the account. Verification is a lane, not a universal
+// mandate, so most accounts sit at UNVERIFIED. New values may be appended;
+// existing values must not be renumbered.
 enum VerificationLevel {
   // Default value, rejected at the boundary: the server always sets a concrete
   // level (this OUTPUT_ONLY field is never persisted unset).
   VERIFICATION_LEVEL_UNSPECIFIED = 0;
 
-  // The account has no active identity verification — the ordinary state until a
-  // fan opts into verification.
+  // The account has no Active Kyc — the ordinary state until a fan opts into
+  // verification.
   VERIFICATION_LEVEL_UNVERIFIED = 1;
 
-  // The account is bound to a verified real person (an active VerifiedIdentity
-  // exists). Surfaced to ④/⑤ so verification-required events admit it.
-  VERIFICATION_LEVEL_IDENTITY_VERIFIED = 2;
+  // The account is bound to a verified real person (an Active Kyc exists), so
+  // TicketSales with a verification requirement admit it.
+  VERIFICATION_LEVEL_KYC_VERIFIED = 2;
+
+  reserved "VERIFICATION_LEVEL_IDENTITY_VERIFIED";
 }
 
 // User represents a registered person on the Liverty Music platform.
@@ -76,9 +98,9 @@ message User {
   // and to localize user-facing notifications.
   //
   // Absent (NULL in storage) until the client first asserts a preference —
-  // either via Create at signup or via UpdatePreferredLanguage for legacy
+  // either via Create at signup or via SetPreferredLanguage for legacy
   // rows that predate this field. Clients observing an absent value SHALL
-  // backfill it by calling UpdatePreferredLanguage with their currently
+  // backfill it by calling SetPreferredLanguage with their currently
   // effective locale, so that subsequent sessions can rely on the backend
   // as the single source of truth for the user's language preference.
   optional string preferred_language = 7 [(buf.validate.field).string = {
@@ -86,10 +108,10 @@ message User {
     pattern: "^[a-z]{2}$"
   }];
 
-  // The account's identity-verification assurance level, derived server-side
-  // from whether an active VerifiedIdentity backs this account (see
-  // identity-ekyc). Surfaced here so ④ lottery-application and ⑤ ticket-purchase
-  // consumers can gate a verification-required event without a second lookup.
+  // The account's 本人確認 assurance level, derived server-side from whether an
+  // Active Kyc backs this account. Surfaced here so a lottery entry or a
+  // checkout can gate a TicketSale with a verification requirement without a
+  // second lookup.
   // OUTPUT_ONLY: clients never set it; the server always populates a concrete
   // value (UNVERIFIED for accounts that have not verified).
   VerificationLevel verification_level = 8 [
@@ -97,11 +119,19 @@ message User {
     (buf.validate.field).enum.defined_only = true
   ];
 
-  // The 本人確認 name and phone number the user last checked out with, kept to
-  // prefill their next checkout. Absent until the user first authorizes a
-  // checkout; replaced as a whole whenever they check out with different
-  // details. Server-owned: it changes only through a checkout.
-  HolderIdentity holder_identity = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // The 本人確認 (identity check) name shown on the user's tickets and
+  // prefilled at lottery entry and checkout. Absent until the user first gives
+  // it, at lottery entry, at checkout or in their settings.
+  FullName full_name = 10 [(google.api.field_behavior) = OPTIONAL];
+
+  // The 本人確認 contact phone number shown on the user's tickets. Absent until
+  // the user first gives it, at lottery entry, at checkout or in their settings.
+  PhoneNumber phone_number = 11 [(google.api.field_behavior) = OPTIONAL];
+
+  // Field 9 was the 本人確認 details as one value, replaced by full_name and
+  // phone_number.
+  reserved 9;
+  reserved "holder_identity";
 }
 
 // Home represents the user's home area as a structured geographic location,

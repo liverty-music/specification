@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.artist.v1 provides the organizer-facing
+// ArtistService that an operator uses to read the Artists their own Organizer
+// represents from the organizer console. It is served by the dedicated
+// organizer Connect server behind org-scoped role-claim authorization.
+package liverty_music.rpc.organizer.artist.v1;
+
+import "liverty_music/entity/v1/artist.proto";
+
+// ArtistService is the organizer-facing surface over Artists. The caller's
+// Organizer is resolved from the token (the Zitadel org the token is scoped
+// to), so requests never carry an organizer_id and an operator cannot ask for
+// another Organizer's roster. Every call passes the same organizer-console
+// sign-in checks as liverty_music.rpc.organizer.v1.OrganizerService, and
+// failures that would concern another org never reveal whether such an
+// Organizer exists.
+service ArtistService {
+  // List returns every Artist the caller's own Organizer represents, ascending
+  // by artist id (stable), so the organizer console can render the roster.
+  // Empty when it represents none. The roster is unbounded on the wire:
+  // pagination is deferred to a later phase, which is acceptable because an
+  // Organizer's roster is admin-curated and small.
+  //
+  // Possible errors:
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - PERMISSION_DENIED: The token carries no organizer-console role, its
+  //   audience lacks the organizer-console project id, its login-scope org and
+  //   role-claim org disagree, no Organizer is linked to the caller's Zitadel
+  //   org, or the Organizer is still provisioning. Non-revealing.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc List(ListRequest) returns (ListResponse);
+}
+
+// ListRequest is empty: the caller's Organizer is resolved from the token.
+message ListRequest {}
+
+// ListResponse contains the Artists the caller's Organizer represents,
+// ascending by artist id (stable). Empty when it represents none.
+message ListResponse {
+  // The artists represented by the caller's organizer, ascending by artist id.
+  repeated entity.v1.Artist artists = 1;
+}

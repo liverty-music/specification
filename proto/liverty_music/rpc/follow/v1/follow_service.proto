@@ -11,6 +11,11 @@ import "liverty_music/entity/v1/follow.proto";
 // FollowService manages the relationship between fans and the artists they follow.
 // It handles follow/unfollow actions, hype level preferences, and listing
 // followed artists for the authenticated user.
+//
+// Every call acts only for the signed-in caller, resolved to their stored User;
+// no request names a fan. Every call fails with UNAUTHENTICATED when the caller
+// is not signed in, and with NOT_FOUND when the caller has no account (the fan
+// must finish registration first), before any usecase runs.
 service FollowService {
   // Follow establishes a follow relationship between the current user and an artist.
   // This personalization allows the system to notify users about concerts.
@@ -26,12 +31,13 @@ service FollowService {
   // - NOT_FOUND: The user was not following the specified artist.
   rpc Unfollow(UnfollowRequest) returns (UnfollowResponse);
 
-  // ListFollowed retrieves the list of artists currently followed by the authenticated user.
-  // Each entry includes the user's hype preference for the artist.
+  // List retrieves the caller's Follows: every artist the authenticated user
+  // currently follows, each with the user's hype preference for the artist.
   //
   // Possible errors:
-  // - UNAUTHENTICATED: The user identity could not be verified.
-  rpc ListFollowed(ListFollowedRequest) returns (ListFollowedResponse);
+  // - UNAUTHENTICATED: The caller is not signed in.
+  // - NOT_FOUND: The signed-in caller has no account.
+  rpc List(ListRequest) returns (ListResponse);
 
   // SetHype updates the user's enthusiasm tier for a followed artist.
   // The hype level controls push notification scope and dashboard rendering.
@@ -60,12 +66,12 @@ message UnfollowRequest {
 // UnfollowResponse is returned upon successfully removing the follow relationship.
 message UnfollowResponse {}
 
-// ListFollowedRequest is the request for listing the current user's followed artists.
-message ListFollowedRequest {}
+// ListRequest is the request for listing the current user's followed artists.
+message ListRequest {}
 
-// ListFollowedResponse contains the collection of artists followed by the user,
+// ListResponse contains the collection of artists followed by the user,
 // enriched with per-user hype metadata.
-message ListFollowedResponse {
+message ListResponse {
   // The collection of followed artists with their hype preferences.
   repeated entity.v1.FollowedArtist artists = 1;
 }

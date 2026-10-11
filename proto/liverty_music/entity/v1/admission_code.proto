@@ -49,7 +49,7 @@ message AdmissionCode {
     expression: "this.ticket_ids.map(t, t.value).unique()"
   };
 
-  // The User presenting the tickets; must be the holder of each.
+  // The User presenting the tickets; must be the user of each.
   UserId user_id = 1 [(buf.validate.field).required = true];
 
   // The event the presented tickets admit to.

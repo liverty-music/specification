@@ -4,15 +4,14 @@ package liverty_music.rpc.notification.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/notification.proto";
-import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/notification/v1;notificationv1";
 
 // NotificationService lets a fan manage the read/dismiss state of their own
-// notifications. Each request carries an explicit user_id that the backend
-// verifies against the JWT-derived userID (per the rpc-auth-scoping convention),
-// rejecting mismatches with PERMISSION_DENIED — defense-in-depth so one user
-// cannot change another user's notification state.
+// notifications. Every call acts for the signed-in caller, resolved to their
+// stored User; the request names no fan, and the backend refuses a
+// notification of another fan, so one user cannot change another user's
+// notification state.
 //
 // This is the minimal control surface required so that read/dismiss state is
 // user-controllable. A full inbox listing RPC is intentionally deferred to the
@@ -21,18 +20,28 @@ service NotificationService {
   // MarkRead marks one of the caller's notifications as read. It is idempotent:
   // marking an already-read notification succeeds without changing the recorded
   // read time.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The caller is not signed in.
+  // - NOT_FOUND: The signed-in caller has no account.
+  // - INVALID_ARGUMENT: No notification is given.
   rpc MarkRead(MarkReadRequest) returns (MarkReadResponse);
 
-  // MarkDismissed marks one of the caller's notifications as dismissed. It is
+  // Dismiss marks one of the caller's notifications as dismissed. It is
   // idempotent: dismissing an already-dismissed notification succeeds without
   // changing the recorded dismiss time.
-  rpc MarkDismissed(MarkDismissedRequest) returns (MarkDismissedResponse);
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The caller is not signed in.
+  // - NOT_FOUND: The signed-in caller has no account.
+  // - INVALID_ARGUMENT: No notification is given.
+  rpc Dismiss(DismissRequest) returns (DismissResponse);
 }
 
 // MarkReadRequest identifies the caller's notification to mark as read.
 message MarkReadRequest {
-  // The authenticated caller, verified against the JWT-derived userID.
-  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+  reserved 1;
+  reserved "user_id";
 
   // The notification to mark as read. Must belong to the authenticated caller.
   entity.v1.NotificationId notification_id = 2 [(buf.validate.field).required = true];
@@ -41,14 +50,14 @@ message MarkReadRequest {
 // MarkReadResponse is returned when the notification has been marked read.
 message MarkReadResponse {}
 
-// MarkDismissedRequest identifies the caller's notification to mark as dismissed.
-message MarkDismissedRequest {
-  // The authenticated caller, verified against the JWT-derived userID.
-  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+// DismissRequest identifies the caller's notification to mark as dismissed.
+message DismissRequest {
+  reserved 1;
+  reserved "user_id";
 
   // The notification to mark as dismissed. Must belong to the authenticated caller.
   entity.v1.NotificationId notification_id = 2 [(buf.validate.field).required = true];
 }
 
-// MarkDismissedResponse is returned when the notification has been marked dismissed.
-message MarkDismissedResponse {}
+// DismissResponse is returned when the notification has been marked dismissed.
+message DismissResponse {}
