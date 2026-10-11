@@ -47,19 +47,19 @@ Apply SHALL take a phase, the calling fan as applicant, a requested ticket count
 
 ### Requirement: Verification gate
 
-When the phase requires verification, Apply SHALL require the applicant to hold a verified identity whose status is Active, read with VerifiedIdentity.GetByUserID, and SHALL fail with FailedPrecondition otherwise. When the phase's requirement is None, no verified identity is needed.
+When the phase requires verification, Apply SHALL require the applicant to hold an identity verification whose status is Active, read with IdentityVerification.GetByUserID, and SHALL fail with FailedPrecondition otherwise. When the phase's requirement is None, no identity verification is needed.
 
-#### Scenario: No verified identity
+#### Scenario: No identity verification
 
 - **WHEN** the phase requires JPKI-only and the fan has never verified
 - **THEN** Apply fails with FailedPrecondition and stores nothing
 
 #### Scenario: Verification not active
 
-- **WHEN** the phase requires verification and the fan's verified identity needs re-verification
+- **WHEN** the phase requires verification and the fan's identity verification needs re-verification
 - **THEN** Apply fails with FailedPrecondition
 
 #### Scenario: Active verification
 
-- **WHEN** the phase requires verification and the fan's verified identity is Active
+- **WHEN** the phase requires verification and the fan's identity verification is Active
 - **THEN** Apply continues with the other checks

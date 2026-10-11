@@ -8,7 +8,7 @@ PayoutSweeperUseCase.ReleaseDueSettlements pays out every Held Settlement whose 
 
 ### Requirement: Payout waits for the Organizer's payout account
 
-ReleaseDueSettlements SHALL withhold the Settlement, without failing it, when the Organizer has no payout account, found with OrganizerConnectedAccount.GetByOrganizerID, or when the account is not Active. It SHALL refresh the account's status with OrganizerConnectedAccount.GetAccountStatus before deciding, and use the stored status when the refresh fails.
+ReleaseDueSettlements SHALL withhold the Settlement, without failing it, when the Organizer has no payout account, found with PayoutAccount.GetByOrganizerID, or when the account is not Active. It SHALL refresh the account's status with PayoutAccount.GetStatus before deciding, and use the stored status when the refresh fails.
 
 #### Scenario: No payout account
 

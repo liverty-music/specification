@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The admin-facing concert service boundary: who may list and delete concerts from the admin console. Reviewing staged concerts is the admin StagedConcertService boundary.
+The admin-facing concert service boundary: who may list and delete concerts from the admin console. Reviewing concert candidates is the admin StagedConcertService boundary.
 
 ## Requirements
 
@@ -18,25 +18,25 @@ List, ListPending, Approve, Reject and Delete SHALL require a signed-in caller h
 #### Scenario: Non-admin approves
 
 - **WHEN** a signed-in caller without the admin role calls Approve
-- **THEN** the call fails with PermissionDenied and the StagedConcert is unchanged
+- **THEN** the call fails with PermissionDenied and the ConcertCandidate is unchanged
 
 ### Requirement: Reviews carry the reviewer
 
-Approve SHALL pass the StagedConcert id, the requested resolution — keep the existing Event, adopt the staged one, or none — and the caller's identity as reviewer to ConcertUseCase.Approve, and SHALL return the duplicate conflict the usecase reports, if any. Reject SHALL pass the StagedConcert id, the reason and the caller's identity as reviewer to ConcertUseCase.Reject.
+Approve SHALL pass the ConcertCandidate id, the requested resolution — keep the existing Event, adopt the staged one, or none — and the caller's identity as reviewer to ConcertUseCase.Approve, and SHALL return the duplicate conflict the usecase reports, if any. Reject SHALL pass the ConcertCandidate id, the reason and the caller's identity as reviewer to ConcertUseCase.Reject.
 
 #### Scenario: Approve without a resolution
 
-- **WHEN** an admin approves a StagedConcert that collides with an existing Event without giving a resolution
+- **WHEN** an admin approves a ConcertCandidate that collides with an existing Event without giving a resolution
 - **THEN** the response carries the duplicate conflict and nothing is published
 
 #### Scenario: Reject records the reviewer
 
-- **WHEN** an admin rejects a StagedConcert with a reason
+- **WHEN** an admin rejects a ConcertCandidate with a reason
 - **THEN** the rejection is recorded with that reason and that admin as reviewer
 
 ### Requirement: Admin concert requests are validated at the boundary
 
-Approve and Reject SHALL fail with InvalidArgument when no StagedConcert id is given; Reject SHALL fail with InvalidArgument when the reason is empty; Delete SHALL fail with InvalidArgument when no event id is given.
+Approve and Reject SHALL fail with InvalidArgument when no ConcertCandidate id is given; Reject SHALL fail with InvalidArgument when the reason is empty; Delete SHALL fail with InvalidArgument when no event id is given.
 
 #### Scenario: Reject without a reason
 

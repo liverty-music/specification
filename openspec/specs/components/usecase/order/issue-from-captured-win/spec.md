@@ -45,21 +45,21 @@ It SHALL store them with Order.Issue; when Order.Issue fails with AlreadyExists 
 - **WHEN** Event.GetOrganizerID fails with NotFound
 - **THEN** IssueFromCapturedWin fails with NotFound and creates nothing
 
-### Requirement: Verified identity binding
+### Requirement: Identity verification binding
 
-When the phase requires verification, IssueFromCapturedWin SHALL bind every Ticket to the applicant's verified identity, read with VerifiedIdentity.GetByUserID whatever its status; the holder name on the Ticket stays the applicant's declared name. When the applicant has no verified identity, it SHALL fail with that error and create nothing.
+When the phase requires verification, IssueFromCapturedWin SHALL bind every Ticket to the applicant's identity verification, read with IdentityVerification.GetByUserID whatever its status; the holder name on the Ticket stays the applicant's declared name. When the applicant has no identity verification, it SHALL fail with that error and create nothing.
 
 #### Scenario: Phase required verification
 
-- **WHEN** the phase requires JPKI-only and the applicant has a verified identity
-- **THEN** every Ticket is bound to that verified identity and shows the applicant's declared name
+- **WHEN** the phase requires JPKI-only and the applicant has an identity verification
+- **THEN** every Ticket is bound to that identity verification and shows the applicant's declared name
 
-#### Scenario: Verified identity missing
+#### Scenario: Identity verification missing
 
-- **WHEN** the phase requires verification and VerifiedIdentity.GetByUserID fails with NotFound
+- **WHEN** the phase requires verification and IdentityVerification.GetByUserID fails with NotFound
 - **THEN** IssueFromCapturedWin fails with NotFound and creates nothing
 
 #### Scenario: No requirement
 
 - **WHEN** the phase's requirement is None
-- **THEN** the Tickets have no verified identity
+- **THEN** the Tickets have no identity verification

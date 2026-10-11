@@ -34,7 +34,7 @@ erDiagram
   User ||--o{ TicketJourney : "tracks events through"
   User ||--o{ PushSubscription : "receives push on"
   User ||--o{ Notification : "receives"
-  User ||--o{ VerifiedIdentity : "is verified by"
+  User ||--o{ IdentityVerification : "is verified by"
   User ||--o{ Order : "buys"
   User ||--o{ Ticket : "holds"
   User ||--o{ LotteryEntry : "enters"

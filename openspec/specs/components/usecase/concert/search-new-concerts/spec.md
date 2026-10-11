@@ -32,7 +32,7 @@ SearchNewConcerts SHALL return no concerts, and SHALL perform no external search
 
 ### Requirement: Skip when recently searched or discovered
 
-Before searching, SearchNewConcerts SHALL read the Artist's SearchLog and return no concerts, performing no external search, when the SearchLog is fresh (freshness window 24 hours by default, configurable per environment), recently discovered (discovery window 14 days by default), or in progress (pending timeout 3 minutes). An Artist never searched, or whose last search failed and found nothing recently, SHALL be searched.
+Before searching, SearchNewConcerts SHALL read the Artist's ConcertSearch and return no concerts, performing no external search, when the ConcertSearch is fresh (freshness window 24 hours by default, configurable per environment), recently discovered (discovery window 14 days by default), or in progress (pending timeout 3 minutes). An Artist never searched, or whose last search failed and found nothing recently, SHALL be searched.
 
 #### Scenario: Searched 2 hours ago
 - **WHEN** the Artist's last search completed 2 hours ago
@@ -52,19 +52,19 @@ Before searching, SearchNewConcerts SHALL read the Artist's SearchLog and return
 
 ### Requirement: The search is recorded
 
-Before the external search, SearchNewConcerts SHALL restart the Artist's SearchLog as pending (SearchLog.Upsert), and SHALL fail without searching when that cannot be recorded. When the search ends with an error the status SHALL become failed; otherwise completed. When new concerts are announced, SearchNewConcerts SHALL record the discovery (SearchLog.MarkFound); a failure to update the status or record the discovery SHALL NOT change the result.
+Before the external search, SearchNewConcerts SHALL restart the Artist's ConcertSearch as pending (ConcertSearch.Upsert), and SHALL fail without searching when that cannot be recorded. When the search ends with an error the status SHALL become failed; otherwise completed. When new concerts are announced, SearchNewConcerts SHALL record the discovery (ConcertSearch.MarkFound); a failure to update the status or record the discovery SHALL NOT change the result.
 
 #### Scenario: Productive search
 - **WHEN** the search announces two new concerts
-- **THEN** the SearchLog is completed and its last found time is now
+- **THEN** the ConcertSearch is completed and its last found time is now
 
 #### Scenario: Nothing new
 - **WHEN** the search finds only known concerts
-- **THEN** the SearchLog is completed and its last found time is unchanged
+- **THEN** the ConcertSearch is completed and its last found time is unchanged
 
 #### Scenario: External search fails
 - **WHEN** the external search fails with an error
-- **THEN** the SearchLog is failed and SearchNewConcerts fails
+- **THEN** the ConcertSearch is failed and SearchNewConcerts fails
 
 ### Requirement: Artist data required
 
@@ -76,18 +76,18 @@ SearchNewConcerts SHALL fail with Internal, before any external search, when the
 
 ### Requirement: Only new concerts are kept
 
-SearchNewConcerts SHALL search from the current date (Concert.Search), then drop events already known among the Artist's upcoming Concerts (DiscoveredSeries.FilterNewSeries over Concert.ListByArtist upcoming only), then drop every event whose local date and normalized listed venue name match one of the Artist's pending StagedConcerts, whatever its start time. A series left with no events SHALL be dropped. The RejectedConcertLog and SuppressedConcerts SHALL NOT be consulted here.
+SearchNewConcerts SHALL search from the current date (Concert.Search), then drop events already known among the Artist's upcoming Concerts (DiscoveredSeries.FilterNewSeries over Concert.ListByArtist upcoming only), then drop every event whose local date and normalized listed venue name match one of the Artist's pending ConcertCandidates, whatever its start time. A series left with no events SHALL be dropped. The RejectedConcert and SuppressedConcerts SHALL NOT be consulted here.
 
 #### Scenario: Already in the catalog
 - **WHEN** a found event matches an upcoming Concert of the Artist
 - **THEN** it is not announced
 
 #### Scenario: Pending review at another start time
-- **WHEN** a found event starts at 18:00 and a StagedConcert for the Artist is pending at the same date and venue starting 13:00
-- **THEN** the event is not announced and the StagedConcert is not refreshed
+- **WHEN** a found event starts at 18:00 and a ConcertCandidate for the Artist is pending at the same date and venue starting 13:00
+- **THEN** the event is not announced and the ConcertCandidate is not refreshed
 
 #### Scenario: Previously rejected
-- **WHEN** a found event matches only a RejectedConcertLog entry
+- **WHEN** a found event matches only a RejectedConcert entry
 - **THEN** it is announced
 
 ### Requirement: New concerts are announced once per search

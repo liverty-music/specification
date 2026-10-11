@@ -13,7 +13,7 @@ PublishEvents SHALL take a Series and one or more of its DRAFT Events. For each 
 - remove the DRAFT Event when a PUBLISHED Event of this Series is already at that slot;
 - claim the Event at that slot when it belongs to a discovered Series or to another Series of the same Organizer and is not CANCELLED: move it to this Series, keep its id, make it PUBLISHED, add the performers of the DRAFT Event's Concert to its Concert, and remove the DRAFT Event.
 
-It SHALL return the ids of the Events it made PUBLISHED in place; claimed Events SHALL NOT be returned. Together with the Events, it SHALL remove the StagedConcerts that belong to the Series.
+It SHALL return the ids of the Events it made PUBLISHED in place; claimed Events SHALL NOT be returned. Together with the Events, it SHALL remove the ConcertCandidates that belong to the Series.
 
 #### Scenario: New slot
 - **WHEN** no Event is at a given DRAFT Event's slot

@@ -12,7 +12,7 @@ After AdminConcertUseCase.Delete removes a Concert, its Venue, date and start ti
 
 #### Scenario: Discovery finds it again
 - **WHEN** an admin deletes a Concert and a later search finds the same slot for another Artist
-- **THEN** no Concert and no StagedConcert exists for that slot
+- **THEN** no Concert and no ConcertCandidate exists for that slot
 
 #### Scenario: Organizer publishes into the slot
 - **WHEN** an organizer publishes a draft with a performance at the deleted slot

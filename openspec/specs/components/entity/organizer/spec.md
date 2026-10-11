@@ -21,9 +21,9 @@ An Organizer is a vetted seller - a record label, management agency, promoter or
 ```mermaid
 erDiagram
   Organizer |o--o{ Artist : "represents"
-  Organizer ||--o| OrganizerConnectedAccount : "is paid out through"
+  Organizer ||--o| PayoutAccount : "is paid out through"
   Organizer |o--o{ Series : "authors"
-  Organizer ||--o{ Media : "uploads"
+  Organizer ||--o{ SeriesImage : "uploads"
   Organizer ||--o{ Settlement : "is paid by"
 ```
 

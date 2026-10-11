@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The organizer-facing payout onboarding boundary: it resolves the caller's own Organizer from their sign-in and returns that Organizer's payout-receiving account through OnboardingUseCase.GetOrCreateOnboarding.
+The organizer-facing payout onboarding boundary: it resolves the caller's own Organizer from their sign-in and returns that Organizer's payout-receiving account through PayoutAccountUseCase.Get.
 
 ## Requirements
 
@@ -32,7 +32,7 @@ Every request SHALL carry a valid sign-in, or fail with Unauthenticated. The sig
 
 ### Requirement: Get returns the caller's own account
 
-Get SHALL take no input, call OnboardingUseCase.GetOrCreateOnboarding for the caller's own Organizer, and return the account's reference and payout onboarding status, with the onboarding link only when one was returned. When the Organizer is no longer found, it SHALL fail with PermissionDenied.
+Get SHALL take no input, call PayoutAccountUseCase.Get for the caller's own Organizer, and return the account's reference and payout onboarding status, with the onboarding link only when one was returned. When the Organizer is no longer found, it SHALL fail with PermissionDenied.
 
 #### Scenario: Operator opens payout settings
 
@@ -41,5 +41,5 @@ Get SHALL take no input, call OnboardingUseCase.GetOrCreateOnboarding for the ca
 
 #### Scenario: Organizer gone meanwhile
 
-- **WHEN** OnboardingUseCase.GetOrCreateOnboarding fails with NotFound
+- **WHEN** PayoutAccountUseCase.Get fails with NotFound
 - **THEN** Get fails with PermissionDenied

@@ -10,7 +10,7 @@ A Ticket is one account-bound admission right to an event, issued from an Order.
 | order | the Order that issued it | required |
 | user | the account the ticket is bound to | required; never changes (official resale voids the ticket and issues a new one) |
 | event | the event it admits to, which gives the date and venue on its face | required |
-| verified identity | the verified identity the ticket is bound to | optional; set only when the sale required verification |
+| identity verification | the identity verification the ticket is bound to | optional; set only when the sale required verification |
 | resale without consent prohibited | the face states that resale without the organizer's consent is prohibited | always true |
 | status | lifecycle; a Voided ticket is no longer valid for entry | Issued or Voided |
 | issued time | when the ticket was issued | required |
@@ -21,7 +21,7 @@ erDiagram
   Order ||--|{ Ticket : "issues"
   User ||--o{ Ticket : "holds"
   Event ||--o{ Ticket : "is admitted by"
-  VerifiedIdentity |o--o{ Ticket : "binds"
+  IdentityVerification |o--o{ Ticket : "binds"
 ```
 
 ```mermaid

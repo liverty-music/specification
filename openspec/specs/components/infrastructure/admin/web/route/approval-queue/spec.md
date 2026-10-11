@@ -4,7 +4,7 @@
 
 Concerts discovered by the search pipeline are staged for human review before
 they become fan-visible. Discovery resolves the venue and writes a `pending`
-staged concert instead of publishing directly; a developer approves (publishing
+concert candidate instead of publishing directly; a developer approves (publishing
 the concert and notifying followers) or rejects (dropping it and appending to an
 analysis-only log). This gates AI-sourced data quality while keeping rejection
 non-permanent and re-discovery idempotent.

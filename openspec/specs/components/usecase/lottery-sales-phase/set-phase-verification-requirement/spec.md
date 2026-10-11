@@ -2,7 +2,7 @@
 
 ## Purpose
 
-LotteryUseCase.SetPhaseVerificationRequirement lets an Organizer change whether applicants to a LotterySalesPhase must hold a verified identity.
+LotteryUseCase.SetPhaseVerificationRequirement lets an Organizer change whether applicants to a LotterySalesPhase must hold an identity verification.
 
 ## Requirements
 
