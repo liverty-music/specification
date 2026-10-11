@@ -3,5 +3,5 @@
 ## REMOVED Requirements
 
 ### Requirement: Searched time is not in the future
-**Reason**: SalesPhaseSearchLog is renamed TicketSaleSearchLog, as the sales it searches for are TicketSales.
-**Migration**: The behavior continues in `components/entity/ticket-sale-search-log`; the stored data moves in this change's migration.
+**Reason**: SalesPhaseSearchLog is renamed TicketSaleSearch, as the sales it searches for are TicketSales.
+**Migration**: The behavior continues in `components/entity/ticket-sale-search`; the stored data moves in this change's migration.

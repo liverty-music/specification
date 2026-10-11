@@ -143,7 +143,7 @@ Navigation bar/rail, top app bar with account menu, breadcrumb, button (filled, 
 ### D11 — Spec handling of in-flight changes
 
 - `route/reception-links` (added by `ticket-wallet-and-checkin`, not yet in the main specs) is written as a REMOVED delta here; `openspec validate --strict` accepts it now, and it applies once `ticket-wallet-and-checkin` archives. If `rename-reception-to-scanner` moves that spec, task 0.3 retargets the delta.
-- `route/lottery-phase-editor` keeps its path in this change. Once `unify-ticket-sales` and `first-come-ticket-sales` are both archived, the lottery editor and the first-come `route/ticket-sale-editor` are one screen family; merging the two main specs into `route/ticket-sale-editor` is a main-spec move done directly with a mapping table (task 8.1), not a delta.
+- `route/lottery-sale-editor` (moved from `route/lottery-phase-editor` by `unify-ticket-sales`) keeps its path in this change. Once `unify-ticket-sales` and `first-come-ticket-sales` are both archived, the lottery editor and the first-come `route/ticket-sale-editor` are one screen family; merging the two main specs into `route/ticket-sale-editor` is a main-spec move done directly with a mapping table (task 8.1), not a delta.
 - Publish and cancel are written as acting on an event. The exact usecase names come from `restructure-event-publishing`; task 0.2 aligns the story and the event page wording once it is archived.
 
 ### D12 — What this change takes over from `refactor-shared-ui-design-system`

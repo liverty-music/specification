@@ -30,7 +30,7 @@
   - alter `ticket_sales`: `lottery_result_at`, `discovered_at`, generated `start_date_jst`, nullable `name` and `end_at`, the kind-scoped CHECKs, and the partial unique index `uq_ticket_sales_discovered_convergence`;
   - copy every `sales_phases` row with its id, mapping the method with an explicit `CASE` by name;
   - rename `sales_phase_reminders` to `ticket_sale_reminders`, with `ticket_sale_id` and its foreign key repointed to `ticket_sales`;
-  - rename `sales_phase_search_logs` to `ticket_sale_search_logs`;
+  - rename `sales_phase_search_logs` to `ticket_sale_searches`;
   - rewrite `notifications.type`;
   - drop `sales_phases`;
   - update `schema.sql` and its comments.
@@ -39,7 +39,7 @@
 - [ ] 3.2 Add a migration test. Load the following, apply the migration and check every row:
   - a lottery with an end and a result time, a lottery without a result time, a first-come sale without an end and a first-come sale with an end;
   - two reminders (stages 1 and 4);
-  - one search log;
+  - one ticket sale search;
   - one `sales_phase_announcement` notification;
   - one Organizer's lottery sale created by `unify-ticket-sales`.
 
@@ -48,13 +48,13 @@
 ## 4. Backend: entities and entity operations
 
 - [ ] 4.1 `TicketSale` kinds and rules (`components/entity/ticket-sale`, design D1, D3, D4). Fold `SalesPhaseCandidate.Validate` into the discovered branch of `TicketSale` validation, and remove `entity/sales_phase.go`'s `SalesPhase` and `SalesMethod` in favour of `TicketSale` and `TicketSaleMethod`. Verify one unit test per scenario: Lottery window within bounds, Lottery window shorter than 1 day, Lottery window longer than 14 days, End not after start, Discovered lottery longer than 14 days, Named sale, Empty name, Discovered sale without a name, Organizer's presale, Sale found by discovery, Discovered sale with a TicketType, Organizer's sale without a TicketType, First-come sale until sold out, Lottery without a close, Organizer's first-come sale without a close, Result before close, Result on a first-come sale, Result time on an Organizer's lottery, Discovered lottery with an announced result, Organizer's lottery, Discovered lottery without an announced result, Re-discovery keeps the discovered time, Lottery before its close, First-come sale until sold out has opened
-- [ ] 4.2 `TicketSaleReminder` and `TicketSaleSearchLog` (`components/entity/ticket-sale-reminder`, `components/entity/ticket-sale-search-log`), renamed from the sales phase types. `ReminderStage` keeps 1, 2 and 4, and the anchors use the sale's result time. Verify one unit test per scenario: Undefined stage, Lottery stages, First-come stage, Lottery without a result time, Organizer's lottery, Future searched time
+- [ ] 4.2 `TicketSaleReminder` and `TicketSaleSearch` (`components/entity/ticket-sale-reminder`, `components/entity/ticket-sale-search`), renamed from the sales phase types. `ReminderStage` keeps 1, 2 and 4, and the anchors use the sale's result time. Verify one unit test per scenario: Undefined stage, Lottery stages, First-come stage, Lottery without a result time, Organizer's lottery, Future searched time
 - [ ] 4.3 `TicketSaleRepository.UpsertDiscovered`, `ListBySeries` and `ListWithPendingMilestones` (design D2, D5). `ListWithPendingMilestones` returns TicketTypes, computes the result time, and keeps an Organizer's sale only while its Series is `PUBLISHED`. Verify one contract test per scenario against Postgres:
   - upsert-discovered: Unknown start, Sale no longer discovered, No series, Unknown series, Series of an Organizer, Lottery without a close, Re-discovery with a corrected time, Re-discovery with more detail, Different start dates stay separate, Different methods on one day stay separate, Omitted value clears the stored one
   - list-by-series: Series with two sales, Series with no sale, No series given
   - list-with-pending-milestones: Opened weeks ago, result tomorrow, Opens beyond the lookahead, All milestones long past, Latest milestone just past, Organizer's sale opening tomorrow, Organizer's sale of a cancelled Series, Nothing pending, Zero lookahead, Negative lookback
 - [ ] 4.4 `TicketSale.ListDueForDraw` excludes discovered sales (`discovered_at IS NULL`). Verify the contract tests Closed and undrawn, Still open, Already drawn and Discovered lottery has closed pass
-- [ ] 4.5 `TicketSaleReminderRepository.AlreadySent / ListSentStages / RecordSent` and `TicketSaleSearchLogRepository.ListBySeries / Record` on the renamed tables. Verify one contract test per scenario: Recorded, Not recorded, Missing ticket sale (AlreadySent), Some stages sent, No users given, Missing ticket sale (ListSentStages), First record, Repeated record, Missing user, One searched, one never searched, No series given, Series searched again, Series searched for the first time, Unknown series
+- [ ] 4.5 `TicketSaleReminderRepository.AlreadySent / ListSentStages / RecordSent` and `TicketSaleSearchRepository.ListBySeries / Record` on the renamed tables. Verify one contract test per scenario: Recorded, Not recorded, Missing ticket sale (AlreadySent), Some stages sent, No users given, Missing ticket sale (ListSentStages), First record, Repeated record, Missing user, One searched, one never searched, No series given, Series searched again, Series searched for the first time, Unknown series
 - [ ] 4.6 `TicketJourney.ListUserIDsTrackingEvents` (`components/entity/ticket-journey/list-user-ids-tracking-events`), the same query as `ListUserIDsTrackingSeries` filtered by event ids. Verify one contract test per scenario: Fans tracking offered events, Linked event is among the given events, Tracking only an event not given, A fan past the Tracking stage, No event given
 - [ ] 4.7 Rename the Gemini searcher to `TicketSaleSearcher.SearchPublishedSales`, returning discovered sales (`components/entity/ticket-sale/search-published-sales`); the prompt and response schema keep their content. Verify the unit tests pass for Artist with two tours, Unattributable sale, No series given, Close before open, Opening after the last show, Spend cap reached, No result, Service unreachable, Invalid request recovered without the tool report, Invalid request rejected twice. Then run the existing evaluation integration test (`sales_phase_eval_integration_test.go`, renamed) once against real pages and verify its pass rate is not lower than on `main`, covering Two rounds announced ahead, Sale already open, Official ticket trade, Sale abroad, Year omitted, and the five "Required values come from the source pages" scenarios
 
@@ -71,5 +71,5 @@
 
 ## 6. Production verification (read-only)
 
-- [ ] 6.1 Read the migrated rows through the db-proxy runbook. Verify the counts of discovered `ticket_sales` (per method, with and without an end and a result time), `ticket_sale_reminders` (per stage), `ticket_sale_search_logs` and `ticket_sale_announcement` notifications equal task 0.2, and that no `sales_phase*` table remains
+- [ ] 6.1 Read the migrated rows through the db-proxy runbook. Verify the counts of discovered `ticket_sales` (per method, with and without an end and a result time), `ticket_sale_reminders` (per stage), `ticket_sale_searches` and `ticket_sale_announcement` notifications equal task 0.2, and that no `sales_phase*` table remains
 - [ ] 6.2 After the first 21:00 Japan-time discovery run and an hour of reminder scans following the deploy, read the job and consumer logs (`gcloud logging read --configuration=liverty-music`). Verify the discovery job finished without an error, the scan logged no error, and no `sales_reminder` notification was created after the deploy for a user, sale and stage already in `ticket_sale_reminders` before it (compare `ticket_sale_reminders.sent_at` with the notification's tag `ticket-sale-<id>-stage-<n>`)

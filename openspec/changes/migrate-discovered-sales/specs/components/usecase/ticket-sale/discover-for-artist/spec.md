@@ -50,14 +50,14 @@ DiscoverForArtist SHALL search a series of the artist only when all of these hol
 - TicketJourney.ListUserIDsTrackingSeries returns at least one fan for it.
 - It has an upcoming event (Concert.ListByArtist with upcoming concerts only).
 - No sale returned by TicketSale.ListBySeries for it is not yet over.
-- TicketSaleSearchLog.ListBySeries shows it was never searched, or last searched 10 or more days ago. Days are counted as calendar days in Japan time (Asia/Tokyo), so a series searched on a given date is searched again from the run 10 dates later, whatever the time of day of either run.
+- TicketSaleSearch.ListBySeries shows it was never searched, or last searched 10 or more days ago. Days are counted as calendar days in Japan time (Asia/Tokyo), so a series searched on a given date is searched again from the run 10 dates later, whatever the time of day of either run.
 
 DiscoverForArtist SHALL call TicketSale.SearchPublishedSales once for the artist with the artist's official site and every series that qualifies, each with its title and the event period of its upcoming events. It SHALL return 0 without searching in either of these cases:
 
 - No series qualifies.
 - The artist has no official site, or an empty one.
 
-When the artist's concerts, its official site, a series' trackers, sales or search log cannot be read, DiscoverForArtist SHALL fail with that error.
+When the artist's concerts, its official site, a series' trackers, sales or ticket sale search cannot be read, DiscoverForArtist SHALL fail with that error.
 
 #### Scenario: Tracked series with nothing pending
 - **WHEN** a fan tracks a series with an upcoming event, the series has no sale, and it was last searched 12 days ago
@@ -105,7 +105,7 @@ When the artist's concerts, its official site, a series' trackers, sales or sear
 
 ### Requirement: A successful search is recorded
 
-When SearchPublishedSales succeeds, DiscoverForArtist SHALL call TicketSaleSearchLog.Record for every series it searched, with the time of the search, whether or not any sale was found. When the search fails, nothing SHALL be recorded, so the next daily run searches those series again. When recording fails, DiscoverForArtist SHALL fail with that error after storing the discovered sales.
+When SearchPublishedSales succeeds, DiscoverForArtist SHALL call TicketSaleSearch.Record for every series it searched, with the time of the search, whether or not any sale was found. When the search fails, nothing SHALL be recorded, so the next daily run searches those series again. When recording fails, DiscoverForArtist SHALL fail with that error after storing the discovered sales.
 
 #### Scenario: Search finds nothing
 - **WHEN** SearchPublishedSales returns no sales for a searched series
