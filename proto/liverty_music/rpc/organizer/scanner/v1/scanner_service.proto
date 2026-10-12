@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.scanner.v1 provides the organizer-facing
+// ScannerService, the surface an operator uses from the organizer console to
+// hand admission for one event to venue staff who have no account: one
+// Scanner per scanner device. It is served by the dedicated organizer Connect
+// server behind org-scoped role-claim authorization; the scanner device itself
+// calls liverty_music.rpc.scanner.v1.
+package liverty_music.rpc.organizer.scanner.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/scanner.proto";
+
+// ScannerService is the organizer-facing surface over Scanners: an
+// authenticated operator creates, lists and revokes the Scanners of its own
+// published events. Every call passes the same organizer-console sign-in
+// checks as the organizer OrganizerService and resolves the caller's own
+// Organizer from the token (never carried in the request). Failures that would
+// concern another org's event or Scanner never reveal whether it exists.
+service ScannerService {
+  // Create creates a Scanner for one of the caller's published events, to hand
+  // to one scanner device. The server numbers it after the event's earlier
+  // Scanners (1, 2, ...). The Scanner starts UNUSED and is returned with its
+  // link token, which the console turns into the link's URL. A Scanner can be
+  // created any time before the event, whether or not its admission window has
+  // opened, but only for an event with a start time (without one the event has
+  // no admission window).
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The event_id is missing or malformed.
+  // - PERMISSION_DENIED: The event does not exist or is not owned by the
+  //   caller's Organizer, or any organizer-console authorization failure.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The event's concert is still a DRAFT, the event has
+  //   no start time, or the caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Create(CreateRequest) returns (CreateResponse);
+
+  // ListByEvent returns every Scanner of one of the caller's events with its
+  // state: number, status, bind and revoke times, and the link token only for
+  // a Scanner that is still UNUSED. An event has a handful of Scanners, so the
+  // list is not paginated.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The event_id is missing or malformed.
+  // - PERMISSION_DENIED: The event does not exist or is not owned by the
+  //   caller's Organizer, or any organizer-console authorization failure.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc ListByEvent(ListByEventRequest) returns (ListByEventResponse);
+
+  // Revoke stops a Scanner at once, for example when its device is lost or
+  // replaced. From then on every call through the Scanner is refused,
+  // including a scan already sent but not yet decided. Revoking an already
+  // REVOKED Scanner returns it unchanged. To replace a device, revoke its
+  // Scanner and create a new one.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The scanner_id is missing or malformed.
+  // - PERMISSION_DENIED: The Scanner does not exist or its event is not owned
+  //   by the caller's Organizer, or any organizer-console authorization
+  //   failure. Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Revoke(RevokeRequest) returns (RevokeResponse);
+}
+
+// CreateRequest names the event to create a Scanner for.
+message CreateRequest {
+  // Required. The published event the Scanner admits to. Its concert MUST be
+  // owned by the caller's Organizer.
+  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+}
+
+// CreateResponse returns the new Scanner.
+message CreateResponse {
+  // The new UNUSED Scanner, with its server-minted id, its number and its link
+  // token.
+  entity.v1.Scanner scanner = 1 [(buf.validate.field).required = true];
+}
+
+// ListByEventRequest names the event whose Scanners to list.
+message ListByEventRequest {
+  // Required. The event whose Scanners to list. Its concert MUST be owned by
+  // the caller's Organizer.
+  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+}
+
+// ListByEventResponse returns the event's Scanners.
+message ListByEventResponse {
+  // Every Scanner of the event, REVOKED ones included, by number. The link
+  // token is set only on UNUSED Scanners. Empty when the event has none.
+  repeated entity.v1.Scanner scanners = 1;
+}
+
+// RevokeRequest names the Scanner to revoke.
+message RevokeRequest {
+  // Required. The Scanner to revoke. Its event MUST be owned by the caller's
+  // Organizer.
+  entity.v1.ScannerId scanner_id = 1 [(buf.validate.field).required = true];
+}
+
+// RevokeResponse returns the revoked Scanner.
+message RevokeResponse {
+  // The Scanner, now REVOKED, with its revoke time.
+  entity.v1.Scanner scanner = 1 [(buf.validate.field).required = true];
+}

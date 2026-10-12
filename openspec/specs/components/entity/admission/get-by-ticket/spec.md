@@ -1,7 +1,7 @@
 # components/entity/admission/get-by-ticket Specification
 
 ## Purpose
-Finds the Admission of a Ticket, to tell staff when and through which link it was already let in.
+Finds the Admission of a Ticket, to tell staff when and through which Scanner it was already let in.
 
 ## Requirements
 

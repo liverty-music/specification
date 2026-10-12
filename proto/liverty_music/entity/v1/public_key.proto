@@ -12,7 +12,7 @@ option go_package = "github.com/liverty-music/specification/gen/go/liverty_music
 // key. The private half never leaves the device; the platform keeps only this
 // public key and verifies the device's Signatures with it. The field that
 // holds it says whose device it is: a fan's WalletPublicKey `public_key`, or a
-// ReceptionLink's `bound_public_key`.
+// Scanner's `bound_public_key`.
 //
 // Encoding: the uncompressed SEC1 point `0x04 || X || Y` (65 bytes), exactly
 // what WebCrypto `exportKey("raw", publicKey)` returns. The schema checks only

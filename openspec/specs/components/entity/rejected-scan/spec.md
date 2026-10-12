@@ -1,19 +1,19 @@
 # components/entity/rejected-scan Specification
 
 ## Purpose
-A RejectedScan is the permanent note that a scan at the venue, or one Ticket in it, was refused: why, through which ReceptionLink and when. RejectedScans are never changed or removed. Unlike an Admission, losing one is acceptable, so they are stored apart from the Ticket.
+A RejectedScan is the permanent note that a scan at the venue, or one Ticket in it, was refused: why, through which Scanner and when. RejectedScans are never changed or removed. Unlike an Admission, losing one is acceptable, so they are stored apart from the Ticket.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
-| event | the event of the ReceptionLink that scanned | required |
-| reception link | the ReceptionLink that scanned | required |
+| event | the event of the Scanner that scanned | required |
+| scanner | the Scanner that scanned | required |
 | ticket | the Ticket the refusal is about | required, except absent when the reason is Forged |
 | reason | why it was refused | required: Forged, Expired, OtherEvent, Voided or AlreadyAdmitted |
 | scanned time | when the scan was decided | required |
 
 ```mermaid
 erDiagram
-  ReceptionLink ||--o{ RejectedScan : "refuses"
+  Scanner ||--o{ RejectedScan : "refuses"
   Ticket |o--o{ RejectedScan : "is refused in"
 ```
 

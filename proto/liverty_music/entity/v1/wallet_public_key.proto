@@ -20,9 +20,9 @@ option go_package = "github.com/liverty-music/specification/gen/go/liverty_music
 // automatically, and another device replaces it only when the fan confirms.
 // Codes from a replaced device are refused as forged.
 //
-// It is the fan-side counterpart of a ReceptionLink's `bound_public_key`: the
-// same PublicKey, held per User and replaceable, where a reception link's key
-// is bound once.
+// It is the fan-side counterpart of a Scanner's `bound_public_key`: the same
+// PublicKey, held per User and replaceable, where a Scanner's key is bound
+// once.
 message WalletPublicKey {
   // The User whose device created the key. Identifies the WalletPublicKey: a
   // User has at most one. Resolved from the caller's token at registration;

@@ -7,13 +7,13 @@ import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/event.proto";
-import "liverty_music/entity/v1/reception_link.proto";
+import "liverty_music/entity/v1/scanner.proto";
 import "liverty_music/entity/v1/ticket.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
 // RejectedScanReason is why a scan, or one ticket presented in it, was refused
-// at reception. New values may be appended; existing values must not be
+// by a Scanner. New values may be appended; existing values must not be
 // renumbered.
 enum RejectedScanReason {
   // Default value, rejected at the boundary: a RejectedScan always has a
@@ -31,7 +31,7 @@ enum RejectedScanReason {
   // screenshot shown later). Applies to the whole scan.
   REJECTED_SCAN_REASON_EXPIRED = 2;
 
-  // A genuine, fresh code for an event other than the reception link's event.
+  // A genuine, fresh code for an event other than the Scanner's event.
   // Applies to the whole scan.
   REJECTED_SCAN_REASON_OTHER_EVENT = 3;
 
@@ -48,7 +48,7 @@ enum RejectedScanReason {
 }
 
 // RejectedScan is the permanent note that a scan at the venue, or one ticket in
-// it, was refused: why, through which ReceptionLink and when. RejectedScans are
+// it, was refused: why, through which Scanner and when. RejectedScans are
 // append-only. Unlike an Admission, losing one is acceptable, so they are
 // stored apart from the ticket.
 //
@@ -64,14 +64,14 @@ message RejectedScan {
     expression: "(this.reason == 1) == !has(this.ticket_id)"
   };
 
-  // The event of the ReceptionLink that scanned.
+  // The event of the Scanner that scanned.
   EventId event_id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
 
-  // The ReceptionLink that scanned.
-  ReceptionLinkId reception_link_id = 2 [
+  // The Scanner that scanned.
+  ScannerId scanner_id = 2 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];

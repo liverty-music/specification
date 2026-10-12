@@ -1,19 +1,19 @@
 # components/entity/admission Specification
 
 ## Purpose
-An Admission is the permanent note that a Ticket was let in at the venue: which Ticket, through which ReceptionLink and when. It is stored together with the Ticket's admit time and never changed or removed, so that it can later serve as evidence that the Ticket's user attended, for example against a chargeback.
+An Admission is the permanent note that a Ticket was let in at the venue: which Ticket, through which Scanner and when. It is stored together with the Ticket's admit time and never changed or removed, so that it can later serve as evidence that the Ticket's user attended, for example against a chargeback.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | ticket | the Ticket let in | required; at most one Admission per Ticket |
 | event | the event of the Ticket | required |
-| reception link | the ReceptionLink that scanned | required |
+| scanner | the Scanner that scanned | required |
 | admit time | when the Ticket was let in | required, equal to the Ticket's admit time |
 
 ```mermaid
 erDiagram
   Ticket ||--o| Admission : "is let in by"
-  ReceptionLink ||--o{ Admission : "lets in"
+  Scanner ||--o{ Admission : "lets in"
 ```
 
 ## Requirements

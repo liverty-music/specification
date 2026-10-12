@@ -1,7 +1,7 @@
 # stories/enter-a-venue-with-a-ticket Specification
 
 ## Purpose
-A fan holding tickets enters the venue with their companions by showing one QR code their phone makes even without a connection, and venue staff without an account admit them through a reception link the Organizer issued; each ticket admits once, and a copied or stale code admits no one.
+A fan holding tickets enters the venue with their companions by showing one QR code their phone makes even without a connection, and venue staff without an account admit them through a Scanner the Organizer created; each ticket admits once, and a copied or stale code admits no one.
 
 ## Requirements
 
