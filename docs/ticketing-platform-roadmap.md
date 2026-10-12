@@ -38,7 +38,7 @@ change's `design.md`:
   blockchain. (Base recorded in `product-design.md`.)
 - **Anti-scalp is a TIERED platform model, not a gate re-auth (settled after
   the ⑥ step-up exploration).** Layers, lightest→heaviest: (1) **account passkey**
-  login (phishing-resistant); (2) **JPKI eKYC (マイナンバーカード) high-assurance
+  login (phishing-resistant); (2) **JPKI identity verification (マイナンバーカード) high-assurance
   lane** binding 1 person = 1 verified account — kills bulk/industrial scalping
   (what 不正転売禁止法 targets); JPKI certs only (never the 個人番号 → outside 番号法;
   via a 認定PF事業者, no self-certification); a **lane, not mandatory** (card
@@ -49,10 +49,10 @@ change's `design.md`:
   (`face-auth-entry`) — the ONLY layer that closes the 1:1 device-transfer /
   "escort" hand-off, for top-demand shows. **Rejected: gate-time passkey step-up**
   — WebAuthn proves phishing-resistance, **not anti-collusion**, so it cannot stop
-  a holder handing over an unlocked device/pass; it only dents an already
+  a fan handing over an unlocked device/pass; it only dents an already
   non-scaling residual at a disproportionate UX/auth-server cost. The strong-control
   budget goes to (5), not a gate re-auth.
-- **Seller entity: `Organizer` — a role, not a company category** (name
+- **Ticket-selling entity: `Organizer` — a role, not a company category** (name
   chosen over "Partner", which in platform contexts usually means an
   integration/affiliate partner). The Organizer is the account authorized
   to publish an artist's events and sell their tickets. It is the
@@ -87,14 +87,14 @@ change's `design.md`:
   which also removes the fake-event risk.
 - **Sales method: lottery only for MVP.** FCFS, common inventory pool,
   seat maps, manual draw, and preference ordering are all deferred until
-  demand is proven. Lottery draws against a fixed capacity *after*
-  applications close, which removes the hardest correctness problem
+  demand is proven. Lottery draws against a fixed quantity *after*
+  entries close, which removes the hardest correctness problem
   (real-time oversell prevention) from the MVP.
-- **Tickets per application: variable, per-event.** The organizer sets a
-  `max_tickets_per_application` on each lottery phase (sized to venue
-  capacity). Capacity is accounted in **tickets**, not applications.
+- **Tickets per entry: variable, per-event.** The organizer sets a
+  per-account limit on each TicketType (sized to venue
+  capacity). Quantity is accounted in **tickets**, not entries.
 - **Companion group entry = same-time entry (in MVP); NO open
-  distribution URL.** Group attendance is handled by the lead buyer
+  distribution URL.** Group attendance is handled by the lead fan
   holding all won tickets on their own device, with the lead and
   companions entering the gate **together** (plan-1.md's "一括表示・同時
   入場", ZAIKO-style). We deliberately **reject the open 分配URL pattern**
@@ -116,14 +116,14 @@ change's `design.md`:
   Decisions. The cannot-attend case is handled by official resale, not by
   companion hand-off.
 - **Cannot-attend → official face-value resale, not ad-hoc refunds.** The
-  buyer's own seat is account/identity-bound and cannot be handed to a
+  fan's own seat is account/identity-bound and cannot be handed to a
   named person; the sanctioned path is an **anonymous face-value resale
-  pool** that refunds the original buyer when it sells. General refunds
+  pool** that refunds the original fan when it sells. General refunds
   are reserved for **event cancellation**. In a lottery, the **losers
-  form the natural demand pool** that absorbs returned tickets (DICE
-  waitlist model). This is the anti-scalp gold standard (ローチケ/ぴあ)
+  form the natural demand pool** that absorbs returned tickets (DICE-style
+  losers pool). This is the anti-scalp gold standard (ローチケ/ぴあ)
   and the legally favored path. **Open timing decision:** official resale
-  is listed in Phase 2, but "the buyer got sick" is a real day-one need —
+  is listed in Phase 2, but "the fan got sick" is a real day-one need —
   decide whether a minimal return-to-pool/resale ships in MVP or
   immediately after (see Open Decisions).
 - **Legal "covered ticket" (チケット不正転売禁止法).** To make anti-scalp
@@ -135,7 +135,7 @@ change's `design.md`:
   from scraping.** When an organizer-published event or issued ticket
   exists it supersedes the inferred/self-reported data for the same
   subject (a published event overrides the scraped
-  `staged_concert`/`sales_phase`; issuing a ticket syncs the user's
+  `concert_candidate`/`sales_phase`; issuing a ticket syncs the user's
   `ticket-journey` to `PAID`). Once an artist is represented by an
   Organizer (which exists only via admin vetting), that artist is simply
   **excluded from concert-search scraping** (first-party is authoritative;
@@ -144,14 +144,14 @@ change's `design.md`:
   Liverty Music collects, takes a fee, pays out the organizer. **Card-only** for
   MVP (incl. debit/prepaid + Apple/Google Pay; konbini/PayPay deferred).
   The lottery charges **only winners** — via a **Stripe manual-capture
-  authorization hold**: **authorize (hold) the ticket amount at application,
+  authorization hold**: **authorize the ticket amount on the card at entry,
   capture winners at the draw, release losers** (④ owns authorize+capture; ⑤ takes
   the captured payment → Order + Ticket). **JPY cards only (Amex excluded)** — the
   30-day JPY authorization window ≫ the 1–14-day lottery window, which is what makes
   the hold viable (this **supersedes** the earlier SetupIntent-not-hold decision,
   whose "holds too short-lived" premise assumed the ~7-day non-JPY window). The
   domain Order/Payment entity is **provider- and method-agnostic** (see D2). Full
-  design + legal scheme (収納代行, Organizer = seller-of-record) + counsel flags:
+  design + legal scheme (収納代行, Organizer = 販売業者) + counsel flags:
   [`payments-design.md`](./payments-design.md) (issue #778).
 - **Web First, No Native App** (product constraint): the check-in tool is
   a PWA using the web camera, not a native scanner app.
@@ -177,7 +177,7 @@ sub-changes (see its row and `organizer-platform-design.md`).
      │         │
      │         ├──▶ ③ follower-event-publish-notification   ★ ships early, no ticketing needed
      │         │
-     │         └──▶ ④ lottery-application   (lottery phase, apply, auto draw, win/loss, 本人確認)
+     │         └──▶ ④ lottery-application   (lottery sale, enter, auto draw, win/loss, 本人確認)
      │                    │
      │                    └──▶ ⑤ ticket-purchase-and-issuance   (Stripe → order → issued ticket)
      │                                 │
@@ -186,17 +186,17 @@ sub-changes (see its row and `organizer-platform-design.md`).
 
 | # | Change | Adds (capabilities / entities) | Depends on | Boundary rationale |
 |---|--------|--------------------------------|------------|--------------------|
-| ① | **organizer platform** (4 sub-changes) | The vetted-seller foundation, split to keep each change reviewable: **`organizer-tenancy`** (identity-management topology delta + Zitadel platform IaC: `organizer-console` project/roles/apps + provisioner machine user + per-org passkey login), **`organizer-accounts`** (Organizer entity + admin vetting RPCs + runtime tenant-provisioning saga + operator bootstrap + `deactivated` hook + analytics), **`organizer-console`** (`organizer.html` entry + hosting `organizer.{base}` + runtime-config delta), **`organizer-rpc-server`** (dedicated `api.organizer.{base}` server + CORS + `OrganizerService.Get` + org-scoped authz). Full design + resolved gap-audit: [`organizer-platform-design.md`](./organizer-platform-design.md). | existing admin only | A completeness audit showed a single change hid ~33 gaps (a dedicated API server, dedicated hosting, provisioning saga, offboarding). Splitting by surface (identity/accounts/console/rpc-server) mirrors the admin precedent and keeps each spec complete. |
+| ① | **organizer platform** (4 sub-changes) | The vetted-Organizer foundation, split to keep each change reviewable: **`organizer-tenancy`** (identity-management topology delta + Zitadel platform IaC: `organizer-console` project/roles/apps + provisioner machine user + per-org passkey login), **`organizer-accounts`** (Organizer entity + admin vetting RPCs + runtime tenant-provisioning saga + operator bootstrap + `deactivated` hook + analytics), **`organizer-console`** (`organizer.html` entry + hosting `organizer.{base}` + runtime-config delta), **`organizer-rpc-server`** (dedicated `api.organizer.{base}` server + CORS + `OrganizerService.Get` + org-scoped authz). Full design + resolved gap-audit: [`organizer-platform-design.md`](./organizer-platform-design.md). | existing admin only | A completeness audit showed a single change hid ~33 gaps (a dedicated API server, dedicated hosting, provisioning saga, offboarding). Splitting by surface (identity/accounts/console/rpc-server) mirrors the admin precedent and keeps each spec complete. |
 | ② | `organizer-event-authoring` | Organizer-authored Event/Series/Venue, publish flow, **private visibility via signed tokenized URL**, first-party supersedes scraped concerts, **organizer-represented artists excluded from scraping** | ① | Turns the existing `Series/Event/Venue/event_performers` model from a scrape-reconstruction target into a first-party authoring target. |
 | ③ | `follower-event-publish-notification` — **largely absorbed by ②** | ② `Publish` emits `CONCERT.created`, which the **existing `notify-concert` consumer already turns into follower push** (verified in code). So ③ is mostly delivered for free by ②. **Re-scoped to at most a thin change** (organizer-specific message copy / deeplink; UNLISTED/DRAFT never notify is handled in ②) and may be dropped. | ② | Confirmed during ② design: `CONCERT.created` → `NotifyNewConcerts` already notifies artist followers, so a separate publish→notify build is redundant. |
-| ④ | `lottery-application` | LotterySalesPhase (**first-party; distinct from the scraped `sales_phase`, no merge**), `max_tickets_per_application`, TicketApplication, **card authorize (hold) at apply → capture winners / release losers at draw** (Stripe manual-capture, JPY-only), automatic draw, win/loss, **本人確認 identity + 1 account / 1 application** | ② | Draw logic is substantial and stands alone. Couples to payment via authorize-at-apply/capture-at-draw (no payment deadline / 繰上げ). 本人確認 also makes tickets legally "covered". Organizer sets phase capacity (no venue-capacity field exists upstream). |
+| ④ | `lottery-application` | lottery TicketSale/TicketType (**first-party; distinct from the scraped `sales_phase`, no merge**), per-account limit, LotteryEntry, **card authorization at entry → capture winners / release losers at draw** (Stripe manual-capture, JPY-only), automatic draw, win/loss, **本人確認 identity + 1 account / 1 entry** | ② | Draw logic is substantial and stands alone. Couples to payment via authorize-at-entry/capture-at-draw (no payment deadline / 繰上げ). 本人確認 also makes tickets legally "covered". Organizer sets the TicketType quantity (no venue-capacity field exists upstream). |
 | ⑤ | `ticket-purchase-and-issuance` | Order (provider/method-agnostic, opaque payment refs), platform-intermediated Stripe payment (card/wallet/**konbini async**), **Web2 account-bound Ticket issuance** (N per order), event-cancellation refund, `ticket-journey` sync to PAID | ④ | Stripe integration is heavy on its own: post-win payment → order → issuance is a single pipeline. |
 | ⑥ | `ticket-wallet-and-checkin` | Ticket wallet UI (renders the **covered-ticket face**), **in-app dynamic QR = server-signed short-TTL token**, **signature+freshness then online atomic duplicate-check** at admit, **same-time group entry**, **reception PWA (web-camera, no NFC)**, entry status | ⑤ | Requires an issued ticket. App-first credential (cross-platform, not OS-shareable). **No gate-time passkey step-up** (rejected). **OS Wallet passes, NFC tap, offline scanning, per-event 顔認証 are deferred (future).** PWA honors No-Native-App. |
 
 ### Recommended sequencing note
 
 ①② introduce most of the new proto entities — land them first to
-stabilize the schema. ④⑤ then finalize LotterySalesPhase/Order/Ticket. ③
+stabilize the schema. ④⑤ then finalize TicketSale/TicketType/Order/Ticket. ③
 carries minimal proto change (reuses existing notification), so it can
 start right after ② merges and delivers value fastest.
 
@@ -210,7 +210,7 @@ change when picked up:
   pool). **Calibration (market-design-notes #2): PULL EARLY — now a market
   default** (post-チケトレ, resale moved in-platform) and the cannot-attend
   valve → plan it **immediately after the lottery/ticketing MVP (⑥)**, not
-  deep in Phase 2. Full design (money model = refund-seller + fresh-sale, no
+  deep in Phase 2. Full design (money model = refund-to-reselling-fan + fresh-sale, no
   individual payee; legal must-haves; lifecycle; counsel brief):
   [`resale-design.md`](./resale-design.md).
 - `face-auth-entry` — the **per-event high-assurance entry tier** on top of ⑥'s
@@ -227,7 +227,7 @@ change when picked up:
   (market-design-notes #3): leaders' bar moved here (チケプラ 2025-12,
   デジタル庁×Playground PoC = zero resale with face auth); without it we look a
   generation behind.
-- `identity-ekyc-jpki` — **JPKI eKYC (マイナンバーカード) high-assurance account
+- `identity-ekyc-jpki` — **JPKI identity verification (マイナンバーカード) high-assurance account
   lane**: bind 1 person = 1 verified account to kill bulk/industrial scalping.
   Uses **公的個人認証 (JPKI) certificates only — never the 個人番号** (stays outside
   番号法), via a **認定プラットフォーム事業者** (e.g. TRUSTDOCK) so no self-certification;
@@ -242,7 +242,7 @@ change when picked up:
   reception staff), sub-owner invites, **audit log** (add audit subjects
   to the existing JetStream analytics pipeline).
 - `first-come-inventory-pool` — FCFS + common inventory pool with
-  oversell prevention (row locks / reservation TTL). Only after lottery
+  oversell prevention (row locks / Checkout hold TTL). Only after lottery
   validates demand.
 - `seat-map-assignment` — seat map upload, block/individual seat
   assignment.
@@ -266,7 +266,7 @@ Recorded here so they are not lost; each is formalized (or superseded) in
 the relevant change's `design.md`.
 
 - **D1 — Lottery charges winners at the draw via an authorization hold
-  (updated).** **Authorize (hold) at application, capture winners at the draw,
+  (updated).** **Authorize at entry, capture winners at the draw,
   release losers** (Stripe manual-capture; ④ owns authorize+capture, ⑤ issues from
   the captured payment). **JPY cards only (Amex excluded):** the **30-day JPY
   authorization window ≫ the 1–14-day lottery window**, so the hold survives — this
@@ -279,7 +279,7 @@ the relevant change's `design.md`.
   `card` with a `card.wallet.type` facet, so they need no dedicated
   fields. Store the stable set and nothing card/wallet-shaped as identity:
 
-  - **Store:** `provider` (stripe), `payment_intent_id` (`pi_…`),
+  - **Store:** `provider` (stripe), `provider_payment_id` (`pi_…`),
     `payment_method_id` (`pm_…`), `payment_method_type`
     (card/konbini/paypay/bank_transfer), own `status` enum
     (pending/awaiting_payment/paid/failed/refunded), `amount`+`currency`,
@@ -325,13 +325,13 @@ Behind the opaque payment reference; changeable without schema breaks:
 Stripe charge model (destination vs separate charges & transfers) and
 merchant-of-record; **primary** payout timing (immediate vs held past the
 event); platform fee rate; tax/currency (JPY tax-inclusive, インボイス);
-特定商取引法 seller-of-record disclosure and refund-policy wording.
+特定商取引法 販売業者 disclosure and refund-policy wording.
 
 Note: the **official-resale** money decisions are now SETTLED in
 [`resale-design.md`](./resale-design.md) — price is locked to 券面代金
-(face-value only, no cap knob), and the reselling **seller refund is
+(face-value only, no cap knob), and the reselling **fan's refund is
 triggered on resale completion with a short hold-back, NOT held to the
-event** (ぴあ/ticket board/e+/tiget-aligned). Only the *primary* buyer→Organizer
+event** (ぴあ/ticket board/e+/tiget-aligned). Only the *primary* fan→Organizer
 payout timing above remains a ⑤ decision (and resale does not depend on it).
 
 Note: merchant-of-record / 特商法 / refund policy, Stripe Connect account
@@ -346,7 +346,7 @@ long lead times — start them on a separate track before ⑤ begins.
   (audit log, Phase 2), `sales_phase` and `ticket-journey` models (④⑤),
   PWA infrastructure (⑥).
 - **Net new:** organizer accounts, tokenized private URLs,
-  lottery application/draw, Stripe integration, Order, account-bound
+  lottery entry/draw, Stripe integration, Order, account-bound
   ticket issuance, same-time group entry, **signed short-TTL entry-token
   issuance/validation (in-app dynamic QR)**, reception check-in PWA.
 

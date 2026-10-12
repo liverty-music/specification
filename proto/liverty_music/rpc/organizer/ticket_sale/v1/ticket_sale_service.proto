@@ -188,12 +188,12 @@ message ListByEventRequest {
   entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
 }
 
-// LotteryEntryStats tallies the Entered, Won and Lost entries of one
+// LotteryEntryStats counts the Entered, Won and Lost entries of one
 // TicketType of a LOTTERY sale; Draft and Withdrawn entries are not counted.
 // Every count is 0 for a TicketType with no entry, and the Won and Lost counts
 // stay 0 until the sale is drawn.
 message LotteryEntryStats {
-  // The TicketType the tallies are for.
+  // The TicketType the stats are for.
   entity.v1.TicketTypeId ticket_type_id = 1 [(buf.validate.field).required = true];
 
   // The number of entries.
@@ -226,7 +226,7 @@ message ListByEventResponse {
   // event.
   repeated entity.v1.TicketSale ticket_sales = 1;
 
-  // The entry tallies of every TicketType of the LOTTERY sales above, one per
+  // The entry stats of every TicketType of the LOTTERY sales above, one per
   // TicketType. Empty when none of the sales is a LOTTERY sale.
   repeated LotteryEntryStats lottery_entry_stats = 2;
 }

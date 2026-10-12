@@ -47,7 +47,7 @@ enum TicketJourneyStatus {
 
 // TicketJourney represents a fan's personal ticket acquisition status for a specific event.
 // It captures where the fan stands in the process of obtaining a ticket — from initial
-// interest through lottery application to payment completion.
+// interest through entering a lottery to payment completion.
 //
 // Each fan may have at most one journey per event. The journey is entirely user-managed:
 // the system does not automate transitions or verify the fan's actual ticket status.

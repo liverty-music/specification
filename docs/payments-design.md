@@ -19,7 +19,7 @@ the competitor/market research in `market-design-notes.md`.
   enterprise-scale "graduation" target.
 - **Connect charge model: separate charges & transfers (platform-held escrow) —
   SUPERSEDES the earlier destination-charge decision (see "Why separate charges
-  & transfers" below).** The platform charges the buyer (funds sit on the
+  & transfers" below).** The platform charges the fan (funds sit on the
   **platform** balance), then **`Transfer`s the Organizer's net share after the
   event** (`source_transaction` links each transfer to its charge); losers' holds
   are released and refunds come from the platform balance. This is what actually
@@ -28,13 +28,13 @@ the competitor/market research in `market-design-notes.md`.
   Organizer's *bank* withdrawal, not platform custody). **Payee model = single
   Organizer + retained platform fee**, modelled as extensible splits (venue is the
   Organizer's cost, not a platform payee — the ticketing norm). **Three axes stay
-  separate** (do not conflate): legal seller-of-record = **Organizer** (via 収納代行
+  separate** (do not conflate): legal 販売業者 (the business named on the 特商法 disclosure) = **Organizer** (via 収納代行
   contract + 特商法 表記); money-handling role = **platform as 収納代行 collection
   agent** (代理受領権限); Stripe settlement-merchant/MoR = **the platform** (MVP: **no
   `on_behalf_of`**). Naming the Organizer via `on_behalf_of` would require its connected
   account to hold the `card_payments` capability active **before** the charge, gating
   ticket sale on merchant KYB — so MVP keeps the platform as the Stripe merchant and carries
-  seller-of-record contractually. The statement stays recognizable via the platform static
+  the Organizer as 販売業者 contractually. The statement stays recognizable via the platform static
   prefix + a per-event dynamic suffix (kanji/kana); Organizer-named statement is a future
   `on_behalf_of` change if counsel requires it. The full settlement mechanics are specified
   in the **`ticket-settlement-and-payout`** change. `allocated_funds` fund isolation is
@@ -47,8 +47,8 @@ the competitor/market research in `market-design-notes.md`.
   without a proto break. Trade-off: card-only excludes some cardless
   students/minors — accepted for a vetted-partner MVP, revisit on demand.
 - **Lottery charge mechanism: authorization hold (Stripe manual-capture) —
-  SUPERSEDES the earlier SetupIntent decision (see Why, updated).** At application,
-  **authorize (hold) the ticket amount** via a manual-capture `PaymentIntent`
+  SUPERSEDES the earlier SetupIntent decision (see Why, updated).** At entry,
+  **authorize the ticket amount on the card** via a manual-capture `PaymentIntent`
   (`capture_method=manual`, 3DS once). At the draw, **capture winners / cancel
   (release) losers**. ④ owns authorize+capture; ⑤ takes the captured payment →
   Order + Ticket. **JPY cards only, American Express excluded** — a **JP-based
@@ -58,7 +58,7 @@ the competitor/market research in `market-design-notes.md`.
   at the draw effectively does not fail (a rare failed capture → seat unfilled,
   manual follow-up).
 - **Payout: hold to event + dispute window (platform-held via separate charges
-  & transfers).** Buyer funds sit on the **platform** balance from capture; a
+  & transfers).** Fans' funds sit on the **platform** balance from capture; a
   **scheduled platform process** `Transfer`s the Organizer's net share only
   **after the event AND a dispute-safety buffer** (chargebacks arrive
   days-to-weeks later — "after event" alone is too early). Refunds/releases come
@@ -68,9 +68,9 @@ the competitor/market research in `market-design-notes.md`.
   bank withdrawal of funds already in its own balance.
 - **Webhooks are the source of truth** for capture / refund / dispute — never
   issue tickets on the client confirm alone. Idempotent handlers.
-- **Fee model: a flat percentage, buyer-shiftable.** A single clean % (like
+- **Fee model: a flat percentage, fan-shiftable.** A single clean % (like
   LivePocket's flat 5%) reads better than a stacked per-ticket fee (tiget's
-  ¥220+¥99 draws complaints). Buyer-pass-through toggle → organizer cost can
+  ¥220+¥99 draws complaints). Fan-pass-through toggle → organizer cost can
   be ¥0. Exact rate is a business decision (#778).
 
 ### Why authorization hold (updated — reverses the earlier SetupIntent reasoning)
@@ -86,7 +86,7 @@ needed**: no off-session charge that can fail, no payment deadline, no re-auth/g
 link, no **当選無効 → 繰上げ**. Trade-offs accepted: (a) the fan's funds are held for
 the window (bounded ≤14 days; the ローチケ norm), and (b) **American Express + non-JPY
 cards are excluded** (they fall back to the ~7-day window, too short) — rejected at
-application in ④. This is the model ④ `lottery-application` implements; ⑤ consumes
+entry in ④. This is the model ④ `lottery-application` implements; ⑤ consumes
 the **captured** payment.
 
 > Historical note: the original "Why SetupIntent" argument (¥1 validity check at
@@ -118,17 +118,17 @@ destination charges:
   organizer* — the separate-charges shape, under a 収納代行 / 委託販売 wrapper.
 - **The "収納代行 vs true escrow" framing is a false dichotomy.** Platform-held funds
   (separate C&T) are compatible with the Organizer remaining the legal
-  seller-of-record: 代理受領権限 discharges the buyer's obligation at payment, so the
+  販売業者: 代理受領権限 discharges the fan's obligation at payment, so the
   platform holding those collected funds until the event is normal collection-agency
   behaviour. Keep the three axes separate but decoupled from any Stripe flag
-  (seller-of-record = Organizer *contractually*; money-handling = platform 収納代行 agent;
+  (販売業者 = Organizer *contractually*; money-handling = platform 収納代行 agent;
   Stripe settlement-merchant = **the platform**, no `on_behalf_of`).
 - **Stripe settlement merchant = platform; NO `on_behalf_of` (updated).** The earlier plan
-  adopted `on_behalf_of` = Organizer so the descriptor/settlement would follow the seller.
+  adopted `on_behalf_of` = Organizer so the descriptor/settlement would follow the Organizer.
   Stripe's mechanics make that unworkable for MVP: putting the Organizer's name on the
   statement requires its connected account to hold the **`card_payments` capability active
   before the charge** ("連結アカウントから静的コンポーネントを使用するには card_payments
-  ケイパビリティが必要") — i.e. before the lottery authorization at application time — which
+  ケイパビリティが必要") — i.e. before the lottery authorization at entry time — which
   would gate ticket sale on full merchant KYB and contradict "onboarding never blocks sale."
   Stripe's own Connect guidance also lists `on_behalf_of` as a trap for standard
   separate-charges flows and says NOT to request `card_payments` for a recipient account.
@@ -174,8 +174,8 @@ destination charges:
 ## Legal / money scheme (収納代行) — not legal advice
 
 - **収納代行 (collection agent) + intermediary marketplace; Organizer =
-  seller-of-record.** Avoid MoR, 資金移動業, 前払式支払手段.
-- Buyer ToS: the buyer's obligation is **discharged on paying the platform**.
+  販売業者.** Avoid MoR, 資金移動業, 前払式支払手段.
+- Fan ToS: the fan's obligation is **discharged on paying the platform**.
   Organizer contract: grants the platform **代理受領権限**.
 - **前払式 avoidance:** charge a **specific-event ticket at win, deliver
   promptly** — no wallet / points / stored balance.
@@ -199,24 +199,24 @@ destination charges:
 between remote parties (為替取引, 最決平成13年) is a licensed monopoly (bank
 or 資金移動業). Operating unlicensed is **criminal** (銀行法 §61: up to 3yr /
 ¥3M, corporate 両罰 up to ¥300M) — which is why the boundary must be
-*confirmed*, not assumed. 収納代行 is exempt because the buyer's debt is
+*confirmed*, not assumed. 収納代行 is exempt because the fan's debt is
 **discharged on payment to the agent** → no protectable "money in flight".
 
 **Our flow most likely sits in the exempt zone**, on two structural facts:
 1. **Payee = business.** The 2020 amendment (施行 2021-05) pulls collection
    into 資金移動業 only when the **payee (受取人) is an individual acting in a
    non-business capacity** (割り勘 / C2C). Our Organizers are vetted
-   **事業者** sellers-of-record → outside that trigger, so the traditional
+   **事業者** acting as 販売業者 → outside that trigger, so the traditional
    exemption holds.
 2. **Domestic-only.** The 2025 amendment (公布 2025-06; 施行 ~2026) that newly
    regulates **cross-border 収納代行** applies to 国内⇄国外 flows only. A
-   fully domestic buyer/platform/Organizer flow is untouched.
+   fully domestic fan/platform/Organizer flow is untouched.
 
-**Market corroboration:** holding buyer funds **until after the event** and
+**Market corroboration:** holding fans' funds **until after the event** and
 **charging lottery winners at the draw via a saved card** are the **universal
 JP ticketing norm** (LivePocket, tiget, ZAIKO, Peatix, teket, e+/ぴあ/ローチケ
 — none pays the organizer pre-event). **ZAIKO's terms explicitly operate as
-収納代行 with the Organizer as seller and "immediate charge of the registered
+収納代行 with the Organizer as 販売業者 and "immediate charge of the registered
 card at the time of winning"** — essentially our design. So our hold-until-
 event is **not** an anomaly; it is established practice, which supports the
 escrow characterization rather than undermining it. The **only** genuine
@@ -230,9 +230,9 @@ separate charges & transfers is the correct rail for this model.
 
 **Safe-harbor to stay clearly in exempt 収納代行** (structure in the contract
 stack + T&Cs):
-1. **Payee = 事業者** — contract/vet the Organizer as a business seller;
+1. **Payee = 事業者** — contract/vet the Organizer as a business (販売業者);
    never settle to a private individual.
-2. **Discharge clause (load-bearing)** — buyer ToS: obligation **discharged
+2. **Discharge clause (load-bearing)** — fan ToS: obligation **discharged
    on payment to the platform**; Organizer grants **代理受領権限**.
 3. **Genuine underlying transaction** — a real ticket sale by the Organizer;
    platform = collection agent (keep the substance documented).
@@ -253,16 +253,16 @@ Points 1/5/6 are self-assessable; **2/3/4 need a written 弁護士 opinion**
 1. **⚠️ 収納代行 exemption opinion (highest leverage — closes 資金決済法 +
    犯収法 together).** Get a written opinion confirming: (i) the discharge
    clause is effective and the platform is a collection agent (not
-   seller/MoR), (ii) the **hold-until-event** design qualifies as exempt
+   販売業者/MoR), (ii) the **hold-until-event** design qualifies as exempt
    escrow (府令第1条の3, non-為替取引 / not 預り金), and (iii) no cross-border
    leg exists. Likely exempt (business-payee + domestic; see determination
    above), but the escrow/discharge boundary is where the FSA applies
    substance-over-form.
-2. **Seller-of-record ↔ UX alignment** — if marketing/UX makes the *platform*
-   look like the seller, the collection-agent theory weakens. Align the
+2. **販売業者 ↔ UX alignment** — if marketing/UX makes the *platform*
+   look like the 販売業者, the collection-agent theory weakens. Align the
    legal structure with the UX (Organizer named as 販売業者 at checkout).
 3. Charge-after-win card-on-file + MIT — confirm no 割賦販売法 / 前払式 issue.
-4. MoR / 特商法 seller-of-record + domestic-fee 課税 (10%) → register as
+4. MoR / 特商法 販売業者 + domestic-fee 課税 (10%) → register as
    適格請求書発行事業者; 媒介者交付特例 only if organizers are registered.
 5. 消費者契約法 enforceability of refund/cancellation clauses.
 6. **特定興行入場券 本人確認 evidence after a name or phone change.** The
@@ -280,19 +280,19 @@ research: [`resale-design.md`](./resale-design.md). "Δ" marks where the
 resale analysis differs from or extends the primary-sale analysis above.
 
 1. **⚠️ 資金移動業 for the resale money legs (highest leverage).** Resale is
-   **two decoupled legs**: (a) buyer→Organizer fresh face-value sale =
+   **two decoupled legs**: (a) purchasing fan→Organizer fresh face-value sale =
    the same 収納代行/事業者-payee scheme as the primary sale (may hold to
-   event); (b) seller refund = a **refund of the seller's own payment**.
+   event); (b) reselling-fan refund = a **refund of the reselling fan's own payment**.
    Confirm leg (b) avoids 資金移動業 via **both** grounds: it is a refund
-   (not a payee transfer) AND, if the seller is nonetheless viewed as an
+   (not a payee transfer) AND, if the reselling fan is nonetheless viewed as an
    individual payee, it fits the **資金決済法 2条の2第2号 escrow exclusion**
    (funds received before/with counter-performance, moved to the payee
-   **after counter-performance = the seller's ticket delivery via
-   void+reissue**). **Δ vs primary:** the seller-refund leg is **settled
+   **after counter-performance = the reselling fan's ticket delivery via
+   void+reissue**). **Δ vs primary:** the reselling-fan refund leg is **settled
    ~days-to-3-weeks after the resale completes, NOT held to the event** (ぴあ
    /ticket board/e+/tiget norm) — so the primary "hold-until-event" escrow
    framing does **not** govern this leg; confirm the "refund of own money"
-   vs "代金交付" framing given the buyer funds the balance.
+   vs "代金交付" framing given the purchasing fan funds the balance.
 2. **古物営業法** — confirm **no 古物商許可** for a **no-inventory,
    organizer-consigned, electronic-ticket** resale (void-original + reissue,
    platform never buys/stocks); and the boundary if physical tickets are ever
@@ -303,20 +303,20 @@ resale analysis differs from or extends the primary-sale analysis above.
    re-consent needed), so mandatory-by-default resale is not "unauthorized".
    Flag the **artist/promoter no-resale rider** edge — an Organizer bound
    upstream cannot consent; confirm the **admin-exception** carve-out suffices.
-4. **本人確認 re-bind keeps 特定興行入場券.** Confirm reissuing with the new
-   holder's 本人確認 (name+contact) + the 3 face conditions preserves the
+4. **本人確認 re-bind keeps 特定興行入場券.** Confirm reissuing with the purchasing
+   fan's 本人確認 (name+contact) + the 3 face conditions preserves the
    covered-ticket protection for the new owner.
-5. **特商法 §12-6 返品特約 on the buyer's 最終確認画面 (Δ: distinct from the
-   fee disclosure)** — the resale buyer's fresh purchase is a 通信販売;
+5. **特商法 §12-6 返品特約 on the purchasing fan's 最終確認画面 (Δ: distinct from the
+   fee disclosure)** — the purchasing fan's fresh purchase is a 通信販売;
    displaying 返品不可 defeats the §15-3 8-day return right. **Frame the
    resale fee as 役務提供の対価 (not 違約金/キャンセル料)** to lower 消費者契約法
    §9/§10 risk on the "non-refundable / not-guaranteed-if-unsold" terms.
    (Extends counsel flag #5 and obligations-table #2 to the resale leg.)
 6. **個人情報保護法 — 本人確認 lifecycle (Δ).** Define 利用目的 (resale as a
    purpose), retention through the hold-back/dispute window, then **deletion**
-   of the voided seller's 本人確認; both-party anonymity avoids §27 第三者提供.
+   of the voided reselling fan's 本人確認; both-party anonymity avoids §27 第三者提供.
    (Beyond the Stripe 越境移転 item in obligations-table #4.)
-7. **消費税 / インボイス on the resale fee (Δ).** The seller-side ~10% fee is
+7. **消費税 / インボイス on the resale fee (Δ).** The reselling-side ~10% fee is
    課税取引 under 総額表示; decide **税抜 vs 税込** — if 税込, effective take is
    ~9.1% after consumption tax, which affects the fee-band choice.
 8. **令和7年 (2025) 資金決済法改正 (施行 ~令和8年6月).** Confirm the narrowed
@@ -325,7 +325,7 @@ resale analysis differs from or extends the primary-sale analysis above.
 
 ## Domain entity (provider-agnostic)
 
-Order/Payment carries only: `provider` (stripe), opaque `payment_intent_id`
+Order/Payment carries only: `provider` (stripe), opaque `provider_payment_id`
 (`pi_…`) + `payment_method_id` (`pm_…`), `payment_method_type` (card now;
 konbini/paypay later), own `status` (`paid` on creation → `refunded`, or
 `failed` for the capture-succeeded-but-issuance-refunded edge — **no `pending`**:
@@ -338,7 +338,7 @@ provider switch (KOMOJU) or added methods.
 ## Open decisions (business / counsel, long lead — start now)
 
 - KOMOJU-vs-Stripe PoC outcome; Stripe Connect account type + payout account verification (審査) apply.
-- MoR designation + 特商法 seller wording; fee rate; payout schedule
+- MoR designation + 特商法 販売業者 wording; fee rate; payout schedule
   (event-end-keyed, like the incumbents — the escrow *gate* matters, not a
   bright-line duration); refund/cancellation policy; 適格請求書発行事業者
   registration.
@@ -370,9 +370,9 @@ whether 犯収法 AML-KYC applies to the platform.
 Non-regulatory gaps to specify when ⑤ is authored:
 
 - **Pricing model:** Organizer-set price, JPY, tax-inclusive, ticket tiers
-  (adult/child sharing the capacity pool), any price cap.
+  (adult/child sharing the quantity pool), any price cap.
 - **Order ↔ Ticket ↔ Payment linkage:** one Order = N tickets (companion,
-  ≤ `max_tickets_per_application`); a successful charge issues N tickets.
+  ≤ the TicketType's `per_account_limit`); a successful charge issues N tickets.
 - **Refund taxonomy:** **cancellation (中止) only**; a postponed show (延期)
   is cancelled and re-listed as a new event. Partial refunds, and the "no
   returns except cancellation" 返品特約 wording (ties to §2 above).
@@ -385,7 +385,7 @@ Non-regulatory gaps to specify when ⑤ is authored:
   reconciliation.
 - **Webhook security** (signature verification) + idempotency keys; a
   **test/sandbox** strategy for the lottery charge flow.
-- **Purchase limits** (1 account / 1 application) enforced at the
+- **Purchase limits** (1 account / 1 entry) enforced at the
   payment/order layer (anti-scalp).
 
 ## References

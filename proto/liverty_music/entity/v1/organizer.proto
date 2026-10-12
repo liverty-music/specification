@@ -6,7 +6,7 @@ import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/user.proto";
 
-// Organizer represents a vetted seller - a record label, management agency,
+// Organizer represents a vetted ticket-selling business - a record label, management agency,
 // promoter or self-publishing artist - that an admin creates to manage the
 // artists it represents. Existence is the vetting: an Organizer exists only
 // because an admin created it, so there is no separate `verified` flag and no
@@ -38,7 +38,7 @@ message Organizer {
     }
   ];
 
-  // The 販売業者の名称 (the seller of record's legal name) in the 特商法
+  // The 販売業者の名称 (the legal name of the business) in the 特商法
   // (Specified Commercial Transactions Act) disclosure shown to fans when they
   // buy the Organizer's tickets. Entered by an admin during vetting. The five
   // business details are absent until entered, and the Organizer's events can
@@ -67,8 +67,8 @@ message Organizer {
   reserved "seller_details";
 }
 
-// LegalName is an Organizer's 販売業者の名称 (the seller of record's legal
-// name) shown in the 特商法 (Specified Commercial Transactions Act) disclosure,
+// LegalName is an Organizer's 販売業者の名称 (the legal name of the
+// business) shown in the 特商法 (Specified Commercial Transactions Act) disclosure,
 // e.g. the registered company name.
 message LegalName {
   // The legal name, 1 to 200 characters.

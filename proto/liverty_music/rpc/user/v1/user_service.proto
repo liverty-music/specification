@@ -177,7 +177,7 @@ message CreateResponse {
 // UpdateRequest carries the caller's new full name and phone number and the
 // mask naming which of them to change.
 //
-// The nested User's own rules (its required id, email and external id) are
+// The nested User's own rules (its required id, email and provider user id) are
 // not evaluated, because the request names no User and carries only the
 // fields to change. The backend validates each value the mask names by its
 // entity rule (FullName, PhoneNumber) before any change and rejects a

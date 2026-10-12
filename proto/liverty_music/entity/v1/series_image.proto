@@ -47,7 +47,7 @@ message SeriesImage {
     (buf.validate.field).required = true
   ];
 
-  // Field 2 was the media kind, which had a single value (image). Field 3 held
+  // Field 2 was the image kind, which had a single value (image). Field 3 held
   // the variant addresses in a kind-specific attributes message; they are now
   // the thumb and large fields.
   reserved 2, 3;
