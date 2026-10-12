@@ -12,7 +12,7 @@ Delete SHALL remove, together or not at all:
 - the Organizer;
 - its first-party Series with their TicketSales, and their Events, with each Event's TicketTypes, lottery entries, ticket journeys and performers;
 - the Orders and Tickets for those Events, with their Reversed Settlements;
-- the reception links of those Events, with their admissions and rejected scans;
+- the Scanners of those Events, with their Admissions and RejectedScans;
 - its SeriesImage records and the Series' cover links;
 - its Artist associations and its payout-account record.
 
