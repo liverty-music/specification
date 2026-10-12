@@ -32,7 +32,7 @@ The screen SHALL open from a Scanner's link in the browser without asking for a 
 
 ### Requirement: Scanning only during the admission window
 
-Before the admission window the screen SHALL show when admission starts, after it SHALL show when admission ended, and when the event has no admission window it SHALL say that admission times are not set; in all three cases it SHALL not start the camera. Inside the window it SHALL ask for the rear camera only when staff start scanning, and scan continuously until they stop.
+Before the admission window the screen SHALL show when admission starts, after it SHALL show when admission ended, and when the event has no admission window it SHALL say that admission times are not set; in all three cases it SHALL not start the camera. Inside the window it SHALL ask for the rear camera only when staff start scanning, and scan continuously until they stop. Starting to scan SHALL clear the verdict of the previous scan, so staff never read an earlier result as the next fan's.
 
 #### Scenario: Opened the day before
 
@@ -48,6 +48,11 @@ Before the admission window the screen SHALL show when admission starts, after i
 
 - **WHEN** staff tap to start scanning inside the window
 - **THEN** the rear camera starts and QR codes in view are scanned
+
+#### Scenario: Scanning again after stopping
+
+- **WHEN** staff stop scanning after an OK and later start scanning again
+- **THEN** the screen shows no verdict until the next QR code is decided
 
 ### Requirement: The verdict without personal data
 
