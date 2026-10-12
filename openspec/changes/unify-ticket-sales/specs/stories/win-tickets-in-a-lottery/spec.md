@@ -28,7 +28,7 @@ Fans SHALL be able to enter, win and receive tickets for an Organizer's lottery 
 
 ### Requirement: A winning fan receives tickets
 
-After an Organizer creates a Lottery TicketSale for a published event with TicketSaleUseCase.Create, a fan SHALL be able to start an entry for the event's TicketType with LotteryEntryUseCase.Start, authorize their card with LotteryEntryUseCase.AuthorizeCard, complete card authentication and confirm the entry with LotteryEntryUseCase.Confirm while the window is open, and — when their entry wins — find it Won with LotteryEntryUseCase.ListOwnByTicketType within 1 minute after the window closes and find its Tickets with TicketUseCase.List within 1 more minute.
+After an Organizer creates a Lottery TicketSale for a published event with TicketSaleUseCase.Create, a fan SHALL be able to start an entry for the event's TicketType with LotteryEntryUseCase.Start, authorize their card with LotteryEntryUseCase.AuthorizeCard, complete card authentication and confirm the entry with LotteryEntryUseCase.Confirm while the window is open, and — when their entry wins — find it Won with LotteryEntryUseCase.ListByTicketType within 1 minute after the window closes and find its Tickets with TicketUseCase.List within 1 more minute.
 
 #### Scenario: Demand within quantity
 - **WHEN** a fan enters 2 tickets for a TicketType of 100 tickets priced 8000 yen, and the window closes with fewer than 100 tickets requested
@@ -36,7 +36,7 @@ After an Organizer creates a Lottery TicketSale for a published event with Ticke
 
 ### Requirement: A losing fan is never charged
 
-A fan whose entry is not admitted SHALL find it Lost with LotteryEntryUseCase.ListOwnByTicketType and SHALL NOT be charged.
+A fan whose entry is not admitted SHALL find it Lost with LotteryEntryUseCase.ListByTicketType and SHALL NOT be charged.
 
 #### Scenario: Oversubscribed sale
 - **WHEN** a TicketType of 4 tickets closes with entries for 12 tickets and the fan's entry is not admitted
@@ -44,7 +44,7 @@ A fan whose entry is not admitted SHALL find it Lost with LotteryEntryUseCase.Li
 
 ### Requirement: A fan can withdraw before the draw
 
-A fan SHALL be able to withdraw with LotteryEntryUseCase.WithdrawEntry before the draw and enter again while the window is open. A Draft the fan never confirmed SHALL take no part in the draw, and its card authorization SHALL be released at the draw.
+A fan SHALL be able to withdraw with LotteryEntryUseCase.Withdraw before the draw and enter again while the window is open. A Draft the fan never confirmed SHALL take no part in the draw, and its card authorization SHALL be released at the draw.
 
 #### Scenario: Withdraw and enter again
 - **WHEN** a fan withdraws their entry while the window is open and enters again with a new card authorization

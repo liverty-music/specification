@@ -93,7 +93,7 @@ message TicketType {
   // The price of one ticket in whole yen, tax-inclusive (税込). 1 to 1,000,000.
   // The fan pays price × count, with no fee on top. For a first-come sale it
   // cannot change while any ticket is sold or held.
-  TicketPrice price = 4 [
+  TicketTypePrice price = 4 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
@@ -144,8 +144,8 @@ message TicketType {
   bool low_stock = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
-// TicketPrice is the price of one ticket in whole yen, tax-inclusive (税込).
-message TicketPrice {
+// TicketTypePrice is the price of one ticket in whole yen, tax-inclusive (税込).
+message TicketTypePrice {
   // The amount in yen, 1 to 1,000,000.
   int64 value = 1 [(buf.validate.field).int64 = {
     gte: 1

@@ -54,7 +54,7 @@ message UpdateRequest {
 
   // Required. The price of one ticket in yen, tax-inclusive (税込). 1 to
   // 1,000,000.
-  entity.v1.TicketPrice price = 2 [(buf.validate.field).required = true];
+  entity.v1.TicketTypePrice price = 2 [(buf.validate.field).required = true];
 
   // Required. The tickets offered, at least 1.
   int32 quantity = 3 [(buf.validate.field).int32.gte = 1];
