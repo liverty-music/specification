@@ -7,7 +7,7 @@ A fan holding tickets enters the venue with their companions by showing one QR c
 
 ### Requirement: Fan and companions enter together
 
-After an Organizer issues a link with ReceptionLinkUseCase.Issue and venue staff open it on a device with ReceptionLinkUseCase.Open, a fan whose phone registered its key with WalletPublicKeyUseCase.Register and who holds Issued tickets for the event SHALL be able to show the QR code their phone makes and be admitted with TicketUseCase.Admit during the reception window; their tickets SHALL then be shown as entered in TicketUseCase.List.
+After an Organizer creates a Scanner with ScannerUseCase.Create and venue staff open its link on a device with ScannerUseCase.Open, a fan whose phone registered its key with WalletPublicKeyUseCase.Register and who holds Issued tickets for the event SHALL be able to show the QR code their phone makes and be admitted with TicketUseCase.Admit during the admission window; their tickets SHALL then be shown as entered in TicketUseCase.List.
 
 #### Scenario: Group of three enters
 
@@ -21,12 +21,12 @@ After an Organizer issues a link with ReceptionLinkUseCase.Issue and venue staff
 
 ### Requirement: A ticket admits only once
 
-A ticket that has been admitted SHALL be refused at every later scan, through any link, and staff SHALL see when and through which link it was admitted.
+A ticket that has been admitted SHALL be refused at every later scan, through any Scanner, and staff SHALL see when and through which Scanner it was admitted.
 
 #### Scenario: Same code at two entrances
 
 - **WHEN** the same QR code is scanned at `受付1` and `受付2` at the same moment
-- **THEN** its tickets are admitted once in total, and the other entrance sees NG, already used, with the time and link label
+- **THEN** its tickets are admitted once in total, and the other entrance sees NG, already used, with the time and Scanner label
 
 ### Requirement: Copied or stale codes admit no one
 
@@ -39,14 +39,14 @@ A QR code scanned more than 30 seconds after the phone made it, one made on a ph
 
 ### Requirement: Only the bound device, only during the window
 
-A reception link SHALL admit only from the device that first opened it, only during the event's reception window, and not at all once the Organizer has revoked it.
+A Scanner SHALL admit only from the device that first opened its link, only during the event's admission window, and not at all once the Organizer has revoked it.
 
 #### Scenario: Link forwarded
 
-- **WHEN** staff forward the link `受付1` to another phone and scan there
+- **WHEN** staff forward the link of `受付1` to another phone and scan there
 - **THEN** that phone is refused and the fan is not admitted
 
 #### Scenario: Lost phone revoked
 
 - **WHEN** the Organizer revokes and reissues `受付1` after the phone is lost
-- **THEN** the lost phone can no longer admit, and the reissued link works on the replacement phone
+- **THEN** the lost phone can no longer admit, and the reissued Scanner works on the replacement phone
