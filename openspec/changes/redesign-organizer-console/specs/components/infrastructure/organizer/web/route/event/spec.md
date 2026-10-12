@@ -53,7 +53,9 @@ The Sales tab SHALL list every TicketSale that offers a TicketType for the event
 - closed and not drawn (抽選待ち), for a lottery after the end time before the draw;
 - drawn (抽選済み), for a lottery: the number of winning entries, the number of tickets won and the number of losers (Lost entries).
 
-When the event has no sale the tab SHALL say so and offer 抽選で販売する (sell by lottery) and 先着で販売する (sell first come). When the event has sales, the tab SHALL still offer to start another sale after them. A first-come sale shows what the first-come sale editor specifies.
+A first-come sale SHALL show its TicketType's state with its sold count, held count and quantity: 受付開始前 (NotYetOnSale) with the time remaining until it opens, 販売中 (OnSale), 残りは購入手続き中 (AllHeld), 完売 (SoldOut) or 販売終了 (Ended).
+
+When the event has no sale the tab SHALL say so and offer 抽選で販売する (sell by lottery) and 先着で販売する (sell first come). When the event has sales, the tab SHALL still offer to start another lottery after them, and SHALL offer 先着で販売する only while the event has no first-come sale.
 
 #### Scenario: No sale yet
 
@@ -75,6 +77,11 @@ When the event has no sale the tab SHALL say so and offer 抽選で販売する 
 - **WHEN** a drawn lottery has 318 winning entries for 1,198 tickets and 94 Lost entries
 - **THEN** the sale shows 当選 318, 1,198 tickets won and 94 losers
 
+#### Scenario: First-come sale on sale
+
+- **WHEN** a first-come sale of 150 tickets is open with 100 sold and 6 held
+- **THEN** the sale shows 販売中 with 100 sold, 6 held and 150 tickets
+
 #### Scenario: Presale drawn, general sale scheduled
 
 - **WHEN** an event has a drawn ファンクラブ先行 and a 一般発売 that has not opened
@@ -88,6 +95,25 @@ When the event has no sale the tab SHALL say so and offer 抽選で販売する 
 
 - **WHEN** an operator presses 抽選で販売する, fills in ファンクラブ先行 and saves
 - **THEN** the Sales tab opens with ファンクラブ先行 listed as 受付開始前 or 受付中 and the snackbar confirms it
+
+### Requirement: Edit a sale from the Sales tab
+
+Each first-come sale SHALL offer 編集, which opens the first-come sale editor for the event. Each lottery sale SHALL offer 編集 before its start time, which opens the lottery sale editor for that sale; from its start time on, 編集 SHALL be shown disabled with 受付開始後は変更できません.
+
+#### Scenario: Edit a first-come sale
+
+- **WHEN** an operator presses 編集 on the 一般発売 first-come sale
+- **THEN** the first-come sale editor opens for the event with that sale's settings
+
+#### Scenario: Edit a lottery before it opens
+
+- **WHEN** an operator presses 編集 on a lottery sale that opens tomorrow
+- **THEN** the lottery sale editor opens with that sale's window, price, quantity and per-account limit
+
+#### Scenario: Lottery already open
+
+- **WHEN** a lottery sale's window has opened
+- **THEN** its 編集 is disabled and says 受付開始後は変更できません
 
 ### Requirement: Change a sale's verification requirement
 

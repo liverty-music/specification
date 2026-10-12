@@ -12,7 +12,7 @@ Current state, verified in the code on 2026-10-10 (frontend `main` at `e0f6c3d`)
 - **No i18n.** `organizer/main.ts:147-162` registers "NO i18n machinery"; every string is English. The fan app's set-up is `src/main.ts:166-190` (`I18nConfiguration`, `fallbackLng: 'ja'`, detection querystring → localStorage → navigator).
 - **Styles.** `organizer/styles/main.css` (245 lines) copies a subset of the fan tokens with the fan app's dark navy surface. The fan tokens have `--md-easing-emphasized-accelerate: cubic-bezier(0.3, 0.8, 0.15, 1)` at `src/styles/tokens.css:146` (wrong), state layers focus and pressed 12 % at `:251-252`, and only `long2`/`long4` of the long durations.
 - **Fan primitives.** `<loading-spinner>` is registered at `src/main.ts:291` and used only at `src/routes/verify-callback/verify-callback-route.html:6`. `<snack-bar>` lives in `src/components/snack-bar/` (default 2500 ms, `snack.ts:29`; `Infinity` supported, `snack-bar.ts:62-68`) and is mounted in `src/app-shell.html:28`.
-- **Backend reads the console can use.** `OrganizerService.Get` / `ListArtists`, `PayoutAccountService.Get` (account status plus `onboarding_url` while not active), `SeriesService.List` (each authored Series with its dates as Concerts, which carry their event ids, and each Artist once) and `RegenerateToken` (returns the new share token; the Series' token is "never shown on reads", `specs/components/entity/series`). After `unify-ticket-sales`: `TicketSaleService.List(event_id)` with entry stats per TicketType (`usecase/ticket-sale/list-own-by-event`: entries, requested tickets, Won entries, Won tickets, Lost entries) and `SetVerificationRequirement`.
+- **Backend reads the console can use.** `OrganizerService.Get` / `ListArtists`, `PayoutAccountService.Get` (account status plus `onboarding_url` while not active), `SeriesService.List` (each authored Series with its dates as Concerts, which carry their event ids, and each Artist once) and `RegenerateToken` (returns the new share token; the Series' token is "never shown on reads", `specs/components/entity/series`). After `unify-ticket-sales`: `TicketSaleService.ListByEvent(event_id)` with entry stats per TicketType (`usecase/ticket-sale/list-own-by-event`: entries, requested tickets, Won entries, Won tickets, Lost entries) and `SetVerificationRequirement`.
 - **Map catalog.** The backend already calls Places Text Search with Application Default Credentials (`backend/internal/infrastructure/maps/google/client.go:27,90`, `SearchPlace` returns one best match). No browser Maps key exists.
 - **M3 values**, fetched today from AndroidX sources: `StateTokens.kt` hover 0.08, focus 0.10, pressed 0.10, dragged 0.16 (no selected value); `MotionTokens.kt` durations 50-1000 ms and easings standard (0.2,0,0,1), standard-accelerate (0.3,0,1,1), standard-decelerate (0,0,0,1), emphasized-accelerate (0.3,0,0.8,0.15), emphasized-decelerate (0.05,0.7,0.1,1); `SnackbarHost.kt` Short 4000 ms, Long 10000 ms, Indefinite. Window size classes (compact < 600, medium 600-839, expanded 840-1199 dp) and the 48 dp target come from the brief's check of the Android Developers docs; not re-fetched here.
 
@@ -26,9 +26,9 @@ Constraints: bundle isolation (`make verify-bundle-isolation`, `lint-boundaries`
 
 **Non-Goals:**
 - The admin console shell (from `refactor-shared-ui-design-system`); follow-up issue (task 0.6).
-- The first-come sale editor and its states (`first-come-ticket-sales`); this change gives it the Sales tab entry.
+- The first-come sale editor and its states (`route/ticket-sale-editor`, shipped by `first-come-ticket-sales`); this change gives it its Sales tab entries, to start and to change the event's first-come sale.
 - The reception screen staff use at the door and the reception guide (`ticket-wallet-and-checkin`, `isolate-venue-reception`).
-- Editing a sale after creation, refunds, settlement statements, a pre-publish preview, a sales checklist (story-map items without an RPC; listed in the plan).
+- Changing a lottery sale once its window has opened (the server refuses it, `usecase/ticket-sale/set-window` and `usecase/ticket-type/update`), renaming a sale, and cancelling a sale (no RPC). Refunds, settlement statements, a pre-publish preview and a sales checklist (story-map items without an RPC; listed in the plan).
 - Changing the fan app's colors, type or components beyond the shared tokens, the snack bar move and the spinner replacement.
 - A `SeriesService.Get`: `List` is enough for an Organizer's small catalog (the plan's decision).
 
@@ -45,12 +45,13 @@ Constraints: bundle isolation (`make verify-bundle-isolation`, `lint-boundaries`
 | `concerts/:seriesId/edit` | Concert editor | Concert | 公演 |
 | `concerts/:seriesId/events/:eventId/sales` (default tab) | Event, Sales tab | Concert | 公演 |
 | `concerts/:seriesId/events/:eventId/reception` | Event, Reception tab | Concert | 公演 |
-| `concerts/:seriesId/events/:eventId/sales/new-lottery` | Lottery sale editor | Event | 公演 |
-| `concerts/:seriesId/events/:eventId/sales/new-first-come` | First-come sale editor (`first-come-ticket-sales`) | Event | 公演 |
+| `concerts/:seriesId/events/:eventId/sales/lottery/new` | Lottery sale editor (new) | Event | 公演 |
+| `concerts/:seriesId/events/:eventId/sales/lottery/:saleId` | Lottery sale editor (change before it opens) | Event | 公演 |
+| `concerts/:seriesId/events/:eventId/sales/first-come` | First-come sale editor (`route/ticket-sale-editor`; starts the event's first-come sale or changes it) | Event | 公演 |
 | `settings` | Settings | — | 設定 |
 | `denied`, `auth/callback` | unchanged | — | — |
 
-- Removed: `lottery/configure/:eventId`, `lottery/status/:phaseId`, `reception-links/:eventId`, `welcome`, `concerts/edit/:seriesId`. No redirects: there are no users, and the fallback opens Home.
+- Removed: `lottery/configure/:eventId`, `lottery/status/:phaseId`, `scanners/:eventId`, `welcome`, `concerts/edit/:seriesId`. No redirects: there are no users, and the fallback opens Home.
 - **Why the event id stays under the concert:** the breadcrumb needs the concert, and `SeriesService.List` is the only read; a flat `events/:eventId` would need a reverse lookup across all concerts.
 - Tabs are child routes so a tab is a shareable address (spec "Reception tab address"). The tab bar is an M3 primary tabs component driving the router.
 - Each route declares its parent in route `data`; one breadcrumb component in the shell renders it (compact: the parent only).
@@ -60,11 +61,11 @@ Constraints: bundle isolation (`make verify-bundle-isolation`, `lint-boundaries`
 | Screen | Reads |
 |---|---|
 | Home | `SeriesService.List`, `PayoutAccountService.Get`, and for each published event starting within 7 days the scanner list of `rename-reception-to-scanner` (an Organizer has a handful of such events; calls run in parallel) |
-| Concerts, Concert | `SeriesService.List`; sale state per event from `TicketSaleService.List` for published events only, lazily per visible event |
-| Event | `SeriesService.List` (find the event), `TicketSaleService.List(event_id)`, `OrganizerService.Get` (business details prerequisite), scanner list |
+| Concerts, Concert | `SeriesService.List`; sale state per event from `TicketSaleService.ListByEvent` for published events only, lazily per visible event |
+| Event | `SeriesService.List` (find the event), `TicketSaleService.ListByEvent(event_id)`, `OrganizerService.Get` (business details prerequisite), scanner list |
 | Settings | `OrganizerService.Get`, `OrganizerService.ListArtists`, `PayoutAccountService.Get` (re-read on `visibilitychange` to visible) |
 
-- **Sale state on lists** costs one `TicketSaleService.List` per published event. With the current catalog (tens of events) this is acceptable; the plan's alternative (a sale summary on the `SeriesService` List response) is the follow-up if lists get slow. Recorded, not built.
+- **Sale state on lists** costs one `TicketSaleService.ListByEvent` per published event. With the current catalog (tens of events) this is acceptable; the plan's alternative (a sale summary on the `SeriesService` List response) is the follow-up if lists get slow. Recorded, not built.
 - Countdown and "open/closed" are computed on the client from the sale's times and the clock, refreshed every 60 s; the server stays the source of truth for whether an entry is accepted.
 
 ### D3 — Responsive layout: window class for navigation, container class for lists
@@ -142,8 +143,8 @@ Navigation bar/rail, top app bar with account menu, breadcrumb, button (filled, 
 
 ### D11 — Spec handling of in-flight changes
 
-- `route/reception-links` (added by `ticket-wallet-and-checkin`, not yet in the main specs) is written as a REMOVED delta here; `openspec validate --strict` accepts it now, and it applies once `ticket-wallet-and-checkin` archives. If `rename-reception-to-scanner` moves that spec, task 0.3 retargets the delta.
-- `route/lottery-sale-editor` (moved by `unify-ticket-sales`) keeps its path in this change. Once `unify-ticket-sales` and `first-come-ticket-sales` are both archived, the lottery editor and the first-come `route/ticket-sale-editor` are one screen family; merging the two main specs into `route/ticket-sale-editor` is a main-spec move done directly with a mapping table (task 8.1), not a delta.
+- `route/scanners` (added by `ticket-wallet-and-checkin` as `route/reception-links`, renamed by `rename-reception-to-scanner`) is written as a REMOVED delta here, with the requirement names of the main spec (task 0.3).
+- `route/lottery-sale-editor` (moved by `unify-ticket-sales`) keeps its path in this change. Once `unify-ticket-sales` and `first-come-ticket-sales` are both archived, the lottery editor and the first-come `route/ticket-sale-editor` are one screen family; merging the two main specs into `route/ticket-sale-editor` is a main-spec move done directly with a mapping table (task 8.1), not a delta. It waits until this change archives, because this change holds a delta on `route/lottery-sale-editor` that would lose its target.
 - Publish and cancel are written as acting on an event. The exact usecase names come from `restructure-event-publishing`; task 0.2 aligns the story and the event page wording once it is archived.
 
 ### D12 — What this change takes over from `refactor-shared-ui-design-system`
@@ -162,10 +163,17 @@ Navigation bar/rail, top app bar with account menu, breadcrumb, button (filled, 
 
 The owner decides whether that change is deleted or archived as superseded (task 0.5).
 
+### D13 — Editing a sale from the Sales tab
+
+- **Why the Sales tab edits sales (owner decision, 2026-10-12):** there is no RPC to cancel or delete a sale, so without an edit entry a mistyped price or window cannot be fixed, and the first-come editor's changes after the start would be reachable only by typing its address. Every RPC already ships: `TicketSaleService.SetWindow` (a lottery until its window opens, a first-come sale at any time) and `TicketTypeService.Update` (a lottery until its window opens; a first-come sale under the price lock and the sold-plus-held floor).
+- A first-come sale's 編集 opens the existing first-come editor, which already starts or changes the event's first-come sale; a lottery's 編集 opens the lottery editor in a change mode (the name is shown, not editable: no RPC renames a sale).
+- **Two calls, no transaction.** The lottery editor saves the window first and the TicketType second, skipping a call whose values did not change. When the second call fails, the editor stays open with what was saved kept, says which part was not saved, and offers 再試行 in the snackbar.
+- The Sales tab disables 編集 from the lottery's start time by the client clock; the server's FailedPrecondition stays the authority (spec "Sale opened while editing").
+
 ## Risks / Trade-offs
 
 - [One sale read per published event on lists (D2)] → Acceptable at tens of events; add a sale summary to the `SeriesService` List response if Concerts takes over 1 s to show sale states.
-- [The console checks business details before a lottery, the server does not (`usecase/ticket-sale/create` has no such precondition)] → The console gate is a UX gate only; see "Assumptions to confirm" 3.
+- [The console checks business details before a lottery, the server does not (`usecase/ticket-sale/create` has no such precondition)] → The console gate is a UX gate only; the server-side precondition is liverty-music/specification#1135; see "Assumptions to confirm" 3.
 - [Fan visual change from 12 % to 10 % state layers] → Small and intended (M3 values); the fan functional test `e2e/functional/press-state.spec.ts` asserts only that a layer appears (opacity above 0), so it passes unchanged.
 - [View Transitions not in every browser] → Progressive enhancement; navigation works without it.
 - [Large frontend rewrite of one app] → The console has no users; screens land in one PR per group behind no flag, and each group's tests gate it.
@@ -184,12 +192,12 @@ The owner decides whether that change is deleted or archived as superseded (task
 
 1. **Venue search runs through a new backend call** (`SeriesService.SearchVenues`) on an explicit search action, with Japanese names and places in Japan ranked first (D9), rather than browser-side Maps autocomplete. The plan had filed the place id bug as a separate issue; the brief puts the fix here, which adds a proto and backend part to this change.
 2. **The Venue read exposes its place id** so that an unchanged row is resent with it; without this the editor cannot keep the venue match.
-3. **Missing business details block both methods in the console.** `first-come-ticket-sales` requires them for first-come; `unify-ticket-sales` does not check them for a lottery. The business details disclosure (特商法 表記) applies to any paid sale, so the console shows the prerequisite for both. Recommended: add the same precondition to `TicketSaleUseCase.Create` for Lottery (not in this change).
+3. **Missing business details block both methods in the console.** The business details disclosure (特商法 表記) applies to any paid sale. Since `unify-ticket-sales` and `first-come-ticket-sales` archived, `usecase/ticket-sale/create` checks them for neither method, so the console gate is a UX gate only; the server-side precondition is liverty-music/specification#1135 (not in this change).
 4. **Publish and cancel act per event** (after `restructure-event-publishing`). Whether a concert-wide cancel remains is that change's decision; the concert page in this change has no cancel action.
 5. **"Draft concerts" on Home means a concert with at least one draft event.**
 6. **Drawn lottery tiles show tickets won**, not tickets issued: the entry stats (`lottery-entry/get-stats-by-ticket-type`) return Won tickets; issuance follows within 1 minute (`unify-ticket-sales` D5), so the numbers match once issuance runs.
 7. **The share link is only shown when created.** The Series' token is never returned on reads, so the concert page cannot show the current link; it offers a new link with a confirmation that the old one stops working.
-8. **先着で販売する appears only once `first-come-ticket-sales` ships**; until then the Sales tab offers the lottery only. Likewise the reception guide link appears only once the guide exists.
+8. **The reception guide link appears only once the guide exists.** (先着で販売する is offered from the start: `first-come-ticket-sales` archived on 2026-10-11.)
 9. **Old addresses are not redirected**; unknown addresses open Home.
 10. **The fan app's focus and pressed state layers change to 10 %**, because the system tokens are shared; the plan said the fan app changes only its easing token.
 
