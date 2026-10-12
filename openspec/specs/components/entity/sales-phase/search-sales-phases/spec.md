@@ -27,7 +27,7 @@ SearchSalesPhases SHALL take the artist, the artist's official site, and the ser
 
 ### Requirement: Only sales that have not opened are returned
 
-SearchSalesPhases SHALL return only sales whose apply start time is after the current time, including lotteries and first-come sales, presales and general on-sales, and every later round (2次, 3次, …) of a series that has not opened yet. A sale that has already opened, whether still open or closed, SHALL NOT be returned. Ticket trades and resales between ticket holders (公式トレード, リセール) SHALL NOT be returned.
+SearchSalesPhases SHALL return only sales whose apply start time is after the current time, including lotteries and first-come sales, presales and general on-sales, and every later round (2次, 3次, …) of a series that has not opened yet. A sale that has already opened, whether still open or closed, SHALL NOT be returned. Ticket trades and resales between fans (公式トレード, リセール) SHALL NOT be returned.
 
 #### Scenario: Two rounds announced ahead
 

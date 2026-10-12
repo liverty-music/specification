@@ -25,19 +25,19 @@ Refund SHALL take an Order, a reason — Cancellation or Dispute — and the cur
 - **WHEN** the Order does not exist
 - **THEN** Refund fails with NotFound
 
-### Requirement: Buyer refunded the full amount
+### Requirement: Fan refunded the full amount
 
-For the reason Cancellation, Refund SHALL refund the Order's full amount to the buyer's original payment with Order.CreateRefund, against the charge recorded on the Order's Settlement or, when none is recorded, the charge found by Order.GetProviderChargeID. It SHALL fail with FailedPrecondition when the Order's payment provider cannot issue refunds or the Order has no provider payment ID. For the reason Dispute it SHALL issue no refund, because the dispute has already returned the money to the cardholder.
+For the reason Cancellation, Refund SHALL refund the Order's full amount to the fan's original payment with Order.CreateRefund, against the charge recorded on the Order's Settlement or, when none is recorded, the charge found by Order.GetProviderChargeID. It SHALL fail with FailedPrecondition when the Order's payment provider cannot issue refunds or the Order has no provider payment ID. For the reason Dispute it SHALL issue no refund, because the dispute has already returned the money to the fan.
 
 #### Scenario: Cancellation refund
 
 - **WHEN** an event is cancelled and a 16000 yen Order is refunded with the reason Cancellation
-- **THEN** 16000 yen is refunded to the buyer's card
+- **THEN** 16000 yen is refunded to the fan's card
 
 #### Scenario: Dispute
 
 - **WHEN** Refund runs with the reason Dispute
-- **THEN** no refund is issued to the buyer and the rest of the refund still happens
+- **THEN** no refund is issued to the fan and the rest of the refund still happens
 
 ### Requirement: Payout clawed back
 
@@ -69,5 +69,5 @@ After the money has moved, Refund SHALL record the refund with Order.CommitRefun
 
 #### Scenario: Retry after a failure
 
-- **WHEN** a refund failed after the buyer was refunded and is run again
-- **THEN** the buyer is not refunded a second time and the refund is recorded
+- **WHEN** a refund failed after the fan was refunded and is run again
+- **THEN** the fan is not refunded a second time and the refund is recorded

@@ -28,6 +28,6 @@ Paid ticketing (roadmap ⑤ `ticket-purchase-and-issuance`) is implemented and v
 ## Impact
 
 - **Provider**: decided — Stripe Connect (test mode now; live launch deferred behind this gate).
-- **Cross-capability**: 収納代行 escrow/payout execution is `ticket-settlement-and-payout`; the checkout/apply UI that carries 総額表示 + 特商法 最終確認 spans ④ (`lottery-application`) and ⑤ (`ticket-purchase-and-issuance`) surfaces — this capability owns the obligations, those changes own the pixels.
+- **Cross-capability**: 収納代行 escrow/payout execution is `ticket-settlement-and-payout`; the checkout and lottery entry UI that carries 総額表示 + 特商法 最終確認 spans ④ (the lottery entry screen) and ⑤ (`ticket-purchase-and-issuance`) surfaces — this capability owns the obligations, those changes own the pixels.
 - **External**: legal counsel (#778), 税務署 適格請求書発行事業者 registration, Stripe live 審査, DPA execution — none block ⑤'s spec/implementation or archive.
 - **No code/proto surface** introduced by this capability itself; it is a launch-gate tracking + obligations spec.

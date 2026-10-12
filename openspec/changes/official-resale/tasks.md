@@ -1,6 +1,6 @@
 ## 0. Dependency gate (must clear before any implementation)
 
-- [ ] 0.1 Confirm ④ `lottery-application` is specced + shipped, and **persists a stable loser ordering (draw order)** that resale can consume (fallback: application-timestamp order)
+- [ ] 0.1 Confirm ④ LotteryEntry is specced + shipped, and **persists a stable loser ordering (draw order)** that resale can consume (fallback: entry-time order)
 - [ ] 0.2 Confirm ⑤ `ticket-purchase-and-issuance` is specced + shipped (Order/Payment/Ticket + Stripe Connect 収納代行 + refunds/`transfer_reversal`)
 - [ ] 0.3 Confirm ⑥ `ticket-wallet-and-checkin` is specced + shipped (issue / void / rotating-QR / 本人確認 binding)
 - [ ] 0.4 Confirm legal counsel sign-off on the 9-item resale brief in #778 (escrow-exclusion 2条の2第2号 + post-sale settlement; no-inventory 古物; 特商法 fee clause; 本人確認 re-bind; blanket-consent incl. artist-rider/admin-exception; 返品特約 §12-6; 個人情報 lifecycle; 消費税/インボイス; 2025資金決済法改正)

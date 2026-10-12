@@ -86,7 +86,7 @@ two stubs — everything around them (dedupe, privacy, RPC surface, UI) is done:
   Verify **SDK** card-read (physical NFC + スマホJPKI). The `verify()` orchestration,
   the observable status, and the Settings UI already branch on `isAvailable`.
 - Then build the deferred **5.2** (apply-time "requires verification" prompt — needs
-  the lottery-application apply flow to exist) and **5.3** (運転免許証 fallback UI).
+  the lottery entry flow to exist) and **5.3** (運転免許証 fallback UI).
 
 ## Status of the shipped slice (2026-09-02)
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The organizer (seller) frontend shell: a dedicated `organizer.html` entry,
+The organizer frontend shell: a dedicated `organizer.html` entry,
 bundle-isolated from the consumer SPA and admin console, authenticated
 against the operator's own Zitadel tenant org via org-pinned entry, with a
 role-claim route guard and a post-login placeholder. Business screens land

@@ -88,7 +88,7 @@ The admin Organizer service SHALL NOT list an Organizer's Artists; the admin art
 - **WHEN** OrganizerUseCase.Delete fails with FailedPrecondition
 - **THEN** Delete fails with FailedPrecondition
 
-#### Scenario: Admin records seller details
+#### Scenario: Admin records business details
 
 - **WHEN** an admin calls SetBusinessDetails with all five business details
 - **THEN** OrganizerUseCase.SetBusinessDetails runs and the Organizer is returned with them

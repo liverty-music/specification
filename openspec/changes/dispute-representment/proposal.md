@@ -7,16 +7,16 @@
 
 A dispute (chargeback) is conceded the moment it opens: on the payment provider's
 "dispute created" notice the platform refunds the Order through
-RefundOrderUseCase.RefundOrder with the reason Dispute — voiding the Tickets,
+OrderUseCase.Refund with the reason Dispute — voiding the Tickets,
 reversing the Organizer's payout and marking the Order Refunded — and never
 contests it. A dispute can arrive long after the event (card networks allow
 months), i.e. after the Settlement was Released; the Organizer's split is clawed
 back, so the platform still loses its 5% platform fee and the provider's dispute
-fee — even when the holder attended.
+fee — even when the fan attended.
 
-Tickets are bound to the buyer's account (and, for verified phases, to a
+Tickets are bound to the fan's account (and, for verification-required sales, to a
 本人確認 identity), and once `ticket-wallet-and-checkin` records admissions the
-platform can prove the holder entered the venue. That evidence is strong against
+platform can prove the fan entered the venue. That evidence is strong against
 "product not received" and "unauthorised / not recognised" disputes, so the
 platform should contest those instead of conceding.
 
@@ -28,7 +28,7 @@ platform should contest those instead of conceding.
   Order's event has already happened, so entry is not a concern.
 - **Submit evidence automatically.** For an Order whose Tickets were admitted,
   the platform submits evidence to the payment provider: the admission records
-  (instant, operator, event), the account and 本人確認 binding of the holder, and
+  (instant, operator, event), the account and 本人確認 binding of the fan, and
   the logged purchase consent / charge-timing disclosure.
 - **Settle on the outcome.** On the provider's "dispute closed" notice:
   - **lost** — do what is done today: void the Tickets, reverse the Organizer's

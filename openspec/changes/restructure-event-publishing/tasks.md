@@ -61,7 +61,7 @@
 - [ ] 5.3 `Event.IsEventPublished` on the Event's own state; verify contract tests: Published organizer event, Draft date of a published series, Cancelled date of a published series, Discovered event, Unknown event id
 - [ ] 5.4 Introduce `catalogEventCondition` and `fanVisibleCondition` in `rdb` (design D4), apply them to every Concert read and to the discovery upsert's conflict inference, and add the reflection-guarded leakage test. Verify the test passes for every scenario:
   - `components/entity/concert`: Draft not returned by id, Discovery ignores a draft at the same slot;
-  - list: Cancelled organizer concert included, Staged concert excluded, Empty catalog, Draft event excluded;
+  - list: Cancelled organizer concert included, Concert candidate excluded, Empty catalog, Draft event excluded;
   - list-by-artist: Past and upcoming, Upcoming only, Draft organizer concert excluded, No concerts, Draft and cancelled dates of a published tour excluded;
   - list-by-artists: Two artists, Cancelled organizer concert excluded, No concerts, Draft date of a published tour excluded;
   - list-by-follower: Default start is today, Past start date widens the range, Two followed performers at one concert, Unlisted organizer concert excluded, Follows nothing, Draft and cancelled dates of a published tour excluded;
@@ -71,10 +71,10 @@
 
 ## 6. Backend — usecases (unit tests with the operations mocked)
 
-- [ ] 6.1 `ConcertAuthoringUseCase.CreateDraft` (`components/usecase/series/create`); verify unit tests: Draft for a represented artist, Two showtimes, and the existing validation scenarios
+- [ ] 6.1 `SeriesUseCase.Create` (`components/usecase/series/create`); verify unit tests: Draft for a represented artist, Two showtimes, and the existing validation scenarios
 - [ ] 6.2 Rename `UpdateDraft` to `Update` and implement `components/usecase/series/update` (design D9), calling `TicketSale.ListByEvent` only for PUBLISHED Events whose start time changes; verify unit tests: Another organizer's series, Unknown series, Doors after start, Correcting a past published date, Published venue changed, Published date left out, Visibility changed after publish, Start time on sale, Start time before any sale, Event removed, Published concert corrected, Additional date added as a draft
-- [ ] 6.3 `ConcertAuthoringUseCase.Publish` with optional event ids (`components/usecase/series/publish`); verify unit tests: No performer, No cover image, Claims a discovered event, Suppressed slot, Already published, Additional date on a published tour, Only the named date, Unlisted publish, New date keeps the share link, Two performers, Only claimed events, Additional date announced alone, and the unchanged Another organizer's series and Unlisted publish reported
-- [ ] 6.4 `ConcertAuthoringUseCase.Cancel` with optional event ids (`components/usecase/series/cancel`); verify unit tests: Unknown series, Cancel a published concert, Cancel a draft, Cancel twice, Cancel one date, Cancelled tour, Draft discarded silently
+- [ ] 6.3 `SeriesUseCase.Publish` with optional event ids (`components/usecase/series/publish`); verify unit tests: No performer, No cover image, Claims a discovered event, Suppressed slot, Already published, Additional date on a published tour, Only the named date, Unlisted publish, New date keeps the share link, Two performers, Only claimed events, Additional date announced alone, and the unchanged Another organizer's series and Unlisted publish reported
+- [ ] 6.4 `SeriesUseCase.Cancel` with optional event ids (`components/usecase/series/cancel`); verify unit tests: Unknown series, Cancel a published concert, Cancel a draft, Cancel twice, Cancel one date, Cancelled tour, Draft discarded silently
 - [ ] 6.5 `ConcertUseCase.Get` checks the event page on the Event and returns its publish state (`components/usecase/concert/get`); verify unit tests: Published public concert, Cancelled series, Draft date of a published series, and the existing Unknown id, Unlisted series, Discovered concert, Store unavailable
 
 ## 7. Backend — adapter, story and release

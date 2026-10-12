@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A fan applies to an Organizer's lottery with a card hold, the draw runs after the window closes, and a winning fan is charged and receives account-bound covered tickets while a losing fan is never charged.
+A fan enters an Organizer's lottery with a card authorization, the draw runs after the window closes, and a winning fan is charged and receives account-bound covered tickets while a losing fan is never charged.
 
 ## Requirements
 

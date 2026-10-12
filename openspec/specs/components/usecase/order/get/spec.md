@@ -2,7 +2,7 @@
 
 ## Purpose
 
-OrderUseCase.Get returns one of the calling buyer's own Orders.
+OrderUseCase.Get returns one of the calling fan's own Orders.
 
 ## Requirements
 

@@ -50,7 +50,7 @@ Create SHALL take the caller's Organizer, a Series, a name, the method Lottery o
 
 ### Requirement: A sale needs the Organizer's business details
 
-For a sale of either method, Create SHALL read the Organizer with Organizer.Get and fail with FailedPrecondition, storing nothing, when the Organizer does not have complete business details (legal name, representative name, business address, business phone number and contact email), because a fan pays at checkout or when a lottery entry wins, and the 特商法 (Specified Commercial Transactions Act) disclosure must name the seller.
+For a sale of either method, Create SHALL read the Organizer with Organizer.Get and fail with FailedPrecondition, storing nothing, when the Organizer does not have complete business details (legal name, representative name, business address, business phone number and contact email), because a fan pays at checkout or when a lottery entry wins, and the 特商法 (Specified Commercial Transactions Act) disclosure must show them.
 
 #### Scenario: Business details missing
 - **WHEN** the Organizer has no business address and the owner creates a FirstCome sale

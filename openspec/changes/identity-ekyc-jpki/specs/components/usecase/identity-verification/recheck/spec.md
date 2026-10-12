@@ -1,6 +1,6 @@
 ## Purpose
 
-Periodically re-examines an existing identity verification to detect that its underlying credential has been revoked or its holder's basic details have changed, flagging the account for re-verification rather than silently keeping it verified or hard-locking it.
+Periodically re-examines an existing identity verification to detect that its underlying credential has been revoked or the fan's basic details have changed, flagging the account for re-verification rather than silently keeping it verified or hard-locking it.
 
 ## ADDED Requirements
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A Sales Phase is one ticket-sales opportunity (a fan-club lottery, a presale, a general on-sale, and so on) announced for a Series (tour) as a whole; it records how tickets are allocated and the milestones of its timeline, so that fans tracking the series can be told when to apply and when results come out. It is discovered from the artist's published ticket information and is unrelated to the organizer-authored lottery sales phase of an Event, which shares the words but none of the attributes.
+A Sales Phase is one ticket-sales opportunity (a fan-club lottery, a presale, a general on-sale, and so on) announced for a Series (tour) as a whole; it records how tickets are allocated and the milestones of its timeline, so that fans tracking the series can be told when to apply and when results come out. It is discovered from the artist's published ticket information and is unrelated to an Organizer's TicketSale of an Event, which shares the words but none of the attributes.
 
 | attribute | meaning | constraint |
 |---|---|---|

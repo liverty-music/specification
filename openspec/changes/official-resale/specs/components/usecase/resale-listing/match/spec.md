@@ -8,11 +8,11 @@ Matches a listed ticket to a user drawn from the public resale queue, giving lot
 
 The system SHALL expose resale inventory as a **publicly visible, publicly
 joinable marketplace** — any user can discover available resale seats and join
-the demand queue (not hidden behind a pre-registered waitlist). Matching SHALL be
+the demand queue (not hidden behind a pre-registered queue). Matching SHALL be
 **priority-ordered, NOT first-come**: **lottery-losers first in draw order, then
 the general public in join order**. "Draw order" is the stable loser ordering
-persisted by ④ `lottery-application`; **if ④ does not persist one, the fallback is
-lottery-application-timestamp order**. A listed seat SHALL be offered
+persisted by ④ LotteryEntry; **if ④ does not persist one, the fallback is
+entry-time order**. A listed seat SHALL be offered
 **sequentially** down this ordered queue via a **time-limited offer** (state
 `OFFERED`); on expiry — or if the candidate **explicitly declines**, or **becomes
 ineligible while OFFERED** (e.g. they separately win the event's lottery or buy a

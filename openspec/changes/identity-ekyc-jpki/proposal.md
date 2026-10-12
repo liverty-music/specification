@@ -4,16 +4,16 @@ The tiered anti-scalp model (roadmap Guiding Decision) needs its **heavy lever**
 bind **1 account = 1 verified real person** so bulk/industrial scalping (bot
 armies, one-person-many-accounts) is structurally resisted. Account passkey +
 signed-credential + dedup (⑥) only defeat forgery/screenshots and double-entry;
-they do not stop a scalper opening 100 accounts. **Account eKYC is what caps that.**
+they do not stop a scalper opening 100 accounts. **Account identity verification is what caps that.**
 
 This is a **business anti-scalp measure — it is NOT required by チケット不正転売禁止法**
 (which targets 業としての定価超譲渡; even entry 本人確認 is only an 努力義務). And it is
 **not, by itself, an anti-resale mechanism**: it stops many-accounts, but a verified
-buyer can still resell/lend a ticket — closing that needs the separate per-event
+fan can still resell/lend a ticket — closing that needs the separate per-event
 gate 顔認証 (`face-auth-entry`). The gold-standard JP method is **マイナンバーカード
 公的個人認証 (JPKI)**; the vendor is **Pocket Sign (PocketSign Verify)**, a 主務大臣認定
 プラットフォーム事業者. Grounding: the merged roadmap decision + the session's JPKI +
-Pocket Sign research (デジタル庁×Playground PoC: eKYC **+ face** entry → zero resale
+Pocket Sign research (デジタル庁×Playground PoC: identity verification **+ face** entry → zero resale
 vs ~300 on paper). Companion to
 [`ticketing-platform-roadmap.md`](../../../docs/ticketing-platform-roadmap.md).
 
@@ -39,7 +39,7 @@ vs ~300 on paper). Companion to
 - **A lane, NOT mandatory.** A fan is unverified until they hold an Active
   IdentityVerification. A **TicketSale MAY require verification** (Verified-any or
   JPKI-only). **MVP is JPKI-only** — a
-  verification-required event admits only card-holders. A **運転免許証 IC fallback**
+  verification-required event admits only fans with a My Number Card. A **運転免許証 IC fallback**
   (Pocket Sign's separate **Verify CardInfo**) for non-card fans is **POST-MVP**
   (deferred 2026-09-02): it proves identity but yields **no equivalent stable
   per-person dedupe key** (weaker dedupe), so it does not advance the anti-scalp core and
