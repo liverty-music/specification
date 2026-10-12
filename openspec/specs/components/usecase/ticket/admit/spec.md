@@ -1,7 +1,7 @@
 # components/usecase/ticket/admit Specification
 
 ## Purpose
-TicketUseCase.Admit decides one scan at the venue: through a ReceptionLink, from the device it is bound to, during its event's reception window, it admits each Ticket a genuine and fresh AdmissionCode presents exactly once, records every outcome, and tells staff the result without any personal data.
+TicketUseCase.Admit decides one scan at the venue: through a Scanner, from the device it is bound to, during its event's admission window, it admits each Ticket a genuine and fresh AdmissionCode presents exactly once, records every outcome, and tells staff the result without any personal data.
 
 ## Requirements
 

@@ -1,7 +1,7 @@
 # components/entity/ticket/admit Specification
 
 ## Purpose
-Admits one Ticket through a ReceptionLink at a given time, at most once, together with its Admission, and reports why when it cannot.
+Admits one Ticket through a Scanner at a given time, at most once, together with its Admission, and reports why when it cannot.
 
 ## Requirements
 
