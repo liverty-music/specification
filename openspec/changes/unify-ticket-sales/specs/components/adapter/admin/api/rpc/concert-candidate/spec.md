@@ -22,7 +22,7 @@ List, Approve and Reject SHALL require a signed-in caller holding the admin role
 
 ### Requirement: Reviews carry the reviewer
 
-Approve SHALL pass the ConcertCandidate id, the requested resolution — keep the existing Event, adopt the staged one, or none — and the caller's identity as reviewer to ConcertCandidateUseCase.Approve, and SHALL return the duplicate conflict the usecase reports, if any. Reject SHALL pass the ConcertCandidate id, the reason and the caller's identity as reviewer to ConcertCandidateUseCase.Reject.
+Approve SHALL pass the ConcertCandidate id, the requested resolution — keep the existing Event, adopt the candidate, or none — and the caller's identity as reviewer to ConcertCandidateUseCase.Approve, and SHALL return the duplicate conflict the usecase reports, if any. Reject SHALL pass the ConcertCandidate id, the reason and the caller's identity as reviewer to ConcertCandidateUseCase.Reject.
 
 #### Scenario: Approve without a resolution
 

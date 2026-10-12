@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Approve lets an admin publish a ConcertCandidate under the Series it was staged with, or, when it collides with an Event already in the catalog, resolve the collision by keeping the existing Event or adopting the staged details onto it.
+Approve lets an admin publish a ConcertCandidate under the Series it was proposed with, or, when it collides with an Event already in the catalog, resolve the collision by keeping the existing Event or adopting the candidate's details onto it.
 
 ## Requirements
 
@@ -54,16 +54,16 @@ When the ConcertCandidate collides and the resolution is keep existing, Approve 
 - **WHEN** an admin approves a colliding ConcertCandidate choosing keep existing
 - **THEN** the ConcertCandidate is logged as rejected and removed, and the Event is unchanged
 
-### Requirement: Adopt staged
+### Requirement: Adopt the candidate
 
-When the ConcertCandidate collides and the resolution is adopt staged, Approve SHALL replace the Event's listed venue name with the ConcertCandidate's (Concert.UpdateEventListedVenueName), fill the Event's unknown start and open time from it (Concert.FillEventStartTimes), leave its Venue, place id and Series title unchanged, remove the ConcertCandidate, and return no conflict.
+When the ConcertCandidate collides and the resolution is adopt the candidate, Approve SHALL replace the Event's listed venue name with the ConcertCandidate's (Concert.UpdateEventListedVenueName), fill the Event's unknown start and open time from it (Concert.FillEventStartTimes), leave its Venue, place id and Series title unchanged, remove the ConcertCandidate, and return no conflict.
 
-#### Scenario: Admin adopts the staged details
-- **WHEN** an admin approves a colliding ConcertCandidate choosing adopt staged
+#### Scenario: Admin adopts the candidate's details
+- **WHEN** an admin approves a colliding ConcertCandidate choosing adopt the candidate
 - **THEN** the Event lists the ConcertCandidate's venue name, gains any unknown time, and the ConcertCandidate is removed
 
 #### Scenario: Known start time kept
-- **WHEN** the Event starts at 18:00 and the ConcertCandidate has no start time and adopt staged is chosen
+- **WHEN** the Event starts at 18:00 and the ConcertCandidate has no start time and adopt the candidate is chosen
 - **THEN** the Event still starts at 18:00 and lists the ConcertCandidate's venue name
 
 ### Requirement: Publish a non-colliding concert candidate
