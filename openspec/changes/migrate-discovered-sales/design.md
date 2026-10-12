@@ -162,6 +162,19 @@ The subject changes (phase → sale, and reminders now cover the Organizer's sal
 
 ## Migration Plan
 
+Production before the migration, read 2026-10-13 through the db-proxy runbook (read-only):
+
+| what | count |
+|---|---|
+| `sales_phases` (any method, with or without an end or a result time) | 0 |
+| `sales_phases` whose series has an `organizer_id` | 0 |
+| `sales_phase_reminders` (any stage) | 0 |
+| `sales_phase_search_logs` | 6, all for series without an `organizer_id` |
+| `notifications` of type `sales_phase_announcement` | 0 |
+| `ticket_sales` (Organizer's, for reference) | 9 |
+
+On-demand backup `1791848024841` of `postgres-osaka` (2026-10-12T23:33:44Z, SUCCESSFUL). No discovered sale exists yet, so the row copy is exercised only by the migration test (task 3.2) until discovery runs again.
+
 1. Specification PR: delete `sales_phase.proto` and add the `ticket_sale.proto` doc comment. Release, then BSR gen.
 2. Backend PR with one Atlas migration, in one transaction:
    1. Alter `ticket_sales` as in D2.

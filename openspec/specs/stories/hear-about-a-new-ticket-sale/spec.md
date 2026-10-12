@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A fan who tracks an event of a tour is told, once, when a new ticket sales phase for that tour is published, while fans who only follow the artist are not.
+A fan who tracks an event of a tour is told, once, when a new discovered ticket sale for that tour is published, while fans who only follow the artist are not.
 
 ## Requirements
 
