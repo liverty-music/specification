@@ -58,22 +58,27 @@ enum Visibility {
   reserved "VISIBILITY_PASSWORD";
 }
 
-// PublishState is the authoring lifecycle of a first-party series. It is
-// meaningful only for series that carry an `organizer_id`; discovered series
-// leave it PUBLISH_STATE_UNSPECIFIED. The final shape is declared now so that
-// later authoring extensions are purely additive. New values may be appended;
-// existing values must not be renumbered.
+// PublishState is the publish lifecycle of an Event of a first-party series.
+// An Event of a discovered series has none and leaves it
+// PUBLISH_STATE_UNSPECIFIED. A first-party Series reports a state derived from
+// its Events (see Series.publish_state). New values may be appended; existing
+// values must not be renumbered.
 enum PublishState {
-  // Default value. Applies to discovered (non-first-party) series, which do not
-  // pass through the organizer authoring lifecycle; must not be persisted for a
-  // first-party series.
+  // Default value. Applies to an Event of a discovered (non-first-party)
+  // series, which does not pass through the organizer authoring lifecycle;
+  // must not be persisted for an Event of a first-party series.
   PUBLISH_STATE_UNSPECIFIED = 0;
-  // The series is being authored and is not visible on any fan surface.
+  // The event is being authored. It holds no slot of the catalog, is not a
+  // Concert, and is not visible on any fan surface. A new event of a
+  // first-party series starts here. A draft that will not happen is removed,
+  // never cancelled.
   PUBLISH_STATE_DRAFT = 1;
-  // The series has been published; PUBLIC series are announced to followers.
+  // The event has been published. It is publicly visible when its series'
+  // visibility is PUBLIC, and followers of a PUBLIC series are told about it.
   PUBLISH_STATE_PUBLISHED = 2;
-  // The series has been cancelled. This is terminal: it is dropped from fan
-  // surfaces and never re-published.
+  // The published event has been cancelled. This is terminal: the event is
+  // dropped from fan lists, keeps its event page with a cancellation banner,
+  // keeps its slot, and never changes again.
   PUBLISH_STATE_CANCELLED = 3;
   // Field 4 is reserved for a future scheduled-publish state introduced by
   // organizer-event-authoring-extensions.
@@ -147,11 +152,12 @@ message Series {
   // to a non-zero value because this entity also represents discovered series.
   Visibility visibility = 8 [(google.api.field_behavior) = OPTIONAL];
 
-  // The authoring lifecycle state of this series. Set only for first-party
-  // series; discovered series leave it PUBLISH_STATE_UNSPECIFIED. Not
-  // constrained to a non-zero value because this entity also represents
-  // discovered series.
-  PublishState publish_state = 9 [(google.api.field_behavior) = OPTIONAL];
+  // The publish state of this series, derived by the server from its Events:
+  // PUBLISHED when at least one Event is PUBLISHED; CANCELLED when none is
+  // PUBLISHED and at least one is CANCELLED; DRAFT when every Event is DRAFT.
+  // The series stores no state of its own, so a write never sets it.
+  // Discovered series leave it PUBLISH_STATE_UNSPECIFIED.
+  PublishState publish_state = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The organizer that authored this series. Present marks the series as
   // first-party; absent means the series originated from the discovery
