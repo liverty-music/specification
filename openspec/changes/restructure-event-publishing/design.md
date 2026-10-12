@@ -26,7 +26,7 @@ Current state (verified on backend, frontend and specification `main`, 2026-10-1
 - **Frontend readers of the Series state**:
   - organizer concert list (`organizer/concerts/concerts-route.ts:130-144`);
   - organizer editor (`concert-editor-route.ts:214`);
-  - reception links screen (`organizer/reception-links/reception-links-route.ts:170`);
+  - Scanners screen (`organizer/scanners/scanners-route.ts`; then the reception links screen, `reception-links-route.ts:170`);
   - fan event page (`src/routes/event/event-page.ts:68`).
 - **Discovery**: artists represented by an active Organizer are not searched (archived `2026-08-28-organizer-event-authoring` design, D5). So a discovered Event at an organizer's slot exists only when it was found before the artist was represented.
 
@@ -65,7 +65,7 @@ Current state (verified on backend, frontend and specification `main`, 2026-10-1
 - Drop `series.publish_state`, `published_at`, `cancelled_at` and the type `series_publish_state`. `chk_series_first_party_state` keeps only `visibility` tied to `organizer_id`.
 - The timestamps go because no spec reads them. The specification review criteria allow a timestamp field only when a spec requirement reads it (`specification/CLAUDE.md`, review criteria).
 - Series reads compute the state with one aggregate over the Series' events: `PUBLISHED` if any is published, else `CANCELLED` if any is cancelled, else `DRAFT`. In Go, `entity.Series.PublishState` stays a field and is filled by the repository from that aggregate. No caller recomputes it.
-- Proto: `Series.publish_state` stays, with the same number. It becomes `OUTPUT_ONLY` and is documented as derived. The console list and the reception links screen keep reading it.
+- Proto: `Series.publish_state` stays, with the same number. It becomes `OUTPUT_ONLY` and is documented as derived. The console list keeps reading it. The Scanners screen reads each Event's own state instead (task 8.3).
 - **Rejected — keep a stored Series state in sync:** two sources of truth for one fact. Every event transition would have to update the Series too.
 
 ### D4 — Two shared conditions and one leakage test
@@ -105,7 +105,7 @@ Current state (verified on backend, frontend and specification `main`, 2026-10-1
   - re-points that row to the Series and sets it `PUBLISHED`;
   - adds the draft's performers;
   - deletes the DRAFT row.
-- Fan references to the discovered id survive (decision 7). No sale, reception link or event page can reference a draft id: sales and reception links require `IsEventPublished`, and drafts have no event page.
+- Fan references to the discovered id survive (decision 7). No sale, Scanner or event page can reference a draft id: sales and Scanners require `IsEventPublished`, and drafts have no event page.
 - The draft's open time is not copied onto the claimed Event. This is today's behavior (`series_repo.go` claim branch), unchanged.
 
 ### D8 — A new start time takes its slot inside `Series.Update`
@@ -123,7 +123,7 @@ Current state (verified on backend, frontend and specification `main`, 2026-10-1
 
 - The usecase reads `GetAuthored`, then checks "Corrections keep what publish fixed" before any write.
 - A PUBLISHED Event's venue counts as unchanged when the entered venue name equals the Event's listed venue name, and the place id, when given, equals the Venue's place id. The usecase does not resolve the venue for a published Event, so a refused save creates no Venue.
-- Performers compare as sets against the performers of the Series' PUBLISHED and CANCELLED Events.
+- Performers stay changeable after publish (Assumptions 3). Update sets the performers of the Concerts of the given DRAFT and PUBLISHED Events and leaves those of CANCELLED Events as they were. An added performer must be represented by the Organizer, as at creation.
 - The past-date check (`validateDraftEventInputs`) runs only for new and DRAFT events. The editor already allows past dates on published concerts (`concert-editor-route.ts:255`).
 
 ### D10 — Sequencing with in-flight changes
@@ -137,8 +137,8 @@ Current state (verified on backend, frontend and specification `main`, 2026-10-1
 
    `openspec validate --strict` reports them as INFO until then. Its code is already on `main` (`concert_uc.go:291`).
 3. **`ticket-wallet-and-checkin`**: no shared requirement.
-   - Its reception-link usecase calls `IsEventPublished`, which now gives the per-Event answer it expects.
-   - The reception links screen reads the Series state today (`reception-links-route.ts:170`). Task 8.3 switches it to the Event.
+   - `ScannerUseCase.Create` (then the reception-link usecase) calls `IsEventPublished`, which now gives the per-Event answer it expects.
+   - The Scanners screen (`organizer/scanners/scanners-route.ts`) read the Series state. Task 8.3 switches it to the Event.
 4. **`first-come-ticket-sales`**: its checkout and sale reads call `IsEventPublished` "as for a cancelled concert". That now also covers one cancelled date. Its `route/event` delta changes a different requirement (ticket section). Its backend tables do not read `series.publish_state`. It needs a rebase only if it touches the dropped columns.
 5. **`organizer-event-authoring-extensions`**: its "Scheduled publish" (ADDED to `usecase/series/publish`) and its design's `publish_at` on the Series must become per Event when that change is scheduled. This change does not edit it; task 1.3 adds the note there.
 6. **`redesign-organizer-console`**: builds the per-date publish confirmation and per-date cancel on D6's surface.
@@ -180,6 +180,6 @@ The brief did not settle these. Each is the simplest option, and the specs are w
    4. Insert `draft_events` of DRAFT Series into `events` as `DRAFT`, keeping their ids, with `concerts` rows. Insert their performers from `draft_series_performers` into `concert_artists`.
    5. Delete CANCELLED Series that have no events. Their draft rows cascade.
    6. Drop `draft_series_performers`, `draft_events`, `series.publish_state`, `published_at`, `cancelled_at` and the type `series_publish_state`. Rewrite `chk_series_first_party_state`.
-4. Frontend PR: organizer editor, concert list, reception links and the fan event page.
+4. Frontend PR: organizer editor, concert list, Scanners screen and the fan event page.
 5. Verify in production: the AtlasMigration status, read-only row checks against step 1, and the story tests run in CI against Postgres. No dev environment is needed.
 6. Rollback: the migration is forward-only. With test data only, fix forward. If data must come back, use Cloud SQL point-in-time recovery to before the migration.
