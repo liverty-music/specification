@@ -261,11 +261,11 @@ artifacts:
                                                  an unknown reference is
                                                  acknowledged and ignored"
         infrastructure/<a>/web/route/orders      "The orders screen lists the
-                                                 customer's orders newest
-                                                 first and shows a Refunded
-                                                 order greyed out"
-        stories/refund-a-cancelled-order         "WHEN the seller cancels the
-                                                 event THEN every customer's
+                                                 fan's orders newest first
+                                                 and shows a Refunded order
+                                                 greyed out"
+        stories/refund-a-cancelled-order         "WHEN the Organizer cancels
+                                                 the event THEN every fan's
                                                  order for it is refunded and
                                                  their orders screen shows it
                                                  Refunded"
@@ -366,7 +366,7 @@ artifacts:
 
       ## Purpose
 
-      An Order is a customer's confirmed purchase of the lines in a cart.
+      An Order is a fan's confirmed purchase of the lines in a cart.
 
       | attribute | meaning                      | constraint                    |
       |-----------|------------------------------|-------------------------------|
