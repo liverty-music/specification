@@ -52,8 +52,8 @@ AIP-132 narrows a `List` with `parent` plus `filter`, and AIP-136 forbids standa
 ## Vocabulary traps
 
 - Bare "identity" means the account at the identity provider (Zitadel). The result of a fan's 本人確認 is the entity `IdentityVerification`; the payment provider's check of an Organizer's account is "payout account verification". "KYC" is only the legal term "AML-KYC".
-- The hold on a fan's card is a "card authorization", never bare "authorization" (access control) or "hold" (the Checkout's reservation of tickets and Settlement's Held status). Stripe's "client secret" is the `card_authorization_secret`.
-- "holder", "buyer", "applicant" and "seller" are not entities. A ticketing record's User is `user`; the Organizer's legal seller details are plain Organizer fields.
+- The amount reserved on a fan's card is a "card authorization", never bare "authorization" (access control) or "hold" (which names only the Checkout's tickets held for the fan and Settlement's Held status). Stripe's "client secret" is the `card_authorization_secret`.
+- "holder", "buyer", "applicant" and "seller" are not entities. A ticketing record's User is `user`; the Organizer's 販売業者 business details are plain Organizer fields.
 
 ## Before you finish
 

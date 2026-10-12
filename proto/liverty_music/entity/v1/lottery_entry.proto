@@ -115,10 +115,10 @@ message LotteryEntry {
   // on. Captured on a win, released otherwise. Server-owned.
   CardAuthorizationId card_authorization_id = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
 
-  // Field 2 was the lottery sales phase, replaced by ticket_type_id. Field 5 was
-  // the 本人確認 details copied onto the application, which now live on the
-  // User. Fields 3 and 8 were renamed from applicant_id and draw_sequence.
-  // Field 4 was the ticket count under its former name, replaced by
+  // Field 2 was the sale the entry belonged to, replaced by ticket_type_id.
+  // Field 5 was the 本人確認 details copied onto the entry, which now live on
+  // the User. Fields 3 and 8 are user_id and draw_position under former
+  // names. Field 4 was the ticket count under its former name, replaced by
   // ticket_count. Field 6 held the card authorization in a message of its
   // own, replaced by card_authorization_id.
   reserved 2, 4, 5, 6;

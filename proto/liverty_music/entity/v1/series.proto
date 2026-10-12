@@ -136,7 +136,7 @@ message Series {
   Description description = 6 [(google.api.field_behavior) = OPTIONAL];
 
   // Field 7 held the cover image, first as a single served Url and then as a
-  // kind-tagged media object; it is replaced by cover_image (field 12). The
+  // kind-tagged object under its former name; it is replaced by cover_image (field 12). The
   // name cover_image is reused with a new number and type, so the old
   // field 7 Url never decodes as a SeriesImage.
   reserved 7;

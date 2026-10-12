@@ -39,7 +39,7 @@ import "liverty_music/entity/v1/rejected_scan.proto";
 // The boundary throttles clients that try unknown link tokens: after more than
 // 10 calls with unknown tokens within 10 minutes, further calls fail with
 // RESOURCE_EXHAUSTED until those 10 minutes pass. Results never carry personal
-// data: no holder name, phone number or account.
+// data: no user's full name, phone number or account.
 service ReceptionService {
   // Open is called when staff open a link on a device. On first use it binds
   // the link to the device's public key (UNUSED → IN_USE); later opens must
@@ -164,7 +164,7 @@ message AdmitResponse {
 }
 
 // RejectedTicket is why one presented ticket was rejected. It does not identify
-// the ticket or its holder.
+// the ticket or its user.
 message RejectedTicket {
   // The earlier admission is reported only for ALREADY_ADMITTED.
   option (buf.validate.message).cel = {

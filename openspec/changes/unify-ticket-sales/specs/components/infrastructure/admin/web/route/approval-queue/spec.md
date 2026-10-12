@@ -49,8 +49,8 @@ table; they are conveyed by the group headers.
   series group on success
 - **AND** if the series group becomes empty it SHALL be removed from the UI
 
-#### Scenario: Conflict dialog shows open time for both staged and existing
+#### Scenario: Conflict dialog shows open time for both the candidate and the existing event
 
 - **WHEN** approval detects a duplicate and presents the conflict dialog
-- **THEN** the dialog SHALL show the open time for both the staged and the existing event
+- **THEN** the dialog SHALL show the open time for both the candidate and the existing event
 - **AND** absent open time values SHALL be displayed as a dash placeholder

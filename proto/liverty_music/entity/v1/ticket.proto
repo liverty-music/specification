@@ -113,7 +113,7 @@ message Ticket {
   IdentityVerificationId identity_verification_id = 11 [(google.api.field_behavior) = OPTIONAL];
 
   // Field 5 was the 本人確認 details copied onto the ticket, which now live on
-  // the User. Field 3 was renamed from holder_id. Field 6 was the
+  // the User. Field 3 is the user_id under a former name. Field 6 was the
   // IdentityVerification reference under its former names, replaced by
   // identity_verification_id.
   reserved 5, 6;

@@ -232,9 +232,9 @@ message Order {
   // sent; set once. Server-owned.
   google.protobuf.Timestamp confirmation_send_time = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
 
-  // Fields 3 and 9 were the lottery application and the reservation sources,
-  // replaced by lottery_entry_id and checkout_id. Field 2 was renamed from
-  // buyer_id.
+  // Fields 3 and 9 were the LotteryEntry and the Checkout sources under their
+  // former names, replaced by lottery_entry_id and checkout_id. Field 2 is the
+  // user_id under a former name.
   reserved 3, 9;
   reserved "application_id", "reservation_id", "buyer_id";
 }

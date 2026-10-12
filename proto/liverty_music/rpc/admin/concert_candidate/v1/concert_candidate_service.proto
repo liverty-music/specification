@@ -49,7 +49,7 @@ service ConcertCandidateService {
   // `DuplicateConflict` (the existing event's display fields plus the
   // ConcertCandidate) and NO state is mutated; the reviewer then re-invokes
   // Approve with a `resolution` of `RESOLUTION_KEEP_EXISTING` or
-  // `RESOLUTION_ADOPT_STAGED`. A non-duplicate approval publishes normally
+  // `RESOLUTION_ADOPT_CANDIDATE`. A non-duplicate approval publishes normally
   // regardless of the `resolution` value.
   //
   // Possible errors:
@@ -170,7 +170,7 @@ enum Resolution {
   // event's listed venue name and fill its start/open time only where currently
   // unset, leaving venue identity (venue_id, place_id) and the shared series
   // title untouched, then drop the ConcertCandidate.
-  RESOLUTION_ADOPT_STAGED = 2;
+  RESOLUTION_ADOPT_CANDIDATE = 2;
 }
 
 // ExistingEvent is the display-field preview of an already-published event that
@@ -185,7 +185,7 @@ message ExistingEvent {
   entity.v1.Title title = 2 [(buf.validate.field).required = true];
 
   // The venue name currently stored on the existing event (its display field,
-  // the one ADOPT_STAGED would overwrite).
+  // the one RESOLUTION_ADOPT_CANDIDATE would overwrite).
   entity.v1.ListedVenueName listed_venue_name = 3 [(buf.validate.field).required = true];
 
   // The local calendar date of the existing event.

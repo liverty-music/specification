@@ -1,7 +1,7 @@
 # Organizer Platform — Design & Change Decomposition
 
 Durable design for the **Organizer** feature cluster (roadmap change ① of
-`ticketing-platform-roadmap.md`, "the vetted seller foundation"). The
+`ticketing-platform-roadmap.md`, "the vetted Organizer foundation"). The
 original single `organizer-accounts` change grew too large — a
 spec-completeness audit surfaced ~33 gaps spanning identity, provisioning,
 a dedicated API server, dedicated hosting, and offboarding. To avoid
@@ -14,7 +14,7 @@ the Organizer domain, its surfaces, and the resolved audit gaps.
 
 ## Confirmed decisions
 
-- **Organizer = the vetted seller entity**, distinct from Artist/Performer
+- **Organizer = the vetted ticket-selling business entity**, distinct from Artist/Performer
   (schema.org `organizer`). Exists only via admin creation → existence is
   the vetting; **no business `verified` flag**.
 - **Entity fields:** `OrganizerId` (UUIDv7), `OrganizerName` (1–200 chars),

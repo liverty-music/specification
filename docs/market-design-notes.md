@@ -18,7 +18,7 @@ Web2 + face-auth.
 
 ## Dominant 後発 patterns (adopt)
 
-- Zero-fixed-cost, revenue-share-only; **buyer-shiftable flat %** fee (a flat
+- Zero-fixed-cost, revenue-share-only; **fan-shiftable flat %** fee (a flat
   % reads cleaner than tiget's stacked ¥220+¥99, which draws complaints).
 - **Organizer self-serve is table-stakes** (teket/ZAIKO), not a
   differentiator. (We deliberately chose **vetted partners** for MVP — a
@@ -28,7 +28,7 @@ Web2 + face-auth.
   (after the industry チケトレ shut down 2025-06 and resale moved inside
   チケプラTrade / e+ / ぴあ).
 - Companion **分配URL (organizer-toggle, returnable)** is standard; plus
-  multi-ticket single-buyer group entry (teket/スマチケ).
+  multi-ticket single-fan group entry (teket/スマチケ).
 - Rotating QR + server-side one-time validation is **baseline** (not novel).
 
 ## Trend: identity at entry (the moving competitive bar)
@@ -58,7 +58,7 @@ Web2 + face-auth.
   account-bound 分配 is scalp-safe and more convenient. Revisit at ⑥.
 - **#1 vetted-only vs zero-gate self-serve:** conscious divergence; keep for
   MVP, keep open-self-serve as a future option.
-- **#5 fee model:** flat %, buyer-shiftable → see `payments-design.md`.
+- **#5 fee model:** flat %, fan-shiftable → see `payments-design.md`.
 
 ## The moat, in one line
 

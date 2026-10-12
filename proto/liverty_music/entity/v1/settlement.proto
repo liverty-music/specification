@@ -95,7 +95,7 @@ message SettlementSplit {
 }
 
 // Settlement is the payout record for one Order's captured money under the
-// 収納代行 (collection agency) scheme, with the Organizer as seller of record:
+// 収納代行 (collection agency) scheme, with the Organizer as 販売業者:
 // the money stays with the platform while the Settlement is Held, each payee's
 // split is paid out to the payee's PayoutAccount when it is Released, the
 // platform keeps the remainder as its fee, and payouts are clawed back when it
