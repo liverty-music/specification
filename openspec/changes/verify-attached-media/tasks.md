@@ -2,7 +2,7 @@
 
 ## 1. Access check (cloud-provisioning, read-only)
 
-- [ ] 1.1 Confirm that the `organizer-console-api` service account may read object metadata in the prod internal series image bucket (`liverty-music-prod-organizer-media-internal`); verify from the bucket's IAM policy (`gcloud storage buckets get-iam-policy`) and record the role in design.md D1. If it is missing, add the grant to `src/gcp/components/organizer-media.ts` as a task in this group
+- [ ] 1.1 Confirm that the `organizer-console-api` service account may read object metadata in the prod internal series image bucket (`liverty-music-prod-internal`); verify from the bucket's IAM policy (`gcloud storage buckets get-iam-policy`) and record the role in design.md D1. If it is missing, add the grant to `src/gcp/components/object-storage.ts` as a task in this group
 
 ## 2. Entity operation (components/entity/series-image/original-exists)
 
@@ -10,7 +10,7 @@
 
 ## 3. Usecase (components/usecase/series/set-cover-image)
 
-- [ ] 3.1 In `SeriesUseCase.SetCoverImage`, check the caller's upload (design D1) before recording, and return Unavailable when publishing `MEDIA.uploaded` fails (design D2); verify unit tests with the operations mocked: Another organizer's series image id, Nothing uploaded, Announcement fails, Repeated attach after processing, and the existing Missing series image id, Another organizer's series, Cover replaced later, Repeated attach
+- [ ] 3.1 In `SeriesUseCase.SetCoverImage`, check the caller's upload (design D1) before recording, and return Unavailable when publishing `SERIES_IMAGE.uploaded` fails (design D2); verify unit tests with the operations mocked: Another organizer's series image id, Nothing uploaded, Announcement fails, Repeated attach after processing, and the existing Missing series image id, Another organizer's series, Cover replaced later, Repeated attach
 
 ## 4. Delivery (backend)
 
