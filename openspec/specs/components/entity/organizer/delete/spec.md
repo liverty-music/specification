@@ -10,7 +10,7 @@ Organizer.Delete permanently removes an Organizer's records: the Organizer with 
 Delete SHALL remove, together or not at all:
 
 - the Organizer;
-- its first-party Series and their Events, with each Event's lottery sales phases, ticket applications, ticket journeys and performers;
+- its first-party Series with their TicketSales, and their Events, with each Event's TicketTypes, lottery entries, ticket journeys and performers;
 - the Orders and Tickets for those Events, with their Reversed Settlements;
 - the reception links of those Events, with their admissions and rejected scans;
 - its SeriesImage records and the Series' cover links;

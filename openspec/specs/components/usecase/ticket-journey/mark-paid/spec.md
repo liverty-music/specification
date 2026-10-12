@@ -7,7 +7,7 @@ TicketJourneyUseCase.MarkPaid sets a user's ticket journey for an event to Paid 
 
 ### Requirement: Paid after every recorded purchase
 
-MarkPaid SHALL run for each Order announced as paid, with its buyer and event. It SHALL set the buyer's TicketJourney for the event to Paid with TicketJourney.Upsert, replacing whatever status the fan had set, and SHALL NOT announce the change as a ticket journey status change. Running it again for the same Order SHALL leave the journey Paid. When Upsert fails, MarkPaid SHALL fail with that error and is run again.
+MarkPaid SHALL run for each Order announced as paid, with its user and event. It SHALL set the user's TicketJourney for the event to Paid with TicketJourney.Upsert, replacing whatever status the fan had set, and SHALL NOT announce the change as a ticket journey status change. Running it again for the same Order SHALL leave the journey Paid. When Upsert fails, MarkPaid SHALL fail with that error and is run again.
 
 #### Scenario: Checkout paid
 
@@ -16,8 +16,8 @@ MarkPaid SHALL run for each Order announced as paid, with its buyer and event. I
 
 #### Scenario: Lottery win
 
-- **WHEN** the purchase of a won lottery application is announced
-- **THEN** the buyer's ticket journey for the event is Paid
+- **WHEN** the purchase of a won lottery entry is announced
+- **THEN** the Order's user's ticket journey for the event is Paid
 
 #### Scenario: Update fails
 

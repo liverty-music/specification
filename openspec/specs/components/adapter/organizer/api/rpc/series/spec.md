@@ -8,7 +8,7 @@ The organizer-facing Series service boundary: how an operator's sign-in is turne
 
 ### Requirement: Every authoring call acts for the caller's own active Organizer
 
-Every call of the organizer Series service — Create, Update, Publish, Cancel, List, RegenerateToken, CreateMediaUploadURL and AttachMedia — SHALL pass the same organizer-console sign-in checks as the organizer Organizer service, and SHALL then resolve the caller's own Organizer through OrganizerUseCase.ResolveCaller with the caller's tenant. A failure of ResolveCaller SHALL be returned unchanged and nothing is stored: PermissionDenied when no Organizer is linked to the tenant or the Organizer is provisioning, without revealing whether an Organizer exists, and FailedPrecondition when the Organizer is deactivated. Ownership of the Series named in a request is checked by the usecase, not here.
+Every call of the organizer Series service — Create, Update, Publish, Cancel, List, RegenerateShareUrl and SetCoverImage — SHALL pass the same organizer-console sign-in checks as the organizer Organizer service, and SHALL then resolve the caller's own Organizer through OrganizerUseCase.ResolveCaller with the caller's tenant. A failure of ResolveCaller SHALL be returned unchanged and nothing is stored: PermissionDenied when no Organizer is linked to the tenant or the Organizer is provisioning, without revealing whether an Organizer exists, and FailedPrecondition when the Organizer is deactivated. Ownership of the Series named in a request is checked by the usecase, not here.
 
 #### Scenario: Operator of an active Organizer lists concerts
 
@@ -34,18 +34,18 @@ Create and Update SHALL fail with InvalidArgument, before any usecase runs, when
 - **WHEN** an operator calls Create with a draft that has a performer and no event
 - **THEN** it fails with InvalidArgument and no Series is created
 
-### Requirement: RegenerateToken returns the new token
+### Requirement: RegenerateShareUrl returns the new token
 
-RegenerateToken SHALL return the Series' new unlisted share token; the organizer console builds the share link from it.
+RegenerateShareUrl SHALL return the Series' new unlisted share token; the organizer console builds the share link from it.
 
 #### Scenario: New token
 
-- **WHEN** an operator regenerates the token of their UNLISTED Series
+- **WHEN** an operator regenerates the share link of their UNLISTED Series
 - **THEN** the response carries the new token and the old share link stops working
 
 ### Requirement: What a returned series carries
 
-Create, Update, Publish and List SHALL return each Series they act on or list together with its dates as Concerts and, once each, every Artist those Concerts refer to; a Concert carries only the id of its Series (through its Event) and the ids of its Artists. A DRAFT Series' dates are its DraftEvents, each returned as a Concert with the Series' draft performers. Every returned Series SHALL carry its description, cover image, visibility and publish state when it has them. The share token SHALL be returned only by RegenerateToken.
+Create, Update, Publish and List SHALL return each Series they act on or list together with its dates as Concerts and, once each, every Artist those Concerts refer to; a Concert carries only the id of its Series (through its Event) and the ids of its Artists. A DRAFT Series' dates are its DraftEvents, each returned as a Concert with the Series' draft performers. Every returned Series SHALL carry its description, cover image, visibility and publish state when it has them. The share token SHALL be returned only by RegenerateShareUrl.
 
 #### Scenario: Tour with one performer
 

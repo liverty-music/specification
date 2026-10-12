@@ -398,13 +398,13 @@ The invariants — exclude followed artists, deduplicate by name/id/mbid, and en
 - **AND** the physics layer SHALL receive a field already within capacity and SHALL NOT re-cap it
 
 ### Requirement: Bubble UI re-experience on Discover tab
-The system SHALL provide the onboarding Bubble UI as a reusable discovery experience on the Discover tab, with a simplified 3-row grid layout. After following an artist, the Discovery page SHALL call `ConcertService.List` to check for existing concerts and update onboarding state. The page SHALL NOT call `SearchNewConcerts` directly.
+The system SHALL provide the onboarding Bubble UI as a reusable discovery experience on the Discover tab, with a simplified 3-row grid layout. After following an artist, the Discovery page SHALL call `ConcertService.ListByArtist` to check for existing concerts and update onboarding state. The page SHALL NOT call `SearchNewConcerts` directly.
 
 #### Scenario: Default Bubble UI display
 - **WHEN** the Discover tab is opened
 - **THEN** the system SHALL display the physics-based artist Bubble UI (same as onboarding)
 - **AND** the DNA Orb SHALL be displayed at the bottom
-- **AND** tapping a bubble SHALL trigger the absorption animation and call `ArtistService.Follow`
+- **AND** tapping a bubble SHALL trigger the absorption animation and call `FollowService.Follow`
 - **AND** the page grid SHALL use `grid-template-rows: auto auto 1fr` (search bar, genre chips, bubble area)
 
 #### Scenario: Genre filtering
@@ -427,17 +427,15 @@ The system SHALL provide the onboarding Bubble UI as a reusable discovery experi
 
 #### Scenario: Concert check after follow uses List RPC
 - **WHEN** a user follows an artist from the Discovery page (bubble tap or search follow)
-- **THEN** the page SHALL call `ConcertService.List(artistId)` to check for existing upcoming concerts
+- **THEN** the page SHALL call `ConcertService.ListByArtist(artistId)` to check for existing upcoming concerts
 - **AND** SHALL NOT call `SearchNewConcerts`
 - **AND** if concerts exist, the page SHALL show a snack notification and update the onboarding coach mark state
 
 #### Scenario: Concert check at page load uses List RPC
 - **WHEN** the Discovery page loads and there are pre-seeded guest follows
-- **THEN** the page SHALL call `ConcertService.List(artistId)` for each followed artist
+- **THEN** the page SHALL call `ConcertService.ListByArtist(artistId)` for each followed artist
 - **AND** SHALL NOT call `SearchNewConcerts`
 - **AND** `artistsWithConcerts` SHALL be updated for each artist that has stored concerts
-
----
 
 ### Requirement: Manual search on Discover tab
 The system SHALL provide a text search for targeted artist discovery.

@@ -8,7 +8,7 @@ The fan-facing concert service boundary: which concert calls need a signed-in fa
 
 ### Requirement: Public concert calls need no sign-in
 
-Get, ListBySeries, List, ListByArtists and ListByLocation SHALL be callable without sign-in. ListByFollower SHALL require a signed-in fan and fail with Unauthenticated otherwise. Get SHALL call ConcertUseCase.Get and ListBySeries SHALL call ConcertUseCase.ListBySeries, each returning the usecase's result.
+Get, ListBySeries, ListByArtist, ListByArtists and ListByLocation SHALL be callable without sign-in. ListFollowed SHALL require a signed-in fan and fail with Unauthenticated otherwise. Get SHALL call ConcertUseCase.Get and ListBySeries SHALL call ConcertUseCase.ListBySeries, each returning the usecase's result.
 
 #### Scenario: Guest lists concerts of chosen artists
 
@@ -17,7 +17,7 @@ Get, ListBySeries, List, ListByArtists and ListByLocation SHALL be callable with
 
 #### Scenario: Guest asks for followed artists' concerts
 
-- **WHEN** a caller who is not signed in calls ListByFollower
+- **WHEN** a caller who is not signed in calls ListFollowed
 - **THEN** the call fails with Unauthenticated and no usecase runs
 
 #### Scenario: Guest opens an event page
@@ -30,13 +30,13 @@ Get, ListBySeries, List, ListByArtists and ListByLocation SHALL be callable with
 - **WHEN** a caller who is not signed in calls ListBySeries with the id of a Series that has an event page
 - **THEN** ConcertUseCase.ListBySeries runs and the Series' Concerts are returned
 
-### Requirement: ListByFollower acts for the signed-in fan with their stored home
+### Requirement: ListFollowed acts for the signed-in fan with their stored home
 
-ListByFollower SHALL resolve the signed-in caller to their stored User (User.GetByProviderUserID) and call ConcertUseCase.ListFollowed with that User, the User's stored Home and the optional from-date of the request; the request carries no fan and no home. When the caller has no stored account, the call SHALL fail with NotFound.
+ListFollowed SHALL resolve the signed-in caller to their stored User (User.GetByProviderUserID) and call ConcertUseCase.ListFollowed with that User, the User's stored Home and the optional from-date of the request; the request carries no fan and no home. When the caller has no stored account, the call SHALL fail with NotFound.
 
 #### Scenario: Fan with a home
 
-- **WHEN** a signed-in fan whose Home is JP-13 calls ListByFollower
+- **WHEN** a signed-in fan whose Home is JP-13 calls ListFollowed
 - **THEN** the concerts of the fan's followed artists are grouped by proximity to JP-13
 
 #### Scenario: Caller without an account
@@ -46,7 +46,7 @@ ListByFollower SHALL resolve the signed-in caller to their stored User (User.Get
 
 ### Requirement: What a returned concert carries
 
-Every response of the fan concert service that returns Concerts SHALL also return, once each, every Series and every Artist those Concerts refer to; a Concert carries only the id of its Series (through its Event) and the ids of its Artists. Every returned Venue SHALL carry its id, name and admin area, and never its coordinates. When there are no concerts, List SHALL return an empty list, not NotFound. Every returned Series SHALL carry its Organizer when it is first-party, so the fan app can tell first-party concerts from discovered ones and show who sells the tickets: the Organizer's id, name and, when present, seller details, which the checkout shows as the 特商法 (Specified Commercial Transactions Act) disclosure, and never its platform fee rate. Every returned Series SHALL carry its description, cover image, visibility and publish state when it has them, on every call alike. A Series' share token SHALL never be returned.
+Every response of the fan concert service that returns Concerts SHALL also return, once each, every Series and every Artist those Concerts refer to; a Concert carries only the id of its Series (through its Event) and the ids of its Artists. Every returned Venue SHALL carry its id, name and admin area, and never its coordinates. When there are no concerts, ListByArtist SHALL return an empty list, not NotFound. Every returned Series SHALL carry its Organizer when it is first-party, so the fan app can tell first-party concerts from discovered ones and show who sells the tickets: the Organizer's id, name and, when present, business details (legal name, representative name, business address, business phone number and contact email), which the checkout shows as the 特商法 (Specified Commercial Transactions Act) disclosure, and never its platform fee rate. Every returned Series SHALL carry its description, cover image, visibility and publish state when it has them, on every call alike. A Series' share token SHALL never be returned.
 
 #### Scenario: Venue without coordinates
 
@@ -55,22 +55,22 @@ Every response of the fan concert service that returns Concerts SHALL also retur
 
 #### Scenario: Artist without concerts
 
-- **WHEN** List is called for an artist with no concerts
+- **WHEN** ListByArtist is called for an artist with no concerts
 - **THEN** it returns an empty list
 
 #### Scenario: First-party concert in a list
 
-- **WHEN** ListByFollower returns a Concert whose Series belongs to an Organizer
+- **WHEN** ListFollowed returns a Concert whose Series belongs to an Organizer
 - **THEN** the Series returned with it carries that Organizer's id
 
 #### Scenario: Discovered concert in a list
 
-- **WHEN** ListByFollower returns a Concert whose Series has no organizer
+- **WHEN** ListFollowed returns a Concert whose Series has no organizer
 - **THEN** the Series returned with it carries no Organizer id
 
 #### Scenario: Tour in one list
 
-- **WHEN** ListByFollower returns three Concerts of one Series, all performed by the same Artist
+- **WHEN** ListFollowed returns three Concerts of one Series, all performed by the same Artist
 - **THEN** the response carries that Series once and that Artist once
 
 #### Scenario: Cover image in a list
@@ -80,15 +80,15 @@ Every response of the fan concert service that returns Concerts SHALL also retur
 
 #### Scenario: Seller shown for a first-party concert
 
-- **WHEN** Get returns a Concert whose Series belongs to an Organizer with seller details and a platform fee rate
-- **THEN** the Series returned with it carries the Organizer's id, name and seller details, and no platform fee rate
+- **WHEN** Get returns a Concert whose Series belongs to an Organizer with business details and a platform fee rate
+- **THEN** the Series returned with it carries the Organizer's id, name and business details, and no platform fee rate
 
 ### Requirement: Concert requests are validated before the usecase runs
 
 The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 - Get has no event id, or an event id that is not a UUID;
 - ListBySeries has no series id, or a series id that is not a UUID;
-- List has no artist id;
+- ListByArtist has no artist id;
 - ListByArtists has fewer than 1 or more than 50 artist ids, or no home area;
 - ListByLocation has no location, no from-date or no to-date, or a from-date later than its to-date (the limit on the length of the range belongs to ConcertUseCase.ListByLocation).
 

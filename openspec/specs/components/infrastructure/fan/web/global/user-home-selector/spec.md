@@ -57,7 +57,7 @@ The home-area selector SHALL indicate the currently selected prefecture/city rea
 
 The frontend SHALL provide a single reusable `user-home-selector` component for selecting the user's home area. This component SHALL be used in the onboarding flow (the Dashboard bottom sheet), the Settings page, and the Dashboard All Nearby area selector. The component SHALL implement a consistent 2-step selection flow with an optional quick-select shortcut.
 
-The component SHALL be a pure selection UI: it SHALL NOT call `UserService.updateHome()`, write to localStorage, or resolve the user store / the auth service internally. All persistence decisions are delegated to the caller via the `onHomeSelected` callback.
+The component SHALL be a pure selection UI: it SHALL NOT call `UserService.setHome()`, write to localStorage, or resolve the user store / the auth service internally. All persistence decisions are delegated to the caller via the `onHomeSelected` callback.
 
 #### Scenario: Step 1 displays quick-select cities and regions
 
@@ -90,7 +90,7 @@ The component SHALL be a pure selection UI: it SHALL NOT call `UserService.updat
 #### Scenario: Caller owns persistence — authenticated home save
 
 - **WHEN** the `user-home-selector` is used on the Settings page or onboarding flow
-- **THEN** the caller (Settings page / onboarding handler) SHALL call `UserService.updateHome()` in its `onHomeSelected` handler
+- **THEN** the caller (Settings page / onboarding handler) SHALL call `UserService.setHome()` in its `onHomeSelected` handler
 - **AND** the component itself SHALL NOT call any backend RPC
 
 #### Scenario: Caller owns persistence — guest home save
@@ -103,7 +103,7 @@ The component SHALL be a pure selection UI: it SHALL NOT call `UserService.updat
 
 - **WHEN** the `user-home-selector` is used as the All Nearby area selector
 - **THEN** the caller SHALL update only the route's local state with the selected code
-- **AND** neither `UserService.updateHome()` nor localStorage SHALL be written
+- **AND** neither `UserService.setHome()` nor localStorage SHALL be written
 
 #### Scenario: Current selection highlight via bindable prop
 

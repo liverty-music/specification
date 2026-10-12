@@ -16,9 +16,9 @@ non-permanent and re-discovery idempotent.
 The admin console SHALL provide a reviewer screen that lists pending concerts grouped
 first by performing artist and then by series title, and offers per-concert approve and
 reject (with reason) actions. The screen SHALL live in the bundle-isolated `admin/` app
-and SHALL consume the admin `ConcertService`. Grouping SHALL be computed client-side
-from the flat `ListPending` result using the `PendingConcert.performer.name` and
-`PendingConcert.title` fields as grouping keys (artist and series proxy respectively).
+and SHALL consume the admin `ConcertCandidateService`. Grouping SHALL be computed client-side
+from the flat `ConcertCandidateService.List` result using the `ConcertCandidate.performer.name` and
+`ConcertCandidate.title` fields as grouping keys (artist and series proxy respectively).
 
 Each series group SHALL be presented as a collapsible disclosure. The collapsed summary
 SHALL show the series title, the count of pending concerts in the group, and the count

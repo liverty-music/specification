@@ -7,13 +7,13 @@ OrderUseCase.FulfillPayment turns a completed charge reported by the payment pro
 
 ### Requirement: Each completed charge ends in an announced Order
 
-FulfillPayment SHALL take the reference of a completed charge and find its source:
-- a Reservation with Reservation.GetByAuthorizationRef, for which it SHALL run OrderUseCase.IssueFromReservation without a calling fan;
-- otherwise a TicketApplication with TicketApplication.GetByPaymentIntentRef, for which it SHALL run OrderUseCase.IssueFromCapturedWin.
+FulfillPayment SHALL take the card authorization of a completed charge and find its source:
+- a Checkout with Checkout.GetByCardAuthorizationID, for which it SHALL run OrderUseCase.IssueFromCheckout without a calling fan;
+- otherwise a LotteryEntry with LotteryEntry.GetByCardAuthorizationID, for which it SHALL run OrderUseCase.IssueFromCapturedWin.
 
-It SHALL then announce that the Order is paid, carrying the Order, its buyer, its event, its number of Tickets, its amount and its source. The announcement SHALL be deduplicated by the Order, so announcing the same Order again does not reach a consumer twice within the deduplication window, and consumers SHALL treat a repeated announcement of an Order as one.
+It SHALL then announce that the Order is paid, carrying the Order, its user, its event, its number of Tickets, its amount and its source. The announcement SHALL be deduplicated by the Order, so announcing the same Order again does not reach a consumer twice within the deduplication window, and consumers SHALL treat a repeated announcement of an Order as one.
 
-When neither source has the reference, FulfillPayment SHALL succeed without effect. When issuing or announcing fails, FulfillPayment SHALL fail with that error, so the provider reports the charge again.
+When neither source has the card authorization, FulfillPayment SHALL succeed without effect. When issuing or announcing fails, FulfillPayment SHALL fail with that error, so the provider reports the charge again.
 
 #### Scenario: Checkout charged
 
@@ -22,8 +22,8 @@ When neither source has the reference, FulfillPayment SHALL succeed without effe
 
 #### Scenario: Lottery win charged
 
-- **WHEN** the charge of a won lottery application completes
-- **THEN** the application's Order is issued, or found, and announced as paid
+- **WHEN** the charge of a won lottery entry completes
+- **THEN** the entry's Order is issued, or found, and announced as paid
 
 #### Scenario: Charge reported twice
 
@@ -37,5 +37,5 @@ When neither source has the reference, FulfillPayment SHALL succeed without effe
 
 #### Scenario: Charge of another system
 
-- **WHEN** the charge belongs to no Reservation and no TicketApplication
+- **WHEN** the charge belongs to no Checkout and no LotteryEntry
 - **THEN** FulfillPayment succeeds and nothing changes

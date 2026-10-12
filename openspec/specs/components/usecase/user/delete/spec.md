@@ -8,7 +8,7 @@ Removes a fan User from the platform, together with the User's sign-in identity,
 
 ### Requirement: Delete removes the user
 
-Delete SHALL load the User through User.Get, failing with NotFound for an unknown User. It SHALL fail with FailedPrecondition, removing nothing, while the User holds an Issued Ticket (Ticket.ListByHolder) or has an Order that is not Refunded (Order.ListByBuyer). Otherwise it SHALL remove the User's sign-in identity through User.DeleteIdentity and then the User through User.Delete. A failure of either SHALL be returned as it is; because an identity that is already gone counts as removed, calling Delete again completes a deletion that failed in User.Delete.
+Delete SHALL load the User through User.Get, failing with NotFound for an unknown User. It SHALL fail with FailedPrecondition, removing nothing, while the User holds an Issued Ticket (Ticket.ListByUser) or has an Order that is not Refunded (Order.ListByUser). Otherwise it SHALL remove the User's sign-in identity through User.DeleteIdentity and then the User through User.Delete. A failure of either SHALL be returned as it is; because an identity that is already gone counts as removed, calling Delete again completes a deletion that failed in User.Delete.
 
 #### Scenario: Existing user
 

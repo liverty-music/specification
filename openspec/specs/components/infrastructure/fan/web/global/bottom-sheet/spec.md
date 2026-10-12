@@ -25,7 +25,7 @@ When a user views a concert in the All Nearby mode, the event detail sheet SHALL
 #### Scenario: Follow action from detail sheet
 
 - **WHEN** the user taps "Follow this artist" in the event detail sheet
-- **THEN** `ArtistService.Follow` SHALL be called
+- **THEN** `FollowService.Follow` SHALL be called
 - **AND** the button SHALL transition to a "Following" indicator
 - **AND** the DNA Orb absorption animation SHALL NOT play (reserved for the Discovery context)
 
@@ -45,7 +45,7 @@ When a user views a concert in the All Nearby mode, the event detail sheet SHALL
 
 - **WHEN** an unauthenticated user taps "Follow this artist" in the event detail sheet
 - **THEN** the system SHALL surface the sign-up prompt banner
-- **AND** `ArtistService.Follow` SHALL NOT be called
+- **AND** `FollowService.Follow` SHALL NOT be called
 
 ### Requirement: Bottom Sheet Custom Element
 The system SHALL provide a `<bottom-sheet>` custom element as the single dialog primitive for all overlay content, promoted to the Top Layer via a **non-modal `popover="manual"`** element (NOT `<dialog>.showModal()`), with CSS scroll-snap dismiss via an internal scroll container. The open/closed lifecycle SHALL be driven by an `IntersectionObserver` on the sheet body as the single source of truth: all dismiss paths (swipe, tap-outside, ESC, Android back, programmatic) converge in its callback. Dismissing SHALL be performed by scrolling the container to the closed snap stop; the popover SHALL be hidden (`hidePopover()`) only after the observer confirms the sheet has left the viewport, so the dismiss scroll itself is the (native, momentum-driven, interruptible) close animation. Because a `popover` is non-modal, the CE SHALL manage focus-trap, background `inert`, and the Escape close request itself.

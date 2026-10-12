@@ -6,43 +6,6 @@ The admin-facing concert service boundary: who may list and delete concerts from
 
 ## Requirements
 
-### Requirement: Only admins reach the admin concert calls
-
-List, ListPending, Approve, Reject and Delete SHALL require a signed-in caller holding the admin role. A caller who is not signed in SHALL fail with Unauthenticated; a signed-in caller without the admin role SHALL fail with PermissionDenied. Both checks come before any usecase runs, so a rejected call changes nothing.
-
-#### Scenario: Admin lists pending concerts
-
-- **WHEN** a signed-in admin calls ListPending
-- **THEN** ConcertCandidateUseCase.List runs and the pending concerts are returned
-
-#### Scenario: Non-admin approves
-
-- **WHEN** a signed-in caller without the admin role calls Approve
-- **THEN** the call fails with PermissionDenied and the ConcertCandidate is unchanged
-
-### Requirement: Reviews carry the reviewer
-
-Approve SHALL pass the ConcertCandidate id, the requested resolution — keep the existing Event, adopt the candidate, or none — and the caller's identity as reviewer to ConcertCandidateUseCase.Approve, and SHALL return the duplicate conflict the usecase reports, if any. Reject SHALL pass the ConcertCandidate id, the reason and the caller's identity as reviewer to ConcertCandidateUseCase.Reject.
-
-#### Scenario: Approve without a resolution
-
-- **WHEN** an admin approves a ConcertCandidate that collides with an existing Event without giving a resolution
-- **THEN** the response carries the duplicate conflict and nothing is published
-
-#### Scenario: Reject records the reviewer
-
-- **WHEN** an admin rejects a ConcertCandidate with a reason
-- **THEN** the rejection is recorded with that reason and that admin as reviewer
-
-### Requirement: Admin concert requests are validated at the boundary
-
-Approve and Reject SHALL fail with InvalidArgument when no ConcertCandidate id is given; Reject SHALL fail with InvalidArgument when the reason is empty; Delete SHALL fail with InvalidArgument when no event id is given.
-
-#### Scenario: Reject without a reason
-
-- **WHEN** an admin calls Reject with an empty reason
-- **THEN** it fails with InvalidArgument and nothing is rejected
-
 ### Requirement: Listed concerts come with their series and artists once
 
 List SHALL return, together with the Concerts, every Series and every Artist those Concerts refer to, once each; a Concert carries only the id of its Series (through its Event) and the ids of its Artists. Every returned Series SHALL carry the same fields as on the fan concert service, and its share token SHALL never be returned.
@@ -51,3 +14,26 @@ List SHALL return, together with the Concerts, every Series and every Artist tho
 
 - **WHEN** an admin lists the concerts and two of them belong to the same Series and share an Artist
 - **THEN** the response carries that Series once and that Artist once, and both Concerts refer to them by id
+
+### Requirement: Only admins list and delete concerts
+
+List and Delete SHALL require a signed-in caller holding the admin role. A caller who is not signed in SHALL fail with Unauthenticated; a signed-in caller without the admin role SHALL fail with PermissionDenied. Both checks come before any usecase runs, so a rejected call changes nothing.
+
+#### Scenario: Admin lists concerts
+
+- **WHEN** a signed-in admin calls List
+- **THEN** the concerts are returned with their series and artists
+
+#### Scenario: Non-admin deletes
+
+- **WHEN** a signed-in caller without the admin role calls Delete
+- **THEN** the call fails with PermissionDenied and the Concert is unchanged
+
+### Requirement: Delete names an event
+
+Delete SHALL fail with InvalidArgument when no event id is given.
+
+#### Scenario: Delete without an event
+
+- **WHEN** an admin calls Delete without an event id
+- **THEN** it fails with InvalidArgument and nothing is deleted

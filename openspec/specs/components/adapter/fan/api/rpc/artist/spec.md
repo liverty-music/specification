@@ -8,7 +8,7 @@ The fan-facing artist service boundary: which artist calls need a signed-in call
 
 ### Requirement: Browsing artists needs no sign-in
 
-ListTop, ListSimilar and Search SHALL be callable without sign-in. List, Create, CreateOfficialSite and DeleteOfficialSite SHALL require a signed-in caller and SHALL fail with Unauthenticated, before any usecase runs, when the caller is not signed in. None of these calls acts for a particular fan, so no account is looked up.
+ListTop, ListSimilar and Search SHALL be callable without sign-in. List and Create SHALL require a signed-in caller and SHALL fail with Unauthenticated, before any usecase runs, when the caller is not signed in. None of these calls acts for a particular fan, so no account is looked up.
 
 #### Scenario: Guest searches
 
@@ -26,8 +26,7 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 - Create has no name, an empty name, or an MBID that is not a UUID;
 - Search has an empty query;
 - ListSimilar has no artist id, an artist id that is not a UUID, or a limit outside 0 to 100;
-- ListTop has a tag longer than 50 characters or a limit outside 0 to 100;
-- CreateOfficialSite has no artist id, an artist id that is not a UUID, or a URL that is not a valid URI of 1 to 2048 characters.
+- ListTop has a tag longer than 50 characters or a limit outside 0 to 100.
 
 #### Scenario: Empty search query
 
@@ -43,17 +42,3 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 
 - **WHEN** Create is called with an MBID that is not a UUID
 - **THEN** it fails with InvalidArgument and no artist is created
-
-### Requirement: Official sites are created through the boundary but never deleted
-
-CreateOfficialSite SHALL hand the artist id and URL to OfficialSiteUseCase.Create. DeleteOfficialSite SHALL fail with Unimplemented for every signed-in caller; there is no usecase behind it.
-
-#### Scenario: Create a site
-
-- **WHEN** a signed-in caller calls CreateOfficialSite for an artist without a site with a valid URL
-- **THEN** the site is stored for the artist
-
-#### Scenario: Delete a site
-
-- **WHEN** a signed-in caller calls DeleteOfficialSite
-- **THEN** it fails with Unimplemented and nothing changes

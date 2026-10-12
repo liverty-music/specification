@@ -283,7 +283,7 @@ Every request the web apps (fan, admin, organizer) send to the backend SHALL fai
 
 ### Requirement: Push subscription recovered on launch
 
-When the app opens, and again whenever the Service Worker reports that the browser's push subscription changed, the app SHALL check, for a signed-in fan whose account is loaded and who has granted notification permission, whether the server still has the browser's push subscription (PushNotificationService.Get). When the server answers NotFound, the app SHALL register the subscription again (PushNotificationService.Create) without asking the fan. When permission is not granted, the app SHALL do nothing and SHALL NOT show a permission prompt.
+When the app opens, and again whenever the Service Worker reports that the browser's push subscription changed, the app SHALL check, for a signed-in fan whose account is loaded and who has granted notification permission, whether the server still has the browser's push subscription (PushSubscriptionService.Get). When the server answers NotFound, the app SHALL register the subscription again (PushSubscriptionService.Create) without asking the fan. When permission is not granted, the app SHALL do nothing and SHALL NOT show a permission prompt.
 
 #### Scenario: Server lost the subscription
 

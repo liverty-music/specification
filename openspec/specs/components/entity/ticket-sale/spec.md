@@ -22,95 +22,90 @@ erDiagram
 
 ## Requirements
 
-### Requirement: Sale window, price, quantity and limit
+### Requirement: A lottery window lasts 1 to 14 days
 
-A TicketSale's sale end SHALL be after its sale start, its price SHALL be 1 to 1,000,000 yen, its quantity SHALL be at least 1 and its per-account limit SHALL be 1 to 10. A TicketSale created without a per-account limit SHALL have a limit of 4.
+A TicketSale's end time SHALL be after its start time. When its method is Lottery, the window SHALL last at least 1 day and at most 14 days.
 
-#### Scenario: Usual sale
+#### Scenario: Lottery window within bounds
+- **WHEN** a Lottery sale runs for 10 days
+- **THEN** the window is valid
 
-- **WHEN** a sale runs from 2026-11-01 10:00 to 2026-11-20 18:00, priced 3000 yen, with 150 tickets and no limit given
-- **THEN** it is valid and its per-account limit is 4
+#### Scenario: Lottery window shorter than 1 day
+- **WHEN** a Lottery sale runs for 23 hours
+- **THEN** the window is invalid
 
-#### Scenario: End before start
+#### Scenario: Lottery window longer than 14 days
+- **WHEN** a Lottery sale runs for 14 days and 1 hour
+- **THEN** the window is invalid
 
-- **WHEN** the sale end is before the sale start
-- **THEN** the TicketSale is invalid
+#### Scenario: End not after start
+- **WHEN** the end time equals or precedes the start time
+- **THEN** the window is invalid
 
-#### Scenario: Limit over 10
+#### Scenario: First-come window longer than 14 days
+- **WHEN** a FirstCome sale runs from 2026-11-01 10:00 to 2026-11-20 18:00
+- **THEN** the window is valid
 
-- **WHEN** the per-account limit is 11
-- **THEN** the TicketSale is invalid
+### Requirement: A sale has a name
 
-### Requirement: Remaining tickets
+A TicketSale's name SHALL be 1 to 100 characters.
 
-A TicketSale's remaining count at a time SHALL be its quantity minus its sold count minus the counts of its Reservations that are holding at that time, and never below 0.
+#### Scenario: Named sale
+- **WHEN** a sale is named ファンクラブ先行
+- **THEN** the name is valid
 
-#### Scenario: Some sold, some held
+#### Scenario: Empty name
+- **WHEN** a sale has an empty name
+- **THEN** the sale is invalid
 
-- **WHEN** a sale of 150 has sold 100 and Reservations holding 6 tickets
-- **THEN** 44 tickets remain
+### Requirement: Verification requirement
 
-### Requirement: Sale state at a time
+A sale SHALL require verification when its verification requirement is Verified-any or JPKI-only; both require the fan to hold an Active IdentityVerification. A sale created without a requirement SHALL have the requirement None.
 
-A TicketSale's state at a time SHALL be:
-- NotYetOnSale before the sale start;
-- Ended at or after the sale end;
-- SoldOut when the sold count equals the quantity;
-- AllHeld when the remaining count is 0 and the sold count is below the quantity;
-- OnSale otherwise.
+#### Scenario: No requirement given
+- **WHEN** a sale is created without a verification requirement
+- **THEN** its requirement is None and it does not require verification
 
-Ended takes precedence over SoldOut and AllHeld. An OnSale sale SHALL be LowStock when its remaining count is at most one tenth of its quantity, rounded up, so a sale of 9 tickets is LowStock with 1 left.
+#### Scenario: Verified-any or JPKI-only
+- **WHEN** the requirement is Verified-any or JPKI-only
+- **THEN** the sale requires an Active IdentityVerification
 
-#### Scenario: Before opening
+### Requirement: Window open at an instant
 
-- **WHEN** a sale opening at 10:00 is checked at 09:59
-- **THEN** it is NotYetOnSale
+A sale's window SHALL be open at an instant when the instant is at or after the start time and before the end time.
 
-#### Scenario: Last tickets held by others
+#### Scenario: Before start
+- **WHEN** the instant precedes the start time
+- **THEN** the window is not open
 
-- **WHEN** a sale of 150 has sold 147 and Reservations hold the other 3
-- **THEN** it is AllHeld
+#### Scenario: Between start and end
+- **WHEN** the instant is at the start time or later and before the end time
+- **THEN** the window is open
 
-#### Scenario: Sold out
+#### Scenario: At end
+- **WHEN** the instant is the end time or later
+- **THEN** the window is not open
 
-- **WHEN** a sale of 150 has sold 150
-- **THEN** it is SoldOut
+### Requirement: Two windows overlap
 
-#### Scenario: Few left
+Two sales' windows SHALL overlap when each one starts before the other ends.
 
-- **WHEN** a sale of 150 has 15 tickets remaining
-- **THEN** it is OnSale and LowStock
+#### Scenario: Back to back
+- **WHEN** one sale ends at 2026-11-10 23:59 and the other starts at 2026-11-10 23:59
+- **THEN** the windows do not overlap
 
-#### Scenario: Small sale, last ticket
+#### Scenario: Overlapping
+- **WHEN** one sale runs from 1 to 10 November and the other from 8 to 20 November
+- **THEN** the windows overlap
 
-- **WHEN** a sale of 9 has 1 ticket remaining
-- **THEN** it is OnSale and LowStock
+### Requirement: Drawn sale
 
-#### Scenario: Closed
+A Lottery sale SHALL count as drawn once its draw time is set.
 
-- **WHEN** a sale is checked at its sale end
-- **THEN** it is Ended
+#### Scenario: Draw time set
+- **WHEN** the draw time is set
+- **THEN** the sale is drawn
 
-### Requirement: Price fixed while tickets are held or sold
-
-A TicketSale's price SHALL be changeable only while its sold count and its held count are both 0, so every fan who pays for a sale's tickets pays the same price.
-
-#### Scenario: Price change before any ticket is held
-
-- **WHEN** a sale with nothing sold or held changes its price from 3000 to 3500 yen
-- **THEN** the change is allowed
-
-#### Scenario: Price change while tickets are held
-
-- **WHEN** a sale with nothing sold and Reservations holding 2 tickets changes its price
-- **THEN** the change is not allowed
-
-#### Scenario: Price change after tickets sold
-
-- **WHEN** a sale with 1 ticket sold changes its price
-- **THEN** the change is not allowed
-
-#### Scenario: Price change after every checkout lapsed
-
-- **WHEN** a sale whose only Reservation expired without a commit changes its price
-- **THEN** the change is allowed
+#### Scenario: Draw time absent
+- **WHEN** the draw time is absent
+- **THEN** the sale is not drawn

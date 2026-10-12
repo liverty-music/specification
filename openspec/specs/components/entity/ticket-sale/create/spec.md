@@ -5,16 +5,26 @@ Stores a new TicketSale together with its TicketTypes.
 
 ## Requirements
 
-### Requirement: One sale per event
+### Requirement: Store a sale with its ticket types
 
-Create SHALL store a new TicketSale with a sold count of 0 and return it. It SHALL fail with InvalidArgument when the sale breaks the TicketSale rules, and with AlreadyExists when the event already has a TicketSale.
+Create SHALL store the sale without a draw time and every one of its TicketTypes together, or nothing, and return the sale with its TicketTypes; each TicketType of a FirstCome sale SHALL start with a sold count of 0. It SHALL fail with InvalidArgument when the sale or a TicketType breaks the TicketSale or TicketType rules, or when two of its TicketTypes are for the same event, and with FailedPrecondition when the Series or an event of a TicketType does not exist.
 
-#### Scenario: First sale for an event
+#### Scenario: Sale stored
+- **WHEN** Create is called for an existing Series with TicketTypes for two of its events
+- **THEN** the sale and both TicketTypes are stored and returned, and the sale is not drawn
 
-- **WHEN** a valid sale is created for an event without one
-- **THEN** it is stored with a sold count of 0
+#### Scenario: First-come sale stored
+- **WHEN** a valid FirstCome sale with one TicketType of 150 tickets is created
+- **THEN** it is stored with its TicketType at a sold count of 0
 
-#### Scenario: Second sale for the event
+#### Scenario: Unknown event
+- **WHEN** one TicketType names an event that does not exist
+- **THEN** Create fails with FailedPrecondition and stores neither the sale nor any TicketType
 
-- **WHEN** the event already has a TicketSale
-- **THEN** Create fails with AlreadyExists and stores nothing
+#### Scenario: Same event twice
+- **WHEN** two TicketTypes of the sale are for the same event
+- **THEN** Create fails with InvalidArgument and stores nothing
+
+#### Scenario: Invalid ticket type
+- **WHEN** a TicketType has a per-account limit of 11
+- **THEN** Create fails with InvalidArgument and stores nothing
