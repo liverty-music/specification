@@ -18,7 +18,7 @@ See proposal.md. The upload authorization from SeriesImageUseCase.CreateUploadUr
 
 ### D2 — Announcement failure fails the call
 
-- SetCoverImage returns Unavailable when publishing `MEDIA.uploaded` fails. The row insert is idempotent and the original still exists, so the console's retry records nothing new and announces again.
+- SetCoverImage returns Unavailable when publishing `SERIES_IMAGE.uploaded` fails. The row insert is idempotent and the original still exists, so the console's retry records nothing new and announces again.
 - **Rejected — an outbox:** durable re-announcement for a few uploads a month; the operator's retry is enough.
 
 ## Risks / Trade-offs

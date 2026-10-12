@@ -136,7 +136,7 @@ NATS is a StatefulSet with a zonal 10 GiB PVC. The docs say: "To minimize the ri
 | ESO webhook + cert-controller | `webhook.create: false`, `certController.create: false` in base values; drop their now-targetless resource patches | chart defaults never chosen; the controller does not need them |
 | `argocd-server` | keep, 1 replica, comment | UI access; small cost |
 | `reloader` | keep, comment | implements Secret rotation for 9 workloads |
-| KEDA (3 Pods) | keep, comment | scales `media-consumer` 0↔1; removing it would make that Pod run 24/7 |
+| KEDA (3 Pods) | keep, comment | scales `series-image-consumer` 0↔1; removing it would make that Pod run 24/7 |
 
 Why the ESO webhook and cert-controller go together:
 - With the Pod at 0 replicas and the configuration left in place, `failurePolicy=Fail` rejects every ExternalSecret create, update or delete.
