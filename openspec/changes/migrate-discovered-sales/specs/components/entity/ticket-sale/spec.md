@@ -26,6 +26,10 @@ A TicketSale's end time, when it has one, SHALL be after its start time. When an
 - **WHEN** a discovered Lottery sale runs from 1 October to 31 October
 - **THEN** the window is valid
 
+#### Scenario: First-come window longer than 14 days
+- **WHEN** a FirstCome sale runs from 2026-11-01 10:00 to 2026-11-20 18:00
+- **THEN** the window is valid
+
 ### Requirement: A sale has a name
 
 An Organizer's sale SHALL have a name of 1 to 100 characters. A discovered sale SHALL have no name.

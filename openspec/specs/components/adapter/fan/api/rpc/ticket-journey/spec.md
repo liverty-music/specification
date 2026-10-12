@@ -8,11 +8,11 @@ The fan-facing ticket journey service boundary: it resolves the signed-in fan fo
 
 ### Requirement: Every call acts for the signed-in fan
 
-SetStatus, Delete and ListByUser SHALL act only on the journeys of the signed-in fan who makes the call; a request cannot name another fan. Each call SHALL fail with Unauthenticated when the caller is not signed in, and with NotFound when the signed-in caller has no account, before any journey is read or changed.
+SetStatus, Delete and List SHALL act only on the journeys of the signed-in fan who makes the call; a request cannot name another fan. Each call SHALL fail with Unauthenticated when the caller is not signed in, and with NotFound when the signed-in caller has no account, before any journey is read or changed.
 
 #### Scenario: Not signed in
 
-- **WHEN** a caller who is not signed in calls SetStatus, Delete or ListByUser
+- **WHEN** a caller who is not signed in calls SetStatus, Delete or List
 - **THEN** the call fails with Unauthenticated and no journey is read or changed
 
 #### Scenario: Caller has no account
@@ -53,11 +53,11 @@ Delete SHALL fail with InvalidArgument, before TicketJourneyUseCase.Delete runs,
 - **WHEN** Delete is called without an event id, or with one that is not well formed
 - **THEN** it fails with InvalidArgument and nothing is removed
 
-### Requirement: ListByUser response
+### Requirement: List response
 
-ListByUser SHALL return each of the caller's journeys with its event, its status and the caller as its owner, and SHALL return an empty list, not an error, when the caller has no journeys.
+List SHALL return each of the caller's journeys with its event, its status and the caller as its owner, and SHALL return an empty list, not an error, when the caller has no journeys.
 
 #### Scenario: The caller has no journeys
 
-- **WHEN** a signed-in fan with no journeys calls ListByUser
+- **WHEN** a signed-in fan with no journeys calls List
 - **THEN** the call succeeds with an empty list

@@ -31,7 +31,7 @@ Admit SHALL take a link token, a call signature with its signed time, the scanne
 
 ### Requirement: Only a genuine, fresh code for this event
 
-Admit SHALL read the scanned text with AdmissionCode.Decode; a Malformed text SHALL be rejected with reason Forged. It SHALL read the code's user's key with WalletPublicKey.GetByUser, rejecting with reason Forged when the user has none, and check the code with AdmissionCode.Verify at the current time: Forged is rejected with reason Forged, Expired with reason Expired. A code whose event is not the link's event SHALL be rejected with reason OtherEvent. Admit SHALL then read the code's user's Tickets for the event with Ticket.ListByHolderAndEvent; when any presented Ticket is not among them, because another account holds it or it is for another event, the whole scan SHALL be rejected with reason Forged, since the tickets screen only ever presents the user's own Tickets of one event. In these cases no Ticket's admission SHALL be attempted.
+Admit SHALL read the scanned text with AdmissionCode.Decode; a Malformed text SHALL be rejected with reason Forged. It SHALL read the code's user's key with WalletPublicKey.GetByUser, rejecting with reason Forged when the user has none, and check the code with AdmissionCode.Verify at the current time: Forged is rejected with reason Forged, Expired with reason Expired. A code whose event is not the link's event SHALL be rejected with reason OtherEvent. Admit SHALL then read the code's user's Tickets for the event with Ticket.ListByUserAndEvent; when any presented Ticket is not among them, because it is another User's Ticket or it is for another event, the whole scan SHALL be rejected with reason Forged, since the tickets screen only ever presents the user's own Tickets of one event. In these cases no Ticket's admission SHALL be attempted.
 
 #### Scenario: Screenshot shown later
 
@@ -50,7 +50,7 @@ Admit SHALL read the scanned text with AdmissionCode.Decode; a Malformed text SH
 
 #### Scenario: Someone else's ticket
 
-- **WHEN** a code signed with the user's key also presents a Ticket held by another account
+- **WHEN** a code signed with the user's key also presents a Ticket of another User
 - **THEN** the whole scan is rejected with reason Forged and no Ticket is admitted
 
 #### Scenario: Ticket of another event in the code
@@ -103,7 +103,7 @@ Each Admission SHALL be stored by Ticket.Admit itself. Admit SHALL append every 
 
 ### Requirement: The result carries no personal data
 
-Admit SHALL return, for the scan, the number of Tickets admitted and, for each rejected Ticket or for the whole scan, the reason, with the earlier admission time and link number for AlreadyAdmitted. It SHALL NOT return the holder's name, phone number, account or any other personal data.
+Admit SHALL return, for the scan, the number of Tickets admitted and, for each rejected Ticket or for the whole scan, the reason, with the earlier admit time and link number for AlreadyAdmitted. It SHALL NOT return the user's full name, phone number, account or any other personal data.
 
 #### Scenario: Result of a group scan
 

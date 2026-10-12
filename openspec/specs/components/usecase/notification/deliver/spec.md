@@ -97,8 +97,8 @@ Deliver SHALL run once for each notification requested for one fan, by Notificat
 
 #### Scenario: Purchase notification requested
 
-- **WHEN** an order_confirmation notification is requested for a buyer
-- **THEN** Deliver runs for that buyer with the type order_confirmation
+- **WHEN** an order_confirmation notification is requested for an Order's user
+- **THEN** Deliver runs for that user with the type order_confirmation
 
 #### Scenario: Recording fails for one request
 

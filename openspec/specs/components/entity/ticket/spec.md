@@ -35,15 +35,17 @@ stateDiagram-v2
 
 ### Requirement: Every ticket is a covered ticket
 
-Every Ticket SHALL carry the three conditions of a 特定興行入場券: its face states that resale without the organizer's consent is prohibited; it names the event (date and venue) and the eligible person, who is the holder named by the holder full name, with no seat assigned; and it records the holder's name and contact phone (本人確認).
+Every Ticket SHALL carry the three conditions of a 特定興行入場券 (covered ticket): its face states that resale without the organizer's consent is prohibited; it names the event (date and venue) and the eligible person, who is the Ticket's user, with no seat assigned; and it shows the user's full name and phone number as the User currently records them (本人確認, identity check).
 
 #### Scenario: Issued ticket face
-
 - **WHEN** a Ticket is issued
-- **THEN** it states that resale without consent is prohibited, names its event and its holder, carries the holder's name and phone, and has no seat
+- **THEN** it states that resale without consent is prohibited, names its event and its user, shows the user's full name and phone number, and has no seat
+
+#### Scenario: User corrects their details
+- **WHEN** the Ticket's user changes their phone number
+- **THEN** the Ticket's face shows the new phone number
 
 #### Scenario: Resale flag cannot be false
-
 - **WHEN** a Ticket states resale without consent is not prohibited
 - **THEN** the Ticket is invalid
 
@@ -58,7 +60,7 @@ A Ticket SHALL start in status Issued.
 
 ### Requirement: A ticket is admissible only once and only while Issued
 
-A Ticket SHALL be admissible exactly when its status is Issued and it has no admit time. A Voided Ticket SHALL NOT be admissible, and a Ticket that has an admit time SHALL NOT be admissible again. Voiding a Ticket SHALL keep its admit time, so a refund after entry does not erase that the holder was admitted.
+A Ticket SHALL be admissible exactly when its status is Issued and it has no admit time. A Voided Ticket SHALL NOT be admissible, and a Ticket that has an admit time SHALL NOT be admissible again. Voiding a Ticket SHALL keep its admit time, so a refund after entry does not erase that the user was admitted.
 
 #### Scenario: Issued and not yet admitted
 

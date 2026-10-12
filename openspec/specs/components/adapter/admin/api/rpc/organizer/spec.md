@@ -36,7 +36,7 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 - a required OrganizerId or ArtistId is missing or malformed;
 - Create's name is not 1 to 200 characters;
 - Create's operator email is not an email address;
-- any of UpdateSellerDetails' seller details is missing;
+- any of SetBusinessDetails' legal name, representative name, business address, business phone number and contact email is missing;
 - SetPlatformFeeRate's rate is missing.
 
 #### Scenario: Name too long
@@ -51,7 +51,7 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 
 #### Scenario: Missing OrganizerId
 
-- **WHEN** Get, ListArtists, AssociateArtist, DisassociateArtist, Deactivate, UpdateSellerDetails or SetPlatformFeeRate is called without an OrganizerId
+- **WHEN** Get, AssociateArtist, DisassociateArtist, Deactivate, SetBusinessDetails or SetPlatformFeeRate is called without an OrganizerId
 - **THEN** it fails with InvalidArgument
 
 #### Scenario: Missing rate
@@ -63,20 +63,20 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 
 Each call SHALL run one usecase method:
 - Create SHALL run OrganizerUseCase.Create and return the created Organizer.
-- Get, List and ListArtists SHALL run OrganizerUseCase.Get, OrganizerUseCase.List and ArtistUseCase.ListByOrganizer for any Organizer the admin names.
-- AssociateArtist, DisassociateArtist, Deactivate, Delete, UpdateSellerDetails and SetPlatformFeeRate SHALL run the usecase method of the same name.
+- Get and List SHALL run OrganizerUseCase.Get and OrganizerUseCase.List for any Organizer the admin names.
+- AssociateArtist, DisassociateArtist, Deactivate, Delete, SetBusinessDetails and SetPlatformFeeRate SHALL run the usecase method of the same name.
 
-Errors from the usecase SHALL be returned unchanged. An Organizer is returned with its id, name, seller details and platform fee rate.
+The admin Organizer service SHALL NOT list an Organizer's Artists; the admin artist service does (ListByOrganizer). Errors from the usecase SHALL be returned unchanged. An Organizer is returned with its id, name, legal name, representative name, business address, business phone number, contact email and platform fee rate.
 
 #### Scenario: Admin lists Organizers and inspects a roster
 
 - **WHEN** an admin lists Organizers and then requests one Organizer's Artists
-- **THEN** it returns every Organizer, and then the Artists that Organizer represents
+- **THEN** it returns every Organizer, and the Artists that Organizer represents come from the admin artist service's ListByOrganizer, not from the Organizer service
 
 #### Scenario: Admin reads any Organizer
 
 - **WHEN** an admin calls Get for a deactivated Organizer
-- **THEN** it returns that Organizer's id, name, seller details and platform fee rate
+- **THEN** it returns that Organizer's id, name, business details and platform fee rate
 
 #### Scenario: Admin deletes a deactivated Organizer
 
@@ -90,5 +90,5 @@ Errors from the usecase SHALL be returned unchanged. An Organizer is returned wi
 
 #### Scenario: Admin records seller details
 
-- **WHEN** an admin calls UpdateSellerDetails with complete details
-- **THEN** OrganizerUseCase.UpdateSellerDetails runs and the Organizer is returned with them
+- **WHEN** an admin calls SetBusinessDetails with all five business details
+- **THEN** OrganizerUseCase.SetBusinessDetails runs and the Organizer is returned with them

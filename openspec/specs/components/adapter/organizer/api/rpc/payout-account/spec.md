@@ -32,7 +32,7 @@ Every request SHALL carry a valid sign-in, or fail with Unauthenticated. The sig
 
 ### Requirement: Get returns the caller's own account
 
-Get SHALL take no input, call PayoutAccountUseCase.Get for the caller's own Organizer, and return the account's reference and payout onboarding status, with the onboarding link only when one was returned. When the Organizer is no longer found, it SHALL fail with PermissionDenied.
+Get SHALL take no input, call PayoutAccountUseCase.Get for the caller's own Organizer, and return the account's provider account ID and payout onboarding status, with the onboarding link only when one was returned. When the Organizer is no longer found, it SHALL fail with PermissionDenied.
 
 #### Scenario: Operator opens payout settings
 

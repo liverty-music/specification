@@ -64,14 +64,14 @@ The system SHALL keep the browser's push subscription and the backend's stored s
 - **Backend missing the browser's subscription** — the browser has an active subscription the backend does not know about.
 - **Browser missing a subscription entirely** — the browser has no active subscription (e.g., after the push service invalidated it, a `410 Gone` cleanup on the backend, a PWA reinstall, or site-data clearing), even though permission is still granted.
 
-In the second case, when permission is granted, the system SHALL create a fresh browser subscription with the configured VAPID application server key and register it via `PushNotificationService.Create`. The system SHALL NOT leave a permission-granted user silently unsubscribed. When permission is NOT granted, the system SHALL surface an OFF/re-enable affordance rather than silently doing nothing.
+In the second case, when permission is granted, the system SHALL create a fresh browser subscription with the configured VAPID application server key and register it via `PushSubscriptionService.Create`. The system SHALL NOT leave a permission-granted user silently unsubscribed. When permission is NOT granted, the system SHALL surface an OFF/re-enable affordance rather than silently doing nothing.
 
 #### Scenario: Self-heal on settings page load
 
 - **WHEN** the settings page loads
 - **AND** `PushManager.getSubscription()` returns a non-null subscription
-- **AND** `PushNotificationService.Get` returns `NOT_FOUND` for that endpoint
-- **THEN** the system SHALL call `PushNotificationService.Create` with the browser's existing subscription material
+- **AND** `PushSubscriptionService.Get` returns `NOT_FOUND` for that endpoint
+- **THEN** the system SHALL call `PushSubscriptionService.Create` with the browser's existing subscription material
 - **AND** on success, the UI toggle SHALL reflect the ON state
 - **AND** the user SHALL NOT be prompted to re-grant notification permission
 
@@ -90,7 +90,7 @@ In the second case, when permission is granted, the system SHALL create a fresh 
 - **AND** browser notification permission is `granted`
 - **AND** `PushManager.getSubscription()` returns `null`
 - **THEN** the system SHALL call `PushManager.subscribe()` with the configured VAPID application server key
-- **AND** SHALL register the resulting subscription via `PushNotificationService.Create`
+- **AND** SHALL register the resulting subscription via `PushSubscriptionService.Create`
 - **AND** on success the UI toggle SHALL reflect the ON state
 - **AND** the user SHALL NOT be prompted to re-grant notification permission
 
@@ -103,7 +103,7 @@ In the second case, when permission is granted, the system SHALL create a fresh 
 
 ### Requirement: Subscription registration failures are observable on the client
 
-Push subscription registration (`PushManager.subscribe()` and the `PushNotificationService.Create` RPC) SHALL NOT fail silently. Failures SHALL be logged on the client and reflected in the notification toggle state, so a user who believes they enabled notifications is not left silently unsubscribed.
+Push subscription registration (`PushManager.subscribe()` and the `PushSubscriptionService.Create` RPC) SHALL NOT fail silently. Failures SHALL be logged on the client and reflected in the notification toggle state, so a user who believes they enabled notifications is not left silently unsubscribed.
 
 #### Scenario: subscribe() throws during enable
 
@@ -119,32 +119,32 @@ The system SHALL allow users to control push notification delivery for the curre
 #### Scenario: Toggle state on page load — subscribed on this browser
 - **WHEN** the Settings page loads
 - **AND** `PushManager.getSubscription()` returns a non-null subscription
-- **AND** `PushNotificationService.Get(user_id, endpoint)` returns an existing `PushSubscription`
+- **AND** `PushSubscriptionService.Get(endpoint)` returns an existing `PushSubscription`
 - **THEN** the Push Notifications toggle SHALL display ON
 
 #### Scenario: Toggle state on page load — not subscribed on this browser
 - **WHEN** the Settings page loads
 - **AND** `PushManager.getSubscription()` returns `null`
 - **THEN** the Push Notifications toggle SHALL display OFF
-- **AND** the system SHALL NOT call `PushNotificationService.Get` for a non-existent endpoint
+- **AND** the system SHALL NOT call `PushSubscriptionService.Get` for a non-existent endpoint
 
 #### Scenario: Toggle state on page load — browser has subscription but backend does not (self-heal)
 - **WHEN** the Settings page loads
 - **AND** `PushManager.getSubscription()` returns a non-null subscription
-- **AND** `PushNotificationService.Get` returns `NOT_FOUND`
-- **THEN** the system SHALL call `PushNotificationService.Create` with the browser's existing subscription material
+- **AND** `PushSubscriptionService.Get` returns `NOT_FOUND`
+- **THEN** the system SHALL call `PushSubscriptionService.Create` with the browser's existing subscription material
 - **AND** on success, the Push Notifications toggle SHALL display ON
 - **AND** the user SHALL NOT be shown a permission prompt during self-heal
 
 #### Scenario: Toggling notifications ON
 - **WHEN** a user toggles the Push Notifications switch ON
-- **THEN** the system SHALL call `PushManager.subscribe()` and `PushNotificationService.Create` with the resulting subscription material
+- **THEN** the system SHALL call `PushManager.subscribe()` and `PushSubscriptionService.Create` with the resulting subscription material
 - **AND** on success, the toggle SHALL reflect ON
 - **AND** the system SHALL NOT write any `localStorage` flag for this state
 
 #### Scenario: Toggling notifications OFF (this browser only)
 - **WHEN** a user toggles the Push Notifications switch OFF
-- **THEN** the system SHALL call `PushNotificationService.Delete(user_id, endpoint)` with the current browser's endpoint
+- **THEN** the system SHALL call `PushSubscriptionService.Delete(endpoint)` with the current browser's endpoint
 - **AND** the system SHALL call `PushSubscription.unsubscribe()` on the browser subscription object
 - **AND** other browsers registered by the same user SHALL continue to receive notifications
 - **AND** the toggle SHALL reflect OFF
@@ -166,7 +166,7 @@ The system SHALL provide access to legal and licensing information via in-app ro
 ---
 
 ### Requirement: Language Preference
-The system SHALL allow users to change the display language of the application. While authenticated, the change SHALL be persisted to the backend user row via `UserService.UpdatePreferredLanguage` — Settings SHALL NOT read or write browser local storage for the language preference.
+The system SHALL allow users to change the display language of the application. While authenticated, the change SHALL be persisted to the backend user row via `UserService.SetPreferredLanguage` — Settings SHALL NOT read or write browser local storage for the language preference.
 
 #### Scenario: Displaying language option
 - **WHEN** the Settings page is displayed for an authenticated user
@@ -183,14 +183,14 @@ The system SHALL allow users to change the display language of the application. 
 - **WHEN** a user taps the "Language" row
 - **THEN** the system SHALL display a selection UI with available languages: 日本語, English
 - **AND** WHEN the user selects a language different from the current one
-- **THEN** the system SHALL call `UserService.UpdatePreferredLanguage` with the new value
+- **THEN** the system SHALL call `UserService.SetPreferredLanguage` with the new value
 - **AND** on success, the system SHALL change the active locale
 - **AND** all UI text on the Settings page and throughout the app SHALL immediately update to the selected language
 - **AND** the system SHALL NOT write to browser local storage
 - **AND** subsequent reads of the current user's preferred language SHALL return the new value (write-through per `user-profile-hydration`)
 
 #### Scenario: Language change RPC failure
-- **WHEN** the `UpdatePreferredLanguage` RPC fails (network or server error)
+- **WHEN** the `SetPreferredLanguage` RPC fails (network or server error)
 - **THEN** the active locale SHALL end at the value it held before the change was attempted (the implementation MAY apply the new locale optimistically and revert on failure, consistent with `frontend-i18n`'s "Authenticated language switch RPC failure" scenario; the user-observable end-state SHALL be unchanged)
 - **AND** the displayed "Language" row SHALL end at the prior value (since the row is derived from the current user's preferred language, which is restored when the optimistic update is reverted)
 - **AND** the system SHALL surface a Snack notification indicating the change could not be saved
@@ -235,7 +235,7 @@ The system SHALL adapt the Settings page to authentication state. For guests, th
 
 The system SHALL allow a guest user to change the display language from
 Settings. For guests, the change SHALL apply to the active locale only and
-SHALL NOT call `UserService.UpdatePreferredLanguage` (no backend persistence is
+SHALL NOT call `UserService.SetPreferredLanguage` (no backend persistence is
 possible without an account). The language selector's selected-state indicator
 and the Language row SHALL derive from an observable current-language
 value — NOT from a one-time read of the active locale that cannot be observed
@@ -246,7 +246,7 @@ for reactivity — so they reflect the active locale reactively for guests.
 - **WHEN** an unauthenticated user selects a language different from the current one
 - **THEN** the system SHALL change the active locale
 - **AND** all UI text SHALL immediately update to the selected language
-- **AND** the system SHALL NOT call `UserService.UpdatePreferredLanguage`
+- **AND** the system SHALL NOT call `UserService.SetPreferredLanguage`
 
 #### Scenario: Selector highlight follows the active locale for guests
 
@@ -474,3 +474,15 @@ The Settings page header SHALL render the invariant English brand label "Setting
 - **WHEN** the Settings route renders its `page-header`
 - **THEN** the header title SHALL resolve from the same invariant navigation label used by the bottom-navigation Settings tab (the `nav.settings` key, "Settings" in both JA and EN locales)
 - **AND** the header SHALL NOT depend on a separate localized `settings.title` string
+
+### Requirement: The fan edits their name and phone number
+
+The settings screen SHALL show the fan's saved full name and phone number, say that they are shown on the face of the fan's tickets, and let the fan change them with UserService.Update. A phone number SHALL be entered in the domestic form and sent in E.164 form.
+
+#### Scenario: Fan changes their phone number
+- **WHEN** a fan with the saved phone number 090-1234-5678 enters 090-9876-5432 and saves
+- **THEN** UserService.Update is called with `+819098765432` and the screen shows the new number
+
+#### Scenario: No details saved yet
+- **WHEN** a fan who never gave a name or phone number opens the settings screen
+- **THEN** both fields are empty and can be filled in

@@ -59,11 +59,11 @@ Whether an authenticated callback is treated as a first sign-up SHALL be determi
 #### Scenario: Notification opt-in from dialog
 
 - **WHEN** the user taps the notification opt-in button in the post-signup dialog
-- **THEN** the system SHALL call `PushService.create()` (backed by `PushNotificationService.Create` RPC)
+- **THEN** the system SHALL call `PushService.create()` (backed by `PushSubscriptionService.Create` RPC)
 - **AND** the system SHALL NOT write any `localStorage` flag for push notification enabled state
 - **AND** on success, the notification row SHALL show a confirmed state
 - **AND** on failure or denial, the notification row SHALL show an error state
-- **AND** the settings page SHALL subsequently derive the toggle state from the backend via `PushNotificationService.Get` without relying on any `localStorage` flag
+- **AND** the settings page SHALL subsequently derive the toggle state from the backend via `PushSubscriptionService.Get` without relying on any `localStorage` flag
 
 #### Scenario: PWA install from dialog — native prompt
 

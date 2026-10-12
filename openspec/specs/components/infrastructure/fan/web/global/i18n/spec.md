@@ -16,7 +16,7 @@ of driving UI state; bindings that depend on the current language SHALL
 depend on the observable language value. The system SHALL also handle an
 authenticated user whose backend preferred-language value is NULL (historical
 rows not yet backfilled) by surfacing the detected locale as the effective
-language and backfilling the server value via `UserService.UpdatePreferredLanguage`;
+language and backfilling the server value via `UserService.SetPreferredLanguage`;
 this fallback path is independent of the guest-data reconciliation, which
 only fires when guest data is present in localStorage.
 
@@ -38,7 +38,7 @@ only fires when guest data is present in localStorage.
 - **WHEN** the authenticated user's `User.preferredLanguage` is NULL
 - **THEN** the system SHALL surface the detected locale as the effective language
 - **AND** the system SHALL backfill the server value via
-  `UserService.UpdatePreferredLanguage`, preserving the current
+  `UserService.SetPreferredLanguage`, preserving the current
   `user-hydration-task` behavior
 - **AND** this SHALL occur whether or not any guest data exists in localStorage
 
@@ -108,7 +108,7 @@ the active locale that selects the correct persistence path based on the
 caller's authentication state, so components do not duplicate this logic.
 The persistence target SHALL depend on the authentication state: anonymous
 changes persist to `localStorage`; authenticated changes persist to the
-backend user row via `UserService.UpdatePreferredLanguage`.
+backend user row via `UserService.SetPreferredLanguage`.
 
 #### Scenario: Switching language mid-session as an anonymous user
 - **WHEN** an unauthenticated user changes the language preference (e.g., from the Welcome page language selector)
@@ -119,13 +119,13 @@ backend user row via `UserService.UpdatePreferredLanguage`.
 
 #### Scenario: Switching language mid-session as an authenticated user
 - **WHEN** an authenticated user changes the language preference (e.g., from the Settings page)
-- **THEN** the system SHALL call `UserService.UpdatePreferredLanguage` with the new locale
+- **THEN** the system SHALL call `UserService.SetPreferredLanguage` with the new locale
 - **AND** on success, the system SHALL call `i18n.setLocale` so all `t`-bound template strings update immediately
 - **AND** the system SHALL NOT read or write `localStorage['language']` for this change
 - **AND** date/number formatters SHALL use the new locale for subsequent renders
 
 #### Scenario: Authenticated language switch RPC failure
-- **WHEN** the `UpdatePreferredLanguage` RPC fails (network, server error)
+- **WHEN** the `SetPreferredLanguage` RPC fails (network, server error)
 - **THEN** the active locale SHALL end at the value it held before the change was attempted (the implementation MAY apply the new locale optimistically and revert on failure; the user-observable end-state SHALL be unchanged)
 - **AND** the system SHALL surface a user-visible error notification (Snack)
 
@@ -136,7 +136,7 @@ backend user row via `UserService.UpdatePreferredLanguage`.
 
 #### Scenario: Authenticated caller path
 - **WHEN** any component calls the shared language-change utility while authenticated
-- **THEN** the utility SHALL call `UserService.UpdatePreferredLanguage` first
+- **THEN** the utility SHALL call `UserService.SetPreferredLanguage` first
 - **AND** on success, the utility SHALL call `i18n.setLocale(lang)`
 - **AND** the utility SHALL NOT touch `localStorage['language']`
 
@@ -186,13 +186,13 @@ When the hydrated user profile has no preferred language set (NULL legacy row), 
 
 - **WHEN** `UserService.ensureLoaded()` resolves
 - **AND** `UserService.current.preferredLanguage` is absent (proto `optional` field not present)
-- **THEN** the system SHALL call `UserService.updatePreferredLanguage(I18N.getLocale())`
+- **THEN** the system SHALL call `UserService.setPreferredLanguage(I18N.getLocale())`
 - **AND** on success, `UserService.current.preferredLanguage` SHALL match the value sent
 - **AND** the active i18n locale SHALL remain unchanged (no flicker because the value matched what was already effective)
 
 #### Scenario: Backfill RPC failure is non-fatal
 
-- **WHEN** the backfill `UpdatePreferredLanguage` RPC fails
+- **WHEN** the backfill `SetPreferredLanguage` RPC fails
 - **THEN** the system SHALL log a warning
 - **AND** the application SHALL continue to render with the current locale
 - **AND** the next hydration cycle SHALL retry the backfill (because the DB still holds NULL)
