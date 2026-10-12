@@ -70,7 +70,7 @@ message AdmissionCode {
   Signature signature = 5 [(buf.validate.field).required = true];
 }
 
-// ScannedText is the text a reception device read from a scanned QR code,
+// ScannedText is the text a scanner device read from a scanned QR code,
 // passed to the server undecoded. It may hold anything a QR code can carry (for
 // example a web address); the server decodes it and rejects text that is not an
 // AdmissionCode as forged rather than failing the call. Bounded by the largest

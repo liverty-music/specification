@@ -7,13 +7,13 @@ import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/event.proto";
-import "liverty_music/entity/v1/reception_link.proto";
+import "liverty_music/entity/v1/scanner.proto";
 import "liverty_music/entity/v1/ticket.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
 // Admission is the permanent note that a Ticket was let in at the venue: which
-// ticket, through which ReceptionLink and when. It is stored in one step
+// ticket, through which Scanner and when. It is stored in one step
 // together with the ticket's `admit_time`, a ticket has at most one, and it is
 // never changed or removed — not even when the ticket is later voided — so it
 // can serve as attendance evidence (for example against a chargeback).
@@ -30,8 +30,8 @@ message Admission {
     (buf.validate.field).required = true
   ];
 
-  // The ReceptionLink that scanned the ticket.
-  ReceptionLinkId reception_link_id = 3 [
+  // The Scanner that scanned the ticket.
+  ScannerId scanner_id = 3 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];

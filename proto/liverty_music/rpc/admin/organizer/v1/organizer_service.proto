@@ -99,7 +99,7 @@ service OrganizerService {
   // Delete permanently removes a deactivated Organizer together with everything
   // kept for it: its first-party Series with their ticket sales and ticket
   // types, and their Events (with their lottery entries, checkouts, ticket
-  // journeys, performers and reception records), the Orders, Tickets and
+  // journeys, performers and scanner records), the Orders, Tickets and
   // reversed settlements for those Events, its series images and their files,
   // its identity provider tenant with the tenant's operators, its artist
   // associations and its PayoutAccount record. Records in the payment provider
