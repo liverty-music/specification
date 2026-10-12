@@ -8,7 +8,7 @@ The fan-facing lottery entry service boundary (`LotteryEntryService`): how a sig
 
 ### Requirement: The fan entering is the signed-in caller
 
-Every lottery entry call (Start, AuthorizeCard, Confirm, Withdraw and ListByTicketType) SHALL require a signed-in caller and fail with Unauthenticated otherwise. It SHALL resolve the caller to their stored User (User.GetByProviderUserID), failing with NotFound when the caller has no stored account, and pass that User to LotteryEntryUseCase.Start, AuthorizeCard, Confirm, WithdrawEntry or ListOwnByTicketType; the request never names a user. AuthorizeCard SHALL return the card authorization secret (`card_authorization_secret`) the usecase returns. Errors from the usecase SHALL be returned unchanged.
+Every lottery entry call (Start, AuthorizeCard, Confirm, Withdraw and ListByTicketType) SHALL require a signed-in caller and fail with Unauthenticated otherwise. It SHALL resolve the caller to their stored User (User.GetByProviderUserID), failing with NotFound when the caller has no stored account, and pass that User to LotteryEntryUseCase.Start, AuthorizeCard, Confirm, Withdraw or ListByTicketType; the request never names a user. AuthorizeCard SHALL return the card authorization secret (`card_authorization_secret`) the usecase returns. Errors from the usecase SHALL be returned unchanged.
 
 #### Scenario: Fan starts an entry
 - **WHEN** a signed-in fan calls Start for a TicketType
@@ -24,7 +24,7 @@ Every lottery entry call (Start, AuthorizeCard, Confirm, Withdraw and ListByTick
 
 #### Scenario: Withdraw own entry
 - **WHEN** a fan calls Withdraw with the id of their own Entered entry
-- **THEN** LotteryEntryUseCase.WithdrawEntry runs with that fan and the entry is withdrawn
+- **THEN** LotteryEntryUseCase.Withdraw runs with that fan and the entry is withdrawn
 
 ### Requirement: Lottery entry requests are validated at the boundary
 

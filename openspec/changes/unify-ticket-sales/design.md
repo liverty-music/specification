@@ -100,7 +100,7 @@ A `TicketSale` (受付) holds what is common to one sale opportunity: Series, na
   | proto file | `lottery_application.proto`, `reservation.proto` | `lottery_entry.proto`, `checkout.proto` |
   | proto messages | `TicketApplication*`, `Reservation*` | `LotteryEntry*`, `Checkout*` |
   | Go | `TicketApplication*`, `Reservation*` | `LotteryEntry*`, `Checkout*` |
-  | usecase methods | `CreateAuthorization`, `Apply`, `WithdrawApplication`, `GetMyApplication`, `GetResult`, `DrawDuePhases` | `Start`, `Authorize`, `Confirm`, `WithdrawEntry`, `ListOwnByTicketType`, `DrawDueSales` (D14) |
+  | usecase methods | `CreateAuthorization`, `Apply`, `WithdrawApplication`, `GetMyApplication`, `GetResult`, `DrawDuePhases` | `Start`, `Authorize`, `Confirm`, `Withdraw`, `ListByTicketType`, `DrawDueSales` (D14) |
 
 - **Enum values are aligned.** The lottery state numbers become `ENTERED = 1`, `WON = 2`, `LOST = 3`, `WITHDRAWN = 4`, `DRAFT = 5` in proto, Go and DB. The migration rewrites stored `5` (today's Withdrawn) to `4` before `DRAFT` takes 5. This fixes the current proto/DB mismatch.
 - `uq_ticket_applications_active` becomes `uq_lottery_entries_active` on `(ticket_type_id, user_id) WHERE state <> WITHDRAWN`. `uq_reservations_held` becomes `uq_checkouts_held` on the ticket type.
@@ -328,7 +328,7 @@ Kept, with reasons recorded in the review: `SalesPhase`, `SalesPhaseReminder` an
 | Payment provider | "payment provider" everywhere (no "payment service") |
 | Routes | `route/lottery-sale-editor` (was lottery-phase-editor), fan `route/lottery-entry` (was lottery-apply, lottery-application) |
 
-**Usecases, RPCs and clients use the same method names** (the usecase interface is named after the entity its spec path names):
+**Usecases, RPCs and clients use the same method names** (the usecase interface is named after the entity its spec path names). When two audiences' RPCs share a name on one usecase interface, the caller-scoped one adds `Own` (organizer `TicketSaleService.ListByEvent` runs `TicketSaleUseCase.ListOwnByEvent`, beside the fan's `ListByEvent`):
 
 | RPC | Usecase (spec path) |
 |---|---|
@@ -356,7 +356,7 @@ Frontend clients and stores take the RPC's method name (`list`, `setHome`, `setP
 
 **Removed (unused):**
 - admin `SettlementService`.
-- `users.country`, `time_zone`, `is_active`.
+- `users.country`, `is_active`. (`users.time_zone` stays: `usecase/sales-phase/announce-discovered-phase` and `scan-due-reminders` show times in the fan's time zone and read it.)
 - Go `UserRepository.GetByEmail`/`Update`/`List`, `OrderRepository.UpdateStatus`, `TicketRepository.ListByOrder`/`VoidByOrder`, `SettlementRepository.Get`.
 
 **Entity operations renamed with their entity** (a pure rename on the main specs, committed with the entity moves): `SeriesImage.FindMediaByID` → `Get`, `InsertMedia` → `Create`, `CutOverSeriesMedia` → `ReplaceCover`; `PayoutAccount.CreateConnectedAccount` → `Create`, `GetAccountStatus` → `GetStatus`; story `review-staged-concerts` → `review-concert-candidates`.

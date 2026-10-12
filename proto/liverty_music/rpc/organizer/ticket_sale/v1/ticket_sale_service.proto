@@ -120,9 +120,9 @@ service TicketSaleService {
   rpc SetVerificationRequirement(SetVerificationRequirementRequest) returns (SetVerificationRequirementResponse);
 }
 
-// TicketTypeDraft is what a new sale offers for one event, given at Create.
+// TicketTypeInput is what a new sale offers for one event, given at Create.
 // The ticket type's id, sale and counts are assigned by the server.
-message TicketTypeDraft {
+message TicketTypeInput {
   // Required. The event the ticket type admits to. It MUST be one of the
   // Series' events, published and with a start time, and at most one ticket
   // type of the sale may name it.
@@ -130,7 +130,7 @@ message TicketTypeDraft {
 
   // Required. The price of one ticket in yen, tax-inclusive (税込). 1 to
   // 1,000,000.
-  entity.v1.TicketPrice price = 2 [(buf.validate.field).required = true];
+  entity.v1.TicketTypePrice price = 2 [(buf.validate.field).required = true];
 
   // Required. The tickets offered, at least 1.
   int32 quantity = 3 [(buf.validate.field).int32.gte = 1];
@@ -172,7 +172,7 @@ message CreateRequest {
   entity.v1.VerificationRequirement verification_requirement = 6 [(buf.validate.field).enum.defined_only = true];
 
   // Required. One ticket type for each event the sale covers, at least one.
-  repeated TicketTypeDraft ticket_types = 7 [(buf.validate.field).repeated.min_items = 1];
+  repeated TicketTypeInput ticket_types = 7 [(buf.validate.field).repeated.min_items = 1];
 }
 
 // CreateResponse returns the stored sale.

@@ -2,13 +2,13 @@
 
 ## Purpose
 
-LotteryEntryUseCase.ListOwnByTicketType returns the calling fan's LotteryEntries for a TicketType, so the fan sees whether they have entered and, after the draw, whether they won.
+LotteryEntryUseCase.ListByTicketType returns the calling fan's LotteryEntries for a TicketType, so the fan sees whether they have entered and, after the draw, whether they won.
 
 ## ADDED Requirements
 
 ### Requirement: Caller's entries for a ticket type
 
-ListOwnByTicketType SHALL take a TicketType and the calling fan and return the fan's entries for it from LotteryEntry.ListByTicketTypeAndUser, newest first. It SHALL return an empty list when the fan has none, and SHALL fail with NotFound when the TicketType does not exist (TicketType.Get).
+ListByTicketType SHALL take a TicketType and the calling fan and return the fan's entries for it from LotteryEntry.ListByTicketTypeAndUser, newest first. It SHALL return an empty list when the fan has none, and SHALL fail with NotFound when the TicketType does not exist (TicketType.Get).
 
 #### Scenario: Entered entry
 - **WHEN** the fan has an Entered entry for the TicketType
