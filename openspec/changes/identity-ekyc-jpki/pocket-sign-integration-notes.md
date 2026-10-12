@@ -22,15 +22,15 @@ Our entities map onto `pocketsign.verify.v2` as follows:
 
 | Our type / field (`liverty_music.entity.v1`) | Pocket Sign `pocketsign.verify.v2` source | Notes |
 |---|---|---|
-| `PocketSignUserId.value` (opaque string) | `User.userId` (string) | The tenant-scoped person key. It is a **string, not necessarily a UUID** — so keeping `PocketSignUserId` a bounded opaque string (not `string.uuid`) was the correct call. |
-| `VerifiedIdentity.method` = JPKI | `CertificateContent` oneof: `JPKICardUserAuthentication` / `JPKICardDigitalSignature` / `JPKIMobileUserAuthentication` / `JPKIMobileDigitalSignature` + `Certificate.type` (`certificateType`) | Both **physical card** (`JPKICard*`) and **スマホJPKI** (`JPKIMobile*`) are first-class, each in 利用者証明用 (`*UserAuthentication`) and 署名用 (`*DigitalSignature`) variants. |
+| `IdentityVerification.provider_user_id` (`ProviderUserId.value`, opaque string) | `User.userId` (string) | The tenant-scoped provider user ID. It is a **string, not necessarily a UUID** — so keeping `ProviderUserId` a bounded opaque string (not `string.uuid`) was the correct call. |
+| `IdentityVerification.method` = JPKI | `CertificateContent` oneof: `JPKICardUserAuthentication` / `JPKICardDigitalSignature` / `JPKIMobileUserAuthentication` / `JPKIMobileDigitalSignature` + `Certificate.type` (`certificateType`) | Both **physical card** (`JPKICard*`) and **スマホJPKI** (`JPKIMobile*`) are first-class, each in 利用者証明用 (`*UserAuthentication`) and 署名用 (`*DigitalSignature`) variants. |
 | (dedupe decision: new vs returning) | `Verification.isNewUser` (bool) | Pocket Sign itself tells us whether this `userId` is new to our tenant — a direct signal for the "second account for the same person" check (tasks 3.1/3.2). |
 | (verification handle) | `Verification.verificationId`, `Verification.userIds`, `Verification.signCertificateJwe`, `Verification.hashAlgorithm`, `Verification.identifyUser` | The challenge/response artifacts. `signCertificateJwe` is the signed material we validate then **discard** (task 2.1 / privacy). |
 | (never stored) | `User.serialNumberMac` | Pocket Sign returns a **MAC-hashed** serial, **not the raw 発行番号** — reinforces that we never receive or store the raw serial (task 4.1). Do **not** persist even this MAC unless a justified use case appears. |
-| `VerificationStatus` (現況確認) | `CheckUserStatus` / `BatchCheckUserStatus`; `CheckCertificateStatus` / `CheckCertificateStatusByContent` / `BatchCheckCertificateStatus`; `CertificateStatus.{status, crlReason, checkMethod, checkPurpose}` | The 現況確認 / 失効確認 surface for task 2.3 (ReCheck). `CertificateStatus.checkPurpose` is the **J-LIS-logged `check_purpose`** our privacy requirement (4.1) calls out. |
+| `VerificationStatus` (現況確認) | `CheckUserStatus` / `BatchCheckUserStatus`; `CheckCertificateStatus` / `CheckCertificateStatusByContent` / `BatchCheckCertificateStatus`; `CertificateStatus.{status, crlReason, checkMethod, checkPurpose}` | The 現況確認 / 失効確認 surface for task 2.3 (`IdentityVerificationService.Recheck`). `CertificateStatus.checkPurpose` is the **J-LIS-logged `check_purpose`** our privacy requirement (4.1) calls out. |
 | (consent step) | `CreateConsentForDigitalIdentificationApp*`, `Consent`, `Consent.Preference` | The デジタル認証アプリ consent flow that precedes a verification. |
 
-**Implication for our proto:** no change needed. `PocketSignUserId` as an opaque
+**Implication for our proto:** no change needed. `ProviderUserId` as an opaque
 string is correct; `VerificationMethod` (JPKI vs DRIVER_LICENCE) sits one level
 above Pocket Sign's card/mobile + auth/signature distinction (all four JPKI cert
 contents collapse to our single `JPKI` method).
@@ -40,7 +40,7 @@ contents collapse to our single `JPKI` method).
 - The schema models a single `User.userId` that carries multiple certificates
   (`latestCertificate`, `certificateStates`, both JPKICard and JPKIMobile contents),
   and `Verification.isNewUser` distinguishes new vs returning — i.e. the design
-  intent is clearly **one stable person key across cert type and card/mobile**.
+  intent is clearly **one stable provider user ID across cert type and card/mobile**.
 - **Still needs a live check** that `userId` is byte-identical after a card
   **renewal / re-issue** (not just across cert type) on a real account — the schema
   strongly implies it but does not prove the renewal case.
@@ -49,8 +49,8 @@ contents collapse to our single `JPKI` method).
 
 - `User` exposes `userId` + `serialNumberMac` + certificate **metadata** without
   requiring `CertificateContent` (which is where 基本4情報 lives). So we can dedupe
-  on `userId` **without receiving PII**. Our "store only `User.id`" design is
-  achievable. Confirm during integration that the verify call can be configured to
+  on `userId` **without receiving PII**. Our "store only the provider user ID" design is
+  achievable (stored as `provider_user_id`). Confirm during integration that the verify call can be configured to
   return the assertion + `userId` while omitting `certificateContent`.
 
 ## S5 — licence-path dedupe (**consistent with the WEAK-dedupe design**)
@@ -59,7 +59,7 @@ contents collapse to our single `JPKI` method).
   types appear anywhere in the module. The 運転免許証 fallback (design's "Verify
   CardInfo") is therefore a **separate Pocket Sign product/surface** that does not
   yield a `verify.v2` `userId`. This confirms the honest-caveat design: the licence
-  path has **no equivalent stable per-person key** → `dedupe_strength = WEAK`.
+  path has **no equivalent stable per-person dedupe key** → `dedupe_strength = WEAK`.
 
 ## S3 / S4 — 目的外利用 limits / 越境 (**still vendor/legal, not answerable from the schema**)
 
@@ -75,10 +75,10 @@ two stubs — everything around them (dedupe, privacy, RPC surface, UI) is done:
 
 - **Backend** — replace `internal/infrastructure/pocketsign/stub_verifier.go`
   (`StubVerifier`, currently returns `UNAVAILABLE`) with a real client implementing
-  `usecase.PocketSignVerifier` (`IssueChallenge` / `ValidateResponse` / `Recheck`).
+  `usecase.IdentityVerifier` (`IssueChallenge` / `ValidateResponse` / `Recheck`).
   Wire it in `internal/di/provider.go` (the `TODO: replace StubVerifier ...` line).
   Map: `ValidateResponse` → the verify RPC returning `Verification` (read `userIds`
-  → our `pocket_sign_user_id`, `isNewUser`, cert content type → our `method`);
+  → our `provider_user_id`, `isNewUser`, cert content type → our `method`);
   `Recheck` → `CheckUserStatus` / `CheckCertificateStatus`. Add the
   `buf.build/gen/go/pocketsign/apis/...` dependency at that point.
 - **Frontend** — replace `src/adapter/pocket-sign/pocket-sign-verify-client.ts`

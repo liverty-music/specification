@@ -16,7 +16,7 @@ in when this lands.
   **per-person** limit signal to ④/⑤.
 - Stay **outside 番号法** (JPKI only, never 個人番号) and **proportionate** (ticketing
   is not a 犯収法 obligor → no 取引時確認).
-- Privacy by design: store **only Pocket Sign's `User.id`**, delete raw cert data,
+- Privacy by design: store **only the provider user ID** (`provider_user_id`), delete raw cert data,
   deletion path.
 
 **Non-Goals:**
@@ -40,7 +40,7 @@ win**.
   `CreateSession` → the fan opens the returned `redirectUrl` in the **PocketSign
   app** (installed separately), reads their card and signs there → returns to the
   PWA → the backend `FinalizeSession` gets the result. Stamp **rides on PocketSign
-  Verify** as its backend, so the person key (`User.id`), dedupe, and 現況確認 come
+  Verify** as its backend, so the provider user ID, dedupe, and 現況確認 come
   from Verify. This replaces the earlier "Verify **SDK** embedded in our app +
   our own Nonce challenge–response" framing (that fits a native app we are not
   building). The government **デジタル認証アプリ** (`VerifyForDigitalIdentificationApp`)
@@ -51,7 +51,7 @@ win**.
   item and is already the sanctioned per-event "JPKI-only" option below. The proto
   keeps `DRIVER_LICENCE`/`WEAK`/`VERIFIED_ANY` for forward-compat, but no
   `pocketsign.cardinfo` integration and no fallback UI ship in the MVP.
-- **MVP stores only `User.id`; verified-name (基本4情報) binding is POST-MVP.** The
+- **MVP stores only `provider_user_id`; verified-name (基本4情報) binding is POST-MVP.** The
   MVP retains only the dedupe key and does **not** retrieve/verify 基本4情報 (氏名).
   The covered-ticket 本人確認 in the MVP is ④ lottery-application's **self-declared
   name+contact** (`ApplicantIdentity`), which already satisfies the 特定興行入場券
@@ -68,7 +68,7 @@ win**.
   deferred until the MVP is proven. Consequence: prod E2E validates the
   **integration and flow** (CreateSession → PocketSign app → callback →
   FinalizeSession → dedupe), NOT a genuine 公的個人認証 — mock cards are used, so
-  real-card assurance and the renewal-stable `User.id` confirmation (spike S1)
+  real-card assurance and the renewal-stable provider user ID confirmation (spike S1)
   wait for the sandbox→prod-tenant cutover. The `PocketSignConfig.Validate` host
   allowlist already admits any `*.p8n.app` host, so mock-in-prod passes validation.
 
@@ -79,7 +79,7 @@ win**.
   embedded-SDK framing).** The backend calls `pocketsign.stamp.v1.SessionService`
   (CreateSession → redirect to the PocketSign app → FinalizeSession); Stamp rides on
   the PocketSign Verify API, which validates certificate authenticity and returns
-  the person key. Raw certificate/response is **deleted promptly** after the call.
+  the provider user ID. Raw certificate/response is **deleted promptly** after the call.
   Pocket Sign is a 公的個人認証法 **主務大臣認定プラットフォーム事業者** (since 2023), so we
   integrate as a **加盟事業者 with NO own 主務大臣認定**. Envs: mock → test → prod.
   Rejected: self-認定 (overkill); running our own native app just to embed the Verify
@@ -92,27 +92,30 @@ win**.
   retained are full personal data (個情法 §17/§21/§23) → 利用目的 specification, minimal
   retention, deletion. Plus the **JPKI-framework 目的外利用禁止 + 失効情報確認** duties
   flow down from the 認定PF事業者 to us as an SP事業者.
-- **Dedupe key = Pocket Sign `User.id` (tenant-scoped UUID).** Pocket Sign returns
-  a **tenant-scoped** user id (same person → same id within our tenant; different
-  across tenants = a service-scoped pairwise id), and crucially returns the **same
-  `User.id` across card renewal, re-issue, cert generation, and cert type**. We
-  store **only this UUID** (never the raw 発行番号/serial — avoiding the restricted
-  serial-DB 目的外利用 concern entirely, and never the 個人番号). Enforce ≤1 active
-  `IDENTITY_VERIFIED` account per `User.id`; a second maps to reject/recovery.
+- **Dedupe key = the provider user ID (`provider_user_id`, Pocket Sign's
+  `User.userId`).** Pocket Sign returns a **tenant-scoped** user id (same person →
+  same id within our tenant; different across tenants = a service-scoped pairwise
+  id), and crucially returns the **same ID across card renewal, re-issue, cert
+  generation, and cert type**. We store **only this ID** (never the raw
+  発行番号/serial — avoiding the restricted serial-DB 目的外利用 concern entirely, and
+  never the 個人番号). Enforce ≤1 Active IdentityVerification per `provider_user_id`;
+  a second maps to reject/recovery.
   **Limit:** tenant-scoped → **no cross-platform scalper detection** (accepted).
-- **Re-issue/renewal continuity is solved by the vendor.** Because Pocket Sign's
-  `User.id` is **stable across renewal/re-issue**, we do **not** need 基本4情報
+- **Re-issue/renewal continuity is solved by the vendor.** Because the provider
+  user ID is **stable across renewal/re-issue**, we do **not** need 基本4情報
   re-link logic — the earlier serial-rotation hole disappears. (Spike S1: confirm
-  `User.id` is identical across both cert types + スマホJPKI on the live account.)
+  the provider user ID is identical across both cert types + スマホJPKI on the live
+  account.)
 - **現況確認 for freshness.** Use Pocket Sign's 現況確認 (liveness) to detect
   revocation / 基本4情報 change / expiry and prompt re-verification (not a hard lock).
 - **Per-person limit signal + honest mixed-population scope.** Where an event
   **requires** verification, ④'s "1 account / 1 application" is evaluated **per
-  verified person** across accounts (via `User.id`). Where an event does **not**
+  verified person** across accounts (via `provider_user_id`). Where an event does **not**
   require verification, only **per-account** limits apply and bulk-account resistance
   is **not** guaranteed — stated explicitly, not marketed as per-person.
 - **Lane + per-event requirement + fallback (with an honest dedupe caveat).**
-  Default `UNVERIFIED`; events opt into requiring verification. Non-card fallback =
+  A fan is unverified until they hold an Active IdentityVerification; TicketSales
+  opt into requiring verification. Non-card fallback =
   Pocket Sign **運転免許証 IC (Verify CardInfo)**, **substantively non-disadvantaging**
   (equivalent odds — マイナンバーカード is 任意, so a materially-worse fallback = de-facto
   compulsion / 平等 concern). **But the licence path yields identity proofing WITHOUT
@@ -122,16 +125,13 @@ win**.
   accounts), or (b) for the highest-demand shows **require JPKI** (no weaker
   fallback), accepting card-holder exclusion as a deliberate trade-off. Rejected:
   an attestation-only fallback with no dedupe (unlimited-account escape hatch).
-- **Relationship to ④ 本人確認.** Where verification is required, the **verified
-  identity is authoritative** for the covered ticket; ④'s apply-time 本人確認 name must
-  be **consistent with the verified 基本4情報** (no conflicting name bound). Where not
-  required, ④'s 本人確認 alone binds the covered ticket. Resolves the double-identity
-  ambiguity (④'s spec is unchanged for non-requiring events).
-- **Relationship to ④ 本人確認.** Where verification is required, the **verified
-  identity is authoritative** for the covered ticket; ④'s apply-time 本人確認 name must
-  be **consistent with the verified 基本4情報** (no conflicting name bound). Where not
-  required, ④'s 本人確認 alone binds the covered ticket. Resolves the double-identity
-  ambiguity (④'s spec is unchanged for non-requiring events).
+- **Relationship to ④ 本人確認.** Where verification is required, the
+  **IdentityVerification's verified name is authoritative** for the covered ticket; ④'s
+  entry-time 本人確認 name must be **consistent with the verified 基本4情報** (no
+  conflicting name bound). Where not required, ④'s 本人確認 alone binds the covered
+  ticket. Resolves the double-identity ambiguity (④'s spec is unchanged for
+  non-requiring sales). (The MVP-scope section defers the verified name: in the MVP
+  the User's self-declared full name and phone number bind the ticket.)
 - **Phone-embedded credential.** Support both the **physical card (NFC+PIN)** and the
   **スマホ用電子証明書** (Android 令和5年5月; iPhone 2025) — better completion, mitigates
   the ~81%-penetration/drop-off concern.
@@ -139,34 +139,71 @@ win**.
   one-person-many-accounts, but does **NOT** stop a verified buyer reselling/lending
   a ticket — the PoC's zero-resale needed eKYC **+ gate 顔認証**. That entry layer is
   the separate `face-auth-entry` tier; do not claim eKYC alone delivers zero resale.
-- **Entity `VerifiedIdentity`** — `account_ref`, `method` (JPKI / driver-licence),
-  `pocket_sign_user_id` (the tenant-scoped UUID = the person key), a
-  `dedupe_strength` flag (STRONG for JPKI / WEAK for licence), `verified_at`,
-  `status`; plus account-level `verification_level` (`UNVERIFIED` /
-  `IDENTITY_VERIFIED`). Store **no** 基本4情報 by default (only if a justified use
+- **Entity `IdentityVerification`** — `user_id`, `method` (JPKI / driver-licence),
+  `provider_user_id` (the verification provider's ID for the User), a
+  `dedupe_strength` flag (STRONG for JPKI / WEAK for licence), `verify_time`,
+  `status` (Active / NeedsReverification). There is no account-level verification
+  flag: a client treats an Active IdentityVerification as verified, and NotFound or a
+  non-Active one as not verified (unify-ticket-sales D11, D16). Store **no** 基本4情報 by default (only if a justified use
   case needs it). Follow proto conventions (type-safe IDs, enum, protovalidate).
+- **The verification result is shown on Settings (added 2026-10-11).** Today the
+  callback route finalizes the session and navigates to `/settings` inside its
+  router `loading()` hook, before its view renders, and Settings shows only the
+  badge, so a fan never sees the result or the reason
+  (`frontend/src/routes/verify-callback/verify-callback-route.ts`,
+  `settings-route.html:335-356`). The callback route now shows only
+  `<circular-progress>` and hands the outcome to Settings in app state (not the
+  URL, so a shared or reloaded address never replays a result). Settings shows
+  success as a snackbar (the badge also changes) and a failure as a reason kept
+  inside the identity verification row next to the button: the fan acts there, and M3 keeps
+  errors next to the control instead of in a snackbar that times out. Showing the
+  result on the callback screen instead was rejected: a reload there finds the
+  session id already cleared and turns any outcome into "no verification in
+  progress". Copy reuses the `verifyCallback.*` keys added in frontend v1.82.0
+  (owner-approved 2026-10-11). Reasons by outcome:
+
+  | Outcome | Reason key | Button |
+  |---|---|---|
+  | verified | — (snackbar `verifyCallback.success.heading`) | hidden |
+  | no session id on this device, account unverified | `error.sessionMismatch` | shown |
+  | no session id on this device, account verified | — | hidden |
+  | FailedPrecondition | `error.notCompleted` | shown |
+  | PermissionDenied | `error.permissionDenied` | shown |
+  | Unavailable | `error.unavailable` | shown |
+  | AlreadyExists | `error.alreadyVerified` + support contact `pannpers@pannpers.dev` (as in the Terms and Privacy Policy) | hidden |
+  | anything else | `error.generic` | shown |
+
+  The unused `settings.identity.comingSoon` key is removed.
 
 ## Risks / Trade-offs
 
+- **The callback may open in a different browser storage than the one that
+  started verification** (inferred, not checked): on iOS a home-screen PWA and
+  Safari keep separate storage, so if the PocketSign app opens the callback in
+  Safari, the persisted session id is missing and the fan sees "no verification
+  in progress". *→* Check on real devices during 7.7; if it happens, the session
+  has to be found from the signed-in user on the backend instead of device
+  storage.
+
 - **Privacy/regulatory sensitivity is high.** マイナンバーカード handling is press- and
-  PPC-sensitive. *→* Never touch 個人番号; store only `User.id`; delete raw cert data;
+  PPC-sensitive. *→* Never touch 個人番号; store only `provider_user_id`; delete raw cert data;
   counsel review of the Pocket Sign 利用規約 + data flow before launch.
 - **Depends on Pocket Sign** (加盟契約, API/SDK, ¥300k init + per-verify fees, ~2-3mo
   Verify integration; free sandbox for PoC). *→* Long-lead: onboard early. Keep the
   provider behind our RPC in case of a future swap (accepting a swap re-issues the
-  tenant-scoped `User.id`, i.e. a migration).
-- **Licence fallback has weaker dedupe** (no stable per-person key). *→* Flag/limit
+  tenant-scoped provider user ID, i.e. a migration).
+- **Licence fallback has weaker dedupe** (no stable per-person dedupe key). *→* Flag/limit
   licence-fallback accounts; let high-demand events require JPKI-only.
 - **Authored ahead of ④/⑤ enforcement.** *→* This change owns verification + the
-  per-person signal (`User.id` + verification_level); ④/⑤ consume it. Fold the
+  per-person signal (`provider_user_id` + an Active IdentityVerification); ④/⑤ consume it. Fold the
   enforcement hooks into ④/⑤ when this lands; keep the signal a stable contract.
 
 ## Migration Plan
 
 New capability on the existing Zitadel account. Sequence: **onboard Pocket Sign**
-(加盟契約, sandbox) → proto (`VerifiedIdentity` with `pocket_sign_user_id`,
-verification level, per-event requirement flag, verify + 現況確認 RPCs) → BSR →
-backend (Verify challenge–response integration, `User.id` dedupe uniqueness,
+(加盟契約, sandbox) → proto (`IdentityVerification` with `provider_user_id`,
+per-sale verification requirement, `IdentityVerificationService` RPCs) → BSR →
+backend (Verify challenge–response integration, `provider_user_id` dedupe uniqueness,
 現況確認 re-check, per-person signal, delete-raw-cert + retention/deletion) →
 frontend (Verify SDK card/スマホJPKI flow + status) → wire ④/⑤ enforcement +
 per-event requirement. No 個人番号, no raw serial anywhere.
@@ -174,13 +211,13 @@ per-event requirement. No 個人番号, no raw serial anywhere.
 ## Open Questions / Spikes (Pocket Sign docs unclear)
 
 - **S1 — スマホJPKI cert support**: reconcile a stale `supported-certificate` doc page
-  vs current "supported"; confirm both cert types + スマホJPKI return the same `User.id`.
-- **S2 — data minimization**: confirm we can get `User.id` + a verification assertion
+  vs current "supported"; confirm both cert types + スマホJPKI return the same provider user ID.
+- **S2 — data minimization**: confirm we can get the provider user ID + a verification assertion
   **without** being forced to receive/persist 基本4情報.
 - **S3 — 目的外利用 / purpose limits** in the Pocket Sign 利用規約 + J-LIS guidelines for
   anti-scalp identity use.
 - **S4 — data residency (越境)**: confirm all processing is domestic.
 - **S5 — licence-path dedupe**: confirm whether Verify CardInfo yields ANY stable
-  per-person key; if not, lock the weaker-guarantee handling.
+  per-person dedupe key; if not, lock the weaker-guarantee handling.
 - **S6 — proto field mapping**: pull `pocketsign.verify.v2` field names from BSR to
-  lock `User.id`/attribute mapping at implementation.
+  lock the `User.userId` → `provider_user_id` / attribute mapping at implementation.
