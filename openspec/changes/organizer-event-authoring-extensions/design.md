@@ -29,6 +29,12 @@ blocklist).
   the same read path.
 - **Scheduled publish** runs the same publish transaction (supersede +
   `CONCERT.created`) from a timer instead of the manual action.
+  - Note from `restructure-event-publishing`: publish state now lives on
+    each Event, and Publish publishes chosen DRAFT Events of a Series. A
+    scheduled publish must publish chosen DRAFT Events too, so `publish_at`
+    belongs on the Event, not on the Series. Rewrite this change's "Scheduled
+    publish" delta on `usecase/series/publish` per Event when it is
+    scheduled.
 - **Streaming mode** relaxes the venue requirement for `online`; discovery
   treatment of online concerts is decided when this ships (Liverty Music is
   attendable-concert-first).
