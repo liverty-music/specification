@@ -2,7 +2,7 @@
 
 ## Purpose
 
-An Organizer is a vetted seller - a record label, management agency, promoter or self-publishing artist - that an admin creates to sell tickets for the Artists it represents. Being created by an admin is the vetting; an Organizer is an entity separate from any Artist, and its operators sign in to the Organizer's own isolated tenant.
+An Organizer is a vetted business - a record label, management agency, promoter or self-publishing artist - that an admin creates to sell tickets for the Artists it represents. Being created by an admin is the vetting; an Organizer is an entity separate from any Artist, and its operators sign in to the Organizer's own isolated tenant.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -11,7 +11,7 @@ An Organizer is a vetted seller - a record label, management agency, promoter or
 | operator email | email of the initial operator, captured at creation to seed the operator's sign-in | required; an email address; never shown to the organizer or fan audiences |
 | provider organizer ID | the identity provider's ID for the Organizer: its isolated sign-in tenant | optional; empty until provisioning links the tenant; once set, no other Organizer has the same one |
 | status | lifecycle | provisioning, active or deactivated |
-| legal name | 販売業者の名称 (the seller of record) shown in the 特商法 (Specified Commercial Transactions Act) disclosure | optional until entered by an admin at vetting; 1 to 200 characters |
+| legal name | 販売業者の名称 (the legal business name) shown in the 特商法 (Specified Commercial Transactions Act) disclosure | optional until entered by an admin at vetting; 1 to 200 characters |
 | representative name | 代表者 of the Organizer | optional until entered; 1 to 100 characters |
 | business address | the Organizer's business address | optional until entered; 1 to 300 characters |
 | business phone number | the Organizer's business phone number | optional until entered; E.164 |

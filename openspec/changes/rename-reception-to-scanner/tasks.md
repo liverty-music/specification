@@ -1,7 +1,7 @@
 ## 0. Dependency gate
 
 - [ ] 0.1 Confirm `ticket-wallet-and-checkin` is archived, so `openspec/specs/` holds `components/entity/reception-link/**`, `components/usecase/reception-link/**`, the two reception adapters, the two reception routes, `entity/admission/get-by-ticket`, `entity/ticket/admit`, `usecase/ticket/admit` and `stories/enter-a-venue-with-a-ticket` (design D9). No implementation PR of this change merges before this, because the retagged `@spec` annotations would break that change's coverage check. Verify the paths exist on specification `main` and `openspec validate rename-reception-to-scanner --strict` reports no "Archive would refuse this delta" line
-- [ ] 0.2 Confirm `unify-ticket-sales` is archived, so `components/entity/ticket/list-by-user-and-event` exists on main for `usecase/ticket/admit` (design D9). Verify the path exists, or else change the MODIFIED `usecase/ticket/admit` back to `Ticket.ListByHolderAndEvent` and the user wording back to holder, and verify validation still passes
+- [ ] 0.2 Confirm `unify-ticket-sales` is archived, so `components/entity/ticket/list-by-user-and-event` exists on main for `usecase/ticket/admit` (design D9). Verify the path exists on main (`unify-ticket-sales` archived on 2026-10-12) and that validation passes
 
 ## 1. Specification — main specs and plan
 

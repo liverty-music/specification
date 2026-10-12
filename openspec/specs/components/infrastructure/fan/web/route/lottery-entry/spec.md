@@ -11,18 +11,18 @@ The 本人確認 phone number field SHALL accept either a Japanese domestic numb
 
 #### Scenario: Domestic number with hyphens
 
-- **WHEN** the fan enters `090-1234-5678` and applies
-- **THEN** the application is sent with the phone number `+819012345678`
+- **WHEN** the fan enters `090-1234-5678` and confirms the entry
+- **THEN** the entry is sent with the phone number `+819012345678`
 
 #### Scenario: Landline number
 
-- **WHEN** the fan enters `03 1234 5678` and applies
-- **THEN** the application is sent with the phone number `+81312345678`
+- **WHEN** the fan enters `03 1234 5678` and confirms the entry
+- **THEN** the entry is sent with the phone number `+81312345678`
 
 #### Scenario: E.164 number with spaces
 
-- **WHEN** the fan enters `+81 90 1234 5678` and applies
-- **THEN** the application is sent with the phone number `+819012345678`
+- **WHEN** the fan enters `+81 90 1234 5678` and confirms the entry
+- **THEN** the entry is sent with the phone number `+819012345678`
 
 #### Scenario: Number fits neither form
 

@@ -72,7 +72,7 @@ These are written as REMOVED deltas:
   - Series repository: create, update, publish, cancel and get-authored.
   - Concert repository: one shared catalog condition and one fan-visibility condition replace the Series-state guard.
   - `EventPublishStateRepository`.
-  - `ConcertAuthoringUseCase` and the organizer handler.
+  - `SeriesUseCase` and the organizer handler.
   - `Series.IsPubliclyVisible` and `Series.HasEventPage` move to the Event.
 - **frontend**:
   - Organizer concert editor, concert list and reception links screen: read the per-Event state.

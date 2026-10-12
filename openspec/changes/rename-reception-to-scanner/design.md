@@ -199,7 +199,7 @@ The story and the real-iPhone scenario are run by hand on production with a test
 - [The migration runs before the new pods. Until the rollout finishes, old pods query `reception_links` and fail.] → There are no users. Deploy outside any event: the migration and the rollout take minutes, and a scan in that gap fails closed on the screen.
 - [A console tab or scanner tab still running the old app calls procedures that no longer exist] → The console gets Unimplemented until reload. The scanner screen shows an error and admits no one until reload (it fails closed). The production check (task 6.1) reloads both.
 - [`check-scenario-coverage.py` for `ticket-wallet-and-checkin` breaks if this change's retagged tests merge first] → Task 0.1 gates every implementation PR on that archive.
-- [`unify-ticket-sales` slips behind this change] → Task 0.2 checks it. If it has not archived, `usecase/ticket/admit` here goes back to `Ticket.ListByHolderAndEvent` before this change archives.
+- [`unify-ticket-sales` slips behind this change] → Task 0.2 checks it. It archived on 2026-10-12, so `Ticket.ListByUserAndEvent` is on main.
 - [One large breaking proto release] → Same as `ticket-wallet-and-checkin`'s naming cleanup: no outside clients, and `buf skip breaking`.
 
 ## Migration Plan

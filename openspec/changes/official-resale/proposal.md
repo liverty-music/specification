@@ -69,7 +69,7 @@ markup charged to the matched user. Provider/payment mechanics reuse ⑤'s Strip
 
 <!-- official-resale reuses the Order/Payment/Ticket entities defined by ⑤
      ticket-purchase-and-issuance and ⑥ ticket-wallet-and-checkin, and the demand
-     pool from ④ lottery-application. Those are DEPENDENCIES (see design.md); the
+     pool from ④ LotteryEntry. Those are DEPENDENCIES (see design.md); the
      deltas below only add resale-specific requirements to them. -->
 - `components/entity/event`: Ticket sales require complete event info
 - `components/entity/ticket-journey`: Resold companion seat leaves the same-time-entry group
@@ -77,7 +77,7 @@ markup charged to the matched user. Provider/payment mechanics reuse ⑤'s Strip
 
 ## Impact
 
-- **Depends on (not yet specced/built):** ④ `lottery-application` (the
+- **Depends on (not yet specced/built):** ④ LotteryEntry (the
   loser demand pool), ⑤ `ticket-purchase-and-issuance` (Order/Payment/Ticket +
   **issuance + 本人確認 + covered-ticket face** + 収納代行 + refunds), ⑥
   `ticket-wallet-and-checkin` (**void→invalidate credential** + the signed-token /

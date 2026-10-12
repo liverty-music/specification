@@ -173,9 +173,9 @@ message RejectedTicket {
     expression: "this.reason == 6 || (!has(this.earlier_admit_time) && !has(this.earlier_reception_link_number))"
   };
 
-  // VOIDED (refunded or resold) or ALREADY_ADMITTED. NOT_HOLDER is no longer
-  // returned (such a scan is refused as a whole with FORGED); the value stays
-  // accepted so older responses still validate.
+  // VOIDED (refunded or resold) or ALREADY_ADMITTED. The reserved value 4 is
+  // never returned (a ticket the user does not have for the event is refused
+  // as a whole with FORGED); it stays accepted so older responses still validate.
   entity.v1.RejectedScanReason reason = 1 [(buf.validate.field).enum = {
     defined_only: true
     in: [

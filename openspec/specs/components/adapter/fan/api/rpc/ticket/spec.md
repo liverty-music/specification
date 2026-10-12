@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The fan-facing ticket service boundary: a fan reads only their own orders and tickets, and the buyer is always the caller.
+The fan-facing ticket service boundary: a fan reads only their own orders and tickets, and the Order's user is always the caller.
 
 ## Requirements
 

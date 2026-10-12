@@ -26,7 +26,7 @@ It SHALL fail with AlreadyExists when an Order already exists for the same sourc
 - **WHEN** Issue is called with an Order whose source is a Committed, charged Checkout
 - **THEN** the Order and its Tickets are stored and the Checkout is Completed
 
-#### Scenario: Reservation not charged
+#### Scenario: Checkout not charged
 
 - **WHEN** the source Checkout is Committed but has no capture time
 - **THEN** Issue fails with FailedPrecondition and stores nothing
@@ -36,12 +36,12 @@ It SHALL fail with AlreadyExists when an Order already exists for the same sourc
 - **WHEN** storing any Ticket or the Settlement fails
 - **THEN** neither the Order, any Ticket nor the Settlement is stored, and a Checkout stays Committed
 
-#### Scenario: Second order for the application
+#### Scenario: Second order for the lottery entry
 
 - **WHEN** an Order already exists for the LotteryEntry
 - **THEN** Issue fails with AlreadyExists and stores nothing
 
-#### Scenario: Second order for the reservation
+#### Scenario: Second order for the checkout
 
 - **WHEN** an Order already exists for the Checkout
 - **THEN** Issue fails with AlreadyExists and stores nothing

@@ -22,7 +22,7 @@ Current state (verified on backend, frontend and specification `main`, 2026-10-1
   - The event page uses `Series.HasEventPage` (`entity/series.go:171`, called at `usecase/concert_uc.go:291`).
   - Non-test references to `publish_state` in rdb: 8 in `concert_repo.go`, 3 in `event_publish_state_repo.go`, 9 in `series_repo.go`.
 - **Upserts that name the constraint**: `concert_repo.go:27` (discovery) and `series_repo.go:988` (publish).
-- **Cancellation announcement**: `CONCERT.cancelled` is published by `ConcertAuthoringUseCase.Cancel` (`concert_authoring_uc.go:462`) and has no consumer. Changing its payload to the cancelled Events only breaks nobody.
+- **Cancellation announcement**: `CONCERT.cancelled` is published by `SeriesUseCase.Cancel` and has no consumer. Changing its payload to the cancelled Events only breaks nobody.
 - **Frontend readers of the Series state**:
   - organizer concert list (`organizer/concerts/concerts-route.ts:130-144`);
   - organizer editor (`concert-editor-route.ts:214`);
@@ -87,7 +87,7 @@ Current state (verified on backend, frontend and specification `main`, 2026-10-1
 - `UpdateDraft`, `PublishDraft`, `MarkPublished`, `MarkCancelled`, `LoadDraft` and `entity.DraftEvent` are deleted.
 - The usecase method `UpdateDraft` is renamed `Update`, matching the RPC.
 - **Why on the Series:** each operation is scoped to one Series. The claim rule needs the Series' Organizer. Splitting writes across an event repository would split the transaction.
-- `CancelEvents` deletes a Series left with no Event. `series_media` cascades. The `media` row and its objects stay, as for any hard-deleted Series today (comment at the end of `ConcertAuthoringUseCase.Cancel`).
+- `CancelEvents` deletes a Series left with no Event. The Series' cover image link cascades. The SeriesImage row and its objects stay, as for any hard-deleted Series today (comment at the end of `SeriesUseCase.Cancel`).
 
 ### D6 — RPC surface: optional event lists, no new methods
 
@@ -116,7 +116,7 @@ Current state (verified on backend, frontend and specification `main`, 2026-10-1
   - when a discovered Event is there, moves its `ticket_journeys` to the live Event (`ON CONFLICT DO NOTHING` keeps the live Event's own journey), adds its performers, and deletes it (cascading its `concerts` row);
   - when a first-party Event is there, fails with FailedPrecondition.
 - The live Event keeps its id because its `/events/<id>` link may already be shared and announced. See "Assumptions to confirm".
-- **Start-time lock:** `ConcertAuthoringUseCase.Update` calls `TicketSale.ListByEvent` (from `unify-ticket-sales`) for each PUBLISHED Event whose start time changes. A TicketSale requires a start time (`unify-ticket-sales`, `usecase/ticket-sale/create`). So an Event with no start time is never on sale, and setting its first start time is always allowed.
+- **Start-time lock:** `SeriesUseCase.Update` calls `TicketSale.ListByEvent` (from `unify-ticket-sales`) for each PUBLISHED Event whose start time changes. A TicketSale requires a start time (`unify-ticket-sales`, `usecase/ticket-sale/create`). So an Event with no start time is never on sale, and setting its first start time is always allowed.
 - **Race:** a sale created between the check and the update is possible in theory. There is one operator per Organizer. This is the same trade-off as `unify-ticket-sales` D4.
 
 ### D9 — Update validates against the stored Series without resolving venues
@@ -139,7 +139,7 @@ Current state (verified on backend, frontend and specification `main`, 2026-10-1
 3. **`ticket-wallet-and-checkin`**: no shared requirement.
    - Its reception-link usecase calls `IsEventPublished`, which now gives the per-Event answer it expects.
    - The reception links screen reads the Series state today (`reception-links-route.ts:170`). Task 8.3 switches it to the Event.
-4. **`first-come-ticket-sales`**: its reservation and sale reads call `IsEventPublished` "as for a cancelled concert". That now also covers one cancelled date. Its `route/event` delta changes a different requirement (ticket section). Its backend tables do not read `series.publish_state`. It needs a rebase only if it touches the dropped columns.
+4. **`first-come-ticket-sales`**: its checkout and sale reads call `IsEventPublished` "as for a cancelled concert". That now also covers one cancelled date. Its `route/event` delta changes a different requirement (ticket section). Its backend tables do not read `series.publish_state`. It needs a rebase only if it touches the dropped columns.
 5. **`organizer-event-authoring-extensions`**: its "Scheduled publish" (ADDED to `usecase/series/publish`) and its design's `publish_at` on the Series must become per Event when that change is scheduled. This change does not edit it; task 1.3 adds the note there.
 6. **`redesign-organizer-console`**: builds the per-date publish confirmation and per-date cancel on D6's surface.
 

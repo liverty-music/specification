@@ -5,7 +5,7 @@ An AdmissionCode is what a fan's device shows as the entry QR code at the venue:
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
-| user | the User presenting the Tickets; must be the holder of each | required |
+| user | the User presenting the Tickets; must be the user of each | required |
 | event | the event the Tickets admit to | required |
 | tickets | the Tickets presented together, for same-time group entry | required, 1 to 10, each at most once; a Ticket not for the event is refused at admission |
 | signed time | when the device signed it, by the device's clock | required |

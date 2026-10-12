@@ -17,7 +17,7 @@ The page SHALL show the Organizer's name and the Artists it represents, read onl
 
 ### Requirement: Business details, read only
 
-The page SHALL show the Organizer's business details — legal name, representative name, business address, business phone number and contact email — read only, and SHALL say that Liverty Music entered them during vetting, that they are shown to fans on ticket sales as the seller disclosure (特商法 表記, the commercial transactions disclosure), and how to ask Liverty Music to change them. A missing detail SHALL be shown as 未登録 (not registered), with a note that sales cannot start until every detail is registered.
+The page SHALL show the Organizer's business details — legal name, representative name, business address, business phone number and contact email — read only, and SHALL say that Liverty Music entered them during vetting, that they are shown to fans on ticket sales as the business details disclosure (特商法 表記, the commercial transactions disclosure), and how to ask Liverty Music to change them. A missing detail SHALL be shown as 未登録 (not registered), with a note that sales cannot start until every detail is registered.
 
 #### Scenario: Complete details
 

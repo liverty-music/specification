@@ -46,15 +46,15 @@ win**.
   building). The government **デジタル認証アプリ** (`VerifyForDigitalIdentificationApp`)
   is a **separate, unused path** — do not treat it as ours.
 - **MVP = JPKI-only; the 運転免許証 (Verify CardInfo) fallback is POST-MVP.** In the
-  MVP a verification-required event admits only JPKI (card-holders). The 任意/平等
-  fairness concern of excluding non-card-holders is a **legal-review (task 0.2)**
+  MVP a verification-required event admits only JPKI (fans with a My Number Card). The 任意/平等
+  fairness concern of excluding fans without one is a **legal-review (task 0.2)**
   item and is already the sanctioned per-event "JPKI-only" option below. The proto
   keeps `DRIVER_LICENCE`/`WEAK`/`VERIFIED_ANY` for forward-compat, but no
   `pocketsign.cardinfo` integration and no fallback UI ship in the MVP.
 - **MVP stores only `provider_user_id`; verified-name (基本4情報) binding is POST-MVP.** The
   MVP retains only the dedupe key and does **not** retrieve/verify 基本4情報 (氏名).
-  The covered-ticket 本人確認 in the MVP is ④ lottery-application's **self-declared
-  name+contact** (`ApplicantIdentity`), which already satisfies the 特定興行入場券
+  The covered-ticket 本人確認 in the MVP is ④ LotteryEntry's **self-declared
+  personal details** (full name and phone number), which already satisfies the 特定興行入場券
   requirement — **チケット不正転売禁止法 does not mandate JPKI-level name verification**
   (entry 本人確認 is largely 努力義務). Retrieving 基本4情報 via the JPKI **署名用証明書 +
   PocketSign ConsentService** to bind a *verified* name is a stronger post-MVP
@@ -123,7 +123,7 @@ win**.
   change), so a licence-fallback account has a **weaker 1-person guarantee**. Per
   event the organizer chooses: (a) allow the licence fallback (flag/limit those
   accounts), or (b) for the highest-demand shows **require JPKI** (no weaker
-  fallback), accepting card-holder exclusion as a deliberate trade-off. Rejected:
+  fallback), accepting the exclusion of fans without a My Number Card as a deliberate trade-off. Rejected:
   an attestation-only fallback with no dedupe (unlimited-account escape hatch).
 - **Relationship to ④ 本人確認.** Where verification is required, the
   **IdentityVerification's verified name is authoritative** for the covered ticket; ④'s
@@ -135,10 +135,10 @@ win**.
 - **Phone-embedded credential.** Support both the **physical card (NFC+PIN)** and the
   **スマホ用電子証明書** (Android 令和5年5月; iPhone 2025) — better completion, mitigates
   the ~81%-penetration/drop-off concern.
-- **Anti-resale scope (corrected overclaim).** Account eKYC kills
-  one-person-many-accounts, but does **NOT** stop a verified buyer reselling/lending
-  a ticket — the PoC's zero-resale needed eKYC **+ gate 顔認証**. That entry layer is
-  the separate `face-auth-entry` tier; do not claim eKYC alone delivers zero resale.
+- **Anti-resale scope (corrected overclaim).** Account identity verification kills
+  one-person-many-accounts, but does **NOT** stop a verified fan reselling/lending
+  a ticket — the PoC's zero-resale needed identity verification **+ gate 顔認証**. That entry layer is
+  the separate `face-auth-entry` tier; do not claim identity verification alone delivers zero resale.
 - **Entity `IdentityVerification`** — `user_id`, `method` (JPKI / driver-licence),
   `provider_user_id` (the verification provider's ID for the User), a
   `dedupe_strength` flag (STRONG for JPKI / WEAK for licence), `verify_time`,

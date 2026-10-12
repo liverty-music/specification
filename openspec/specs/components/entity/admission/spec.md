@@ -1,7 +1,7 @@
 # components/entity/admission Specification
 
 ## Purpose
-An Admission is the permanent note that a Ticket was let in at the venue: which Ticket, through which ReceptionLink and when. It is stored together with the Ticket's admit time and never changed or removed, so that it can later serve as evidence that the holder attended, for example against a chargeback.
+An Admission is the permanent note that a Ticket was let in at the venue: which Ticket, through which ReceptionLink and when. It is stored together with the Ticket's admit time and never changed or removed, so that it can later serve as evidence that the Ticket's user attended, for example against a chargeback.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|

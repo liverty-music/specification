@@ -78,7 +78,7 @@ Every response of the fan concert service that returns Concerts SHALL also retur
 - **WHEN** ListByArtists returns a Concert whose first-party Series has a cover image
 - **THEN** the Series returned with it carries the cover image, as Get does
 
-#### Scenario: Seller shown for a first-party concert
+#### Scenario: Organizer shown for a first-party concert
 
 - **WHEN** Get returns a Concert whose Series belongs to an Organizer with business details and a platform fee rate
 - **THEN** the Series returned with it carries the Organizer's id, name and business details, and no platform fee rate

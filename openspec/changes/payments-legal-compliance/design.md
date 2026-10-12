@@ -1,6 +1,6 @@
 ## Context
 
-See proposal.md — Why. Paid ticketing (⑤) is implemented and verified in Stripe test mode; livemode is gated by JP legal/tax/compliance obligations. These obligations are cross-cutting: the consumer disclosures (総額表示, 特商法 最終確認) render on UI owned by ④ (`lottery-application` apply/checkout) and ⑤ (`ticket-purchase-and-issuance` Order views); the escrow/payout execution is `ticket-settlement-and-payout`; the legal opinions and tax registration are external actions. No proto/RPC surface changes.
+See proposal.md — Why. Paid ticketing (⑤) is implemented and verified in Stripe test mode; livemode is gated by JP legal/tax/compliance obligations. These obligations are cross-cutting: the consumer disclosures (総額表示, 特商法 最終確認) render on UI owned by ④ (the lottery entry and checkout screens) and ⑤ (`ticket-purchase-and-issuance` Order views); the escrow/payout execution is `ticket-settlement-and-payout`; the legal opinions and tax registration are external actions. No proto/RPC surface changes.
 
 ## Goals / Non-Goals
 

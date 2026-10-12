@@ -7,7 +7,7 @@ only the technical shape and the *why* behind the decisions; it does not restate
 the research.
 
 This capability is **authored ahead of its dependencies**. It reuses primitives
-that are designed but **not yet specced or built**: ④ `lottery-application` (the
+that are designed but **not yet specced or built**: ④ LotteryEntry (the
 loser demand pool), ⑤ `ticket-purchase-and-issuance` (Order/Payment/Ticket +
 Stripe Connect 収納代行 + refunds — see [`payments-design.md`](../../../docs/payments-design.md),
 issue #778), and ⑥ `ticket-wallet-and-checkin` (issue / void / rotating-QR /
@@ -76,7 +76,7 @@ gated on them shipping.
   general public (join order); a seat is offered **sequentially** with a
   per-candidate timed window, and re-queues (not dead) if it exhausts the queue
   before the deadline. First-come was rejected (thundering herd + unfair to
-  earliest applicants); waitlist-only was refined to a public marketplace to
+  the earliest fans); a losers-only queue was refined to a public marketplace to
   recover the discoverability incumbents expose.
 - **D6 — Unsold = return-only, no organizer buyback in MVP.** Return the ticket to
   the listing's user; a buyback safety net (チケプラTrade) is deferred.

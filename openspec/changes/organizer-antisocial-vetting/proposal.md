@@ -1,6 +1,6 @@
 ## Why
 
-A ticketing marketplace that collects money and onboards sellers is expected
+A ticketing marketplace that collects money and onboards Organizers is expected
 (暴力団排除条例, all 47 prefectures; card acquirers demand it) to **exclude
 反社会的勢力 (antisocial forces)** from its Organizer relationships. Our
 current organizer onboarding (`organizer-accounts`) vets and provisions an
@@ -36,7 +36,7 @@ self-serve organizer onboarding.
 ### Modified Capabilities
 
 - `components/usecase/organizer/deactivate`: Post-onboarding antisocial discovery triggers deactivation
-- `components/usecase/organizer-connected-account/get-or-create-onboarding`: Organizer onboarding agreement includes an antisocial-forces exclusion clause
+- `components/usecase/payout-account/get`: Organizer onboarding agreement includes an antisocial-forces exclusion clause
 
 ## Impact
 

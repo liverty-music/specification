@@ -21,7 +21,7 @@ Current state, verified 2026-10-10 on backend `main` (d53780d) and specification
 - **No RPC or screen exposes a discovered sale.**
   - `entity/v1/sales_phase.proto` is imported by no RPC proto (grep over `proto/`).
   - The backend never references `entityv1.SalesPhase` or `entityv1.SalesMethod`.
-  - The frontend's only "sales phase" hits are the organizer lottery editor (`LotterySalesPhase`).
+  - The frontend's only "sales phase" hits are the organizer lottery editor's former type name, since renamed to the TicketSale vocabulary.
   - The fan sees discovered sales only as push notifications and the Notification records behind them.
 - **Infrastructure names**:
   - NATS stream `SALES_PHASE` with subjects `SALES_PHASE.discovered` and `SALES_PHASE.reminder_due` (`internal/entity/event_data.go:30-35`, `internal/infrastructure/messaging/streams.go:91`, `cloud-provisioning/k8s/namespaces/nats/base/jetstream/stream-sales-phase.yaml`).
@@ -78,14 +78,14 @@ Constraint changes:
 - `name` becomes nullable, with `CHECK (discovered_at IS NOT NULL OR name IS NOT NULL)` and `CHECK (discovered_at IS NULL OR name IS NULL)`.
 - `end_at` becomes nullable, with `CHECK (end_at IS NOT NULL OR (discovered_at IS NOT NULL AND method = FirstCome))`.
 - The window-length CHECK of unify, if one exists, gets `discovered_at IS NOT NULL OR ...`.
-- `CHECK (discovered_at IS NULL OR (verification_requirement = None AND drawn_at IS NULL))`.
+- `CHECK (discovered_at IS NULL OR (verification_requirement = None AND draw_at IS NULL))`.
 - `uq_ticket_sales_discovered_convergence UNIQUE (series_id, method, start_date_jst) WHERE discovered_at IS NOT NULL` replaces `uq_sales_phases_series_method_start_date`.
   - **Why partial:** an Organizer may run two Lottery sales of one Series that open on the same day for different events. Unify D4 only forbids overlap per event. The discovery key must not forbid that.
   - The upsert uses `ON CONFLICT (series_id, method, start_date_jst) WHERE discovered_at IS NOT NULL DO UPDATE`. This keeps today's single-statement convergence (`rdb/sales_phase_repo.go:103`).
 
 ### D3 — The rules unify put on every sale apply to an Organizer's sale
 
-`components/entity/ticket-sale` "A lottery window lasts 1 to 14 days", "A sale has a name" and "Required times depend on the method and the kind of sale" scope these rules to an Organizer's sale: the 1-to-14-day lottery window, the required name and the required end time for FirstCome. They are rules for selling on the platform. The 1-14 days come from the card hold and the draw, and the end time from checkout. None of them applies to a sale the platform only reports. `first-come-ticket-sales`' rule that the end comes no later than the event's start time is on the Organizer's FirstCome sale and its TicketTypes, so it is untouched.
+`components/entity/ticket-sale` "A lottery window lasts 1 to 14 days", "A sale has a name" and "Required times depend on the method and the kind of sale" scope these rules to an Organizer's sale: the 1-to-14-day lottery window, the required name and the required end time for FirstCome. They are rules for selling on the platform. The 1-14 days come from the card authorization and the draw, and the end time from checkout. None of them applies to a sale the platform only reports. `first-come-ticket-sales`' rule that the end comes no later than the event's start time is on the Organizer's FirstCome sale and its TicketTypes, so it is untouched.
 
 In Go, `TicketSale.Validate` takes the kind (derived from `discovered_at` / the Series) and checks the matching rule set. `SalesPhaseCandidate.Validate` (`sales_phase.go`) becomes the discovered branch.
 
@@ -96,7 +96,7 @@ In Go, `TicketSale.Validate` takes the kind (derived from `discovered_at` / the 
 - **Organizer's Lottery sale:** the end time. Its draw runs within 1 minute after it (`DrawDueSales`, unify D6), and `GetResult` answers from then on.
 - An Organizer's sale never stores a lottery result time. A stored value later than the draw would contradict what `GetResult` shows.
 - `RESULT_DAY` is anchored on the calendar day of the result time (`entity/ticket-sale-reminder`). For an Organizer's lottery it is due at 09:00 on the closing day, with the text "本日{end}に抽選結果発表!!".
-- **Rejected: a reminder after the draw** ("results are out"). It needs a new anchor (the drawn time), a new copy row and a scan over drawn sales. Assumptions to confirm.
+- **Rejected: a reminder after the draw** ("results are out"). It needs a new anchor (the draw time), a new copy row and a scan over drawn sales. Assumptions to confirm.
 
 ### D5 — Reminders for the Organizer's sales reuse the scan
 
@@ -148,8 +148,8 @@ The subject changes (phase → sale, and reminders now cover the Organizer's sal
 ### D9 — Sequencing
 
 1. `unify-ticket-sales` and `first-come-ticket-sales` archive first. The MODIFIED deltas on `entity/ticket-sale`, `entity/ticket-sale/list-due-for-draw` and `usecase/notification/deliver` copy their text. `openspec validate` already reports that archive would refuse those two deltas until `entity/ticket-sale` exists on main.
-2. When they archive, task 0.1 re-copies each MODIFIED block from the then-current main spec. `first-come-ticket-sales` rewrites its deltas onto unify's model (unify task 8.1), so "Purchase notification requested" in `notification/deliver` may change from "buyer" to "user".
-3. `concert/delete-and-suppress` and `user/delete` also mention the lottery sales phase and ticket applications that unify removes, and unify has no delta for them. This change writes their post-unify wording ("TicketTypes … with their lottery entries", "lottery entries"). If unify adds its own deltas first, this change keeps only the TicketSale and reminder parts (task 0.1). `organizer/delete` ("each Event's lottery sales phases, ticket applications", spec.md:13) has the same gap. That one is unify's to fix and is reported, not changed here.
+2. When they archive, task 0.1 re-copies each MODIFIED block from the then-current main spec. `first-come-ticket-sales` rewrites its deltas onto unify's model (unify task 8.1), so "Purchase notification requested" in `notification/deliver` now names the Order's user.
+3. `concert/delete-and-suppress` and `user/delete` also mention the lottery sales and lottery entries as named before unify, and unify has no delta for them. This change writes their post-unify wording ("TicketTypes … with their lottery entries", "lottery entries"). If unify adds its own deltas first, this change keeps only the TicketSale and reminder parts (task 0.1). `organizer/delete` had the same gap; its wording is now the TicketSale and LotteryEntry vocabulary on main.
 
 ## Risks / Trade-offs
 
@@ -158,14 +158,14 @@ The subject changes (phase → sale, and reminders now cover the Organizer's sal
 - [Turning reminders on for the Organizer's sales at deploy] → A sale already open but not past its end gets `APPLY_OPEN` on the first scan. Only test sales exist, so this is accepted.
 - [Organizer's lottery: two pushes on the closing day] (`APPLY_CLOSE_24H` at 08:00 when the end is late evening, and `RESULT_DAY` at 09:00) → They say different things. Assumptions to confirm.
 - [Organizer sale invariants are kept by the application, not the database] (D1) → Only two writers exist (`Create`, `UpsertDiscovered`), each with a contract test for the refusal.
-- [The draw job could pick up discovered lotteries] → `ListDueForDraw` adds `discovered_at IS NULL`, covered by the scenario "Discovered lottery has closed". Without it, the draw would set `drawn_at` on every discovered lottery and break the CHECK.
+- [The draw job could pick up discovered lotteries] → `ListDueForDraw` adds `discovered_at IS NULL`, covered by the scenario "Discovered lottery has closed". Without it, the draw would set `draw_at` on every discovered lottery and break the CHECK.
 
 ## Migration Plan
 
 1. Specification PR: delete `sales_phase.proto` and add the `ticket_sale.proto` doc comment. Release, then BSR gen.
 2. Backend PR with one Atlas migration, in one transaction:
    1. Alter `ticket_sales` as in D2.
-   2. `INSERT INTO ticket_sales (id, series_id, name, method, start_at, end_at, lottery_result_at, discovered_at, verification_requirement, drawn_at) SELECT id, series_id, NULL, CASE method WHEN 1 THEN <Lottery> WHEN 2 THEN <FirstCome> END, apply_start_at, apply_end_at, lottery_result_at, discovered_at, <None>, NULL FROM sales_phases`.
+   2. `INSERT INTO ticket_sales (id, series_id, name, method, start_at, end_at, lottery_result_at, discovered_at, verification_requirement, draw_at) SELECT id, series_id, NULL, CASE method WHEN 1 THEN <Lottery> WHEN 2 THEN <FirstCome> END, apply_start_at, apply_end_at, lottery_result_at, discovered_at, <None>, NULL FROM sales_phases`.
    3. `ALTER TABLE sales_phase_reminders RENAME TO ticket_sale_reminders`, rename `sales_phase_id` → `ticket_sale_id`, and repoint its foreign key to `ticket_sales(id) ON DELETE CASCADE`. The ids match, so no row changes.
    4. `ALTER TABLE sales_phase_search_logs RENAME TO ticket_sale_searches`.
    5. `UPDATE notifications SET type = 'ticket_sale_announcement' WHERE type = 'sales_phase_announcement'`.

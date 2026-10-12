@@ -2,7 +2,7 @@
 
 ## Purpose
 
-OrderUseCase.IssueDueWins issues an Order and tickets for every Won TicketApplication that has none yet.
+OrderUseCase.IssueDueWins issues an Order and tickets for every Won LotteryEntry that has none yet.
 
 ## Requirements
 
