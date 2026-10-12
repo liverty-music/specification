@@ -83,4 +83,10 @@ message Event {
   // listed_venue_name is the venue name as the source listed it, preserved
   // separately from the normalised Venue.name.
   ListedVenueName listed_venue_name = 10;
+
+  // publish_state is where this event is in the organizer publish lifecycle:
+  // DRAFT, PUBLISHED or CANCELLED. Set by the server for an Event of a
+  // first-party series only; an Event of a discovered series leaves it
+  // PUBLISH_STATE_UNSPECIFIED. A Concert carries it through its event.
+  PublishState publish_state = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

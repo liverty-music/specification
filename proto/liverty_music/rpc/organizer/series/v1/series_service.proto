@@ -12,22 +12,28 @@ import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/artist.proto";
 import "liverty_music/entity/v1/concert.proto";
 import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/series.proto";
 import "liverty_music/entity/v1/series_image.proto";
 import "liverty_music/entity/v1/venue.proto";
 
 // SeriesService is the organizer-facing authoring surface: an authenticated
 // operator creates a first-party Series as an informational event page,
-// edits it while it is a draft, publishes it to fans, and manages its
-// lifecycle thereafter. A Series is a single show, a multi-day run, or a tour
-// with one or more dates; times live on each date, so a 2部制 day is two dates
+// edits it, publishes its dates to fans, corrects it after publish, and
+// cancels dates. A Series is a single show, a multi-day run, or a tour with
+// one or more dates; times live on each date, so a 2部制 day is two dates
 // under one Series.
 //
-// Create, Update, Publish and List return each Series together with its dates
-// as Concerts and, once each, every Artist those Concerts refer to. A Concert
-// carries only the id of its Series (through its Event) and the ids of its
-// Artists. A DRAFT Series' dates are returned as Concerts whose event id is
-// the draft date's id and whose artist ids are the Series' draft performers.
+// Each date is an Event with its own publish state: DRAFT, PUBLISHED or
+// CANCELLED (entity.v1.Event.publish_state). A new date starts DRAFT, and a
+// published Series can gain new DRAFT dates and publish them on their own.
+// The Series stores no state of its own; its publish_state is derived from
+// its Events.
+//
+// Create, Update, Publish and List return each Series together with every
+// one of its dates, DRAFT ones included, as Concerts and, once each, every
+// Artist those Concerts refer to. A Concert carries only the id of its Series
+// (through its Event), its Event's publish state, and the ids of its Artists.
 //
 // The caller's Organizer is resolved from the token (the identity provider
 // organization the token is scoped to), so requests never carry an
@@ -37,15 +43,15 @@ import "liverty_music/entity/v1/venue.proto";
 // org-scoped from the token's role claim, and failures that would concern
 // another org's series never reveal whether such a series exists.
 //
-// Publishing a PUBLIC series emits exactly one CONCERT.created per series
-// (carrying the newly-published event ids), which drives the existing follower
-// push; DRAFT and UNLISTED series never emit. UNLISTED series are reachable
-// only through a signed tokenized share URL and are excluded from discovery,
-// lists, and notifications.
+// Publishing dates of a PUBLIC series announces only the newly published
+// Events to the followers of each performer; DRAFT dates and UNLISTED series
+// never announce. UNLISTED series are reachable only through a signed
+// tokenized share URL and are excluded from discovery, lists, and
+// notifications.
 service SeriesService {
-  // Create authors a new first-party series in the DRAFT state: it mints a
-  // Series (title, type, visibility, optional description) with its
-  // performers and one or more Events (venue, date, optional start/open
+  // Create authors a new first-party series whose Events are all DRAFT: it
+  // mints a Series (title, type, visibility, optional description) with its
+  // performers and one or more DRAFT Events (venue, date, optional start/open
   // times). Nothing is announced to fans — a draft is visible only in the
   // organizer console until Publish. The venue of each event is the Venue
   // holding the event's picked place id, or a new Venue created from the map
@@ -64,53 +70,87 @@ service SeriesService {
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Create(CreateRequest) returns (CreateResponse);
 
-  // Update edits an existing series. While the series is a DRAFT this may
-  // change any authored field, add events, or change performers. Once
-  // PUBLISHED it is a correction: it revises the page in place and does NOT
-  // re-notify followers. The whole authoring payload is supplied and replaces
-  // the prior draft content.
+  // Update edits an existing series. The whole authoring payload is supplied
+  // and replaces the prior content, together or not at all. Each EventDraft
+  // with an event_id edits that Event of the series; one without it adds a new
+  // DRAFT Event; a DRAFT Event that is left out is removed. Nothing is
+  // announced, whether the series is a draft or has PUBLISHED Events.
   //
-  // Each event's venue is found or created from its picked place id exactly as
-  // in Create.
+  // While every Event is DRAFT, any authored field may change. Once the series
+  // has a PUBLISHED or CANCELLED Event, Update is a correction: the title,
+  // description, performers and each PUBLISHED Event's open time may change,
+  // and a PUBLISHED Event's start time may be set or changed while no
+  // TicketSale offers it. A new start time takes its slot again: a discovered
+  // Event at that slot is merged into the PUBLISHED Event, which keeps its id.
+  //
+  // Each new or DRAFT event's venue is found or created from its picked place
+  // id exactly as in Create. The date of a PUBLISHED or CANCELLED Event is not
+  // checked against the current day.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: A required field is missing or malformed (including an
-  //   event without a picked place id), a time is inconsistent, or the map
+  //   event without a picked place id), a time is inconsistent (e.g. open time
+  //   after start time, or a new or DRAFT event dated in the past), or the map
   //   catalog has no place with a given place id.
-  // - PERMISSION_DENIED: The series is not owned by the caller's Organizer, or
-  //   a requested performer is not represented. Non-revealing.
-  // - FAILED_PRECONDITION: The series has been CANCELLED (terminal).
+  // - PERMISSION_DENIED: The series does not exist or is not owned by the
+  //   caller's Organizer, or a requested performer is not represented.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: Nothing changes when
+  //   - a PUBLISHED or CANCELLED Event of the series is left out (a published
+  //     date is cancelled, not removed);
+  //   - a given event_id is not an Event of the series;
+  //   - a PUBLISHED Event's venue or date differs from the stored one;
+  //   - a CANCELLED Event differs from the stored one in any value;
+  //   - the series has a PUBLISHED or CANCELLED Event and the type, source page
+  //     or visibility differs from the stored one;
+  //   - a PUBLISHED Event's start time changes while a TicketSale offers it;
+  //   - a PUBLISHED Event's new start time lands on a suppressed slot or on an
+  //     Event of another first-party series.
   // - UNAVAILABLE: The map catalog could not be reached to read a new place.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Update(UpdateRequest) returns (UpdateResponse);
 
-  // Publish transitions a DRAFT series to PUBLISHED. For a PUBLIC series this
-  // emits exactly one CONCERT.created carrying the newly-published event ids,
-  // which notifies followers; publishing a further event under an
-  // already-published series emits once for only the new event id(s). UNLISTED
-  // series publish without emitting. On publish the natural-key upsert
-  // supersedes any matching discovered slot: a pending ConcertCandidate is
-  // dropped and an already-published discovered event is claimed (re-pointed to
-  // this series, kept by id, marked organizer-owned) without re-notifying.
+  // Publish publishes the named DRAFT Events of a series, or every DRAFT
+  // Event when none is named. A published series can publish a new date the
+  // same way; its other Events are unchanged. For a PUBLIC series each
+  // performer's followers are told about the newly published Events only;
+  // UNLISTED series announce nothing. An UNLISTED series gets a signed share
+  // token on its first publish and keeps it afterwards.
+  //
+  // At each Event's venue, date and start time, a discovered Event (or an
+  // Event of another series of the same Organizer) is claimed: it joins this
+  // series as PUBLISHED, kept by id with the fans tracking it, the DRAFT Event
+  // is removed, and the claimed Event is not announced. A pending
+  // ConcertCandidate of the series is dropped.
   //
   // Possible errors:
-  // - PERMISSION_DENIED: The series is not owned by the caller's Organizer.
-  //   Non-revealing.
-  // - FAILED_PRECONDITION: The series is already PUBLISHED with no new events,
-  //   is CANCELLED, or a target (venue, date, start time) slot is suppressed or
-  //   owned by a different organizer — the latter is routed to admin
-  //   reconciliation rather than taken over.
+  // - PERMISSION_DENIED: The series does not exist or is not owned by the
+  //   caller's Organizer. Non-revealing.
+  // - FAILED_PRECONDITION: Nothing is published when
+  //   - the title is blank, there is no performer, or an Event to publish has
+  //     no venue or no date;
+  //   - a named Event is not a DRAFT Event of the series;
+  //   - no Event is named and the series has no DRAFT Event;
+  //   - an Event's slot is suppressed, is held by another Organizer's Event
+  //     (routed to admin reconciliation rather than taken over), or is held by
+  //     a CANCELLED Event.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Publish(PublishRequest) returns (PublishResponse);
 
-  // Cancel marks a series CANCELLED. This is terminal: the series is dropped
-  // from every fan surface and cannot be re-published. A CONCERT.cancelled
-  // event is emitted so downstream consumers and caches can drop it.
+  // Cancel cancels the named Events of a series, or every PUBLISHED and DRAFT
+  // Event when none is named, together or not at all. A PUBLISHED Event
+  // becomes CANCELLED: it is dropped from fan lists, keeps its event page with
+  // a cancellation banner, and never changes again. A DRAFT Event is removed,
+  // never cancelled. A series left with no Event is removed. A
+  // CONCERT.cancelled event carrying the ids of the Events that became
+  // CANCELLED is emitted; none is emitted when only drafts were removed.
   //
   // Possible errors:
-  // - PERMISSION_DENIED: The series is not owned by the caller's Organizer.
-  //   Non-revealing.
-  // - FAILED_PRECONDITION: The series is already CANCELLED.
+  // - PERMISSION_DENIED: The series does not exist or is not owned by the
+  //   caller's Organizer. Non-revealing.
+  // - FAILED_PRECONDITION: Nothing changes when a named Event is not an Event
+  //   of the series or is already CANCELLED, or when no Event is named and the
+  //   series has no PUBLISHED or DRAFT Event.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Cancel(CancelRequest) returns (CancelResponse);
 
@@ -159,8 +199,8 @@ service SeriesService {
 }
 
 // EventDraft is one performance being authored under a series: its calendar
-// date, optional start and open times, and its venue. The venue is the map
-// place the operator picked from
+// date, optional start and open times, its venue and, for an Event that
+// already exists, its id. The venue is the map place the operator picked from
 // liverty_music.rpc.organizer.venue.v1.VenueService.Search; a typed name alone
 // is never saved.
 message EventDraft {
@@ -183,6 +223,10 @@ message EventDraft {
 
   // Optional. The door-open time; omitted when not yet announced.
   entity.v1.OpenTime open_time = 5;
+
+  // Optional. The Event of the series this entry edits, as returned in a
+  // Concert's event. Omitted for a new date, which is added as a DRAFT Event.
+  entity.v1.EventId event_id = 6;
 }
 
 // SeriesDraft is the authoring payload for a first-party series, shared by
@@ -232,14 +276,15 @@ message SeriesDraft {
 
 // CreateRequest carries the authoring payload for a new draft series.
 message CreateRequest {
-  // Required. The series to author. It is created in the DRAFT state.
+  // Required. The series to author. Its Events are created DRAFT.
   SeriesDraft draft = 1 [(buf.validate.field).required = true];
 }
 
 // CreateResponse returns the newly-created draft series with its dates.
 message CreateResponse {
-  // The created series, in the DRAFT state, including its authoring fields
-  // (description, cover image, visibility, publish state, organizer id).
+  // The created series, whose derived publish state is DRAFT, including its
+  // authoring fields (description, cover image, visibility, publish state,
+  // organizer id).
   entity.v1.Series series = 1 [(buf.validate.field).required = true];
 
   // The dates of the series, as Concerts in date order. Always contains at
@@ -273,16 +318,27 @@ message UpdateResponse {
   repeated entity.v1.Artist artists = 3 [(buf.validate.field).repeated.min_items = 1];
 }
 
-// PublishRequest identifies the series to publish.
+// PublishRequest identifies the series to publish and, optionally, which of
+// its DRAFT Events.
 message PublishRequest {
+  option (buf.validate.message).cel = {
+    id: "publish_request.distinct_events"
+    message: "event_ids must not repeat an event"
+    expression: "this.event_ids.map(e, e.value).unique()"
+  };
+
   // Required. The series to publish. It MUST be owned by the caller's
   // Organizer.
   entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
+
+  // Optional. The DRAFT Events of the series to publish. Empty publishes every
+  // DRAFT Event of the series.
+  repeated entity.v1.EventId event_ids = 2;
 }
 
-// PublishResponse returns the published series with its dates.
+// PublishResponse returns the series with its dates after the publish.
 message PublishResponse {
-  // The published series, including its authoring fields.
+  // The series, including its authoring fields.
   entity.v1.Series series = 1 [(buf.validate.field).required = true];
 
   // The dates of the series, as Concerts in date order. Always contains at
@@ -293,11 +349,22 @@ message PublishResponse {
   repeated entity.v1.Artist artists = 3 [(buf.validate.field).repeated.min_items = 1];
 }
 
-// CancelRequest identifies the series to cancel.
+// CancelRequest identifies the series to cancel and, optionally, which of its
+// Events.
 message CancelRequest {
+  option (buf.validate.message).cel = {
+    id: "cancel_request.distinct_events"
+    message: "event_ids must not repeat an event"
+    expression: "this.event_ids.map(e, e.value).unique()"
+  };
+
   // Required. The series to cancel. It MUST be owned by the caller's
   // Organizer.
   entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
+
+  // Optional. The PUBLISHED or DRAFT Events of the series to cancel. Empty
+  // cancels every PUBLISHED and DRAFT Event of the series.
+  repeated entity.v1.EventId event_ids = 2;
 }
 
 // CancelResponse is returned upon successful cancellation.
