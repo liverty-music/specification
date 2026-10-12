@@ -36,4 +36,4 @@ IsEventPublished SHALL report true when the Event's own publish state is PUBLISH
 ### Requirement: Published only when the series is PUBLISHED
 
 **Reason**: The Series no longer has a stored publish state; each Event has its own.
-**Migration**: Replaced by "Published only when the event is PUBLISHED" above. Callers (lottery and ticket sales, reception links) keep calling IsEventPublished and now get the answer for the one Event.
+**Migration**: Replaced by "Published only when the event is PUBLISHED" above. Callers (lottery and ticket sales, and Scanners through ScannerUseCase.Create) keep calling IsEventPublished and now get the answer for the one Event.

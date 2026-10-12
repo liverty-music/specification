@@ -75,7 +75,7 @@ These are written as REMOVED deltas:
   - `SeriesUseCase` and the organizer handler.
   - `Series.IsPubliclyVisible` and `Series.HasEventPage` move to the Event.
 - **frontend**:
-  - Organizer concert editor, concert list and reception links screen: read the per-Event state.
+  - Organizer concert editor, concert list and Scanners screen: read the per-Event state.
   - Fan event page: the banner follows the Event.
 - **Other in-flight changes**: `unify-ticket-sales` and `public-event-page` land first. `organizer-event-authoring-extensions` (scheduled publish) and `redesign-organizer-console` build on this change. See design.md "Sequencing".
 - **Production data**: only test data. The rows to migrate are counted read-only first.
