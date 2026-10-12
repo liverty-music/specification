@@ -1,6 +1,6 @@
 ## Purpose
 
-Verifies an authenticated fan's real-world identity using their national ID card, accepting either a physical card or a phone-embedded credential, and marks the account as identity-verified on success while discarding the raw certificate data it briefly examined.
+Verifies an authenticated fan's real-world identity using their national ID card, accepting either a physical card or a phone-embedded credential, and creates an Active IdentityVerification on success while discarding the raw certificate data it briefly examined.
 
 ## ADDED Requirements
 
@@ -19,15 +19,15 @@ credential)**.
  The system SHALL use
 **only JPKI verification data — never the 個人番号 (My Number)**, and SHALL **delete
 the raw certificate/response promptly** after the provider's verification call (retaining only
-the result — see the dedupe + privacy requirements). On success the account's
-`verification_level` SHALL become `IDENTITY_VERIFIED`; on failure/abandonment it
-SHALL remain `UNVERIFIED`. The verification provider is a 公的個人認証法 **認定プラットフォーム事業者**,
+the result — see the dedupe + privacy requirements). On success the system SHALL create an
+Active IdentityVerification for the User; on failure/abandonment it SHALL create none,
+and the fan stays unverified. The verification provider is a 公的個人認証法 **認定プラットフォーム事業者**,
 so the platform integrates as a 加盟事業者 **without its own 主務大臣認定**.
 
 #### Scenario: Verify via physical card or スマホJPKI
 
 - **WHEN** a fan completes the verification provider's challenge–response using either a physical マイナンバーカード (NFC+PIN) or the スマホJPKI credential, and the provider validates it
-- **THEN** the account becomes `IDENTITY_VERIFIED` and a `IdentityVerification` is created
+- **THEN** an Active IdentityVerification is created for the fan
 
 #### Scenario: My Number is never used and raw cert data is deleted
 
@@ -37,4 +37,4 @@ so the platform integrates as a 加盟事業者 **without its own 主務大臣�
 #### Scenario: Failed verification leaves the account unverified
 
 - **WHEN** verification fails or is abandoned
-- **THEN** the account stays `UNVERIFIED` and no `IdentityVerification` is created
+- **THEN** no IdentityVerification is created and the fan stays unverified
