@@ -95,7 +95,7 @@
 
   Verify component tests: Published event's venue is fixed, Additional date saved as a draft, Start time already on sale, and the existing cover image scenarios
 - [ ] 8.2 Organizer concert list (`components/infrastructure/organizer/web/route/concerts`): Publish offered while any event is DRAFT, Cancel while any event is PUBLISHED or DRAFT, and the lottery and ticket sale entry points gated on the event's own state; verify component tests: Published tour with a new date, Nothing left to publish, Organizer reaches lottery configuration from a published event, No lottery entry point for a draft event
-- [ ] 8.3 Reception links screen: read the event's own publish state instead of the Series'; verify its existing component tests pass with a DRAFT and a CANCELLED date of a PUBLISHED Series
+- [ ] 8.3 Scanner screen (formerly the reception links screen): read the event's own publish state instead of the Series'; verify its existing component tests pass with a DRAFT and a CANCELLED date of a PUBLISHED Series
 - [ ] 8.4 Fan event page (`components/infrastructure/fan/web/route/event`): the 中止 banner follows the Concert's `event.publish_state`, and a cancelled sibling date is marked 中止 in the date list; verify component tests: Shared link after cancellation, Other date of a partly cancelled tour
 - [ ] 8.5 Upgrade the generated clients to the 2.3 release, run `make check`, open the frontend PR citing the change, and merge; verify the production rollout is healthy
 
