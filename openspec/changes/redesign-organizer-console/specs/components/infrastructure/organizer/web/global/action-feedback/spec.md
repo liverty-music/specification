@@ -45,7 +45,7 @@ While an action started from a button is running, the button SHALL show a progre
 
 ### Requirement: Irreversible actions ask first and name the effect
 
-Before an action that cannot be undone or that affects people outside the console runs, the console SHALL ask for confirmation in a dialog whose title names the action and its object and whose text states the effect; the confirming button SHALL name the action (公開する, 中止する, 取り消す), and the other button SHALL be やめる (keep as is). The dialog SHALL take focus, SHALL keep focus inside it, SHALL close on Escape as やめる, and SHALL return focus to the control that opened it. These actions are: publishing an event (the performers' followers are notified and the event cannot return to draft), 中止 (cancelling) an event or a concert, creating a new share link for an unlisted concert (the previous link stops working), and revoking a scanner or revoking and reissuing it (the device using it stops working).
+Before an action that cannot be undone or that affects people outside the console runs, the console SHALL ask for confirmation in a dialog whose title names the action and its object and whose text states the effect; the confirming button SHALL name the action (公開する, 中止する, 取り消す), and the other button SHALL be やめる (Cancel in English). The dialog SHALL take focus, SHALL keep focus inside it, SHALL close on Escape as やめる, and SHALL return focus to the control that opened it. These actions are: publishing an event (the performers' followers are notified and the event cannot return to draft), 中止 (cancelling) an event or a concert, and revoking a scanner or revoking and reissuing it (the device using it stops working).
 
 #### Scenario: Publish asks first
 

@@ -4,7 +4,7 @@
 
 ### Requirement: Only owner-role operators enter, and they land on Home
 
-The organizer console SHALL guard its screens: an unauthenticated visitor is sent to sign-in, and an authenticated user is admitted only if the token's `organizer-console` project roles include `owner`; otherwise the console shows a page saying access is denied, with a sign-out action. The backend remains the source of truth for authorization; the guard is a gate for the screens. An admitted operator SHALL land on Home, and an address the console does not know SHALL open Home.
+The organizer console SHALL guard its screens: an unauthenticated visitor is sent to sign-in, and an authenticated user is admitted only if the token's `organizer-console` project roles include `owner`; otherwise the console shows a page saying access is denied, with a sign-out action. The backend remains the source of truth for authorization; the guard is a gate for the screens. An admitted operator SHALL land on the Home of their own Organizer, and an address the console does not know SHALL open that Home.
 
 #### Scenario: Unauthenticated visitor goes to sign-in
 
@@ -14,7 +14,7 @@ The organizer console SHALL guard its screens: an unauthenticated visitor is sen
 #### Scenario: Owner lands on Home
 
 - **WHEN** an authenticated operator whose token carries the `owner` role opens the console
-- **THEN** Home is shown
+- **THEN** the Home of the operator's Organizer is shown, at an address that names that Organizer
 
 #### Scenario: Account without the owner role
 
@@ -23,12 +23,12 @@ The organizer console SHALL guard its screens: an unauthenticated visitor is sen
 
 #### Scenario: Old or unknown address
 
-- **WHEN** an operator opens `lottery/status/abc` or any other address the console does not know
-- **THEN** Home is shown
+- **WHEN** an operator opens `lottery/status/abc`, `/concerts` or any other address the console does not know
+- **THEN** the Home of the operator's Organizer is shown
 
 ### Requirement: Persistent navigation around every screen
 
-Every console screen except sign-in and access denied SHALL be shown inside a frame with three destinations — ホーム (Home), 公演 (Concerts) and 設定 (Settings) — with the current destination marked, a top bar with the Liverty Organizer logo and the Organizer's name, and an account menu holding the language switch and サインアウト (sign out). Signing out SHALL end the session and show the sign-in page. Every screen SHALL belong to one destination: Home to ホーム; Concerts, a concert, the concert editor, an event and the sale editors to 公演; Settings to 設定.
+Every console screen except sign-in and access denied SHALL be shown inside a frame with three destinations — ホーム (Home), 公演 (Concerts) and 設定 (Settings) — with the current destination marked, the names Liverty Music and Organizer Console (in English in every language; no other or shortened product name), the Organizer's name, the represented Artist being worked on (a menu to change it when the Organizer represents two or more Artists), and an account menu holding the language switch and サインアウト (sign out). Signing out SHALL end the session and show the sign-in page. Every screen SHALL belong to one destination: Home to ホーム; Concerts, a concert, the concert editor, an event and the sale editors to 公演; Settings to 設定. 公演 SHALL open the concerts of the Artist being worked on: the Artist in the current address, else the Artist last opened on this device, else the first represented Artist by name.
 
 #### Scenario: Sign out from any screen
 
@@ -39,6 +39,16 @@ Every console screen except sign-in and access denied SHALL be shown inside a fr
 
 - **WHEN** an operator is on the Sales tab of an event
 - **THEN** 公演 is marked as the current destination
+
+#### Scenario: Product name in Japanese
+
+- **WHEN** the console is shown in Japanese
+- **THEN** the top of the frame reads Liverty Music and Organizer Console, and no other product name appears
+
+#### Scenario: Change the Artist
+
+- **WHEN** the Organizer XX Records represents Band A and Band B, an operator works on Band A and chooses Band B from the Artist menu
+- **THEN** the concerts of Band B are shown and 公演 opens them from now on
 
 ### Requirement: Navigation bar on a phone, navigation rail from 600 px
 
@@ -61,7 +71,7 @@ When the window is narrower than 600 px the destinations SHALL be shown in a nav
 
 ### Requirement: No screen is reachable only by its address
 
-Every screen below a destination SHALL show a breadcrumb of its parents up to the destination (for example 公演 › XX Tour 2026 › 11月3日(火)), each part a link except the current page. In a window narrower than 600 px the breadcrumb SHALL collapse to one link back to the parent. Every screen SHALL be reachable by navigation from its destination: a concert from Concerts, an event from its concert, a sale editor from its event's Sales tab.
+Every screen below a destination SHALL show a breadcrumb of its parents up to the destination (for example 公演 › XX Tour 2026 › 11月3日(火)), each part a link except the current page. In a window narrower than 600 px the breadcrumb SHALL be replaced by a back arrow in the top bar that leads to the parent. Every screen SHALL be reachable by navigation from its destination: a concert from Concerts, an event from its concert, a sale editor from its event's Sales tab.
 
 #### Scenario: Breadcrumb on an event
 
@@ -71,12 +81,36 @@ Every screen below a destination SHALL show a breadcrumb of its parents up to th
 #### Scenario: Breadcrumb on a phone
 
 - **WHEN** the same page is opened in a 390 px wide window
-- **THEN** a single link ‹ XX Tour 2026 leads back to the concert
+- **THEN** a back arrow in the top bar leads back to XX Tour 2026
 
 #### Scenario: Every screen reached by navigation
 
 - **WHEN** an operator starts at Home
 - **THEN** they can reach any concert, event, Sales tab, Reception tab, sale editor and Settings by selecting links, without typing an address
+
+### Requirement: Addresses name the Organizer and the Artist
+
+Every console address below sign-in SHALL start with the operator's Organizer (`/organizers/<organizer id>`), and every address of the 公演 destination SHALL continue with a represented Artist (`/artists/<artist id>/series/...`), so a copied address opens the same screen for any operator of the same Organizer. A concert SHALL open under each represented Artist who performs in it, and SHALL be not found under any other Artist. An address naming another Organizer SHALL show that the address belongs to another Organizer, with サインアウト to switch accounts, and SHALL show none of its data; the backend stays the source of truth for what the operator may read.
+
+#### Scenario: Copied address
+
+- **WHEN** an operator copies the address of the Sales tab of the 3 November event of XX Tour 2026 and another operator of the same Organizer opens it
+- **THEN** the same Sales tab opens
+
+#### Scenario: Co-headlined concert
+
+- **WHEN** Band A and Band B, both represented by XX Records, perform in XX × YY 2026
+- **THEN** the concert is listed in the concerts of each, opens under either Artist's address, and its breadcrumb follows the Artist in the address
+
+#### Scenario: Another Organizer's address
+
+- **WHEN** an operator of XX Records opens an address that names another Organizer
+- **THEN** the page says the address belongs to another Organizer and offers サインアウト, and no console screen opens
+
+#### Scenario: No represented Artist yet
+
+- **WHEN** an operator of an Organizer that represents no Artist selects 公演
+- **THEN** the page says no Artist is represented yet and that Liverty Music adds Artists on request
 
 ## REMOVED Requirements
 

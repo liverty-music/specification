@@ -55,11 +55,13 @@ message VenueCandidate {
   // The map place id; sent back as EventDraft.place_id when picked.
   entity.v1.PlaceId place_id = 1 [(buf.validate.field).required = true];
 
-  // The place's canonical name, in Japanese when the map catalog has one.
+  // The place's name as the map catalog suggests it for the typed text, in
+  // Japanese when the catalog has one.
   entity.v1.VenueName name = 2 [(buf.validate.field).required = true];
 
-  // The place's formatted address as the map catalog gives it, shown so the
-  // operator can tell same-named places apart.
+  // The rest of the place's description as the map catalog suggests it
+  // (usually the address without the postal code), shown so the operator can
+  // tell same-named places apart.
   string address = 3 [(buf.validate.field).string = {
     min_len: 1
     max_len: 300

@@ -8,12 +8,12 @@ The organizer console page of one event (one date of a concert): its date, venue
 
 ### Requirement: The event header and its actions
 
-The page SHALL show the event's date and start time in Japan time, its venue and its publish state as a labelled badge, and SHALL offer the actions that apply to the event's state: 公開する (publish) for a draft event, which publishes this date only, 中止する (cancel) for an event that is not cancelled, and 編集 (edit), which opens the concert editor. Publishing and cancelling SHALL ask for confirmation first, naming the effect (for a draft date, that 中止する removes it); the publish confirmation SHALL say that publishing this date alone notifies followers for this date, and point to the concert page to publish several dates with one notification, and on success the page SHALL show the new state and confirm it in the snackbar. A cancelled event SHALL show that it is cancelled and offer no action. The page SHALL have two tabs, 販売 (Sales) and 受付 (Reception), each with its own address so a tab can be reopened or shared; the page opens on 販売. An event of another Organizer, or one that does not exist, SHALL show that the event was not found with a link to its concert or to Concerts.
+The page SHALL show the event's date and start time in Japan time, its venue and its publish state as a labelled badge, and SHALL offer the actions that apply to the event's state: 公開する (publish) for a draft event, which publishes this date only, as the page's main action, and, in a menu of further actions, 中止する (cancel) for an event that is not cancelled and 公演を編集 (edit the concert), which opens the concert editor. Publishing and cancelling SHALL ask for confirmation first, naming the effect (for a draft date, that 中止する removes it); the publish confirmation SHALL say that publishing this date alone notifies followers for this date, and point to the concert page to publish several dates with one notification, and on success the page SHALL show the new state and confirm it in the snackbar. A cancelled event SHALL show that it is cancelled and offer no action. The page SHALL have two tabs, 販売 (Sales) and 受付 (Reception), each with its own address so a tab can be reopened or shared; the page opens on 販売. An event of another Organizer, or one that does not exist, SHALL show that the event was not found with a link to its concert or to Concerts.
 
 #### Scenario: Draft event
 
 - **WHEN** an operator opens a draft event of XX Tour 2026 on 3 November at Zepp Haneda
-- **THEN** the header shows 11月3日(火) 18:00 JST · Zepp Haneda with the badge 下書き and offers 公開する, 中止する and 編集
+- **THEN** the header shows 11月3日(火) 18:00 JST · Zepp Haneda with the badge 下書き and offers 公開する, with 中止する and 公演を編集 in its menu
 
 #### Scenario: Publish confirmed
 
@@ -24,6 +24,20 @@ The page SHALL show the event's date and start time in Japan time, its venue and
 
 - **WHEN** an operator opens the Reception tab's address directly after signing in
 - **THEN** the event page opens with 受付 selected
+
+### Requirement: The fan page of a published date
+
+For a published date of a PUBLIC concert, the page SHALL show the address of the date's fan event page (`/events/<event id>` on the fan app) with a copy action, so the operator can share it. A draft or cancelled date, and any date of an UNLISTED concert, SHALL show no fan address, because fans cannot open it.
+
+#### Scenario: Public date
+
+- **WHEN** an operator opens the published 3 November event of the PUBLIC concert XX Tour 2026
+- **THEN** the page shows the fan page address of that event, and copying puts it on the clipboard
+
+#### Scenario: Unlisted concert
+
+- **WHEN** an operator opens a published event of an UNLISTED concert
+- **THEN** no fan page address is shown
 
 ### Requirement: The Sales tab explains a missing prerequisite
 

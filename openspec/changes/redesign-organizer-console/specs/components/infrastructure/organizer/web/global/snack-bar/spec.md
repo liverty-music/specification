@@ -8,12 +8,12 @@ The organizer console's single place for the result of an action: a short messag
 
 ### Requirement: One snackbar at a time, at the bottom of the window
 
-The console SHALL show the result of an action (saved, published, link issued, failed) in one snackbar area at the bottom of the window, above the navigation bar on a phone. A new message SHALL replace the one shown. The snackbar SHALL be announced to screen readers without moving the keyboard focus, and SHALL never cover a dialog's buttons.
+The console SHALL show the result of an action (saved, published, link issued, failed) in one snackbar area at the bottom of the window, above the navigation bar on a phone. A new message SHALL replace the one shown. A message SHALL be text, with no icon, and SHALL follow a language switch while it is shown. The snackbar SHALL be announced to screen readers without moving the keyboard focus, and SHALL never cover a dialog's buttons.
 
 #### Scenario: Two results in a row
 
-- **WHEN** an operator saves a concert and then copies a share link within 2 seconds
-- **THEN** the save message is replaced by the copy message and only one snackbar is shown
+- **WHEN** an operator publishes an event and then copies its fan page address within 2 seconds
+- **THEN** the publish message is replaced by the copy message and only one snackbar is shown
 
 #### Scenario: Phone layout
 

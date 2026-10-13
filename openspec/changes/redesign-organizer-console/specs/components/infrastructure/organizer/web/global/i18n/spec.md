@@ -25,9 +25,14 @@ Every label, message and error the console shows SHALL come in Japanese and in E
 - **WHEN** an operator switches the language to English from the account menu
 - **THEN** every text on the page changes to English without a reload, the page declares English, and the next visit on this device opens in English
 
+#### Scenario: Every text follows a switch
+
+- **WHEN** an operator on Settings switches from English to Japanese, and then opens the concert editor
+- **THEN** the business detail labels, the account menu's mark on the chosen language, the concert type choices and every option list are in Japanese
+
 ### Requirement: Dates and times in Japan time
 
-Every date and time the console shows SHALL be in Japan time (Asia/Tokyo) with the label JST, whatever the device's time zone, and formatted for the current language (for example `11月3日(火) 18:00 JST` in Japanese and `Tue, Nov 3, 18:00 JST` in English). Every date and time an operator enters SHALL be read as Japan time, and the field SHALL say JST next to it.
+Every date and time the console shows SHALL be in Japan time (Asia/Tokyo) with the label JST, whatever the device's time zone, and formatted for the current language (for example `11月3日(火) 18:00 JST` in Japanese and `Tue, Nov 3, 18:00 JST` in English). Every date and time an operator enters SHALL be read as Japan time, and the field SHALL say JST next to it. Every time an operator enters, in any console editor, SHALL be entered as an hour from 00 to 23 and a minute in steps of 5, with no AM or PM, whatever the device's clock setting.
 
 #### Scenario: Operator abroad
 
@@ -38,6 +43,11 @@ Every date and time the console shows SHALL be in Japan time (Asia/Tokyo) with t
 
 - **WHEN** an operator whose device is set to London time enters a sale start of 2026-10-10 12:00 in a field marked JST
 - **THEN** the sale starts at 12:00 Japan time, not 12:00 London time
+
+#### Scenario: Device on a 12-hour clock
+
+- **WHEN** an operator whose device shows times as 6:00 PM opens a sale window field
+- **THEN** the field offers hours 00 to 23 and minutes in steps of 5, with no AM or PM
 
 ### Requirement: Prices in yen with separators
 
