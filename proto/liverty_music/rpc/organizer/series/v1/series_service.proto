@@ -208,11 +208,15 @@ message EventDraft {
   // as the event's listed venue name.
   entity.v1.VenueName venue_name = 1 [(buf.validate.field).required = true];
 
-  // Required. The place id of the candidate the operator picked from
-  // VenueService.Search; the operator never types it. The Venue holding this
-  // place id is used, or a new Venue is created from the map catalog's place
-  // (name, coordinates and admin area). There is no resolution by name.
-  entity.v1.PlaceId place_id = 2 [(buf.validate.field).required = true];
+  // The place id of the candidate the operator picked from
+  // VenueService.Search; the operator never types it. Required for a new date
+  // and for a DRAFT Event: the Venue holding this place id is used, or a new
+  // Venue is created from the map catalog's place (name, coordinates and admin
+  // area), and there is no resolution by name; Create and Update fail with
+  // INVALID_ARGUMENT without it. Not read for a PUBLISHED or CANCELLED Event,
+  // which keeps its Venue, so a date published before venues were picked can
+  // still be corrected.
+  entity.v1.PlaceId place_id = 2;
 
   // Required. The calendar date of this performance in the venue's local
   // timezone.

@@ -63,6 +63,20 @@ Saving SHALL show progress in the save button and ignore repeated presses. A suc
 - **WHEN** an operator saves without a performer
 - **THEN** the error is shown next to the performers and focus moves there
 
+### Requirement: Visibility is chosen before publishing
+
+The editor SHALL offer the concert's visibility as a choice of two, each with its effect: 公開 (PUBLIC: shown in fan lists, and followers are notified when it is published) and 限定公開 (UNLISTED: shown only through its share link, and no follower is notified). A new concert SHALL start as 公開. Once the concert has a published or cancelled date, the visibility SHALL be shown as fixed.
+
+#### Scenario: Unlisted concert created
+
+- **WHEN** an operator creates a concert and chooses 限定公開
+- **THEN** the concert is saved as UNLISTED and its page offers a share link once it is published
+
+#### Scenario: Visibility fixed after publish
+
+- **WHEN** an operator edits a concert with a published date
+- **THEN** the visibility is shown and cannot be changed
+
 ## MODIFIED Requirements
 
 ### Requirement: A new cover image is previewed while it is processed

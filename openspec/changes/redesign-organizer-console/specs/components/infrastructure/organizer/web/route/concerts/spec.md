@@ -41,3 +41,10 @@ When the Organizer has no concert, the screen SHALL say so and offer 公演を�
 
 **Reason**: Sales are now reached per event: the concert page lists its events and each event page has a Sales tab with the lottery entry. The concerts list no longer carries per-event actions.
 **Migration**: The entry point is specified in `components/infrastructure/organizer/web/route/event` ("The Sales tab explains a missing prerequisite", "Start a lottery from the Sales tab"); a draft event still cannot start a sale.
+
+### Requirement: Publish while a concert has draft dates
+
+**Reason**: Publishing notifies followers once per publish, so a concert's dates are published together from its concert page, where the operator sees which dates go out; one date at a time is published from its event page. Actions on list rows also made an unintended notification one mis-tap away. The list is for finding a concert and seeing its state.
+
+**Migration**: Publish and cancel of a whole concert are specified in `components/infrastructure/organizer/web/route/concert` ("Publish or cancel the concert's dates together"); one date's in `components/infrastructure/organizer/web/route/event` ("The event header and its actions"). The list keeps each concert's publish state as a labelled badge.
+
