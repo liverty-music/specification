@@ -64,8 +64,14 @@ enum VerificationRequirement {
 // its name, how tickets are allocated, the window in which fans take part and
 // whether they must hold an Active IdentityVerification. What it offers for
 // each event is a TicketType. Two sales of one event never overlap (checked
-// server-side). It is distinct from SalesPhase, which records sales announced
-// elsewhere.
+// server-side).
+//
+// This message carries an Organizer's sale only. A discovered sale (a sale
+// announced on an artist's official pages for a Series without an Organizer)
+// is also stored as a TicketSale on the server, but it is never returned over
+// RPC: it reaches fans only as push notifications. That is why `name` and
+// `sale_end_time` stay required here even though a discovered sale has no name
+// and a discovered first-come sale may have no end time.
 message TicketSale {
   // The sale window must end after it starts.
   option (buf.validate.message).cel = {
