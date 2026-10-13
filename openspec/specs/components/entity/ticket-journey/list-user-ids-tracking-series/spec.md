@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Returns the fans who are tracking any event of a series, which is the audience that hears about that series' ticket sales phases.
+Returns the fans who are tracking any event of a series, which is the audience that hears about that series' discovered ticket sales.
 
 ## Requirements
 

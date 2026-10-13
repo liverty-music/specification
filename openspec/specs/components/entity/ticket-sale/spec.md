@@ -1,23 +1,26 @@
 # components/entity/ticket-sale Specification
 
 ## Purpose
-A TicketSale is the platform's own sale opportunity for some or all events of an Organizer's Series, such as a fan-club presale or a general sale (受付): its name, how tickets are allocated, the window in which fans take part and whether they must hold an Active IdentityVerification. What it offers for each event - price, quantity, per-account limit and, first come, first served, the stock - is a TicketType. It is distinct from the SalesPhase entity, which records sales announced elsewhere.
+A TicketSale is one sale opportunity (受付) for some or all events of a Series, such as a fan-club presale or a general sale: how tickets are allocated and the window in which fans take part. It is of one of two kinds. An Organizer's sale is sold on the platform for a Series an Organizer owns: it has a name, says whether fans must hold an Active IdentityVerification, and offers a TicketType for each event it sells, with price, quantity, per-account limit and, first come, first served, the stock. A discovered sale is a sale announced on the artist's official pages for a Series without an Organizer: the platform only reports it to fans, so it has no name and offers no TicketType. The Series tells the kind; nothing on the sale marks it.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | id | the sale's identity | required, assigned on creation |
 | series | the Series whose events the sale offers | required |
-| name | the label fans and operators see, for example ファンクラブ先行 | required, 1-100 characters |
+| name | the label fans and operators see, for example ファンクラブ先行 | an Organizer's sale: required, 1-100 characters; a discovered sale: absent |
 | method | how tickets are allocated | Lottery or FirstCome |
 | start time | when the sale opens, an instant entered and shown in Japan time | required, before the end time |
-| end time | when the sale closes, an instant entered and shown in Japan time | required; for Lottery, 1 to 14 days after the start time inclusive |
-| verification requirement | whether fans must hold an Active IdentityVerification to take part | None (the default), Verified-any or JPKI-only |
-| draw time | when the lottery draw ran | absent until the draw runs; Lottery only |
+| end time | when the sale closes, an instant entered and shown in Japan time | required, except on a discovered FirstCome sale, where absent means until sold out; for an Organizer's Lottery sale, 1 to 14 days after the start time inclusive |
+| verification requirement | whether fans must hold an Active IdentityVerification to take part | None (the default), Verified-any or JPKI-only; None on a discovered sale |
+| draw time | when the lottery draw ran | absent until the draw runs; an Organizer's Lottery sale only |
+| lottery result time | when the result of a lottery is announced (当落発表) | optional; a discovered Lottery sale only; not before the end time |
+| discovered time | when discovery first stored the sale | a discovered sale only, required; set once and never changed |
 
 ```mermaid
 erDiagram
   Series ||--o{ TicketSale : "is sold through"
-  TicketSale ||--|{ TicketType : "offers"
+  TicketSale ||--o{ TicketType : "offers"
+  TicketSale ||--o{ TicketSaleReminder : "is reminded through"
 ```
 
 ## Requirements

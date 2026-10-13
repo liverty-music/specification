@@ -27,7 +27,7 @@ erDiagram
   Series |o--o| SeriesImage : "has cover"
   Series }o--o{ Artist : "drafts performers"
   Series ||--o{ ConcertCandidate : "holds pending"
-  Series ||--o{ SalesPhase : "sells through"
+  Series ||--o{ TicketSale : "sells through"
 ```
 
 ```mermaid
