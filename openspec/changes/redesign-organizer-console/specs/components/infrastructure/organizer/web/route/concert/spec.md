@@ -2,13 +2,13 @@
 
 ## Purpose
 
-The organizer console page of one concert (one Series): its summary, performers, visibility and share link, the publishing and cancelling of its dates together, and the list of its event dates, each leading to that event's page.
+The organizer console page of one concert (one Series): its summary, performers and visibility, the publishing and cancelling of its dates together, and the list of its event dates, each leading to that event's page.
 
 ## ADDED Requirements
 
 ### Requirement: The concert's summary and its event dates
 
-The page SHALL show the concert's title, type, visibility, cover image and performers, with 編集 (edit) opening the concert editor, and SHALL list its events in date order, each with its date and start time in Japan time, its venue, its publish state as a labelled badge, and the state of its current or next TicketSale (none, scheduled, open or drawn). Each event SHALL open that event's page. A concert of another Organizer, or one that does not exist, SHALL show that the concert was not found with a link to Concerts.
+The page SHALL show the concert's title, type, visibility, cover image and performers, with 編集 (edit) opening the concert editor, and SHALL list its events in date order as items that are each one target, each with its date and start time in Japan time, its venue, its publish state as a labelled badge, and the state of its current or next TicketSale (none, scheduled, open or drawn). Selecting an event SHALL open that event's page. From 840 px the summary SHALL sit beside the list of events, and below it on narrower windows. A concert of another Organizer, or one that does not exist, SHALL show that the concert was not found with a link to Concerts.
 
 #### Scenario: Tour with three dates
 
@@ -20,23 +20,9 @@ The page SHALL show the concert's title, type, visibility, cover image and perfo
 - **WHEN** an operator opens a concert address whose concert is not among the Organizer's concerts
 - **THEN** the page says the concert was not found and links to Concerts
 
-### Requirement: Share link of an unlisted concert
-
-For a published UNLISTED concert the page SHALL explain that fans can open it only through its share link and offer 新しい共有リンクを発行 (create a new share link). Because an existing link is never shown again, creating one SHALL first ask for confirmation saying that the previous link stops working; after confirmation the page SHALL show the new link with a copy action. A PUBLIC or draft concert SHALL not offer a share link.
-
-#### Scenario: New share link
-
-- **WHEN** an operator confirms 新しい共有リンクを発行 on a published UNLISTED concert
-- **THEN** the page shows the new link with a copy action and the previous link no longer opens the concert
-
-#### Scenario: Public concert
-
-- **WHEN** an operator opens a published PUBLIC concert
-- **THEN** no share link action is offered
-
 ### Requirement: Publish or cancel the concert's dates together
 
-While the concert has a draft date, the page SHALL offer 公開する (publish), which publishes the draft dates the operator chooses in one action (SeriesUseCase.Publish with those dates); the confirmation SHALL list the draft dates with each one chosen at first, and SHALL say that the performers' followers are notified once for the dates published together (a PUBLIC concert) or that no follower is notified (an UNLISTED concert), and that a published date cannot return to draft. While the concert has a published or draft date, the page SHALL offer 公演を中止 (cancel the concert), which cancels every published and draft date in one action (SeriesUseCase.Cancel with no date named) after a confirmation saying that fans are told once, that draft dates are removed and that it cannot be undone. On success the page SHALL show the new states and confirm them in the snackbar. A concert whose dates are all cancelled SHALL offer neither.
+While the concert has a draft date, the page SHALL offer 公開する (publish), which publishes the draft dates the operator chooses in one action (SeriesUseCase.Publish with those dates); the confirmation SHALL list the draft dates with each one chosen at first, and SHALL say that the performers' followers are notified once for the dates published together (a PUBLIC concert) or that no follower is notified (an UNLISTED concert), and that a published date cannot return to draft. While the concert has a published or draft date, the page SHALL offer 公演を中止 (cancel the concert) in its menu of further actions, which cancels every published and draft date in one action (SeriesUseCase.Cancel with no date named) after a confirmation saying that fans are told once, that draft dates are removed and that it cannot be undone. On success the page SHALL show the new states and confirm them in the snackbar. A concert whose dates are all cancelled SHALL offer neither.
 
 #### Scenario: New tour published at once
 

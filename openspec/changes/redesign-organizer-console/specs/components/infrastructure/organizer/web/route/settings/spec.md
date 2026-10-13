@@ -31,12 +31,12 @@ The page SHALL show the Organizer's business details — legal name, representat
 
 ### Requirement: Payout account status and onboarding
 
-The page SHALL show the payout account's status in words — 確認中 (being verified) for pending, 有効 (active) for active, or 要対応 (action needed) for restricted — and, while the account is not active, SHALL explain that fans can still buy tickets and only the payout waits, and offer 登録を続ける (continue setup), which opens the provider's onboarding page in a new tab. When the operator returns to the console tab, the page SHALL read the status again.
+The page SHALL show the payout account's status in words — 確認中 (being verified) for pending, 有効 (active) for active, or 要対応 (action needed) for restricted — and, while the account is not active, SHALL explain that fans can still buy tickets and only the payout waits, and SHALL say before the operator leaves the console what the setup is: that payouts go through Stripe, the payment provider of Liverty Music; that on Stripe's page the operator enters the business, its representative's identity and the bank account to be paid into; that the page opens in a new tab; and that the operator returns to this tab when done. It SHALL then offer Stripe で登録を続ける (continue setup on Stripe), marked as opening an external site, which opens Stripe's onboarding page in a new tab. When the operator returns to the console tab, the page SHALL read the status again.
 
 #### Scenario: Onboarding not finished
 
 - **WHEN** the payout account is pending
-- **THEN** the page shows 確認中, says sales are not blocked, and offers 登録を続ける
+- **THEN** the page shows 確認中, says sales are not blocked, explains what is entered on Stripe and that it opens in a new tab, and offers Stripe で登録を続ける
 
 #### Scenario: Back from onboarding
 

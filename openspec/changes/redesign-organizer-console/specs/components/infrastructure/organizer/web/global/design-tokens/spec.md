@@ -34,13 +34,27 @@ In both light and dark, body text SHALL have a contrast ratio of at least 4.5:1 
 - **WHEN** a card shows a secondary line such as a venue name
 - **THEN** that text has a contrast ratio of at least 4.5:1 against the card in light and in dark
 
+### Requirement: Readable on every screen in both appearances
+
+Every console screen, as rendered with all its components, SHALL meet the contrast targets of this spec in light and in dark, on a phone and on a PC, including the text inside buttons, the options of an open selection list and the text of status labels. A style written for one screen SHALL never change the appearance of a component placed on it.
+
+#### Scenario: Button on Settings
+
+- **WHEN** Settings shows 登録を続ける in dark mode
+- **THEN** the button's label has a contrast ratio of at least 4.5:1 against the button
+
+#### Scenario: Open selection list in dark mode
+
+- **WHEN** an operator opens the verification requirement list on the Sales tab in dark mode
+- **THEN** every option and the highlighted option have a contrast ratio of at least 4.5:1 against the list
+
 ### Requirement: The brand color marks only the primary action, focus and the logo
 
 The brand magenta SHALL be used only for the primary action of a page, the keyboard focus indicator and the logo. Status (published, draft, on sale, error) SHALL never be shown by color alone: every status color SHALL be accompanied by its text label.
 
 #### Scenario: One primary action
 
-- **WHEN** the Concerts page offers 公演をつくる (create a concert) as its main action and each concert row offers 開く (open)
+- **WHEN** the Concerts page offers 公演をつくる (create a concert) as its main action and lists concerts that each open their page
 - **THEN** only 公演をつくる uses the brand color
 
 #### Scenario: Status with label
