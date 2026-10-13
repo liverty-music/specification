@@ -8,7 +8,7 @@ Removes a User together with everything that belongs only to that User.
 
 ### Requirement: Delete removes the user and what it owns
 
-Delete SHALL remove the User with the given id, including its full name and phone number, together with its follows, ticket journeys, push subscriptions, notifications, sales-phase reminder records and IdentityVerification records. The User's orders, tickets and lottery entries SHALL remain. It SHALL fail with NotFound when no User has that id, and with InvalidArgument when the id is empty.
+Delete SHALL remove the User with the given id, including its full name and phone number, together with its follows, ticket journeys, push subscriptions, notifications, ticket sale reminder records and IdentityVerification records. The User's orders, tickets and lottery entries SHALL remain. It SHALL fail with NotFound when no User has that id, and with InvalidArgument when the id is empty.
 
 #### Scenario: Existing user
 
@@ -29,3 +29,8 @@ Delete SHALL remove the User with the given id, including its full name and phon
 
 - **WHEN** the id is empty
 - **THEN** Delete fails with InvalidArgument
+
+#### Scenario: Reminder records go with the user
+
+- **WHEN** Delete runs for a User who was sent a ticket sale reminder
+- **THEN** that reminder record no longer exists
