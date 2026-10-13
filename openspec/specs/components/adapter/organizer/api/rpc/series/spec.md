@@ -45,7 +45,7 @@ RegenerateShareUrl SHALL return the Series' new unlisted share token; the organi
 
 ### Requirement: What a returned series carries
 
-Create, Update, Publish and List SHALL return each Series they act on or list together with its dates as Concerts and, once each, every Artist those Concerts refer to; a Concert carries only the id of its Series (through its Event) and the ids of its Artists. A DRAFT Series' dates are its DraftEvents, each returned as a Concert with the Series' draft performers. Every returned Series SHALL carry its description, cover image, visibility and publish state when it has them. The share token SHALL be returned only by RegenerateShareUrl.
+Create, Update, Publish and List SHALL return each Series they act on or list together with its dates as Concerts and, once each, every Artist those Concerts refer to; a Concert carries only the id of its Series (through its Event) and the ids of its Artists. Every Event of the Series is returned whatever its publish state, each as a Concert carrying that Event's publish state and its own performers. Every returned Series SHALL carry its description, cover image, visibility and publish state when it has them. The share token SHALL be returned only by RegenerateShareUrl.
 
 #### Scenario: Tour with one performer
 
