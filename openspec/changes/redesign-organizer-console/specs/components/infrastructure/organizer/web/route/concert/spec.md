@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The organizer console page of one concert (one Series): its summary, performers, visibility and share link, and the list of its event dates, each leading to that event's page.
+The organizer console page of one concert (one Series): its summary, performers, visibility and share link, the publishing and cancelling of its dates together, and the list of its event dates, each leading to that event's page.
 
 ## ADDED Requirements
 
@@ -33,3 +33,33 @@ For a published UNLISTED concert the page SHALL explain that fans can open it on
 
 - **WHEN** an operator opens a published PUBLIC concert
 - **THEN** no share link action is offered
+
+### Requirement: Publish or cancel the concert's dates together
+
+While the concert has a draft date, the page SHALL offer 公開する (publish), which publishes the draft dates the operator chooses in one action (SeriesUseCase.Publish with those dates); the confirmation SHALL list the draft dates with each one chosen at first, and SHALL say that the performers' followers are notified once for the dates published together (a PUBLIC concert) or that no follower is notified (an UNLISTED concert), and that a published date cannot return to draft. While the concert has a published or draft date, the page SHALL offer 公演を中止 (cancel the concert), which cancels every published and draft date in one action (SeriesUseCase.Cancel with no date named) after a confirmation saying that fans are told once, that draft dates are removed and that it cannot be undone. On success the page SHALL show the new states and confirm them in the snackbar. A concert whose dates are all cancelled SHALL offer neither.
+
+#### Scenario: New tour published at once
+
+- **WHEN** an operator presses 公開する on XX Tour 2026 with four draft dates, keeps all four chosen and confirms
+- **THEN** one publish names the four dates, they are shown as 公開中, and the dialog had said followers are notified once
+
+#### Scenario: Additional date on a published tour
+
+- **WHEN** XX Tour 2026 has three published dates and one draft date added later, and the operator presses 公開する and confirms
+- **THEN** only the draft date is published and the three published dates are unchanged
+
+#### Scenario: One date left out
+
+- **WHEN** the operator unchecks 24 November in the dialog and confirms
+- **THEN** the other draft dates are published and 24 November stays draft
+
+#### Scenario: Whole concert cancelled
+
+- **WHEN** an operator presses 公演を中止 on a concert with published dates and confirms
+- **THEN** one cancel is made with no date named and every date is shown as 中止
+
+#### Scenario: Nothing to publish
+
+- **WHEN** every date of a concert is published or cancelled
+- **THEN** 公開する is not offered
+
