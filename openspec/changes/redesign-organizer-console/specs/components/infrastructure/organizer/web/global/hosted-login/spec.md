@@ -33,6 +33,14 @@ credential** and SHALL have this shape:
   operator who accepts the invite would dead-end on an identity-provider page
   with no path back to the console.
 - `allowDomainDiscovery` — **NOT required (MVP defaults it off).**
+- `hidePasswordReset = true` — the hosted login offers no password reset, its
+  only self-service path for an operator to set a password while local
+  authentication must stay enabled for passkeys.
+- Check lifetimes set explicitly to the identity provider's instance defaults
+  (Zitadel v4.19.4 `cmd/defaults.yaml`): password check 240h, external login
+  check 240h, MFA init skip 720h, second factor check 18h, multi-factor check
+  12h. Omitted lifetimes are stored as 0, and the identity provider's console
+  then refuses to save the tenant policy ("Form contains invalid value(s).").
 
 A **recovery path MUST exist** — passkey-only with **no** recovery is
 prohibited. Recovery SHALL be an **admin-initiated re-invite** (the system
@@ -73,6 +81,9 @@ requirement defines the required shape.
   `allowUsernamePassword=true`, `allowRegister=false`) and the operator SHALL be
   created with no password so the passkey is their only usable local method
 - **AND** `allowExternalIDP` and `ignoreUnknownUsernames` SHALL be enabled
+- **AND** `hidePasswordReset` SHALL be enabled, and every check lifetime SHALL be
+  the instance default (240h, 240h, 720h, 18h, 12h), never 0, on a new policy
+  and when an existing policy is converged on re-provisioning
 
 #### Scenario: The policy renders a usable login and returns the operator to the console
 
