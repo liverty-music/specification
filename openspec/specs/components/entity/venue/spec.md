@@ -16,7 +16,6 @@ A Venue is a physical place where Events are held, known by a canonical name, th
 ```mermaid
 erDiagram
   Venue ||--o{ Event : "hosts"
-  Venue ||--o{ DraftEvent : "hosts draft"
   Venue ||--o| Coordinates : "located at"
 ```
 

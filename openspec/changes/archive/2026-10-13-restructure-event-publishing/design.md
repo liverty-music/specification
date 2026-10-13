@@ -171,15 +171,23 @@ The brief did not settle these. Each is the simplest option, and the specs are w
 
 ## Migration Plan
 
-1. Read-only counts in production (task 0.2): Series by state, `draft_events` per Series state, PUBLISHED Series that still have draft rows (expected 0), CANCELLED Series with draft rows and no events.
+1. Read-only counts in production (task 0.3): Series by state, `draft_events` per Series state, PUBLISHED Series that still have draft rows (expected 0), CANCELLED Series with draft rows and no events.
+   - Read on 2026-10-12. Every first-party Series belongs to the Organizer "E2E Test": test data only.
+   - Series: DRAFT 1, PUBLISHED 6, CANCELLED 1, discovered 283.
+   - `draft_events`: 1, of the DRAFT Series. `draft_series_performers`: 1, of the DRAFT Series.
+   - PUBLISHED Series with draft rows: 0. CANCELLED Series with draft rows and no events: 0.
+   - Events of first-party Series: 5 of PUBLISHED Series, 1 of the CANCELLED Series. No discovered Event sits at the draft's slot.
+   - One PUBLISHED Series ("3人グループの入場") has no events and no draft rows. After step 6 its derived state would read DRAFT, and it breaks "A Series left with no Event is removed". Step 5 removes it (decided with the owner on 2026-10-12).
 2. Specification: plan PR, then proto PR, then Release, then BSR gen.
 3. Backend PR with one Atlas migration, in this order:
    1. Create `event_publish_state` and add `events.publish_state`.
    2. Copy each first-party Series' state onto its events.
    3. Drop the constraint `uq_events_natural_key` and create the partial index under the same name.
    4. Insert `draft_events` of DRAFT Series into `events` as `DRAFT`, keeping their ids, with `concerts` rows. Insert their performers from `draft_series_performers` into `concert_artists`.
-   5. Delete CANCELLED Series that have no events. Their draft rows cascade.
+   5. Delete first-party Series that still have no events: CANCELLED Series with only draft rows (their draft rows cascade), and Series with neither events nor draft rows.
    6. Drop `draft_series_performers`, `draft_events`, `series.publish_state`, `published_at`, `cancelled_at` and the type `series_publish_state`. Rewrite `chk_series_first_party_state`.
+      - Built as `20261013000000_event_publish_state.sql` (backend #610). Step 6 also drops `idx_series_first_party_state`, which indexed the dropped column.
+   7. A second migration, `20261013000100_grant_organizer_console_api_event_lifecycle.sql`, grants the organizer server its new writes: column UPDATE (`publish_state`, `venue_id`, `listed_venue_name`, `local_event_date`, `start_at`, `open_at`) and DELETE on `events`, DELETE on `concert_artists` and `series`, and INSERT on `ticket_journeys` (the D8 merge). Without it the organizer server's lifecycle writes fail with permission denied in production.
 4. Frontend PR: organizer editor, concert list, Scanners screen and the fan event page.
 5. Verify in production: the AtlasMigration status, read-only row checks against step 1, and the story tests run in CI against Postgres. No dev environment is needed.
 6. Rollback: the migration is forward-only. With test data only, fix forward. If data must come back, use Cloud SQL point-in-time recovery to before the migration.

@@ -8,7 +8,7 @@ Link preview is the card that social networks and messengers (X, Facebook, LINE,
 ### Requirement: Event page links carry the event's preview
 
 The HTML served for `/events/:id` of an event with an event page SHALL carry, without running the app's scripts:
-- `og:title`: the Series' title followed by " | " and the performing Artists' names, prefixed with "【公演中止】" when the Series is CANCELLED;
+- `og:title`: the Series' title followed by " | " and the performing Artists' names, prefixed with "【公演中止】" when the event is CANCELLED;
 - `og:description`: the date with weekday, the doors-open and start times when announced and the venue name with its prefecture, all in Japanese with times in Japan time, followed by "全N公演" and the dates when the Series has more than one Event, then the start of the Series' description, at most 100 characters in total;
 - `og:image`: the Series' cover image, or the brand default image when there is none, as an absolute URL;
 - `og:url`: `https://liverty-music.app/events/<id>`, without any query parameter;
@@ -27,7 +27,7 @@ The HTML served for `/events/:id` of an event with an event page SHALL carry, wi
 
 #### Scenario: Cancelled event
 
-- **WHEN** the event's Series is CANCELLED
+- **WHEN** the event is CANCELLED
 - **THEN** the preview title starts with "【公演中止】"
 
 ### Requirement: Site-wide preview otherwise

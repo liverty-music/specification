@@ -9,6 +9,7 @@ A Concert is the music kind of Event: one Event together with the Artists who pe
 | id | identifier shared with the Event it extends | required |
 | event | the Event it extends: its Series, venue, listed venue name, local date, start and open time | required; its venue is absent only on a discovery preview |
 | artists | the Artists performing | at least 1 |
+| publish state | the Event's publish state | absent on a discovered concert |
 
 ```mermaid
 erDiagram
@@ -20,15 +21,19 @@ erDiagram
 
 ### Requirement: A concert is exactly one event
 
-A Concert SHALL extend exactly one Event and carry that Event's id; it adds only the performing Artists. A Concert SHALL have no title, type or source page of its own; they are read from the Series of the Event it extends.
+A Concert SHALL be exactly one Event: it carries the Event's id, venue, listed venue name, date, times and publish state, and adds only the embedded Series and the performing Artists. A Concert SHALL have no title or source page of its own; they are read from its Series.
 
 #### Scenario: Title comes from the series
-- **WHEN** a Concert extends an Event of a Series titled "ARENA TOUR 2026"
+- **WHEN** a Concert belongs to a Series titled "ARENA TOUR 2026"
 - **THEN** the Concert's title is "ARENA TOUR 2026"
 
 #### Scenario: Concert id is its event id
 - **WHEN** a Concert extends the Event with id E
 - **THEN** the Concert's id is E
+
+#### Scenario: Cancelled date of a published tour
+- **WHEN** a Concert extends a CANCELLED Event of a Series whose other Events are PUBLISHED
+- **THEN** the Concert's publish state is CANCELLED
 
 ### Requirement: A concert has at least one performer
 
@@ -94,10 +99,26 @@ The earliest Concert of a set SHALL be the one with the earliest local date; on 
 - **WHEN** the set of Concerts is empty
 - **THEN** there is no earliest Concert
 
-### Requirement: Fan visibility follows the series
+### Requirement: A draft event is not a concert
 
-A Concert SHALL be visible to fans exactly when its Series is publicly visible (see Series).
+A DRAFT Event SHALL NOT be a Concert. No Concert operation SHALL return a DRAFT Event, match it against a discovered concert, merge into it, fill its times or remove it; an id of a DRAFT Event SHALL be treated by every Concert operation as an id that matches no Concert.
+
+#### Scenario: Draft not returned by id
+- **WHEN** Concert.ListByIDs is given the id of a DRAFT Event
+- **THEN** that id is left out as unknown
+
+#### Scenario: Discovery ignores a draft at the same slot
+- **WHEN** discovery finds a concert at the Venue, date and start time of a DRAFT Event
+- **THEN** the DRAFT Event is not found as an existing Event and is left unchanged
+
+### Requirement: Fan visibility follows the event
+
+A Concert SHALL be visible to fans exactly when its Event is publicly visible (see Event).
 
 #### Scenario: Concert of an unlisted organizer series
 - **WHEN** a Concert's Series is a first-party Series with visibility UNLISTED
 - **THEN** the Concert is not visible to fans
+
+#### Scenario: Cancelled date of a public series
+- **WHEN** a Concert's Event is CANCELLED and its Series' other Events are PUBLISHED and PUBLIC
+- **THEN** that Concert is not visible to fans
