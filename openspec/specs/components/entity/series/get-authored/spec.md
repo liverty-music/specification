@@ -2,22 +2,22 @@
 
 ## Purpose
 
-Returns a Series with its performances and performers as its organizer authored them: DraftEvents and draft performers while DRAFT, Events and their performers afterwards.
+Returns a Series with its derived publish state and every one of its Events, whatever its publish state, each with its own publish state and its performers, as its organizer authored them.
 
 ## Requirements
 
-### Requirement: Draft or live content by state
+### Requirement: Every event with its publish state
 
-GetAuthored SHALL return the Series with its cover image and, while it is DRAFT, its DraftEvents and draft performers; otherwise its Events and the Artists performing at them. Performances SHALL be ordered by date, then start time with unknown start times last. It SHALL fail with NotFound when no Series has the id.
+GetAuthored SHALL return the Series with its cover image and its derived publish state, every Event of the Series whatever its publish state, each with its publish state, and the Artists performing at any of those Events. Events SHALL be ordered by date, then start time with unknown start times last. It SHALL fail with NotFound when no Series has the id.
 
-#### Scenario: Draft series
-- **WHEN** a DRAFT Series with two DraftEvents is read
-- **THEN** its two DraftEvents are returned as its performances
+#### Scenario: Draft series read
+- **WHEN** a Series with two DRAFT Events is read
+- **THEN** both Events are returned as DRAFT and the Series' publish state is DRAFT
 
-#### Scenario: Published series
-- **WHEN** a PUBLISHED Series is read
-- **THEN** its Events are returned as its performances
+#### Scenario: Published tour with a new date
+- **WHEN** a Series with two PUBLISHED Events and one DRAFT Event is read
+- **THEN** all three Events are returned, each with its own publish state
 
-#### Scenario: Unknown id
+#### Scenario: Unknown series id
 - **WHEN** no Series has the id
 - **THEN** GetAuthored fails with NotFound

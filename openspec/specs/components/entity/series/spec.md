@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A Series groups the Events of one engagement — a tour, a single-venue run, or a festival — and owns what they share: title, type and source page. A Series authored by an organizer (first-party) also carries a description, a cover image, a visibility and a publish state; a Series found by discovery has none of these and is always visible.
+A Series groups the Events of one engagement — a tour, a single-venue run, or a festival — and owns what they share: title, type and source page. A Series authored by an organizer (first-party) also carries a description, a cover image and a visibility; a Series found by discovery has none of these. A first-party Series stores no publish state of its own: its publish state is derived from its Events (PUBLISHED when one is PUBLISHED, else CANCELLED when one is CANCELLED, else DRAFT), and each Event is published or cancelled on its own.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -14,29 +14,15 @@ A Series groups the Events of one engagement — a tour, a single-venue run, or 
 | description | organizer-written body text | optional, 1–10000 characters; first-party only |
 | cover image | current cover SeriesImage | optional; first-party only |
 | visibility | PUBLIC or UNLISTED | first-party only |
-| publish state | DRAFT, PUBLISHED or CANCELLED | first-party only |
 | share token | token that opens an UNLISTED Series | present only on a published UNLISTED Series; never shown on reads |
-| published at | when it became PUBLISHED | set on publish |
-| cancelled at | when it became CANCELLED | set on cancel |
 
 ```mermaid
 erDiagram
   Series ||--o{ Event : "groups"
-  Series ||--o{ DraftEvent : "drafts"
   Organizer |o--o{ Series : "authors"
   Series |o--o| SeriesImage : "has cover"
-  Series }o--o{ Artist : "drafts performers"
   Series ||--o{ ConcertCandidate : "holds pending"
   Series ||--o{ TicketSale : "sells through"
-```
-
-```mermaid
-stateDiagram-v2
-  [*] --> DRAFT
-  DRAFT --> PUBLISHED
-  DRAFT --> CANCELLED
-  PUBLISHED --> CANCELLED
-  CANCELLED --> [*]
 ```
 
 ## Requirements
@@ -61,46 +47,6 @@ Every Event SHALL belong to exactly one Series, and a Series' title and source p
 - **WHEN** a tour has three stops on different dates and venues
 - **THEN** one Series holds the title and source page, and each stop is an Event of that Series
 
-### Requirement: Public visibility
-
-A Series SHALL be publicly visible when it is not first-party, or when it is first-party, PUBLISHED and PUBLIC. A first-party Series that is DRAFT, CANCELLED, or UNLISTED is not publicly visible; its Events are not shown on any fan-facing list.
-
-#### Scenario: Discovered series is visible
-- **WHEN** a Series has no organizer
-- **THEN** it is publicly visible
-
-#### Scenario: Published public series is visible
-- **WHEN** a first-party Series is PUBLISHED with visibility PUBLIC
-- **THEN** it is publicly visible
-
-#### Scenario: Published unlisted series is not visible
-- **WHEN** a first-party Series is PUBLISHED with visibility UNLISTED
-- **THEN** it is not publicly visible
-
-#### Scenario: Draft series is not visible
-- **WHEN** a first-party Series is DRAFT
-- **THEN** it is not publicly visible
-
-#### Scenario: Cancelled series is not visible
-- **WHEN** a first-party Series is CANCELLED
-- **THEN** it is not publicly visible
-
-### Requirement: A draft series has no catalog events
-
-While a first-party Series is DRAFT, its performances SHALL be DraftEvents, not Events: it occupies no Event slot and claims no discovered Event until it is published.
-
-#### Scenario: Draft performance does not claim a slot
-- **WHEN** a DRAFT Series has a DraftEvent at a Venue, date and start time where a discovered Event exists
-- **THEN** the discovered Event still belongs to its own Series
-
-### Requirement: Cancelled is terminal
-
-A CANCELLED Series SHALL NOT become DRAFT or PUBLISHED again.
-
-#### Scenario: Cancelled series stays cancelled
-- **WHEN** a Series is CANCELLED
-- **THEN** it has no transition to DRAFT or PUBLISHED
-
 ### Requirement: Share token only on an unlisted series
 
 A share token SHALL exist only on a published first-party Series whose visibility is UNLISTED, and it SHALL never be part of what a Series read returns.
@@ -111,29 +57,69 @@ A share token SHALL exist only on a published first-party Series whose visibilit
 
 ### Requirement: Which series' events have an event page
 
-The Events of a Series SHALL have an event page exactly when the Series is first-party, its visibility is PUBLIC, and its publish state is PUBLISHED or CANCELLED. A discovered Series, a DRAFT Series and an UNLISTED Series SHALL have no event page. Unlike public visibility, a CANCELLED Series keeps its event page, so a shared link still explains that the concert is 中止 (cancelled).
+An Event of a Series SHALL have an event page exactly when the Series is first-party, its visibility is PUBLIC, and the Event is PUBLISHED or CANCELLED. A Series SHALL have an event page when at least one of its Events has one. An Event of a discovered Series, a DRAFT Event and an Event of an UNLISTED Series SHALL have no event page. Unlike public visibility, a CANCELLED Event keeps its event page, so a shared link still explains that the concert is 中止 (cancelled).
 
 #### Scenario: Published public series
 
-- **WHEN** a first-party Series is PUBLISHED with visibility PUBLIC
-- **THEN** its Events have an event page
+- **WHEN** an Event of a first-party Series with visibility PUBLIC is PUBLISHED
+- **THEN** the Event has an event page
 
 #### Scenario: Cancelled public series
 
-- **WHEN** a first-party Series with visibility PUBLIC is CANCELLED
-- **THEN** its Events have an event page, while the Series is not publicly visible
+- **WHEN** an Event of a first-party Series with visibility PUBLIC is CANCELLED
+- **THEN** the Event has an event page, while it is not publicly visible
 
 #### Scenario: Unlisted series
 
-- **WHEN** a first-party Series is PUBLISHED with visibility UNLISTED
-- **THEN** its Events have no event page
+- **WHEN** an Event of a first-party Series with visibility UNLISTED is PUBLISHED
+- **THEN** the Event has no event page
 
 #### Scenario: Draft series
 
-- **WHEN** a first-party Series is DRAFT
-- **THEN** its Events have no event page
+- **WHEN** an Event of a first-party Series is DRAFT, even while another Event of the Series is PUBLISHED
+- **THEN** the DRAFT Event has no event page
 
 #### Scenario: Discovered series
 
 - **WHEN** a Series has no organizer
 - **THEN** its Events have no event page
+
+### Requirement: Publish state is derived from the events
+
+A first-party Series SHALL have no publish state of its own. Its publish state SHALL be derived from its Events: PUBLISHED when at least one Event is PUBLISHED; CANCELLED when no Event is PUBLISHED and at least one is CANCELLED; DRAFT when every Event is DRAFT. A discovered Series SHALL have no publish state.
+
+#### Scenario: Published tour with a draft date
+- **WHEN** a first-party Series has two PUBLISHED Events and one DRAFT Event
+- **THEN** its publish state is PUBLISHED
+
+#### Scenario: One date cancelled
+- **WHEN** a first-party Series has one PUBLISHED Event and one CANCELLED Event
+- **THEN** its publish state is PUBLISHED
+
+#### Scenario: Every published date cancelled
+- **WHEN** a first-party Series has two CANCELLED Events and one DRAFT Event
+- **THEN** its publish state is CANCELLED
+
+#### Scenario: Only drafts
+- **WHEN** every Event of a first-party Series is DRAFT
+- **THEN** its publish state is DRAFT
+
+#### Scenario: Discovered series has no publish state
+- **WHEN** a Series has no organizer
+- **THEN** it has no publish state
+
+### Requirement: What can change after publish
+
+While every Event of a first-party Series is DRAFT, all of its authored attributes and its performers SHALL be changeable. Once the Series has a PUBLISHED or CANCELLED Event, its title, description, cover image and performers SHALL remain changeable, and its type, source page and visibility SHALL NOT change.
+
+#### Scenario: Title corrected after publish
+- **WHEN** a Series has a PUBLISHED Event
+- **THEN** its title, description, cover image and performers can change
+
+#### Scenario: Visibility fixed after publish
+- **WHEN** a Series has a PUBLISHED Event
+- **THEN** its type, source page and visibility cannot change
+
+#### Scenario: Draft series is fully editable
+- **WHEN** every Event of a Series is DRAFT
+- **THEN** its type, visibility and performers can change
