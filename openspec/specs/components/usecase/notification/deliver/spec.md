@@ -88,7 +88,7 @@ When the outcome is Delivered, Deliver SHALL announce once that the fan's Notifi
 
 ### Requirement: Runs for each requested notification
 
-Deliver SHALL run once for each notification requested for one fan, by NotificationUseCase.NotifyNewConcerts, SalesPhaseAnnouncementUseCase.AnnounceDiscoveredPhase or NotificationUseCase.SendOrderConfirmation, with that fan, the notification type and the finished message. When Deliver fails, that request SHALL be processed again; a failure for one fan's request SHALL NOT affect the requests of any other fan.
+Deliver SHALL run once for each notification requested for one fan, by NotificationUseCase.NotifyNewConcerts, TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale or NotificationUseCase.SendOrderConfirmation, with that fan, the notification type and the finished message. When Deliver fails, that request SHALL be processed again; a failure for one fan's request SHALL NOT affect the requests of any other fan.
 
 #### Scenario: Notification requested
 
@@ -104,3 +104,8 @@ Deliver SHALL run once for each notification requested for one fan, by Notificat
 
 - **WHEN** Deliver fails because the Notification for one of three requested fans cannot be recorded
 - **THEN** that fan's request is processed again and the other two fans' requests are unaffected
+
+#### Scenario: Discovered sale announced
+
+- **WHEN** a ticket_sale_announcement notification is requested for a fan
+- **THEN** Deliver runs for that fan with the type ticket_sale_announcement
