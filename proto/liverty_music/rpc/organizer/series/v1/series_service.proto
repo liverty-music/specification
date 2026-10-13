@@ -213,9 +213,11 @@ message EventDraft {
   // and for a DRAFT Event: the Venue holding this place id is used, or a new
   // Venue is created from the map catalog's place (name, coordinates and admin
   // area), and there is no resolution by name; Create and Update fail with
-  // INVALID_ARGUMENT without it. Not read for a PUBLISHED or CANCELLED Event,
-  // which keeps its Venue, so a date published before venues were picked can
-  // still be corrected.
+  // INVALID_ARGUMENT without it. Optional for a PUBLISHED or CANCELLED Event,
+  // whose venue cannot change: it counts as unchanged when venue_name equals
+  // the event's listed venue name and, when given, this equals the Venue's
+  // place id. A date published before venues were picked can so still be
+  // corrected.
   entity.v1.PlaceId place_id = 2;
 
   // Required. The calendar date of this performance in the venue's local
