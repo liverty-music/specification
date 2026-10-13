@@ -174,8 +174,10 @@ buf lint
 ### Check Breaking Changes
 
 ```bash
-buf breaking --against '.git#branch=main'
+make breaking   # buf breaking --against '.git#branch=origin/main'
 ```
+
+`make lint` and `make check` do not run it. CI runs it on every PR; an intended breaking change passes with the `buf skip breaking` label.
 
 ### Format
 
