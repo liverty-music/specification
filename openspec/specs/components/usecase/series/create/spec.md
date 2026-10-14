@@ -30,18 +30,6 @@ Create SHALL fail with PermissionDenied, without saying which Artist, when any p
 - **WHEN** the draft names an Artist the Organizer does not represent
 - **THEN** Create fails with PermissionDenied and stores nothing
 
-### Requirement: Each event's venue is found or created
-
-For each event, Create SHALL use the Venue holding the given place id when one is given and held (Venue.GetByPlaceID), else the Venue holding the entered venue name and admin area (Venue.GetByListedName), else create a Venue named after the entered name with the given place id and admin area and no coordinates (Venue.Create). No external place search SHALL be made.
-
-#### Scenario: Known place id
-- **WHEN** an event gives a place id that a Venue holds
-- **THEN** that Venue is used
-
-#### Scenario: New venue name
-- **WHEN** no Venue holds the place id or the entered name and admin area
-- **THEN** a Venue named after the entered name is created without coordinates
-
 ### Requirement: Draft stored as DRAFT
 
 Create SHALL store the Series, owned by the caller's Organizer, with one DRAFT Event per event — a multi-showtime day being several Events — each with the performers (Series.CreateDraft), and SHALL return the Series with its Events and performers (Series.GetAuthored). Nothing SHALL be announced.
@@ -53,3 +41,27 @@ Create SHALL store the Series, owned by the caller's Organizer, with one DRAFT E
 #### Scenario: Two showtimes
 - **WHEN** the draft has 13:00 and 18:00 events on one date at one venue
 - **THEN** the Series has two DRAFT Events
+
+### Requirement: Each event's venue is a picked place
+
+Every event SHALL give the place id of a place the operator picked from the map catalog; an event without one SHALL fail Create with InvalidArgument, storing nothing. For each event, Create SHALL use the Venue holding the place id when one is held (Venue.GetByPlaceID). Otherwise it SHALL read the place from the map catalog (Venue.GetPlace) and create a Venue with the place id and the place's name, coordinates and admin area (Venue.Create). When the catalog cannot be reached it SHALL fail with Unavailable, storing nothing; when the catalog has no such place it SHALL fail with InvalidArgument, storing nothing.
+
+#### Scenario: Known place id
+- **WHEN** an event gives a place id that a Venue holds
+- **THEN** that Venue is used and the catalog is not read
+
+#### Scenario: New place
+- **WHEN** an event gives the place id of Zepp Haneda and no Venue holds it
+- **THEN** a Venue for Zepp Haneda is created with that place id, its coordinates and the admin area JP-13
+
+#### Scenario: Same name in two cities
+- **WHEN** one event picks CLUB QUATTRO in Shibuya and another picks CLUB QUATTRO in Umeda
+- **THEN** the two events have two different Venues, in JP-13 and JP-27
+
+#### Scenario: Venue typed but not picked
+- **WHEN** an event gives a venue name but no place id
+- **THEN** Create fails with InvalidArgument and nothing is stored
+
+#### Scenario: Catalog down for a new place
+- **WHEN** no Venue holds the given place id and the catalog cannot be reached
+- **THEN** Create fails with Unavailable and nothing is stored
