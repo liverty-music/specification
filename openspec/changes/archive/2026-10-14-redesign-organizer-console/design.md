@@ -51,6 +51,8 @@ Amended after the owner's production walk-through (2026-10-13): addresses carry 
 | `.../events/{event}/ticket-sales/new?method=first-come` | First-come sale editor (`route/ticket-sale-editor`), new | Event | 公演 |
 | `.../events/{event}/ticket-sales/{sale}/edit` | The sale's editor (lottery before it opens, or first-come) | Event | 公演 |
 | `/organizers/{o}/settings` | Settings | — | 設定 |
+| `/organizers/{o}/artists` | opens the concerts of the Artist being worked on; says no Artist is represented yet when there is none | — | 公演 |
+| `/other-organizer` | says the address belonged to another Organizer, with サインアウト (the address it came from is not kept) | — | — |
 | `/`, and any unknown address | opens `/organizers/{own id}` | — | — |
 | `denied`, `auth/callback` | unchanged | — | — |
 
@@ -214,7 +216,7 @@ The first walk-through of v1.89.0 stopped on defects that the unit, story and fu
 
 ### D16 — Console components are encapsulated in Shadow DOM
 
-- Each custom element in `frontend/organizer/ui` renders into a shadow root (`@useShadowDOM()`), so no page style can reach inside it, and its own styles cannot reach out. The fan app stays in light DOM with `@scope`; the console differs because its pages compose many small generic components inside forms, where name clashes such as `.label` are likely.
+- Each custom element in `frontend/organizer/ui` renders into a shadow root (a `<use-shadow-dom>` element in its template; with the `@useShadowDOM()` decorator Aurelia loads the component's CSS into the document instead of the shadow root), so no page style can reach inside it, and its own styles cannot reach out. The fan app stays in light DOM with `@scope`; the console differs because its pages compose many small generic components inside forms, where name clashes such as `.label` are likely.
 - Shared rules that every component needs (state layer, touch target, focus ring, visually hidden) are one stylesheet passed to every shadow root through Aurelia's `StyleConfiguration.shadowDOM({ sharedStyles })`. Tokens are custom properties and inherit into shadow roots unchanged.
 - Native form controls stay inside the component that labels them, so `<label for>` and the form's own submission keep working; the field components expose their value through `@bindable` and events, not by reaching into the shadow root.
 - Page (route) styles stay in light DOM under `@scope (<route-element>)` and SHALL use class names that do not repeat a component's part names; a stylelint rule is not available for this, so the full-screen checks of D22 catch a regression.
@@ -231,7 +233,7 @@ The first walk-through of v1.89.0 stopped on defects that the unit, story and fu
 
 Each screen was redesigned against the M3 guideline pages, rendered and read on 2026-10-13 (m3.material.io `components/<name>/guidelines` and `foundations/layout/canonical-examples/*`; the quotes below are verbatim). The rules applied everywhere:
 
-- **One filled button per screen**, for the action that completes its flow (保存する, 公開する); secondary actions are outlined or tonal; dialogs use text buttons (M3 Buttons). Destructive actions that are not the screen's purpose (公演を中止, 中止する) sit in an overflow menu in the page header (M3 Menus: "a menu takes up less space"; disabled rather than removed when unavailable).
+- **One filled button per screen**, for the action that completes its flow (保存する, 公開する); secondary actions are outlined or tonal; in a dialog the dismissive action is a text button and the confirming one keeps its emphasis as the dialog's one filled button (公開する) or an error-colored button for a destructive action (中止する, 取り消す, 破棄する), so a consequential choice never looks like the safe one (M3 Buttons recommends text buttons in dialogs; this departs from it on purpose). Destructive actions that are not the screen's purpose (公演を中止, 中止する) sit in an overflow menu in the page header (M3 Menus: "a menu takes up less space"; disabled rather than removed when unavailable).
 - **Collections are lists, not cards, on compact windows**: a list item is one action that opens its detail ("Lists should extend edge-to-edge in compact windows. Selecting a list item should open a page with the details."); trailing text carries the date or state. From 840 px (M3 expanded) a collection that is compared across rows is a table whose whole row opens the item (one link per row, stretched over the row). Cards remain only where a group holds several different actions (a sale on the Sales tab).
 - **Dialogs only for confirmations and discarding changes**, a title that names the action and object (never "Are you sure?"), at most two actions, the confirming one naming the action (M3 Dialogs). The dismissive label is やめる / Cancel (the English "Keep as is" goes).
 - **Loading** shows one linear progress indicator at the top of the page; a pending action shows a circular indicator inside its button (M3 Progress indicators). **Snackbars carry no icons** (M3 Snackbar: "Avoid adding icons") and, because auto-dismissing snackbars are not accessible on web, every result is also visible on the page it lands on (the new state, or the page the save returned to).
@@ -255,7 +257,7 @@ Per screen:
 
 - **24-hour time entry.** A console time field of two selects, hour 00-23 and minute 00-55 in 5-minute steps, labelled JST, with no AM/PM (M3 Time pickers: "Hours and minutes should have separate inputs… For people using a 24-hour clock, the AM/PM selector shouldn't appear"). Selects accept typed digits from the keyboard, which covers M3's "manual time entry". Estimated 100-150 lines with its story; no dial. The same field replaces every `datetime-local` and `time` input of the console (the concert editor, the lottery and first-come sale windows): a date field plus this time field. Dates stay `<input type="date">` (the owner reported no problem with dates).
 - **Defaults.** The first date row of a new concert starts with 開場 17:00 and 開演 19:00 (owner, 2026-10-13). 日程を追加 copies the previous row's venue (with its picked place), date, open and start time, so a run of nights at one venue needs only the date changed.
-- **Save returns.** A successful save returns to the page the editor was opened from (the concert page; for a new concert, the new concert's page) and confirms in the snackbar, replacing "keeps the editor open". The landing page shows the saved values, which also gives the inline confirmation M3 asks for on web.
+- **Save returns.** A successful save returns to the page the editor was opened from (the concert page; for a new concert, the new concert's page) and confirms in the snackbar, replacing "keeps the editor open". The landing page shows the saved values, which also gives the inline confirmation M3 asks for on web. The cover preview of D9a moves with it: the editor hands the picked image and its upload to an in-memory store, and the concert page shows that image with the processing note and keeps re-reading (3 s, up to 60 s) until the Series' cover image id equals the uploaded one; without this the page would show the previous cover after a save (found while implementing, 2026-10-13).
 
 ### D20 — Names
 
@@ -267,10 +269,12 @@ Per screen:
 - The UNLISTED share link is removed from the console until fans can open one: no fan route reads the token, and `/events/<id>` of an UNLISTED concert answers not found (fan `route/event` "Event without a page"). A follow-up change gives UNLISTED concerts a fan entry (backend returning a full URL, a fan route reading the token) and brings 新しい共有リンクを発行 back. The referral link (`?ref=`) is a separate change too (owner, 2026-10-13).
 - The editor keeps 限定公開: an UNLISTED concert notifies no follower when published, which the owner's walk-through relies on (task 7.2).
 
-### D22 — Rendered checks
+### D22 — Rendered checks run on the production build in pull-request CI
 
-- Functional tests run axe on every console screen in light and dark at 390 × 844 and 1280 × 800, failing on any violation (including `color-contrast`), with `@axe-core/playwright` as a new dev dependency (the storybook projects already run axe per component; a screen check catches what composition breaks, such as D16's leak).
-- Before a screen is called done, it is looked at rendered in both themes and widths, and the story is walked end to end, including external hand-offs (`feedback`: the walk-through found what the suites passed).
+- **Why the production build.** v1.89.0 broke the fan web in production (component styles lost) while every suite passed: the functional tests run on the Vite dev server (`playwright.config.mjs` `webServer: npm start`), which injects CSS in import order, and Storybook loads `main.css` once per story. Only the production build splits CSS shared between entries into chunks linked before an entry's main CSS, and the first `@layer` read fixes the cascade order (fixed in v1.89.1 by declaring the order first in each HTML entry, guarded by `test/layer-order.node.spec.ts`). Checks of the dev server cannot see this class of defect.
+- **A required CI job.** Pull-request CI builds the production bundle, serves it with `vite preview` and runs a Playwright project against it on every pull request that changes the frontend; its result is part of `CI Success`, so a merge needs it green. It opens the public screens of each entry (fan, organizer, admin) and, with mocked RPCs, every console screen, in light and dark at 390 × 844 and 1280 × 800, and fails on any axe violation (including `color-contrast`, with `@axe-core/playwright` as a new dev dependency) and when a component's own styles are not applied (for example a button without its container color and padding).
+- **After deploy too.** `post-deploy-smoke` (today run only on manual dispatch, and `skipped` for v1.89.0) runs after every production release and asserts the same "component styles applied" checks on the fan welcome page and the organizer entry, so a defect that only production shows is caught within minutes.
+- Before a screen is called done, it is looked at rendered in both themes and widths, and the story is walked end to end, including external hand-offs.
 
 ## Risks / Trade-offs
 

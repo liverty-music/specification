@@ -86,7 +86,7 @@ Saving SHALL show progress in the save button and ignore repeated presses. A suc
 #### Scenario: Saved
 
 - **WHEN** an operator opens the editor from the concert page, changes the description and saves
-- **THEN** the concert page opens with the new description and the snackbar says 変更を保存しました
+- **THEN** the concert page opens with the saved values and the snackbar says 変更を保存しました
 
 #### Scenario: New concert
 
@@ -116,7 +116,7 @@ The editor SHALL offer the concert's type as a choice of 単独公演 (single sh
 
 ### Requirement: A new cover image is previewed while it is processed
 
-After the operator picks a cover image, the editor SHALL show that image from the operator's device at once and SHALL say that the optimised image is still being processed. Once the processed image is available, the editor SHALL show it instead, without the operator reloading the editor. There is no processing status to wait for; the preview simply gives way to the processed image. Until then, saving the concert SHALL keep showing the picked image, never the previous cover.
+After the operator picks a cover image, the editor SHALL show that image from the operator's device at once and SHALL say that the optimised image is still being processed. Once the processed image is available, the editor SHALL show it instead, without the operator reloading the editor. There is no processing status to wait for; the preview simply gives way to the processed image. Until then, saving the concert SHALL keep showing the picked image, never the previous cover: the concert page the save returns to SHALL show the picked image with the processing note, and SHALL show the processed image once it is available.
 
 #### Scenario: Image just uploaded
 
@@ -131,5 +131,5 @@ After the operator picks a cover image, the editor SHALL show that image from th
 #### Scenario: Saved before processing finished
 
 - **WHEN** an operator picks a new cover image for a concert that has a cover and saves before the new image is processed
-- **THEN** the editor still shows the picked image with the processing note, not the previous cover
+- **THEN** the concert page opens and shows the picked image with the processing note, not the previous cover, until the processed image replaces it
 

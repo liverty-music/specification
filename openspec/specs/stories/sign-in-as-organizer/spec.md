@@ -13,8 +13,13 @@ returning with a passkey.
 
 The organizer console SHALL authenticate operators through the identity provider's
 sign-in (PKCE, no client secret) using the shared `organizer-console` client. The operator's
-tenant org is **bound to their account** — NOT to a URL parameter and NOT to
-email domain:
+tenant org is **bound to their account** — NOT granted by a URL parameter and NOT by
+email domain. An entry link MAY carry the tenant org's id as a hint (the `org_id`
+query parameter of the invitation's return address) so that sign-in uses that
+org's login policy, and the console MAY remember the hint on the device for later
+sign-ins. The hint never grants access: the authenticated token's org decides, and
+a hint that differs from it leads to re-authentication or denial, never into the
+hinted org:
 
 - **First sign-in** happens through the identity provider's standard invitation
   flow (the invite links to the IdP, not the console). After the operator sets
@@ -25,7 +30,7 @@ email domain:
   operator's existing passkey.
 
 The console SHALL **enforce that the authenticated token's org is the intended
-tenant org**. A session belonging to a different org (e.g. an unrelated identity-provider
+tenant org** (the remembered hint, when there is one). A session belonging to a different org (e.g. an unrelated identity-provider
 SSO session already present in the browser) SHALL NOT be silently accepted for a
 different operator/tenant: the console SHALL detect the mismatch and force
 re-authentication (or sign the stale session out) rather than admitting the
@@ -60,3 +65,8 @@ wrong operator. There is no fixed org id at build time and no org picker.
 - **THEN** the console SHALL NOT admit that session as the intended operator; it
   SHALL force re-authentication (or sign the stale session out) so the operator
   is authenticated as the correct tenant — never routed into another org
+
+#### Scenario: A hint for another org grants nothing
+
+- **WHEN** an operator of one Organizer opens the console through a link whose `org_id` names another tenant org
+- **THEN** the console SHALL NOT admit them into that org: after one re-authentication the token's org still differs, and the access denied page is shown

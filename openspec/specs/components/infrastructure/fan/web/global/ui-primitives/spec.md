@@ -6,40 +6,6 @@ The small shared building blocks every screen uses: the loading spinner, icons, 
 
 ## Requirements
 
-### Requirement: Loading Spinner Custom Element
-The system SHALL provide a `<loading-spinner>` custom element as a visual primitive for animated loading indicators with size variants.
-
-#### Scenario: Default rendering
-- **WHEN** `<loading-spinner>` is rendered without attributes
-- **THEN** the CE SHALL display a circular spinner with `md` size (2rem)
-- **AND** the spinner SHALL use a border-based animation: solid border with one transparent side
-- **AND** the border color SHALL derive from `var(--color-brand-accent)` at 30% opacity with `border-block-start-color` at full opacity
-- **AND** `animation: spin 0.8s linear infinite` SHALL be applied
-
-#### Scenario: Size variants
-- **WHEN** `<loading-spinner size="sm">` is rendered
-- **THEN** the spinner SHALL be 1rem with 1.5px border
-- **WHEN** `<loading-spinner size="md">` is rendered
-- **THEN** the spinner SHALL be 2rem with 2px border
-- **WHEN** `<loading-spinner size="lg">` is rendered
-- **THEN** the spinner SHALL be 2.5rem with 3px border
-
-#### Scenario: Accessibility semantics
-- **WHEN** the spinner is rendered
-- **THEN** the host element SHALL be an `<output>` with `role="status"` and `aria-busy="true"`
-
-#### Scenario: Color inheritance
-- **WHEN** the spinner is placed inside a container with custom `--color-brand-accent`
-- **THEN** the spinner border color SHALL inherit from that custom property
-
-#### Scenario: Reduced motion
-- **WHEN** `prefers-reduced-motion: reduce` is active
-- **THEN** the spin animation SHALL be paused or removed
-
-#### Scenario: CUBE CSS layer
-- **WHEN** the spinner CSS is loaded
-- **THEN** all styles SHALL be defined within `@layer block` using `@scope (loading-spinner)`
-
 ### Requirement: SVG Icon Component
 The system SHALL provide a centralized `<svg-icon>` custom element as the single source of truth for all SVG icon definitions, eliminating inline SVG duplication across templates.
 
@@ -83,6 +49,28 @@ The system SHALL provide a `<state-placeholder>` custom element for displaying e
 #### Scenario: Custom content via slot
 - **WHEN** child content is placed inside `<state-placeholder>`
 - **THEN** the content SHALL be projected via `<au-slot>`
-- **AND** this SHALL allow pages to provide titles, descriptions, buttons, links, or `<loading-spinner>` elements
+- **AND** this SHALL allow pages to provide titles, descriptions, buttons, links, or `<circular-progress>` elements
 
----
+### Requirement: Circular Progress Indicator
+
+The system SHALL provide a `<circular-progress>` custom element, shared by the fan app and the organizer console, that shows an indeterminate Material 3 circular progress indicator: an arc that grows, shrinks and rotates on a circular track. It SHALL come in two sizes, 48 px (default) and 24 px for use inside a button, with a 4 px stroke at 48 px and a 3 px stroke at 24 px. The arc SHALL use the `primary` color role of the surrounding app unless the parent sets another color. It SHALL expose `role="progressbar"` with an accessible name that defaults to the localized word for loading and can be set by the page, and SHALL carry no value while indeterminate. Under `prefers-reduced-motion: reduce` it SHALL stop growing and shrinking and rotate at most once every 2 seconds.
+
+#### Scenario: Default rendering
+
+- **WHEN** `<circular-progress>` is rendered without attributes
+- **THEN** a 48 px indeterminate circular indicator with a 4 px arc in the `primary` color is shown, exposed as a progressbar named for loading
+
+#### Scenario: Inside a button
+
+- **WHEN** `<circular-progress size="small">` is placed inside a pending button
+- **THEN** a 24 px indicator with a 3 px arc in the button's content color is shown, and the button keeps its size
+
+#### Scenario: Reduced motion
+
+- **WHEN** `prefers-reduced-motion: reduce` is active
+- **THEN** the arc keeps a fixed length and turns at most once every 2 seconds
+
+#### Scenario: Identity verification in progress
+
+- **WHEN** the fan app's identity verification callback screen waits for the result
+- **THEN** it shows `<circular-progress>` with the waiting message

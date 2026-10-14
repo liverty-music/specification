@@ -126,11 +126,22 @@ def ref_texts(repo, ref):
                                  capture_output=True, text=True, errors="ignore").stdout
 
 
+# A test file may name the capability once in a string constant and write
+# `@spec ${SPEC} "<scenario>"` in its test titles (a template literal).
+CONSTANT = re.compile(r"""\bconst\s+([A-Za-z_]\w*)\s*=\s*(['"`])([^'"`$\n]+)\2""")
+TEMPLATE_REF = re.compile(r"\$\{([A-Za-z_]\w*)\}")
+
+
+def resolve_constants(text):
+    constants = {name: value for name, _, value in CONSTANT.findall(text)}
+    return TEMPLATE_REF.sub(lambda m: constants.get(m.group(1), m.group(0)), text)
+
+
 def annotations(sources, pattern):
     found = set()
     for texts in sources:
         for text in texts:
-            found.update(norm(a, b) for a, b in pattern.findall(text))
+            found.update(norm(a, b) for a, b in pattern.findall(resolve_constants(text)))
     return found
 
 

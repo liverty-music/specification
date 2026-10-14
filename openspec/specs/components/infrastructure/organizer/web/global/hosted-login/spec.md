@@ -34,13 +34,21 @@ credential** and SHALL have this shape:
   already has a workspace IdP can federate.
 - `ignoreUnknownUsernames = true` — the login flow SHALL NOT disclose whether a
   given account or org exists (anti-enumeration).
-- `defaultRedirectUri = <organizer console origin>` — after the operator
+- `defaultRedirectUri = <organizer console origin>/?org_id=<tenant org id>` — after the operator
   completes credential setup via the invitation flow (which runs outside any
   in-flight OIDC request), the identity provider SHALL redirect them to the
   organizer console, from which the console completes sign-in. Without this, an
   operator who accepts the invite would dead-end on an identity-provider page
   with no path back to the console.
 - `allowDomainDiscovery` — **NOT required (MVP defaults it off).**
+- `hidePasswordReset = true` — the hosted login offers no password reset, its
+  only self-service path for an operator to set a password while local
+  authentication must stay enabled for passkeys.
+- Check lifetimes set explicitly to the identity provider's instance defaults
+  (Zitadel v4.19.4 `cmd/defaults.yaml`): password check 240h, external login
+  check 240h, MFA init skip 720h, second factor check 18h, multi-factor check
+  12h. Omitted lifetimes are stored as 0, and the identity provider's console
+  then refuses to save the tenant policy ("Form contains invalid value(s).").
 
 A **recovery path MUST exist** — passkey-only with **no** recovery is
 prohibited. Recovery SHALL be an **admin-initiated re-invite** (the system
@@ -55,10 +63,12 @@ Synced passkeys (iCloud Keychain / Google Password Manager) survive
 single-device loss, so a second **hardware** authenticator is NOT mandated for
 this operator persona.
 
-**Org resolution is bound to the operator's account, not to a URL parameter.**
+**Org resolution is bound to the operator's account; a URL parameter is only a hint.**
 The single OIDC app serves all tenants; the operator's org is fixed by the
 **invitation** (the invite code is bound to the operator, who belongs to exactly
-one tenant org) and, thereafter, by the operator's authenticated session/token.
+one tenant org) and, thereafter, by the operator's authenticated session/token. The `org_id` carried by the
+return address only selects the tenant org's login policy for sign-in and grants
+nothing; the token's org is authoritative.
 An operator SHALL NOT be routed to a different org by supplying a different
 email, and a session belonging to a different org SHALL NOT satisfy an
 onboarding entry for this tenant (the console enforces the token's org — see
@@ -79,6 +89,9 @@ requirement defines the required shape.
   `allowUsernamePassword=true`, `allowRegister=false`) and the operator SHALL be
   created with no password so the passkey is their only usable local method
 - **AND** `allowExternalIDP` and `ignoreUnknownUsernames` SHALL be enabled
+- **AND** `hidePasswordReset` SHALL be enabled, and every check lifetime SHALL be
+  the instance default (240h, 240h, 720h, 18h, 12h), never 0, on a new policy
+  and when an existing policy is converged on re-provisioning
 
 #### Scenario: The policy renders a usable login and returns the operator to the console
 
