@@ -16,7 +16,7 @@ An Organizer is a vetted business - a record label, management agency, promoter 
 | representative name | 代表者 of the Organizer | optional until entered; 1 to 100 characters |
 | business address | the Organizer's business address | optional until entered; 1 to 300 characters |
 | business phone number | the Organizer's business phone number | optional until entered; E.164 |
-| contact email | the Organizer's contact email | optional until entered; an email address |
+| contact email | the Organizer's contact email | optional until entered; an email address of at most 165 characters |
 | platform fee rate | the platform fee applied to the Organizer's future Orders, in hundredths of a percent | required; 0 to 3000; 800 for a new Organizer; never shown to the fan audience |
 
 ```mermaid

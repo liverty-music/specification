@@ -3,6 +3,7 @@ syntax = "proto3";
 package liverty_music.rpc.user.v1;
 
 import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/user.proto";
 
 // UserService provides operations for managing user accounts and profiles.
@@ -135,7 +136,7 @@ message GetResponse {
 // on a duplicate provider user ID.
 message CreateRequest {
   // Required. The user's email address for account identity.
-  entity.v1.UserEmail email = 1 [(buf.validate.field).required = true];
+  entity.v1.Email email = 1 [(buf.validate.field).required = true];
 
   // Optional. The user's home area, when it has already been selected during
   // the onboarding flow before account creation. Providing this field here

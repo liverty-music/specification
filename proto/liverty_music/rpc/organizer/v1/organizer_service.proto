@@ -1,20 +1,25 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.organizer.v1 provides the organizer-facing
-// OrganizerService that an operator uses to read their own Organizer from the
-// organizer console. It is served by the dedicated organizer Connect server
-// behind org-scoped role-claim authorization; the admin-facing surface for
-// managing Organizers lives separately in liverty_music.rpc.admin.organizer.v1.
+// OrganizerService that the organizer console uses to read the signed-in
+// person's Organizer and to send sign-in links to a person whose device does
+// not know their Organizer. It is served by the dedicated organizer Connect
+// server behind org-scoped role-claim authorization; the admin-facing surface
+// for managing Organizers lives separately in
+// liverty_music.rpc.admin.organizer.v1.
 package liverty_music.rpc.organizer.v1;
 
 import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/organizer.proto";
 
-// OrganizerService is the organizer-facing surface: an authenticated operator
-// reads their own Organizer. The caller's Organizer is resolved from the token
-// (the identity provider organization the token is scoped to). Authorization is
+// OrganizerService is the organizer-facing surface: a signed-in person reads
+// their own Organizer, and a person who is not signed in asks for sign-in
+// links by email. The caller's Organizer is resolved from the token (the
+// identity provider organization the token is scoped to). Authorization is
 // org-scoped from the token's role claim, and failures that would concern
-// another org never reveal whether such an Organizer exists.
+// another org never reveal whether such an Organizer exists. SendSignInLinks is
+// the only call that needs no sign-in.
 service OrganizerService {
   // Get returns the caller's own Organizer identity (id, name), resolved from
   // the authenticated token. The console holds no OrganizerId before this call
@@ -36,6 +41,20 @@ service OrganizerService {
   //   an Organizer exists.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Get(GetRequest) returns (GetResponse);
+
+  // SendSignInLinks emails the given address one organizer-console sign-in
+  // link for each active Organizer whose owner email it is, each link naming
+  // that Organizer's Organization by its short name. The console calls it when
+  // the device knows no Organizer. It needs no sign-in. It answers with the
+  // same empty response whether or not the address owns any Organizer, and
+  // sends at most 3 emails to one address in any 60 minutes; a further request
+  // for that address succeeds without sending.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The email is missing or not an email address.
+  // - RESOURCE_EXHAUSTED: The client made more than 10 requests in the last 60
+  //   minutes.
+  rpc SendSignInLinks(SendSignInLinksRequest) returns (SendSignInLinksResponse);
 }
 
 // GetRequest is empty: the caller's Organizer is resolved from the token, not
@@ -48,3 +67,13 @@ message GetResponse {
   // The caller's organizer (id and name).
   entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
 }
+
+// SendSignInLinksRequest carries the address to send sign-in links to.
+message SendSignInLinksRequest {
+  // Required. The email the person signs in with.
+  entity.v1.Email email = 1 [(buf.validate.field).required = true];
+}
+
+// SendSignInLinksResponse is empty, so the answer never reveals whether the
+// address owns an Organizer.
+message SendSignInLinksResponse {}
