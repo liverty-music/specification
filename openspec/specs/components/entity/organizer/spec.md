@@ -2,14 +2,15 @@
 
 ## Purpose
 
-An Organizer is a vetted business - a record label, management agency, promoter or self-publishing artist - that an admin creates to sell tickets for the Artists it represents. Being created by an admin is the vetting; an Organizer is an entity separate from any Artist, and its operators sign in to the Organizer's own isolated tenant.
+An Organizer is a vetted business - a record label, management agency, promoter or self-publishing artist - that an admin creates to sell tickets for the Artists it represents. Being created by an admin is the vetting; an Organizer is an entity separate from any Artist. The people who run it sign in to the Organizer's own Organization at the identity provider, with identities separate from any fan account they have, even under the same email.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | id | unique identity of the Organizer | required; UUID; assigned at creation; never the same value as an ArtistId |
 | name | public display name, such as the label or promoter name | required; 1 to 200 characters |
-| operator email | email of the initial operator, captured at creation to seed the operator's sign-in | required; an email address; never shown to the organizer or fan audiences |
-| provider organizer ID | the identity provider's ID for the Organizer: its isolated sign-in tenant | optional; empty until provisioning links the tenant; once set, no other Organizer has the same one |
+| short name | the Organizer's handle, given by the admin at creation: it names the Organizer's Organization, completes the user names of its identities and appears in the organizer console's sign-in address | required; 3 to 32 characters of lowercase letters, digits and hyphens, starting with a letter; unique across Organizers; never changes; `admin` and `liverty-music` are reserved; never shown to the fan audience |
+| owner email | email of the person who owns the Organizer, captured at creation; their identity in the Organizer's Organization is created with it and holds the owner role | required; an email address of at most 165 characters; may also be the email of a fan account or of another Organizer's owner; never shown to the fan audience |
+| provider organizer ID | the identity provider's ID for the Organizer's Organization | optional; empty until provisioning links the Organization; once set, no other Organizer has the same one |
 | status | lifecycle | provisioning, active or deactivated |
 | legal name | 販売業者の名称 (the legal business name) shown in the 特商法 (Specified Commercial Transactions Act) disclosure | optional until entered by an admin at vetting; 1 to 200 characters |
 | representative name | 代表者 of the Organizer | optional until entered; 1 to 100 characters |
@@ -20,6 +21,7 @@ An Organizer is a vetted business - a record label, management agency, promoter 
 
 ```mermaid
 erDiagram
+  Organizer ||--o| Organization : "is signed in to through"
   Organizer |o--o{ Artist : "represents"
   Organizer ||--o| PayoutAccount : "is paid out through"
   Organizer |o--o{ Series : "authors"
