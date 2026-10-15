@@ -12,6 +12,7 @@ package liverty_music.rpc.lottery_entry.v1;
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/card_authorization.proto";
 import "liverty_music/entity/v1/lottery_entry.proto";
+import "liverty_music/entity/v1/referral.proto";
 import "liverty_music/entity/v1/ticket_type.proto";
 import "liverty_music/entity/v1/user.proto";
 
@@ -42,15 +43,17 @@ service LotteryEntryService {
   // event, must still fit it. When the sale requires verification, the caller
   // must hold an Active IdentityVerification. A caller whose entry for the
   // TicketType is already Entered, Won or Lost cannot start another; one whose
-  // only earlier entry is Withdrawn can.
+  // only earlier entry is Withdrawn can. A referral_code is recorded for the
+  // returned Draft while it is a Draft; starting again with another code
+  // replaces it, and starting again without one keeps it.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   // - NOT_FOUND: The TicketType does not exist, or the caller has no stored
   //   account.
-  // - INVALID_ARGUMENT: The ticket_type_id is missing or malformed, or the
+  // - INVALID_ARGUMENT: The ticket_type_id is missing or malformed, the
   //   ticket_count is not greater than 0 or is above the TicketType's
-  //   per-account limit.
+  //   per-account limit, or the referral_code is given and malformed.
   // - FAILED_PRECONDITION: The TicketType's sale is not a LOTTERY sale or its
   //   window is not open, the sale requires verification and the caller holds
   //   no Active IdentityVerification, the caller's Issued tickets for the event plus the count
@@ -144,6 +147,11 @@ message StartRequest {
     gte: 1
     lte: 10
   }];
+
+  // Optional. The referral code of the link the fan came from. Recorded for
+  // the entry while it is a Draft; a malformed code fails with
+  // INVALID_ARGUMENT. Absent for an entry without a code.
+  optional entity.v1.ReferralCode referral_code = 3;
 }
 
 // StartResponse returns the Draft entry.

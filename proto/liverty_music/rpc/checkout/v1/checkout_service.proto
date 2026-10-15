@@ -9,6 +9,7 @@ import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/card_authorization.proto";
 import "liverty_music/entity/v1/checkout.proto";
 import "liverty_music/entity/v1/order.proto";
+import "liverty_music/entity/v1/referral.proto";
 import "liverty_music/entity/v1/ticket_type.proto";
 import "liverty_music/entity/v1/user.proto";
 
@@ -39,15 +40,17 @@ service CheckoutService {
   // TicketType's per-account limit and, together with the caller's Issued
   // tickets for the event and the tickets of their committed checkouts not yet
   // issued, must still fit it. When the sale requires verification, the caller
-  // must hold an Active IdentityVerification.
+  // must hold an Active IdentityVerification. A referral_code is recorded for
+  // the returned Checkout while it is HELD; starting again with another code
+  // replaces it, and starting again without one keeps it.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   // - NOT_FOUND: The TicketType does not exist, or the caller has no stored
   //   account.
-  // - INVALID_ARGUMENT: The ticket_type_id is missing or malformed, or the
+  // - INVALID_ARGUMENT: The ticket_type_id is missing or malformed, the
   //   ticket_count is missing, not greater than 0 or above the TicketType's
-  //   per-account limit.
+  //   per-account limit, or the referral_code is given and malformed.
   // - FAILED_PRECONDITION: The TicketType's sale is not a FIRST_COME sale, its
   //   event's concert is not published (for example cancelled), the TicketType
   //   is not on sale (not yet open, sold out or ended), the sale requires
@@ -137,6 +140,11 @@ message StartRequest {
     gte: 1
     lte: 10
   }];
+
+  // Optional. The referral code of the link the fan came from. Recorded for
+  // the Checkout while it is HELD; a malformed code fails with
+  // INVALID_ARGUMENT. Absent for a purchase without a code.
+  optional entity.v1.ReferralCode referral_code = 3;
 }
 
 // StartResponse returns the holding Checkout.

@@ -1,7 +1,7 @@
 # components/usecase/ticket-sale/list-own-by-event Specification
 
 ## Purpose
-TicketSaleUseCase.ListOwnByEvent shows an Organizer every sale of one of its events, with the entry stats of each lottery TicketType, the sold and held counts of each first-come TicketType, and whether each lottery sale has been drawn.
+TicketSaleUseCase.ListOwnByEvent shows an Organizer every sale of one of its events, with the entry stats of each lottery TicketType, the sold and held counts of each first-come TicketType, whether each lottery sale has been drawn, and the event's purchases per referral code.
 
 ## Requirements
 

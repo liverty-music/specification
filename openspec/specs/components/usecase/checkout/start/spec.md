@@ -1,7 +1,7 @@
 # components/usecase/checkout/start Specification
 
 ## Purpose
-CheckoutUseCase.Start begins a fan's checkout on a TicketType of a FirstCome TicketSale, or resumes it: it holds the chosen number of tickets for 15 minutes and returns the holding Checkout.
+CheckoutUseCase.Start begins a fan's checkout on a TicketType of a FirstCome TicketSale, or resumes it: it holds the chosen number of tickets for 15 minutes and returns the holding Checkout, and records the referral code it was started with.
 
 ## Requirements
 

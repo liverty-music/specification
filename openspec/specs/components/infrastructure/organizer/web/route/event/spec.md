@@ -1,7 +1,7 @@
 # components/infrastructure/organizer/web/route/event Specification
 
 ## Purpose
-The organizer console page of one event (one date of a concert): its date, venue and publish state with the actions on it, a Sales tab for the event's TicketSales and a Reception (受付) tab for the Scanners venue staff use at the door.
+The organizer console page of one event (one date of a concert): its date, venue and publish state with the actions on it, a Sales tab for the event's TicketSales and its purchases per referral code, and a Reception (受付) tab for the Scanners venue staff use at the door.
 
 ## Requirements
 

@@ -1,7 +1,7 @@
 # components/usecase/lottery-entry/start Specification
 
 ## Purpose
-LotteryEntryUseCase.Start begins a fan's LotteryEntry for a TicketType of an open Lottery sale, or resumes it, after checking the ticket count, the sale's verification requirement and the per-account limit. It returns the Draft entry; nothing is held on the card yet.
+LotteryEntryUseCase.Start begins a fan's LotteryEntry for a TicketType of an open Lottery sale, or resumes it, after checking the ticket count, the sale's verification requirement and the per-account limit. It returns the Draft entry, and records the referral code it was started with; nothing is held on the card yet.
 
 ## Requirements
 

@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// ReferralCode is the code a link to an event page carries in `?ref=`, so the
+// Organizer can count the purchases each link brought. It is free-form: it is
+// not registered in advance, grants no access and pays no reward, and it is
+// unrelated to an UNLISTED share link. The fan app lowercases a link's code
+// before it keeps it, so `Member-A` and `member-a` in links are one code.
+//
+// A Checkout or LotteryEntry started with a code keeps it in a Referral; no RPC
+// returns the Referral itself.
+message ReferralCode {
+  // The code: 1 to 32 characters, each a lowercase ASCII letter (a-z), a digit
+  // (0-9) or a hyphen.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 32
+    pattern: "^[a-z0-9-]+$"
+  }];
+}

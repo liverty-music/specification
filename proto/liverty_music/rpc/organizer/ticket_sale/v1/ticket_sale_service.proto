@@ -14,6 +14,7 @@ package liverty_music.rpc.organizer.ticket_sale.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/referral.proto";
 import "liverty_music/entity/v1/series.proto";
 import "liverty_music/entity/v1/ticket_sale.proto";
 import "liverty_music/entity/v1/ticket_type.proto";
@@ -68,7 +69,9 @@ service TicketSaleService {
   // whether it is drawn and, per TicketType, its LotteryEntryStats (entry,
   // ticket, winner and loser counts, returned beside the sales); for a FIRST_COME
   // sale, per TicketType, its quantity, sold count, held count and state now.
-  // An event that no sale offers returns an empty list.
+  // Beside the sales it returns the event's Paid Orders per referral code
+  // (ReferralCodeStats), with the purchases without a code as one direct
+  // group. An event that no sale offers returns an empty list.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The event_id is missing or malformed.
@@ -218,6 +221,24 @@ message LotteryEntryStats {
   reserved "requested_ticket_count";
 }
 
+// ReferralCodeStats counts the Paid Orders of one event whose Checkout or
+// LotteryEntry was started with one referral code. Refunded Orders are not
+// counted, and a LotteryEntry counts only once it won and its Order exists.
+message ReferralCodeStats {
+  // The referral code. Absent for the direct group: the purchases whose
+  // Checkout or LotteryEntry was started without a code.
+  optional entity.v1.ReferralCode code = 1;
+
+  // The number of Paid Orders, at least 1.
+  int32 order_count = 2 [(buf.validate.field).int32.gte = 0];
+
+  // The sum of the ticket counts of the Orders' Checkouts and LotteryEntries.
+  int32 ticket_count = 3 [(buf.validate.field).int32.gte = 0];
+
+  // The sum of the Orders' amounts, in whole yen, 税込 (tax-inclusive).
+  int64 amount = 4 [(buf.validate.field).int64.gte = 0];
+}
+
 // ListByEventResponse returns the event's sales with their counts.
 message ListByEventResponse {
   // The event's sales in start order, each with its TicketTypes. A FIRST_COME
@@ -229,6 +250,11 @@ message ListByEventResponse {
   // The entry stats of every TicketType of the LOTTERY sales above, one per
   // TicketType. Empty when none of the sales is a LOTTERY sale.
   repeated LotteryEntryStats lottery_entry_stats = 2;
+
+  // The event's Paid Orders per referral code, most Orders first, then by
+  // code; the direct group has no code. Empty when the event has no Paid
+  // Order.
+  repeated ReferralCodeStats referral_code_stats = 3;
 }
 
 // SetWindowRequest names the sale and its new window.
