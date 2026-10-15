@@ -63,6 +63,19 @@ message Description {
   }];
 }
 
+// Email represents an email address. Used for every email field across
+// entities and requests (a User's email, an Organizer's owner and contact
+// emails); the field name says whose address it is. At most 165 characters,
+// so that the user name `<email> (<short name>)` of an identity in an
+// Organizer's Organization stays within the identity provider's 200.
+message Email {
+  // The email address, at most 165 characters.
+  string value = 1 [(buf.validate.field).string = {
+    email: true
+    max_len: 165
+  }];
+}
+
 // Url represents a validated web address.
 // Used for any URI field across entities (source links, image URLs, official sites).
 message Url {

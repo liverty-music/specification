@@ -4,6 +4,7 @@ package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
+import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/user.proto";
 
 // Organizer represents a vetted ticket-selling business - a record label, management agency,
@@ -11,13 +12,14 @@ import "liverty_music/entity/v1/user.proto";
 // artists it represents. Existence is the vetting: an Organizer exists only
 // because an admin created it, so there is no separate `verified` flag and no
 // self-serve registration. An Organizer is distinct from an Artist — an artist
-// self-publishing gets its own Organizer with a distinct OrganizerId — and it
-// runs against its own isolated tenant at the identity provider, which its
-// operators sign into.
+// self-publishing gets its own Organizer with a distinct OrganizerId. The
+// people who run an Organizer sign in through its own Organization at the
+// identity provider, named by the Organizer's short name.
 //
 // The provider organizer ID (the identity provider's ID for the Organizer's
-// tenant) and the operational provisioning lifecycle are backend-only concerns
-// and are intentionally not part of this consumer entity.
+// Organization), the owner email and the provisioning lifecycle are
+// backend-only concerns and are intentionally not part of this consumer
+// entity.
 message Organizer {
   // The unique identifier for the organizer.
   OrganizerId id = 1 [(buf.validate.field).required = true];
@@ -59,7 +61,14 @@ message Organizer {
 
   // The Organizer's contact email, in the 特商法 disclosure. Absent until
   // entered.
-  ContactEmail contact_email = 9 [(google.api.field_behavior) = OPTIONAL];
+  Email contact_email = 9 [(google.api.field_behavior) = OPTIONAL];
+
+  // The Organizer's short name: a unique, never-changed handle chosen by an
+  // admin at creation. It names the Organizer's Organization at the identity
+  // provider and the organizer console's sign-in address
+  // (`?org=<short name>`). Set on admin and organizer reads; a fan-facing read
+  // never sets it.
+  OrganizerShortName short_name = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // Field 3 was the business details as one value, replaced by the five fields
   // above.
@@ -98,13 +107,6 @@ message BusinessAddress {
   }];
 }
 
-// ContactEmail is an Organizer's contact email address (メールアドレス), shown in
-// the 特商法 disclosure.
-message ContactEmail {
-  // The email address.
-  string value = 1 [(buf.validate.field).string.email = true];
-}
-
 // OrganizerId is a globally unique identifier for an organizer.
 message OrganizerId {
   // A UUID string mapping to the organizer's unique identity.
@@ -117,5 +119,20 @@ message OrganizerName {
   string value = 1 [(buf.validate.field).string = {
     min_len: 1
     max_len: 200
+  }];
+}
+
+// OrganizerShortName is an Organizer's short name: 3 to 32 lowercase letters
+// `a`-`z`, digits and hyphens, starting with a letter, e.g. `xx-records`.
+// `admin` and `liverty-music` are reserved for the admin and product
+// Organizations.
+message OrganizerShortName {
+  // The short name string.
+  string value = 1 [(buf.validate.field).string = {
+    pattern: "^[a-z][a-z0-9-]{2,31}$"
+    not_in: [
+      "admin",
+      "liverty-music"
+    ]
   }];
 }

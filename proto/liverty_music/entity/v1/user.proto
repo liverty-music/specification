@@ -5,6 +5,7 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/coordinates.proto";
+import "liverty_music/entity/v1/entity.proto";
 
 // UserId is a globally unique identifier for a platform user.
 message UserId {
@@ -33,12 +34,6 @@ message PhoneNumber {
   }];
 }
 
-// UserEmail represents a validated email address for communications.
-message UserEmail {
-  // The email address string, validated against standard email formats.
-  string value = 1 [(buf.validate.field).string.email = true];
-}
-
 // User represents a registered person on the Liverty Music platform.
 // Users are notified of upcoming concerts based on their following and favorite artists.
 message User {
@@ -53,7 +48,7 @@ message User {
   UserId id = 1 [(buf.validate.field).required = true];
 
   // The primary email address used for account identity and notifications.
-  UserEmail email = 2 [(buf.validate.field).required = true];
+  Email email = 2 [(buf.validate.field).required = true];
 
   reserved 3;
 

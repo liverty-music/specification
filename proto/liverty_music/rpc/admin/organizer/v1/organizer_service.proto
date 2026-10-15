@@ -8,18 +8,18 @@ package liverty_music.rpc.admin.organizer.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/organizer.proto";
 import "liverty_music/entity/v1/user.proto";
 
 // OrganizerService is the admin surface for managing Organizers — the vetted
-// businesses that represent artists. It creates an Organizer (provisioning an
-// isolated identity provider tenant with an initial `owner` operator), manages
-// the
-// Organizer↔Artist association (each artist is represented by at most one
+// businesses that represent artists. It creates an Organizer (provisioning its
+// own Organization at the identity provider with an `owner` identity for the
+// owner email), manages the Organizer↔Artist association (each artist is represented by at most one
 // Organizer), lists organizers for the admin console, records an Organizer's
 // 特商法 business details and its platform fee rate at vetting, deactivates an
 // Organizer as a minimal off-switch, and permanently deletes a deactivated
-// Organizer. An Organizer is returned with its id, name, legal name,
+// Organizer. An Organizer is returned with its id, name, short name, legal name,
 // representative name, business address, business phone number, contact email
 // and platform fee rate. The artists an Organizer represents are listed by
 // liverty_music.rpc.admin.artist.v1.ArtistService.ListByOrganizer, not here.
@@ -27,21 +27,25 @@ import "liverty_music/entity/v1/user.proto";
 // All RPCs are authorized only for the admin organization; callers outside it
 // are rejected with PERMISSION_DENIED at the admin server boundary.
 service OrganizerService {
-  // Create registers a new Organizer with a display name and an initial
-  // operator email, then provisions its isolated identity provider tenant (org,
-  // passkey-primary login policy, organizer-console project grant) and seeds
-  // the initial operator as its `owner`. Provisioning is idempotent and
-  // compensating: retrying a Create that failed partway never creates a
-  // duplicate Organizer or tenant org and never leaves the Organizer without an
-  // `owner` operator. The initial operator is created without a password and
-  // receives a passkey-registration init link from the identity provider to
-  // register a passkey on
-  // first sign-in.
+  // Create registers a new Organizer with a display name, a short name and an
+  // owner email, then provisions its Organization at the identity provider,
+  // named by the short name (passkey-primary sign-in policy, organizer-console
+  // project grant), and adds the owner's identity to it with the `owner` role.
+  // The owner identity has the user name `<owner email> (<short name>)` and the
+  // owner email, which may also be the email of a fan account or of an identity
+  // in another Organizer's Organization; the owner signs in by typing the
+  // email. It is created without a password and receives a
+  // passkey-registration link from the identity provider. Provisioning is
+  // idempotent and compensating: retrying a Create that failed partway never
+  // creates a duplicate Organizer or Organization and never leaves the
+  // Organizer without its `owner` identity.
   //
   // Possible errors:
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
-  // - INVALID_ARGUMENT: The name is empty/too long or the operator email is
-  //   malformed.
+  // - INVALID_ARGUMENT: The name is empty or too long, the short name is
+  //   missing or malformed, or the owner email is malformed or longer than 165
+  //   characters.
+  // - ALREADY_EXISTS: Another Organizer already has the short name.
   rpc Create(CreateRequest) returns (CreateResponse);
 
   // AssociateArtist links an existing Artist to an Organizer. There is no
@@ -84,10 +88,10 @@ service OrganizerService {
   rpc Get(GetRequest) returns (GetResponse);
 
   // Deactivate turns an Organizer off: the backend thereafter rejects all
-  // operations targeting it, its operators are deactivated at the identity
-  // provider, and its
+  // operations targeting it, the identities in its Organization are deactivated
+  // at the identity provider, and its
   // artist associations are freed so the artists can be re-associated. Full
-  // teardown of the tenant org and grants is out of scope. It is idempotent:
+  // teardown of the Organization and grants is out of scope. It is idempotent:
   // deactivating an already-deactivated Organizer succeeds.
   //
   // Possible errors:
@@ -101,16 +105,16 @@ service OrganizerService {
   // types, and their Events (with their lottery entries, checkouts, ticket
   // journeys, performers and scanner records), the Orders, Tickets and
   // reversed settlements for those Events, its series images and their files,
-  // its identity provider tenant with the tenant's operators, its artist
+  // its Organization at the identity provider with its identities, its artist
   // associations and its PayoutAccount record. Records in the payment provider
   // are kept.
   //
   // Nothing is removed when the Organizer is not deactivated, when any of its
   // Events has an Order that is not refunded or a settlement that is not
-  // reversed, or when the Organizer has a payout account. Files and the tenant
-  // are removed before the database records and an already removed file or
-  // tenant counts as removed, so a call that failed partway is completed by
-  // calling Delete again.
+  // reversed, or when the Organizer has a payout account. Files and the
+  // Organization are removed before the database records and an already
+  // removed file or Organization counts as removed, so a call that failed
+  // partway is completed by calling Delete again.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request carries no valid sign-in.
@@ -150,16 +154,20 @@ service OrganizerService {
   rpc SetPlatformFeeRate(SetPlatformFeeRateRequest) returns (SetPlatformFeeRateResponse);
 }
 
-// CreateRequest carries the new Organizer's name and its initial operator's
-// email.
+// CreateRequest carries the new Organizer's name, short name and owner email.
 message CreateRequest {
   // Required. The display name of the organizer to create.
   entity.v1.OrganizerName name = 1 [(buf.validate.field).required = true];
 
-  // Required. The email of the initial operator, seeded as the organizer's
-  // `owner` and sent a passkey-registration init link from the identity
-  // provider.
-  entity.v1.UserEmail operator_email = 2 [(buf.validate.field).required = true];
+  // Required. The email of the person who owns the organizer. Their identity
+  // is given the `owner` role and sent a passkey-registration link from the
+  // identity provider.
+  entity.v1.Email owner_email = 2 [(buf.validate.field).required = true];
+
+  // Required. The organizer's short name, unique and never changed. It names
+  // the organizer's Organization at the identity provider and the organizer
+  // console's sign-in address.
+  entity.v1.OrganizerShortName short_name = 3 [(buf.validate.field).required = true];
 }
 
 // CreateResponse returns the newly created Organizer.
@@ -255,7 +263,7 @@ message SetBusinessDetailsRequest {
   entity.v1.PhoneNumber business_phone_number = 5 [(buf.validate.field).required = true];
 
   // Required. The email address fans contact the business at.
-  entity.v1.ContactEmail contact_email = 6 [(buf.validate.field).required = true];
+  entity.v1.Email contact_email = 6 [(buf.validate.field).required = true];
 }
 
 // SetBusinessDetailsResponse returns the Organizer with its new business
