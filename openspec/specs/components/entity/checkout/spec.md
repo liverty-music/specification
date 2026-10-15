@@ -23,6 +23,7 @@ erDiagram
   User ||--o{ Checkout : "checks out"
   Checkout ||--o| Order : "is paid as"
   Checkout |o--o| CardAuthorization : "is paid by"
+  Checkout ||--o| Referral : "was started from"
 ```
 
 ```mermaid

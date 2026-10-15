@@ -19,6 +19,7 @@ erDiagram
   User ||--o{ LotteryEntry : "enters"
   LotteryEntry ||--o| Order : "is purchased by"
   LotteryEntry |o--o| CardAuthorization : "is paid by"
+  LotteryEntry ||--o| Referral : "was started from"
 ```
 
 ```mermaid
