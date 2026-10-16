@@ -266,7 +266,7 @@ The system SHALL persist hype changes made by guest users to localStorage withou
 
 - **WHEN** a guest user changes a hype level while `OnboardingService.isOnboarding` is `true`
 - **AND** the user is not authenticated
-- **THEN** the system SHALL persist the hype value in `GuestService` under `liverty:guest:hypes`
+- **THEN** the system SHALL persist the hype value in the artist's entry of `guest.followedArtists`
 - **AND** the system SHALL NOT revert the hype change in the UI
 - **AND** the system SHALL NOT mutate onboarding state (no step advance, no completion)
 - **AND** the signup-prompt-banner SHALL already have been visible (per the `Signup Banner on My Artists` requirement in the `signup-prompt-banner` capability); no additional banner-visibility mutation is required by this change handler

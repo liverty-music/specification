@@ -15,7 +15,7 @@ For cross-border transfers, the Privacy Policy SHALL name each third-party recip
 #### Scenario: Collected data and purposes are stated
 
 - **WHEN** the Privacy Policy is displayed
-- **THEN** it SHALL list the collected personal data categories (account identity, home area, follows, language preference, push subscription, analytics events) and the purpose of each use
+- **THEN** it SHALL list the collected personal data categories (account identity, home area, follows, language preference, push subscription, analytics events, purchase records — orders, tickets and the full name and phone number given for 本人確認 (identity check) — and the purchase route, that is the referral code of the link the fan came from when a purchase was started) and the purpose of each use
 
 #### Scenario: Third-party transfer and cross-border processing are disclosed
 

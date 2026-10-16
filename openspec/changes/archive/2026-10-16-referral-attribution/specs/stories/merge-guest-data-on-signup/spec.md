@@ -81,7 +81,9 @@ follow store SHALL clear `guest.followedArtists` as part of this cleanup. Partia
 - **WHEN** a `FollowService.SetHype` call fails during merge
 - **THEN** the system SHALL log the error
 - **AND** the system SHALL continue with remaining hype calls (best-effort)
-- **AND** the merge SHALL still be considered complete
+- **AND** the artist whose hype failed SHALL stay in `guest.followedArtists`, so
+  boot reconciliation retries it on the next authenticated start and the hype
+  is not lost
 
 #### Scenario: Guest data cleared after merge
 
@@ -109,8 +111,8 @@ follow store SHALL clear `guest.followedArtists` as part of this cleanup. Partia
 #### Scenario: Identity already has an account
 
 - **WHEN** a guest signs in with an identity that already has an account
-- **THEN** `UserService.Create` returns that account unchanged and the follow
-  migration continues
+- **THEN** `UserService.Get` finds that account, `UserService.Create` is not
+  called, and the follow migration continues
 - **AND** the guest-chosen home and preferred language SHALL NOT be applied to
   the pre-existing account — the returning user's saved account preferences win
   (only follows merge, as they are additive)
@@ -130,7 +132,7 @@ follow store SHALL clear `guest.followedArtists` as part of this cleanup. Partia
 - **WHEN** any `FollowService.Follow` or `FollowService.SetHype` call fails during migration
 - **THEN** the system SHALL log the error
 - **AND** the system SHALL continue with remaining calls (best-effort)
-- **AND** the system SHALL still set `onboardingStep` to COMPLETED
+- **AND** the system SHALL still mark onboarding complete (`onboardingComplete`)
 - **AND** each artist SHALL be removed from `guest.followedArtists` as its
   `Follow` succeeds, so only the failed items remain in localStorage for boot
   reconciliation to retry idempotently on the next authenticated start
@@ -138,7 +140,8 @@ follow store SHALL clear `guest.followedArtists` as part of this cleanup. Partia
 #### Scenario: Merge progress indication
 
 - **WHEN** sign-up is in progress
-- **THEN** the system SHALL display a loading indicator on the SignUp modal
+- **THEN** the system SHALL display a loading indicator on the sign-in callback
+  screen
 - **AND** the system SHALL NOT navigate away until **user creation** completes
   (the awaited Create call)
 - **AND** the system SHALL NOT block navigation on follow migration, which runs

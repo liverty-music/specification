@@ -26,9 +26,10 @@ The system SHALL automatically open the help bottom-sheet on the user's first vi
 
 ### Requirement: Help seen flags cleared on onboarding reset
 
-The system SHALL clear all per-page help-seen flags when the user restarts onboarding, so that contextual help auto-opens again for the fresh session.
+The system SHALL clear all per-page help-seen flags when the guest's local data is reset, at sign-in and when sign-up completes, so that contextual help auto-opens again for the next session. Tapping [Get Started] on Welcome SHALL NOT clear them.
 
 #### Scenario: Help-seen flags cleared on fresh onboarding
 
-- **WHEN** the user starts a fresh onboarding session (taps [Get Started] on Welcome)
+- **WHEN** the guest's local data is reset at sign-in or when sign-up completes
 - **THEN** the system SHALL clear all `onboarding.helpSeen:*` keys from localStorage
+- **AND** tapping [Get Started] on Welcome SHALL NOT clear them

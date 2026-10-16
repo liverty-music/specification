@@ -37,7 +37,7 @@ See proposal.md - Why. The approved plan is `~/.cache/referral-attribution-plan/
 | `checkout_id` | UUID NULL | `REFERENCES checkouts(id) ON DELETE CASCADE`; unique where not null |
 | `lottery_entry_id` | UUID NULL | `REFERENCES lottery_entries(id) ON DELETE CASCADE`; unique where not null |
 | `code` | TEXT | `chk_referrals_code`: `code ~ '^[a-z0-9-]{1,32}$'` |
-| `create_at` | TIMESTAMPTZ | not null |
+| `created_at` | TIMESTAMPTZ | not null; the Referral's create time (backend AGENTS.md: a creation time is named `created_at`) |
 
 `chk_referrals_one_source` requires exactly one of the two source columns, mirroring `chk_orders_one_source`. `ON DELETE CASCADE` realizes "A Referral lives with its source": `Concert.DeleteAndSuppress` (`rdb/concert_repo.go:271`) and `Organizer.Delete` (`rdb/organizer_repo.go:412`) delete Checkouts, and `lottery_entries` cascade from `ticket_types`; none of those statements changes. Purchases without a code get no row.
 
@@ -104,7 +104,7 @@ Following the rpc-design skill (`.claude/skills/rpc-design/SKILL.md`): no new se
   }
   ```
 - `TicketSaleUseCase.ListOwnByEvent` returns `*OwnEventSales{Sales []*TicketSaleView; ReferralCodeStats []entity.ReferralCodeStats}` instead of the bare slice. It calls `Referral.ListStatsByEvent` after the ownership check.
-- All additions; one minor proto release (v0.86.0 expected), no `buf skip breaking`.
+- All additions; one minor proto release (v0.87.0, cut 2026-10-15 from #1161; v0.86.0 was taken by reuse-fan-email-for-organizer-sign-in), no `buf skip breaking`.
 
 ### D6 — Migration and database roles
 
@@ -126,7 +126,7 @@ Following the rpc-design skill (`.claude/skills/rpc-design/SKILL.md`): no new se
 ### D8 — The organizer Sales tab
 
 - `EventTicketSales` (`organizer/services/ticket-sale-client.ts:42-45`) gains `referralCodeStats`. `organizer/model/sale-model.ts` maps it to rows: the code as given, `件`, `枚`, and the yen amount formatted like the sale prices. The direct row is moved last.
-- `sales-tab.html` renders the section after the sales list (`</ul>` at line 97) inside the `ready` state, as a table with a caption, a short note on what counts, and `まだ購入はありません` when there are no rows. ja and en strings go under `sale.referral.*` in the organizer locales.
+- `sales-tab.html` renders the section after the sales list (`</ul>` at line 97) inside the `ready` state, with the console's shared `data-list` (labelled by the section title; a list at phone width), a short note on what counts, and `まだ購入はありません` when there are no rows. ja and en strings go under `sale.referral.*` in the organizer locales.
 - The section appears only when the event has at least one sale (Assumption A4).
 
 ### D9 — Storage names without `liverty`
@@ -178,7 +178,7 @@ Add to section 2 of `legal.privacy` in ja and en:
 - ・購入に関する情報（注文、チケット、本人確認のための氏名・電話番号、決済の参照番号）
 - ・購入の経路（紹介リンクに含まれる紹介コード）
 
-Add to section 3 (purposes): measuring which links led to purchases and reporting the count per code to the Organizer of the event. Update the revision date. The spec `global/legal-document` enumerates the categories, so its scenario is MODIFIED. The purchase-records line fills an existing gap; the plan's mockup already shows it (Assumption A3). The Stripe cross-border wording stays with `payments-legal-compliance` task 3.2.
+Add to section 3 (purposes): issuing tickets, checking the buyer's identity at entry and handling refunds from the purchase records (owner, 2026-10-16), and measuring which links led to purchases and reporting the count per code to the Organizer of the event. Update the revision date. The spec `global/legal-document` enumerates the categories, so its scenario is MODIFIED. The purchase-records line fills an existing gap; the plan's mockup already shows it (Assumption A3). The Stripe cross-border wording stays with `payments-legal-compliance` task 3.2.
 
 ### D11 — Analytics events carry no query of the app's own URLs
 
@@ -215,3 +215,10 @@ Add to section 3 (purposes): measuring which links led to purchases and reportin
 - **A5 — The kept code is not cleared by a purchase.** Further purchases of the same Series within 7 days count for the same link.
 - **A6 — When the fan changes the ticket count, the new Checkout or Draft is attributed from the code sent with that Start.** The Referral of the released one stays and is never counted.
 - **A7 — No cleanup of old storage entries, IndexedDB databases or caches.** They stay unused on the owner's and the tester's devices; clearing site data removes them.
+
+## Scenarios verified without an E2E test
+
+The two story scenarios below need a second Series or a link older than 7 days on production, which the production E2E cannot set up. The fan app's route tests verify them (task 8.1):
+
+@spec-manual stories/attribute-a-purchase-to-a-referral-link "Another tour is not attributed" -- frontend `src/routes/checkout/checkout-route.spec.ts:732` and `src/routes/lottery-entry/lottery-entry-route.spec.ts:500` ("Another Series": the kept code is not sent for another Series); the backend records only what Start receives
+@spec-manual stories/attribute-a-purchase-to-a-referral-link "Link older than 7 days" -- frontend `src/routes/checkout/checkout-route.spec.ts:719` and `src/routes/lottery-entry/lottery-entry-route.spec.ts:509` ("Code expired"), and `test/adapter/storage/referral-storage.spec.ts` (expiry at exactly 7 days)
