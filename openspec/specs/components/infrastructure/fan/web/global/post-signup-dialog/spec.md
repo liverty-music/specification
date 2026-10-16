@@ -15,22 +15,22 @@ Whether an authenticated callback is treated as a first sign-up SHALL be determi
 #### Scenario: Dialog shown after first signup
 
 - **WHEN** the auth-callback route completes an authenticated callback whose originating flow is the **sign-up** flow
-- **AND** `localStorage['liverty:postSignup:shown']` is not set
-- **THEN** the system SHALL set `localStorage['liverty:postSignup:shown']` to the pending marker
+- **AND** `localStorage['postSignup.shown']` is not set
+- **THEN** the system SHALL set `localStorage['postSignup.shown']` to the pending marker
 - **AND** the system SHALL navigate to `/dashboard`
 - **AND** the Dashboard SHALL display the post-signup dialog on load
 
 #### Scenario: Dialog not shown on subsequent logins
 
 - **WHEN** the auth-callback route completes for a returning user
-- **AND** `localStorage['liverty:postSignup:shown']` is already set
+- **AND** `localStorage['postSignup.shown']` is already set
 - **THEN** the system SHALL NOT show the post-signup dialog
 
 #### Scenario: Sign-in with an empty local cache does not trigger the dialog
 
 - **WHEN** the auth-callback route completes an authenticated callback whose originating flow is the **sign-in** flow
 - **AND** no user identifier is cached locally (e.g. a new browser/device, cleared storage, or a prior guest session)
-- **THEN** the system SHALL NOT set `localStorage['liverty:postSignup:shown']` to the pending marker
+- **THEN** the system SHALL NOT set `localStorage['postSignup.shown']` to the pending marker
 - **AND** the system SHALL NOT display the celebration overlay or the post-signup dialog
 - **AND** the user SHALL be navigated to `/dashboard` without a first-run payoff
 

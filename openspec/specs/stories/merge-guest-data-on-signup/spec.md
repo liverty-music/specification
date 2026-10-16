@@ -62,7 +62,7 @@ reconcile migrates, so reverted state is never resurrected.
 - **AND** no guest-merge receipt exists for the account
 - **AND** a store finds leftover guest data in localStorage
 - **THEN** the store SHALL run its idempotent migration, then write the
-  per-account receipt (e.g. `liverty:guestMerged:<userId>`), then clear the
+  per-account receipt (e.g. `guestMerged:<userId>`), then clear the
   leftover guest data
 
 #### Scenario: Reconciliation does not resurrect reverted state
@@ -94,7 +94,6 @@ The system SHALL store guest session data in LocalStorage under namespaced keys 
 
 - **WHEN** a guest user changes a hype level for a followed artist
 - **THEN** the system SHALL update the `hype` field of the matching entry in `guest.followedArtists`
-- **AND** the system SHALL NOT write to the `liverty:guest:hypes` key
 
 #### Scenario: Legacy data read with hype fallback
 
@@ -115,9 +114,7 @@ central orchestrator. Home and language SHALL be migrated as Create-time
 inputs; follows and hype SHALL be migrated by the follow store after the user
 exists, reading hype from the unified `guest.followedArtists` entries. Each
 store SHALL clear its own guest data when its own migration completes; the
-follow store SHALL clear `guest.followedArtists` as part of this cleanup, and
-SHALL NOT need to remove `liverty:guest:hypes` (the key is no longer
-written). Partial failures SHALL be healed by boot reconciliation (see the
+follow store SHALL clear `guest.followedArtists` as part of this cleanup. Partial failures SHALL be healed by boot reconciliation (see the
 `entity-store-layer` capability), not by an in-flight retry barrier.
 
 #### Scenario: Guest hype merged from follow entries
@@ -132,13 +129,14 @@ written). Partial failures SHALL be healed by boot reconciliation (see the
 - **WHEN** a `FollowService.SetHype` call fails during merge
 - **THEN** the system SHALL log the error
 - **AND** the system SHALL continue with remaining hype calls (best-effort)
-- **AND** the merge SHALL still be considered complete
+- **AND** the artist whose hype failed SHALL stay in `guest.followedArtists`, so
+  boot reconciliation retries it on the next authenticated start and the hype
+  is not lost
 
 #### Scenario: Guest data cleared after merge
 
 - **WHEN** the data merge completes
 - **THEN** the system SHALL remove `guest.followedArtists` from localStorage as part of the standard guest data cleanup
-- **AND** the system SHALL NOT need to remove `liverty:guest:hypes` (key is no longer written)
 
 #### Scenario: Successful data merge
 
@@ -161,8 +159,8 @@ written). Partial failures SHALL be healed by boot reconciliation (see the
 #### Scenario: Identity already has an account
 
 - **WHEN** a guest signs in with an identity that already has an account
-- **THEN** `UserService.Create` returns that account unchanged and the follow
-  migration continues
+- **THEN** `UserService.Get` finds that account, `UserService.Create` is not
+  called, and the follow migration continues
 - **AND** the guest-chosen home and preferred language SHALL NOT be applied to
   the pre-existing account — the returning user's saved account preferences win
   (only follows merge, as they are additive)
@@ -182,7 +180,7 @@ written). Partial failures SHALL be healed by boot reconciliation (see the
 - **WHEN** any `FollowService.Follow` or `FollowService.SetHype` call fails during migration
 - **THEN** the system SHALL log the error
 - **AND** the system SHALL continue with remaining calls (best-effort)
-- **AND** the system SHALL still set `onboardingStep` to COMPLETED
+- **AND** the system SHALL still mark onboarding complete (`onboardingComplete`)
 - **AND** each artist SHALL be removed from `guest.followedArtists` as its
   `Follow` succeeds, so only the failed items remain in localStorage for boot
   reconciliation to retry idempotently on the next authenticated start
@@ -190,7 +188,8 @@ written). Partial failures SHALL be healed by boot reconciliation (see the
 #### Scenario: Merge progress indication
 
 - **WHEN** sign-up is in progress
-- **THEN** the system SHALL display a loading indicator on the SignUp modal
+- **THEN** the system SHALL display a loading indicator on the sign-in callback
+  screen
 - **AND** the system SHALL NOT navigate away until **user creation** completes
   (the awaited Create call)
 - **AND** the system SHALL NOT block navigation on follow migration, which runs
