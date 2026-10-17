@@ -1,7 +1,7 @@
 # components/entity/organization Specification
 
 ## Purpose
-An Organization is a sign-in unit at the identity provider: it holds identities - the accounts people sign in with - and the sign-in policy they sign in under. There is one product organization holding the fans' identities, one admin organization holding the platform admins' identities, and one Organization per Organizer, named by the Organizer's short name, holding the identities of the people who run that Organizer. An Organization is not a business: the business is the Organizer, which refers to its Organization by its provider organizer ID. The identity provider is the only record of an Organization; Liverty Music stores no row of its own for it.
+An Organization is a sign-in unit at the identity provider: it holds identities - the accounts people sign in with - and the sign-in policy they sign in under. There is one product organization holding the fans' identities, one admin organization holding the platform admins' identities, and one Organization per Organizer, named by the Organizer's short name, holding the identities of that Organizer's members. An Organization is not a business: the business is the Organizer, which refers to its Organization by its provider organizer ID. The identity provider is the only record of an Organization; Liverty Music stores no row of its own for it.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
