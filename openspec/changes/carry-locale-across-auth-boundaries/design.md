@@ -24,7 +24,6 @@ See proposal.md (Why) for the two symptoms. The current mechanics, verified in c
 **Non-Goals:**
 
 - **Admin app.** It has no language switch. Its sign-in keeps sending no `ui_locales`, so the hosted login uses the browser language and then English.
-- **Fan `<html lang>`.** The fan page always declares `lang="ja"`; only the organizer console syncs it. This is a separate accessibility gap; see Open Questions.
 - **Sign-out page language.** Zitadel's end-session page is not given a language (`ui_locales` on end-session). The sign-out redirect passes through without a page the user reads.
 
 ## Decisions
@@ -75,6 +74,24 @@ The setting is instance-wide, because there is one Login v2 deployment. The admi
 
 This matches Zitadel's instance `defaultLanguage = en`, so a browser in an unsupported language sees one language end to end.
 
+### D5. Fan `<html lang>` follows the shown language
+
+The fan page hard-codes `<html lang="ja">` in `index.html`. Nothing updates it, so an English page declares Japanese.
+
+Fix it the way the organizer console does (`syncDocumentLanguage` in `organizer/i18n/console-language.ts`): an activating `AppTask` in the fan app does three things:
+
+- awaits `i18n.initPromise`;
+- sets `document.documentElement.lang` to `normalizeToSupportedLanguage(i18n.getLocale())`;
+- re-applies it on `Signals.I18N_EA_CHANNEL`.
+
+The channel fires after every `setLocale`: a guest switch, hydration applying the account language, and a Settings switch. One subscriber therefore covers every path.
+
+The static `lang="ja"` in `index.html` stays as the pre-boot value. Changing it to `en` would make the pre-boot page declare English on a Japanese browser.
+
+Alternative: set `lang` inside `changeLocale` and the hydration task. Rejected: that is two call sites to keep in sync instead of one subscriber, and it would miss the initial detection.
+
+Also outside the language rule: `shared/ui/circular-progress` reads `<html lang>`, so in the fan app it now follows the shown language too.
+
 ## Risks / Trade-offs
 
 - **Devices that already lost the key.** On devices where hydration already removed the key, the first guest open after this deploy still detects from `navigator`, once. → Accepted, see the REMOVED requirement's Migration. A signed-in boot after the deploy rewrites the key from the account value, so the next sign-out is already correct.
@@ -89,10 +106,7 @@ This matches Zitadel's instance `defaultLanguage = en`, so a browser in an unsup
 3. **Verify in prod** (the dev environment is stopped), on a browser whose first language is English:
    - choose Japanese on Welcome, then Login: the hosted login is in Japanese;
    - sign in, reload, sign out: Welcome is in Japanese;
-   - same on the organizer console.
+   - same on the organizer console;
+   - DevTools shows `<html lang>` following the shown language on the fan app.
 
 Rollback: revert either PR. The two are independent. Without the frontend change the Zitadel setting is a no-op, and without the Zitadel setting `ui_locales` still applies whenever no cookie exists.
-
-## Open Questions
-
-- **Fan `<html lang>`.** Should the fan page sync `<html lang>` like the organizer console does? It does not affect this change's rule, so it is left for a separate change if wanted.

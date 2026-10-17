@@ -21,8 +21,12 @@
   - "Authenticated language switch RPC failure"
   - "Language switched while signed in survives sign-out"
 - [ ] 3.4 Pass the current language (`normalizeToSupportedLanguage(i18n.getLocale())`) as `uiLocales` from every fan sign-in/sign-up call site: `src/routes/welcome/welcome-route.ts`, `src/routes/settings/settings-route.ts` (Login and Sign up), `src/components/auth-status.ts`. Verify with unit or fixture tests annotated `@spec` "Login from the Welcome page in Japanese" and "Sign up in English": the call carries the active locale.
-- [ ] 3.5 Update the remaining fan tests that assert the key is removed during authenticated sessions (hydration, auth-callback, settings sign-out fixture), so they assert the new behavior. Verify with `make check` in frontend passing.
-- [ ] 3.6 Add a Playwright test for sign-out: with a mocked authenticated session and account language `ja` on an English browser locale, run sign-out and land on Welcome. Verify that Welcome renders Japanese, annotated `@spec` "Welcome after sign-out keeps the account's language" and "Involuntary logout keeps the language". If the OIDC redirect cannot be driven in E2E, cover the post-redirect boot (key present, `navigator` English → Japanese) instead, and record the gap under this task.
+- [ ] 3.5 Keep the fan page's `<html lang>` equal to the shown language with an activating `AppTask` that applies it after i18n init and on every locale-changed signal (design D5). Verify with unit tests annotated `@spec`:
+  - "English shown on first open"
+  - "Switch updates the declared language"
+  - "Account language applied after sign-in"
+- [ ] 3.6 Update the remaining fan tests that assert the key is removed during authenticated sessions (hydration, auth-callback, settings sign-out fixture), so they assert the new behavior. Verify with `make check` in frontend passing.
+- [ ] 3.7 Add a Playwright test for sign-out: with a mocked authenticated session and account language `ja` on an English browser locale, run sign-out and land on Welcome. Verify that Welcome renders Japanese, annotated `@spec` "Welcome after sign-out keeps the account's language" and "Involuntary logout keeps the language". If the OIDC redirect cannot be driven in E2E, cover the post-redirect boot (key present, `navigator` English → Japanese) instead, and record the gap under this task.
 
 ## 4. Organizer console (frontend organizer/; components/infrastructure/organizer/web/global/i18n)
 

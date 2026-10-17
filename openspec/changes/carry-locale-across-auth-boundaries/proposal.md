@@ -13,6 +13,7 @@ Separately, the fan app and the organizer console fall back to Japanese for a br
 - **Fan app: keep the language across sign-out.** `localStorage['language']` is kept and always holds the language last applied, in every auth state. Hydration no longer removes it. While signed in, the account's `preferredLanguage` still wins over it as soon as hydration resolves. **BREAKING (spec):** this replaces the requirement "Remove Legacy localStorage Language Key After Authenticated Session Begins".
 - **Fan app and organizer console: send the language to hosted login.** Every sign-in and sign-up redirect sends the language shown in the app as OIDC `ui_locales`. This covers fan Login/Sign up, organizer sign-in, and forced re-authentication.
 - **Hosted login: let `ui_locales` win over an old cookie.** The Login v2 deployment sets `ZITADEL_UI_LOCALES_OVERRIDE_COOKIE=true`. Without it, an existing `NEXT_LOCALE` cookie wins over `ui_locales`.
+- **Fan app: the page declares the language shown.** The fan page always declares `lang="ja"` today, whatever it shows. It now follows the shown language, as the organizer console already does.
 - **Fallback changes from Japanese to English** in the fan app and the organizer console. **BREAKING (visible):** a first visit from an unsupported browser language (e.g. French) now shows English instead of Japanese. Browsers set to Japanese or English are not affected. This also changes the language stored on accounts created from such a browser.
 
 ## Capabilities
@@ -29,6 +30,7 @@ Separately, the fan app and the organizer console fall back to Japanese for a br
   - "Remove Legacy localStorage Language Key After Authenticated Session Begins" is removed. New requirement: "Language Kept Across Sign-in and Sign-out".
   - "Language Switching" no longer forbids the authenticated switch from updating the saved language.
   - New requirement: "Hosted Login Opens in the App's Language".
+  - New requirement: "Page Declares the Language Shown".
 - `components/infrastructure/organizer/web/global/i18n`:
   - The first-open fallback becomes English.
   - New requirement: hosted login opens in the console's language.
@@ -41,7 +43,7 @@ No entity, usecase or adapter changes. `User.preferredLanguage` and `UserService
 - **frontend**
   - `shared/services/auth-service.ts`: `signIn`/`signUp` accept and forward `ui_locales`.
   - Fan:
-    - `src/main.ts`: `fallbackLng`.
+    - `src/main.ts`: `fallbackLng`, and keeping `<html lang>` in sync.
     - `src/util/change-locale.ts`: `normalizeToSupportedLanguage` fallback.
     - `src/services/user-hydration-task.ts`: stop removing the key.
     - Sign-in/sign-up call sites: `src/routes/settings/settings-route.ts`, `src/components/auth-status.ts`.

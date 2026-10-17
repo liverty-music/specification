@@ -40,6 +40,25 @@ Every redirect from the fan app to the hosted login screen (Login and Sign up, f
 - **THEN** the hosted sign-up screen opens in English
 
 
+### Requirement: Page Declares the Language Shown
+
+The fan app's page SHALL always declare the language it is showing, so that screen readers, the browser's translation offer and hyphenation follow it. The declared language SHALL change together with the shown language: on first open, after the account's language is applied, and on every switch, without a reload.
+
+#### Scenario: English shown on first open
+
+- **WHEN** a guest opens the fan app for the first time in a browser whose preferred language is English
+- **THEN** the page declares English
+
+#### Scenario: Switch updates the declared language
+
+- **WHEN** a guest switches the Welcome page from English to Japanese
+- **THEN** the page declares Japanese without a reload
+
+#### Scenario: Account language applied after sign-in
+
+- **WHEN** a signed-in user whose account language is `ja` opens the app with English saved on this device
+- **THEN** the page declares Japanese once the account is loaded
+
 ### Requirement: Language Chosen on First Open
 The system SHALL choose the language on first open with one rule: the language chosen in the app and saved on this device, else the browser's preferred language when it is Japanese or English, else English. A `?lang=` URL parameter SHALL override the rule for that open. The chosen language SHALL be saved on this device so that later opens do not re-detect. The rule runs before a signed-in user's account is loaded, so its result is a TENTATIVE initial language for a signed-in session: once the account is loaded, its preferred language replaces it per "Account Language Wins While Signed In".
 
