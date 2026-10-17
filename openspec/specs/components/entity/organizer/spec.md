@@ -40,25 +40,6 @@ stateDiagram-v2
 
 ## Requirements
 
-### Requirement: Name and operator email are well-formed
-
-An Organizer's name SHALL be 1 to 200 characters long, and its operator email SHALL be an email address.
-
-#### Scenario: Empty name
-
-- **WHEN** the name is empty
-- **THEN** the Organizer is invalid
-
-#### Scenario: Name too long
-
-- **WHEN** the name is 201 characters long
-- **THEN** the Organizer is invalid
-
-#### Scenario: Malformed operator email
-
-- **WHEN** the operator email is not an email address
-- **THEN** the Organizer is invalid
-
 ### Requirement: A new Organizer starts provisioning with its own identity
 
 A new Organizer SHALL start in status provisioning with no provider organizer ID, and SHALL receive a new id of its own. An Organizer made for a self-publishing artist SHALL still have an id different from that Artist's ArtistId; there is no separate verified flag, because existence is the vetting.
@@ -122,7 +103,7 @@ An Organizer SHALL become active only from provisioning, and a deactivated Organ
 
 ### Requirement: Business details
 
-An Organizer's business details, shown to fans as the 特商法 (Specified Commercial Transactions Act) 販売業者 disclosure, SHALL consist of its legal name of 1 to 200 characters, its representative name of 1 to 100 characters, its business address of 1 to 300 characters, its business phone number in E.164 form and its contact email, an email address. An Organizer SHALL have complete business details only when all five are present and valid.
+An Organizer's business details, shown to fans as the 特商法 (Specified Commercial Transactions Act) 販売業者 disclosure, SHALL consist of its legal name of 1 to 200 characters, its representative name of 1 to 100 characters, its business address of 1 to 300 characters, its business phone number in E.164 form and its contact email, an email address of at most 165 characters. An Organizer SHALL have complete business details only when all five are present and valid.
 
 #### Scenario: Corporation with all details
 
@@ -133,6 +114,11 @@ An Organizer's business details, shown to fans as the 特商法 (Specified Comme
 
 - **WHEN** an Organizer has no business address
 - **THEN** its business details are not complete
+
+#### Scenario: Contact email too long
+
+- **WHEN** an Organizer's contact email is 166 characters long
+- **THEN** its business details are not valid
 
 ### Requirement: Platform fee rate
 
@@ -147,3 +133,42 @@ An Organizer's platform fee rate SHALL be 0 to 30% in hundredths of a percent, a
 
 - **WHEN** an Organizer's rate is set to 31%
 - **THEN** the rate is invalid
+
+### Requirement: Name, short name and owner email are well-formed
+
+An Organizer's name SHALL be 1 to 200 characters long. Its short name SHALL be 3 to 32 characters of lowercase letters `a`-`z`, digits and hyphens, starting with a letter, and SHALL NOT be `admin` or `liverty-music`. Its owner email SHALL be an email address of at most 165 characters, so that the user name `<owner email> (<short name>)` of its owner identity stays within 200 characters.
+
+#### Scenario: Empty name
+
+- **WHEN** the name is empty
+- **THEN** the Organizer is invalid
+
+#### Scenario: Name too long
+
+- **WHEN** the name is 201 characters long
+- **THEN** the Organizer is invalid
+
+#### Scenario: Valid short name
+
+- **WHEN** the short name is `xx-records` or `band2026`
+- **THEN** the short name is valid
+
+#### Scenario: Malformed short name
+
+- **WHEN** the short name is `XX Records`, `2band`, `ab` or 33 characters long
+- **THEN** the Organizer is invalid
+
+#### Scenario: Reserved short name
+
+- **WHEN** the short name is `admin` or `liverty-music`
+- **THEN** the Organizer is invalid
+
+#### Scenario: Malformed owner email
+
+- **WHEN** the owner email is not an email address
+- **THEN** the Organizer is invalid
+
+#### Scenario: Owner email too long
+
+- **WHEN** the owner email is 166 characters long
+- **THEN** the Organizer is invalid

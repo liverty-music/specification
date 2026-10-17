@@ -30,12 +30,13 @@ Every request SHALL carry a valid sign-in, or fail with Unauthenticated, and the
 - **WHEN** a caller without the admin role calls SetPlatformFeeRate
 - **THEN** it fails with PermissionDenied and the rate is unchanged
 
-### Requirement: Requests are validated before any usecase runs
+### Requirement: Requests are validated before a usecase runs
 
 The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 - a required OrganizerId or ArtistId is missing or malformed;
 - Create's name is not 1 to 200 characters;
-- Create's operator email is not an email address;
+- Create's short name is missing or is not a valid short name in the terms of the Organizer entity;
+- Create's owner email is not an email address of at most 165 characters;
 - any of SetBusinessDetails' legal name, representative name, business address, business phone number and contact email is missing;
 - SetPlatformFeeRate's rate is missing.
 
@@ -44,9 +45,14 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 - **WHEN** Create is called with a 201-character name
 - **THEN** it fails with InvalidArgument and no Organizer is created
 
-#### Scenario: Malformed operator email
+#### Scenario: Malformed short name
 
-- **WHEN** Create is called with an operator email that is not an email address
+- **WHEN** Create is called with the short name `XX Records`
+- **THEN** it fails with InvalidArgument and no Organizer is created
+
+#### Scenario: Malformed owner email
+
+- **WHEN** Create is called with an owner email that is not an email address
 - **THEN** it fails with InvalidArgument
 
 #### Scenario: Missing OrganizerId
@@ -59,24 +65,24 @@ The boundary SHALL fail with InvalidArgument, before any usecase runs, when:
 - **WHEN** SetPlatformFeeRate is called without a rate
 - **THEN** it fails with InvalidArgument and the rate is unchanged
 
-### Requirement: Each call runs one OrganizerUseCase method
+### Requirement: Each call runs one OrganizerUseCase method and returns the short name
 
 Each call SHALL run one usecase method:
-- Create SHALL run OrganizerUseCase.Create and return the created Organizer.
+- Create SHALL run OrganizerUseCase.Create with the name, the short name and the owner email and return the created Organizer.
 - Get and List SHALL run OrganizerUseCase.Get and OrganizerUseCase.List for any Organizer the admin names.
 - AssociateArtist, DisassociateArtist, Deactivate, Delete, SetBusinessDetails and SetPlatformFeeRate SHALL run the usecase method of the same name.
 
-The admin Organizer service SHALL NOT list an Organizer's Artists; the admin artist service does (ListByOrganizer). Errors from the usecase SHALL be returned unchanged. An Organizer is returned with its id, name, legal name, representative name, business address, business phone number, contact email and platform fee rate.
+The admin Organizer service SHALL NOT list an Organizer's Artists; the admin artist service does (ListByOrganizer). Errors from the usecase SHALL be returned unchanged. An Organizer is returned with its id, name, short name, legal name, representative name, business address, business phone number, contact email and platform fee rate.
 
 #### Scenario: Admin lists Organizers and inspects a roster
 
 - **WHEN** an admin lists Organizers and then requests one Organizer's Artists
-- **THEN** it returns every Organizer, and the Artists that Organizer represents come from the admin artist service's ListByOrganizer, not from the Organizer service
+- **THEN** it returns every Organizer with its short name, and the Artists that Organizer represents come from the admin artist service's ListByOrganizer, not from the Organizer service
 
 #### Scenario: Admin reads any Organizer
 
 - **WHEN** an admin calls Get for a deactivated Organizer
-- **THEN** it returns that Organizer's id, name, business details and platform fee rate
+- **THEN** it returns that Organizer's id, name, short name, business details and platform fee rate
 
 #### Scenario: Admin deletes a deactivated Organizer
 
@@ -92,3 +98,8 @@ The admin Organizer service SHALL NOT list an Organizer's Artists; the admin art
 
 - **WHEN** an admin calls SetBusinessDetails with all five business details
 - **THEN** OrganizerUseCase.SetBusinessDetails runs and the Organizer is returned with them
+
+#### Scenario: Short name already used
+
+- **WHEN** OrganizerUseCase.Create fails with AlreadyExists for the short name
+- **THEN** Create fails with AlreadyExists

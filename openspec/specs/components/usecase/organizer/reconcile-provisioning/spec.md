@@ -63,11 +63,11 @@ When Organizer.ListByStatus fails, ReconcileProvisioning SHALL fail and change n
 - **WHEN** Organizer.ListByStatus fails
 - **THEN** ReconcileProvisioning fails and no Organizer changes
 
-### Requirement: A permanent failure deactivates the Organizer
+### Requirement: A permanent failure deactivates the Organizer left provisioning
 
 When completing an Organizer fails with AlreadyExists, InvalidArgument or FailedPrecondition, which retrying cannot fix, ReconcileProvisioning SHALL deactivate it through OrganizerUseCase.Deactivate so that later runs skip it, and SHALL NOT delete it. When the deactivation fails, the Organizer stays provisioning for the next run.
 
-#### Scenario: Operator email taken
+#### Scenario: Owner email rejected
 
-- **WHEN** an Organizer left provisioning fails to complete because its operator email belongs to another account
+- **WHEN** an Organizer left provisioning fails to complete because the sign-in service rejects its owner email
 - **THEN** it becomes deactivated, its records are kept, and the next run does not try it again
