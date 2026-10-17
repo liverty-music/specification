@@ -17,9 +17,8 @@ import "liverty_music/entity/v1/user.proto";
 // identity provider, named by the Organizer's short name.
 //
 // The provider Organizer ID (the identity provider's ID for the Organizer's
-// Organization), the owner email and the provisioning lifecycle are
-// backend-only concerns and are intentionally not part of this consumer
-// entity.
+// Organization) and the owner email are backend-only concerns and are
+// intentionally not part of this consumer entity.
 message Organizer {
   // The unique identifier for the Organizer.
   OrganizerId id = 1 [(buf.validate.field).required = true];
@@ -70,10 +69,29 @@ message Organizer {
   // never sets it.
   OrganizerShortName short_name = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
 
+  // The Organizer's lifecycle status. Set on admin reads; a fan-facing read
+  // never sets it.
+  OrganizerStatus status = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+
   // Field 3 was the business details as one value, replaced by the five fields
   // above.
   reserved 3;
   reserved "seller_details";
+}
+
+// OrganizerStatus is where an Organizer is in its lifecycle: provisioning,
+// then active, and deactivated from either. A deactivated Organizer can be
+// deleted.
+enum OrganizerStatus {
+  // The status is not set, as on a fan-facing read.
+  ORGANIZER_STATUS_UNSPECIFIED = 0;
+  // The Organizer's Organization at the identity provider is not ready yet.
+  ORGANIZER_STATUS_PROVISIONING = 1;
+  // The Organizer is in operation.
+  ORGANIZER_STATUS_ACTIVE = 2;
+  // The Organizer is turned off: the backend refuses every operation on it
+  // except Delete.
+  ORGANIZER_STATUS_DEACTIVATED = 3;
 }
 
 // LegalName is an Organizer's 販売業者の名称 (the legal name of the
