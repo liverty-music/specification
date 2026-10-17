@@ -42,12 +42,16 @@ Alternative: a `SignedOut` subscriber that writes the current locale. Rejected f
 
 Keeping the key is also why the authed boot shows the account language on first paint in the common case: the key already equals the account value.
 
+Implementation note: the two places that apply the account's language after sign-in (`user-hydration-task.ts` at boot, `auth-callback-route.ts` mid-session) also write the key explicitly after a successful `setLocale`, for the same reason as `changeLocale`.
+
 ### D2. The caller passes the language to `AuthService`
 
 `signIn` and `signUp` gain an optional `uiLocales?: string` option, forwarded as `ui_locales` to `signinRedirect`. Each caller resolves the language it is showing:
 
 - **Fan.** Settings Login/Sign up and `auth-status` use `I18N.getLocale()` normalized by `normalizeToSupportedLanguage`. If the Welcome page has its own Login/Sign up path, it gets the same treatment.
 - **Organizer.** `auth-hook` and the unrecoverable-expiry `onUnrecoverable` in `organizer-auth-retry-interceptor` use `IConsoleLanguage.current`.
+
+Implementation note: "every redirect" also covers the fan sign-ups on Event, My Artists and Dashboard, and the organizer's wrong-organization re-auth (`org-enforcement.ts`) and callback state-miss retry. The fan call sites use `currentLanguage(i18n)` (`src/util/change-locale.ts`). The organizer transport factory takes `IConsoleLanguage` as a parameter, so the retry interceptor reads `current` when the sign-in starts.
 
 Alternatives considered:
 
@@ -90,6 +94,8 @@ The static `lang="ja"` in `index.html` stays as the pre-boot value. Changing it 
 
 Alternative: set `lang` inside `changeLocale` and the hydration task. Rejected: that is two call sites to keep in sync instead of one subscriber, and it would miss the initial detection.
 
+Implementation note: the fan's i18n options moved from `src/main.ts` into `FanI18nConfiguration` (`src/lib/i18n/fan-i18n-configuration.ts`), which also registers this `AppTask`, mirroring the organizer's `ConsoleI18nConfiguration`, so unit tests boot the real configuration.
+
 Also outside the language rule: `shared/ui/circular-progress` reads `<html lang>`, so in the fan app it now follows the shown language too.
 
 ## Risks / Trade-offs
@@ -110,3 +116,13 @@ Also outside the language rule: `shared/ui/circular-progress` reads `<html lang>
    - DevTools shows `<html lang>` following the shown language on the fan app.
 
 Rollback: revert either PR. The two are independent. Without the frontend change the Zitadel setting is a no-op, and without the Zitadel setting `ui_locales` still applies whenever no cookie exists.
+
+## Manual verification
+
+Verified by hand in prod on 2026-10-17, on a browser whose first language is English, after cloud-provisioning#658 and frontend v1.97.2 rolled out (tasks.md 5.2, checks (a)–(d) all passed).
+
+@spec-manual components/infrastructure/fan/web/global/hosted-login "App language wins over the browser language" -- check (a): Welcome switched to 日本語, Login → the hosted login opened in Japanese.
+@spec-manual components/infrastructure/fan/web/global/hosted-login "App language wins over a language remembered from an earlier visit" -- check (c): English picked with the in-login selector, aborted, Login again from the app in Japanese → the hosted login opened in Japanese.
+@spec-manual components/infrastructure/fan/web/global/hosted-login "No language requested" -- by the Login v2 v4.19.4 source, not by hand: with no `ui_locales` and no cookie, `apps/login/src/i18n/request.ts` takes the first `accept-language` tag that `allowedLanguages` contains. This change does not touch that path; the admin app follows it.
+@spec-manual components/infrastructure/fan/web/global/hosted-login "Unsupported browser language and no request" -- by the same source, not by hand: an `accept-language` tag outside `allowedLanguages` falls through to the instance `defaultLanguage`, which is `en`.
+@spec-manual components/infrastructure/fan/web/global/hosted-login "App in English on a browser in another supported language" -- same path as checks (a) and (c) with `ui_locales=en`: unit tests assert the fan app sends `en` when it shows English (`test/components/auth-status.spec.ts`, `test/routes/settings-route.spec.ts` "Sign up in English"), and the override flag lets it win over `accept-language` and the cookie. Not repeated by hand on a German browser.
