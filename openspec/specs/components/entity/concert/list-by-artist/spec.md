@@ -18,7 +18,7 @@ ListByArtist SHALL return every Concert whose performers include the Artist, ord
 - **WHEN** the same Artist is listed with upcoming only
 - **THEN** only the future Concert is returned
 
-#### Scenario: Draft organizer concert excluded
+#### Scenario: Draft Organizer concert excluded
 - **WHEN** the Artist performs at a DRAFT Event of a first-party Series
 - **THEN** that Concert is not returned
 

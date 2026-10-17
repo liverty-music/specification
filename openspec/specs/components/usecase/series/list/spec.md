@@ -18,10 +18,10 @@ List SHALL return the caller's Organizer's Series newest first (Series.ListByOrg
 - **WHEN** the Organizer owns a CANCELLED Series
 - **THEN** it is returned
 
-#### Scenario: Other organizers excluded
+#### Scenario: Other Organizers excluded
 - **WHEN** another Organizer owns a Series
 - **THEN** it is not returned
 
-#### Scenario: Missing organizer
+#### Scenario: Missing Organizer
 - **WHEN** no Organizer is given
 - **THEN** List fails with InvalidArgument

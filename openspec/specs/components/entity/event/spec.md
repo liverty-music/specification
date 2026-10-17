@@ -9,7 +9,7 @@ An Event is one performance at one Venue on one local date, at an optional start
 | id | event identifier | required |
 | series | the engagement it belongs to | required |
 | venue | where it happens | required |
-| listed venue name | venue text as listed by the source or organizer, normalized | optional, 1–255 characters; absent on events stored before the name was kept |
+| listed venue name | venue text as listed by the source or Organizer, normalized | optional, 1–255 characters; absent on events stored before the name was kept |
 | local date | calendar date at the venue | required; a date without a time of day |
 | start time | performance start | optional; absent means unknown |
 | open time | doors open | optional; absent means unknown |
@@ -72,7 +72,7 @@ An Event SHALL carry no title, type or source page; those belong to its Series a
 An Event of a first-party Series SHALL have a publish state, DRAFT, PUBLISHED or CANCELLED, and an Event of a discovered Series SHALL have none. A new Event of a first-party Series SHALL start DRAFT. The only transitions SHALL be DRAFT to PUBLISHED and PUBLISHED to CANCELLED. A DRAFT Event SHALL NOT become CANCELLED; a DRAFT Event that will not happen is removed. CANCELLED SHALL be terminal.
 
 #### Scenario: Discovered event has no publish state
-- **WHEN** an Event belongs to a Series with no organizer
+- **WHEN** an Event belongs to a Series with no Organizer
 - **THEN** it has no publish state
 
 #### Scenario: New authored event is a draft
@@ -92,7 +92,7 @@ An Event of a first-party Series SHALL have a publish state, DRAFT, PUBLISHED or
 An Event SHALL be publicly visible when its Series is not first-party, or when it is PUBLISHED and its first-party Series' visibility is PUBLIC. A DRAFT or CANCELLED Event, and any Event of an UNLISTED Series, SHALL NOT be publicly visible.
 
 #### Scenario: Discovered event is visible
-- **WHEN** an Event's Series has no organizer
+- **WHEN** an Event's Series has no Organizer
 - **THEN** it is publicly visible
 
 #### Scenario: Published event of a public series is visible

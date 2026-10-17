@@ -11,31 +11,31 @@ The page SHALL show the event's date and start time in Japan time, its venue and
 
 #### Scenario: Draft event
 
-- **WHEN** an operator opens a draft event of XX Tour 2026 on 3 November at Zepp Haneda
+- **WHEN** a member opens a draft event of XX Tour 2026 on 3 November at Zepp Haneda
 - **THEN** the header shows 11月3日(火) 18:00 JST · Zepp Haneda with the badge 下書き and offers 公開する, with 中止する and 公演を編集 in its menu
 
 #### Scenario: Publish confirmed
 
-- **WHEN** the operator presses 公開する and confirms in the dialog
+- **WHEN** the member presses 公開する and confirms in the dialog
 - **THEN** the badge becomes 公開中 and the snackbar says the event was published
 
 #### Scenario: Reception tab address
 
-- **WHEN** an operator opens the Reception tab's address directly after signing in
+- **WHEN** a member opens the Reception tab's address directly after signing in
 - **THEN** the event page opens with 受付 selected
 
 ### Requirement: The fan page of a published date
 
-For a published date of a PUBLIC concert, the page SHALL show the address of the date's fan event page (`/events/<event id>` on the fan app) with a copy action, so the operator can share it. A draft or cancelled date, and any date of an UNLISTED concert, SHALL show no fan address, because fans cannot open it.
+For a published date of a PUBLIC concert, the page SHALL show the address of the date's fan event page (`/events/<event id>` on the fan app) with a copy action, so the member can share it. A draft or cancelled date, and any date of an UNLISTED concert, SHALL show no fan address, because fans cannot open it.
 
 #### Scenario: Public date
 
-- **WHEN** an operator opens the published 3 November event of the PUBLIC concert XX Tour 2026
+- **WHEN** a member opens the published 3 November event of the PUBLIC concert XX Tour 2026
 - **THEN** the page shows the fan page address of that event, and copying puts it on the clipboard
 
 #### Scenario: Unlisted concert
 
-- **WHEN** an operator opens a published event of an UNLISTED concert
+- **WHEN** a member opens a published event of an UNLISTED concert
 - **THEN** no fan page address is shown
 
 ### Requirement: The Sales tab explains a missing prerequisite
@@ -44,7 +44,7 @@ The Sales tab SHALL say why no sale can be started, and link to where to fix it,
 
 #### Scenario: Draft event
 
-- **WHEN** an operator opens the Sales tab of a draft event
+- **WHEN** a member opens the Sales tab of a draft event
 - **THEN** it says 販売を始めるには、公演を公開してください with a link to publish, and no sale can be started
 
 #### Scenario: No start time
@@ -106,7 +106,7 @@ When the event has no sale the tab SHALL say so and offer 抽選で販売する 
 
 #### Scenario: Lottery created
 
-- **WHEN** an operator presses 抽選で販売する, fills in ファンクラブ先行 and saves
+- **WHEN** a member presses 抽選で販売する, fills in ファンクラブ先行 and saves
 - **THEN** the Sales tab opens with ファンクラブ先行 listed as 受付開始前 or 受付中 and the snackbar confirms it
 
 ### Requirement: Edit a sale from the Sales tab
@@ -115,12 +115,12 @@ Each first-come sale SHALL offer 編集, which opens the first-come sale editor 
 
 #### Scenario: Edit a first-come sale
 
-- **WHEN** an operator presses 編集 on the 一般発売 first-come sale
+- **WHEN** a member presses 編集 on the 一般発売 first-come sale
 - **THEN** the first-come sale editor opens for the event with that sale's settings
 
 #### Scenario: Edit a lottery before it opens
 
-- **WHEN** an operator presses 編集 on a lottery sale that opens tomorrow
+- **WHEN** a member presses 編集 on a lottery sale that opens tomorrow
 - **THEN** the lottery sale editor opens with that sale's window, price, quantity and per-account limit
 
 #### Scenario: Lottery already open
@@ -134,7 +134,7 @@ Each sale SHALL offer a choice of its verification requirement — 本人確認�
 
 #### Scenario: Tighten while open
 
-- **WHEN** an operator changes an open sale from 本人確認なし to マイナンバーカードで本人確認済み
+- **WHEN** a member changes an open sale from 本人確認なし to マイナンバーカードで本人確認済み
 - **THEN** the sale's requirement is JPKI-only and the snackbar confirms it
 
 #### Scenario: Change fails
@@ -144,11 +144,11 @@ Each sale SHALL offer a choice of its verification requirement — 本人確認�
 
 ### Requirement: The Reception tab lists one Scanner per device
 
-The Reception tab SHALL list the event's Scanners by number, labelled 受付1, 受付2 and so on, with their state: 未使用 (Unused), 使用中 (InUse) with the time it was first opened in Japan time, or 取り消し済み (Revoked). It SHALL let the operator issue a Scanner with one action, without asking for a name, and show the new Scanner's link with actions to copy and share it; the new row SHALL enter the list with a short motion. The link SHALL be on the reception origin, which is separate from the console origin, and carry the token in its fragment, so that the token never reaches a web server or its access logs. An InUse or Revoked Scanner SHALL no longer show its link. The tab SHALL show the event's reception window and that each link works only on the first device that opens it, and offer a link to the reception guide, opened in a new tab, to hand to venue staff with the links.
+The Reception tab SHALL list the event's Scanners by number, labelled 受付1, 受付2 and so on, with their state: 未使用 (Unused), 使用中 (InUse) with the time it was first opened in Japan time, or 取り消し済み (Revoked). It SHALL let the member issue a Scanner with one action, without asking for a name, and show the new Scanner's link with actions to copy and share it; the new row SHALL enter the list with a short motion. The link SHALL be on the reception origin, which is separate from the console origin, and carry the token in its fragment, so that the token never reaches a web server or its access logs. An InUse or Revoked Scanner SHALL no longer show its link. The tab SHALL show the event's reception window and that each link works only on the first device that opens it, and offer a link to the reception guide, opened in a new tab, to hand to venue staff with the links.
 
 #### Scenario: Issue two scanners
 
-- **WHEN** an operator issues two Scanners for an event without Scanners
+- **WHEN** a member issues two Scanners for an event without Scanners
 - **THEN** 受付1 and 受付2 are listed as 未使用, each with a link to copy
 
 #### Scenario: Scanner opened by staff
@@ -162,7 +162,7 @@ For a Scanner that is not Revoked the tab SHALL offer 取り消す (revoke) and 
 
 #### Scenario: Staff changed phones
 
-- **WHEN** the operator revokes and reissues 受付1 of an event with Scanners 1 and 2, and confirms
+- **WHEN** the member revokes and reissues 受付1 of an event with Scanners 1 and 2, and confirms
 - **THEN** 受付1 is 取り消し済み and a new 未使用 受付3 is shown with its link
 
 ### Requirement: The Reception tab explains a missing prerequisite
@@ -171,12 +171,12 @@ The Reception tab SHALL say, and not offer to issue a Scanner, when the event is
 
 #### Scenario: Unpublished event
 
-- **WHEN** the operator opens the Reception tab of a draft event
+- **WHEN** the member opens the Reception tab of a draft event
 - **THEN** the tab says the event must be published before links can be issued
 
 #### Scenario: Event without a start time
 
-- **WHEN** the operator opens the Reception tab of a published event without a start time
+- **WHEN** the member opens the Reception tab of a published event without a start time
 - **THEN** the tab says the event needs a start time before links can be issued
 
 ### Requirement: The Sales tab shows purchases per referral code

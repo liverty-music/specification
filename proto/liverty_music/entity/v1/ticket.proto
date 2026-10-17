@@ -47,7 +47,7 @@ enum TicketStatus {
 //
 // Every issued Ticket is a covered ticket (特定興行入場券) carrying ALL THREE legal
 // conditions:
-//   (i)   the face states resale without the organizer's consent is prohibited
+//   (i)   the face states resale without the Organizer's consent is prohibited
 //         (`resale_without_consent_prohibited`, always true);
 //   (ii)  the face specifies date/venue (via `event_id`) + the eligible person
 //         (the ticket's User; admission is general with no seat map);
@@ -84,7 +84,7 @@ message Ticket {
     (buf.validate.field).required = true
   ];
 
-  // Covered-ticket condition (i): the face states resale without the organizer's
+  // Covered-ticket condition (i): the face states resale without the Organizer's
   // consent is prohibited. Constrained to true — every issued ticket asserts this
   // so it qualifies as a 特定興行入場券.
   bool resale_without_consent_prohibited = 7 [(buf.validate.field).bool.const = true];

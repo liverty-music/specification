@@ -1,8 +1,8 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.organizer.payout_account.v1 provides the
-// organizer-facing PayoutAccountService that an operator uses from the
-// organizer console; the Organizer identity surface lives in
+// organizer-facing PayoutAccountService that a member uses from the organizer
+// console; the Organizer identity surface lives in
 // liverty_music.rpc.organizer.v1.
 package liverty_music.rpc.organizer.payout_account.v1;
 
@@ -11,11 +11,11 @@ import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/payout_account.proto";
 
 // PayoutAccountService is the organizer-facing surface for the Organizer's
-// PayoutAccount: an authenticated operator reads its own account at the payment
-// provider and its payout onboarding status. The caller's Organizer is resolved
-// from the token (org-scoped from the role claim; failures that would concern
-// another org never reveal whether such an Organizer exists), mirroring the
-// organizer OrganizerService.
+// PayoutAccount: an authenticated member reads its Organizer's account at the
+// payment provider and its payout onboarding status. The caller's Organizer is
+// resolved from the token (org-scoped from the role claim; failures that would
+// concern another org never reveal whether such an Organizer exists), mirroring
+// the organizer OrganizerService.
 service PayoutAccountService {
   // Get returns the caller's own PayoutAccount and its payout onboarding
   // status, plus a provider-hosted URL to (re)start or complete the payment

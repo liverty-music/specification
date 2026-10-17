@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Update lets the owning organizer operator edit a concert: everything while it is a draft, and corrections — title, description, performers, doors-open and start times, and new draft dates — once it has published dates.
+Update lets a member of the owning Organizer edit a concert: everything while it is a draft, and corrections — title, description, performers, doors-open and start times, and new draft dates — once it has published dates.
 
 ## Requirements
 
@@ -10,8 +10,8 @@ Update lets the owning organizer operator edit a concert: everything while it is
 
 Update SHALL fail with PermissionDenied, without revealing whether the Series exists, when the Series does not exist or is not owned by the caller's Organizer.
 
-#### Scenario: Another organizer's series
-- **WHEN** an operator updates a Series owned by another Organizer
+#### Scenario: Another Organizer's series
+- **WHEN** a member updates a Series owned by another Organizer
 - **THEN** Update fails with PermissionDenied
 
 #### Scenario: Unknown series

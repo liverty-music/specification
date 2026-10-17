@@ -2,7 +2,7 @@
 
 ## Purpose
 
-OrganizerUseCase.ReconcileProvisioning finishes provisioning for every Organizer left in status provisioning, for example after a failed Create, so each eventually becomes active with an owner operator.
+OrganizerUseCase.ReconcileProvisioning finishes provisioning for every Organizer left in status provisioning, for example after a failed Create, so each eventually becomes active with an owner identity.
 
 ## Requirements
 
@@ -17,10 +17,10 @@ ReconcileProvisioning SHALL run every 5 minutes, the first run 5 minutes after t
 
 ### Requirement: Completes every Organizer left provisioning
 
-ReconcileProvisioning SHALL find the Organizers in status provisioning through Organizer.ListByStatus and complete each the way Create does, reusing the recorded tenant when there is one:
+ReconcileProvisioning SHALL find the Organizers in status provisioning through Organizer.ListByStatus and complete each the way Create does, reusing the recorded Organization when there is one:
 
-1. create and record the tenant through Organizer.EnsureTenantOrg and Organizer.SetProviderOrganizerID, only when none is recorded;
-2. complete it through Organizer.ProvisionTenant;
+1. only when none is recorded, create the Organization through Organization.Create; when that fails with AlreadyExists, resolve it through Organization.GetByName, where NotFound fails with Internal and leaves the Organizer provisioning for the next run; then record it through Organizer.SetProviderOrganizerID;
+2. complete it through Organization.Provision;
 3. move the Organizer from provisioning to active through Organizer.CompareAndSetStatus;
 4. announce that the Organizer was created.
 
@@ -29,12 +29,17 @@ A failure to announce SHALL NOT count as a failure.
 #### Scenario: Organizer left provisioning
 
 - **WHEN** an Organizer is provisioning after a failed Create
-- **THEN** it becomes active, linked to one tenant with an owner operator, and its creation is announced
+- **THEN** it becomes active, linked to one Organization with an owner identity, and its creation is announced
 
-#### Scenario: Tenant already recorded
+#### Scenario: Organization already recorded
 
-- **WHEN** an Organizer left provisioning already has a recorded tenant
-- **THEN** that tenant is completed and no other tenant is created
+- **WHEN** an Organizer left provisioning already has a recorded Organization
+- **THEN** that Organization is completed and no other Organization is created
+
+#### Scenario: Organization created but not recorded
+
+- **WHEN** an earlier attempt created the Organization named by an Organizer's short name but did not record it, so Organization.Create fails with AlreadyExists
+- **THEN** that Organization is found through Organization.GetByName, recorded and completed, no second Organization is created, and the Organizer becomes active
 
 ### Requirement: One failure does not stop the others
 

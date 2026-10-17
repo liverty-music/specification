@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Delete lets an admin permanently remove a Concert from the catalog and suppress its slot, so that neither discovery nor organizer publishing brings it back.
+Delete lets an admin permanently remove a Concert from the catalog and suppress its slot, so that neither discovery nor Organizer publishing brings it back.
 
 ## Requirements
 
 ### Requirement: Delete removes and suppresses
 
-Delete SHALL remove the Concert and suppress its slot (Concert.DeleteAndSuppress), whatever the Concert's origin — discovered, approved or organizer-published — and whatever its performers. Delete SHALL fail with InvalidArgument when no Event id is given.
+Delete SHALL remove the Concert and suppress its slot (Concert.DeleteAndSuppress), whatever the Concert's origin — discovered, approved or Organizer-published — and whatever its performers. Delete SHALL fail with InvalidArgument when no Event id is given.
 
 #### Scenario: Auto-published concert deleted
 - **WHEN** an admin deletes a discovered Concert

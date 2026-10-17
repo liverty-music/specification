@@ -25,21 +25,21 @@ service ArtistService {
   // Possible errors:
   // - UNAUTHENTICATED: The request carries no valid sign-in.
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
-  // - INVALID_ARGUMENT: The organizer id is missing or malformed.
-  // - NOT_FOUND: The organizer does not exist.
+  // - INVALID_ARGUMENT: The Organizer id is missing or malformed.
+  // - NOT_FOUND: The Organizer does not exist.
   rpc ListByOrganizer(ListByOrganizerRequest) returns (ListByOrganizerResponse);
 }
 
 // ListByOrganizerRequest identifies the Organizer whose represented Artists to
 // list.
 message ListByOrganizerRequest {
-  // Required. The organizer whose represented artists to return.
+  // Required. The Organizer whose represented artists to return.
   entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
 }
 
 // ListByOrganizerResponse contains the Artists the Organizer currently
 // represents.
 message ListByOrganizerResponse {
-  // The artists represented by the organizer. Empty when it represents none.
+  // The artists represented by the Organizer. Empty when it represents none.
   repeated entity.v1.Artist artists = 1;
 }

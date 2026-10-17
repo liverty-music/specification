@@ -2,7 +2,7 @@
 
 ## Purpose
 
-An admin removes a wrong Concert from the catalog for good: neither the next discovery run nor an organizer's publish brings the same slot back.
+An admin removes a wrong Concert from the catalog for good: neither the next discovery run nor an Organizer's publish brings the same slot back.
 
 ## Requirements
 
@@ -15,5 +15,5 @@ After ConcertUseCase.Delete removes a Concert, its Venue, date and start time SH
 - **THEN** no Concert and no ConcertCandidate exists for that slot
 
 #### Scenario: Organizer publishes into the slot
-- **WHEN** an organizer publishes a draft with a performance at the deleted slot
+- **WHEN** an Organizer publishes a draft with a performance at the deleted slot
 - **THEN** the publish fails with FailedPrecondition

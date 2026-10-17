@@ -64,7 +64,7 @@ message GetRequest {}
 
 // GetResponse returns the caller's Organizer identity.
 message GetResponse {
-  // The caller's organizer (id and name).
+  // The caller's Organizer (id and name).
   entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
 }
 

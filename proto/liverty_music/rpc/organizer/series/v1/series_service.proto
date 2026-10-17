@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.organizer.series.v1 provides the organizer-facing
-// SeriesService, the authoring surface an organizer uses to create and
+// SeriesService, the authoring surface an Organizer uses to create and
 // publish first-party series for the artists it represents. It is served by
 // the dedicated organizer Connect server behind org-scoped role-claim
 // authorization; the admin-facing catalog management lives separately in
@@ -18,7 +18,7 @@ import "liverty_music/entity/v1/series_image.proto";
 import "liverty_music/entity/v1/venue.proto";
 
 // SeriesService is the organizer-facing authoring surface: an authenticated
-// operator creates a first-party Series as an informational event page,
+// member creates a first-party Series as an informational event page,
 // edits it, publishes its dates to fans, corrects it after publish, and
 // cancels dates. A Series is a single show, a multi-day run, or a tour with
 // one or more dates; times live on each date, so a 2部制 day is two dates
@@ -188,7 +188,7 @@ service SeriesService {
   // List returns the series authored by the caller's own Organizer, both
   // drafts and published, so the console can render the authoring dashboard.
   // The Organizer is resolved from the token; the list is unbounded on the
-  // wire because an organizer's own catalog is small.
+  // wire because an Organizer's own catalog is small.
   //
   // Possible errors:
   // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
@@ -200,16 +200,16 @@ service SeriesService {
 
 // EventDraft is one performance being authored under a series: its calendar
 // date, optional start and open times, its venue and, for an Event that
-// already exists, its id. The venue is the map place the operator picked from
+// already exists, its id. The venue is the map place the member picked from
 // liverty_music.rpc.organizer.venue.v1.VenueService.Search; a typed name alone
 // is never saved.
 message EventDraft {
-  // Required. The venue name as the operator saw it for the picked place, kept
+  // Required. The venue name as the member saw it for the picked place, kept
   // as the event's listed venue name.
   entity.v1.VenueName venue_name = 1 [(buf.validate.field).required = true];
 
-  // The place id of the candidate the operator picked from
-  // VenueService.Search; the operator never types it. Required for a new date
+  // The place id of the candidate the member picked from
+  // VenueService.Search; the member never types it. Required for a new date
   // and for a DRAFT Event: the Venue holding this place id is used, or a new
   // Venue is created from the map catalog's place (name, coordinates and admin
   // area), and there is no resolution by name; Create and Update fail with
@@ -290,7 +290,7 @@ message CreateRequest {
 message CreateResponse {
   // The created series, whose derived publish state is DRAFT, including its
   // authoring fields (description, cover image, visibility, publish state,
-  // organizer id).
+  // Organizer id).
   entity.v1.Series series = 1 [(buf.validate.field).required = true];
 
   // The dates of the series, as Concerts in date order. Always contains at

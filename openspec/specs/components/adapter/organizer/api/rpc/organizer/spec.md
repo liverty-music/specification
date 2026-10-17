@@ -2,13 +2,13 @@
 
 ## Purpose
 
-The organizer-facing Organizer service boundary: how an operator's sign-in is turned into their own Organizer, and what the boundary decides before OrganizerUseCase runs for Get.
+The organizer-facing Organizer service boundary: how a member's sign-in is turned into their own Organizer, and what the boundary decides before OrganizerUseCase runs for Get.
 
 ## Requirements
 
-### Requirement: The caller's tenant comes from their organizer-console sign-in
+### Requirement: The caller's Organization comes from their organizer-console sign-in
 
-Every request SHALL carry a valid sign-in, or fail with Unauthenticated. The sign-in SHALL be issued for the organizer console, or the request fails with PermissionDenied. The caller's tenant SHALL be the single tenant in which the sign-in grants the operator any organizer-console role; any role is enough. A sign-in that grants roles in no tenant, or in more than one, SHALL fail with PermissionDenied. These checks come before the request's fields are validated, and a request that fails them has no effect.
+Every request SHALL carry a valid sign-in, or fail with Unauthenticated. The sign-in SHALL be issued for the organizer console, or the request fails with PermissionDenied. The caller's Organization SHALL be the single Organization in which the sign-in grants the member any organizer-console role; any role is enough. A sign-in that grants roles in no Organization, or in more than one, SHALL fail with PermissionDenied. These checks come before the request's fields are validated, and a request that fails them has no effect.
 
 #### Scenario: Not signed in
 
@@ -20,23 +20,23 @@ Every request SHALL carry a valid sign-in, or fail with Unauthenticated. The sig
 - **WHEN** the sign-in was not issued for the organizer console
 - **THEN** it fails with PermissionDenied
 
-#### Scenario: No role in any tenant
+#### Scenario: No role in any Organization
 
 - **WHEN** the sign-in grants no organizer-console role
 - **THEN** it fails with PermissionDenied
 
-#### Scenario: Roles in several tenants
+#### Scenario: Roles in several Organizations
 
-- **WHEN** the sign-in grants organizer-console roles in two tenants
+- **WHEN** the sign-in grants organizer-console roles in two Organizations
 - **THEN** it fails with PermissionDenied
 
 ### Requirement: Only the caller's own active Organizer is served
 
-The boundary SHALL resolve the caller's own Organizer through OrganizerUseCase.ResolveCaller with the caller's tenant and serve the request only for the Organizer it returns. A failure of ResolveCaller SHALL be returned unchanged and nothing else runs: PermissionDenied when no Organizer is linked to the tenant or the Organizer is provisioning, without revealing whether an Organizer exists, and FailedPrecondition when the Organizer is deactivated.
+The boundary SHALL resolve the caller's own Organizer through OrganizerUseCase.ResolveCaller with the caller's Organization and serve the request only for the Organizer it returns. A failure of ResolveCaller SHALL be returned unchanged and nothing else runs: PermissionDenied when no Organizer is linked to the Organization or the Organizer is provisioning, without revealing whether an Organizer exists, and FailedPrecondition when the Organizer is deactivated.
 
-#### Scenario: Tenant with no Organizer
+#### Scenario: Organization with no Organizer
 
-- **WHEN** no Organizer is linked to the caller's tenant
+- **WHEN** no Organizer is linked to the caller's Organization
 - **THEN** the request fails with PermissionDenied and does not reveal whether an Organizer exists
 
 #### Scenario: Provisioning Organizer
@@ -53,9 +53,9 @@ The boundary SHALL resolve the caller's own Organizer through OrganizerUseCase.R
 
 Get SHALL take no input and SHALL return the caller's own Organizer's id and name. It is how the organizer console first learns its OrganizerId. It does not return the roster.
 
-#### Scenario: Operator reads their own Organizer
+#### Scenario: Member reads their own Organizer
 
-- **WHEN** an operator of an active Organizer calls Get
+- **WHEN** a member of an active Organizer calls Get
 - **THEN** it returns that Organizer's id and name
 
 ### Requirement: SendSignInLinks needs no sign-in and reveals nothing

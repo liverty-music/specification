@@ -11,7 +11,7 @@ A Venue is a physical place where Events are held, known by a canonical name, th
 | admin area | ISO 3166-2 subdivision the venue lies in | optional, matches `^[A-Z]{2}-[A-Z0-9]{1,3}$`; absent means unknown |
 | place id | map place identity | optional; at most one Venue per place id |
 | coordinates | location | optional Coordinates |
-| listed venue name | the name as first listed by a source or organizer, normalized | optional; with the admin area, identifies the Venue |
+| listed venue name | the name as first listed by a source or Organizer, normalized | optional; with the admin area, identifies the Venue |
 
 ```mermaid
 erDiagram

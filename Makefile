@@ -1,4 +1,4 @@
-.PHONY: lint breaking fix check
+.PHONY: lint breaking fix words check
 
 ## lint: buf lint + format check. Breaking change detection is `make breaking`:
 ## an intended breaking change passes CI with the `buf skip breaking` label,
@@ -16,5 +16,10 @@ breaking:
 fix:
 	buf format -w
 
+## words: reject words no entity defines (tenant, operator, seller, buyer,
+## applicant) in proto/, docs/, openspec/specs/ and openspec/schemas/
+words:
+	python3 scripts/check-forbidden-words.py
+
 ## check: full local pre-commit check
-check: lint
+check: lint words

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Cancel lets the owning organizer operator mark a whole concert or some of its dates 中止 (cancelled): a PUBLISHED Event becomes CANCELLED, disappears from fan lists and is kept rather than deleted, and never changes again; a DRAFT Event is removed, and a Series left with no Event is removed.
+Cancel lets a member of the owning Organizer mark a whole concert or some of its dates 中止 (cancelled): a PUBLISHED Event becomes CANCELLED, disappears from fan lists and is kept rather than deleted, and never changes again; a DRAFT Event is removed, and a Series left with no Event is removed.
 
 ## Requirements
 

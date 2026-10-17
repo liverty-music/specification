@@ -2,19 +2,19 @@
 
 ## Purpose
 
-The static Zitadel platform scaffolding for the Organizer B2B tenancy model:
+The static Zitadel platform scaffolding for one Organization per Organizer:
 a shared, actor-named `organizer-console` project (roles + apps) owned by the
 product org, a dedicated provisioner machine user, and the login policy that
-runtime-provisioned Organizer tenant orgs must receive. Per-Organizer orgs,
+every Organizer's Organization, provisioned at runtime, must receive. Per-Organizer orgs,
 the domain entity, the console, and the API server are separate changes.
 
 ## Requirements
 
-### Requirement: Organizer tenant orgs use a passkey-primary login policy with a designed recovery path
+### Requirement: Organizers' Organizations use a passkey-primary login policy with a designed recovery path
 
 Every Organizer's Organization SHALL be given an **explicit** login policy — it SHALL NOT inherit the instance default (admin Google-IdP-only) policy. The policy SHALL make **passkeys the primary credential** and SHALL have this shape:
 
-- `passwordlessType = PASSWORDLESS_TYPE_ALLOWED` — passkeys enabled and primary; the people who run the Organizer enroll a passkey on first sign-in.
+- `passwordlessType = PASSWORDLESS_TYPE_ALLOWED` — passkeys enabled and primary; the Organizer's members enroll a passkey on first sign-in.
 - `allowUsernamePassword = true` — **local authentication is enabled.** Despite its name, this field gates ALL local authentication (user name or email plus **passkey** OR password), not only passwords: with it disabled, the hosted login renders no entry form and, with no external IdP configured, the invited person is left with an empty login card. Passkey-primary / "no passwords" is therefore expressed by `passwordlessType=ALLOWED` **plus never setting a password on an identity**, NOT by disabling local authentication.
 - `allowRegister = false` — no open self-registration; identities are created by Liverty Music for vetted Organizers only.
 - `allowExternalIDP = true` — permit OIDC federation so an Organizer that already has a workspace IdP can federate.
@@ -31,7 +31,7 @@ Synced passkeys (iCloud Keychain / Google Password Manager) survive single-devic
 
 **The Organization is bound to the person's identity; an address only names which Organization's sign-in to open.** The single OIDC app serves all Organizers. The console names the Organization from `?org=<short name>`, `?org_id=<Organization id>` or the Organization remembered on the device, which selects that Organization's login policy and grants nothing; the token's Organization is authoritative. A person SHALL NOT be routed to a different Organization by supplying a different email, and a session belonging to a different Organization SHALL NOT satisfy an entry for this one (the console enforces the token's Organization — see `organizer-shell`).
 
-#### Scenario: A provisioned tenant org has the passkey-primary policy
+#### Scenario: A provisioned Organization has the passkey-primary policy
 
 - **WHEN** an Organizer's Organization is provisioned
 - **THEN** it SHALL have an explicitly set login policy, not the inherited admin default
@@ -39,13 +39,13 @@ Synced passkeys (iCloud Keychain / Google Password Manager) survive single-devic
 - **AND** `allowExternalIDP` SHALL be enabled, `ignoreUnknownUsernames` SHALL be disabled and login with email SHALL be enabled
 - **AND** `hidePasswordReset` SHALL be enabled, and every check lifetime SHALL be the instance default (240h, 240h, 720h, 18h, 12h), never 0, on a new policy and when an existing policy is converged on re-provisioning
 
-#### Scenario: The policy renders a usable login and returns the operator to the console
+#### Scenario: The policy renders a usable login and returns the member to the console
 
 - **WHEN** an invited person reaches the Organization's hosted login
 - **THEN** local authentication SHALL be available (no empty login card)
 - **AND** after the person completes passkey setup via the invitation flow, the identity provider SHALL redirect them to the organizer console (`defaultRedirectUri`)
 
-#### Scenario: Operator completes first login by enrolling a passkey
+#### Scenario: Owner completes first login by enrolling a passkey
 
 - **WHEN** Liverty Music creates a no-password identity and the person opens the invitation and enrolls a passkey
 - **THEN** the person SHALL complete first sign-in by enrolling a passkey via the invitation flow
@@ -58,7 +58,7 @@ Synced passkeys (iCloud Keychain / Google Password Manager) survive single-devic
 - **AND** a policy with no recovery path (passkey-only, no re-invite / no fallback) SHALL be rejected
 - **AND** any non-passkey fallback lane SHALL be step-up protected
 
-#### Scenario: Org is resolved by org-pinned entry for every operator
+#### Scenario: Organization is resolved by org-pinned entry for every member
 
 - **WHEN** any person (consumer / free-mail such as `gmail.com`, or a custom domain) signs in, whose email may also be a fan account's
 - **THEN** the Organization SHALL be the one the console named and the person's own identity confirms, never one derived from the email domain

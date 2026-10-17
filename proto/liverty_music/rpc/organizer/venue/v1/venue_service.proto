@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.organizer.venue.v1 provides the organizer-facing
-// VenueService, which an operator uses from the organizer console to find the
+// VenueService, which a member uses from the organizer console to find the
 // venue of an event while authoring a series.
 package liverty_music.rpc.organizer.venue.v1;
 
@@ -13,9 +13,9 @@ import "liverty_music/entity/v1/venue.proto";
 // organizer-console sign-in checks as the organizer OrganizerService; failures
 // that would concern another org never reveal whether such an Organizer exists.
 service VenueService {
-  // Search looks up a venue name in the map catalog while an operator authors
+  // Search looks up a venue name in the map catalog while a member authors
   // a series, and returns up to 5 candidate places, best match first, with
-  // places in Japan ranked first. The operator picks one and its place id goes
+  // places in Japan ranked first. The member picks one and its place id goes
   // into liverty_music.rpc.organizer.series.v1.EventDraft.place_id. Nothing is
   // stored: a Venue is matched or created only when a series is saved with the
   // picked place.
@@ -24,7 +24,7 @@ service VenueService {
   // - INVALID_ARGUMENT: The text is shorter than 2 or longer than 100
   //   characters after trimming spaces.
   // - PERMISSION_DENIED: The caller lacks the organizer-console role, or no
-  //   Organizer is linked to the caller's tenant or it is provisioning.
+  //   Organizer is linked to the caller's Organization or it is provisioning.
   //   Non-revealing.
   // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
   // - UNAVAILABLE: The map catalog could not be reached.
@@ -32,7 +32,7 @@ service VenueService {
   rpc Search(SearchRequest) returns (SearchResponse);
 }
 
-// SearchRequest carries the venue name an operator typed.
+// SearchRequest carries the venue name a member typed.
 message SearchRequest {
   // Required. The venue name to look up, 2 to 100 characters after trimming
   // spaces. The schema bounds the raw length; the usecase trims and applies
@@ -50,7 +50,7 @@ message SearchResponse {
   repeated VenueCandidate candidates = 1 [(buf.validate.field).repeated.max_items = 5];
 }
 
-// VenueCandidate is one map place an operator can pick as an event's venue.
+// VenueCandidate is one map place a member can pick as an event's venue.
 message VenueCandidate {
   // The map place id; sent back as EventDraft.place_id when picked.
   entity.v1.PlaceId place_id = 1 [(buf.validate.field).required = true];
@@ -60,7 +60,7 @@ message VenueCandidate {
   entity.v1.VenueName name = 2 [(buf.validate.field).required = true];
 
   // The rest of the place's description as the map catalog suggests it
-  // (usually the address without the postal code), shown so the operator can
+  // (usually the address without the postal code), shown so the member can
   // tell same-named places apart.
   string address = 3 [(buf.validate.field).string = {
     min_len: 1

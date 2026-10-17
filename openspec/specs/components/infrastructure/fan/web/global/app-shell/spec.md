@@ -103,7 +103,7 @@ The runtime configuration document SHALL be a JSON object whose top-level shape 
 - **AND** `previewArtistIds.length` does not equal `previewArtistNames.length`
 - **THEN** bootstrap SHALL throw an error naming the length-mismatch invariant
 - **AND** the app SHALL NOT start
-- **AND** the rendered error page SHALL state the observed lengths so the operator can correct the configuration
+- **AND** the rendered error page SHALL state the observed lengths so the configuration can be corrected
 
 ### Requirement: Bootstrap failures SHALL surface a static error page
 

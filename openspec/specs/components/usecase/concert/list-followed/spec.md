@@ -26,6 +26,6 @@ ListFollowed SHALL read the Concerts of the User's followed Artists from the giv
 - **WHEN** the User follows no Artist
 - **THEN** no groups are returned, without error
 
-#### Scenario: Cancelled organizer concert
+#### Scenario: Cancelled Organizer concert
 - **WHEN** a followed Artist performs in a CANCELLED first-party Series
 - **THEN** that Concert is not in any group

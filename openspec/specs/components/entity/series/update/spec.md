@@ -1,14 +1,14 @@
 # components/entity/series/update Specification
 
 ## Purpose
-Applies an organizer's edit to a first-party Series in one step: its authored attributes, its DRAFT Events and performers, and the times of its PUBLISHED Events.
+Applies an Organizer's edit to a first-party Series in one step: its authored attributes, its DRAFT Events and performers, and the times of its PUBLISHED Events.
 
 ## Requirements
 
 ### Requirement: Apply the edit whole
 
 Update SHALL take a Series, its title, type, source page, description and visibility, its performers, and a list of events, each with a Venue, a local date, an optional start time, an optional open time and, for an existing Event, that Event's id. Together or not at all, it SHALL:
-- set the Series' title, type, source page, description and visibility, leaving its organizer and cover image unchanged;
+- set the Series' title, type, source page, description and visibility, leaving its Organizer and cover image unchanged;
 - add each event given without an id as a new DRAFT Event whose Concert has the given performers;
 - set the Venue, date and times of each given DRAFT Event, and make the given performers the performers of its Concert;
 - remove each DRAFT Event of the Series that is not given;

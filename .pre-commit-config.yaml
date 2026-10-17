@@ -33,3 +33,9 @@ repos:
         language: system
         files: ^openspec/(specs|changes)/.*spec\.md$
         pass_filenames: false
+      - id: check-forbidden-words
+        name: forbidden words
+        entry: python3 scripts/check-forbidden-words.py
+        language: system
+        files: ^(proto|docs|openspec/(specs|schemas))/
+        pass_filenames: false

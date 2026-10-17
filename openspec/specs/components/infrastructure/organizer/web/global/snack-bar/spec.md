@@ -11,7 +11,7 @@ The console SHALL show the result of an action (saved, published, link issued, f
 
 #### Scenario: Two results in a row
 
-- **WHEN** an operator publishes an event and then copies its fan page address within 2 seconds
+- **WHEN** a member publishes an event and then copies its fan page address within 2 seconds
 - **THEN** the publish message is replaced by the copy message and only one snackbar is shown
 
 #### Scenario: Phone layout
@@ -21,21 +21,21 @@ The console SHALL show the result of an action (saved, published, link issued, f
 
 ### Requirement: Success disappears, an error with Retry stays
 
-A message without an action SHALL disappear after 4 seconds. A message with an action other than Retry SHALL disappear after 10 seconds. A failure the operator can retry SHALL show a Retry action and SHALL stay until the operator retries or dismisses it. Every snackbar SHALL offer a close button. Pressing Retry SHALL repeat the failed action once and dismiss the snackbar.
+A message without an action SHALL disappear after 4 seconds. A message with an action other than Retry SHALL disappear after 10 seconds. A failure the member can retry SHALL show a Retry action and SHALL stay until the member retries or dismisses it. Every snackbar SHALL offer a close button. Pressing Retry SHALL repeat the failed action once and dismiss the snackbar.
 
 #### Scenario: Save succeeded
 
-- **WHEN** an operator saves a concert and the save succeeds
+- **WHEN** a member saves a concert and the save succeeds
 - **THEN** a snackbar says 変更を保存しました and disappears after 4 seconds
 
 #### Scenario: Save failed
 
 - **WHEN** a save fails because the network is down
-- **THEN** a snackbar says the save failed, offers 再試行 (Retry), and stays until the operator presses 再試行 or closes it
+- **THEN** a snackbar says the save failed, offers 再試行 (Retry), and stays until the member presses 再試行 or closes it
 
-#### Scenario: Operator retries
+#### Scenario: Member retries
 
-- **WHEN** the operator presses 再試行 on a failed save
+- **WHEN** the member presses 再試行 on a failed save
 - **THEN** the save runs again once and the snackbar closes
 
 ### Requirement: Field errors never go to the snackbar
@@ -44,5 +44,5 @@ An error about one form field (a missing name, a window that is too long) SHALL 
 
 #### Scenario: Missing sale name
 
-- **WHEN** an operator saves a lottery sale without a name
+- **WHEN** a member saves a lottery sale without a name
 - **THEN** the error is shown under the name field and no snackbar appears

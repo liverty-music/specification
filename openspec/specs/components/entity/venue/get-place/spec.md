@@ -1,7 +1,7 @@
 # components/entity/venue/get-place Specification
 
 ## Purpose
-Reads one place from the external map catalog by its place id, so a Venue can be created from the place an operator picked: its canonical name, coordinates and admin area.
+Reads one place from the external map catalog by its place id, so a Venue can be created from the place a member picked: its canonical name, coordinates and admin area.
 
 ## Requirements
 

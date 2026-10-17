@@ -59,7 +59,7 @@ change's `design.md`:
   `schema.org/Event` `organizer` property, used by Eventbrite / Peatix /
   ZAIKO, and is a **distinct entity from Artist/Performer** (Ticketmaster
   splits Promoter↔Attraction; schema.org splits
-  `organizer`/`performer`/`seller`). Relationship:
+  `organizer`/`performer`). Relationship:
 
   ```
   Organizer (1) ──publishes──▶ (N) Event ──features──▶ (N) Artist   (existing event_performers)
@@ -155,12 +155,13 @@ change's `design.md`:
   [`payments-design.md`](./payments-design.md) (issue #778).
 - **Web First, No Native App** (product constraint): the check-in tool is
   a PWA using the web camera, not a native scanner app.
-- **Organizer identity & RBAC: Zitadel B2B org-per-tenant.** Each Organizer
-  is its own Zitadel Organization; a shared, actor-named `organizer-console`
-  project (owned by the `liverty-music` org) is Project-Granted to each; the
-  backend authorizes from the org-scoped role claim; per-tenant orgs are
-  created at runtime via the Management API from admin vetting. Full model
-  and rationale: [`zitadel-tenancy-model.md`](./zitadel-tenancy-model.md).
+- **Organizer identity & RBAC: Zitadel B2B, one Organization per
+  Organizer.** Each Organizer is its own Zitadel Organization; a shared,
+  actor-named `organizer-console` project (owned by the `liverty-music` org)
+  is Project-Granted to each; the backend authorizes from the org-scoped
+  role claim; the per-Organizer orgs are created at runtime via the
+  Management API from admin vetting. Full model and rationale:
+  [`zitadel-tenancy-model.md`](./zitadel-tenancy-model.md).
 
 ## MVP Decomposition
 
@@ -186,7 +187,7 @@ sub-changes (see its row and `organizer-platform-design.md`).
 
 | # | Change | Adds (capabilities / entities) | Depends on | Boundary rationale |
 |---|--------|--------------------------------|------------|--------------------|
-| ① | **organizer platform** (4 sub-changes) | The vetted-Organizer foundation, split to keep each change reviewable: **`organizer-tenancy`** (identity-management topology delta + Zitadel platform IaC: `organizer-console` project/roles/apps + provisioner machine user + per-org passkey login), **`organizer-accounts`** (Organizer entity + admin vetting RPCs + runtime tenant-provisioning saga + operator bootstrap + `deactivated` hook + analytics), **`organizer-console`** (`organizer.html` entry + hosting `organizer.{base}` + runtime-config delta), **`organizer-rpc-server`** (dedicated `api.organizer.{base}` server + CORS + `OrganizerService.Get` + org-scoped authz). Full design + resolved gap-audit: [`organizer-platform-design.md`](./organizer-platform-design.md). | existing admin only | A completeness audit showed a single change hid ~33 gaps (a dedicated API server, dedicated hosting, provisioning saga, offboarding). Splitting by surface (identity/accounts/console/rpc-server) mirrors the admin precedent and keeps each spec complete. |
+| ① | **organizer platform** (4 sub-changes) | The vetted-Organizer foundation, split to keep each change reviewable: **`organizer-tenancy`** (identity-management topology delta + Zitadel platform IaC: `organizer-console` project/roles/apps + provisioner machine user + per-org passkey login), **`organizer-accounts`** (Organizer entity + admin vetting RPCs + runtime Organization-provisioning saga + owner bootstrap + `deactivated` hook + analytics), **`organizer-console`** (`organizer.html` entry + hosting `organizer.{base}` + runtime-config delta), **`organizer-rpc-server`** (dedicated `api.organizer.{base}` server + CORS + `OrganizerService.Get` + org-scoped authz). Full design + resolved gap-audit: [`organizer-platform-design.md`](./organizer-platform-design.md). | existing admin only | A completeness audit showed a single change hid ~33 gaps (a dedicated API server, dedicated hosting, provisioning saga, offboarding). Splitting by surface (identity/accounts/console/rpc-server) mirrors the admin precedent and keeps each spec complete. |
 | ② | `organizer-event-authoring` | Organizer-authored Event/Series/Venue, publish flow, **private visibility via signed tokenized URL**, first-party supersedes scraped concerts, **organizer-represented artists excluded from scraping** | ① | Turns the existing `Series/Event/Venue/event_performers` model from a scrape-reconstruction target into a first-party authoring target. |
 | ③ | `follower-event-publish-notification` — **largely absorbed by ②** | ② `Publish` emits `CONCERT.created`, which the **existing `notify-concert` consumer already turns into follower push** (verified in code). So ③ is mostly delivered for free by ②. **Re-scoped to at most a thin change** (organizer-specific message copy / deeplink; UNLISTED/DRAFT never notify is handled in ②) and may be dropped. | ② | Confirmed during ② design: `CONCERT.created` → `NotifyNewConcerts` already notifies artist followers, so a separate publish→notify build is redundant. |
 | ④ | `lottery-application` | lottery TicketSale/TicketType (**first-party; distinct from the scraped `sales_phase`, no merge**), per-account limit, LotteryEntry, **card authorization at entry → capture winners / release losers at draw** (Stripe manual-capture, JPY-only), automatic draw, win/loss, **本人確認 identity + 1 account / 1 entry** | ② | Draw logic is substantial and stands alone. Couples to payment via authorize-at-entry/capture-at-draw (no payment deadline / 繰上げ). 本人確認 also makes tickets legally "covered". Organizer sets the TicketType quantity (no venue-capacity field exists upstream). |
@@ -303,7 +304,7 @@ the relevant change's `design.md`.
 - **D4 — Check-in is a PWA + web-camera QR** (No-Native-App constraint),
   with a non-camera "tap stamp" fallback (⑥).
 - **D5 — Organizer vetting reuses the existing admin console** (admin
-  approves/creates organizer accounts + sets mandate); organizers use
+  approves/creates Organizer accounts + sets mandate); Organizers' members use
   `organizer.html` (a third entry point, following the proven consumer/admin
   dual-entry pattern) (①).
 

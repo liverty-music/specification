@@ -11,8 +11,9 @@ import "liverty_music/entity/v1/ticket_type.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
-// TicketSaleName is the label of a TicketSale that fans and operators see, for
-// example ファンクラブ先行 (fan-club presale) or 一般発売 (general sale).
+// TicketSaleName is the label of a TicketSale that fans and the Organizer's
+// members see, for example ファンクラブ先行 (fan-club presale) or 一般発売
+// (general sale).
 message TicketSaleName {
   // The name, 1 to 100 characters.
   string value = 1 [(buf.validate.field).string = {
@@ -141,7 +142,7 @@ message TicketSale {
     (buf.validate.field).required = true
   ];
 
-  // The label fans and operators see, for example ファンクラブ先行.
+  // The label fans and the Organizer's members see, for example ファンクラブ先行.
   TicketSaleName name = 15 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true

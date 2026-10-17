@@ -49,7 +49,7 @@ message Title {
 }
 
 // Description represents the free-form body text of a concert page, authored by
-// an organizer. It holds the informational write-up shown on the event page
+// an Organizer. It holds the informational write-up shown on the event page
 // (set list notes, guest details, admission notes, and similar prose). A nil
 // wrapper skips inner validation by protovalidate's default presence semantics
 // (Ignore.IGNORE_UNSPECIFIED), so a series without a description never hits the

@@ -34,7 +34,7 @@ Web2 + face-auth.
 ## Trend: identity at entry (the moving competitive bar)
 
 - **Hardware-free, on-device face-auth entry** shipped (チケプラ, 2025-12) —
-  removes the operator-tablet barrier and is becoming the anti-scalp bar for
+  removes the staff-tablet barrier and is becoming the anti-scalp bar for
   high-demand tours. Photo-bound tickets are now the floor at the leaders.
 - **マイナンバーカード linkage** (デジタル庁 2025 実証): zero fraud on linked
   tickets, but low linkage (13-28%) + install friction → treat as an

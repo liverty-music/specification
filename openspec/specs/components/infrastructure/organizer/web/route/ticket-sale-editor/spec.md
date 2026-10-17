@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The organizer console screen where an operator puts one published event on sale, by lottery or first come, first served, or changes that sale: the sale's name and window, and its TicketType's price, quantity and per-account limit. For a first-come sale it also shows how many tickets have sold.
+The organizer console screen where a member puts one published event on sale, by lottery or first come, first served, or changes that sale: the sale's name and window, and its TicketType's price, quantity and per-account limit. For a first-come sale it also shows how many tickets have sold.
 
 ## Requirements
 
@@ -13,17 +13,17 @@ For an event without a first-come sale, the screen SHALL offer the sale's name, 
 
 #### Scenario: Blank form
 
-- **WHEN** an operator opens the editor for an event starting 2026-11-20 19:00
+- **WHEN** a member opens the editor for an event starting 2026-11-20 19:00
 - **THEN** the end time is 2026-11-20 19:00, the name is 一般発売 and the limit is 4
 
 #### Scenario: End after the show starts
 
-- **WHEN** the operator sets the end time to 19:30 for a 19:00 show and saves
+- **WHEN** the member sets the end time to 19:30 for a 19:00 show and saves
 - **THEN** an error is shown next to the end time and nothing is saved
 
 #### Scenario: Overlapping a presale
 
-- **WHEN** the event's lottery presale runs to 10 November and the operator saves a sale starting 8 November
+- **WHEN** the event's lottery presale runs to 10 November and the member saves a sale starting 8 November
 - **THEN** the screen says the window overlaps another sale and nothing is saved
 
 ### Requirement: What can change once a first-come sale has started
@@ -32,17 +32,17 @@ For an event with a first-come sale, read with TicketSaleService.ListByEvent, th
 
 #### Scenario: Price locked
 
-- **WHEN** the operator opens the editor while a fan's checkout holds 2 tickets
+- **WHEN** the member opens the editor while a fan's checkout holds 2 tickets
 - **THEN** the price cannot be edited and the screen says it is fixed while tickets are held or sold
 
 #### Scenario: More tickets
 
-- **WHEN** the operator raises the quantity from 150 to 180 and saves
+- **WHEN** the member raises the quantity from 150 to 180 and saves
 - **THEN** the TicketType is updated and the screen shows a quantity of 180
 
 #### Scenario: Sale extended
 
-- **WHEN** the operator moves the end time later, still no later than the event's start time, and saves
+- **WHEN** the member moves the end time later, still no later than the event's start time, and saves
 - **THEN** the sale's window is updated and the price, quantity and limit are unchanged
 
 ### Requirement: Prerequisites explained
@@ -51,7 +51,7 @@ When the event is not published, has no start time, or the Organizer does not ha
 
 #### Scenario: No start time
 
-- **WHEN** the operator opens the editor for an event without a start time
+- **WHEN** the member opens the editor for an event without a start time
 - **THEN** the screen says to set the start time in the concert editor first and links to it
 
 ### Requirement: A lottery window defaults to 10 days
@@ -60,12 +60,12 @@ A new lottery sale SHALL open with the window starting now and closing 10 days l
 
 #### Scenario: Blank lottery form
 
-- **WHEN** an operator opens the editor for a lottery sale for an event without a sale at 2026-10-01 12:00
+- **WHEN** a member opens the editor for a lottery sale for an event without a sale at 2026-10-01 12:00
 - **THEN** the window opens at 2026-10-01 12:00 and closes at 2026-10-11 12:00
 
 #### Scenario: Window too long
 
-- **WHEN** the operator sets a window of 15 days and saves
+- **WHEN** the member sets a window of 15 days and saves
 - **THEN** an error is shown next to the window and nothing is saved
 
 ### Requirement: An event goes on sale only with its start time
@@ -74,7 +74,7 @@ When the event has no start time, the editor SHALL, for a lottery sale, say that
 
 #### Scenario: Start time not set
 
-- **WHEN** an operator opens the editor for a lottery sale for a published event with no start time
+- **WHEN** a member opens the editor for a lottery sale for a published event with no start time
 - **THEN** the screen says the start time must be set first, links to the concert editor, and saving is not offered
 
 ### Requirement: The editor creates a named lottery sale for one event
@@ -82,15 +82,15 @@ When the event has no start time, the editor SHALL, for a lottery sale, say that
 The editor SHALL create a Lottery TicketSale for the event it was opened from, with a name, the window, and one TicketType for that event with a quantity, a per-account limit and a price. The name SHALL be required, and the per-account limit SHALL default to 4 and accept 1 to 10. When a sale of the event already overlaps the entered window, the screen SHALL say so next to the window and SHALL not save.
 
 #### Scenario: Presale for one event
-- **WHEN** an operator names the sale ファンクラブ先行, keeps the 10-day window and enters 100 tickets at 8000 yen
+- **WHEN** a member names the sale ファンクラブ先行, keeps the 10-day window and enters 100 tickets at 8000 yen
 - **THEN** a Lottery sale named ファンクラブ先行 is created with one TicketType of 100 tickets at 8000 yen and a per-account limit of 4
 
 #### Scenario: Missing name
-- **WHEN** the operator saves without a name
+- **WHEN** the member saves without a name
 - **THEN** an error is shown next to the name and nothing is saved
 
 #### Scenario: Overlapping window
-- **WHEN** the event already has a sale from 1 to 10 November and the operator enters a window starting 8 November
+- **WHEN** the event already has a sale from 1 to 10 November and the member enters a window starting 8 November
 - **THEN** the screen says the window overlaps that sale and nothing is saved
 
 ### Requirement: Opened from the event's Sales tab and back
@@ -99,7 +99,7 @@ The editor for a lottery sale SHALL be opened from 抽選で販売する on an e
 
 #### Scenario: Back after creating
 
-- **WHEN** an operator creates a lottery sale from the Sales tab of the 3 November event
+- **WHEN** a member creates a lottery sale from the Sales tab of the 3 November event
 - **THEN** the Sales tab of the 3 November event opens and lists the new sale
 
 #### Scenario: Breadcrumb
@@ -113,24 +113,24 @@ The editor SHALL take the sale's start and end as Japan time, marked JST, whatev
 
 #### Scenario: Device in another time zone
 
-- **WHEN** an operator whose device is set to London time enters a start of 2026-10-10 12:00 JST and saves
+- **WHEN** a member whose device is set to London time enters a start of 2026-10-10 12:00 JST and saves
 - **THEN** the sale opens at 12:00 Japan time on 10 October
 
 ### Requirement: A lottery sale changes only before it opens
 
-Opened with 編集 for a lottery sale, the editor SHALL show the sale's name without letting it change, and SHALL let the operator change the window, the price, the quantity and the per-account limit under the same rules as a new sale. It SHALL save the window with TicketSaleService.SetWindow and the price, quantity and per-account limit with TicketTypeService.Update. When the sale has opened by the time the operator saves, the editor SHALL say that a lottery cannot change once its window has opened and SHALL save nothing.
+Opened with 編集 for a lottery sale, the editor SHALL show the sale's name without letting it change, and SHALL let the member change the window, the price, the quantity and the per-account limit under the same rules as a new sale. It SHALL save the window with TicketSaleService.SetWindow and the price, quantity and per-account limit with TicketTypeService.Update. When the sale has opened by the time the member saves, the editor SHALL say that a lottery cannot change once its window has opened and SHALL save nothing.
 
 #### Scenario: Move the window before it opens
 
-- **WHEN** an operator moves an unopened lottery's window from 10 to 17 October to 12 to 19 October and saves
+- **WHEN** a member moves an unopened lottery's window from 10 to 17 October to 12 to 19 October and saves
 - **THEN** the sale opens on 12 October and the Sales tab shows the new window
 
 #### Scenario: Change the price before it opens
 
-- **WHEN** an operator changes an unopened lottery's price from 8000 to 7500 yen and saves
+- **WHEN** a member changes an unopened lottery's price from 8000 to 7500 yen and saves
 - **THEN** the sale's TicketType costs 7500 yen
 
 #### Scenario: Sale opened while editing
 
-- **WHEN** an operator saves a change after the lottery's window has opened
+- **WHEN** a member saves a change after the lottery's window has opened
 - **THEN** the editor says the lottery cannot change once its window has opened and nothing is saved

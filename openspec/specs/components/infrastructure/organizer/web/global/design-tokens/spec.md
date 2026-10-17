@@ -11,12 +11,12 @@ The console SHALL render with light colors, and SHALL render with dark colors wh
 
 #### Scenario: Office PC in light mode
 
-- **WHEN** an operator opens the console on a PC whose system appearance is light
+- **WHEN** a member opens the console on a PC whose system appearance is light
 - **THEN** the console shows a light surface with dark text
 
 #### Scenario: Phone in dark mode
 
-- **WHEN** an operator opens the console on a phone whose system appearance is dark
+- **WHEN** a member opens the console on a phone whose system appearance is dark
 - **THEN** the console shows a dark surface with light text, and form controls and scrollbars are dark too
 
 #### Scenario: System switches while the console is open
@@ -44,7 +44,7 @@ Every console screen, as rendered with all its components, SHALL meet the contra
 
 #### Scenario: Open selection list in dark mode
 
-- **WHEN** an operator opens the verification requirement list on the Sales tab in dark mode
+- **WHEN** a member opens the verification requirement list on the Sales tab in dark mode
 - **THEN** every option and the highlighted option have a contrast ratio of at least 4.5:1 against the list
 
 ### Requirement: The brand color marks only the primary action, focus and the logo

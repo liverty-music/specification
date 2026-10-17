@@ -18,7 +18,7 @@ service NotificationService {
   // specific set of newly created concerts belonging to an artist. This RPC
   // invokes the same code path as the CONCERT.created event consumer, but
   // bypasses the NATS event bus for deterministic integration testing and
-  // operator-initiated re-delivery. It returns once the delivery pipeline
+  // admin-initiated re-delivery. It returns once the delivery pipeline
   // completes.
   //
   // This RPC is restricted to non-production environments. In production the

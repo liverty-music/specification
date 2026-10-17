@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Returns a Series with its derived publish state and every one of its Events, whatever its publish state, each with its own publish state and its performers, as its organizer authored them.
+Returns a Series with its derived publish state and every one of its Events, whatever its publish state, each with its own publish state and its performers, as its Organizer authored them.
 
 ## Requirements
 

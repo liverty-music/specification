@@ -1,13 +1,12 @@
 ## Purpose
 
-Lets an administrator record the outcome of an antisocial-forces background check performed on an organizer before that organizer is activated, blocking activation on a hit and retaining the reviewer, timestamp, and result for later audit.
+Lets an administrator record the outcome of an antisocial-forces background check performed on an Organizer before that Organizer is activated, blocking activation on a hit and retaining the reviewer, timestamp, and result for later audit.
 
 ## ADDED Requirements
 
 ### Requirement: Admin antisocial-forces check gates Organizer activation
 
-Before an Organizer is provisioned/activated, an operator holding the platform
-`admin` role SHALL perform a **反社チェック** (name screening of the Organizer
+Before an Organizer is provisioned/activated, an admin SHALL perform a **反社チェック** (name screening of the Organizer
 and its principals) and record the outcome — **reviewer, timestamp, and result
 (pass / hit)**. A **positive hit SHALL block** the Organizer's creation /
 activation. The check record SHALL be retained for audit.

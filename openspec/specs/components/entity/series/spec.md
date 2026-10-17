@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A Series groups the Events of one engagement — a tour, a single-venue run, or a festival — and owns what they share: title, type and source page. A Series authored by an organizer (first-party) also carries a description, a cover image and a visibility; a Series found by discovery has none of these. A first-party Series stores no publish state of its own: its publish state is derived from its Events (PUBLISHED when one is PUBLISHED, else CANCELLED when one is CANCELLED, else DRAFT), and each Event is published or cancelled on its own.
+A Series groups the Events of one engagement — a tour, a single-venue run, or a festival — and owns what they share: title, type and source page. A Series authored by an Organizer (first-party) also carries a description, a cover image and a visibility; a Series found by discovery has none of these. A first-party Series stores no publish state of its own: its publish state is derived from its Events (PUBLISHED when one is PUBLISHED, else CANCELLED when one is CANCELLED, else DRAFT), and each Event is published or cancelled on its own.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -11,7 +11,7 @@ A Series groups the Events of one engagement — a tour, a single-venue run, or 
 | type | TOUR, SINGLE or FESTIVAL | required |
 | source page | official page for the engagement | optional; a URI of at most 2048 characters |
 | organizer | owning Organizer | optional; present exactly when the Series is first-party |
-| description | organizer-written body text | optional, 1–10000 characters; first-party only |
+| description | Organizer-written body text | optional, 1–10000 characters; first-party only |
 | cover image | current cover SeriesImage | optional; first-party only |
 | visibility | PUBLIC or UNLISTED | first-party only |
 | share token | token that opens an UNLISTED Series | present only on a published UNLISTED Series; never shown on reads |
@@ -29,7 +29,7 @@ erDiagram
 
 ### Requirement: Series type
 
-A Series' type SHALL be TOUR (events at several venues by the same performers under one name), SINGLE (one venue over one or more consecutive days) or FESTIVAL (a multi-performer event). A Series found by discovery SHALL be TOUR or SINGLE; FESTIVAL is set only by an organizer.
+A Series' type SHALL be TOUR (events at several venues by the same performers under one name), SINGLE (one venue over one or more consecutive days) or FESTIVAL (a multi-performer event). A Series found by discovery SHALL be TOUR or SINGLE; FESTIVAL is set only by an Organizer.
 
 #### Scenario: Unspecified type is invalid
 - **WHEN** a Series has no type
@@ -81,7 +81,7 @@ An Event of a Series SHALL have an event page exactly when the Series is first-p
 
 #### Scenario: Discovered series
 
-- **WHEN** a Series has no organizer
+- **WHEN** a Series has no Organizer
 - **THEN** its Events have no event page
 
 ### Requirement: Publish state is derived from the events
@@ -105,7 +105,7 @@ A first-party Series SHALL have no publish state of its own. Its publish state S
 - **THEN** its publish state is DRAFT
 
 #### Scenario: Discovered series has no publish state
-- **WHEN** a Series has no organizer
+- **WHEN** a Series has no Organizer
 - **THEN** it has no publish state
 
 ### Requirement: What can change after publish

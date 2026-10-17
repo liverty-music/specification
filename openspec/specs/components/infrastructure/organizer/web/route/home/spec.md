@@ -1,11 +1,11 @@
 # components/infrastructure/organizer/web/route/home Specification
 
 ## Purpose
-The organizer console's first screen: the list of things that need the operator now, each with the one action that resolves it, so an operator who opens the console knows what to do without searching.
+The organizer console's first screen: the list of things that need the member now, each with the one action that resolves it, so a member who opens the console knows what to do without searching.
 
 ## Requirements
 
-### Requirement: Home lists what needs the operator, most urgent first
+### Requirement: Home lists what needs the member, most urgent first
 
 Home SHALL list, as one list grouped by kind under a heading per kind, items that each say what needs doing and are one target that opens where it is resolved, with no other action inside the item:
 

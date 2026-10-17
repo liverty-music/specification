@@ -40,7 +40,7 @@ Get SHALL fail with NotFound, without saying why, when no Concert has the id or 
 
 #### Scenario: Discovered concert
 
-- **WHEN** Get is called for a Concert whose Series has no organizer
+- **WHEN** Get is called for a Concert whose Series has no Organizer
 - **THEN** it fails with NotFound
 
 ### Requirement: Read failures

@@ -1,32 +1,32 @@
 # components/adapter/organizer/api/rpc/ticket-sale Specification
 
 ## Purpose
-The organizer-facing ticket sale service boundary: how an operator's sign-in is turned into their own Organizer before a sale is configured or read.
+The organizer-facing ticket sale service boundary: how a member's sign-in is turned into their own Organizer before a sale is configured or read.
 
 ## Requirements
 
 ### Requirement: Every call acts for the caller's own active Organizer
 
-Create, ListByEvent, SetWindow and SetVerificationRequirement SHALL pass the same organizer-console sign-in checks as the organizer Organizer service, and SHALL then resolve the caller's own Organizer through OrganizerUseCase.ResolveCaller with the caller's tenant. When the caller has no tenant, the call SHALL fail with PermissionDenied. A failure of ResolveCaller SHALL be returned unchanged and nothing else runs: PermissionDenied when no Organizer is linked to the tenant or the Organizer is provisioning, and FailedPrecondition when it is deactivated. Only then SHALL the boundary run, for the resolved Organizer, TicketSaleUseCase.Create for Create, ListOwnByEvent for ListByEvent, SetWindow for SetWindow and SetVerificationRequirement for SetVerificationRequirement; errors from the usecase SHALL be returned unchanged. That the Series, event or sale belongs to the caller's Organizer is a precondition of the usecase, not of the boundary.
+Create, ListByEvent, SetWindow and SetVerificationRequirement SHALL pass the same organizer-console sign-in checks as the organizer Organizer service, and SHALL then resolve the caller's own Organizer through OrganizerUseCase.ResolveCaller with the caller's Organization. When the caller has no Organization, the call SHALL fail with PermissionDenied. A failure of ResolveCaller SHALL be returned unchanged and nothing else runs: PermissionDenied when no Organizer is linked to the Organization or the Organizer is provisioning, and FailedPrecondition when it is deactivated. Only then SHALL the boundary run, for the resolved Organizer, TicketSaleUseCase.Create for Create, ListOwnByEvent for ListByEvent, SetWindow for SetWindow and SetVerificationRequirement for SetVerificationRequirement; errors from the usecase SHALL be returned unchanged. That the Series, event or sale belongs to the caller's Organizer is a precondition of the usecase, not of the boundary.
 
-#### Scenario: Operator configures a sale
+#### Scenario: Member configures a sale
 
-- **WHEN** an operator of an active Organizer calls Create for a FirstCome or Lottery sale on its published events
+- **WHEN** a member of an active Organizer calls Create for a FirstCome or Lottery sale on its published events
 - **THEN** the sale is created and returned with its TicketTypes
 
-#### Scenario: Operator sees how many sold
+#### Scenario: Member sees how many sold
 
-- **WHEN** an operator calls ListByEvent for their event
+- **WHEN** a member calls ListByEvent for their event
 - **THEN** TicketSaleUseCase.ListOwnByEvent runs for their Organizer and the event's sales are returned with their counts
 
-#### Scenario: Operator moves a window
+#### Scenario: Member moves a window
 
-- **WHEN** an operator calls SetWindow for a sale on their Series
+- **WHEN** a member calls SetWindow for a sale on their Series
 - **THEN** TicketSaleUseCase.SetWindow runs for their Organizer and the updated sale is returned
 
-#### Scenario: Tenant with no Organizer
+#### Scenario: Organization with no Organizer
 
-- **WHEN** no Organizer is linked to the caller's tenant
+- **WHEN** no Organizer is linked to the caller's Organization
 - **THEN** the call fails with PermissionDenied and nothing is created
 
 #### Scenario: Deactivated Organizer
@@ -44,7 +44,7 @@ Each call SHALL fail with InvalidArgument, before any usecase runs, when a value
 
 #### Scenario: Missing price
 
-- **WHEN** an operator calls Create with a TicketType without a price
+- **WHEN** a member calls Create with a TicketType without a price
 - **THEN** it fails with InvalidArgument and nothing is stored
 
 #### Scenario: Sale without ticket types

@@ -134,7 +134,7 @@ message Series {
   reserved 5;
   reserved "merch_url";
 
-  // The free-form body text of the series page, authored by an organizer.
+  // The free-form body text of the series page, authored by an Organizer.
   // Optional: discovered series and organizer series without a write-up leave
   // it unset. A nil wrapper skips inner-Description validation by protovalidate's
   // default presence semantics.
@@ -159,19 +159,19 @@ message Series {
   // Discovered series leave it PUBLISH_STATE_UNSPECIFIED.
   PublishState publish_state = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
 
-  // The organizer that authored this series. Present marks the series as
+  // The Organizer that authored this series. Present marks the series as
   // first-party; absent means the series originated from the discovery
   // pipeline. Optional for that reason. The unlisted share token is a
   // backend-only concern and is intentionally absent from this read entity.
   OrganizerId organizer_id = 10 [(google.api.field_behavior) = OPTIONAL];
 
-  // The organizer that authored this series, resolved by the server and set
+  // The Organizer that authored this series, resolved by the server and set
   // exactly when organizer_id is set: its id, name and, once entered, the
   // 特商法 business details a fan's checkout shows. A fan-facing read never sets
   // its platform fee rate.
   Organizer organizer = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
 
-  // The cover image shown on the series page, uploaded by its organizer and
+  // The cover image shown on the series page, uploaded by its Organizer and
   // served as processed variants. Optional: absent for discovered series and
   // for organizer series without an uploaded image. A nil message skips the
   // inner SeriesImage validation by protovalidate's default presence semantics.

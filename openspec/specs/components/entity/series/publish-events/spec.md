@@ -38,7 +38,7 @@ PublishEvents SHALL fail with FailedPrecondition, changing nothing, when any giv
 - **WHEN** one given DRAFT Event's slot matches a SuppressedConcert
 - **THEN** PublishEvents fails with FailedPrecondition and every given Event stays DRAFT
 
-#### Scenario: Another organizer's slot
+#### Scenario: Another Organizer's slot
 - **WHEN** one given DRAFT Event's slot holds an Event of another Organizer's Series
 - **THEN** PublishEvents fails with FailedPrecondition and every given Event stays DRAFT
 
