@@ -35,6 +35,7 @@ Separately, the fan app and the organizer console fall back to Japanese for a br
   - The first-open fallback becomes English.
   - New requirement: hosted login opens in the console's language.
 - `components/infrastructure/fan/web/global/hosted-login`: Localize Login UI Text gains `ui_locales` precedence over the browser and an old language cookie.
+- `components/infrastructure/fan/web/route/settings`: "Language Preference" no longer forbids saving the language on this device; a successful switch while signed in saves it there too, and a failed one leaves it unchanged.
 
 No entity, usecase or adapter changes. `User.preferredLanguage` and `UserService.SetPreferredLanguage` keep their contract; only the value a new account gets from an unsupported browser language changes (`en` instead of `ja`).
 

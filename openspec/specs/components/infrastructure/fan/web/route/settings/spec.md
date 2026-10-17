@@ -166,7 +166,7 @@ The system SHALL provide access to legal and licensing information via in-app ro
 ---
 
 ### Requirement: Language Preference
-The system SHALL allow users to change the display language of the application. While authenticated, the change SHALL be persisted to the backend user row via `UserService.SetPreferredLanguage` — Settings SHALL NOT read or write browser local storage for the language preference.
+The system SHALL allow users to change the display language of the application. While authenticated, the change SHALL be persisted to the backend user row via `UserService.SetPreferredLanguage` and, once applied, also saved on this device per `components/infrastructure/fan/web/global/i18n` "Language Kept Across Sign-in and Sign-out". Settings SHALL NOT read browser local storage for the language preference: the row and the selector derive from the current user's preferred language.
 
 #### Scenario: Displaying language option
 - **WHEN** the Settings page is displayed for an authenticated user
@@ -186,13 +186,14 @@ The system SHALL allow users to change the display language of the application. 
 - **THEN** the system SHALL call `UserService.SetPreferredLanguage` with the new value
 - **AND** on success, the system SHALL change the active locale
 - **AND** all UI text on the Settings page and throughout the app SHALL immediately update to the selected language
-- **AND** the system SHALL NOT write to browser local storage
+- **AND** the language saved on this device SHALL then hold the selected language, so the first screen after a sign-out opens in it
 - **AND** subsequent reads of the current user's preferred language SHALL return the new value (write-through per `user-profile-hydration`)
 
 #### Scenario: Language change RPC failure
 - **WHEN** the `SetPreferredLanguage` RPC fails (network or server error)
 - **THEN** the active locale SHALL end at the value it held before the change was attempted (the implementation MAY apply the new locale optimistically and revert on failure, consistent with `frontend-i18n`'s "Authenticated language switch RPC failure" scenario; the user-observable end-state SHALL be unchanged)
 - **AND** the displayed "Language" row SHALL end at the prior value (since the row is derived from the current user's preferred language, which is restored when the optimistic update is reverted)
+- **AND** the language saved on this device SHALL end at the value it held before the change was attempted
 - **AND** the system SHALL surface a Snack notification indicating the change could not be saved
 
 #### Scenario: Re-selecting the current language is a no-op
