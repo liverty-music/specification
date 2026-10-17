@@ -1,12 +1,12 @@
 ## Purpose
 
-An admin retires an Organizer that should no longer exist, such as a test Organizer: it is deactivated so its operators can no longer sign in, then deleted permanently from the admin console's Organizers screen.
+An admin retires an Organizer that should no longer exist, such as a test Organizer: it is deactivated so the identities of its Organization can no longer sign in, then deleted permanently from the admin console's Organizers screen.
 
 ## ADDED Requirements
 
 ### Requirement: An admin deactivates and then deletes an Organizer from the Organizers screen
 
-An admin SHALL be able to retire an Organizer entirely from the Organizers screen: Deactivate turns it off and the screen shows it deactivated; Delete then removes it, with its files, its sign-in tenant and every record kept for it, unless a purchase or a payout account blocks the deletion.
+An admin SHALL be able to retire an Organizer entirely from the Organizers screen: Deactivate turns it off and the screen shows it deactivated; Delete then removes it, with its files, its Organization at the identity provider and every record kept for it, unless a purchase or a payout account blocks the deletion.
 
 #### Scenario: Deactivated Organizer is shown deactivated
 
