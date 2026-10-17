@@ -20,8 +20,8 @@ import "liverty_music/entity/v1/user.proto";
 // 特商法 business details and its platform fee rate at vetting, deactivates an
 // Organizer as a minimal off-switch, and permanently deletes a deactivated
 // Organizer. An Organizer is returned with its id, name, short name, legal name,
-// representative name, business address, business phone number, contact email
-// and platform fee rate. The artists an Organizer represents are listed by
+// representative name, business address, business phone number, contact email,
+// platform fee rate and status. The artists an Organizer represents are listed by
 // liverty_music.rpc.admin.artist.v1.ArtistService.ListByOrganizer, not here.
 //
 // All RPCs are authorized only for the admin organization; callers outside it
@@ -151,6 +151,7 @@ service OrganizerService {
   // - INVALID_ARGUMENT: The Organizer id is missing or malformed, or the rate is
   //   missing or outside 0 to 3000 basis points.
   // - NOT_FOUND: The Organizer does not exist.
+  // - FAILED_PRECONDITION: The Organizer is deactivated.
   rpc SetPlatformFeeRate(SetPlatformFeeRateRequest) returns (SetPlatformFeeRateResponse);
 }
 
