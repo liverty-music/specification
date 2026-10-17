@@ -7,14 +7,15 @@ The admin console's Organizers screen cannot finish an Organizer's lifecycle (#1
 - The admin `OrganizerService` returns each Organizer with its status (provisioning, active or deactivated) on Create, List, Get, SetBusinessDetails and SetPlatformFeeRate. Fan-facing reads still never carry it. Additive proto change: a new `OrganizerStatus` enum and an output-only `status` field on `entity.v1.Organizer`.
 - The Organizers screen shows each Organizer's status in the list and in the selected Organizer's detail.
 - The screen offers Deactivate only for a provisioning or active Organizer and shows the new status as soon as Deactivate succeeds.
+- A deactivated Organizer's detail hides the controls whose calls it refuses (the roster's Remove, the artist search and Associate, the business-details form); the platform fee rate stays.
 - The screen offers Delete only for a deactivated Organizer, behind a confirmation dialog that names it; a successful Delete removes it from the list, and a refusal (FailedPrecondition) shows the reason the server gives (an order that is not refunded, a settlement that is not reversed, a payout account).
-- A first spec for the Organizers screen, covering the parts this change touches: the list, the status, Deactivate and Delete.
+- A first spec for the Organizers screen, covering the parts this change touches: the list, the status, the controls a deactivated Organizer keeps, Deactivate and Delete.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `components/infrastructure/admin/web/route/organizers`: the admin Organizers screen - the Organizer list with status, the selected Organizer's status, Deactivate and Delete with confirmation and refusal reasons.
+- `components/infrastructure/admin/web/route/organizers`: the admin Organizers screen - the Organizer list with status, the selected Organizer's status and the controls a deactivated Organizer keeps, Deactivate and Delete with confirmation and refusal reasons.
 - `stories/retire-an-organizer`: an admin retires an Organizer from the console, from deactivation to permanent deletion.
 
 ### Modified Capabilities
@@ -27,6 +28,6 @@ The Organizer entity (`components/entity/organizer`) is unchanged: its status at
 
 - **specification**: `proto/liverty_music/entity/v1/organizer.proto` gains `enum OrganizerStatus` and `Organizer.status` (OUTPUT_ONLY, set on admin reads only); the admin `OrganizerService` doc comment lists status among the returned fields. Additive, not breaking. Needs a Release and BSR gen before backend and frontend can consume it.
 - **backend**: the admin Organizer mapper sets the status; the fan-facing mapper does not.
-- **frontend**: `admin/services/organizer-client.ts` gains `delete`; `admin/organizers/organizers-route` shows the status, hides Deactivate for a deactivated Organizer, and adds Delete with a confirmation dialog and refusal reasons.
+- **frontend**: `admin/services/organizer-client.ts` gains `delete`; `admin/organizers/organizers-route` shows the status, hides Deactivate and the refused roster, association and business-details controls for a deactivated Organizer, and adds Delete with a confirmation dialog and refusal reasons.
 - **Production check**: delete `fan-test` (`01a142c8-2971-7993-a41f-620783586665`) and `fan-test-2` (`01a142c8-64c5-7b0d-b3e9-4b6c6768834b`) from the new screen.
-- **Overlap with #1158** (moving tenant- and operator-named Organizer operations such as `delete-tenant` and `deactivate-operators` into an `organization` entity): this change references those operations by their current names and changes none of them, so the two changes do not conflict; whichever archives second only sees the current names in this proposal.
+- **Overlap with #1158** (change `rename-organization-operations`, liverty-music/specification#1169, which moves the Organizer operations on the Organization at the identity provider into an `organization` entity): this change cites those operations only by their current spec paths in this proposal and changes none of them, and its specs use the vocabulary #1169 settles (Organizer is the business, a member uses the organizer console, an identity is an account at the identity provider, admin is Liverty Music staff), so the two changes do not conflict.
