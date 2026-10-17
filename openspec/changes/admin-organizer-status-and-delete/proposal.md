@@ -7,7 +7,8 @@ The admin console's Organizers screen cannot finish an Organizer's lifecycle (#1
 - The admin `OrganizerService` returns each Organizer with its status (provisioning, active or deactivated) on Create, List, Get, SetBusinessDetails and SetPlatformFeeRate. Fan-facing reads still never carry it. Additive proto change: a new `OrganizerStatus` enum and an output-only `status` field on `entity.v1.Organizer`.
 - The Organizers screen shows each Organizer's status in the list and in the selected Organizer's detail.
 - The screen offers Deactivate only for a provisioning or active Organizer and shows the new status as soon as Deactivate succeeds.
-- A deactivated Organizer's detail hides the controls whose calls it refuses (the roster's Remove, the artist search and Associate, the business-details form); the platform fee rate stays.
+- A deactivated Organizer's detail hides the controls whose calls it refuses (the roster's Remove, the artist search and Associate, the business-details form, the platform fee rate form).
+- OrganizerUseCase.SetPlatformFeeRate fails with FailedPrecondition for a deactivated Organizer, as AssociateArtist, DisassociateArtist and SetBusinessDetails already do; the RPC documents the new error.
 - The screen offers Delete only for a deactivated Organizer, behind a confirmation dialog that names it; a successful Delete removes it from the list, and a refusal (FailedPrecondition) shows the reason the server gives (an order that is not refunded, a settlement that is not reversed, a payout account).
 - A first spec for the Organizers screen, covering the parts this change touches: the list, the status, the controls a deactivated Organizer keeps, Deactivate and Delete.
 
@@ -20,14 +21,15 @@ The admin console's Organizers screen cannot finish an Organizer's lifecycle (#1
 
 ### Modified Capabilities
 
-- `components/adapter/admin/api/rpc/organizer`: an Organizer is returned with its status.
+- `components/adapter/admin/api/rpc/organizer`: an Organizer is returned with its status. Its usecase errors are already returned unchanged, so the new SetPlatformFeeRate refusal needs no adapter change.
+- `components/usecase/organizer/set-platform-fee-rate`: refuses a deactivated Organizer with FailedPrecondition. It reads the Organizer through Organizer.Get and stores through Organizer.SetPlatformFeeRate (`components/entity/organizer/{get,set-platform-fee-rate}`), both unchanged.
 
 The Organizer entity (`components/entity/organizer`) is unchanged: its status attribute and state diagram already define provisioning, active and deactivated. OrganizerUseCase.List, Get, Deactivate and Delete (`components/usecase/organizer/{list,get,deactivate,delete}`) and the entity operations they call (`components/entity/organizer/{list,get,delete,delete-tenant,deactivate-operators,free-artists,set-status}`) are unchanged: they already return the status and already enforce the deactivated precondition; this change only exposes the status and calls Delete from the screen.
 
 ## Impact
 
-- **specification**: `proto/liverty_music/entity/v1/organizer.proto` gains `enum OrganizerStatus` and `Organizer.status` (OUTPUT_ONLY, set on admin reads only); the admin `OrganizerService` doc comment lists status among the returned fields. Additive, not breaking. Needs a Release and BSR gen before backend and frontend can consume it.
-- **backend**: the admin Organizer mapper sets the status; the fan-facing mapper does not.
-- **frontend**: `admin/services/organizer-client.ts` gains `delete`; `admin/organizers/organizers-route` shows the status, hides Deactivate and the refused roster, association and business-details controls for a deactivated Organizer, and adds Delete with a confirmation dialog and refusal reasons.
+- **specification**: `proto/liverty_music/entity/v1/organizer.proto` gains `enum OrganizerStatus` and `Organizer.status` (OUTPUT_ONLY, set on admin reads only); the admin `OrganizerService` doc comment lists status among the returned fields, and `SetPlatformFeeRate` lists FAILED_PRECONDITION. Additive, not breaking. Needs a Release and BSR gen before backend and frontend can consume it.
+- **backend**: the admin Organizer mapper sets the status; the fan-facing mapper does not. OrganizerUseCase.SetPlatformFeeRate refuses a deactivated Organizer.
+- **frontend**: `admin/services/organizer-client.ts` gains `delete`; `admin/organizers/organizers-route` shows the status, hides Deactivate and the refused roster, association, business-details and fee-rate controls for a deactivated Organizer, and adds Delete with a confirmation dialog and refusal reasons.
 - **Production check**: delete `fan-test` (`01a142c8-2971-7993-a41f-620783586665`) and `fan-test-2` (`01a142c8-64c5-7b0d-b3e9-4b6c6768834b`) from the new screen.
 - **Overlap with #1158** (change `rename-organization-operations`, liverty-music/specification#1169, which moves the Organizer operations on the Organization at the identity provider into an `organization` entity): this change cites those operations only by their current spec paths in this proposal and changes none of them, and its specs use the vocabulary #1169 settles (Organizer is the business, a member uses the organizer console, an identity is an account at the identity provider, admin is Liverty Music staff), so the two changes do not conflict.

@@ -34,17 +34,17 @@ The selected Organizer's detail SHALL show its status label. It SHALL offer Deac
 
 ### Requirement: A deactivated Organizer's detail offers only what the Organizer still accepts
 
-The detail of a deactivated Organizer SHALL NOT offer the controls whose calls a deactivated Organizer refuses: removing an Artist from its roster, searching for and associating an Artist, and recording its business details. It SHALL still show its represented Artists without a Remove control, and SHALL still offer the platform fee rate, which a deactivated Organizer accepts. A provisioning or active Organizer's detail SHALL offer all of these controls.
+The detail of a deactivated Organizer SHALL NOT offer the controls whose calls a deactivated Organizer refuses: removing an Artist from its roster, searching for and associating an Artist, recording its business details and setting its platform fee rate. It SHALL still show its represented Artists without a Remove control. A provisioning or active Organizer's detail SHALL offer all of these controls.
 
 #### Scenario: Deactivated Organizer hides refused controls
 
 - **WHEN** the admin selects a deactivated Organizer
-- **THEN** the detail offers no Remove control on the roster, no artist search or Associate control and no business-details form, and still offers the platform fee rate
+- **THEN** the detail offers no Remove control on the roster, no artist search or Associate control, no business-details form and no platform fee rate form
 
 #### Scenario: Active Organizer keeps every control
 
 - **WHEN** the admin selects an active Organizer
-- **THEN** the detail offers Remove on each represented Artist, the artist search with Associate, the business-details form and the platform fee rate
+- **THEN** the detail offers Remove on each represented Artist, the artist search with Associate, the business-details form and the platform fee rate form
 
 ### Requirement: A successful Deactivate shows the Organizer deactivated
 
@@ -53,7 +53,7 @@ When Deactivate succeeds, the screen SHALL show the Organizer as `Deactivated` i
 #### Scenario: Deactivate succeeds
 
 - **WHEN** the admin deactivates an active Organizer that represents an Artist
-- **THEN** the list and the detail show `Deactivated`, Delete replaces Deactivate, the artist search and the business-details form are no longer offered, and the roster shows no Artists
+- **THEN** the list and the detail show `Deactivated`, Delete replaces Deactivate, the artist search, the business-details form and the platform fee rate form are no longer offered, and the roster shows no Artists
 
 #### Scenario: Deactivate fails
 

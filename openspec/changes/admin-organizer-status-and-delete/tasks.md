@@ -4,25 +4,26 @@ Every test task cites its scenarios with `@spec <capability-path> "<scenario>"` 
 
 ## 1. Proto (specification → BSR)
 
-- [ ] 1.1 `entity/v1/organizer.proto`: `enum OrganizerStatus` (UNSPECIFIED 0, PROVISIONING 1, ACTIVE 2, DEACTIVATED 3) and `OrganizerStatus status = 11` (OUTPUT_ONLY, "set on admin reads; fan-facing reads never set it"); rewrite the message comment's backend-only sentence to name only the provider organizer ID and owner email; add status to the returned-fields sentence in `rpc/admin/organizer/v1/organizer_service.proto`; verify `buf lint`, `buf format -d --exit-code` pass and `buf breaking` reports nothing (additive)
+- [ ] 1.1 `entity/v1/organizer.proto`: `enum OrganizerStatus` (UNSPECIFIED 0, PROVISIONING 1, ACTIVE 2, DEACTIVATED 3) and `OrganizerStatus status = 11` (OUTPUT_ONLY, "set on admin reads; fan-facing reads never set it"); rewrite the message comment's backend-only sentence to name only the provider organizer ID and owner email; add status to the returned-fields sentence and `FAILED_PRECONDITION: The organizer is deactivated.` to `SetPlatformFeeRate`'s errors in `rpc/admin/organizer/v1/organizer_service.proto`; verify `buf lint`, `buf format -d --exit-code` pass and `buf breaking` reports nothing (additive)
 - [ ] 1.2 Open the proto PR from a worktree cut from origin/main, merge it, cut a Release; verify `buf-release.yml` succeeds and record the BSR Go and npm versions here
 
-## 2. Backend (components/adapter/admin/api/rpc/organizer)
+## 2. Backend (components/adapter/admin/api/rpc/organizer, components/usecase/organizer/set-platform-fee-rate)
 
 - [ ] 2.1 Consume the release from 1.2 (`consume-proto-release` skill); verify `make check` passes
 - [ ] 2.2 `mapper.OrganizerToProto` sets `Status` from the entity status (provisioning, active, deactivated; Unspecified → UNSPECIFIED); `PublicOrganizerToProto` unchanged; verify a mapper test asserts each status maps and a fan-facing mapping leaves it unset
 - [ ] 2.3 Add a test for `@spec components/adapter/admin/api/rpc/organizer "Admin lists Organizers in every status"` (List returns a provisioning, an active and a deactivated Organizer each with its status) and extend the existing `"Admin reads any Organizer"` test to assert status deactivated; the other scenarios of the modified requirement already have marked tests on backend main; verify `make check` passes
-- [ ] 2.4 Open the backend PR citing this change, merge, release and confirm the prod rollout; verify with a read-only prod check (admin `OrganizerService.List` response or backend logs) that Organizers carry a status
+- [ ] 2.4 `OrganizerUseCase.SetPlatformFeeRate` reads the Organizer with Organizer.Get and fails with FailedPrecondition, storing nothing, when it is deactivated; verify usecase tests for `@spec components/usecase/organizer/set-platform-fee-rate "Deactivated Organizer"` (Organizer.SetPlatformFeeRate not called) and the existing "Pilot Organizer" pass
+- [ ] 2.5 Open the backend PR citing this change, merge, release and confirm the prod rollout; verify with a read-only prod check (admin `OrganizerService.List` response or backend logs) that Organizers carry a status
 
 ## 3. Frontend (components/infrastructure/admin/web/route/organizers)
 
 - [ ] 3.1 Consume the release from 1.2; `OrganizerClient.delete(organizerId, signal?)` mirroring `deactivate`; verify a `test/admin/services/organizer-client.spec.ts` case sends `organizerId` and propagates errors
 - [ ] 3.2 `OrganizerRow.status` and the status labels in the list and the detail; Deactivate offered only for provisioning or active (and UNSPECIFIED), Delete only for deactivated; verify route tests for `@spec components/infrastructure/admin/web/route/organizers "Organizers in every status"`, "Active Organizer", "Provisioning Organizer" and "Deactivated Organizer" pass
-- [ ] 3.3 Hide the roster's Remove, the artist search and Associate, and the business-details form (a `deactivated` bindable on `organizer-commercial-terms`) for a deactivated Organizer; keep the fee-rate form; verify route and `organizer-commercial-terms` tests for `@spec components/infrastructure/admin/web/route/organizers "Deactivated Organizer hides refused controls"` and "Active Organizer keeps every control" pass
+- [ ] 3.3 Hide the roster's Remove, the artist search and Associate, the business-details form and the fee-rate form (a `deactivated` bindable on `organizer-commercial-terms`) for a deactivated Organizer; verify route and `organizer-commercial-terms` tests for `@spec components/infrastructure/admin/web/route/organizers "Deactivated Organizer hides refused controls"` and "Active Organizer keeps every control" pass
 - [ ] 3.4 Deactivate sets the row's status to deactivated (list and detail together) and reloads the roster; on failure the status and action are unchanged; verify route tests for "Deactivate succeeds" (including the hidden controls) and "Deactivate fails" pass
 - [ ] 3.5 Delete confirmation `<dialog>` (name and short name, Cancel focused, Escape and Cancel dismiss, Delete control disabled in flight, one call per confirmation); verify route tests for "Confirm deletes", "Dismiss keeps the Organizer" and "Dialog names the Organizer" pass
 - [ ] 3.6 Delete outcome: on success remove the row and clear the selection; FailedPrecondition shows `This organizer cannot be deleted: <server reason>.` (Delete-specific mapping in `organizer-error-message.ts`); other errors through `toUserMessage`; verify route tests for "Delete succeeds", "Delete blocked by an order" and "Delete fails otherwise" pass
-- [ ] 3.7 Open the frontend PR citing this change after 2.4 is in prod; `make check` passes; merge and confirm the admin console deploy
+- [ ] 3.7 Open the frontend PR citing this change after 2.5 is in prod; `make check` passes; merge and confirm the admin console deploy
 
 ## 4. Production check (stories/retire-an-organizer)
 
