@@ -2,7 +2,7 @@
 
 ## Purpose
 
-An Organizer is a vetted business - a record label, management agency, promoter or self-publishing artist - that an admin creates to sell tickets for the Artists it represents. Being created by an admin is the vetting; an Organizer is an entity separate from any Artist. The people who run it sign in to the Organizer's own Organization at the identity provider, with identities separate from any fan account they have, even under the same email.
+An Organizer is a vetted business - a record label, management agency, promoter or self-publishing artist - that an admin creates to sell tickets for the Artists it represents. Being created by an admin is the vetting; an Organizer is an entity separate from any Artist. The people who run it are its members: a member is a person with an identity in the Organizer's Organization at the identity provider, separate from any fan account they have, even under the same email. Every member holds a role; owner is the only role today, held by the identity created with the owner email.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
