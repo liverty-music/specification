@@ -6,30 +6,42 @@ Gives an Organizer its isolated sign-in tenant, with the initial operator as the
 
 ## Requirements
 
-### Requirement: ProvisionTenant sets up the tenant and its owner
+### Requirement: ProvisionTenant sets up the Organization and its owner
 
-ProvisionTenant SHALL take an Organizer, its recorded sign-in tenant and the initial operator email. It SHALL make sure that the tenant's operators sign in to the organizer console with a passkey and no password, that the tenant may use the organizer console, and that the initial operator exists in the tenant with the owner role. The initial operator SHALL receive an invitation email whose link lets them register a passkey.
+ProvisionTenant SHALL take an Organizer, its recorded Organization and the owner email. It SHALL make sure that:
+
+- the Organization's identities sign in to the organizer console with a passkey and no password, by typing their email;
+- the Organization tells a person who types an email that names no identity there that it is unknown, instead of continuing as if it existed;
+- the Organization may use the organizer console;
+- an identity exists in the Organization with the owner email as its email, the user name `<owner email> (<short name>)` and the owner role.
+
+That identity SHALL receive an invitation email whose link lets them register a passkey. The owner email MAY already be the email of an identity in another Organization - a fan account, an admin or another Organizer's owner - and that identity is neither used nor changed.
 
 #### Scenario: Organizer is provisioned
 
-- **WHEN** ProvisionTenant runs for an Organizer's tenant with an operator email
-- **THEN** the operator holds the owner role in that tenant and is invited to register a passkey
+- **WHEN** ProvisionTenant runs for the Organizer `xx-records` with the owner email `band@example.com`
+- **THEN** an identity with the email `band@example.com` and the user name `band@example.com (xx-records)` holds the owner role in that Organization and is invited to register a passkey
 
-### Requirement: ProvisionTenant is repeatable per Organizer
+#### Scenario: Owner email of a fan account
 
-ProvisionTenant SHALL be keyed on the tenant: a repeated call SHALL NOT create a second initial operator, and a later call SHALL complete the steps that are missing. A tenant for which ProvisionTenant succeeded SHALL always have an operator holding the owner role. When the operator email belongs to a user outside the tenant, it SHALL fail with AlreadyExists. When the sign-in service rejects the email, it SHALL fail with InvalidArgument. When any other step fails, it SHALL fail with Internal.
+- **WHEN** the owner email is the email of a fan account
+- **THEN** a separate identity with that email is created in the Organizer's Organization and the fan account is unchanged
+
+### Requirement: ProvisionTenant is repeatable for the Organization
+
+ProvisionTenant SHALL be keyed on the Organization: a repeated call SHALL NOT create a second owner identity, and a later call SHALL complete the steps that are missing. An Organization for which ProvisionTenant succeeded SHALL always have an identity holding the owner role. When the sign-in service rejects the email or the user name, it SHALL fail with InvalidArgument. When any other step fails, it SHALL fail with Internal.
 
 #### Scenario: Repeated call
 
-- **WHEN** ProvisionTenant runs again for a tenant it already provisioned
+- **WHEN** ProvisionTenant runs again for an Organization it already provisioned
 - **THEN** it creates nothing new
 
 #### Scenario: Retry after a partial failure
 
-- **WHEN** ProvisionTenant failed part-way and runs again for the same tenant
-- **THEN** it completes the missing steps, and the operator holds the owner role
+- **WHEN** ProvisionTenant failed part-way and runs again for the same Organization
+- **THEN** it completes the missing steps, and the owner identity holds the owner role
 
-#### Scenario: Operator email used in another tenant
+#### Scenario: Email rejected by the sign-in service
 
-- **WHEN** the operator email belongs to a user of another tenant
-- **THEN** ProvisionTenant fails with AlreadyExists and creates no operator
+- **WHEN** the sign-in service rejects the owner email
+- **THEN** ProvisionTenant fails with InvalidArgument and creates no identity

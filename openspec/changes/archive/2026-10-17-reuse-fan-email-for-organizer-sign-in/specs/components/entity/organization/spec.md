@@ -33,5 +33,5 @@ A person SHALL sign in to an Organization by typing the email of their identity 
 
 #### Scenario: Same email twice in one Organization
 
-- **WHEN** an identity with `Band@Example.com` is added to an Organization in which `band@example.com` already names an identity
-- **THEN** the second identity is not created
+- **WHEN** Liverty Music adds an identity with `Band@Example.com` to an Organization in which `band@example.com` already names an identity
+- **THEN** no second identity is created and the existing one is used
