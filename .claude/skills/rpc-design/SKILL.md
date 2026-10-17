@@ -54,6 +54,8 @@ AIP-132 narrows a `List` with `parent` plus `filter`, and AIP-136 forbids standa
 - Bare "identity" means the account at the identity provider (Zitadel). The result of a fan's 本人確認 is the entity `IdentityVerification`; the payment provider's check of an Organizer's account is "payout account verification". "KYC" is only the legal term "AML-KYC".
 - The amount reserved on a fan's card is a "card authorization", never bare "authorization" (access control) or "hold" (which names only the Checkout's tickets held for the fan and Settlement's Held status). Stripe's "client secret" is the `card_authorization_secret`.
 - "holder", "buyer", "applicant" and "seller" are not entities. A ticketing record's User is `user`; the Organizer's 販売業者 business details are plain Organizer fields.
+- "Organizer" is the business, in any letter case; the audience name `organizer` (spec paths, `rpc.organizer.v1`, the organizer console) is the Organizer's. A person who uses the organizer console for an Organizer is a **member** of that Organizer, and **owner** is a member's role (the only one today). A member's account is an **identity** in the Organizer's **Organization**. Liverty Music staff are **admins**.
+- "tenant", "operator", "seller", "buyer" and "applicant" are not entities: use the Organizer's Organization, member, owner, identity, admin, the Organizer, the User or the fan who entered. `scripts/check-forbidden-words.py` rejects them in `proto/`, `docs/`, `openspec/specs/` and `openspec/schemas/` (`make words`, `CI Success`).
 
 ## Before you finish
 

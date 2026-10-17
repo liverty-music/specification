@@ -1,13 +1,14 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.organizer.ticket_sale.v1 provides the
-// organizer-facing TicketSaleService, the surface an operator uses from the
+// organizer-facing TicketSaleService, the surface a member uses from the
 // organizer console to open a sale (受付) on the published events of one of its
-// Series, by lottery or first come, first served, and to see how it stands. It
-// is served by the dedicated organizer Connect server behind org-scoped
-// role-claim authorization. A sale's per-event price, quantity and per-account
-// limit are changed through liverty_music.rpc.organizer.ticket_type.v1; fans
-// read sales through liverty_music.rpc.ticket_sale.v1 and take part through
+// Organizer's Series, by lottery or first come, first served, and to see how it
+// stands. It is served by the dedicated organizer Connect server behind
+// org-scoped role-claim authorization. A sale's per-event price, quantity and
+// per-account limit are changed through
+// liverty_music.rpc.organizer.ticket_type.v1; fans read sales through
+// liverty_music.rpc.ticket_sale.v1 and take part through
 // liverty_music.rpc.lottery_entry.v1 and liverty_music.rpc.checkout.v1.
 package liverty_music.rpc.organizer.ticket_sale.v1;
 
@@ -20,16 +21,16 @@ import "liverty_music/entity/v1/ticket_sale.proto";
 import "liverty_music/entity/v1/ticket_type.proto";
 
 // TicketSaleService is the organizer-facing sale surface: an authenticated
-// operator creates the TicketSales of its own Series, lists the sales of one of
-// its events with their counts, and moves a sale's window or changes its
+// member creates the TicketSales of its Organizer's Series, lists the sales of
+// one of its events with their counts, and moves a sale's window or changes its
 // verification requirement. Every call passes the same organizer-console
 // sign-in checks as the organizer OrganizerService and then resolves the
-// caller's own Organizer from the caller's tenant (never carried in the
-// request): a caller with no tenant, a tenant with no linked Organizer and a
-// provisioning Organizer fail with PERMISSION_DENIED, and a deactivated
-// Organizer fails with FAILED_PRECONDITION, before anything else runs. Failures
-// that would concern another Organizer's Series, event or sale never reveal
-// whether it exists.
+// caller's own Organizer from the caller's Organization (never carried in the
+// request): a caller with no Organization, an Organization with no linked
+// Organizer and a provisioning Organizer fail with PERMISSION_DENIED, and a
+// deactivated Organizer fails with FAILED_PRECONDITION, before anything else
+// runs. Failures that would concern another Organizer's Series, event or sale
+// never reveal whether it exists.
 service TicketSaleService {
   // Create opens a sale on published events of one of the caller's Series: a
   // name, the method LOTTERY or FIRST_COME, a window, an optional verification

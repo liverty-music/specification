@@ -87,13 +87,15 @@ enum VerificationStatus {
 // platform enforces "at most one account per person with an Active
 // IdentityVerification".
 message IdentityVerification {
-  // ProviderUserId is the verification provider's ID for the User: its stable,
-  // tenant-scoped key for the person, the SAME value across card renewal,
-  // re-issue, certificate generation and certificate type. It is the only
-  // person-identifying value the platform stores: never the certificate
-  // 発行番号/serial, never the 個人番号. Because it is tenant-scoped it does NOT
-  // enable cross-platform scalper detection (an accepted limitation). It is a
-  // bounded opaque string: the platform does not parse or interpret it.
+  // ProviderUserId is the verification provider's ID for the User: its stable
+  // key for the person, scoped to Liverty Music's account at the verification
+  // provider, the SAME value across card renewal, re-issue, certificate
+  // generation and certificate type. It is the only person-identifying value
+  // the platform stores: never the certificate 発行番号/serial, never the
+  // 個人番号. Because it is scoped to Liverty Music's account at the
+  // verification provider it does NOT enable cross-platform scalper detection
+  // (an accepted limitation). It is a bounded opaque string: the platform does
+  // not parse or interpret it.
   message ProviderUserId {
     // The opaque person key as returned by the verification provider, stored
     // verbatim as the dedupe key.

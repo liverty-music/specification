@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.organizer.ticket_type.v1 provides the
-// organizer-facing TicketTypeService, the surface an operator uses from the
+// organizer-facing TicketTypeService, the surface a member uses from the
 // organizer console to change what one of its TicketSales offers for one
 // event: the price, the quantity and the per-account limit. It is served by
 // the dedicated organizer Connect server behind org-scoped role-claim
@@ -15,9 +15,9 @@ import "liverty_music/entity/v1/ticket_type.proto";
 // TicketTypeService changes the TicketTypes of the caller's own sales. Every
 // call passes the same organizer-console sign-in checks as the organizer
 // OrganizerService and then resolves the caller's own Organizer from the
-// caller's tenant (never carried in the request): a caller with no tenant, a
-// tenant with no linked Organizer and a provisioning Organizer fail with
-// PERMISSION_DENIED, and a deactivated Organizer fails with
+// caller's Organization (never carried in the request): a caller with no
+// Organization, an Organization with no linked Organizer and a provisioning
+// Organizer fail with PERMISSION_DENIED, and a deactivated Organizer fails with
 // FAILED_PRECONDITION, before anything else runs.
 service TicketTypeService {
   // Update replaces the price, quantity and per-account limit of a TicketType

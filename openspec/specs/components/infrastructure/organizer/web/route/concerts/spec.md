@@ -12,7 +12,7 @@ The screen SHALL list the concerts that the Artist in its address performs in, c
 
 #### Scenario: Phone
 
-- **WHEN** an operator opens the concerts of Band A in a 390 px wide window with two concerts
+- **WHEN** a member opens the concerts of Band A in a 390 px wide window with two concerts
 - **THEN** each concert is one list item showing its title, dates, venue, sale state and status, and selecting anywhere on it opens the concert page
 
 #### Scenario: PC
@@ -32,7 +32,7 @@ The screen SHALL list the concerts that the Artist in its address performs in, c
 
 #### Scenario: Create from an Artist
 
-- **WHEN** an operator presses 公演をつくる on the concerts of Band A
+- **WHEN** a member presses 公演をつくる on the concerts of Band A
 - **THEN** the concert editor opens with Band A as the first performer
 
 ### Requirement: Empty and failed lists
@@ -41,7 +41,7 @@ When the Artist performs in no concert, the screen SHALL say so and offer 公演
 
 #### Scenario: First visit
 
-- **WHEN** an operator opens the concerts of an Artist who performs in none
+- **WHEN** a member opens the concerts of an Artist who performs in none
 - **THEN** the screen says there are no concerts yet and offers 公演をつくる
 
 #### Scenario: Load fails

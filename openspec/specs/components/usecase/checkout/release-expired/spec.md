@@ -31,8 +31,8 @@ A Checkout whose handling fails SHALL NOT stop the others and is tried again on 
 
 ### Requirement: A captured card authorization on an ended checkout is reported
 
-When CardAuthorization.Release fails with FailedPrecondition because the card authorization of an Expired or Released Checkout was captured, ReleaseExpired SHALL report that Checkout, with its id and its card authorization's id, as needing an operator on every run until it is resolved, and SHALL go on with the others.
+When CardAuthorization.Release fails with FailedPrecondition because the card authorization of an Expired or Released Checkout was captured, ReleaseExpired SHALL report that Checkout, with its id and its card authorization's id, as needing an admin on every run until it is resolved, and SHALL go on with the others.
 
 #### Scenario: Money taken on an ended checkout
 - **WHEN** the card authorization of a Released Checkout turns out to have been captured
-- **THEN** the Checkout is reported as needing an operator on every run
+- **THEN** the Checkout is reported as needing an admin on every run

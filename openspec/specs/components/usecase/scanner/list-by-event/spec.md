@@ -1,7 +1,7 @@
 # components/usecase/scanner/list-by-event Specification
 
 ## Purpose
-ScannerUseCase.ListByEvent shows the owning organizer operator every Scanner of one of their events and its state.
+ScannerUseCase.ListByEvent shows a member of the owning Organizer every Scanner of one of their events and its state.
 
 ## Requirements
 
@@ -14,7 +14,7 @@ ListByEvent SHALL take the caller's Organizer and an event. It SHALL fail with P
 - **WHEN** the owner lists an event with Scanner 1 (InUse since 14:10) and Scanner 2 (Unused)
 - **THEN** both are returned, 1 with bound time 14:10 and no link token, 2 with its link token
 
-#### Scenario: Another organizer's event
+#### Scenario: Another Organizer's event
 
-- **WHEN** an operator lists the Scanners of another Organizer's event
+- **WHEN** a member lists the Scanners of another Organizer's event
 - **THEN** ListByEvent fails with PermissionDenied

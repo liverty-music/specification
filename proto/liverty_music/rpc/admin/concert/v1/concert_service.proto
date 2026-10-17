@@ -30,7 +30,7 @@ import "liverty_music/entity/v1/series.proto";
 // organization with PERMISSION_DENIED, before any usecase runs.
 service ConcertService {
   // List returns every published concert, with no follower or proximity
-  // filtering, so an operator can review the full catalog and act on it. Each
+  // filtering, so an admin can review the full catalog and act on it. Each
   // concert carries its event id (for deletion) and the ids of its performing
   // artists (for client-side grouping); the response carries each referenced
   // Series and Artist once.

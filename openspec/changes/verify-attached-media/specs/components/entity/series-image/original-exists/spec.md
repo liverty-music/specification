@@ -12,7 +12,7 @@ OriginalExists SHALL take an Organizer id and a SeriesImage id and report whethe
 - **WHEN** an Organizer uploaded the original of a SeriesImage
 - **THEN** OriginalExists reports true for that Organizer and that SeriesImage
 
-#### Scenario: Another organizer's upload
+#### Scenario: Another Organizer's upload
 - **WHEN** the original of a SeriesImage was uploaded by another Organizer
 - **THEN** OriginalExists reports false
 

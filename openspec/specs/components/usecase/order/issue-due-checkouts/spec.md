@@ -23,8 +23,8 @@ IssueDueCheckouts SHALL run every 1 minute. For each Committed Checkout returned
 
 ### Requirement: A charged checkout left unissued is reported
 
-When a Committed Checkout has a capture time more than 10 minutes before the run and is still not Completed, IssueDueCheckouts SHALL report it, with its id and provider payment ID, as needing an operator on every run, while still trying to issue it.
+When a Committed Checkout has a capture time more than 10 minutes before the run and is still not Completed, IssueDueCheckouts SHALL report it, with its id and provider payment ID, as needing an admin on every run, while still trying to issue it.
 
 #### Scenario: Organizer record broken
 - **WHEN** a Checkout was charged at 18:20 and its issuance keeps failing
-- **THEN** from 18:31 every run reports it as needing an operator and tries again
+- **THEN** from 18:31 every run reports it as needing an admin and tries again

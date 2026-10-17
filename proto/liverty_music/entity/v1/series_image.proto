@@ -8,7 +8,7 @@ import "liverty_music/entity/v1/entity.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
-// SeriesImageId is a globally unique identifier for an image an organizer
+// SeriesImageId is a globally unique identifier for an image an Organizer
 // uploaded for one of its Series. The value doubles as the object-key basename
 // in storage and, being a time-ordered UUIDv7, as the creation-time source and
 // the version of its served addresses: a new upload mints a new
@@ -20,11 +20,11 @@ message SeriesImageId {
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
-// SeriesImage is an image an organizer uploaded for one of its Series, served
+// SeriesImage is an image an Organizer uploaded for one of its Series, served
 // to fans only as processed variants: a thumbnail at most 800 px wide and a
 // large image at most 1920 px wide, both WebP from the CDN. The original upload
 // is never served. The variant addresses are derived at read time from the
-// owning organizer and the id, so they are never stored and never change; a
+// owning Organizer and the id, so they are never stored and never change; a
 // replaced cover is a new SeriesImage with new addresses.
 message SeriesImage {
   // The unique identifier for this series image.

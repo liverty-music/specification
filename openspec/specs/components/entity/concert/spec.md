@@ -115,7 +115,7 @@ A DRAFT Event SHALL NOT be a Concert. No Concert operation SHALL return a DRAFT 
 
 A Concert SHALL be visible to fans exactly when its Event is publicly visible (see Event).
 
-#### Scenario: Concert of an unlisted organizer series
+#### Scenario: Concert of an unlisted Organizer series
 - **WHEN** a Concert's Series is a first-party Series with visibility UNLISTED
 - **THEN** the Concert is not visible to fans
 

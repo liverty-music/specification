@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.organizer.scanner.v1 provides the organizer-facing
-// ScannerService, the surface an operator uses from the organizer console to
+// ScannerService, the surface a member uses from the organizer console to
 // hand admission for one event to venue staff who have no account: one
 // Scanner per scanner device. It is served by the dedicated organizer Connect
 // server behind org-scoped role-claim authorization; the scanner device itself
@@ -13,11 +13,11 @@ import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/scanner.proto";
 
 // ScannerService is the organizer-facing surface over Scanners: an
-// authenticated operator creates, lists and revokes the Scanners of its own
-// published events. Every call passes the same organizer-console sign-in
-// checks as the organizer OrganizerService and resolves the caller's own
-// Organizer from the token (never carried in the request). Failures that would
-// concern another org's event or Scanner never reveal whether it exists.
+// authenticated member creates, lists and revokes the Scanners of its
+// Organizer's published events. Every call passes the same organizer-console
+// sign-in checks as the organizer OrganizerService and resolves the caller's
+// own Organizer from the token (never carried in the request). Failures that
+// would concern another org's event or Scanner never reveal whether it exists.
 service ScannerService {
   // Create creates a Scanner for one of the caller's published events, to hand
   // to one scanner device. The server numbers it after the event's earlier

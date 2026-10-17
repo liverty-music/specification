@@ -54,24 +54,24 @@ A new Organizer SHALL start in status provisioning with no provider organizer ID
 - **WHEN** an Organizer is created for a self-publishing artist
 - **THEN** the Organizer's id differs from the Artist's ArtistId
 
-### Requirement: Only an active Organizer serves its operators
+### Requirement: Only an active Organizer serves its members
 
-An Organizer SHALL serve requests from its own operators only while its status is active.
+An Organizer SHALL serve requests from its own members only while its status is active.
 
 #### Scenario: Active Organizer
 
 - **WHEN** the status is active
-- **THEN** the Organizer serves its operators
+- **THEN** the Organizer serves its members
 
 #### Scenario: Provisioning Organizer
 
 - **WHEN** the status is provisioning
-- **THEN** the Organizer does not serve its operators
+- **THEN** the Organizer does not serve its members
 
 #### Scenario: Deactivated Organizer
 
 - **WHEN** the status is deactivated
-- **THEN** the Organizer does not serve its operators
+- **THEN** the Organizer does not serve its members
 
 ### Requirement: The roster is fixed once deactivated
 

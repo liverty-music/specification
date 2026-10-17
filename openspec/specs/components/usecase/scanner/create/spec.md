@@ -1,7 +1,7 @@
 # components/usecase/scanner/create Specification
 
 ## Purpose
-ScannerUseCase.Create lets the owning organizer operator create a Scanner for one of their published events, to hand to one device of the venue staff.
+ScannerUseCase.Create lets a member of the owning Organizer create a Scanner for one of their published events, to hand to one device of the venue staff.
 
 ## Requirements
 
@@ -9,9 +9,9 @@ ScannerUseCase.Create lets the owning organizer operator create a Scanner for on
 
 Create SHALL take the caller's Organizer and an event. It SHALL fail with PermissionDenied, without revealing whether the event exists, when Event.GetOrganizerID fails with NotFound or returns another Organizer. It SHALL fail with FailedPrecondition when Event.IsEventPublished reports false, or when Event.Get returns no start time, because such an event has no admission window.
 
-#### Scenario: Another organizer's event
+#### Scenario: Another Organizer's event
 
-- **WHEN** an operator creates a Scanner for an event owned by another Organizer
+- **WHEN** a member creates a Scanner for an event owned by another Organizer
 - **THEN** Create fails with PermissionDenied and no Scanner is created
 
 #### Scenario: Draft event

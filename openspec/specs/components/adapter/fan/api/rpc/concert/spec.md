@@ -65,7 +65,7 @@ Every response of the fan concert service that returns Concerts SHALL also retur
 
 #### Scenario: Discovered concert in a list
 
-- **WHEN** ListFollowed returns a Concert whose Series has no organizer
+- **WHEN** ListFollowed returns a Concert whose Series has no Organizer
 - **THEN** the Series returned with it carries no Organizer id
 
 #### Scenario: Tour in one list

@@ -2,22 +2,22 @@
 
 ## Purpose
 
-OrganizerUseCase.Create registers a new Organizer from a name and an initial operator email and provisions its isolated sign-in tenant with that operator as owner, so the Organizer becomes active and its operator can sign in.
+OrganizerUseCase.Create registers a new Organizer from a name, a short name and an owner email and provisions its Organization with the owner identity, so the Organizer becomes active and its owner can sign in.
 
 ## Requirements
 
 ### Requirement: A failed provisioning leaves the Organizer provisioning
 
-When creating, recording or completing the tenant fails with Internal, Create SHALL fail with that error and leave the stored Organizer in status provisioning, keeping any recorded tenant; ReconcileProvisioning completes it later.
+When creating, resolving, recording or completing the Organization fails with Internal, Create SHALL fail with that error and leave the stored Organizer in status provisioning, keeping any recorded Organization; ReconcileProvisioning completes it later.
 
 #### Scenario: Provisioning fails
 
-- **WHEN** Organizer.ProvisionTenant fails with Internal
-- **THEN** Create fails and the Organizer stays provisioning, linked to its tenant
+- **WHEN** Organization.Provision fails with Internal
+- **THEN** Create fails and the Organizer stays provisioning, linked to its Organization
 
 ### Requirement: Deactivation during provisioning wins
 
-When the Organizer was deactivated while its tenant was being provisioned, Create SHALL leave it deactivated, SHALL NOT announce it, and SHALL still succeed.
+When the Organizer was deactivated while its Organization was being provisioned, Create SHALL leave it deactivated, SHALL NOT announce it, and SHALL still succeed.
 
 #### Scenario: Deactivated meanwhile
 
@@ -43,9 +43,10 @@ When Create moves the Organizer to active, it SHALL announce that the Organizer 
 Create SHALL take a name, a short name and an owner email. It SHALL then:
 
 1. store a new Organizer through Organizer.Create (it starts provisioning), failing with AlreadyExists and doing nothing else when the short name is already used;
-2. create its Organization through Organizer.EnsureTenantOrg and record it at once through Organizer.SetProviderOrganizerID;
-3. complete the Organization through Organizer.ProvisionTenant;
-4. move the Organizer from provisioning to active through Organizer.CompareAndSetStatus.
+2. create its Organization through Organization.Create; when that fails with AlreadyExists, because an earlier attempt created the Organization but did not record it, resolve it through Organization.GetByName, where NotFound fails with Internal;
+3. record the Organization at once through Organizer.SetProviderOrganizerID;
+4. complete the Organization through Organization.Provision;
+5. move the Organizer from provisioning to active through Organizer.CompareAndSetStatus.
 
 It SHALL return the created Organizer. Create does not check the owner email against other Organizations: it may be the email of a fan account, an admin or another Organizer's owner. Create does not look for an existing Organizer with the same name.
 
@@ -71,9 +72,9 @@ It SHALL return the created Organizer. Create does not check the owner email aga
 
 ### Requirement: A permanent provisioning failure discards the new Organizer
 
-When creating, recording or completing the Organization fails with AlreadyExists, InvalidArgument or FailedPrecondition, which retrying cannot fix, Create SHALL deactivate the Organizer through OrganizerUseCase.Deactivate, remove it and its Organization through OrganizerUseCase.Delete, and fail with the original error. When this clean-up fails, Create SHALL still fail with the original error, leaving at most a deactivated Organizer for an admin to delete.
+When recording or completing the Organization fails with AlreadyExists, InvalidArgument or FailedPrecondition, which retrying cannot fix, Create SHALL deactivate the Organizer through OrganizerUseCase.Deactivate, remove it and its Organization through OrganizerUseCase.Delete, and fail with the original error. When this clean-up fails, Create SHALL still fail with the original error, leaving at most a deactivated Organizer for an admin to delete.
 
 #### Scenario: Owner email rejected during provisioning
 
-- **WHEN** Organizer.ProvisionTenant fails with InvalidArgument because the sign-in service rejects the owner email
+- **WHEN** Organization.Provision fails with InvalidArgument because the sign-in service rejects the owner email
 - **THEN** Create fails with InvalidArgument, and neither the Organizer nor its Organization remains

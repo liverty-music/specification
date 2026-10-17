@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.organizer.artist.v1 provides the organizer-facing
-// ArtistService that an operator uses to read the Artists their own Organizer
+// ArtistService that a member uses to read the Artists their own Organizer
 // represents from the organizer console. It is served by the dedicated
 // organizer Connect server behind org-scoped role-claim authorization.
 package liverty_music.rpc.organizer.artist.v1;
@@ -10,7 +10,7 @@ import "liverty_music/entity/v1/artist.proto";
 
 // ArtistService is the organizer-facing surface over Artists. The caller's
 // Organizer is resolved from the token (the identity provider organization the
-// token is scoped to), so requests never carry an organizer_id and an operator
+// token is scoped to), so requests never carry an organizer_id and a member
 // cannot ask for another Organizer's roster. Every call passes the same
 // organizer-console sign-in checks as
 // liverty_music.rpc.organizer.v1.OrganizerService, and failures that would
@@ -38,6 +38,6 @@ message ListRequest {}
 // ListResponse contains the Artists the caller's Organizer represents,
 // ascending by artist id (stable). Empty when it represents none.
 message ListResponse {
-  // The artists represented by the caller's organizer, ascending by artist id.
+  // The artists represented by the caller's Organizer, ascending by artist id.
   repeated entity.v1.Artist artists = 1;
 }

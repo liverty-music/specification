@@ -10,7 +10,7 @@ Returns the whole Concert catalog with no audience filter, each Concert with its
 
 List SHALL return every Concert in the catalog — past and upcoming, of every Series whatever its visibility, and CANCELLED ones included — ordered by local date ascending, each with its Venue, Series, performers and publish state. ConcertCandidates and DRAFT Events are not Concerts and SHALL NOT be returned. An empty catalog SHALL yield an empty list.
 
-#### Scenario: Cancelled organizer concert included
+#### Scenario: Cancelled Organizer concert included
 - **WHEN** the catalog holds a CANCELLED Event of a first-party Series
 - **THEN** List returns it as a CANCELLED Concert
 

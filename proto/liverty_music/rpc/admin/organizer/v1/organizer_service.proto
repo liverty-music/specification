@@ -16,7 +16,7 @@ import "liverty_music/entity/v1/user.proto";
 // businesses that represent artists. It creates an Organizer (provisioning its
 // own Organization at the identity provider with an `owner` identity for the
 // owner email), manages the Organizer↔Artist association (each artist is represented by at most one
-// Organizer), lists organizers for the admin console, records an Organizer's
+// Organizer), lists Organizers for the admin console, records an Organizer's
 // 特商法 business details and its platform fee rate at vetting, deactivates an
 // Organizer as a minimal off-switch, and permanently deletes a deactivated
 // Organizer. An Organizer is returned with its id, name, short name, legal name,
@@ -55,9 +55,9 @@ service OrganizerService {
   //
   // Possible errors:
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
-  // - INVALID_ARGUMENT: The organizer id or artist id is missing or malformed.
-  // - NOT_FOUND: The organizer or the artist does not exist.
-  // - ALREADY_EXISTS: The artist is already represented by an organizer.
+  // - INVALID_ARGUMENT: The Organizer id or artist id is missing or malformed.
+  // - NOT_FOUND: The Organizer or the artist does not exist.
+  // - ALREADY_EXISTS: The artist is already represented by an Organizer.
   rpc AssociateArtist(AssociateArtistRequest) returns (AssociateArtistResponse);
 
   // DisassociateArtist removes the link between an Artist and its Organizer,
@@ -66,8 +66,8 @@ service OrganizerService {
   //
   // Possible errors:
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
-  // - INVALID_ARGUMENT: The organizer id or artist id is missing or malformed.
-  // - NOT_FOUND: The organizer does not exist.
+  // - INVALID_ARGUMENT: The Organizer id or artist id is missing or malformed.
+  // - NOT_FOUND: The Organizer does not exist.
   rpc DisassociateArtist(DisassociateArtistRequest) returns (DisassociateArtistResponse);
 
   // List returns every Organizer so the admin console can render the
@@ -83,8 +83,8 @@ service OrganizerService {
   //
   // Possible errors:
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
-  // - INVALID_ARGUMENT: The organizer id is missing or malformed.
-  // - NOT_FOUND: The organizer does not exist.
+  // - INVALID_ARGUMENT: The Organizer id is missing or malformed.
+  // - NOT_FOUND: The Organizer does not exist.
   rpc Get(GetRequest) returns (GetResponse);
 
   // Deactivate turns an Organizer off: the backend thereafter rejects all
@@ -96,8 +96,8 @@ service OrganizerService {
   //
   // Possible errors:
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
-  // - INVALID_ARGUMENT: The organizer id is missing or malformed.
-  // - NOT_FOUND: The organizer does not exist.
+  // - INVALID_ARGUMENT: The Organizer id is missing or malformed.
+  // - NOT_FOUND: The Organizer does not exist.
   rpc Deactivate(DeactivateRequest) returns (DeactivateResponse);
 
   // Delete permanently removes a deactivated Organizer together with everything
@@ -119,9 +119,9 @@ service OrganizerService {
   // Possible errors:
   // - UNAUTHENTICATED: The request carries no valid sign-in.
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
-  // - INVALID_ARGUMENT: The organizer id is missing or malformed.
-  // - NOT_FOUND: The organizer does not exist.
-  // - FAILED_PRECONDITION: The organizer is not deactivated, or an unrefunded
+  // - INVALID_ARGUMENT: The Organizer id is missing or malformed.
+  // - NOT_FOUND: The Organizer does not exist.
+  // - FAILED_PRECONDITION: The Organizer is not deactivated, or an unrefunded
   //   order, an unreversed settlement or a payout account blocks deletion.
   rpc Delete(DeleteRequest) returns (DeleteResponse);
 
@@ -135,10 +135,10 @@ service OrganizerService {
   // Possible errors:
   // - UNAUTHENTICATED: The request carries no valid sign-in.
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
-  // - INVALID_ARGUMENT: The organizer id is missing or malformed, or any of the
+  // - INVALID_ARGUMENT: The Organizer id is missing or malformed, or any of the
   //   business details is missing or malformed.
-  // - NOT_FOUND: The organizer does not exist.
-  // - FAILED_PRECONDITION: The organizer is deactivated.
+  // - NOT_FOUND: The Organizer does not exist.
+  // - FAILED_PRECONDITION: The Organizer is deactivated.
   rpc SetBusinessDetails(SetBusinessDetailsRequest) returns (SetBusinessDetailsResponse);
 
   // SetPlatformFeeRate sets the platform fee rate applied to an Organizer's
@@ -148,38 +148,38 @@ service OrganizerService {
   // Possible errors:
   // - UNAUTHENTICATED: The request carries no valid sign-in.
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
-  // - INVALID_ARGUMENT: The organizer id is missing or malformed, or the rate is
+  // - INVALID_ARGUMENT: The Organizer id is missing or malformed, or the rate is
   //   missing or outside 0 to 3000 basis points.
-  // - NOT_FOUND: The organizer does not exist.
+  // - NOT_FOUND: The Organizer does not exist.
   rpc SetPlatformFeeRate(SetPlatformFeeRateRequest) returns (SetPlatformFeeRateResponse);
 }
 
 // CreateRequest carries the new Organizer's name, short name and owner email.
 message CreateRequest {
-  // Required. The display name of the organizer to create.
+  // Required. The display name of the Organizer to create.
   entity.v1.OrganizerName name = 1 [(buf.validate.field).required = true];
 
-  // Required. The email of the person who owns the organizer. Their identity
+  // Required. The email of the person who owns the Organizer. Their identity
   // is given the `owner` role and sent a passkey-registration link from the
   // identity provider.
   entity.v1.Email owner_email = 2 [(buf.validate.field).required = true];
 
-  // Required. The organizer's short name, unique and never changed. It names
-  // the organizer's Organization at the identity provider and the organizer
+  // Required. The Organizer's short name, unique and never changed. It names
+  // the Organizer's Organization at the identity provider and the organizer
   // console's sign-in address.
   entity.v1.OrganizerShortName short_name = 3 [(buf.validate.field).required = true];
 }
 
 // CreateResponse returns the newly created Organizer.
 message CreateResponse {
-  // The created organizer.
+  // The created Organizer.
   entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
 }
 
 // AssociateArtistRequest identifies the Organizer and the existing Artist to
 // link.
 message AssociateArtistRequest {
-  // Required. The organizer that will represent the artist.
+  // Required. The Organizer that will represent the artist.
   entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
 
   // Required. The existing artist to associate. Unknown ids are rejected with
@@ -192,7 +192,7 @@ message AssociateArtistResponse {}
 
 // DisassociateArtistRequest identifies the Organizer and the Artist to unlink.
 message DisassociateArtistRequest {
-  // Required. The organizer to unlink the artist from.
+  // Required. The Organizer to unlink the artist from.
   entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
 
   // Required. The artist to disassociate.
@@ -208,35 +208,35 @@ message ListRequest {}
 
 // ListResponse contains every Organizer.
 message ListResponse {
-  // The organizers, in catalog order.
+  // The Organizers, in catalog order.
   repeated entity.v1.Organizer organizers = 1;
 }
 
 // GetRequest identifies the Organizer to retrieve.
 message GetRequest {
-  // Required. The unique identifier of the organizer to retrieve.
+  // Required. The unique identifier of the Organizer to retrieve.
   entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
 }
 
 // GetResponse returns the requested Organizer.
 message GetResponse {
-  // The requested organizer.
+  // The requested Organizer.
   entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
 }
 
 // DeactivateRequest identifies the Organizer to deactivate.
 message DeactivateRequest {
-  // Required. The unique identifier of the organizer to deactivate.
+  // Required. The unique identifier of the Organizer to deactivate.
   entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
 }
 
 // DeactivateResponse is returned upon a successful deactivation (including the
-// idempotent case where the organizer was already deactivated).
+// idempotent case where the Organizer was already deactivated).
 message DeactivateResponse {}
 
 // DeleteRequest identifies the deactivated Organizer to delete.
 message DeleteRequest {
-  // Required. The unique identifier of the organizer to delete.
+  // Required. The unique identifier of the Organizer to delete.
   entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
 }
 
@@ -247,7 +247,7 @@ message DeleteResponse {}
 // SetBusinessDetailsRequest identifies the Organizer and carries its five
 // business details, replacing any recorded before.
 message SetBusinessDetailsRequest {
-  // Required. The organizer whose business details to record.
+  // Required. The Organizer whose business details to record.
   entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
 
   // Required. The legal name of the business, shown in the 特商法 disclosure.
@@ -269,13 +269,13 @@ message SetBusinessDetailsRequest {
 // SetBusinessDetailsResponse returns the Organizer with its new business
 // details.
 message SetBusinessDetailsResponse {
-  // The organizer with its business details.
+  // The Organizer with its business details.
   entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
 }
 
 // SetPlatformFeeRateRequest identifies the Organizer and carries its new rate.
 message SetPlatformFeeRateRequest {
-  // Required. The organizer whose rate to set.
+  // Required. The Organizer whose rate to set.
   entity.v1.OrganizerId organizer_id = 1 [(buf.validate.field).required = true];
 
   // Required. The platform fee rate in basis points (hundredths of a percent):
@@ -292,6 +292,6 @@ message SetPlatformFeeRateRequest {
 
 // SetPlatformFeeRateResponse returns the Organizer with its new rate.
 message SetPlatformFeeRateResponse {
-  // The organizer with its platform fee rate.
+  // The Organizer with its platform fee rate.
   entity.v1.Organizer organizer = 1 [(buf.validate.field).required = true];
 }

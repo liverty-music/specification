@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.organizer.series_image.v1 provides the
-// organizer-facing SeriesImageService, which an operator uses from the
+// organizer-facing SeriesImageService, which a member uses from the
 // organizer console to upload an image for one of their Organizer's Series.
 package liverty_music.rpc.organizer.series_image.v1;
 
@@ -29,7 +29,7 @@ service SeriesImageService {
   // Possible errors:
   // - INVALID_ARGUMENT: The content type is not an accepted image type.
   // - PERMISSION_DENIED: The caller lacks the organizer-console role, or no
-  //   Organizer is linked to the caller's tenant or it is provisioning.
+  //   Organizer is linked to the caller's Organization or it is provisioning.
   //   Non-revealing.
   // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.

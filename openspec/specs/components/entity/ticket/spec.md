@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A Ticket is one account-bound admission right to an event, issued from an Order. Every Ticket is a 特定興行入場券 (covered ticket): it names the event and its user and states that resale without the organizer's consent is prohibited.
+A Ticket is one account-bound admission right to an event, issued from an Order. Every Ticket is a 特定興行入場券 (covered ticket): it names the event and its user and states that resale without the Organizer's consent is prohibited.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -11,7 +11,7 @@ A Ticket is one account-bound admission right to an event, issued from an Order.
 | user | the account the ticket is bound to | required; never changes (official resale voids the ticket and issues a new one) |
 | event | the event it admits to, which gives the date and venue on its face | required |
 | identity verification | the identity verification the ticket is bound to | optional; set only when the sale required verification |
-| resale without consent prohibited | the face states that resale without the organizer's consent is prohibited | always true |
+| resale without consent prohibited | the face states that resale without the Organizer's consent is prohibited | always true |
 | status | lifecycle; a Voided ticket is no longer valid for entry | Issued or Voided |
 | issue time | when the ticket was issued | required |
 | admit time | when the ticket was let in at the venue | optional; absent until admitted, set once and kept when the ticket is later Voided |
@@ -35,7 +35,7 @@ stateDiagram-v2
 
 ### Requirement: Every ticket is a covered ticket
 
-Every Ticket SHALL carry the three conditions of a 特定興行入場券 (covered ticket): its face states that resale without the organizer's consent is prohibited; it names the event (date and venue) and the eligible person, who is the Ticket's user, with no seat assigned; and it shows the user's full name and phone number as the User currently records them (本人確認, identity check).
+Every Ticket SHALL carry the three conditions of a 特定興行入場券 (covered ticket): its face states that resale without the Organizer's consent is prohibited; it names the event (date and venue) and the eligible person, who is the Ticket's user, with no seat assigned; and it shows the user's full name and phone number as the User currently records them (本人確認, identity check).
 
 #### Scenario: Issued ticket face
 - **WHEN** a Ticket is issued

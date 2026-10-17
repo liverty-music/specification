@@ -17,7 +17,7 @@ import "liverty_music/entity/v1/user.proto";
 // Every response that returns concerts also returns, once each, every Series and
 // Artist those concerts refer to, in its `series` and `artists` lists. A concert
 // carries only the id of its Series (through its Event) and the ids of its
-// Artists. Every returned Series carries its organizer id, description, cover
+// Artists. Every returned Series carries its Organizer id, description, cover
 // image, visibility and publish state when it has them, on every call alike.
 service ConcertService {
   // ListByArtist retrieves every concert the given artist performs at, as a

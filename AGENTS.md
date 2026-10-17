@@ -152,5 +152,7 @@ Before modifying `.proto` files, follow the checklist in `proto/AGENTS.md`.
   - The caller is never named: no `user_id` on a fan's own request.
   - Other operations are domain verbs (`Publish`, `Withdraw`, `Follow`).
 - Message, field, file and RPC names use entity names from `openspec/specs/components/entity/` (the ubiquitous language). A term no entity defines ("holder", "device key") is a violation: use the entity's name, or raise the missing entity.
+- The Organizer's people and accounts use the entity vocabulary (`rpc-design` skill, "Vocabulary traps"): "Organizer" is the business in any letter case, a person using the organizer console is a member, owner is a member's role, their account is an identity in the Organizer's Organization, and Liverty Music staff are admins. "tenant", "operator", "seller", "buyer" and "applicant" are violations; `scripts/check-forbidden-words.py` rejects them in proto, docs and specs.
+- The Organizer's people and accounts use the entity vocabulary (`rpc-design` skill, "Vocabulary traps"): "Organizer" is the business in any letter case, a person using the organizer console is a member, owner is a member's role, their account is an identity in the Organizer's Organization, and Liverty Music staff are admins. "tenant", "operator", "seller", "buyer" and "applicant" are violations; `scripts/check-forbidden-words.py` rejects them in proto, docs and specs.
 
 </agent-rules>

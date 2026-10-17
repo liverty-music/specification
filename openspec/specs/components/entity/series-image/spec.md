@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A SeriesImage is an image an organizer uploaded for one of its Series, served to fans only as processed variants: a thumbnail at most 800 px wide and a large image at most 1920 px wide. The original upload is never served.
+A SeriesImage is an image an Organizer uploaded for one of its Series, served to fans only as processed variants: a thumbnail at most 800 px wide and a large image at most 1920 px wide. The original upload is never served.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -33,7 +33,7 @@ A SeriesImage, when shown as a Series cover, SHALL expose both a thumb and a lar
 
 ### Requirement: Served addresses are stable per series image
 
-The variant addresses of a SeriesImage SHALL be derived from its organizer and id and SHALL never change; a replaced cover gets a new SeriesImage with new addresses.
+The variant addresses of a SeriesImage SHALL be derived from its Organizer and id and SHALL never change; a replaced cover gets a new SeriesImage with new addresses.
 
 #### Scenario: Replacing the cover
 - **WHEN** a Series' cover is replaced by a new upload

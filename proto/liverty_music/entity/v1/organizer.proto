@@ -16,15 +16,15 @@ import "liverty_music/entity/v1/user.proto";
 // people who run an Organizer sign in through its own Organization at the
 // identity provider, named by the Organizer's short name.
 //
-// The provider organizer ID (the identity provider's ID for the Organizer's
+// The provider Organizer ID (the identity provider's ID for the Organizer's
 // Organization), the owner email and the provisioning lifecycle are
 // backend-only concerns and are intentionally not part of this consumer
 // entity.
 message Organizer {
-  // The unique identifier for the organizer.
+  // The unique identifier for the Organizer.
   OrganizerId id = 1 [(buf.validate.field).required = true];
 
-  // The display name of the organizer (e.g., the label or promoter name).
+  // The display name of the Organizer (e.g., the label or promoter name).
   OrganizerName name = 2 [(buf.validate.field).required = true];
 
   // The platform fee applied to the Organizer's future Orders, in basis points
@@ -107,13 +107,13 @@ message BusinessAddress {
   }];
 }
 
-// OrganizerId is a globally unique identifier for an organizer.
+// OrganizerId is a globally unique identifier for an Organizer.
 message OrganizerId {
-  // A UUID string mapping to the organizer's unique identity.
+  // A UUID string mapping to the Organizer's unique identity.
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
-// OrganizerName represents the public display name of an organizer.
+// OrganizerName represents the public display name of an Organizer.
 message OrganizerName {
   // The name string, required to be between 1 and 200 characters.
   string value = 1 [(buf.validate.field).string = {

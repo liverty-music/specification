@@ -1,7 +1,7 @@
 # components/infrastructure/organizer/web/global/action-feedback Specification
 
 ## Purpose
-How every control in the organizer console responds to the operator, on a PC and on a phone: touch targets, hover, focus and press feedback, pending actions, confirmation before irreversible actions, unsaved changes and the small motions that confirm what happened.
+How every control in the organizer console responds to the member, on a PC and on a phone: touch targets, hover, focus and press feedback, pending actions, confirmation before irreversible actions, unsaved changes and the small motions that confirm what happened.
 
 ## Requirements
 
@@ -20,17 +20,17 @@ A control SHALL show an overlay of its content color over its surface when hover
 
 #### Scenario: Pointer hover
 
-- **WHEN** an operator moves the pointer over 保存する (save)
+- **WHEN** a member moves the pointer over 保存する (save)
 - **THEN** an 8 % overlay appears on the button
 
 #### Scenario: Keyboard focus
 
-- **WHEN** an operator reaches 保存する with the Tab key
+- **WHEN** a member reaches 保存する with the Tab key
 - **THEN** a 10 % overlay and a focus ring appear
 
 #### Scenario: Pointer click
 
-- **WHEN** an operator clicks 保存する with the mouse
+- **WHEN** a member clicks 保存する with the mouse
 - **THEN** a 10 % overlay shows while pressed and no focus ring remains afterwards
 
 ### Requirement: A pending action shows progress in its button and ignores repeats
@@ -39,7 +39,7 @@ While an action started from a button is running, the button SHALL show a progre
 
 #### Scenario: Double press on save
 
-- **WHEN** an operator presses 保存する twice within 1 second
+- **WHEN** a member presses 保存する twice within 1 second
 - **THEN** one save is sent and the button shows 保存中… with a progress indicator until it finishes
 
 ### Requirement: Irreversible actions ask first and name the effect
@@ -48,31 +48,31 @@ Before an action that cannot be undone or that affects people outside the consol
 
 #### Scenario: Publish asks first
 
-- **WHEN** an operator presses 公開する on a draft event of XX Tour 2026
-- **THEN** a dialog asks whether to publish it, says the performers' followers will be notified and that it cannot return to draft, and nothing is published until the operator presses 公開する in the dialog
+- **WHEN** a member presses 公開する on a draft event of XX Tour 2026
+- **THEN** a dialog asks whether to publish it, says the performers' followers will be notified and that it cannot return to draft, and nothing is published until the member presses 公開する in the dialog
 
-#### Scenario: Operator changes their mind
+#### Scenario: Member changes their mind
 
-- **WHEN** the operator presses やめる or Escape in that dialog
+- **WHEN** the member presses やめる or Escape in that dialog
 - **THEN** the dialog closes, nothing changes, and focus returns to the 公開する button
 
 #### Scenario: Revoke a scanner
 
-- **WHEN** an operator chooses to revoke 受付1
-- **THEN** a dialog says the device using 受付1 will stop working, and 受付1 is revoked only after the operator confirms
+- **WHEN** a member chooses to revoke 受付1
+- **THEN** a dialog says the device using 受付1 will stop working, and 受付1 is revoked only after the member confirms
 
 ### Requirement: Unsaved changes are not lost by leaving
 
-When an operator has changed a form and not saved it, leaving the page through navigation SHALL ask whether to discard the changes, with 破棄する (discard) and 編集を続ける (keep editing); closing or reloading the browser tab SHALL trigger the browser's own leave warning. After a successful save, leaving SHALL not ask.
+When a member has changed a form and not saved it, leaving the page through navigation SHALL ask whether to discard the changes, with 破棄する (discard) and 編集を続ける (keep editing); closing or reloading the browser tab SHALL trigger the browser's own leave warning. After a successful save, leaving SHALL not ask.
 
 #### Scenario: Leaving the editor with changes
 
-- **WHEN** an operator edits a concert title and selects Concerts in the navigation without saving
-- **THEN** a dialog asks whether to discard the changes, and the page stays when the operator chooses 編集を続ける
+- **WHEN** a member edits a concert title and selects Concerts in the navigation without saving
+- **THEN** a dialog asks whether to discard the changes, and the page stays when the member chooses 編集を続ける
 
 #### Scenario: Leaving after saving
 
-- **WHEN** the operator saves and then selects Concerts
+- **WHEN** the member saves and then selects Concerts
 - **THEN** the Concerts page opens without a question
 
 ### Requirement: Small motions confirm what happened
@@ -81,10 +81,10 @@ Copying a value SHALL turn the copy icon into a check mark for 2 seconds and ann
 
 #### Scenario: Copy a link
 
-- **WHEN** an operator presses the copy icon next to a scanner URL
+- **WHEN** a member presses the copy icon next to a scanner URL
 - **THEN** the URL is on the clipboard and the icon shows a check mark for 2 seconds, then returns to the copy icon
 
 #### Scenario: Reduced motion
 
-- **WHEN** the system asks for reduced motion and the operator changes from the Sales tab to the Reception tab
+- **WHEN** the system asks for reduced motion and the member changes from the Sales tab to the Reception tab
 - **THEN** the indicator moves to Reception without animation

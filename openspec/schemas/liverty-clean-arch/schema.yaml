@@ -119,7 +119,7 @@ artifacts:
         components/adapter/<audience>/<delivery>/**/<component>/spec.md
           A boundary that receives calls from the outside and hands them to
           usecases: an RPC handler's audience gate, a webhook from an external
-          system. The boundary resolves the caller (token validity, tenant,
+          system. The boundary resolves the caller (token validity, Organization,
           user); role and ownership preconditions belong to the usecase.
           Client-side transport, formatting helpers and state stores are
           implementation, not components: what the user sees of them is

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Create lets an organizer operator start a new first-party concert — a Series with one or more DRAFT Events and the Artists it represents as performers — that no fan can see and nobody is notified about until its Events are published.
+Create lets a member of an Organizer start a new first-party concert — a Series with one or more DRAFT Events and the Artists it represents as performers — that no fan can see and nobody is notified about until its Events are published.
 
 ## Requirements
 
@@ -35,7 +35,7 @@ Create SHALL fail with PermissionDenied, without saying which Artist, when any p
 Create SHALL store the Series, owned by the caller's Organizer, with one DRAFT Event per event — a multi-showtime day being several Events — each with the performers (Series.CreateDraft), and SHALL return the Series with its Events and performers (Series.GetAuthored). Nothing SHALL be announced.
 
 #### Scenario: Draft for a represented artist
-- **WHEN** an operator creates a draft with one event naming a represented Artist
+- **WHEN** a member creates a draft with one event naming a represented Artist
 - **THEN** a Series owned by the Organizer with one DRAFT Event is returned and no fan list or notification shows it
 
 #### Scenario: Two showtimes
@@ -44,7 +44,7 @@ Create SHALL store the Series, owned by the caller's Organizer, with one DRAFT E
 
 ### Requirement: Each event's venue is a picked place
 
-Every event SHALL give the place id of a place the operator picked from the map catalog; an event without one SHALL fail Create with InvalidArgument, storing nothing. For each event, Create SHALL use the Venue holding the place id when one is held (Venue.GetByPlaceID). Otherwise it SHALL read the place from the map catalog (Venue.GetPlace) and create a Venue with the place id and the place's name, coordinates and admin area (Venue.Create). When the catalog cannot be reached it SHALL fail with Unavailable, storing nothing; when the catalog has no such place it SHALL fail with InvalidArgument, storing nothing.
+Every event SHALL give the place id of a place the member picked from the map catalog; an event without one SHALL fail Create with InvalidArgument, storing nothing. For each event, Create SHALL use the Venue holding the place id when one is held (Venue.GetByPlaceID). Otherwise it SHALL read the place from the map catalog (Venue.GetPlace) and create a Venue with the place id and the place's name, coordinates and admin area (Venue.Create). When the catalog cannot be reached it SHALL fail with Unavailable, storing nothing; when the catalog has no such place it SHALL fail with InvalidArgument, storing nothing.
 
 #### Scenario: Known place id
 - **WHEN** an event gives a place id that a Venue holds

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-SetCoverImage lets the owning organizer operator record an uploaded image as the next cover of one of its concerts (Series). The image becomes the cover only once it has been processed into servable variants.
+SetCoverImage lets a member of the owning Organizer record an uploaded image as the next cover of one of its concerts (Series). The image becomes the cover only once it has been processed into servable variants.
 
 ## Requirements
 
@@ -18,8 +18,8 @@ SetCoverImage SHALL fail with InvalidArgument when the Series id or the SeriesIm
 
 SetCoverImage SHALL fail with PermissionDenied, without revealing whether the Series exists, when the Series does not exist or is not owned by the caller's Organizer. A Series in any publish state SHALL be accepted.
 
-#### Scenario: Another organizer's series
-- **WHEN** an operator attaches an image to another Organizer's Series
+#### Scenario: Another Organizer's series
+- **WHEN** a member attaches an image to another Organizer's Series
 - **THEN** SetCoverImage fails with PermissionDenied and nothing is recorded
 
 ### Requirement: Record and hand over for processing

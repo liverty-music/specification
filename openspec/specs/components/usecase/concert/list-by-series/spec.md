@@ -30,7 +30,7 @@ ListBySeries SHALL fail with NotFound, without saying why, when no Series has th
 
 #### Scenario: Discovered series
 
-- **WHEN** ListBySeries is called for a Series with no organizer
+- **WHEN** ListBySeries is called for a Series with no Organizer
 - **THEN** it fails with NotFound
 
 ### Requirement: Read failures

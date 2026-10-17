@@ -14,7 +14,7 @@ ListByArtists SHALL return, once each, every Concert whose performers include an
 - **WHEN** Artist A performs on 2026-05-02 and Artist B on 2026-05-01
 - **THEN** B's Concert is returned before A's
 
-#### Scenario: Cancelled organizer concert excluded
+#### Scenario: Cancelled Organizer concert excluded
 - **WHEN** one of the Artists performs at a CANCELLED Event of a first-party Series
 - **THEN** that Concert is not returned
 

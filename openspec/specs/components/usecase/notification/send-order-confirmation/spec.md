@@ -18,7 +18,7 @@ It SHALL send, with Order.SendConfirmationEmail to the user's email address and 
 - the number of tickets and the total paid, 税込 (tax-inclusive);
 - the pay time, the payment method (card) and the card brand and last four digits;
 - the Organizer's business details: legal name, representative name, business address, business phone number and contact email;
-- that resale of the tickets without the organizer's consent is prohibited;
+- that resale of the tickets without the Organizer's consent is prohibited;
 - that tickets cannot be cancelled or refunded except when the concert is 中止 (cancelled);
 - how to show the tickets.
 

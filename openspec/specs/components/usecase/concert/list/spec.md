@@ -14,6 +14,6 @@ List SHALL return the result of Concert.List unchanged. ConcertCandidates SHALL 
 - **WHEN** the catalog holds Concerts and ConcertCandidates are pending
 - **THEN** List returns only the Concerts
 
-#### Scenario: Unlisted organizer concert
+#### Scenario: Unlisted Organizer concert
 - **WHEN** a Concert belongs to a PUBLISHED UNLISTED first-party Series
 - **THEN** List returns it

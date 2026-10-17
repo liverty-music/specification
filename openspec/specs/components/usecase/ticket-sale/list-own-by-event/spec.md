@@ -21,8 +21,8 @@ ListOwnByEvent SHALL take the caller's Organizer, an event and the current time.
 - **WHEN** the owner reads an event that no sale offers
 - **THEN** an empty list is returned
 
-#### Scenario: Another organizer's event
-- **WHEN** an operator reads the sales of another Organizer's event
+#### Scenario: Another Organizer's event
+- **WHEN** a member reads the sales of another Organizer's event
 - **THEN** ListOwnByEvent fails with PermissionDenied
 
 #### Scenario: Purchases per referral code

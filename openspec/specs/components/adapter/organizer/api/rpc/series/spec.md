@@ -2,17 +2,17 @@
 
 ## Purpose
 
-The organizer-facing Series service boundary: how an operator's sign-in is turned into their own Organizer before any authoring call runs, and which drafts the boundary rejects before the usecase sees them.
+The organizer-facing Series service boundary: how a member's sign-in is turned into their own Organizer before any authoring call runs, and which drafts the boundary rejects before the usecase sees them.
 
 ## Requirements
 
 ### Requirement: Every authoring call acts for the caller's own active Organizer
 
-Every call of the organizer Series service — Create, Update, Publish, Cancel, List, RegenerateShareUrl and SetCoverImage — SHALL pass the same organizer-console sign-in checks as the organizer Organizer service, and SHALL then resolve the caller's own Organizer through OrganizerUseCase.ResolveCaller with the caller's tenant. A failure of ResolveCaller SHALL be returned unchanged and nothing is stored: PermissionDenied when no Organizer is linked to the tenant or the Organizer is provisioning, without revealing whether an Organizer exists, and FailedPrecondition when the Organizer is deactivated. Ownership of the Series named in a request is checked by the usecase, not here.
+Every call of the organizer Series service — Create, Update, Publish, Cancel, List, RegenerateShareUrl and SetCoverImage — SHALL pass the same organizer-console sign-in checks as the organizer Organizer service, and SHALL then resolve the caller's own Organizer through OrganizerUseCase.ResolveCaller with the caller's Organization. A failure of ResolveCaller SHALL be returned unchanged and nothing is stored: PermissionDenied when no Organizer is linked to the Organization or the Organizer is provisioning, without revealing whether an Organizer exists, and FailedPrecondition when the Organizer is deactivated. Ownership of the Series named in a request is checked by the usecase, not here.
 
-#### Scenario: Operator of an active Organizer lists concerts
+#### Scenario: Member of an active Organizer lists concerts
 
-- **WHEN** an operator of an active Organizer calls List
+- **WHEN** a member of an active Organizer calls List
 - **THEN** the Organizer's own Series are returned with their Concerts
 
 #### Scenario: Provisioning Organizer
@@ -31,7 +31,7 @@ Create and Update SHALL fail with InvalidArgument, before any usecase runs, when
 
 #### Scenario: Draft without events
 
-- **WHEN** an operator calls Create with a draft that has a performer and no event
+- **WHEN** a member calls Create with a draft that has a performer and no event
 - **THEN** it fails with InvalidArgument and no Series is created
 
 ### Requirement: RegenerateShareUrl returns the new token
@@ -40,7 +40,7 @@ RegenerateShareUrl SHALL return the Series' new unlisted share token; the organi
 
 #### Scenario: New token
 
-- **WHEN** an operator regenerates the share link of their UNLISTED Series
+- **WHEN** a member regenerates the share link of their UNLISTED Series
 - **THEN** the response carries the new token and the old share link stops working
 
 ### Requirement: What a returned series carries
@@ -49,10 +49,10 @@ Create, Update, Publish and List SHALL return each Series they act on or list to
 
 #### Scenario: Tour with one performer
 
-- **WHEN** an operator lists their Organizer's Series and one of them has three dates performed by the same Artist
+- **WHEN** a member lists their Organizer's Series and one of them has three dates performed by the same Artist
 - **THEN** the response carries that Series once with three Concerts, and that Artist once
 
 #### Scenario: Draft series
 
-- **WHEN** an operator creates a draft Series with two dates and one performer
+- **WHEN** a member creates a draft Series with two dates and one performer
 - **THEN** the response carries the DRAFT Series with two Concerts, each referring to that performer

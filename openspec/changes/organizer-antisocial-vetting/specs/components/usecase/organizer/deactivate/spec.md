@@ -2,12 +2,12 @@
 
 ### Requirement: Post-onboarding antisocial discovery triggers deactivation
 
-If a 反社 relationship is discovered **after** onboarding, an operator holding
-the platform `admin` role SHALL **deactivate** the Organizer (reusing the
+If a 反社 relationship is discovered **after** onboarding, an admin SHALL
+**deactivate** the Organizer (reusing the
 existing deactivation hook), and the breach of the 暴排条項 SHALL be a
 documented ground for termination.
 
-#### Scenario: Later discovery deactivates the organizer
+#### Scenario: Later discovery deactivates the Organizer
 
 - **WHEN** a 反社 relationship is discovered for an already-onboarded Organizer
 - **THEN** an admin SHALL deactivate the Organizer

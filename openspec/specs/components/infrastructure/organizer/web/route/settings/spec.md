@@ -30,7 +30,7 @@ The page SHALL show the Organizer's business details — legal name, representat
 
 ### Requirement: Payout account status and onboarding
 
-The page SHALL show the payout account's status in words — 確認中 (being verified) for pending, 有効 (active) for active, or 要対応 (action needed) for restricted — and, while the account is not active, SHALL explain that fans can still buy tickets and only the payout waits, and SHALL say before the operator leaves the console what the setup is: that payouts go through Stripe, the payment provider of Liverty Music; that on Stripe's page the operator enters the business, its representative's identity and the bank account to be paid into; that the page opens in a new tab; and that the operator returns to this tab when done. It SHALL then offer Stripe で登録を続ける (continue setup on Stripe), marked as opening an external site, which opens Stripe's onboarding page in a new tab. When the operator returns to the console tab, the page SHALL read the status again.
+The page SHALL show the payout account's status in words — 確認中 (being verified) for pending, 有効 (active) for active, or 要対応 (action needed) for restricted — and, while the account is not active, SHALL explain that fans can still buy tickets and only the payout waits, and SHALL say before the member leaves the console what the setup is: that payouts go through Stripe, the payment provider of Liverty Music; that on Stripe's page the member enters the business, its representative's identity and the bank account to be paid into; that the page opens in a new tab; and that the member returns to this tab when done. It SHALL then offer Stripe で登録を続ける (continue setup on Stripe), marked as opening an external site, which opens Stripe's onboarding page in a new tab. When the member returns to the console tab, the page SHALL read the status again.
 
 #### Scenario: Onboarding not finished
 
@@ -39,7 +39,7 @@ The page SHALL show the payout account's status in words — 確認中 (being ve
 
 #### Scenario: Back from onboarding
 
-- **WHEN** the operator finishes onboarding in the other tab and returns to the console tab
+- **WHEN** the member finishes onboarding in the other tab and returns to the console tab
 - **THEN** the page reads the status again and shows the new status
 
 #### Scenario: Active account

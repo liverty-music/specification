@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Publish lets the owning organizer operator take DRAFT Events of a concert live, all of them or only the named ones, including dates added after an earlier publish: they become PUBLISHED, claiming matching discovered Events, and when the Series is PUBLIC, followers of its performers are told about the newly published Events only.
+Publish lets a member of the owning Organizer take DRAFT Events of a concert live, all of them or only the named ones, including dates added after an earlier publish: they become PUBLISHED, claiming matching discovered Events, and when the Series is PUBLIC, followers of its performers are told about the newly published Events only.
 
 ## Requirements
 
@@ -10,8 +10,8 @@ Publish lets the owning organizer operator take DRAFT Events of a concert live, 
 
 Publish SHALL fail with PermissionDenied, without revealing whether the Series exists, when the Series does not exist or is not owned by the caller's Organizer.
 
-#### Scenario: Another organizer's series
-- **WHEN** an operator publishes a Series owned by another Organizer
+#### Scenario: Another Organizer's series
+- **WHEN** a member publishes a Series owned by another Organizer
 - **THEN** Publish fails with PermissionDenied
 
 ### Requirement: Complete draft required

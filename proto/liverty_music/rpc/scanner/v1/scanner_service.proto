@@ -6,8 +6,9 @@ syntax = "proto3";
 // the caller is a scanner device acting through its own Scanner, identified by
 // the Scanner's link token plus a signature made by the device the Scanner is
 // bound to, with no sign-in. Only the reception server (the reception-api
-// workload) serves it; the organizer and fan servers do not. Operators create,
-// list and revoke Scanners through liverty_music.rpc.organizer.scanner.v1.
+// workload) serves it; the organizer and fan servers do not. An Organizer's
+// members create, list and revoke Scanners through
+// liverty_music.rpc.organizer.scanner.v1.
 package liverty_music.rpc.scanner.v1;
 
 import "buf/validate/validate.proto";

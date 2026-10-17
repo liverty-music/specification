@@ -22,7 +22,7 @@ ListByFollower SHALL return, once each, every Concert at which at least one Arti
 - **WHEN** the User follows both performers of one Concert
 - **THEN** that Concert is returned once
 
-#### Scenario: Unlisted organizer concert excluded
+#### Scenario: Unlisted Organizer concert excluded
 - **WHEN** a followed Artist performs at a PUBLISHED Event of an UNLISTED first-party Series
 - **THEN** that Concert is not returned
 

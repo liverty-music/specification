@@ -7,7 +7,7 @@ A TicketSale is one sale opportunity (受付) for some or all events of a Series
 |-----------|---------|------------|
 | id | the sale's identity | required, assigned on creation |
 | series | the Series whose events the sale offers | required |
-| name | the label fans and operators see, for example ファンクラブ先行 | an Organizer's sale: required, 1-100 characters; a discovered sale: absent |
+| name | the label fans and members see, for example ファンクラブ先行 | an Organizer's sale: required, 1-100 characters; a discovered sale: absent |
 | method | how tickets are allocated | Lottery or FirstCome |
 | start time | when the sale opens, an instant entered and shown in Japan time | required, before the end time |
 | end time | when the sale closes, an instant entered and shown in Japan time | required, except on a discovered FirstCome sale, where absent means until sold out; for an Organizer's Lottery sale, 1 to 14 days after the start time inclusive |

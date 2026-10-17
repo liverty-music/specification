@@ -6,23 +6,23 @@ The organizer-facing payout account boundary: it resolves the caller's own Organ
 
 ## Requirements
 
-### Requirement: The caller must be an operator of their own active Organizer
+### Requirement: The caller must be a member of their own active Organizer
 
-Every request SHALL carry a valid sign-in, or fail with Unauthenticated. The sign-in SHALL be issued for the organizer console and grant organizer-console roles in exactly one tenant, or the request fails with PermissionDenied. The boundary SHALL resolve the caller's Organizer through OrganizerUseCase.ResolveCaller with that tenant and return its failure unchanged: PermissionDenied when no Organizer is linked or it is provisioning, without revealing whether an Organizer exists, and FailedPrecondition when it is deactivated.
+Every request SHALL carry a valid sign-in, or fail with Unauthenticated. The sign-in SHALL be issued for the organizer console and grant organizer-console roles in exactly one Organization, or the request fails with PermissionDenied. The boundary SHALL resolve the caller's Organizer through OrganizerUseCase.ResolveCaller with that Organization and return its failure unchanged: PermissionDenied when no Organizer is linked or it is provisioning, without revealing whether an Organizer exists, and FailedPrecondition when it is deactivated.
 
 #### Scenario: Not signed in
 
 - **WHEN** a request has no valid sign-in
 - **THEN** it fails with Unauthenticated
 
-#### Scenario: Roles in several tenants
+#### Scenario: Roles in several Organizations
 
-- **WHEN** the sign-in grants organizer-console roles in two tenants
+- **WHEN** the sign-in grants organizer-console roles in two Organizations
 - **THEN** it fails with PermissionDenied
 
-#### Scenario: Tenant with no Organizer
+#### Scenario: Organization with no Organizer
 
-- **WHEN** no Organizer is linked to the caller's tenant
+- **WHEN** no Organizer is linked to the caller's Organization
 - **THEN** it fails with PermissionDenied
 
 #### Scenario: Deactivated Organizer
@@ -34,9 +34,9 @@ Every request SHALL carry a valid sign-in, or fail with Unauthenticated. The sig
 
 Get SHALL take no input, call PayoutAccountUseCase.Get for the caller's own Organizer, and return the account's provider account ID and payout onboarding status, with the onboarding link only when one was returned. When the Organizer is no longer found, it SHALL fail with PermissionDenied.
 
-#### Scenario: Operator opens payout settings
+#### Scenario: Member opens payout settings
 
-- **WHEN** an operator of an active Organizer calls Get
+- **WHEN** a member of an active Organizer calls Get
 - **THEN** it returns their Organizer's account and status, with an onboarding link while the account is not active
 
 #### Scenario: Organizer gone meanwhile

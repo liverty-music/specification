@@ -50,5 +50,5 @@ A change to anything the preview is built from (the Series' title, description, 
 
 #### Scenario: Series cancelled
 
-- **WHEN** the organizer cancels the Series
+- **WHEN** the Organizer cancels the Series
 - **THEN** the HTML served for its `/events/:id` 60 seconds later carries a title starting with "【公演中止】"

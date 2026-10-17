@@ -26,7 +26,7 @@ For an event with an event page, the Event page SHALL show:
 - a share control and an add-to-calendar control;
 - a ticket section.
 
-Text the organizer entered (title, description, venue as listed) SHALL be shown as entered in every display language; labels, dates and times SHALL follow the app's display language. The page SHALL NOT show the ticket journey status control.
+Text the Organizer entered (title, description, venue as listed) SHALL be shown as entered in every display language; labels, dates and times SHALL follow the app's display language. The page SHALL NOT show the ticket journey status control.
 
 #### Scenario: Event without a cover image
 
@@ -40,7 +40,7 @@ Text the organizer entered (title, description, venue as listed) SHALL be shown 
 
 #### Scenario: English display language
 
-- **WHEN** the display language is English and the organizer wrote the title in Japanese
+- **WHEN** the display language is English and the Organizer wrote the title in Japanese
 - **THEN** the title is shown in Japanese and the date and labels in English
 
 ### Requirement: Following from the event page

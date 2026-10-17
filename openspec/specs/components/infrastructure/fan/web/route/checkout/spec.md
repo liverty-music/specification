@@ -56,7 +56,7 @@ Before placing the order, the checkout SHALL show on one screen:
 - the payment method, credit card, with the card brand and last four digits, and that the card is charged when the order is placed;
 - that the tickets are available in the app's Tickets screen immediately after purchase;
 - the sale period;
-- that resale of the tickets without the organizer's consent is prohibited, and that the tickets are issued to the fan's own account and name;
+- that resale of the tickets without the Organizer's consent is prohibited, and that the tickets are issued to the fan's own account and name;
 - that the purchase cannot be cancelled or refunded except when the event is 中止 (cancelled), that no cooling-off applies, and that official resale opens only if the event sells out;
 - the Organizer's business details, carried by the Series of the event's Concert: legal name, representative name, business address, business phone number and contact email.
 

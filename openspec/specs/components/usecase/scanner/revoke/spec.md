@@ -1,7 +1,7 @@
 # components/usecase/scanner/revoke Specification
 
 ## Purpose
-ScannerUseCase.Revoke lets the owning organizer operator stop a Scanner at once, for example when its device is lost or replaced.
+ScannerUseCase.Revoke lets a member of the owning Organizer stop a Scanner at once, for example when its device is lost or replaced.
 
 ## Requirements
 
@@ -9,9 +9,9 @@ ScannerUseCase.Revoke lets the owning organizer operator stop a Scanner at once,
 
 Revoke SHALL take the caller's Organizer, a Scanner and the current time. It SHALL read the Scanner with Scanner.Get and its event's Organizer with Event.GetOrganizerID, and SHALL fail with PermissionDenied, without revealing whether the Scanner exists, when the Scanner does not exist or its event is not owned by the caller's Organizer.
 
-#### Scenario: Another organizer's scanner
+#### Scenario: Another Organizer's scanner
 
-- **WHEN** an operator revokes a Scanner of another Organizer's event
+- **WHEN** a member revokes a Scanner of another Organizer's event
 - **THEN** Revoke fails with PermissionDenied and the Scanner is unchanged
 
 ### Requirement: Revoked at once

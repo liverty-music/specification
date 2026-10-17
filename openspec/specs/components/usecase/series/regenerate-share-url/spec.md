@@ -2,7 +2,7 @@
 
 ## Purpose
 
-RegenerateShareUrl lets the owning organizer operator replace the share token of an UNLISTED concert, so the previous share link stops working.
+RegenerateShareUrl lets a member of the owning Organizer replace the share token of an UNLISTED concert, so the previous share link stops working.
 
 ## Requirements
 
@@ -10,8 +10,8 @@ RegenerateShareUrl lets the owning organizer operator replace the share token of
 
 RegenerateShareUrl SHALL fail with PermissionDenied, without revealing whether the Series exists, when the Series does not exist or is not owned by the caller's Organizer.
 
-#### Scenario: Another organizer's series
-- **WHEN** an operator regenerates the token of another Organizer's Series
+#### Scenario: Another Organizer's series
+- **WHEN** a member regenerates the token of another Organizer's Series
 - **THEN** RegenerateShareUrl fails with PermissionDenied
 
 ### Requirement: Unlisted only

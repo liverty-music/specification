@@ -16,8 +16,8 @@ Create SHALL take the caller's Organizer, a Series, a name, the method Lottery o
 - for a Lottery sale, fail with FailedPrecondition when the end time is not before the start time of every event it covers, so a lottery is drawn and its tickets issued before the doors open;
 - for a FirstCome sale, fail with FailedPrecondition when the end time is after the start time of any event it covers, so the sale closes no later than the doors open.
 
-#### Scenario: Another organizer's series
-- **WHEN** an operator creates a sale for a Series owned by another Organizer
+#### Scenario: Another Organizer's series
+- **WHEN** a member creates a sale for a Series owned by another Organizer
 - **THEN** Create fails with PermissionDenied and nothing is stored
 
 #### Scenario: Event of another series
