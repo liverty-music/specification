@@ -1,6 +1,6 @@
 # Tasks
 
-Frontend only; no proto or backend work. Every test task cites its scenarios with `@spec <capability-path> "<scenario>"` so `scripts/check-scenario-coverage.py` finds them at archive.
+Frontend only (admin console, organizer console, fan app); no proto or backend work. Every test task cites its scenarios with `@spec <capability-path> "<scenario>"` so `scripts/check-scenario-coverage.py` finds them at archive.
 
 ## 1. Admin console (components/infrastructure/admin/web/global/error-messages, components/infrastructure/admin/web/route/organizers)
 
@@ -16,6 +16,13 @@ Frontend only; no proto or backend work. Every test task cites its scenarios wit
 - [ ] 2.2 Delete `toOrganizerErrorMessage` and `test/organizer/services/connect-error-copy.spec.ts`; `find-organizer-route.ts` imports `Code` and `ConnectError` from `@connectrpc/connect`; update the client doc comments that point at `connect-error-copy`; verify `make check` passes and `git grep -n -E 'rawMessage|err\.message' -- admin organizer` lists only the organizer callback's state-miss check and the dev-only bootstrap detail
 - [ ] 2.3 Add tests for the existing behavior: `"Refused first-come sale save"` (ticket sale editor shows `firstComeEditor.rejected`, server text absent) and `"Publish fails without copy of its own"` (event route snackbar `event.publishFailed` with Retry, server text absent); verify they pass
 
-## 3. Release and production check
+## 3. Fan app (components/infrastructure/fan/web/global/error-messages, components/infrastructure/fan/web/global/error-banner)
 
-- [ ] 3.1 Open the frontend PR citing this change (`OpenSpec-Change: console-error-copy`), `make check` passes, merge, cut the release and confirm the admin and organizer console deploys succeed; then the owner opens Delete for `fan-test` on the prod admin Organizers screen (refused: it has a payout account) and confirms the detail shows the fixed three-blocker sentence with no `(failed_precondition)`; record the result here
+- [ ] 3.1 Sign-in callback: a failure flag in place of the message, the `authCallback.*` keys of design D2b for the loading text, the failure copy and the home link; verify a `test/routes/auth-callback-route.spec.ts` test for `@spec components/infrastructure/fan/web/global/error-messages "Sign-in callback fails"` passes (library text absent)
+- [ ] 3.2 Error banner: title, message and button labels from the `errorBanner.*` keys, Error ID kept, `currentError.message` no longer rendered; verify `test/components/error-banner.spec.ts` tests for `@spec components/infrastructure/fan/web/global/error-banner "Unhandled error shows fixed copy"` and `"English labels"` pass, and the copied report still contains the message
+- [ ] 3.3 Inline error: drop the detail line and the `errorMessage` getter, Retry from `common.retry`; verify a dashboard test for `@spec components/infrastructure/fan/web/global/error-messages "Timetable fails to load"` passes (server text absent)
+- [ ] 3.4 Card payment: `stripe-service.ts` returns the `payment.error.*` key by error type (design D2b) and logs type and code; `checkout-route` and `lottery-entry-route` render it through the catalog; verify `src/services/stripe-service.spec.ts` and checkout tests for `"Card declined at checkout"` and `"Card details incomplete"` pass (payment form message absent), and `git grep -n -E 'rawMessage|err\.message|error\.message|String\(err' -- src admin organizer` lists no line that reaches the DOM
+
+## 4. Release and production check
+
+- [ ] 4.1 Open the frontend PR citing this change (`OpenSpec-Change: web-error-copy`), `make check` passes, merge, cut the release and confirm the fan app, admin console and organizer console deploys succeed; then the owner opens Delete for `fan-test` on the prod admin Organizers screen (refused: it has a payout account) and confirms the detail shows the fixed three-blocker sentence with no `(failed_precondition)`; record the result here
