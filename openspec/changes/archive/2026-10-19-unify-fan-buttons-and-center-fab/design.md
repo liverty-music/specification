@@ -26,6 +26,7 @@ See proposal.md (Why). The current state that shapes the approach:
 ### D1. Snack bar offset uses the measured banner height
 
 `snack-bar.css` replaces `var(--bottom-banner-clearance, 0px)` with `var(--bottom-banner-height, 0px)`, and the two `:root:has()` rules in `global.css` are deleted. A hidden banner publishes 0px (its host has no height), and an unmounted banner removes the property.
+*Found during apply:* both banner hosts can be mounted at once (a signed-in fan's dashboard and My Artists mount the hidden signup prompt next to the install banner), and the hidden one wrote 0px over the visible one's height. Each banner now writes the variable only while it shows, and removes it only if it wrote it last.
 *Alternative:* fix only the selector (`:root:has(.pwa-banner)`). Rejected: it keeps two hard-coded heights that drift from the real banner, and two mechanisms for the same job.
 
 ### D2. The button is a scoped CSS block with variants in the exception layer
@@ -47,6 +48,7 @@ A new `src/styles/button.css`, imported from `main.css`:
 
 The markup is `class="[ button ] [ pressable ]" data-variant="outlined"`. The press shape morph and state layer come from the existing `.pressable` utility. The pending state reuses the existing `busy-on-click` attribute.
 *Alternative:* a `<lm-button>` custom element like the organizer's `console-button`. Rejected: the fan app styles both `<a>` and `<button>`, needs no DI or slots, and a custom element would add a host box that changes layout in flex rows. Plain CSS has fewer concepts.
+*Label size (decided during apply):* white on brand-primary measures 3.66:1, below WCAG AA's 4.5:1 for body text, and the catalog story's axe check fails on it. The fill stays brand-primary, and every variant's label is WCAG large text instead (Outfit, at least 19px, weight 700), whose minimum is 3:1. The user chose this over a darker fill (oklch 55%, 4.72:1) after comparing both. The border is 2px, not 1.5px: Chromium rounds a 1.5px border down to 1px at a device pixel ratio of 1.
 *Alternative:* keep a `text` variant. Rejected: the user observed that text buttons do not read as buttons. Dismissive actions become `outlined`.
 
 ### D3. Migration maps classes by role, not by name
@@ -63,6 +65,8 @@ A page keeps a block class only for layout that the button does not own, such as
 
 `SnackOptions` gains an optional `icon` (an svg-icon name), which overrides the severity icon. `main.ts` passes `rotate-ccw` (an icon that already exists) for the update snack. The action button gets `[ button ]` with `data-variant="on-container"`. The update snack also sets `data-attention` on the action, which runs a `box-shadow` glow with `animation-iteration-count: 3`. The glow is disabled under reduced motion.
 *Alternative:* a dedicated update-snack component. Rejected: the snack bar already supports actions, and only the icon and the attention flag differ.
+
+*Changed after the production check:* on a phone the update snack's message wrapped beside the large shared button. The user chose, from rendered options, a compact action and a shorter message, and asked to drop the leading icon. `button.css` exposes size hooks (`--button-min-size`, `--button-padding-block`, `--button-padding-inline`, `--button-font-size`) that `snack-bar.css` sets on `.snack-action-btn` (36px tall, `step--1` label; radius and weight unchanged). The organizer console, which has no shared button, ignores them. `SnackOptions.icon: null` means no leading icon, and `main.ts` passes it for the update snack. The ja copy becomes 「新しいバージョンがあります」. Other snacks keep their severity icon. **Known AA gap, left to `snack-text-contrast`:** the compact label is no longer WCAG large text, so it needs 4.5:1, and it does not reach it. White on the on-container fill measures 3.35:1 at the brand-primary end of the info gradient and 3.06:1 at the brand-secondary end. The snack's white message already fell short before this change: 3.66 to 3.88:1 on the info gradient and 4.03:1 at the light end of the warning gradient. The user chose to keep the compact action and to darken the info and warning containers in a follow-up change (`snack-text-contrast`), after comparing that against a neutral surface and against large text in Storybook.
 
 ### D5. Four tabs and a fixed centre slot
 
@@ -83,7 +87,15 @@ Settings gets `nav: false`. `bottom-nav-bar` lays out a five-column grid (`1fr 1
 - **Motion:** open animates `offset-distance` from 0 to the item's distance with the spatial spring, staggered by `--i`. Under reduced motion the duration is near-instant (the existing `--_duration-reduced` convention).
 - **Margins:** the 16px screen margin is checked at a 320px viewport in the e2e test (D10). If four items do not fit, the path is scaled with `min()` against `100vi`.
 
+*Changed during apply:*
+- The path above keeps only 31 to 52px of vertical separation and reaches 136px right of the FAB, past the 16px margin at 320px. A numeric search over Bézier control points chose `M0 0 C 0 -100, 70 -140, 110 -260`: four items 56px or more apart vertically, the last 102px right of the FAB (34px margin at 320px). No `min()` scaling is needed.
+- Up to four items take fixed steps along the path (`(i + 1) / max(n, 4) * 92%`), so one or two actions sit near the FAB instead of at the top of the arc; five or more share it evenly.
+- The item surface (`--md-color-menu-surface`) is lightened from oklch 30% to 50%, so items reach the WCAG 1.4.11 3:1 against the page dimmed by the scrim, and white labels stay above 4.5:1.
+- Routes order their actions closest-first for the arc: the dashboard contributes beam, filter, mode switch, help; My Artists edit, help.
+- **Bottom banners (stopgap).** D7 put the FAB's centre on the top edge of a visible banner, where it covers the banner's text and leaves an empty notch. While the signup prompt or the install banner is visible on a route with actions, `global.css` sets `--fab-floating: 1`: the FAB floats one `space-s` step above the banner at full size and does not sink, the bar closes the notch (zero mask radius), and the snack bar sits one `space-s` step above the FAB. The user chose this over keeping the FAB in the notch (it would cover the banner's bottom) after comparing both. Replacing the two banners with snack bars, which would remove this exception and the banner height variable, is left to a separate change: a persistent snack would keep the FAB sunk for most fans, which needs its own decision.
 *Alternative:* trigonometric `translate` per item (`cos()` and `sin()`), as in the earlier mock. Rejected: it produces a circular arc around the FAB, which is the opposite curvature of the thumb sweep. A Bézier path describes the tall thumb arc directly.
+
+*Changed after the production check:* a popover's `::backdrop` does not catch taps, so a tap outside the open arc closed it and also reached the page (a tab navigated, an event card opened its sheet). The scrim is now a `.fab-scrim` element inside the panel, fixed over the viewport, whose click closes the arc. When the arc opens, the FAB popover is hidden and shown again, so it re-enters the top layer above the panel and stays the visible close control.
 
 ### D8. Sink while a snack bar is open: a root flag, not a service
 

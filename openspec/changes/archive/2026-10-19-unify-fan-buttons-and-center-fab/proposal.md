@@ -11,6 +11,7 @@ The fan app's bottom edge does not read as one designed surface. The update snac
 - The FAB moves to the centre of the bottom navigation and protrudes from a notch cut into the bar. The bar keeps the centre slot on every route, so the four tabs never move. On routes without FAB actions (Tickets, Event, order detail and others), the slot is empty and the bar has no notch.
 - Tapping the FAB unfolds its actions one after another along a tall arc that follows the right thumb's sweep, starting at the FAB and curving up and to the right. Left-handed mode mirrors the arc to the left.
 - While a snack bar is open, the FAB sinks into the notch and gets smaller, so the snack bar can sit directly above the navigation. The FAB stays tappable.
+- While the signup prompt or the install banner is visible, the FAB floats just above the banner instead and the bar shows no notch, so the FAB covers no part of the banner. This is a stopgap until those banners become snack bars (a separate change).
 - The FAB glyph becomes a 32px equalizer (three bars). It turns into `×` when the FAB opens; the bars bounce only at that moment.
 - After the fan navigates away and back, the FAB always shows its collapsed state.
 - An e2e test checks that the FAB stays in the top layer and receives taps above the Discovery dna orb.
@@ -38,4 +39,4 @@ None.
 - Button migration: about 25 templates and their CSS under `src/routes/**` and `src/components/**`.
 - i18n: `settings.leftHandedDesc` (ja, en) and a label for the header Settings entry.
 - Tests: the button catalog story with a screenshot, a snack-bar update-action story, fab-menu unit tests, the existing e2e `fab-menu-beam-toggle.spec.ts` (placement scenario), new e2e for the top layer on Discovery, and the bottom-nav and page-header stories and screenshots.
-- The coach mark's `data-nav-dashboard` / `data-nav-my-artists` targets are kept.
+- The coach mark's tab targets (`data-nav="home"`, `data-nav="my-artists"`) are kept; the bottom-nav spec named them `data-nav-dashboard` / `data-nav-my-artists`, which the code never used, and is corrected.

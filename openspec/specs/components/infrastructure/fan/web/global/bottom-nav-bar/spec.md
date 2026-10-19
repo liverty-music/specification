@@ -34,25 +34,24 @@ The system SHALL conditionally show or hide the navigation bar based on the curr
 #### Scenario: Navigation shown on post-onboarding routes
 - **WHEN** the user is on the Dashboard or post-onboarding routes
 - **THEN** the system SHALL display the bottom navigation bar in the `nav` grid area
-- **AND** the navigation bar SHALL include tab icons and labels for Home, Discover, My Artists, Tickets, and Settings
+- **AND** the navigation bar SHALL include tab icons and labels for Home, Discover, My Artists and Tickets, in that order, two on each side of an empty centre slot reserved for the FAB
+- **AND** the navigation bar SHALL NOT include a Settings tab
 
 #### Scenario: Navigation remains visible beneath area setup dialog
 - **WHEN** the first-visit area setup dialog is displayed on the Dashboard
-- **THEN** the area setup dialog SHALL render via `<dialog>` `showModal()` in the browser's Top Layer
+- **THEN** the area setup dialog SHALL render in the browser's Top Layer (a `<dialog>` shown with `showPopover()`, the bottom-sheet convention)
 - **AND** the bottom navigation bar SHALL remain in its normal grid position beneath the Top Layer
 - **AND** the `::backdrop` pseudo-element SHALL visually dim the entire page including the navigation bar
 
 #### Scenario: Dashboard icon data attribute for coach mark targeting
 - **WHEN** the bottom navigation bar renders
-- **THEN** the Dashboard tab link SHALL include a `data-nav-dashboard` attribute
-- **AND** the My Artists tab link SHALL include a `data-nav-my-artists` attribute
+- **THEN** the Dashboard (Home) tab link SHALL carry `data-nav="home"`, the selector the onboarding coach mark targets
+- **AND** the My Artists tab link SHALL carry `data-nav="my-artists"`
 
 #### Scenario: Pages do not compensate for navigation bar height
 - **WHEN** any route component renders inside the `<au-viewport>` element
 - **THEN** the route component SHALL NOT apply viewport-relative height constraints (e.g., `100dvh`, `100vh`) or bottom padding (e.g., `pb-14`) to account for the navigation bar
 - **AND** the CSS Grid layout SHALL ensure the route content fills the available space within the `1fr` track
-
----
 
 ### Requirement: App shell hides navigation on fullscreen routes
 The app shell's navigation-visibility state SHALL be `false` for fullscreen routes and `true` for other routes.
@@ -130,8 +129,7 @@ SHALL highlight that tab.
 
 #### Scenario: Tab route displayed
 
-- **WHEN** the displayed route is Home, Discover, My Artists, Tickets or
-  Settings
+- **WHEN** the displayed route is Home, Discover, My Artists or Tickets
 - **THEN** that tab SHALL be highlighted and every other tab SHALL NOT be
 
 #### Scenario: Concert deep-link highlights Home
@@ -146,8 +144,8 @@ SHALL highlight that tab.
 
 #### Scenario: Route outside every tab
 
-- **WHEN** the displayed route belongs to no tab (for example an order detail
-  or a legal document) while the navigation bar is shown
+- **WHEN** the displayed route belongs to no tab (for example Settings, an
+  order detail or a legal document) while the navigation bar is shown
 - **THEN** no tab SHALL be highlighted
 
 ### Requirement: Menu-tab navigation never waits on data
@@ -173,3 +171,24 @@ Every bottom-nav menu-tab route SHALL NOT block the router view swap on its data
 - **WHEN** a route is added to the bottom navigation
 - **THEN** that route SHALL satisfy this requirement from the moment it appears in the nav
 - **AND** no enumeration of route names SHALL be required to bring it into scope
+
+### Requirement: Centre slot and notch for the FAB
+
+The navigation bar SHALL keep a centre slot between its second and third tabs on every route where it is shown, so that the four tabs stay at the same positions on every route. While the FAB is shown, the bar SHALL cut a notch around the FAB in its top edge at the centre slot. While the FAB is not shown, or floats above a visible bottom banner (see FAB Menu), the bar SHALL show no notch; while the FAB is not shown, the centre slot SHALL stay empty.
+
+#### Scenario: Route with FAB actions
+- **WHEN** the dashboard is displayed and the FAB is shown
+- **THEN** the bar's top edge SHALL have a notch around the FAB at the centre slot
+
+#### Scenario: Route without FAB actions
+- **WHEN** the Tickets route is displayed and no action is contributed
+- **THEN** the bar's top edge SHALL be straight, with no notch
+- **AND** the centre slot SHALL be empty
+
+#### Scenario: FAB floating above a banner
+- **WHEN** the dashboard is displayed with the FAB shown while the install banner is visible
+- **THEN** the bar's top edge SHALL be straight, with no notch
+
+#### Scenario: Tabs do not move between routes
+- **WHEN** the user moves from the dashboard (FAB shown) to Tickets (FAB hidden)
+- **THEN** each of the four tabs SHALL stay at the same horizontal position
