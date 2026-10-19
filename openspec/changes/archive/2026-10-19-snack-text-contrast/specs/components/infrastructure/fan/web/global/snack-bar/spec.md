@@ -6,11 +6,11 @@ Every snack bar's message and its action label SHALL keep a contrast ratio of at
 
 #### Scenario: Message contrast on every severity
 - **WHEN** an info, a warning and an error snack bar are each shown
-- **THEN** the white message SHALL measure at least 4.5:1 against both ends of that snack's container gradient
+- **THEN** the white message SHALL measure at least 4.5:1 against every point of that snack's container gradient, both ends included
 
 #### Scenario: Action contrast on every severity
 - **WHEN** a snack bar with an action (such as the update snack) is shown in each severity
-- **THEN** the action's label SHALL measure at least 4.5:1 against the action's translucent fill laid over both ends of the container gradient
+- **THEN** the action's label SHALL measure at least 4.5:1 against the action's translucent fill laid over every point of the container gradient, both ends included
 
 ## MODIFIED Requirements
 
