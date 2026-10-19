@@ -9,6 +9,10 @@ in a comment or in its name, e.g.
 
     // @spec components/entity/order/create "Second create for the same cart"
 
+A scenario name that contains a double quote escapes it with a backslash:
+
+    // @spec components/infrastructure/fan/web/route/settings "Header reads \\"Settings\\" regardless of active locale"
+
 The scenarios checked are those under `## ADDED Requirements` and
 `## MODIFIED Requirements` in the change's delta specs. The annotations are
 searched in the test files, including Storybook stories run as component
@@ -43,8 +47,15 @@ TEST_DIRS = {"e2e", "test", "tests"}
 SKIP_DIRS = {".git", "node_modules", "dist", "build", "coverage", "vendor", ".venv"}
 DELTA = re.compile(r"^## (ADDED|MODIFIED|REMOVED|RENAMED) Requirements\s*$")
 SCENARIO = re.compile(r"^#### Scenario:\s*(.+?)\s*$")
-ANNOTATION = re.compile(r'@spec\s+(\S+)\s+"([^"]+)"')
-MANUAL = re.compile(r'@spec-manual\s+(\S+)\s+"([^"]+)"')
+# The name is a double-quoted string in which `\"` stands for a quote.
+QUOTED = r'"((?:[^"\\\n]|\\.)+)"'
+ANNOTATION = re.compile(r'@spec\s+(\S+)\s+' + QUOTED)
+MANUAL = re.compile(r'@spec-manual\s+(\S+)\s+' + QUOTED)
+ESCAPE = re.compile(r'\\(.)')
+
+
+def unescape(name):
+    return ESCAPE.sub(r'\1', name)
 
 
 def norm(path, name):
@@ -141,7 +152,7 @@ def annotations(sources, pattern):
     found = set()
     for texts in sources:
         for text in texts:
-            found.update(norm(a, b) for a, b in pattern.findall(resolve_constants(text)))
+            found.update(norm(a, unescape(b)) for a, b in pattern.findall(resolve_constants(text)))
     return found
 
 
@@ -172,7 +183,7 @@ def main():
     covered = annotations((texts for _, _, texts in searched), ANNOTATION)
     manual = set()
     for f in change_dir.glob("*.md"):
-        manual.update(norm(a, b) for a, b in MANUAL.findall(f.read_text()))
+        manual.update(norm(a, unescape(b)) for a, b in MANUAL.findall(f.read_text()))
 
     missing = [(c, s) for c, s in wanted if norm(c, s) not in covered and norm(c, s) not in manual]
     print(f"{args.change}: {len(wanted) - len(missing)}/{len(wanted)} scenarios covered "
