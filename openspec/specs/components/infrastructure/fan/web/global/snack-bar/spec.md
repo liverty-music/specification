@@ -50,12 +50,12 @@ The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-no
 
 #### Scenario: CSS entry animation
 - **WHEN** a snack popover is opened via `showPopover()`
-- **THEN** the snack SHALL animate from `opacity: 0; transform: translateY(-1rem)` to `opacity: 1; transform: translateY(0)`
+- **THEN** the snack SHALL rise into place from below, animating from `opacity: 0; transform: translateY(1rem)` to `opacity: 1; transform: translateY(0)`
 - **AND** the entry state SHALL be defined via `@starting-style` inside `:popover-open`
 
 #### Scenario: CSS exit animation
 - **WHEN** a snack popover is closed via `hidePopover()`
-- **THEN** the snack SHALL animate from `opacity: 1; transform: translateY(0)` to `opacity: 0; transform: translateY(-1rem)`
+- **THEN** the snack SHALL sink out of place, animating from `opacity: 1; transform: translateY(0)` to `opacity: 0; transform: translateY(1rem)`
 - **AND** the transition SHALL include `display allow-discrete` and `overlay allow-discrete` to keep the element visible in the Top Layer until the animation completes
 
 #### Scenario: Snack severity visual variants
@@ -103,23 +103,6 @@ When `vite-plugin-pwa` detects a waiting SW (`onNeedRefresh` callback) after the
 - **THEN** `location.reload()` SHALL be called at most once per lifecycle
 - **AND** a subsequent `controllerchange` event (e.g., from another tab's skipWaiting) SHALL NOT trigger a second reload on the same page
 
-### Requirement: The update action button is visually prominent
-
-When the update snack is displayed, its action button (labelled with `pwa.updateAction`) SHALL be visually distinguished from the snack body text so that users can immediately identify it as a primary call-to-action. The button SHALL use a pill-shaped border and a pulsing glow animation to attract attention. The animation SHALL be suppressed when `prefers-reduced-motion: reduce` is active.
-
-#### Scenario: Action button appears as a pill with pulse animation
-
-- **WHEN** the update snack is visible with the action button
-- **THEN** the action button SHALL have a rounded pill border (1.5px, semi-transparent white)
-- **AND** a semi-transparent white background fill SHALL distinguish it from plain text
-- **AND** the button SHALL animate a repeating `box-shadow` glow pulse (period ≈ 1.8s, ease-in-out)
-
-#### Scenario: Animation is suppressed under reduced motion
-
-- **WHEN** the user's OS has `prefers-reduced-motion: reduce` set
-- **THEN** the pulse animation SHALL NOT play
-- **AND** the pill border and background fill SHALL still be applied (static emphasis)
-
 ### Requirement: Fire-and-forget failures show a snack and revert optimistic UI
 The system SHALL replace silent error swallowing in services with explicit error states that callers can distinguish from empty-data states.
 
@@ -132,3 +115,54 @@ The system SHALL replace silent error swallowing in services with explicit error
 - **WHEN** a fire-and-forget RPC operation (e.g., artist follow) fails
 - **THEN** the system SHALL display an error snack informing the user of the failure
 - **AND** the system SHALL revert any optimistic UI updates
+
+### Requirement: Snack bars sit directly above the bottom navigation
+
+Every snack bar, whatever its severity or sender, SHALL be placed at the bottom of the screen with its bottom edge one `space-s` step above the top of the bottom navigation bar and the bottom safe-area inset. While a persistent bottom banner (the signup prompt or the install banner) is visible above the navigation bar, the snack bar SHALL sit that same step above the banner instead, using the banner's rendered height; a banner that is not visible SHALL add no height. While the FAB floats above a visible banner (see FAB Menu), the snack bar SHALL sit one `space-s` step above the FAB instead.
+
+#### Scenario: No banner is visible
+- **WHEN** a snack bar opens and no persistent bottom banner is visible
+- **THEN** the gap between the snack bar's bottom edge and the navigation bar's top edge SHALL be one `space-s` step (16 to 20px)
+
+#### Scenario: Install banner dismissed
+- **WHEN** the fan has dismissed the install banner, so that it is no longer visible
+- **AND** a snack bar opens
+- **THEN** the snack bar SHALL sit one `space-s` step above the navigation bar, not above the space the banner used to occupy
+
+#### Scenario: A banner is visible
+- **WHEN** a snack bar opens while the signup prompt or the install banner is visible
+- **THEN** the snack bar's bottom edge SHALL sit one `space-s` step above the banner's top edge
+- **AND** the snack bar SHALL NOT cover any part of the banner
+
+#### Scenario: The FAB floats above a visible banner
+- **WHEN** a snack bar opens while a bottom banner is visible on a route that shows the FAB
+- **THEN** the snack bar's bottom edge SHALL sit one `space-s` step above the FAB's top edge
+- **AND** the snack bar SHALL cover neither the FAB nor the banner
+
+#### Scenario: Same placement for every severity
+- **WHEN** an info, warning and error snack bar are each shown in turn under the same conditions
+- **THEN** all three SHALL occupy the same vertical position
+
+### Requirement: The update action stands out as a button on the snack bar
+
+When the update snack is displayed, its action button (labelled with `pwa.updateAction`) SHALL be visually distinguished from the snack body text so that users immediately identify it as a button. The button SHALL use the on-container button style in the compact snack-bar size (see UI Primitives): a translucent white fill, a white border and the shared button corner radius. When the update snack appears, the button SHALL glow three times and then stay still for as long as the snack is shown. The glow SHALL NOT play when `prefers-reduced-motion: reduce` is active. The update snack SHALL show no leading icon, so its message (「新しいバージョンがあります」) and action fit one row on a 360px screen.
+
+#### Scenario: Action button appears in the on-container style
+- **WHEN** the update snack is visible with the action button
+- **THEN** the action button SHALL have a white border at least 1.5px wide and a translucent white fill
+- **AND** its corner radius SHALL equal the shared button corner radius (12px)
+
+#### Scenario: The glow plays three times, then stops
+- **WHEN** the update snack appears
+- **THEN** the action button SHALL glow exactly three times
+- **AND** after the third glow the button SHALL remain still while the snack stays open
+
+#### Scenario: Animation is suppressed under reduced motion
+- **WHEN** the user's OS has `prefers-reduced-motion: reduce` set
+- **THEN** the glow SHALL NOT play
+- **AND** the border and fill SHALL still be applied
+
+#### Scenario: No leading icon
+- **WHEN** the update snack is visible
+- **THEN** it SHALL show no leading icon
+- **AND** on a 360px-wide screen its message SHALL fit one line beside the action

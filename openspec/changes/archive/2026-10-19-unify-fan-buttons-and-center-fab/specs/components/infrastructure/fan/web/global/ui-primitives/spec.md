@@ -2,7 +2,7 @@
 
 ### Requirement: One button style in four variants
 
-Every text button in the fan app SHALL use one shared button style, in one of four variants. All four SHALL share the same corner radius (12px), padding and label weight, so that any text button reads as a button from its shape alone. Icon-only buttons are not covered by this requirement.
+Every text button in the fan app SHALL use one shared button style, in one of four variants. All four SHALL share the same corner radius (12px), padding and label weight, so that any text button reads as a button from its shape alone. The one exception is the action on a snack bar, which SHALL use a compact size (a smaller label and padding, 36px tall) with the same radius and weight, so the snack's message keeps the width of its row. Icon-only buttons are not covered by this requirement.
 
 - **filled** (the default): a solid brand-primary fill with white text, for the main action on a screen.
 - **outlined**: a transparent fill with a visible border, for secondary and dismissive actions (cancel, later, back).
@@ -26,6 +26,11 @@ A text button SHALL NOT be rendered as plain text without a fill or a border.
 #### Scenario: Button on a coloured surface
 - **WHEN** a button is placed on a snack bar or a banner with a coloured or gradient fill
 - **THEN** it SHALL be rendered in the on-container variant with a translucent white fill and a white border at least 1.5px wide
+
+#### Scenario: Compact button on a snack bar
+- **WHEN** a snack bar shows an action
+- **THEN** the action SHALL be 36px tall with a label smaller than the default button's
+- **AND** it SHALL keep the shared 12px corner radius and the bold label weight
 
 #### Scenario: Catalog matches the specification
 - **WHEN** the button catalog shows all four variants side by side

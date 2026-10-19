@@ -2,7 +2,7 @@
 
 ### Requirement: Centre slot and notch for the FAB
 
-The navigation bar SHALL keep a centre slot between its second and third tabs on every route where it is shown, so that the four tabs stay at the same positions on every route. While the FAB is shown, the bar SHALL cut a notch around the FAB in its top edge at the centre slot. While the FAB is not shown, the bar SHALL show no notch and the centre slot SHALL stay empty.
+The navigation bar SHALL keep a centre slot between its second and third tabs on every route where it is shown, so that the four tabs stay at the same positions on every route. While the FAB is shown, the bar SHALL cut a notch around the FAB in its top edge at the centre slot. While the FAB is not shown, or floats above a visible bottom banner (see FAB Menu), the bar SHALL show no notch; while the FAB is not shown, the centre slot SHALL stay empty.
 
 #### Scenario: Route with FAB actions
 - **WHEN** the dashboard is displayed and the FAB is shown
@@ -12,6 +12,10 @@ The navigation bar SHALL keep a centre slot between its second and third tabs on
 - **WHEN** the Tickets route is displayed and no action is contributed
 - **THEN** the bar's top edge SHALL be straight, with no notch
 - **AND** the centre slot SHALL be empty
+
+#### Scenario: FAB floating above a banner
+- **WHEN** the dashboard is displayed with the FAB shown while the install banner is visible
+- **THEN** the bar's top edge SHALL be straight, with no notch
 
 #### Scenario: Tabs do not move between routes
 - **WHEN** the user moves from the dashboard (FAB shown) to Tickets (FAB hidden)
@@ -52,14 +56,14 @@ The system SHALL conditionally show or hide the navigation bar based on the curr
 
 #### Scenario: Navigation remains visible beneath area setup dialog
 - **WHEN** the first-visit area setup dialog is displayed on the Dashboard
-- **THEN** the area setup dialog SHALL render via `<dialog>` `showModal()` in the browser's Top Layer
+- **THEN** the area setup dialog SHALL render in the browser's Top Layer (a `<dialog>` shown with `showPopover()`, the bottom-sheet convention)
 - **AND** the bottom navigation bar SHALL remain in its normal grid position beneath the Top Layer
 - **AND** the `::backdrop` pseudo-element SHALL visually dim the entire page including the navigation bar
 
 #### Scenario: Dashboard icon data attribute for coach mark targeting
 - **WHEN** the bottom navigation bar renders
-- **THEN** the Dashboard tab link SHALL include a `data-nav-dashboard` attribute
-- **AND** the My Artists tab link SHALL include a `data-nav-my-artists` attribute
+- **THEN** the Dashboard (Home) tab link SHALL carry `data-nav="home"`, the selector the onboarding coach mark targets
+- **AND** the My Artists tab link SHALL carry `data-nav="my-artists"`
 
 #### Scenario: Pages do not compensate for navigation bar height
 - **WHEN** any route component renders inside the `<au-viewport>` element

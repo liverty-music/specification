@@ -2,7 +2,7 @@
 
 ### Requirement: The FAB yields to an open snack bar
 
-While any snack bar is open, the FAB SHALL sink into the navigation bar's centre slot so the snack bar can sit directly above the navigation bar without covering the FAB. Sunk, the FAB SHALL be 40px across and SHALL lie entirely within the navigation bar's height, and it SHALL stay tappable. When the last open snack bar closes, the FAB SHALL return to its normal size and position. The movement SHALL use spring motion and SHALL respect `prefers-reduced-motion: reduce` by landing the end state without overshoot.
+While any snack bar is open, the FAB SHALL sink into the navigation bar's centre slot so the snack bar can sit directly above the navigation bar without covering the FAB. Sunk, the FAB SHALL be 40px across and SHALL lie entirely within the navigation bar's height, and it SHALL stay tappable. When the last open snack bar closes, the FAB SHALL return to its normal size and position. The movement SHALL use spring motion and SHALL respect `prefers-reduced-motion: reduce` by landing the end state without overshoot. While the FAB floats above a visible bottom banner, it SHALL NOT sink; the snack bar sits above it instead (see Snack Bar).
 
 #### Scenario: A snack bar opens
 - **WHEN** a snack bar opens on a route where the FAB is shown
@@ -13,6 +13,11 @@ While any snack bar is open, the FAB SHALL sink into the navigation bar's centre
 #### Scenario: The sunk FAB still opens the actions
 - **WHEN** a snack bar is open and the user taps the sunk FAB
 - **THEN** the action arc SHALL open as it does from the normal FAB
+
+#### Scenario: A snack bar opens above a bottom banner
+- **WHEN** a snack bar opens while the FAB floats above a visible bottom banner
+- **THEN** the FAB SHALL keep its 56px size
+- **AND** the snack bar SHALL sit one `space-s` step above the FAB, overlapping neither the FAB nor the banner
 
 #### Scenario: The last snack bar closes
 - **WHEN** the last open snack bar closes
@@ -99,7 +104,11 @@ secondary) and SHALL carry a brand-coloured glow. The FAB SHALL be promoted to t
 browser top layer (not stacked via `z-index`), so it stays above and receives taps
 over any route content, including canvases. The FAB SHALL NOT cover any navigation
 tab. The FAB SHALL be hidden whenever the navigation bar is hidden (e.g. landing
-page, auth callback) or when the current route contributes zero actions.
+page, auth callback) or when the current route contributes zero actions. While a
+persistent bottom banner (the signup prompt or the install banner) is visible, the
+FAB SHALL instead float one `space-s` step above the banner's top edge, still
+horizontally centred and 56px across, so that it covers no part of the banner, and
+the navigation bar SHALL show no notch.
 
 #### Scenario: FAB floats in the thumb zone above content
 
@@ -107,6 +116,12 @@ page, auth callback) or when the current route contributes zero actions.
 - **THEN** the FAB SHALL be horizontally centred, with its centre on the navigation bar's top edge
 - **AND** the navigation bar SHALL show a notch around the FAB with a gap of at least 6px
 - **AND** no navigation tab's icon or label SHALL be covered by the FAB
+
+#### Scenario: A bottom banner is visible
+
+- **WHEN** a route that contributes at least one action is displayed while the install banner or the signup prompt is visible
+- **THEN** the FAB SHALL be horizontally centred, 56px across, with its bottom edge one `space-s` step above the banner's top edge
+- **AND** the navigation bar SHALL show no notch
 
 #### Scenario: FAB stays above the Discovery dna orb
 
@@ -151,6 +166,12 @@ expanded it SHALL show a close (`×`) affordance.
 - **WHEN** the arc is open and the user taps the FAB (now a close affordance)
 - **THEN** the arc SHALL close and the glyph SHALL return to the equalizer glyph
 
+#### Scenario: Tapping outside the arc only closes it
+
+- **WHEN** the arc is open and the user taps a navigation tab or the page's own content outside the arc
+- **THEN** the arc SHALL close
+- **AND** the tap SHALL NOT navigate or activate what lies beneath
+
 #### Scenario: Every item shows icon and label
 
 - **WHEN** the action arc is open
@@ -176,7 +197,7 @@ arc to its place with a springy, slightly overshooting motion while it fades in,
 brief staggered sequence starting with the item closest to the FAB; on close, the
 items SHALL travel back into the FAB. The glyph SHALL morph between the equalizer and
 the close affordance, and the equalizer bars SHALL bounce once only at the moment the
-launcher opens (never while idle). A scrim SHALL dim the page behind the open arc.
+launcher opens (never while idle). A scrim SHALL dim the page behind the open arc and SHALL take every tap outside the arc's items: such a tap SHALL only close the arc, never reach the page beneath. The FAB SHALL stay above the scrim as the close affordance.
 All motion SHALL respect the `prefers-reduced-motion: reduce` user preference by
 landing the same end state without overshoot, travel, stagger or bounce. The open
 arc SHALL maintain strong contrast between its items and the dimmed page behind it.
