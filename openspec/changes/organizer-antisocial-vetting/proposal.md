@@ -14,7 +14,9 @@ the onboarding agreement and a 反社チェック gate in admin vetting.
 - **暴排条項 in the Organizer onboarding agreement** — a representation &
   warranty that the Organizer and its principals are **not** 反社会的勢力 and
   have no such relationships, plus the platform's right to **terminate /
-  deactivate immediately** on breach.
+  deactivate immediately** on breach. This is a term of the Organizer
+  agreement, not product behavior: no spec covers it (the product records no
+  acceptance), and it is tracked as the legal/docs tasks 1.1-1.2 (design D0).
 - **反社チェック gate in admin vetting** — before an Organizer is
   provisioned/activated, an admin performs a name-screening 反社チェック and
   records the outcome (reviewer, timestamp, result). A **positive hit blocks**
@@ -36,7 +38,6 @@ self-serve organizer onboarding.
 ### Modified Capabilities
 
 - `components/usecase/organizer/deactivate`: Post-onboarding antisocial discovery triggers deactivation
-- `components/usecase/payout-account/get`: Organizer onboarding agreement includes an antisocial-forces exclusion clause
 
 ## Impact
 

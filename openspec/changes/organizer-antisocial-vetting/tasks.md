@@ -1,7 +1,7 @@
 ## 1. Legal / docs
 
 - [ ] 1.1 Draft the **暴排条項** (antisocial-forces exclusion clause: R&W + immediate termination) for the Organizer onboarding agreement
-- [ ] 1.2 Make acceptance of the clause a condition of onboarding
+- [ ] 1.2 Put the clause in the Organizer agreement the Organizer signs before an admin creates it (contract process outside the product; design D0)
 
 ## 2. Specification (only if a proto is added)
 

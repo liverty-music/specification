@@ -17,6 +17,15 @@ for MVP); the payment 収納代行 scheme; self-serve onboarding.
 
 ## Decisions
 
+**D0 — The 暴排条項 is a contract term, not a spec requirement.** The clause
+lives in the Organizer agreement that the Organizer signs before an admin
+creates it. The product neither shows nor records that agreement, so no
+system behavior can verify it; specs hold product behavior only. It was
+first placed under `components/usecase/payout-account/get`, whose "onboarding"
+is the payment provider's identity check, a different thing; that delta was
+removed on 2026-10-19 (owner decision). If the product later records the
+Organizer's acceptance, that recording gets its own requirement.
+
 **D1 — Manual, risk-based check for MVP.** An admin records a name-screening
 outcome; no third-party screening API integration yet (a future hardening).
 The exemption from liability comes from the 暴排条項 + a documented check, not
