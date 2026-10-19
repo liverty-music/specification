@@ -30,16 +30,30 @@ Every request SHALL carry a valid sign-in, or fail with Unauthenticated. The sig
 - **WHEN** the caller's Organizer is deactivated
 - **THEN** it fails with FailedPrecondition
 
-### Requirement: Get returns the caller's own account
+### Requirement: Get reads the caller's own account
 
-Get SHALL take no input, call PayoutAccountUseCase.Get for the caller's own Organizer, and return the account's provider account ID and payout onboarding status, with the onboarding link only when one was returned. When the Organizer is no longer found, it SHALL fail with PermissionDenied.
+Get SHALL take no input, call PayoutAccountUseCase.Get for the caller's own Organizer, and return the account's provider account ID and payout onboarding status. It SHALL return no onboarding link. When PayoutAccountUseCase.Get fails with NotFound because the Organizer has no payout account, Get SHALL fail with NotFound; a caller whose Organizer cannot be resolved has already failed the audience gate with PermissionDenied, so NotFound means only that no payout account exists yet.
 
 #### Scenario: Member opens payout settings
 
-- **WHEN** a member of an active Organizer calls Get
-- **THEN** it returns their Organizer's account and status, with an onboarding link while the account is not active
+- **WHEN** a member of an active Organizer with a pending account calls Get
+- **THEN** it returns their Organizer's account and status, and no onboarding link
+
+#### Scenario: No payout account yet
+
+- **WHEN** a member of an active Organizer that has no payout account calls Get
+- **THEN** it fails with NotFound
+
+### Requirement: StartOnboarding returns a link for the caller's own account
+
+StartOnboarding SHALL take no input, call PayoutAccountUseCase.StartOnboarding for the caller's own Organizer, and return the onboarding link it gives. When the Organizer is no longer found, it SHALL fail with PermissionDenied; any other failure, such as Unavailable, SHALL be returned unchanged.
+
+#### Scenario: Member starts onboarding
+
+- **WHEN** a member of an active Organizer calls StartOnboarding
+- **THEN** it returns an onboarding link for their Organizer's account
 
 #### Scenario: Organizer gone meanwhile
 
-- **WHEN** PayoutAccountUseCase.Get fails with NotFound
-- **THEN** Get fails with PermissionDenied
+- **WHEN** PayoutAccountUseCase.StartOnboarding fails with NotFound
+- **THEN** StartOnboarding fails with PermissionDenied
