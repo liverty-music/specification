@@ -8,42 +8,14 @@ Invites a signed-in, not-yet-installed user to install the app to their device o
 
 ### Requirement: PWA Install Prompt i18n
 
-The PWA install prompt SHALL use i18n keys for all user-facing text, consistent with the notification prompt's existing i18n pattern.
+The PWA install banner SHALL take all user-facing text from the app's translations, so that it reads in the user's locale (Japanese or English), consistent with the notification prompt's existing i18n pattern.
 
 #### Scenario: PWA install prompt displays localized text
 
-- **WHEN** the PWA install prompt is visible
-- **THEN** the title text SHALL be rendered via the `pwa.title` i18n key
-- **AND** the description text SHALL be rendered via the `pwa.description` i18n key
-- **AND** the install button label SHALL be rendered via the `pwa.install` i18n key
-- **AND** the dismiss button label SHALL be rendered via the `pwa.notNow` i18n key
+- **WHEN** the PWA install banner is visible
+- **THEN** the banner's accessible label, its message, its install button label and its close button's accessible name SHALL come from the translations of the user's locale
+- **AND** the guide sheet's title, its steps and its "added" button label SHALL come from the same translations
 - **AND** the text SHALL NOT be hardcoded in the template
-
----
-
-### Requirement: Prompt Entrance and Exit Animations
-
-The PWA install prompt and notification prompt SHALL animate when entering and leaving the viewport, providing visual continuity with the rest of the onboarding flow.
-
-#### Scenario: Prompt entrance animation
-
-- **WHEN** the PWA install prompt or notification prompt becomes visible
-- **THEN** the prompt SHALL animate in using a fade-slide-up effect (opacity 0 -> 1, translateY 16px -> 0)
-- **AND** the animation duration SHALL be 600ms with ease-out timing
-- **AND** the animation SHALL reuse the existing `fade-slide-up` keyframe defined in `my-app.css`
-
-#### Scenario: Prompt exit animation
-
-- **WHEN** the PWA install prompt or notification prompt is dismissed
-- **THEN** the prompt SHALL animate out using a fade-slide-down effect (opacity 1 -> 0, translateY 0 -> 16px)
-- **AND** the animation duration SHALL be 600ms with ease-out timing
-- **AND** the element SHALL remain in the DOM until the exit animation completes
-
-#### Scenario: Reduced motion preference
-
-- **WHEN** the user has `prefers-reduced-motion: reduce` enabled
-- **THEN** the prompt entrance and exit animations SHALL be skipped
-- **AND** the prompt SHALL appear and disappear instantly
 
 ### Requirement: Install-prompt listener registers before routing
 
@@ -247,25 +219,33 @@ The banner SHALL NOT be visible while the post-signup dialog is open to avoid vi
 
 ### Requirement: Banner Visual Presentation
 
-The `pwa-install-banner` SHALL use the same visual design language as `signup-prompt-banner`.
+The `pwa-install-banner` SHALL use the same visual design language as `signup-prompt-banner`: the persistent-banner surface, placement, action glow and message text below. A banner is persistent, so it SHALL sit on a dark surface marked by a brand-gradient line, and SHALL NOT use the brand-gradient fill of the transient snack bar.
 
 #### Scenario: Banner is fixed at the bottom above the nav bar
 
 - **WHEN** the banner is visible
-- **THEN** the banner SHALL be positioned fixed at `inset-block-end: calc(3.5rem + env(safe-area-inset-bottom, 0px))`
+- **THEN** the banner SHALL be positioned fixed with its bottom edge at the bottom navigation bar's height plus the bottom safe-area inset, so that it follows the navigation bar's height if that changes
 - **AND** the banner SHALL span the full inline width of the screen (`inset-inline: 0`)
 
 #### Scenario: Banner frosted glass and gradient border
 
 - **WHEN** the banner is rendered
-- **THEN** the background SHALL use a frosted glass surface (dark base at ~85% opacity with `backdrop-filter: blur`)
+- **THEN** the background SHALL be the app's base surface colour at 85% opacity with a backdrop blur, the same surface as `signup-prompt-banner`
 - **AND** the top border SHALL be a 2px gradient from `--color-brand-primary` to `--color-brand-secondary`
+- **AND** the banner SHALL NOT be filled with the brand gradient
 
 #### Scenario: CTA button glow pulse animation
 
-- **WHEN** the banner is rendered
+- **WHEN** the banner becomes visible
 - **AND** `prefers-reduced-motion` is not set to `reduce`
-- **THEN** the CTA button SHALL display a continuous glow pulse animation using `--color-brand-primary` cycling every 2.5 seconds
+- **THEN** the CTA button SHALL glow in `--color-brand-primary` three times, over 1.2 seconds each, the timing of the snack bar's attention glow
+- **AND** the CTA button SHALL then stay still for as long as the banner is shown
+
+#### Scenario: Banner message text
+
+- **WHEN** the banner is rendered
+- **THEN** the message SHALL use the primary text colour at full opacity and font weight 500, the same as `signup-prompt-banner`'s message
+- **AND** the message SHALL measure at least 4.5:1 against the banner's surface
 
 #### Scenario: Reduced motion — no animation
 
@@ -277,9 +257,7 @@ The `pwa-install-banner` SHALL use the same visual design language as `signup-pr
 
 - **WHEN** the banner becomes visible
 - **AND** `prefers-reduced-motion` is not set to `reduce`
-- **THEN** the banner SHALL animate in with a slide-up from below over 400ms
-
----
+- **THEN** the banner SHALL animate in with a slide-up from below and a fade-in over 350ms (the app's medium motion duration), the same entrance as `signup-prompt-banner`
 
 ### Requirement: Banner Accessibility
 
