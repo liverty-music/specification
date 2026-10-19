@@ -60,9 +60,9 @@ The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-no
 
 #### Scenario: Snack severity visual variants
 - **WHEN** a snack has severity `info`
-- **THEN** the background SHALL use the brand gradient (`--color-brand-primary` to `--color-brand-secondary`)
+- **THEN** the background SHALL use a gradient in the brand hues (from brand-primary's hue to brand-secondary's), darkened so that white text meets 4.5:1 across it
 - **WHEN** a snack has severity `warning`
-- **THEN** the background SHALL use a warm amber gradient
+- **THEN** the background SHALL use a deep amber gradient, dark enough that white text meets 4.5:1 across it
 - **WHEN** a snack has severity `error`
 - **THEN** the background SHALL use a deep red gradient
 
@@ -166,3 +166,15 @@ When the update snack is displayed, its action button (labelled with `pwa.update
 - **WHEN** the update snack is visible
 - **THEN** it SHALL show no leading icon
 - **AND** on a 360px-wide screen its message SHALL fit one line beside the action
+
+### Requirement: Snack text meets WCAG AA contrast
+
+Every snack bar's message and its action label SHALL keep a contrast ratio of at least 4.5:1 against the container colour behind them at every point of the container's gradient, for every severity. This applies to the action's own fill as well: the on-container action's translucent white fill over the gradient. The minimum SHALL be met by the container colours and SHALL NOT depend on the text being large. The brand colours used by other surfaces (the FAB, the navigation bar, the filled button) SHALL NOT change for this.
+
+#### Scenario: Message contrast on every severity
+- **WHEN** an info, a warning and an error snack bar are each shown
+- **THEN** the white message SHALL measure at least 4.5:1 against every point of that snack's container gradient, both ends included
+
+#### Scenario: Action contrast on every severity
+- **WHEN** a snack bar with an action (such as the update snack) is shown in each severity
+- **THEN** the action's label SHALL measure at least 4.5:1 against the action's translucent fill laid over every point of the container gradient, both ends included

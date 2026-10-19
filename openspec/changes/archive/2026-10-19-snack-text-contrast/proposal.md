@@ -4,9 +4,9 @@ The fan app's snack bars put white text on bright gradients that fall short of W
 
 ## What Changes
 
-- The info snack keeps the brand hues and chroma, and its gradient is darkened: brand-primary's hue at oklch lightness 51.5%, brand-secondary's at 49%.
+- The info snack keeps the brand hues and chroma, and its gradient is darkened: brand-primary's hue at oklch lightness 50.5%, brand-secondary's at 48%.
 - The warning snack keeps its amber hue and chroma at lightness 47.5% on both stops.
-- With these colours, the white message and the update snack's compact on-container action both reach 4.5:1 at every point of the gradient. The error snack already passes and is unchanged.
+- With these colours, the white message and the update snack's compact on-container action both reach 4.5:1 at every point of the gradient, including mid-way, where the blend of the two hues is darkest for the action. The error snack already passes and is unchanged.
 - The colours are derived inside the snack bar from the brand tokens. The brand tokens and every other brand surface stay as they are: the FAB fill, the navigation's top line and the filled button.
 - The organizer console's snack bar sets its own container colour and is unaffected.
 
@@ -28,4 +28,4 @@ None.
 
 - **frontend only.** No proto, backend or infrastructure change.
 - `shared/ui/snack-bar/snack-bar.css` (info and warning gradient stops).
-- `shared/ui/snack-bar/snack-bar.stories.ts` (contrast assertions; the Info, Warning and UpdateAction screenshots change).
+- `shared/ui/snack-bar/snack-bar.stories.ts` (contrast assertions along each gradient; the severity stories gain an action; the UpdateAction screenshot changes, the only snack story with a baseline).
