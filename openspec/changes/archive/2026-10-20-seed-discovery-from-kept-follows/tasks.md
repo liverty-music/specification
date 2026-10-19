@@ -12,4 +12,4 @@ All tasks are in the frontend repository. Each test carries `@spec components/in
 
 ## 3. Release and measure
 
-- [ ] 3.1 Release, then measure about 10 signed-in loads on the reference setup and record the medians under "Measurements" in design.md
+- [x] 3.1 Release, then measure about 10 signed-in loads on the reference setup and record the medians under "Measurements" in design.md

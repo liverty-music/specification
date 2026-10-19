@@ -565,9 +565,16 @@ The system SHALL cache the last successfully generated bubble field (`Artist[]`)
 
 #### Scenario: Initial load starts during start-up when the app opens on Discovery
 - **WHEN** the page is opened on Discovery
-- **THEN** the initial load SHALL start during app start-up, without waiting for the route to load: once the session is known, after the follow list for a signed-in fan and after restoring an onboarding guest's persisted follows
+- **THEN** the initial load SHALL start during app start-up, without waiting for the route to load: once the session is known; for a signed-in fan, at once when follows are kept on the device for the account (see "Seeds come from the follows kept on the device"), otherwise after the follow list; and after restoring an onboarding guest's persisted follows
 - **AND** if the field is built before the route shows it, the route SHALL show those artists directly, without ghost placeholder bubbles
 - **AND** the route SHALL NOT start a second initial load while the start-up load is running
+
+#### Scenario: Seeds come from the follows kept on the device
+- **WHEN** a signed-in fan's follow list has been loaded on this device before, for the same account
+- **AND** the app opens on Discovery
+- **THEN** the start-up initial load SHALL choose its seeds from the followed artists kept from that load, without waiting for this session's follow list
+- **AND** the field SHALL still exclude the artists in the follow list current when the field is set
+- **AND** signing out SHALL remove the kept follows, and another account SHALL NOT use them
 
 #### Scenario: Cache is updated after each successful load
 - **WHEN** an initial load or refresh completes successfully
