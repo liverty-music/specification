@@ -7,21 +7,40 @@ syntax = "proto3";
 package liverty_music.rpc.organizer.payout_account.v1;
 
 import "buf/validate/validate.proto";
-import "google/api/field_behavior.proto";
+import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/payout_account.proto";
 
 // PayoutAccountService is the organizer-facing surface for the Organizer's
 // PayoutAccount: an authenticated member reads its Organizer's account at the
-// payment provider and its payout onboarding status. The caller's Organizer is
-// resolved from the token (org-scoped from the role claim; failures that would
-// concern another org never reveal whether such an Organizer exists), mirroring
-// the organizer OrganizerService.
+// payment provider and its payout onboarding status, and starts the payment
+// provider's onboarding. The caller's Organizer is resolved from the token
+// (org-scoped from the role claim; failures that would concern another org
+// never reveal whether such an Organizer exists), mirroring the organizer
+// OrganizerService.
 service PayoutAccountService {
   // Get returns the caller's own PayoutAccount and its payout onboarding
-  // status, plus a provider-hosted URL to (re)start or complete the payment
-  // provider's identity check when action is still required. Onboarding status
-  // never blocks ticket sale or issuance; only the payout waits until the
-  // account is active.
+  // status. It only reads: it never opens an account at the payment provider
+  // and never creates an onboarding URL. Onboarding status never blocks ticket
+  // sale or issuance; only the payout waits until the account is active.
+  //
+  // Possible errors:
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated. Because
+  //   this is the caller's own org, the state is not concealed.
+  // - NOT_FOUND: The caller's Organizer has no PayoutAccount yet; call
+  //   StartOnboarding to open one.
+  // - PERMISSION_DENIED: The token carries no organizer-console role, its audience
+  //   lacks the organizer-console project id, or its login-scope org and role-claim
+  //   org disagree, or the caller's Organizer is no longer found. The response
+  //   never reveals whether such an Organizer exists.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Get(GetRequest) returns (GetResponse);
+
+  // StartOnboarding opens the caller's Organizer's PayoutAccount at the payment
+  // provider when it has none (stored pending, with the owner's email as
+  // contact) and returns a fresh single-use URL to the provider-hosted
+  // onboarding page. Every call returns a new URL, whatever the account's
+  // status. The provider brings the member back to the organizer console when
+  // they finish or when the URL has expired.
   //
   // Possible errors:
   // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated. Because
@@ -31,29 +50,35 @@ service PayoutAccountService {
   //   org disagree, or the caller's Organizer is no longer found. The response
   //   never reveals whether such an Organizer exists.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  rpc Get(GetRequest) returns (GetResponse);
+  // - UNAVAILABLE: The payment provider cannot be reached. An account opened
+  //   before the failure stays stored, so a later call returns a URL for it.
+  rpc StartOnboarding(StartOnboardingRequest) returns (StartOnboardingResponse);
 }
 
 // GetRequest is empty: the caller's Organizer, and its PayoutAccount, are
 // resolved from the authenticated token.
 message GetRequest {}
 
-// GetResponse returns the caller's PayoutAccount plus an optional
-// onboarding-continuation URL.
+// GetResponse returns the caller's PayoutAccount.
 message GetResponse {
   // The caller's PayoutAccount and its payout onboarding status.
   entity.v1.PayoutAccount payout_account = 3 [(buf.validate.field).required = true];
 
-  // A provider-hosted onboarding URL to (re)start or complete the identity
-  // check, present only when action is still required (status is not ACTIVE).
-  // Empty once the account is active.
-  string onboarding_url = 2 [
-    (google.api.field_behavior) = OPTIONAL,
-    (buf.validate.field).string.max_len = 2048
-  ];
-
   // Field 1 was the account under its former name and type, replaced by
-  // payout_account.
-  reserved 1;
-  reserved "account";
+  // payout_account. Field 2 was the onboarding URL, now returned by
+  // StartOnboarding.
+  reserved 1, 2;
+  reserved "account", "onboarding_url";
+}
+
+// StartOnboardingRequest is empty: the caller's Organizer, and its
+// PayoutAccount, are resolved from the authenticated token.
+message StartOnboardingRequest {}
+
+// StartOnboardingResponse returns the URL of the payment provider's onboarding
+// page for the caller's PayoutAccount.
+message StartOnboardingResponse {
+  // The provider-hosted onboarding page the client opens. Single use and valid
+  // for a short time; call StartOnboarding again for a new one.
+  entity.v1.Url onboarding_url = 1 [(buf.validate.field).required = true];
 }
