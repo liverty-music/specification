@@ -15,7 +15,7 @@ The system SHALL initialize the bubble pool differently based on whether the use
 - **WHEN** the discovery page loads
 - **AND** the user follows one or more artists (including artists restored from persisted guest state)
 - **THEN** the system SHALL randomly select up to 5 followed artists as seeds
-- **AND** the system SHALL call `ArtistService.ListSimilar` for each seed in parallel with the limit evenly distributed to fill 50 total (e.g., 5 seeds × limit=10, 2 seeds × limit=25)
+- **AND** the system SHALL call `ArtistService.ListSimilar` for each seed in parallel with the limit evenly distributed to fill the number of bubbles the screen shows: 50 total (e.g., 5 seeds × limit=10, 2 seeds × limit=25), or 30 on a screen narrower than 390 px (e.g., 5 seeds × limit=6)
 
 #### Scenario: Seed results are revealed as each seed answers
 - **WHEN** the initial load takes the similar-seed path on a cold visit
@@ -37,7 +37,7 @@ The system SHALL initialize the bubble pool differently based on whether the use
 #### Scenario: Seed selection with fewer than 5 followed artists
 - **WHEN** the user follows fewer than 5 artists
 - **THEN** the system SHALL use all followed artists as seeds
-- **AND** the limit per seed SHALL be `floor(50 / followedCount)`
+- **AND** the limit per seed SHALL be `floor(N / followedCount)`, where N is the number of bubbles the screen shows (50, or 30 below 390 px)
 
 #### Scenario: Follow state hydration on page reload
 - **WHEN** the discovery page loads during onboarding
@@ -90,9 +90,15 @@ The system SHALL cache the last successfully generated bubble field (`Artist[]`)
 - **AND** the followed artists SHALL NOT appear as bubbles in the physics engine
 
 #### Scenario: Cold visit uses ghost bubbles
-- **WHEN** no cached field exists (first visit or cache cleared)
+- **WHEN** Discovery is shown for the first time in the page and no field has been built yet (the initial load is still running)
 - **THEN** the route SHALL initialize with ghost placeholder bubbles
 - **AND** ghost bubbles SHALL switch to real artists in place as artists arrive (per seed on the similar-seed path, all at once on the top-artists path)
+
+#### Scenario: Initial load starts during start-up when the app opens on Discovery
+- **WHEN** the page is opened on Discovery
+- **THEN** the initial load SHALL start during app start-up, without waiting for the route to load: once the session is known, after the follow list for a signed-in fan and after restoring an onboarding guest's persisted follows
+- **AND** if the field is built before the route shows it, the route SHALL show those artists directly, without ghost placeholder bubbles
+- **AND** the route SHALL NOT start a second initial load while the start-up load is running
 
 #### Scenario: Cache is updated after each successful load
 - **WHEN** an initial load or refresh completes successfully
@@ -117,11 +123,15 @@ When a bubble appears (a ghost switching to a real artist, or a new artist added
 - **THEN** the artist name is readable no later than with motion enabled
 
 ### Requirement: Cold-load reveal timings are reported
-On a cold visit to Discovery (no cached field), the fan app SHALL send exactly one usage analytics event once all bubbles show artist names, carrying the time from the moment Discovery was opened to: the first ghost bubble drawn, the first artist name drawn, and every bubble showing an artist name, in milliseconds. The moment Discovery was opened is the start of the page load when Discovery is the first page of the visit, and the start of the in-app navigation otherwise; the event SHALL state which of the two applies. It SHALL also state which initial-load path ran (top artists or similar seeds) and the number of seeds. Re-entries that paint a cached field SHALL NOT send this event. The event SHALL obey the analytics consent setting and the query-string rule of the analytics surface.
+On a cold visit to Discovery (the first time Discovery is shown in the page, including when the start-up load already built the field), the fan app SHALL send exactly one usage analytics event once all bubbles show artist names, carrying the time from the moment Discovery was opened to: the first bubble drawn (a ghost placeholder, or an artist when the artists arrive before any ghost is drawn), the first artist name drawn, and every bubble showing an artist name, in milliseconds. The moment Discovery was opened is the start of the page load when Discovery is the first page of the visit, and the start of the in-app navigation otherwise; the event SHALL state which of the two applies. It SHALL also state which initial-load path ran (top artists or similar seeds) and the number of seeds. Re-entries that paint a cached field SHALL NOT send this event. The event SHALL obey the analytics consent setting and the query-string rule of the analytics surface.
 
 #### Scenario: Cold visit with followed artists
 - **WHEN** a fan who follows artists opens Discovery with no cached field and analytics on
 - **THEN** one event is sent with the similar-seed path, the seed count, whether Discovery was the first page, and the three timings in milliseconds
+
+#### Scenario: Artists arrive before a ghost is drawn
+- **WHEN** a cold visit's artists arrive before the first ghost bubble is drawn
+- **THEN** one event is sent, with the time to the first bubble drawn taken from the first artist bubble
 
 #### Scenario: Re-entry
 - **WHEN** the fan returns to Discovery within the session and the cached field is painted
@@ -145,3 +155,16 @@ A ghost placeholder bubble SHALL NOT respond to a tap or to keyboard selection: 
 #### Scenario: Tap on a revealed artist while other bubbles are still ghosts
 - **WHEN** the fan taps a revealed artist bubble while other bubbles are still ghosts
 - **THEN** the artist is followed and similar artists are requested once the initial load has finished, as for any tap
+
+### Requirement: Cold load meets a time budget
+On the reference setup, a cold load of Discovery SHALL draw the first artist name within 6.0 s of the start of the page load for a signed-in fan with followed artists, and within 3.0 s for a guest, each as the median of about 10 loads. The time to the first bubble and from the first bubble to the first name SHALL be measured and recorded with each release of this work, but are not held to a bound: drawing the ghost bubbles sooner lengthens the second without making the fan wait longer. The reference setup is desktop Chrome with device emulation at a 375 px viewport, DevTools' "Slow 4G" network throttling and 4x CPU throttling (the Lighthouse mobile profile), and the HTTP cache enabled, on a repeat visit (the app's code already cached). The times are those reported by the cold-load reveal timings (`ghosts_ms`, `first_name_ms`). A first visit, which downloads the app's code, is reported but not held to the bounds.
+
+#### Scenario: Signed-in fan with followed artists
+- **WHEN** a signed-in fan who follows artists opens Discovery about 10 times on the reference setup
+- **THEN** the median time from the start of the page load to the first artist name is at most 6.0 s
+- **AND** the median times to the first bubble and from the first bubble to the first name are recorded
+
+#### Scenario: Guest
+- **WHEN** a guest who follows no artists opens Discovery about 10 times on the reference setup
+- **THEN** the median time from the start of the page load to the first artist name is at most 3.0 s
+- **AND** the median times to the first bubble and from the first bubble to the first name are recorded

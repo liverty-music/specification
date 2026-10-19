@@ -14,6 +14,7 @@ On a cold visit to Discovery, the ghost bubbles stay on screen for seconds befor
 - **Cold-load timings are measured.** One analytics event per cold visit records the time to ghost bubbles, the first name and all names. The before and after can then be compared on real devices in production.
 - **Static assets compressed and cached.** The fan web server compresses text assets and serves hashed `/assets/*` files as immutable for one year. Today the 446 KB entry script and other scripts are sent uncompressed, with no cache header.
 - **Physics engine fetched earlier.** The physics library chunk is requested when the Discovery route starts loading, not after the canvas is attached.
+- **Cold-load time budget (added 2026-10-19).** After the reveal work, the data arrives before the canvas can draw anything: the first bubble takes about 5 s at 4x CPU throttling, almost all of it app start-up. Discovery gets a time budget on a fixed reference setup: the first artist name within 6.0 s of the page start for a signed-in fan and 3.0 s for a guest (medians); the first bubble and the first bubble → first name are recorded with each release but not bound (D13 says why). The work also removes waste from start-up on the way to Discovery: what blocks the first render, the `config.json` round trip, the generic boot skeleton, and drawing ghost bubbles before the physics engine is ready.
 
 ## Capabilities
 
@@ -23,7 +24,7 @@ On a cold visit to Discovery, the ghost bubbles stay on screen for seconds befor
 
 ### Modified Capabilities
 
-- `components/infrastructure/fan/web/route/discovery`: the similar-seed initial load reveals per seed. The sparse top-up may be fetched before it is needed. A cold visit switches ghosts to real artists progressively. Three additions: names fade in within a real-time bound, ghost bubbles ignore taps, and cold-load reveal timings are sent as an analytics event.
+- `components/infrastructure/fan/web/route/discovery`: the similar-seed initial load reveals per seed. The sparse top-up may be fetched before it is needed. A cold visit switches ghosts to real artists progressively. Four additions: names fade in within a real-time bound, ghost bubbles ignore taps, cold-load reveal timings are sent as an analytics event, and a cold load meets a time budget on a reference setup.
 - `components/usecase/artist/list-similar`: always looks up 50 similar artists and returns the first `limit`. The limit range becomes 0–50. A recent result is reused per artist id for 6 hours, whatever the limit.
 - `components/usecase/artist/list-top`: a recent result is reused for 6 hours (was 1 hour).
 - `components/usecase/artist/search`: a recent result is reused for 6 hours (was 1 hour).
@@ -46,4 +47,5 @@ Unchanged:
   - Discovery route: `routes/discovery/discovery-route.ts`.
   - Analytics events: `services/analytics-events.ts`.
   - Web server config: `Caddyfile`.
+  - App start-up on the way to Discovery (cold-load budget): `main.ts`, the auth and user-hydration start-up tasks, the app-shell route table, the analytics and validator start-up.
 - **Verification:** the dev environment is stopped. Verification uses unit tests (including one that checks the cached label layout equals the current per-frame layout, since the bubble canvas has no visual-regression baseline) and the new cold-load analytics event in production, released first to record a baseline.
