@@ -27,4 +27,11 @@ Rejected: hydrating `FollowStore.followedArtists` from the kept list. Every scre
 
 ## Measurements
 
-To be recorded after release: about 10 signed-in repeat-visit loads on the reference setup, `ghosts_ms` and `first_name_ms` medians, against v1.107.0's 2,996 / 5,008 ms.
+v1.110.0, 2026-10-19 15:30 UTC, owner's account, clean measuring Chrome (no extensions, the profile's other tabs on `about:blank`), iPhone SE emulation, Slow 4G and 4x CPU through CDP, 10 repeat-visit loads (medians):
+
+| build | ghosts_ms | first_name_ms | first `ListSimilar` sent | follow list responseEnd |
+|---|---|---|---|---|
+| v1.107.0 | 2,996 | 5,008 | 3,888 | 2,292 |
+| v1.110.0 | 3,295 (2,820–3,970) | 4,643 (3,856–5,244) | 2,128 (1,573–2,682) | 2,736 |
+
+The seeds now go out about 1.8 s sooner, before the follow list answers. The first name came 365 ms sooner, much less than the seeds: the similar answers (about 2.7–3.3 s) now arrive before the ghosts (3.3 s), and the first name follows 1.3 s after the ghosts. The time to it is the main thread rendering the route and the first frames, not the network. The two sets were taken in different sessions on a shared PC, so differences under about 300 ms are within the noise.
