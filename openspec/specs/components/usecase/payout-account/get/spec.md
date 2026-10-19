@@ -2,7 +2,7 @@
 
 ## Purpose
 
-PayoutAccountUseCase.Get returns an Organizer's payout-receiving account and its payout onboarding status, opening the account on first use, and gives a link to continue the 本人確認 (identity check) while the account cannot yet receive payouts.
+PayoutAccountUseCase.Get returns an Organizer's payout-receiving account and its payout onboarding status, refreshed from the payment provider. It only reads: PayoutAccountUseCase.StartOnboarding opens the account and gives the link to the 本人確認 (identity check).
 
 ## Requirements
 
