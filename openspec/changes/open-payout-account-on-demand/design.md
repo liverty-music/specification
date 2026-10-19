@@ -14,7 +14,7 @@ See proposal.md - Why. Current code (backend and frontend `origin/main`, 2026-10
 
 - No call opens a payout account or creates an onboarding link except `StartOnboarding`.
 - `Get` is a plain read with NotFound for "no account yet".
-- The member leaves for Stripe and comes back in one tab, landing on Settings at the payout account.
+- The member leaves for Stripe and comes back in one tab, through the return address configured today.
 
 **Non-Goals:**
 
@@ -40,7 +40,7 @@ Usecase `StartOnboarding(ctx, organizerID) (onboardingURL string, err error)`:
 2. `GetByOrganizerID`; on NotFound `Create(organizerID, owner email)` → `Upsert` pending (the old `provisionAndPersist` minus the link).
 3. `CreateOnboardingLink(providerAccountID, returnURL)`; a failure fails the call (unlike the old Get, the link is the whole point; a swallowed failure would leave the button doing nothing).
 
-No status refresh (Get does that, and Settings reads Get after the member returns). No guard on an active account: the console never offers the action then, and refusing it would add a FailedPrecondition branch no screen reaches.
+No status refresh (Get does that, and Home reads Get when the member returns). No guard on an active account: the console never offers the action then, and refusing it would add a FailedPrecondition branch no screen reaches.
 
 Double clicks and retries: Settings disables the action while a call is in flight; across calls, `Create`'s idempotency key returns the same provider account within 24 hours (`components/entity/payout-account/create` "Create does not open a second account on retry") and `Upsert` keeps one row per Organizer, so an Upsert or link failure followed by a retry reuses the account.
 
@@ -72,19 +72,17 @@ message StartOnboardingResponse {
 
 `entity.v1.Url` (URI, 1 to 2048 characters) follows `IdentityVerificationService.StartResponse.redirect_url`, instead of the bare `string` the removed field used. Removing field 2 fails `buf breaking`; the PR carries the `buf skip breaking` label. Release as the next minor (v0.90.0 after v0.89.0).
 
-### D4. Return address: one console address that forwards to Settings at the payout account
+### D4. Return address: unchanged
 
-Stripe's `return_url` and `refresh_url` stay one configured address. The console adds an unframed address `/payout-account` that, like the landing, reads the caller's Organizer (`OrganizerService.Get` through the console context) and forwards to `/organizers/{id}/settings#payout`; cloud-provisioning sets `STRIPE_ONBOARDING_RETURN_URL` to `https://organizer.liverty-music.app/payout-account` (prod) and `https://organizer.dev.liverty-music.app/payout-account` (dev, unverifiable while dev is stopped). The member arrives signed in (same tab, the console session is still there); a member whose session expired goes through sign-in as for any console address.
+Stripe's `return_url` and `refresh_url` both stay `STRIPE_ONBOARDING_RETURN_URL` (`stripe_settlement.go:396-397` passes the usecase's `returnURL` as both), which is `https://organizer.liverty-music.app/` in prod: the landing, which forwards to the caller's Home. Home reads Get and shows the 要対応 item while the account is not active, and that item opens Settings at the payout account (owner decision on #1183, 2026-10-19). StartOnboarding passes the same `returnURL` the old Get passed, so no backend config and no cloud-provisioning change.
 
-Alternative rejected: the backend builds `/organizers/{id}/settings#payout` from a console base URL. It teaches the backend the console's route table, changes the meaning of the config value, and puts a fragment into Stripe's redirect. With the forward address the backend code does not change at all for the return address.
-
-Order safety: before the frontend ships `/payout-account`, the console's fallback opens the landing, which forwards to Home, so the config change may merge before or after the frontend.
+Alternatives rejected: a console address that forwards to `/organizers/{id}/settings#payout`, or the backend building that URL from a console base URL. Each adds a route or config semantics for one fewer click after Stripe, and Home already says what is left to do.
 
 ### D5. Frontend
 
 - `PayoutAccountClient.get` returns `PayoutAccountView | null`: `null` on `Code.NotFound` (a normal state, not logged as a failure); other errors propagate as today. `onboardingUrl` leaves `PayoutAccountView`. New `startOnboarding(signal?) → string`.
 - Home: the home model's payout source becomes "absent | status"; absent and not-active both produce the 要対応 item (`organizer/model/home-model.ts:108-109`).
-- Settings: three states (`none`, account, error). The button calls `startOnboarding()`, then `window.location.assign(url)`; it is disabled while the call runs. On failure the page shows `settings.payout.startFailed` (Stripe のページを開けませんでした。もう一度お試しください。) chosen from code, never the server text (archived `web-error-copy`). Drop the `visibilitychange` re-read (no second tab), `target="_blank"`, and the `newTab` / `opensNewTab` copy; add the same-tab explanation (e.g. Stripe のページに移動します。入力が終わると、Stripe からこのページに戻ります。), `settings.payout.start` (Stripe で登録する) and an external-site marker for screen readers. English catalog entries change alongside.
+- Settings: three states (`none`, account, error). The button calls `startOnboarding()`, then `window.location.assign(url)`; it is disabled while the call runs. On failure the page shows `settings.payout.startFailed` (Stripe のページを開けませんでした。もう一度お試しください。) chosen from code, never the server text (archived `web-error-copy`). Drop the `visibilitychange` re-read (no second tab), `target="_blank"`, and the `newTab` / `opensNewTab` copy; add the same-tab explanation (e.g. Stripe のページに移動します。入力が終わると、Stripe からコンソールのホームに戻ります。), `settings.payout.start` (Stripe で登録する) and an external-site marker for screen readers. English catalog entries change alongside.
 
 ### D6. Production clean-up of the test Organizers
 
@@ -95,16 +93,15 @@ Order safety: before the frontend ships `/payout-account`, the console's fallbac
 - [Between the backend and frontend deploys the deployed console is wrong] An Organizer without an account sees "payout status could not be loaded" on Home and Settings (old client treats NotFound as a failure), and a pending Organizer sees no Stripe button (old client reads the now-absent `onboarding_url`). → Accepted: the product has no real Organizers yet (`liverty-music/CLAUDE.md` "Current operating state"). Deploy the frontend right after the backend; no compatibility shim (keeping `onboarding_url` populated for one release would mean a second proto change and Get creating links again).
 - [Frontend before backend would break onboarding] `StartOnboarding` would answer Unimplemented. → The frontend is released only after the backend release is confirmed in production (task 5.1).
 - [An Organizer that starts onboarding and abandons it keeps an account] Same as today, but now only after an explicit request. → Nothing to do; Delete still refuses it, which is the intended guard for an Organizer that may have provider records.
-- [Stripe's `refresh_url` now lands on Settings instead of a fresh link] The member presses the button again. → Matches the owner decision; one extra click on an expired link.
+- [Stripe's return and refresh land on Home, not on Settings] One more click (the 要対応 item) to see the status or continue an expired link. → Owner decision; Home already names what is left to do.
 - [Break-glass write in production] → Owner confirms at that time; one transaction with an expected row count, read back afterwards.
 
 ## Migration Plan
 
 1. specification: proto PR (`buf skip breaking`), merge, Release v0.90.0, wait for `buf-release.yml`.
 2. backend: consume v0.90.0, Get read-only, StartOnboarding, handler; release; confirm the rollout in production.
-3. cloud-provisioning (any time; D4 order safety): `STRIPE_ONBOARDING_RETURN_URL` → `/payout-account`.
-4. frontend: consume v0.90.0, client, Home, Settings, `/payout-account`; release right after step 2 is in production.
-5. Production check and clean-up (D6), then close #1176.
+3. frontend: consume v0.90.0, client, Home, Settings; release right after step 2 is in production.
+4. Production check and clean-up (D6), then close #1176.
 
 Rollback: backend and frontend roll back together to their previous releases (the old frontend works with the old backend); the proto release stays (old backends ignore it).
 

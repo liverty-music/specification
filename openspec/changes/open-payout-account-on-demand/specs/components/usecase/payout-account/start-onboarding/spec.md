@@ -30,7 +30,7 @@ StartOnboarding SHALL load the Organizer through Organizer.Get, failing with Not
 
 ### Requirement: StartOnboarding returns a fresh onboarding link
 
-StartOnboarding SHALL return a new link from PayoutAccount.CreateOnboardingLink on every call, whatever the account's status, with the organizer console's payout account settings as the address the provider brings the member back to. When the link cannot be created, StartOnboarding SHALL fail with that error, such as Unavailable, keeping any account it opened stored, so a later call returns a link for the same account.
+StartOnboarding SHALL return a new link from PayoutAccount.CreateOnboardingLink on every call, whatever the account's status, with the organizer console's address, which opens the member's Home, as the address the provider brings the member back to, both when the member finishes and when the link has expired. When the link cannot be created, StartOnboarding SHALL fail with that error, such as Unavailable, keeping any account it opened stored, so a later call returns a link for the same account.
 
 #### Scenario: Two calls
 
