@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The organizer-facing payout account boundary: it resolves the caller's own Organizer from their sign-in and returns that Organizer's payout-receiving account through PayoutAccountUseCase.Get.
+The organizer-facing payout account boundary: it resolves the caller's own Organizer from their sign-in and returns that Organizer's payout-receiving account through PayoutAccountUseCase.Get, or starts its onboarding at the payment provider through PayoutAccountUseCase.StartOnboarding.
 
 ## Requirements
 

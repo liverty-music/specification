@@ -1,0 +1,34 @@
+# Tasks
+
+Order: proto (specification) → Release/BSR → backend in production → frontend. No cloud-provisioning change: Stripe's return and refresh address stays as today (design D4). Every test task cites its scenarios with `@spec <capability-path> "<scenario>"` so `scripts/check-scenario-coverage.py` finds them at archive. Dev is stopped: verification is unit tests, CI and read-only production checks.
+
+## 1. Proto (specification)
+
+- [ ] 1.1 In `proto/liverty_music/rpc/organizer/payout_account/v1/payout_account_service.proto`, per design D3: remove `GetResponse.onboarding_url` and reserve field 2 and its name; add NOT_FOUND to Get's documented errors and drop the onboarding-URL wording from the service and Get comments; add `StartOnboarding` with empty `StartOnboardingRequest` and `StartOnboardingResponse { entity.v1.Url onboarding_url = 1 [required] }` and its documented errors; verify `buf lint` and `buf format -d` are clean and `buf breaking` reports only the field-2 removal
+- [ ] 1.2 Open the specification PR with the `buf skip breaking` label, `Refs #1176`; verify `buf-pr-checks.yml` and CI Success are green, merge, publish Release v0.90.0, and verify `gh run list --repo liverty-music/specification --workflow buf-release.yml --limit 3` shows the run for v0.90.0 succeeded
+
+## 2. Backend usecase (components/usecase/payout-account/get, components/usecase/payout-account/start-onboarding)
+
+- [ ] 2.1 Consume schema v0.90.0 (`consume-proto-release` skill); verify `go build ./...` passes
+- [ ] 2.2 Make `PayoutAccountUseCase.Get` read-only per design D1 (`GetByOrganizerID`, NotFound returned as is, existing status refresh kept; no `Organizer.Get`, no `Create`, `Upsert` or `CreateOnboardingLink`; returns no URL); verify unit tests in `internal/usecase/payout_account_uc_test.go` for `@spec components/usecase/payout-account/get "Organizer without an account"` (asserts `Create` and `Upsert` are not called) and `"Organizer with an account"` (asserts `CreateOnboardingLink` is not called) pass, the existing `"Identity check just cleared"` and `"Status cannot be read"` tests still pass, and the tests of the removed requirements are deleted
+- [ ] 2.3 Add `PayoutAccountUseCase.StartOnboarding` per design D2 (Organizer.Get → GetByOrganizerID → Create + Upsert pending when absent → CreateOnboardingLink with the configured return address; link failure fails the call); verify unit tests for `@spec components/usecase/payout-account/start-onboarding "First start"`, `"Account already open"`, `"Provider unreachable when opening"`, `"Unknown Organizer"`, `"Two calls"` and `"Link cannot be created"` pass with the operations mocked
+
+## 3. Backend RPC (components/adapter/organizer/api/rpc/payout-account)
+
+- [ ] 3.1 In `internal/adapter/rpc/payout_account_handler.go`, Get returns the account without a URL and lets NotFound through as `CodeNotFound`; add `StartOnboarding` behind `resolveCallerOrganizer`, mapping usecase NotFound to PermissionDenied and returning other errors unchanged; verify `internal/adapter/rpc/payout_account_handler_test.go` tests for `@spec components/adapter/organizer/api/rpc/payout-account "Member opens payout settings"`, `"No payout account yet"`, `"Member starts onboarding"` and `"Organizer gone meanwhile"` pass, the audience-gate tests cover StartOnboarding too, and the old Get "Organizer gone meanwhile" test is replaced
+- [ ] 3.2 Open the backend PR (`OpenSpec-Change: open-payout-account-on-demand`), `make check` passes, merge, cut the release; verify the production rollout completed and the fan-api logs show no startup error
+
+## 4. Frontend (components/infrastructure/organizer/web/route/home, components/infrastructure/organizer/web/route/settings)
+
+- [ ] 4.1 Start only after 3.2 is in production. Consume schema v0.90.0; `PayoutAccountClient.get` returns `null` on NotFound and drops `onboardingUrl`; add `startOnboarding()` (design D5); verify client unit tests for NotFound → `null`, other errors rethrown, and `startOnboarding` returning the URL pass
+- [ ] 4.2 Home: an absent payout account yields the 要対応 item like a pending one and is not a load failure; verify `test/organizer/model/home-items.spec.ts` tests for `@spec components/infrastructure/organizer/web/route/home "No payout account yet"` and the existing `"Payout account not finished"` pass, plus a home-route test that a NotFound from Get shows the item and not the payout-unavailable message
+- [ ] 4.3 Settings: no-account state, StartOnboarding behind Stripe で登録する / Stripe で登録を続ける with the action disabled while the call runs, same-tab `location.assign`, fixed failure copy, removal of the new-tab copy and the `visibilitychange` re-read, ja and en catalog entries (design D5); verify `test/organizer/settings/settings-route.spec.ts` tests for `@spec components/infrastructure/organizer/web/route/settings "No payout account yet"`, `"Onboarding not finished"`, `"Member goes to Stripe"`, `"Stripe's page cannot be prepared"` (server text absent from the DOM) and `"Active account"` pass, and that the Stripe hand-off copy says Stripe brings the member back to Home
+- [ ] 4.4 Return through Home: verify a test for `@spec components/infrastructure/organizer/web/route/settings "Back from onboarding"` (Home re-reads Get on load: an active account shows no payout item, a pending one shows 入金口座の登録が終わっていません) and `"Onboarding page expired"` (Home's 要対応 item opens Settings at the payout account, which offers Stripe で登録を続ける) passes in `test/organizer/home` and `test/organizer/settings`
+- [ ] 4.5 Open the frontend PR (`OpenSpec-Change: open-payout-account-on-demand`), `make check` passes, merge, cut the release; verify the organizer console deploy and post-deploy smoke succeed
+
+## 5. Production check and clean-up
+
+- [ ] 5.1 Read-only production check after 4.5: record the `payout_accounts` row count (`db-proxy` read-only login) at the backend release and again after the frontend release, and verify in the backend logs that every row added in between comes from a `PayoutAccountService/StartOnboarding` call, none from `Get`; record both counts here
+- [ ] 5.2 With the owner's confirmation of the production write at that time, break-glass login as `postgres` (cloud-provisioning `docs/runbooks/cloud-sql-access.md`) and in one transaction delete the `payout_accounts` rows of `fan-test` (01a142c8-2971-7993-a41f-620783586665) and `fan-test-2` (01a142c8-64c5-7b0d-b3e9-4b6c6768834b), expecting 2 rows (design D6); verify the read-back returns no row for either
+- [ ] 5.3 Delete `fan-test` and `fan-test-2` from the prod admin Organizers screen; verify both disappear from the list and a read-only query finds no `organizers` row and no `payout_accounts` row for either id; their Stripe accounts are kept
+- [ ] 5.4 Close liverty-music/specification#1176 with a comment linking the merged PRs and the results of 5.1-5.3; verify the issue shows Closed
