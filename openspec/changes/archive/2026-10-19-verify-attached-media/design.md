@@ -13,6 +13,7 @@ See proposal.md. The upload authorization from SeriesImageUseCase.CreateUploadUr
 ### D1 — Ownership is proven by the uploaded object, not by a mint-time record
 
 - SetCoverImage checks `SeriesImage.OriginalExists(callerOrg, seriesImageID)` (a metadata read of `<callerOrg>/<seriesImageID>` in the internal bucket). The object can exist only if the caller's Organizer uploaded it with its own authorization.
+- Access (verified 2026-10-19, `gcloud storage buckets get-iam-policy gs://liverty-music-prod-internal`): `serviceAccount:organizer-console-api@liverty-music-prod.iam.gserviceaccount.com` holds `roles/storage.objectAdmin` on the bucket, which includes `storage.objects.get`; no new grant is needed.
 - When the original is gone, `SeriesImage.Get` decides: recorded for the caller → a repeated attach after processing, which succeeds without announcing; recorded for another Organizer → PermissionDenied; not recorded → FailedPrecondition (never uploaded, or the authorization expired unused).
 - **Rejected — record the SeriesImage at mint time:** a new row per upload authorization, most never attached, and a change to the CreateUploadUrl promise ("nothing is stored") for the same guarantee.
 
