@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Invites a signed-in, not-yet-installed user to install the app to their device once onboarding is complete, adapting its install flow to the platform, and hiding itself once installed, dismissed for the session, or while another prompt is open.
+Invites a signed-in, not-yet-installed user to install the app to their device once onboarding is complete, adapting its install flow to the platform, and hiding itself once installed or while another prompt is open. It offers no way to close it.
 
 ## Requirements
 
