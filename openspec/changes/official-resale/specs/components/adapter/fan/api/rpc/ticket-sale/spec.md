@@ -1,0 +1,15 @@
+## MODIFIED Requirements
+
+### Requirement: A returned sale never shows its counts
+
+A TicketSale returned by the fan boundary SHALL carry its id, Series, name, method, start time, end time and verification requirement, and its one TicketType for the event with the TicketType's id, event, price, per-account limit and, for a FirstCome sale, its state, whether it is LowStock, whether its resale is open and whether resale is available. It SHALL NOT carry a TicketType's quantity, sold count, held count or free resale count, nor the TicketTypes of the sale's other events, so no fan learns how many tickets remain or how many are listed.
+
+#### Scenario: Few left without a count
+
+- **WHEN** ListByEvent returns a sale whose first-come TicketType of 150 is OnSale and LowStock with 15 remaining
+- **THEN** the response carries its state, LowStock and price, and no quantity, sold count or held count
+
+#### Scenario: Resale without a count
+
+- **WHEN** ListByEvent returns a sold-out first-come TicketType with 3 free listings
+- **THEN** the response says resale is open and available and carries no count of listings

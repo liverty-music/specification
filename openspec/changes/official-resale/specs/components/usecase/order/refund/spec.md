@@ -1,55 +1,44 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
-### Requirement: Listing user's refund triggered on resale completion
+### Requirement: Fan refunded the full amount
 
-The system SHALL refund the listing's user **their own original payment minus the resale
-fee**, **triggered at the atomic match** (the resale completing), **NOT held to
-the event**. The net settlement to the listing's user SHALL carry a **hold-back reserve —
-a fixed window measured from the match** (a dispute buffer; ~days to ~3 weeks, the
-exact length a tunable operational parameter) — after which it releases; it MUST
-NOT be tied to the event occurring. If the listing user's original
-payment method can no longer be reversed at settlement time (e.g. an expired card),
-the system SHALL fall back to an alternative payout (e.g. bank transfer).
+For the reason Cancellation, Refund SHALL refund the price of the Order's Tickets that are still Issued — the Order's amount divided by its number of Tickets, times the number still Issued — to the fan's original payment with Order.CreateRefund for the Order's own refund, against the charge recorded on the Order's Settlement or, when none is recorded, the charge found by Order.GetProviderChargeID. Tickets the fan resold through official resale were already refunded less the resale fee and are not refunded again. When no Ticket of the Order is Issued, it SHALL issue no refund. It SHALL fail with FailedPrecondition when the Order's payment provider cannot issue refunds or the Order has no provider payment ID. For the reason Dispute it SHALL issue no refund, because the dispute has already returned the money to the fan.
 
-#### Scenario: Refund triggered when the resale completes
+#### Scenario: Cancellation refund
 
-- **WHEN** a resale match completes
-- **THEN** the listing user's refund (original payment minus the resale fee) is triggered, subject to a short hold-back reserve, without waiting for the event
+- **WHEN** an event is cancelled and a 16000 yen Order is refunded with the reason Cancellation
+- **THEN** 16000 yen is refunded to the fan's card
 
-#### Scenario: Chargeback handled via hold-back, not event-gating
+#### Scenario: Cancellation after a resale
 
-- **WHEN** the matched user charges back a resold seat
-- **THEN** the platform draws on the hold-back reserve and represents the dispute with the delivered-ticket / entry evidence, clawing back via reversal if needed
+- **WHEN** an event is cancelled and a 10000 yen Order for 2 tickets, one of which was resold, is refunded with the reason Cancellation
+- **THEN** 5000 yen is refunded to the fan's card
 
-#### Scenario: Refund falls back when the card cannot be reversed
+#### Scenario: Every ticket resold
 
-- **WHEN** the listing user's original card is expired or closed at settlement time
-- **THEN** the system pays the listing's user via an alternative payout method instead of a card reversal
+- **WHEN** an event is cancelled and every Ticket of the Order was resold
+- **THEN** no refund is issued and the Order is recorded Refunded
 
-### Requirement: Resale fee
+#### Scenario: Dispute
 
-The system SHALL charge the **listing's user** a **single resale fee as a percentage of
-face value** (default ~10%, business-configurable), and SHALL charge it **only on
-a successful resale**. If a listing does not sell, the system MUST NOT charge any
-fee. The fee SHALL be defined in the terms as **consideration for a service
-rendered (役務提供の対価** — matching / payment / 本人確認), not a cancellation
-penalty (違約金). Fee computation SHALL apply a **defined rounding rule** and, when
-the listing user's refundable original amount is less than the computed fee, SHALL
-**clamp the fee to the refundable amount** (never producing a negative payout). The
-fee and per-Organizer 事業者情報 SHALL be disclosed on the confirmation screen
-(特定商取引法に基づく表記).
+- **WHEN** Refund runs with the reason Dispute
+- **THEN** no refund is issued to the fan and the rest of the refund still happens
 
-#### Scenario: Fee charged only on success
+### Requirement: Payout clawed back
 
-- **WHEN** a listing sells
-- **THEN** the listing user's refund is reduced by the resale fee and the fee terms were disclosed before listing
+When the Order's Settlement, read with Settlement.GetByOrderID, is Released, Refund SHALL reverse every paid split that is not yet reversed with Settlement.ReversePayout for the split's amount. When it is Held, no payout is reversed and the Settlement becomes Reversed, so it is never paid out later. When it is already Reversed, as after every Ticket of the Order was resold, nothing is clawed back and no Settlement is given to Order.CommitRefund. When the Order has no Settlement, nothing is clawed back. Only the paid splits are reversed: the platform fee was never paid out, so it is not recovered from the Organizer, and when a Released Order is refunded — in practice a Dispute that arrives after the release — the platform bears its fee.
 
-#### Scenario: No fee when unsold
+#### Scenario: Payout already released
 
-- **WHEN** a listing does not sell by the deadline
-- **THEN** no resale fee is charged
+- **WHEN** the Order's Settlement is Released
+- **THEN** each paid split is reversed and the Settlement becomes Reversed
 
-#### Scenario: Fee is clamped to the refundable amount
+#### Scenario: Payout not yet released
 
-- **WHEN** the computed fee would exceed the listing user's refundable original amount
-- **THEN** the fee is clamped so the listing user's payout is never negative
+- **WHEN** the Order's Settlement is Held
+- **THEN** no payout is reversed and the Settlement becomes Reversed
+
+#### Scenario: Settlement given up by resales
+
+- **WHEN** the Order's Settlement was Reversed because every Ticket was resold
+- **THEN** nothing is clawed back and the Order is recorded Refunded

@@ -1,31 +1,47 @@
 ## Purpose
 
-Lets the current user of an eligible, unused ticket list it for official resale at its fixed face value ahead of the event's resale deadline, rejecting tickets that are already listed, used, refunded, or otherwise ineligible for resale.
+ResaleListingUseCase.Create lets a fan who cannot attend offer one of their tickets for official resale (公式リセール) at face value, once the ticket's first-come sale has sold out and until admission opens.
 
 ## ADDED Requirements
 
-### Requirement: List a ticket for resale
+### Requirement: List one of the fan's own tickets while resale is open
 
-The system SHALL allow the ticket's current **user** to list it for official
-resale when the ticket is **PAID and unused**, its event is in the **future**,
-resale is **enabled** for that event, and the **resale deadline has not passed**.
-The listing price SHALL be **fixed to the ticket's face value** — defined as the
-**ticket price (券面代金) only, excluding the original purchase-side booking/service
-fee** — the listing's user MUST NOT be able to set any other price. A ticket that is
-already listed, used, refunded, or belongs to a past/cancelled event MUST NOT be
-listable.
+Create SHALL take the calling fan, a Ticket and the current time:
+- It SHALL read the fan's Tickets with Ticket.ListByUser and fail with PermissionDenied, without revealing whether the Ticket exists, when the Ticket is not among them.
+- It SHALL fail with FailedPrecondition when the Ticket is Voided or has an admit time.
+- It SHALL read the Ticket's Order with Order.Get and fail with FailedPrecondition when the Order's source is not a Checkout, as for a ticket won in a lottery. It SHALL read that Checkout with Checkout.Get and its TicketType and sale with TicketType.Get.
+- It SHALL fail with FailedPrecondition when Event.IsEventPublished reports false for the Ticket's event, as for a 中止 (cancelled) concert.
+- It SHALL read the event with Event.Get and fail with FailedPrecondition when the TicketType's resale is not open at the current time with the event's resale deadline.
+- It SHALL then call ResaleListing.Create with the Ticket, its Order, the fan, the TicketType, the TicketType's price and the current time, return the listing, and return a failure of ResaleListing.Create unchanged.
 
-#### Scenario: Ticket's user lists an eligible ticket
+#### Scenario: Fan lists a ticket after the sale sold out
+- **WHEN** a fan holding 2 Issued Tickets of a sold-out TicketType priced 5000 yen lists one of them the week before the event
+- **THEN** a Listed listing for that Ticket with the price 5000 yen is returned
 
-- **WHEN** the user of a PAID, unused ticket for a future resale-enabled event lists it before the deadline
-- **THEN** a resale listing is created in state LISTED at the ticket's original face value, and the ticket becomes visible in the resale demand-matching pool
+#### Scenario: Sale not sold out
+- **WHEN** the fan lists a Ticket of a TicketType that never sold out
+- **THEN** Create fails with FailedPrecondition and nothing is listed
 
-#### Scenario: Price is locked to face value
+#### Scenario: Admission has opened
+- **WHEN** the fan lists a Ticket after the event's admission window opened
+- **THEN** Create fails with FailedPrecondition and nothing is listed
 
-- **WHEN** a listing is created
-- **THEN** its price equals the ticket's original purchase price and cannot be set above or below it
+#### Scenario: Ticket already used
+- **WHEN** the fan lists a Ticket that was admitted
+- **THEN** Create fails with FailedPrecondition
 
-#### Scenario: Ineligible ticket is rejected
+#### Scenario: Lottery ticket
+- **WHEN** the fan lists a Ticket whose Order came from a won lottery entry
+- **THEN** Create fails with FailedPrecondition
 
-- **WHEN** the ticket's user attempts to list a ticket that is used, already listed, refunded, or for a past or cancelled event
-- **THEN** the system rejects the listing with a precondition failure and no listing is created
+#### Scenario: Concert cancelled
+- **WHEN** the fan lists a Ticket of a cancelled concert
+- **THEN** Create fails with FailedPrecondition
+
+#### Scenario: Someone else's ticket
+- **WHEN** the fan lists a Ticket of another User
+- **THEN** Create fails with PermissionDenied and nothing is listed
+
+#### Scenario: Listed twice
+- **WHEN** the fan lists a Ticket that already has a Listed listing
+- **THEN** Create fails with AlreadyExists

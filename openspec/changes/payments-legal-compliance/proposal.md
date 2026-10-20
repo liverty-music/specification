@@ -19,15 +19,17 @@ Paid ticketing (roadmap ⑤ `ticket-purchase-and-issuance`) is implemented and v
 ### New Capabilities
 
 - `components/entity/order`: card numbers never reach the platform (PCI SAQ A); an Order's receipt is a qualified invoice (適格請求書). The livemode launch gate is a launch decision recorded in design.md.
-- `components/infrastructure/fan/web/route/order`: Total-price display (総額表示); 特定商取引法 final confirmation
 
 ### Modified Capabilities
 
-- `components/infrastructure/fan/web/global/legal-document`: Cross-border data-transfer disclosure and retention
+- `components/infrastructure/fan/web/global/legal-document`: Cross-border data-transfer disclosure and retention; the Terms of Service state the ticket purchase terms
+
+Already specified and shipped elsewhere (reviewed by counsel under §2.4, no delta here): 総額表示 and the 特商法 final confirmation of a first-come purchase are `components/infrastructure/fan/web/route/checkout` ("Choose the count and hold the tickets", "特商法 final confirmation") and `components/usecase/notification/send-order-confirmation`, shipped by `first-come-ticket-sales` (archived 2026-10-11). The lottery entry screen is not used for the pilot (liverty-music/specification#1074) and is left to the change that brings the lottery to real money.
 
 ## Impact
 
 - **Provider**: decided — Stripe Connect (test mode now; live launch deferred behind this gate).
 - **Cross-capability**: 収納代行 escrow/payout execution is `ticket-settlement-and-payout`; the checkout and lottery entry UI that carries 総額表示 + 特商法 最終確認 spans ④ (the lottery entry screen) and ⑤ (`ticket-purchase-and-issuance`) surfaces — this capability owns the obligations, those changes own the pixels.
 - **External**: legal counsel (#778), 税務署 適格請求書発行事業者 registration, Stripe live 審査, DPA execution — none block ⑤'s spec/implementation or archive.
-- **No code/proto surface** introduced by this capability itself; it is a launch-gate tracking + obligations spec.
+- **Product work** that this change still needs: receipts (領収書 / 適格請求書) for Orders, which do not exist yet (§3.1); the Terms of Service ticket purchase article and the Privacy Policy's Stripe disclosure (§3.2, §3.4). No proto surface.
+- **Launch prerequisites outside this change**: `official-resale` and `organizer-antisocial-vetting` shipped to production (§4.1), per the pilot roadmap liverty-music/specification#1074.
