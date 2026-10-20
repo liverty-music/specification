@@ -78,11 +78,14 @@ The fee covers the card fee that the payment provider does not return on a refun
 
 ### D6 — Refund right after the purchasing fan is charged, by a 1-minute job
 
-`ResaleListingUseCase.RefundSold` runs every minute in the checkout sweeper goroutine (`startCheckoutSweepers`, a third call after `IssueDueCheckouts`). For each Sold listing without a refund it resolves the original Order's charge (`Order.GetProviderChargeID`), refunds the refund amount with `Order.CreateRefund` under the idempotency key `resale-listing-refund:<listing id>`, records the refund ID and time on the listing, and announces `RESALE_LISTING.refunded` with the listing id as the message id.
+`ResaleListingUseCase.RefundSold` runs every minute in the checkout sweeper goroutine (`startCheckoutSweepers`, a third call after `IssueDueCheckouts`). For each Sold listing without a refund it resolves the original Order's charge (`Order.GetProviderChargeID`), refunds the refund amount with `Order.CreateRefund` under the idempotency key `resale-listing-refund:<listing id>`, records the refund ID and time on the listing, and announces `ORDER.resale_listing_refunded` with the listing id as the message id.
 
 The sold email is sent by the event consumer, as the purchase confirmation is for `ORDER.paid`: `NotificationUseCase.SendResaleSold` sends it through Postmark with `sold_email_send_at` set once (like `orders.confirmation_send_time`). The payment job then needs no mail credentials (only the event consumer holds the Postmark token), and email delivery has one path with the consumer's redelivery and poison queue. A refunded listing whose email is not sent yet is announced again on every run, so a lost announcement is recovered; the message id deduplicates it inside JetStream's window and `sold_email_send_at` after it.
 
+The subject is on the existing `ORDER.*` stream, so the only infrastructure change is one NACK `Consumer` (`send-resale-sold`, filter `ORDER.resale_listing_refunded`) in cloud-provisioning, beside `send-order-confirmation`. It must exist before the event consumer that binds to it is released.
+
 - Rejected — send the email from the job: the fan-api workload that runs the payment jobs has no Postmark token, and it would duplicate the consumer's retry handling.
+- Rejected — a `RESALE_LISTING.*` stream of its own: one more stream to provision for a single subject that is about an Order's charge anyway.
 
 No hold-back period (owner, 2026-10-20). The incumbents' hold-back protects them against a chargeback on the purchasing fan's charge after they paid out. Here the purchasing fan's money stays with the platform in a Held Settlement until 7 days after the event, so a dispute on that charge is covered by money the platform still holds; the listing fan's refund comes from their own charge, which the platform also still holds.
 
