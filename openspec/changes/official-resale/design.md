@@ -7,7 +7,7 @@ What already exists and is reused:
 - **First-come sale** (`first-come-ticket-sales`, archived 2026-10-11): a TicketType with a price, quantity, sold count and per-account limit; a Checkout that holds tickets for 15 minutes, authorizes the card, commits, captures and issues an Order with account-bound Tickets and a Held Settlement; the 1-minute sweepers `ReleaseExpired` and `IssueDueCheckouts` (`internal/di/checkout_sweeper_job.go`); `ORDER.paid` and the confirmation email and push.
 - **Refunds** (`OrderUseCase.Refund`): a full refund of one Order for 中止 or a dispute, through `StripeOrderPayments.CreateRefund` with the idempotency key `order-refund:<order id>`.
 - **Settlement:** the Organizer's split of each Order is Held until 7 days after the event and then paid out (`ReleaseDueSettlements`).
-- **Venue entry:** a Scanner admits only inside the event's admission window, which opens 3 hours before the open time (or the start time) (`components/entity/scanner`).
+- **Venue entry:** a Scanner admits only inside the event's admission window, which today opens 3 hours before the open time, or the start time when there is none (`components/entity/scanner`). This change counts it from the start time only (D11).
 - **Covered ticket:** a Ticket's user never changes; official resale voids it and issues a new Ticket (`components/entity/ticket`).
 
 ## Goals / Non-Goals
@@ -36,13 +36,14 @@ A ResaleListing is for a Ticket whose Order came from a Checkout of a FirstCome 
 
 ### D2 — Resale closes when admission opens
 
-A listing's deadline is the opening of its event's admission window (3 hours before the open time, or before the start time when there is no open time), read from the event's current times. Before that instant no Scanner admits anyone, so a listed Ticket cannot be used for entry while it can still be sold. After it, nothing can be listed or bought, and an unsold listing is simply over: its Ticket was never touched and works at the door.
+A listing's deadline is 3 hours before its event's start time, which is also when the event's admission window opens (D11), read from the event's current start time. The start time is required for a sale; the open time is optional, so the deadline never depends on it. Before that instant no Scanner admits anyone, so a listed Ticket cannot be used for entry while it can still be sold. After it, nothing can be listed or bought, and an unsold listing is simply over: its Ticket was never touched and works at the door.
 
 Every resale Checkout's hold ends at the deadline at the latest (`hold expiry = min(start + 15 min, deadline)`), so no resale commit can happen after admission opens.
 
 Remaining gap: a Checkout committed just before the deadline whose issuance stalls is issued by `IssueDueCheckouts` within about 1 minute. During that minute the listed Ticket is still Issued and could be admitted if its user is at the door the moment admission opens. Accepted for the pilot: it needs a stalled issuance and a fan at the door in the first minute of a 3-hour window; the admission record would show it, and an admin would refund the purchasing fan. A Ticket.Admit guard for listed tickets would close it at the cost of a new rejection reason on the scanner screen.
 
-- Rejected — the earlier draft's `start_time − 1h`: the admission window opens 3 hours before doors, so a listed Ticket could be scanned while still for sale.
+- Rejected — the earlier draft's `start_time − 1h`: admission opens before that, so a listed Ticket could be scanned while still for sale.
+- Rejected — 3 hours before the open time: the open time is optional, so the deadline would depend on whether the Organizer entered it.
 
 ### D3 — A resale purchase is a Checkout that holds listings
 
@@ -120,6 +121,10 @@ The fee and refund amount are derived from `price` (D5) and not stored. `ticket_
 - `Checkout`: `bool resale`.
 
 All additive.
+
+### D11 — The admission window opens 3 hours before the start time
+
+The Scanner's admission window opened 3 hours before the open time, or the start time when there was none. It now opens 3 hours before the start time in every case (owner, 2026-10-20): the start time is required for a sale and the open time is not, so one rule covers every event, and the resale deadline is the same instant. For an event with doors at 18:00 and start at 19:00, admission now opens at 16:00 instead of 15:00. The change is the `admissionWindowLead` base in `internal/entity/scanner.go` and the `AdmissionWindow` doc comment; the scanner screen already shows the window the backend returns. It can ship before the rest of this change, and the pilot rehearsal (#1076) uses the new time.
 
 ### D10 — The Organizer's consent
 

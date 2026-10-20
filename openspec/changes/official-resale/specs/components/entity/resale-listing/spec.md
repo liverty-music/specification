@@ -59,11 +59,11 @@ A listing's resale fee SHALL be 10% of its price, rounded down to the yen, and i
 
 ### Requirement: Resale deadline
 
-A listing's deadline SHALL be the opening of its Ticket's event's admission window as the event's current times give it: 3 hours before the open time, or 3 hours before the start time when the event has no open time.
+A listing's deadline SHALL be 3 hours before its Ticket's event's current start time, which is when the event's admission window opens.
 
 #### Scenario: Event with an open time
 - **WHEN** the event opens its doors at 18:00 and starts at 19:00
-- **THEN** the deadline is 15:00 that day
+- **THEN** the deadline is 16:00 that day
 
 #### Scenario: Event without an open time
 - **WHEN** the event has no open time and starts at 19:00
@@ -74,11 +74,11 @@ A listing's deadline SHALL be the opening of its Ticket's event's admission wind
 A listing SHALL be open at a time when it is Listed and the time is before its deadline. A Listed listing at or after its deadline SHALL be expired: it can no longer be held, bought or withdrawn, and its Ticket stays the user's.
 
 #### Scenario: Before the deadline
-- **WHEN** a Listed listing with the deadline 15:00 is checked at 14:59
+- **WHEN** a Listed listing with the deadline 16:00 is checked at 15:59
 - **THEN** it is open
 
 #### Scenario: At the deadline
-- **WHEN** the same listing is checked at 15:00
+- **WHEN** the same listing is checked at 16:00
 - **THEN** it is expired and not open
 
 #### Scenario: Sold listing

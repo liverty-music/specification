@@ -13,13 +13,16 @@
 - [ ] 2.1 Add `entity/v1/resale_listing.proto` with `ResaleListingId` and `ResaleListing` (design D9: id, ticket_id, price, fee, refund_amount, status LISTED/SOLD/WITHDRAWN/CANCELLED/EXPIRED, create_time, deadline_time, sold_time, refund_time) and doc comments from `components/entity/resale-listing`; verify `buf lint` and `buf format -d` pass
 - [ ] 2.2 Add `rpc/resale_listing/v1/resale_listing_service.proto` with `Create`, `Withdraw` and `List` (rpc-design skill; the caller is never named), with protovalidate on the ids; verify `buf lint` passes
 - [ ] 2.3 Add `bool resale_open` and `bool resale_available` to the fan's TicketType and `bool resale` to the Checkout, with doc comments saying no count is ever returned; verify `buf breaking` reports nothing
-- [ ] 2.4 Open the proto PR from a worktree, merge it, and cut the next minor Release; verify `buf-release.yml` succeeds and BSR has the version
+- [ ] 2.4 Update the `AdmissionWindow` doc comment in `entity/v1/scanner.proto` to "from 3 hours before the start time" (design D11); verify `buf lint` passes
+- [ ] 2.5 Open the proto PR from a worktree, merge it, and cut the next minor Release; verify `buf-release.yml` succeeds and BSR has the version
 
 ## 3. Backend — schema and entities
 
 - [ ] 3.1 Write the Atlas migration that creates `resale_listings` and adds `ticket_types.resale_open_time` (design D8: columns, the partial unique index on `ticket_id WHERE status = 1`, the `(ticket_type_id, create_time) WHERE status = 1` index, grants), and mirror it in `rdb/schema/schema.sql`; verify `make lint-schema` and `TestMigrationGrants_IAMRoles` pass (full CRUD for `fan-api`, SELECT for `organizer-console-api`, none for `reception-api`)
 - [ ] 3.2 Add `entity.ResaleListing` with fee, refund amount, deadline, open, expired and free rules; verify one unit test per scenario of `components/entity/resale-listing` ("Round price", "Price that does not divide evenly", "Smallest price", "Event with an open time", "Event without an open time", "Before the deadline", "At the deadline", "Sold listing", "Never held", "Held by another fan", "Hold lapsed", "Being charged")
 - [ ] 3.3 Add the resale rules to `entity.TicketType` and `entity.Checkout` and the share-of-resold-tickets rule to `entity.Settlement`; verify one unit test per scenario of `components/entity/ticket-type` (resale requirements), `components/entity/checkout` ("Resale checkout long before the deadline", "Resale checkout just before the deadline", "Two listings of two fans", "The fan's own listing") and `components/entity/settlement` ("One of two tickets resold", "One of three tickets resold", "Last ticket resold")
+
+- [ ] 3.4 Count `admissionWindowLead` from the start time only in `internal/entity/scanner.go` (design D11); verify one unit test per scenario of `components/entity/scanner` "Admission window" ("Usual evening show" now opens at 16:00, "No open time", "Before the window", "Window closed", "No start time") and that the `usecase/ticket/admit` tests still pass
 
 ## 4. Backend — entity operations
 
@@ -36,7 +39,7 @@
 - [ ] 5.2 Implement `ResaleListingUseCase.RefundSold` and call it from `startCheckoutSweepers` after `IssueDueCheckouts` (design D6); verify one unit test per scenario of `components/usecase/resale-listing/refund-sold`
 - [ ] 5.3 Change `CheckoutUseCase.Start`, `OrderUseCase.Refund` and `TicketSaleUseCase.ListByEvent`; verify one unit test per scenario of `components/usecase/checkout/start`, `components/usecase/order/refund` and `components/usecase/ticket-sale/list-by-event`, and that their existing tests still pass
 - [ ] 5.4 Add `ResaleListingHandler` and map `resale_open`, `resale_available` and `resale` in the ticket sale and checkout handlers, wiring everything in `internal/di`; verify the handler tests for every scenario of `components/adapter/fan/api/rpc/resale-listing`, `ticket-sale` ("Resale without a count") and `checkout` ("Resale checkout started")
-- [ ] 5.5 Open the backend PR (OpenSpec-Change: official-resale) once BSR has 2.4; verify CI passes, merge, and verify in prod that the AtlasMigration status shows the migration applied and the fan-api rollout is healthy (read-only `kubectl` with `CLOUDSDK_ACTIVE_CONFIG_NAME=liverty-music`)
+- [ ] 5.5 Open the backend PR (OpenSpec-Change: official-resale) once BSR has 2.5; verify CI passes, merge, and verify in prod that the AtlasMigration status shows the migration applied and the fan-api rollout is healthy (read-only `kubectl` with `CLOUDSDK_ACTIVE_CONFIG_NAME=liverty-music`)
 
 ## 6. Frontend — fan app
 

@@ -4,7 +4,7 @@ The pilot sells tickets first come, first served, with real money (liverty-music
 
 ## What Changes
 
-- **Resale opens when a first-come ticket type sells out** (every primary ticket paid) and stays open after that, even if the Organizer later adds tickets. It closes when the event's admission window opens (3 hours before doors). An event that never sells out has no resale; the checkout and the Terms of Service already say so.
+- **Resale opens when a first-come ticket type sells out** (every primary ticket paid) and stays open after that, even if the Organizer later adds tickets. It closes when the event's admission window opens, 3 hours before the start time; the start time is required for a sale, the doors-open time is not. An event that never sells out has no resale; the checkout and the Terms of Service already say so.
 - **A fan lists a ticket** they hold for such a ticket type, while it is Issued and not admitted, and can **withdraw** it until another fan holds it in a checkout. A listing that does not sell by the deadline expires and the ticket stays the fan's.
 - **Another fan buys through the same checkout as the primary sale**: on a sold-out ticket type with resale open, starting a checkout holds listings instead of stock, oldest first, for 15 minutes or until the deadline, whichever is earlier. The price is the face value (券面価格). The per-account limit, card authorization, the 特商法 final confirmation, the referral code and the confirmation email work as for the primary sale; the final confirmation also says that the tickets are official resale tickets at face value.
 - **On purchase, atomically:** the purchasing fan's Order and new Tickets are issued to that fan (the 本人確認 identity check details are that fan's own, so each ticket stays a 特定興行入場券 covered ticket), the listed Tickets are Voided, and the listing fan's original Order's payout to the Organizer drops by the share of the resold tickets, so the Organizer is paid once per seat.
@@ -36,6 +36,7 @@ Dropped from the earlier design of this change: the lottery-loser priority queue
 
 ### Modified Capabilities
 
+- `components/entity/scanner`: the admission window opens 3 hours before the start time, no longer 3 hours before the open time (owner, 2026-10-20), so the Scanner links and the resale deadline both follow the one time every sale has.
 - `components/entity/ticket-type` (Purpose: `resale open time` and `free resale count` rows): resale opens when the ticket type sells out; resale open and available at a time.
 - `components/entity/ticket-type/get`: returns the free resale count.
 - `components/entity/ticket-sale/list-by-event`: returns each first-come TicketType's free resale count.
@@ -61,8 +62,8 @@ Unchanged and relied on: `components/usecase/order/issue-from-checkout` (it buil
 
 ## Impact
 
-- **specification:** `entity/v1/resale_listing.proto`; `ResaleListingService` (Create, Withdraw, List) under `rpc/resale_listing/v1`; `resale_open` and `resale_available` on the fan's TicketType; `resale` on the Checkout. Additive, no breaking change.
-- **backend:** an Atlas migration (`resale_listings`, `ticket_types.resale_open_time`; design D8); the entity, repository, usecase and handler code above; the 1-minute `RefundSold` job in the existing checkout sweeper (design D6).
+- **specification:** the `AdmissionWindow` doc comment in `entity/v1/scanner.proto`; `entity/v1/resale_listing.proto`; `ResaleListingService` (Create, Withdraw, List) under `rpc/resale_listing/v1`; `resale_open` and `resale_available` on the fan's TicketType; `resale` on the Checkout. Additive, no breaking change.
+- **backend:** an Atlas migration (`resale_listings`, `ticket_types.resale_open_time`; design D8); the entity, repository, usecase and handler code above; the 1-minute `RefundSold` job in the existing checkout sweeper (design D6); `admissionWindowLead` counted from the start time in `entity/scanner.go` (design D11).
 - **frontend:** event page ticket section, checkout final confirmation, tickets screen listing flow, Terms of Service text, ja/en copy.
 - **cloud-provisioning:** none expected.
 - **Legal:** the counsel opinion in `payments-legal-compliance` 1.1 covers the two money legs (a refund of the fan's own payment and a new sale to the purchasing fan, so money never moves between fans). The Organizer's consent to resale is a clause of the Organizer agreement (design D10).
