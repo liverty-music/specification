@@ -78,7 +78,11 @@ The fee covers the card fee that the payment provider does not return on a refun
 
 ### D6 — Refund right after the purchasing fan is charged, by a 1-minute job
 
-`ResaleListingUseCase.RefundSold` runs every minute in the checkout sweeper goroutine (`startCheckoutSweepers`, a third call after `IssueDueCheckouts`). For each Sold listing without a refund it resolves the original Order's charge (`Order.GetProviderChargeID`), refunds the refund amount with `Order.CreateRefund` under the idempotency key `resale-listing-refund:<listing id>`, records the refund ID and time on the listing, and sends the sold email (Postmark, `send_time` set once like `orders.confirmation_send_time`).
+`ResaleListingUseCase.RefundSold` runs every minute in the checkout sweeper goroutine (`startCheckoutSweepers`, a third call after `IssueDueCheckouts`). For each Sold listing without a refund it resolves the original Order's charge (`Order.GetProviderChargeID`), refunds the refund amount with `Order.CreateRefund` under the idempotency key `resale-listing-refund:<listing id>`, records the refund ID and time on the listing, and announces `RESALE_LISTING.refunded` with the listing id as the message id.
+
+The sold email is sent by the event consumer, as the purchase confirmation is for `ORDER.paid`: `NotificationUseCase.SendResaleSold` sends it through Postmark with `sold_email_send_at` set once (like `orders.confirmation_send_time`). The payment job then needs no mail credentials (only the event consumer holds the Postmark token), and email delivery has one path with the consumer's redelivery and poison queue. A refunded listing whose email is not sent yet is announced again on every run, so a lost announcement is recovered; the message id deduplicates it inside JetStream's window and `sold_email_send_at` after it.
+
+- Rejected — send the email from the job: the fan-api workload that runs the payment jobs has no Postmark token, and it would duplicate the consumer's retry handling.
 
 No hold-back period (owner, 2026-10-20). The incumbents' hold-back protects them against a chargeback on the purchasing fan's charge after they paid out. Here the purchasing fan's money stays with the platform in a Held Settlement until 7 days after the event, so a dispute on that charge is covered by money the platform still holds; the listing fan's refund comes from their own charge, which the platform also still holds.
 
@@ -113,6 +117,8 @@ New table `resale_listings`:
 
 The fee and refund amount are derived from `price` (D5) and not stored. `ticket_types.resale_open_time timestamptz NULL` is added. Grants follow the existing pattern: full CRUD for `fan-api`, SELECT for `organizer-console-api`, none for `reception-api`.
 
+As implemented (backend migration `create_resale_listings`): the timestamp columns follow the backend's `_at` naming (`ticket_types.resale_open_at`, `resale_listings.created_at`, `sold_at`, `withdraw_at`, `refund_at`, `sold_email_send_at`). The listing's Order is not a column: it is read through `tickets.order_id`, which never changes. `checkouts.resale boolean NOT NULL DEFAULT false` is added, because whether a Checkout is a resale Checkout cannot be derived from `resale_listings.checkout_id` once its hold lapses and another Checkout holds the listing, yet `Checkout.Get` must still say so (`components/adapter/fan/api/rpc/checkout`), and the held count of a ticket type must leave resale holds out.
+
 ### D9 — Proto and RPC
 
 - `entity/v1/resale_listing.proto`: `ResaleListingId`, `ResaleListing { id, ticket_id, price, fee, refund_amount, status (LISTED, SOLD, WITHDRAWN, CANCELLED, EXPIRED), create_time, deadline_time, sold_time, refund_time }`. EXPIRED is what the fan boundary returns for a Listed listing past its deadline; it is never stored.
@@ -136,6 +142,7 @@ A covered ticket's face says resale without the Organizer's consent is prohibite
 - [A listing never sells] → It expires at admission opening and the fan keeps a working Ticket; the listing screen says resale is not guaranteed.
 - [A fan lists, sells, and the concert is then cancelled] → The fan keeps 90% for the resold ticket, not 100%. Stated in the Terms of Service; accepted because the resale was completed.
 - [Stalled issuance across the deadline] → D2's one-minute gap; accepted, recorded in the admission records.
+- [The listing fan's Order is refunded while a purchasing fan's charged resale Checkout awaits issuance] → `Order.CommitRefund` cancels the Listed listing, so the issuance fails and `IssueDueCheckouts` reports the charge under `LogKeyNeedsOperator`; an admin refunds the purchasing fan. Accepted: a cancellation stops new charges (Confirm refuses an unpublished concert), so only a charge captured in the minute before can be caught (backend#661 review).
 - [Counsel finds the two money legs or the fee framing insufficient] → `payments-legal-compliance` 1.1 runs before the livemode gate; resale ships in Stripe test mode first and the gate is not lifted until counsel signs off.
 
 ## Migration Plan

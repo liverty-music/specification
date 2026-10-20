@@ -30,7 +30,8 @@ Dropped from the earlier design of this change: the lottery-loser priority queue
 - `components/usecase/resale-listing/create`: a fan lists a ticket.
 - `components/usecase/resale-listing/withdraw`: a fan withdraws a listing.
 - `components/usecase/resale-listing/list`: a fan reads their listings.
-- `components/usecase/resale-listing/refund-sold`: refunds and notifies listing fans within 1 minute after a sale.
+- `components/usecase/resale-listing/refund-sold`: refunds listing fans within 1 minute after a sale and announces each refund.
+- `components/usecase/notification/send-resale-sold`: emails the listing fan that their ticket sold and how much is refunded, for each announced refund.
 - `components/adapter/fan/api/rpc/resale-listing`: the fan boundary of the listing calls.
 - `stories/resell-a-ticket`: a fan who cannot attend lists a ticket, another fan buys it, and the first fan is refunded.
 
