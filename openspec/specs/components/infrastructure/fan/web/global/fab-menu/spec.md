@@ -125,10 +125,8 @@ browser top layer (not stacked via `z-index`), so it stays above and receives ta
 over any route content, including canvases. The FAB SHALL NOT cover any navigation
 tab. The FAB SHALL be hidden whenever the navigation bar is hidden (e.g. landing
 page, auth callback) or when the current route contributes zero actions. While a
-persistent bottom banner (the signup prompt or the install banner) is visible, the
-FAB SHALL instead float one `space-s` step above the banner's top edge, still
-horizontally centred and 56px across, so that it covers no part of the banner, and
-the navigation bar SHALL show no notch.
+snack bar is open or a persistent bottom banner is visible, the FAB SHALL sink into
+the navigation bar (see "The FAB yields to a snack bar or a bottom banner").
 
 #### Scenario: FAB floats in the thumb zone above content
 
@@ -140,8 +138,8 @@ the navigation bar SHALL show no notch.
 #### Scenario: A bottom banner is visible
 
 - **WHEN** a route that contributes at least one action is displayed while the install banner or the signup prompt is visible
-- **THEN** the FAB SHALL be horizontally centred, 56px across, with its bottom edge one `space-s` step above the banner's top edge
-- **AND** the navigation bar SHALL show no notch
+- **THEN** the FAB SHALL be sunk into the navigation bar, 40px across and horizontally centred
+- **AND** no part of the FAB SHALL extend above the navigation bar's top edge
 
 #### Scenario: FAB stays above the Discovery dna orb
 
@@ -322,29 +320,6 @@ outside it (light dismiss).
 - **WHEN** the panel is open and the user presses Escape or activates outside the panel
 - **THEN** the panel SHALL close
 
-### Requirement: The FAB yields to an open snack bar
-
-While any snack bar is open, the FAB SHALL sink into the navigation bar's centre slot so the snack bar can sit directly above the navigation bar without covering the FAB. Sunk, the FAB SHALL be 40px across and SHALL lie entirely within the navigation bar's height, and it SHALL stay tappable. When the last open snack bar closes, the FAB SHALL return to its normal size and position. The movement SHALL use spring motion and SHALL respect `prefers-reduced-motion: reduce` by landing the end state without overshoot. While the FAB floats above a visible bottom banner, it SHALL NOT sink; the snack bar sits above it instead (see Snack Bar).
-
-#### Scenario: A snack bar opens
-- **WHEN** a snack bar opens on a route where the FAB is shown
-- **THEN** the FAB SHALL shrink to 40px across
-- **AND** no part of the FAB SHALL extend above the navigation bar's top edge
-- **AND** the FAB and the snack bar SHALL NOT overlap
-
-#### Scenario: The sunk FAB still opens the actions
-- **WHEN** a snack bar is open and the user taps the sunk FAB
-- **THEN** the action arc SHALL open as it does from the normal FAB
-
-#### Scenario: A snack bar opens above a bottom banner
-- **WHEN** a snack bar opens while the FAB floats above a visible bottom banner
-- **THEN** the FAB SHALL keep its 56px size
-- **AND** the snack bar SHALL sit one `space-s` step above the FAB, overlapping neither the FAB nor the banner
-
-#### Scenario: The last snack bar closes
-- **WHEN** the last open snack bar closes
-- **THEN** the FAB SHALL return to 56px across, protruding from the notch
-
 ### Requirement: The FAB shows its collapsed state after navigation
 
 Whenever the FAB is shown after a navigation, it SHALL be collapsed: the action arc SHALL be closed, the glyph SHALL be the collapsed glyph, and the FAB SHALL expose the collapsed state to assistive technology. This SHALL hold even if the arc was open when the user left the previous route.
@@ -383,3 +358,36 @@ SHALL persist across sessions. The default SHALL be right-handed.
 
 - **WHEN** the user has set a handedness preference and reloads the app
 - **THEN** the action arc SHALL open toward the saved side without further interaction
+
+### Requirement: The FAB yields to a snack bar or a bottom banner
+
+While any snack bar is open, or a persistent bottom banner (the signup prompt or the install banner) is visible, the FAB SHALL sink into the navigation bar's centre slot so the snack bar or the banner can sit directly above the navigation bar without covering the FAB. Sunk, the FAB SHALL be 40px across and SHALL lie entirely within the navigation bar's height, and it SHALL stay tappable. When no snack bar is open and no bottom banner is visible, the FAB SHALL return to its normal size and position. The movement SHALL use spring motion and SHALL respect `prefers-reduced-motion: reduce` by landing the end state without overshoot.
+
+#### Scenario: A snack bar opens
+- **WHEN** a snack bar opens on a route where the FAB is shown
+- **THEN** the FAB SHALL shrink to 40px across
+- **AND** no part of the FAB SHALL extend above the navigation bar's top edge
+- **AND** the FAB and the snack bar SHALL NOT overlap
+
+#### Scenario: A bottom banner is visible
+- **WHEN** a route that shows the FAB is displayed while the install banner or the signup prompt is visible
+- **THEN** the FAB SHALL be 40px across and lie entirely within the navigation bar's height
+- **AND** the FAB and the banner SHALL NOT overlap
+- **AND** no content above the banner SHALL be covered by the FAB
+
+#### Scenario: The sunk FAB still opens the actions
+- **WHEN** a snack bar is open or a bottom banner is visible, and the user taps the sunk FAB
+- **THEN** the action arc SHALL open as it does from the normal FAB
+
+#### Scenario: A snack bar opens above a bottom banner
+- **WHEN** a snack bar opens while a bottom banner is visible
+- **THEN** the FAB SHALL stay sunk
+- **AND** the snack bar SHALL sit above the banner, overlapping neither the FAB nor the banner
+
+#### Scenario: The last snack bar closes
+- **WHEN** the last open snack bar closes and no bottom banner is visible
+- **THEN** the FAB SHALL return to 56px across, protruding from the notch
+
+#### Scenario: The bottom banner goes away
+- **WHEN** the visible bottom banner is removed (the app is installed, or the guest signs up) and no snack bar is open
+- **THEN** the FAB SHALL return to 56px across, protruding from the notch

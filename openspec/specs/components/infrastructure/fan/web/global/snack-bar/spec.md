@@ -116,33 +116,6 @@ The system SHALL replace silent error swallowing in services with explicit error
 - **THEN** the system SHALL display an error snack informing the user of the failure
 - **AND** the system SHALL revert any optimistic UI updates
 
-### Requirement: Snack bars sit directly above the bottom navigation
-
-Every snack bar, whatever its severity or sender, SHALL be placed at the bottom of the screen with its bottom edge one `space-s` step above the top of the bottom navigation bar and the bottom safe-area inset. While a persistent bottom banner (the signup prompt or the install banner) is visible above the navigation bar, the snack bar SHALL sit that same step above the banner instead, using the banner's rendered height; a banner that is not visible SHALL add no height. While the FAB floats above a visible banner (see FAB Menu), the snack bar SHALL sit one `space-s` step above the FAB instead.
-
-#### Scenario: No banner is visible
-- **WHEN** a snack bar opens and no persistent bottom banner is visible
-- **THEN** the gap between the snack bar's bottom edge and the navigation bar's top edge SHALL be one `space-s` step (16 to 20px)
-
-#### Scenario: Install banner dismissed
-- **WHEN** the fan has dismissed the install banner, so that it is no longer visible
-- **AND** a snack bar opens
-- **THEN** the snack bar SHALL sit one `space-s` step above the navigation bar, not above the space the banner used to occupy
-
-#### Scenario: A banner is visible
-- **WHEN** a snack bar opens while the signup prompt or the install banner is visible
-- **THEN** the snack bar's bottom edge SHALL sit one `space-s` step above the banner's top edge
-- **AND** the snack bar SHALL NOT cover any part of the banner
-
-#### Scenario: The FAB floats above a visible banner
-- **WHEN** a snack bar opens while a bottom banner is visible on a route that shows the FAB
-- **THEN** the snack bar's bottom edge SHALL sit one `space-s` step above the FAB's top edge
-- **AND** the snack bar SHALL cover neither the FAB nor the banner
-
-#### Scenario: Same placement for every severity
-- **WHEN** an info, warning and error snack bar are each shown in turn under the same conditions
-- **THEN** all three SHALL occupy the same vertical position
-
 ### Requirement: The update action stands out as a button on the snack bar
 
 When the update snack is displayed, its action button (labelled with `pwa.updateAction`) SHALL be visually distinguished from the snack body text so that users immediately identify it as a button. The button SHALL use the on-container button style in the compact snack-bar size (see UI Primitives): a translucent white fill, a white border and the shared button corner radius. When the update snack appears, the button SHALL glow three times and then stay still for as long as the snack is shown. The glow SHALL NOT play when `prefers-reduced-motion: reduce` is active. The update snack SHALL show no leading icon, so its message (「新しいバージョンがあります」) and action fit one row on a 360px screen.
@@ -178,3 +151,30 @@ Every snack bar's message and its action label SHALL keep a contrast ratio of at
 #### Scenario: Action contrast on every severity
 - **WHEN** a snack bar with an action (such as the update snack) is shown in each severity
 - **THEN** the action's label SHALL measure at least 4.5:1 against the action's translucent fill laid over every point of the container gradient, both ends included
+
+### Requirement: Snack bars sit above the bottom navigation and any banner
+
+Every snack bar, whatever its severity or sender, SHALL be placed at the bottom of the screen with its bottom edge one `space-s` step above the top of the bottom navigation bar and the bottom safe-area inset. While a persistent bottom banner (the signup prompt or the install banner) is visible above the navigation bar, the snack bar SHALL sit that same step above the banner instead, using the banner's rendered height; a banner that is not visible SHALL add no height. The FAB stays sunk in the navigation bar in both cases (see FAB Menu).
+
+#### Scenario: No banner is visible
+- **WHEN** a snack bar opens and no persistent bottom banner is visible
+- **THEN** the gap between the snack bar's bottom edge and the navigation bar's top edge SHALL be one `space-s` step (16 to 20px)
+
+#### Scenario: A hidden banner adds no height
+- **WHEN** a banner's host is on the screen but the banner is not visible (the app is installed, or a post-signup surface hides it)
+- **AND** a snack bar opens
+- **THEN** the snack bar SHALL sit one `space-s` step above the navigation bar
+
+#### Scenario: A banner is visible
+- **WHEN** a snack bar opens while the signup prompt or the install banner is visible
+- **THEN** the snack bar's bottom edge SHALL sit one `space-s` step above the banner's top edge
+- **AND** the snack bar SHALL NOT cover any part of the banner
+
+#### Scenario: The FAB stays sunk under a banner and a snack bar
+- **WHEN** a snack bar opens while a bottom banner is visible on a route that shows the FAB
+- **THEN** the FAB SHALL stay sunk in the navigation bar
+- **AND** the snack bar SHALL cover neither the FAB nor the banner
+
+#### Scenario: Same placement for every severity
+- **WHEN** an info, warning and error snack bar are each shown in turn under the same conditions
+- **THEN** all three SHALL occupy the same vertical position

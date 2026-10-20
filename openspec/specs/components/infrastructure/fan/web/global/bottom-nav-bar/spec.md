@@ -172,9 +172,9 @@ Every bottom-nav menu-tab route SHALL NOT block the router view swap on its data
 - **THEN** that route SHALL satisfy this requirement from the moment it appears in the nav
 - **AND** no enumeration of route names SHALL be required to bring it into scope
 
-### Requirement: Centre slot and notch for the FAB
+### Requirement: Centre slot and notch around the FAB
 
-The navigation bar SHALL keep a centre slot between its second and third tabs on every route where it is shown, so that the four tabs stay at the same positions on every route. While the FAB is shown, the bar SHALL cut a notch around the FAB in its top edge at the centre slot. While the FAB is not shown, or floats above a visible bottom banner (see FAB Menu), the bar SHALL show no notch; while the FAB is not shown, the centre slot SHALL stay empty.
+The navigation bar SHALL keep a centre slot between its second and third tabs on every route where it is shown, so that the four tabs stay at the same positions on every route. While the FAB is shown, the bar SHALL cut a notch around the FAB in its top edge at the centre slot, including while the FAB is sunk under a snack bar or a bottom banner (see FAB Menu), so that the sunk FAB reads as resting in its socket. While the FAB is not shown, the bar SHALL show no notch and the centre slot SHALL stay empty.
 
 #### Scenario: Route with FAB actions
 - **WHEN** the dashboard is displayed and the FAB is shown
@@ -185,9 +185,10 @@ The navigation bar SHALL keep a centre slot between its second and third tabs on
 - **THEN** the bar's top edge SHALL be straight, with no notch
 - **AND** the centre slot SHALL be empty
 
-#### Scenario: FAB floating above a banner
+#### Scenario: FAB sunk under a banner
 - **WHEN** the dashboard is displayed with the FAB shown while the install banner is visible
-- **THEN** the bar's top edge SHALL be straight, with no notch
+- **THEN** the FAB SHALL rest sunk in the centre slot
+- **AND** the bar's top edge SHALL keep the notch around it
 
 #### Scenario: Tabs do not move between routes
 - **WHEN** the user moves from the dashboard (FAB shown) to Tickets (FAB hidden)
