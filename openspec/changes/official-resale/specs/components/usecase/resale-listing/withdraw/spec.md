@@ -1,23 +1,21 @@
 ## Purpose
 
-Lets the listing's user pull back a listed ticket before it is offered to another user, returning it to ordinary ownership at no charge, while protecting an in-flight offer or a completed match from being undone by a late withdrawal.
+ResaleListingUseCase.Withdraw lets a fan take back a ticket they listed for resale, as long as no other fan is buying it.
 
 ## ADDED Requirements
 
-### Requirement: Withdraw a listing
+### Requirement: Withdraw the fan's own listing
 
-The system SHALL allow the listing's user to **withdraw** their listing **only while it is
-in `LISTED` state** (not while an offer is in flight or after a match), returning
-the ticket to normal OWNED state with no fee charged. While a seat is `OFFERED` to
-a candidate the listing is locked and MUST NOT be withdrawable — this resolves the
-withdraw-vs-purchase race in favor of the in-flight offer.
+Withdraw SHALL take the calling fan, a ResaleListing and the current time. It SHALL read the listing with ResaleListing.Get and fail with PermissionDenied, without revealing whether it exists, when it does not exist or its user is not the fan. It SHALL then call ResaleListing.Withdraw, return a failure unchanged, and return the listing as read again with ResaleListing.Get.
 
-#### Scenario: Listing user withdraws while LISTED
+#### Scenario: Fan can attend after all
+- **WHEN** a fan withdraws their free listing
+- **THEN** the listing is returned Withdrawn and the Ticket is no longer for sale
 
-- **WHEN** the listing's user withdraws a listing that is in LISTED state with no offer in flight
-- **THEN** the listing moves to WITHDRAWN, the ticket returns to OWNED, and no fee is charged
+#### Scenario: Another fan is checking out
+- **WHEN** the fan withdraws a listing held by another fan's Checkout
+- **THEN** Withdraw fails with FailedPrecondition and the listing stays Listed
 
-#### Scenario: Withdrawal is rejected while an offer is in flight or after match
-
-- **WHEN** the listing's user attempts to withdraw a listing that is OFFERED to a candidate or already SOLD
-- **THEN** the system rejects the withdrawal (the offer/match takes precedence)
+#### Scenario: Someone else's listing
+- **WHEN** a fan withdraws a listing of another User
+- **THEN** Withdraw fails with PermissionDenied

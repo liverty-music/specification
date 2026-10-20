@@ -1,95 +1,69 @@
 ## Why
 
-A fan who buys a ticket and then cannot attend has no sanctioned way to hand it
-on. Ad-hoc refunds do not scale and person-to-person resale is both a scalping
-loophole and a legal hazard (為替取引 / 資金移動業, 不正転売禁止法, 古物営業法).
-The JP market default — reinforced after チケトレ shut down 2025-06-30 — is that
-each primary platform runs its **own official, face-value resale on its own
-issuance base**. Liverty Music issues its own account-bound tickets, so it is exactly
-positioned to offer this. Official face-value resale is the anti-scalp gold
-standard (ローチケ/ぴあ), the legally favored path, and a real day-one need
-("the ticket's user got sick").
-
-The full legal + competitor research and the settled design decisions are
-captured in [`docs/resale-design.md`](../../../docs/resale-design.md); this
-change turns that design into a specced capability.
+The pilot sells tickets first come, first served, with real money (liverty-music/specification#1074). A fan who bought a ticket and then cannot attend has no way to hand it on, and the checkout's 特商法 (Specified Commercial Transactions Act) final confirmation already tells every fan who buys that official resale opens if the event sells out. This change builds that official resale, in the simplified form decided for the pilot on 2026-10-07: it opens when the primary sale sells out, other fans buy first come, first served through the same checkout, and the oldest listing sells first.
 
 ## What Changes
 
-- Introduce **official, face-value ticket resale** as a sanctioned safety valve
-  for the cannot-attend case, structured as **two decoupled money legs** — a
-  refund of the listing user's own purchase + a fresh face-value sale to the matched user —
-  so **money never moves individual-to-individual** (payee is always the
-  business Organizer; keeps the platform a 収納代行, not a 資金移動業).
-- The ticket's **user** can **list** a PAID, unused ticket for resale before the
-  deadline (`start_time − 1h`) and **withdraw** it any time before it matches.
-- Resale inventory is a **public marketplace** (any user can discover + join),
-  but matching is **priority-ordered — lottery-losers first, then general public**
-  — via **sequential timed offers**, not first-come.
-- On a match, atomically: settle the matched user's fresh face-value payment, **void**
-  the listing user's original ticket, and **issue a new ticket** to the matched user with
-  **本人確認 re-bound** (preserving 特定興行入場券 status).
-- The listing user's refund (original payment **minus a ~10% resale fee**) is
-  **triggered on resale completion with a short hold-back reserve — NOT held to
-  the event** (matches ぴあ/ticket board/e+/tiget). The **matched user pays exactly face
-  value** (券面代金; the original booking fee is excluded and non-refundable).
-- A **返品特約 (no-return clause)** is shown on the matched user's final confirmation
-  screen (特商法 §12-6), distinct from fee disclosure; the fee is framed as
-  役務提供の対価.
-- Resale is **mandatory-by-default** on every standard paid event via blanket
-  Organizer consent in the platform agreement; non-resellable only via automatic
-  **structural exclusions** (free/¥0, comp, goods-bundled, name-locked) or a
-  rare admin exception. **No organizer self-serve off-switch.**
-- **Sales precondition:** ticket sales/resale require the event's mandatory info
-  (including `start_time`) to be set, so the `start_time − 1h` deadline is
-  computable.
-- Event **cancellation** while a ticket is listed routes to the normal
-  cancellation-refund path. A postponed show is a cancellation followed by a new
-  event, so it takes the same path.
-- **Unsold at deadline = return-only** (no organizer buyback in MVP). **Match
-  notification** (push/email) is a **future** enhancement.
+- **Resale opens when a first-come ticket type sells out** (every primary ticket paid) and stays open after that, even if the Organizer later adds tickets. It closes when the event's admission window opens (3 hours before doors). An event that never sells out has no resale; the checkout and the Terms of Service already say so.
+- **A fan lists a ticket** they hold for such a ticket type, while it is Issued and not admitted, and can **withdraw** it until another fan holds it in a checkout. A listing that does not sell by the deadline expires and the ticket stays the fan's.
+- **Another fan buys through the same checkout as the primary sale**: on a sold-out ticket type with resale open, starting a checkout holds listings instead of stock, oldest first, for 15 minutes or until the deadline, whichever is earlier. The price is the face value (券面価格). The per-account limit, card authorization, the 特商法 final confirmation, the referral code and the confirmation email work as for the primary sale; the final confirmation also says that the tickets are official resale tickets at face value.
+- **On purchase, atomically:** the purchasing fan's Order and new Tickets are issued to that fan (the 本人確認 identity check details are that fan's own, so each ticket stays a 特定興行入場券 covered ticket), the listed Tickets are Voided, and the listing fan's original Order's payout to the Organizer drops by the share of the resold tickets, so the Organizer is paid once per seat.
+- **The listing fan is refunded within 1 minute after the purchasing fan is charged**, to the card they paid with: the face value minus a resale fee of 10%, rounded down to the yen (a 5,000 yen ticket refunds 4,500 yen). An email tells them the ticket sold and how much is refunded. There is no hold-back period: the purchasing fan's money stays with the platform until the Organizer's payout 7 days after the event, which already covers a chargeback on that charge.
+- **Cancellation (中止)** refunds the listing fan's remaining tickets at face value, ends their open listings, and refunds the purchasing fan in full, as for any Order. A resale already completed keeps its fee.
+- The event page offers resale tickets when a listing is free, and the tickets screen shows each ticket's listing and the refund.
+- The Terms of Service state the resale rules: when resale opens and closes, the fee, the refund and that an event that does not sell out has no resale.
 
-Scope guardrails (MVP): electronic tickets only (no physical inventory →
-license-exempt); anonymous pool (no P2P contact); no above-face pricing; no
-markup charged to the matched user. Provider/payment mechanics reuse ⑤'s Stripe Connect /
-収納代行 scheme unchanged.
+Dropped from the earlier design of this change: the lottery-loser priority queue and sequential timed offers (D5), the hold-back reserve (D1), structural exclusions and the admin exception (D2, D7), the organizer cutoff setting (D3) and buyback (D6). They stay in `docs/resale-design.md` as background.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `components/entity/resale-listing`: Resale deadline; Resale is enabled by default with structural exclusions only; Event cancellation while listed; Anonymity and no person-to-person contact
-- `components/infrastructure/fan/web/route/order`: Resale return policy on the final confirmation screen
-- `components/usecase/resale-listing/create`: List a ticket for resale
-- `components/usecase/resale-listing/expire`: Unsold listing returns to the listing's user
-- `components/usecase/resale-listing/match`: Public resale marketplace with lottery-loser priority; Two-leg money model at match time; Covered-ticket re-bind on reissue; No double-seat or double-charge across lottery and resale
-- `components/usecase/resale-listing/withdraw`: Withdraw a listing
+- `components/entity/resale-listing`: a fan's offer of one Ticket for official resale; its price, fee and refund amount; its deadline; when it is open and when it is free to hold.
+- `components/entity/resale-listing/create`: stores a new listing, at most one open listing per Ticket.
+- `components/entity/resale-listing/get`: reads one listing.
+- `components/entity/resale-listing/withdraw`: withdraws a Listed listing no checkout holds.
+- `components/entity/resale-listing/list-by-user`: a fan's listings.
+- `components/entity/resale-listing/list-sold-unrefunded`: Sold listings whose fan is not refunded yet.
+- `components/entity/resale-listing/record-refund`: records the refund of a Sold listing.
+- `components/entity/resale-listing/send-sold-email`: sends the "your ticket sold" email once per listing.
+- `components/usecase/resale-listing/create`: a fan lists a ticket.
+- `components/usecase/resale-listing/withdraw`: a fan withdraws a listing.
+- `components/usecase/resale-listing/list`: a fan reads their listings.
+- `components/usecase/resale-listing/refund-sold`: refunds and notifies listing fans within 1 minute after a sale.
+- `components/adapter/fan/api/rpc/resale-listing`: the fan boundary of the listing calls.
+- `stories/resell-a-ticket`: a fan who cannot attend lists a ticket, another fan buys it, and the first fan is refunded.
 
 ### Modified Capabilities
 
-<!-- official-resale reuses the Order/Payment/Ticket entities defined by ⑤
-     ticket-purchase-and-issuance and ⑥ ticket-wallet-and-checkin, and the demand
-     pool from ④ LotteryEntry. Those are DEPENDENCIES (see design.md); the
-     deltas below only add resale-specific requirements to them. -->
-- `components/entity/event`: Ticket sales require complete event info
-- `components/entity/ticket-journey`: Resold companion seat leaves the same-time-entry group
-- `components/usecase/order/refund`: Listing user's refund triggered on resale completion; Resale fee
+- `components/entity/ticket-type` (Purpose: `resale open time` and `free resale count` rows): resale opens when the ticket type sells out; resale open and available at a time.
+- `components/entity/ticket-type/get`: returns the free resale count.
+- `components/entity/ticket-sale/list-by-event`: returns each first-come TicketType's free resale count.
+- `components/entity/checkout` (Purpose: `resale listings` row; Checkout `||--o{` ResaleListing in the erDiagram): a resale checkout's hold ends at the resale deadline when that is earlier than 15 minutes.
+- `components/entity/checkout/get-or-create-held`: holds free listings, oldest first, when asked for resale.
+- `components/entity/checkout/commit`: a resale commit leaves the sold count alone; the commit that sells a ticket type out opens its resale.
+- `components/entity/checkout/revert-commit`: a resale revert leaves the sold count alone.
+- `components/usecase/checkout/start`: starts a resale checkout when the ticket type is not on sale and its resale is open.
+- `components/entity/order/issue`: a resale checkout's issuance sells its listings, voids their Tickets and lowers the original Orders' payouts.
+- `components/entity/order/create-refund`: one refund per Order and purpose (the Order's own refund, or one listing's refund), so a resold Order can be refunded more than once.
+- `components/entity/order/commit-refund`: voids only the Order's Issued Tickets and ends its Listed listings.
+- `components/usecase/order/refund`: a cancellation refunds the price of the Order's Tickets that are still Issued.
+- `components/entity/settlement`: the share of resold tickets taken off a Held Settlement.
+- `components/usecase/ticket-sale/list-by-event`: returns whether resale is open and available.
+- `components/adapter/fan/api/rpc/ticket-sale`: carries whether resale is open and available, never a count.
+- `components/adapter/fan/api/rpc/checkout`: a returned Checkout says whether it is a resale checkout.
+- `components/infrastructure/fan/web/route/event`: the ticket section offers resale.
+- `components/infrastructure/fan/web/route/checkout`: the final confirmation of a resale checkout.
+- `components/infrastructure/fan/web/route/tickets`: listing, withdrawing, and a resold ticket's refund.
+- `components/infrastructure/fan/web/global/legal-document`: the Terms of Service state the resale rules.
+
+Unchanged and relied on: `components/usecase/order/issue-from-checkout` (it builds the purchasing fan's Order, Tickets and Settlement from the Checkout as for any checkout, and `Order.Issue` does the resale part), `components/usecase/order/fulfill-payment`, `components/usecase/notification/send-order-confirmation` (the purchasing fan's email), `components/usecase/checkout/release-expired` and `components/entity/checkout/release` (a listing is free again as soon as the Checkout holding it is no longer holding or Committed), `components/entity/ticket` (its user never changes; resale voids it and issues a new one), and `components/usecase/ticket/admit` (resale closes when admission opens).
 
 ## Impact
 
-- **Depends on (not yet specced/built):** ④ LotteryEntry (the
-  loser demand pool), ⑤ `ticket-purchase-and-issuance` (Order/Payment/Ticket +
-  **issuance + 本人確認 + covered-ticket face** + 収納代行 + refunds), ⑥
-  `ticket-wallet-and-checkin` (**void→invalidate credential** + the signed-token /
-  in-app dynamic-QR entry credential). This change is **authored ahead** to lock the design; its
-  `tasks.md` is gated on ④⑤⑥ shipping first.
-- **New domain entity:** `ResaleListing` (references the listing user's original
-  `Payment` and the matched user's new `Order` — no new money primitive).
-- **New RPCs:** `ListForResale` / `WithdrawListing` for the listing's user;
-  join-queue + match→buy for other users; organizer/admin structural-exclusion + earlier-cutoff config.
-- **Payments (⑤):** reuses Stripe Connect / 収納代行; adds the listing user's
-  refund trigger on resale completion (with a hold-back reserve) and `transfer_reversal`
-  clawback for chargebacks. Legal counsel brief (9 items) folded into #778.
-- **Legal:** confirms the two-leg structure avoids 資金移動業; no-inventory
-  electronic resale avoids 古物商許可; blanket consent satisfies 不正転売禁止法.
-- **No proto/frontend impact until ④⑤⑥ land;** this is a spec-only artifact now.
+- **specification:** `entity/v1/resale_listing.proto`; `ResaleListingService` (Create, Withdraw, List) under `rpc/resale_listing/v1`; `resale_open` and `resale_available` on the fan's TicketType; `resale` on the Checkout. Additive, no breaking change.
+- **backend:** an Atlas migration (`resale_listings`, `ticket_types.resale_open_time`; design D8); the entity, repository, usecase and handler code above; the 1-minute `RefundSold` job in the existing checkout sweeper (design D6).
+- **frontend:** event page ticket section, checkout final confirmation, tickets screen listing flow, Terms of Service text, ja/en copy.
+- **cloud-provisioning:** none expected.
+- **Legal:** the counsel opinion in `payments-legal-compliance` 1.1 covers the two money legs (a refund of the fan's own payment and a new sale to the purchasing fan, so money never moves between fans). The Organizer's consent to resale is a clause of the Organizer agreement (design D10).
+- **Depends on:** the shipped `first-come-ticket-sales`, `ticket-wallet-and-checkin` and `referral-attribution`. Must ship before the `payments-legal-compliance` livemode gate.

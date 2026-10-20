@@ -1,75 +1,106 @@
 ## Purpose
 
-A resale listing represents one ticket its user has offered back to the platform for a sanctioned face-value resale, tracking its price, deadline, and lifecycle from listed through matched, withdrawn, or expired, so no seat changes hands off-platform or above face value.
+A ResaleListing is a fan's offer of one of their Tickets for official resale (公式リセール) at face value, after the Ticket's first-come TicketType sold out. Another fan buys it through a Checkout of the same TicketType; the listing's Ticket is then Voided, the other fan receives a new Ticket, and the listing's user is refunded the price minus the resale fee.
+
+| attribute | meaning | constraint |
+|-----------|---------|------------|
+| id | the listing's identity | required, assigned on creation |
+| ticket | the Ticket offered | required; Issued and not admitted when listed |
+| order | the Order that issued the Ticket, whose charge the user is refunded from | required |
+| user | the fan offering it, the Ticket's user | required |
+| ticket type | the FirstCome TicketType the Ticket was bought from | required |
+| price | face value of the Ticket (券面価格), in whole yen 税込 (tax-inclusive) | required; the ticket type's price when listed |
+| status | lifecycle | Listed, Sold, Withdrawn or Cancelled |
+| checkout | the Checkout that last held the listing | absent until a Checkout holds it |
+| create time | when the fan listed the Ticket | required |
+| sold time | when another fan's Order bought it | absent unless Sold |
+| withdraw time | when the fan withdrew it | absent unless Withdrawn |
+| provider refund ID | the payment provider's ID for the refund to the listing's user | absent until refunded; set once |
+| refund time | when the listing's user was refunded | absent until refunded; set once |
+| sold email send time | when the email telling the user the Ticket sold was sent | absent until sent; set once |
+
+```mermaid
+erDiagram
+  User ||--o{ ResaleListing : "lists"
+  Ticket ||--o{ ResaleListing : "is offered by"
+  Order ||--o{ ResaleListing : "is refunded through"
+  TicketType ||--o{ ResaleListing : "is resold through"
+  Checkout |o--o{ ResaleListing : "holds"
+```
+
+```mermaid
+stateDiagram-v2
+  [*] --> Listed
+  Listed --> Sold
+  Listed --> Withdrawn
+  Listed --> Cancelled
+  Sold --> [*]
+  Withdrawn --> [*]
+  Cancelled --> [*]
+```
 
 ## ADDED Requirements
 
+### Requirement: Resale fee and refund amount
+
+A listing's resale fee SHALL be 10% of its price, rounded down to the yen, and its refund amount SHALL be its price minus the resale fee.
+
+#### Scenario: Round price
+- **WHEN** a listing's price is 5000 yen
+- **THEN** its resale fee is 500 yen and its refund amount is 4500 yen
+
+#### Scenario: Price that does not divide evenly
+- **WHEN** a listing's price is 3333 yen
+- **THEN** its resale fee is 333 yen and its refund amount is 3000 yen
+
+#### Scenario: Smallest price
+- **WHEN** a listing's price is 9 yen
+- **THEN** its resale fee is 0 yen and its refund amount is 9 yen
+
 ### Requirement: Resale deadline
 
-The system SHALL stop accepting new listings and stop matching at a **resale
-deadline of one hour before the event start time (`start_time − 1h`)**. An
-Organizer MAY configure an **earlier** cutoff for their event but MUST NOT set a
-later one.
+A listing's deadline SHALL be the opening of its Ticket's event's admission window as the event's current times give it: 3 hours before the open time, or 3 hours before the start time when the event has no open time.
 
-#### Scenario: Listing after the deadline is rejected
+#### Scenario: Event with an open time
+- **WHEN** the event opens its doors at 18:00 and starts at 19:00
+- **THEN** the deadline is 15:00 that day
 
-- **WHEN** the ticket's user attempts to list a ticket at or after `start_time − 1h` (or the organizer's earlier cutoff)
-- **THEN** the system rejects the listing because the resale window has closed
+#### Scenario: Event without an open time
+- **WHEN** the event has no open time and starts at 19:00
+- **THEN** the deadline is 16:00 that day
 
-#### Scenario: Organizer sets an earlier cutoff
+### Requirement: Open and expired
 
-- **WHEN** an Organizer configures a resale cutoff earlier than `start_time − 1h`
-- **THEN** listing and matching stop at that earlier time for that event
+A listing SHALL be open at a time when it is Listed and the time is before its deadline. A Listed listing at or after its deadline SHALL be expired: it can no longer be held, bought or withdrawn, and its Ticket stays the user's.
 
-### Requirement: Resale is enabled by default with structural exclusions only
+#### Scenario: Before the deadline
+- **WHEN** a Listed listing with the deadline 15:00 is checked at 14:59
+- **THEN** it is open
 
-The system SHALL treat official resale as **enabled by default on every standard
-paid event** (consent obtained as a blanket, standing grant in the vetted
-Organizer's platform agreement). It SHALL provide **no organizer self-serve
-off-switch**. A ticket SHALL be **non-resellable only** when an automatic
-**structural exclusion** applies — the ticket is **free (¥0)**, a **comp/invite**,
-**bundled with physical goods**, or a **name-locked special ticket** (a ticket
-type flagged as non-transferable by design — e.g. an FC-restricted or
-named-user-only ticket — which is distinct from the ordinary 本人確認 binding
-that every covered ticket, including reissued resale tickets, carries) — or when an
-**administrator** grants a documented exception for the event. These exclusion
-flags are ticket-type metadata defined by ⑤/⑥ (see design.md dependency).
+#### Scenario: At the deadline
+- **WHEN** the same listing is checked at 15:00
+- **THEN** it is expired and not open
 
-#### Scenario: Standard paid event is resale-enabled without organizer action
+#### Scenario: Sold listing
+- **WHEN** a Sold listing is checked before its deadline
+- **THEN** it is not open
 
-- **WHEN** a vetted Organizer publishes a standard paid event
-- **THEN** official resale is enabled for that event by default with no per-event opt-in step
+### Requirement: Free to hold
 
-#### Scenario: Structurally excluded ticket cannot be listed
+A listing SHALL be free at a time when it is open at that time and it has no Checkout, or its Checkout is neither holding at that time nor Committed. Only a free listing can be held by a new Checkout or withdrawn.
 
-- **WHEN** the ticket's user attempts to list a free, comp, goods-bundled, or name-locked ticket
-- **THEN** the system rejects the listing because the ticket is structurally excluded from resale
+#### Scenario: Never held
+- **WHEN** an open listing has no Checkout
+- **THEN** it is free
 
-#### Scenario: Administrator excludes an event by exception
+#### Scenario: Held by another fan
+- **WHEN** an open listing's Checkout is holding
+- **THEN** it is not free
 
-- **WHEN** an administrator records a documented resale exception for a specific event
-- **THEN** listing is disabled for that event, LISTED listings are withdrawn, and any in-flight OFFERED offer is voided with no charge (admin action overrides the OFFERED lock, which only blocks the *listing user*'s own withdrawal); already-SOLD resales are unaffected
+#### Scenario: Hold lapsed
+- **WHEN** an open listing's Checkout is Expired
+- **THEN** it is free
 
-### Requirement: Event cancellation while listed
-
-When an event is **cancelled** while a ticket is in `LISTED` or `OFFERED` state
-(fresh-sale leg not yet completed), the system SHALL cancel the listing/offer and
-route the ticket to the **normal cancellation-refund path** — the resale
-fresh-sale leg MUST NOT execute. A postponed show is handled as a cancellation
-followed by a new event, so it takes this same path.
-
-#### Scenario: Cancellation supersedes a live listing
-
-- **WHEN** an event is cancelled while a ticket is in LISTED or OFFERED state
-- **THEN** the listing/offer is cancelled and the ticket's user receives the standard cancellation refund, not a resale outcome
-
-### Requirement: Anonymity and no person-to-person contact
-
-The system SHALL keep the listing's user and the matched user **anonymous to each other**: they MUST
-NOT exchange personal information and money MUST NOT move person-to-person. All
-matching happens through the platform pool.
-
-#### Scenario: No personal information is exchanged
-
-- **WHEN** a resale match completes
-- **THEN** neither party learns the other's identity or contact details, and no direct payment occurred between them
+#### Scenario: Being charged
+- **WHEN** an open listing's Checkout is Committed
+- **THEN** it is not free
