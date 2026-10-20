@@ -4,6 +4,22 @@
 
 A fan records where they stand in getting a ticket for an event and sees the same status for that event on every screen, right after the change is saved and never from someone else's session.
 
+```mermaid
+usecase-beta
+direction LR
+actor Fan("fan")
+systemBoundary "Liverty Music"
+  Goal("Track ticket journey")
+  TicketJourneyUseCaseSetStatus("TicketJourneyUseCase.SetStatus")
+  TicketJourneyUseCaseDelete("TicketJourneyUseCase.Delete")
+  TicketJourneyUseCaseList("TicketJourneyUseCase.List")
+end
+Fan --> Goal
+Goal ..> : include TicketJourneyUseCaseSetStatus
+Goal ..> : include TicketJourneyUseCaseDelete
+Goal ..> : include TicketJourneyUseCaseList
+```
+
 ## Requirements
 
 ### Requirement: One status per event on every screen

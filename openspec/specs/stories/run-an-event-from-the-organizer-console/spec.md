@@ -3,6 +3,24 @@
 ## Purpose
 A member of an Organizer takes one event from draft to the door in the organizer console — publishes it, opens a lottery sale, watches it, and issues the scanners venue staff use — reaching every step by navigation, on a PC or on a phone.
 
+```mermaid
+usecase-beta
+direction LR
+actor Member("member")
+systemBoundary "Liverty Music"
+  Goal("Run an event from the organizer console")
+  SeriesUseCasePublish("SeriesUseCase.Publish")
+  TicketSaleUseCaseCreate("TicketSaleUseCase.Create")
+  TicketSaleUseCaseListOwnByEvent("TicketSaleUseCase.ListOwnByEvent")
+  ScannerUseCaseCreate("ScannerUseCase.Create")
+end
+Member --> Goal
+Goal ..> : include SeriesUseCasePublish
+Goal ..> : include TicketSaleUseCaseCreate
+Goal ..> : include TicketSaleUseCaseListOwnByEvent
+Goal ..> : include ScannerUseCaseCreate
+```
+
 ## Requirements
 
 ### Requirement: From draft to the door by navigation

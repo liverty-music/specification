@@ -63,6 +63,11 @@ jobs:
       - name: Check spec layout
         run: python3 scripts/check-spec-layout.py
 
+      # Every usecase method a story names is drawn in its Purpose's
+      # usecase-beta fence. Main specs only, like the rest of this job.
+      - name: Check story diagrams
+        run: python3 scripts/check-story-diagrams.py
+
       # Changes are judged only when this PR touches them, so an in-progress
       # change on main never blocks unrelated PRs.
       - name: Find changes touched by this PR

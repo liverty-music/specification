@@ -3,6 +3,30 @@
 ## Purpose
 A fan opens an event link that carries a referral code, signs up if needed and buys tickets or enters the lottery within 7 days, and the Organizer sees the paid purchase counted under that code on the event's Sales tab.
 
+```mermaid
+usecase-beta
+direction LR
+actor Fan("fan")
+actor Member("member")
+actor Member("member")
+systemBoundary "Liverty Music"
+  Goal("Attribute a purchase to a referral link")
+  TicketSaleUseCaseCreate("TicketSaleUseCase.Create")
+  CheckoutUseCaseStart("CheckoutUseCase.Start")
+  CheckoutUseCaseAuthorizeCard("CheckoutUseCase.AuthorizeCard")
+  OrderUseCaseIssueFromCheckout("OrderUseCase.IssueFromCheckout")
+  TicketSaleUseCaseListOwnByEvent("TicketSaleUseCase.ListOwnByEvent")
+end
+Fan --> Goal
+Goal ..> : include TicketSaleUseCaseCreate
+Goal ..> : include CheckoutUseCaseStart
+Goal ..> : include CheckoutUseCaseAuthorizeCard
+Goal ..> : include OrderUseCaseIssueFromCheckout
+Goal ..> : include TicketSaleUseCaseListOwnByEvent
+Member --> TicketSaleUseCaseCreate
+Member --> TicketSaleUseCaseListOwnByEvent
+```
+
 ## Requirements
 
 ### Requirement: A purchase counts for the link the fan came from

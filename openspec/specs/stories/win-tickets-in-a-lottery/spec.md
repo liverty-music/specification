@@ -4,6 +4,34 @@
 
 A fan enters an Organizer's lottery with a card authorization, the draw runs after the window closes, and a winning fan is charged and receives account-bound covered tickets while a losing fan is never charged.
 
+```mermaid
+usecase-beta
+direction LR
+actor Fan("fan")
+actor Member("member")
+systemBoundary "Liverty Music"
+  Goal("Win tickets in a lottery")
+  TicketSaleUseCaseCreate("TicketSaleUseCase.Create")
+  LotteryEntryUseCaseStart("LotteryEntryUseCase.Start")
+  LotteryEntryUseCaseAuthorizeCard("LotteryEntryUseCase.AuthorizeCard")
+  LotteryEntryUseCaseConfirm("LotteryEntryUseCase.Confirm")
+  LotteryEntryUseCaseWithdraw("LotteryEntryUseCase.Withdraw")
+  LotteryEntryUseCaseListByTicketType("LotteryEntryUseCase.ListByTicketType")
+  TicketUseCaseList("TicketUseCase.List")
+  SettlementUseCaseReleaseDueSettlements("SettlementUseCase.ReleaseDueSettlements")
+end
+Fan --> Goal
+Goal ..> : include TicketSaleUseCaseCreate
+Goal ..> : include LotteryEntryUseCaseStart
+Goal ..> : include LotteryEntryUseCaseAuthorizeCard
+Goal ..> : include LotteryEntryUseCaseConfirm
+Goal ..> : include LotteryEntryUseCaseWithdraw
+Goal ..> : include LotteryEntryUseCaseListByTicketType
+Goal ..> : include TicketUseCaseList
+Goal ..> : include SettlementUseCaseReleaseDueSettlements
+Member --> TicketSaleUseCaseCreate
+```
+
 ## Requirements
 
 ### Requirement: The Organizer's payout readiness never blocks the sale

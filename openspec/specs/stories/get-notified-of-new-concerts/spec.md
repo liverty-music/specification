@@ -4,6 +4,20 @@
 
 A fan who follows an artist gets one push message on each of their registered browsers when concerts matching their hype level are added for that artist, and every such message is kept as a Notification with its delivery outcome.
 
+```mermaid
+usecase-beta
+direction LR
+actor Fan("fan")
+systemBoundary "Liverty Music"
+  Goal("Get notified of new concerts")
+  NotificationUseCaseNotifyNewConcerts("NotificationUseCase.NotifyNewConcerts")
+  NotificationUseCaseDeliver("NotificationUseCase.Deliver")
+end
+Fan --> Goal
+Goal ..> : include NotificationUseCaseNotifyNewConcerts
+Goal ..> : include NotificationUseCaseDeliver
+```
+
 ## Requirements
 
 ### Requirement: New concerts reach matched followers' browsers and are recorded

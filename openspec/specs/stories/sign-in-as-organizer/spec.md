@@ -7,6 +7,22 @@ app and the admin console, and always lands in their own Organizer's
 Organization, never another one, whether signing in for the first time from an
 invitation or returning with a passkey.
 
+```mermaid
+usecase-beta
+direction LR
+actor Member("member")
+actor Admin("admin")
+systemBoundary "Liverty Music"
+  Goal("Sign in as organizer")
+  OrganizerUseCaseCreate("OrganizerUseCase.Create")
+  OrganizerUseCaseSendSignInLinks("OrganizerUseCase.SendSignInLinks")
+end
+Member --> Goal
+Goal ..> : include OrganizerUseCaseCreate
+Goal ..> : include OrganizerUseCaseSendSignInLinks
+Admin --> OrganizerUseCaseCreate
+```
+
 ## Requirements
 
 ### Requirement: Sign in as a member via org-pinned entry

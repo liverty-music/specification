@@ -14,7 +14,7 @@ artifacts:
       - **What Changes**: Bullet list of changes. Be specific about new capabilities, modifications, or removals. Mark breaking changes with **BREAKING**.
       - **Capabilities**: Identify which specs will be created or modified:
         - **New Capabilities**: List capabilities being introduced. Each becomes a new `specs/<capability-path>/spec.md`. The path is one of the spec-tree slots defined in the specs instruction - `stories/<story>`, `components/entity/<entity>`, `components/entity/<entity>/<operation>`, `components/usecase/<entity>/<method>`, `components/adapter|infrastructure/<audience>/<delivery>/.../<component>` - in kebab-case.
-        - **Modified Capabilities**: List existing capabilities whose REQUIREMENTS are changing. Only include if spec-level behavior changes (not just implementation details). Each needs a delta spec file. Use the exact existing path under `openspec/specs/`. Leave empty if no requirement changes. An entity's Purpose (its attribute table and state diagram) is edited directly in the main spec, never through a delta: list the entity here marked (Purpose) so reviewers see it, and if that is the change's only spec edit set `skip_specs: true` and say so. When a usecase is listed, also list the entity and the entity operations it relies on, or state here why they are unchanged.
+        - **Modified Capabilities**: List existing capabilities whose REQUIREMENTS are changing. Only include if spec-level behavior changes (not just implementation details). Each needs a delta spec file. Use the exact existing path under `openspec/specs/`. Leave empty if no requirement changes. An entity's Purpose (its attribute table and state diagram) and a story's Purpose (its usecase diagram) are edited directly in the main spec, never through a delta: list the entity or story here marked (Purpose) so reviewers see it, and if that is the change's only spec edit set `skip_specs: true` and say so. When a usecase is listed, also list the entity and the entity operations it relies on, or state here why they are unchanged.
       - **Impact**: Affected code, APIs, dependencies, or systems.
 
       IMPORTANT: The Capabilities section is critical. It creates the contract between
@@ -235,6 +235,37 @@ artifacts:
                          or a promise an operation spec makes is never
                          restated here; a rule that must hold no matter who
                          calls goes in the entity spec.
+
+      stories/<story>/spec.md
+
+        ## Purpose
+          The user goal in one or two sentences. When the story composes
+          usecases, draw it in a `mermaid` usecase-beta fence: one
+          `systemBoundary "Liverty Music"` holding the goal (labelled with
+          the story name as a sentence) and each usecase method the story
+          composes (labelled with its full name, OrderUseCase.Checkout); an
+          `include` edge from the goal to each method; the actor who pursues
+          the goal, outside the boundary, with an edge to the goal (none when
+          the platform pursues it on its own, as in discovery); and any
+          other actor with an edge to the method it triggers. A method run
+          by a schedule or an internal event has only its include edge.
+          Actors are named in the entity vocabulary: fan, admin, member,
+          venue staff. The fence names every usecase method the story's
+          requirements name; it may also name one they describe in words.
+          No front-matter config. Order is not drawn: it is the scenarios'.
+          Like an entity's Purpose, it is edited directly in the main spec;
+          a new story puts it in its delta's Purpose.
+            usecase-beta
+            direction LR
+            actor Member("member")
+            systemBoundary "Liverty Music"
+              Goal("Publish an organizer concert")
+              Create("SeriesUseCase.Create")
+              Publish("SeriesUseCase.Publish")
+            end
+            Member --> Goal
+            Goal ..> : include Create
+            Goal ..> : include Publish
 
       One rule, split across four places:
 

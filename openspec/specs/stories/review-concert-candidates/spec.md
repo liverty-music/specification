@@ -4,6 +4,24 @@
 
 An admin reviews concerts held back from automatic publishing, publishing the good ones, reconciling duplicates, and dropping the wrong ones, while rejected concerts stay eligible for later discovery.
 
+```mermaid
+usecase-beta
+direction LR
+actor Admin("admin")
+systemBoundary "Liverty Music"
+  Goal("Review concert candidates")
+  ConcertCreationUseCaseCreateFromDiscovered("ConcertCreationUseCase.CreateFromDiscovered")
+  ConcertCandidateUseCaseList("ConcertCandidateUseCase.List")
+  ConcertCandidateUseCaseApprove("ConcertCandidateUseCase.Approve")
+  ConcertCandidateUseCaseReject("ConcertCandidateUseCase.Reject")
+end
+Admin --> Goal
+Goal ..> : include ConcertCreationUseCaseCreateFromDiscovered
+Goal ..> : include ConcertCandidateUseCaseList
+Goal ..> : include ConcertCandidateUseCaseApprove
+Goal ..> : include ConcertCandidateUseCaseReject
+```
+
 ## Requirements
 
 ### Requirement: Concert candidates are reviewed through the queue
