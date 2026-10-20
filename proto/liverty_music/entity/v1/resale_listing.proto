@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/ticket.proto";
+import "liverty_music/entity/v1/ticket_type.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// ResaleListingId is a globally unique identifier for a single ResaleListing.
+// Server-generated (UUIDv7).
+message ResaleListingId {
+  // A UUID string mapping to the listing's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// ResaleListingStatus is where a ResaleListing stands. New values may be
+// appended; existing values must not be renumbered.
+//
+//   LISTED --> SOLD | WITHDRAWN | CANCELLED
+//   LISTED --> EXPIRED   (derived when read, never stored)
+enum ResaleListingStatus {
+  // Default value, rejected at the boundary: a returned listing always carries
+  // a concrete status.
+  RESALE_LISTING_STATUS_UNSPECIFIED = 0;
+
+  // Offered for resale and open: before its deadline and not yet sold. Another
+  // fan's Checkout may be holding it.
+  RESALE_LISTING_STATUS_LISTED = 1;
+
+  // Another fan's Order bought it. The listing's Ticket is Voided, and the fan
+  // is refunded the refund amount to the card they paid with.
+  RESALE_LISTING_STATUS_SOLD = 2;
+
+  // The fan withdrew it before anyone bought it. The Ticket stays theirs.
+  RESALE_LISTING_STATUS_WITHDRAWN = 3;
+
+  // Ended because the Ticket's Order was refunded, as for a 中止 (cancelled)
+  // concert. The fan is refunded through that Order.
+  RESALE_LISTING_STATUS_CANCELLED = 4;
+
+  // Still listed at its deadline, so it can no longer be bought or withdrawn.
+  // The Ticket stays the fan's and works at the door. Returned by the server
+  // for a LISTED listing read at or after its deadline; never stored.
+  RESALE_LISTING_STATUS_EXPIRED = 5;
+}
+
+// ResaleListing is a fan's offer of one of their Tickets for official resale
+// (公式リセール) at face value, after the Ticket's first-come TicketType sold
+// out. Another fan buys it through a Checkout of the same TicketType; the
+// listing's Ticket is then Voided, the other fan receives a new Ticket, and the
+// listing's fan is refunded the price minus the resale fee. A Ticket has at
+// most one LISTED listing at a time.
+//
+// A returned listing shows only the fan's own side: it never carries the
+// Checkout that holds it or anything about the fan who bought it.
+message ResaleListing {
+  // The fee and the refund amount add up to the price.
+  option (buf.validate.message).cel = {
+    id: "resale_listing.fee_plus_refund_is_price"
+    message: "fee + refund_amount must equal price"
+    expression: "this.fee + this.refund_amount == this.price.value"
+  };
+
+  // The unique identifier for this listing. Server-generated.
+  ResaleListingId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The Ticket offered: one of the fan's Tickets of a first-come TicketType,
+  // Issued and not admitted when listed.
+  TicketId ticket_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The face value of the Ticket (券面価格) in whole yen, tax-inclusive (税込):
+  // the TicketType's price when listed, which is also what the fan paid for the
+  // Ticket and what the purchasing fan pays. Server-owned.
+  TicketTypePrice price = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The resale fee in whole yen: 10% of the price, rounded down to the yen.
+  // Server-owned.
+  int64 fee = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).int64.gte = 0
+  ];
+
+  // The amount refunded to the fan when the listing sells, in whole yen: the
+  // price minus the fee. Server-owned.
+  int64 refund_amount = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).int64.gt = 0
+  ];
+
+  // Where the listing stands at the time it was read. Server-owned.
+  ResaleListingStatus status = 6 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // When the fan listed the Ticket. Server-owned.
+  google.protobuf.Timestamp create_time = 7 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // When the listing can no longer be bought or withdrawn: 3 hours before its
+  // event's start time, which is when the event's admission window opens. The
+  // start time is required for a sale and fixed once a TicketType offers the
+  // event. Server-owned.
+  google.protobuf.Timestamp deadline_time = 8 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // When another fan's Order bought the listing. Absent unless SOLD.
+  // Server-owned.
+  google.protobuf.Timestamp sold_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When the fan was refunded the refund amount. Absent until refunded, which
+  // happens within about a minute after the listing is SOLD; set once.
+  // Server-owned.
+  google.protobuf.Timestamp refund_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+}

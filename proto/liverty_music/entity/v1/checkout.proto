@@ -49,12 +49,17 @@ enum CheckoutStatus {
 }
 
 // Checkout is one fan's purchase in progress on a TicketType of a first-come
-// TicketSale: it holds a count of tickets for exactly 15 minutes, never
-// extended, while the fan confirms their 本人確認 (identity check) details and
+// TicketSale: it holds a count of tickets for 15 minutes, never extended,
+// while the fan confirms their 本人確認 (identity check) details and
 // authorizes their card. It ends with the tickets committed, charged and issued
 // as an Order, or with the hold released and any card authorization released. A
 // fan has at most one holding Checkout per ticket type, and a charged Checkout
 // is never released. The fan's full name and phone number are the User's.
+//
+// A resale Checkout holds other fans' ResaleListings of a sold-out TicketType
+// instead of its stock, at the same price, and its hold also ends at the
+// resale deadline when that comes first. It never names the listings or their
+// fans.
 message Checkout {
   // The unique identifier for this checkout. Server-generated.
   CheckoutId id = 1 [
@@ -84,9 +89,10 @@ message Checkout {
     (buf.validate.field).enum.defined_only = true
   ];
 
-  // When the hold lapses: exactly 15 minutes after the checkout started, never
-  // extended. The tickets can be committed only before this instant.
-  // Server-owned.
+  // When the hold lapses: 15 minutes after the checkout started, never
+  // extended. For a resale Checkout it is the resale deadline instead when that
+  // is earlier, so no resale hold lasts into admission. The tickets can be
+  // committed only before this instant. Server-owned.
   google.protobuf.Timestamp hold_expire_time = 8 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
@@ -107,6 +113,13 @@ message Checkout {
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
+
+  // True for a resale Checkout: it holds official resale (公式リセール) tickets
+  // that other fans listed, at face value, because the TicketType is sold out
+  // and its resale is open. False when it holds the TicketType's own stock.
+  // Neither the listings nor how many there are is ever returned.
+  // Server-owned.
+  bool resale = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // Field 2 was the per-event sale, replaced by ticket_type_id. The fan (always
   // the caller) and the start time are not exposed. Field 6 was the 本人確認

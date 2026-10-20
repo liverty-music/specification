@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.resale_listing.v1 provides the fan-facing
+// ResaleListingService: the signed-in fan's official resale (公式リセール)
+// listings of their own tickets. Buying a listed ticket is not here: another
+// fan buys it through liverty_music.rpc.checkout.v1, which holds listings when
+// the TicketType is sold out and its resale is open. Refunding a sold listing
+// runs as an internal backend job, not an RPC.
+package liverty_music.rpc.resale_listing.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/resale_listing.proto";
+import "liverty_music/entity/v1/ticket.proto";
+
+// ResaleListingService lets a fan who cannot attend offer a ticket for
+// official resale at face value, withdraw the offer while nobody is buying it,
+// and see where each listing stands and how much is refunded. Every call
+// requires a signed-in fan, who is always the caller; the fan is resolved from
+// the token to their stored account and is never named in a request. A
+// signed-in caller with no stored account fails with NOT_FOUND.
+service ResaleListingService {
+  // Create lists one of the caller's Tickets for official resale and returns
+  // the LISTED listing. The Ticket must be Issued and not admitted, bought
+  // through a first-come Checkout whose TicketType has sold out, for a
+  // published concert, and resale must still be open: before the listing's
+  // deadline, 3 hours before the event's start time. A Ticket has at most one
+  // LISTED listing; one whose earlier listing was withdrawn can be listed
+  // again.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - NOT_FOUND: The caller has no stored account.
+  // - INVALID_ARGUMENT: The ticket_id is missing or malformed.
+  // - PERMISSION_DENIED: The Ticket does not exist or is another fan's.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The Ticket is Voided or admitted, it came from a
+  //   lottery entry, its concert is not published (for example cancelled), its
+  //   TicketType never sold out, or the resale deadline has passed.
+  // - ALREADY_EXISTS: The Ticket already has a LISTED listing.
+  rpc Create(CreateRequest) returns (CreateResponse);
+
+  // Withdraw takes back the caller's listing so its Ticket is no longer for
+  // sale, and returns it WITHDRAWN. Only a listing that no other fan's
+  // Checkout is holding or being charged for can be withdrawn, and only before
+  // its deadline. Withdrawing a WITHDRAWN listing again changes nothing.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - NOT_FOUND: The caller has no stored account.
+  // - INVALID_ARGUMENT: The resale_listing_id is missing or malformed.
+  // - PERMISSION_DENIED: The listing does not exist or is another fan's.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: Another fan's Checkout is holding the listing or
+  //   being charged for it, or the listing is SOLD, CANCELLED or expired.
+  rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
+
+  // List returns all of the caller's listings, each with its fee, refund
+  // amount and deadline. A LISTED listing read at or after its deadline is
+  // returned EXPIRED. A caller who never listed gets an empty list.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  // - NOT_FOUND: The caller has no stored account.
+  rpc List(ListRequest) returns (ListResponse);
+}
+
+// CreateRequest names the Ticket to list.
+message CreateRequest {
+  // Required. One of the caller's Tickets.
+  entity.v1.TicketId ticket_id = 1 [(buf.validate.field).required = true];
+}
+
+// CreateResponse returns the new listing.
+message CreateResponse {
+  // The LISTED listing, with its price, fee, refund amount and deadline.
+  entity.v1.ResaleListing resale_listing = 1 [(buf.validate.field).required = true];
+}
+
+// WithdrawRequest names the listing to withdraw.
+message WithdrawRequest {
+  // Required. One of the caller's listings.
+  entity.v1.ResaleListingId resale_listing_id = 1 [(buf.validate.field).required = true];
+}
+
+// WithdrawResponse returns the withdrawn listing.
+message WithdrawResponse {
+  // The listing, now WITHDRAWN.
+  entity.v1.ResaleListing resale_listing = 1 [(buf.validate.field).required = true];
+}
+
+// ListRequest carries no fields: the caller is resolved from the token and all
+// of that account's listings are returned.
+message ListRequest {}
+
+// ListResponse returns the caller's listings.
+message ListResponse {
+  // The caller's listings in every status. Empty when the caller has none.
+  repeated entity.v1.ResaleListing resale_listings = 1;
+}
