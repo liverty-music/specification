@@ -356,7 +356,7 @@ implements/holds the duty.
 | 3 | **割賦販売法 (2018): card-data 非保持化 / PCI** | **Yes (precondition)** | Platform (加盟店) / Stripe | Stripe Elements so **no PAN touches our systems** (store only Stripe tokens/customer ids — incl. the saved-card-at-draw flow); keep **PCI SAQ A** + EMV 3DS on file. |
 | 4 | **個人情報保護法 (2022): 越境移転 to Stripe (US)** | **Yes** | Platform | Privacy policy: personal/card data is **entrusted (委託) to an overseas processor (Stripe, USA)** + **外的環境の把握** (US regime + Stripe safeguards); hold a **Stripe DPA** as 委託先監督 evidence. |
 | 5 | **犯収法 / AML-KYC** | Confirm | Stripe (card-level) | A pure 収納代行 that does **not** perform 為替取引 is generally **not** a 犯収法 特定事業者. Document why the flow is 収納代行, not remittance. **Same determination as the 資金決済法 boundary** — close it once. |
-| 6 | **反社会的勢力排除 (暴排条例)** | **Yes** | Platform | Organizer onboarding contract with a **暴排条項** (表明保証 + immediate termination) + a **反社チェック** step in vetting. *(Belongs to the organizer-accounts vetting flow — cross-reference.)* |
+| 6 | **反社会的勢力排除 (暴排条例)** | 努力義務 (no penalty) | Platform | Organizer agreement with a **暴排条項** (表明確約 + termination without notice), `payments-legal-compliance` 1.4. No screening step in the product: an admin creates Organizers one by one (owner, 2026-10-20). Revisit when Organizers sign up by themselves. |
 | 7 | **電子帳簿保存法 (2024 電子取引 mandatory)** | From day one | Platform | Retain fee invoices/receipts/transaction records electronically with **真実性 + 可視性** (searchable by date/amount/counterparty). |
 | 8 | **領収書 + 印紙税 / 適格請求書** | Low | Organizer (ticket) / Platform (fee) | Receipts must **print "クレジットカード決済"** → 印紙-free at any amount. 適格請求書: Organizer 登録番号 on the ticket, platform 登録番号 on the fee (代理交付/媒介者交付特例). |
 
