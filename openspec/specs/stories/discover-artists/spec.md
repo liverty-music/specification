@@ -4,6 +4,28 @@
 
 A fan finds artists to follow by searching by name, browsing popular charts or exploring artists similar to one they know; every artist found is a registered artist that soon shows the catalog's canonical name and its community images.
 
+```mermaid
+usecase-beta
+direction LR
+actor Fan("fan")
+systemBoundary "Liverty Music"
+  Goal("Discover artists")
+  ArtistUseCaseSearch("ArtistUseCase.Search")
+  ArtistUseCaseListTop("ArtistUseCase.ListTop")
+  ArtistUseCaseListSimilar("ArtistUseCase.ListSimilar")
+  ArtistUseCaseCreate("ArtistUseCase.Create")
+  ArtistNameResolutionUseCaseResolveCanonicalName("ArtistNameResolutionUseCase.ResolveCanonicalName")
+  ArtistImageSyncUseCaseSyncArtistImage("ArtistImageSyncUseCase.SyncArtistImage")
+end
+Fan --> Goal
+Goal ..> : include ArtistUseCaseSearch
+Goal ..> : include ArtistUseCaseListTop
+Goal ..> : include ArtistUseCaseListSimilar
+Goal ..> : include ArtistUseCaseCreate
+Goal ..> : include ArtistNameResolutionUseCaseResolveCanonicalName
+Goal ..> : include ArtistImageSyncUseCaseSyncArtistImage
+```
+
 ## Requirements
 
 ### Requirement: A discovered artist is registered and enriched

@@ -3,6 +3,28 @@
 ## Purpose
 A fan buys tickets for an Organizer's event first come, first served: they hold tickets for 15 minutes, pay by card, and receive account-bound covered tickets with a confirmation email, while no fan is ever charged for tickets they do not receive.
 
+```mermaid
+usecase-beta
+direction LR
+actor Fan("fan")
+actor Member("member")
+systemBoundary "Liverty Music"
+  Goal("Buy tickets first come")
+  TicketSaleUseCaseCreate("TicketSaleUseCase.Create")
+  CheckoutUseCaseStart("CheckoutUseCase.Start")
+  CheckoutUseCaseAuthorizeCard("CheckoutUseCase.AuthorizeCard")
+  OrderUseCaseIssueFromCheckout("OrderUseCase.IssueFromCheckout")
+  TicketUseCaseList("TicketUseCase.List")
+end
+Fan --> Goal
+Goal ..> : include TicketSaleUseCaseCreate
+Goal ..> : include CheckoutUseCaseStart
+Goal ..> : include CheckoutUseCaseAuthorizeCard
+Goal ..> : include OrderUseCaseIssueFromCheckout
+Goal ..> : include TicketUseCaseList
+Member --> TicketSaleUseCaseCreate
+```
+
 ## Requirements
 
 ### Requirement: Fan buys tickets

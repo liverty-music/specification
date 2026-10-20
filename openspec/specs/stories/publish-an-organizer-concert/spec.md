@@ -4,6 +4,28 @@
 
 An Organizer authors a concert for an Artist it represents, edits it while it is a draft, and publishes it; the published concert takes over matching discovered data and appears to fans according to its visibility. After publish the organizer corrects it, adds dates that are published on their own, and cancels dates.
 
+```mermaid
+usecase-beta
+direction LR
+actor Member("member")
+actor Fan("fan")
+systemBoundary "Liverty Music"
+  Goal("Publish an organizer concert")
+  SeriesUseCaseCreate("SeriesUseCase.Create")
+  SeriesUseCaseUpdate("SeriesUseCase.Update")
+  SeriesUseCasePublish("SeriesUseCase.Publish")
+  SeriesUseCaseCancel("SeriesUseCase.Cancel")
+  ConcertUseCaseListByArtist("ConcertUseCase.ListByArtist")
+end
+Member --> Goal
+Goal ..> : include SeriesUseCaseCreate
+Goal ..> : include SeriesUseCaseUpdate
+Goal ..> : include SeriesUseCasePublish
+Goal ..> : include SeriesUseCaseCancel
+Goal ..> : include ConcertUseCaseListByArtist
+Fan --> ConcertUseCaseListByArtist
+```
+
 ## Requirements
 
 ### Requirement: Draft to published

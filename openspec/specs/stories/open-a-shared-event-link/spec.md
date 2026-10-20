@@ -3,6 +3,30 @@
 ## Purpose
 A fan who taps an event link that an artist shared, or a new-concert notification, lands on that event's public page whether or not they have an account, can follow the artist there, and when they sign up to buy, comes back to the same event.
 
+```mermaid
+usecase-beta
+direction LR
+actor Fan("fan")
+actor Member("member")
+actor Member("member")
+systemBoundary "Liverty Music"
+  Goal("Open a shared event link")
+  SeriesUseCasePublish("SeriesUseCase.Publish")
+  SeriesUseCaseCancel("SeriesUseCase.Cancel")
+  ConcertUseCaseGet("ConcertUseCase.Get")
+  ConcertUseCaseListBySeries("ConcertUseCase.ListBySeries")
+  NotificationUseCaseNotifyNewConcerts("NotificationUseCase.NotifyNewConcerts")
+end
+Fan --> Goal
+Goal ..> : include SeriesUseCasePublish
+Goal ..> : include SeriesUseCaseCancel
+Goal ..> : include ConcertUseCaseGet
+Goal ..> : include ConcertUseCaseListBySeries
+Goal ..> : include NotificationUseCaseNotifyNewConcerts
+Member --> SeriesUseCasePublish
+Member --> SeriesUseCaseCancel
+```
+
 ## Requirements
 
 ### Requirement: A shared link shows the event to anyone

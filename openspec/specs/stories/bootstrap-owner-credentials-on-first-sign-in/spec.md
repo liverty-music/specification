@@ -7,6 +7,20 @@ invitation email and lands in the organizer console signed in to their own
 Organizer, without ever typing a code; an admin re-invites them when they lose
 access.
 
+```mermaid
+usecase-beta
+direction LR
+actor Member("member")
+actor Admin("admin")
+systemBoundary "Liverty Music"
+  Goal("Bootstrap owner credentials on first sign in")
+  OrganizerUseCaseCreate("OrganizerUseCase.Create")
+end
+Member --> Goal
+Goal ..> : include OrganizerUseCaseCreate
+Admin --> OrganizerUseCaseCreate
+```
+
 ## Requirements
 
 ### Requirement: Owner bootstraps credentials on first sign-in

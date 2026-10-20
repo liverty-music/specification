@@ -3,6 +3,22 @@
 ## Purpose
 An admin retires an Organizer that should no longer exist, such as a test Organizer: it is deactivated so the identities of its Organization can no longer sign in, then deleted permanently from the admin console's Organizers screen.
 
+```mermaid
+usecase-beta
+direction LR
+actor Admin("admin")
+systemBoundary "Liverty Music"
+  Goal("Retire an organizer")
+  OrganizerUseCaseList("OrganizerUseCase.List")
+  OrganizerUseCaseDeactivate("OrganizerUseCase.Deactivate")
+  OrganizerUseCaseDelete("OrganizerUseCase.Delete")
+end
+Admin --> Goal
+Goal ..> : include OrganizerUseCaseList
+Goal ..> : include OrganizerUseCaseDeactivate
+Goal ..> : include OrganizerUseCaseDelete
+```
+
 ## Requirements
 
 ### Requirement: An admin deactivates and then deletes an Organizer from the Organizers screen

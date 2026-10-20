@@ -4,6 +4,24 @@
 
 An admin removes a wrong Concert from the catalog for good: neither the next discovery run nor an Organizer's publish brings the same slot back.
 
+```mermaid
+usecase-beta
+direction LR
+actor Admin("admin")
+actor Member("member")
+systemBoundary "Liverty Music"
+  Goal("Delete a wrong concert")
+  ConcertUseCaseDelete("ConcertUseCase.Delete")
+  ConcertCreationUseCaseCreateFromDiscovered("ConcertCreationUseCase.CreateFromDiscovered")
+  SeriesUseCasePublish("SeriesUseCase.Publish")
+end
+Admin --> Goal
+Goal ..> : include ConcertUseCaseDelete
+Goal ..> : include ConcertCreationUseCaseCreateFromDiscovered
+Goal ..> : include SeriesUseCasePublish
+Member --> SeriesUseCasePublish
+```
+
 ## Requirements
 
 ### Requirement: A deleted slot stays deleted

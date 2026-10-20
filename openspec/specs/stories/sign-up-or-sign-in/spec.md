@@ -4,6 +4,18 @@
 
 Defines user authentication behavior: sign up / sign in, session restoration on cold start, and the server-side session monitoring policy.
 
+```mermaid
+usecase-beta
+direction LR
+actor Fan("fan")
+systemBoundary "Liverty Music"
+  Goal("Sign up or sign in")
+  UserUseCaseCreate("UserUseCase.Create")
+end
+Fan --> Goal
+Goal ..> : include UserUseCaseCreate
+```
+
 ## Requirements
 
 ### Requirement: Sign Up / Sign In
