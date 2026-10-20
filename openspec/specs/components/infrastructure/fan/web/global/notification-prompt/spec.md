@@ -129,26 +129,12 @@ The notification prompt SHALL be eligible to display on the first session after 
 
 ---
 
-### Requirement: Dismissed Prompts Do Not Reappear
+### Requirement: Dismissed notification prompt does not reappear
 
-When the user dismisses the notification prompt, the system SHALL persist the dismissal and SHALL NOT show that prompt again. The `pwa-install-banner` supports session-level dismiss: tapping the close button suppresses the banner for the current session only, and it reappears in subsequent sessions until the app is installed.
+When the user dismisses the notification prompt, the system SHALL persist the dismissal and SHALL NOT show that prompt again. The `pwa-install-banner` has no dismiss of its own (see Pwa Install Banner).
 
 #### Scenario: User dismisses notification prompt
 
 - **WHEN** the user taps the dismiss control on the notification prompt
 - **THEN** the system SHALL write the dismissal to `localStorage`
 - **AND** the notification prompt SHALL NOT appear on subsequent sessions
-
-#### Scenario: User dismisses pwa-install-banner (session-level)
-
-- **WHEN** the user taps the close button on the `pwa-install-banner`
-- **THEN** the banner SHALL be hidden for the remainder of the current session
-- **AND** the dismiss state SHALL be stored in `sessionStorage` only (NOT `localStorage`)
-- **AND** the banner SHALL reappear on the next session if the app has not been installed
-
-#### Scenario: Session dismiss is not permanent suppression
-
-- **WHEN** the user has dismissed the `pwa-install-banner` in a previous session
-- **AND** a new session begins
-- **AND** the app has not been installed
-- **THEN** the banner SHALL be shown again (session storage is cleared on new session)

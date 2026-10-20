@@ -8,12 +8,12 @@ Invites a signed-in, not-yet-installed user to install the app to their device o
 
 ### Requirement: PWA Install Prompt i18n
 
-The PWA install banner SHALL take all user-facing text from the app's translations, so that it reads in the user's locale (Japanese or English), consistent with the notification prompt's existing i18n pattern.
+The PWA install banner SHALL take all user-facing text from the app's translations, so that it reads in the user's locale (Japanese or English), consistent with the notification prompt's existing i18n pattern. The message SHALL read 「新着ライブ通知を受け取ろう！」 in Japanese and "Get new show alerts!" in English, and the install button SHALL read "Install" in both.
 
 #### Scenario: PWA install prompt displays localized text
 
 - **WHEN** the PWA install banner is visible
-- **THEN** the banner's accessible label, its message, its install button label and its close button's accessible name SHALL come from the translations of the user's locale
+- **THEN** the banner's accessible label, its message and its install button label SHALL come from the translations of the user's locale
 - **AND** the guide sheet's title, its steps and its "added" button label SHALL come from the same translations
 - **AND** the text SHALL NOT be hardcoded in the template
 
@@ -80,14 +80,13 @@ The `pwa-install-banner` SHALL be eligible immediately after onboarding completi
 
 ### Requirement: Banner Visible to Authenticated Non-Installed Users After Onboarding
 
-The system SHALL display the `pwa-install-banner` to authenticated users who have not installed the PWA, once onboarding is completed. The banner SHALL NOT be shown to unauthenticated (guest) users.
+The system SHALL display the `pwa-install-banner` to authenticated users who have not installed the PWA, once onboarding is completed. The banner SHALL NOT be shown to unauthenticated (guest) users. The banner offers no way to close it: it stays until the app is installed or the user confirms the install in the guide sheet.
 
 #### Scenario: Authenticated user has not installed the PWA
 
 - **WHEN** the user is authenticated
 - **AND** onboarding is completed (`OnboardingStep.COMPLETED`)
 - **AND** the app has not been installed
-- **AND** the session-dismiss flag is NOT set in `sessionStorage`
 - **THEN** the system SHALL display the `pwa-install-banner`
 
 #### Scenario: Guest user is not shown the banner
@@ -173,33 +172,6 @@ The system SHALL remove the banner permanently once the app is installed.
 - **AND** the banner SHALL be removed from the DOM
 - **AND** the banner SHALL NOT reappear in subsequent sessions
 
-### Requirement: Session-Level Dismiss
-
-The banner SHALL support a per-session dismiss that suppresses the banner until the next session.
-
-#### Scenario: User taps the close button
-
-- **WHEN** the banner is visible
-- **AND** the user taps the close button (`×`)
-- **THEN** the banner SHALL be hidden for the remainder of the session
-- **AND** the dismiss state SHALL be persisted in `sessionStorage`
-
-#### Scenario: Banner reappears on next session
-
-- **WHEN** the user dismissed the banner in a previous session
-- **AND** the user starts a new session (page load / new tab)
-- **AND** the app has NOT been installed
-- **THEN** the session-dismiss state SHALL be cleared
-- **AND** the banner SHALL be displayed again
-
-#### Scenario: Session dismiss is NOT a permanent suppression
-
-- **WHEN** the user has dismissed the banner via the close button
-- **THEN** the banner dismissal SHALL NOT be persisted in `localStorage`
-- **AND** the system SHALL NOT treat this as a permanent "user declined to install" signal
-
----
-
 ### Requirement: Banner Suppressed While Post-Signup Dialog Is Open
 
 The banner SHALL NOT be visible while the post-signup dialog is open to avoid visual conflict at the bottom of the screen.
@@ -214,72 +186,7 @@ The banner SHALL NOT be visible while the post-signup dialog is open to avoid vi
 
 - **WHEN** the post-signup dialog is closed (user taps Later/Close)
 - **AND** the system determines the install banner should be shown
-- **AND** session-dismiss flag is NOT set
 - **THEN** the banner SHALL be rendered
-
-### Requirement: Banner Visual Presentation
-
-The `pwa-install-banner` SHALL use the same visual design language as `signup-prompt-banner`: the persistent-banner surface, placement, action glow and message text below. A banner is persistent, so it SHALL sit on a dark surface marked by a brand-gradient line, and SHALL NOT use the brand-gradient fill of the transient snack bar.
-
-#### Scenario: Banner is fixed at the bottom above the nav bar
-
-- **WHEN** the banner is visible
-- **THEN** the banner SHALL be positioned fixed with its bottom edge at the bottom navigation bar's height plus the bottom safe-area inset, so that it follows the navigation bar's height if that changes
-- **AND** the banner SHALL span the full inline width of the screen (`inset-inline: 0`)
-
-#### Scenario: Banner frosted glass and gradient border
-
-- **WHEN** the banner is rendered
-- **THEN** the background SHALL be the app's base surface colour at 85% opacity with a backdrop blur, the same surface as `signup-prompt-banner`
-- **AND** the top border SHALL be a 2px gradient from `--color-brand-primary` to `--color-brand-secondary`
-- **AND** the banner SHALL NOT be filled with the brand gradient
-
-#### Scenario: CTA button glow pulse animation
-
-- **WHEN** the banner becomes visible
-- **AND** `prefers-reduced-motion` is not set to `reduce`
-- **THEN** the CTA button SHALL glow in `--color-brand-primary` three times, over 1.2 seconds each, the timing of the snack bar's attention glow
-- **AND** the CTA button SHALL then stay still for as long as the banner is shown
-
-#### Scenario: Banner message text
-
-- **WHEN** the banner is rendered
-- **THEN** the message SHALL use the primary text colour at full opacity and font weight 500, the same as `signup-prompt-banner`'s message
-- **AND** the message SHALL measure at least 4.5:1 against the banner's surface
-
-#### Scenario: Reduced motion — no animation
-
-- **WHEN** `prefers-reduced-motion: reduce` is set
-- **THEN** the CTA button glow animation SHALL be suppressed
-- **AND** the banner SHALL appear without a slide-up animation
-
-#### Scenario: Banner slides in on appearance
-
-- **WHEN** the banner becomes visible
-- **AND** `prefers-reduced-motion` is not set to `reduce`
-- **THEN** the banner SHALL animate in with a slide-up from below and a fade-in over 350ms (the app's medium motion duration), the same entrance as `signup-prompt-banner`
-
-### Requirement: Banner Accessibility
-
-The banner SHALL be accessible to keyboard and assistive technology users.
-
-#### Scenario: Banner element has an accessible label
-
-- **WHEN** the banner is rendered
-- **THEN** the root `<aside>` element SHALL have an `aria-label` identifying it as the install prompt
-
-#### Scenario: Close button has an accessible name
-
-- **WHEN** the close button is rendered
-- **THEN** it SHALL have an `aria-label` (e.g., "閉じる") so assistive technology announces its purpose
-
-#### Scenario: Banner is removed from DOM when hidden
-
-- **WHEN** the banner is not visible (session-dismissed, installed, or PostSignupDialog open)
-- **THEN** the banner element SHALL be removed from the DOM (`if.bind`, not `show.bind`)
-- **AND** neither the CTA button nor the close button SHALL be reachable via keyboard navigation
-
----
 
 ### Requirement: Banner visibility state and installed confirmation
 
@@ -307,3 +214,79 @@ The system SHALL expose a reactive property and a method to support the install 
 - **WHEN** the installed-confirmation action is invoked
 - **THEN** the system SHALL persist that the app has been installed
 - **AND** the install banner SHALL hide
+
+### Requirement: Install banner presentation and attention cue
+
+The `pwa-install-banner` SHALL use the same presentation and attention cue as `signup-prompt-banner`. A banner is persistent, so it SHALL sit on a dark surface marked by a brand-gradient line and SHALL NOT use the brand-gradient fill of the transient snack bar. It SHALL show one row, the message followed by the install button, with no icon and no close control. The install button SHALL be the filled button at the compact size of the snack bar's action. The message and the button label SHALL share one text size that follows the banner's width, between 12px and 16px, so that both fit on one line without truncation on every screen from 320px to 412px wide, in Japanese and English. While the banner is visible, a light SHALL run along its top brand line and then across the install button, once when the banner appears and then every 12 seconds, at most 5 times per route the fan opens; the banner and the button SHALL keep their position and size while it runs.
+
+#### Scenario: Banner is fixed at the bottom above the nav bar
+
+- **WHEN** the banner is visible
+- **THEN** the banner SHALL be positioned fixed with its bottom edge at the bottom navigation bar's height plus the bottom safe-area inset, so that it follows the navigation bar's height if that changes
+- **AND** the banner SHALL span the full inline width of the screen (`inset-inline: 0`)
+
+#### Scenario: Banner frosted glass and gradient border
+
+- **WHEN** the banner is rendered
+- **THEN** the background SHALL be the app's base surface colour at 85% opacity with a backdrop blur, the same surface as `signup-prompt-banner`
+- **AND** the top border SHALL be a 2px gradient from `--color-brand-primary` to `--color-brand-secondary`
+- **AND** the banner SHALL NOT be filled with the brand gradient
+
+#### Scenario: One row with no icon or close control
+
+- **WHEN** the banner is rendered
+- **THEN** it SHALL show the message and the install button side by side on one row
+- **AND** it SHALL show no app icon and no close control
+
+#### Scenario: Message and button fit one line
+
+- **WHEN** the banner is shown on a screen 320px, 360px, 375px or 412px wide, in Japanese or in English
+- **THEN** the message and the install button label SHALL each fit on one line, with no ellipsis and no clipped text
+- **AND** the message and the button label SHALL have the same text size, between 12px and 16px
+
+#### Scenario: Install button is the filled compact button
+
+- **WHEN** the banner is rendered
+- **THEN** the install button SHALL have the `primary` role's fill with its white `on-primary` label at 4.5:1 or more, 36px tall, with the shared 12px corner radius and bold label
+
+#### Scenario: Banner message text
+
+- **WHEN** the banner is rendered
+- **THEN** the message SHALL use the primary text colour at full opacity and font weight 500, the same as `signup-prompt-banner`'s message
+- **AND** the message SHALL measure at least 4.5:1 against the banner's surface
+
+#### Scenario: CTA attention cue
+
+- **WHEN** the banner becomes visible and stays visible on one route
+- **AND** `prefers-reduced-motion` is not set to `reduce`
+- **THEN** a light SHALL run along the banner's top brand line and then across the install button when the banner appears, and again every 12 seconds
+- **AND** the cue SHALL play at most 5 times on that route, then the banner SHALL stay still
+- **AND** opening another route SHALL let the cue play again, at most 5 times there
+- **AND** the banner and the install button SHALL keep their position and size while the cue plays
+
+#### Scenario: Reduced motion — no animation
+
+- **WHEN** `prefers-reduced-motion: reduce` is set
+- **THEN** the attention cue SHALL NOT play
+- **AND** the banner SHALL appear without a slide-up animation
+
+#### Scenario: Banner slides in on appearance
+
+- **WHEN** the banner becomes visible
+- **AND** `prefers-reduced-motion` is not set to `reduce`
+- **THEN** the banner SHALL animate in with a slide-up from below and a fade-in over 350ms (the app's medium motion duration), the same entrance as `signup-prompt-banner`
+
+### Requirement: Install banner accessibility
+
+The banner SHALL be accessible to keyboard and assistive technology users.
+
+#### Scenario: Banner element has an accessible label
+
+- **WHEN** the banner is rendered
+- **THEN** the root `<aside>` element SHALL have an `aria-label` identifying it as the install prompt
+
+#### Scenario: Banner is removed from DOM when hidden
+
+- **WHEN** the banner is not visible (installed, or a post-signup surface is open)
+- **THEN** the banner element SHALL be removed from the DOM (`if.bind`, not `show.bind`)
+- **AND** its install button SHALL NOT be reachable via keyboard navigation

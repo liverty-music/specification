@@ -32,9 +32,11 @@ See proposal.md for the motivation. The code this change touches:
 
 *Alternative:* pad each route's scroll container, as frontend#787 suggested. Rejected: five routes, and an empty state would still centre over the banner.
 
+*As implemented:* the banners no longer measure and publish their height from a `ResizeObserver`. A token `--bottom-banner-block-size` (`2.25rem + 2 × space-xs + 2px`: the compact button, the block padding and the brand line) is each banner's `block-size`, and `global.css` sets `--bottom-banner-height` to it from `:root:has(.signup-banner, .pwa-banner)`. The observer delivered the height one frame after the banner first painted, so the route area shrank under content already on screen: the dashboard's loading placeholder shifted with CLS 0.035 (the skeleton-swap check allows 0.001), and `offsetHeight`'s whole pixels left the route area up to 0.8px under the banner. A height known to CSS applies in the frame the banner appears, and both components lose their measuring code.
+
 ### D3. One row, one text size from the banner's width
 
-Each banner is `container-type: inline-size` with a grid of `minmax(0, 1fr) auto`. A block-private property `--_banner-text: clamp(12px, 4.4cqi, 16px)` sets the message's `font-size` and the button's `--button-font-size`. 4.4cqi keeps the longest message (14 characters) and the button on one line at 320px; the bound comes from the message width plus the button's padding and label against the banner's content box at 320px, with about 5% to spare. The message has `white-space: nowrap` and no `text-overflow`, so a copy that no longer fits shows as clipped text that the E2E check in D7 catches, rather than as an ellipsis. The icon, the close button and the right padding that reserved its space are removed.
+Each banner is `container-type: inline-size` with a grid of `minmax(0, 1fr) auto`. A block-private property `--_banner-text: clamp(12px, 4.2cqi, 16px)` (4.4cqi in the plan; see *Measured fit* under D5) sets the message's `font-size` and the button's `--button-font-size`. The factor keeps the longest message (14 characters) and the button on one line at 320px; the bound comes from the message width plus the button's padding and label against the banner's content box at 320px. The message has `white-space: nowrap` and no `text-overflow`, so a copy that no longer fits shows as clipped text that the E2E check in D7 catches, rather than as an ellipsis. The icon, the close button and the right padding that reserved its space are removed.
 
 *Alternative:* fixed `--step--1` for both. Rejected after the preview: `--step--1` follows the viewport, not the banner, and clipped the message.
 
@@ -62,9 +64,15 @@ The signup prompt is mounted by each route, so its cue restarts per route by its
 
 *Alternative:* a JavaScript timer that toggles a class. Rejected: a counted CSS animation needs no timer to clean up, and only the install banner's restart needs a subscription.
 
+*As implemented:* the CTA's layer is its `::before`, not `::after`: the shared button's `::after` is already the `pressable` state layer and the `busy-on-click` spinner. Both layers move a light by animating `background-position-x` over their own box (a `-100% 0 / 50% 100%` gradient), which needs no `overflow: hidden` and so cannot clip the 2px border the line's layer sits on. The CTA's cue starts 1s after the line's (`animation-delay: 1s`), so it crosses the CTA at about 8–17% of the cycle. Both banners are the query container (`container: bottom-banner / inline-size`) on their host, because `cqi` on an element resolves against an ancestor container, not the element itself.
+
+*Measured fit:* with 4.4cqi, at 320px in Japanese, the signup prompt's message needed 185.3px of the 191px its column left (about 3% to spare, not 5%), and until Outfit loaded the fallback font widened the "Sign Up" label from 85px to 92px and clipped the message by about 1px. The factor is now 4.2cqi (`clamp(12px, 4.2cqi, 16px)`, 13.44px at 320px): with the web fonts held back the message needs 176.9px of 195px (about 9% to spare). The E2E fit check measures after `document.fonts.ready`.
+
 ### D6. The dismiss goes
 
 `pwa-install-banner` loses `dismissed`, `dismiss()`, the close button and its `pwaInstallBanner.close` keys, and `SessionKeys.pwaBannerDismissed` is deleted. `isVisible` becomes `pwaInstall.shouldShowInstallBanner`.
+
+*As implemented:* the app shell's gate on the banner also requires `onboarding.isCompleted` (as the notification prompt's does), so "Banner not shown during onboarding" holds without relying on sign-up implying a finished onboarding.
 
 ### D7. Copy and keys
 

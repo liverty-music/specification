@@ -77,18 +77,18 @@ The system SHALL provide a `<circular-progress>` custom element, shared by the f
 
 ### Requirement: One button style in four variants
 
-Every text button in the fan app SHALL use one shared button style, in one of four variants. All four SHALL share the same corner radius (12px), padding and label weight, so that any text button reads as a button from its shape alone. The one exception is the action on a snack bar, which SHALL use a compact size (a smaller label and padding, 36px tall) with the same radius and weight, so the snack's message keeps the width of its row. Icon-only buttons are not covered by this requirement.
+Every text button in the fan app SHALL use one shared button style, in one of four variants. All four SHALL share the same corner radius (12px), padding and label weight, so that any text button reads as a button from its shape alone. The one exception is the action on a snack bar or a bottom banner, which SHALL use a compact size (a smaller label and padding, 36px tall) with the same radius and weight, so the message keeps the width of its row. On a bottom banner the compact button's label SHALL take the banner's own text size, the same as the message. Every variant with a fill SHALL keep its label at 4.5:1 or more at every size, so that a compact label does not depend on WCAG's large-text minimum. Icon-only buttons are not covered by this requirement.
 
-- **filled** (the default): a solid brand-primary fill with white text, for the main action on a screen.
+- **filled** (the default): a solid fill in the `primary` colour role (brand-primary's hue and chroma) with its white `on-primary` label, for the main action on a screen and the action on a bottom banner.
 - **outlined**: a transparent fill with a visible border, for secondary and dismissive actions (cancel, later, back).
 - **danger**: a solid red fill with white text, for destructive actions.
-- **on-container**: a translucent white fill with a white border, for a button placed on a coloured surface such as a snack bar or a banner.
+- **on-container**: a translucent white fill with a white border, for a button placed on a coloured surface such as a snack bar.
 
 A text button SHALL NOT be rendered as plain text without a fill or a border.
 
 #### Scenario: Default variant
 - **WHEN** a text button is rendered without a variant
-- **THEN** it SHALL have a brand-primary fill, white text and a 12px corner radius
+- **THEN** it SHALL have the `primary` role's fill with its white `on-primary` label at 4.5:1 or more, and a 12px corner radius
 
 #### Scenario: Secondary and dismissive actions are outlined
 - **WHEN** a screen offers a cancel, later or back action next to its main action
@@ -99,12 +99,18 @@ A text button SHALL NOT be rendered as plain text without a fill or a border.
 - **THEN** it SHALL be rendered in the danger variant
 
 #### Scenario: Button on a coloured surface
-- **WHEN** a button is placed on a snack bar or a banner with a coloured or gradient fill
+- **WHEN** a button is placed on a snack bar with a coloured or gradient fill
 - **THEN** it SHALL be rendered in the on-container variant with a translucent white fill and a white border at least 1.5px wide
 
 #### Scenario: Compact button on a snack bar
 - **WHEN** a snack bar shows an action
 - **THEN** the action SHALL be 36px tall with a label smaller than the default button's
+- **AND** it SHALL keep the shared 12px corner radius and the bold label weight
+
+#### Scenario: Compact filled button on a bottom banner
+- **WHEN** the install banner or the signup prompt shows its action
+- **THEN** the action SHALL be the filled variant, 36px tall
+- **AND** its label SHALL have the same text size as the banner's message
 - **AND** it SHALL keep the shared 12px corner radius and the bold label weight
 
 #### Scenario: Catalog matches the specification
