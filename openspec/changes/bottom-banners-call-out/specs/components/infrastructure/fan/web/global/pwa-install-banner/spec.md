@@ -32,7 +32,7 @@ The `pwa-install-banner` SHALL use the same presentation and attention cue as `s
 #### Scenario: Install button is the filled compact button
 
 - **WHEN** the banner is rendered
-- **THEN** the install button SHALL have a fill in brand-primary's hue, dark enough that its white label measures at least 4.5:1, 36px tall, with the shared 12px corner radius and bold label
+- **THEN** the install button SHALL have the `primary` role's fill with its white `on-primary` label at 4.5:1 or more, 36px tall, with the shared 12px corner radius and bold label
 
 #### Scenario: Banner message text
 

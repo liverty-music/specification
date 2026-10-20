@@ -34,7 +34,7 @@ The signup prompt banner SHALL be implemented as a shared component reusable acr
 #### Scenario: Sign Up button is the filled compact button
 
 - **WHEN** the signup-prompt-banner is rendered
-- **THEN** the Sign Up button SHALL have a fill in brand-primary's hue, dark enough that its white label measures at least 4.5:1, 36px tall, with the shared 12px corner radius and bold label
+- **THEN** the Sign Up button SHALL have the `primary` role's fill with its white `on-primary` label at 4.5:1 or more, 36px tall, with the shared 12px corner radius and bold label
 
 #### Scenario: Banner message text
 

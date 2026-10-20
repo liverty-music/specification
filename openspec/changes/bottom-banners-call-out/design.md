@@ -38,11 +38,21 @@ Each banner is `container-type: inline-size` with a grid of `minmax(0, 1fr) auto
 
 *Alternative:* fixed `--step--1` for both. Rejected after the preview: `--step--1` follows the viewport, not the banner, and clipped the message.
 
-### D4. The filled compact button
+### D4. The filled button takes the primary role pair, at a tone where white passes
 
-The banner CTAs drop `data-variant="on-container"` and take the default (filled) variant, with the compact hooks the snack bar's action uses: `--button-min-size: 2.25rem`, `--button-padding-block: var(--space-3xs)`, `--button-padding-inline: var(--space-s)`, and `--button-font-size: var(--_banner-text)`. White on brand-primary (oklch 65% 0.28 350) is 3.66:1. The default button passes because its 19px bold label is WCAG large text (at least 18.67px bold, minimum 3:1). The banner label is 12 to 16px, so it needs 4.5:1. The banners therefore darken the fill in brand-primary's hue and chroma, `background: oklch(from var(--color-brand-primary) 57% c h)`, which measures 4.64:1 with white (computed with the WCAG relative-luminance formula, as in `snack-text-contrast`). The `button.css` default and its catalog are unchanged. *Pending the user's confirmation; see the proposal summary.*
+The banner CTAs drop `data-variant="on-container"` and take the default (filled) variant, with the compact hooks the snack bar's action uses: `--button-min-size: 2.25rem`, `--button-padding-block: var(--space-3xs)`, `--button-padding-inline: var(--space-s)` and `--button-font-size: var(--_banner-text)`.
 
-*Alternative:* keep `on-container`. Rejected: it is meant for coloured surfaces and reads as grey on the dark banner.
+A compact label (12 to 16px bold) is not WCAG large text, so it needs 4.5:1. White on brand-primary (oklch 65% 0.28 350) is 3.67:1 and can reach 4.5:1 only at a lightness of about 57.5% or below. Rather than darken the fill inside the banners, the fix goes into the role tokens, which the design-tokens spec already requires components to use ("Color roles with guaranteed on-color pairing"):
+
+- `tokens.css`: `--md-color-primary: oklch(from var(--color-brand-primary) 57% c h)` (brand hue and full chroma, the highest tone at which white passes, 4.64:1) and `--md-color-on-primary: var(--color-white)`. `--color-brand-primary` stays at 65% for the FAB, gradients, lines and glows.
+- `button.css`: the filled variant's `background` and `color` become `--md-color-primary` / `--md-color-on-primary` instead of `--color-brand-primary` / `--color-white`, so every filled button passes at every size, and the large-text comment goes.
+- The two other places that put text on a primary fill pair the physical `--color-brand-primary` with the dark `--md-color-on-primary`: the selected date tab (`event-date-tabs.css`) and the followed state of the event page's follow button (`event-route.css`). Both move to the role pair; with `on-primary` now white they would otherwise fall to 3.67:1.
+- `circular-progress.css` colours the spinner with `--md-color-primary`; at 57% it measures 4.06:1 against the base surface, above the 3:1 a non-text indicator needs.
+
+The user compared this (option C) with the M3 pairs already in the tokens (primary with a dark label, and primary-container with a near-white label) and chose it: it keeps the brand's vivid pink and the white label of every other filled button.
+
+*Alternative:* darken the fill only in the banners (`oklch(from … 57% c h)` in the banner CSS). Rejected by the user: a value picked per component bypasses the token layer that keeps the app consistent.
+*Alternative:* `primary` with the existing dark `on-primary` (5.21:1), or `primary-container` with `on-primary-container` (6.25:1). Rejected by the user after the preview "filled ボタンの色の役割".
 
 ### D5. The attention cue is one CSS animation with a count
 
@@ -65,9 +75,16 @@ The signup prompt is mounted by each route, so its cue restarts per route by its
 - **Stories** (`signup-prompt-banner.stories.ts`, `pwa-install-banner.stories.ts`, `.storybook/bottom-banner.ts`): the surface, the one row with no icon or close, the filled compact button (fill, 36px height, label size equal to the message's, 4.5:1), the message text, the cue (`animationIterationCount` 5, `animationDuration` 12s, the CTA's box unchanged while it runs), reduced motion, and the entrance.
 - **E2E** (`e2e/functional/`): the fit at 320, 360, 375 and 412px in `ja` and `en` (`scrollWidth <= clientWidth` for the message and the button), the FAB sunk under a visible banner and returning when it goes, the notch kept, the snack's placement with a banner, the Settings Sign out row and the My Artists empty-state button hit-testable with a banner shown, and the install banner's cue restarting after a tab change.
 
+### D9. The snack bar's severity colours become tokens
+
+`snack-text-contrast` set the snack's gradient stops inside `snack-bar.css` (info `oklch(from brand-primary 50.5% c h)` and `oklch(from brand-secondary 48% c h)`, warning `oklch(47.5% 0.16 75deg)`, error `oklch(40% 0.2 25deg)` and `oklch(45% 0.18 25deg)`). These move to `tokens.css` as `--md-color-snack-info-from`, `--md-color-snack-info-to`, `--md-color-snack-warning`, `--md-color-snack-error-from` and `--md-color-snack-error-to`, each documented with the white label and the on-container action it carries at 4.5:1, and `snack-bar.css` reads them. The values and the rendered snack do not change, so the snack's stories and screenshot stay as they are. The organizer console still restyles the container through `--snack-bar-container`.
+
+*Alternative:* derive the info stops from `--md-color-primary`. Rejected: the action needs 50.5% mid-gradient (see `snack-text-contrast`), darker than the button role.
+
 ## Risks / Trade-offs
 
 - **[The FAB stays small for as long as a banner shows]** The install banner shows to every signed-in fan until the app is installed. → The sunk FAB stays tappable (an existing scenario), and the user chose this over the floating FAB.
 - **[The banner can no longer be closed]** A fan who will not install keeps seeing it. → Intended by the user; the guide sheet's 「追加しました」 removes it, and the cue stops after five plays per route.
 - **[The Discovery canvas loses the banner's height while the install banner shows]** → Bubbles then never sit under the banner. The canvas already sizes from its container.
-- **[A darker fill than the filled button elsewhere]** → Needed for 4.5:1 at a label of 16px or less; it stays the brand hue.
+- **[Every filled button in the app turns a shade deeper]** 65% to 57% lightness at the same hue and chroma. → The user chose it in the preview; the button catalog's screenshot is regenerated and reviewed.
+- **[The selected date tab and the followed button change from a dark label to a white one]** → They now follow the same role pair as the filled button.

@@ -14,7 +14,8 @@ The user compared preview options and chose to keep both banners always visible,
 
 - **FAB.** While a bottom banner is visible, the FAB sinks into the navigation bar exactly as it does under a snack bar. It no longer floats above the banner. **BREAKING** for the stopgap behaviour.
 - **Layout.** Both banners show one row: the message, then the CTA. They have no icon and no close button. The message and the CTA label share one text size that follows the banner's width, so both fit on one line at every phone width, without truncation, in Japanese and English.
-- **CTA.** The CTA uses the filled (brand-primary) button at the compact size of the snack bar's action. `on-container` stays for buttons on coloured surfaces (the snack bar).
+- **CTA.** The CTA uses the filled button at the compact size of the snack bar's action. `on-container` stays for buttons on coloured surfaces (the snack bar).
+- **Primary role.** The filled button takes the `primary` / `on-primary` role pair, as the design-tokens spec already requires. `primary` becomes brand-primary's hue and chroma at 57% lightness, the highest tone at which its white `on-primary` label passes 4.5:1 at every size, so every filled button in the app turns a shade deeper. The brand colour itself stays for the FAB, gradients and glows. The snack bar's severity colours move into the token layer too, unchanged.
 - **Attention cue.** Every 12 seconds while a banner is visible, a light runs along its top brand line and then across the CTA. The cue plays at most 5 times per route visit, and never with reduced motion. Nothing moves or changes size, so the CTA never changes under a finger.
 - **Copy.** The signup prompt reads 「フォロー履歴を保存しよう！」 with a 「Sign Up」 button. The install banner reads 「新着ライブ通知を受け取ろう！」 with 「Install」. The English copy is "Save your follows!" and "Get new show alerts!", with "Sign Up" and "Install".
 - **No dismiss.** The install banner's close button and its per-tab dismiss are removed. The banner stays until the app is installed or the fan confirms the install in the guide sheet. **BREAKING** for the spec's session-level dismiss.
@@ -36,11 +37,13 @@ None.
 - `components/infrastructure/fan/web/global/ui-primitives`: the filled compact button on a bottom banner; `on-container` is for coloured surfaces only.
 - `components/infrastructure/fan/web/global/notification-prompt`: the install banner's session-dismiss scenarios are removed.
 - `components/infrastructure/fan/web/global/app-shell`: the route area ends above a visible bottom banner.
+- `components/infrastructure/fan/web/global/design-tokens`: the `primary` role takes a white `on-primary` label at 4.5:1 or more.
 
 ## Impact
 
 - **frontend only.** No proto, backend or infrastructure change.
 - `src/components/pwa-install-banner/` and `src/components/signup-prompt-banner/` (templates, CSS, view models, stories), `src/styles/global.css`, `src/components/fab-menu/fab-menu.css`, `src/components/bottom-nav-bar/`, `shared/ui/snack-bar/snack-bar.css`, `src/app-shell.css`.
+- `src/styles/tokens.css`, `src/styles/button.css` (and its catalog screenshot), `src/components/event-date-tabs/event-date-tabs.css`, `src/routes/event/event-route.css`.
 - `src/locales/{ja,en}/translation.json` and `src/constants/storage-keys.ts` (the dismiss key goes).
 - E2E: `e2e/functional/snack-bar.spec.ts` and `e2e/functional/fab-menu-arc.spec.ts` (banner placement), and a new check that the last row and the empty state clear the banner.
 - frontend#787 is closed by this change.
