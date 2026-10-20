@@ -1,6 +1,6 @@
 ## Purpose
 
-ResaleListingUseCase.RefundSold refunds the user of every resold listing the face value minus the resale fee, within 1 minute after the other fan was charged, and tells them by email.
+ResaleListingUseCase.RefundSold refunds the user of every resold listing the face value minus the resale fee, within 1 minute after the other fan was charged, and announces the refund so the user is told by email.
 
 ## ADDED Requirements
 
@@ -20,22 +20,21 @@ RefundSold SHALL run every 1 minute over the listings from ResaleListing.ListSol
 - **WHEN** a refund was issued and recording it failed
 - **THEN** the next run records the same refund and the user is not refunded twice
 
-### Requirement: Email after the refund
+### Requirement: Refund announced
 
-For a listing that has a refund time and no sold email send time, RefundSold SHALL read the listing's user with User.Get, the Order with Order.Get and the event's concert with Concert.ListByIDs, and send with ResaleListing.SendSoldEmail, to the user's email address and in the user's preferred language (Japanese when none), a message stating:
-- the concert's title, date and venue;
-- that one ticket was resold through official resale;
-- the price, the resale fee and the refund amount, 税込 (tax-inclusive);
-- that the refund goes to the card with the Order's card brand and last four digits, and that when it appears on the statement depends on the card issuer;
-- that the resold ticket is no longer valid for entry.
+For each listing it refunds, and for each listing from ResaleListing.ListSoldUnrefunded that has a refund time and no sold email send time, RefundSold SHALL announce that the listing was refunded, carrying the listing, its user, its Order and its event. The announcement SHALL be deduplicated by the listing, so announcing the same listing again does not reach a consumer twice within the deduplication window, and consumers SHALL treat a repeated announcement of a listing as one. A failed announcement SHALL NOT stop the other listings and is made again on the next run; the refund is not repeated.
 
-#### Scenario: Sold email
-- **WHEN** a listing priced 5000 yen was refunded
-- **THEN** its user receives one email with the concert, the price 5000 yen, the fee 500 yen and the refund 4500 yen
+#### Scenario: Refund announced
+- **WHEN** a listing is refunded
+- **THEN** the refund is announced once with the listing, its user, its Order and its event
 
-#### Scenario: Mail unavailable
-- **WHEN** ResaleListing.SendSoldEmail fails with Unavailable
-- **THEN** the email is sent on a later run and the refund is not repeated
+#### Scenario: Announcement fails
+- **WHEN** announcing a refunded listing fails
+- **THEN** the next run announces it again and does not refund it again
+
+#### Scenario: Email already sent
+- **WHEN** a refunded listing has a sold email send time
+- **THEN** it is not announced again
 
 ### Requirement: A sold listing left unrefunded is reported
 
