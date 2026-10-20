@@ -1,0 +1,31 @@
+# Tasks
+
+All tasks are in the frontend repository. Each test carries `@spec components/infrastructure/fan/web/global/<capability> "<scenario>"` for the scenarios it covers. Stories run in the pinned Playwright container (`mcr.microsoft.com/playwright:v1.63.0-noble`); E2E runs there too.
+
+## 1. FAB under a banner (global/fab-menu, global/bottom-nav-bar, global/snack-bar)
+
+- [ ] 1.1 In `src/styles/global.css`, set `--fab-sunk: 1` while a snack bar is open or a `.signup-banner` / `.pwa-banner` is shown, and delete the `--fab-floating` rule. Remove every `--fab-floating` / `--_floating` term from `fab-menu.css`, `bottom-nav-bar.css` and `shared/ui/snack-bar/snack-bar.css`, and update their comments (design D1). Verify that `git grep fab-floating` finds nothing in `src/` and `shared/`.
+- [ ] 1.2 Update `e2e/functional/fab-menu-arc.spec.ts` and `e2e/functional/snack-bar.spec.ts` for the sunk FAB: "A bottom banner is visible" (both fab-menu requirements), "The sunk FAB still opens the actions", "A snack bar opens above a bottom banner", "The last snack bar closes", "The bottom banner goes away", "FAB sunk under a banner", "A hidden banner adds no height" and "The FAB stays sunk under a banner and a snack bar"; rename the tests that carried the removed scenario names. Verify that both files pass in the container.
+
+## 2. Route area above a banner (global/app-shell)
+
+- [ ] 2.1 In `src/app-shell.css`, give `au-viewport` `padding-block-end: var(--bottom-banner-height, 0px)` with `box-sizing: border-box` (design D2), and confirm that no route sets its own banner offset. Add an E2E test that covers "Last row clears the banner" (Settings Sign out with the install banner), "Empty state clears the banner and the FAB" (My Artists as a guest with the signup prompt) and "No banner, no reserved space", each by `elementFromPoint` at the target's centre. Verify that it fails before the CSS change and passes after it, then close frontend#787 from the PR.
+
+## 3. Banner presentation (global/signup-prompt-banner, global/pwa-install-banner, global/ui-primitives)
+
+- [ ] 3.1 Rebuild both banners on one row (design D3, D4): remove the install banner's icon, close button and the padding reserved for it; make each banner an inline-size container with `--_banner-text: clamp(12px, 4.4cqi, 16px)` for the message and the button; give the CTA the default (filled) variant with the snack's compact size hooks and the darker fill `oklch(from var(--color-brand-primary) 57% c h)`; keep the surface, the entrance and the message colour. Verify `npx stylelint` and `npx biome check` on the touched files.
+- [ ] 3.2 Replace the three-time glow with the counted cue (design D5): `::before` on the top line and `::after` on the CTA running `12s ease-in-out 5` inside `prefers-reduced-motion: no-preference`; in `pwa-install-banner.ts`, restart the cue after each completed navigation through a router event subscription opened in `attached()` and disposed in `detaching()`, with a unit test for both.
+- [ ] 3.3 Remove the install banner's dismiss (design D6): `dismissed`, `dismiss()`, `SessionKeys.pwaBannerDismissed` and its tests; `isVisible` reads `shouldShowInstallBanner` only. Annotate, or write where none exists, the unit tests (`pwa-install-banner.spec.ts`, the install service's and the app shell's specs, the notification prompt's spec) for "Authenticated user has not installed the PWA", "Guest user is not shown the banner", "App already installed — banner not shown", "Banner not shown during onboarding", "Post-signup dialog open — banner hidden", "Post-signup dialog closed — banner visible" and "User dismisses notification prompt". Verify that `make test` passes.
+- [ ] 3.4 Update the copy and keys (design D7): `pwaInstallBanner.label`, `myArtists.signupBanner.message`, a new `signupBanner.cta`, and delete `common.createAccount` and `pwaInstallBanner.close` from both locales. Verify that `git grep` finds no reader of the deleted keys.
+- [ ] 3.5 Update `.storybook/bottom-banner.ts` and both banner stories (design D8). They cover, for each banner: "Banner is fixed at the bottom above the nav bar" / "Component renders consistently", "Banner frosted glass and gradient border" / "Banner has frosted glass background", "One row with no icon or close control", "No dismiss control", "Install button is the filled compact button" / "Sign Up button is the filled compact button", "Compact filled button on a bottom banner", "Banner message text", "CTA attention cue", "Reduced motion — no animation" / "CTA button has no animation for reduced motion", "Banner slides in on appearance", "Banner appears instantly for reduced motion", "Banner element has an accessible label", "Banner is removed from DOM when hidden" and "PWA install prompt displays localized text". Verify that the stories fail on the current CSS (run once before 3.1) and pass after 3.1–3.4 in the container.
+- [ ] 3.6 Add an E2E test for "Message and button fit one line" on both banners at 320, 360, 375 and 412px in `ja` and `en` (`scrollWidth <= clientWidth` for the message and the button), plus "Banner copy — Japanese", "Banner copy — English" and "Button on a coloured surface" (the snack's action stays `on-container`). Verify that it passes in the container.
+
+## 4. Integration
+
+- [ ] 4.1 Verify that `make check` passes, that `npm run build && npm run verify:build-templates` passes, and that the button catalog's screenshot ("Catalog matches the specification") is unchanged.
+- [ ] 4.2 Verify that `openspec validate bottom-banners-call-out --strict` and `python3 scripts/check-scenario-coverage.py bottom-banners-call-out` pass in specification once the frontend PR has merged; record any scenario with only a manual check as `@spec-manual` in design.md.
+
+## 5. Ship
+
+- [ ] 5.1 Open the plan PR in specification, then the frontend PR citing `OpenSpec-Change: bottom-banners-call-out` and the store commit, and merge each once CI is green.
+- [ ] 5.2 After the release reaches production, check on a phone (and record which device) that both banners show on one line, the FAB sinks under them, the cue plays and stops, and Settings' last row and My Artists' empty state are tappable. Record the result here.
