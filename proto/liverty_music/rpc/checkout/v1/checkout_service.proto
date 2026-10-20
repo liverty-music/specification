@@ -15,7 +15,9 @@ import "liverty_music/entity/v1/user.proto";
 
 // CheckoutService runs one fan's checkout on a first-come TicketType:
 //
-//   1. Start holds the chosen count for exactly 15 minutes (never extended).
+//   1. Start holds the chosen count for 15 minutes (never extended), from the
+//      TicketType's stock, or from other fans' resale listings when it is sold
+//      out and its resale is open.
 //   2. AuthorizeCard records the 本人確認 name and phone number on the fan's
 //      account and opens a card authorization for the amount, which the
 //      browser authenticates (3D Secure) with the returned card authorization
@@ -32,9 +34,14 @@ import "liverty_music/entity/v1/user.proto";
 // without revealing whether it exists.
 service CheckoutService {
   // Start holds a count of tickets of a first-come TicketType for the caller
-  // for 15 minutes and returns the holding Checkout. Starting again with the
-  // same count while the hold lasts returns the same Checkout, so a double
-  // tap, a retry or a reload never holds twice. Starting with another count
+  // for 15 minutes and returns the holding Checkout. While the TicketType is
+  // on sale it holds its stock. Otherwise, while its resale is open (it sold
+  // out and its event's resale deadline, 3 hours before the start time, has
+  // not passed), it holds the oldest free resale listings of other fans at the
+  // same price and returns a resale Checkout, whose hold ends at the deadline
+  // when that comes first. Starting again with the same count while the hold
+  // lasts returns the same Checkout, so a double tap, a retry or a reload never
+  // holds twice. Starting with another count
   // replaces the hold only when the new one can be made; the replaced
   // checkout's card authorization is released. The count must be at most the
   // TicketType's per-account limit and, together with the caller's Issued
@@ -53,13 +60,13 @@ service CheckoutService {
   //   per-account limit, or the referral_code is given and malformed.
   // - FAILED_PRECONDITION: The TicketType's sale is not a FIRST_COME sale, its
   //   event's concert is not published (for example cancelled), the TicketType
-  //   is not on sale (not yet open, sold out or ended), the sale requires
-  //   verification and the caller holds no Active IdentityVerification, or the
-  //   caller's tickets for the event plus the count exceed the per-account
-  //   limit.
-  // - RESOURCE_EXHAUSTED: Not enough tickets remain, including when every
-  //   remaining ticket is held by other fans. The caller keeps any hold they
-  //   already had.
+  //   is not on sale (not yet open, sold out or ended) and its resale is not
+  //   open, the sale requires verification and the caller holds no Active
+  //   IdentityVerification, or the caller's tickets for the event plus the
+  //   count exceed the per-account limit.
+  // - RESOURCE_EXHAUSTED: Not enough tickets remain, or for resale not enough
+  //   free listings, including when every remaining ticket or listing is held
+  //   by other fans. The caller keeps any hold they already had.
   rpc Start(StartRequest) returns (StartResponse);
 
   // Get returns the caller's Checkout as it stands now. A HELD Checkout whose

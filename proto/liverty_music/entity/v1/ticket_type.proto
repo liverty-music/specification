@@ -142,6 +142,20 @@ message TicketType {
   // shows 残りわずか (few left) without a count. Always false for a lottery
   // sale. Server-owned.
   bool low_stock = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // True when official resale (公式リセール) of a first-come ticket type is
+  // open at the time it was read: its sold count has once equalled its
+  // quantity, and its event's resale deadline, 3 hours before the start time,
+  // has not passed. Once the ticket type sells out it stays open until that
+  // deadline, even when the quantity is raised or the sale ends. Always false
+  // for a lottery sale. Server-owned.
+  bool resale_open = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // True when resale is open and at least one listed ticket is free to buy at
+  // the time it was read, so the event page offers a resale ticket. No count
+  // of listings is ever returned. Always false for a lottery sale.
+  // Server-owned.
+  bool resale_available = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 // TicketTypePrice is the price of one ticket in whole yen, tax-inclusive (税込).
