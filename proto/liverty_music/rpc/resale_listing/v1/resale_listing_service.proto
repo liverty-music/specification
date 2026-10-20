@@ -24,8 +24,8 @@ service ResaleListingService {
   // through a first-come Checkout whose TicketType has sold out, for a
   // published concert, and resale must still be open: before the listing's
   // deadline, 3 hours before the event's start time. A Ticket has at most one
-  // LISTED listing; one whose earlier listing was withdrawn, cancelled or
-  // expired can be listed again.
+  // LISTED listing; one whose earlier listing was withdrawn can be listed
+  // again.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.

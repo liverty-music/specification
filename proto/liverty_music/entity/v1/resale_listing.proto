@@ -114,8 +114,9 @@ message ResaleListing {
   ];
 
   // When the listing can no longer be bought or withdrawn: 3 hours before its
-  // event's current start time, which is when the event's admission window
-  // opens. Follows the start time if it changes. Server-owned.
+  // event's start time, which is when the event's admission window opens. The
+  // start time is required for a sale and fixed once a TicketType offers the
+  // event. Server-owned.
   google.protobuf.Timestamp deadline_time = 8 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
