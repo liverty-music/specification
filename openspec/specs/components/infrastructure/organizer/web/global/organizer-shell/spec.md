@@ -36,7 +36,7 @@ The organizer console SHALL guard its screens: an unauthenticated visitor is sen
 
 ### Requirement: Persistent navigation around every screen
 
-Every console screen except sign-in and access denied SHALL be shown inside a frame with three destinations — ホーム (Home), 公演 (Concerts) and 設定 (Settings) — with the current destination marked, the names Liverty Music and Organizer Console (in English in every language; no other or shortened product name), the Organizer's name, the represented Artist being worked on (a menu to change it when the Organizer represents two or more Artists), and an account menu holding the language switch and サインアウト (sign out). Signing out SHALL end the session and show the sign-in page. Every screen SHALL belong to one destination: Home to ホーム; Concerts, a concert, the concert editor, an event and the sale editors to 公演; Settings to 設定. 公演 SHALL open the concerts of the Artist being worked on: the Artist in the current address, else the Artist last opened on this device, else the first represented Artist by name.
+Every console screen except sign-in and access denied SHALL be shown inside a frame with three destinations — ホーム (Home), 公演 (Concerts) and 設定 (Settings) — with the current destination marked, the names Liverty Music and Organizer Console (in English in every language; no other or shortened product name), the Organizer's name, the represented Artist being worked on (a menu to change it when the Organizer represents two or more Artists), a help action 使い方 (Help) that opens the members' guide, and an account menu holding the language switch and サインアウト (sign out). Signing out SHALL end the session and show the sign-in page. Every screen SHALL belong to one destination: Home to ホーム; Concerts, a concert, the concert editor, an event and the sale editors to 公演; Settings to 設定. 公演 SHALL open the concerts of the Artist being worked on: the Artist in the current address, else the Artist last opened on this device, else the first represented Artist by name.
 
 #### Scenario: Sign out from any screen
 
@@ -138,3 +138,37 @@ When an unauthenticated visitor opens any console address and the console knows 
 
 - **WHEN** an organizer on a new phone opens a console address, is shown the find-organizer screen and then signs in through the link in the email within 24 hours
 - **THEN** the address they first opened is shown
+
+### Requirement: Help opens the guide at the current screen's chapter
+
+The help action SHALL be an icon in the top bar next to the account menu, named 使い方 in Japanese and Help in English for screen readers and shown as a tooltip, on every screen inside the frame and at every window width. It SHALL open the members' guide in a new browser tab, so the console keeps its state, including unsaved input in an editor, at the chapter for the current screen:
+
+| screen | chapter |
+|---|---|
+| Home | ホームの見かた |
+| Concerts, a concert, the concert editor | 公演をつくって公開する |
+| an event's Sales tab, the lottery and first-come sale editors | チケットを販売する |
+| an event's Reception tab | 受付リンクを発行する |
+| Settings | 事業者情報と受取口座 |
+
+The guide SHALL be in Japanese whatever language the console is set to.
+
+#### Scenario: Help on the Sales tab
+
+- **WHEN** a member on the Sales tab of an event selects 使い方
+- **THEN** the guide opens in a new tab at the chapter チケットを販売する, and the Sales tab stays open in the console's tab
+
+#### Scenario: Help while editing
+
+- **WHEN** a member who has typed a title in the concert editor without saving selects 使い方
+- **THEN** the guide opens in a new tab at 公演をつくって公開する, no unsaved-changes dialog appears, and the typed title is still in the editor
+
+#### Scenario: Help on a phone
+
+- **WHEN** a member opens an event page in a 390 px wide window
+- **THEN** the top bar shows the back arrow, the page title, 使い方 and the account menu, none of them overlapping
+
+#### Scenario: Console in English
+
+- **WHEN** the console is in English and a member selects Help on Settings
+- **THEN** the guide opens in Japanese at the chapter 事業者情報と受取口座

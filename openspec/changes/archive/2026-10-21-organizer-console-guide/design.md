@@ -42,9 +42,9 @@ Alternatives:
 - **Put it in the shared `public/`.** It would also be emitted into the fan image, which serves `dist/`. A members' page on the fan origin is confusing. Rejected.
 - **A separate organizer `publicDir`.** It is a build change for one file. Rejected.
 
-In `npm run dev` the page is reachable at `/organizer/guide/guide.html`. The help link uses `/guide.html` and is only exercised against the production-like build in E2E.
+In `npm run dev` the page is reachable at `/organizer/guide/guide.html`. The functional E2E opens it there, and answers the new tab of the help link (`/guide.html`) from the same file, so the link is exercised on the dev server. The phone checks also run on Safari's engine in the Playwright project `webkit-organizer-guide` (iPhone 14), because the guide spec asks for the browsers the console supports and `functional` runs Chromium only.
 
-The page links Google Fonts and the favicon the same way the reception guide does, and copies the palette from the organizer's `styles/tokens.css`. The copy is mirrored by hand, as in the reception guide, because a static page cannot import the console's CSS.
+The page links the favicon and copies the palette (light and dark, with `light-dark()`) and the system font stack from the organizer's `styles/tokens.css`, so it reads like the console rather than like the reception guide, which uses the fan app's Google Fonts. The copy is mirrored by hand, as in the reception guide, because a static page cannot import the console's CSS.
 
 ### D3. Chapter anchors and the screen-to-chapter mapping
 
@@ -61,11 +61,11 @@ Each chapter has a fixed id. The console links to `/guide.html#<id>`.
 | 売れ行きと紹介コード | `sales-and-referral` |
 | 受付リンクを発行する | `reception` |
 
-One frontend module holds the guide URL builder and the mapping from route component to chapter id. The table is in the organizer-shell spec. The top bar reads the active route from the router to choose the anchor. The prerequisite callouts use the same builder with a fixed id. The unit test reads the guide HTML and checks that every id in the mapping exists as an `id` attribute in the guide.
+One frontend module (`organizer/guide/guide-link.ts`) holds the guide URL builder and the mapping from a console path to chapter id (`chapterOf`), in the same style as the shell's `destinationOf`. The table is in the organizer-shell spec. The shell computes the anchor from the path on every `au:router:navigation-end`, as it does for the current destination, and passes it to the top bar. The prerequisite callouts use the same builder with a fixed id. The unit test reads the guide HTML and checks that every id in the mapping exists as an `id` attribute in the guide.
 
 ### D4. The help action is a link, not a button
 
-The help action is `<a href="/guide.html#…" target="_blank" rel="noopener">` with a `help` icon (Material Symbols "help", outlined), a visually hidden label from `shell.help` (使い方 / Help), and a `title` with the same text for the pointer tooltip. It is a link because it navigates. It opens a new tab because the concert and sale editors guard unsaved changes on navigation, and the reception guide link already sets this pattern.
+The help action is `<a href="/guide.html#…" target="_blank" rel="noopener">` with a `help` icon (Material Symbols "help", outlined), a visually hidden label from `shell.help` (使い方 / Help), and a `title` with the same text for the pointer tooltip. It is a link because it navigates, marked `external` so the router's `href` attribute leaves the plain `/guide.html#…` address alone. It opens a new tab because the concert and sale editors guard unsaved changes on navigation, and the reception guide link already sets this pattern.
 
 It sits immediately before the account icon. On a narrow deep page, the Organizer and Artist block shrinks, then the title; the back arrow, help and account keep their 48 px targets. This is verified at 390 px by E2E.
 
