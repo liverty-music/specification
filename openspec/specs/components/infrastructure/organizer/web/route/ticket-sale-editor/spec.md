@@ -6,7 +6,6 @@ The organizer console screen where a member puts one published event on sale, by
 
 ## Requirements
 
-
 ### Requirement: A first-come sale's settings and defaults
 
 For an event without a first-come sale, the screen SHALL offer the sale's name, the start time and end time, entered in Japan time, the price per ticket 税込 (tax-inclusive), the quantity and the per-account limit, with the name defaulting to 一般発売, the end time defaulting to the event's start time and the limit defaulting to 4. Saving SHALL create a FirstCome sale of the event's Series with one TicketType for the event, with TicketSaleService.Create. It SHALL show an error next to a field, without saving, when the end time is after the event's start time, the end is not after the start, the name is empty or longer than 100 characters, the price is outside 1 to 1,000,000 yen, the quantity is below 1, or the limit is outside 1 to 10 or above the quantity. When saving fails because the window overlaps another sale of the event, the screen SHALL say so.
@@ -47,12 +46,17 @@ For an event with a first-come sale, read with TicketSaleService.ListByEvent, th
 
 ### Requirement: Prerequisites explained
 
-When the event is not published, has no start time, or the Organizer does not have complete business details, the screen SHALL say which is missing and not offer to save. For missing business details, it SHALL say they are entered by Liverty Music during vetting.
+When the event is not published, has no start time, or the Organizer does not have complete business details, the screen SHALL say which is missing and not offer to save. For missing business details, it SHALL say they are entered by Liverty Music during vetting. Each of these notices SHALL also link to the members' guide, opened in a new tab, at the chapter that explains it: 公演をつくって公開する for an unpublished event or a missing start time, and 事業者情報と受取口座 for incomplete business details.
 
 #### Scenario: No start time
 
 - **WHEN** the member opens the editor for an event without a start time
-- **THEN** the screen says to set the start time in the concert editor first and links to it
+- **THEN** the screen says to set the start time in the concert editor first and links to it and to the guide's chapter 公演をつくって公開する
+
+#### Scenario: Business details incomplete
+
+- **WHEN** the member opens the editor for a published, timed event of an Organizer without a business phone number
+- **THEN** the screen says the business details are entered by Liverty Music during vetting, links to the guide's chapter 事業者情報と受取口座, and saving is not offered
 
 ### Requirement: A lottery window defaults to 10 days
 
