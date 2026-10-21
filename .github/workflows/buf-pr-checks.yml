@@ -52,12 +52,6 @@ jobs:
           archive: false
           pr_comment: true
 
-  buf-checks-skip:
-    needs: changes
-    if: needs.changes.outputs.src == 'false' || github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "No relevant changes, skipping Buf PR checks"
 
   # The ubiquitous-language guard (scripts/check-forbidden-words.py). It reads
   # the whole tree in about a second, so it runs on every PR and push with no
@@ -72,10 +66,10 @@ jobs:
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [changes, buf-checks, buf-checks-skip, forbidden-words]
+    needs: [changes, buf-checks, forbidden-words]
     if: always()
     steps:
       - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # release/v1
         with:
-          allowed-skips: buf-checks, buf-checks-skip
+          allowed-skips: buf-checks
           jobs: ${{ toJSON(needs) }}
