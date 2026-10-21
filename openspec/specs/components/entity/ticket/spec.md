@@ -22,6 +22,7 @@ erDiagram
   User ||--o{ Ticket : "holds"
   Event ||--o{ Ticket : "is admitted by"
   IdentityVerification |o--o{ Ticket : "binds"
+  Ticket ||--o{ ResaleListing : "is offered by"
 ```
 
 ```mermaid

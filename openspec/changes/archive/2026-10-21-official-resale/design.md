@@ -137,7 +137,7 @@ The Scanner's admission window opened 3 hours before the open time, or the start
 
 ### D10 — The Organizer's consent
 
-A covered ticket's face says resale without the Organizer's consent is prohibited. Official resale is resale with that consent: the Organizer agreement (outside the product, signed before an admin creates the Organizer) gains a clause consenting to official resale at face value on the platform for every first-come sale. Tracked as task 1.2; the pilot Organizer signs it before the pilot sale opens.
+A covered ticket's face says resale without the Organizer's consent is prohibited. Official resale is resale with that consent: the Organizer agreement (outside the product, signed before an admin creates the Organizer) gains a clause consenting to official resale at face value on the platform for every first-come sale. The clause is one part of that agreement, which is drafted, reviewed by counsel and concluded with the pilot Organizer as a whole under `payments-legal-compliance` task 1.4, a condition of its livemode gate (4.1); this change carries no task of its own for it.
 
 ## Risks / Trade-offs
 
@@ -153,3 +153,8 @@ A covered ticket's face says resale without the Organizer's consent is prohibite
 1. Plan PR (this change) → proto PR and Release → backend (migration, entity, repository, usecases, handler, job) → frontend. The migration is additive; existing rows need no backfill (`resale_open_time` stays NULL for ticket types that sold out before the release; for the pilot none has).
 2. Verify in production in Stripe test mode with the Stripe Sandbox E2E and a production E2E of `stories/resell-a-ticket` on a test event.
 3. Rollback: hide the listing action in the frontend; the backend changes are inert while no listing exists.
+
+## Scenarios verified by hand
+
+@spec-manual stories/resell-a-ticket "Payout after a resale" -- checked against production data after the production run of resell-a-ticket on 2026-10-21 (task 7.1, event 01a15c84-df19-7abb-998f-936342b90736, Organizer at 5%): the listing fan's 10000 yen Order's Held split fell from 9500 to 4750 and the purchasing fan's 5000 yen Order's Held split is 4750, 9500 in total as before the resale; a browser cannot read Settlements, and the split arithmetic is covered by the entity and issuance contract tests (components/entity/settlement, components/entity/order/issue)
+@spec-manual stories/resell-a-ticket "Unsold at the deadline" -- needs an event whose admission window opens during the run and a scan at the venue; its parts are tested separately: a listing at its deadline is Expired and not open (components/entity/resale-listing "At the deadline"), Create and Start refuse after the deadline (components/usecase/resale-listing/create "Admission has opened", components/usecase/checkout/start "After the resale deadline"), an expired listing leaves its ticket 未入場 with its QR code (components/infrastructure/fan/web/route/tickets "Listing expired"), and the admission window opens at the same instant (components/entity/scanner "Usual evening show")

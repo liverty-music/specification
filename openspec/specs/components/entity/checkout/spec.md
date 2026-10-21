@@ -1,7 +1,7 @@
 # components/entity/checkout Specification
 
 ## Purpose
-A Checkout is one fan's purchase in progress on a TicketType of a FirstCome TicketSale: it holds a number of tickets for 15 minutes while the fan confirms their 本人確認 (identity check) details and authorizes their card. It ends with the tickets committed, charged and issued, or with the hold released and any card authorization given back. The fan's full name and phone number are the User's.
+A Checkout is one fan's purchase in progress on a TicketType of a FirstCome TicketSale: it holds a number of tickets for 15 minutes while the fan confirms their 本人確認 (identity check) details and authorizes their card. It holds the TicketType's stock or, for a resale Checkout, the ResaleListings it holds. It ends with the tickets committed, charged and issued, or with the hold released and any card authorization given back. The fan's full name and phone number are the User's.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -13,7 +13,7 @@ A Checkout is one fan's purchase in progress on a TicketType of a FirstCome Tick
 | card authorization | the CardAuthorization opened on the fan's card for the amount | absent until the fan authorizes their card; set once |
 | card authorization release time | when the card authorization was given back without charging | absent unless released; set once |
 | status | lifecycle | Held, Committed, Completed, Expired or Released |
-| hold expiry | when the hold lapses; it is never extended | required; 15 minutes after the checkout starts |
+| hold expiry | when the hold lapses; it is never extended | required; 15 minutes after the checkout starts, or for a resale Checkout the resale deadline when that is earlier |
 | commit time | when its tickets were committed against the stock | absent until Committed |
 | capture time | when the card was charged | absent until charged; set once |
 
@@ -24,6 +24,7 @@ erDiagram
   Checkout ||--o| Order : "is paid as"
   Checkout |o--o| CardAuthorization : "is paid by"
   Checkout ||--o| Referral : "was started from"
+  Checkout |o--o{ ResaleListing : "holds"
 ```
 
 ```mermaid
@@ -43,11 +44,19 @@ stateDiagram-v2
 
 ### Requirement: A new checkout holds for 15 minutes
 
-A new Checkout SHALL start Held, with a hold expiry 15 minutes after its create time and an amount equal to the ticket type's price times its ticket count.
+A new Checkout SHALL start Held, with a hold expiry 15 minutes after its create time and an amount equal to the ticket type's price times its ticket count. A resale Checkout's hold expiry SHALL instead be the earlier of 15 minutes after its create time and the resale deadline of its TicketType's event, so that no resale hold lasts into admission.
 
 #### Scenario: New checkout
 - **WHEN** a fan starts a checkout for 2 tickets of a TicketType priced 3000 yen at 18:00
 - **THEN** the Checkout is Held, its amount is 6000 yen and its hold expires at 18:15
+
+#### Scenario: Resale checkout long before the deadline
+- **WHEN** a fan starts a resale checkout for 1 ticket priced 5000 yen at 12:00 and the resale deadline is 15:00
+- **THEN** the Checkout is Held, its amount is 5000 yen and its hold expires at 12:15
+
+#### Scenario: Resale checkout just before the deadline
+- **WHEN** a fan starts a resale checkout at 14:50 and the resale deadline is 15:00
+- **THEN** its hold expires at 15:00
 
 ### Requirement: Holding
 
@@ -68,3 +77,15 @@ A Checkout with a capture time SHALL NOT become Released or Expired.
 #### Scenario: Charged checkout
 - **WHEN** a Committed Checkout has a capture time
 - **THEN** it can only become Completed
+
+### Requirement: A resale checkout holds listings
+
+A Checkout SHALL be a resale Checkout when it holds ResaleListings instead of its TicketType's stock. A resale Checkout SHALL hold exactly as many listings as its ticket count, all of its TicketType, and none whose user is the Checkout's user. A Checkout that holds stock SHALL hold no listing.
+
+#### Scenario: Two listings of two fans
+- **WHEN** a resale Checkout for 2 tickets holds one listing of each of two other fans
+- **THEN** it is valid
+
+#### Scenario: The fan's own listing
+- **WHEN** a resale Checkout holds a listing whose user is the Checkout's user
+- **THEN** it is invalid

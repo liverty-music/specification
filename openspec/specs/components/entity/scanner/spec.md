@@ -90,12 +90,12 @@ A call through an InUse Scanner SHALL be proven when it carries a signature that
 
 ### Requirement: Admission window
 
-The admission window of a Scanner SHALL be derived from its event's current local date, open time and start time, in Japan time. It SHALL open 3 hours before the open time, or 3 hours before the start time when the event has no open time, and close at 04:00 on the day after the local date. A time is inside the window when it is at or after the opening and before the closing. An event without a start time SHALL have no admission window.
+The admission window of a Scanner SHALL be derived from its event's current local date and start time, in Japan time. It SHALL open 3 hours before the start time and close at 04:00 on the day after the local date; the open time does not affect it, because an event may have none. A time is inside the window when it is at or after the opening and before the closing. An event without a start time SHALL have no admission window.
 
 #### Scenario: Usual evening show
 
 - **WHEN** the event is on 2026-11-20 with open time 18:00 and start time 19:00
-- **THEN** the window is from 2026-11-20 15:00 to 2026-11-21 04:00
+- **THEN** the window is from 2026-11-20 16:00 to 2026-11-21 04:00
 
 #### Scenario: No open time
 
@@ -104,7 +104,7 @@ The admission window of a Scanner SHALL be derived from its event's current loca
 
 #### Scenario: Before the window
 
-- **WHEN** the window opens at 15:00 and the time is 14:59
+- **WHEN** the window opens at 16:00 and the time is 15:59
 - **THEN** the time is outside the window
 
 #### Scenario: Window closed
