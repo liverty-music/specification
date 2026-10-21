@@ -1,26 +1,26 @@
-name: OpenSpec Checks
+name: CI
 
-# Gate planning changes in the openspec-store store the same way everywhere:
-# local sessions have a pre-archive hook, but multi-repo Claude Code on the web
-# threads run no repository hooks, so CI is the only check that always runs.
+# One workflow, one `CI Success`. Branch protection requires that check by
+# name only, so a second workflow publishing its own `CI Success` would let
+# either one satisfy it (liverty-music/backend#669), and a workflow without
+# one is not a gate at all: OpenSpec Checks used to be a separate workflow
+# that a pull request could merge past while it failed.
 
 on:
+  push:
+    branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 permissions:
   contents: read
-
-env:
-  # Keep in sync with the version pinned in README.md / AGENTS.md.
-  OPENSPEC_VERSION: 1.13.2
-  OPENSPEC_TELEMETRY: "0"
-  DO_NOT_TRACK: "1"
+  pull-requests: write
 
 jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
+      src: ${{ steps.filter.outputs.src }}
       openspec: ${{ steps.filter.outputs.openspec }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -28,16 +28,64 @@ jobs:
         id: filter
         with:
           filters: |
+            src:
+              - "proto/**"
+              - "buf.yaml"
+              - "Makefile"
+              - ".github/workflows/**"
             openspec:
               - "openspec/**"
               - "scripts/check-spec-layout.py"
+              - "scripts/check-story-diagrams.py"
               - "scripts/check-scenario-coverage.py"
-              - ".github/workflows/openspec-checks.yml"
+              - ".github/workflows/ci.yml"
+
+  buf-checks:
+    needs: changes
+    if: needs.changes.outputs.src == 'true' && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      # Native mode: annotations on the diff plus a summary comment. Breaking
+      # detection compares against the PR base and is skipped when the
+      # `buf skip breaking` label is applied. Push stays release-only
+      # (buf-release.yml), so push and archive are off here.
+      - name: Buf lint, format and breaking
+        uses: bufbuild/buf-action@8c6a16e16f12ba20b6470afa9c2ba9b5ba8c97c3 # v1
+        with:
+          token: ${{ secrets.BUF_TOKEN }}
+          lint: true
+          format: true
+          breaking: ${{ !contains(github.event.pull_request.labels.*.name, 'buf skip breaking') }}
+          push: false
+          archive: false
+          pr_comment: true
+
+
+  # The ubiquitous-language guard (scripts/check-forbidden-words.py). It reads
+  # the whole tree in about a second, so it runs on every PR and push with no
+  # path filter and also catches violations already on main.
+  forbidden-words:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Check forbidden words
+        run: python3 scripts/check-forbidden-words.py
 
   openspec-checks:
     needs: changes
-    if: needs.changes.outputs.openspec == 'true'
+    # Pull requests only: the steps diff against the pull request's base.
+    if: needs.changes.outputs.openspec == 'true' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    env:
+      # Keep in sync with the version pinned in README.md / AGENTS.md.
+      OPENSPEC_VERSION: 1.13.2
+      OPENSPEC_TELEMETRY: "0"
+      DO_NOT_TRACK: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -157,3 +205,14 @@ jobs:
             python3 scripts/check-scenario-coverage.py "archive/${c}" --repos "${RUNNER_TEMP}"/repos/* || status=1
           done
           exit "$status"
+
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [changes, buf-checks, forbidden-words, openspec-checks]
+    if: always()
+    steps:
+      - uses: re-actors/alls-green@b5b5b37504aa4183270bd3d855c52a67f212be35 # release/v1
+        with:
+          allowed-skips: buf-checks, openspec-checks
+          jobs: ${{ toJSON(needs) }}

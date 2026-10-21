@@ -62,7 +62,7 @@
   </dependency-order>
 
   <release-process>
-    1. Create PR to specification/main → buf-pr-checks.yml validates
+    1. Create PR to specification/main → ci.yml validates
     2. Merge PR to main
     3. Create GitHub Release (tag: vX.Y.Z) → buf-release.yml pushes to BSR
     4. BSR publishes generated code for downstream consumers
@@ -128,7 +128,7 @@ This repo is the OpenSpec **store** `openspec-store` (identity file: `.openspec-
 - **Shared working tree rules.** In this checkout never run `git stash`, `git reset --hard`, `git checkout -- .` / `git restore .` or `git clean`: they discard other changes' progress. Stage by path (`git add openspec/changes/<change> …`), never `git add -A` or `git add .`. Never switch its branch: do branch work in a worktree (`git worktree add .claude/worktrees/<branch> -b <branch> origin/main`). Update it with `git fetch origin && git merge --ff-only origin/main`, not `git pull` (which rebases with autostash), and after a PR merges sync only that change's paths (README "Branch work in this repository").
 - **Sharing is plain git.** OpenSpec never pulls or pushes; commit and push planning like code, and review it via PRs on this repo.
 - **Plan PR bodies show real spec diffs**: see `openspec/AGENTS.md`.
-- **CI gate (`.github/workflows/openspec-checks.yml`)** runs on every PR touching `openspec/`: `openspec validate --specs`, `scripts/check-spec-layout.py`, `openspec validate <change> --strict` for each change the PR touches (deferred with a notice while its delta specs are not written yet, so a proposal-only PR passes and an in-progress change on `main` never blocks unrelated PRs), and, for every change archived in the PR, that all tasks are checked and that `scripts/check-scenario-coverage.py` finds an `@spec`-annotated test for each ADDED/MODIFIED scenario on the implementing repositories' `main` (or an `@spec-manual` exemption). It is the only gate in cloud threads, where repository hooks do not run.
+- **CI gate (the `openspec-checks` job of `.github/workflows/ci.yml`, part of the required `CI Success`)** runs on every PR touching `openspec/`: `openspec validate --specs`, `scripts/check-spec-layout.py`, `openspec validate <change> --strict` for each change the PR touches (deferred with a notice while its delta specs are not written yet, so a proposal-only PR passes and an in-progress change on `main` never blocks unrelated PRs), and, for every change archived in the PR, that all tasks are checked and that `scripts/check-scenario-coverage.py` finds an `@spec`-annotated test for each ADDED/MODIFIED scenario on the implementing repositories' `main` (or an `@spec-manual` exemption). It is the only gate in cloud threads, where repository hooks do not run.
 
 ### Spec tree
 
