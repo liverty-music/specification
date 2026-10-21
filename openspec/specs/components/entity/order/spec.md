@@ -28,6 +28,7 @@ erDiagram
   Checkout ||--o| Order : "is purchased by"
   Order ||--|{ Ticket : "issues"
   Order ||--o| Settlement : "is paid out by"
+  Order ||--o{ ResaleListing : "is refunded through"
 ```
 
 ```mermaid

@@ -135,6 +135,8 @@ The ticket section SHALL read the Event's sales with TicketSaleService.ListByEve
 - SoldOut: 売り切れ;
 - Ended: that the sale has ended.
 
+When the FirstCome TicketType is SoldOut or Ended and its resale is open, the section SHALL add, below that state, 公式リセール (official resale): when resale is available, the price 税込, that resale tickets are sold at face value, and an action to buy; when it is not, that tickets listed by fans who cannot attend can be bought here, with no action. It SHALL never show how many tickets are listed.
+
 For a Lottery sale, the section SHALL show its start and end date and time in Japan time and the price 税込, and while its window is open an action to enter, which opens the lottery entry screen for the TicketType; outside the window it shows no action. When the Event has no sale, the section SHALL show no sale.
 
 The action to buy or to enter SHALL open the checkout or the entry screen for a signed-in fan. For a guest, it SHALL start sign-up and return to the Event page. The fan's purchased tickets are shown as before.
@@ -158,6 +160,16 @@ The action to buy or to enter SHALL open the checkout or the entry screen for a 
 
 - **WHEN** the first-come sale's TicketType is AllHeld
 - **THEN** the section shows 売り切れ with the note that tickets may be available again in a few minutes
+
+#### Scenario: Sold out with a resale ticket
+
+- **WHEN** the first-come TicketType priced 5000 yen is SoldOut and resale is available
+- **THEN** the section shows 売り切れ, then 公式リセール with 5,000円（税込）, the face-value note and the action to buy
+
+#### Scenario: Sold out, nothing listed
+
+- **WHEN** the first-come TicketType is SoldOut, its resale is open and resale is not available
+- **THEN** the section shows 売り切れ and 公式リセール with the note that listed tickets can be bought here, and no action to buy
 
 #### Scenario: Presale over, general sale upcoming
 
