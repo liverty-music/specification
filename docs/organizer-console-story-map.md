@@ -334,7 +334,7 @@ from the `publish` chapter.
 
 ## Gaps
 
-The steps scored 1 or 2 above, and gaps found while writing the guide. Until each
+The steps scored 1 or 2 above. Until each
 is fixed in the console, the guide explains the current behaviour. They are
 proposed for a separate change.
 
@@ -344,4 +344,3 @@ proposed for a separate change.
 | A referral link has to be built by hand. Nothing in the console says that `?ref=` exists. | `route/event` "The Sales tab shows purchases per referral code" says the section is read only and codes are not registered | Build a referral address from a typed code next to the ファンページ address, with copy. |
 | The short name for `?org=` is never shown, so a member on a new device can use only the emailed link. | `stories/sign-in-as-organizer` "A new device finds the Organizer by short name or by email"; no screen spec shows the short name | Show the console address with `?org=<short name>` in Settings, with copy. |
 | A new Organizer's Home says nothing needs attention, with no first step. | `route/home` "Nothing to do is said plainly" | A first-run item on Home: 公演をつくる when the Organizer has no concert. |
-| The lottery sale editor says nothing when the event is not published or the business details are incomplete; it shows the form and the save is refused with a generic message. | `frontend/organizer/lottery-sale-editor/lottery-sale-editor-route.html` handles only `noStartTime`; `route/ticket-sale-editor` "Prerequisites explained" applies to both editors | Show the same notices as the first-come editor and the Sales tab. |
