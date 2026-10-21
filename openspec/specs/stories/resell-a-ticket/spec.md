@@ -7,7 +7,7 @@ A fan who bought first-come tickets and cannot attend lists one through official
 usecase-beta
 direction LR
 actor Fan("listing fan")
-actor Buyer("purchasing fan")
+actor PurchasingFan("purchasing fan")
 systemBoundary "Liverty Music"
   Goal("Resell a ticket")
   ResaleListingUseCaseCreate("ResaleListingUseCase.Create")
@@ -20,10 +20,10 @@ end
 Fan --> Goal
 Goal ..> : include ResaleListingUseCaseCreate
 Goal ..> : include ResaleListingUseCaseList
-Buyer --> CheckoutUseCaseStart
-Buyer --> CheckoutUseCaseAuthorizeCard
+PurchasingFan --> CheckoutUseCaseStart
+PurchasingFan --> CheckoutUseCaseAuthorizeCard
 Goal ..> : include OrderUseCaseIssueFromCheckout
-Buyer --> TicketUseCaseList
+PurchasingFan --> TicketUseCaseList
 ```
 
 ## Requirements
