@@ -101,6 +101,10 @@
 
 <agent-rules>
 
+## Public repository
+
+This repository is public, and so are its Issues, PRs, commit messages and Actions logs. Never write production user data there: no emails, names, user or order IDs, payment or Stripe customer IDs, or log lines that carry them. Specs and change artifacts describe behaviour with made-up examples, never with records copied from production. Visibility is managed per repository by cloud-provisioning (`docs/runbooks/repository-visibility.md`).
+
 ## Pre-commit Hooks
 
 If a breaking change is intentional, add the `buf skip breaking` label to the PR.
