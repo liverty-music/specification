@@ -15,6 +15,7 @@ import "liverty_music/entity/v1/user.proto";
 // without a centroid), and its full name and phone number when set. Whether the
 // User is verified is read from
 // liverty_music.rpc.identity_verification.v1.IdentityVerificationService.Get.
+// RequestPasskeyRecovery is the only call that needs no sign-in.
 service UserService {
   // Get retrieves the profile of the authenticated user, so the same profile
   // is restored on every device.
@@ -114,6 +115,23 @@ service UserService {
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   // - UNAVAILABLE: The email verification service is not configured.
   rpc ResendEmailVerification(ResendEmailVerificationRequest) returns (ResendEmailVerificationResponse);
+
+  // RequestPasskeyRecovery asks for a link, sent to the given address, that
+  // registers a new passkey on the device it is opened on. The fan app calls
+  // it from the "can't sign in" screen, so it needs no sign-in and uses no
+  // sign-in identity even when one is presented. It answers with the same
+  // empty response, in the same time, whether or not the address belongs to a
+  // User; the link is sent only when it belongs to a User whose address is
+  // verified. At most 3 links are requested for one address, letter case
+  // ignored, in any 60 minutes; a further request for that address succeeds
+  // without requesting one.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The email is missing or not an email address of at
+  //   most 165 characters.
+  // - RESOURCE_EXHAUSTED: The client made more than 10 requests in the last 60
+  //   minutes.
+  rpc RequestPasskeyRecovery(RequestPasskeyRecoveryRequest) returns (RequestPasskeyRecoveryResponse);
 }
 
 // GetRequest is the request for retrieving the authenticated user's profile.
@@ -253,3 +271,14 @@ message ResendEmailVerificationRequest {
 // ResendEmailVerificationResponse is returned when the verification email has
 // been successfully queued for delivery.
 message ResendEmailVerificationResponse {}
+
+// RequestPasskeyRecoveryRequest carries the address to send the passkey
+// registration link to.
+message RequestPasskeyRecoveryRequest {
+  // Required. The email of the account the person cannot sign in to.
+  entity.v1.Email email = 1 [(buf.validate.field).required = true];
+}
+
+// RequestPasskeyRecoveryResponse is empty, so the answer never reveals whether
+// the address belongs to a User.
+message RequestPasskeyRecoveryResponse {}
