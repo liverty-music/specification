@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// PasskeyId is the identity provider's id for one passkey of a User. It is the
+// same id the identity provider's own passkey list returns, so a client can
+// match a recorded Passkey to a listed passkey.
+message PasskeyId {
+  // The identity provider's passkey id.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
+// PasskeyProviderName is the product name of the passkey provider that made a
+// passkey (for example "iCloud Keychain", "Google Password Manager",
+// "Windows Hello"), looked up from the passkey's AAGUID.
+message PasskeyProviderName {
+  // The provider's display name.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 100
+  }];
+}
+
+// Passkey is the platform's record of one passkey registered for a User at the
+// identity provider: which passkey it is, which passkey provider made it and
+// when it was registered. The identity provider remains the authority on which
+// passkeys exist; a passkey registered before records were kept, or whose
+// change was never announced, has no Passkey.
+message Passkey {
+  // The identity provider's id for the passkey.
+  PasskeyId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The passkey provider's name. Unset when the provider does not reveal
+  // itself (an all-zero AAGUID) or is not in the platform's provider list.
+  optional PasskeyProviderName provider_name = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When the passkey finished registration. Server-owned.
+  google.protobuf.Timestamp create_time = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+}
