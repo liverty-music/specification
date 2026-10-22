@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.passkey.v1 provides the fan-facing PasskeyService:
+// the signed-in fan's recorded passkeys. Listing and removing the passkeys
+// themselves is done against the identity provider with the fan's own token,
+// not here; this service only adds what the identity provider does not report.
+package liverty_music.rpc.passkey.v1;
+
+import "liverty_music/entity/v1/passkey.proto";
+
+// PasskeyService reads the signed-in caller's recorded passkeys, resolved to
+// their stored User; no request names a fan.
+service PasskeyService {
+  // List returns the caller's recorded passkeys, newest first, each with its
+  // provider name when known and its create time. A passkey of the caller that
+  // has no record is not returned.
+  //
+  // Possible errors:
+  // - NOT_FOUND: The signed-in caller has no account.
+  // - UNAUTHENTICATED: The caller is not signed in.
+  rpc List(ListRequest) returns (ListResponse);
+}
+
+// ListRequest is empty: the caller is taken from the sign-in.
+message ListRequest {}
+
+// ListResponse returns the caller's recorded passkeys.
+message ListResponse {
+  // The caller's recorded passkeys, newest first. Empty when none is recorded.
+  repeated entity.v1.Passkey passkeys = 1;
+}
