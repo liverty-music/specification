@@ -186,10 +186,25 @@ jobs:
       # Archive happens after the implementation PRs merge, so their main
       # branches must carry an @spec-annotated test for every ADDED/MODIFIED
       # scenario (or an @spec-manual exemption in the change). The repos are
-      # public: a shallow anonymous clone is enough.
+      # public, so an anonymous shallow clone works today. With the
+      # IMPLEMENTING_REPOS_TOKEN secret set (Contents: read on the three
+      # repositories), the clone authenticates, so it keeps working when one
+      # of them turns private (cloud-provisioning
+      # docs/runbooks/repository-visibility.md). The token reaches git through
+      # GIT_CONFIG_* environment variables, never a URL or an argument. An
+      # expired token fails the clone even of a public repository: renew the
+      # secret, or delete it while every repository is public.
       - name: Clone implementing repositories
         if: steps.archived.outputs.names != ''
+        env:
+          TOKEN: ${{ secrets.IMPLEMENTING_REPOS_TOKEN }}
         run: |
+          if [ -n "${TOKEN}" ]; then
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+            GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "${TOKEN}" | base64 -w0)"
+            export GIT_CONFIG_VALUE_0
+          fi
           for r in backend frontend cloud-provisioning; do
             git clone --quiet --depth 1 "https://github.com/liverty-music/${r}.git" "${RUNNER_TEMP}/repos/${r}"
           done
