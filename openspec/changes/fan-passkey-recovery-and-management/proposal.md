@@ -8,9 +8,11 @@ Every primary source checked agrees on the baseline this change adopts: allow se
 
 - **Recovery by email**: a fan who cannot sign in enters their email on a new "can't sign in" screen reachable from the welcome page and the Settings guest hero. When the address belongs to a fan account with a verified address, the fan receives a link (valid 1 hour) that registers a new passkey on the device they open it on. The answer and its timing never reveal whether an account exists; requests are limited per address and per client.
 - **Passkey management in Settings**: a signed-in fan sees their passkeys (name), adds a passkey on the device in hand, and removes passkeys they no longer use. Opening passkey management requires a sign-in within the last 5 minutes. The last remaining passkey cannot be removed from the app.
+- **Offer a passkey on this device after Log In**: after a Log In on a device where no passkey was created or confirmed, the fan is offered to create a passkey on that device (passkeys.dev Bootstrapping; web.dev passkey checklist: "prompt for local passkey creation if the user has signed in with a cross-device passkey"). The fan can create one, say the device already has one, or postpone it for 30 days.
+- **Passkey provider and date in Settings**: each passkey in passkey management shows its passkey provider (e.g. Google Password Manager, iCloud Keychain) and the date it was added, read from a record the platform keeps for each passkey added after this change (web.dev passkey management; FIDO "create, view and manage passkeys in account settings"). Last-used date is deferred.
 - **Security notifications**: the fan receives an email whenever a passkey is added to or removed from their account, including a passkey added through a recovery link.
 - **Hosted login policy described as it is**: the fan hosted-login spec currently requires local authentication to be off ("passkeys-only"), which the identity provider cannot honor because that switch also disables passkeys; the spec is corrected to express passkey-only as "passwordless allowed and no password ever issued", like the organizer spec, and gains the recovery-path requirement.
-- New public fan RPC `UserService.RequestPasskeyRecovery(email)`.
+- New public fan RPC `UserService.RequestPasskeyRecovery(email)` and signed-in fan RPC `PasskeyService.List()`.
 
 ## Capabilities
 
@@ -24,22 +26,31 @@ Every primary source checked agrees on the baseline this change adopts: allow se
 - `components/usecase/user/notify-passkey-change`: UserUseCase.NotifyPasskeyChange - run for each passkey added or removed at the identity provider and email the fan.
 - `components/adapter/fan/api/webhook/passkey-events`: the identity provider's passkey-added and passkey-removed notices, authenticated and turned into announcements.
 - `components/infrastructure/fan/web/route/passkey-recovery`: the "can't sign in" screen.
+- `components/entity/passkey`: the platform's record of one passkey of a User (provider passkey id, AAGUID, create time) and the provider name derived from the AAGUID.
+- `components/entity/passkey/create`: store a Passkey, idempotent on the provider passkey id.
+- `components/entity/passkey/delete`: remove a Passkey by provider passkey id; a missing one counts as removed.
+- `components/entity/passkey/list-by-user`: list a User's Passkeys, newest first.
+- `components/usecase/passkey/record-change`: PasskeyUseCase.RecordChange - run for each announced passkey change and keep the Passkey records in step.
+- `components/usecase/passkey/list`: PasskeyUseCase.List - return the fan's recorded passkeys.
+- `components/adapter/fan/api/rpc/passkey`: PasskeyService.List for the signed-in fan.
+- `components/infrastructure/fan/web/global/add-passkey-prompt`: the offer to create a passkey on this device after a Log In.
 - `stories/recover-sign-in-after-losing-passkeys`: a fan who lost every passkey gets back into the same account.
 - `stories/manage-passkeys`: a fan adds a passkey on another device, sees and removes passkeys, and is told about each change.
 
 ### Modified Capabilities
 
+- `components/adapter/fan/api/webhook/passkey-events` (new in this change): announcements also carry the provider passkey id and the AAGUID.
 - `components/adapter/fan/api/rpc/user`: RequestPasskeyRecovery is the one user service call that needs no sign-in; new requirement for its handling.
 - `components/infrastructure/fan/web/route/settings`: new Passkeys section for signed-in fans; the guest hero gains the "can't sign in" link.
 - `components/infrastructure/fan/web/route/welcome`: the sign-in CTAs gain the "can't sign in" link.
 - `components/infrastructure/fan/web/global/hosted-login`: "Configure Login Policy" corrected to the policy the product actually runs; new requirements for the recovery path and for registering a passkey from a link or from a signed-in session.
 
-The User entity (Purpose) is unchanged: no attribute is added (passkeys live at the identity provider and are not stored by the platform). The usecases also rely on the existing operations User.Get and User.GetByProviderUserID, whose promises are unchanged.
+The User entity (Purpose) is unchanged: no attribute is added. Passkeys still live at the identity provider; the new Passkey entity records only what the identity provider does not report (provider and registration time). The usecases also rely on the existing operations User.Get and User.GetByProviderUserID, whose promises are unchanged.
 
 ## Impact
 
-- **specification**: `rpc/user/v1/user_service.proto` gains `RequestPasskeyRecovery`; a Release and BSR generation are needed before backend and frontend PRs.
-- **backend**: new usecase methods, a public RPC with per-address and per-client limits, two new event subjects and consumer handlers, a webhook handler for passkey events, a Postmark email for passkey changes, and an identity-provider client that issues passkey registration links.
-- **frontend**: "can't sign in" screen, links from welcome and the Settings guest hero, a Passkeys section in Settings that talks to the identity provider directly with a short-lived, re-authenticated token.
-- **cloud-provisioning**: a dedicated identity-provider service account for recovery links (mounted on the event consumer only), Actions v2 targets and event executions for passkey events, the login policy left as is, and review of the identity provider's passkey-registration email text.
-- **Out of scope**: the ticket wallet key stays one device per User; removing the identity-provider key from the fan API (account deletion and verification resend) is a separate change.
+- **specification**: `rpc/user/v1/user_service.proto` gains `RequestPasskeyRecovery` (released as v0.92.0); a second Release adds `entity/v1/passkey.proto` and `rpc/passkey/v1/passkey_service.proto` (`PasskeyService.List`).
+- **backend**: a `passkeys` table, Passkey operations, `PasskeyUseCase` (RecordChange, List), a vendored AAGUID-to-provider-name list, new usecase methods, a public RPC with per-address and per-client limits, two new event subjects and consumer handlers, a webhook handler for passkey events, a Postmark email for passkey changes, and an identity-provider client that issues passkey registration links.
+- **frontend**: "can't sign in" screen, links from welcome and the Settings guest hero, a Passkeys section in Settings that talks to the identity provider directly with a short-lived, re-authenticated token and shows provider and date from `PasskeyService.List`, and the add-passkey prompt after Log In.
+- **cloud-provisioning**: a dedicated identity-provider service account for recovery links (mounted on the event consumer only), Actions v2 targets and event executions for passkey events, KEDA triggers for three new consumers, the login policy left as is, and review of the identity provider's passkey-registration email text.
+- **Out of scope**: the ticket wallet key stays one device per User; moving the verification resend off the fan API and unmounting the backend-app key there is change `remove-identity-key-from-fan-api`.
