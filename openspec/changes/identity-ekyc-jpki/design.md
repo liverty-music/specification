@@ -27,6 +27,11 @@ in when this lands.
 - **Mandatory-for-all verification** — it is a lane; ④/⑤/events opt in.
 - Running our own JPKI 署名検証者 認定 — ride on Pocket Sign's 認定 (see decision).
 - 券面事項 read (マイナンバー / 顔写真 / card-face images) — never requested (番号法).
+- **Self-service account recovery by re-verification** — not built here; tracked in
+  liverty-music/specification#1219. This change keeps it possible: the provider user ID
+  stays the only stored per-person key and stays unique among Active verifications,
+  and the AlreadyExists result never reveals the other account (its email or name) to
+  the person verifying.
 
 ## MVP scope & corrections (2026-09-02)
 
@@ -215,7 +220,9 @@ per-event requirement. No 個人番号, no raw serial anywhere.
 - **S2 — data minimization**: confirm we can get the provider user ID + a verification assertion
   **without** being forced to receive/persist 基本4情報.
 - **S3 — 目的外利用 / purpose limits** in the Pocket Sign 利用規約 + J-LIS guidelines for
-  anti-scalp identity use.
+  anti-scalp identity use, **and for account recovery** (using the provider user ID to
+  restore access to the account bound to the same person, #1219), including whether our
+  利用目的 and consent text must name it.
 - **S4 — data residency (越境)**: confirm all processing is domestic.
 - **S5 — licence-path dedupe**: confirm whether Verify CardInfo yields ANY stable
   per-person dedupe key; if not, lock the weaker-guarantee handling.
