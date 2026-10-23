@@ -15,36 +15,58 @@ import "liverty_music/entity/v1/user.proto";
 // outside the cluster and carries no sign-in. Each calling workload reaches
 // only the procedures it uses; the event consumer calls
 // SendEmailVerification, ResendEmailVerification and
-// IssuePasskeyRegistrationLink, and the admin console API calls
-// DeleteIdentity. A call to any other procedure is refused with
+// IssuePasskeyRegistrationLink, the fan API calls VerifyEmail, and the admin
+// console API calls DeleteIdentity. A call to any other procedure is refused with
 // PERMISSION_DENIED and changes nothing.
 //
 // Every request names the identity by the identity provider's ID for the
 // User, because the caller is a workload, not the fan.
 service UserService {
-  // SendEmailVerification sends the identity's email address a verification
-  // code, at sign-up.
+  // SendEmailVerification issues a verification code for the identity's email
+  // address, at sign-up, and returns the address and the code. The identity
+  // provider sends nothing; the caller emails the code. The code is a
+  // credential: neither side logs it.
   //
   // Possible errors:
   // - PERMISSION_DENIED: The calling workload may not call this procedure.
   // - INVALID_ARGUMENT: The provider user id is missing or empty.
+  // - NOT_FOUND: The identity does not exist.
+  // - FAILED_PRECONDITION: The identity's email address is already verified;
+  //   no code is issued.
   // - UNAVAILABLE: The identity provider cannot be reached; a retry may
   //   succeed.
-  // - INTERNAL: The identity provider failed to send the code.
+  // - INTERNAL: The identity provider failed to issue the code.
   rpc SendEmailVerification(SendEmailVerificationRequest) returns (SendEmailVerificationResponse);
 
-  // ResendEmailVerification sends the identity's email address a new
-  // verification code, when the fan asks for one.
+  // ResendEmailVerification issues a new verification code for the identity's
+  // email address, when the fan asks for one, and returns the address and the
+  // code. Earlier codes stop working. The identity provider sends nothing; the
+  // caller emails the code. The code is a credential: neither side logs it.
   //
   // Possible errors:
   // - PERMISSION_DENIED: The calling workload may not call this procedure.
   // - INVALID_ARGUMENT: The provider user id is missing or empty.
+  // - NOT_FOUND: The identity does not exist.
   // - FAILED_PRECONDITION: The identity's email address is already verified;
-  //   nothing is sent.
+  //   no code is issued.
   // - UNAVAILABLE: The identity provider cannot be reached; a retry may
   //   succeed.
-  // - INTERNAL: The identity provider failed to send the code.
+  // - INTERNAL: The identity provider failed to issue the code.
   rpc ResendEmailVerification(ResendEmailVerificationRequest) returns (ResendEmailVerificationResponse);
+
+  // VerifyEmail marks the identity's email address verified with a code from
+  // its verification email. The code must be the latest one issued for the
+  // address and less than 1 hour old; a code is used up once it verifies.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The calling workload may not call this procedure.
+  // - INVALID_ARGUMENT: The provider user id or code is missing or empty, or
+  //   the code is wrong, older than 1 hour or already used; nothing changes.
+  // - NOT_FOUND: The identity does not exist.
+  // - UNAVAILABLE: The identity provider cannot be reached; a retry may
+  //   succeed.
+  // - INTERNAL: The identity provider failed to verify the address.
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
 
   // IssuePasskeyRegistrationLink returns the identity's verified email address
   // and a link that registers a new passkey for the identity without a
@@ -83,8 +105,15 @@ message SendEmailVerificationRequest {
   entity.v1.User.ProviderUserId provider_user_id = 1 [(buf.validate.field).required = true];
 }
 
-// SendEmailVerificationResponse is returned once the code has been sent.
-message SendEmailVerificationResponse {}
+// SendEmailVerificationResponse carries the address to email the code to and
+// the code.
+message SendEmailVerificationResponse {
+  // The identity's email address, not yet verified.
+  entity.v1.Email email = 1 [(buf.validate.field).required = true];
+
+  // The new verification code. It must not be logged.
+  entity.v1.EmailVerificationCode code = 2 [(buf.validate.field).required = true];
+}
 
 // ResendEmailVerificationRequest identifies the identity to send a new code
 // to.
@@ -93,8 +122,29 @@ message ResendEmailVerificationRequest {
   entity.v1.User.ProviderUserId provider_user_id = 1 [(buf.validate.field).required = true];
 }
 
-// ResendEmailVerificationResponse is returned once the new code has been sent.
-message ResendEmailVerificationResponse {}
+// ResendEmailVerificationResponse carries the address to email the new code
+// to and the code.
+message ResendEmailVerificationResponse {
+  // The identity's email address, not yet verified.
+  entity.v1.Email email = 1 [(buf.validate.field).required = true];
+
+  // The new verification code. It must not be logged.
+  entity.v1.EmailVerificationCode code = 2 [(buf.validate.field).required = true];
+}
+
+// VerifyEmailRequest identifies the identity and carries the code from its
+// verification email.
+message VerifyEmailRequest {
+  // Required. The identity provider's ID for the User.
+  entity.v1.User.ProviderUserId provider_user_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The code from the verification email. It must not be logged.
+  entity.v1.EmailVerificationCode code = 2 [(buf.validate.field).required = true];
+}
+
+// VerifyEmailResponse is returned once the identity's email address is
+// verified.
+message VerifyEmailResponse {}
 
 // IssuePasskeyRegistrationLinkRequest identifies the identity to issue a
 // passkey registration link for.

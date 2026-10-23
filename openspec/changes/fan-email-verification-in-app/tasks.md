@@ -1,7 +1,7 @@
 ## 1. Proto (specification)
 
-- [ ] 1.0 After `identity-service` is archived, add the `components/infrastructure/backend/process/identity-provider-credentials` delta to this change: the fan API reaches only the identity service's verify operation (design Risks). Verify `openspec validate fan-email-verification-in-app --strict`
-- [ ] 1.1 Add `UserService.VerifyEmail` to `rpc/user/v1/user_service.proto`: `VerifyEmailRequest { UserId user_id; EmailVerificationCode code }` with protovalidate, an empty response, and a doc comment saying it needs no sign-in and lists INVALID_ARGUMENT, RESOURCE_EXHAUSTED and UNAVAILABLE. Add the `EmailVerificationCode` wrapper (1-32 characters) and `VerifyEmail` (provider user id, code) on `rpc/internal/user/v1.UserService`. Change `SendEmailVerification` and `ResendEmailVerification` there to return `{email, code}` (design D1, D3). Verify `make check` and `buf breaking` in CI (apply `buf skip breaking` for the internal response change if reported)
+- [x] 1.0 After `identity-service` is archived, add the `components/infrastructure/backend/process/identity-provider-credentials` delta to this change: the fan API reaches only the identity service's verify operation (design Risks). Verify `openspec validate fan-email-verification-in-app --strict`
+- [ ] 1.1 Add `UserService.VerifyEmail` to `rpc/user/v1/user_service.proto`: `VerifyEmailRequest { UserId user_id; EmailVerificationCode code }` with protovalidate, an empty response, and a doc comment saying it needs no sign-in and lists INVALID_ARGUMENT, RESOURCE_EXHAUSTED and UNAVAILABLE. Add the `EmailVerificationCode` wrapper (1-32 characters) and `VerifyEmail` (provider user id, code) on `rpc/backend/user/v1.UserService`. Change `SendEmailVerification` and `ResendEmailVerification` there to return `{email, code}` (design D1, D3). Verify `make check` and `buf breaking` in CI (apply `buf skip breaking` for the internal response change if reported)
 - [ ] 1.2 Merge, publish a GitHub Release and confirm `buf-release.yml` succeeded
 
 ## 2. Identity provider operations (backend: identity service and entity)
@@ -13,8 +13,8 @@
   - never log a code.
 
   Verify handler tests against a fake identity provider, including components/entity/user/verify-email "Valid code", "Code already used", "Code older than 1 hour", "Unknown identity"
-- [ ] 2.3 Add listener 9102 whose allowlist holds only `VerifyEmail`; verify a test that it refuses `DeleteIdentity` and `SendEmailVerification` with PermissionDenied and allows `VerifyEmail`
-- [ ] 2.4 Declare `User.VerifyEmail` on the entity interface. Implement it in the identity-service client, mapping InvalidArgument, NotFound and Unavailable; verify client contract tests for components/entity/user/verify-email (same four scenarios against a fake server)
+- [ ] 2.3 Add listener 9102 whose allowlist holds only `VerifyEmail`; verify a test for components/infrastructure/backend/process/identity-provider-credentials "Fan API asks for another operation" (it refuses `DeleteIdentity` and `SendEmailVerification` with PermissionDenied, nothing called) and that it allows `VerifyEmail`
+- [ ] 2.4 Declare `User.VerifyEmail` on the entity interface. Implement it in the identity-service client, mapping InvalidArgument, NotFound and Unavailable; verify client contract tests for components/entity/user/verify-email (same four scenarios against a fake server) and components/infrastructure/backend/process/identity-provider-credentials "Fan confirms an email address" (the client calls the identity service's `VerifyEmail`)
 
 ## 3. Verification email and public RPC (backend)
 
@@ -50,9 +50,13 @@
 - [ ] 6.1 With the owner account, or a new account signed up for the check:
   - sign up and receive the verification email in Japanese, then confirm from the phone and see 認証済み on the laptop's Settings after returning to the tab;
   - open a link older than 1 hour and see it refused, then resend from Settings and verify with the new link;
-  - confirm that `kubectl run` without `app=fan-api` cannot reach `identity:9102`.
+  - confirm that `kubectl run` without an allowed label cannot reach `identity:9100`, `9101` or `9102`, and that `fan-api` has no Zitadel key volume or variable.
 
   Record the evidence under each `@spec-manual` line below
 
 @spec-manual stories/verify-email-address "Sign up, then verify on the phone" -- prod walk-through in task 6.1
 @spec-manual stories/verify-email-address "Link expired" -- prod walk-through in task 6.1
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "API server deployment" -- unchanged by this change; prod `kubectl get deploy -o yaml` in task 6.1 shows no Zitadel key volume or variable on `fan-api`
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "Process with no access" -- task 6.1 (`kubectl run` without an allowed label cannot connect to 9100, 9101 or 9102)
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "Request from outside the cluster" -- unchanged by this change; Service `identity` stays ClusterIP with no Gateway route (task 5.1 kustomize output)
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "Signed-in calls keep working" -- task 6.1 (signed-in Settings and resend work in prod)
