@@ -34,6 +34,18 @@ message PhoneNumber {
   }];
 }
 
+// EmailVerificationCode is the one-time code in a User's verification email.
+// It confirms the User's email address while it is the latest code issued for
+// that address and less than 1 hour old. It is a credential and must not be
+// logged.
+message EmailVerificationCode {
+  // The code as issued by the identity provider, 1 to 32 characters.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 32
+  }];
+}
+
 // User represents a registered person on the Liverty Music platform.
 // Users are notified of upcoming concerts based on their following and favorite artists.
 message User {

@@ -43,7 +43,7 @@ Unchanged and relied on:
 
 ## Impact
 
-- **specification**: `rpc/user/v1/user_service.proto` gains `VerifyEmail`; `rpc/internal/user/v1` gains `VerifyEmail` (both on top of `identity-service`). Release and BSR generation.
+- **specification**: `rpc/user/v1/user_service.proto` gains `VerifyEmail`; `rpc/backend/user/v1` gains `VerifyEmail` (both on top of `identity-service`). Release and BSR generation.
 - **backend**:
   - The consumer sends the verification email through Postmark (ja/en) with a code the identity service returns.
   - The fan API gains the public `VerifyEmail` with limiters and an identity-service client.

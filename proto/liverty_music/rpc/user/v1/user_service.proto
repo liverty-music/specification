@@ -15,7 +15,8 @@ import "liverty_music/entity/v1/user.proto";
 // without a centroid), and its full name and phone number when set. Whether the
 // User is verified is read from
 // liverty_music.rpc.identity_verification.v1.IdentityVerificationService.Get.
-// RequestPasskeyRecovery is the only call that needs no sign-in.
+// RequestPasskeyRecovery and VerifyEmail are the only calls that need no
+// sign-in.
 service UserService {
   // Get retrieves the profile of the authenticated user, so the same profile
   // is restored on every device.
@@ -132,6 +133,25 @@ service UserService {
   // - RESOURCE_EXHAUSTED: The client made more than 10 requests in the last 60
   //   minutes.
   rpc RequestPasskeyRecovery(RequestPasskeyRecoveryRequest) returns (RequestPasskeyRecoveryResponse);
+
+  // VerifyEmail confirms a User's email address with the User id and code
+  // from the link in that User's verification email. The fan app calls it
+  // from the email verification screen when the fan taps to confirm, so it
+  // needs no sign-in and uses no sign-in identity even when one is presented.
+  // An unknown User and a wrong, expired or already used code fail alike, so
+  // the answer never reveals whether a User exists. At most 5 attempts are
+  // accepted for one User id and at most 10 from one client in any 60
+  // minutes, whatever their outcome.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The User id is missing or not a UUID, the code is
+  //   missing or longer than 32 characters, no User has the id, or the code
+  //   is wrong, older than 1 hour or already used.
+  // - RESOURCE_EXHAUSTED: Too many attempts were made for the User id or from
+  //   the client in the last 60 minutes.
+  // - UNAVAILABLE: The identity provider cannot be reached; a retry may
+  //   succeed.
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
 }
 
 // GetRequest is the request for retrieving the authenticated user's profile.
@@ -282,3 +302,16 @@ message RequestPasskeyRecoveryRequest {
 // RequestPasskeyRecoveryResponse is empty, so the answer never reveals whether
 // the address belongs to a User.
 message RequestPasskeyRecoveryResponse {}
+
+// VerifyEmailRequest carries the User and code from the link in the User's
+// verification email.
+message VerifyEmailRequest {
+  // Required. The User the verification email was sent to.
+  entity.v1.UserId user_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The code from the verification email. It must not be logged.
+  entity.v1.EmailVerificationCode code = 2 [(buf.validate.field).required = true];
+}
+
+// VerifyEmailResponse is returned once the User's email address is verified.
+message VerifyEmailResponse {}

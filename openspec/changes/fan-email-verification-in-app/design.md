@@ -56,7 +56,7 @@ Our UUID keeps the identity provider's id out of URLs and email bodies. The fan 
   - The usecase limits attempts per User id in process: 5 per 60 min, counted before the read.
   - A per-client interceptor scoped to this procedure limits attempts by client IP: 10 per 60 min.
   - Like the passkey-recovery limiters, both are per pod.
-- **verification**: the fan API calls `rpc.internal.user.v1.UserService.VerifyEmail` on a third identity listener, 9102.
+- **verification**: the fan API calls `rpc.backend.user.v1.UserService.VerifyEmail` on a third identity listener, 9102.
   - That listener's allowlist holds only `VerifyEmail`.
   - NetworkPolicy `identity-ingress` gains TCP 9102 from `app=fan-api`.
   - `fan-api` gets `IDENTITY_SERVICE_URL`.
@@ -96,7 +96,7 @@ If task 4.1 finds that ZITADEL rejects the main access token at userinfo, fall b
 ## Migration Plan
 
 1. `identity-service` is in production and archived. Add the `identity-provider-credentials` delta here (task 1.0).
-2. **specification**: `VerifyEmail` in `rpc/user/v1` and `rpc/internal/user/v1`, and `EmailVerificationCode`. Release.
+2. **specification**: `VerifyEmail` in `rpc/user/v1` and `rpc/backend/user/v1`, and `EmailVerificationCode`. Release.
 3. **backend**: the identity listener 9102 and the `VerifyEmail` handler, `return_code` sending with the verified check, the consumer's Postmark email, and the public RPC with limiters. Release.
 4. **cloud-provisioning**: port 9102 on Service `identity`, the NetworkPolicy rule from `app=fan-api`, and `IDENTITY_SERVICE_URL` on `fan-api`. Merge before the backend release is pinned. Old images ignore the variable.
 5. **frontend**: `/verify-email` and the Settings badge refresh. Release.
