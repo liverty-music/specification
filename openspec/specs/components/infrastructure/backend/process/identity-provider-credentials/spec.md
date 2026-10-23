@@ -1,23 +1,49 @@
 # components/infrastructure/backend/process/identity-provider-credentials Specification
 
 ## Purpose
-Keeps every internet-facing API server except the admin console API from holding a credential that can change fan identities at the identity provider, so a compromise of the fan, organizer or reception API cannot take over fan accounts through the identity provider.
+Keeps every credential that can change identities at the identity provider in one backend process, the identity service, which takes no requests from outside the cluster and serves each calling process only the operations it uses. A compromise of an API server or of the event consumer, which processes external data, then cannot take over fan accounts or Organizers' Organizations through the identity provider.
 
 ## Requirements
 
-### Requirement: Only the admin console API and the event consumer hold an identity-provider credential
+### Requirement: Only the identity service holds an identity-provider credential
 
-The fan, organizer and reception API servers SHALL run without any credential for the identity provider's management API; such a credential SHALL be neither mounted in them nor readable by them, including through a shared secret. Every change to a fan identity that the platform makes on its own (verification emails, passkey registration links) SHALL be made by the event consumer, and every change an admin makes SHALL be made by the admin console API. Each API server SHALL keep validating sign-in tokens with the identity provider's public keys, which are not a credential.
+The identity service SHALL be the only backend process that holds a credential for the identity provider's management API. No other process SHALL have such a credential mounted or readable, including through a shared secret; this includes the fan, organizer, reception and admin console API servers and the event consumer.
+
+Every change the platform makes to an identity at the identity provider SHALL be made by the identity service, on a request from another process:
+- from the event consumer: verification emails and passkey registration links;
+- from the admin console API: deleting a fan identity, and creating, provisioning, deactivating and deleting an Organizer's Organization.
+
+The identity service SHALL take no requests from outside the cluster. Each calling process SHALL reach only the identity-service operations it uses, and every other process SHALL reach none. A request for an operation outside the caller's set SHALL be refused and SHALL change nothing. Each API server SHALL keep validating sign-in tokens with the identity provider's public keys, which are not a credential.
 
 #### Scenario: API server deployment
 
-- **WHEN** the fan, organizer or reception API is deployed
+- **WHEN** the fan, organizer, reception or admin console API or the event consumer is deployed
 - **THEN** no identity-provider management credential is mounted in it or readable by it
 
 #### Scenario: Fan requests a verification resend
 
 - **WHEN** a signed-in fan requests a verification resend through the fan API
-- **THEN** the fan API announces the request and the event consumer sends the code
+- **THEN** the fan API announces the request, the event consumer asks the identity service, and the identity service sends the code
+
+#### Scenario: Admin deletes a fan
+
+- **WHEN** an admin deletes a fan through the admin console API
+- **THEN** the admin console API asks the identity service to delete the fan's identity
+
+#### Scenario: Operation outside the caller's set
+
+- **WHEN** the event consumer asks the identity service to delete a fan identity
+- **THEN** the request is refused and the identity is unchanged
+
+#### Scenario: Process with no access
+
+- **WHEN** the fan API, or any process other than the event consumer and the admin console API, sends a request to the identity service
+- **THEN** the request does not reach the identity service
+
+#### Scenario: Request from outside the cluster
+
+- **WHEN** a request from the internet is aimed at the identity service
+- **THEN** it does not reach the identity service
 
 #### Scenario: Signed-in calls keep working
 
