@@ -14,7 +14,7 @@ This change makes the product record what the team needs, from the first visit t
 - The campaign values of the address the fan arrived on (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`) are sent as their own properties. The query-string rule for addresses stays as it is; a referral code is still never sent.
 - Session replay starts recording, behind the existing Session replay toggle: every text and input is masked, and the checkout, lottery entry, identity check and settings screens are not recorded.
 - Every event says whether the app runs installed or in a browser tab.
-- New usage events: onboarding started and sign-up started (welcome), a guest's follow, the dashboard coach mark shown (discovery), the number of guest follows merged at sign-up, the push permission answer, the install banner shown and the app installed, the concert's source link opened and calendar added (event detail sheet), share and calendar added (event page), each checkout step shown, purchase initiated, lottery entry started and submitted.
+- New usage events: onboarding started (welcome), every start of sign-up or sign-in with the screen it started from, a guest's follow, the dashboard coach mark shown (discovery), the number of guest follows merged at sign-up, the push permission answer, the install banner shown and the app installed, the concert's source link opened and calendar added (event detail sheet), share and calendar added (event page), each checkout step shown, purchase initiated, lottery entry started and submitted.
 - A notification opened or dismissed carries the notification's type and, for a sales reminder, its milestone.
 - PostHog traffic goes through a reverse proxy on a subdomain of the app's domain, and the project's day boundary moves to Japan time.
 
@@ -30,7 +30,7 @@ This change makes the product record what the team needs, from the first visit t
 
 **Out of scope, and why**
 
-- Browser error reporting, source maps and the privacy-policy purpose 不具合の検出と修正: owned by the in-flight change `capture-client-errors`.
+- Browser error reporting, source maps and the privacy-policy purpose 不具合の検出と修正: shipped by `capture-client-errors` (frontend #828).
 - An event for a completed identity check: the identity check screens and use case are being built in the in-flight change `identity-ekyc-jpki` and have no main spec yet; the event belongs there.
 - Loading this data into BigQuery and the dashboards: the follow-up change for the analytics platform.
 
@@ -48,7 +48,8 @@ None.
 - `components/infrastructure/fan/web/global/pwa-install-banner`: banner shown and app installed are reported.
 - `components/infrastructure/fan/web/global/event-detail-sheet`: source link and calendar are reported.
 - `components/infrastructure/fan/web/global/legal-document`: the Privacy Policy discloses session recordings (ADDED; the existing disclosure requirement is modified by `capture-client-errors`).
-- `components/infrastructure/fan/web/route/welcome`: onboarding started and sign-up started are reported.
+- `components/infrastructure/fan/web/route/welcome`: onboarding started is reported.
+- `stories/sign-up-or-sign-in`: every start of sign-up or sign-in is reported with where it started (six screens and controls start it, so the rule is the story's).
 - `components/infrastructure/fan/web/route/discovery`: a guest's follow and the coach mark are reported.
 - `components/infrastructure/fan/web/route/event`: share and calendar are reported.
 - `components/infrastructure/fan/web/route/checkout`: steps and purchase initiated are reported.

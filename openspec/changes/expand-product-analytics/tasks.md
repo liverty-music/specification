@@ -8,7 +8,8 @@
 ## 2. Fan app events (frontend)
 
 - [ ] 2.1 Add the new events to `src/services/analytics-events.ts` with typed properties, and remove `entry.checkin.attempted`; verify `npm run typecheck` and the catalogue test pass
-- [ ] 2.2 Welcome: `onboarding.started` on `[Get Started]` and `signup.started` before leaving for hosted login (`welcome-route.ts:486`); tests annotated for components/infrastructure/fan/web/route/welcome "Get Started" and "Sign-up from the landing page"
+- [ ] 2.2 Welcome: `onboarding.started` on `[Get Started]`; test annotated for components/infrastructure/fan/web/route/welcome "Get Started"
+- [ ] 2.2a Sign-up and sign-in starts: add a `source` option to `AuthService.signIn` / `signUp` and send `auth.started` with `kind` and `source` before the redirect; pass a source from each of the six callers (design Context "Sign-up starts"); tests annotated for stories/sign-up-or-sign-in "Sign-up from a banner", "Sign-in from the landing page" and "Analytics off"
 - [ ] 2.3 Discovery and follow store: `artist.follow.guest` in the guest branch of `FollowStore.follow` (`follow-store.ts:152`) and `onboarding.coachmark.shown` when the coach mark appears; tests for components/infrastructure/fan/web/route/discovery "Guest follows a fifth artist" and "Coach mark appears"
 - [ ] 2.4 Guest merge: `guest.follows.merged` with the merged count when the merge finishes (`follow-store.ts:336`); test for stories/merge-guest-data-on-signup "Guest with five follows signs up"
 - [ ] 2.5 Push permission: `notification.permission.result` after `Notification.requestPermission()` (`notification-manager.ts:68`) with the answer and the start; test for components/infrastructure/fan/web/global/notification-prompt "Fan denies"
