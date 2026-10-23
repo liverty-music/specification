@@ -43,19 +43,19 @@ Alternatives:
 | An RPC listener on the event consumer | The consumer keeps both keys while it processes external data (Gemini results, official-site pages). The risk the proposal removes would stay, and the consumer would take two roles. |
 | A role-less key on the fan API for #1228 | It still puts an identity-provider credential on an internet-facing pod, and leaves the consumer and admin keys as they are. |
 
-### D2. Internal API: `liverty_music.rpc.internal.<entity>.v1`, entity-named services
+### D2. Backend API: `liverty_music.rpc.backend.<entity>.v1`, entity-named services
 
-Packages name the caller (`rpc-design` skill: "Packages name the caller"). `internal` is a new caller, meaning a backend workload inside the cluster. Services are named after the entity they act on, not after the hosting workload, so a later move or split of the identity workload renames nothing.
+Packages name the caller (`rpc-design` skill: "Packages name the caller"). `backend` is a new caller, meaning a backend workload inside the cluster. The name `internal` was planned first and rejected: BSR generates the Go package at `.../liverty_music/rpc/internal/user/v1`, and Go refuses to import a path with an `internal` element from outside its parent tree (checked: `use of internal package ... not allowed`). Services are named after the entity they act on, not after the hosting workload, so a later move or split of the identity workload renames nothing.
 
 | Today (entity interface) | Internal RPC | Caller |
 |---|---|---|
-| `EmailVerifier.SendVerification` | `rpc.internal.user.v1.UserService.SendEmailVerification` | event consumer |
+| `EmailVerifier.SendVerification` | `rpc.backend.user.v1.UserService.SendEmailVerification` | event consumer |
 | `EmailVerifier.ResendVerification` | `UserService.ResendEmailVerification` | event consumer |
 | `PasskeyRegistrationLinkIssuer` (verified email + link) | `UserService.IssuePasskeyRegistrationLink` | event consumer |
 | `IdentityRemover.DeleteIdentity` | `UserService.DeleteIdentity` | admin console API |
-| `OrganizationRepository.Create`, `GetByName`, `Provision`, `DeactivateIdentities`, `Delete` | `rpc.internal.organization.v1.OrganizationService.*` (names fixed against the `rpc-design` skill in task 1.1) | admin console API |
+| `OrganizationRepository.Create`, `GetByName`, `Provision`, `DeactivateIdentities`, `Delete` | `rpc.backend.organization.v1.OrganizationService.Create`, `Get`, `Provision`, `DeactivateIdentities`, `Delete` | admin console API |
 
-Requests name the provider user id or provider organization id, because the caller is a workload, not the subject. Errors keep today's codes: NotFound, FailedPrecondition (unverified email), Unavailable. The caller's client maps them back to the same `apperr` codes, so the usecases do not change.
+Requests name the provider user id or provider organizer id, because the caller is a workload, not the subject. `GetByName` becomes `Get(short_name)`: the short name is the Organization's name at the identity provider, a natural key (`rpc-design` skill, Methods table). The provider organizer id gets the wrapper `Organizer.ProviderOrganizerId`, nested like `User.ProviderUserId`. Errors keep today's codes: NotFound, FailedPrecondition (unverified email), Unavailable. The caller's client maps them back to the same `apperr` codes, so the usecases do not change.
 
 The protos go on BSR with the rest. The module is public, which is acceptable because no protection depends on hiding the names (D3).
 
@@ -106,7 +106,7 @@ The GSM secrets keep their names:
 - `zitadel-machine-key-for-fan-passkey-recovery`
 - `zitadel-machine-key-for-organizer-provisioner`
 
-ESO syncs them into `identity-secrets`. The three `*_PATH` variables move to the identity config. `event-consumer` and `admin-console-api` lose the mounts and the variables, and gain `IDENTITY_SERVICE_URL`.
+ESO syncs them into `identity-secrets`. All three are ESO-only in Secret Manager: no workload GSA may read them through the Secret Manager API (before this change the `backend-app`, `fan-api` and `admin-console-api` GSAs could read the backend-app or provisioner key there, even unmounted). The pod runs as its own KSA `identity`, bound to no GSA and with no token mounted: it calls no Google Cloud API, so `backend-app`'s Cloud SQL and other grants would only widen what a compromise reaches. The three `*_PATH` variables move to the identity config. `event-consumer` and `admin-console-api` lose the mounts and the variables, and gain `IDENTITY_SERVICE_URL`.
 
 ### D6. Availability: one replica; callers keep their retry paths
 
@@ -119,12 +119,14 @@ This is accepted at current scale, with no users.
 
 ZITADEL is reached on first use. The token source is lazy, so the process starts and reports ready without it (spec `health-probes`).
 
+The identity service answers Unavailable when the identity provider cannot be reached: its API answers gRPC Unavailable, the token request cannot be sent, or the token endpoint answers 5xx. The ZITADEL clients themselves still return Internal there, as the entity specs say for the direct path. The callers' identity client maps every code back unchanged, so a caller sees Unavailable while the identity provider or the identity service is down; the consumer redelivers on any error and the admin console shows it, so no behaviour depends on Internal versus Unavailable.
+
 ### D7. Pipeline
 
 `identity` joins:
 - `docker-bake.hcl` and the `IMAGES` list in `deploy.yml`;
 - the release copy matrix;
-- `dispatch-prod-pin`;
+- the `IMAGES` list of cloud-provisioning `bump-prod-pin.yml` (backend `dispatch-prod-pin` dispatches per component and needs no change);
 - the prod overlay image pin.
 
 The Dockerfile gains an `identity` stage like `consumer`.
@@ -155,4 +157,4 @@ The Dockerfile gains an `identity` stage like `consumer`.
 
 ## Open Questions
 
-- Exact `OrganizationService` method names under the `rpc-design` rules, e.g. how `GetByName` reads. This is settled in task 1.1 and does not change the approach.
+(none: the `OrganizationService` method names were settled in task 1.1, see D2.)

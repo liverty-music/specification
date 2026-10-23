@@ -16,7 +16,7 @@ The next change (#1228: our own verification email, verified from an app page) n
   - the admin console API for deleting a fan identity and for creating, provisioning, deactivating and deleting an Organizer's Organization.
 - Each calling workload can reach only the identity-service operations it needs, and nothing else can reach the identity service.
 - The identity service's liveness and readiness reflect only the process, because it has no database.
-- New internal RPC packages `liverty_music.rpc.internal.<entity>.v1`, and the `rpc-design` naming rule gains the `internal` caller.
+- New RPC packages `liverty_music.rpc.backend.<entity>.v1` for calls between backend workloads, and the `rpc-design` naming rule gains the `backend` caller.
 
 ## Capabilities
 
@@ -40,7 +40,7 @@ The usecases that call them (`UserUseCase.ReissueEmailVerification`, `SendPasske
 
 ## Impact
 
-- **specification**: `proto/liverty_music/rpc/internal/user/v1` and `rpc/internal/organization/v1`, a Release, and the `rpc-design` skill rule for the `internal` caller.
+- **specification**: `proto/liverty_music/rpc/backend/user/v1` and `rpc/backend/organization/v1`, a Release, and the `rpc-design` skill rule for the `backend` caller.
 - **backend**:
   - a new `identity` binary and image, with no database and an internal Connect listener per caller;
   - clients for the event consumer and the admin console API that replace the Zitadel clients behind `EmailVerifier`, `PasskeyRegistrationLinkIssuer`, `IdentityRemover` and `OrganizationRepository`;
