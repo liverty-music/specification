@@ -1,0 +1,163 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.backend.organization.v1 provides the
+// OrganizationService that backend workloads call to create, provision and
+// remove an Organizer's Organization at the identity provider. It is served by
+// the identity service, the only backend workload that holds an
+// identity-provider credential.
+package liverty_music.rpc.backend.organization.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/organizer.proto";
+
+// OrganizationService manages Organizers' Organizations, the sign-in units at
+// the identity provider that hold the identities of an Organizer's members. An
+// Organizer's Organization is named by the Organizer's short name. The
+// identity provider is the only record of an Organization.
+//
+// It is cluster-internal: it takes no requests from outside the cluster and
+// carries no sign-in. Only the admin console API may call it; a call from any
+// other workload is refused with PERMISSION_DENIED and changes nothing.
+//
+// Provisioning is split so the caller can record the Organization's id as soon
+// as it exists: Create creates the Organization, the caller records its id
+// (resolving it with Get when Create reports ALREADY_EXISTS), and Provision
+// completes the remaining steps against that id.
+service OrganizationService {
+  // Create creates the Organization named by the Organizer's short name and
+  // returns its id.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The calling workload may not call this procedure.
+  // - INVALID_ARGUMENT: The short name is missing or malformed.
+  // - ALREADY_EXISTS: An Organization with that name exists; no second one is
+  //   created.
+  // - UNAVAILABLE: The identity provider cannot be reached; a retry may
+  //   succeed.
+  // - INTERNAL: The Organization could not be created.
+  rpc Create(CreateRequest) returns (CreateResponse);
+
+  // Get returns the id of the Organization named by the Organizer's short
+  // name, ignoring removed Organizations. Used for an Organizer whose
+  // Organization was created but never recorded.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The calling workload may not call this procedure.
+  // - INVALID_ARGUMENT: The short name is missing or malformed.
+  // - NOT_FOUND: No Organization has the short name.
+  // - UNAVAILABLE: The identity provider cannot be reached; a retry may
+  //   succeed.
+  // - INTERNAL: The Organizations could not be searched.
+  rpc Get(GetRequest) returns (GetResponse);
+
+  // Provision completes the Organization: it sets a passkey-primary sign-in
+  // policy that reports unknown emails, lets the Organization use the
+  // organizer console, and creates the owner identity with the owner email
+  // and the user name `<owner email> (<short name>)`, granted the `owner` role
+  // and invited to register a passkey. The owner email may already belong to
+  // an identity in another Organization, which is neither used nor changed.
+  // It is idempotent: a retry after a partial failure completes the remaining
+  // steps without creating a second owner identity, and never leaves the
+  // owner without the `owner` role.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The calling workload may not call this procedure.
+  // - INVALID_ARGUMENT: A field is missing or malformed, or the identity
+  //   provider rejected the owner email or the user name. Retrying cannot
+  //   succeed.
+  // - ALREADY_EXISTS: The user name is taken outside the Organization.
+  //   Retrying cannot succeed.
+  // - UNAVAILABLE: The identity provider cannot be reached; a retry may
+  //   succeed.
+  // - INTERNAL: Any other step failed; a retry may succeed.
+  rpc Provision(ProvisionRequest) returns (ProvisionResponse);
+
+  // DeactivateIdentities makes every identity in the Organization unable to
+  // sign in: an identity that has signed in before is deactivated and one
+  // that never completed its first sign-in is removed. The Organization
+  // stays. Identities already turned off count as done, so a repeated call
+  // succeeds.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The calling workload may not call this procedure.
+  // - INVALID_ARGUMENT: The provider organizer id is missing or empty.
+  // - UNAVAILABLE: The identity provider cannot be reached; a retry may
+  //   succeed.
+  // - INTERNAL: An identity could not be turned off.
+  rpc DeactivateIdentities(DeactivateIdentitiesRequest) returns (DeactivateIdentitiesResponse);
+
+  // Delete removes the Organization together with every identity in it. An
+  // Organization that no longer exists counts as removed, so a repeated call
+  // succeeds.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The calling workload may not call this procedure.
+  // - INVALID_ARGUMENT: The provider organizer id is missing or empty.
+  // - UNAVAILABLE: The identity provider cannot be reached; a retry may
+  //   succeed.
+  // - INTERNAL: The Organization could not be removed.
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+}
+
+// CreateRequest carries the short name that names the new Organization.
+message CreateRequest {
+  // Required. The Organizer's short name.
+  entity.v1.OrganizerShortName short_name = 1 [(buf.validate.field).required = true];
+}
+
+// CreateResponse returns the new Organization's id.
+message CreateResponse {
+  // The identity provider's ID for the new Organization.
+  entity.v1.Organizer.ProviderOrganizerId provider_organizer_id = 1 [(buf.validate.field).required = true];
+}
+
+// GetRequest carries the short name of the Organization to find.
+message GetRequest {
+  // Required. The Organizer's short name, which names its Organization.
+  entity.v1.OrganizerShortName short_name = 1 [(buf.validate.field).required = true];
+}
+
+// GetResponse returns the Organization's id.
+message GetResponse {
+  // The identity provider's ID for the Organization.
+  entity.v1.Organizer.ProviderOrganizerId provider_organizer_id = 1 [(buf.validate.field).required = true];
+}
+
+// ProvisionRequest identifies the recorded Organization and carries what its
+// owner identity is created from.
+message ProvisionRequest {
+  // Required. The identity provider's ID for the Organization, as recorded on
+  // the Organizer.
+  entity.v1.Organizer.ProviderOrganizerId provider_organizer_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The Organizer's short name, used in the owner identity's user
+  // name.
+  entity.v1.OrganizerShortName short_name = 2 [(buf.validate.field).required = true];
+
+  // Required. The email of the person who owns the Organizer.
+  entity.v1.Email owner_email = 3 [(buf.validate.field).required = true];
+}
+
+// ProvisionResponse is returned once every provisioning step is complete.
+message ProvisionResponse {}
+
+// DeactivateIdentitiesRequest identifies the Organization whose identities to
+// turn off.
+message DeactivateIdentitiesRequest {
+  // Required. The identity provider's ID for the Organization.
+  entity.v1.Organizer.ProviderOrganizerId provider_organizer_id = 1 [(buf.validate.field).required = true];
+}
+
+// DeactivateIdentitiesResponse is returned once no identity in the
+// Organization can sign in.
+message DeactivateIdentitiesResponse {}
+
+// DeleteRequest identifies the Organization to remove.
+message DeleteRequest {
+  // Required. The identity provider's ID for the Organization.
+  entity.v1.Organizer.ProviderOrganizerId provider_organizer_id = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteResponse is returned once the Organization no longer exists.
+message DeleteResponse {}
