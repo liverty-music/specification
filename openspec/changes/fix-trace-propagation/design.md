@@ -42,6 +42,10 @@ Add `telemetry.StartJobRun(ctx, jobName)` and `telemetry.StartJobItem(runCtx, sp
 - Alternative: one trace per run. Rejected: a run touches hundreds of artists, so one trace would hold thousands of spans and the analytics layer could not key one search by its trace id.
 - Alternative: new root per artist with no link. Rejected: the link keeps "which run did this" answerable from the trace.
 
+### `normalize-venue-names` is out of scope
+
+`cmd/job/normalize-venue-names` is a one-time migration, not a scheduled job: no Dockerfile target, `docker-bake.hcl` entry, k8s manifest or cloud-provisioning resource runs it, and it never calls `telemetry.SetupTelemetry`, so a run span there would go to the no-op tracer. It gets no span, and backend#680 deleted it after confirming that every prod `listed_venue_name` (2,728 rows) is already normalized.
+
 ### Correct the router comment
 
 `router.go:50` states what the middlewares now do, and names the extract step.
@@ -55,3 +59,8 @@ Add `telemetry.StartJobRun(ctx, jobName)` and `telemetry.StartJobItem(runCtx, sp
 ## Migration Plan
 
 Ship in one backend release. Rollback is a revert: no data or wire format depends on the new keys.
+
+## Production check (v1.95.0, 2026-10-23)
+
+- 3.1: a manual run (`concert-discovery-manual-trace-1608`) logged a `trace_id` on all 7 `successfully received Gemini response` lines. For Clutch, the job lines and the `event-consumer` lines (`processing concert.discovered event`, venue search) share trace `f526dfd73adb2a8cc8fb28d37c8b4e14`. The `auto-published new concerts for series` line did not occur because both concerts were kept as reconciliation candidates; the owner accepted the `ingest-concert` lines as the evidence.
+- 3.2: in Cloud Trace, trace `f526dfd73adb2a8cc8fb28d37c8b4e14` holds `concert_search.artist` (root) → the send span → `ingest-concert` and the consumer's SQL and HTTP spans (31 spans, every parent present), and `concert_search.artist` links to the run trace `686d53c3743e44a6289da87c9b68caf1` (owner checked the Links panel). v1.95.0 named the send span `messaging.traceContextPublisher`; backend#681 (v1.95.1) restored `nats.Publisher` by injecting through watermill's `MessageTransformPublisherDecorator` and naming the span explicitly, confirmed on a `USER.logged_in` trace (`712c5a0cc7aff1de47647c5813fb8eed`).
