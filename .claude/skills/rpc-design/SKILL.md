@@ -13,7 +13,9 @@ The goal: a developer predicts a method's input and behavior from its name alone
 - A service's standard methods take and return only its own resource. A read of another resource goes to that resource's service (`OrderService.Get`, not `TicketService.GetOrder`).
   - A read may carry related resources as side lists (`ConcertService` responses carry `series` and `artists`).
   - A create may carry child resources created with the parent (`TicketSaleService.Create` with its ticket types).
-- Packages name the caller: `rpc.<entity>.v1` is the fan API; `rpc.admin.`, `rpc.organizer.` and `rpc.scanner.` are the admin console, organizer console and venue scanner device. The same method name in two packages narrows by the same Key; the payload may differ.
+- Packages name the caller: `rpc.<entity>.v1` is the fan API; `rpc.admin.`, `rpc.organizer.` and `rpc.scanner.` are the admin console, organizer console and venue scanner device; `rpc.backend.` is another backend workload inside the cluster, with no sign-in (the identity service's callers). The same method name in two packages narrows by the same Key; the payload may differ.
+  - Never `rpc.internal.`: BSR generates the Go package under `.../rpc/internal/`, and Go refuses to import a path with an `internal` element from outside its parent tree.
+  - A `rpc.backend.` request names its subject (`provider_user_id`), because the caller is a workload, not the subject.
 
 ## Methods
 

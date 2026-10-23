@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.backend.user.v1 provides the UserService that
+// backend workloads call to change a fan's identity at the identity provider.
+// It is served by the identity service, the only backend workload that holds
+// an identity-provider credential.
+package liverty_music.rpc.backend.user.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/user.proto";
+
+// UserService changes a fan's identity at the identity provider on behalf of
+// another backend workload. It is cluster-internal: it takes no requests from
+// outside the cluster and carries no sign-in. Each calling workload reaches
+// only the procedures it uses; the event consumer calls
+// SendEmailVerification, ResendEmailVerification and
+// IssuePasskeyRegistrationLink, and the admin console API calls
+// DeleteIdentity. A call to any other procedure is refused with
+// PERMISSION_DENIED and changes nothing.
+//
+// Every request names the identity by the identity provider's ID for the
+// User, because the caller is a workload, not the fan.
+service UserService {
+  // SendEmailVerification sends the identity's email address a verification
+  // code, at sign-up.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The calling workload may not call this procedure.
+  // - INVALID_ARGUMENT: The provider user id is missing or empty.
+  // - UNAVAILABLE: The identity provider cannot be reached; a retry may
+  //   succeed.
+  // - INTERNAL: The identity provider failed to send the code.
+  rpc SendEmailVerification(SendEmailVerificationRequest) returns (SendEmailVerificationResponse);
+
+  // ResendEmailVerification sends the identity's email address a new
+  // verification code, when the fan asks for one.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The calling workload may not call this procedure.
+  // - INVALID_ARGUMENT: The provider user id is missing or empty.
+  // - FAILED_PRECONDITION: The identity's email address is already verified;
+  //   nothing is sent.
+  // - UNAVAILABLE: The identity provider cannot be reached; a retry may
+  //   succeed.
+  // - INTERNAL: The identity provider failed to send the code.
+  rpc ResendEmailVerification(ResendEmailVerificationRequest) returns (ResendEmailVerificationResponse);
+
+  // IssuePasskeyRegistrationLink returns the identity's verified email address
+  // and a link that registers a new passkey for the identity without a
+  // sign-in. The caller emails the link to that address. The link stops
+  // working 1 hour after it is issued and once a registration has been
+  // started with it; the identity's existing passkeys stay registered. The
+  // link is a credential: neither side logs it.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The calling workload may not call this procedure.
+  // - INVALID_ARGUMENT: The provider user id is missing or empty.
+  // - NOT_FOUND: The identity does not exist.
+  // - FAILED_PRECONDITION: The identity's email address is not verified;
+  //   nothing is issued.
+  // - UNAVAILABLE: The identity provider cannot be reached; a retry may
+  //   succeed.
+  // - INTERNAL: The identity provider failed to issue the link.
+  rpc IssuePasskeyRegistrationLink(IssuePasskeyRegistrationLinkRequest) returns (IssuePasskeyRegistrationLinkResponse);
+
+  // DeleteIdentity removes the identity, so it can no longer sign in. An
+  // identity that no longer exists counts as removed, so a repeated call
+  // succeeds.
+  //
+  // Possible errors:
+  // - PERMISSION_DENIED: The calling workload may not call this procedure.
+  // - INVALID_ARGUMENT: The provider user id is missing or empty.
+  // - UNAVAILABLE: The identity provider cannot be reached; a retry may
+  //   succeed.
+  // - INTERNAL: The identity provider failed to remove the identity.
+  rpc DeleteIdentity(DeleteIdentityRequest) returns (DeleteIdentityResponse);
+}
+
+// SendEmailVerificationRequest identifies the identity to send a code to.
+message SendEmailVerificationRequest {
+  // Required. The identity provider's ID for the User.
+  entity.v1.User.ProviderUserId provider_user_id = 1 [(buf.validate.field).required = true];
+}
+
+// SendEmailVerificationResponse is returned once the code has been sent.
+message SendEmailVerificationResponse {}
+
+// ResendEmailVerificationRequest identifies the identity to send a new code
+// to.
+message ResendEmailVerificationRequest {
+  // Required. The identity provider's ID for the User.
+  entity.v1.User.ProviderUserId provider_user_id = 1 [(buf.validate.field).required = true];
+}
+
+// ResendEmailVerificationResponse is returned once the new code has been sent.
+message ResendEmailVerificationResponse {}
+
+// IssuePasskeyRegistrationLinkRequest identifies the identity to issue a
+// passkey registration link for.
+message IssuePasskeyRegistrationLinkRequest {
+  // Required. The identity provider's ID for the User.
+  entity.v1.User.ProviderUserId provider_user_id = 1 [(buf.validate.field).required = true];
+}
+
+// IssuePasskeyRegistrationLinkResponse carries the address to send the link
+// to and the link.
+message IssuePasskeyRegistrationLinkResponse {
+  // The identity's verified email address.
+  entity.v1.Email email = 1 [(buf.validate.field).required = true];
+
+  // The link that registers a new passkey for the identity. It carries a
+  // single-use code and must not be logged.
+  entity.v1.Url link = 2 [(buf.validate.field).required = true];
+}
+
+// DeleteIdentityRequest identifies the identity to remove.
+message DeleteIdentityRequest {
+  // Required. The identity provider's ID for the User.
+  entity.v1.User.ProviderUserId provider_user_id = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteIdentityResponse is returned once the identity no longer exists.
+message DeleteIdentityResponse {}

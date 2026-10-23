@@ -20,6 +20,13 @@ import "liverty_music/entity/v1/user.proto";
 // Organization) and the owner email are backend-only concerns and are
 // intentionally not part of this consumer entity.
 message Organizer {
+  // ProviderOrganizerId is the identity provider's ID for the Organizer's
+  // Organization. Only calls between backend workloads carry it.
+  message ProviderOrganizerId {
+    // The identity provider's organization id, at least 1 character.
+    string value = 1 [(buf.validate.field).string.min_len = 1];
+  }
+
   // The unique identifier for the Organizer.
   OrganizerId id = 1 [(buf.validate.field).required = true];
 
