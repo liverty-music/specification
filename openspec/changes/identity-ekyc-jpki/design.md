@@ -180,6 +180,12 @@ win**.
 
   The unused `settings.identity.comingSoon` key is removed.
 
+### Verification outcomes are reported for product analytics
+
+Added 2026-10-23 for `expand-product-analytics`, which records a fan's path to a paid ticket and leaves this step to this change because the identity check has no main spec yet. `Create` publishes `USER.identity_verification_finished` with `{user_id, outcome, method, renewal}` and the analytics consumer forwards it as `identity.verification.finished`, the same path as the other trust-critical signals (`backend/internal/usecase/analytics_client.go:20-23`; the `USER` stream already carries `USER.created` and `USER.logged_in`). The outcome is one of `verified`, `already_exists`, `not_finished` and `failed:<code>`. The provider user ID never leaves the use case: the signal is for funnels (how many fans who meet a verified sale finish the check), not for identity.
+
+- Alternative: send the event from the fan app's verify-callback route. Rejected: the route sees only what the RPC returns to it, a closed tab sends nothing, and the outcome is trust-critical.
+
 ## Risks / Trade-offs
 
 - **The callback may open in a different browser storage than the one that

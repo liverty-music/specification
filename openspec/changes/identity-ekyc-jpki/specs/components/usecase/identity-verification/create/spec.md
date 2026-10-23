@@ -38,3 +38,22 @@ so the platform integrates as a 加盟事業者 **without its own 主務大臣�
 
 - **WHEN** verification fails or is abandoned
 - **THEN** no IdentityVerification is created and the fan stays unverified
+
+### Requirement: Each verification outcome is reported for product analytics
+
+Every call of Create that reaches the verification provider SHALL send one "identity verification finished" signal for product analytics for the fan, carrying the outcome and, when verified, the method and whether it renewed an earlier verification of the same person. The outcomes SHALL be: verified; the person is already verified on another account (AlreadyExists); the fan has not finished the session (FailedPrecondition); and failed for any other reason, named by its error code. The signal SHALL carry no provider user ID, name or other personal data. A failure to send it SHALL NOT change the outcome or fail Create.
+
+#### Scenario: Verified with a physical card
+
+- **WHEN** a fan verifies for the first time with a physical card
+- **THEN** one signal is sent with the outcome verified, the JPKI method and not a renewal
+
+#### Scenario: Person already verified on another account
+
+- **WHEN** Create fails with AlreadyExists because the provider user ID belongs to another account
+- **THEN** one signal is sent with that outcome and no provider user ID
+
+#### Scenario: Session not finished
+
+- **WHEN** the fan returns to the app before finishing the session in the provider's app
+- **THEN** one signal is sent with the outcome not finished

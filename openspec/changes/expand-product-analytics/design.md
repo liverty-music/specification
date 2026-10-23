@@ -2,14 +2,15 @@
 
 See proposal.md for why. The constraints that shape the approach, all read from the code on 2026-10-23:
 
-- **Fan app**: PostHog is initialised in `frontend/src/lib/analytics/analytics-service.ts:356-386` with `autocapture: false`, `capture_pageview: false`, `disable_session_recording: true` and `before_send: stripOwnUrlQuery`. Events can only be sent from the catalogue in `src/services/analytics-events.ts:214-227`. The installed `posthog-js` is 1.438.13 (`package-lock.json`); its config type accepts `capture_pageview: 'history_change'`, `capture_pageleave`, `session_recording.{maskAllInputs, maskTextSelector, blockSelector}` and `register()` (`@posthog/types` 1.416.0, `posthog-config.d.ts:1347, 1355, 531-599`; `posthog.d.ts:358`).
+- **Fan app**: PostHog is initialised in `frontend/src/lib/analytics/analytics-service.ts:440-476` with `autocapture: false`, `capture_pageview: false`, `disable_session_recording: true`, `capture_exceptions: false` and `before_send: filterAnalyticsEvent` (`src/lib/analytics/error-report-filter.ts`, from `capture-client-errors`, frontend #828). Events can only be sent from the catalogue in `src/services/analytics-events.ts:214-227`. The installed `posthog-js` is 1.438.13 (`package-lock.json`); its config type accepts `capture_pageview: 'history_change'`, `capture_pageleave`, `session_recording.{maskAllInputs, maskTextSelector, blockSelector}` and `register()` (`@posthog/types` 1.416.0, `posthog-config.d.ts:1347, 1355, 531-599`; `posthog.d.ts:358`).
 - **UTM**: posthog-js already reads `utm_*` from `document.URL` inside `capture()` and registers them as their own properties and as `$initial_utm_*` person properties (`save_campaign_params: true` by default, `posthog-core.js:218, 1522-1530`), before `before_send` runs (`:1663`). Today's 0 UTM events mean no campaign link has been used yet, not that the strip removes them.
 - **Service worker**: it posts opened and dismissed events itself with only `notification_id` (`src/lib/analytics/notification-interaction.ts:242-260`); it reads the push message's `data.url` and `data.notification_id` (`src/sw.ts:131-158`).
 - **Backend signals**: use cases publish domain events, and `internal/adapter/event/analytics_consumer.go` forwards them to PostHog (`internal/usecase/analytics_client.go:20-23`; subscriptions in `internal/di/consumer.go:327-337`). `AnalyticsClient.Enqueue` requires a user UUID as distinct id (`internal/infrastructure/analytics/posthog/posthog_client.go:141-146`). `ORDER.paid` exists but has no analytics subscription.
 - **Search calls**: both searchers already gather the usage fields (`PassMetadata` and `SearchMetadata` in `internal/infrastructure/gcp/gemini/searcher.go:193-262`; `logResponseMetadata` in `ticket_sale_searcher.go:486-553`) but log them under different names and types (`usage_metadata` vs `usage`; `url_context_retrieved` as an int vs a string array).
 - **Version**: pods carry `app.kubernetes.io/version` (`cloud-provisioning/k8s/namespaces/backend/overlays/prod/kustomization.yaml:52`), but `TELEMETRY_SERVICE_VERSION` is unset and defaults to `1.0.0` (`backend/pkg/config/config.go:404`).
 - **Proxy**: PostHog's managed reverse proxy is free on Cloud and needs one DNS-only CNAME; Cloudflare records are already created with `cloudflare.DnsRecord` and `proxied: false` (`cloud-provisioning/src/gcp/components/object-storage.ts:424-439`).
-- **Overlap**: `capture-client-errors` edits `analytics-service.ts` and MODIFIES the query-string requirement and the Privacy Policy disclosure requirement; this change only ADDS requirements to those specs.
+- **Overlap**: `capture-client-errors` shipped its frontend in #828 (2026-10-23) and is not archived yet; it MODIFIES the query-string requirement and the Privacy Policy disclosure requirement, and this change only ADDS requirements to those specs, so the two archive in either order. #828 also added error-report steps (`IErrorBoundaryService.addBreadcrumb`) at several actions this change reports: `follow-store.ts:147`, `checkout-route.ts:413`, `lottery-entry-route.ts:404`, `event-detail-sheet.ts:207` and every sign-in or sign-up start. A step is kept on the device for an error report; an analytics event is sent at once and obeys the opt-out. They stay two calls, placed next to each other.
+- **Sign-up starts**: the fan app starts hosted login from six places: `auth-status.ts:16,22`, `dashboard-route.ts:1130`, `event-route.ts:468`, `my-artists-route.ts:391`, `settings-route.ts:603,609` and `welcome-route.ts:487` (sign-in only; `[Get Started]` starts the guest flow, not sign-up). All go through `AuthService.signIn` / `signUp`.
 
 ## Goals / Non-Goals
 
@@ -31,7 +32,8 @@ One namespace per subject, dot-separated, as the catalogue already does.
 
 | signal | event | sent by |
 |---|---|---|
-| onboarding started / sign-up started | `onboarding.started`, `signup.started` | fan app |
+| onboarding started | `onboarding.started` | fan app (welcome) |
+| sign-up or sign-in started | `auth.started` with `kind` (sign_up / sign_in) and `source` (the screen or control) | fan app, inside `AuthService.signIn` / `signUp`, which take a `source` option |
 | guest follow / coach mark / follows merged | `artist.follow.guest`, `onboarding.coachmark.shown`, `guest.follows.merged` | fan app |
 | permission answer | `notification.permission.result` | fan app |
 | install banner / install answer / installed | `pwa.install.banner_shown`, `pwa.install.answered`, `pwa.installed` | fan app |
@@ -83,7 +85,7 @@ The harness (`TestConcertSearcher_ABEval`, `searcher_integration_test.go:247`) r
 
 - [Masking every text hides what a fan read when they left] → layout, taps and the screen path stay visible; unmasking chosen elements is a later decision.
 - [The managed proxy's CNAME must stay DNS-only] → `proxied: false` on the record, as for `cdn.<publicDomain>`.
-- [Merge conflicts with `capture-client-errors` in `analytics-service.ts` and the privacy policy texts] → whichever change merges second rebases; neither changes the other's requirements.
+- [The page-view rules and `capture-client-errors`' error-report rule share `filterAnalyticsEvent`] → add the query-only page-view drop there, with tests next to its existing ones, so one filter decides what leaves the device.
 - [Personless events are counted by PostHog like other events] → about 1,500 a month (Gemini calls and search outcomes), inside the free tier.
 
 ## Migration Plan
