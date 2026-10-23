@@ -6,7 +6,14 @@ See proposal.md - Why. Verified state on 2026-10-22:
 - DI builds two clients whenever `ZITADEL_MACHINE_KEY_FOR_BACKEND_APP_PATH` is set (`provider.go:258-275`):
   - `EmailVerifier` (Send/ResendVerification).
   - `IdentityRemover` (DeleteIdentity).
-- The `backend-app` key is mounted on `fan-api` (`cloud-provisioning/k8s/namespaces/backend/base/fan-api/external-secret.yaml:27-29`), `event-consumer` (`event-consumer/deployment.yaml:33-38`) and `admin-console-api` (`admin-console-api/deployment.yaml:30-35`).
+- The `backend-app` key is mounted on five Deployments (verified in implementation; exploration found only the first three):
+  - `fan-api` (`cloud-provisioning/k8s/namespaces/backend/base/fan-api/external-secret.yaml:27-29`).
+  - `event-consumer` (`event-consumer/deployment.yaml:33-38`).
+  - `admin-console-api` (`admin-console-api/deployment.yaml:30-35`).
+  - `organizer-console-api` (`organizer-console-api/deployment.yaml:28-33`).
+  - `reception-api` (`reception-api/deployment.yaml:19-24`).
+- All but `fan-api` take it from the shared `backend-secrets` (`backend-secrets-external-secret.yaml:41-43`), which they also load whole with `envFrom`. The cluster runs Kubernetes 1.35, where an environment variable name may contain a dot, so the key JSON can also be visible as an environment variable.
+- The backend server config required `ZITADEL_MACHINE_KEY_FOR_BACKEND_APP_PATH` on every API workload (`backend/pkg/config/config.go:952`), and the event consumer only binds to durables NACK has already created (`backend/internal/infrastructure/messaging/subscriber.go:128-131`).
 - Uses of the key:
   - `SendVerification`: event consumer, on `USER.created` (`internal/adapter/event/user_consumer.go:54`).
   - `ResendVerification`: fan RPC through `UserUseCase.ResendEmailVerification` (`internal/usecase/user_uc.go:427-440`).
@@ -18,13 +25,13 @@ During exploration, best practice for removing a standing all-users credential f
 ## Goals / Non-Goals
 
 **Goals:**
-- The `fan-api` Pod has no identity-provider management credential.
+- The `fan-api`, `organizer-console-api` and `reception-api` Pods have no identity-provider management credential, neither mounted nor in their environment.
 - The fan-facing behaviour of the resend stays as it is on screen.
 
 **Non-Goals:**
 - Fan self-service account deletion. It does not exist today, and no fan surface calls `UserUseCase.Delete`. If it is added later, it should run the identity provider's self-deletion with the fan's own freshly re-authenticated token (ZITADEL self-deletion guide; ASVS 8.3.3), not through a service account.
 - Moving the key off `event-consumer` or `admin-console-api`.
-- Splitting the binary so the fan Pod stops running the admin and organizer listeners.
+- Splitting the binary so the API Pods stop running the other audiences' listeners.
 
 ## Decisions
 
@@ -54,13 +61,18 @@ The fan API can no longer ask the identity provider whether the address is verif
 
 "Not configured" was a local-development case: there is no key in `make dev`. It is now logged by the consumer.
 
-### D3. Remove the mount from `fan-api` only
+### D3. Only the admin console API and the event consumer get the key
 
-Remove the `zitadel-machine-key-for-backend-app.json` entry from `fan-api/external-secret.yaml` and remove its volume and mount. With the path unset, DI builds neither client in the `fan-api` Pod:
+The organizer and reception workloads route nothing that uses the key: `Delete` is served only on the admin listener, and the resend no longer calls the identity provider. So the key is removed from them too.
+- Remove the `zitadel-machine-key-for-backend-app.json` entry from `fan-api/external-secret.yaml`, and the volume, mount and path variable from `fan-api`, `organizer-console-api` and `reception-api`.
+- Move the key out of `backend-secrets` into the per-workload Secrets that already exist for the other Zitadel keys: `event-consumer-secrets` and `admin-console-api-secrets`. Removing the volume is not enough while the key stays in the shared Secret those Pods load with `envFrom`. Reusing those Secrets adds no new resource.
+- The backend server config requires the key path only on the admin workload; the consumer config keeps requiring it. `admin-console-api` loads the shared `fan-api-config`, so it sets the path variable in its own `env`, and `fan-api-config` drops it.
+
+With the path unset, DI builds neither client:
 - The unrouted in-process admin `Delete` gets a nil remover and returns early.
 - The resend no longer uses the verifier.
 
-Keep the key in `backend-secrets` for `event-consumer` and `admin-console-api`. Add a startup log line that states which identity-provider clients were built, so the absence is visible in `fan-api` logs.
+A startup log line states which identity-provider clients were built, so the absence is visible in each Pod's logs. The config does not forbid the key on the other workloads: that would require the key removal to land before the backend, while the old backend requires the key.
 
 ## Risks / Trade-offs
 
@@ -71,14 +83,14 @@ Keep the key in `backend-secrets` for `event-consumer` and `admin-console-api`. 
 
 ## Migration Plan
 
-1. **backend**: ship the announce-and-consume resend, with tests. Deploy while `fan-api` still mounts the key: the behaviour already uses the consumer, so this step changes nothing for users.
-2. **cloud-provisioning**:
-   - Add the KEDA trigger for `reissue-email-verification`.
-   - Remove the key from `fan-api`'s ExternalSecret and Deployment.
-   - Merge, then roll out to prod.
-3. **Verify in prod** (dev is stopped):
-   - `kubectl exec` into `fan-api` shows no `/secrets/zitadel`.
-   - `fan-api` startup logs show no identity-provider clients.
+1. **cloud-provisioning PR 1** (additive, before the backend): the NACK Consumer `reissue-email-verification` and its KEDA trigger. The new event consumer fails to bind without the durable.
+2. **backend**: ship the announce-and-consume resend and the relaxed config, with tests. Deploy while the API Pods still mount the key: the behaviour already uses the consumer, so this step changes nothing for users.
+3. **cloud-provisioning PR 2** (after the backend is deployed in prod): remove the key from `fan-api`, `organizer-console-api` and `reception-api`, and move it from `backend-secrets` to `event-consumer-secrets` and `admin-console-api-secrets`. The old backend would refuse to start the API workloads without the key, so this waits for step 2.
+4. **Verify in prod** (dev is stopped):
+   - `kubectl exec` into `fan-api`, `organizer-console-api` and `reception-api` shows no `/secrets/zitadel` and no Zitadel key variable.
+   - Their startup logs show `identity-provider clients built clients=none`; `admin-console-api` shows both clients.
    - With the owner account, a resend from Settings on an unverified test address delivers a code. If no unverified account exists, use a consumer unit test plus a prod log line of a handled request.
 
-**Rollback**: re-add the mount. The consumer path keeps working either way.
+The two cloud-provisioning PRs depart from "one PR per repository" because the backend must deploy between them.
+
+**Rollback**: re-add the mounts and the `backend-secrets` entry. The consumer path keeps working either way.
