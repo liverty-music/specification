@@ -65,35 +65,30 @@ The system SHALL provide an `ErrorBoundaryService` as a DI singleton that captur
 
 #### Scenario: Same error does not replace the open banner
 - **WHEN** the banner is open for an error and an error with the same message and source is captured again
-- **THEN** the banner SHALL keep showing the first error's Error ID
+- **THEN** the banner SHALL keep the first error, so its report email carries the first error's Error ID
 
 ---
 
 ### Requirement: The banner's text comes from the app's catalog
 
-The error banner SHALL show a title, a message and its button labels from the app's own catalog in the fan's language, with the Error ID labelled お問い合わせ番号 (inquiry number), and SHALL NOT show the captured error's message. The title SHALL be うまく動きませんでした (Something went wrong). The message SHALL depend on whether the error was reported to the team:
+The error banner SHALL show a title, a message and its button labels from the app's own catalog in the fan's language, and SHALL NOT show the captured error's message or its Error ID. The message SHALL be the same whether or not the error was reported to the team.
 
-| case | Japanese message | English message |
+| | Japanese | English |
 |---|---|---|
-| sent | 起きたことはチームに届いています。ページを読み込み直してみてください。よければ、何をしていたかメールで教えてください。ひとことだけで大丈夫です。 | Our team has received the details. Try reloading the page. If you like, email us what you were doing. One line is enough. |
-| not sent | 起きたことはチームに届いていません。ページを読み込み直してみてください。何をしていたかメールで教えてください。ひとことだけで大丈夫です。 | Our team hasn't received the details. Try reloading the page. Please email us what you were doing. One line is enough. |
+| title | ⚡️ライブ中にアクシデント発生⚡️ | ⚡️Something went wrong mid-show⚡️ |
+| message | ですが、ご安心ください！<br>エンジニアチームがすぐに原因調査を行います。<br>再発防止のため、メールで簡単に状況を教えてもらえると非常に助かります🙇‍♀️ | But don't worry!<br>Our engineering team will look into it right away.<br>To help keep it from happening again, a quick email about what happened would help us a lot 🙇‍♀️ |
 
-The error's message stays in the browser console log and, when the error was not reported, in the report email.
+The message is shown as its three lines. The error's message stays in the browser console log and, when the error was not reported, in the report email; the Error ID stays in the report email.
 
 #### Scenario: Unhandled error shows fixed copy
 
-- **WHEN** an unhandled promise rejection with the message `Cannot read properties of undefined (reading 'id')` opens the error banner for a fan using Japanese, with analytics on
-- **THEN** the banner shows うまく動きませんでした, the sent message and お問い合わせ番号 with the Error ID, and `Cannot read properties` appears nowhere in the banner
+- **WHEN** an unhandled promise rejection with the message `Cannot read properties of undefined (reading 'id')` opens the error banner for a fan using Japanese
+- **THEN** the banner shows ⚡️ライブ中にアクシデント発生⚡️ and the message, and neither `Cannot read properties` nor the Error ID appears in the banner
 
 #### Scenario: English labels
 
 - **WHEN** the error banner opens for a fan using English
 - **THEN** the title, the message and the button labels are in English
-
-#### Scenario: Not-sent copy when analytics is off
-
-- **WHEN** the error banner opens for a fan using Japanese who turned analytics off in Settings
-- **THEN** the banner shows the not-sent message 起きたことはチームに届いていません。…
 
 ## ADDED Requirements
 
@@ -121,7 +116,7 @@ An error that wraps a cause SHALL be reported with its cause, and a rejection va
 #### Scenario: Analytics off sends no report
 - **WHEN** a fan who turned analytics off in Settings hits an unhandled error
 - **THEN** no error report leaves the device
-- **AND** the banner opens with the not-sent message
+- **AND** the report email carries the 調査用の情報 block
 
 #### Scenario: Error with a cause
 - **WHEN** an error whose cause is another error is captured
@@ -137,37 +132,34 @@ An error that wraps a cause SHALL be reported with its cause, and a rejection va
 
 #### Scenario: Reporting failure does not break the banner
 - **WHEN** sending the error report throws
-- **THEN** the banner still opens, with the not-sent message
+- **THEN** the banner still opens, and the report email carries the 調査用の情報 block
 
 #### Scenario: Report accepted after the banner opened
 - **WHEN** an error is captured before error reporting has finished loading, and the report is accepted once it loads
-- **THEN** the banner first shows the not-sent message and then switches to the sent message
+- **THEN** a report email built before the report is accepted carries the 調査用の情報 block, and one built after it does not
 
 ---
 
 ### Requirement: Error banner offers reload, close and an email report
-The system SHALL display an error banner in the root component (`my-app`) when `ErrorBoundaryService.currentError` is set. The banner SHALL offer ページを読み込み直す (Reload page) as its primary button, 閉じる (Close), and メールで状況を伝える (Tell us what happened by email). When the error was reported to the team, メールで状況を伝える SHALL be a text link; when it was not, it SHALL be a button. The banner SHALL NOT link to GitHub or any other public tracker.
+The system SHALL display an error banner in the root component (`my-app`) when `ErrorBoundaryService.currentError` is set. The banner SHALL offer, in this order, メールで状況を伝える (Tell us what happened by email) as its primary button, ページを読み込み直す (Reload page) and 閉じる (Close). Once the fan has tapped メールで状況を伝える, the banner SHALL also show the contact address, for a fan whose device opens no mail app. The banner SHALL NOT link to GitHub or any other public tracker.
 
 #### Scenario: Error banner renders with error details
 - **WHEN** `ErrorBoundaryService.currentError` is not null
 - **THEN** the root component SHALL display an error banner overlaying the current page content
 - **AND** the banner SHALL display a user-friendly error message
-- **AND** the banner SHALL display the Error ID prominently, labelled お問い合わせ番号
-- **AND** the banner SHALL provide a ページを読み込み直す button, a 閉じる button and メールで状況を伝える
+- **AND** the banner SHALL NOT display the Error ID
+- **AND** the banner SHALL provide the buttons メールで状況を伝える, ページを読み込み直す and 閉じる, in that order
 
 #### Scenario: Error banner buttons are interactive
 - **WHEN** the error banner dialog is displayed via `showModal()`
-- **THEN** all buttons and links within the dialog SHALL respond to click and tap events
+- **THEN** all buttons within the dialog SHALL respond to click and tap events
 - **AND** the dialog element SHALL override the inherited `pointer-events: none` from the parent `<error-banner>` custom element with `pointer-events: auto`
 - **AND** the `::backdrop` pseudo-element SHALL NOT block pointer events from reaching the dialog content
 
-#### Scenario: Email report is a link when the report was sent
-- **WHEN** the banner opens for an error that was reported to the team
-- **THEN** メールで状況を伝える is shown as a text link, not a button
-
-#### Scenario: Email report is a button when the report was not sent
-- **WHEN** the banner opens for an error that was not reported to the team
-- **THEN** メールで状況を伝える is shown as a button next to 閉じる
+#### Scenario: Address shown for a device without a mail app
+- **WHEN** the fan taps メールで状況を伝える
+- **THEN** the banner shows メールが開かない場合は、pannpers@pannpers.dev までご連絡ください。 below the button
+- **AND** before the first tap the banner does not show it
 
 #### Scenario: Email report opens a pre-filled message
 - **WHEN** the fan taps メールで状況を伝える

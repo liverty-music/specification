@@ -47,7 +47,7 @@ Alternatives considered:
 - Before init with analytics on, it queues the call in the existing pre-init queue and starts init right away, without waiting for idle. When the queued capture is accepted at flush, it calls back to mark the `AppError` reported.
 - The whole method is wrapped in `try/catch`. A throwing SDK returns `false` and logs a warning.
 
-`AppError` gains an `@observable reported: boolean`. The banner reads it to choose the message and whether メールで状況を伝える is a link or a button. This is how "Report accepted after the banner opened" switches the copy.
+`AppError` gains an `@observable reported: boolean`. The report email reads it to decide whether to carry the `調査用の情報` block, so an email built after a queued report is accepted carries no technical details. The banner shows the same copy either way (owner's decision, 2026-10-23, after the first prod check).
 
 "Sent" means PostHog took the event into its send queue, not that the server stored it. That is as far as the browser can know without an acknowledgement round-trip (see Risks).
 
@@ -97,13 +97,17 @@ The Vite build adds `@posthog/rollup-plugin` (1.6.x) only when `POSTHOG_SOURCEMA
 
 With `deleteAfterUpload`, the maps are emitted as hidden and removed after upload, so the served image contains none. The SHA is not environment-specific, so the bundle stays env-agnostic. A prod release retags the same digest whose maps were uploaded at the main push. An "inherit" run reuses an earlier digest whose maps already exist.
 
-The key is passed as a BuildKit secret (`secrets:` on `docker/build-push-action`, `RUN --mount=type=secret,id=posthog_sourcemap_key`), never a build-arg. A build-arg would remain in the image history. The key is a PostHog personal API key scoped to project 190464 with the error-tracking write scope only. cloud-provisioning stores it as a repository-level Actions secret on `frontend`, from the prod stack's ESC environment. This is the same pattern as the backend's repository-level Stripe sandbox secret, since the key belongs to the prod PostHog project; a `dev` environment secret would place a prod credential in the dev stack.
+The key is passed as a BuildKit secret (`secrets:` on `docker/build-push-action`, `RUN --mount=type=secret,id=posthog_sourcemap_key`), never a build-arg. A build-arg would remain in the image history. The key is a PostHog personal API key scoped to project 190464, with the key dialog's "Source map upload" preset: `error_tracking:write` and `organization:read`. posthog-cli's README lists only `error_tracking:write` for `sourcemap`, but PostHog's upload guides and the preset both include `organization:read`.
+
+A personal key is a workaround, not the preferred credential. A CI credential should not depend on a user account, and PostHog's project secret API keys are built for that: project-scoped, not tied to a user, granted only the scopes chosen. In October 2026 they support only `feature_flag:read`, `endpoint:read` and `support_ticket:read`, and every source-map guide requires a personal key; PostHog documents no OIDC login for the CLI. Exit condition: when project secret API keys accept `error_tracking:write` for source-map upload, replace the personal key with one (runbook `frontend-error-tracking.md`). Until then, the key dies with its owner's account, which is acceptable while the owner is the only operator.
+
+cloud-provisioning stores it as a repository-level Actions secret on `frontend`, from the prod stack's ESC environment. This is the same pattern as the backend's repository-level Stripe sandbox secret, since the key belongs to the prod PostHog project; a `dev` environment secret would place a prod credential in the dev stack.
 
 If the upload fails, the build fails. A missing map shows up as unreadable stacks only after an error happens, so failing loudly at build time is preferred.
 
 ### D8. Steps (exception steps)
 
-`ErrorBoundaryService.addBreadcrumb` keeps its local buffer (30) and also forwards to `IAnalyticsService.addExceptionStep(label, { type, route })`. That calls posthog-js `addExceptionStep`; PostHog attaches its buffer to the next `$exception` (default on, 32,768-byte cap). Before init, steps go into the pre-init queue in order.
+`ErrorBoundaryService.addBreadcrumb` keeps its local buffer (30) and also forwards to `IAnalyticsService.addExceptionStep(label, { type })`. The route stays in the local buffer only: a path such as `/events/<id>` holds an id, which a step must not carry, and the `$exception` event has its own `$current_url`. That calls posthog-js `addExceptionStep`; PostHog attaches its buffer to the next `$exception` (default on, 32,768-byte cap). Before init, steps go into the pre-init queue in order.
 
 There are three step types:
 
@@ -128,17 +132,23 @@ The action names start with: `follow_artist`, `unfollow_artist`, `open_event_det
 - The whole link is capped at 2,000 characters by shortening the error message further. Some mail apps refuse longer `mailto:` links.
 - The email templates and all banner strings are translation keys (`errorBanner.*`, `errorReportEmail.*`) in `ja` and `en`.
 
-The copy was written by a Japanese UX writer brief (astra, `~/.cache/error-banner-copy/astra-output.md`) with two review edits:
-- 「よければ、していた操作をメールで。」 became 「よければ、何をしていたかメールで教えてください。」. The original was a fragment.
-- The not-sent technical lines are grouped under 「調査用の情報」.
+The banner copy is the owner's (2026-10-23, after the first prod check): title ⚡️ライブ中にアクシデント発生⚡️ and one three-line message for both cases. メールで状況を伝える is the first, primary button, then ページを読み込み直す and 閉じる; the Error ID is not shown on the banner, since a fan has no use for it, and stays in the email. The email templates came from a Japanese UX writer brief (astra, `~/.cache/error-banner-copy/astra-output.md`); the not-sent technical lines are grouped under 「調査用の情報」.
 
-### D10. Volume limits and alerts (PostHog project settings, by hand)
+On a device that opens no mail app, `mailto:` does nothing visible (observed in prod on the owner's browser, where typing the `mailto:` address into the address bar also did nothing). The page cannot detect this, so after the first tap the banner shows メールが開かない場合は、pannpers@pannpers.dev までご連絡ください。 (`errorBanner.emailFallback`).
 
-These are not in code, so `cloud-provisioning/docs/runbooks/frontend-error-tracking.md` records each setting and how to check it.
-- **Billing limit for error tracking: 0 USD.** Ingestion stops at the free 100k a month instead of charging. With no users, a runaway loop is the only way to reach it.
-- **Rate limits.** A project-wide exception rate limit and a per-issue rate limit, set to the lowest values the UI offers that still keep 100 events an hour per issue. The exact unit depends on the UI; the runbook records what was set.
-- **Alerts.** Two alerts send to the Slack integration (id 83774), channel `#alert-frontend-prod`: "issue created" (`$error_tracking_issue_created`) and "issue reopened" (`$error_tracking_issue_reopened`). Spiking is not alerted: with no users, any recurrence is already a new or reopened issue.
-- **Channel setup.** The owner creates `#alert-frontend-prod` and invites the PostHog app; this needs Slack admin rights. The alerts are created through the PostHog MCP `exec` (`cdp-function`) or the UI, then checked by a test event.
+### D10. Volume limits and alerts (PostHog project settings)
+
+The settings the PostHog provider can hold are declared in cloud-provisioning; the rest are set by hand. `cloud-provisioning/docs/runbooks/frontend-error-tracking.md` records both and how to check them.
+- **In code (prod stack, `src/posthog/components/error-tracking.ts`).** PostHog's official Terraform provider `PostHog/posthog` (1.0.25), bridged with `pulumi package add terraform-provider`, holds:
+  - **Alerts.** Two `HogFunction`s (`internal_destination`, `template-slack`) send to the Slack integration (id 83774), channel `#alert-frontend-prod` by id: "issue created" (`$error_tracking_issue_created`) and "issue reopened" (`$error_tracking_issue_reopened`), with the message layout of PostHog's alert wizard. Spiking is not alerted: with no users, any recurrence is already a new or reopened issue.
+  - **Exception autocapture off** at the project (`ProjectSettings.autocaptureExceptionsOptIn: false`), the project-side half of D1.
+  - The provider authenticates with its own personal API key (`hog_function:write`, `project:write`, project 190464), `pulumiConfig.posthogManagementApiKey`, separate from the source-map key a CI build holds (D7's workaround note applies to it too).
+- **By hand (no provider resource):**
+  - **Billing limit for error tracking: 0 USD.** Ingestion stops at the free 100k a month instead of charging. With no users, a runaway loop is the only way to reach it.
+  - **Rate limits.** A project-wide limit of 100 exceptions an hour, which caps a month at about 72k, under the free 100k, and a per-issue limit of 20 an hour, well below it so one looping issue cannot use the whole project budget and drop every other issue's exceptions.
+- **Channel setup.** The owner creates `#alert-frontend-prod` and invites the PostHog app; this needs Slack admin rights. The Slack integration itself is made in the PostHog UI and referenced by id.
+
+Alternative considered: alerts through the PostHog MCP or the UI, by hand. Fewer moving parts (no bridged provider, no second key), but a UI edit leaves no review trail and the runbook would be the only record of what the alerts are.
 
 ### D11. Spec deltas replace two requirements
 
@@ -146,13 +156,13 @@ OpenSpec 1.13.2 refuses a MODIFIED requirement that omits a scenario, and cannot
 
 ## Risks / Trade-offs
 
-- **[An ad blocker blocks `eu.i.posthog.com`]** → The SDK still accepts the event, so the banner says 届いています while nothing arrives. The sent-case banner still offers the email link. A managed reverse proxy (PostHog "managed proxy" on a subdomain of liverty-music.app) fixes this and is a follow-up proposal, not this change.
-- **[An error during the first seconds of a visit]** → The banner opens with the not-sent copy and switches once PostHog loads. Init is started at once on the first error, so the switch normally happens within a second.
+- **[An ad blocker blocks `eu.i.posthog.com`]** → The SDK still accepts the event, so the report email omits the technical details while nothing arrives. The banner still offers the email. A managed reverse proxy (PostHog "managed proxy" on a subdomain of liverty-music.app) fixes this and is a follow-up proposal, not this change.
+- **[An error during the first seconds of a visit]** → A report email built before PostHog loads carries the technical details. Init is started at once on the first error, so the report is normally accepted within a second.
 - **[A render loop floods events]** → The SDK limiter (10 burst, 1 per second), the project and per-issue rate limits and the 0 USD billing limit cap it. The banner does not reopen for the same error within 60 s.
 - **[A third-party script error with no stack]** → A "Script error." from another origin carries no frames. It is reported with `error_source` and steps only. If it becomes noise, a suppression rule in PostHog is the remedy, recorded in the runbook.
 - **[An error message contains personal data]** → Messages come from code, not from the fan's input. Tokens are redacted, and the query rule removes URL values except the three dashboard keys. A message that interpolates an email would still be sent; review RPC error messages in the backend separately if one appears in PostHog.
 - **[A source-map upload failure blocks a main-push build]** → Re-run the job. If PostHog is down for a long time, unset the secret to build without maps; the runbook notes this.
-- **[The fan has no mail app configured]** → The link does nothing visible. The inquiry number stays on the banner, and the address appears in the terms.
+- **[The fan has no mail app configured]** → The button does nothing visible. After the first tap the banner shows the contact address (D9), which the terms also publish.
 
 ## Migration Plan
 
@@ -166,4 +176,4 @@ Rollback: revert the frontend PR. Events already sent stay in PostHog until its 
 
 ## Open Questions
 
-- The exact numbers for the project and per-issue rate limits depend on the units the PostHog settings UI offers on the day. The runbook records the values set; this does not change the specs or the tasks.
+None. The rate limits were set on 2026-10-23 (D10) and the runbook records them.
