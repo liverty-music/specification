@@ -5,7 +5,7 @@
 The identity service SHALL be the only backend process that holds a credential for the identity provider's management API. No other process SHALL have such a credential mounted or readable, including through a shared secret; this includes the fan, organizer, reception and admin console API servers and the event consumer.
 
 Every change the platform makes to an identity at the identity provider SHALL be made by the identity service, on a request from another process:
-- from the event consumer: verification emails and passkey registration links;
+- from the event consumer: verification codes and passkey registration links;
 - from the fan API: confirming an email address with the code from a verification email, and nothing else;
 - from the admin console API: deleting a fan identity, and creating, provisioning, deactivating and deleting an Organizer's Organization.
 
@@ -19,7 +19,7 @@ The identity service SHALL take no requests from outside the cluster. Each calli
 #### Scenario: Fan requests a verification resend
 
 - **WHEN** a signed-in fan requests a verification resend through the fan API
-- **THEN** the fan API announces the request, the event consumer asks the identity service, and the identity service sends the code
+- **THEN** the fan API announces the request, the event consumer asks the identity service for a new code, and the event consumer emails the code to the address
 
 #### Scenario: Fan confirms an email address
 
