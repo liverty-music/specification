@@ -7,7 +7,7 @@ Provides a persistent snack bar that notifies the user when an app update is rea
 ## Requirements
 
 ### Requirement: Snack Bar Component
-The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-notification>`) that displays transient status messages using the Popover API, with each snack as an independent `popover="manual"` element managed by browser-native entry/exit transitions.
+The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-notification>`) that displays transient status messages using the Popover API, with each snack as an independent `popover="manual"` element managed by browser-native entry/exit transitions. A snack's display time follows the Material 3 snackbar durations: a snack without an action SHALL stay 4 seconds when its message is at most 30 characters and 10 seconds when it is longer, a snack with an action SHALL stay 10 seconds, and a snack that sets its own duration SHALL keep it.
 
 #### Scenario: Snack display on event publish
 - **WHEN** a `Snack` event is published via `IEventAggregator`
@@ -17,7 +17,7 @@ The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-no
 
 #### Scenario: Auto-dismiss after duration
 - **WHEN** a snack is displayed
-- **THEN** the component SHALL call `hidePopover()` after the snack's `durationMs` (default 2500ms)
+- **THEN** the component SHALL call `hidePopover()` after the snack's display time
 - **AND** the CSS exit transition SHALL play before the element is removed from the Top Layer
 
 #### Scenario: Programmatic dismiss via handle
@@ -75,6 +75,18 @@ The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-no
 - **WHEN** a snack is shown while a `<dialog>` is open via `showModal()`
 - **THEN** the snack popover SHALL appear above the dialog because `showPopover()` appends to the top of the Top Layer stack
 - **AND** no manual `hidePopover()`/`showPopover()` re-insertion SHALL be needed
+
+#### Scenario: Short message
+- **WHEN** a snack without an action shows 「パスキーを追加しました。」 (12 characters)
+- **THEN** it SHALL be dismissed 4 seconds after it appears
+
+#### Scenario: Long message
+- **WHEN** a snack without an action shows a message of 50 characters
+- **THEN** it SHALL be dismissed 10 seconds after it appears
+
+#### Scenario: Snack with its own duration
+- **WHEN** a snack is published with its own duration (for example the update snack, which never auto-dismisses)
+- **THEN** that duration SHALL be used
 
 ### Requirement: The SPA shows a persistent update toast when a waiting SW is detected after user interaction
 

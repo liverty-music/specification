@@ -126,7 +126,7 @@ over any route content, including canvases. The FAB SHALL NOT cover any navigati
 tab. The FAB SHALL be hidden whenever the navigation bar is hidden (e.g. landing
 page, auth callback) or when the current route contributes zero actions. While a
 snack bar is open or a persistent bottom banner is visible, the FAB SHALL sink into
-the navigation bar (see "The FAB yields to a snack bar or a bottom banner").
+the navigation bar (see "The FAB yields to a snack bar or a bottom banner"). While a bottom sheet is open, the FAB SHALL NOT be shown, so it never covers the sheet.
 
 #### Scenario: FAB floats in the thumb zone above content
 
@@ -157,6 +157,12 @@ the navigation bar (see "The FAB yields to a snack bar or a bottom banner").
 - **WHEN** the current route contributes zero actions to the launcher
 - **THEN** the FAB SHALL NOT be rendered
 - **AND** the navigation bar SHALL show no notch (see Bottom Nav Bar)
+
+#### Scenario: FAB hidden while a bottom sheet is open
+
+- **WHEN** a bottom sheet (for example the event detail sheet) is open on a route that contributes at least one action
+- **THEN** the FAB SHALL NOT be shown
+- **AND** the FAB SHALL be shown again when the sheet closes
 
 ### Requirement: Single-tap disclosure of a labeled action list
 

@@ -64,7 +64,7 @@ The consumer handler `SendPasskeyRecoveryLink` does the following:
 1. Reads the User.
 2. Reads the identity with User v2 `GetUserByID`. If the email is not verified, it returns FailedPrecondition. If the user is unknown, it returns NotFound.
 3. Calls `CreatePasskeyRegistrationLink` with `returnCode`.
-4. Builds `https://<issuer host>/ui/v2/login/passkey/set?userId=<id>&code=<code>&codeId=<codeId>&organization=<product org id>`.
+4. Builds `https://<issuer host>/ui/v2/login/passkey/set?userId=<id>&code=<code>&codeId=<codeId>&organization=<org>`, where `<org>` is the identity's resource owner from `GetUserByID` (the product org for a fan), so the consumer needs no product org id.
 5. Emails the link through Postmark in the User's preferred language. The email states the 1-hour validity, the single-attempt rule and "ignore if you did not request this".
 
 The operation `User.SendPasskeyRegistrationLink` is realized by an identity-provider client plus the existing Postmark sender. Both are injected only into the consumer.
@@ -99,6 +99,7 @@ The main session's token keeps its current audience (the product project only).
 
 - **Why not a backend RPC with `backend-app`**: that adds a new identity-provider dependency to the fan API. Moving the verification resend off the fan API and unmounting the backend-app key there is change `remove-identity-key-from-fan-api`. It also acts with a service's permissions rather than the fan's (ASVS 5.0 8.3.3). With the fan's own token, a compromised fan API cannot list or remove anyone's passkeys.
 - **Why not add the ZITADEL audience to the main token**: every fan-api request would then carry a token usable against ZITADEL, and an XSS anywhere in the app could use it for up to 30 minutes after any sign-in (OWASP Identity Propagation: "Do not widen token audiences").
+- **Token across the add round trip**: going to Login UI to add a passkey and coming back with the browser's back restores the page from the bfcache with the token still in memory, so passkey management is not re-authenticated then. This is one add flow, not a new visit, and the token still expires with its 30-minute lifetime.
 - **Residual risk**: XSS while passkey management is open can use that token on the fan's own identity, for example to register a passkey through the self-management API. The token is short-lived and memory-only, and every addition is emailed (D6).
 - **Requests**: REST/JSON (`/v2/users/{userId}/passkeys/...`) with only `authorization` and `content-type` headers, which match the verified CORS preflight. The exact REST paths are taken from the v4.19.5 API reference at implementation time.
 
@@ -110,6 +111,8 @@ The main session's token keeps its current audience (the product project only).
 3. The re-authentication in D3 has just refreshed the Login UI session on this browser, so the enrollment guard passes.
 4. After registration, Login UI v2 asks for one assertion (zitadel#12885) and redirects to the login policy's `defaultRedirectUri`, the fan app root.
 5. The root route consumes the marker and reopens passkey management. This re-runs D3, which is silent because `max_age` is satisfied.
+
+Login UI v2 reports neither outcome back to the app, and on a refused creation (`InvalidStateError`) it shows nothing. So before leaving, the app saves the current passkey ids with the `returnTo` marker, and on coming back to passkey management (through the redirect, a reload, or a browser back restored from the bfcache, caught with `pageshow`) it lists again and compares: one more id means added, the same ids mean not added. The saved ids are cleared after one comparison. A fan who closes the Login UI tab and never returns sees nothing.
 
 Duplicate creation on the same provider is prevented by ZITADEL's `excludeCredentials` (`internal/webauthn/webauthn.go:60-79`).
 
@@ -134,10 +137,11 @@ The group `user.human.passwordless` is not used, because it also fires on every 
 The handler:
 - Verifies the HMAC with `actions.ValidateRequestPayload`.
 - Ignores events whose `resourceOwner` is not the product org.
+- Answers 503 and announces nothing when the signing key or the product org id (`ZITADEL_PRODUCT_ORG_ID`) is not configured: zitadel-go verifies a body signed with an empty key, so an empty key must not reach the check.
 - Publishes `USER.passkey_changed` with `{provider_user_id: aggregateID, provider_passkey_id: webAuthNTokenId, kind, name: webAuthNTokenName, aaguid, change_time: created_at}`. `aaguid` is decoded from the base64 bytes of `token.verified` into the canonical lower-case UUID form; `token.removed` carries `webAuthNTokenId` only (zitadel v4.19.5 `internal/repository/user/human_mfa_web_auth_n.go:50-61`, `:144-149`).
 
 Two consumers read that subject:
-- `notify-passkey-change` runs `UserUseCase.NotifyPasskeyChange`, which resolves the User by `provider_user_id` and sends the Postmark email.
+- `notify-passkey-change` runs `UserUseCase.NotifyPasskeyChange`, which resolves the User by `provider_user_id` and sends the Postmark email. The email's links (`/passkey-recovery`, `/settings/passkeys`) use the fan web origin derived from the issuer by dropping `auth.`, as the organizer sign-in links already do (`organization_repository.go:153`), so the consumer needs no new setting.
 - `record-passkey-change` runs `PasskeyUseCase.RecordChange` (D7). A usecase never calls another usecase interface, so the two are separate consumers rather than one handler calling both.
 
 - ZITADEL itself sends no email for these events (`internal/notification/handlers/user_notifier.go:25-80`).
@@ -166,15 +170,15 @@ The existing `UNIQUE (email)` is case-sensitive. If two rows match case-insensit
 
 `frontend.ts` keeps `userLogin: true` and `hidePasswordReset: true`. The fan hosted-login spec now states that local authentication must be on for passkeys, matching the organizer spec. The `TODO: Revert to false` comment in `frontend.ts` is reworded to point at this spec.
 
-### D10. Add-passkey prompt keyed by a per-device record
+### D10. Offering a passkey on this device after Log In is deferred
 
-The prompt in passkeys.dev and web.dev keys off `authenticatorAttachment == "cross-platform"` in the sign-in assertion. The app cannot see it: the assertion runs in the stock Login UI v2, and ZITADEL tokens and sessions carry no attachment. So the app keeps a `localStorage` record per device instead:
-- Set on sign-up on the device, after adding a passkey from Settings or from the prompt (on the return from `/passkey/set`, via the D4 `returnTo` marker), and on "This device already has one".
-- "Later" (or dismissing) stores the time; the prompt stays hidden on that device for 30 days.
-- The prompt shows on the first screen after the auth callback of a Log In (not a sign-up). "Create" runs the D4 navigation; the fan has just signed in, so the Login UI session is fresh. The `returnTo` marker is the screen the fan was on.
-- An unreadable `localStorage` (private mode) means no record, so the prompt can appear on each Log In there; "Later" then cannot be remembered either. Accepted.
+The best practice offers to create a passkey on the device only when the sign-in used a passkey from another device: the assertion's `authenticatorAttachment` is `cross-platform` (passkeys.dev Bootstrapping), after checking `isUserVerifyingPlatformAuthenticatorAvailable()`. The app cannot see that value. The assertion runs in the stock Login UI v2 on the auth host, and ZITADEL keeps only `verified_at` and `user_verified` for it (`proto/zitadel/session/v2/session.proto:88-95` `WebAuthNFactor`), so neither tokens, sessions nor events carry it.
 
-Alternative rejected: compare `PasskeyService.List` against the device. Nothing on the device identifies which passkey it holds.
+A per-device `localStorage` record was tried instead (frontend v1.114.0/v1.114.1) and removed after the prod check:
+- Every device signed up before the record existed, and every device that signs in with a synced passkey, has no record, so the prompt appeared on a phone that had just signed in with a synced Google Password Manager passkey (2026-10-23).
+- Accepting it there leads nowhere: the browser refuses the creation (`InvalidStateError`, `excludeCredentials`) and Login UI v2 shows nothing.
+
+The offer returns when the attachment can reach the app, for example if ZITADEL exposes it on the session (zitadel#12988). Until then a fan adds a passkey from Settings. The FAB rule that came with the prompt (hidden while any bottom sheet is open) stays.
 
 ### D11. AAGUID names: vendored names-only map
 
@@ -182,18 +186,24 @@ The provider name comes from `passkeydeveloper/passkey-authenticator-aaguids` `a
 
 The map is refreshed by hand: `make refresh-aaguid-names` downloads the upstream file, strips icons, and rewrites the vendored copy; reviewers check the diff. There is no scheduled refresh; a new provider just shows its ZITADEL name until the next refresh.
 
+### D12. Snack display time follows Material 3
+
+The fan app showed every snack for 2.5 s (`shared/ui/snack-bar/snack.ts`, `durationMs` default), too short for the 50-character "no passkey was added" message (prod check, 2026-10-23). Material 3 uses two durations: Jetpack Compose Material3 maps `SnackbarDuration.Short` to 4000 ms and `Long` to 10000 ms (`SnackbarHost.kt` `toMillis`), and Material Components Web keeps the timeout between 4000 and 10000 ms (default 5000). The organizer console already follows that (4 s without an action, 10 s with one).
+
+Material does not say when a message is "long". At about 8 Japanese characters per second, 4 s reads about 30 characters. So a snack without an action stays 4 s up to 30 characters and 10 s beyond, a snack with an action stays 10 s, and an explicit `duration` (the update snack's `Infinity`) is kept. The rule lives in the shared snack-bar, so organizer and admin snacks without an explicit duration change too; the organizer console's own spec already asks for 4 s and 10 s.
+
 ## Risks / Trade-offs
 
 - **[Risk]** A cancelled or failed browser prompt on `/passkey/set` burns the one-time code (zitadel#12499). → The recovery screen offers a resend after 60 s, and the email says the link works for one attempt.
-- **[Risk]** `/passkey/set` calls `navigator.credentials.create` on mount, without a user gesture (`register-passkey.tsx:200-205`). Safari may require transient activation. → Verify in prod on an iPhone with the owner's account. If it fails, file upstream and document the workaround (tap "Continue" if Login UI shows one).
+- **[Risk]** `/passkey/set` calls `navigator.credentials.create` on mount, without a user gesture (`register-passkey.tsx:200-205`). Safari may require transient activation. → Login UI shows a Continue button that starts the ceremony again with a gesture (seen in prod on 2026-10-22). An iPhone Safari check was dropped by the owner. The automatic attempt can still fail, for example when the page has no focus (`NotAllowedError`, seen in prod on 2026-10-22). Because the code is consumed when registration starts, the link is then spent and Continue fails with `Code is invalid` (see the zitadel#12499 risk above).
 - **[Risk]** ZITADEL leaves `residentKey` unset (zitadel#12942), so some authenticators may create non-discoverable or unsynced passkeys. → Login UI v2 asks for the login name first, so non-discoverable credentials still work. Track upstream.
 - **[Risk]** Session-based `/passkey/set` adds a passkey for anyone holding an unlocked browser with a live Login UI session, with no recency check. → Every addition is emailed (D6), and passkeys can be removed (D3).
 - **[Risk]** A compromised mailbox means a compromised account, because the link goes to the verified address. → This is inherent to email recovery. The added email notifies the fan, and NIST SP 800-63B-4 §4.2 notes this limit.
 - **[Risk]** The `ORG_OWNER` key on `event-consumer` can change the whole product org if the consumer is compromised. The consumer has no inbound internet traffic, but it processes external data (Gemini results, web pages). → Only the recovery handler loads the key. A later split into a dedicated workload is possible without spec changes.
 - **[Risk]** XSS while passkey management is open (D3). → The token is memory-only and discarded when passkey management closes. It is never refreshed, so it lives at most the 30-minute access-token lifetime. The fan app already ships a CSP (`frontend/index.html:15-`, `script-src 'self'` plus named hosts), and changes are emailed. Its `connect-src` already allows `https://*.liverty-music.app`, so the SPA's calls to the auth host need no CSP change.
 - **[Trade-off]** Notifications are best-effort, because ZITADEL does not retry webhooks (D6). A lost notice also leaves that passkey without a record, so it shows its name without provider or date (D7).
-- **[Trade-off]** A device in the same ecosystem that already holds a synced passkey sees the add-passkey prompt once (D10). Choosing create there hits `excludeCredentials`, the browser reports the passkey already exists, and nothing is duplicated; choosing "already has one" stops the prompt.
-- **[Risk]** A fan who just registered a passkey through a recovery link and then logs in on that device sees the prompt, because the registration happened in Login UI v2 and set no device record (D10). → "This device already has one" stops it. Revisit if prod verification shows it confuses fans.
+- **[Risk]** Adding a passkey on a device whose passkey manager already holds one for the account is refused by the browser (`InvalidStateError`), and Login UI v2 shows no message (zitadel#12986). → Passkey management says beforehand that no passkey is created in that case, and on coming back it says whether a passkey was added (D4).
+- **[Risk]** A passkey removed in passkey management stays in the device's passkey manager, which still offers it and fails at sign-in. → The removal confirmation tells the fan to delete it there too. The WebAuthn Signal API (`signalAllAcceptedCredentials`, Chrome 132+) would let the RP clean it up, but it must run on the auth host, i.e. in Login UI v2 (zitadel#12987).
 - **[Trade-off]** Rate limiters are per pod (D1).
 
 ## Migration Plan
@@ -218,16 +228,14 @@ The map is refreshed by hand: `make refresh-aaguid-names` downloads the upstream
    - Passkeys section with the second OIDC flow and `/auth/passkeys-callback`.
    - Add-passkey navigation and return marker.
    - Provider name and date per passkey (after the second release).
-   - Add-passkey prompt after Log In.
 
-**Rollback**: hide the links, the Passkeys row and the add-passkey prompt (frontend), delete the two executions (cloud-provisioning), and unmount the recovery key. The public RPC can stay, because it only announces events.
+**Rollback**: hide the links and the Passkeys row (frontend), delete the two executions (cloud-provisioning), and unmount the recovery key. The public RPC can stay, because it only announces events.
 
 **Verification in prod** (dev is stopped), with the owner's account:
 - Request a link, register a passkey on a second device, then sign in.
 - Check that the added and removed emails arrive.
 - Remove a passkey and confirm it no longer signs in.
-- Run an iPhone Safari check of `/passkey/set`.
-- Log In on a laptop with the phone by QR code, accept the add-passkey prompt, and confirm Settings shows the new passkey with its provider and date.
+- Log In on a laptop with the phone by QR code, add a passkey on the laptop from Settings, and confirm Settings shows it with its provider and date.
 
 ## Open Questions
 
