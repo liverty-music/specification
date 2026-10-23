@@ -11,11 +11,9 @@ An error in the fan app reaches the team today only if the fan copies the detail
   - minified stack frames resolved to source, using source maps uploaded at build time.
 
   The fan's analytics opt-out still applies: when analytics is off, nothing is sent.
-- **The banner says whether the team got the report, and asks for one line by email.** It replaces the fixed copy 「問題が発生しました」 with 「うまく動きませんでした」 and one of two messages:
-  - **Sent**: the team has received what happened. A text link 「メールで状況を伝える」 opens the fan's mail app.
-  - **Not sent**: the team has not received it. 「メールで状況を伝える」 is a button.
+- **The banner asks for one line by email.** It replaces the fixed copy 「問題が発生しました」 with the title 「⚡️ライブ中にアクシデント発生⚡️」 and a message saying the engineering team will look into it and an email would help. 「メールで状況を伝える」 is the first button and opens the fan's mail app; once tapped, the banner also shows the contact address for a device with no mail app. The Error ID is not shown on the banner.
 
-  The email goes to the contact address the terms already publish. It is pre-filled with the Error ID (shown as お問い合わせ番号, inquiry number), the time and the screen. When the report was not sent, it also carries the error message and trace ID under 「調査用の情報」.
+  The email goes to the contact address the terms already publish. It is pre-filled with the Error ID (as お問い合わせ番号, inquiry number), the time and the screen. When the report was not sent, it also carries the error message and trace ID under 「調査用の情報」.
 - **BREAKING (UI)**: the banner loses "Copy Error Details" and "Report to GitHub". The fan app no longer links to any public tracker.
 - **Capture is more robust**:
   - another `window.onerror` handler keeps working, and the browser still logs the error;
