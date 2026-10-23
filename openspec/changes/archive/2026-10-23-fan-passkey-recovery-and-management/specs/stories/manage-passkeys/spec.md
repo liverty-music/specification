@@ -29,15 +29,6 @@ A fan who signs in on a device whose passkey provider does not hold one of their
 - **WHEN** a fan signs in on a laptop with their phone's passkey, opens passkey management within 5 minutes and adds a passkey on the laptop
 - **THEN** the next sign-in on the laptop uses the laptop's passkey, and the fan receives the passkey-added email
 
-### Requirement: A fan who signed in with another device's passkey is offered one on this device
-
-A fan who logs in on a device where no passkey was created or confirmed SHALL be offered, right after the Log In, to create a passkey on that device without opening Settings; creating it SHALL have the same result as adding it from passkey management.
-
-#### Scenario: QR sign-in, then a passkey on the laptop
-
-- **WHEN** a fan logs in on a laptop by scanning a QR code with their phone and accepts the offer to create a passkey on the laptop
-- **THEN** the next sign-in on the laptop uses the laptop's passkey, passkey management lists it with its provider and date, and the fan receives the passkey-added email
-
 ### Requirement: A fan removes a passkey they no longer trust
 
 A fan SHALL be able to remove any passkey but the last from passkey management; the removed passkey SHALL no longer sign in to the account, and the fan SHALL receive the email that a passkey was removed. The passkey-added email SHALL tell a fan who did not add the passkey to remove it in passkey management.
