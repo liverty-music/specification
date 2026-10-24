@@ -96,9 +96,9 @@ Run after group 7 is released.
 ## 6. Follow-up issues
 
 - [ ] 6.1 File issues for:
-  - releasing open lottery entries and held checkouts when an Event is cancelled;
-  - notifying fans of a refund;
-  - the payout-account contradiction in components/entity/organizer/delete.
+  - releasing open lottery entries and held checkouts when an Event is cancelled: liverty-music/specification#1240;
+  - notifying fans of a refund: liverty-music/specification#1241;
+  - the payout-account contradiction in components/entity/organizer/delete: liverty-music/specification#1242.
 
   Verify the three issue links are recorded here.
 
@@ -106,10 +106,11 @@ Run after group 7 is released.
 
 - [ ] 7.1 In `rpc/admin/concert/v1/concert_service.proto` add `ListByArtist(ListByArtistRequest { entity.v1.ArtistId artist_id })` (required) returning concerts, series and artists like `List`; remove `ListRequest.artist_id` and reserve field 1 and its name; update the `Delete` comment to the D2 blockers. In `rpc/admin/artist/v1/artist_service.proto` add `Get(GetRequest { entity.v1.ArtistId artist_id })` returning `entity.v1.Artist artist`. Each with protovalidate and the doc comment's error list (D9, D10). Verify `make check`; open the PR with the `buf skip breaking` label.
 - [ ] 7.2 Merge, publish a GitHub Release and confirm `buf-release.yml` succeeded.
-- [ ] 7.3 Consume the release. In `rdb`, lock the events, their ticket types and those ticket types' checkouts and lottery entries `FOR UPDATE` before the blocker check in both deletions; block on a Paid Order and on a Draft lottery entry with a card authorization; remove Failed orders with the Refunded ones and only Completed, Expired and Released checkouts (D1, D2). Verify integration tests for:
-  - components/entity/concert/delete-and-suppress: "Cancelled concert with a failed order", "Concert with a draft entry holding a card authorization", and the existing scenarios;
-  - components/entity/organizer/delete: "Draft entry with a card authorization", and the existing scenarios;
-  - a test that starts a checkout on the Event in a second transaction while a deletion holds its locks, and verifies the checkout is refused and nothing it created is removed.
+- [ ] 7.3 Consume the release. In `rdb`, lock, child rows first, those ticket types' checkouts and lottery entries, then the ticket types, then the events `FOR UPDATE` before the blocker check in both deletions; block on a Paid Order, on a Draft lottery entry with a card authorization and on a Won lottery entry with no Order; remove Failed orders with the Refunded ones and only Completed, Expired and Released checkouts (D1, D2). Verify integration tests for:
+  - components/entity/concert/delete-and-suppress: "Cancelled concert with a failed order", "Concert with a draft entry holding a card authorization", "Concert with a won entry awaiting its order", and the existing scenarios;
+  - components/entity/organizer/delete: "Draft entry with a card authorization", "Won entry awaiting its order", and the existing scenarios;
+  - a test that starts a checkout on the Event in a second transaction while a deletion holds its locks, and verifies the checkout is refused with a foreign-key violation and nothing it created is removed;
+  - a test that runs an Order issuance for a committed checkout of the Event in a second transaction while a deletion starts, and verifies neither deadlocks: the deletion waits and then fails with FailedPrecondition.
 - [ ] 7.4 Restore `ConcertRepository.List` and `ConcertUseCase.List` to take no Artist; add `Concert.ListCatalogByArtist` and `ConcertUseCase.ListCatalogByArtist`, and `ArtistUseCase.Get`. Verify:
   - integration tests for components/entity/concert/list-catalog-by-artist: "Narrowed to one artist", "Artist without concerts", "Draft event excluded", "No artist given";
   - unit tests, with the mockery mocks, for components/usecase/concert/list-catalog-by-artist: "One artist's concerts", "Missing artist"; components/usecase/artist/get: "Known artist", "Unknown artist"; and the existing components/usecase/concert/list and delete scenarios (replacing the `fakeConcertRepo` filter and `deleteErr` added in 3.3).

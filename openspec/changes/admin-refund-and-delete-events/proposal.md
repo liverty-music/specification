@@ -14,7 +14,7 @@ While tracing the deletion, two defects turned up:
 - **Delete an Event that had purchases.** Concert deletion (admin ConcertService.Delete) is refused only while a purchase is still live:
   - an Order that is Paid;
   - a Settlement that is not Reversed;
-  - a purchase in progress (a Checkout or LotteryEntry whose card authorization is still open, Draft entries included, or a Checkout that is Held or Committed).
+  - a purchase in progress (a Checkout or LotteryEntry whose card authorization is still open, Draft entries included, a Checkout that is Held or Committed, or a Won LotteryEntry whose Order is not yet issued).
 
   Today any Ticket, Order or Settlement blocks it. A purchase started while the deletion runs is refused, never removed. With the Event, deletion removes its Refunded and Failed Orders and their Tickets, Reversed Settlements, ResaleListings, Scanners with their Admissions and RejectedScans, and finished Checkouts and LotteryEntries. A first-party Series left with no Event is removed too. The slot is still suppressed, whatever the Concert's origin.
 - **A refund for 中止 needs a cancelled Event.** OrderUseCase.Refund with the reason Cancellation fails with FailedPrecondition unless the Order's Event is CANCELLED. Dispute refunds are unchanged. **BREAKING** for an admin who refunds an Order of an Event that is still PUBLISHED.
