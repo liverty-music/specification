@@ -473,6 +473,15 @@ artifacts:
         index, an external client, a pure function), how a state change is
         realized in code, and every provider or vendor name and object type.
         None of these belong in a spec.
+        Two decisions are required whenever they apply:
+        - Every value a new or changed screen shows names the RPC response
+          field it is read from. A value no RPC returns is a gap: add the read
+          to the change (proto, entity operation, usecase). Never carry the
+          value from another screen in the URL or in client state.
+        - Every write that checks a condition and then acts (a delete refused
+          while a record exists, a create limited by a count) names the rows it
+          locks, and shows that the paths creating those records lock the same
+          rows, so nothing created after the check is lost or let through.
       - **Risks / Trade-offs**: Known limitations, things that could go wrong. Format: [Risk] → Mitigation
       - **Migration Plan**: Steps to deploy, rollback strategy (if applicable)
       - **Open Questions**: Unknowns that can safely be answered later without
@@ -521,6 +530,10 @@ artifacts:
         tests; a story yields its E2E test. Every test task names the
         scenarios it covers. Design decisions add their own tasks
         (migrations, indexes, configuration).
+      - A screen (`components/infrastructure/<audience>/web/route/...`) is also
+        verified by running it in a browser with Playwright, not only by its
+        component tests: the task names the flow it runs and where (a local
+        build or the deployed app).
       - Each task MUST state how to verify completion (a test, command,
         observable behavior, or delivered artifact). Put the verification in
         that task's checkbox description. Use a separate verification task only
