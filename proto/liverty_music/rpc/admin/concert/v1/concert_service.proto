@@ -33,26 +33,40 @@ service ConcertService {
   // filtering, so an admin can review the full catalog and act on it. Each
   // concert carries its event id (for deletion) and the ids of its performing
   // artists (for client-side grouping); the response carries each referenced
-  // Series and Artist once. When artist_id is set, only the concerts that
-  // Artist performs in are returned.
+  // Series and Artist once.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request carries no valid sign-in.
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
-  // - INVALID_ARGUMENT: The artist_id is malformed.
   rpc List(ListRequest) returns (ListResponse);
 
+  // ListByArtist returns every concert one Artist performs in, oldest first,
+  // so an admin can refund and delete them. It includes past concerts,
+  // CANCELLED ones and those of an UNLISTED Series, and leaves out DRAFT
+  // events. The response carries each referenced Series and Artist once, as
+  // on List. An Artist who performs in no concert, or an id no Artist has,
+  // yields an empty list.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The artist_id is missing or malformed.
+  rpc ListByArtist(ListByArtistRequest) returns (ListByArtistResponse);
+
   // Delete permanently removes a concert by its event id, whatever its origin.
-  // It is refused while a purchase of the event is still live: an Order that
-  // is not refunded, a Settlement that is not reversed, or a purchase in
-  // progress (a Checkout that is held or committed, a Checkout whose card
-  // authorization is not yet released, or an entered lottery entry).
+  // It is refused while a purchase of the event is still live: a paid Order,
+  // a Settlement that is not reversed, or a purchase in progress (a Checkout
+  // that is held or committed, an expired or released Checkout whose card
+  // authorization is not yet released, an entered lottery entry, or a draft
+  // lottery entry whose card authorization is open). A purchase started while
+  // the delete runs either makes it fail or is refused; it is never removed.
   //
   // Otherwise it removes the event together with its performers, its ticket
   // journeys, its ticket types, their finished checkouts and lottery entries,
-  // the refunded Orders with their Tickets and resale listings, the reversed
-  // Settlements, and the event's scanners with their admissions and rejected
-  // scans. A first-party Series left with no event is removed too; a
+  // the refunded and failed Orders with their Tickets and resale listings,
+  // the reversed Settlements, and the event's scanners with their admissions
+  // and rejected scans. An Organizer's ticket sale left with no ticket type,
+  // and a first-party Series left with no event, are removed too; a
   // discovered Series stays. Everything is removed together or not at all.
   //
   // The event's venue, date and start time are suppressed so that discovery
@@ -69,12 +83,31 @@ service ConcertService {
   rpc Delete(DeleteRequest) returns (DeleteResponse);
 }
 
-// ListRequest is the request for retrieving published concerts. With no
-// artist_id the full catalog is returned.
+// ListRequest is the request for retrieving all published concerts. It takes no
+// parameters; the full published catalog is returned.
 message ListRequest {
-  // Optional. When set, only the concerts this Artist performs in are
-  // returned; an Artist who performs in none yields an empty list.
-  entity.v1.ArtistId artist_id = 1;
+  // Field 1 was artist_id, replaced by ListByArtist.
+  reserved 1;
+  reserved "artist_id";
+}
+
+// ListByArtistRequest names the Artist whose concerts to list.
+message ListByArtistRequest {
+  // Required. The Artist whose concerts to return.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+}
+
+// ListByArtistResponse contains the Artist's concerts with the Series and
+// Artists they refer to.
+message ListByArtistResponse {
+  // The Artist's concerts, oldest first.
+  repeated entity.v1.Concert concerts = 1;
+
+  // Every Series the concerts refer to, as on ListResponse.
+  repeated entity.v1.Series series = 2;
+
+  // Every Artist the concerts refer to, as on ListResponse.
+  repeated entity.v1.Artist artists = 3;
 }
 
 // ListResponse contains the published concerts. Each concert carries its event id

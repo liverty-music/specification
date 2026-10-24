@@ -17,6 +17,15 @@ import "liverty_music/entity/v1/organizer.proto";
 // All RPCs are authorized only for the admin organization; callers outside it
 // are rejected with PERMISSION_DENIED at the admin server boundary.
 service ArtistService {
+  // Get returns one Artist by its id.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The Artist id is missing or malformed.
+  // - NOT_FOUND: No Artist has the id.
+  rpc Get(GetRequest) returns (GetResponse);
+
   // ListByOrganizer returns the Artists an Organizer currently represents,
   // whatever the Organizer's status, so the admin console can inspect its
   // roster. Empty when it represents none (or its associations were freed by
@@ -28,6 +37,18 @@ service ArtistService {
   // - INVALID_ARGUMENT: The Organizer id is missing or malformed.
   // - NOT_FOUND: The Organizer does not exist.
   rpc ListByOrganizer(ListByOrganizerRequest) returns (ListByOrganizerResponse);
+}
+
+// GetRequest names the Artist to read.
+message GetRequest {
+  // Required. The Artist to return.
+  entity.v1.ArtistId artist_id = 1 [(buf.validate.field).required = true];
+}
+
+// GetResponse returns the Artist.
+message GetResponse {
+  // The requested Artist.
+  entity.v1.Artist artist = 1 [(buf.validate.field).required = true];
 }
 
 // ListByOrganizerRequest identifies the Organizer whose represented Artists to
