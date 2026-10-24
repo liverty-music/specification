@@ -67,6 +67,8 @@
 
 ## 5. Switch the test Organizer to a test Artist (operations, prod)
 
+Run after group 7 is released.
+
 - [ ] 5.1 On the Organizers screen, create a test Artist for `e2e-test` with a name no real artist uses. Verify it is listed in the roster.
 - [ ] 5.2 In the organizer console, cancel every Series of `e2e-test` that names the real Artist, which also removes its DRAFT Events. Verify the Artist concerts screen of the real Artist shows those Concerts as `Cancelled`.
 - [ ] 5.3 On that screen, use `Refund all` for each cancelled Concert with Paid Orders, then `Delete` for every one. Then verify with a read-only prod query that:
@@ -99,3 +101,20 @@
   - the payout-account contradiction in components/entity/organizer/delete.
 
   Verify the three issue links are recorded here.
+
+## 7. Review fixes (proto, backend, frontend)
+
+- [ ] 7.1 In `rpc/admin/concert/v1/concert_service.proto` add `ListByArtist(ListByArtistRequest { entity.v1.ArtistId artist_id })` (required) returning concerts, series and artists like `List`; remove `ListRequest.artist_id` and reserve field 1 and its name; update the `Delete` comment to the D2 blockers. In `rpc/admin/artist/v1/artist_service.proto` add `Get(GetRequest { entity.v1.ArtistId artist_id })` returning `entity.v1.Artist artist`. Each with protovalidate and the doc comment's error list (D9, D10). Verify `make check`; open the PR with the `buf skip breaking` label.
+- [ ] 7.2 Merge, publish a GitHub Release and confirm `buf-release.yml` succeeded.
+- [ ] 7.3 Consume the release. In `rdb`, lock the events, their ticket types and those ticket types' checkouts and lottery entries `FOR UPDATE` before the blocker check in both deletions; block on a Paid Order and on a Draft lottery entry with a card authorization; remove Failed orders with the Refunded ones and only Completed, Expired and Released checkouts (D1, D2). Verify integration tests for:
+  - components/entity/concert/delete-and-suppress: "Cancelled concert with a failed order", "Concert with a draft entry holding a card authorization", and the existing scenarios;
+  - components/entity/organizer/delete: "Draft entry with a card authorization", and the existing scenarios;
+  - a test that starts a checkout on the Event in a second transaction while a deletion holds its locks, and verifies the checkout is refused and nothing it created is removed.
+- [ ] 7.4 Restore `ConcertRepository.List` and `ConcertUseCase.List` to take no Artist; add `Concert.ListCatalogByArtist` and `ConcertUseCase.ListCatalogByArtist`, and `ArtistUseCase.Get`. Verify:
+  - integration tests for components/entity/concert/list-catalog-by-artist: "Narrowed to one artist", "Artist without concerts", "Draft event excluded", "No artist given";
+  - unit tests, with the mockery mocks, for components/usecase/concert/list-catalog-by-artist: "One artist's concerts", "Missing artist"; components/usecase/artist/get: "Known artist", "Unknown artist"; and the existing components/usecase/concert/list and delete scenarios (replacing the `fakeConcertRepo` filter and `deleteErr` added in 3.3).
+- [ ] 7.5 Add the admin handlers `ConcertService.ListByArtist` and `ArtistService.Get`, and drop the `artist_id` mapping from `List`. Verify handler tests for components/adapter/admin/api/rpc/concert: "Admin lists one artist's concerts", "Malformed artist id", "Missing artist id", "Non-admin lists an artist's concerts"; components/adapter/admin/api/rpc/artist: "Admin reads an artist", "Missing ArtistId", "Unknown artist", "Non-admin reads an artist".
+- [ ] 7.6 Merge and cut the backend Release. Confirm the prod rollout of `fan-api` and `admin-console-api` reached the new version.
+- [ ] 7.7 Consume the release in the frontend. The Artist concerts screen reads the Artist with `ArtistService.Get` and lists with `ConcertService.ListByArtist`; the roster link carries the id only; remove `?name=`, the name taken from the Concerts and the id fallback. Update the refused-Delete copy of both screens. Share the local-date formatting with the approved-concerts screen and replace the test double's `outcome` hook with a plain mock. Verify component tests for components/infrastructure/admin/web/route/artist-concerts: "No concerts", "Unknown artist", "Delete blocked by a paid order", and the existing scenarios; components/infrastructure/admin/web/route/organizers: "Open an artist's concerts", "Delete blocked by an order"; and `make check`.
+- [ ] 7.8 Merge and cut the frontend Release right after 7.6. Confirm the admin console rolled out in prod. Then, signed in as an admin, run the Organizers → Artist concerts flow with Playwright against prod, read-only: open an Organizer's roster link, check the heading names the Artist, and open and dismiss both dialogs without confirming.
+

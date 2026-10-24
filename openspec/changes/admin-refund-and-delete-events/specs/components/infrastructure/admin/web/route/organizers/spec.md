@@ -21,9 +21,30 @@ A provisioning or active Organizer's detail SHALL offer `Create test artist` bes
 
 ### Requirement: A represented Artist opens its concerts
 
-Each Artist in the selected Organizer's roster SHALL link to the Artist concerts screen for that Artist, whatever the Organizer's status.
+Each Artist in the selected Organizer's roster SHALL link to the Artist concerts screen for that Artist, whatever the Organizer's status. The link SHALL carry the Artist's id only; the screen reads everything it shows from the server.
 
 #### Scenario: Open an artist's concerts
 
 - **WHEN** the admin activates the link of a represented Artist
 - **THEN** the Artist concerts screen opens for that Artist
+
+## MODIFIED Requirements
+
+### Requirement: Delete's outcome is shown
+
+When Delete succeeds, the screen SHALL close the dialog, remove the Organizer from the list and return the detail to its no-selection state. When Delete fails with FailedPrecondition, the screen SHALL close the dialog, keep the Organizer listed and selected, and show `This organizer cannot be deleted while it has a paid order, a settlement that is not reversed, a purchase in progress, or a payout account.`, whatever reason the server gives. Any other failure SHALL be shown as an error with the Organizer kept.
+
+#### Scenario: Delete succeeds
+
+- **WHEN** Delete succeeds for the selected Organizer
+- **THEN** it is no longer listed and the detail asks the admin to select an Organizer
+
+#### Scenario: Delete blocked by an order
+
+- **WHEN** Delete fails with FailedPrecondition because an Event of the Organizer has a Paid Order
+- **THEN** the Organizer stays listed and selected, and the detail shows `This organizer cannot be deleted while it has a paid order, a settlement that is not reversed, a purchase in progress, or a payout account.` and not the server's message
+
+#### Scenario: Delete fails otherwise
+
+- **WHEN** Delete fails with Unavailable
+- **THEN** the Organizer stays listed and selected, and the detail shows `Failed to delete the organizer.`
