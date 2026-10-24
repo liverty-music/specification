@@ -28,6 +28,8 @@ context: |
 rules:
   specs:
     - Legal and commercial terms are written in Japanese with an English gloss on first use (特定興行入場券 covered ticket, 本人確認 identity check, 収納代行 collection agency, 特商法 表記, 中止, 延期, 繰上げ); enum values and channel names are English.
+  tasks:
+    - A task that creates or changes a persistent setting (GCP, Cloudflare, GitHub, Zitadel, PostHog and the like) implements it in cloud-provisioning's Pulumi program, through a provider or a dynamic resource over the service's API (cloud-provisioning AGENTS.md "Changing Pulumi code"). A task may say "by hand" only for a service without an API, an API that refuses API keys, or a one-time action, and design.md names which one applies, with the evidence.
 
 operations:
   apply:
