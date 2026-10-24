@@ -47,13 +47,13 @@ See proposal.md for the motivation. The approach is shaped by these facts in the
   7. the `events`. The cascade removes `ticket_types`, `lottery_entries`, `concerts`, `concert_artists` and `ticket_journeys`.
   8. the Organizer TicketSales left without a TicketType;
   9. the first-party `series` left with no event.
-- **Locking.** Before the blocker check, the transaction locks, `FOR UPDATE`, the events, their `ticket_types`, and the `checkouts` and `lottery_entries` of those ticket types.
-  - A path that creates a checkout, lottery entry or resale listing references a ticket type, so its foreign-key check takes `FOR KEY SHARE` on that row: it waits for this transaction and then fails on the deleted ticket type. A ticket references the event row the same way.
-  - A path that moves a checkout or lottery entry forward (Held to Committed, Draft to Entered) updates a row this transaction holds, so it waits too.
+- **Locking.** Before the blocker check, the transaction locks, `FOR UPDATE` and child rows first: the `checkouts` and `lottery_entries` of the events' ticket types, then those `ticket_types`, then the `events`.
+  - This is the order the purchase paths take. Creating a checkout or a Draft, moving one forward (Held to Committed, Draft to Entered) and issuing an Order (`IssuanceRepository.Issue`) all lock or update the checkout or lottery entry row first, and reach the ticket type or event only through a foreign-key check (`FOR KEY SHARE`) when they insert. Locking parents first would invert that order and let a removal and an issuance deadlock.
+  - A path that inserts a new checkout, lottery entry, resale listing or ticket after the child rows are locked holds `FOR KEY SHARE` on its ticket type or event, so the removal waits for it at the parent lock and its blocker check, a new statement, then sees the new row. A path that starts after the parent locks waits, and then fails on the removed ticket type or event.
   - So a purchase started during the removal is either seen by the check or refused, never removed. The status filters in steps 4 to 6 are a second guard: a row in a state the check did not allow makes a RESTRICT foreign key fail the whole removal.
 - `ConcertRepository.DeleteAndSuppress` becomes a transaction:
-  1. Lock the event row and the rows above.
-  2. Return with no effect when it is gone or DRAFT (Concert operations treat a DRAFT id as unknown).
+  1. Take the locks above.
+  2. Read the event's slot; return with no effect when it is gone or DRAFT (Concert operations treat a DRAFT id as unknown).
   3. Run the blocker check (D2).
   4. Run the shared removal.
   5. Insert the suppression row.
@@ -71,6 +71,7 @@ See proposal.md for the motivation. The approach is shaped by these facts in the
     - a `checkouts` row that is Held or Committed;
     - an Expired or Released `checkouts` row with `card_authorization_id` set and `card_authorization_release_at` NULL;
     - a `lottery_entries` row that is Entered;
+    - a Won `lottery_entries` row with no `orders` row: its payment is captured and the issuance sweeper has not yet issued its Order (`issuance_repo.go` `issuanceListAwaitingQuery`). The cascade would otherwise drop it and leave the captured payment with no Order to refund;
     - a Draft `lottery_entries` row with `card_authorization_id` set: the lottery path opens the card authorization while the entry is still Draft (`lottery_entry_repo.go`, the authorization update `WHERE state = 5`), and the cascade would otherwise drop it with the authorization open.
 - The Concert path runs it inside its transaction. The Organizer path uses it both in the dry run and inside the transaction.
 - It replaces Organizer.Delete's old "captured checkout not Completed" clause, which a Committed checkout already covers.

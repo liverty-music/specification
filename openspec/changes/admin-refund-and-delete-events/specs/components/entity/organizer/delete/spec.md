@@ -35,7 +35,7 @@ Delete SHALL fail with FailedPrecondition and remove nothing when, at the moment
 - the Organizer is not deactivated;
 - any of its Events has an Order that is Paid;
 - any of its Events has a Settlement that is not Reversed;
-- any of its Events has a purchase in progress: a Checkout that is Held or Committed, an Expired or Released Checkout whose card authorization is not yet released, an Entered lottery entry, or a Draft lottery entry whose card authorization is open;
+- any of its Events has a purchase in progress: a Checkout that is Held or Committed, an Expired or Released Checkout whose card authorization is not yet released, an Entered lottery entry, a Draft lottery entry whose card authorization is open, or a Won lottery entry whose Order is not yet issued;
 - the Organizer has a payout-account record.
 
 A purchase started while Delete runs SHALL either be seen by these checks or be refused; it SHALL NOT be removed.
@@ -63,6 +63,11 @@ A purchase started while Delete runs SHALL either be seen by these checks or be 
 #### Scenario: Draft entry with a card authorization
 
 - **WHEN** an Event of the Organizer has a Draft lottery entry whose card authorization is open
+- **THEN** it fails with FailedPrecondition and nothing is removed
+
+#### Scenario: Won entry awaiting its order
+
+- **WHEN** an Event of the Organizer has a Won lottery entry whose Order is not yet issued
 - **THEN** it fails with FailedPrecondition and nothing is removed
 
 #### Scenario: Payout account

@@ -46,7 +46,7 @@ It SHALL record a SuppressedConcert for the removed Event's Venue, date and star
 DeleteAndSuppress SHALL fail with FailedPrecondition, removing nothing and suppressing nothing, when the Event has:
 - an Order that is Paid;
 - a Settlement that is not Reversed;
-- a purchase in progress: a Checkout that is Held or Committed, an Expired or Released Checkout whose card authorization is not yet released, an Entered lottery entry, or a Draft lottery entry whose card authorization is open.
+- a purchase in progress: a Checkout that is Held or Committed, an Expired or Released Checkout whose card authorization is not yet released, an Entered lottery entry, a Draft lottery entry whose card authorization is open, or a Won lottery entry whose Order is not yet issued.
 
 A purchase started while DeleteAndSuppress runs SHALL either be seen by this check or be refused; it SHALL NOT be removed.
 
@@ -69,3 +69,7 @@ A purchase started while DeleteAndSuppress runs SHALL either be seen by this che
 #### Scenario: Concert with a draft entry holding a card authorization
 - **WHEN** an Event has a Draft lottery entry whose card authorization is open
 - **THEN** the call fails with FailedPrecondition and the Event remains
+
+#### Scenario: Concert with a won entry awaiting its order
+- **WHEN** an Event has a Won lottery entry whose payment is captured and whose Order is not yet issued
+- **THEN** the call fails with FailedPrecondition and the Event and the entry remain
