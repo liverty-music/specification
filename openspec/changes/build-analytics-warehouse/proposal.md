@@ -7,7 +7,7 @@ The billing export already lands in BigQuery (`billing_export`, asia-northeast1)
 ## What Changes
 
 - **Location**: every analytics dataset is in asia-northeast1 (Tokyo), next to `billing_export`, because BigQuery joins only within one location and the billing dataset cannot move. Osaka also lacks BigQuery Studio notebooks and remote models.
-- **PostHog → BigQuery**: a PostHog batch export writes `events` and `persons` hourly into `posthog_raw`, through service-account impersonation (no key), without the `ip` column.
+- **PostHog → BigQuery**: a PostHog batch export writes `events` and `persons` hourly into `posthog_raw`, through service-account impersonation (no key). The `ip` column is empty, because the project discards client IPs, and the `perf.*` events are left out. The export is managed in Pulumi.
 - **Backend logs → BigQuery**: a backend log line meant for analytics carries one mark (`sink=analytics`) and a topic. One Log Router sink with the filter on that mark routes the lines to a Tokyo log bucket with 400 days of retention, upgraded to Observability Analytics and linked to BigQuery as `logs_analytics`. A new topic needs no sink change. The first topics: job results, notification delivery, catalog review, catalog sync and payments. Gemini calls are not marked: they reach BigQuery through PostHog.
 - **Shaping**: staging and mart views in `analytics_staging` and `analytics_marts`, defined in Pulumi as BigQuery views. Dataform was planned, but it needs its `workflow_settings.yaml` at a repository root, which would mean a new repository for 6 views.
 - **Dashboards in Data Studio** (by hand, recorded in a runbook): unit economics (cost per new concert and per retained fan), Gemini cost by process, infrastructure cost by GKE namespace, value by campaign, pipeline and delivery health, and long-term fan activity. Conversational Analytics, available to every Data Studio user since 2026-04-16, answers ad-hoc questions on the marts.
@@ -26,5 +26,5 @@ None.
 
 - **backend**: one helper that adds the mark, used on the log lines of the first topics (`cmd/job/*/main.go` job summaries; `usecase/notification_delivery.go:111`, `ticket_sale_reminder_delivery_uc.go:91`, `notification_new_concerts.go`; `concert_candidate_uc.go`; `official_site_refresh_uc.go`, `artist_image_sync_uc.go`; `order_refund_uc.go:190`, `settlement_uc.go:217`, `lottery_entry_uc.go:480`).
 - **cloud-provisioning**: datasets, the PostHog export service account and its IAM, the log bucket, sink and link, the views, and runbooks for the PostHog export and the Data Studio reports. Prod only, like `billing_export`.
-- **PostHog project 190464**: the batch export (by hand).
+- **PostHog project 190464**: the integration and the two batch exports, managed in Pulumi through the PostHog REST API.
 - **Cost**: about 0 JPY a month at 1,000 monthly fans (BigQuery storage under 10 GiB and queries under 1 TiB a month are free; the analytics log lines are about 25 MB a month inside Logging's 50 GiB).
