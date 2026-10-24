@@ -12,14 +12,15 @@ While tracing the deletion, two defects turned up:
 ## What Changes
 
 - **Delete an Event that had purchases.** Concert deletion (admin ConcertService.Delete) is refused only while a purchase is still live:
-  - an Order that is not Refunded;
+  - an Order that is Paid;
   - a Settlement that is not Reversed;
-  - a purchase in progress (a Checkout or LotteryEntry whose card authorization is still open, or a Checkout that is Held or Committed).
+  - a purchase in progress (a Checkout or LotteryEntry whose card authorization is still open, Draft entries included, or a Checkout that is Held or Committed).
 
-  Today any Ticket, Order or Settlement blocks it. With the Event, deletion removes its Refunded Orders and their Tickets, Reversed Settlements, ResaleListings, Scanners with their Admissions and RejectedScans, and finished Checkouts and LotteryEntries. A first-party Series left with no Event is removed too. The slot is still suppressed, whatever the Concert's origin.
+  Today any Ticket, Order or Settlement blocks it. A purchase started while the deletion runs is refused, never removed. With the Event, deletion removes its Refunded and Failed Orders and their Tickets, Reversed Settlements, ResaleListings, Scanners with their Admissions and RejectedScans, and finished Checkouts and LotteryEntries. A first-party Series left with no Event is removed too. The slot is still suppressed, whatever the Concert's origin.
 - **A refund for 中止 needs a cancelled Event.** OrderUseCase.Refund with the reason Cancellation fails with FailedPrecondition unless the Order's Event is CANCELLED. Dispute refunds are unchanged. **BREAKING** for an admin who refunds an Order of an Event that is still PUBLISHED.
 - **Admins list the Orders of an Event.** New admin OrderService.ListByEvent.
-- **Admins list one Artist's Concerts.** Admin ConcertService.List takes an optional Artist and then returns only that Artist's Concerts, in every state except DRAFT.
+- **Admins list one Artist's Concerts.** New admin ConcertService.ListByArtist returns one Artist's Concerts in every state except DRAFT. (v0.96.0 shipped this as an optional `artist_id` on List; it is removed.)
+- **Admins read one Artist.** New admin ArtistService.Get, so the Artist concerts screen shows the Artist it is opened for by id.
 - **Admin console:**
   - On the Organizers screen, an admin creates a test Artist (a name only; the music-catalog id is generated) and associates it with the Organizer in one step. Each represented Artist opens a new Artist concerts screen.
   - The Artist concerts screen lists the Artist's Concerts with their state and Paid Orders. A CANCELLED Concert offers **Refund all**, which refunds every Paid Order for 中止 after a confirmation showing their count and total. Every Concert offers **Delete**, after a confirmation.
@@ -36,22 +37,24 @@ While tracing the deletion, two defects turned up:
 - `components/usecase/order/list-by-event`: OrderUseCase.ListByEvent returns an Event's Orders for an admin.
 - `components/infrastructure/admin/web/route/artist-concerts`: the admin console screen listing one Artist's Concerts, with Refund all and Delete.
 - `stories/remove-a-cancelled-concert`: an Organizer cancels an Event; an admin refunds every fan and deletes the Event.
+- `components/entity/concert/list-catalog-by-artist`: Concert.ListCatalogByArtist returns every Concert one Artist performs in, except DRAFT.
+- `components/usecase/concert/list-catalog-by-artist`: ConcertUseCase.ListCatalogByArtist returns them for an admin.
+- `components/usecase/artist/get`: ArtistUseCase.Get returns one Artist by id.
 
 ### Modified Capabilities
 
-- `components/entity/concert/delete-and-suppress`: removes a cancelled Event's refunded purchases, resale listings and scanner records with it, and an emptied first-party Series. It is refused only by a live purchase.
-- `components/entity/concert/list`: takes an optional Artist to narrow the catalog.
+- `components/entity/concert/delete-and-suppress`: removes a cancelled Event's refunded and failed purchases, resale listings and scanner records with it, and an emptied first-party Series. It is refused only by a live purchase: a Paid Order, a Settlement not Reversed, or an open card authorization.
 - `components/entity/event/get`: also returns the Event's publish state.
 - `components/entity/organizer/delete`: removes ResaleListings and refuses while a purchase is in progress.
 - `components/entity/series/publish-events`: a suppressed slot no longer blocks a publish.
 - `components/entity/series/update`: a suppressed slot no longer blocks a new start time.
 - `components/usecase/concert/delete`: the blocking condition follows Concert.DeleteAndSuppress.
-- `components/usecase/concert/list`: passes the optional Artist through.
 - `components/usecase/order/refund`: the reason Cancellation requires a CANCELLED Event.
 - `components/usecase/series/publish`: a suppressed slot no longer fails the publish.
-- `components/adapter/admin/api/rpc/concert`: List accepts an optional Artist.
+- `components/adapter/admin/api/rpc/concert`: adds ListByArtist.
+- `components/adapter/admin/api/rpc/artist`: adds Get.
 - `components/adapter/admin/api/rpc/order`: adds ListByEvent.
-- `components/infrastructure/admin/web/route/organizers`: creates a test Artist, and opens a represented Artist's concerts.
+- `components/infrastructure/admin/web/route/organizers`: creates a test Artist, opens a represented Artist's concerts by id, and names a purchase in progress in the refused-Delete copy.
 - `stories/delete-a-wrong-concert`: a deleted slot stays deleted for discovery only.
 - `components/entity/suppressed-concert` (Purpose): suppression keeps discovery, not Organizer publishing, from bringing a slot back.
 - `stories/delete-a-wrong-concert` (Purpose): SeriesUseCase.Publish leaves the usecase diagram.
@@ -69,20 +72,22 @@ Unchanged, and relied on:
 
 - **specification:**
   - `rpc/admin/order/v1`: `ListByEvent`.
-  - `rpc/admin/concert/v1`: `ListRequest.artist_id` (optional).
+  - `rpc/admin/concert/v1`: `ListByArtist`; `ListRequest.artist_id` (v0.96.0) removed and reserved.
+  - `rpc/admin/artist/v1`: `Get`.
   - Comments on `OrderService.Refund` and `ConcertService.Delete`.
-  - The change is additive in proto.
+  - v0.96.0 is additive; the second release removes `ListRequest.artist_id` (`buf skip breaking`).
 - **backend:**
   - Concert deletion and Organizer deletion share one per-Event removal.
   - Order.ListByEvent and Order.GetEventID.
   - Event.Get returns the publish state.
   - Refund checks the Event state.
   - The suppression checks leave the Series publish and update paths.
-  - Concert.List takes the optional Artist.
+  - Concert.ListCatalogByArtist and ArtistUseCase.Get.
+  - Deletion locks the rows a concurrent purchase would touch.
   - Admin handlers and integration tests.
 - **frontend (admin console):**
   - The Organizers screen gets test-Artist creation and a link per represented Artist.
-  - The new Artist concerts screen.
+  - The new Artist concerts screen, reading the Artist with ArtistService.Get.
 - **cloud-provisioning:** none.
 - **Operations (prod):**
   1. Create and associate the test Artist.

@@ -5,7 +5,7 @@
 DeleteAndSuppress SHALL remove the Event and, with it:
 - its performers, its Concert and its TicketJourneys;
 - the TicketTypes offered for it, with their lottery entries and Checkouts;
-- the Refunded Orders of those lottery entries and Checkouts, with their Tickets and the Tickets' ResaleListings;
+- the Refunded and Failed Orders of those lottery entries and Checkouts, with their Tickets and the Tickets' ResaleListings;
 - the Reversed Settlements of those Orders;
 - the Scanners of the Event, with their Admissions and RejectedScans;
 - every Organizer's TicketSale the removal leaves without a TicketType;
@@ -29,6 +29,10 @@ It SHALL record a SuppressedConcert for the removed Event's Venue, date and star
 - **WHEN** a CANCELLED Event has only Refunded Orders, their Voided Tickets, one Sold ResaleListing, Reversed Settlements and a Scanner with Admissions
 - **THEN** the Event and every one of those records are removed and its slot is suppressed
 
+#### Scenario: Cancelled concert with a failed order
+- **WHEN** a CANCELLED Event's only Order is Failed, its payment already refunded
+- **THEN** the Event and the Order are removed and its slot is suppressed
+
 #### Scenario: Last event of a first-party series
 - **WHEN** the only Event of a first-party Series is deleted
 - **THEN** the Series is removed with it
@@ -40,9 +44,11 @@ It SHALL record a SuppressedConcert for the removed Event's Venue, date and star
 ### Requirement: Paid records block the delete
 
 DeleteAndSuppress SHALL fail with FailedPrecondition, removing nothing and suppressing nothing, when the Event has:
-- an Order that is not Refunded;
+- an Order that is Paid;
 - a Settlement that is not Reversed;
-- a purchase in progress: a Checkout that is Held or Committed, an Expired or Released Checkout whose card authorization is not yet released, or an Entered lottery entry.
+- a purchase in progress: a Checkout that is Held or Committed, an Expired or Released Checkout whose card authorization is not yet released, an Entered lottery entry, or a Draft lottery entry whose card authorization is open.
+
+A purchase started while DeleteAndSuppress runs SHALL either be seen by this check or be refused; it SHALL NOT be removed.
 
 #### Scenario: Concert with issued tickets
 - **WHEN** an Event with an issued Ticket of a Paid Order is deleted
@@ -58,4 +64,8 @@ DeleteAndSuppress SHALL fail with FailedPrecondition, removing nothing and suppr
 
 #### Scenario: Concert with an open lottery entry
 - **WHEN** an Event has an Entered lottery entry
+- **THEN** the call fails with FailedPrecondition and the Event remains
+
+#### Scenario: Concert with a draft entry holding a card authorization
+- **WHEN** an Event has a Draft lottery entry whose card authorization is open
 - **THEN** the call fails with FailedPrecondition and the Event remains

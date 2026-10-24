@@ -41,32 +41,37 @@ See proposal.md for the motivation. The approach is shaped by these facts in the
   1. `admissions`, `rejected_scans`, `scanners`;
   2. `resale_listings` of the events' ticket types;
   3. the Reversed `settlements`;
-  4. the `tickets`;
-  5. the Refunded `orders`;
-  6. the `checkouts` of the events' ticket types;
+  4. the `tickets` of the Refunded and Failed orders;
+  5. the Refunded and Failed `orders`;
+  6. the Completed, Expired and Released `checkouts` of the events' ticket types;
   7. the `events`. The cascade removes `ticket_types`, `lottery_entries`, `concerts`, `concert_artists` and `ticket_journeys`.
   8. the Organizer TicketSales left without a TicketType;
   9. the first-party `series` left with no event.
+- **Locking.** Before the blocker check, the transaction locks, `FOR UPDATE`, the events, their `ticket_types`, and the `checkouts` and `lottery_entries` of those ticket types.
+  - A path that creates a checkout, lottery entry or resale listing references a ticket type, so its foreign-key check takes `FOR KEY SHARE` on that row: it waits for this transaction and then fails on the deleted ticket type. A ticket references the event row the same way.
+  - A path that moves a checkout or lottery entry forward (Held to Committed, Draft to Entered) updates a row this transaction holds, so it waits too.
+  - So a purchase started during the removal is either seen by the check or refused, never removed. The status filters in steps 4 to 6 are a second guard: a row in a state the check did not allow makes a RESTRICT foreign key fail the whole removal.
 - `ConcertRepository.DeleteAndSuppress` becomes a transaction:
-  1. Lock the event row.
+  1. Lock the event row and the rows above.
   2. Return with no effect when it is gone or DRAFT (Concert operations treat a DRAFT id as unknown).
   3. Run the blocker check (D2).
   4. Run the shared removal.
   5. Insert the suppression row.
 
   The method keeps its name and interface.
-- `OrganizerRepository.Delete` keeps its lock, status check and dry run. It replaces its own event-level DELETEs with the shared removal over all its events, then deletes the remaining series, the series images and the organizer.
+- `OrganizerRepository.Delete` keeps its lock, status check and dry run, and takes the same row locks over all its events before the check. It replaces its own event-level DELETEs with the shared removal over all its events, then deletes the remaining series, the series images and the organizer.
 - **Rejected: changing the RESTRICT keys to CASCADE.** That is a migration, and a plain `DELETE FROM events` anywhere else would then silently remove purchases. The admin-delete-test-data design rejected it for the same reason.
 
 ### D2 — One blocker predicate
 
 - One SQL fragment, parameterised by the event-id set, reports any of:
-  - an `orders` row for the events' ticket types with status not Refunded;
+  - an `orders` row for the events' ticket types with status Paid. A Failed order's payment was already refunded (`OrderStatusFailed`), so it does not block and is removed with the Refunded ones;
   - a `settlements` row for the events with status not Reversed;
   - a purchase in progress:
     - a `checkouts` row that is Held or Committed;
     - an Expired or Released `checkouts` row with `card_authorization_id` set and `card_authorization_release_at` NULL;
-    - a `lottery_entries` row that is Entered.
+    - a `lottery_entries` row that is Entered;
+    - a Draft `lottery_entries` row with `card_authorization_id` set: the lottery path opens the card authorization while the entry is still Draft (`lottery_entry_repo.go`, the authorization update `WHERE state = 5`), and the cascade would otherwise drop it with the authorization open.
 - The Concert path runs it inside its transaction. The Organizer path uses it both in the dry run and inside the transaction.
 - It replaces Organizer.Delete's old "captured checkout not Completed" clause, which a Committed checkout already covers.
 
@@ -90,10 +95,11 @@ See proposal.md for the motivation. The approach is shaped by these facts in the
 
 ### D5 — Listing for the console
 
-- **Admin `ConcertService.List` gains an optional `entity.v1.ArtistId artist_id`.**
-  - `rpc-design` puts optional narrowing on `List` as a field and keeps `ListBy<Key>` for a required key.
-  - The approved-concerts screen keeps calling List with no Artist.
-  - `ConcertRepository.List` takes an optional artist id and adds an `EXISTS` on `concert_artists` when one is given.
+- **New admin `ConcertService.ListByArtist(artist_id)`**, a separate RPC from `List`.
+  - `rpc-design` (`.claude/skills/rpc-design/SKILL.md`, the `ListBy<Key>` row and "Key is an entity"): narrowing by an entity is a `ListBy<Key>` method with a required field; an optional field on `List` is for a state or a period.
+  - It runs the new `ConcertUseCase.ListCatalogByArtist` and `Concert.ListCatalogByArtist`. The fan `Concert.ListByArtist` leaves out what fans cannot see, so the admin read is a separate operation, not a flag on it.
+  - `List` and `Concert.List` stay as they were; the approved-concerts screen keeps calling `List`.
+  - **Rejected: an optional `artist_id` on `ListRequest`**, shipped in v0.96.0. It made one method answer two questions, and `""` stood for "no artist" in Go. The field is removed and its number reserved (D9).
 - **New admin `OrderService.ListByEvent(event_id)`** returns `repeated entity.v1.Order`.
   - `OrderRepository.ListByEvent` orders by `pay_at`.
   - The console sums the Paid ones per row. The test Artist has a handful of Concerts, so one call per first-party row is acceptable.
@@ -118,7 +124,8 @@ See proposal.md for the motivation. The approach is shaped by these facts in the
 
 ### D8 — The Artist concerts screen
 
-- **Route:** `artists/:artistId/concerts` under the admin shell. It is linked from each roster row on the Organizers screen and has a back link to Organizers.
+- **Route:** `artists/:artistId/concerts` under the admin shell. It is linked from each roster row on the Organizers screen with the Artist's id only, and has a back link to Organizers.
+- **Name:** read with admin `ArtistService.Get` (D10).
 - **Rows:**
   - The state comes from the Concert's publish state; no publish state means `Discovered`.
   - Paid count and total come from `OrderService.ListByEvent` for first-party rows.
@@ -129,7 +136,14 @@ See proposal.md for the motivation. The approach is shaped by these facts in the
 
 - `ConcertService.Delete` (admin) says today that it is unconditional and "NOT blocked by dependent rows". It is rewritten to state the blockers and what is removed.
 - `OrderService.Refund` gains the CANCELLED-Event precondition for the reason Cancellation.
-- These and the two new fields and method are one additive specification release.
+- These and the two new fields and method are one additive specification release (v0.96.0).
+- A second release adds admin `ConcertService.ListByArtist` and admin `ArtistService.Get`, removes `ListRequest.artist_id` and reserves its number (`buf skip breaking`), and updates the `Delete` comment to the D2 blockers.
+
+### D10 — The Artist concerts screen reads the Artist
+
+- New admin `ArtistService.Get(artist_id)` returns one Artist, through a new `ArtistUseCase.Get` over the existing `Artist.Get`.
+- The screen calls it with the route's id, so its heading is right for a deep link, a reload, and an Artist with no Concert.
+- **Rejected: carrying the name from the Organizers screen in the URL (`?name=`)**, shipped in v1.120.0. The URL then decides what the screen shows, and the name is wrong for an edited or stale link. Reading the name from the Concerts response also fails for an Artist with no Concert.
 
 ## Risks / Trade-offs
 
@@ -145,6 +159,8 @@ See proposal.md for the motivation. The approach is shaped by these facts in the
 - **[Trade-off] The BREAKING refund precondition.** An admin can no longer issue a cancellation refund for an Event still on sale. No such refund is known to exist.
 - **[Trade-off] The suppression row stays for a deleted Organizer Event.** It no longer affects the Organizer, and it keeps discovery from re-adding the slot, which is harmless.
 
+- **[Risk] An admin console older than the second release calls `List` with `artist_id`.** The server ignores the unknown field and returns the whole catalog, with Delete on every row. → The backend and frontend releases go out back to back, the screen is not used in between, and only the owner holds the admin role.
+
 ## Migration Plan
 
 1. **specification:** the proto change (admin `OrderService.ListByEvent`, admin `ConcertService.ListRequest.artist_id`, comments), then a PR, a Release and BSR generation.
@@ -158,4 +174,5 @@ See proposal.md for the motivation. The approach is shaped by these facts in the
    
    Then the release and its prod rollout.
 3. **frontend:** the admin console Organizers additions and the Artist concerts screen, then the release.
-4. **Operations (prod)** follow tasks.md group 5. Rollback is a revert of the backend release. Deletions already performed are not reversible, which is why each one is confirmed.
+4. **Review fixes** (tasks.md group 7), before the operations: the second specification release (D9), then the backend release with the locking and blocker changes (D1, D2), `ListByArtist` and `ArtistService.Get`, then the frontend release that reads the Artist and lists by Artist. The two application releases go out back to back.
+5. **Operations (prod)** follow tasks.md group 5. Rollback is a revert of the backend release. Deletions already performed are not reversible, which is why each one is confirmed.

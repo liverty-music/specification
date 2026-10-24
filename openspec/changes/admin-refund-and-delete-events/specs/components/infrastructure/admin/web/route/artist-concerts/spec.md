@@ -6,12 +6,12 @@ The admin console's Artist concerts screen, opened from an Organizer's roster, l
 
 ### Requirement: The screen lists the Artist's concerts with their orders
 
-The Artist concerts screen SHALL show the Artist's name and list the Concerts that ConcertService.List returns for the Artist, oldest first. Each row SHALL show:
+The Artist concerts screen SHALL be opened with the Artist's id only. It SHALL show the Artist's name, read with ArtistService.Get, and list the Concerts that ConcertService.ListByArtist returns for the Artist, oldest first. When ArtistService.Get fails with NotFound, the screen SHALL show `No artist has this id.` and no Concerts. Each row SHALL show:
 - the Concert's date, its Series title and its venue;
 - its state: `Published`, `Cancelled`, or `Discovered` for a Concert of a discovered Series;
 - for an Organizer's Concert, the number of its Paid Orders and their total in yen, read with OrderService.ListByEvent.
 
-An Artist with no Concert SHALL show `No concerts.`
+An Artist with no Concert SHALL show its name and `No concerts.`
 
 #### Scenario: Cancelled concert with paid orders
 
@@ -21,7 +21,12 @@ An Artist with no Concert SHALL show `No concerts.`
 #### Scenario: No concerts
 
 - **WHEN** the Artist performs in no Concert
-- **THEN** the screen shows `No concerts.`
+- **THEN** the screen shows the Artist's name and `No concerts.`
+
+#### Scenario: Unknown artist
+
+- **WHEN** the screen is opened with an id no Artist has
+- **THEN** it shows `No artist has this id.` and no Concerts
 
 ### Requirement: Refund all refunds every paid order of a cancelled concert
 
@@ -51,7 +56,7 @@ On confirmation the screen SHALL call OrderService.Refund with the reason Cancel
 
 ### Requirement: Delete removes a concert after confirmation
 
-Every row SHALL offer `Delete`. Activating it SHALL open a modal confirmation dialog that names the Concert by date and Series title and says that the Concert and its records are removed permanently. Cancel SHALL receive initial focus, and Cancel and Escape SHALL close the dialog without deleting. ConcertService.Delete SHALL be called only when the admin activates the dialog's Delete control, which SHALL be disabled while the call is in flight. When Delete succeeds the row SHALL leave the list. When it fails with FailedPrecondition the screen SHALL keep the row and show `This concert cannot be deleted while it has an order that is not refunded, a settlement that is not reversed, or a purchase in progress.`, whatever reason the server gives. Any other failure SHALL show `Failed to delete the concert.` with the row kept.
+Every row SHALL offer `Delete`. Activating it SHALL open a modal confirmation dialog that names the Concert by date and Series title and says that the Concert and its records are removed permanently. Cancel SHALL receive initial focus, and Cancel and Escape SHALL close the dialog without deleting. ConcertService.Delete SHALL be called only when the admin activates the dialog's Delete control, which SHALL be disabled while the call is in flight. When Delete succeeds the row SHALL leave the list. When it fails with FailedPrecondition the screen SHALL keep the row and show `This concert cannot be deleted while it has a paid order, a settlement that is not reversed, or a purchase in progress.`, whatever reason the server gives. Any other failure SHALL show `Failed to delete the concert.` with the row kept.
 
 #### Scenario: Refunded cancelled concert deleted
 
@@ -61,7 +66,7 @@ Every row SHALL offer `Delete`. Activating it SHALL open a modal confirmation di
 #### Scenario: Delete blocked by a paid order
 
 - **WHEN** Delete fails with FailedPrecondition because the Concert has a Paid Order
-- **THEN** the row stays and the screen shows `This concert cannot be deleted while it has an order that is not refunded, a settlement that is not reversed, or a purchase in progress.`
+- **THEN** the row stays and the screen shows `This concert cannot be deleted while it has a paid order, a settlement that is not reversed, or a purchase in progress.`
 
 #### Scenario: Delete dismissed
 

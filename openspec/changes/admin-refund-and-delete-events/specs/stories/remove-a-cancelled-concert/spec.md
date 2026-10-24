@@ -10,14 +10,16 @@ actor Member("member")
 systemBoundary "Liverty Music"
   Goal("Remove a cancelled concert")
   SeriesUseCaseCancel("SeriesUseCase.Cancel")
-  ConcertUseCaseList("ConcertUseCase.List")
+  ArtistUseCaseGet("ArtistUseCase.Get")
+  ConcertUseCaseListCatalogByArtist("ConcertUseCase.ListCatalogByArtist")
   OrderUseCaseListByEvent("OrderUseCase.ListByEvent")
   OrderUseCaseRefund("OrderUseCase.Refund")
   ConcertUseCaseDelete("ConcertUseCase.Delete")
 end
 Admin --> Goal
 Goal ..> : include SeriesUseCaseCancel
-Goal ..> : include ConcertUseCaseList
+Goal ..> : include ArtistUseCaseGet
+Goal ..> : include ConcertUseCaseListCatalogByArtist
 Goal ..> : include OrderUseCaseListByEvent
 Goal ..> : include OrderUseCaseRefund
 Goal ..> : include ConcertUseCaseDelete
