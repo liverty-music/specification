@@ -28,7 +28,7 @@ After sign-up, a fan SHALL receive a verification email in their preferred langu
 #### Scenario: Sign up, then verify on the phone
 
 - **WHEN** a fan signs up in Japanese, opens the verification email on their phone and taps "メールアドレスを確認する"
-- **THEN** the email was in Japanese, the screen says the address is verified, and Settings on their laptop shows 認証済み when they return to it
+- **THEN** the email was in Japanese, the screen says the address is verified, and Settings on their laptop shows 確認済み when they return to it
 
 ### Requirement: An expired link leads to a fresh email
 
