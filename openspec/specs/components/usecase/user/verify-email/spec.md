@@ -1,12 +1,13 @@
-## Purpose
+# components/usecase/user/verify-email Specification
 
+## Purpose
 UserUseCase.VerifyEmail lets the person holding a verification link confirm that User's address without signing in, without revealing whether the User exists, and with limits that keep anyone from guessing codes.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: The link's User and code verify the address
 
-VerifyEmail SHALL take a User id, a code and the client's network address. It SHALL read the User with User.Get and confirm the address with User.VerifyEmail for the User's provider user ID. It SHALL succeed when the address is verified. When User.Get fails with NotFound, or User.VerifyEmail fails with InvalidArgument or NotFound, it SHALL fail with InvalidArgument, so an unknown User and a wrong, expired or used code fail alike. When User.VerifyEmail fails with Unavailable, VerifyEmail SHALL fail with Unavailable.
+VerifyEmail SHALL take a User id and a code. It SHALL read the User with User.Get and confirm the address with User.VerifyEmail for the User's provider user ID. It SHALL succeed when the address is verified. When User.Get fails with NotFound, or User.VerifyEmail fails with InvalidArgument or NotFound, it SHALL fail with InvalidArgument, so an unknown User and a wrong, expired or used code fail alike. When User.VerifyEmail fails with Unavailable, VerifyEmail SHALL fail with Unavailable.
 
 #### Scenario: Link from the email
 
@@ -30,7 +31,7 @@ VerifyEmail SHALL take a User id, a code and the client's network address. It SH
 
 ### Requirement: Attempts per client and per User are limited
 
-VerifyEmail SHALL accept at most 10 attempts from one client and at most 5 attempts for one User id in any 60 minutes, counting every attempt whatever its outcome and whether or not a User has the id. A further attempt SHALL fail with ResourceExhausted and SHALL NOT reach User.Get or User.VerifyEmail.
+At most 10 attempts from one client and at most 5 attempts for one User id SHALL be accepted in any 60 minutes, counting every attempt whatever its outcome and whether or not a User has the id. VerifyEmail counts the attempts for the User id itself; the attempts from one client, identified by its network address, are counted by the server before VerifyEmail runs. A further attempt SHALL fail with ResourceExhausted and SHALL NOT reach User.Get or User.VerifyEmail.
 
 #### Scenario: Sixth attempt for one User
 

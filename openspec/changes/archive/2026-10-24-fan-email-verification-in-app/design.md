@@ -84,7 +84,7 @@ It keeps `email_verified` in an observable on the auth service, which the badge 
 
 Alternative: `signinSilent()` refreshes the token and its claims. Rejected: it rotates the refresh token, and the auth service deliberately serializes refreshes (`auth-retry-interceptor.ts`); a refresh on every focus would race. Userinfo is read-only.
 
-If task 4.1 finds that ZITADEL rejects the main access token at userinfo, fall back to a refresh on Settings open only, and revise this decision.
+Task 4.1 (2026-10-23, prod, owner account): `GET https://auth.liverty-music.app/oidc/v1/userinfo` from the signed-in fan app with the main access token answered 200, and the body carried `email_verified`. ZITADEL accepts the main access token at userinfo, so this decision stands.
 
 ## Risks / Trade-offs
 
