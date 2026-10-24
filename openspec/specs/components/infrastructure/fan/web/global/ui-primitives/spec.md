@@ -15,22 +15,27 @@ The system SHALL provide a centralized `<svg-icon>` custom element as the single
 - **AND** only the matched icon SHALL be present in the DOM (via Aurelia `switch.bind`)
 - **AND** unrecognized names SHALL render nothing (default-case fallback)
 
+#### Scenario: Default size follows the text
+- **WHEN** `<svg-icon>` is rendered with no `size` attribute and no size from a stylesheet
+- **THEN** it SHALL be as wide and as tall as the font size of the text around it (`1em`)
+
 #### Scenario: Size variants
 - **WHEN** `<svg-icon>` is rendered with a `size` attribute
 - **THEN** the host element SHALL set `data-size` to the given value
 - **AND** the component SHALL support sizes: xs (0.75rem), sm (1rem), md (1.25rem), lg (1.5rem), xl (2.5rem)
-- **AND** the default size SHALL be md when no size is specified
+
+#### Scenario: Size from a stylesheet
+- **WHEN** a stylesheet gives an `<svg-icon>` element a size
+- **THEN** the drawn icon SHALL take that size
 
 #### Scenario: Icon set coverage
 - **WHEN** the icon component is registered
-- **THEN** it SHALL include at minimum these icons: home, search, discover, music, my-artists, ticket, tickets, settings, check, alert-triangle, warning, info, x-circle, x, chevron-right, arrow-left, trash, plus, map-pin, calendar, link, clock, globe, bell, lock, qr-code, list, grid
+- **THEN** it SHALL include at minimum these icons: home, search, discovery, music, my-artists, ticket, settings, check, alert-triangle, warning, info, x-circle, x, chevron-right, arrow-left, trash, plus, map-pin, calendar, link, clock, globe, bell, lock, mail, qr-code, list, grid
 
 #### Scenario: Color inheritance
 - **WHEN** `<svg-icon>` is placed inside a colored container
 - **THEN** stroke-based icons SHALL use `stroke="currentColor"` to inherit the parent's text color
 - **AND** fill-based icons (warning, x-circle) SHALL use `fill="currentColor"`
-
----
 
 ### Requirement: State Placeholder Component
 The system SHALL provide a `<state-placeholder>` custom element for displaying empty, error, and informational states with a consistent centered layout.
