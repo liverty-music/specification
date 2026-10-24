@@ -6,6 +6,7 @@ syntax = "proto3";
 package liverty_music.rpc.admin.order.v1;
 
 import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/order.proto";
 import "liverty_music/entity/v1/settlement.proto";
 
@@ -34,6 +35,17 @@ service OrderService {
   // - UNAUTHENTICATED: The request lacks valid admin credentials.
   rpc Get(GetRequest) returns (GetResponse);
 
+  // ListByEvent returns every Order whose Tickets admit to the Event, in any
+  // status and oldest pay time first, including Orders from an official resale
+  // purchase. It lets an admin see and refund the purchases of a cancelled
+  // Event. An Event with no Order, and an id no Event has, yield an empty list.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The event_id is missing or malformed.
+  // - PERMISSION_DENIED: The caller lacks the admin role.
+  // - UNAUTHENTICATED: The request lacks valid admin credentials.
+  rpc ListByEvent(ListByEventRequest) returns (ListByEventResponse);
+
   // Refund refunds the Order's user the face value + system/発券
   // fee (retaining the payment-processor fee, the JP norm) with a payment
   // provider refund, and claws back the Organizer's payout. It covers event
@@ -46,7 +58,8 @@ service OrderService {
   //
   // Possible errors:
   // - FAILED_PRECONDITION: The Order is not refundable in its current state
-  //   (e.g. not paid).
+  //   (e.g. not paid), or the reason is CANCELLATION and the Order's Event is
+  //   not CANCELLED. No money moves in either case.
   // - INVALID_ARGUMENT: The order_id is missing/malformed or the reason is
   //   UNSPECIFIED.
   // - NOT_FOUND: No such Order.
@@ -68,6 +81,7 @@ enum RefundReason {
 
   // Event cancellation (中止): the Order's user is refunded face + system/発券 fee and
   // the Organizer's share is clawed back. Any live ⑦ resale listing is cancelled.
+  // Accepted only when the Order's Event is CANCELLED.
   REFUND_REASON_CANCELLATION = 1;
 
   // A chargeback / dispute: the captured payment is reversed and the Organizer's
@@ -89,6 +103,18 @@ message GetResponse {
   // The Order's Settlement with its splits. Unset when the Order has no
   // Settlement.
   entity.v1.Settlement settlement = 2;
+}
+
+// ListByEventRequest names the Event whose Orders to list.
+message ListByEventRequest {
+  // Required. The Event whose Orders to list.
+  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+}
+
+// ListByEventResponse contains the Event's Orders.
+message ListByEventResponse {
+  // The Event's Orders, in any status, oldest pay time first.
+  repeated entity.v1.Order orders = 1;
 }
 
 // RefundRequest identifies the Order to refund and why.

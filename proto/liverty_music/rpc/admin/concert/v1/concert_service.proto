@@ -33,30 +33,49 @@ service ConcertService {
   // filtering, so an admin can review the full catalog and act on it. Each
   // concert carries its event id (for deletion) and the ids of its performing
   // artists (for client-side grouping); the response carries each referenced
-  // Series and Artist once.
+  // Series and Artist once. When artist_id is set, only the concerts that
+  // Artist performs in are returned.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request carries no valid sign-in.
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The artist_id is malformed.
   rpc List(ListRequest) returns (ListResponse);
 
-  // Delete permanently removes a published concert by its event id. The deletion
-  // cascades through the database's referential integrity to every row that
-  // references the event (performers, ticket journeys, ticket emails, and the
-  // event's ticket types). It is unconditional: it is NOT blocked by dependent
-  // rows such as fan ticket journeys.
-  // The operation is idempotent: deleting an event that no longer exists succeeds.
+  // Delete permanently removes a concert by its event id, whatever its origin.
+  // It is refused while a purchase of the event is still live: an Order that
+  // is not refunded, a Settlement that is not reversed, or a purchase in
+  // progress (a Checkout that is held or committed, a Checkout whose card
+  // authorization is not yet released, or an entered lottery entry).
+  //
+  // Otherwise it removes the event together with its performers, its ticket
+  // journeys, its ticket types, their finished checkouts and lottery entries,
+  // the refunded Orders with their Tickets and resale listings, the reversed
+  // Settlements, and the event's scanners with their admissions and rejected
+  // scans. A first-party Series left with no event is removed too; a
+  // discovered Series stays. Everything is removed together or not at all.
+  //
+  // The event's venue, date and start time are suppressed so that discovery
+  // does not add the concert again; an Organizer can still publish at that
+  // slot. The operation is idempotent: deleting an event that no longer exists
+  // succeeds and suppresses nothing.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request carries no valid sign-in.
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
   // - INVALID_ARGUMENT: The event id is missing or malformed.
+  // - FAILED_PRECONDITION: A purchase of the event is still live; nothing is
+  //   removed.
   rpc Delete(DeleteRequest) returns (DeleteResponse);
 }
 
-// ListRequest is the request for retrieving all published concerts. It takes no
-// parameters; the full published catalog is returned.
-message ListRequest {}
+// ListRequest is the request for retrieving published concerts. With no
+// artist_id the full catalog is returned.
+message ListRequest {
+  // Optional. When set, only the concerts this Artist performs in are
+  // returned; an Artist who performs in none yields an empty list.
+  entity.v1.ArtistId artist_id = 1;
+}
 
 // ListResponse contains the published concerts. Each concert carries its event id
 // and the ids of its performing artists; the admin console groups by artist
@@ -77,8 +96,7 @@ message ListResponse {
 
 // DeleteRequest identifies the published concert to delete by its event id.
 message DeleteRequest {
-  // Required. The unique identifier of the published event to delete. The
-  // deletion cascades to all rows referencing this event.
+  // Required. The unique identifier of the event to delete.
   entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
 }
 
