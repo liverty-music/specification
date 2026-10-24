@@ -44,5 +44,6 @@ Unchanged and relied on: `components/infrastructure/fan/web/global/event-detail-
   - The success token value.
   - The call sites listed in design (seven sizes, four status colors).
   - A stylelint check for undefined `--color-*` tokens.
-  - Updated Storybook baselines (`svg-icon`, `state-placeholder`, `page-header`, `inline-error`, `button`, `snack-bar`, `event-date-tabs`) where icon size or success color shows.
+  - No Storybook baseline changes: every storied component's icons pass an explicit `size`, and no baseline shows the success color. The icons whose size changes are on route screens, checked at 375 px.
+  - A paid ticket's journey node and filter chip take the success hue.
 - **backend, cloud-provisioning, proto**: none.

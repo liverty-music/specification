@@ -84,6 +84,7 @@ A story asserts that an unknown name renders no `<svg>`. A missing icon is then 
 | passkey-recovery "sent" | to `--color-success` |
 | Discovery followed check | from `--_green-90` to primary. A translucent variant, if needed, is `color-mix()` over the token. |
 | language check | already primary |
+| ticket PAID (journey node, filter chip) | `--journey-hue-paid` from 150deg to the success hue, 160deg; the node fill from 58% to 52% lightness so its white label reaches 4.5:1 (found by `/opsx:verify`) |
 
 ### D4. Success moves to `oklch(72% 0.17 160deg)`
 

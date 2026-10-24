@@ -24,7 +24,7 @@ The system SHALL provide a centralized `<svg-icon>` custom element as the single
 
 #### Scenario: Icon set coverage
 - **WHEN** the icon component is registered
-- **THEN** it SHALL include at minimum these icons: home, search, discover, music, my-artists, ticket, tickets, settings, check, alert-triangle, warning, info, x-circle, x, chevron-right, arrow-left, trash, plus, map-pin, calendar, link, clock, globe, bell, lock, mail, qr-code, list, grid
+- **THEN** it SHALL include at minimum these icons: home, search, discovery, music, my-artists, ticket, settings, check, alert-triangle, warning, info, x-circle, x, chevron-right, arrow-left, trash, plus, map-pin, calendar, link, clock, globe, bell, lock, mail, qr-code, list, grid
 
 #### Scenario: Color inheritance
 - **WHEN** `<svg-icon>` is placed inside a colored container
