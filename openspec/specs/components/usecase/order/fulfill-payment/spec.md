@@ -11,7 +11,7 @@ FulfillPayment SHALL take the card authorization of a completed charge and find 
 - a Checkout with Checkout.GetByCardAuthorizationID, for which it SHALL run OrderUseCase.IssueFromCheckout without a calling fan;
 - otherwise a LotteryEntry with LotteryEntry.GetByCardAuthorizationID, for which it SHALL run OrderUseCase.IssueFromCapturedWin.
 
-It SHALL then announce that the Order is paid, carrying the Order, its user, its event, its number of Tickets, its amount and its source. The announcement SHALL be deduplicated by the Order, so announcing the same Order again does not reach a consumer twice within the deduplication window, and consumers SHALL treat a repeated announcement of an Order as one.
+It SHALL then announce that the Order is paid, carrying the Order, its user, its event, its number of Tickets, its amount and its source. Each announcement is a new message, so a charge reported again announces the Order again; consumers that act on the Order SHALL treat a repeated announcement of an Order as one. The order-paid signal for product analytics is keyed by the announcement, so a charge reported again records a second order-paid signal for the same Order.
 
 When neither source has the card authorization, FulfillPayment SHALL succeed without effect. When issuing or announcing fails, FulfillPayment SHALL fail with that error, so the provider reports the charge again.
 
@@ -28,7 +28,7 @@ When neither source has the card authorization, FulfillPayment SHALL succeed wit
 #### Scenario: Charge reported twice
 
 - **WHEN** the same completed charge is reported twice
-- **THEN** one Order exists and its announcement reaches each consumer once
+- **THEN** one Order exists, it is announced twice, each consumer that acts on the Order acts on it once, and product analytics records two order-paid signals for that Order
 
 #### Scenario: Messaging unavailable
 
@@ -39,3 +39,15 @@ When neither source has the card authorization, FulfillPayment SHALL succeed wit
 
 - **WHEN** the charge belongs to no Checkout and no LotteryEntry
 - **THEN** FulfillPayment succeeds and nothing changes
+
+### Requirement: A paid order is reported for product analytics
+
+When FulfillPayment announces an Order as paid, an "order paid" signal for product analytics SHALL be sent for the fan, carrying the Order, its Event, the ticket count, the amount and currency, whether the Order came from a won LotteryEntry or a Checkout, and the Order's pay time as the time it happened. A redelivery of the same announcement SHALL be recorded once; a second announcement of the same Order is recorded again (see "Each completed charge ends in an announced Order"). A failure to send it SHALL NOT fail or undo the payment.
+
+#### Scenario: Paid checkout
+- **WHEN** a fan's Checkout for 2 tickets is paid
+- **THEN** one order-paid signal is sent with ticket count 2, the amount, the currency and the source Checkout
+
+#### Scenario: Announcement handled twice
+- **WHEN** the same paid announcement of one Order is delivered twice
+- **THEN** one order-paid signal is recorded for that Order, at its pay time

@@ -299,3 +299,11 @@ Wherever the welcome page shows the `[Log In]` CTA, it SHALL show a "can't sign 
 
 - **WHEN** the user taps the "can't sign in" link
 - **THEN** the app navigates to `/passkey-recovery`
+
+### Requirement: Starting onboarding is reported
+
+The landing page SHALL send one usage analytics event when a visitor taps `[Get Started]`.
+
+#### Scenario: Get Started
+- **WHEN** a guest taps `[Get Started]`
+- **THEN** one onboarding-started event is sent

@@ -23,7 +23,7 @@ RefundSold SHALL run every 1 minute over the listings from ResaleListing.ListSol
 
 ### Requirement: Refund announced
 
-For each listing it refunds, and for each listing from ResaleListing.ListSoldUnrefunded that has a refund time and no sold email send time, RefundSold SHALL announce that the listing was refunded, carrying the listing, its user, its Order and its event. The announcement SHALL be deduplicated by the listing, so announcing the same listing again does not reach a consumer twice within the deduplication window, and consumers SHALL treat a repeated announcement of a listing as one. A failed announcement SHALL NOT stop the other listings and is made again on the next run; the refund is not repeated.
+For each listing it refunds, and for each listing from ResaleListing.ListSoldUnrefunded that has a refund time and no sold email send time, RefundSold SHALL announce that the listing was refunded, carrying the listing, its user, its Order and its event. Each announcement is a new message; consumers SHALL treat a repeated announcement of a listing as one. A failed announcement SHALL NOT stop the other listings and is made again on the next run; the refund is not repeated.
 
 #### Scenario: Refund announced
 - **WHEN** a listing is refunded
