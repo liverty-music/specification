@@ -220,3 +220,11 @@ A kept code SHALL stay on the device across sign-up and sign-in, across other ta
 #### Scenario: Unknown event
 - **WHEN** a fan opens `/events/<id>?ref=member-a` of an event that is not found
 - **THEN** no code is kept
+
+### Requirement: Sharing and adding to a calendar are reported
+
+When the fan uses the share control or the add-to-calendar control of the Event page, the page SHALL send one usage analytics event naming the control, with the Event; for share, it SHALL also state whether the share completed or was cancelled where the device reports it.
+
+#### Scenario: Share
+- **WHEN** a fan shares the Event page and completes the share
+- **THEN** one share event is sent with the Event and the share completed
