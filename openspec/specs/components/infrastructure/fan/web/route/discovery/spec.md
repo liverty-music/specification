@@ -10,8 +10,8 @@ Lets a user discover and follow new artists through an interactive physics-based
 The system SHALL provide a gamified artist discovery interface using a "DNA Extraction" metaphor with an interactive orb (glass sphere) UI that collects user preferences, with visual differentiation per artist and onboarding guidance.
 
 #### Scenario: Initial bubble display with DNA Orb
-- **WHEN** a user reaches the Artist Discovery step after authentication
-- **THEN** the system SHALL display approximately 30 artist bubbles in the center area using physics-based animation
+- **WHEN** a guest or a signed-in fan opens the Discovery screen
+- **THEN** the system SHALL display up to 50 artist bubbles in the center area using physics-based animation, or up to 30 when the canvas is narrower than 390 px
 - **AND** the system SHALL display a "Music DNA Orb" (glass sphere UI) at the bottom of the screen
 - **AND** the orb SHALL serve as a visual inventory for collected artists
 
@@ -21,16 +21,14 @@ The system SHALL provide a gamified artist discovery interface using a "DNA Extr
 - **AND** the colors SHALL provide visual variety across the bubble field (not uniform purple)
 
 #### Scenario: Onboarding guidance overlay
-- **WHEN** the Artist Discovery screen is displayed for the first time during onboarding
-- **THEN** the system SHALL display a popover guide explaining the interaction (per `onboarding-popover-guide` capability)
-- **AND** the popover SHALL dismiss via light-dismiss or explicit close
+- **WHEN** the Discovery screen is displayed for the first time during onboarding
+- **THEN** the page-help sheet for Discovery SHALL open on its own, as the page-help surface's "Auto-open on First Page Visit" requirement states
+- **AND** the onboarding progress row SHALL be shown under the genre chips
 
 #### Scenario: Background visual depth
 - **WHEN** the Artist Discovery screen is displayed
 - **THEN** the background SHALL include subtle visual elements (e.g., particle field, starfield, or animated gradient) to create depth
 - **AND** these elements SHALL NOT compete with the foreground bubbles and orb for attention
-
----
 
 ### Requirement: Bubble Burst On Tap
 When a user taps an artist bubble, the system SHALL play a burst effect that makes the bubble visibly pop in place before the absorption-into-orb animation continues, providing tactile "pop" feedback while preserving the orb color-injection metaphor.
@@ -59,13 +57,13 @@ When a user taps an artist bubble, the system SHALL play a burst effect that mak
 ---
 
 ### Requirement: Similar Artist Chain Reaction
-The system SHALL generate new artist recommendations dynamically using the backend ArtistService.ListSimilar RPC with a limit parameter. The frontend SHALL call the Follow RPC when a user taps an artist bubble. The fetch SHALL NOT directly mutate the bubble pool — the caller SHALL manage eviction and insertion via `addToPool()`.
+The system SHALL generate new artist recommendations dynamically using the backend ArtistService.ListSimilar RPC with a limit parameter. Tapping an artist bubble SHALL follow the artist; the follow shows at once and does not wait for the server. New bubbles SHALL be added to the bubble field under the field's capacity and deduplication rules.
 
 #### Scenario: Similar artist bubble spawning
 - **WHEN** a user taps an artist bubble
 - **THEN** the system SHALL call the backend `ArtistService.ListSimilar` RPC with the selected artist's ID and `limit=30`
 - **AND** the system SHALL deduplicate the results (excluding seen and followed artists)
-- **AND** the system SHALL add results to the pool via `addToPool()`, evicting oldest bubbles if the pool would exceed 50
+- **AND** the system SHALL add the results to the bubble field, evicting the oldest bubbles if the field would exceed 50
 - **AND** evicted bubbles SHALL be faded out before new bubbles spawn
 - **AND** new bubbles representing similar artists SHALL spawn from the original bubble's position
 - **AND** the new bubbles SHALL appear with a "pop" emergence animation
@@ -73,16 +71,14 @@ The system SHALL generate new artist recommendations dynamically using the backe
 
 #### Scenario: Follow RPC called on bubble tap
 - **WHEN** a user taps an artist bubble
-- **THEN** the frontend SHALL call `this.artistClient.follow({ artistId: new ArtistId({ value: artist.id }) })`
-- **AND** the call SHALL be non-blocking (fire-and-forget with error logging)
-- **AND** the local state SHALL update immediately without waiting for the RPC response
+- **THEN** the artist SHALL show as followed at once, before any server answer
+- **AND** for a guest the follow SHALL be kept on the device and no request SHALL be sent for the follow itself
+- **AND** for a signed-in fan the follow SHALL be sent to the server, and if it fails the follow SHALL be undone and the artist's bubble SHALL return to the field
 
 #### Scenario: Similar artist spawning after search follow
 - **WHEN** a user follows an artist from the search results and the absorption animation completes
 - **THEN** the system SHALL trigger the same similar artist loading as a direct bubble tap
-- **AND** new similar artist bubbles SHALL spawn from the orb position
-
----
+- **AND** new similar artist bubbles SHALL spawn from the horizontal centre of the canvas, 17% of the canvas height from its top
 
 ### Requirement: Search result item is fully tappable
 Each search result item SHALL use the entire row as the interactive tap area, replacing the small follow button.
@@ -104,17 +100,6 @@ Each search result item SHALL use the entire row as the interactive tap area, re
 - **THEN** the row SHALL display a ✓ (check) icon
 - **AND** the row SHALL appear visually muted (reduced opacity or distinct styling)
 - **AND** tapping the row SHALL have no effect (no duplicate follow, no animation)
-
----
-
-### Requirement: Completion Action via DNA Orb
-The system SHALL use the DNA Orb as the primary navigation element to proceed to the dashboard.
-
-#### Scenario: Dashboard navigation button
-- **WHEN** the user has followed one or more artists
-- **THEN** the system SHALL display a tappable button on or near the DNA Orb
-- **AND** the button SHALL show the text: "[View Live Schedule (X artists)]" where X is the follow count
-- **AND** when tapped, the system SHALL proceed to the Dashboard
 
 ---
 
@@ -217,41 +202,22 @@ The system SHALL initialize the bubble pool differently based on whether the use
 - **AND** the restored followed artists SHALL be passed as input when initializing the bubble pool
 
 ### Requirement: Bubble pool deduplication
-The system SHALL remove duplicate and already-followed artists from the bubble pool. Follow state SHALL be provided externally via a `followedIds` parameter rather than tracked internally by the pool.
+The system SHALL remove duplicate and already-followed artists from the bubble field. The followed artists SHALL be the fan's current follows at the moment the field is produced or updated.
 
 #### Scenario: Deduplication on initial load (Step 2)
-- **WHEN** the bubble pool is populated from any source
-- **THEN** the caller SHALL provide a `followedIds: ReadonlySet<string>` parameter to the dedup method
-- **AND** the system SHALL remove artists that match any already-seen artist by name (case-insensitive), internal ID, or MBID
-- **AND** the system SHALL remove artists whose ID is in the provided `followedIds` set
-- **AND** the system SHALL cap the pool at a maximum of 50 bubbles
+- **WHEN** the bubble field is populated from any source
+- **THEN** the system SHALL remove artists that match any already-seen artist by name (case-insensitive), internal ID, or MBID
+- **AND** the system SHALL remove artists the fan currently follows
+- **AND** the system SHALL cap the field at a maximum of 50 bubbles
 
 #### Scenario: Deduplication after tap refill (Step 5)
-- **WHEN** similar artists are added to the pool after a tap
-- **THEN** the system SHALL apply the same deduplication rules as Step 2
-- **AND** the caller SHALL provide the current `followedIds` derived from the followed-artists state
+- **WHEN** similar artists are added to the field after a tap
+- **THEN** the system SHALL apply the same deduplication rules as Step 2, against the fan's current follows
 - **AND** already-seen artists from prior fetches SHALL be excluded
 
 #### Scenario: Deduplication on genre reload
-- **WHEN** the genre filter reloads the bubble pool
-- **THEN** the caller SHALL provide the current `followedIds` derived from the followed artists list
-- **AND** the system SHALL apply the same deduplication rules as Step 2
-
-### Requirement: Bubble pool cap and eviction on tap
-The system SHALL enforce the 50-bubble cap at **both** the pool layer and the physics engine. The physics engine SHALL never hold more than 50 active bodies at any time, regardless of the code path that triggered the addition.
-
-#### Scenario: Physics engine enforces the cap when bubbles are added
-- **WHEN** one or more artists are added as bubbles
-- **AND** the physics engine already holds 50 or more bodies
-- **THEN** the physics engine SHALL add no further bodies
-- **AND** it SHALL NOT throw — excess entries are silently skipped
-
-#### Scenario: Stale bodies removed on artist set replacement
-- **WHEN** the canvas receives a new set of real (non-ghost) artists
-- **AND** the physics engine already holds bodies from a previous artist set
-- **THEN** bodies whose artist ID is not present in the new set SHALL be faded out and removed from the physics engine
-- **AND** only after stale bodies are scheduled for removal SHALL the new artists be added
-- **AND** the total active body count SHALL remain within the 50-bubble cap throughout the transition
+- **WHEN** the genre filter reloads the bubble field
+- **THEN** the system SHALL apply the same deduplication rules as Step 2, against the fan's current follows
 
 ### Requirement: Tap-to-refill flow
 The system SHALL fetch similar artists on each bubble tap and manage the bubble pool's lifecycle accordingly.
@@ -264,14 +230,15 @@ The system SHALL fetch similar artists on each bubble tap and manage the bubble 
 - **AND** the cycle SHALL repeat for subsequent taps (Step 6)
 
 #### Scenario: No similar artists found
-- **WHEN** the `ListSimilar` response returns zero artists
-- **THEN** the system SHALL NOT evict any existing bubbles
-- **AND** the system SHALL display an informational toast notification to the user
+- **WHEN** the `ListSimilar` response leaves no new artist after deduplication
+- **THEN** the system SHALL first refill from the top artists, as "Canvas replenishes bubbles when similar artists are exhausted" states
+- **AND** only when the top artists also leave no new artist SHALL the system display an informational snack 「{{name}}の類似アーティストはこれ以上ありません」
+- **AND** the system SHALL NOT evict any existing bubbles
 
 #### Scenario: ListSimilar RPC failure
 - **WHEN** the `ListSimilar` call fails
 - **THEN** the system SHALL NOT evict any existing bubbles
-- **AND** the system SHALL display a warning toast notification to the user
+- **AND** the system SHALL display a warning snack to the user
 
 ### Requirement: Canvas replenishes bubbles when similar artists are exhausted
 When a user follows an artist and the similar-artist lookup returns no new (unseen) artists, the system SHALL automatically fetch replacement bubbles from the top-artist pool to keep the canvas populated.
@@ -283,8 +250,8 @@ When a user follows an artist and the similar-artist lookup returns no new (unse
 
 #### Scenario: Top artist pool also exhausted
 - **WHEN** user taps a bubble AND both similar artists and replacement bubbles return zero new artists
-- **THEN** the system SHALL gracefully accept an empty canvas without errors
-- **AND** the complete button (if visible) SHALL remain functional
+- **THEN** the system SHALL keep the remaining bubbles without an error
+- **AND** the system SHALL display the informational snack 「{{name}}の類似アーティストはこれ以上ありません」
 
 #### Scenario: Replacement bubbles partially available
 - **WHEN** user taps a bubble AND similar artists are exhausted but 5 of 50 top artists are unseen
@@ -388,7 +355,7 @@ When the user already follows artists, the initial load seeds bubbles from those
 - **THEN** the top-up SHALL be applied without starting a new `ArtistService.ListTop` call after the seed lookups finish
 
 ### Requirement: Physics layer is a pure projection of the field
-The physics/canvas layer SHALL render the field it is given and SHALL NOT own bubble policy. It SHALL NOT apply the capacity cap, deduplication, or followed-artist exclusion; those are guaranteed upstream by the field owner. The physics layer SHALL expose a reconcile operation that diffs its current bodies against a target `Artist[]` and applies only the additions and removals needed to match it.
+The physics/canvas layer SHALL render the field it is given and SHALL NOT own bubble policy. It SHALL NOT apply the capacity cap, deduplication, or followed-artist exclusion; those are guaranteed upstream by the field owner. The physics layer SHALL expose a reconcile operation that diffs its current bodies against a target `Artist[]` and applies only the additions and removals needed to match it. As a safety net it SHALL never hold more than 50 active bodies; an addition beyond 50 SHALL be skipped and logged, never dropped silently and never thrown.
 
 #### Scenario: Reconcile to a target list
 - **WHEN** the physics layer is asked to reconcile to a target field
@@ -403,7 +370,13 @@ The physics/canvas layer SHALL render the field it is given and SHALL NOT own bu
 #### Scenario: Physics never silently drops a target member
 - **WHEN** a reconcile target is applied
 - **THEN** the physics layer SHALL NOT silently discard any target artist due to a capacity check
-- **AND** if a hard safety cap is ever hit, it SHALL be logged rather than dropped silently
+- **AND** if the 50-body safety cap is ever hit, the skipped additions SHALL be logged rather than dropped silently
+
+#### Scenario: Stale bodies removed on artist set replacement
+- **WHEN** the canvas receives a new set of real (non-ghost) artists
+- **AND** the physics engine already holds bodies from a previous artist set
+- **THEN** bodies whose artist is not in the new set SHALL be faded out and removed
+- **AND** the total active body count SHALL remain within 50 throughout the transition
 
 ### Requirement: Bubble invariants are applied once at the field boundary
 The invariants — exclude followed artists, deduplicate by name/id/mbid, and enforce the 50-bubble capacity — SHALL be applied exactly once, when the field owner produces or updates the field. Downstream consumers (router hooks, genre/reset/search flows, the physics layer) SHALL NOT re-apply these invariants independently.
@@ -419,20 +392,20 @@ The invariants — exclude followed artists, deduplicate by name/id/mbid, and en
 - **AND** the physics layer SHALL receive a field already within capacity and SHALL NOT re-cap it
 
 ### Requirement: Bubble UI re-experience on Discover tab
-The system SHALL provide the onboarding Bubble UI as a reusable discovery experience on the Discover tab, with a simplified 3-row grid layout. After following an artist, the Discovery page SHALL call `ConcertService.ListByArtist` to check for existing concerts and update onboarding state. The page SHALL NOT call `SearchNewConcerts` directly.
+The system SHALL provide the onboarding Bubble UI as a reusable discovery experience on the Discover tab, with a simplified 3-row grid layout. After following an artist, the Discovery page SHALL call `ConcertService.ListByArtist` to check for existing concerts and update the onboarding progress row. The page SHALL NOT call `SearchNewConcerts` directly.
 
 #### Scenario: Default Bubble UI display
 - **WHEN** the Discover tab is opened
 - **THEN** the system SHALL display the physics-based artist Bubble UI (same as onboarding)
 - **AND** the DNA Orb SHALL be displayed at the bottom
-- **AND** tapping a bubble SHALL trigger the absorption animation and call `FollowService.Follow`
-- **AND** the page grid SHALL use `grid-template-rows: auto auto 1fr` (search bar, genre chips, bubble area)
+- **AND** tapping a bubble SHALL trigger the absorption animation and follow the artist (kept on the device for a guest, sent to the server for a signed-in fan)
+- **AND** the page SHALL be laid out as the search bar, the genre chips (with the onboarding progress row under them while onboarding), and the bubble area filling the rest
 
 #### Scenario: Genre filtering
 - **WHEN** the Bubble UI is displayed
 - **THEN** genre/tag chips SHALL be displayed above the bubble area (e.g., Rock, Pop, Anime, Jazz, Electronic, Hip-Hop)
 - **AND** tapping a genre chip SHALL regenerate bubbles with artists from that genre via `ArtistService.ListTop` with the selected tag
-- **AND** genre results SHALL be global (not country-filtered) due to Last.fm API constraints
+- **AND** genre results SHALL be global (not country-filtered), because the top-artist listing does not accept a genre and a country together
 - **AND** the active genre chip SHALL be visually highlighted
 
 #### Scenario: Genre deselection reverts to regional results
@@ -442,21 +415,21 @@ The system SHALL provide the onboarding Bubble UI as a reusable discovery experi
 - **AND** the system SHALL return to showing regional top artists
 
 #### Scenario: Already-followed artists
-- **WHEN** an artist bubble represents an already-followed artist
-- **THEN** the bubble SHALL be visually distinguished (e.g., dimmed, checkmark overlay)
-- **AND** tapping it SHALL NOT trigger a duplicate follow action
+- **WHEN** the bubble field is shown
+- **THEN** no bubble SHALL represent an artist the fan already follows, as "Bubble pool deduplication" states
+- **AND** a bubble SHALL leave the field as soon as its artist is followed
 
 #### Scenario: Concert check after follow uses List RPC
 - **WHEN** a user follows an artist from the Discovery page (bubble tap or search follow)
 - **THEN** the page SHALL call `ConcertService.ListByArtist(artistId)` to check for existing upcoming concerts
 - **AND** SHALL NOT call `SearchNewConcerts`
-- **AND** if concerts exist, the page SHALL show a snack notification and update the onboarding coach mark state
+- **AND** if concerts exist, the page SHALL show a snack notification and count the artist as having a found concert for the onboarding progress row
 
 #### Scenario: Concert check at page load uses List RPC
 - **WHEN** the Discovery page loads and there are pre-seeded guest follows
 - **THEN** the page SHALL call `ConcertService.ListByArtist(artistId)` for each followed artist
 - **AND** SHALL NOT call `SearchNewConcerts`
-- **AND** `artistsWithConcerts` SHALL be updated for each artist that has stored concerts
+- **AND** each artist that has stored concerts SHALL count as having a found concert for the onboarding progress row
 
 ### Requirement: Manual search on Discover tab
 The system SHALL provide a text search for targeted artist discovery.
@@ -472,16 +445,14 @@ The system SHALL provide a text search for targeted artist discovery.
 
 #### Scenario: Search results
 - **WHEN** search results are displayed
-- **THEN** each result SHALL show the artist name with a follow action button
-- **AND** tapping the follow button SHALL trigger the DNA Orb absorption effect
-- **AND** already-followed artists SHALL show a followed indicator instead of a follow button
+- **THEN** each result SHALL be a row tappable across its full area, as "Search result item is fully tappable" states
+- **AND** tapping an unfollowed row SHALL follow the artist and trigger the DNA Orb absorption effect
+- **AND** already-followed artists SHALL show a ✓ and SHALL NOT respond to a tap
 
 #### Scenario: Exiting search mode
 - **WHEN** a user clears the search text or taps the clear button
 - **THEN** the search results SHALL be hidden
 - **AND** the Bubble UI SHALL be restored
-
----
 
 ### Requirement: Search bar icon explicit sizing
 The search bar SVG icons SHALL have explicit intrinsic dimensions to prevent layout overflow.
@@ -501,15 +472,23 @@ The search bar SVG icons SHALL have explicit intrinsic dimensions to prevent lay
 ---
 
 ### Requirement: Bubble physics pauses when Discover tab is inactive
-The system SHALL manage Bubble UI resources efficiently when the tab is not active.
+The system SHALL manage Bubble UI resources efficiently while the bubble field is not visible.
+
+#### Scenario: Search mode pauses the simulation
+- **WHEN** the user enters search mode
+- **THEN** the physics simulation SHALL be paused, and it SHALL resume when search mode ends
+
+#### Scenario: Hidden document pauses the simulation
+- **WHEN** the document becomes hidden (the app goes to the background or the browser tab is switched)
+- **THEN** the physics simulation SHALL be paused, and it SHALL resume when the document is visible again
 
 #### Scenario: Tab deactivation
 - **WHEN** the user navigates away from the Discover tab
-- **THEN** the physics simulation SHALL be paused to conserve resources
+- **THEN** the physics simulation SHALL be stopped and its resources released
 
 #### Scenario: Tab reactivation
 - **WHEN** the user returns to the Discover tab
-- **THEN** the physics simulation SHALL resume from its paused state
+- **THEN** the bubble field SHALL be drawn again from the cached field, as "Discovery bubble pool caching on re-entry" states
 
 ### Requirement: Reset to Top 50 control
 The Discover tab SHALL provide a Reset control that returns the bubble field to the global Top 50 artists, independent of the user's followed artists. The control SHALL be an icon-only (refresh/reset) button placed at the leading edge of the genre row as a fixed sibling beside the horizontally-scrollable genre chips, so it remains visible while the chips scroll. The control SHALL expose an accessible label.
@@ -657,147 +636,32 @@ The tap and landing sounds SHALL honor the user's existing mute and volume prefe
 - **WHEN** audio has not yet been unlocked by a user gesture
 - **THEN** no AudioContext SHALL be forcibly started outside a gesture, consistent with the existing lazy-unlock behavior
 
-### Requirement: Interactive Artist Discovery (Bubble Network UI)
-
-The system SHALL provide an engaging, gamified interface for users to discover and follow artists using Last.fm API data. During onboarding, followed artists are stored locally (not via backend RPC). After each follow the system SHALL look up the artist's concerts already in the catalog and count the followed artists that have upcoming concerts; it SHALL NOT start a concert search itself (a first follow starts one on the server, as the story stories/follow-an-artist describes). A follow SHALL show at once; following an artist that is already followed SHALL change nothing; when a signed-in fan's follow fails, it SHALL be undone and the artist's bubble returns. The Coach Mark SHALL appear when the progression condition is reached and SHALL hint that the personal timetable is ready; it is owned by `CoachMarkService` (see `onboarding-spotlight`). Navigation to the Dashboard is never forced — the dashboard is always reachable and the user taps the Home nav tab at their own pace. Tapping the coach mark target SHALL navigate only; it SHALL NOT advance any onboarding step (there is no step machine).
-
-#### Scenario: Guest user follows artist via bubble tap
-
-- **WHEN** a guest user (in onboarding) taps an artist bubble
-- **THEN** the system SHALL trigger the absorption animation
-- **AND** the system SHALL store the artist locally (routed to the guest follow queue for unauthenticated users)
-- **AND** the system SHALL look up the artist's concerts already in the catalog
-- **AND** the system SHALL NOT call any backend RPC for the follow operation itself
-
-#### Scenario: Guest follow default hype level
-
-- **WHEN** a guest follows an artist
-- **THEN** the follow is kept on the device at hype level Nearby
-
-#### Scenario: Discover to Dashboard coach-mark trigger
-
-- **WHEN** a user is in onboarding (`isOnboarding === true`)
-- **AND** either the user has followed 5 or more artists, OR the live `artistsWithConcertsCount` >= 3
-- **AND** the coach mark has not yet been shown this session
-- **THEN** the system SHALL activate a coach mark spotlight on the Dashboard nav icon via `CoachMarkService`
-- **AND** the trigger SHALL be evaluated from live follow/concert counts on the Discovery screen, not from a mirrored count cache
-- **AND** the user MAY tap the Dashboard icon at any time (with or without the spotlight) to navigate to `/dashboard`
-- **AND** tapping the Dashboard icon SHALL navigate only and SHALL NOT advance any onboarding step
-
-#### Scenario: Coach Mark does not reappear
-
-- **WHEN** the coach mark has already been shown for the current onboarding session
-- **THEN** the system SHALL NOT display it again even if the user follows more artists
-
-#### Scenario: Pre-seeded follows on page reload
-
-- **WHEN** the discovery page loads during onboarding
-- **THEN** the system SHALL hydrate follows from the locally stored guest follows into the active follow list
-- **AND** the system SHALL look up the catalog's concerts for any artist not yet counted
-
-#### Scenario: Snack notification on concert found
-
-- **WHEN** the lookup for a followed artist finds at least one concert in the catalog
-- **THEN** the system SHALL display a snack notification indicating the artist has upcoming events
-
-#### Scenario: Following an already-followed artist
-
-- **WHEN** a fan taps an artist they already follow
-- **THEN** nothing changes and no request is sent
-
-#### Scenario: Signed-in follow fails
-
-- **WHEN** a signed-in fan follows an artist and the follow fails
-- **THEN** the artist is no longer shown as followed and its bubble returns to the field
-
-### Requirement: Artist discovery service manages bubble state with optimistic follow
-The `ArtistDiscoveryService` SHALL manage artist bubbles, track seen artists across three deduplication sets, and perform optimistic follow/unfollow with retry and rollback.
-
-#### Scenario: Load initial artists
-- **WHEN** `loadInitialArtists` is called
-- **THEN** it SHALL fetch artists from the backend, convert them to bubbles, and populate `availableBubbles`
-
-#### Scenario: Follow artist with optimistic update
-- **WHEN** `followArtist` is called with an artist
-- **THEN** it SHALL immediately add the artist to `followedArtists` before the backend call completes
-
-#### Scenario: Follow fails after retry — rollback
-- **WHEN** `followArtist` backend call fails and the retry also fails
-- **THEN** it SHALL remove the artist from `followedArtists` (rollback)
-
-#### Scenario: Deduplication across name, id, and mbid
-- **WHEN** an artist has already been seen (by name, id, or mbid)
-- **THEN** it SHALL NOT be added to `availableBubbles` again
-
-#### Scenario: Reload with genre tag
-- **WHEN** `reloadWithTag` is called with a genre tag
-- **THEN** it SHALL clear existing bubbles and fetch new artists filtered by the tag
-
-#### Scenario: Evict oldest bubbles
-- **WHEN** `evictOldest` is called with count N
-- **THEN** it SHALL remove the N oldest bubbles from `availableBubbles`
-
 ### Requirement: Discover page debounces search with stale response guard
-The `DiscoverPage` route SHALL debounce artist search input by 300ms and discard stale responses.
+The Discovery screen SHALL debounce artist search input by 300ms and discard stale responses.
 
 #### Scenario: Search is debounced
 - **WHEN** the search query changes
-- **THEN** `performSearch` SHALL NOT be called until 300ms after the last change
+- **THEN** no search request SHALL be sent until 300ms after the last change
 
 #### Scenario: Stale search response is discarded
 - **WHEN** the search query changes again before a previous search responds
 - **THEN** the previous response SHALL be discarded
 
 #### Scenario: Genre tag toggle activates and deactivates
-- **WHEN** a genre tag is selected and then selected again
-- **THEN** the first selection SHALL call `reloadWithTag` and the second SHALL call `loadInitialArtists`
+- **WHEN** a genre chip is selected and then selected again
+- **THEN** the first selection SHALL load the top artists of that genre and the second SHALL load the regional top artists with no genre
 
 #### Scenario: Clear search restores bubble view
-- **WHEN** `clearSearch` is called
+- **WHEN** the fan clears the search
 - **THEN** the search query SHALL be emptied and the bubble canvas SHALL resume
 
-### Requirement: Artist discovery page dismisses guidance overlay
-The `ArtistDiscoveryPage` route SHALL auto-dismiss the guidance overlay after 5 seconds with a 400ms fade animation.
-
-#### Scenario: Guidance auto-dismiss after 5 seconds
-- **WHEN** the component is attached
-- **THEN** the guidance overlay SHALL become hidden after 5000ms
-
-#### Scenario: Fade animation before removal
-- **WHEN** the guidance overlay begins dismissing
-- **THEN** a 400ms fade-out animation SHALL complete before the element is removed
-
-#### Scenario: Artist selection triggers follow and live event check
-- **WHEN** an artist is selected
-- **THEN** `followArtist` SHALL be called followed by `checkLiveEvents`
-
-### Requirement: Onboarding guidance rendered within unified DiscoverPage
-The onboarding guidance SHALL be rendered as a Popover API element within `DiscoverPage` at `/discover`, instead of as an inline grid row.
-
-#### Scenario: Onboarding user navigates to discover
-- **WHEN** `OnboardingService.isOnboarding` is `true` and the user navigates to `/discover`
-- **THEN** the onboarding popover guide SHALL be shown via `showPopover()`
-- **AND** the search bar and genre filter SHALL also be available
-- **AND** the discover page grid SHALL have 3 rows (`auto auto 1fr`), not 4
-
-#### Scenario: Normal user navigates to discover
-- **WHEN** `OnboardingService.isOnboarding` is `false` and the user navigates to `/discover`
-- **THEN** no onboarding popover SHALL be rendered
-- **AND** no CTA button SHALL be shown (bottom navigation provides transitions)
-
-#### Scenario: CTA button removed during onboarding
-- **REMOVED**: The "ダッシュボードを生成する" CTA button is removed from the discover page. The CTA is replaced by a coach mark spotlight on the nav-bar Dashboard icon (defined in `onboarding-tutorial` Step 1 completion).
-
-**Reason**: The nav-bar Dashboard icon spotlight teaches users about navigation while serving as the CTA. A separate button is redundant.
-**Migration**: Remove the `complete-button-wrapper` and `complete-button` elements from `discover-page.html`. CTA behavior is handled by the coach mark component targeting `[data-nav-dashboard]`.
-
 ### Requirement: Followed count reflects localStorage state
-The count of followed artists SHALL be an observable value that updates whenever the user follows, unfollows, or clears all followed artists, so that bindings re-evaluate immediately.
+The count of followed artists SHALL update at once whenever the fan follows, unfollows, or clears all followed artists, so that everything that shows the count changes immediately. The orb's intensity SHALL grow with the follows made during the current visit to Discovery.
 
 #### Scenario: Initial page load with existing guest data
-- **WHEN** the user navigates to `/discover` during onboarding and localStorage's guest followed-artists entry contains 3 artists
-- **THEN** the orb SHALL reflect the accumulated intensity for 3 follows
-- **AND** the coach-mark activation conditions SHALL evaluate correctly
+- **WHEN** an onboarding guest with 3 follows kept on the device opens Discovery
+- **THEN** the followed count is 3 and the onboarding progress row reflects the 3 follows
+- **AND** the orb starts at its resting size, since no follow has been made during this visit
 
 #### Scenario: Follow an artist during onboarding
 - **WHEN** the user taps a bubble to follow an artist
@@ -815,46 +679,7 @@ The search bar and genre filter chips SHALL be visible and functional during onb
 #### Scenario: Onboarding user searches for an artist
 - **WHEN** the user is in onboarding mode and types a query into the search bar
 - **THEN** search results SHALL appear and the user SHALL be able to follow artists from the results
-- **AND** the follow operation SHALL use the same unified flow (localStorage during onboarding)
-
-### Requirement: Popover guide on discover page entry during onboarding
-The system SHALL display a one-time popover guide when an onboarding user navigates to the discover page, using the native Popover API with `popover="auto"` for light-dismiss behavior.
-
-#### Scenario: Popover appears on onboarding entry
-- **WHEN** `OnboardingService.isOnboarding` is `true` and the user navigates to `/discover`
-- **THEN** the system SHALL call `showPopover()` on the guide element immediately upon component attachment
-- **AND** the popover SHALL display a message explaining the interaction (e.g., "ライブ情報を追いかけたいアーティストをタップしてフォローしよう")
-- **AND** the popover SHALL render in the top layer, outside the grid flow
-
-#### Scenario: Popover dismissed via light-dismiss
-- **WHEN** the popover is visible and the user taps outside the popover
-- **THEN** the popover SHALL close via the browser's native light-dismiss mechanism
-- **AND** no additional JavaScript dismiss handler SHALL be required
-
-#### Scenario: Popover entry animation uses CSS only
-- **WHEN** the popover opens
-- **THEN** the popover SHALL animate from `opacity: 0; translate: 0 1rem` to `opacity: 1; translate: 0 0` using `@starting-style` and `:popover-open`
-- **AND** the transition SHALL use `transition-behavior: allow-discrete` for `display` and `overlay` properties
-- **AND** only compositor-thread properties (`opacity`, `translate`) SHALL be animated
-
-#### Scenario: Popover exit animation
-- **WHEN** the popover is dismissed
-- **THEN** the popover SHALL animate from `opacity: 1; translate: 0 0` to `opacity: 0; translate: 0 1rem`
-- **AND** the `display` transition SHALL keep the element visible during the exit animation
-
-#### Scenario: Non-onboarding user does not see popover
-- **WHEN** `OnboardingService.isOnboarding` is `false` and the user navigates to `/discover`
-- **THEN** the popover element SHALL NOT be rendered in the DOM
-- **AND** `showPopover()` SHALL NOT be called
-
-#### Scenario: Popover shown only once per onboarding session
-- **WHEN** the user dismisses the popover and continues using the discover page
-- **THEN** the popover SHALL NOT reappear during the same page visit
-- **AND** if the user navigates away and returns to `/discover` while still onboarding, the popover MAY appear again (no cross-navigation persistence required)
-
-#### Scenario: Respects prefers-reduced-motion
-- **WHEN** the user has `prefers-reduced-motion: reduce` enabled
-- **THEN** the popover SHALL appear and disappear instantly without transition animations
+- **AND** the follow SHALL be kept the same way as a bubble-tap follow (on the device for a guest, on the server for a signed-in fan)
 
 ### Requirement: Search result follow triggers bubble view transition and absorption animation
 When a user follows an artist from the search results, the system SHALL transition back to the bubble view, wait for the canvas to be visible, and play the orb absorption animation, providing the same visual feedback as a direct bubble tap.
@@ -864,11 +689,11 @@ When a user follows an artist from the search results, the system SHALL transiti
 - **THEN** the system SHALL execute the follow action (optimistic UI update)
 - **AND** the system SHALL exit search mode (clear results, hide search result list)
 - **AND** the system SHALL resume the bubble canvas
-- **AND** the system SHALL wait for the canvas element to have non-zero dimensions (via `requestAnimationFrame`)
-- **AND** the system SHALL spawn a temporary bubble at the upper area of the bubble canvas (approximately 15-20% from top)
+- **AND** the system SHALL wait for the canvas to be visible with a non-zero size
+- **AND** the system SHALL spawn a temporary bubble at the horizontal centre of the canvas, 17% of the canvas height from its top
 - **AND** the system SHALL immediately start the absorption animation for that bubble toward the orb
 - **AND** on absorption completion, the orb SHALL absorb the bubble's hue
-- **AND** the system SHALL immediately dispatch the `need-more-bubbles` custom event to trigger similar artist loading (not deferred until absorption completion)
+- **AND** the system SHALL request similar artists immediately, not after the absorption completes
 
 #### Scenario: Search input is cleared after follow
 - **WHEN** a user follows an artist from the search results
@@ -880,19 +705,17 @@ When a user follows an artist from the search results, the system SHALL transiti
 - **AND** the follow action fails (network error or backend error)
 - **THEN** the system SHALL NOT exit search mode
 - **AND** the system SHALL NOT spawn or absorb a bubble
-- **AND** the system SHALL display an error toast notification
+- **AND** the system SHALL display an error snack telling the fan that the follow failed
 - **AND** the search results SHALL remain visible and interactive
 
 ### Requirement: Snack announces an artist's upcoming live events
 The system SHALL provide instant feedback about available live events with a snack.
 
 #### Scenario: Live event notification on artist follow
-- **WHEN** a user taps an artist bubble
-- **AND** the artist has upcoming live events in the database
-- **THEN** the system SHALL display a snack
-- **AND** the snack SHALL show the message: "🎫 [Artist Name] has upcoming live events!"
-- **AND** the snack SHALL remain visible for 2-3 seconds
-- **AND** the snack SHALL fade out smoothly
+- **WHEN** a user follows an artist
+- **AND** the artist has upcoming live events in the catalog
+- **THEN** the system SHALL display a snack with the message 「{{name}}の開催予定のライブが見つかりました！」
+- **AND** the snack SHALL stay for the duration the snack-bar surface sets for its length, then fade out
 
 #### Scenario: No notification for artists without events
 - **WHEN** a user taps an artist bubble
@@ -977,3 +800,96 @@ While the fan is a guest, each follow that takes effect SHALL send one usage ana
 #### Scenario: Ready while searching
 - **WHEN** an onboarding fan's follow from search results makes the progress row ready
 - **THEN** no timetable-ready event is sent until the search is closed and the row is shown
+
+### Requirement: Onboarding progress row
+While the fan is onboarding, the Discovery screen SHALL show a progress row directly under the genre chips that tells how close the fan's timetable is to ready. The row SHALL sit outside the bubble field, so it never overlaps a bubble or the orb. Its value SHALL be (followed artists without a found concert) / 5 + (followed artists with a found concert) / 3, capped at 1, where a concert is found for an artist when the catalog lookup after its follow returns at least one concert. Below 1 the row SHALL show the label 「タイムテーブル完成まで」, a bar filled to the value and the value in percent; the bar SHALL move to a new value with a short animation (none with a reduced-motion preference). At 1 the row SHALL become a button labelled 「完成しました！」 that opens the Dashboard, with an icon of the finished timetable that invites the tap in place of an arrow; its accessible name also says where it leads (「タイムテーブルを見る」). The row SHALL expose its value to assistive technology as a progress value from 0 to 100 percent. The row SHALL be hidden in search mode, like the genre chips, and SHALL NOT be shown once onboarding is complete.
+
+#### Scenario: Follow without a found concert
+- **WHEN** an onboarding fan with no follows follows an artist whose catalog lookup returns no concert
+- **THEN** the progress row shows 20 percent
+
+#### Scenario: Follow with a found concert
+- **WHEN** an onboarding fan with no follows follows an artist whose catalog lookup returns 2 concerts
+- **THEN** the progress row first shows 20 percent after the follow, and 33 percent once the lookup returns
+
+#### Scenario: Every follow advances the row
+- **WHEN** an onboarding fan follows 2 artists with found concerts and then 1 artist without a found concert
+- **THEN** the progress row moves from 67 percent to 87 percent
+
+#### Scenario: Ready by follows alone
+- **WHEN** an onboarding fan follows 5 artists and no lookup finds a concert
+- **THEN** the progress row becomes the 「完成しました！」 button
+
+#### Scenario: Ready by found concerts
+- **WHEN** an onboarding fan follows 3 artists and each lookup finds at least one concert
+- **THEN** the progress row becomes the 「完成しました！」 button
+
+#### Scenario: Button opens the Dashboard
+- **WHEN** the fan taps the 「完成しました！」 button
+- **THEN** the Dashboard opens
+
+#### Scenario: Already ready when Discovery opens
+- **WHEN** an onboarding guest whose stored follows already reach a value of 1 opens Discovery
+- **THEN** the button is shown as soon as the follows and their lookups are restored, without a further follow
+
+#### Scenario: The row never overlaps the bubble field
+- **WHEN** the progress row is shown on a 375 px wide screen
+- **THEN** no bubble and no part of the orb is drawn under the row
+
+#### Scenario: Search mode hides the row
+- **WHEN** the fan types in the search bar
+- **THEN** the progress row is hidden together with the genre chips, and returns when search mode ends
+
+#### Scenario: Onboarding complete
+- **WHEN** a fan whose onboarding is complete opens Discovery
+- **THEN** no progress row is shown
+
+#### Scenario: Screen reader
+- **WHEN** assistive technology reads the progress row at 40 percent
+- **THEN** it announces the label and a progress value of 40 percent
+
+### Requirement: Following artists on Discovery
+
+The system SHALL provide an engaging, gamified interface for users to discover and follow artists from the catalog's artist listings. A guest's follows are kept on the device and not sent to the server; a signed-in fan's follows are sent to the server. After each follow the system SHALL look up the artist's concerts already in the catalog and count the followed artists that have upcoming concerts; it SHALL NOT start a concert search itself (a first follow starts one on the server, as the story stories/follow-an-artist describes). A follow SHALL show at once; following an artist that is already followed SHALL change nothing; when a signed-in fan's follow fails, it SHALL be undone, the artist's bubble returns and an error snack is shown. While the fan is onboarding, the onboarding progress row SHALL show how close the timetable is to ready and SHALL turn into a button to the Dashboard when ready. Navigation to the Dashboard is never forced — the Dashboard is always reachable from the Home tab of the bottom navigation at the fan's own pace.
+
+#### Scenario: Guest user follows artist via bubble tap
+
+- **WHEN** a guest user (in onboarding) taps an artist bubble
+- **THEN** the system SHALL trigger the absorption animation
+- **AND** the system SHALL keep the follow on the device
+- **AND** the system SHALL look up the artist's concerts already in the catalog
+- **AND** the system SHALL NOT call any backend RPC for the follow operation itself
+
+#### Scenario: Guest follow default hype level
+
+- **WHEN** a guest follows an artist
+- **THEN** the follow is kept on the device at hype level Nearby
+
+#### Scenario: Ready timetable is offered without a spotlight
+
+- **WHEN** an onboarding fan's follows reach the ready value of the onboarding progress row
+- **THEN** the row becomes the 「完成しました！」 button
+- **AND** no spotlight or coach mark is shown on the bottom navigation
+- **AND** the fan MAY open the Dashboard from the Home tab at any time, ready or not
+
+#### Scenario: Pre-seeded follows on page reload
+
+- **WHEN** the discovery page loads during onboarding
+- **THEN** the system SHALL restore the follows kept on the device into the active follow list
+- **AND** the system SHALL look up the catalog's concerts for every restored artist
+
+#### Scenario: Snack notification on concert found
+
+- **WHEN** the lookup for a followed artist finds at least one concert in the catalog
+- **THEN** the system SHALL display a snack notification indicating the artist has upcoming events
+
+#### Scenario: Following an already-followed artist
+
+- **WHEN** a fan taps an artist they already follow
+- **THEN** nothing changes and no request is sent
+
+#### Scenario: Signed-in follow fails
+
+- **WHEN** a signed-in fan follows an artist and the follow fails
+- **THEN** the artist is no longer shown as followed and its bubble returns to the field
+- **AND** an error snack tells the fan that the follow failed

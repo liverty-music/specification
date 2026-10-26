@@ -8,263 +8,176 @@ Shows a single, transient spotlight overlay with a tooltip that highlights one U
 
 ### Requirement: Spotlight Visual Layer via Box-Shadow
 
-The coach mark spotlight SHALL use a CSS Anchor Positioning hybrid approach. A `.visual-spotlight` element SHALL be positioned over the target using `anchor()` functions in `inset` properties, with `box-shadow: 0 0 0 100vmax` to create the dark overlay and a transparent cutout. The element SHALL use `border-radius: var(--spotlight-radius)` for shape control and `pointer-events: none` to allow click-through.
+The coach mark SHALL dim the whole viewport to 70% black except for a cutout over its target, and SHALL outline the cutout with the brand accent border. The cutout SHALL extend 8px beyond the target on every side and SHALL use the corner radius the screen gives for its target (12px when none is given). The dim layer SHALL never take taps: a tap on the dimmed area reaches the page beneath it.
 
 #### Scenario: Spotlight renders with rounded cutout over target
 
-- **WHEN** a coach mark is activated with a target selector
-- **THEN** the system SHALL position a `.visual-spotlight` element using CSS `anchor()` functions referencing the target's anchor name
-- **AND** the spotlight SHALL create a dark overlay (70% opacity) across the entire viewport via `box-shadow: 0 0 0 100vmax`
-- **AND** the spotlight cutout SHALL match the target's border-radius via `var(--spotlight-radius)`
-- **AND** the spotlight element SHALL have `pointer-events: none`
+- **WHEN** a coach mark is shown for a target
+- **THEN** the viewport outside the cutout is dimmed to 70% black
+- **AND** the cutout shows the target undimmed with rounded corners
+- **AND** a tap on the dimmed area reaches the page element beneath it
 
 #### Scenario: Spotlight shape adapts per step
 
-- **WHEN** the coach mark targets a circular element (e.g., nav icon)
-- **THEN** `--spotlight-radius` SHALL be set to `50%`
-- **WHEN** the coach mark targets a rectangular element (e.g., concert card)
-- **THEN** `--spotlight-radius` SHALL be set to `12px`
+- **WHEN** the screen gives a corner radius of 50% for a circular target
+- **THEN** the cutout is a circle
+- **WHEN** the screen gives no corner radius
+- **THEN** the cutout corners are 12px
 
 #### Scenario: Spotlight cutout has padding around target
 
 - **WHEN** the spotlight is positioned over a target element
-- **THEN** the spotlight cutout SHALL extend 8px beyond the target's bounding box on all sides (via `margin: -8px`)
+- **THEN** the cutout extends 8px beyond the target's bounds on all sides
 
 ### Requirement: Coach Mark Overlay System
 
-The system SHALL provide a reusable coach mark overlay component that highlights a target element as a non-blocking hint. Coach mark state (target selector, message, radius, active flag, and `onTap` callback) SHALL be owned by a dedicated `CoachMarkService`, not by `OnboardingService`. The `aria-label` on the tooltip SHALL be `"Onboarding tip"`. Navigation SHALL be delegated to the target element's native click behavior; the coach mark SHALL NOT call `router.load()`. The `onTap` callback SHALL NOT advance any onboarding step (there is no step machine); it MAY perform incidental non-navigation side effects only. Target selectors SHALL be scoped to a specific component context (e.g., `concert-highway [data-stage="home"]`) to prevent matching elements in unrelated components.
+The system SHALL provide a reusable coach mark surface that highlights one target element as a non-blocking hint with a short message. The screen that uses a coach mark SHALL name its target within its own content (for example, the first concert card of the Welcome demo timetable), so that the coach mark never highlights an element of another surface. The message SHALL carry the accessible label "Onboarding tip". A tap on the highlighted target SHALL perform the target's own action, exactly as a tap on the target would without the coach mark, and SHALL then close the coach mark. The coach mark SHALL render as a fixed layer over the whole viewport that never takes taps itself, except over the highlighted target.
 
 #### Scenario: Spotlight renders for active coach mark
 
-- **WHEN** a coach mark is activated via `CoachMarkService`
-- **THEN** the system SHALL display the spotlight overlay with instructional text
-- **AND** the tooltip `aria-label` SHALL be `"Onboarding tip"`
+- **WHEN** a screen shows a coach mark
+- **THEN** the spotlight and the message appear over the target
+- **AND** the message's accessible label is "Onboarding tip"
 
 #### Scenario: Nav tab tap through spotlight delegates to href
 
-- **WHEN** a coach mark spotlight is active on a nav tab element
-- **AND** the user taps the spotlighted element
-- **THEN** the system SHALL call `currentTarget.click()` to fire the element's native click event
-- **AND** the system SHALL call the `onTap?.()` callback (for incidental side effects only, never step advancement)
-- **AND** the system SHALL NOT call `router.load()` from within the coach mark component or its `onTap` callback
+- **WHEN** a coach mark highlights a link
+- **AND** the user taps the highlighted link
+- **THEN** the link navigates as a direct tap on it would
+- **AND** the coach mark closes
+
+#### Scenario: Target tap performs the target's own action
+
+- **WHEN** the Welcome demo coach mark highlights a concert card
+- **AND** the visitor taps the highlighted card
+- **THEN** the concert detail sheet for that card opens, as a direct tap on the card opens it
+- **AND** the coach mark closes
 
 #### Scenario: Off-target tap light-dismisses without blocking the page
 
-- **WHEN** a coach mark spotlight is active
+- **WHEN** a coach mark is shown
 - **AND** the user taps the dimmed area outside the highlighted target
-- **THEN** the coach mark SHALL be light-dismissed
-- **AND** the tap SHALL still reach the underlying page (the dim layer is `pointer-events: none`; there is no full-viewport click-blocker)
-- **AND** page scroll SHALL remain enabled
+- **THEN** the coach mark closes
+- **AND** the tap still reaches the underlying page
+- **AND** page scroll remains enabled
 
 #### Scenario: Target selector is scoped to component context
 
-- **WHEN** `CoachMarkService.activate()` is called with a target selector
-- **THEN** the selector SHALL include a component-scoped prefix (e.g., `concert-highway [data-stage="home"]` instead of bare `[data-stage="home"]`)
-- **AND** `document.querySelector()` SHALL NOT match elements in unrelated components (e.g., `page-help` decorative labels)
-
-### Requirement: Spotlight Uses Popover Top Layer
-
-The coach mark overlay container SHALL use `popover="manual"` to render on the browser's top layer, eliminating z-index stacking context issues.
-
-#### Scenario: Spotlight renders above all page content
-
-- **WHEN** the coach mark is activated
-- **THEN** the overlay container SHALL call `showPopover()` to enter the top layer
-- **AND** the spotlight SHALL render above all other content regardless of z-index
-
-#### Scenario: Popover UA styles are neutralized
-
-- **WHEN** the popover is displayed
-- **THEN** the container SHALL have `background: transparent`, `border: none`, `padding: 0`, `margin: 0`
-- **AND** `::backdrop` SHALL be set to `display: none`
+- **WHEN** the Welcome demo shows its coach mark
+- **THEN** the coach mark highlights a concert card of the demo timetable
+- **AND** it never highlights an element of another surface, such as a help sheet
 
 ### Requirement: Route Detach Spotlight Cleanup
 
-When a route hosting an active coach mark detaches (user navigates away), the spotlight SHALL be deactivated via the `detaching()` lifecycle hook to prevent orphaned View Transitions and popover state. Note: `unloading()` (router lifecycle) is also a valid placement since it runs earlier in the navigation sequence (`canUnload → canLoad → unloading → loading → detaching`), but `detaching()` is chosen for consistency with existing cleanup code (AbortController, timers, scroll listeners) already in this hook.
+When the user leaves a screen that shows a coach mark, the coach mark SHALL close and leave nothing on screen.
 
 #### Scenario: Route detaching cleans up spotlight
-- **WHEN** the host route's `detaching()` lifecycle hook fires
-- **THEN** `CoachMarkService.deactivate()` SHALL be called
-- **AND** any in-progress View Transition SHALL be safely terminated
+
+- **WHEN** a coach mark is shown on a screen
+- **AND** the user navigates to another screen
+- **THEN** the coach mark closes before the next screen shows
+- **AND** no spotlight, message or dimmed layer remains
 
 #### Scenario: Navigation during active spotlight does not throw
-- **WHEN** the spotlight is active with a View Transition in progress
-- **AND** the user navigates to another route (via nav tab, browser back, or coach mark tap)
-- **THEN** the route transition SHALL complete without throwing "Transition was aborted because of invalid state"
-- **AND** no unhandled promise rejection SHALL be emitted
 
-### Requirement: Coach Mark Target Click Delegates Navigation to Aurelia Router
-
-The coach mark's `target-interceptor` div overlays the actual target element. When the user taps the interceptor, it programmatically calls `currentTarget.click()` on the real target element. For navigation targets (e.g., `<a>` with `href`), this `.click()` triggers Aurelia Router's `href` intercept, which handles the route transition declaratively. The `onTap` callback SHALL only perform incidental application side effects (never onboarding step advancement, which no longer exists) and SHALL never call imperative `router.load()`.
-
-#### Scenario: Nav link target navigates via Aurelia Router href intercept
-- **WHEN** the coach mark target is a navigation link (e.g., `<a data-nav="home" href="dashboard">`)
-- **AND** the user taps the `target-interceptor` overlay
-- **THEN** `currentTarget.click()` SHALL fire on the `<a>` element
-- **AND** Aurelia Router's `useHref` intercept SHALL handle the resulting click event as a declarative route transition
-- **AND** the `onTap` callback SHALL NOT advance any onboarding step
-- **AND** `router.load()` SHALL NOT be called imperatively from the `onTap` callback
-
-#### Scenario: Non-nav target triggers onTap callback for application logic
-- **WHEN** the coach mark target is a non-navigation element (e.g., concert card)
-- **AND** the user taps the `target-interceptor` overlay
-- **THEN** `currentTarget.click()` SHALL fire on the target element, triggering its bound event handlers
-- **AND** the `onTap` callback SHALL be invoked for incidental application logic only (e.g., opening a detail sheet), never onboarding step advancement
-
-### Requirement: Smooth Spotlight Movement via View Transitions API
-
-The spotlight SHALL animate smoothly when moving between targets, both within the same page (e.g., lane introduction sequence) and across route navigations (e.g., Discovery → Dashboard → My Artists). The `.visual-spotlight` element SHALL use `view-transition-name: spotlight` to enable browser-native cross-fade/slide animation.
-
-#### Scenario: Same-page target change (lane introduction)
-
-- **WHEN** the spotlight target changes within the same page (e.g., HOME STAGE → NEAR STAGE → AWAY STAGE → concert card)
-- **THEN** the system SHALL wrap the anchor-name reassignment in `document.startViewTransition()`
-- **AND** the spotlight SHALL slide smoothly from the old target position to the new target position
-- **AND** the animation duration SHALL be approximately 400ms with an ease-out curve
-
-#### Scenario: Cross-route target change
-
-- **WHEN** a route navigation occurs while the spotlight is active (e.g., Discovery Dashboard icon → Dashboard lane header, or Dashboard My Artists tab → My Artists Passion Level)
-- **THEN** the system SHALL use `document.startViewTransition()` to wrap the navigation
-- **AND** the spotlight SHALL animate from its previous position to the new target on the destination page
-- **AND** the tooltip text SHALL update to the new step's message
-- **AND** the popover SHALL NOT be closed during the transition
-
-#### Scenario: Reduced motion preference
-
-- **WHEN** the user has `prefers-reduced-motion: reduce` enabled
-- **THEN** the View Transition animation SHALL be suppressed (instant position change)
-- **AND** the spotlight SHALL still appear at the correct target position
+- **WHEN** a coach mark is shown
+- **AND** the user navigates away by any means (a link, browser back, or a tap on the highlighted target)
+- **THEN** the navigation completes without an error
 
 ### Requirement: Tooltip Anchor Positioning
 
-The coach mark tooltip SHALL be positioned using CSS Anchor Positioning relative to the target element.
+The coach mark message SHALL be placed directly below its target, and above the target when there is not enough room below it in the viewport.
 
 #### Scenario: Tooltip appears below target
 
-- **WHEN** the coach mark is active
-- **THEN** the tooltip SHALL use `position-anchor` referencing the target's anchor name
-- **AND** the tooltip SHALL use `position-area: block-end` as the default placement
-- **AND** the tooltip SHALL use `position-try-fallbacks: flip-block, flip-inline` for overflow handling
+- **WHEN** a coach mark is shown and there is room below the target
+- **THEN** the message appears directly below the target
+
+#### Scenario: Message flips above the target
+
+- **WHEN** a coach mark is shown and the message does not fit below the target
+- **THEN** the message appears directly above the target
 
 ### Requirement: Tooltip Visual Treatment
 
-The coach mark tooltip SHALL render with a transparent background, allowing the text to float directly on the dark overlay.
+The coach mark message SHALL render as white text with no background or shadow, directly on the dimmed layer, in the app's base UI font, at most 320px wide, and SHALL break Japanese text at phrase boundaries with balanced line lengths.
 
 #### Scenario: Tooltip renders without solid background
 
-- **WHEN** the coach mark tooltip is displayed
-- **THEN** `.coach-mark-tooltip` SHALL have `background: transparent`
-- **AND** `.coach-mark-tooltip` SHALL have `filter: none` (no drop-shadow)
-- **AND** the tooltip text color SHALL remain `var(--color-white)`
-- **AND** the tooltip message SHALL use the app's base UI font (no bespoke web font)
-- **AND** the tooltip SHALL be visually readable against the 70% black overlay
+- **WHEN** the coach mark message is displayed
+- **THEN** the text is white on the 70% black dimmed layer with no background box or shadow
+- **AND** the text uses the app's base UI font
 
-### Requirement: Inline SVG Directional Arrow
+#### Scenario: Japanese message breaks at phrase boundaries
 
-The tooltip SHALL include a hand-drawn style directional arrow rendered as inline SVG. No external image assets (`<img>`, `.png`, `.svg` files) SHALL be used. The arrow SHALL visually connect the tooltip to the spotlight target.
-
-#### Scenario: Arrow direction adapts to tooltip placement
-
-- **WHEN** the tooltip is positioned below the target (`position-area: block-end`)
-- **THEN** the arrow SVG SHALL render an upward-pointing curved path connecting from the tooltip toward the target
-- **WHEN** the tooltip is positioned above the target (via `position-try-fallbacks: flip-block`)
-- **THEN** the arrow SVG SHALL render a downward-pointing curved path
-- **AND** the arrow direction SHALL be selected using Aurelia `switch.bind` on the resolved `position-area`
-
-#### Scenario: Arrow drawing animation on appearance
-
-- **WHEN** the tooltip first appears or the target changes
-- **THEN** the arrow path SHALL animate with a drawing effect using `stroke-dasharray` / `stroke-dashoffset` over approximately 600ms
-- **AND** the arrowhead SHALL fade in after the line drawing completes (300ms delay)
-
-#### Scenario: Arrow inherits theme color
-
-- **WHEN** the tooltip is rendered
-- **THEN** the SVG SHALL use `stroke="currentColor"` to inherit the tooltip's text color
-- **AND** the arrow SHALL automatically adapt to theme changes without separate assets
-
-#### Scenario: Arrow with reduced motion preference
-
-- **WHEN** the user has `prefers-reduced-motion: reduce` enabled
-- **THEN** the drawing animation SHALL be disabled (arrow appears immediately)
-- **AND** the arrow SHALL still be visible in its final drawn state
+- **WHEN** the message 「カードをタップして、チケットや会場をチェック」 wraps onto two lines
+- **THEN** no word such as 「チケット」 is split across the lines
 
 ### Requirement: Invisible Target Rejection
 
-The `findAndHighlight()` method SHALL reject target elements that are invisible (zero dimensions) and continue retry logic as if the element was not found.
+The coach mark SHALL treat a target with zero width and zero height as not yet present, keep looking for a visible target for up to 5 seconds after the screen asks for it, and SHALL show nothing if no visible target appears within those 5 seconds.
 
 #### Scenario: Zero-dimension target is skipped
 
-- **WHEN** `document.querySelector(targetSelector)` returns an element
-- **AND** the element has zero width and zero height (`getBoundingClientRect()` returns 0×0)
-- **THEN** the system SHALL treat the element as not found
-- **AND** the system SHALL continue exponential backoff retry logic
+- **WHEN** the target element exists but has zero width and zero height
+- **THEN** the coach mark is not shown yet
+- **AND** it is shown as soon as the target becomes visible within 5 seconds
 
 #### Scenario: Hidden element in closed popover is skipped
 
-- **WHEN** a matching element exists inside a closed popover or `display: none` container
-- **AND** the element's bounding rect has zero dimensions
-- **THEN** the system SHALL skip this element
-- **AND** the system SHALL retry until a visible matching element appears or timeout is reached
+- **WHEN** the target matches an element inside a closed sheet or a hidden container, so it has zero size
+- **THEN** the coach mark is not shown for that element
+- **AND** it keeps looking for a visible target until 5 seconds have passed
 
-### Requirement: Single Transient Non-Blocking Coach Mark
+#### Scenario: Target never becomes visible
 
-With the step machine removed, the coach mark SHALL be a single, transient, non-blocking hint rather than a multi-step blocking overlay. At most one coach mark SHALL be active at a time. It SHALL NOT lock page scroll and SHALL NOT block interaction with the rest of the page; it visually highlights its target and lets the user keep using the app. State and lifecycle are owned by `CoachMarkService` (`activate` / `deactivate`), and the `<coach-mark>` component SHALL be placed once at the app-shell level, driven by `CoachMarkService` (target selector, message, radius, active flag, `onTap`). The coach mark SHALL be dismissed when the user taps its target, taps the dimmed area outside the target (light-dismiss, via a document-level `pointerdown` capture listener — not a backdrop or `z-index`), or when the host route detaches.
+- **WHEN** no visible target appears within 5 seconds
+- **THEN** the coach mark is not shown
+
+### Requirement: One non-blocking coach mark rendered by the screen that uses it
+
+The coach mark SHALL be a single, transient, non-blocking hint. At most one coach mark SHALL be shown at a time. It SHALL NOT lock page scroll and SHALL NOT block interaction with the rest of the page. The screen that uses a coach mark SHALL render it within that screen; today the only such screen is Welcome, for its demo timetable. The coach mark SHALL close when the user taps its target, taps outside it, or leaves the screen.
 
 #### Scenario: Coach mark does not block the rest of the page
 
-- **WHEN** a coach mark is active
-- **THEN** the page outside the highlighted target SHALL remain interactive (no full-viewport click-blockers)
-- **AND** page scroll SHALL NOT be locked (`<au-viewport>` `overflow` SHALL NOT be forced to `hidden`)
-- **AND** the dashboard is reachable at any time, consistent with the soft gate
+- **WHEN** a coach mark is shown
+- **THEN** the page outside the highlighted target remains interactive
+- **AND** page scroll is not locked
 
-#### Scenario: Single coach mark driven from the app shell
+#### Scenario: Only the Welcome demo shows a coach mark
 
-- **WHEN** the coach mark is active
-- **THEN** the `<coach-mark>` component SHALL be rendered once in the app shell, not in individual route templates
-- **AND** `CoachMarkService` SHALL drive its target selector, message, spotlight radius, and active state
-- **AND** no more than one coach mark SHALL be active simultaneously
+- **WHEN** a fan uses Discovery, the Dashboard or My Artists
+- **THEN** no coach mark is shown on those screens
+- **WHEN** a visitor reaches the interactive timetable of the Welcome demo
+- **THEN** the Welcome screen may show its coach mark, and at most one coach mark is shown
 
-#### Scenario: Coach mark dismissed on target tap, outside tap, or route detach
+#### Scenario: Coach mark closes on any tap or on leaving the screen
 
-- **WHEN** the user taps the coach mark target, OR taps the dimmed area outside it, OR the host route's `detaching()` lifecycle hook fires
-- **THEN** `CoachMarkService.deactivate()` SHALL be called
-- **AND** the document-level `pointerdown` light-dismiss listener SHALL be removed
-- **AND** the spotlight, tooltip, and any anchor-name SHALL be fully cleaned up
+- **WHEN** the user taps the coach mark target, OR taps outside it, OR leaves the screen
+- **THEN** the coach mark closes and its spotlight, message and dimmed layer are removed
 
-### Requirement: Coach Mark Navigation Delegation
+### Requirement: Welcome demo coach mark timing
 
-The system SHALL delegate navigation from coach mark taps to the target element's native href, not to a separate `router.load()` call.
-
-#### Scenario: Nav tab tap through coach mark
-
-- **WHEN** a coach mark spotlight is active on a nav tab
-- **AND** the user taps the spotlighted nav tab
-- **THEN** the nav tab's native click event SHALL handle navigation
-- **AND** the system SHALL NOT call `router.load()` from the `onTap` callback
-
-### Requirement: Coach mark is an independent, non-blocking hint
-
-The coach mark SHALL be a single, transient, non-blocking hint, owned independently of onboarding state. It is activated on the discovery page when the user is in the onboarding flow and the live counts cross the threshold (5 or more followed artists, OR 3 or more followed artists with concerts), and dismissed on target tap or route detach. It SHALL NOT lock scroll or block off-target interaction, and tapping it SHALL navigate only (no state mutation).
+The coach mark SHALL be owned independently of onboarding state and SHALL never change it. On Welcome, the coach mark SHALL appear 5 seconds after the demo timetable becomes interactive, highlighting the first concert card with the message 「カードをタップして、チケットや会場をチェック」, unless the visitor has already tapped a card. It SHALL not be remembered: it can appear again on a later visit to Welcome.
 
 | Action       | From       | To         |
 |--------------|------------|------------|
 | Activation   | `inactive` | `active`   |
 | Deactivation | `active`   | `inactive` |
 
-#### Scenario: Coach mark activates when thresholds cross
+#### Scenario: Coach mark appears after 5 seconds
 
-- **WHEN** the user is in the onboarding flow AND (5 or more artists are followed OR 3 or more followed artists have concerts)
-- **THEN** the coach mark SHALL move from `inactive` to `active`
+- **WHEN** the Welcome demo timetable has been interactive for 5 seconds
+- **AND** the visitor has not tapped a concert card
+- **THEN** the coach mark moves from `inactive` to `active` on the first concert card
 
-#### Scenario: Coach mark deactivates on tap or route detach
+#### Scenario: A card tap before 5 seconds cancels the coach mark
 
-- **WHEN** the coach-mark target is tapped OR the route detaches
-- **THEN** the coach mark SHALL move from `active` to `inactive`
+- **WHEN** the visitor taps a concert card before the 5 seconds pass
+- **THEN** the coach mark does not appear on that visit to the demo
 
-#### Scenario: Coach mark does not block interaction
+#### Scenario: Welcome coach mark deactivates on tap or leaving
 
-- **WHEN** the coach mark is `active`
-- **THEN** it SHALL NOT lock scroll or block off-target interaction
-- **AND** tapping it SHALL navigate only, with no onboarding-state mutation
+- **WHEN** the highlighted card is tapped, OR the visitor taps outside it, OR leaves Welcome
+- **THEN** the coach mark moves from `active` to `inactive`
+- **AND** onboarding state is unchanged

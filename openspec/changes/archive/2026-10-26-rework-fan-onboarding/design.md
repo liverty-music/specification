@@ -20,11 +20,16 @@ See proposal.md for the motivation. Everything here is in the fan web app (front
 
 ## Decisions
 
-### 1. Make every Dashboard load produce a `timetableLoaded` false→true edge
+### 1. The rendered timetable is cached for the inputs it was built from
 
-In the fast path of `loadData()`, set `timetableLoaded = false` before `reflectCachedGroups()` sets it to `true`. `@observable` calls `timetableLoadedChanged(true)` on the second assignment, so the region-select arrival reaches `onTimetableReady()` like the cold path.
+The Dashboard paints the timetable it rendered last (`ConcertStore`, a session singleton) before the background refresh. That cache was one slot for every input, cleared by hand where a caller remembered to: a signed-in follow change and a date-filter change cleared it; a home-area choice and a guest follow did not. A guest who chose a home area on arrival therefore got the timetable built without a home area, which had no concert, so the celebration decision saw zero concerts and was skipped while the latch still fired (production check after v1.127.0, 2026-10-24).
 
-Alternative: call `onTimetableReady()` directly from `onHomeSelected()`. Rejected: it adds a second trigger next to the observed one, and the spec requires the decisions to follow observed data arrival (route/dashboard "Data-ready side effects gate on observed data arrival"). `maybeCelebrate()` and `maybeFinishOnboarding()` already guard against running twice (`celebrationShown`, `isOnboarding`).
+Each input is now handled by its owner:
+
+- The Dashboard's own inputs, the home area (it decides the HOME / NEAR / AWAY lanes) and the date window, form the cache key. `peekDateGroups(key)` returns the timetable only for the same key, and the scroll place is kept with it and survives only a refresh of the same timetable. Choosing a home area or another window reads under a new key, so the Dashboard loads the right timetable and every arrival produces the `timetableLoaded` false→true edge the observed side effects need. The date filter no longer clears anything by hand.
+- The follow set belongs to `FollowStore`, which clears the cache on every follow and unfollow, guest or signed in (before, only signed-in changes did). It is not part of the key because a signed-in fan's follow list can arrive after the timetable's first load, which would split one timetable over two keys and lose the scroll place (caught by the timetable-window E2E).
+
+Alternatives: clear the cache in `onHomeSelected` (rejected: one more hand-placed invalidation, and the guest-follow and Settings home-area paths would stay wrong); reset `timetableLoaded` on the cached path (tried first, rejected: it re-ran the decision on the wrong data).
 
 ### 2. Celebration numbers come from the loaded timetable
 
@@ -55,13 +60,16 @@ Alternatives (the plan asked the user, who chose the row): a ring around the orb
 
 `onShowDashboardCoachMarkChanged`, `onCoachMarkTap` and the `ICoachMarkService` use leave `DiscoveryRoute`. Discovery was the only caller of `CoachMarkService`. The Welcome demo renders its own `<coach-mark>` driven by local state. So the shell-level `<coach-mark>` in `app-shell.html` and `CoachMarkService` are deleted, and the `<coach-mark>` component stays for Welcome (coach-mark delta "One non-blocking coach mark rendered by the screen that uses it").
 
+Discovery reports `onboarding.timetable.ready` with the two counts, once per visit, when the row becomes the link to the Dashboard. It replaces `onboarding.coachmark.shown`, which reported the removed coach mark; expand-product-analytics' discovery delta is rewritten to match (user decision, 2026-10-24).
+
 ### 5. Celebration effects
 
 - Scrim: `--_scrim` about 74% dark plus `backdrop-filter: blur(6px)`, which replaces the light-scrim-plus-text-lens approach.
 - Confetti: about 40 pieces generated in the view model with random CSS custom properties (angle, distance, size, shape, duration, spin). One `@keyframes` reads them, so the burst starts from the centre without 30 hand-written `nth-child` rules.
 - Headline: one keyframe that goes 0.8 → 1.1 → 1.0.
-- Sound: a new synthesized `playCelebration()` on the existing `AudioEngine`, the Web Audio engine that plays the Discovery pop. It reads the same `muted` and volume settings, so it needs no new setting.
-- Vibration: `navigator.vibrate?.([30, 40, 60])`. There is no vibrate on iOS, so it is a no-op there.
+- Sound: a synthesized "cheers" (`celebration-sounds.ts` `playCheers`): a confetti-popper crack, then a cheering crowd (noise through two vowel formants), applause (many short noise claps) and a two-finger whistle, in a small stereo room (generated convolution reverb, a gentle compressor). It plays through the existing `AudioEngine`, so it follows the same `muted` and volume settings and needs no new setting. Chosen by the user from five candidates (party popper, fanfare, level-up, cheers, orchestra hit) on 2026-10-26; the first version, a plain triangle-wave arpeggio, sounded like a phone notification.
+- Vibration: `[30, 40, 60]` through the existing `HapticService.pulse()`, which wraps `navigator.vibrate`. There is no vibrate on iOS, so it is a no-op there.
+- Both need user activation: the celebration opens on a page loaded by the OIDC redirect, where Chrome blocks `navigator.vibrate` and keeps Web Audio suspended until the fan taps. The overlay gives sound and vibration only when `navigator.userActivation.hasBeenActive` is true (a fan who chose the home area on arrival has tapped); otherwise it shows the burst alone. The user chose this over playing them on the dismissing tap (2026-10-24).
 - `prefers-reduced-motion`: no confetti, scaling or vibration. The sound still plays unless muted.
 
 ### 6. Post-signup dialog becomes a small step machine
@@ -93,25 +101,23 @@ Deleted:
 
 Old keys are left in storage; nothing reads them.
 
+Usage analytics (shipped by expand-product-analytics) stays one path: every permission request goes through `PushService.create(source)`, and `NotificationManager` reports the answer as `notification.permission.result`. `accept()` takes the source: `notification_prompt` for the hype-change offer (the notification prompt surface) and `post_signup_dialog` for the sheet. The legacy `notification.requested` event, sent only by the removed toast and duplicating the answer report, is removed with it.
+
 Alternatives:
 - Keep the toast and add the hype snack. Rejected: three places would ask the same question.
 - Offer in Discovery when the catalog already has concerts. Rejected: it reaches only signed-in fans following already-searched artists (see Context).
 
-### 8. Welcome analytics line and the details page
+### 8. No analytics notice on screen; the privacy policy publishes it
 
-Both Get Started placements in `welcome-route.html` get two lines. 「オフにできます」 links to the Settings analytics toggle and 「詳しく」 links to `/consent`. The `/consent` page stays as the details page that names the recipient, the data and the purpose, and links the privacy policy. Its `analytics.noticeSeen` write is removed, because nothing reads it and the notice is now always visible.
+The onboarding story required a "final step" analytics notice that no screen ever showed. The duty behind it is to notify or publish: the purpose of use (APPI) and, for data sent from the fan's device, the data, the recipient and the purpose (外部送信規律). The privacy policy, a public page, already publishes all of them (its purpose-of-use and external-transmission sections), so the notice requirement is removed and no screen repeats it. The opt-out stays in Settings, with `/consent` as the details page. This is an engineering reading, not legal advice.
 
-Legal basis:
-- 外部送信規律 requires the data, the recipient and the purpose to be notified or published. The privacy policy publishes all three, and the line links to them.
-- APPI cross-border transfer relies on the EU adequacy decision, which is stated in the privacy policy.
-
-The line names no country and no vendor, by the user's choice. This is an engineering reading, not legal advice.
+A two-line notice under the Welcome Get Started buttons, linking to the Settings opt-out and `/consent`, shipped in #867 and was removed on 2026-10-26 by the user's decision: it squeezed the demo timetable and was not required. The `/consent` page's unused `analytics.noticeSeen` write stays removed.
 
 ### 9. Small code fixes
 
 - A failed follow from search results, or from a bubble tap by a signed-in fan, publishes the existing unused `discovery.followFailed` snack.
 - `settings.analytics.toggleDescription` (ja and en) drops "匿名" and says that no name or email is sent.
-- The My Artists help text describes the dot selector and Edit in the action menu.
+- The My Artists help text names Edit in the action menu at the bottom centre (the FAB is centred in the navigation bar's notch); the hype dots explain themselves, so the help does not describe them.
 
 ## Risks / Trade-offs
 
@@ -126,3 +132,13 @@ The line names no country and no vendor, by the user's choice. This is an engine
 - Ship as one frontend PR. There is no data migration; old localStorage keys are ignored.
 - Verify on production: unit tests, then the Playwright guest journey used in the investigation (fresh context, analytics blocked). It covers follow → progress row → home area → celebration → `onboardingComplete === 'true'`. The dev environment is stopped, so production is the check.
 - Rollback: revert the PR. Nothing persists that the old code cannot read.
+
+## Manual verification
+
+These scenarios describe what a person sees, hears or feels; no automated test can judge them.
+
+- @spec-manual components/infrastructure/fan/web/global/celebration-overlay "Empty-state text behind the post-signup celebration cannot be read" -- checked on the Storybook story CelebrationOverlay / Post Signup Over Empty State: the empty-state line is not readable through the scrim, the two celebration lines are.
+- @spec-manual components/infrastructure/fan/web/global/celebration-overlay "Heading and sub-text stay legible over bright cards" -- checked on the Storybook story CelebrationOverlay / Light Over Timetable: card colours show faintly, no card text is readable, the three lines are.
+- @spec-manual components/infrastructure/fan/web/global/celebration-overlay "Timetable colors remain visible at the screen edges" -- checked on the same story, at the screen edges.
+- @spec-manual components/infrastructure/fan/web/global/celebration-overlay "Post-signup confetti, sound and vibration" -- checked on an Android device in Chrome after a sign-up: burst, headline overshoot, one sound, one vibration. The unit tests cover the muted and reduced-motion cases.
+- @spec-manual components/infrastructure/fan/web/route/discovery "Background visual depth" -- checked on the Discovery screenshots of task 2.6: the starfield sits behind the bubbles and the orb without competing with them.

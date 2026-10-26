@@ -9,9 +9,9 @@ A guest who follows artists and then chooses a home area on the Dashboard never 
 - **Post-signup celebration**: a darker, blurred scrim, a centre burst of varied confetti, a bouncing headline, a sound that follows the mute setting and a vibration where supported. Copy: 「ようこそ！もうライブは見逃さない」 / 「新着ライブは、Liverty Music が追いかけます！」.
 - **Post-signup sheet becomes two steps, one primary action each**: step 1 says the search for the fan's followed artists has started and asks to turn on notifications; step 2 asks to add the app to the home screen, shown only where the browser can install it and it is not installed. On iOS without the app installed, the sheet shows the add-to-home-screen steps instead, because web push there works only for an installed app.
 - **Where push permission is asked**: the post-signup sheet, a snack offer when a signed-in fan changes an artist's hype on My Artists, and the Settings toggle. The hype offer appears at most once per session and stops after the fan declines it 3 times; it never appears after the browser blocked notifications. **The second-session notification toast is removed.**
-- **Welcome analytics line**: under both Get Started buttons, 「使いやすさの改善のため、利用状況を分析しています。分析に名前やメールアドレスは使いません。」 with links to turn analytics off and to the details page. This replaces the onboarding "final step" notice that nothing ever showed.
+- **Analytics notice**: the onboarding "final step" notice that nothing ever showed is removed. The privacy policy already publishes what analytics sends, to whom and for what; no screen needs to repeat it.
 - **Spec drift**: delete requirements for removed features (popover guide, guidance overlay, orb "View Live Schedule" button, search-status polling, `onboardingStep` migration, `redirectBasedOnStatus`, coach-mark SVG arrow and View Transitions) and rewrite the rest to match the code (route names, the Home tab, follow-store behaviour, snack copy and timing, coach-mark top-layer model).
-- **Copy fixes**: My Artists help describes the dot selector and the Edit action in the action menu; Settings stops calling signed-in analytics "anonymous".
+- **Copy fixes**: My Artists help names Edit in the action menu at the bottom centre; Settings stops calling signed-in analytics "anonymous".
 - **Code fixes found on the way**: a failed follow from search results shows an error snack.
 
 ## Capabilities
@@ -25,7 +25,6 @@ None.
 - `stories/complete-onboarding`: remove the search-status polling, `redirectBasedOnStatus` and legacy-migration requirements; the latch fires on every successful sign-in or sign-up; the analytics notice moves from a final onboarding step to the Welcome line.
 - `components/infrastructure/fan/web/route/discovery`: progress row replaces the coach-mark trigger; delete and rewrite the drifted requirements.
 - `components/infrastructure/fan/web/route/dashboard`: the data-ready side effects also fire after the home area is chosen on arrival.
-- `components/infrastructure/fan/web/route/welcome`: the analytics line under the Get Started buttons.
 - `components/infrastructure/fan/web/route/my-artists`: the push offer on hype change; help content matches the current controls.
 - `components/infrastructure/fan/web/global/celebration-overlay`: light-tier conditions and copy with counts; post-signup copy, scrim, burst, sound and vibration.
 - `components/infrastructure/fan/web/global/post-signup-dialog`: two-step sheet and the iOS branch.

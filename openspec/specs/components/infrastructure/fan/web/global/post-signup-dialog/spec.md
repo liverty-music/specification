@@ -6,85 +6,6 @@ Consolidates notification permission and PWA install prompts into a single dialo
 
 ## Requirements
 
-### Requirement: Post-Signup Dialog on First Authentication
-
-The system SHALL display a dialog after the first successful **sign-up** that consolidates a celebration message with optional power-up actions (notification permission, PWA install), without front-loading guidance for features the user has not yet encountered.
-
-Whether an authenticated callback is treated as a first sign-up SHALL be determined by the **flow the user initiated** — the sign-up flow versus the sign-in flow — carried as a signal that round-trips through the OIDC authorization request and back to the auth-callback. It SHALL NOT be inferred solely from the absence of a locally cached user identifier, because a returning user can arrive with an empty local cache (new browser or device, cleared storage, or a prior anonymous/guest session that never cached an identifier) and MUST NOT be treated as a new sign-up.
-
-#### Scenario: Dialog shown after first signup
-
-- **WHEN** the auth-callback route completes an authenticated callback whose originating flow is the **sign-up** flow
-- **AND** `localStorage['postSignup.shown']` is not set
-- **THEN** the system SHALL set `localStorage['postSignup.shown']` to the pending marker
-- **AND** the system SHALL navigate to `/dashboard`
-- **AND** the Dashboard SHALL display the post-signup dialog on load
-
-#### Scenario: Dialog not shown on subsequent logins
-
-- **WHEN** the auth-callback route completes for a returning user
-- **AND** `localStorage['postSignup.shown']` is already set
-- **THEN** the system SHALL NOT show the post-signup dialog
-
-#### Scenario: Sign-in with an empty local cache does not trigger the dialog
-
-- **WHEN** the auth-callback route completes an authenticated callback whose originating flow is the **sign-in** flow
-- **AND** no user identifier is cached locally (e.g. a new browser/device, cleared storage, or a prior guest session)
-- **THEN** the system SHALL NOT set `localStorage['postSignup.shown']` to the pending marker
-- **AND** the system SHALL NOT display the celebration overlay or the post-signup dialog
-- **AND** the user SHALL be navigated to `/dashboard` without a first-run payoff
-
-#### Scenario: Dialog content leads with celebration
-
-- **WHEN** the post-signup dialog is displayed
-- **THEN** the first content row SHALL be a celebration message acknowledging completion of onboarding
-- **AND** it SHALL offer a notification opt-in action if notification permission has not yet been requested
-- **AND** it SHALL show a notification denied message if notification permission has been denied
-- **AND** it SHALL offer a PWA install action if the app is installable and not yet installed
-- **AND** it SHALL provide a dismiss/close action in the footer
-
-#### Scenario: Footer button label when all actions are complete
-
-- **WHEN** the post-signup dialog is displayed
-- **AND** the app is not installable (already installed, or the browser lacks install support)
-- **AND** notification permission has been granted
-- **THEN** the footer button SHALL display the label "Close"
-
-#### Scenario: Footer button label when actions remain
-
-- **WHEN** the post-signup dialog is displayed
-- **AND** either the app is still installable OR notification permission has not been granted
-- **THEN** the footer button SHALL display the label "Later"
-
-#### Scenario: Notification opt-in from dialog
-
-- **WHEN** the user taps the notification opt-in button in the post-signup dialog
-- **THEN** the system SHALL call `PushService.create()` (backed by `PushSubscriptionService.Create` RPC)
-- **AND** the system SHALL NOT write any `localStorage` flag for push notification enabled state
-- **AND** on success, the notification row SHALL show a confirmed state
-- **AND** on failure or denial, the notification row SHALL show an error state
-- **AND** the settings page SHALL subsequently derive the toggle state from the backend via `PushSubscriptionService.Get` without relying on any `localStorage` flag
-
-#### Scenario: PWA install from dialog — native prompt
-
-- **WHEN** the user taps the install button in the post-signup dialog
-- **AND** the native install prompt has been captured
-- **THEN** the system SHALL trigger the deferred `beforeinstallprompt` event
-
-#### Scenario: PWA install row hidden on iOS Safari
-
-- **WHEN** the post-signup dialog is displayed
-- **AND** the browser does not support the `BeforeInstallPromptEvent` API (i.e. iOS Safari)
-- **THEN** the PWA install row SHALL NOT be shown in the dialog
-- **AND** the persistent `pwa-install-banner` provides the iOS install path instead
-
-#### Scenario: Dialog dismissed
-
-- **WHEN** the user taps the dismiss button
-- **THEN** the post-signup dialog SHALL close
-- **AND** the notification prompt SHALL NOT be shown again in the same session (coordinated via the prompt coordination)
-- **AND** the `pwa-install-banner` SHALL become visible (it is not suppressed by post-signup dialog dismissal)
-
 ### Requirement: Dialog reliably opens when active is true at creation time
 The post-signup dialog SHALL reliably open when `active` is bound to `true` at component creation time, not only when `active` transitions from `false` to `true` after the component is attached.
 
@@ -96,88 +17,45 @@ The post-signup dialog SHALL reliably open when `active` is bound to `true` at c
 - **AND** the dialog SHALL be visible to the user with its full content
 
 ### Requirement: Dialog title and aria-label use i18n bindings
-All user-visible strings in the post-signup dialog SHALL use i18n translation bindings. No hardcoded display strings are permitted in the template.
-
-#### Scenario: Title renders in active locale
-- **WHEN** the post-signup dialog is displayed
-- **AND** the active locale is `en`
-- **THEN** the `<h2>` title SHALL render using the `postSignup.title` translation key in the EN translation
-- **AND** the rendered text SHALL be in English (e.g., `Account registration complete!`)
+All user-visible strings in the post-signup dialog SHALL come from the translation resources of the active locale. No display string is fixed in the markup.
 
 #### Scenario: Title renders in Japanese locale
-- **WHEN** the post-signup dialog is displayed
+- **WHEN** the notification step is displayed
 - **AND** the active locale is `ja`
-- **THEN** the `<h2>` title SHALL render using the `postSignup.title` translation key in the JA translation
-- **AND** the rendered text SHALL be `✅ アカウント登録完了！`
+- **THEN** the title SHALL read 「新着ライブをいち早くお知らせ」
+
+#### Scenario: Title renders in active locale
+- **WHEN** the notification step is displayed
+- **AND** the active locale is `en`
+- **THEN** the title SHALL be the English equivalent of the Japanese title
 
 #### Scenario: aria-label follows active locale
 - **WHEN** the post-signup dialog is displayed
 - **AND** the active locale is `en`
-- **THEN** the wrapping `<bottom-sheet>` element SHALL have an `aria-label` rendered from the `postSignup.ariaLabel` translation key in the EN translation
+- **THEN** the dialog's accessible name SHALL be the English text of the dialog label
 
 #### Scenario: Translation key parity
-- **WHEN** `postSignup.title` or `postSignup.ariaLabel` keys exist in the Japanese translation resource
-- **THEN** the same keys SHALL exist in the English translation resource
-
-### Requirement: Dialog footer button reflects completion state
-
-The footer button label in the post-signup dialog SHALL dynamically reflect whether the user has completed all available actions.
-
-#### Scenario: Button switches to "Close" after enabling notifications
-
-- **WHEN** the user taps the notification opt-in button
-- **AND** enabling push notifications succeeds
-- **AND** installing the app as a PWA is not offered (no separate install action is pending)
-- **THEN** the notification permission SHALL become granted
-- **AND** all available actions SHALL be considered complete
-- **AND** the footer button SHALL display "Close"
+- **WHEN** a string of the post-signup dialog exists in the Japanese translation resource
+- **THEN** the same string SHALL exist in the English translation resource
 
 ### Requirement: Celebration Precedes Post-Signup Dialog
 
-On the post-signup dashboard redirect, the full (confetti) celebration overlay SHALL be shown before the PostSignupDialog. The PostSignupDialog SHALL open when the celebration overlay is dismissed, sequencing the emotional payoff ahead of the functional setup actions.
+On the post-signup Dashboard redirect, the full (confetti) celebration overlay SHALL be shown before the post-signup dialog. When the celebration overlay is dismissed, the post-signup dialog SHALL open if it has at least one step to show, sequencing the emotional payoff ahead of the setup actions; when it has no step to show, nothing opens after the celebration.
 
 #### Scenario: Dialog opens after celebration dismissal
 
 - **WHEN** a newly signed-up user is redirected to the dashboard
-- **AND** the full celebration overlay (per `onboarding-celebration` "Two-Tier Celebration Overlay") is shown
-- **THEN** the system SHALL NOT display the PostSignupDialog while the celebration overlay is visible
-- **AND** the system SHALL display the PostSignupDialog once the celebration overlay is dismissed
+- **AND** the full celebration overlay (per the celebration overlay "Two-Tier Celebration Overlay") is shown
+- **AND** the post-signup dialog has at least one step to show
+- **THEN** the system SHALL NOT display the post-signup dialog while the celebration overlay is visible
+- **AND** the system SHALL display the post-signup dialog once the celebration overlay is dismissed
 
 #### Scenario: Region selection still precedes both
 
 - **WHEN** a newly signed-up user is redirected to the dashboard
-- **AND** `needsRegion` is `true`
+- **AND** the user has no home area yet
 - **THEN** the system SHALL resolve the home-area selection first
-- **AND** only then evaluate the celebration overlay, followed by the PostSignupDialog on dismissal
-
-### Requirement: PWA Install Row Shows Fallback Instructions When Native Prompt Unavailable
-
-When the browser supports PWA install but the native prompt has not been captured, the post-signup dialog SHALL show a manual install guide rather than hiding the row.
-
-#### Scenario: Install row shows "How to add" disclosure when deferredPrompt is absent
-
-- **WHEN** the post-signup dialog is displayed
-- **AND** the browser supports PWA install
-- **AND** the native install prompt has not yet been captured
-- **THEN** the install row SHALL display a "How to add" disclosure control (a native `<details>`/`<summary>` rendered as a button) instead of the native install button
-- **AND** the disclosure SHALL be collapsed by default (the instruction steps hidden)
-
-#### Scenario: Toggling "How to add" reveals inline instructions
-
-- **WHEN** the user activates the "How to add" disclosure (click, or keyboard via the native `<summary>`)
-- **THEN** the install row SHALL expand to show numbered steps for browser-menu-based installation:
-  1. Open the browser menu (⋮)
-  2. Select "Add to Home Screen"
-  3. Tap "Add" to finish
-- **AND** the "How to add" summary SHALL remain visible above the expanded steps and stay toggleable (the native disclosure can be collapsed again)
-
-#### Scenario: Install row reactively upgrades to native button on prompt arrival
-
-- **WHEN** the post-signup dialog is open
-- **AND** the browser fires `beforeinstallprompt` (native prompt arrives after dialog opened)
-- **THEN** the native install prompt becomes available
-- **AND** the install row SHALL update reactively to show the native install button
-- **AND** the "How to add" disclosure SHALL be replaced by the native install button
+- **AND** only then evaluate the celebration overlay, followed by the post-signup dialog on dismissal
 
 ### Requirement: Sign-up from an event page skips the celebration and the dialog
 
@@ -192,3 +70,111 @@ A sign-up that the fan started on an Event page SHALL NOT show the celebration o
 
 - **WHEN** a guest starts sign-up from the Welcome page and completes it
 - **THEN** the celebration overlay and then the post-signup dialog are shown on the Dashboard
+
+### Requirement: Post-signup dialog asks one thing per step
+
+The system SHALL display a dialog after the first successful **sign-up** that asks for at most one thing per step: first to turn on notifications, then to add the app to the home screen. Each step SHALL show exactly one primary action and a 「あとで」 text action that moves on. A step whose question is already answered on this device SHALL be skipped, and when no step remains the dialog SHALL NOT open.
+
+Whether an authenticated callback is treated as a first sign-up SHALL be determined by the **flow the user initiated** — the sign-up flow versus the sign-in flow — carried as a signal that round-trips through the authorization request and back to the auth-callback. It SHALL NOT be inferred solely from the absence of a locally cached user identifier, because a returning user can arrive with an empty local cache (new browser or device, cleared storage, or a prior guest session that never cached an identifier) and MUST NOT be treated as a new sign-up.
+
+#### Scenario: Dialog shown after first signup
+
+- **WHEN** the auth-callback route completes an authenticated callback whose originating flow is the **sign-up** flow
+- **AND** the post-signup dialog has never been scheduled on this device
+- **THEN** the system SHALL schedule the post-signup celebration and dialog
+- **AND** the system SHALL navigate to `/dashboard`
+- **AND** the Dashboard SHALL show the celebration and then the dialog
+
+#### Scenario: Dialog not shown on subsequent logins
+
+- **WHEN** the auth-callback route completes for a returning user
+- **AND** the post-signup dialog was already scheduled on this device
+- **THEN** the system SHALL NOT show the post-signup dialog
+
+#### Scenario: Sign-in with an empty local cache does not trigger the dialog
+
+- **WHEN** the auth-callback route completes an authenticated callback whose originating flow is the **sign-in** flow
+- **AND** no user identifier is cached locally (e.g. a new browser/device, cleared storage, or a prior guest session)
+- **THEN** the system SHALL NOT schedule the post-signup celebration and dialog
+- **AND** the user SHALL be navigated to `/dashboard` without a first-run payoff
+
+#### Scenario: Both steps in order
+
+- **WHEN** the dialog opens on a browser where notification permission is not yet decided and the app can be installed but is not installed
+- **THEN** the dialog SHALL first show the notification step
+- **AND** after the fan taps 「通知をオンにする」 or 「あとで」, the dialog SHALL show the install step
+- **AND** after the fan taps 「ホーム画面に置く」 or 「あとで」 on the install step, the dialog SHALL close
+
+#### Scenario: Notification already decided
+
+- **WHEN** the dialog opens and notification permission is already granted or blocked
+- **THEN** the notification step SHALL be skipped
+
+#### Scenario: Nothing left to ask
+
+- **WHEN** notification permission is already decided and the app is installed or cannot be installed
+- **THEN** the dialog SHALL NOT open after the celebration
+
+### Requirement: Notification step says the search has started
+
+The notification step SHALL show the title 「新着ライブをいち早くお知らせ」, the body 「フォロー中の{{count}}組のライブを探し始めました。見つかったら通知で届けます。」 where count is the number of artists the fan follows (when the fan follows none, the body is 「新しいライブが見つかったら、通知で届けます。」), the primary action 「通知をオンにする」 and the text action 「あとで」. Tapping 「通知をオンにする」 SHALL open the browser permission prompt immediately, as a direct result of the tap. When the fan allows, the fan's browser SHALL be registered for push and the dialog moves on; when the fan blocks or the registration fails, the step SHALL say so in one line, telling the fan that it can be changed later in Settings, and the dialog moves on when the fan taps 「次へ」.
+
+#### Scenario: Fan follows five artists
+
+- **WHEN** the notification step opens for a fan who follows 5 artists
+- **THEN** the body SHALL read 「フォロー中の5組のライブを探し始めました。見つかったら通知で届けます。」
+
+#### Scenario: Fan follows no artist
+
+- **WHEN** the notification step opens for a fan who follows no artist
+- **THEN** the body SHALL read 「新しいライブが見つかったら、通知で届けます。」
+
+#### Scenario: Fan allows notifications
+
+- **WHEN** the fan taps 「通知をオンにする」 and allows in the browser prompt
+- **THEN** the fan's browser SHALL be registered for push
+- **AND** the Settings notification toggle SHALL show on afterwards
+- **AND** the dialog SHALL move to the next step, or close when none remains
+
+#### Scenario: Fan blocks notifications
+
+- **WHEN** the fan taps 「通知をオンにする」 and blocks in the browser prompt
+- **THEN** the step SHALL show one line saying notifications are blocked and can be changed later in Settings
+- **AND** tapping 「次へ」 SHALL move to the next step, or close the dialog when none remains
+
+### Requirement: Install step asks for one thing
+
+The install step SHALL be shown only when the browser can install the app and the app is not installed. It SHALL say what the fan gains, not name the task: the app icon, the title 「ワンタップでタイムテーブルへ」, the body 「ホーム画面に置いておけば、アプリのようにすぐ開けます。」, the primary action 「ホーム画面に置く」 and the text action 「あとで」. When the browser offers its own install prompt, 「ホーム画面に置く」 SHALL open it; otherwise 「ホーム画面に置く」 SHALL reveal 3 numbered steps for adding the app from the browser menu: open the browser menu (⋮), choose 「ホーム画面に追加」, tap 「追加」. If the browser's own install prompt becomes available while the step is open, 「ホーム画面に置く」 SHALL open it from then on.
+
+#### Scenario: Browser offers an install prompt
+
+- **WHEN** the install step is shown and the browser offers its own install prompt
+- **AND** the fan taps 「ホーム画面に置く」
+- **THEN** the browser's install prompt SHALL open
+- **AND** the dialog SHALL close after the prompt is answered
+
+#### Scenario: No install prompt available
+
+- **WHEN** the install step is shown and the browser offers no install prompt
+- **AND** the fan taps 「ホーム画面に置く」
+- **THEN** the 3 numbered menu steps SHALL appear in the step
+
+#### Scenario: App already installed
+
+- **WHEN** the dialog runs and the app is already installed
+- **THEN** the install step SHALL NOT be shown
+
+### Requirement: iOS and iPadOS show the add-to-home-screen steps instead
+
+On iOS and iPadOS when the app is not installed, the dialog SHALL show a single step instead of both steps, because notifications there work only for an app added to the home screen. The step SHALL show the title 「新着ライブをいち早くお知らせ」, the body 「iPhone では、ホーム画面に追加すると通知を受け取れます。」, 3 numbered steps (tap the share button, choose 「ホーム画面に追加」, open the app from the new icon) and the text action 「あとで」. It SHALL NOT show a 「通知をオンにする」 action.
+
+#### Scenario: iPhone without the app installed
+
+- **WHEN** the dialog opens on an iPhone in Safari and the app is not on the home screen
+- **THEN** the dialog SHALL show the title, the body and the 3 numbered steps
+- **AND** no 「通知をオンにする」 action SHALL be shown
+
+#### Scenario: iPhone with the app installed
+
+- **WHEN** the dialog opens in the app launched from the iPhone home screen
+- **THEN** the dialog SHALL show the notification step as on other platforms

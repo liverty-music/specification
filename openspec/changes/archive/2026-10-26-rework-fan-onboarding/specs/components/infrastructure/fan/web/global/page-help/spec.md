@@ -54,11 +54,11 @@ The help bottom-sheet SHALL display page-specific guide content when opened. Onl
 - **WHEN** the help bottom-sheet opens on the My Artists page
 - **THEN** the sheet renders two sub-sections, on every device:
   - "Hype（熱量） について" / "About Hype" — containing:
-    - The description sentence: JA `Hype（熱量）で通知の範囲が変わります。各行の点をタップして切り替えます。` / EN `Hype controls how far away you get notified. Tap a dot on the row to change it.`
+    - The description sentence: JA `Hype（熱量）で通知の範囲が変わります。` / EN `Hype controls how far away you get notified.` (the dots on each row explain themselves; the help does not describe them)
     - The tier table (see "Hype tier table is a 3-column grid") explaining the four hype tier values: `Watch / 通知なし` · `Home / 居住エリアのライブを通知` · `Nearby / 近くのライブも通知` · `Away / 全てのライブを通知`
     - A practical tip: JA `遠征してでも見たいアーティストは Away に設定してみましょう！` / EN `Set artists you'd travel for to Away to never miss them!`
-  - "フォロー解除" / "Unfollowing" — containing: JA `右下のメニューの「編集」をタップすると各行に削除ボタンが表示され、フォローを解除できます。` / EN `Tap Edit in the menu at the bottom right to reveal per-row remove controls and unfollow artists.`
-- **AND** the help text does not mention a slider, a header Edit control, or a long-press gesture
+  - "フォロー解除" / "Unfollowing" — containing: JA `画面下中央のアクションメニューで「編集」を選ぶと、各行に削除ボタンが表示され、フォローを解除できます。` / EN `Choose Edit in the action menu at the bottom centre to show a remove button on each row and unfollow artists.`
+- **AND** the help text does not mention a slider, a header Edit control, a long-press gesture, or a menu at the bottom right (the action menu is centred in the bottom navigation bar)
 
 ### Requirement: Hype tier table is a 3-column grid
 

@@ -61,26 +61,6 @@ stateDiagram-v2
 - **AND** the user revisits the dashboard or any onboarding-relevant surface
 - **THEN** onboarding SHALL stay completed
 
-### Requirement: The analytics notice is visible before any interaction
-
-Because analytics runs default-on under an opt-out model, the purpose-of-use notice required by 個人情報保護法 (APPI, Act on the Protection of Personal Information) and the information that 外部送信規律 (the external-transmission rule of the Telecommunications Business Act) requires to be notified or published SHALL be reachable from the first screen a visitor sees. The Welcome screen SHALL state in plain words that usage is analysed to improve the app and that names and email addresses are not used for it, and SHALL link to the analytics opt-out in Settings and to a details page that names the recipient, the data sent and the purpose and links the privacy policy (per `route/welcome`). The notice SHALL NOT block progression, SHALL NOT require acknowledgement and SHALL NOT change the default-on analytics state.
-
-#### Scenario: Visitor sees the notice on the first screen
-
-- **WHEN** a visitor opens the Welcome screen
-- **THEN** the analytics notice and its two links SHALL be visible next to the Get Started button without any other action
-
-#### Scenario: Notice does not gate analytics or onboarding
-
-- **WHEN** the visitor taps Get Started without opening either link
-- **THEN** onboarding SHALL proceed to Discovery
-- **AND** analytics SHALL remain enabled
-
-#### Scenario: Opt-out remains reachable later
-
-- **WHEN** a fan who passed the Welcome screen later wants to stop analytics
-- **THEN** the fan SHALL be able to reach the analytics opt-out from the Settings screen without re-onboarding
-
 
 ## REMOVED Requirements
 
@@ -91,8 +71,8 @@ Because analytics runs default-on under an opt-out model, the purpose-of-use not
 
 ### Requirement: Final onboarding step is a non-blocking analytics transparency notice
 
-**Reason**: Onboarding has no steps, and no screen ever led to the notice, so no fan saw it.
-**Migration**: Replaced by "The analytics notice is visible before any interaction", shown on the Welcome screen.
+**Reason**: Onboarding has no steps, and no screen ever led to the notice, so no fan saw it. No screen needs to: the privacy policy, a public page, publishes what analytics sends, to whom and for what (its sections on purposes and on external transmission), which is the publication the purpose-of-use rule (APPI) and the external-transmission rule (外部送信規律) ask for.
+**Migration**: None. The opt-out stays in Settings. A notice under the Welcome Get Started buttons was tried and removed (2026-10-26): it took space from the demo timetable without being required.
 
 ### Requirement: Onboarding service routes based on completion status
 

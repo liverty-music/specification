@@ -6,7 +6,7 @@ All user-visible strings in the post-signup dialog SHALL come from the translati
 #### Scenario: Title renders in Japanese locale
 - **WHEN** the notification step is displayed
 - **AND** the active locale is `ja`
-- **THEN** the title SHALL read 「新着ライブを、いち早くお知らせ」
+- **THEN** the title SHALL read 「新着ライブをいち早くお知らせ」
 
 #### Scenario: Title renders in active locale
 - **WHEN** the notification step is displayed
@@ -75,7 +75,7 @@ Whether an authenticated callback is treated as a first sign-up SHALL be determi
 - **WHEN** the dialog opens on a browser where notification permission is not yet decided and the app can be installed but is not installed
 - **THEN** the dialog SHALL first show the notification step
 - **AND** after the fan taps 「通知をオンにする」 or 「あとで」, the dialog SHALL show the install step
-- **AND** after the fan taps 「追加する」 or 「あとで」 on the install step, the dialog SHALL close
+- **AND** after the fan taps 「ホーム画面に置く」 or 「あとで」 on the install step, the dialog SHALL close
 
 #### Scenario: Notification already decided
 
@@ -89,7 +89,7 @@ Whether an authenticated callback is treated as a first sign-up SHALL be determi
 
 ### Requirement: Notification step says the search has started
 
-The notification step SHALL show the title 「新着ライブを、いち早くお知らせ」, the body 「フォロー中の{{count}}組のライブを探し始めました。見つかったら通知で届けます。」 where count is the number of artists the fan follows (when the fan follows none, the body is 「新しいライブが見つかったら、通知で届けます。」), the primary action 「通知をオンにする」 and the text action 「あとで」. Tapping 「通知をオンにする」 SHALL open the browser permission prompt immediately, as a direct result of the tap. When the fan allows, the fan's browser SHALL be registered for push and the dialog moves on; when the fan blocks or the registration fails, the step SHALL say so in one line, telling the fan that it can be changed later in Settings, and the dialog moves on when the fan taps 「次へ」.
+The notification step SHALL show the title 「新着ライブをいち早くお知らせ」, the body 「フォロー中の{{count}}組のライブを探し始めました。見つかったら通知で届けます。」 where count is the number of artists the fan follows (when the fan follows none, the body is 「新しいライブが見つかったら、通知で届けます。」), the primary action 「通知をオンにする」 and the text action 「あとで」. Tapping 「通知をオンにする」 SHALL open the browser permission prompt immediately, as a direct result of the tap. When the fan allows, the fan's browser SHALL be registered for push and the dialog moves on; when the fan blocks or the registration fails, the step SHALL say so in one line, telling the fan that it can be changed later in Settings, and the dialog moves on when the fan taps 「次へ」.
 
 #### Scenario: Fan follows five artists
 
@@ -116,19 +116,19 @@ The notification step SHALL show the title 「新着ライブを、いち早く�
 
 ### Requirement: Install step asks for one thing
 
-The install step SHALL be shown only when the browser can install the app and the app is not installed. It SHALL show the app icon, the title 「ホーム画面に追加」, the body 「アプリのように、ワンタップで開けます。」, the primary action 「追加する」 and the text action 「あとで」. When the browser offers its own install prompt, 「追加する」 SHALL open it; otherwise 「追加する」 SHALL reveal 3 numbered steps for adding the app from the browser menu: open the browser menu (⋮), choose 「ホーム画面に追加」, tap 「追加」. If the browser's own install prompt becomes available while the step is open, 「追加する」 SHALL open it from then on.
+The install step SHALL be shown only when the browser can install the app and the app is not installed. It SHALL say what the fan gains, not name the task: the app icon, the title 「ワンタップでタイムテーブルへ」, the body 「ホーム画面に置いておけば、アプリのようにすぐ開けます。」, the primary action 「ホーム画面に置く」 and the text action 「あとで」. When the browser offers its own install prompt, 「ホーム画面に置く」 SHALL open it; otherwise 「ホーム画面に置く」 SHALL reveal 3 numbered steps for adding the app from the browser menu: open the browser menu (⋮), choose 「ホーム画面に追加」, tap 「追加」. If the browser's own install prompt becomes available while the step is open, 「ホーム画面に置く」 SHALL open it from then on.
 
 #### Scenario: Browser offers an install prompt
 
 - **WHEN** the install step is shown and the browser offers its own install prompt
-- **AND** the fan taps 「追加する」
+- **AND** the fan taps 「ホーム画面に置く」
 - **THEN** the browser's install prompt SHALL open
 - **AND** the dialog SHALL close after the prompt is answered
 
 #### Scenario: No install prompt available
 
 - **WHEN** the install step is shown and the browser offers no install prompt
-- **AND** the fan taps 「追加する」
+- **AND** the fan taps 「ホーム画面に置く」
 - **THEN** the 3 numbered menu steps SHALL appear in the step
 
 #### Scenario: App already installed
@@ -138,7 +138,7 @@ The install step SHALL be shown only when the browser can install the app and th
 
 ### Requirement: iOS and iPadOS show the add-to-home-screen steps instead
 
-On iOS and iPadOS when the app is not installed, the dialog SHALL show a single step instead of both steps, because notifications there work only for an app added to the home screen. The step SHALL show the title 「新着ライブを、いち早くお知らせ」, the body 「iPhone では、ホーム画面に追加すると通知を受け取れます。」, 3 numbered steps (tap the share button, choose 「ホーム画面に追加」, open the app from the new icon) and the text action 「あとで」. It SHALL NOT show a 「通知をオンにする」 action.
+On iOS and iPadOS when the app is not installed, the dialog SHALL show a single step instead of both steps, because notifications there work only for an app added to the home screen. The step SHALL show the title 「新着ライブをいち早くお知らせ」, the body 「iPhone では、ホーム画面に追加すると通知を受け取れます。」, 3 numbered steps (tap the share button, choose 「ホーム画面に追加」, open the app from the new icon) and the text action 「あとで」. It SHALL NOT show a 「通知をオンにする」 action.
 
 #### Scenario: iPhone without the app installed
 

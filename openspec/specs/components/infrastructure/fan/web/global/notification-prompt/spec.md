@@ -6,139 +6,6 @@ Prompts a signed-in user, once onboarding is complete, to grant push-notificatio
 
 ## Requirements
 
-### Requirement: Notification Prompt Placement
-
-The notification prompt SHALL be rendered at the app shell level (`my-app.html`) rather than within the dashboard route template. This ensures the prompt is available on any post-onboarding route, not only the dashboard.
-
-#### Scenario: Notification prompt rendered in app shell when eligible
-
-- **WHEN** the user is authenticated (`auth.isAuthenticated === true`)
-- **AND** onboarding is completed (`onboarding.isCompleted === true`)
-- **AND** the navigation bar is visible (`showNav === true`)
-- **THEN** the system SHALL render the `<notification-prompt>` component in the app shell
-- **AND** the prompt SHALL appear above the main content area, below any app-level banners
-
-#### Scenario: Notification prompt hidden during onboarding routes
-
-- **WHEN** the user is on a fullscreen route (Landing Page, Auth Callback)
-- **OR** the user is not authenticated
-- **OR** onboarding is not completed
-- **THEN** the system SHALL NOT render the `<notification-prompt>` component
-
-#### Scenario: Notification prompt removed from dashboard route
-
-- **WHEN** the dashboard route template is rendered
-- **THEN** the template SHALL NOT contain a `<notification-prompt>` element
-- **AND** the notification prompt import SHALL be removed from the dashboard template
-
----
-
-### Requirement: Notification Prompt Blocked When Not Authenticated
-
-The system SHALL NOT display the push notification prompt when the user is not authenticated.
-
-#### Scenario: Anonymous user on dashboard during tutorial
-
-- **WHEN** the user is not authenticated
-- **AND** the user is on the dashboard route
-- **THEN** the system SHALL NOT display the notification prompt
-
-#### Scenario: Authenticated user after onboarding
-
-- **WHEN** the user is authenticated
-- **AND** onboarding is completed (Step 7)
-- **THEN** the notification prompt MAY be eligible to display (subject to other guards)
-
----
-
-### Requirement: Notification Prompt Blocked During Onboarding
-
-The system SHALL NOT display the push notification prompt during active onboarding steps.
-
-#### Scenario: User at MY_ARTISTS step before sign-up
-
-- **WHEN** the user is at onboarding step MY_ARTISTS
-- **THEN** the system SHALL NOT display the notification prompt
-- **AND** the notification prompt component SHALL not evaluate visibility
-
----
-
-### Requirement: Single Prompt Per Session
-
-The system SHALL display at most one permission prompt (PWA install or push notification) per browser session.
-
-#### Scenario: Notification prompt shown first
-
-- **WHEN** the notification prompt has been displayed in the current session
-- **AND** the PWA install prompt becomes eligible
-- **THEN** the system SHALL NOT display the PWA install prompt in the same session
-
-#### Scenario: PWA install prompt shown first
-
-- **WHEN** the PWA install prompt has been displayed in the current session
-- **AND** the notification prompt becomes eligible
-- **THEN** the system SHALL NOT display the notification prompt in the same session
-
-#### Scenario: New session resets prompt allowance
-
-- **WHEN** the user reloads the page or opens a new browser session
-- **THEN** the single-prompt-per-session constraint SHALL reset
-- **AND** one prompt MAY be shown again (subject to dismissal and eligibility rules)
-
----
-
-### Requirement: Notification Prompt Priority Over Disruptive PWA Prompts
-
-The notification prompt SHALL have higher priority than any disruptive PWA install prompt. The `pwa-install-banner` is passive UI and is not subject to this constraint — it SHALL remain visible regardless of whether the notification prompt is shown.
-
-#### Scenario: Both prompts eligible (first or later post-completion session)
-
-- **WHEN** the user has completed onboarding
-- **AND** notification permission is not yet granted
-- **AND** the notification prompt has not been dismissed
-- **AND** the `pwa-install-banner` is also eligible
-- **THEN** the system SHALL display the notification prompt
-- **AND** the `pwa-install-banner` SHALL remain visible (it is passive UI and does not compete with the notification prompt)
-
-#### Scenario: Notification prompt already dismissed
-
-- **WHEN** the user has previously dismissed the notification prompt
-- **AND** the `pwa-install-banner` is eligible
-- **THEN** the system SHALL display the `pwa-install-banner`
-
----
-
-### Requirement: Notification Prompt Eligible on First Post-Completion Session
-
-The notification prompt SHALL be eligible to display on the first session after onboarding completion, when user motivation is highest.
-
-#### Scenario: User completes onboarding and returns
-
-- **WHEN** the user has completed onboarding (`OnboardingStep.COMPLETED`)
-- **AND** the user starts a new session (page load)
-- **AND** the user is authenticated
-- **AND** the notification prompt has not been dismissed
-- **AND** notification permission is not `granted`
-- **THEN** the system SHALL display the notification prompt
-
-#### Scenario: User completes onboarding within the same session
-
-- **WHEN** the user transitions to `OnboardingStep.COMPLETED` within the current session
-- **THEN** the system SHALL NOT display any notification prompt in the same session as completion
-- **AND** the notification prompt SHALL be eligible starting from the next session
-
----
-
-### Requirement: Dismissed notification prompt does not reappear
-
-When the user dismisses the notification prompt, the system SHALL persist the dismissal and SHALL NOT show that prompt again. The `pwa-install-banner` has no dismiss of its own (see Pwa Install Banner).
-
-#### Scenario: User dismisses notification prompt
-
-- **WHEN** the user taps the dismiss control on the notification prompt
-- **THEN** the system SHALL write the dismissal to `localStorage`
-- **AND** the notification prompt SHALL NOT appear on subsequent sessions
-
 ### Requirement: The permission answer is reported
 
 After the fan answers the browser's push-permission request, the fan app SHALL send one usage analytics event with the answer (granted, denied, or dismissed without an answer) and where the request started: the push offer after a hype change (the notification prompt), the post-signup sheet, Settings, or checkout.
@@ -146,3 +13,101 @@ After the fan answers the browser's push-permission request, the fan app SHALL s
 #### Scenario: Fan denies
 - **WHEN** the fan presses 「オンにする」 on the push offer and then blocks notifications in the browser's request
 - **THEN** one event is sent with the answer denied and the notification prompt as its start
+
+### Requirement: Push offer comes before the browser permission prompt
+
+The notification prompt SHALL be the app's own offer to turn on push notifications for new concerts, shown before the browser's permission prompt. The app SHALL show the browser's notification permission prompt only at once after the fan presses the action of a push offer, or turns on the push toggle in Settings; it SHALL never show it on app launch, on a screen load, or on any other event.
+
+#### Scenario: Pressing the offer action shows the browser prompt
+
+- **WHEN** a fan presses the action of a push offer
+- **THEN** the browser's notification permission prompt appears at once
+
+#### Scenario: No browser prompt on launch
+
+- **WHEN** a signed-in fan with an undecided notification permission opens the app
+- **THEN** no browser permission prompt and no push offer appear on launch
+
+### Requirement: Where the push offer appears
+
+The push offer SHALL appear in exactly two places: the first step of the post-signup sheet (stated by the post-signup dialog surface) and a snack after a saved hype change on My Artists (stated by the My Artists screen). No other screen or surface SHALL show a push offer; the push toggle in Settings stays available at all times.
+
+#### Scenario: Offer after sign-up
+
+- **WHEN** a fan completes sign-up and closes the celebration
+- **THEN** the post-signup sheet's first step offers push notifications
+
+#### Scenario: Offer after a hype change
+
+- **WHEN** an eligible signed-in fan saves a hype change on My Artists
+- **THEN** a snack offers push notifications
+
+#### Scenario: No offer on other screens
+
+- **WHEN** an eligible fan uses Discovery, the Dashboard, Tickets or an Event page
+- **THEN** no push offer appears
+
+### Requirement: Push offer eligibility
+
+The push offer SHALL be shown only to a signed-in fan whose browser notification permission is undecided and whose browser can receive push notifications. On iOS and iPadOS, the browser can receive push notifications only when the app was added to the home screen and opened from there. A guest SHALL never see a push offer. A fan whose browser blocked notifications SHALL never see a push offer; Settings tells them how to change it.
+
+#### Scenario: Guest
+
+- **WHEN** a guest saves a hype change on My Artists
+- **THEN** no push offer appears
+
+#### Scenario: Permission already granted
+
+- **WHEN** a signed-in fan whose browser already allows notifications saves a hype change
+- **THEN** no push offer appears
+
+#### Scenario: Permission blocked
+
+- **WHEN** a signed-in fan whose browser blocked notifications saves a hype change
+- **THEN** no push offer appears
+
+#### Scenario: iOS Safari without the app on the home screen
+
+- **WHEN** a signed-in fan uses the app in iOS Safari without adding it to the home screen and saves a hype change
+- **THEN** no push offer appears
+
+### Requirement: Push offer limits
+
+The hype-change push offer SHALL appear at most once per session, a session being one launch of the app. When the fan has let the hype-change offer go unanswered (the snack closed without the action) or declined the browser prompt 3 times in total, the hype-change offer SHALL stop for good on that browser. The post-signup sheet shows its offer once per sign-up, independently of these limits.
+
+#### Scenario: Once per session
+
+- **WHEN** the fan saw the hype-change offer in this session and saves another hype change
+- **THEN** no push offer appears
+
+#### Scenario: Next session
+
+- **WHEN** the fan let the offer go unanswered once, relaunches the app and saves a hype change
+- **THEN** the offer appears again
+
+#### Scenario: Third unanswered offer stops it
+
+- **WHEN** the fan has let the offer go unanswered or declined the browser prompt 3 times
+- **AND** relaunches the app and saves a hype change
+- **THEN** no push offer appears
+
+### Requirement: Outcome of the browser permission prompt
+
+After the fan answers the browser's permission prompt opened from a push offer, the app SHALL report the outcome. When the fan allows notifications, the app SHALL register push notifications for this browser and show a snack 「新しいライブを通知します。設定からいつでも止められます」 (EN "We'll notify you of new concerts. You can turn this off in Settings anytime."). When the fan blocks notifications, the app SHALL show a snack 「通知はブロックされています。ブラウザの設定から変更できます」 (EN "Notifications are blocked. You can change this in your browser settings."). When the fan closes the prompt without answering, the app SHALL show nothing and SHALL count it as one unanswered offer.
+
+#### Scenario: Fan allows
+
+- **WHEN** the fan allows notifications in the browser prompt
+- **THEN** new concerts that match the fan's hype levels reach this browser by push
+- **AND** a snack says 「新しいライブを通知します。設定からいつでも止められます」
+
+#### Scenario: Fan blocks
+
+- **WHEN** the fan blocks notifications in the browser prompt
+- **THEN** a snack says 「通知はブロックされています。ブラウザの設定から変更できます」
+- **AND** no push offer appears again
+
+#### Scenario: Fan closes the prompt
+
+- **WHEN** the fan closes the browser prompt without answering
+- **THEN** no snack appears and the offer counts as unanswered once

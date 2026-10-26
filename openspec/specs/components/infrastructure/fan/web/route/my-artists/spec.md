@@ -6,62 +6,6 @@ Displays and manages the artists a user follows, letting them adjust each artist
 
 ## Requirements
 
-### Requirement: Edit-mode toggle reveals per-row remove controls
-
-The My Artists list SHALL provide an "Edit" toggle control in the page header. Toggling it ON SHALL put the list into edit mode, in which each artist row SHALL display a remove (−) control as a single-tap, single-pointer affordance available on all pointer types (touch and mouse). Toggling it OFF SHALL leave edit mode and hide the remove controls. Edit mode SHALL NOT depend on any path-based or timed gesture (no swipe, no long-press), satisfying single-pointer operability (WCAG 2.5.1).
-
-#### Scenario: Entering edit mode reveals remove controls
-
-- **WHEN** the user activates the Edit toggle on the My Artists page
-- **THEN** every artist row SHALL display a remove (−) control
-- **AND** the Edit toggle SHALL indicate the active (editing) state
-
-#### Scenario: Leaving edit mode hides remove controls
-
-- **WHEN** the user deactivates the Edit toggle while in edit mode
-- **THEN** the remove controls SHALL no longer be displayed
-- **AND** the list SHALL return to its default (non-editing) presentation
-
-#### Scenario: Remove control is available on all pointer types
-
-- **WHEN** the My Artists page is viewed on a touch device (`pointer: coarse`) OR a mouse device (`pointer: fine`)
-- **AND** edit mode is active
-- **THEN** the per-row remove (−) control SHALL be visible and operable with a single tap or click
-- **AND** no interaction SHALL require a long-press or swipe gesture
-
-#### Scenario: Default (non-editing) list shows no persistent per-row unfollow control
-
-- **WHEN** the My Artists page loads and edit mode is NOT active
-- **THEN** no persistent per-row unfollow control SHALL be shown on any pointer type (touch or mouse), keeping the default list uncluttered
-- **AND** unfollow SHALL be reachable only after entering edit mode
-
-#### Scenario: Edit toggle presented in the page header
-
-- **WHEN** the My Artists page renders with at least one followed artist
-- **THEN** the Edit toggle SHALL be presented in the page header, on the trailing side of the page title, alongside the existing help (`?`) control
-
-#### Scenario: Edit toggle hidden when there is nothing to edit
-
-- **WHEN** the My Artists page is loading, OR has zero followed artists (empty state)
-- **THEN** the Edit toggle SHALL NOT be shown (there is nothing to edit)
-- **AND** the page title and help control SHALL still render
-
-#### Scenario: Edit mode exits when the last artist is removed
-
-- **WHEN** the user is in edit mode and removes the last remaining artist
-- **THEN** the list SHALL transition to the empty state
-- **AND** edit mode SHALL be exited (the Edit toggle returns to its non-editing label / is hidden per the previous scenario)
-
-#### Scenario: Edit mode is not persisted across navigation
-
-- **WHEN** the user leaves the My Artists page while in edit mode and later returns
-- **THEN** the page SHALL open in the default (non-editing) state
-
-#### Scenario: Hype controls remain usable in edit mode
-
-- **WHEN** edit mode is active
-- **THEN** the per-row hype controls SHALL remain interactive (the user can still change hype while remove controls are visible)
-
 ### Requirement: Edit-mode controls are accessible
 
 The Edit toggle and the per-row remove controls SHALL be operable and understandable by assistive technology and keyboard users. The Edit toggle SHALL expose its pressed/active state, and each remove control SHALL have an accessible name identifying the artist it removes.
@@ -319,22 +263,18 @@ The Grid view SHALL display followed artists as poster-style tiles in a responsi
 
 ### Requirement: My Artists page help content documents all available gestures
 
-The My Artists page help content SHALL explain how to unfollow an artist via the Edit-mode
-toggle. The help text SHALL communicate that activating "Edit" in the page header reveals a
-per-row remove control that unfollows immediately (with Undo). The help content SHALL NOT
-reference a long-press-to-unfollow gesture (that interaction is retired). Desktop-specific
-interactions need not be documented in help as they are visually self-evident.
+The My Artists page help content SHALL explain how to unfollow an artist via edit mode. The help text SHALL say that choosing "編集" / "Edit" in the action menu at the bottom centre (the FAB in the bottom navigation bar) reveals a per-row remove control that unfollows immediately (with Undo). The help content SHALL NOT reference a long-press-to-unfollow gesture or an Edit control in the page header. The exact help copy is stated by the page help surface ("Page-specific Help Content").
 
 #### Scenario: Help text visible to touch device users
 
 - **WHEN** the user opens the My Artists page help (on any device, including touch)
-- **THEN** help content includes an explanation that entering Edit mode reveals a per-row remove control to unfollow an artist
-- **AND** the help content SHALL NOT mention a long-press unfollow gesture
+- **THEN** help content explains that choosing Edit in the action menu at the bottom centre reveals a per-row remove control to unfollow an artist
+- **AND** the help content does not mention a long-press unfollow gesture or a header Edit control
 
 #### Scenario: Help text available in all supported locales
 
 - **WHEN** the app is displayed in any supported locale (Japanese, English)
-- **THEN** the Edit-mode unfollow help text is translated and rendered correctly
+- **THEN** the edit-mode unfollow help text is translated and rendered correctly
 
 ### Requirement: My Artists hype column headers render invariant English
 
@@ -401,3 +341,85 @@ Each artist in the My Artists list SHALL be shown in a color derived from the ar
 
 - **WHEN** an artist's name is empty
 - **THEN** the artist is still shown in a valid color
+
+### Requirement: Push offer after a hype change
+
+When a signed-in fan changes an artist's hype level on My Artists and the change is saved, My Artists SHALL show the in-app push offer as a snack, provided the fan is eligible for it and the offer limits allow it (both stated by the notification prompt surface). The snack SHALL read 「{{name}}を {{hype}} にしました。新着ライブを通知で受け取りますか？」 (EN "{{name}} is now {{hype}}. Get notified of new concerts?"), where `{{hype}}` is the invariant English tier label, with the action 「オンにする」 (EN "Turn on"). The snack SHALL stay 10 seconds unless the fan presses the action. Pressing the action SHALL show the browser's notification permission prompt at once. A guest's hype change, and a hype change whose save fails, SHALL NOT show the offer.
+
+#### Scenario: Signed-in fan changes hype and is offered push
+
+- **WHEN** a signed-in fan whose browser notification permission is undecided sets ヨルシカ from Nearby to Away and the change is saved
+- **AND** the offer has not been shown in this session and has been left or declined fewer than 3 times
+- **THEN** a snack reads 「ヨルシカを Away にしました。新着ライブを通知で受け取りますか？」 with the action 「オンにする」
+
+#### Scenario: Pressing the action asks the browser
+
+- **WHEN** the fan presses 「オンにする」 on the offer snack
+- **THEN** the browser's notification permission prompt appears at once
+
+#### Scenario: Guest changes hype
+
+- **WHEN** a guest changes an artist's hype level
+- **THEN** no push offer is shown
+
+#### Scenario: Save fails
+
+- **WHEN** a signed-in fan changes a hype level and saving fails twice
+- **THEN** the failure message is shown and no push offer is shown
+
+#### Scenario: Second hype change in the same session
+
+- **WHEN** the fan already saw the offer in this session and changes another artist's hype level
+- **THEN** the hype change applies and no push offer is shown
+
+### Requirement: Edit in the action launcher reveals per-row remove controls
+
+The My Artists page SHALL offer an "編集" / "Edit" action in its FAB action launcher whenever at least one followed artist is listed. Choosing it SHALL put the list into edit mode and close the launcher; in edit mode each artist row SHALL display a remove (−) control as a single-tap, single-pointer affordance available on all pointer types (touch and mouse), in place of the row's hype controls, and a "完了" / "Done" bar SHALL be shown in the list. Pressing Done SHALL leave edit mode and hide the remove controls. While in edit mode the FAB action launcher SHALL contribute no actions. Edit mode SHALL NOT depend on any path-based or timed gesture (no swipe, no long-press), satisfying single-pointer operability (WCAG 2.5.1).
+
+#### Scenario: Entering edit mode reveals remove controls
+
+- **WHEN** the user chooses Edit in the FAB action launcher on the My Artists page
+- **THEN** every artist row displays a remove (−) control in place of its hype controls
+- **AND** the Done bar is shown and the launcher closes
+
+#### Scenario: Leaving edit mode hides remove controls
+
+- **WHEN** the user presses Done while in edit mode
+- **THEN** the remove controls are no longer displayed
+- **AND** the list returns to its default presentation with hype controls
+
+#### Scenario: Remove control is available on all pointer types
+
+- **WHEN** the My Artists page is viewed on a touch device OR a mouse device
+- **AND** edit mode is active
+- **THEN** the per-row remove (−) control is visible and operable with a single tap or click
+- **AND** no interaction requires a long-press or swipe gesture
+
+#### Scenario: Default (non-editing) list shows no persistent per-row unfollow control
+
+- **WHEN** the My Artists page loads and edit mode is NOT active
+- **THEN** no persistent per-row unfollow control is shown on any pointer type, keeping the default list uncluttered
+- **AND** unfollow is reachable only after entering edit mode
+
+#### Scenario: Edit offered in the action launcher
+
+- **WHEN** the My Artists page renders with at least one followed artist
+- **THEN** the FAB action launcher offers Edit next to Help
+- **AND** the page header holds no Edit control
+
+#### Scenario: Edit hidden when there is nothing to edit
+
+- **WHEN** the My Artists page is loading, OR has zero followed artists (empty state)
+- **THEN** Edit is not offered
+- **AND** Help is still offered in the launcher
+
+#### Scenario: Edit mode exits when the last artist is removed
+
+- **WHEN** the user is in edit mode and removes the last remaining artist
+- **THEN** the list transitions to the empty state
+- **AND** edit mode is exited
+
+#### Scenario: Edit mode is not persisted across navigation
+
+- **WHEN** the user leaves the My Artists page while in edit mode and later returns
+- **THEN** the page opens in the default (non-editing) state
