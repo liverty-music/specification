@@ -45,7 +45,7 @@ The system SHALL conditionally show or hide the navigation bar based on the curr
 
 #### Scenario: Dashboard icon data attribute for coach mark targeting
 - **WHEN** the bottom navigation bar renders
-- **THEN** the Dashboard (Home) tab link SHALL carry `data-nav="home"`, the selector the onboarding coach mark targets
+- **THEN** the Dashboard (Home) tab link SHALL carry `data-nav="home"`, which identifies the tab for tests and analytics (no coach mark targets the navigation bar)
 - **AND** the My Artists tab link SHALL carry `data-nav="my-artists"`
 
 #### Scenario: Pages do not compensate for navigation bar height

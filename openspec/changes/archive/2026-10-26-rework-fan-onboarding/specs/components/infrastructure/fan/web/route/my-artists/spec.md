@@ -86,12 +86,12 @@ The My Artists page SHALL offer an "編集" / "Edit" action in its FAB action la
 
 ### Requirement: My Artists page help content documents all available gestures
 
-The My Artists page help content SHALL explain how to unfollow an artist via edit mode. The help text SHALL say that choosing "編集" / "Edit" in the menu at the bottom right reveals a per-row remove control that unfollows immediately (with Undo). The help content SHALL NOT reference a long-press-to-unfollow gesture or an Edit control in the page header. The exact help copy is stated by the page help surface ("Page-specific Help Content").
+The My Artists page help content SHALL explain how to unfollow an artist via edit mode. The help text SHALL say that choosing "編集" / "Edit" in the action menu at the bottom centre (the FAB in the bottom navigation bar) reveals a per-row remove control that unfollows immediately (with Undo). The help content SHALL NOT reference a long-press-to-unfollow gesture or an Edit control in the page header. The exact help copy is stated by the page help surface ("Page-specific Help Content").
 
 #### Scenario: Help text visible to touch device users
 
 - **WHEN** the user opens the My Artists page help (on any device, including touch)
-- **THEN** help content explains that choosing Edit in the menu at the bottom right reveals a per-row remove control to unfollow an artist
+- **THEN** help content explains that choosing Edit in the action menu at the bottom centre reveals a per-row remove control to unfollow an artist
 - **AND** the help content does not mention a long-press unfollow gesture or a header Edit control
 
 #### Scenario: Help text available in all supported locales

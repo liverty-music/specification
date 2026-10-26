@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Onboarding progress row
-While the fan is onboarding, the Discovery screen SHALL show a progress row directly under the genre chips that tells how close the fan's timetable is to ready. The row SHALL sit outside the bubble field, so it never overlaps a bubble or the orb. Its value SHALL be (followed artists without a found concert) / 5 + (followed artists with a found concert) / 3, capped at 1, where a concert is found for an artist when the catalog lookup after its follow returns at least one concert. Below 1 the row SHALL show the label 「タイムテーブル完成まで」 and a bar filled to the value. At 1 the row SHALL become a button labelled 「タイムテーブルができました →」 that opens the Dashboard. The row SHALL expose its value to assistive technology as a progress value from 0 to 100 percent. The row SHALL be hidden in search mode, like the genre chips, and SHALL NOT be shown once onboarding is complete.
+While the fan is onboarding, the Discovery screen SHALL show a progress row directly under the genre chips that tells how close the fan's timetable is to ready. The row SHALL sit outside the bubble field, so it never overlaps a bubble or the orb. Its value SHALL be (followed artists without a found concert) / 5 + (followed artists with a found concert) / 3, capped at 1, where a concert is found for an artist when the catalog lookup after its follow returns at least one concert. Below 1 the row SHALL show the label 「タイムテーブル完成まで」, a bar filled to the value and the value in percent; the bar SHALL move to a new value with a short animation (none with a reduced-motion preference). At 1 the row SHALL become a button labelled 「完成しました！」 that opens the Dashboard, with an icon of the finished timetable that invites the tap in place of an arrow; its accessible name also says where it leads (「タイムテーブルを見る」). The row SHALL expose its value to assistive technology as a progress value from 0 to 100 percent. The row SHALL be hidden in search mode, like the genre chips, and SHALL NOT be shown once onboarding is complete.
 
 #### Scenario: Follow without a found concert
 - **WHEN** an onboarding fan with no follows follows an artist whose catalog lookup returns no concert
@@ -17,14 +17,14 @@ While the fan is onboarding, the Discovery screen SHALL show a progress row dire
 
 #### Scenario: Ready by follows alone
 - **WHEN** an onboarding fan follows 5 artists and no lookup finds a concert
-- **THEN** the progress row becomes the 「タイムテーブルができました →」 button
+- **THEN** the progress row becomes the 「完成しました！」 button
 
 #### Scenario: Ready by found concerts
 - **WHEN** an onboarding fan follows 3 artists and each lookup finds at least one concert
-- **THEN** the progress row becomes the 「タイムテーブルができました →」 button
+- **THEN** the progress row becomes the 「完成しました！」 button
 
 #### Scenario: Button opens the Dashboard
-- **WHEN** the fan taps the 「タイムテーブルができました →」 button
+- **WHEN** the fan taps the 「完成しました！」 button
 - **THEN** the Dashboard opens
 
 #### Scenario: Already ready when Discovery opens
@@ -67,7 +67,7 @@ The system SHALL provide an engaging, gamified interface for users to discover a
 #### Scenario: Ready timetable is offered without a spotlight
 
 - **WHEN** an onboarding fan's follows reach the ready value of the onboarding progress row
-- **THEN** the row becomes the 「タイムテーブルができました →」 button
+- **THEN** the row becomes the 「完成しました！」 button
 - **AND** no spotlight or coach mark is shown on the bottom navigation
 - **AND** the fan MAY open the Dashboard from the Home tab at any time, ready or not
 

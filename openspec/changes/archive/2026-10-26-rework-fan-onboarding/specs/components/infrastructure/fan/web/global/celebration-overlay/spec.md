@@ -69,6 +69,8 @@ On the post-signup tier the overlay SHALL also:
 - play one short celebratory sound, following the app's sound mute setting (no sound when muted);
 - vibrate briefly once on devices that support vibration.
 
+The sound and the vibration SHALL be given only where the browser allows them, which is once the fan has interacted with the page. A fan who arrives straight from the sign-up redirect, without a tap on the page since, SHALL see the confetti and the headline without sound or vibration; a fan who chose the home area on arrival has tapped and SHALL get both.
+
 With a reduced-motion preference the overlay SHALL show no confetti, no scaling and no vibration, and SHALL appear and disappear without transition. Tier gating, once-per-tier behaviour and tap-to-dismiss are defined by "Two-Tier Celebration Overlay".
 
 #### Scenario: Empty-state text behind the post-signup celebration cannot be read
@@ -102,6 +104,12 @@ With a reduced-motion preference the overlay SHALL show no confetti, no scaling 
 - **AND** the headline SHALL scale up past its full size and settle
 - **AND** one short celebratory sound SHALL play
 - **AND** the device SHALL vibrate briefly once
+
+#### Scenario: No sound or vibration before the fan has touched the page
+
+- **WHEN** the post-signup celebration appears on a page the fan has not tapped since the sign-up redirect
+- **THEN** confetti SHALL burst and the headline SHALL scale up and settle
+- **AND** no sound SHALL play and the device SHALL NOT vibrate
 
 #### Scenario: Muted sound
 

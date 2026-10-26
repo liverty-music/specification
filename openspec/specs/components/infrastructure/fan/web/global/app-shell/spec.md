@@ -208,7 +208,7 @@ The synchronous setup a menu-tab route performs before fetching — toggling `is
 - **AND** a stale late response SHALL NOT overwrite state from the newer request
 
 ### Requirement: Overlay elements excluded from grid flow
-All overlay custom elements (`pwa-install-prompt`, `notification-prompt`, `toast-notification`, `error-banner`, `coach-mark`) SHALL be removed from normal document flow so they do not create implicit CSS Grid rows in the `app-shell` shell layout. The bottom navigation bar and page header SHALL stay pinned even under a standalone PWA pull-to-refresh / overscroll gesture, because the document root is a non-scrolling frame and scrolling is confined to the single inner container.
+All overlay custom elements (`pwa-install-prompt`, `toast-notification`, `error-banner`) SHALL be removed from normal document flow so they do not create implicit CSS Grid rows in the `app-shell` shell layout. The bottom navigation bar and page header SHALL stay pinned even under a standalone PWA pull-to-refresh / overscroll gesture, because the document root is a non-scrolling frame and scrolling is confined to the single inner container.
 
 #### Scenario: Bottom nav stays at viewport bottom
 - **WHEN** the dashboard page has enough events to require scrolling (20+ concerts across multiple dates)
@@ -238,7 +238,7 @@ All overlay custom elements (`pwa-install-prompt`, `notification-prompt`, `toast
 - **AND** the scroll container SHALL declare `overscroll-behavior: contain` so a scroll-boundary bounce does not chain into the document root
 
 #### Scenario: Overlay elements remain functional
-- **WHEN** an overlay element activates (e.g., toast notification, coach-mark spotlight)
+- **WHEN** an overlay element activates (e.g., toast notification, error banner)
 - **THEN** the overlay SHALL render correctly via the browser top-layer API, unaffected by the flow removal
 
 ### Requirement: Document root is a non-scrolling frame
