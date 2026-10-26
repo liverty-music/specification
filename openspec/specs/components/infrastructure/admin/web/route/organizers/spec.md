@@ -82,7 +82,7 @@ Activating Delete SHALL open a modal confirmation dialog that names the Organize
 
 ### Requirement: Delete's outcome is shown
 
-When Delete succeeds, the screen SHALL close the dialog, remove the Organizer from the list and return the detail to its no-selection state. When Delete fails with FailedPrecondition, the screen SHALL close the dialog, keep the Organizer listed and selected, and show `This organizer cannot be deleted while it has an order that is not refunded, a settlement that is not reversed, or a payout account.`, whatever reason the server gives. Any other failure SHALL be shown as an error with the Organizer kept.
+When Delete succeeds, the screen SHALL close the dialog, remove the Organizer from the list and return the detail to its no-selection state. When Delete fails with FailedPrecondition, the screen SHALL close the dialog, keep the Organizer listed and selected, and show `This organizer cannot be deleted while it has a paid order, a settlement that is not reversed, a purchase in progress, or a payout account.`, whatever reason the server gives. Any other failure SHALL be shown as an error with the Organizer kept.
 
 #### Scenario: Delete succeeds
 
@@ -91,8 +91,8 @@ When Delete succeeds, the screen SHALL close the dialog, remove the Organizer fr
 
 #### Scenario: Delete blocked by an order
 
-- **WHEN** Delete fails with FailedPrecondition because an Event of the Organizer has an Order that is not Refunded
-- **THEN** the Organizer stays listed and selected, and the detail shows `This organizer cannot be deleted while it has an order that is not refunded, a settlement that is not reversed, or a payout account.` and not the server's message
+- **WHEN** Delete fails with FailedPrecondition because an Event of the Organizer has a Paid Order
+- **THEN** the Organizer stays listed and selected, and the detail shows `This organizer cannot be deleted while it has a paid order, a settlement that is not reversed, a purchase in progress, or a payout account.` and not the server's message
 
 #### Scenario: Delete fails otherwise
 
@@ -117,3 +117,31 @@ When Create fails, the screen SHALL keep the form's values and show, by error co
 
 - **WHEN** Create fails with FailedPrecondition
 - **THEN** the form shows `Failed to create the organizer.`
+
+### Requirement: An admin creates a test Artist for the Organizer
+
+A provisioning or active Organizer's detail SHALL offer `Create test artist` beside the artist search, with a name field. A test Artist has a name the admin chooses and a music-catalog id the screen generates at random, so it matches no real artist. Under the field the screen SHALL show `Use a name no real artist uses.` On submit, the screen SHALL register the Artist with ArtistService.Create, then associate it with the Organizer with OrganizerService.AssociateArtist, and show it in the roster. When the association fails after the Artist was registered, the screen SHALL keep that Artist and offer to retry only the association, so a retry registers no second Artist. An empty name SHALL be refused by the screen without a call. A deactivated Organizer's detail SHALL NOT offer `Create test artist`.
+
+#### Scenario: Test artist created and associated
+
+- **WHEN** the admin enters `E2E Test Artist` for an active Organizer and submits
+- **THEN** ArtistService.Create is called once with that name and a generated music-catalog id, the Artist is associated with the Organizer, and the roster lists `E2E Test Artist`
+
+#### Scenario: Association fails after registration
+
+- **WHEN** ArtistService.Create succeeds and OrganizerService.AssociateArtist fails with Unavailable
+- **THEN** the screen shows an error and offers to retry the association, and retrying calls only OrganizerService.AssociateArtist for the same Artist
+
+#### Scenario: Empty name
+
+- **WHEN** the admin submits `Create test artist` with an empty name
+- **THEN** no call is made and the field asks for a name
+
+### Requirement: A represented Artist opens its concerts
+
+Each Artist in the selected Organizer's roster SHALL link to the Artist concerts screen for that Artist, whatever the Organizer's status. The link SHALL carry the Artist's id only; the screen reads everything it shows from the server.
+
+#### Scenario: Open an artist's concerts
+
+- **WHEN** the admin activates the link of a represented Artist
+- **THEN** the Artist concerts screen opens for that Artist

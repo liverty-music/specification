@@ -2,31 +2,27 @@
 
 ## Purpose
 
-An admin removes a wrong Concert from the catalog for good: neither the next discovery run nor an Organizer's publish brings the same slot back.
+An admin removes a wrong Concert from the catalog for good: the next discovery run does not bring the same slot back.
 
 ```mermaid
 usecase-beta
 direction LR
 actor Admin("admin")
-actor Member("member")
 systemBoundary "Liverty Music"
   Goal("Delete a wrong concert")
   ConcertUseCaseDelete("ConcertUseCase.Delete")
   ConcertCreationUseCaseCreateFromDiscovered("ConcertCreationUseCase.CreateFromDiscovered")
-  SeriesUseCasePublish("SeriesUseCase.Publish")
 end
 Admin --> Goal
 Goal ..> : include ConcertUseCaseDelete
 Goal ..> : include ConcertCreationUseCaseCreateFromDiscovered
-Goal ..> : include SeriesUseCasePublish
-Member --> SeriesUseCasePublish
 ```
 
 ## Requirements
 
 ### Requirement: A deleted slot stays deleted
 
-After ConcertUseCase.Delete removes a Concert, its Venue, date and start time SHALL stay suppressed: ConcertCreationUseCase.CreateFromDiscovered SHALL neither publish nor stage a concert at that slot, and SeriesUseCase.Publish SHALL refuse a draft with a performance at that slot. No usecase removes the suppression.
+After ConcertUseCase.Delete removes a Concert, its Venue, date and start time SHALL stay suppressed for discovery: ConcertCreationUseCase.CreateFromDiscovered SHALL neither publish nor stage a concert at that slot. No usecase removes the suppression. An Organizer's publish at that slot SHALL succeed, since an Organizer publishes its own performance.
 
 #### Scenario: Discovery finds it again
 - **WHEN** an admin deletes a Concert and a later search finds the same slot for another Artist
@@ -34,4 +30,4 @@ After ConcertUseCase.Delete removes a Concert, its Venue, date and start time SH
 
 #### Scenario: Organizer publishes into the slot
 - **WHEN** an Organizer publishes a draft with a performance at the deleted slot
-- **THEN** the publish fails with FailedPrecondition
+- **THEN** the publish succeeds and the Event is PUBLISHED
