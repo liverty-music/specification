@@ -169,7 +169,7 @@ See proposal.md for the motivation. The approach is shaped by these facts in the
    - the shared removal and blocker predicate, with the catalog-driven FK test;
    - Order.ListByEvent, Order.GetEventID and Event.Get's publish state;
    - the refund precondition;
-   - Concert.List's artist filter;
+   - Concert.List's artist filter, which step 4 replaced with `ListByArtist` (D5);
    - suppression removed from the Series path;
    - the admin handlers.
    
@@ -177,3 +177,15 @@ See proposal.md for the motivation. The approach is shaped by these facts in the
 3. **frontend:** the admin console Organizers additions and the Artist concerts screen, then the release.
 4. **Review fixes** (tasks.md group 7), before the operations: the second specification release (D9), then the backend release with the locking and blocker changes (D1, D2), `ListByArtist` and `ArtistService.Get`, then the frontend release that reads the Artist and lists by Artist. The two application releases go out back to back.
 5. **Operations (prod)** follow tasks.md group 5. Rollback is a revert of the backend release. Deletions already performed are not reversible, which is why each one is confirmed.
+
+## Manual verification
+
+@spec-manual stories/remove-a-cancelled-concert "Cancelled, refunded and deleted" -- Verified in prod on 2026-10-25 and 2026-10-26, observing each step on the e2e-test Organizer's `E2E Sale` Event of the test Artist, the only Event of its Series. Its 4 Paid Orders (15,000 yen, 5 Issued Tickets) were all one fan's, since the purchase spec's last-ticket race went to the same fan, not two.
+- A member cancelled the Series in the organizer console.
+- An admin used `Refund all` on the Artist concerts screen. A read-only prod query then found all 4 Orders Refunded, all 5 Tickets Voided and all 4 Settlements Reversed.
+- The admin used `Delete`. The query then found no Event, no Series and no TicketType of the Event, and one suppression row for its slot.
+- The fan API's ConcertService.Get for the Event returned `not_found`, and its page `/events/<id>` showed the not-found view.
+
+Before this, tasks.md 5.2–5.3 had removed the nine BRADIO Series the same way on 2026-10-24, with 13 cancellation refunds, but recorded no Event ids to observe.
+
+@spec-manual stories/delete-a-wrong-concert "Organizer publishes into the slot" -- Verified in prod by tasks.md 5.4 on 2026-10-24: in the organizer console, the e2e-test Organizer's member created a draft of the test Artist at the slot of a deleted Event (2026-12-01, Zepp Haneda, no start time), published it and saw the date listed as 公開中, then cancelled it (中止).
