@@ -55,7 +55,7 @@
 
 ## 6. Consumer wiring (④/⑤)
 
-- [ ] 6.1 ④ lottery entry (`LotteryEntryUseCase.Start`): enforce per-**verified-person** limit (via `provider_user_id`) where a sale requires verification (extends the per-account limit); non-requiring sales stay per-account
+- [ ] 6.1 ④ lottery entry (`LotteryEntryUseCase.AuthorizeCard`, since enter-lottery-at-confirm): enforce per-**verified-person** limit (via `provider_user_id`) where a sale requires verification (extends the per-account limit); non-requiring sales stay per-account
 - [ ] 6.2 ⑤ checkout and ticket issuance: gate on an Active IdentityVerification where required <!-- MVP: the covered ticket is bound by the User's self-declared full name and phone number; the IdentityVerification supplies the per-person dedupe (provider_user_id) but NOT a verified name in MVP. Binding a *verified* 基本4情報 name (署名用+Consent) is POST-MVP. -->
 - [ ] 6.3 Per-sale requirement enforced at entry/checkout <!-- MVP: None vs JPKI-only (Verified-any behaves as JPKI-only since no fallback ships); the licence fallback is POST-MVP. -->
 
