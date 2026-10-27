@@ -192,9 +192,8 @@ message ListByEventRequest {
   entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
 }
 
-// LotteryEntryStats counts the Entered, Won and Lost entries of one
-// TicketType of a LOTTERY sale; Draft entries are not counted.
-// Every count is 0 for a TicketType with no entry, and the Won and Lost counts
+// LotteryEntryStats counts the entries (Entered, Won and Lost) of one
+// TicketType of a LOTTERY sale. Every count is 0 for a TicketType with no entry, and the Won and Lost counts
 // stay 0 until the sale is drawn.
 message LotteryEntryStats {
   // The TicketType the stats are for.
@@ -223,11 +222,11 @@ message LotteryEntryStats {
 }
 
 // ReferralCodeStats counts the Paid Orders of one event whose Checkout or
-// LotteryEntry was started with one referral code. Refunded Orders are not
+// LotteryEntry has one referral code. Refunded Orders are not
 // counted, and a LotteryEntry counts only once it won and its Order exists.
 message ReferralCodeStats {
   // The referral code. Absent for the direct group: the purchases whose
-  // Checkout or LotteryEntry was started without a code.
+  // Checkout or LotteryEntry has no code.
   optional entity.v1.ReferralCode code = 1;
 
   // The number of Paid Orders, at least 1.
