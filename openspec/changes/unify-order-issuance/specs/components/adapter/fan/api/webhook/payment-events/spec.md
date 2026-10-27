@@ -2,7 +2,7 @@
 
 ### Requirement: Other notices are acknowledged
 
-Notices that a charge completed, that a refund was applied, that a payout was reversed, or that the platform's own bank payout succeeded or failed, and notices of any other kind than a dispute, SHALL be acknowledged without effect.
+Notices that a charge completed, that a refund was applied, that a payout was reversed, or that the platform's own bank payout succeeded or failed, and notices of any other kind than a dispute or a completed card authentication, SHALL be acknowledged without effect.
 
 #### Scenario: Refund confirmation
 

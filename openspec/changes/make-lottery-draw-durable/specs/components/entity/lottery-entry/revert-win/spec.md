@@ -6,7 +6,7 @@ Makes a Won LotteryEntry Lost when its card authorization can no longer be charg
 
 ### Requirement: Revert only an uncharged win
 
-RevertWin SHALL make a Won entry that has no Order Lost, keeping its draw position. It SHALL change nothing and succeed when the entry is already Lost. It SHALL fail with FailedPrecondition and change nothing when the entry has an Order or is in any other state, and with NotFound when no entry has the id.
+RevertWin SHALL make a Won entry that has no Order Lost, keeping its draw position. It SHALL change nothing and succeed when the entry is already Lost. It SHALL fail with FailedPrecondition and change nothing when the entry has an Order or is Entered, and with NotFound when no entry has the id.
 
 #### Scenario: Win reverted
 - **WHEN** RevertWin is called for a Won entry with draw position 3 and no Order
@@ -21,5 +21,9 @@ RevertWin SHALL make a Won entry that has no Order Lost, keeping its draw positi
 - **THEN** RevertWin fails with FailedPrecondition and nothing changes
 
 #### Scenario: Not drawn
-- **WHEN** the entry is Draft or Entered
+- **WHEN** the entry is Entered
 - **THEN** RevertWin fails with FailedPrecondition and nothing changes
+
+#### Scenario: Unknown entry
+- **WHEN** no entry has the id
+- **THEN** RevertWin fails with NotFound
