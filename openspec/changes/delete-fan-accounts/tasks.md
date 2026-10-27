@@ -11,8 +11,8 @@
 
 ## 3. Usecases (backend)
 
-- [ ] 3.1 Implement `UserUseCase.ListDeletionBlockers`; verify unit tests with the operations mocked for "Ticket for a concert next week", "Ticket for today's concert", "Ticket for a past concert", "Listed resale", "Entry awaiting its draw", "Card authorized, not yet charged", "Lapsed hold", "Finished entries and withdrawn listings" and "Unknown user" (`components/usecase/user/list-deletion-blockers`)
-- [ ] 3.2 Change `UserUseCase.Delete` to run ListDeletionBlockers, DeleteIdentity and User.Delete inside `User.SerializeDeletion`; verify unit tests for "Existing user", "Unknown user", "User holding a ticket", "User whose concerts are over", "User with a listed resale", "User with an entry awaiting its draw", "User paying for tickets", "User with only refunded purchases" and "Retry after the record failed" (`components/usecase/user/delete`)
+- [ ] 3.1 Implement `UserUseCase.ListDeletionBlockers`; verify unit tests with the operations mocked for "Ticket for a concert next week", "Ticket for today's concert", "Ticket for a past concert", "Listed resale", "Entry awaiting its draw", "Card authorized, not yet charged", "Win being charged", "Win already issued", "Lapsed hold", "Finished entries and withdrawn listings" and "Unknown user" (`components/usecase/user/list-deletion-blockers`)
+- [ ] 3.2 Change `UserUseCase.Delete` to run ListDeletionBlockers, DeleteIdentity and User.Delete inside `User.SerializeDeletion`; verify unit tests for "Existing user", "Unknown user", "User holding a ticket", "User whose concerts are over", "User with a listed resale", "User with an entry awaiting its draw", "User paying for tickets", "User whose win is being charged", "User with only refunded purchases" and "Retry after the record failed" (`components/usecase/user/delete`)
 - [ ] 3.3 Implement `UserUseCase.GetByEmail`; verify unit tests for "Registered address" and "Unregistered address" (`components/usecase/user/get-by-email`)
 
 ## 4. RPC handlers and configuration (backend, cloud-provisioning)

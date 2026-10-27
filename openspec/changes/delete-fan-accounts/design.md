@@ -32,7 +32,9 @@ See proposal.md - Why. The state this design builds on:
 | Upcoming ticket | `Ticket.ListByUser` + `Event.Get` per distinct event | Issued and the event's `local_date` ≥ today in `Asia/Tokyo` |
 | Listed resale | `ResaleListing.ListByUser` | status Listed |
 | Pending lottery entry | `LotteryEntry.ListByUser` (new) | state Entered |
-| Payment in progress | `Checkout.ListByUser` (new) | Committed, or Held with `hold_expiry` > now |
+| Payment in progress | `Checkout.ListByUser` (new); `LotteryEntry.ListByUser` + `Order.GetByLotteryEntryID` | a Checkout Committed, or Held with `hold_expiry` > now; a lottery entry Won with no Order yet |
+
+A Won entry with no Order is a win whose card is not charged yet: the issuance sweeper (and, after `make-lottery-draw-durable`, `OrderUseCase.Issue`, which retries for up to 24 hours) still has to charge it and read the User for the confirmation. It counts as Payment in progress, the same thing to the fan as a Committed Checkout, so no new kind is added. A Lost entry never charges and does not block.
 
 The ticket rule uses the event's date, not its start time. Many events have no start time, and a start-time rule would block those tickets forever. The rule counts the whole event day as in progress. A fan can withdraw from the next day on.
 
@@ -91,6 +93,7 @@ Alternative considered: a new identity-service method that takes the ID token an
   - the Zitadel API audience, which passkey management needs;
   - the org scope.
 - **Callback.** `/auth/passkeys-callback` stays the single callback and routes by the stored return screen. Reusing the registered redirect URI avoids a cloud-provisioning change and a deploy-order dependency. The route's name no longer describes everything it does. This is a naming debt; rename it when the redirect URIs are next edited.
+- **Abandoned sign-in.** When the fan leaves the hosted sign-in with the browser's Back button, the callback never runs and the withdrawal screen reloads without a token. Before redirecting, the screen writes a sessionStorage marker (the return screen and an expiry 10 minutes later, never a token). On load, a marker with no session tells the screen that the fan abandoned the sign-in, so it says nothing was deleted.
 - **What withdrawal uses.** The withdrawal screen uses only the session's ID token and drops it after the call (spec `route/delete-account`).
 
 Alternative considered: a second UserManager with its own callback. It needs a new redirect URI and a second copy of the callback logic.
