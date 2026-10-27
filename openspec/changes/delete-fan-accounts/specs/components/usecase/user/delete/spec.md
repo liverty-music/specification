@@ -39,6 +39,11 @@ Delete SHALL load the User through User.Get, failing with NotFound for an unknow
 - **WHEN** the User has a Committed Checkout
 - **THEN** Delete fails with FailedPrecondition and the User remains
 
+#### Scenario: User whose win is being charged
+
+- **WHEN** the User has a LotteryEntry in state Won that has no Order yet
+- **THEN** Delete fails with FailedPrecondition and the User remains
+
 #### Scenario: User with only refunded purchases
 
 - **WHEN** the User's only Order is Refunded and its Ticket is Voided

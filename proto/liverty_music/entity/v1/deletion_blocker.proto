@@ -26,7 +26,8 @@ message DeletionBlocker {
     // A LotteryEntry in state Entered, awaiting its draw.
     KIND_PENDING_LOTTERY_ENTRY = 3;
 
-    // A Checkout being paid: Committed, or Held before its hold expiry.
+    // A payment in progress: a Checkout Committed, or Held before its hold
+    // expiry, or a LotteryEntry in state Won whose Order is not issued yet.
     KIND_PAYMENT_IN_PROGRESS = 4;
   }
 

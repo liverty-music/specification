@@ -34,8 +34,8 @@ service UserService {
   //
   // Nothing is removed while the User has a deletion blocker: an Issued
   // Ticket for an Event whose local date is today or later in Japan time, a
-  // Listed resale listing, a lottery entry awaiting its draw, or a Checkout
-  // being paid. A Ticket for an Event that has passed and a paid Order do not
+  // Listed resale listing, a lottery entry awaiting its draw, or a payment in
+  // progress (a Checkout being paid, or a won entry not charged yet). A Ticket for an Event that has passed and a paid Order do not
   // block. The sign-in identity is removed before the User record and an
   // identity that is already gone counts as removed, so a call that failed
   // partway is completed by calling Delete again.
