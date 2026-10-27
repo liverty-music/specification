@@ -70,7 +70,7 @@ not a 特定事業者) — lightweight JPKI binding, not 取引時確認; and **
 
 ### Modified Capabilities
 
-<!-- ④ lottery entry (LotteryEntryUseCase.Start) consumes the verified-person +
+<!-- ④ lottery entry (LotteryEntryUseCase.AuthorizeCard since enter-lottery-at-confirm) consumes the verified-person +
      per-person-limit signal (its per-account limit becomes per verified person where
      a TicketSale requires verification) and ⑤ checkout gates on an Active
      IdentityVerification; the enforcement hooks are folded into ④/⑤ when this lands.
@@ -81,7 +81,7 @@ not a 特定事業者) — lightweight JPKI binding, not 取引時確認; and **
      are added by unify-ticket-sales, which archives first. -->
 - `components/entity/identity-verification`: Verified-person dedupe via the provider user ID; Per-person limit signal and mixed populations; Privacy — data minimization and deletion
 - `components/usecase/ticket-sale/set-verification-requirement`: Only マイナンバーカード verification satisfies a requirement
-- `components/usecase/lottery-entry/start`: Verification adds no verified name
+- `components/usecase/lottery-entry/authorize-card`: Verification adds no verified name (moved from `lottery-entry/start`, which enter-lottery-at-confirm removes)
 - `components/infrastructure/fan/web/route/lottery-entry`: An unverified fan is asked to verify before entering
 - `components/infrastructure/fan/web/route/settings`: the identity verification result (success, or the reason for a failure) is shown on Settings
 
