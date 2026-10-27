@@ -15,11 +15,13 @@
 - [ ] 3.2 Change `UserUseCase.Delete` to run ListDeletionBlockers, DeleteIdentity and User.Delete inside `User.SerializeDeletion`; verify unit tests for "Existing user", "Unknown user", "User holding a ticket", "User whose concerts are over", "User with a listed resale", "User with an entry awaiting its draw", "User paying for tickets", "User with only refunded purchases" and "Retry after the record failed" (`components/usecase/user/delete`)
 - [ ] 3.3 Implement `UserUseCase.GetByEmail`; verify unit tests for "Registered address" and "Unregistered address" (`components/usecase/user/get-by-email`)
 
-## 4. RPC handlers (backend)
+## 4. RPC handlers and configuration (backend, cloud-provisioning)
 
 - [ ] 4.1 Add the fresh-sign-in check (design D3: ID token signature, issuer, `aud` contains the fan client id, `sub` equals the caller's, `auth_time` within 300 s) and the fan `ListDeletionBlockers` and `Delete` handlers; verify handler tests for "Deleting only oneself", "Caller holds an upcoming ticket", "Nothing in progress", "Fresh sign-in", "Old sign-in", "Proof of another identity", "No proof" and "Caller with an upcoming ticket" (`components/adapter/fan/api/rpc/user`)
 - [ ] 4.2 Add the admin `GetByEmail` handler; verify handler tests for "Non-admin looks up a user", "Admin finds a fan", "Fan with nothing in progress", "Unregistered address" and "Malformed address", and that the existing Delete tests still pass (`components/adapter/admin/api/rpc/user`)
-- [ ] 4.3 Release and deploy the backend; verify in prod that the rollout finished and that the admin `GetByEmail` for the owner's own address returns the User with no blocker (read-only check)
+- [ ] 4.3 Add `DeleteIdentity` to the identity service's fan API procedures and build the identity remover on the fan workload (design D3, "Where the identity is removed"); verify the identity listener tests: the fan API's listener serves `DeleteIdentity` and `VerifyEmail` and refuses every other procedure with PermissionDenied
+- [ ] 4.4 (cloud-provisioning) Set `FAN_OIDC_CLIENT_ID` (the fan app's Zitadel client id) on the fan API in the prod and dev overlays, and update the identity NetworkPolicy comment to say the fan API's listener also serves `DeleteIdentity` (design D3); merge and verify in prod that the fan API pods carry the variable
+- [ ] 4.5 Release and deploy the backend after 4.4 is in prod; verify in prod that the rollout finished and that the admin `GetByEmail` for the owner's own address returns the User with no blocker (read-only check)
 
 ## 5. Fan frontend
 

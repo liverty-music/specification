@@ -6,6 +6,7 @@ See proposal.md - Why. The state this design builds on:
 - `users` has no `created_at` column. Follows, journeys, push subscriptions, notifications, reminders, identity verifications, passkeys and wallet keys reference `users(id) ON DELETE CASCADE`. `orders`, `tickets`, `checkouts`, `lottery_entries` and `resale_listings` keep `user_id` without a foreign key, so they survive a deletion with no migration.
 - The fan app's access token is a Zitadel JWT with no `auth_time` and no `amr` claim. The ID token has both. This was checked on the prod fan and organizer tokens stored by the E2E sessions (claim names only).
 - Passkey management already runs a second OIDC request (`src/services/passkey-auth-service.ts`, change `fan-passkey-recovery-and-management` D3): `max_age=300`, an in-memory `UserManager` and the callback `/auth/passkeys-callback`, which is registered as a redirect URI of the fan app in Zitadel.
+- Only the identity service holds identity-provider credentials. Each calling workload reaches it on its own listener, which serves only that workload's procedures: the admin console API's listener serves `DeleteIdentity`, the fan API's only `VerifyEmail` (backend `internal/di/identity.go`). A NetworkPolicy admits each listener from its one workload, and no route exposes the identity service outside the cluster (cloud-provisioning `k8s/namespaces/backend/base/identity-networkpolicy.yaml`). The fan API has no setting for the fan app's client id.
 - Several flows check a condition and then act on it. Those flows serialize with a transaction-scoped advisory lock held while the work runs on other connections (`CheckoutRepository.Serialize`, `pg_advisory_xact_lock`), or with row locks (`event_removal.go`).
 
 ## Goals / Non-Goals
@@ -79,6 +80,10 @@ Alternatives considered:
 - Token introspection. Its response carries no `auth_time` either.
 - Trusting the screen. A direct RPC call would skip the check.
 
+**Where the identity is removed.** The fan API's listener on the identity service also serves the existing `DeleteIdentity`, and the fan workload builds the identity remover the admin workload uses. The identity service does not check the ID token again: only the fan API can reach that listener, and the fan API is where an outside request enters, so the check belongs there. A compromised fan API could remove any fan's identity, but it can already change every User row, so the added exposure is small. The fan app's client id comes from a new fan API setting `FAN_OIDC_CLIENT_ID`, set in cloud-provisioning.
+
+Alternative considered: a new identity-service method that takes the ID token and checks it there. It would keep a compromised fan API from removing identities, at the cost of a second copy of the check, JWKS access in the identity service and a new backend RPC.
+
 ### D4. One fresh-sign-in service for passkeys and withdrawal
 
 - **The service.** `PasskeyAuthService` becomes a fresh-sign-in service. `start` takes the screen to return to, which is stored in the oidc-client-ts request state.
@@ -120,8 +125,9 @@ Order and ticket records are kept for 7 years. That is the longest period that æ
 ## Migration Plan
 
 1. specification: add the proto, release it, and wait for BSR generation.
-2. backend: add the new operations and usecases, the creator locks, the handlers and the fresh-sign-in check. No schema migration. Deploy.
-3. frontend: add the fan withdrawal route, the Settings row, the fresh-sign-in generalization, the admin Users route and the Privacy Policy text. Deploy.
+2. cloud-provisioning: set `FAN_OIDC_CLIENT_ID` on the fan API, and admit `DeleteIdentity` on the fan API's identity listener in the NetworkPolicy comment. The setting is unused until the backend reads it.
+3. backend: add the new operations and usecases, the creator locks, the handlers, the fresh-sign-in check, `DeleteIdentity` on the fan API's identity listener and the identity remover on the fan workload. No schema migration. Deploy.
+4. frontend: add the fan withdrawal route, the Settings row, the fresh-sign-in generalization, the admin Users route and the Privacy Policy text. Deploy.
 
 Rollback: revert the frontend first. The backend RPCs are additive. The narrowed admin rule only lets more deletions through, so reverting the backend restores the stricter rule.
 
