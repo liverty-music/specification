@@ -2,13 +2,14 @@
 
 - [ ] 1.1 Confirm `introduce-durable-workflows` is released in backend and `workflow-worker` runs in prod; verify `kubectl get deploy workflow-worker -n backend` shows 1/1 ready
 
-## 2. Entity operations (components/entity/lottery-entry/persist-draw-outcome, revert-win, send-loss-email)
+## 2. Entity operations (components/entity/lottery-entry/persist-draw-outcome, revert-win, send-loss-email, components/entity/card-authorization/capture, release)
 
 - [ ] 2.1 Add the migration for `lottery_entries.loss_email_send_at` (TIMESTAMPTZ, commented) and add `lottery_loss` to the `notifications.type` comment; verify `make lint-schema` passes and the migration applies to a local database
 - [ ] 2.2 Change `PersistDrawOutcome` to change nothing when the sale already has a draw time; verify the contract tests "Outcome recorded", "Failure leaves nothing recorded", "Empty draw" and "Recorded again" pass
 - [ ] 2.3 Declare and implement `LotteryEntry.RevertWin`; verify the contract tests "Win reverted", "Already reverted", "Win already issued", "Not drawn", "Unknown entry" pass
 - [ ] 2.4 Declare and implement `LotteryEntry.SendLossEmail`; verify the contract tests "Email sent", "Redelivered event", "Mail unavailable" pass
-- [ ] 2.5 Remove `Order.ListLotteryEntryIDsAwaitingIssuance` with its tests and mocks; verify `make check` passes with no reference left
+- [ ] 2.5 Stop sending the fixed idempotency keys on capture and cancel in `stripe_card_authorization.go` (design "Stripe keys: the operation, not the run"); verify the contract tests "Payment provider error, then recovered" of capture and release pass against a stub that answers the first call with a 500 and replays it for the same key, and the existing capture and release tests still pass
+- [ ] 2.6 Remove `Order.ListLotteryEntryIDsAwaitingIssuance` with its tests and mocks; verify `make check` passes with no reference left
 
 ## 3. Usecases (components/usecase/lottery-entry/draw, draw-due-sales, release-card-authorization, components/usecase/order/issue, fulfill-payment)
 

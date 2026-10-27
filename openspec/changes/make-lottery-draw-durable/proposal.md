@@ -25,6 +25,7 @@ The lottery draw charges before it records. `LotteryEntryUseCase.RunDraw` draws 
 
 ### Modified Capabilities
 
+- `components/entity/card-authorization/capture`, `release`: a failure an earlier call received is never returned again (a 500 the payment provider saved under a fixed key).
 - `components/entity/lottery-entry` (Purpose): the state diagram gains Won to Lost; Won means the draw allocated the tickets; new attribute loss email send time.
 - `components/entity/lottery-entry/persist-draw-outcome`: changes nothing for a sale already drawn.
 - `components/entity/notification` (Purpose): new type lottery_loss.
@@ -38,7 +39,7 @@ The lottery draw charges before it records. `LotteryEntryUseCase.RunDraw` draws 
 - `components/usecase/notification/deliver`: runs for `SendLotteryLoss` too.
 - `stories/win-tickets-in-a-lottery`: no time bound; the fan is told the result; new requirements for a draw that stops midway and for a winner whose card can no longer be charged.
 
-Unchanged and why: `components/entity/order/issue` already stores the Order, its Tickets and its Settlement together and fails with AlreadyExists for a second Order of the same source; `components/entity/card-authorization/capture` and `release` already succeed again for a repeated call; `components/entity/lottery-entry/list-undrawn-for-ticket-type` and `run-lottery-draw` keep their contracts; `components/entity/ticket-sale/list-due-for-draw` already returns a sale 1 minute after its end.
+Unchanged and why: `components/entity/order/issue` already stores the Order, its Tickets and its Settlement together and fails with AlreadyExists for a second Order of the same source; `components/entity/lottery-entry/list-undrawn-for-ticket-type` and `run-lottery-draw` keep their contracts; `components/entity/ticket-sale/list-due-for-draw` already returns a sale 1 minute after its end.
 
 ## Impact
 
