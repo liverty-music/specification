@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+
+// DeletionBlocker is one kind of in-progress activity that stops a User from
+// being deleted, with how many of that kind the User has. A User with any
+// blocker cannot be deleted, by the fan or by an admin. Finished activity (a
+// Ticket for an Event whose local date has passed, an Order in any status)
+// never blocks.
+message DeletionBlocker {
+  // Kind is what is still in progress.
+  enum Kind {
+    // Default value, rejected at the boundary: a returned blocker always
+    // carries a concrete kind.
+    KIND_UNSPECIFIED = 0;
+
+    // An Issued Ticket for an Event whose local date is today or later in
+    // Japan time.
+    KIND_UPCOMING_TICKET = 1;
+
+    // A ResaleListing in status Listed.
+    KIND_LISTED_RESALE = 2;
+
+    // A LotteryEntry in state Entered, awaiting its draw.
+    KIND_PENDING_LOTTERY_ENTRY = 3;
+
+    // A Checkout being paid: Committed, or Held before its hold expiry.
+    KIND_PAYMENT_IN_PROGRESS = 4;
+  }
+
+  // What is still in progress.
+  Kind kind = 1 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+
+  // How many of this kind the User has, at least 1.
+  int32 count = 2 [(buf.validate.field).int32.gte = 1];
+}
