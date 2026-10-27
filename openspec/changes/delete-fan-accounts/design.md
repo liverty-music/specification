@@ -138,3 +138,14 @@ Rollback: revert the frontend first. The backend RPCs are additive. The narrowed
 ## Open Questions
 
 - The exact retention period stated in the Privacy Policy (D7). It defaults to 7 years until a tax accountant confirms; only the copy changes.
+
+## Scenarios verified without an automated test
+
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "API server deployment" -- unchanged by this change; prod `kubectl get deploy -n backend <workload> -o yaml` for fan-api, admin-console-api, organizer-console-api and reception-api on v1.106.0 (2026-10-27) has 0 lines mentioning zitadel
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "Process with no access" -- unchanged by this change; the identity NetworkPolicy rules are untouched (cloud-provisioning #706 changed only a comment)
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "Request from outside the cluster" -- unchanged by this change; prod Service `identity` is ClusterIP and no HTTPRoute names it (2026-10-27)
+@spec-manual components/infrastructure/backend/process/identity-provider-credentials "Signed-in calls keep working" -- the prod E2E of stories/delete-my-account (frontend #893) makes signed-in fan calls on v1.106.0 and passed (2026-10-27)
+@spec-manual stories/delete-a-fan-account "Request by email" -- no E2E: the admin console signs in only with the admin organization's Google Workspace accounts; covered by the admin users route component tests and the admin GetByEmail and Delete handler tests; recorded in frontend docs/ci-coverage-gaps.md
+@spec-manual stories/delete-a-fan-account "Fan with a ticket for an upcoming concert" -- no E2E for the same reason; covered by the admin users route test "Fan with an upcoming ticket" and the usecase test "User holding a ticket"
+@spec-manual stories/delete-my-account "Ticket for next week" -- no E2E: a throwaway prod account holding a ticket could not be deleted for a week; covered by the withdrawal route test "Fan with an upcoming ticket" and the usecase tests "Ticket for a concert next week" and "User holding a ticket"
+@spec-manual stories/delete-my-account "After the concert" -- no E2E for the same reason; covered by the usecase tests "Ticket for a past concert" and "User whose concerts are over"
