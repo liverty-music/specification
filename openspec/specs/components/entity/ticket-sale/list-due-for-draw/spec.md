@@ -7,11 +7,15 @@ Lists the Lottery sales whose draw is due at an instant: the window has closed a
 
 ### Requirement: Sales due for draw
 
-ListDueForDraw SHALL return every Organizer's sale whose method is Lottery, whose end time is at or before the given instant and that is not drawn, and no other sale. A discovered sale SHALL never be returned, because the platform takes no entries for it. It SHALL return an empty list when none is due.
+ListDueForDraw SHALL return every Organizer's sale whose method is Lottery, whose end time is at least 1 minute before the given instant and that is not drawn, and no other sale. A discovered sale SHALL never be returned, because the platform takes no entries for it. It SHALL return an empty list when none is due.
 
 #### Scenario: Closed and undrawn
-- **WHEN** an Organizer's Lottery sale ended before the instant and has no draw time
+- **WHEN** an Organizer's Lottery sale ended 2 minutes before the instant and has no draw time
 - **THEN** it is returned
+
+#### Scenario: Just closed
+- **WHEN** a Lottery sale ended 30 seconds before the instant
+- **THEN** it is not returned
 
 #### Scenario: Still open
 - **WHEN** a Lottery sale's end time is after the instant

@@ -47,7 +47,7 @@ Before any usecase runs, the boundary SHALL fail with InvalidArgument when:
 
 #### Scenario: Malformed referral code
 - **WHEN** Start is called with the referral code `member_a`
-- **THEN** it fails with InvalidArgument, nothing is held and no Referral is recorded
+- **THEN** it fails with InvalidArgument, nothing is held and no referral code is set
 
 #### Scenario: Referral code passed on
 - **WHEN** Start is called with a valid TicketType, a ticket count of 2 and the referral code `member-a`

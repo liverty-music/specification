@@ -5,13 +5,13 @@ Lists a user's LotteryEntries for one TicketType.
 
 ## Requirements
 
-### Requirement: Entries of a user for a ticket type
+### Requirement: Entries of one user for one ticket type
 
 ListByTicketTypeAndUser SHALL return every entry of the user for the TicketType, in every state, newest first, and no entry of another user or another TicketType. It SHALL return an empty list when there is none.
 
-#### Scenario: Active entry after a withdrawal
-- **WHEN** the user has a Withdrawn entry and a later Entered entry for the TicketType
-- **THEN** both are returned, the Entered entry first
+#### Scenario: Entry of the user
+- **WHEN** the user has an Entered entry for the TicketType and another user has an entry for it
+- **THEN** only the user's Entered entry is returned
 
 #### Scenario: Never entered
 - **WHEN** the user has no entry for the TicketType

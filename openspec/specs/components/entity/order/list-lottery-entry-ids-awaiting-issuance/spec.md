@@ -18,5 +18,5 @@ ListLotteryEntryIDsAwaitingIssuance SHALL return the id of every Won entry that 
 - **THEN** its id is not returned
 
 #### Scenario: Not won
-- **WHEN** an entry is Entered, Lost or Withdrawn
+- **WHEN** an entry is Entered or Lost
 - **THEN** its id is not returned

@@ -11,6 +11,7 @@ A Checkout is one fan's purchase in progress on a TicketType of a FirstCome Tick
 | ticket count | tickets held | required; 1 to the ticket type's per-account limit |
 | amount | total to pay: the ticket type's price times the ticket count, in yen | required; fixed at creation |
 | card authorization | the CardAuthorization opened on the fan's card for the amount | absent until the fan authorizes their card; set once |
+| referral code | the ReferralCode of the link the fan came from | optional; changeable only while Held |
 | card authorization release time | when the card authorization was given back without charging | absent unless released; set once |
 | status | lifecycle | Held, Committed, Completed, Expired or Released |
 | hold expiry | when the hold lapses; it is never extended | required; 15 minutes after the checkout starts, or for a resale Checkout the resale deadline when that is earlier |
@@ -23,7 +24,6 @@ erDiagram
   User ||--o{ Checkout : "checks out"
   Checkout ||--o| Order : "is paid as"
   Checkout |o--o| CardAuthorization : "is paid by"
-  Checkout ||--o| Referral : "was started from"
   Checkout |o--o{ ResaleListing : "holds"
 ```
 

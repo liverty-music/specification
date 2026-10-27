@@ -55,7 +55,7 @@ On a notice that the card issuer of an Order's user opened a dispute, the endpoi
 
 ### Requirement: Other notices are acknowledged
 
-Notices that a refund was applied, that a payout was reversed, or that the platform's own bank payout succeeded or failed, and notices of any other kind than a dispute or a completed charge, SHALL be acknowledged without effect.
+Notices that a refund was applied, that a payout was reversed, or that the platform's own bank payout succeeded or failed, and notices of any other kind than a dispute, a completed charge or a completed card authentication, SHALL be acknowledged without effect.
 
 #### Scenario: Refund confirmation
 
@@ -75,3 +75,22 @@ On a notice that a charge completed, the endpoint SHALL call OrderUseCase.Fulfil
 
 - **WHEN** FulfillPayment fails
 - **THEN** the endpoint answers with Internal, the notice is not counted as applied, and a redelivery fulfills it
+
+### Requirement: A completed card authentication confirms the lottery entry
+
+On a notice that a card authorization became Authorized, the endpoint SHALL call LotteryEntryUseCase.Confirm with the notice's card authorization and no calling fan. A rejection by Confirm (PermissionDenied, FailedPrecondition, InvalidArgument) SHALL be acknowledged, since Confirm has already released what it rejected; any other failure SHALL be answered with Internal, so the provider delivers the notice again.
+
+#### Scenario: Fan closed the browser
+
+- **WHEN** a notice reports a fan's lottery card authorization Authorized and the fan never called Confirm
+- **THEN** LotteryEntryUseCase.Confirm runs and the entry is made
+
+#### Scenario: Entry already made
+
+- **WHEN** the notice arrives after the fan's Confirm made the entry
+- **THEN** it is acknowledged and nothing changes
+
+#### Scenario: Payment provider unreachable
+
+- **WHEN** Confirm fails with Unavailable
+- **THEN** the endpoint answers with Internal and a redelivery handles the notice again

@@ -47,12 +47,24 @@ It SHALL record a SuppressedConcert for the removed Event's Venue, date and star
 - **WHEN** one of two Events of a first-party Series is deleted
 - **THEN** the Series and its other Event remain
 
-### Requirement: Paid records block the delete
+### Requirement: Delete is idempotent
+
+DeleteAndSuppress on an id that does not exist SHALL succeed and SHALL record no SuppressedConcert; suppressing a slot that is already suppressed SHALL succeed without a second record.
+
+#### Scenario: Unknown id
+- **WHEN** the Event id does not exist
+- **THEN** the call succeeds and no SuppressedConcert is recorded
+
+#### Scenario: Slot already suppressed
+- **WHEN** an Event at an already-suppressed slot is deleted
+- **THEN** the call succeeds and the slot has one SuppressedConcert
+
+### Requirement: Paid records and purchases in progress block the delete
 
 DeleteAndSuppress SHALL fail with FailedPrecondition, removing nothing and suppressing nothing, when the Event has:
 - an Order that is Paid;
 - a Settlement that is not Reversed;
-- a purchase in progress: a Checkout that is Held or Committed, an Expired or Released Checkout whose card authorization is not yet released, an Entered lottery entry, a Draft lottery entry whose card authorization is open, or a Won lottery entry whose Order is not yet issued.
+- a purchase in progress: a Checkout that is Held or Committed, an Expired or Released Checkout whose card authorization is not yet released, an Entered lottery entry, or a Won lottery entry whose Order is not yet issued.
 
 A purchase started while DeleteAndSuppress runs SHALL either be seen by this check or be refused; it SHALL NOT be removed.
 
@@ -72,22 +84,6 @@ A purchase started while DeleteAndSuppress runs SHALL either be seen by this che
 - **WHEN** an Event has an Entered lottery entry
 - **THEN** the call fails with FailedPrecondition and the Event remains
 
-#### Scenario: Concert with a draft entry holding a card authorization
-- **WHEN** an Event has a Draft lottery entry whose card authorization is open
-- **THEN** the call fails with FailedPrecondition and the Event remains
-
 #### Scenario: Concert with a won entry awaiting its order
 - **WHEN** an Event has a Won lottery entry whose payment is captured and whose Order is not yet issued
 - **THEN** the call fails with FailedPrecondition and the Event and the entry remain
-
-### Requirement: Delete is idempotent
-
-DeleteAndSuppress on an id that does not exist SHALL succeed and SHALL record no SuppressedConcert; suppressing a slot that is already suppressed SHALL succeed without a second record.
-
-#### Scenario: Unknown id
-- **WHEN** the Event id does not exist
-- **THEN** the call succeeds and no SuppressedConcert is recorded
-
-#### Scenario: Slot already suppressed
-- **WHEN** an Event at an already-suppressed slot is deleted
-- **THEN** the call succeeds and the slot has one SuppressedConcert

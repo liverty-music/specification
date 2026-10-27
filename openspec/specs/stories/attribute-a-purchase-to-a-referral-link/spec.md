@@ -31,7 +31,7 @@ Member --> TicketSaleUseCaseListOwnByEvent
 
 ### Requirement: A purchase counts for the link the fan came from
 
-After an Organizer creates a FirstCome TicketSale for a published event of a PUBLIC Series with TicketSaleUseCase.Create, a fan who opens `/events/<id>?ref=<code>` for an event of that Series SHALL be able to sign up from the Event page and buy with CheckoutUseCase.Start, CheckoutUseCase.AuthorizeCard and OrderUseCase.IssueFromCheckout within 7 days, and the Order SHALL then be counted under that code by TicketSaleUseCase.ListOwnByEvent for the event. A lottery entry started the same way SHALL be counted under its code once it won and its Order was created.
+After an Organizer creates a FirstCome TicketSale for a published event of a PUBLIC Series with TicketSaleUseCase.Create, a fan who opens `/events/<id>?ref=<code>` for an event of that Series SHALL be able to sign up from the Event page and buy with CheckoutUseCase.Start, CheckoutUseCase.AuthorizeCard and OrderUseCase.IssueFromCheckout within 7 days, and the Order SHALL then be counted under that code by TicketSaleUseCase.ListOwnByEvent for the event. A lottery entry authorized the same way SHALL be counted under its code once it won and its Order was created.
 
 #### Scenario: Guest from a member's link buys after signing up
 - **WHEN** a guest opens `/events/<id>?ref=member-a`, signs up from the Event page and buys 2 tickets of 3000 yen
