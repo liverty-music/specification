@@ -30,7 +30,7 @@ See proposal.md - Why. The state this design builds on:
 | kind | read | blocks when |
 |---|---|---|
 | Upcoming ticket | `Ticket.ListByUser` + `Event.Get` per distinct event | Issued and the event's `local_date` ≥ today in `Asia/Tokyo` |
-| Listed resale | `ResaleListing.ListByUser` | status Listed |
+| Listed resale | `ResaleListing.ListByUser` + `Event.Get` | open: status Listed and before its deadline (an expired listing keeps the stored status Listed forever) |
 | Pending lottery entry | `LotteryEntry.ListByUser` (new) | state Entered |
 | Payment in progress | `Checkout.ListByUser` (new); `LotteryEntry.ListByUser` + `Order.GetByLotteryEntryID` | a Checkout Committed, or Held with `hold_expiry` > now; a lottery entry Won with no Order yet |
 
