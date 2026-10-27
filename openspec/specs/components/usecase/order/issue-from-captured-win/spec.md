@@ -32,7 +32,7 @@ It SHALL store them with Order.Issue; when Order.Issue fails with AlreadyExists 
 
 #### Scenario: Entry not won
 
-- **WHEN** the entry is Draft, Entered, Lost or Withdrawn
+- **WHEN** the entry is Entered or Lost
 - **THEN** IssueFromCapturedWin fails with FailedPrecondition and creates no Order, Ticket or Settlement
 
 #### Scenario: Payment not captured

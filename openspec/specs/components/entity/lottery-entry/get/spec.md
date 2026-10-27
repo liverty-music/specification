@@ -7,7 +7,7 @@ Returns one LotteryEntry by its id, in any state.
 
 ### Requirement: Get by id
 
-Get SHALL return the entry with the given id, including a Withdrawn one, and SHALL fail with NotFound when none exists.
+Get SHALL return the entry with the given id, in any state, and SHALL fail with NotFound when none exists.
 
 #### Scenario: Existing entry
 
