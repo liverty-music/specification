@@ -17,6 +17,25 @@ The system SHALL allow authenticated users to sign out of their account. The Sig
 - **WHEN** an unauthenticated (guest) user views the Settings page
 - **THEN** the system SHALL NOT render the Sign Out control
 
+### Requirement: Passkey management requires a recent sign-in
+
+For a signed-in fan, the ACCOUNT section SHALL show a Passkeys row that opens passkey management. Opening passkey management SHALL send the fan to the hosted login to sign in again, every time, however recently the fan signed in, and SHALL return them to passkey management afterwards. The access gained this way SHALL last only while passkey management stays open: leaving it, or reloading the app, SHALL require signing in again.
+
+#### Scenario: Recent sign-in
+
+- **WHEN** a fan who signed in 2 minutes ago opens the Passkeys row
+- **THEN** the hosted login asks the fan to sign in again, and after it succeeds passkey management opens
+
+#### Scenario: Older sign-in
+
+- **WHEN** a fan who signed in 3 days ago opens the Passkeys row
+- **THEN** the hosted login asks the fan to sign in again, and after it succeeds passkey management opens
+
+#### Scenario: Re-opening after leaving
+
+- **WHEN** the fan leaves passkey management and opens it again a minute after signing in again
+- **THEN** the hosted login asks the fan to sign in again
+
 ## ADDED Requirements
 
 ### Requirement: Delete account entry below Sign Out
