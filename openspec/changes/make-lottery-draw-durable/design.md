@@ -5,7 +5,8 @@ See proposal.md - Why. Facts this design depends on (backend `origin/main` at `4
 - **The draw today** (`internal/usecase/lottery_entry_uc.go:385-466`): `RunDraw` lists each TicketType's Entered entries, computes `RunLotteryDraw(…, uc.newRand())`, captures each winner and releases each loser in the loop, and only then calls `PersistDrawOutcome` (`:450`). A release failure is only logged (`release`). Each entry's result is published as `ORDER.lottery_entry_drawn` with `CaptureFailed` (`entity/event_data.go:136`) for product analytics.
 - **PersistDrawOutcome** (`infrastructure/database/rdb/lottery_entry_repo.go:216-275`) updates the given entries by id without checking their state (`lotteryEntrySetOutcomeQuery`, `:88-93`) and sets `ticket_sales.draw_at` last, in one transaction.
 - **Sweepers**: `DrawDueSales` and `IssueDueWins` run every minute as goroutines in the fan workload (`internal/di/provider.go:521-548`).
-- **Stripe keys**: capture and cancel already use a key per operation and card authorization (`infrastructure/payment/stripe_card_authorization.go:188`, `:225`), and a capture repeated after the key expired reconciles by the PaymentIntent's status (`:184`).
+- **Stripe keys**: capture and cancel send a fixed key per operation and card authorization (`infrastructure/payment/stripe_card_authorization.go:188`, `:225`), and decide the outcome by reading the PaymentIntent after an error (`:184-217`). stripe-go v87 sends a new random key on a write call without one and keeps it for its own retries (`stripe.go:873-881`, 2 retries by default, `:51`).
+- **Stripe's rules** ([Idempotent requests](https://docs.stripe.com/api/idempotent_requests), [Advanced error handling](https://docs.stripe.com/error-low-level)): a key identifies one operation; API v1 returns the saved first response to every retry with the same key, "including `500` errors", for at least 24 hours; after a 500, resolve the outcome by retrieving the object before using a new key.
 - **Notices to fans**: a won entry's Order is announced as `ORDER.paid`, and `SendOrderConfirmation` sends an email and an `order_confirmation` push. A losing fan receives nothing today. Notification types are strings (`entity/notification.go:21`; `notifications.type` comment, `schema.sql:380`). `orders.confirmation_send_at` keeps the confirmation email to one per Order (`schema.sql:880`).
 - **Workflow runtime** (`introduce-durable-workflows`): `Flow` and `Workflows` in the usecase layer, the `workflow-worker` Deployment, step retries on Unavailable and DeadlineExceeded, stored deadlines, the "Workflow Needs Admin" alert, and an event id derived from the workflow id and the step.
 
@@ -66,9 +67,18 @@ ReleaseCardAuthorization(entry) deadline 24 h
 - **Loser**: the `ORDER.lottery_entry_drawn` event that product analytics reads today is the lottery result announcement. `SendLotteryLoss` runs in the event consumer for each Lost result and sends an email (`LotteryEntry.SendLossEmail`, one per entry through the new `lottery_entries.loss_email_send_at`) and a `lottery_loss` push that opens the event page. The message says whether the entry was not drawn or the win was cancelled because the card could not be charged (`CaptureFailed`).
 - The announcement is published from a step, so it keeps one id across a resumed run, and product analytics and the email see it once.
 
-### Stripe keys stay as they are
+### Stripe keys: the operation, not the run
 
-The capture and cancel keys are already one per operation and card authorization, and the capture reconciles by status. A key derived from the workflow id and the step adds nothing for these two calls. Derived keys are for calls whose operation is not unique per resource; none is added here.
+A key names one business operation. What prevents a second effect differs by operation, and so does the key:
+
+| Operation | What prevents a second effect | Key |
+|---|---|---|
+| Capture, cancel | The PaymentIntent: it is captured or cancelled at most once | None of ours: stripe-go's key per call. The outcome is read from the PaymentIntent |
+| Create a card authorization (checkout) | Nothing on Stripe's side: PaymentIntents can be created any number of times | The Checkout id, as today |
+| Refund, transfer (later changes) | Nothing on Stripe's side | The business id (`refund:<order>`, `transfer:<split>`); after a 500, reconcile by metadata before a new key |
+
+- **Why the fixed capture and cancel keys go**: Stripe saves a 500 under the key and returns it to every retry for at least 24 hours. A capture that once got a 500 fails on every retry of the step until Issue's 24-hour deadline, even after Stripe recovers. Capture reads the PaymentIntent after every error, which is the reconciliation Stripe asks for before a new key, and a PaymentIntent can be captured only once, so a fresh key per call cannot charge twice. The same holds for cancel. This also brings the code back to the existing contract "the outcome SHALL follow the CardAuthorization's status, not the outcome of an earlier request".
+- **Why not a key from the workflow id and the step**: the step id is the step's position, so it changes when a patch adds a step, and an admin's `fork` runs under a new workflow id. Such a key repeats a cached 500 exactly like the fixed key, and names the run instead of the operation. The DBOS docs make the workflow id an idempotency key because it is derived from an order or request id (`golang/tutorials/workflow-management.md:135`); the business id itself is the better key wherever one exists, and every Stripe call here has one or needs none.
 
 ### Queue
 
@@ -86,7 +96,7 @@ The `payment_intent.succeeded` notice of a lottery capture arrives after `Issue`
 
 ## Migration Plan
 
-1. backend: migration for `lottery_entries.loss_email_send_at` and the `notifications.type` comment; `PersistDrawOutcome`'s draw-time rule; `RevertWin`, `SendLossEmail`; `Draw`, `ReleaseCardAuthorization`, `Issue`, `SendLotteryLoss` and the `payment` queue; the `draw-due-sales` schedule in the worker; removal of `RunDraw`, `IssueFromCapturedWin`, `IssueDueWins`, `ListLotteryEntryIDsAwaitingIssuance` and the two goroutines.
+1. backend: capture and cancel without a fixed idempotency key; migration for `lottery_entries.loss_email_send_at` and the `notifications.type` comment; `PersistDrawOutcome`'s draw-time rule; `RevertWin`, `SendLossEmail`; `Draw`, `ReleaseCardAuthorization`, `Issue`, `SendLotteryLoss` and the `payment` queue; the `draw-due-sales` schedule in the worker; removal of `RunDraw`, `IssueFromCapturedWin`, `IssueDueWins`, `ListLotteryEntryIDsAwaitingIssuance` and the two goroutines.
 2. Before the deploy, read-only in prod: list Lottery sales due for a draw and Won entries without an Order. Both are expected to be empty (no users). A due sale is drawn by the new schedule after the deploy. A Won entry without an Order has no trigger in the new code: if one exists, stop and issue it with the old code first.
 3. Deploy, then confirm the AtlasMigration, the rollout, and a `draw-due-sales` run for each minute since the rollout.
 

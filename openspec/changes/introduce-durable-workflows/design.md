@@ -117,7 +117,7 @@ type Workflows interface { // for callers outside a workflow (API handlers, cons
 - `Flow.Step` puts the workflow id and the DBOS step id (`GetStepID`, the step's position, the same on every run and distinct for each pass of a loop) into the step's context.
 - `messaging.NewEvent` derives the CloudEvent id from them as a UUIDv5 (fixed namespace, key `<workflow id>/<step id>`) when they are present, and mints a UUIDv7 otherwise. No extra step or write is needed.
 - Rejected: minting a UUIDv7 in an earlier step and recording it, which adds one checkpoint write per publish for the same result.
-- External calls made from a step derive their idempotency keys the same way (`<workflow id>/<step id>`), as the DBOS docs make the workflow id the idempotency key; the later changes apply it to Stripe.
+- This derivation is for events only. An external call's idempotency key names the business operation (a Checkout id, `refund:<order>`), or is left to the client library when the provider's own state prevents a second effect, as for a Stripe capture. A key from the workflow id and the step names the run: it changes under `fork` and when a patch adds a step, and it would keep returning a 500 the provider saved under it (`make-lottery-draw-durable` design "Stripe keys: the operation, not the run").
 - The id is also the JetStream `Nats-Msg-Id`, and consumers already keep idempotency by the event id or by business ids.
 - The usecase calls `PublishEvent` as today; nothing in the usecase layer changes.
 
