@@ -31,6 +31,7 @@ Out of scope: suspending or banning accounts, and keeping a deleted person's pro
 - `components/usecase/user/delete`: the blocking rule narrows to in-progress tickets, resale listings, lottery entries and checkouts, and the usecase is exposed to the fan as well as the admin.
 - `components/adapter/fan/api/rpc/user`: adds Delete (fresh sign-in within 5 minutes) and ListDeletionBlockers for the caller's own User.
 - `components/adapter/admin/api/rpc/user`: adds GetByEmail returning a User with its deletion blockers.
+- `components/infrastructure/backend/process/identity-provider-credentials`: the fan API may also ask the identity service to delete the identity of a fan who deletes their own account (design D3, "Where the identity is removed").
 - `components/infrastructure/fan/web/route/settings`: an account section row that opens the withdrawal screen.
 - `components/infrastructure/fan/web/global/legal-document`: the Privacy Policy states what is kept after withdrawal.
 
