@@ -20,18 +20,16 @@ message LotteryEntryId {
 // LotteryEntryState is the lifecycle of a LotteryEntry:
 //
 //   DRAFT --> ENTERED --> WON | LOST
-//   DRAFT --> WITHDRAWN
-//   ENTERED --> WITHDRAWN
 //
-// New values may be appended; existing values must not be renumbered.
+// A Draft that is not confirmed when the draw runs stays a Draft. New values
+// may be appended; existing values must not be renumbered.
 enum LotteryEntryState {
   // Default value, rejected at the boundary: a persisted entry always has a
   // concrete state.
   LOTTERY_ENTRY_STATE_UNSPECIFIED = 0;
 
   // Confirmed and awaiting the draw. The card authorization reserves the amount
-  // but no money is captured. Withdrawable while the window is open, which
-  // releases the card authorization.
+  // but no money is captured. A confirmed entry cannot be given up.
   LOTTERY_ENTRY_STATE_ENTERED = 1;
 
   // Selected in the draw: the card authorization was captured and the Order is
@@ -42,22 +40,23 @@ enum LotteryEntryState {
   // order among the ticket type's losers.
   LOTTERY_ENTRY_STATE_LOST = 3;
 
-  // Withdrawn by the fan before the draw, or a Draft that was never confirmed
-  // when the draw ran. Any card authorization was released.
-  LOTTERY_ENTRY_STATE_WITHDRAWN = 4;
-
   // Being built by the fan: the ticket count is chosen and the card
   // authorization may be opened, but the entry is not confirmed. It takes no
-  // part in the draw.
+  // part in the draw, which releases its card authorization.
   LOTTERY_ENTRY_STATE_DRAFT = 5;
+
+  // Value 4 was WITHDRAWN, an entry the fan gave up before the draw; a fan can
+  // no longer give up an entry.
+  reserved 4;
+  reserved "LOTTERY_ENTRY_STATE_WITHDRAWN";
 }
 
 // LotteryEntry is one fan account's entry into the lottery for one TicketType:
 // a request for a companion group of tickets allocated all-or-nothing, and the
 // CardAuthorization placed on the fan's card for the amount until the draw. A
 // fan builds the entry as a Draft, authorizes their card for it and confirms
-// it; only an ENTERED entry takes part in the draw. At most one active (not
-// WITHDRAWN) entry exists per account and ticket type (enforced server-side).
+// it; only an ENTERED entry takes part in the draw. At most one entry, in any
+// state, exists per account and ticket type (enforced server-side).
 // The fan's 本人確認 (identity check) details are the User's full name and
 // phone number.
 message LotteryEntry {

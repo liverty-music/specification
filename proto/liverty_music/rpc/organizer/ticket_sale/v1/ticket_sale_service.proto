@@ -193,7 +193,7 @@ message ListByEventRequest {
 }
 
 // LotteryEntryStats counts the Entered, Won and Lost entries of one
-// TicketType of a LOTTERY sale; Draft and Withdrawn entries are not counted.
+// TicketType of a LOTTERY sale; Draft entries are not counted.
 // Every count is 0 for a TicketType with no entry, and the Won and Lost counts
 // stay 0 until the sale is drawn.
 message LotteryEntryStats {

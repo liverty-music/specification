@@ -2,10 +2,10 @@ syntax = "proto3";
 
 // Package liverty_music.rpc.lottery_entry.v1 provides the fan-facing
 // LotteryEntryService: the signed-in fan's entry into the lottery for one
-// TicketType of a LOTTERY TicketSale, from the Draft to the confirmed entry,
-// its withdrawal before the draw and its result. The draw itself (which
-// captures the winners' card authorizations and releases the others) runs as an
-// internal backend job, not an RPC. Sales are configured through
+// TicketType of a LOTTERY TicketSale, from the Draft to the confirmed entry
+// and its result. The draw itself (which captures the winners' card
+// authorizations and releases the others) runs as an internal backend job, not
+// an RPC. Sales are configured through
 // liverty_music.rpc.organizer.ticket_sale.v1.
 package liverty_music.rpc.lottery_entry.v1;
 
@@ -28,23 +28,23 @@ import "liverty_music/entity/v1/user.proto";
 //   3. Confirm checks the card authorization and makes the entry Entered, so
 //      it takes part in the draw.
 //
-// Withdraw gives up an entry before the draw, and ListByTicketType reads the
-// fan's entries, whose state after the draw is the result. No money is
-// captured here. Every call requires a signed-in fan, who is always the
-// caller; the fan is resolved from the token to their stored account and is
-// never named in a request. A signed-in caller with no stored account fails
-// with NOT_FOUND.
+// A confirmed entry cannot be given up. ListByTicketType reads the fan's
+// entries, whose state after the draw is the result. No money is captured
+// here. Every call requires a signed-in fan, who is always the caller; the fan
+// is resolved from the token to their stored account and is never named in a
+// request. A signed-in caller with no stored account fails with NOT_FOUND.
 service LotteryEntryService {
   // Start makes a Draft entry for the caller on a TicketType of a LOTTERY sale
   // whose window is open, or resumes it: starting again with the same count
-  // returns the same Draft, and starting with another count withdraws the Draft
-  // and makes a new one. The count must be at most the TicketType's per-account
-  // limit and, together with the caller's Issued tickets for the TicketType's
-  // event, must still fit it. When the sale requires verification, the caller
-  // must hold an Active IdentityVerification. A caller whose entry for the
-  // TicketType is already Entered, Won or Lost cannot start another; one whose
-  // only earlier entry is Withdrawn can. A referral_code is recorded for the
-  // returned Draft while it is a Draft; starting again with another code
+  // returns the same Draft, and starting with another count changes the same
+  // Draft to that count and releases its card authorization, if it had one, so
+  // the fan authorizes their card again for the new amount. The count must be
+  // at most the TicketType's per-account limit and, together with the caller's
+  // Issued tickets for the TicketType's event, must still fit it. When the sale
+  // requires verification, the caller must hold an Active
+  // IdentityVerification. A caller whose entry for the TicketType is already
+  // Entered, Won or Lost cannot start another. A referral_code is recorded for
+  // the returned Draft while it is a Draft; starting again with another code
   // replaces it, and starting again without one keeps it.
   //
   // Possible errors:
@@ -105,27 +105,9 @@ service LotteryEntryService {
   // - UNAVAILABLE: Card payments are temporarily unavailable.
   rpc Confirm(ConfirmRequest) returns (ConfirmResponse);
 
-  // Withdraw gives up the caller's Draft or Entered entry before the draw, also
-  // after the window has closed: it releases the entry's card authorization,
-  // when it has one, and only then makes the entry Withdrawn. When the release
-  // fails, its error is returned and the entry keeps its state. The caller may
-  // start a new entry while the window is still open.
-  //
-  // Possible errors:
-  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  // - NOT_FOUND: The entry does not exist, or the caller has no stored account.
-  // - INVALID_ARGUMENT: The lottery_entry_id is missing or malformed.
-  // - PERMISSION_DENIED: The entry is another fan's.
-  // - FAILED_PRECONDITION: The entry is not withdrawable: the draw has already
-  //   run for it, or it is already Withdrawn.
-  // - UNAVAILABLE: Card payments are temporarily unavailable; the entry keeps
-  //   its state.
-  rpc Withdraw(WithdrawRequest) returns (WithdrawResponse);
-
-  // ListByTicketType returns the caller's entries for a TicketType, Withdrawn
-  // ones included, newest first, so the fan sees whether they have entered
-  // and, after the draw, whether they won. A caller who never entered gets an
-  // empty list.
+  // ListByTicketType returns the caller's entries for a TicketType, newest
+  // first, so the fan sees whether they have entered and, after the draw,
+  // whether they won. A caller who never entered gets an empty list.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
@@ -200,16 +182,6 @@ message ConfirmResponse {
   entity.v1.LotteryEntry lottery_entry = 1 [(buf.validate.field).required = true];
 }
 
-// WithdrawRequest names the entry to withdraw.
-message WithdrawRequest {
-  // Required. The caller's Draft or Entered entry.
-  entity.v1.LotteryEntryId lottery_entry_id = 1 [(buf.validate.field).required = true];
-}
-
-// WithdrawResponse is empty: a successful withdrawal returns nothing beyond
-// the OK status.
-message WithdrawResponse {}
-
 // ListByTicketTypeRequest names the TicketType whose entries to list.
 message ListByTicketTypeRequest {
   // Required. The TicketType whose entries of the caller to list.
@@ -218,7 +190,7 @@ message ListByTicketTypeRequest {
 
 // ListByTicketTypeResponse returns the caller's entries for the TicketType.
 message ListByTicketTypeResponse {
-  // The caller's entries for the TicketType, Withdrawn ones included, newest
-  // first. Empty when the caller never entered.
+  // The caller's entries for the TicketType, newest first. Empty when the
+  // caller never entered.
   repeated entity.v1.LotteryEntry lottery_entries = 1;
 }
