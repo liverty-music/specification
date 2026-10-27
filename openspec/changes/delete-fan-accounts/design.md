@@ -76,7 +76,7 @@ The identity is removed before the row on purpose, as today. If the row delete f
   - `auth_time` ≥ now − 300 s, with no extra skew allowance.
 - **Errors.** Any failed check returns PermissionDenied. An empty token returns InvalidArgument through protovalidate.
 - **Where the token comes from.** The frontend gets the token from the same mechanism passkey management uses. The request carries `prompt=login`, so Zitadel always asks the fan to sign in again, and `max_age=300`. The ID token's `auth_time` then shows that sign-in.
-- **Why not `max_age` alone.** Zitadel's login V2 ignores `max_age` and answers with the existing session (zitadel/zitadel#12258, found in prod: an ID token came back with an `auth_time` 57 hours old). The backend's `auth_time` check caught it. `prompt=login` makes the hosted login re-authenticate every time, including within 5 minutes of the last sign-in; the backend check stays as the proof.
+- **Why not `max_age` alone.** Zitadel's login V2 ignores `max_age` and answers with the existing session (zitadel/zitadel#12258, found in prod: an ID token came back with an `auth_time` 57 hours old). The backend's `auth_time` check caught it. `prompt=login` makes the hosted login re-authenticate every time, including within 5 minutes of the last sign-in; the backend check stays as the proof. Passkey management uses the same request, so it also asks every time; the settings requirement "Passkey management requires a recent sign-in" is modified to match.
 
 Alternatives considered:
 - A Zitadel Action that copies `auth_time` into the access token. This needs a new Action in cloud-provisioning and changes every fan token, only to serve one RPC.
