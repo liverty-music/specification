@@ -202,13 +202,13 @@ The system SHALL allow users to change the display language of the application. 
 - **AND** no DB write SHALL occur
 
 ### Requirement: Sign Out
-The system SHALL allow authenticated users to sign out of their account. The Sign Out control SHALL be rendered only when the user is authenticated and SHALL be hidden for guest (unauthenticated) users. It SHALL stand apart from every other control, in a group of its own below the ACCOUNT section with at least 24px between them, so a tap meant for an account row never signs the user out.
+The system SHALL allow authenticated users to sign out of their account. The Sign Out control SHALL be rendered only when the user is authenticated and SHALL be hidden for guest (unauthenticated) users. It SHALL stand apart from every other control, in a group of its own below the ACCOUNT section with at least 24px between them, so a tap meant for an account row never signs the user out. Only the Delete account control SHALL come after it.
 
 #### Scenario: Sign out action
 - **WHEN** an authenticated user taps the "Sign Out" button
 - **THEN** the system SHALL clear the user's authentication session
 - **AND** the system SHALL navigate to the Landing Page
-- **AND** the Sign Out button SHALL be visually distinct (e.g., red text) and positioned at the bottom of the settings list
+- **AND** the Sign Out button SHALL be visually distinct (e.g., red text) and positioned at the bottom of the settings list, above only the Delete account control
 
 #### Scenario: Sign out apart from account rows
 - **WHEN** an authenticated user views the ACCOUNT section with the Passkeys row as its last row
@@ -503,22 +503,22 @@ The guest call-to-action hero at the top of the Settings page SHALL show a "can'
 
 ### Requirement: Passkey management requires a recent sign-in
 
-For a signed-in fan, the ACCOUNT section SHALL show a Passkeys row that opens passkey management. Opening passkey management SHALL require that the fan signed in within the last 5 minutes; otherwise the app SHALL send the fan to the hosted login to sign in again with a passkey and SHALL return them to passkey management afterwards. The access gained this way SHALL last only while passkey management stays open: leaving it, or reloading the app, SHALL require the 5-minute rule again.
+For a signed-in fan, the ACCOUNT section SHALL show a Passkeys row that opens passkey management. Opening passkey management SHALL send the fan to the hosted login to sign in again, every time, however recently the fan signed in, and SHALL return them to passkey management afterwards. The access gained this way SHALL last only while passkey management stays open: leaving it, or reloading the app, SHALL require signing in again.
 
 #### Scenario: Recent sign-in
 
 - **WHEN** a fan who signed in 2 minutes ago opens the Passkeys row
-- **THEN** passkey management opens directly
+- **THEN** the hosted login asks the fan to sign in again, and after it succeeds passkey management opens
 
 #### Scenario: Older sign-in
 
 - **WHEN** a fan who signed in 3 days ago opens the Passkeys row
-- **THEN** the hosted login asks for a passkey, and after it succeeds passkey management opens
+- **THEN** the hosted login asks the fan to sign in again, and after it succeeds passkey management opens
 
 #### Scenario: Re-opening after leaving
 
-- **WHEN** the fan leaves passkey management and opens it again 6 minutes after signing in again
-- **THEN** the hosted login asks for a passkey again
+- **WHEN** the fan leaves passkey management and opens it again a minute after signing in again
+- **THEN** the hosted login asks the fan to sign in again
 
 ### Requirement: Passkey management lists, adds and removes passkeys
 
@@ -592,3 +592,17 @@ For a signed-in fan, the email verification badge SHALL reflect the identity pro
 
 - **WHEN** reading the current state fails
 - **THEN** the badge keeps showing the last known state
+
+### Requirement: Delete account entry below Sign Out
+
+For a signed-in fan, Settings SHALL show a 「アカウントを削除」 (Delete account) control below the Sign Out control, in a group of its own at least 24px away from it, that opens the withdrawal screen. It SHALL NOT be shown to a guest.
+
+#### Scenario: Signed-in fan
+
+- **WHEN** a signed-in fan views Settings
+- **THEN** the Delete account control is shown below Sign Out, apart from it, and opens the withdrawal screen
+
+#### Scenario: Guest
+
+- **WHEN** a guest views Settings
+- **THEN** no Delete account control is shown

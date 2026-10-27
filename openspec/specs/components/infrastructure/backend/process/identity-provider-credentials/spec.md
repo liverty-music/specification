@@ -11,7 +11,7 @@ The identity service SHALL be the only backend process that holds a credential f
 
 Every change the platform makes to an identity at the identity provider SHALL be made by the identity service, on a request from another process:
 - from the event consumer: verification codes and passkey registration links;
-- from the fan API: confirming an email address with the code from a verification email, and nothing else;
+- from the fan API: confirming an email address with the code from a verification email, and deleting the identity of a fan who deletes their own account, and nothing else;
 - from the admin console API: deleting a fan identity, and creating, provisioning, deactivating and deleting an Organizer's Organization.
 
 The identity service SHALL take no requests from outside the cluster. Each calling process SHALL reach only the identity-service operations it uses, and every other process SHALL reach none. A request for an operation outside the caller's set SHALL be refused and SHALL change nothing. Each API server SHALL keep validating sign-in tokens with the identity provider's public keys, which are not a credential.
@@ -31,6 +31,11 @@ The identity service SHALL take no requests from outside the cluster. Each calli
 - **WHEN** a fan confirms their address from the email verification screen
 - **THEN** the fan API asks the identity service to confirm it with the code, and the identity service confirms it
 
+#### Scenario: Fan deletes their account
+
+- **WHEN** a fan deletes their own account through the fan API
+- **THEN** the fan API asks the identity service to delete that fan's identity, and the identity service deletes it
+
 #### Scenario: Admin deletes a fan
 
 - **WHEN** an admin deletes a fan through the admin console API
@@ -43,8 +48,8 @@ The identity service SHALL take no requests from outside the cluster. Each calli
 
 #### Scenario: Fan API asks for another operation
 
-- **WHEN** the fan API asks the identity service to send a verification email or to delete a fan identity
-- **THEN** the request is refused and the identity is unchanged
+- **WHEN** the fan API asks the identity service to send a verification email or to create an Organizer's Organization
+- **THEN** the request is refused and nothing changes
 
 #### Scenario: Process with no access
 
