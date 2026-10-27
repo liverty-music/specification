@@ -1,43 +1,40 @@
 ## 1. Prerequisites
 
-- [ ] 1.1 Confirm `remove-lottery-entry-withdrawal` is merged and released in backend (no Withdrawn state, `GetOrCreateDraft` in place); verify `git log origin/main` of backend shows its PR
-- [ ] 1.2 Read-only in prod, list the database pool size of every workload from the prod config maps (`cloud-provisioning/k8s/namespaces/backend/overlays/prod/*/configmap.env`, defaults from `backend/pkg/config/config.go`) and Zitadel's, and record in design.md that adding 3 DBOS connections keeps the total within `max_connections=25`; if it does not, lower a pool in the same PR
+- [ ] 1.1 Confirm `introduce-durable-workflows` is released in backend and `workflow-worker` runs in prod; verify `kubectl get deploy workflow-worker -n backend` shows 1/1 ready
 
-## 2. DBOS runtime (backend infrastructure)
+## 2. Entity operations (components/entity/lottery-entry/persist-draw-outcome, revert-win, send-loss-email)
 
-- [ ] 2.1 Add `github.com/dbos-inc/dbos-transact-golang` at v1.7.0; generate the `dbos` schema migration with `dbos migrate --print-migrations all` and the grants with `dbos migrate --print-user-role --app-role <fan IAM role>`, commit them as one Atlas migration, and limit `scripts/lint-schema.sh` to the `app` schema; verify `make lint-schema` passes and the migration applies to a local database
-- [ ] 2.2 Declare `Flow`, `StepOption` and the `Step` helper in `internal/usecase/workflow.go`, and implement them in `internal/infrastructure/workflow/dbos.go` (own `pgxpool` of 3 connections through the Cloud SQL dialer, `SkipMigrations`, `DatabaseSchema: "dbos"`, `ApplicationVersion: "1"`, registration by stable name, `Launch` only when `RunsPaymentSweepers()`); verify an integration test against local Postgres runs a two-step workflow, stops the process between the steps, launches again and sees the first step not re-run
-- [ ] 2.3 Carry the trace context: `Enqueue` writes `traceparent` / `tracestate` to the workflow attributes, a run starts a span from it and a child span per step, and a resumed run starts a new root span linked to it; verify a unit test of the attribute round trip and, in the integration test, that a step's span has the enqueuing span's trace id
-- [ ] 2.4 Register the `payment` queue (partition per TicketSale, `WithPartitionConcurrency(5)`, rate limit 20 per second) and the `draw-due-sales` schedule (`* * * * *`, `AutomaticBackfill`); verify the integration test sees one `DrawDueSales` run per minute and two enqueues with one id run once
-- [ ] 2.5 Document in `backend/AGENTS.md`: values that change between runs are read inside a step; a change to a registered workflow's steps uses `dbos.Patch`; the module upgrade adds the printed migrations first; verify the section exists in the PR
+- [ ] 2.1 Add the migration for `lottery_entries.loss_email_send_at` (TIMESTAMPTZ, commented) and add `lottery_loss` to the `notifications.type` comment; verify `make lint-schema` passes and the migration applies to a local database
+- [ ] 2.2 Change `PersistDrawOutcome` to change nothing when the sale already has a draw time; verify the contract tests "Outcome recorded", "Failure leaves nothing recorded", "Empty draw" and "Recorded again" pass
+- [ ] 2.3 Declare and implement `LotteryEntry.RevertWin`; verify the contract tests "Win reverted", "Already reverted", "Win already issued", "Not drawn", "Unknown entry" pass
+- [ ] 2.4 Declare and implement `LotteryEntry.SendLossEmail`; verify the contract tests "Email sent", "Redelivered event", "Mail unavailable" pass
+- [ ] 2.5 Remove `Order.ListLotteryEntryIDsAwaitingIssuance` with its tests and mocks; verify `make check` passes with no reference left
 
-## 3. Entity operations (components/entity/lottery-entry/record-draw-outcome, revert-win, components/entity/ticket-sale/record-draw)
+## 3. Usecases (components/usecase/lottery-entry/draw, draw-due-sales, release-card-authorization, components/usecase/order/issue, fulfill-payment)
 
-- [ ] 3.1 Declare and implement `LotteryEntry.RecordDrawOutcome`; verify one contract test per scenario passes ("Outcome recorded", "Recorded again", "Another outcome", "Failure leaves nothing recorded")
-- [ ] 3.2 Declare and implement `LotteryEntry.RevertWin`; verify the contract tests "Win reverted", "Already reverted", "Win already issued", "Not drawn" pass
-- [ ] 3.3 Declare and implement `TicketSale.RecordDraw`; verify the contract tests "Draw recorded", "Recorded again", "First-come sale" pass
-- [ ] 3.4 Remove `LotteryEntry.PersistDrawOutcome` and `Order.ListLotteryEntryIDsAwaitingIssuance` with their tests and mocks; verify `make check` passes with no reference left
+- [ ] 3.1 Implement `LotteryEntryUseCase.Draw` as a workflow (design "Record first, then one workflow per entry") and remove `RunDraw`; verify one unit test per scenario passes with mocked `Flow` and operations ("Winners and losers recorded", "Each ticket type is drawn against its own quantity", "Losers in draw order", "No entries", "Stopped before the outcome was recorded", "Two entries, one place"), and that it starts `issue:<entry>` for each Won entry and `release:<entry>` for each Lost entry
+- [ ] 3.2 Change `DrawDueSales` to a scheduled workflow that starts `draw:<sale>`; verify the unit tests "Window closes", "Window still open", "Drawn once", "One sale fails" pass
+- [ ] 3.3 Implement `LotteryEntryUseCase.ReleaseCardAuthorization` as a workflow with a 24-hour deadline; verify the unit tests "Loser released", "Win reverted", "Payment provider unavailable", "Payment provider unavailable for a day", "Charged card authorization" pass
+- [ ] 3.4 Implement `OrderUseCase.Issue` for a LotteryEntry as a workflow with a 24-hour deadline, on the `payment` queue (global concurrency 2), and remove `IssueFromCapturedWin` and `IssueDueWins`; verify one unit test per scenario of "Every Won entry is issued", "Charge, then issue", "Identity verification binding", "The paid Order is announced" and "A paid order is reported for product analytics" passes
+- [ ] 3.5 Change `OrderUseCase.FulfillPayment` to succeed without effect for a LotteryEntry; verify the unit tests of "Each completed charge ends in an announced Order" pass, including "Lottery win charged"
+- [ ] 3.6 Remove the lottery draw and issuance goroutines from `internal/di/provider.go` and register the workflows, the queue and the `draw-due-sales` schedule in `cmd/worker`; verify `make check` passes and `/worker workflow list` shows the schedule runs locally
 
-## 4. Usecases (components/usecase/lottery-entry/draw, draw-due-sales, components/usecase/order/issue, components/usecase/card-authorization/release, components/usecase/order/fulfill-payment)
+## 4. Notifications (components/usecase/notification/send-lottery-loss, send-order-confirmation, deliver)
 
-- [ ] 4.1 Implement `LotteryEntryUseCase.Draw` as a workflow and remove `RunDraw`; verify one unit test per scenario passes with a fake `Flow` and mocked operations ("Winners and losers recorded", "Each ticket type is drawn against its own quantity", "Losers in draw order", "Unconfirmed draft at the draw", "No entries", "Stopped after one ticket type", "Two entries, one place"), and that each Won entry enqueues `issue:<entry>` and each Lost entry and Draft with a card authorization enqueues `release:<card authorization>`
-- [ ] 4.2 Change `LotteryEntryUseCase.DrawDueSales` to enqueue `Draw(sale)` with the id `draw:<sale>`; verify the unit tests "Window closes", "Window still open", "Drawn once", "One sale fails" pass
-- [ ] 4.3 Implement `OrderUseCase.Issue` for a LotteryEntry as a workflow (retry options of design "24-hour retries") and remove `IssueFromCapturedWin` and `IssueDueWins`; verify one unit test per scenario of "Every Won entry is issued", "Charge, then issue", "Identity verification binding", "The paid Order is announced" and "A paid order is reported for product analytics" passes
-- [ ] 4.4 Implement `CardAuthorizationUseCase.Release` as a workflow; verify the unit tests "Loser released", "Unconfirmed draft released", "Payment provider unavailable", "Charged card authorization" pass
-- [ ] 4.5 Change `OrderUseCase.FulfillPayment` to succeed without effect for a LotteryEntry; verify the unit tests of "Each completed charge ends in an announced Order" pass, including "Lottery win charged"
-- [ ] 4.6 Remove the lottery draw and issuance goroutines from `internal/di/provider.go` and wire the workflows; verify `make check` passes and the local fan workload logs DBOS launched with the schedule
+- [ ] 4.1 Implement `NotificationUseCase.SendLotteryLoss` on the `ORDER.lottery_entry_drawn` consumer for Lost results, with the `lottery_loss` type; verify the unit tests "Entry not drawn", "Card could not be charged", "Result announced twice", "Mail unavailable", "Fan allowed notifications" and the Deliver test "Lottery loss requested" pass
+- [ ] 4.2 Add the win wording to the confirmation email and push for an Order whose source is a LotteryEntry, in Japanese and English; verify the unit tests "Lottery win" and "Lottery winner allowed notifications" pass
 
 ## 5. Story (stories/win-tickets-in-a-lottery)
 
-- [ ] 5.1 Extend `lottery_story_integration_test.go` to run the lottery through the DBOS workflows against local Postgres and a fake payment provider; verify "Demand within quantity", "Oversubscribed sale", "Count changed before confirming", "Entry left unconfirmed" and the new "Stopped after the first charge" (stop the process after the first capture, launch again, assert the same winners, one charge each, 2 Issued Tickets each, the loser never charged) pass
+- [ ] 5.1 Extend `lottery_story_integration_test.go` to run the lottery through the workflows against local Postgres and a fake payment provider; verify "Demand within quantity", "Oversubscribed sale", "Stopped after the first charge" (stop the worker after the first capture, start it again, assert the same winners, one charge each, 2 Issued Tickets each, the loser never charged) and "Card closed before the charge" pass, with one email per fan
 - [ ] 5.2 Run `make test-stripe-e2e` with the Stripe Sandbox key and confirm the authorize and capture legs still pass
 
 ## 6. Release and production check
 
 - [ ] 6.1 Read-only in prod before the deploy, list Lottery sales due for a draw and Won entries without an Order; record the counts in design.md and stop if a Won entry without an Order exists (design "Migration Plan")
-- [ ] 6.2 Merge the backend PR, cut the release, and confirm in prod (read-only) that the AtlasMigration applied the `dbos` schema, the fan-api rollout finished, and `dbos.workflow_status` holds a `draw-due-sales` run for each minute since the rollout
+- [ ] 6.2 Merge the backend PR, cut the release, and confirm in prod (read-only) that the AtlasMigration applied, `workflow-worker` rolled out, and `/worker workflow list` shows a `draw-due-sales` run for each minute since the rollout
 - [ ] 6.3 Run `gh workflow run stripe-sandbox-e2e.yml` in backend and confirm the run succeeds
 
 ## 7. Archive
 
-- [ ] 7.1 Edit the main spec Purposes this change lists (Purpose): the state diagram of `components/entity/lottery-entry` gains Won --> Lost, and the usecase diagram of `stories/win-tickets-in-a-lottery` names `LotteryEntryUseCase.Draw`, `LotteryEntryUseCase.DrawDueSales`, `OrderUseCase.Issue` and `CardAuthorizationUseCase.Release` instead of the removed methods; delete the emptied `persist-draw-outcome`, `list-lottery-entry-ids-awaiting-issuance`, `run-draw`, `issue-from-captured-win` and `issue-due-wins` specs; verify `openspec validate --specs` passes
+- [ ] 7.1 Edit the main spec Purposes this change lists: the `components/entity/lottery-entry` state diagram gains Won --> Lost and the attribute loss email send time; the `components/entity/notification` type list gains lottery_loss; delete the emptied `list-lottery-entry-ids-awaiting-issuance`, `run-draw`, `issue-from-captured-win` and `issue-due-wins` specs; verify `openspec validate --specs` passes
