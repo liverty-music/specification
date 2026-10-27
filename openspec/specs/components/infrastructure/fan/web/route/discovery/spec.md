@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Lets a user discover and follow new artists through an interactive physics-based bubble interface and text search, available throughout onboarding and afterward, with sound and animation feedback on each follow.
+Lets a user discover and follow new artists through an interactive physics-based bubble interface and text search, available throughout onboarding and afterward, with sound and animation feedback on each follow. A swap tile beside the orb switches to the All Nearby view, which lists the concerts near the fan's area within a chosen period, including concerts of artists the fan does not follow yet.
 
 ## Requirements
 

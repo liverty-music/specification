@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Presents a fan's personalized view of upcoming concerts for followed artists, with filtering by artist, date, and ticket-journey status synchronized to the URL, concert detail views, cached data loading with stale-data handling, and a broader all-nearby browsing mode.
+Presents a fan's personalized view of upcoming concerts for followed artists, with filtering by artist, date, and ticket-journey status synchronized to the URL, concert detail views, and cached data loading with stale-data handling. Concerts of artists the fan does not follow are browsed in the All Nearby view on Discovery.
 
 ## Requirements
 
