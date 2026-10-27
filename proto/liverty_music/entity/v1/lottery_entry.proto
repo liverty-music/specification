@@ -19,17 +19,17 @@ message LotteryEntryId {
 
 // LotteryEntryState is the lifecycle of a LotteryEntry:
 //
-//   DRAFT --> ENTERED --> WON | LOST
+//   ENTERED --> WON | LOST
 //
-// A Draft that is not confirmed when the draw runs stays a Draft. New values
-// may be appended; existing values must not be renumbered.
+// An entry is created ENTERED. New values may be appended; existing values
+// must not be renumbered.
 enum LotteryEntryState {
   // Default value, rejected at the boundary: a persisted entry always has a
   // concrete state.
   LOTTERY_ENTRY_STATE_UNSPECIFIED = 0;
 
-  // Confirmed and awaiting the draw. The card authorization reserves the amount
-  // but no money is captured. A confirmed entry cannot be given up.
+  // Made when the fan confirmed, and awaiting the draw. The card authorization
+  // reserves the amount but no money is captured. An entry cannot be given up.
   LOTTERY_ENTRY_STATE_ENTERED = 1;
 
   // Selected in the draw: the card authorization was captured and the Order is
@@ -40,34 +40,22 @@ enum LotteryEntryState {
   // order among the ticket type's losers.
   LOTTERY_ENTRY_STATE_LOST = 3;
 
-  // Being built by the fan: the ticket count is chosen and the card
-  // authorization may be opened, but the entry is not confirmed. It takes no
-  // part in the draw, which releases its card authorization.
-  LOTTERY_ENTRY_STATE_DRAFT = 5;
-
   // Value 4 was WITHDRAWN, an entry the fan gave up before the draw; a fan can
-  // no longer give up an entry.
-  reserved 4;
-  reserved "LOTTERY_ENTRY_STATE_WITHDRAWN";
+  // no longer give up an entry. Value 5 was DRAFT, an entry being built before
+  // it was confirmed; an entry is now made only when the fan confirms.
+  reserved 4, 5;
+  reserved "LOTTERY_ENTRY_STATE_WITHDRAWN", "LOTTERY_ENTRY_STATE_DRAFT";
 }
 
-// LotteryEntry is one fan account's entry into the lottery for one TicketType:
-// a request for a companion group of tickets allocated all-or-nothing, and the
-// CardAuthorization placed on the fan's card for the amount until the draw. A
-// fan builds the entry as a Draft, authorizes their card for it and confirms
-// it; only an ENTERED entry takes part in the draw. At most one entry, in any
-// state, exists per account and ticket type (enforced server-side).
+// LotteryEntry is one fan account's confirmed entry into the lottery for one
+// TicketType: a request for a companion group of tickets allocated
+// all-or-nothing, paid by the CardAuthorization placed on the fan's card for
+// the amount until the draw. It is made when the fan confirms after
+// authenticating their card, and takes part in the draw from then on. At most
+// one entry exists per account and ticket type (enforced server-side).
 // The fan's 本人確認 (identity check) details are the User's full name and
 // phone number.
 message LotteryEntry {
-  // An entry has its card authorization from ENTERED on. CEL sees enums as
-  // integers: 1 is ENTERED, 2 is WON and 3 is LOST.
-  option (buf.validate.message).cel = {
-    id: "lottery_entry.card_authorization_from_entered"
-    message: "an entered, won or lost entry must have a card authorization"
-    expression: "!(this.state in [1, 2, 3]) || has(this.card_authorization_id)"
-  };
-
   // The unique identifier for this entry. Server-generated surrogate id.
   LotteryEntryId id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
@@ -109,10 +97,12 @@ message LotteryEntry {
     (buf.validate.field).required = true
   ];
 
-  // The CardAuthorization opened on the fan's card for the entry's amount.
-  // Absent on a Draft until the fan authorizes their card; present from ENTERED
-  // on. Captured on a win, released otherwise. Server-owned.
-  CardAuthorizationId card_authorization_id = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // The CardAuthorization on the fan's card for the entry's amount, set when
+  // the entry is made. Captured on a win, released otherwise. Server-owned.
+  CardAuthorizationId card_authorization_id = 10 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
 
   // Field 2 was the sale the entry belonged to, replaced by ticket_type_id.
   // Field 5 was the 本人確認 details copied onto the entry, which now live on
