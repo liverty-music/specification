@@ -38,7 +38,7 @@ It SHALL return an empty list when the User has none. A Voided Ticket, an Issued
 
 #### Scenario: Expired listing
 
-- **WHEN** the User's only ResaleListing is Listed and its deadline passed an hour ago without a buyer
+- **WHEN** the User's only ResaleListing is Listed and its deadline passed an hour ago, unsold
 - **THEN** ListDeletionBlockers returns an empty list
 
 #### Scenario: Entry awaiting its draw
