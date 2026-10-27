@@ -1,35 +1,68 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.admin.user.v1 provides the admin-only UserService
-// for removing fan Users from the developer admin tooling. It is served by the
+// for finding and removing fan Users from the admin console. It is served by the
 // admin Connect server behind the admin-role gate.
 package liverty_music.rpc.admin.user.v1;
 
 import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/deletion_blocker.proto";
+import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/user.proto";
 
 // UserService is the admin surface over fan Users. It is authorized only for
 // the admin organization and is never reachable by the consumer product.
 service UserService {
+  // GetByEmail returns the fan User registered with the given email address,
+  // letter case ignored, together with what currently stops that User from
+  // being deleted. The admin finds the account a fan asks to have removed by
+  // the address the request came from.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The request carries no valid sign-in.
+  // - PERMISSION_DENIED: The caller is not a member of the admin organization.
+  // - INVALID_ARGUMENT: The email is missing or not an email address of at
+  //   most 165 characters.
+  // - NOT_FOUND: No User has the address.
+  rpc GetByEmail(GetByEmailRequest) returns (GetByEmailResponse);
+
   // Delete permanently removes a fan User: the User with its follows, ticket
   // journeys, notifications, push subscriptions, sales-phase reminders,
-  // IdentityVerifications and home area, plus its sign-in identity at the
-  // identity provider. The
-  // User's other Orders, Tickets and lottery entries are kept.
+  // IdentityVerifications, passkeys and home area, plus its sign-in identity
+  // at the identity provider. The User's Orders, Tickets, Checkouts, lottery
+  // entries and resale listings are kept as transaction records.
   //
-  // Nothing is removed while the User holds an issued Ticket or has an Order
-  // that is not refunded. The sign-in identity is removed before the User
-  // record and an identity that is already gone counts as removed, so a call
-  // that failed partway is completed by calling Delete again.
+  // Nothing is removed while the User has a deletion blocker: an Issued
+  // Ticket for an Event whose local date is today or later in Japan time, a
+  // Listed resale listing, a lottery entry awaiting its draw, or a Checkout
+  // being paid. A Ticket for an Event that has passed and a paid Order do not
+  // block. The sign-in identity is removed before the User record and an
+  // identity that is already gone counts as removed, so a call that failed
+  // partway is completed by calling Delete again.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request carries no valid sign-in.
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
   // - INVALID_ARGUMENT: The user id is missing or not a UUID.
   // - NOT_FOUND: The user does not exist.
-  // - FAILED_PRECONDITION: The user holds an issued ticket or has an order
-  //   that is not refunded.
+  // - FAILED_PRECONDITION: The user has a deletion blocker.
   rpc Delete(DeleteRequest) returns (DeleteResponse);
+}
+
+// GetByEmailRequest carries the address to find a fan User by.
+message GetByEmailRequest {
+  // Required. The email address, matched exactly with letter case ignored.
+  entity.v1.Email email = 1 [(buf.validate.field).required = true];
+}
+
+// GetByEmailResponse carries the User and what stops its deletion.
+message GetByEmailResponse {
+  // The User registered with the address.
+  entity.v1.User user = 1 [(buf.validate.field).required = true];
+
+  // One entry per kind the User has, each kind at most once. Empty when the
+  // User can be deleted.
+  repeated entity.v1.DeletionBlocker blockers = 2;
 }
 
 // DeleteRequest identifies the fan User to delete.

@@ -3,6 +3,7 @@ syntax = "proto3";
 package liverty_music.rpc.user.v1;
 
 import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/deletion_blocker.proto";
 import "liverty_music/entity/v1/entity.proto";
 import "liverty_music/entity/v1/user.proto";
 
@@ -152,6 +153,39 @@ service UserService {
   // - UNAVAILABLE: The identity provider cannot be reached; a retry may
   //   succeed.
   rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
+
+  // ListDeletionBlockers returns what currently stops the caller's own User
+  // from being deleted: each kind of in-progress activity with how many of it
+  // the User has, or no blocker. The withdrawal screen shows it before the fan
+  // commits, and Delete applies the same rule.
+  //
+  // Possible errors:
+  // - NOT_FOUND: No user record exists for the authenticated identity.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc ListDeletionBlockers(ListDeletionBlockersRequest) returns (ListDeletionBlockersResponse);
+
+  // Delete permanently removes the caller's own User: the User with its
+  // follows, ticket journeys, notifications, push subscriptions, sales-phase
+  // reminders, IdentityVerifications, passkeys and home area, plus its sign-in
+  // identity at the identity provider. The User's Orders, Tickets, Checkouts,
+  // lottery entries and resale listings are kept as transaction records.
+  //
+  // The request carries the ID token of a sign-in the caller made within the
+  // last 5 minutes; the backend checks it, so a direct call cannot skip the
+  // fresh sign-in. Nothing is removed while ListDeletionBlockers returns any
+  // blocker. The sign-in identity is removed before the User record and an
+  // identity that is already gone counts as removed, so a call that failed
+  // partway is completed by calling Delete again.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The ID token is missing.
+  // - PERMISSION_DENIED: The ID token is not validly signed, was issued to
+  //   another app, names an identity other than the caller's, or shows a
+  //   sign-in older than 5 minutes.
+  // - NOT_FOUND: No user record exists for the authenticated identity.
+  // - FAILED_PRECONDITION: The User has a deletion blocker.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
 }
 
 // GetRequest is the request for retrieving the authenticated user's profile.
@@ -315,3 +349,28 @@ message VerifyEmailRequest {
 
 // VerifyEmailResponse is returned once the User's email address is verified.
 message VerifyEmailResponse {}
+
+// ListDeletionBlockersRequest is the request for what stops the caller's
+// deletion. It names no User; the caller is taken from the sign-in.
+message ListDeletionBlockersRequest {}
+
+// ListDeletionBlockersResponse carries what currently stops the caller's
+// deletion.
+message ListDeletionBlockersResponse {
+  // One entry per kind the User has, each kind at most once. Empty when the
+  // User can be deleted.
+  repeated entity.v1.DeletionBlocker blockers = 1;
+}
+
+// DeleteRequest carries the proof of a fresh sign-in. It names no User; the
+// caller is taken from the sign-in.
+message DeleteRequest {
+  // Required. The ID token the identity provider issued to the fan app for a
+  // sign-in the caller made within the last 5 minutes. It is a credential and
+  // must not be logged.
+  string id_token = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+// DeleteResponse is returned once the caller's User and its sign-in identity
+// have been removed.
+message DeleteResponse {}
