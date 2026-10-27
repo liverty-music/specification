@@ -10,7 +10,7 @@ This change adds one durable workflow mechanism to the backend, in the platform'
 - A new backend workload, the workflow worker, is the only process that runs workflows, their queues and their schedules. API servers, event consumers and jobs only start workflows and wait for their results.
 - The usecase layer gets a workflow interface (steps, starting a workflow, waiting for a signal or a result, durable delays). The engine stays in the infrastructure layer.
 - Failures are classified once for every workflow: transient failures are retried inside the step; business outcomes are results, not errors; a workflow that ends with an error, is interrupted again and again, or passes its deadline is reported to an admin.
-- An event that a workflow step publishes carries an id derived from the workflow and the step, so it has the same id every time the step runs.
+- An event that a workflow step publishes carries an id derived from the workflow and the step, so it has the same id every time the step runs. Every other event keeps a fresh id per publish, and all event ids share one format.
 - Workflows that ended successfully more than 30 days ago are deleted once a day; failed ones stay until an admin resolves them.
 - The workflow worker reports ready only once it runs workflows.
 

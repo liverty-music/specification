@@ -3,7 +3,7 @@
 See proposal.md - Why. The facts this design rests on:
 
 - **Today's recovery** is a set of goroutine sweepers in the fan workload (`backend/internal/di/provider.go:521-548`, started when `RunsPaymentSweepers()`, `backend/pkg/config/config.go:1096-1105`), plus CronJobs (`cloud-provisioning/k8s/namespaces/backend/base/cronjob/`). A purchase that needs an admin is logged with `LogKeyNeedsOperator` (`backend/internal/usecase/order_issue_uc.go:37-42`) and paged by a log-based alert (`cloud-provisioning/src/gcp/components/monitoring.ts:247-296`), which assumes a sweeper re-logs every minute (`autoClose: 3600s`).
-- **Events** get a fresh UUIDv7 per publish (`backend/internal/infrastructure/messaging/cloudevents.go:26-39`), and the publisher sets it as the JetStream `Nats-Msg-Id` (`messaging/publisher.go:53-55`, 2-minute duplicate window). A fact announced twice is two events (`usecase/event_publisher.go:8-15`).
+- **Events** get a fresh UUIDv7 per publish today (`backend/internal/infrastructure/messaging/cloudevents.go:26-39`), and the publisher sets it as the JetStream `Nats-Msg-Id` (`messaging/publisher.go:53-55`, 2-minute duplicate window). A fact announced twice is two events (`usecase/event_publisher.go:8-15`).
 - **Database**: one Cloud SQL Postgres (`db-f1-micro`, `max_connections=25`, shared with Zitadel). The app schema `app` is migrated by the Atlas Operator as `postgres` (`backend/k8s/atlas/base/atlas-migration.yaml`). Workload IAM users get DML through a loop over every `%@%.iam` role (`migrations/20260817010000_grant_fan_api_app_schema.sql`).
 - **Single-pod guarantee precedent**: event-consumer runs with `maxSurge: 0, maxUnavailable: 1`, so the old Pod stops before the new one starts (`cloud-provisioning/k8s/namespaces/backend/base/event-consumer/deployment.yaml:18-27`).
 - **Prod access for people** is the `db-proxy` runbook (`cloud-provisioning/docs/runbooks/cloud-sql-access.md`), which is read-only.
@@ -114,9 +114,12 @@ type Workflows interface { // for callers outside a workflow (API handlers, cons
 
 ### One id per announcement
 
-- `Flow.Step` puts the workflow id and the DBOS step id (`GetStepID`, the step's position, the same on every run and distinct for each pass of a loop) into the step's context.
-- `messaging.NewEvent` derives the CloudEvent id from them as a UUIDv5 (fixed namespace, key `<workflow id>/<step id>`) when they are present, and mints a UUIDv7 otherwise. No extra step or write is needed.
-- Rejected: minting a UUIDv7 in an earlier step and recording it, which adds one checkpoint write per publish for the same result.
+An event id has one use here: telling a repeated publish from a new one (the JetStream `Nats-Msg-Id` window, PostHog's `uuid`); other consumers stay idempotent by business ids. So the id must be the same when the same publish is repeated and different otherwise. A repeated publish can be recognised safely only inside a workflow step, whose position is recorded. Anywhere else, the inputs can differ between the two tries: a key built from business values was removed before (`expand-product-analytics`, "an entity id is not an event id"), and a key built from the incoming event and a counter shifts when a re-read list changes, so another fan's notification would be dropped as a duplicate.
+
+- Every event id is a UUIDv5 under one fixed namespace, made in `messaging.NewEvent` alone; no publisher changes.
+- Inside a step, the name is `<workflow id>/<step id>`. `Flow.Step` puts the workflow id and the DBOS step id (`GetStepID`, the step's position, the same on every run and distinct for each pass of a loop) into the step's context. The same publish gets the same id on every run.
+- Anywhere else, the name is a fresh random value, so each publish gets its own id, as today. A publisher moved into a workflow later gets the repeated-publish id with no change of its own.
+- Rejected: minting a UUIDv7 in an earlier step and recording it, which adds one checkpoint write per publish for the same result; deriving ids outside a step from business values or from the incoming event, for the false duplicates above.
 - This derivation is for events only. An external call's idempotency key names the business operation (a Checkout id, `refund:<order>`), or is left to the client library when the provider's own state prevents a second effect, as for a Stripe capture. A key from the workflow id and the step names the run: it changes under `fork` and when a patch adds a step, and it would keep returning a 500 the provider saved under it (`make-lottery-draw-durable` design "Stripe keys: the operation, not the run").
 - The id is also the JetStream `Nats-Msg-Id`, and consumers already keep idempotency by the event id or by business ids.
 - The usecase calls `PublishEvent` as today; nothing in the usecase layer changes.
