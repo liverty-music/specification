@@ -7,7 +7,7 @@ See proposal.md - Why. The facts this design rests on:
 - **Database**: one Cloud SQL Postgres (`db-f1-micro`, `max_connections=25`, shared with Zitadel). The app schema `app` is migrated by the Atlas Operator as `postgres` (`backend/k8s/atlas/base/atlas-migration.yaml`). Workload IAM users get DML through a loop over every `%@%.iam` role (`migrations/20260817010000_grant_fan_api_app_schema.sql`).
 - **Single-pod guarantee precedent**: event-consumer runs with `maxSurge: 0, maxUnavailable: 1`, so the old Pod stops before the new one starts (`cloud-provisioning/k8s/namespaces/backend/base/event-consumer/deployment.yaml:18-27`).
 - **Prod access for people** is the `db-proxy` runbook (`cloud-provisioning/docs/runbooks/cloud-sql-access.md`), which is read-only.
-- **DBOS Transact Go v1.7.0**, read in its source at `98cea9b`:
+- **DBOS Transact Go v1.7.0**, read in its source at `98cea9b`. That commit is two commits after the v1.7.0 tag (`3397057`) and unreleased; the one difference that matters is that v1.7.0 still requires `EnablePatching` for `Patch` and `DeprecatePatch` (`dbos/workflow.go:4530`). Line numbers below are of `98cea9b`:
   - `Launch` recovers the PENDING workflows of its executor id and application version (`dbos.go:939`, `recovery.go:9`).
   - Starting an existing workflow id returns the existing handle (`WorkflowIDReusePolicyReturnExisting`, `workflow.go:899`).
   - Step retries run in memory with `WithStepRetryPredicate`, `WithStepBaseInterval`, `WithStepBackoffFactor`, `WithStepMaxInterval` and `WithStepMaxRetries` (`workflow.go:2460-2530`, `:2681`).
@@ -53,11 +53,11 @@ Chosen because it is a library over the database the platform already runs: no s
 
 ### The workflow worker owns execution
 
-- New entrypoint `cmd/worker`. It runs the same DI graph as the fan workload and calls `dbos.Launch`, which starts the queue runners, the schedules and the recovery of its own pending workflows.
+- New entrypoint `cmd/worker`. It runs the fan workload's configuration and identity and calls `dbos.Launch`, which starts the queue runners, the schedules and the recovery of its own pending workflows.
 - New Deployment `workflow-worker`: `replicas: 1`, `strategy.rollingUpdate` with `maxSurge: 0` and `maxUnavailable: 1`, as event-consumer does. It uses the `fan-api` service account and secrets, so it holds the same Stripe and database identity as the code it takes over, and no new IAM user is needed.
 - `ExecutorID: "workflow-worker"` and `ApplicationVersion: "1"` are fixed. A new Pod therefore recovers exactly what the old one left, and no two Pods ever run at once. This is the documented single-server recovery.
 - `AppName: "liverty-music-backend"` for the worker and for every client, because only the owning application dequeues, runs and recovers a workflow.
-- A change to the steps of a registered workflow follows the documented lifecycle: wrap the new steps in `dbos.Patch(ctx, "<name>")`, later replace it with `dbos.DeprecatePatch`, and remove it once no workflow started before it is running. The version is never bumped for that. (`EnablePatching` in the docs is deprecated in v1.7.0, `dbos.go:66`, and not needed.)
+- A change to the steps of a registered workflow follows the documented lifecycle: wrap the new steps in `dbos.Patch(ctx, "<name>")`, later replace it with `dbos.DeprecatePatch`, and remove it once no workflow started before it is running. The version is never bumped for that. `EnablePatching: true` is set, because v1.7.0 refuses `Patch` without it; DBOS defaults the version only when it is empty, so the fixed `ApplicationVersion` stays. `Flow` therefore has `DeprecatePatch` beside `Patched`.
 - API servers, consumers and jobs create a `dbos.Client` (`dbos.NewClient`) and never call `Launch`, so the fan API can go back to 2 replicas without either replica recovering the other's work. A client never starts a workflow in-process, so cancelling a request context can never cancel a workflow.
 - **Readiness**: the worker's readiness probe succeeds only after `Launch` returned; its liveness probe checks only the process, as the API liveness rule of `health-probes` does.
 - **Startup**: `SystemDBStartupTimeout` is 5 minutes, and a failed `NewContext` is retried with a fresh context until then, to meet `startup-dependencies` ("keep trying … for at least 5 minutes").
@@ -78,6 +78,8 @@ type Flow interface {
 	Recv(ctx context.Context, topic string, timeout time.Duration) ([]byte, bool, error)
 	// Patched reports whether this run takes the steps added under name.
 	Patched(ctx context.Context, name string) (bool, error)
+	// DeprecatePatch replaces Patched(name) once no run started before the patch is left.
+	DeprecatePatch(ctx context.Context, name string) error
 }
 
 type Workflows interface { // for callers outside a workflow (API handlers, consumers)
@@ -106,7 +108,7 @@ type Workflows interface { // for callers outside a workflow (API handlers, cons
 - **Step defaults** (applied by the implementation to every `Step`): retry when the error is Unavailable or DeadlineExceeded; base 1 s, factor 2, at most 1 h between tries, `WithStepMaxRetries(10000)`. The limit on a retry is the workflow's deadline, not the count, because the in-memory count restarts when the worker does.
 - **Deadline**: each `Start` that needs a bound passes `WithDeadline`. The deadline is stored, so it holds across restarts.
 - **Business outcomes** are returned values. A workflow returns an error only for a failure nobody planned for.
-- **Report**: a schedule `report-workflows-needing-admin` (`*/5 * * * *`) reads `GetWorkflowAggregates` grouped by status and name. It records the count of workflows in `ERROR`, `MAX_RECOVERY_ATTEMPTS_EXCEEDED` or `CANCELLED` as an OpenTelemetry gauge `workflow.needs_admin` (labels `workflow_name`, `status`), and logs `LogKeyWorkflowNeedsAdmin` ("workflow needs an admin") with `workflow_id` once for each workflow it sees for the first time.
+- **Report**: a schedule `report-workflows-needing-admin` (`0 */5 * * * *`; DBOS cron has a seconds field) lists the workflows in those statuses (`ListWorkflows`, which also gives the ids to log) and counts them by status and name. It records the count of workflows in `ERROR`, `MAX_RECOVERY_ATTEMPTS_EXCEEDED` or `CANCELLED` as an OpenTelemetry gauge `workflow.needs_admin` (labels `workflow_name`, `status`), and logs `LogKeyWorkflowNeedsAdmin` ("workflow needs an admin") with `workflow_id` once for each workflow it sees for the first time.
   - The alert fires on the gauge being above 0 and closes when it returns to 0, so it stays open exactly while a workflow needs an admin.
   - The log line gives the ids to act on.
   - Rejected: a log line every 5 minutes per workflow, which the log-based alert would need to stay open.
@@ -117,7 +119,7 @@ type Workflows interface { // for callers outside a workflow (API handlers, cons
 An event id has one use here: telling a repeated publish from a new one (the JetStream `Nats-Msg-Id` window, PostHog's `uuid`); other consumers stay idempotent by business ids. So the id must be the same when the same publish is repeated and different otherwise. A repeated publish can be recognised safely only inside a workflow step, whose position is recorded. Anywhere else, the inputs can differ between the two tries: a key built from business values was removed before (`expand-product-analytics`, "an entity id is not an event id"), and a key built from the incoming event and a counter shifts when a re-read list changes, so another fan's notification would be dropped as a duplicate.
 
 - Every event id is a UUIDv5 under one fixed namespace, made in `messaging.NewEvent` alone; no publisher changes.
-- Inside a step, the name is `<workflow id>/<step id>`. `Flow.Step` puts the workflow id and the DBOS step id (`GetStepID`, the step's position, the same on every run and distinct for each pass of a loop) into the step's context. The same publish gets the same id on every run.
+- Inside a step, the name is `<workflow id>/<step id>`. `Flow.Step` puts the workflow id and the DBOS step id (`GetStepID`, the step's position, the same on every run and distinct for each pass of a loop) into the step's context. The same publish gets the same id on every run. Each publish in one step run also gets its position in that run (`<workflow id>/<step id>/<n>`), so a step that publishes twice (one event per fan) does not lose the second event to the JetStream duplicate window; a run of the step again publishes in the same order.
 - Anywhere else, the name is a fresh random value, so each publish gets its own id, as today. A publisher moved into a workflow later gets the repeated-publish id with no change of its own.
 - Rejected: minting a UUIDv7 in an earlier step and recording it, which adds one checkpoint write per publish for the same result; deriving ids outside a step from business values or from the incoming event, for the false duplicates above.
 - This derivation is for events only. An external call's idempotency key names the business operation (a Checkout id, `refund:<order>`), or is left to the client library when the provider's own state prevents a second effect, as for a Stripe capture. A key from the workflow id and the step names the run: it changes under `fork` and when a patch adds a step, and it would keep returning a 500 the provider saved under it (`make-lottery-draw-durable` design "Stripe keys: the operation, not the run").
@@ -127,11 +129,11 @@ An event id has one use here: telling a repeated publish from a new one (the Jet
 ### Placement, migrations and connections
 
 - **Schema**: the system tables live in schema `dbos` of the same database, so point-in-time recovery restores them with the business data.
-- **Migration**: one Atlas migration holds the output of `dbos migrate --print-migrations all`, plus the grant SQL of `--print-user-role` applied in the existing loop over every `%@%.iam` role. The workloads start DBOS with `SkipMigrations: true` and `DatabaseSchema: "dbos"`.
+- **Migration**: one Atlas migration holds the output of `dbos migrate --print-migrations all`, plus the grant SQL of `--print-user-role` applied to the `fan-api` IAM role by name, the identity of the worker and of the fan API. Not the loop over every `%@%.iam` role: the grant convention of `20261008020000_restrict_organizer_console_api_and_zitadel_app_grants.sql` keeps narrow roles (Zitadel, organizer, reception) out of generic loops, and workflow inputs carry business data. A workload that starts workflows later grants its own role by name. The file starts with `-- atlas:txmode none`, because the DBOS SQL builds indexes `CONCURRENTLY`. The workloads start DBOS with `SkipMigrations: true` and `DatabaseSchema: "dbos"`.
 - **Upgrading the module**: commit the output of `--print-migrations <first new number>` as a new Atlas migration first. This is written in `backend/AGENTS.md`.
-- **Schema lint**: `scripts/lint-schema.sh` enforces entity policies; it is limited to the `app` schema, because the engine's tables are not entities.
+- **Schema lint and `schema.sql`**: the engine's tables are not entities, so they stay out of `schema.sql`, the desired state Atlas diffs against; `scripts/lint-schema.sh` reads only `schema.sql` and needs no change. Without more, the next `atlas migrate diff` would end with `DROP SCHEMA "dbos" CASCADE` (verified with Atlas v1.3.0); `atlas.hcl` sets `diff { skip { drop_schema = true } }` (an env `exclude` does not reach `migrate diff`), and `scripts/check-migration-drift.sh` does not ask a DBOS migration for a `schema.sql` change.
 - **Migration check**: a CI test compares `dbos migrate --print-migrations all` of the pinned module with the committed migration, so a module bump without its migration fails CI. At start, `SkipMigrations` makes the worker verify the schema version and fail if it is behind; the Atlas sync wave runs before the backend's.
-- **Retention**: a schedule `delete-old-workflows` (`0 3 * * *`, Asia/Tokyo) lists `SUCCESS` workflows created more than 30 days ago (`WithFilterStatus`, `WithFilterCreatedBefore`) and deletes them with `DeleteWorkflows`. Workflows in a failed state stay until an admin resolves them, so a failure nobody handled is never deleted silently (Conductor's retention would delete them too, `docs/conductor/retention.md`).
+- **Retention**: a schedule `delete-old-workflows` (`0 0 3 * * *`, Asia/Tokyo) lists `SUCCESS` workflows created more than 30 days ago (`WithFilterStatus`, `WithFilterCreatedBefore`) and deletes them with `DeleteWorkflows`. Workflows in a failed state stay until an admin resolves them, so a failure nobody handled is never deleted silently (Conductor's retention would delete them too, `docs/conductor/retention.md`).
 
 ### Connections: the whole instance stays within 25
 
@@ -144,9 +146,9 @@ An event id has one use here: telling a repeated publish from a new one (the Jet
 | fan-api | 5 | 3, shared with its DBOS client |
 | event-consumer | 5 | 2 |
 | series-image-consumer | 5 | 1 |
-| organizer-console-api | 10 (default, no override) | 1 |
-| admin-console-api | 10 (default) | 1 |
-| reception-api | 10 (default) | 1 |
+| organizer-console-api | 5 (reads `fan-api-config`) | 1, set in its own container `env`, which takes precedence over `fan-api-config` |
+| admin-console-api | 5 (reads `fan-api-config`) | 1, set in its own container `env`, which takes precedence over `fan-api-config` |
+| reception-api | 5 (reads `fan-api-config`) | 1, set in its own container `env`, which takes precedence over `fan-api-config` |
 | CronJobs (5) | 5 each | 1 each; at most 2 run at once (sales-reminders every 15 minutes plus one daily job), so 2 |
 | **Total** | **61** | **22** |
 
@@ -164,11 +166,24 @@ Not used now.
 
 ### Trace context
 
-`Start` and `Send` write the caller's `traceparent` / `tracestate` into the workflow attributes. A run starts a span whose parent is that context, and each step is a child span. A run resumed after a restart starts a new root span linked to the stored context, the job-item pattern of `fix-trace-propagation`.
+`Start` writes the caller's `traceparent` / `tracestate` into the workflow attributes. `Send` does not: DBOS messages carry no metadata, and replacing the attributes would lose the starter's context. A run starts a span whose parent is that context, and each step is a child span. A run resumed after a restart starts a new root span linked to the stored context, the job-item pattern of `fix-trace-propagation`.
 
 ### Operating a workflow
 
 `cmd/worker` gains the subcommands `workflow list|steps|resume|fork|delete`, which wrap the DBOS client. An admin runs them with `kubectl exec deploy/workflow-worker -n backend -- /worker workflow …`, so the write goes through the worker's own database identity and the read-only people access stays read-only. The runbook `cloud-provisioning/docs/runbooks/workflow-needs-admin.md` describes each report status and the action for it.
+
+### Implementation notes
+
+Decided while implementing, against DBOS Transact Go v1.7.0:
+
+- **Registration**: DBOS names a workflow function after its symbol, so the adapters of one generic `Register` would collide. A usecase workflow is registered as a configured instance named after the workflow (`dbos.WithInstance`), and `Start` enqueues it with that name as its config name. The two schedule workflows are plain functions, because DBOS schedules address a workflow by its plain name.
+- **Start** enqueues on the default queue `workflows` (or the named one) from a client and from a running workflow alike; inside a workflow DBOS checkpoints the enqueue as a step. A deadline passed from a client is stored as a timeout that DBOS counts from the dequeue, so `Start` subtracts the delay; the queue picks a workflow up within a second.
+- **Cancel** deletes the workflow in one statement when it is still `ENQUEUED` or `DELAYED`. DBOS's `CancelWorkflow` also stops running workflows and leaves them `CANCELLED`, which the report would page about.
+- **Shared pool**: DBOS closes the pool it is given when the runtime or client shuts down, even one it did not create. The worker stops the runtime in the drain shutdown phase, before the database closes; a client goes in a phase before the database's.
+- **Worker graph**: the worker builds only configuration, logging, telemetry, the database and the runtime. Building the fan API graph would also start its payment sweepers a second time; the first usecase workflow brings the usecases it needs.
+- **Tests** create the `dbos` tables with `dbos.Migrate` rather than the Atlas apply: the grant migrations would give the grants test's cluster-wide fake roles privileges in the scratch databases while that test drops them. `TestDBOSMigrationsMatchModule` keeps the two SQL texts equal, and the grants test applies every migration.
+
+@spec-manual components/infrastructure/backend/process/durable-workflows "Worker redeployed" -- the old Pod stops before the new one starts by the Deployment strategy (`maxSurge: 0`, `maxUnavailable: 1`, task 4.1, checked in the rendered prod overlay); the new worker continuing the workflow is "Worker stops between two steps" (`TestRuntime_WorkerStopsBetweenTwoSteps`).
 
 ## Risks / Trade-offs
 
