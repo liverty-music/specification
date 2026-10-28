@@ -71,8 +71,9 @@ The help bottom-sheet SHALL display page-specific guide content when opened. Onl
 #### Scenario: Discovery help content
 
 - **WHEN** the help bottom-sheet opens on the Discovery page
-- **THEN** the sheet renders two sub-sections:
+- **THEN** the sheet renders three sub-sections:
   - "アーティストの探し方" / "Finding Artists" — containing the description that tapping artist bubbles follows them, the inline chip demo, and the two tips (genre tabs, search bar)
+  - "近くのライブ" / "Near you" — containing the description that the swap tile beside the orb opens the concerts near the chosen area within a chosen period, including artists the fan does not follow yet, and that an artist can be followed from a concert's detail
   - "フォロー解除" / "Unfollowing" — containing the single sentence pointing users to the My Artists page for unfollow operations
 
 #### Scenario: Dashboard help content

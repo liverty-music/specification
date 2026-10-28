@@ -4,7 +4,7 @@
 
 Discovery SHALL show a swap tile beside the orb, inside the band below the floor that bubbles never cross, so that no bubble and no part of the orb is ever drawn under the tile and the bubble field keeps the same size it has without the tile. The tile SHALL sit on the dominant-hand side of the orb, just outside the largest size the orb can grow to: on a 375 px wide screen, right-handed, its centre is between 260 px and 300 px from the left edge. In left-handed mode (the FAB menu's handedness setting) it SHALL be mirrored to the left of the orb.
 
-The tile's icon SHALL draw two arrows in a loop, one magenta and one cyan. The glyph of the view on screen SHALL be drawn large over the arrows, and the glyph of the other view SHALL be drawn as a small badge in the tile's bottom corner: the artist bubbles are three bubbles (purple, teal and gold) with small sparkles, and the All Nearby view is a ticket marked LIVE with a white location pin. Under the tile a label SHALL name the view a tap leads to: 「近くのライブ」 on the artist bubbles and 「アーティスト」 on the All Nearby view (English: "Near you" and "Artists"); the tile's accessible name SHALL say the same.
+The tile's icon SHALL draw two arrows in a loop, one magenta and one cyan. The glyph of the view on screen SHALL be drawn large over the arrows, and the glyph of the other view SHALL be drawn as a small badge in the tile's bottom corner: the artist bubbles are three bubbles (purple, teal and gold) with small sparkles, and the All Nearby view is a ticket marked LIVE with a white location pin. The tile SHALL show no text label. Its accessible name SHALL name the view a tap leads to: 「近くのライブ」 on the artist bubbles and 「アーティスト」 on the All Nearby view (English: "Near you" and "Artists").
 
 A tap SHALL switch the view. The arrows SHALL make a half turn, always in the same direction, while the two glyphs trade places and sizes with a spring motion, and the new view SHALL appear as a circle growing out of the tile; the whole motion SHALL end within 700 ms. With a reduced-motion preference the view and the icon SHALL change at once, without motion.
 
@@ -16,12 +16,12 @@ A tap SHALL switch the view. The arrows SHALL make a half turn, always in the sa
 #### Scenario: Switching to the All Nearby view
 - **WHEN** the fan taps the swap tile on the artist bubbles
 - **THEN** Discovery shows the All Nearby view with its area chip, date chip and concert list
-- **AND** the tile shows the ticket glyph large, the bubbles as the corner badge and the label 「アーティスト」
+- **AND** the tile shows the ticket glyph large and the bubbles as the corner badge, and its accessible name is 「アーティスト」
 
 #### Scenario: Switching back to the artist bubbles
 - **WHEN** the fan taps the swap tile on the All Nearby view
 - **THEN** Discovery shows the artist bubbles, the search bar and the genre chips again
-- **AND** the tile shows the bubbles large, the ticket as the corner badge and the label 「近くのライブ」
+- **AND** the tile shows the bubbles large and the ticket as the corner badge, and its accessible name is 「近くのライブ」
 
 #### Scenario: Reduced motion
 - **WHEN** a fan with a reduced-motion preference taps the swap tile
@@ -253,7 +253,7 @@ All user-facing Japanese strings on the All Nearby surface SHALL read as natural
 
 #### Scenario: All Nearby strings are natural Japanese
 
-- **WHEN** the swap tile labels, area prompt, empty-state text, date-preset labels, and range hint are displayed in Japanese
+- **WHEN** the swap tile's accessible names, area prompt, empty-state text, date-preset labels, and range hint are displayed in Japanese
 - **THEN** each SHALL be phrased in natural Japanese
 - **AND** every `allNearby.*` key present in the Japanese bundle SHALL also exist in the English bundle (and vice versa)
 

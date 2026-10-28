@@ -42,8 +42,8 @@ visual effect on the concert highway. The toggle SHALL be presented as an inline
 toggle item within the FAB action launcher panel (see the `fab-action-launcher`
 capability), not as a button in the page header. The preference SHALL be persisted
 in localStorage under the key `beams.enabled`. The default state SHALL be
-`false` (disabled). The toggle item SHALL be contributed to the launcher only while
-the dashboard is in My Timetable mode.
+`false` (disabled). The toggle item SHALL be contributed to the launcher whenever the dashboard
+is shown.
 
 #### Scenario: Default state is off on first visit
 
@@ -74,7 +74,7 @@ the dashboard is in My Timetable mode.
 
 #### Scenario: Toggle button placement and icon
 
-- **WHEN** the dashboard is displayed in My Timetable mode
+- **WHEN** the dashboard is displayed
 - **THEN** a beam toggle item SHALL be contributed to the FAB action launcher panel
 - **AND** the item SHALL use the `spotlight` icon together with a text label
 - **AND** the item SHALL reflect the current enabled state to assistive technology (pressed/selected)
@@ -86,8 +86,8 @@ The dashboard filter SHALL be reached from the FAB action launcher (see the
 `fab-action-launcher` capability) instead of a dedicated trigger button in the page
 header; the page header SHALL NOT host a filter trigger. The launcher's filter item
 SHALL visually indicate when a filter is active. Artist names SHALL NOT be rendered
-as chips in the header. The filter item SHALL be contributed to the launcher only
-while the dashboard is in My Timetable mode.
+as chips in the header. The filter item SHALL be contributed to the launcher while
+the dashboard is shown and the fan is not onboarding.
 
 #### Scenario: No active filter — header unchanged
 
@@ -204,7 +204,7 @@ expanded it SHALL show a close (`×`) affordance.
 
 #### Scenario: Labels never overlap icons
 
-- **WHEN** the action arc is open with the dashboard's four actions (beam toggle, filter, mode switch, help)
+- **WHEN** the action arc is open with the dashboard's three actions (beam toggle, filter, help)
 - **THEN** no label's box SHALL intersect another item's icon or label box
 - **AND** every item SHALL lie at least 16px inside the screen edges
 
@@ -218,14 +218,14 @@ expanded it SHALL show a close (`×`) affordance.
 Route components SHALL contribute their actions to the launcher when activated and
 SHALL remove them when deactivated, so the launcher's contents adapt to the current
 page. Re-contributing from the same owner SHALL replace that owner's previous set
-(not accumulate), so a within-route state change (e.g. dashboard mode switch) never
+(not accumulate), so a within-route state change (e.g. the end of the fan's onboarding on the dashboard) never
 leaves stale items. After navigation away from a route, that route's actions SHALL
 no longer appear.
 
 #### Scenario: Dashboard contributes its actions
 
-- **WHEN** the dashboard is displayed in My Timetable mode
-- **THEN** the launcher SHALL present the dashboard's actions (beam toggle, filter, mode switch, help)
+- **WHEN** the dashboard is displayed to a fan who is not onboarding
+- **THEN** the launcher SHALL present the dashboard's actions (beam toggle, filter, help)
 
 #### Scenario: Actions removed on navigation away
 
@@ -234,9 +234,8 @@ no longer appear.
 
 #### Scenario: Within-route mode change replaces, not accumulates
 
-- **WHEN** the dashboard switches from My Timetable to All Nearby mode
-- **THEN** the launcher SHALL present the All Nearby action set
-- **AND** the My Timetable-only actions (beam toggle, filter) SHALL NOT remain in the list
+- **WHEN** the fan's onboarding completes while the dashboard is displayed
+- **THEN** the launcher SHALL present the beam toggle, the filter and help
 - **AND** actions SHALL NOT be duplicated
 
 ### Requirement: Command and toggle action items

@@ -34,7 +34,7 @@ The tile's inline-start edge is `50% + max-orb-radius + var(--space-s)` from the
 
 ### D3. The icon is one inline SVG component driven by `data-view`
 
-A small custom element (`discovery-swap-button`) renders `<button>` with the label and an inline SVG (viewBox 64×64):
+A small custom element (`discovery-swap-button`) renders `<button>` with an inline SVG (viewBox 64×64) and a visually hidden label, which is the button's accessible name; the tile shows no text (the user dropped the visible label during apply):
 
 - Arrows: two filled tapered "swoosh" paths, point-symmetric about (32, 32). Each is built from a centre line at radius `23.5 + 2.2·sin(2πt − 0.6)` swept clockwise over 132° (168°→300° and 348°→480°), half-width growing from 0.7 to 4.4 (`t^0.85`), smoothed with Catmull-Rom curves, a rounded tail, and a head 9.6 wide and 24° long with slightly concave sides. Arrow 1 is `--color-brand-primary` (magenta), arrow 2 `--color-stage-near` (cyan). The paths are generated once and pasted as static `d` attributes.
 - Glyphs, drawn around (0, 0): the artist glyph is three bubbles (hues 275, 182, 46 at saturation 85–95 %, lightness 88 → 68 → 52 %, a pink-to-cyan sheen, a white glint, a thin white rim) plus three four-point sparkles; the All Nearby glyph is an orange ticket marked LIVE with a white pin and a dark pin hole.
@@ -67,6 +67,18 @@ The tile's block-end offset adds `var(--snack-stack-height, 0px)`, a custom prop
 ### D8. Dashboard keeps one view
 
 The dashboard drops `viewMode`, every `isAllNearby` branch, the chip row, the second `<user-home-selector>`, the `<date-range-sheet>`, the mode-swap FAB action and its re-registration on mode change (re-registration on onboarding change stays). Both empty states get `<a href="/discovery?view=nearby">` with the new key `dashboard.nearbyCta` 「近くのライブを見る」 / "See shows near you".
+
+### Implementation notes (recorded during apply)
+
+- **D4, the visit keeps more than the cache.** `<nearby-concerts>` is re-created on every switch (`if.bind`), so the route's `NearbyVisit` holds the area override and the applied date range along with the result cache, and `<date-range-sheet>` gained an `initial-range` binding to start from the visit's range. Without that, switching back would reset the range to 7日以内 and miss the "same area and date range" the cache scenario names. A new visit (route instance) still starts empty.
+- **D5, address and storage are written by `switchView()`, not a `@watch`.** A view chosen in `loading()` (from storage) is written to the address in `attached()`, because the router rewrites the address after `loading()`. A storage that throws yields the artist bubbles (`discovery-view-storage.ts`).
+- **D6, the reveal names the layout only during the swap** (`data-revealing` → `view-transition-name: discovery-view`) with `vt-suppress-root`, so route navigations keep their root cross-fade and the page chrome does not dip.
+- **D7, `max()` instead of adding.** `--snack-stack-height` is the room the snack takes above the route area (its gap plus a snack whose message runs to two lines, 68 px at 375 px; a one-line estimate overlapped the tile once the visible label was gone), and the tile's block-end offset is `max(--orb-floor, --snack-stack-height + space-3xs)`. Adding the snack height to `--orb-floor` would push the tile's top about 5 px into the bubble field on a 375 px screen, against "overlapping neither the snack bar nor the bubble field".
+- **D8, the timetable's first bind.** The dashboard's `<concert-highway>` used to sit inside `<template if.bind="!isAllNearby">`, which bound it after the route's `bound()`. With the wrapper gone it binds with the route's view, so the cached timetable and the remembered date are now reflected in `binding()`; otherwise re-entry opened two days off the remembered date (`timetable-window.spec.ts` "Re-entry restores the same date, at any depth").
+- **Empty-state links take the tap.** On `main` the dashboard's empty-state "アーティストを探す" link is covered by the always-present `<concert-highway>` in the same grid cell (the tap lands on the highway). The highway now comes first in that cell and the error and empty states are positioned after it, in the dashboard and in `<nearby-concerts>`, so both empty-state links work.
+- **Analytics sources.** The sheet opened from the All Nearby view reports `source: 'all_nearby'` and a guest's sign-up from it `all_nearby_prompt`, instead of the dashboard's values.
+- **The icon's lines.** The global `:where(svg) { stroke: currentcolor }` traced every arrow and the LIVE letters in white, filling the letters in at tile size; the icon sets `stroke: none` and only the badge, rims, pin and perforation draw a line. LIVE is set in `--font-display` at 700 and fitted to the ticket with `textLength`.
+- **Dead copy removed.** `allNearby.modeToggle.*` and `allNearby.empty.discoverLink` lost their last use and were removed from both bundles.
 
 ## Risks / Trade-offs
 
