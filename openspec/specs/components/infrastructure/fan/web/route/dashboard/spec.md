@@ -233,28 +233,6 @@ Every dashboard load SHALL call `FollowService.List` to retrieve per-artist hype
 - **WHEN** the dashboard loads and the in-memory list of followed artists is empty
 - **THEN** `FollowService.List` SHALL be called to populate the state and retrieve hype levels
 
-### Requirement: All Nearby mode uses ListByLocation
-
-The Dashboard concert cache SHALL support an "All Nearby" mode that calls `ConcertService.ListByLocation` and caches its result separately from the My Timetable result.
-
-#### Scenario: All Nearby result cached independently
-
-- **WHEN** the user switches to All Nearby mode and `ListByLocation` returns a result
-- **THEN** the result SHALL be stored in route-local state separate from the My Timetable cache
-- **AND** switching back to My Timetable and then to All Nearby again SHALL reuse the cached All Nearby result if the location and date range have not changed
-
-#### Scenario: Cache invalidated on filter change
-
-- **WHEN** the user changes the area or date preset in All Nearby mode
-- **THEN** the All Nearby cache SHALL be invalidated
-- **AND** `ListByLocation` SHALL be called again with the new parameters
-
-#### Scenario: My Timetable cache unaffected by All Nearby mode
-
-- **WHEN** the user switches between My Timetable and All Nearby mode
-- **THEN** the My Timetable concert cache SHALL remain intact
-- **AND** switching back to My Timetable SHALL display the previously loaded result without an additional network call
-
 ### Requirement: Default today-onward timetable
 
 The dashboard "My Timetable" SHALL, by default, display only concerts whose date is on or after the current local date. The "today" boundary SHALL be anchored to the client's local date, and the dashboard SHALL request the timetable by passing that date as the `from` argument to `ConcertService.ListFollowed`.
@@ -528,221 +506,6 @@ Side effects that must only run once a route's data is genuinely present (e.g. t
 - **THEN** the celebration decision SHALL be evaluated exactly once
 - **AND** the onboarding-completion latch SHALL be evaluated exactly once
 
-### Requirement: Dashboard Mode Toggle
-
-The Dashboard SHALL provide a segment toggle control that switches between "My Timetable" mode (current behavior — concerts for followed artists) and "All Nearby" mode (new — all concerts in the DB near a given location within a date range). The toggle is what tells the fan which mode is active: the page header title SHALL remain the dashboard's title in both modes.
-
-#### Scenario: Default mode is My Timetable
-
-- **WHEN** the Dashboard loads or the page is reloaded
-- **THEN** the active mode SHALL default to "My Timetable"
-- **AND** the toggle SHALL visually indicate My Timetable as the selected mode
-
-#### Scenario: Mode-specific filters appear only in All Nearby
-
-- **WHEN** the user switches to "All Nearby" mode
-- **THEN** a date-preset selector and an area selector SHALL appear below the toggle
-- **WHEN** the user switches back to "My Timetable" mode
-- **THEN** the date-preset selector and area selector SHALL be hidden
-
-#### Scenario: Switching modes replaces the concert list
-
-- **WHEN** the user switches from My Timetable to All Nearby
-- **THEN** the Dashboard SHALL call `ConcertService.ListByLocation` with the current location and date range
-- **AND** the resulting `ProximityGroup[]` SHALL replace the concert list
-- **WHEN** the user switches back to My Timetable
-- **THEN** the Dashboard SHALL revert to the cached `ConcertService.ListFollowed` / `ConcertService.ListByArtists` result
-
-#### Scenario: Header title does not change with the mode
-
-- **WHEN** the user switches between My Timetable and All Nearby
-- **THEN** the page header title SHALL stay the dashboard's title
-- **AND** the toggle SHALL indicate the newly selected mode
-
-### Requirement: Date Preset Selector
-
-The All Nearby mode SHALL expose its date filter as a single date chip that opens one date-range bottom sheet. The sheet SHALL offer three quick presets (今週末, 7日以内, 30日以内) and a directly-editable custom range (start/end date fields), so a custom range is adjusted without any intermediate menu or drill-down. There is no standalone "カスタム" preset chip; custom selection is simply editing the date fields.
-
-#### Scenario: Date chip opens the range sheet in one tap
-
-- **WHEN** the user taps the date chip
-- **THEN** a date-range bottom sheet SHALL open containing both the quick presets and editable start/end date fields
-
-#### Scenario: Available quick presets
-
-- **WHEN** the date-range sheet is displayed
-- **THEN** it SHALL offer exactly three quick presets: 今週末, 7日以内, 30日以内
-- **AND** it SHALL provide directly-editable start (開始) and end (終了) date fields for a custom range
-
-#### Scenario: 今週末 preset date range
-
-- **WHEN** the user selects 今週末
-- **AND** today is Monday through Friday
-- **THEN** `from` SHALL be set to the next Saturday and `to` to the next Sunday
-
-#### Scenario: 今週末 when today is Saturday or Sunday
-
-- **WHEN** the user selects 今週末
-- **AND** today is Saturday
-- **THEN** `from` SHALL be today and `to` SHALL be the next day (Sunday)
-- **WHEN** the user selects 今週末
-- **AND** today is Sunday
-- **THEN** `from` and `to` SHALL both be today
-
-#### Scenario: 7日以内 preset date range
-
-- **WHEN** the user selects 7日以内
-- **THEN** `from` SHALL be today and `to` SHALL be today + 6 days (inclusive 7-day window)
-
-#### Scenario: 30日以内 preset date range
-
-- **WHEN** the user selects 30日以内
-- **THEN** `from` SHALL be today and `to` SHALL be today + 29 days (inclusive 30-day window)
-
-#### Scenario: Quick preset applies and closes in one tap
-
-- **WHEN** the user taps a quick preset in the sheet
-- **THEN** the corresponding range SHALL be applied and the sheet SHALL close without a further confirmation tap
-
-#### Scenario: Custom range is edited then applied
-
-- **WHEN** the user edits the start and/or end date fields in the sheet
-- **THEN** the sheet SHALL remain open for adjustment
-- **AND** an apply action SHALL confirm the edited range and close the sheet
-
-#### Scenario: Custom range validation
-
-- **WHEN** the user edits the custom date fields
-- **THEN** the UI SHALL prevent `to` from being earlier than `from`
-- **AND** the UI SHALL prevent the inclusive range from exceeding 30 days
-- **AND** an inline hint SHALL communicate an invalid range and block applying it
-
-### Requirement: Area Selector in All Nearby Mode
-
-The All Nearby mode SHALL present the current reference area as an **area chip** in the single-row filter bar, and allow the user to override it for the duration of the session by opening the shared `user-home-selector` from that chip.
-
-#### Scenario: Default area is user home
-
-- **WHEN** All Nearby mode activates for an authenticated user who has set a home area
-- **THEN** the area chip SHALL display the user's home area name (prefecture display name)
-- **AND** the `GeoLocation` passed to `ListByLocation` SHALL use `user.home.centroid.latitude`, `user.home.centroid.longitude`, and `user.home.level_1` as `admin_area` (`centroid` is the nested `Coordinates` sub-message on the `Home` proto; `centroid_latitude`/`centroid_longitude` are reserved field names)
-
-#### Scenario: Area override via UserHomeSelector
-
-- **WHEN** the user taps the area chip
-- **THEN** the `user-home-selector` component SHALL open
-- **AND** on selection, the route SHALL update its local area state with the new ISO 3166-2 code
-- **AND** `ListByLocation` SHALL be called with the new area's centroid coordinates and admin_area
-- **AND** the new area SHALL NOT be saved to the user's account
-
-#### Scenario: Area override is session-scoped
-
-- **WHEN** the user reloads the page or navigates away and returns
-- **THEN** the area chip SHALL reset to the user's persisted home area
-- **AND** any previous session override SHALL be discarded
-
-#### Scenario: Area override for unauthenticated user
-
-- **WHEN** an unauthenticated user opens All Nearby mode
-- **AND** no guest home is stored in localStorage
-- **THEN** the area chip SHALL prompt the user to choose an area
-- **AND** the chosen area SHALL be used for the session without persisting to localStorage
-
-### Requirement: All Nearby Concert List
-
-The All Nearby mode SHALL display concerts returned by `ConcertService.ListByLocation` using the existing concert timetable with HOME and NEARBY lanes.
-
-#### Scenario: HOME and NEARBY lanes rendered
-
-- **WHEN** `ListByLocation` returns proximity groups
-- **THEN** the concert timetable SHALL render HOME-tier concerts in the HOME lane and NEARBY-tier concerts in the NEARBY lane
-- **AND** AWAY-tier concerts SHALL NOT be displayed
-
-#### Scenario: Venue name shown for all lanes
-
-- **WHEN** a concert card is rendered in the All Nearby list
-- **THEN** the venue name (listed or resolved) SHALL be shown regardless of the lane (HOME or NEARBY)
-- **AND** this overrides the current Dashboard behavior where HOME-lane cards suppress the venue label
-
-#### Scenario: Empty state
-
-- **WHEN** `ListByLocation` returns an empty group list
-- **THEN** the Dashboard SHALL display an empty-state message explaining that no concerts were found for the selected area and date range
-- **AND** the empty state SHALL include a link or button navigating to the Discovery tab
-
-### Requirement: Follow CTA in Event Detail Sheet for All Nearby
-
-When viewing a concert in All Nearby mode, the event detail sheet SHALL surface a follow action for artists the user does not yet follow.
-
-#### Scenario: Follow button visible for unfollowed artist
-
-- **WHEN** the user opens the event detail sheet for a concert in All Nearby mode
-- **AND** the concert's artist is not in the user's followed artists list
-- **THEN** the sheet SHALL display a "Follow this artist" button
-
-#### Scenario: Follow action from detail sheet
-
-- **WHEN** the user taps "Follow this artist" in the event detail sheet
-- **THEN** `FollowService.Follow` SHALL be called
-- **AND** the button SHALL change to a "Following" indicator
-- **AND** the DNA Orb absorption animation SHALL NOT play (the sheet is not the Discovery context)
-
-#### Scenario: No follow button for already-followed artist
-
-- **WHEN** the user opens the event detail sheet for a concert in All Nearby mode
-- **AND** the concert's artist is already followed
-- **THEN** the follow button SHALL NOT be displayed
-
-#### Scenario: Follow button for unauthenticated user
-
-- **WHEN** an unauthenticated user taps "Follow this artist" in the event detail sheet
-- **THEN** the system SHALL surface the sign-up prompt banner instead of calling `FollowService.Follow`
-
-### Requirement: Compact All Nearby Filter Bar
-
-The All Nearby mode SHALL present its filters as a single, fixed-height row of two chips — an area chip and a date chip — such that selecting or adjusting any filter never changes the height of the filter area and therefore never reduces the concert timetable's height.
-
-#### Scenario: Filter bar is a single row of two chips
-
-- **WHEN** All Nearby mode is active
-- **THEN** the filter area SHALL render exactly two controls on one row: an area chip and a date chip
-- **AND** neither chip SHALL expand the filter area inline when tapped
-
-#### Scenario: Timetable height is unaffected by filter interaction
-
-- **WHEN** the user opens the area sheet, opens the date sheet, or changes any filter
-- **THEN** the height of the concert timetable SHALL NOT decrease as a result
-- **AND** all complex input SHALL occur in a bottom sheet overlay rather than inline expansion
-
-### Requirement: Localized All Nearby Date Display
-
-Every user-facing date and date-range in the All Nearby filter SHALL be formatted for the Japanese locale via `Intl.DateTimeFormat('ja-JP')`; the browser's native `MM/DD/YYYY` input rendering SHALL NOT be the primary display of the selected range.
-
-#### Scenario: Date chip shows a localized range
-
-- **WHEN** a custom range from 2026-08-12 to 2026-08-20 is applied
-- **THEN** the date chip SHALL display the localized range `8/12〜8/20`
-
-#### Scenario: Single-day range
-
-- **WHEN** the applied range has `from` equal to `to`
-- **THEN** the date chip SHALL display that single localized date (e.g. `8/10`) rather than a `〜`-joined pair
-
-#### Scenario: Preset shows its name
-
-- **WHEN** a quick preset (今週末 / 7日以内 / 30日以内) is applied
-- **THEN** the date chip SHALL display that preset's name rather than a raw date range
-
-### Requirement: Natural Japanese Copy for All Nearby
-
-All user-facing Japanese strings on the All Nearby surface SHALL read as natural, native Japanese; machine-translated or awkward phrasing SHALL be corrected. Japanese and English i18n keys SHALL remain at parity.
-
-#### Scenario: All Nearby strings are natural Japanese
-
-- **WHEN** the mode toggle labels, area prompt, empty-state text, date-preset labels, and range hint are displayed in Japanese
-- **THEN** each SHALL be phrased in natural Japanese
-- **AND** every `allNearby.*` key present in the Japanese bundle SHALL also exist in the English bundle (and vice versa)
-
 ### Requirement: Dashboard uses semantic HTML structure
 The dashboard route SHALL use semantic HTML elements instead of generic `<div>` elements for its concert timeline layout.
 
@@ -981,8 +744,7 @@ As the fan scrolls toward either edge of the window, further dates SHALL be
 added on that side before the fan reaches the edge, so scrolling never stops at
 an artificial end. Adding dates above the fan SHALL NOT move what the fan is
 looking at. Dates outside the window SHALL NOT be built. Lane alignment with the
-stage header SHALL hold for every group, in both the three-lane and the
-collapsed two-lane (All Nearby) presentations.
+stage header SHALL hold for every group.
 
 #### Scenario: Only the window is built
 
@@ -1008,7 +770,6 @@ collapsed two-lane (All Nearby) presentations.
 
 - **WHEN** any date group is built, including one added while scrolling
 - **THEN** its lane columns SHALL align with the stage header's columns
-- **AND** this SHALL hold in both the three-lane and the two-lane presentations
 
 ### Requirement: Closing the detail sheet keeps the dashboard's filters in the URL
 
@@ -1114,7 +875,7 @@ The system SHALL provide a detail view for a selected discovered concert using a
 - **THEN** `dashboard-route` SHALL handle the `event-selected` custom event and open the `event-detail-sheet` dialog
 
 #### Scenario: First-party concert opens its event page
-- **WHEN** a user taps the card of a concert whose Series belongs to an Organizer, in the timetable or the All Nearby list
+- **WHEN** a user taps the card of a concert whose Series belongs to an Organizer, in the timetable
 - **THEN** the app SHALL navigate to `/events/<id>` and SHALL NOT open the detail sheet
 
 #### Scenario: Back from the event page
@@ -1126,3 +887,20 @@ The system SHALL provide a detail view for a selected discovered concert using a
 - **THEN** the timetable SHALL show its loading placeholder in place of the lanes, and no empty state
 - **WHEN** they have loaded and none match
 - **THEN** the dashboard SHALL show the empty state with a link to Discovery
+
+### Requirement: Empty timetable offers the All Nearby view
+
+Whenever the dashboard shows an empty timetable, the empty state SHALL offer, next to its link to Discovery, a second link that opens the All Nearby view on Discovery (`/discovery?view=nearby`). This holds for the guest who follows no artist and for the fan whose followed artists have no concert to show.
+
+#### Scenario: Guest with no follows
+- **WHEN** a guest who follows no artist opens the dashboard
+- **THEN** the empty state shows the link to Discovery and a link 「近くのライブを見る」
+- **AND** tapping 「近くのライブを見る」 opens Discovery on the All Nearby view
+
+#### Scenario: Followed artists with nothing to show
+- **WHEN** a fan follows artists but none of them has a concert to show
+- **THEN** the empty state shows the link to Discovery and the link 「近くのライブを見る」
+
+#### Scenario: Timetable with concerts
+- **WHEN** the timetable shows at least one concert
+- **THEN** no link to the All Nearby view is shown on the dashboard
