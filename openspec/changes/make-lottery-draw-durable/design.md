@@ -25,7 +25,7 @@ See proposal.md - Why. This change is applied after `remodel-ticket-sales`: an O
 
 ## Decisions
 
-### Record first, then one workflow per entry
+### Record first; the work after the draw starts from the announcements
 
 ```
 schedule draw-due-sales (* * * * *)
@@ -40,10 +40,10 @@ Draw(sale)                           step TicketSale.Get
                                           Lost Orders Void, one LotteryEntry announcement per
                                           entry changed (ORDER.lottery_entry_drawn, outbox)
 workflow starter (consumer of ORDER.lottery_entry_drawn)
-                                        Won  -> Start Issue(order)                    id issue:<order>
+                                        Won  -> Start Issue(entry)                    id issue:<entry's order>
                                         Lost -> Start ReleaseCardAuthorization(order) id release:<order>
 loss notifier (its own consumer)        Lost -> SendLotteryLoss(entry)
-Issue(order)                deadline 24 h
+Issue(entry)                deadline 24 h
                                      step reads: LotteryEntry.Get (Won), Order.Get (Pending),
                                           TicketStock.Get, TicketSale.Get, Event.GetOrganizerID,
                                           Organizer.Get, IdentityVerification
@@ -66,7 +66,7 @@ ReleaseCardAuthorization(order) deadline 24 h
 - **A card that can no longer be charged is a result.** Per the failure classification of `introduce-durable-workflows`, `Issue` returns "no Order" instead of an error, so it is not reported. `ReleaseCardAuthorization` ending with FailedPrecondition (a Lost entry whose card was charged) is an error and is reported.
 - **The work after the draw starts from the entries' announcements.** `PersistDrawOutcome` records the outcome and one announcement per changed entry in one transaction. The workflow starter, one durable consumer of `ORDER.lottery_entry_drawn`, starts `OrderUseCase.Issue` (`issue:<order>`) for a Won entry's Order and `OrderUseCase.ReleaseCardAuthorization` (`release:<order>`) for a Lost one's, through `Workflows.Start`; a repeated delivery starts nothing new, because DBOS runs one workflow per id. The specs write it as the trigger of the started method ("Issue SHALL run once for each entry that PersistDrawOutcome records Won"). Starting them from `Draw` with `Flow.Start` was rejected: each start is one checkpoint write in `Draw`, one after another, so a sale of 1,000,000 entries would cost 1,000,000 sequential writes in one workflow (`docs/event-delivery-design.md`, "Why change").
 - **`ReleaseCardAuthorization` is on `OrderUseCase` and takes an Order.** The card authorization belongs to the Order after `remodel-ticket-sales`, and a Void Order is the one fact every source shares: a Lost lottery entry here, and a Lapsed, Lost or Withdrawn resale entry in `resell-tickets-by-lottery`, so one workflow serves both. A `CardAuthorizationUseCase` would hold one method.
-- **Ids**: `draw:<sale>`, `issue:<order>`, `release:<order>`. Every application has exactly one Order (`remodel-ticket-sales` D3), so the Order id names the work for every source without a source prefix. A schedule run that lists a sale whose draw is still running, or ended in ERROR, starts nothing new (`DrawDueSales` "Drawn once", "One sale fails").
+- **Ids**: `draw:<sale>`, `issue:<order>`, `release:<order>`. Every application has exactly one Order (`remodel-ticket-sales` D3), so the Order id names the work for every source without a source prefix. `Issue` takes the Won LotteryEntry (its announcement carries the Order id), and its workflow is named after that entry's Order; `ReleaseCardAuthorization` takes the Order. A schedule run that lists a sale whose draw is still running, or ended in ERROR, starts nothing new (`DrawDueSales` "Drawn once", "One sale fails").
 - **Deadlines**: 24 hours for `Issue` and `ReleaseCardAuthorization` (`WithDeadline`). A JPY card authorization of an account based in Japan can be held for up to 30 days ([Place a hold on a payment method](https://docs.stripe.com/payments/place-a-hold-on-a-payment-method), "30-day authorisation windows in Japan"; American Express keeps the standard 7 days), and an Organizer's lottery window lasts at most 14 days, so a resumed capture still finds it.
 - **Release tracking.** Every Lost entry's Order gets its own `release:<order>` workflow, started by the consumer of its announcement from `PersistDrawOutcome` or from `RevertWin`, so a release is never only logged. The workflow's stored state is the record of whether the release finished; a release that fails or passes its 24 hours raises "Workflow Needs Admin". No release time column is added: the CardAuthorization's own status (Released) is the fact, read from the payment provider. `Draw` has no deadline: it only reads and writes the database.
 
