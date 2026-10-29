@@ -11,7 +11,7 @@ The backend commits a fact and then publishes its event in a second call: a fail
 - **Observations from outside are recorded as facts.** The passkey webhook starts the recording of the Passkey change, and the recorded Passkey is announced as added or removed; the passkey registered at sign-up is now emailed as added too. The login webhook records the User's last login time, and that change is announced.
 - **Unused announcements go**: CONCERT.cancelled and ORGANIZER.concert_published have no receiver.
 - **The payload is the changed entity**, or the entities of one type one operation changed together, as `entity/v1` messages in binary protobuf; the hand-written payload structs go. A fact that is not entity state becomes entity state or is read by id:
-  - LotteryEntry gains its TicketSale and the reason it lost; `referral_code` joins its proto.
+  - LotteryEntry gains the reason it lost (its sale and Order, and the referral code on the Order, come from `remodel-ticket-sales`).
   - An Artist names the Organizer that represents it, so the association announces the Artist.
   - A Passkey keeps the name the identity provider gave it, which the passkey email shows.
   - Every entity is compared with its proto, and a field left out for no personal-data reason is added.
@@ -33,7 +33,7 @@ Process:
 - `components/infrastructure/backend/process/durable-workflows`: the step-derived event id requirement is removed (moved to event-delivery).
 
 Entities (Purpose, edited in the main spec):
-- `components/entity/lottery-entry` (Purpose): new attributes ticket sale (the sale of its ticket type) and lost reason (not drawn, or card could not be charged).
+- `components/entity/lottery-entry` (Purpose): new attribute lost reason (not drawn, or card could not be charged).
 - `components/entity/user` (Purpose): new attribute last login time.
 - `components/entity/artist` (Purpose): new attribute organizer (the Organizer that represents it, at most one), drawn Organizer ||--o{ Artist.
 - `components/entity/series-image` (Purpose): new attribute series (the Series it was uploaded for).
@@ -87,8 +87,8 @@ Unchanged and why: consumers whose trigger is a fact that stays an announcement 
 
 ## Impact
 
-- **backend**: an outbox table per subject and its relay in the workflow worker; entity operations write announcements on the repository transaction; the usecases lose the event publisher; new workflows for the six requests; the passkey and login webhooks call usecases; consumers read binary protobuf payloads; the entity-to-proto conversion moves out of the RPC mapper package; the step-derived event id code goes; migrations for `lottery_entries.ticket_sale_id` and the lost reason, and `users.last_login_time`.
-- **specification**: `entity/v1` gains `LotteryEntry.ticket_sale_id`, `referral_code` and the lost reason, `User` the last login time, and any field the entity-to-proto audit finds missing (a proto release).
+- **backend**: an outbox table per subject and its relay in the workflow worker; entity operations write announcements on the repository transaction; the usecases lose the event publisher; new workflows for the six requests; the passkey and login webhooks call usecases; consumers read binary protobuf payloads; the entity-to-proto conversion moves out of the RPC mapper package; the step-derived event id code goes; migrations for the lottery entry's lost reason and `users.last_login_time`.
+- **specification**: `entity/v1` gains the `LotteryEntry` lost reason, `User` the last login time, and any field the entity-to-proto audit finds missing (a proto release).
 - **cloud-provisioning**: JetStream streams lose the removed subjects.
 - **frontend**: none.
-- **In-flight changes**: `make-lottery-draw-durable` and `unify-order-issuance` are re-planned on top of this change (their announcement and `FulfillPayment` requirements change here).
+- **Order of changes**: `remodel-ticket-sales` → this change → `make-lottery-draw-durable` → `unify-order-issuance` → `resell-tickets-by-lottery`. This change's deltas of `persist-draw-outcome`, `run-draw`, `order/issue`, `checkout/release` and `release-expired` are written against the main specs as `remodel-ticket-sales` leaves them, and the three later changes are written on this one: entity operations announce, usecases do not, and work after a stored change starts from its announcement.

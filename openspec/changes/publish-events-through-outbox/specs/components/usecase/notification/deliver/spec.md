@@ -31,7 +31,7 @@ Deliver SHALL send the message (PushSubscription.Send) to every PushSubscription
 
 ### Requirement: Runs for each requested notification
 
-Deliver SHALL run once for each notification that NotificationUseCase.NotifyNewConcerts or TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale starts for one fan, with that fan, the notification type and the finished message; a start repeated under the same name runs nothing new. NotificationUseCase.SendOrderConfirmation calls it directly. When a started Deliver fails, that notification SHALL be processed again; a failure for one fan's notification SHALL NOT affect the notifications of any other fan.
+Deliver SHALL run once for each notification that NotificationUseCase.NotifyNewConcerts, TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale or NotificationUseCase.SendOrderConfirmation starts for one fan, with that fan, the notification type and the finished message; a start repeated under the same name runs nothing new. When a started Deliver fails, that notification SHALL be processed again; a failure for one fan's notification SHALL NOT affect the notifications of any other fan.
 
 #### Scenario: Notification requested
 
@@ -40,7 +40,7 @@ Deliver SHALL run once for each notification that NotificationUseCase.NotifyNewC
 
 #### Scenario: Purchase notification requested
 
-- **WHEN** SendOrderConfirmation sends the confirmation of an Order
+- **WHEN** SendOrderConfirmation starts the push of an Order's confirmation
 - **THEN** Deliver runs for the Order's user with the type order_confirmation
 
 #### Scenario: Recording fails for one request

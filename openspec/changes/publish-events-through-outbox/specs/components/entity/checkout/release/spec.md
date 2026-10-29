@@ -2,7 +2,7 @@
 
 ### Requirement: An expired Checkout is announced with the change
 
-When Release makes a Checkout Expired, it SHALL announce the Checkout as expired, carrying it in status Expired, together with the change: both are stored or neither is. When Release changes nothing, it SHALL announce nothing. When the announcement cannot be recorded, Release SHALL fail with Unavailable and the Checkout SHALL stay Held.
+When Release makes a Checkout Expired and its Order Void, it SHALL announce the Checkout as expired, carrying it in status Expired, together with the change: both are stored or neither is. When Release changes nothing, it SHALL announce nothing. When the announcement cannot be recorded, Release SHALL fail with Unavailable, and the Checkout SHALL stay Held and its Order Pending.
 
 #### Scenario: Hold lapsed
 
@@ -17,4 +17,4 @@ When Release makes a Checkout Expired, it SHALL announce the Checkout as expired
 #### Scenario: Announcement cannot be recorded
 
 - **WHEN** a Held Checkout whose hold lapsed is released and the announcement cannot be recorded
-- **THEN** Release fails with Unavailable and the Checkout stays Held
+- **THEN** Release fails with Unavailable, the Checkout stays Held and its Order stays Pending
