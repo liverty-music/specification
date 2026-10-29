@@ -1,18 +1,19 @@
 # components/usecase/ticket-sale/create Specification
 
 ## Purpose
-TicketSaleUseCase.Create lets an Organizer open a sale (受付), by lottery or first come, first served - its name, window and verification requirement, and a TicketType with price, quantity and per-account limit for each event it covers - on published events of one of its Series.
+TicketSaleUseCase.Create lets an Organizer open a sale (受付), by lottery or first come, first served - its name, window and verification requirement, and one or more events it covers - on published events of one of its Series.
 
 ## Requirements
 
 ### Requirement: Only the owner, on published and timed events of one Series
 
-Create SHALL take the caller's Organizer, a Series, a name, the method Lottery or FirstCome, a start time, an end time (optional for FirstCome), an optional verification requirement and one or more TicketTypes, each with an event, a price, a quantity and an optional per-account limit. It SHALL:
-- fail with InvalidArgument when no TicketType is given, when a Lottery sale has no end time, or when the values break the TicketSale or TicketType rules;
+Create SHALL take the caller's Organizer, a Series, a name, the method Lottery or FirstCome, a start time, an end time, an optional verification requirement and one or more events. It SHALL:
+- fail with InvalidArgument when no event or no end time is given, or when the values break the TicketSale rules;
 - read the Series with Series.GetAuthored and fail with PermissionDenied, without revealing whether it exists, when it does not exist or is owned by another Organizer;
-- fail with InvalidArgument when a TicketType's event is not one of the Series' Events;
+- fail with InvalidArgument when an event is not one of the Series' Events;
 - fail with FailedPrecondition when Event.IsEventPublished reports false for an event;
 - fail with FailedPrecondition when Event.GetEventStartTime returns no start time for an event;
+- fail with FailedPrecondition when TicketStock.ListByEvent returns no TicketStock for an event, so every sale has tickets to sell;
 - for a Lottery sale, fail with FailedPrecondition when the end time is not before the start time of every event it covers, so a lottery is drawn and its tickets issued before the doors open;
 - for a FirstCome sale, fail with FailedPrecondition when the end time is after the start time of any event it covers, so the sale closes no later than the doors open.
 
@@ -21,7 +22,7 @@ Create SHALL take the caller's Organizer, a Series, a name, the method Lottery o
 - **THEN** Create fails with PermissionDenied and nothing is stored
 
 #### Scenario: Event of another series
-- **WHEN** one TicketType names an event that belongs to a different Series
+- **WHEN** one of the given events belongs to a different Series
 - **THEN** Create fails with InvalidArgument and nothing is stored
 
 #### Scenario: Event not published
@@ -30,6 +31,10 @@ Create SHALL take the caller's Organizer, a Series, a name, the method Lottery o
 
 #### Scenario: Start time not yet announced
 - **WHEN** an event has a date but no start time
+- **THEN** Create fails with FailedPrecondition and nothing is stored
+
+#### Scenario: Event without a ticket stock
+- **WHEN** one of the given events has no TicketStock
 - **THEN** Create fails with FailedPrecondition and nothing is stored
 
 #### Scenario: Sale ends after the event starts
@@ -45,7 +50,11 @@ Create SHALL take the caller's Organizer, a Series, a name, the method Lottery o
 - **THEN** the sale is created
 
 #### Scenario: Invalid configuration
-- **WHEN** the window lasts 15 days, or a per-account limit exceeds the quantity, or a price is 0
+- **WHEN** the window of a Lottery sale lasts 15 days, or the name is empty
+- **THEN** Create fails with InvalidArgument and nothing is stored
+
+#### Scenario: No end time
+- **WHEN** the owner creates a FirstCome sale without an end time
 - **THEN** Create fails with InvalidArgument and nothing is stored
 
 ### Requirement: A sale needs the Organizer's business details
@@ -76,14 +85,10 @@ Create SHALL read the existing sales of every event it covers with TicketSale.Li
 - **WHEN** the overlapping existing sale covers only other events of the Series
 - **THEN** the sale is created
 
-### Requirement: Store the sale
+### Requirement: Store the sale with its events
 
-When a FirstCome sale is given no end time, Create SHALL use the earliest start time among the events it covers. Create SHALL store the sale and its TicketTypes with TicketSale.Create, with the verification requirement None when none is given, and return the stored sale with its TicketTypes, not drawn.
+Create SHALL store the sale naming its events with TicketSale.Create, with the verification requirement None when none is given, and return the stored sale with its events, not drawn.
 
 #### Scenario: Tour presale
-- **WHEN** the owner creates a 10-day Lottery sale named ファンクラブ先行 with TicketTypes of 100 tickets at 8000 yen for two published, timed events
-- **THEN** the sale is stored, not drawn, with the requirement None, and returned with its two TicketTypes
-
-#### Scenario: First-come sale without an end time
-- **WHEN** the owner creates a FirstCome sale named 一般発売 with one TicketType of 150 tickets at 3000 yen and no limit, for an event starting at 19:00, without an end time
-- **THEN** a sale ending at 19:00 is stored with a TicketType whose per-account limit is 4 and sold count 0, and returned
+- **WHEN** the owner creates a 10-day Lottery sale named ファンクラブ先行 for two published, timed events that each have TicketStocks of S席 and A席
+- **THEN** the sale is stored, not drawn, with the requirement None, and returned naming its two events

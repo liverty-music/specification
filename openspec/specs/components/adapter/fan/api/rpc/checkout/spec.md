@@ -10,7 +10,7 @@ The fan-facing checkout service boundary (`CheckoutService`): starting, reading,
 Start, Get, AuthorizeCard and Confirm SHALL require a signed-in caller and fail with Unauthenticated otherwise. They SHALL resolve the caller to their stored User with User.GetByProviderUserID, failing with NotFound when the caller has no stored account. They SHALL pass that User to CheckoutUseCase.Start, CheckoutUseCase.Get, CheckoutUseCase.AuthorizeCard and OrderUseCase.IssueFromCheckout respectively; the request never names a user. AuthorizeCard SHALL return the card authorization secret (`card_authorization_secret`) the usecase returns. Errors from the usecase SHALL be returned unchanged.
 
 #### Scenario: Fan starts a checkout
-- **WHEN** a signed-in fan calls Start for 2 tickets of a TicketType
+- **WHEN** a signed-in fan calls Start for 2 tickets of a TicketStock
 - **THEN** CheckoutUseCase.Start runs for that fan and the Checkout is returned
 
 #### Scenario: Guest tries to buy
@@ -28,7 +28,7 @@ Start, Get, AuthorizeCard and Confirm SHALL require a signed-in caller and fail 
 ### Requirement: Requests are validated before any usecase runs
 
 Before any usecase runs, the boundary SHALL fail with InvalidArgument when:
-- Start's TicketType is missing or malformed, or its ticket count is missing or not greater than 0;
+- Start's TicketStock is missing or malformed, or its ticket count is missing or not greater than 0;
 - Start's referral code is given and is not a valid ReferralCode (1 to 32 lowercase ASCII letters, digits or hyphens); a Start without a referral code is valid;
 - the Checkout of Get, AuthorizeCard or Confirm is missing or malformed;
 - AuthorizeCard's full name or phone number is missing or breaks the User's personal details rule, including a phone number that is not in E.164 form.
@@ -47,16 +47,8 @@ Before any usecase runs, the boundary SHALL fail with InvalidArgument when:
 
 #### Scenario: Malformed referral code
 - **WHEN** Start is called with the referral code `member_a`
-- **THEN** it fails with InvalidArgument, nothing is held and no referral code is set
+- **THEN** it fails with InvalidArgument, nothing is held and no referral code is stored
 
 #### Scenario: Referral code passed on
-- **WHEN** Start is called with a valid TicketType, a ticket count of 2 and the referral code `member-a`
+- **WHEN** Start is called with a valid TicketStock, a ticket count of 2 and the referral code `member-a`
 - **THEN** the request passes the boundary and CheckoutUseCase.Start runs with the code `member-a`
-
-### Requirement: A returned checkout says whether it is a resale checkout
-
-Every Checkout returned by Start and Get SHALL say whether it is a resale Checkout, and SHALL NOT carry the ResaleListings it holds or anything about their users.
-
-#### Scenario: Resale checkout started
-- **WHEN** a signed-in fan calls Start for 1 ticket of a sold-out TicketType with a free listing
-- **THEN** the returned Checkout says it is a resale Checkout and names no other fan

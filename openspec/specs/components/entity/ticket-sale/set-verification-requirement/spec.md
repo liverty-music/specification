@@ -7,11 +7,11 @@ Sets the verification requirement of one TicketSale and returns the updated sale
 
 ### Requirement: Set the requirement
 
-SetVerificationRequirement SHALL set the sale's verification requirement, leave its other attributes and its TicketTypes unchanged and return the updated sale. It SHALL fail with InvalidArgument when no sale id is given and with NotFound when no sale has the id.
+SetVerificationRequirement SHALL set the sale's verification requirement, leave its other attributes and its events unchanged and return the updated sale. It SHALL fail with InvalidArgument when no sale id is given and with NotFound when no sale has the id.
 
 #### Scenario: Requirement changed
 - **WHEN** a sale's requirement None is updated to JPKI-only
-- **THEN** the returned sale requires JPKI-only and its window and TicketTypes are unchanged
+- **THEN** the returned sale requires JPKI-only and its window and events are unchanged
 
 #### Scenario: Unknown id
 - **WHEN** no sale has the id

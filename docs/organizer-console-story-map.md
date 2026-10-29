@@ -195,17 +195,22 @@ journey
 
 ### Sell by lottery or first come (guide chapter `sell`)
 
-Source: `route/event` (Sales tab), `route/ticket-sale-editor`,
+Source: `route/concert` (seat types), `route/concert-editor` (per-account
+limit), `route/event` (Sales tab), `route/ticket-sale-editor`,
 `stories/win-tickets-in-a-lottery`, `stories/buy-tickets-first-come`.
 
 ```mermaid
 journey
     title Sell by lottery or first come (scores are an estimate)
+    section Prepare
+      Add seat types with a price on the concert page: 4: Member
+      Set each date's per-account limit in the concert editor: 4: Member
+      Add each seat type's quantity on the date's Sales tab: 4: Member
     section Start
       Open the Sales tab of a published date: 4: Member
       Read why a sale cannot start yet: 3: Member
       Press 抽選で販売する or 先着で販売する: 5: Member
-      Fill in the window, price, quantity and limit: 4: Member
+      Fill in the name and the window: 5: Member
     section Run
       Watch 受付開始前, 受付中, 抽選待ち, 抽選済み: 4: Member
       Wait for the automatic draw: 3: Member, Fan
@@ -215,8 +220,15 @@ journey
 - A lottery window is 1 to 14 days (10 by default) and closes before the show.
   The draw runs automatically shortly after the window closes. Nothing about a
   lottery can change once its window opens (受付開始後は変更できません).
-- A first-come sale (一般発売 by default) ends by the show's start time. Its price
-  is fixed while tickets are 販売済み or 購入手続き中.
+- A first-come sale (一般発売 by default) ends by the show's start time.
+- A seat type (席種) belongs to the concert, with a name and a price; a date's
+  stock gives each seat type a quantity. Neither can change once saved: to
+  sell more, add another seat type. Every sale of a date sells every stock of
+  it, so tickets sold in a presale are gone from the later sales.
+- A date's per-account limit (1アカウントの上限, 1 to 10, 4 by default) counts
+  every sale, seat type and official resale of the date, and is fixed once the
+  date is published. A fan holds one seat type per date.
+- A sale only names its dates and window; only the window can change.
 - Sales of one date cannot overlap.
 
 ### Check sales and referral codes (guide chapter `sales-and-referral`)
@@ -319,12 +331,12 @@ at the screen's chapter (not drawn).
 |---|---|---|---|
 | Home | Items by kind: 要対応, 7日以内, 開始時刻なし, 下書き | Open an item; 公演一覧へ | `home` |
 | Concerts | Concerts of the Artist worked on: 公演名, 日程・会場, 販売状態, 状態 | Open a concert; 公演をつくる | `publish` |
-| Concert | Title, type, visibility, cover, performers; dates with state and sale state | 編集; 公開する; 公演を中止 | `publish` |
-| Concert editor | 公演名, 説明, 種類, 公開範囲, 出演者, カバー画像; dates with 会場, 日付, 開場, 開演 | 公演日を追加; save; キャンセル | `publish` |
+| Concert | Title, type, visibility, cover, performers; dates with state and sale state; 席種 with price | 編集; 公開する; 公演を中止; 席種を追加; 削除 a seat type no stock uses | `publish`, `sell` |
+| Concert editor | 公演名, 説明, 種類, 公開範囲, 出演者, カバー画像; dates with 会場, 日付, 開場, 開演, 1アカウントの上限 | 公演日を追加; save; キャンセル | `publish`, `sell` |
 | Event | Date, start time, venue, state; ファンページ address | 公開する; 中止する; 公演を編集; tabs 販売 and 受付 | `sell` |
-| 販売 tab | Prerequisite notices; sales with state, window, price, counts; 本人確認; 紹介コード別の購入 | 抽選で販売する; 先着で販売する; 編集; change 本人確認 | `sell` |
-| Lottery sale editor | Event; 販売名, 受付期間, 価格, 販売枚数, 1人あたりの上限枚数 | 抽選販売を始める or save; キャンセル | `sell` |
-| First-come sale editor | Event; 販売名, 販売期間, price and counts; 販売済み, 購入手続き中 | 先着販売を始める or save; キャンセル | `sell` |
+| 販売 tab | Prerequisite notices; 席種と枚数 with 販売済み, 購入手続き中 and state; sales with state, window, per-stock lottery entries; 本人確認; 紹介コード別の購入 | 席種を追加 (a stock); 削除 a stock; 抽選で販売する; 先着で販売する; 編集; change 本人確認 | `sell` |
+| Lottery sale editor | Event and its stocks; 販売名, 受付期間 | 抽選販売を始める or save; キャンセル | `sell` |
+| First-come sale editor | Event and its stocks; 販売名, 販売期間 | 先着販売を始める or save; キャンセル | `sell` |
 | 受付 tab | Reception window; links 受付1… with 未使用, 使用中, 取り消し済み | 受付リンクを発行; コピー; 共有; 取り消す; 取り消して再発行; staff guide | `reception` |
 | Settings | 組織, 所属アーティスト, 事業者情報, 入金口座 with 確認中, 有効, 要対応 | Stripe で登録する or Stripe で登録を続ける | `business-and-payout` |
 | Find organizer (signed out) | 主催者コンソールにサインイン | リンクを送る | `sign-in` |

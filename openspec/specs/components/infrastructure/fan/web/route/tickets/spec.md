@@ -7,12 +7,12 @@ The fan's tickets screen: the tickets issued to their account, each showing its 
 
 ### Requirement: Tickets grouped by event with their face
 
-The screen SHALL list the signed-in fan's tickets grouped by event, nearest event first. Each ticket SHALL show its event's title, date, venue, open and start times, and its covered-ticket face: that resale without the Organizer's consent is prohibited, the eligible person's full name and phone number as the fan's User currently records them, and that no seat is assigned. Each ticket SHALL show its state: 未入場 (not yet entered), 出品中 (listed for official resale), 入場済み (entered) with the admit time, リセール済み (resold) for a ticket voided by its Sold listing, or 無効 (void) for any other voided ticket. The last loaded list SHALL stay viewable without a connection.
+The screen SHALL list the signed-in fan's tickets grouped by event, nearest event first. Each ticket SHALL show its event's title, date, venue, open and start times, its seat type's name, and its covered-ticket face: that resale without the Organizer's consent is prohibited, the eligible person's full name and phone number as the fan's User currently records them, and that no seat is assigned. Each ticket SHALL show its state: 未入場 (not yet entered), 出品中 (listed for official resale), 入場済み (entered) with the admit time, リセール済み (resold) for a ticket voided by its Sold listing, or 無効 (void) for any other voided ticket. The last loaded list SHALL stay viewable without a connection.
 
 #### Scenario: Fan opens their tickets
 
-- **WHEN** a fan with 3 tickets for one event opens the screen
-- **THEN** the event is shown once with its 3 tickets, each with the resale notice, the fan's full name and phone number and 未入場
+- **WHEN** a fan with 3 S席 tickets for one event opens the screen
+- **THEN** the event is shown once with its 3 tickets, each with S席, the resale notice, the fan's full name and phone number and 未入場
 
 #### Scenario: Fan corrected their phone number
 
@@ -123,31 +123,31 @@ The screen, including making the QR code without a connection, SHALL work in the
 
 ### Requirement: List a ticket for official resale
 
-The screen SHALL read the fan's listings with ResaleListingService.List and, for each event, its sales with TicketSaleService.ListByEvent. For a ticket that is 未入場 and has no Listed listing, whose event's FirstCome TicketType has its resale open, the screen SHALL offer to list it for 公式リセール. Before listing, it SHALL show on one screen: the price 税込, the resale fee of 10%, the refund amount, that the refund goes to the card the fan paid with right after another fan buys the ticket, that the listing closes when admission opens with that date and time, that a sale is not guaranteed and an unsold ticket stays valid, that the listing can be withdrawn until another fan starts buying it, and that a sold ticket becomes invalid. Confirming SHALL call ResaleListingService.Create for that one ticket. A ticket of an event whose TicketType never sold out SHALL offer no listing, and the screen SHALL say that official resale opens only when the event sells out.
+The screen SHALL read the fan's listings with ResaleListingService.List and, for each event, its sales with TicketSaleService.ListByEvent. For a ticket that is 未入場 and has no Listed listing, whose TicketStock has its resale open, the screen SHALL offer to list it for 公式リセール. Before listing, it SHALL show on one screen: the price 税込, the resale fee of 10%, the refund amount, that the refund goes to the card the fan paid with right after another fan buys the ticket, that the listing closes when admission opens with that date and time, that a sale is not guaranteed and an unsold ticket stays valid, that the listing can be withdrawn until it is sold or listing closes, and that a sold ticket becomes invalid. Confirming SHALL call ResaleListingService.Create for that one ticket. A ticket whose TicketStock is not sold out SHALL offer no listing, and the screen SHALL say that official resale opens only when the seat type sells out for the event.
 
 #### Scenario: Fan lists a ticket
-- **WHEN** a fan with 2 tickets of 5000 yen for a sold-out event lists one of them
+- **WHEN** a fan with 2 S席 tickets of 5000 yen for an event whose S席 sold out lists one of them
 - **THEN** the screen shows 5,000円, 手数料 500円 and 返金額 4,500円 before confirming, and after confirming that ticket is shown as 出品中
 
 #### Scenario: Event not sold out
-- **WHEN** the fan's event never sold out
-- **THEN** the screen offers no listing and says official resale opens only when the event sells out
+- **WHEN** the seat type of the fan's tickets never sold out for the event
+- **THEN** the screen offers no listing and says official resale opens only when the seat type sells out
 
 #### Scenario: Admission opened
 - **WHEN** the fan opens the screen after the event's admission window opened
 - **THEN** no listing is offered
 
-### Requirement: A listed ticket can be withdrawn and shows its outcome
+### Requirement: A listed ticket can be withdrawn until it is sold or listing closes
 
-A ticket shown as 出品中 SHALL offer to withdraw the listing, which calls ResaleListingService.Withdraw; when withdrawing fails with FailedPrecondition, the screen SHALL say that another fan is buying the ticket right now and that it cannot be withdrawn unless that purchase lapses. A ticket shown as リセール済み SHALL show the refund amount and whether the refund has been made, with its date. A listing returned Expired SHALL leave its ticket shown as 未入場.
+A ticket shown as 出品中 SHALL offer to withdraw the listing, which calls ResaleListingService.Withdraw; a listing can be withdrawn until it is sold or listing closes. When withdrawing fails with FailedPrecondition, the screen SHALL say that the listing can no longer be withdrawn because it was sold or listing has closed, and SHALL read the fan's listings again. A ticket shown as リセール済み SHALL show the refund amount and whether the refund has been made, with its date. A listing returned Expired SHALL leave its ticket shown as 未入場.
 
 #### Scenario: Fan withdraws
-- **WHEN** the fan withdraws a listed ticket nobody is buying
+- **WHEN** the fan withdraws a listed ticket before listing closes
 - **THEN** the ticket is shown as 未入場 again
 
-#### Scenario: Someone is buying it
-- **WHEN** the fan withdraws a listed ticket another fan holds in a checkout
-- **THEN** the screen says another fan is buying it now and the ticket stays 出品中
+#### Scenario: Listing already closed
+- **WHEN** the fan withdraws a listed ticket after it was sold or listing closed
+- **THEN** the screen says the listing can no longer be withdrawn and shows the ticket as the listings read again say
 
 #### Scenario: Refund made
 - **WHEN** the fan opens the screen after their listed ticket was resold and refunded
