@@ -79,12 +79,21 @@ Each view's SQL passed `bq query --dry_run` against prod on 2026-10-24 (task 3.3
 
 After the prod `pulumi up` (update 282, `+12-0~0`), one query per mart returned rows on 2026-10-24:
 
-- `mart_gemini_cost_daily` sums to the bill: 4,729.68 JPY for 2026-10-01 to 10-23 in both the mart and `stg_billing_daily`. All of it is `(unattributed)` until backend#685 is released.
+- `mart_gemini_cost_daily` sums to the bill: 4,729.68 JPY for 2026-10-01 to 10-23 in both the mart and `stg_billing_daily`. All of it was `(unattributed)`, because backend#685 was not yet released.
 - `mart_pipeline_health_daily` shows the day's 14 sales-reminders runs, one `new_concerts` delivery that failed with `no_subscription`, three fan-outs that sent nothing, and one candidate queued for review.
 - The fan counts in `mart_unit_economics_monthly` and `mart_campaign_value` were partial: the PostHog backfill from 2026-08-01 (events) and 2026-05-31 (persons) was still running.
 
 - `mart_infra_cost_daily` reads the whole detailed export, about 0.7 GB per query today. At that size, the free 1 TiB of queries allows about 1,400 report loads a month. It is the first mart to materialize if reports load it often.
-- `mart_gemini_cost_daily` (per process) and `mart_cost_per_concert_monthly` need `$ai_generation`, `concert.ingest.completed` and `ticket_sale.search.completed`. These events come from backend#685 (`expand-product-analytics`). Until that is released, Gemini cost shows as `(unattributed)`, and the counts of new concerts come only from approved candidates.
+- `mart_gemini_cost_daily` (per process) and `mart_cost_per_concert_monthly` need `$ai_generation`, `concert.ingest.completed` and `ticket_sale.search.completed`. These events come from backend#685 (`expand-product-analytics`), merged and released on 2026-10-24. Gemini cost before 2026-10-24 stays `(unattributed)`. The first attributed day is 2026-10-24: 676.03 JPY to concert-discovery, concert search.
+- October 2026 gives no cost per new concert. The Gemini API spend cap (¥4,000 a month, `cap-paid-api-spend`) refused every call from 2026-10-24 11:25 UTC on, with `Error 403 ... Spend cap breached ... PERMISSION_DENIED`. October's bill reached 4,729.68 JPY by 10-23, and billing data lags. From 10-25 to 10-28, all 45 `$ai_generation` events are errors with 0 tokens, so no new concert was found and `mart_cost_per_concert_monthly` shows 0 new concerts. The cap lifts on 2026-11-01, and November is the first month that can check this mart.
+
+### Billing views keep the project
+
+The billing export covers the whole billing account, so it holds `liverty-music-dev` as well as `liverty-music-prod`. The staging views first summed every project, which put development cost into the per-fan and per-concert marts. Measured on 2026-10-29 (list price): dev's Gemini API cost was 1,230 JPY in August 2026, 0 in September and 1,070 in October, and dev's cost for all services was 3,452, 2,028 and 1,857 JPY. In `mart_gemini_cost_daily`, a dev charge was split across the prod processes of that day, or showed as `(unattributed)` on a day with no prod generation (2026-10-28, 7.75 JPY). Task 5.1's September check passed only because dev used no Gemini that month.
+
+The dev charges since the dev environment stopped come from local sessions calling Gemini with the dev key from Pulumi ESC `liverty-music/dev` (a searcher integration test on 2026-10-24, and document reviews on 2026-10-28 and 10-29), not from a workload or a leaked key: each call in the dev project's `serviceruntime` request counts matches a command in those sessions.
+
+So `stg_billing_daily` and `stg_billing_resource_daily` carry `project_id`. The Gemini, per-concert and per-fan marts read `liverty-music-prod` only, because they divide cost by prod's generations, concerts and fans. `mart_infra_cost_daily` keeps `project_id` as a dimension, so dev cost stays visible (task 3.4).
 
 ### Splitting the Gemini bill by process
 
@@ -101,7 +110,7 @@ The billing export has no process dimension. `mart_gemini_cost_daily` splits eac
 | `mart_campaign_value` | sign-ups, retained fans and paid orders by first `utm_source` / `utm_campaign` | PostHog persons and events |
 | `mart_pipeline_health_daily` | job runs, failures, notification delivery and failure reasons, review queue in and out | `logs_analytics` |
 
-The North Star (fans who opened a new-concert notification in the week) is a PostHog insight, not a mart. It is a `posthog.Insight` in cloud-provisioning (`ProductAnalytics`), a Trends query of weekly unique persons with `notification.opened` and `type = new_concerts`. The management key needs `insight:write` for it. `type` reaches `notification.opened` only with frontend#837 and backend#685 (`expand-product-analytics`); until then the insight shows 0. Created on 2026-10-24 by the prod `pulumi up` (update 283, `+1-0~0`) as insight `SBk3xMle`, linked from `docs/runbooks/analytics-dashboards.md` (cloud-provisioning#698).
+The North Star (fans who opened a new-concert notification in the week) is a PostHog insight, not a mart. It is a `posthog.Insight` in cloud-provisioning (`ProductAnalytics`), a Trends query of weekly unique persons with `notification.opened` and `type = new_concerts`. The management key needs `insight:write` for it. `type` reaches `notification.opened` only with frontend#837 and backend#685 (`expand-product-analytics`), both merged on 2026-10-24; earlier weeks show 0. Created on 2026-10-24 by the prod `pulumi up` (update 283, `+1-0~0`) as insight `SBk3xMle`, linked from `docs/runbooks/analytics-dashboards.md` (cloud-provisioning#698).
 
 ### PostHog export settings
 
@@ -141,6 +150,14 @@ Checked on 2026-10-24 (task 2.2):
 - No column can be left out either, `ip` included. Project 190464 has `anonymize_ips: true` (read with the PostHog MCP `project-get`), so PostHog discards the client IP at ingestion and the exported `ip` is empty. Task 4.2 still checks the rows.
 - Impersonation needs three things. The service account's description must contain `posthog:019e7b58-75ff-0000-79de-62f6f9ec2075` (the PostHog organization id). PostHog's account `posthog-batch-exports@posthog-external.iam.gserviceaccount.com` needs `roles/iam.serviceAccountTokenCreator` on it. It also needs a role with `iam.serviceAccounts.get` on it; `roles/iam.serviceAccountViewer` grants that.
 - Volume. In the 30 days to 2026-10-24, the project recorded 17,420 events, and 16,226 of them (93%) were `perf.*`. Those rows are excluded, so at 1,000 monthly fans the export stays at about 80k rows a month. That is well inside the free 1M. Task 4.3 measures it.
+
+Measured on 2026-10-29 (task 4.3), from `posthog_raw.events` by the JST day each row was ingested:
+
+- On 2026-10-24, 2,660 rows arrived. They include the backfill, so events are now in the table from 2026-08-03 on. `posthog_raw.persons` holds 64 persons.
+- From 10-25 to 10-28, 62, 127, 134 and 101 rows arrived each day: about 3,500 rows a month, 0.4% of the free 1M.
+- 0 rows are `perf.*`, and 0 rows have an `ip`.
+
+The count is measured with no fans beyond the owner and one tester. The estimate of about 80k rows a month at 1,000 monthly fans stays the bound to watch.
 
 ### Data Studio
 
