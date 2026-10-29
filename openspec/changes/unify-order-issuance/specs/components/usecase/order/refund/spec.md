@@ -2,7 +2,7 @@
 
 ### Requirement: Payout clawed back
 
-Refund SHALL read the Order's Settlement with Settlement.GetByOrderID; every Order has one, and a failure to read it SHALL be returned with no money moved and nothing recorded. When the Settlement is Released, Refund SHALL reverse every paid split that is not yet reversed with Settlement.ReversePayout for the split's amount. When it is Held, no payout is reversed and the Settlement becomes Reversed, so it is never paid out later. When it is already Reversed, as after every Ticket of the Order was resold, nothing is clawed back and no Settlement is given to Order.CommitRefund. Only the paid splits are reversed: the platform fee was never paid out, so it is not recovered from the Organizer, and when a Released Order is refunded — in practice a Dispute that arrives after the release — the platform bears its fee.
+Refund SHALL read the Order's Settlement with Settlement.GetByOrderID; every Paid Order has one. A missing Settlement SHALL be returned as Internal, since it means the stored records are inconsistent, and any other failure to read it SHALL be returned unchanged, with no money moved and nothing recorded. When the Settlement is Released, Refund SHALL reverse every paid split that is not yet reversed with Settlement.ReversePayout for the split's amount. When it is Held, no payout is reversed and the Settlement becomes Reversed, so it is never paid out later. When it is already Reversed, as after every Ticket of the Order was resold, nothing is clawed back and no Settlement is given to Order.CommitRefund. Only the paid splits are reversed: the platform fee was never paid out, so it is not recovered from the Organizer, and when a Released Order is refunded — in practice a Dispute that arrives after the release — the platform bears its fee.
 
 #### Scenario: Payout already released
 
@@ -21,5 +21,5 @@ Refund SHALL read the Order's Settlement with Settlement.GetByOrderID; every Ord
 
 #### Scenario: Settlement unreadable
 
-- **WHEN** Settlement.GetByOrderID fails with NotFound
-- **THEN** Refund fails with NotFound, no money moves and the Order stays Paid
+- **WHEN** Settlement.GetByOrderID fails with NotFound for a Paid Order
+- **THEN** Refund fails with Internal, no money moves and the Order stays Paid

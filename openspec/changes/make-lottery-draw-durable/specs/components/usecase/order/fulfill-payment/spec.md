@@ -4,7 +4,7 @@
 
 FulfillPayment SHALL take the card authorization of a completed charge and find its source:
 - a Checkout with Checkout.GetByCardAuthorizationID, for which it SHALL run OrderUseCase.IssueFromCheckout without a calling fan and then announce that the Order is paid, carrying the Order, its user, its event, its number of Tickets, its amount and its source;
-- otherwise a LotteryEntry with LotteryEntry.GetByCardAuthorizationID, for which it SHALL succeed without effect, because OrderUseCase.Issue charged the entry and announced its Order.
+- otherwise a LotteryEntry with LotteryEntry.GetByCardAuthorizationID, for which it SHALL succeed without effect, because OrderUseCase.Issue charged the entry's Order and announced it.
 
 Each announcement is a new message, so a charge reported again announces the Order again; consumers that act on the Order SHALL treat a repeated announcement of an Order as one. The order-paid signal for product analytics is keyed by the announcement, so a charge reported again records a second order-paid signal for the same Order.
 
@@ -23,7 +23,7 @@ When neither source has the card authorization, FulfillPayment SHALL succeed wit
 #### Scenario: Charge reported twice
 
 - **WHEN** the same completed charge of a checkout is reported twice
-- **THEN** one Order exists, it is announced twice, each consumer that acts on the Order acts on it once, and product analytics records two order-paid signals for that Order
+- **THEN** one Paid Order exists, it is announced twice, each consumer that acts on the Order acts on it once, and product analytics records two order-paid signals for that Order
 
 #### Scenario: Messaging unavailable
 

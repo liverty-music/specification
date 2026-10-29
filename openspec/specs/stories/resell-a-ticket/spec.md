@@ -1,29 +1,42 @@
 # stories/resell-a-ticket Specification
 
 ## Purpose
-A fan who bought first-come tickets and cannot attend lists one through official resale (公式リセール) after the sale sold out; another fan buys it at face value through the usual checkout, receives a new ticket in their own name, and the first fan is refunded the face value minus the 10% resale fee, while the Organizer is paid once for the seat.
+A fan who holds tickets of a seat type and cannot attend lists one through official resale (公式リセール) after that seat type sold out for the event, whether the tickets were bought first come or won in a lottery. Another fan applies for resale tickets of the seat type; a daily draw at 12:00 allocates the listed tickets to applications, the winning fan is charged face value and receives new tickets in their own name, and the listing fan is refunded the face value minus the 10% resale fee, while the Organizer is paid once per seat.
 
 ```mermaid
 usecase-beta
 direction LR
 actor Fan("listing fan")
-actor PurchasingFan("purchasing fan")
+actor EnteringFan("fan who applies")
 systemBoundary "Liverty Music"
   Goal("Resell a ticket")
   ResaleListingUseCaseCreate("ResaleListingUseCase.Create")
   ResaleListingUseCaseList("ResaleListingUseCase.List")
+  ResaleEntryUseCaseAuthorizeCard("ResaleEntryUseCase.AuthorizeCard")
+  ResaleEntryUseCaseConfirm("ResaleEntryUseCase.Confirm")
+  ResaleEntryUseCaseWithdraw("ResaleEntryUseCase.Withdraw")
+  ResaleEntryUseCaseDraw("ResaleEntryUseCase.Draw")
+  OrderUseCaseIssue("OrderUseCase.Issue")
+  TicketUseCaseList("TicketUseCase.List")
   CheckoutUseCaseStart("CheckoutUseCase.Start")
   CheckoutUseCaseAuthorizeCard("CheckoutUseCase.AuthorizeCard")
   OrderUseCaseIssueFromCheckout("OrderUseCase.IssueFromCheckout")
-  TicketUseCaseList("TicketUseCase.List")
 end
 Fan --> Goal
 Goal ..> : include ResaleListingUseCaseCreate
 Goal ..> : include ResaleListingUseCaseList
-PurchasingFan --> CheckoutUseCaseStart
-PurchasingFan --> CheckoutUseCaseAuthorizeCard
+Goal ..> : include ResaleEntryUseCaseAuthorizeCard
+Goal ..> : include ResaleEntryUseCaseConfirm
+Goal ..> : include ResaleEntryUseCaseWithdraw
+Goal ..> : include ResaleEntryUseCaseDraw
+Goal ..> : include OrderUseCaseIssue
+Goal ..> : include TicketUseCaseList
+Goal ..> : include CheckoutUseCaseStart
+Goal ..> : include CheckoutUseCaseAuthorizeCard
 Goal ..> : include OrderUseCaseIssueFromCheckout
-PurchasingFan --> TicketUseCaseList
+EnteringFan --> ResaleEntryUseCaseAuthorizeCard
+EnteringFan --> ResaleEntryUseCaseConfirm
+EnteringFan --> ResaleEntryUseCaseWithdraw
 ```
 
 ## Requirements

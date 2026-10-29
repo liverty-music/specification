@@ -1,7 +1,7 @@
 # stories/run-an-event-from-the-organizer-console Specification
 
 ## Purpose
-A member of an Organizer takes one event from draft to the door in the organizer console — publishes it, opens a lottery sale, watches it, and issues the scanners venue staff use — reaching every step by navigation, on a PC or on a phone.
+A member of an Organizer takes one event from draft to the door in the organizer console — adds a seat type, publishes it, stocks the seat type, opens a lottery sale, watches it, and issues the scanners venue staff use — reaching every step by navigation, on a PC or on a phone.
 
 ```mermaid
 usecase-beta
@@ -9,13 +9,17 @@ direction LR
 actor Member("member")
 systemBoundary "Liverty Music"
   Goal("Run an event from the organizer console")
+  SeatTypeUseCaseCreate("SeatTypeUseCase.Create")
   SeriesUseCasePublish("SeriesUseCase.Publish")
+  TicketStockUseCaseCreate("TicketStockUseCase.Create")
   TicketSaleUseCaseCreate("TicketSaleUseCase.Create")
   TicketSaleUseCaseListOwnByEvent("TicketSaleUseCase.ListOwnByEvent")
   ScannerUseCaseCreate("ScannerUseCase.Create")
 end
 Member --> Goal
+Goal ..> : include SeatTypeUseCaseCreate
 Goal ..> : include SeriesUseCasePublish
+Goal ..> : include TicketStockUseCaseCreate
 Goal ..> : include TicketSaleUseCaseCreate
 Goal ..> : include TicketSaleUseCaseListOwnByEvent
 Goal ..> : include ScannerUseCaseCreate

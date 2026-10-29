@@ -6,7 +6,7 @@ Placing the order SHALL call OrderUseCase.Place. On success, the checkout SHALL 
 - Expired: that the 15 minutes passed, that the card was not charged, that the released card authorization may still show on the card statement for a few days, and offer to start again;
 - Released with a commit time: that the card could not be charged, and offer to start again;
 - Released without a commit time: that it was replaced by a newer checkout, for example in another tab, and offer to go to it;
-- Held: that the card authentication is not complete, to finish it and try again;
+- Held: the cause Place gave: that the card authentication is not complete, to finish it and try again; that the concert is no longer on sale (中止 or unpublished); that the card authorization's amount does not match, and offer to start again; or that identity verification is needed for this sale, with a link to it;
 - Committed or Completed: that the purchase is being completed and the tickets will appear in the Tickets screen shortly.
 
 #### Scenario: Purchase placed
@@ -18,6 +18,11 @@ Placing the order SHALL call OrderUseCase.Place. On success, the checkout SHALL 
 
 - **WHEN** placing the order fails because the hold has ended
 - **THEN** the screen says the 15 minutes passed and the card was not charged, and offers to start again
+
+#### Scenario: Concert cancelled before placing
+
+- **WHEN** placing the order fails because the concert was cancelled while the Checkout is still Held
+- **THEN** the screen says the concert is no longer on sale and does not ask the fan to finish card authentication
 
 #### Scenario: Charge still completing
 

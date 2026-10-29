@@ -8,21 +8,22 @@ usecase-beta
 direction LR
 actor Fan("fan")
 actor Member("member")
-actor Member("member")
 systemBoundary "Liverty Music"
   Goal("Attribute a purchase to a referral link")
   TicketSaleUseCaseCreate("TicketSaleUseCase.Create")
   CheckoutUseCaseStart("CheckoutUseCase.Start")
   CheckoutUseCaseAuthorizeCard("CheckoutUseCase.AuthorizeCard")
-  OrderUseCaseIssueFromCheckout("OrderUseCase.IssueFromCheckout")
+  OrderUseCasePlace("OrderUseCase.Place")
   TicketSaleUseCaseListOwnByEvent("TicketSaleUseCase.ListOwnByEvent")
+  OrderUseCaseIssueFromCheckout("OrderUseCase.IssueFromCheckout")
 end
 Fan --> Goal
 Goal ..> : include TicketSaleUseCaseCreate
 Goal ..> : include CheckoutUseCaseStart
 Goal ..> : include CheckoutUseCaseAuthorizeCard
-Goal ..> : include OrderUseCaseIssueFromCheckout
+Goal ..> : include OrderUseCasePlace
 Goal ..> : include TicketSaleUseCaseListOwnByEvent
+Goal ..> : include OrderUseCaseIssueFromCheckout
 Member --> TicketSaleUseCaseCreate
 Member --> TicketSaleUseCaseListOwnByEvent
 ```

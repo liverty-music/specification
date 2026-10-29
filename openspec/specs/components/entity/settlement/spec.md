@@ -7,7 +7,7 @@ A Settlement is the payout record for one Order's captured money under the åç´
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | id | the settlement's identity | required, assigned on creation |
-| order | the Order whose money it pays out | required, one Settlement per Order |
+| order | the Order whose money it pays out | required; every Paid Order has exactly one Settlement, created when it becomes Paid |
 | organizer | the Organizer receiving the payout | required |
 | event | the event whose start gates the release | required |
 | provider charge ID | the payment provider's ID for the captured charge the payouts are tied to | empty until resolved at release |
