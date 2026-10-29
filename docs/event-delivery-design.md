@@ -2,7 +2,7 @@
 
 How the backend announces a fact to other parts of the system (NATS JetStream events) and how it starts work that must happen after a fact (DBOS workflows), without losing or duplicating either. This is a design reference for people and for coding agents. It records the decision; the implementation is planned as an OpenSpec change and replaces the event id rule of `introduce-durable-workflows` (design "One id per announcement").
 
-Status: decided 2026-10-28, not implemented yet. Facts below were checked against DBOS Transact Go v1.7.0, watermill v1.5.3, watermill-sql v4.1.5 and watermill-nats v2.2.0 on that date.
+Status: decided 2026-10-28, not implemented yet; planned as the OpenSpec change `publish-events-through-outbox`, whose design.md lists every subject and request. Facts below were checked against DBOS Transact Go v1.7.0, watermill v1.5.3, watermill-sql v4.1.5 and watermill-nats v2.2.0 on that date.
 
 ## The rules
 
@@ -10,8 +10,8 @@ Status: decided 2026-10-28, not implemented yet. Facts below were checked agains
 2. **An event's id is made once, when the event is written** (UUIDv7), and is stored with it. Every send of the event, first or repeated, carries that id. No id is derived from a workflow step, a counter or business values.
 3. **No change, no event.** An operation that finds its change already made writes nothing, so a retried request, a redelivered message or a step that runs again announces nothing a second time.
 4. **The entity operation announces, not the usecase.** Its name and its Go doc tell the usecase what it announces (see "The entity operation contract").
-5. **The payload is the changed entity, as its `entity/v1` proto message in binary.** There are no event-only types. The subject names the fact.
-6. **Work that must follow a fact is started by the event's consumer, as a workflow whose id is the business key** (`issue:<entry>`). DBOS runs one workflow per id, so a repeated event starts nothing new.
+5. **The payload is the changed entity, as its `entity/v1` proto message in binary**, or the entities of one type one operation changed together (a list message declared next to the entity). There are no event-only fields: a list of one entity type is a plain `repeated` message of that entity. The subject names the fact; what the announcement is about, when the payload does not say it, is the CloudEvents `subject` attribute.
+6. **Work that must follow a fact is started by the event's consumer, as a workflow whose id is the business key** (`issue:<entry>`). DBOS runs one workflow per id, so a repeated event starts nothing new. **A request for one receiver with no fact behind it is not an event**: the requester starts the receiver's workflow, or the repository starts it in the transaction of the change it follows. **An observation from outside** (a webhook notice) is recorded as entity state, and that record is announced.
 7. **A consumer treats an event it has seen as done.** JetStream drops a repeated id for only 2 minutes; past that, the consumer's own state (a send time, a unique key, PostHog's `uuid`) drops it.
 
 ## Why
@@ -46,15 +46,16 @@ The transactional outbox is the only pattern that removes both the lost event an
    |  +------------------------------------------------------------------+
    |  | UPDATE lottery_entries SET state = 'lost' ... WHERE state = 'won'  |  the fact
    |  | if rows changed:                                                   |
-   |  |   INSERT INTO watermill_<topic> (uuid, payload, metadata, ...)     |  the event,
-   |  |   uuid = UUIDv7 made here                                          |  watermill-sql
-   |  |   payload = proto.Marshal(pb.FromLotteryEntry(entry))              |  Publisher on the tx
+   |  |   INSERT INTO watermill_events_outbox (uuid, payload, metadata)    |  the event, one
+   |  |   uuid = UUIDv7 made here, payload = forwarder envelope around     |  table for every
+   |  |   proto.Marshal(pb.FromLotteryEntry(entry))                        |  subject, on the tx
    |  +------------------------------------------------------------------+
    v                     commit: both or neither
  forwarder (watermill components/forwarder, in workflow-worker)
-   |  reads committed rows in order, in batches
+   |  reads committed rows in batches (queue schema, FOR UPDATE)
    |  publishes each with its stored uuid  -->  Nats-Msg-Id (TrackMsgID)
-   |  crash after publish, before ack  -->  publishes again, same uuid
+   |  deletes the row once JetStream acknowledged it (DeleteOnAck)
+   |  crash after publish, before delete  -->  publishes again, same uuid
    v
  JetStream  (drops a repeated Nats-Msg-Id within 2 min)
    |
@@ -69,20 +70,18 @@ The transactional outbox is the only pattern that removes both the lost event an
 | Need | Provided by | Our code |
 |---|---|---|
 | Write the event in the caller's transaction | watermill-sql `NewPublisher` accepts a transaction; `TxFromPgx(pgx.Tx)` adapts our pgx transaction; `Publish(topic, msgs...)` is one multi-row `INSERT` | A small helper that publishes on the repository's transaction |
-| Store a binary payload | watermill-sql `GeneratePayloadType` (`BYTEA` instead of the default JSON) | The schema option and its Atlas migration |
-| Read committed events in commit order | watermill-sql PostgreSQL schema: `transaction_id xid8` and `pg_snapshot_xmin`, so a row of a transaction still open is never skipped | None |
+| Read every committed event and drop it once delivered | watermill-sql `PostgreSQLQueueSchema` (`WHERE acked = false ... FOR UPDATE`: a row of an open transaction is read once committed) with `DeleteOnAck` | None |
 | Relay to NATS with the original id | watermill `forwarder`: the envelope keeps the original UUID and metadata and restores them before publishing | Wiring in `workflow-worker` |
 | Drop a repeated publish | watermill-nats `TrackMsgID: true` (already set) sends the UUID as `Nats-Msg-Id` | None |
 | Encode the payload | the generated `entity/v1` messages and the entity-to-proto functions | Move the functions from `internal/adapter/rpc/mapper` to `internal/adapter/pb` (see "The payload") |
 | Start follow-up work once | DBOS workflow id | The consumer names the workflow id after the business key |
-| Start one workflow atomically with a fact, outside a workflow | DBOS `Enqueue` with `WithEnqueueTransaction(tx)`; the DBOS tables are in the application database (schema `dbos`) | None. Use it for a command with one receiver (for example, a checkout that must be issued), not for an event |
 
 What goes away: the UUIDv5 namespace, the step origin in the context, the per-step counter, the `EventPublisher` dependency of the usecases, the payload structs of `entity/event_data.go` (the subject constants stay), and the rule "a step publishes once".
 
 ### Commands and events
 
 - **Event**: a fact other parts react to, any number of receivers (analytics, notifications, a workflow starter). Goes through the outbox.
-- **Command**: one receiver must do one piece of work. Inside a workflow, `Flow.Start` (DBOS checkpoints it). Outside a workflow, `Enqueue` with `WithEnqueueTransaction` in the transaction of the fact, or an event whose consumer starts the workflow when the work follows a fact that is already announced.
+- **Command**: one receiver must do one piece of work with no stored change behind it. Inside a workflow, `Flow.Start` (DBOS checkpoints it); outside, `Workflows.Start`, named after the business key. Work that follows a stored change is not a command: the consumer of that change's announcement starts it, so no DBOS transaction is shared with the fact (`WithEnqueueTransaction` is not used).
 - Rejected: one DBOS workflow per event as the outbox. DBOS v1.7.0 has only a per-workflow `Enqueue` (no bulk enqueue; `SendBulk` sends messages to workflows, not to NATS), and each event would cost a workflow row, a dequeue, a step checkpoint and a status update.
 
 ## The entity operation contract
@@ -123,7 +122,7 @@ Rejected:
   - Why an entry lost (its card could not be charged) is shown to the fan in the loss email: it becomes an attribute of LotteryEntry.
   - The draw time is the TicketSale's: the consumer reads the TicketSale by id. LotteryEntry gains `ticket_sale_id` next to `ticket_type_id` (a composite foreign key keeps the two consistent), so this is one read.
   - The time the fact happened is the CloudEvents `time` attribute.
-- **Encoding: binary protobuf**, `datacontenttype` `application/protobuf`. Measured for one LotteryEntry (Go 1.25, protobuf-go):
+- **Encoding: binary protobuf**, `datacontenttype` `application/protobuf`. In the outbox row it sits base64-encoded inside the forwarder's JSON envelope; the row lives only until delivery, and the message on the stream is binary. Measured for one LotteryEntry (Go 1.25, protobuf-go):
 
   | | binary | protojson | the old JSON struct |
   |---|---|---|---|
@@ -136,7 +135,7 @@ Rejected:
 
 ### Personal data
 
-- The email address may be in a payload. The stream stays inside the cluster with a limited retention, and the analytics consumer forwards only the fields it maps.
+- The email address may be in a payload. A PushSubscription's push address and keys never are. The stream stays inside the cluster with a limited retention, and the analytics consumer forwards only the fields it maps.
 - The full name and phone number a fan gives for the ticket face (`users.full_name`, `users.phone_number`) are never in a payload. They are what must be protected.
 - `identity_verifications` keeps storing no personal data beyond the provider's id (`schema.sql`, comment on `provider_user_id`). It records verification results; the name a fan types is a declaration, not a result.
 - `users.name` (the identity provider's display name) duplicates the full name and has no business use in the backend; it is dropped unless the frontend needs it.
@@ -152,14 +151,13 @@ A step that calls an entity operation can run again after the operation committe
 | Step | Writes |
 |---|---|
 | Record the outcome and its 1,000,000 events | One transaction; the events go in multi-row `INSERT`s of a few thousand rows (PostgreSQL allows 65,535 parameters per statement) |
-| Relay | The forwarder reads and publishes in batches (`SubscribeBatchSize`, default 100, to be tuned) and records one offset per batch |
+| Relay | The forwarder reads in batches (`SubscribeBatchSize`, default 100) and deletes each row once delivered |
 | Charge and release | One workflow per entry, started by the consumer. This cost is inherent: each entry needs its own Stripe call |
 
 The parent workflow (`Draw`) writes no checkpoint per entry.
 
 ## Open points for the OpenSpec change
 
-- Retention: the PostgreSQL schema keeps forwarded rows. Choose a scheduled delete of rows older than the duplicate window plus a margin, or watermill-sql's queue schema (deletes on ack) after checking that it also never skips a row of an open transaction.
 - Events with no state change behind them (if any): list them; each needs a fact to attach to or an explicit exception.
 - The forwarder's failure signal: a row that is not forwarded must reach an admin, as "Workflow Needs Admin" does for workflows.
 - Moving the consumers (analytics, notifications) from the JSON structs to the proto payloads, and the order of the switch.
