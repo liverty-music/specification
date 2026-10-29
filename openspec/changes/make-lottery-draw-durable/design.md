@@ -93,6 +93,15 @@ A key names one business operation. What prevents a second effect differs by ope
 
 One queue `payment` with a global concurrency of 2 for `Issue` and `ReleaseCardAuthorization`. The worker's pool has 5 connections, shared with DBOS (`introduce-durable-workflows` "Connections"). Each step holds at most one connection, so 2 running workflows leave room for DBOS and `Draw`. Stripe's live-mode limit (100 requests per second) is far above what 2 workflows send, so no rate limiter is set. `Draw` and `DrawDueSales` run outside the queue, started by the schedule and by `Draw` itself.
 
+### Traces: a schedule run that finds no sale records nothing
+
+The schedule runs `DrawDueSales` 1,440 times a day, and almost every run finds no due sale. With the workflow runtime's spans (`internal/infrastructure/workflow/trace.go`, `startRunSpan`), each run would be a new root trace holding the run span, the `ListDueForDraw` step span and its SQL span. Today the same poll already writes 1,440 single-span traces a day (prod, 2026-10-28: 10,368 of the 14,984 billable spans that day came from the payment sweepers, none of them part of any unit of work).
+
+- **The schedule run is not sampled.** `DrawDueSales` runs with a context whose span context is valid and not sampled, so the parent-based sampler (`pkg/telemetry/telemetry.go:62`) records none of its spans, while each log line still carries a `trace_id`.
+- **Each `Draw` starts its own trace.** `DrawDueSales` starts `Draw(sale)` from a context without that span context, so the trace context stored with the run is empty and `Draw` is a new, sampled root. The unit of work worth reading is one sale's draw; its `Issue` and `ReleaseCardAuthorization` runs continue its trace through the `ORDER.lottery_entry_drawn` announcement.
+- Rejected — keep every schedule run as a trace: about 4,300 spans a day that say only "nothing was due".
+- Rejected — leave the run sampled and start `Draw` under it: an unsampled run would then drop the draw's trace too, because the sampler follows the parent.
+
 ### FulfillPayment for lottery charges
 
 The `payment_intent.succeeded` notice of a lottery capture arrives after `Issue` captured. `FulfillPayment` finds the LotteryEntry and returns without effect, so the Order is announced once, by `Order.Issue`. The capture is the response to the platform's own call, so issuance does not wait for the notice (Stripe retries it for up to 3 days).
