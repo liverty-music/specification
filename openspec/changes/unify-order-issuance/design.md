@@ -1,6 +1,6 @@
 ## Context
 
-See proposal.md - Why. This change is written on the model of `remodel-ticket-sales`: an Order is created Pending when the fan applies, a Checkout holds a FirstCome sale's TicketStock for its Order and names its sale, and official resale is not bought through a Checkout. After `make-lottery-draw-durable`, `OrderUseCase.Issue` is a workflow that makes a Won LotteryEntry's Pending Order Paid, on the runtime of the archived `introduce-durable-workflows`.
+See proposal.md - Why. This change is written on the model of `remodel-ticket-sales`: an Order is created Pending when the fan applies, a Checkout holds a FirstCome sale's TicketStock for its Order and names its sale, and official resale is not bought through a Checkout. After `make-lottery-draw-durable`, `OrderUseCase.Issue` is a workflow that makes a Won LotteryEntry's Pending Order Paid, on the runtime of the archived `introduce-durable-workflows`. After `publish-events-through-outbox`, `Order.Issue` announces `ORDER.paid` in the transaction that makes the Order Paid, so no usecase announces it.
 
 The first-come paths it replaces (backend `origin/main` at `42f2bc78`, before `remodel-ticket-sales`):
 
@@ -16,7 +16,7 @@ The first-come paths it replaces (backend `origin/main` at `42f2bc78`, before `r
 - A fan's mistake (card not yet authenticated, another fan's Checkout) is answered at once and never fixed into a workflow's outcome.
 
 **Non-Goals:**
-- `CheckoutUseCase.ReleaseExpired` stays as it is: it makes an expired Checkout Expired and its Order Void, and gives back the card authorization.
+- `CheckoutUseCase.ReleaseExpired` goes with the rest of the sweeper. `Checkout.GetOrCreateHeld` announces each hold it creates (`ORDER.checkout_held`) and each Checkout it ends (`ORDER.checkout_released`, `ORDER.checkout_expired`); `Checkout.RevertCommit` announces the Checkout it makes Released; `Checkout.Release` already announces `ORDER.checkout_expired`. The workflow starter, a durable consumer of these subjects, starts `CheckoutUseCase.Expire` (`expire:<checkout>`) for a held Checkout, which sleeps durably until the hold expiry and calls `Checkout.Release`, and `OrderUseCase.ReleaseCardAuthorization` (`release:<order>`) for an Expired or Released one. The card authorization is then released by the same workflow as a lost lottery entry's or a resale entry's, retried for 24 hours and reported when it cannot finish, so the Checkout's release time and `ListDue` go. A hold ends at its expiry instead of within the next minute.
 - No change to the Confirm request, its response or the checkout screen's states.
 - Official resale: it is bought through a resale entry and its draw (`resell-tickets-by-lottery`), not through a Checkout.
 - `Issue` never refunds on its own and there is no Order status for a charge it could not issue: a run that cannot issue after charging stops after 24 hours with the Order Pending and is reported to an admin.
@@ -35,7 +35,7 @@ CheckoutHandler.Confirm
     while Held: holding at now, published,
       Order's card authorization Authorized for its amount,
       IdentityVerification when required  FailedPrecondition: Checkout Held, Order Pending
-    Workflows.Start Issue                  id issue:checkout:<checkout>, queue checkout
+    Workflows.Start Issue                  id issue:<order>, queue checkout
     Workflows.Await (30 s)  ------------> Issue(checkout)                 deadline 24 h
                                             step reads: Checkout, Order, TicketStock, TicketSale,
                                                         Organizer, IdentityVerification
@@ -43,8 +43,8 @@ CheckoutHandler.Confirm
                                             step Capture                 <- the point of no return
                                               FailedPrecondition -> step RevertCommit (Order Void) -> end
                                             step RecordCapture
-                                            step CardAuthorization.Get, step Order.Issue (Order Paid)
-                                            step announce ORDER.paid
+                                            step CardAuthorization.Get, step Order.Issue (Order Paid,
+                                                 ORDER.paid announced in the same transaction)
 ```
 
 - **Why the checks run before `Start`**: a workflow runs once per id. If `Issue` checked "card authentication not complete" itself, its first outcome would be fixed for that id, and the fan's second try after authenticating would get that old failure. A fan could also join another fan's workflow before the owner check. `Place` checks synchronously, so only a Checkout that can proceed starts a workflow.
@@ -64,15 +64,14 @@ CheckoutHandler.Confirm
 | Before the charge | nothing | `Checkout.Commit` |
 | Capture cannot succeed | `LotteryEntry.RevertWin` (Order Void) | `Checkout.RevertCommit` (Order Void) |
 | After the charge | `Order.Issue` | `Checkout.RecordCapture`, then `Order.Issue` |
-| Then | announce `ORDER.paid` | announce `ORDER.paid` |
 
-- **Workflow id** `issue:checkout:<checkout id>` and `issue:entry:<entry id>`, so the two sources never share an id.
+- **Workflow id** `issue:<order>` for both sources, as in `make-lottery-draw-durable`: each Order has exactly one source, so two sources never share an id.
 - **Its own queue**: `checkout`, global concurrency 2. A large lottery's `Issue` runs on the `payment` queue, so a fan waiting on the screen never waits behind it.
 - Rejected: a `CheckoutUseCase.Confirm` that commits and then starts `Issue`. It puts the commit outside the workflow (above), and a usecase does not call another usecase's method (the spec rule for `components/usecase`).
 
 ### The completed-charge notice
 
-`payment_intent.succeeded` is acknowledged without effect for every source. The capture is the response to the platform's own call, and `Issue` announces the Order. `processed_webhook_events` still records the notice, so a redelivery stays a no-op. Rejected: starting `Issue` from the notice as a safety net. Every capture the platform makes runs inside `Issue`, so the start would always find the workflow, and a capture made outside the platform (in the Stripe dashboard) has no Checkout step to resume.
+`payment_intent.succeeded` is acknowledged without effect for every source. The capture is the response to the platform's own call, and `Order.Issue` announced the Order when `Issue` made it Paid. `processed_webhook_events` still records the notice, so a redelivery stays a no-op. Rejected: starting `Issue` from the notice as a safety net. Every capture the platform makes runs inside `Issue`, so the start would always find the workflow, and a capture made outside the platform (in the Stripe dashboard) has no Checkout step to resume.
 
 ### A Paid Order has its Settlement
 
@@ -87,12 +86,12 @@ A Settlement stays in the same transaction as making the Order Paid: created lat
 ## Risks / Trade-offs
 
 - [A Committed Checkout exists at the moment of the rollout, left by an interrupted old call] → Before the deploy, list Committed Checkouts read-only in prod; none is expected (no users, and `remodel-ticket-sales` deletes the existing ticket data). If one exists, finish it with the old code before deploying.
-- [`ReleaseExpired` can expire a Checkout whose order was placed in its last seconds, before `Issue` commits] → The `checkout` queue starts `Issue` within about a second. The fan then sees "the 15 minutes passed", the Order is Void and the card is not charged.
+- [`Expire` can expire a Checkout whose order was placed in its last seconds, before `Issue` commits] → The `checkout` queue starts `Issue` within about a second. The fan then sees "the 15 minutes passed", the Order is Void and the card is not charged.
 - [The 30-second wait holds a request goroutine] → It holds no database connection: `Await` polls the workflow status.
 
 ## Migration Plan
 
-1. backend: `Place`; `Issue` for a Checkout and the `checkout` queue; the handler change; the Settlement branches; removal of `IssueFromCheckout`, `IssueDueCheckouts`, `FulfillPayment`, `Serialize` (its only caller goes) and the issuance call in the checkout sweeper.
+1. backend: `Place`; `Issue` for a Checkout and the `checkout` queue; the handler change; the Settlement branches; removal of `IssueFromCheckout`, `IssueDueCheckouts`, `FulfillPayment`, `Serialize` (its only caller goes), `ReleaseExpired`, `ListDue`, `RecordCardAuthorizationRelease` and the sweeper's release and issuance calls; `Expire`, the Checkout announcements and their workflow starter; the migration dropping `checkouts.card_authorization_release_time`. Before the deploy, read-only in prod: list Held Checkouts and Expired or Released Checkouts without a release time; Held ones are ended by the old sweeper before the rollout or by an admin call of `Expire`, and leftover card authorizations are released by starting `release:<order>` once.
 2. Read-only prod check for Committed Checkouts and Paid Orders without a Settlement, deploy, confirm the rollout, and buy one ticket with the Stripe Sandbox E2E.
 
 Rollback: revert the backend release; Checkouts and Orders keep their shape.

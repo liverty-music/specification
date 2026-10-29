@@ -12,10 +12,10 @@ Notices that a charge completed, that a refund was applied, that a payout was re
 #### Scenario: Completed charge
 
 - **WHEN** a notice reports that the charge of a fan's checkout or of a won lottery entry completed
-- **THEN** it is acknowledged and nothing changes, because OrderUseCase.Issue already made the Order Paid and announced it
+- **THEN** it is acknowledged and nothing changes, because OrderUseCase.Issue already made the Order Paid with Order.Issue, which announced it
 
 ## REMOVED Requirements
 
 ### Requirement: A completed charge is fulfilled
-**Reason**: OrderUseCase.FulfillPayment is removed; OrderUseCase.Issue makes every Order Paid and announces it.
+**Reason**: OrderUseCase.FulfillPayment is removed; OrderUseCase.Issue makes every Order Paid with Order.Issue, which announces it.
 **Migration**: The notice falls under "Other notices are acknowledged".

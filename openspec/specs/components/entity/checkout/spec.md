@@ -9,7 +9,6 @@ A Checkout is how one fan's Order is bought first come, first served: during a F
 | id | the checkout's identity | required, assigned on creation |
 | order | the Order it buys | required; one Checkout per Order |
 | sale | the FirstCome TicketSale it buys from | required; a sale that names the event of the Order's TicketStock |
-| card authorization release time | when the Order's card authorization was given back without charging | absent unless released; set once |
 | status | lifecycle | Held, Committed, Completed, Expired or Released |
 | hold expiry | when the hold lapses; it is never extended | required; 15 minutes after the checkout starts |
 | commit time | when its tickets were committed against the stock | absent until Committed |
