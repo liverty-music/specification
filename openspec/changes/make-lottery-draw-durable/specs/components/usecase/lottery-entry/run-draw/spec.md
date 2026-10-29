@@ -1,6 +1,6 @@
 ## REMOVED Requirements
 
-### Requirement: Draw a sale's entered entries
+### Requirement: Draw a sale's entered entries per ticket stock
 **Reason**: RunDraw charged the winners before it recorded the outcome, so a draw that stopped midway drew again in a new random order and could leave a charged fan Lost.
 **Migration**: Replaced by LotteryEntryUseCase.Draw, which records the outcome first and charges nothing; OrderUseCase.Issue charges each Won entry and LotteryEntryUseCase.ReleaseCardAuthorization releases the card authorization of each Lost entry.
 

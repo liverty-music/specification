@@ -1,7 +1,7 @@
 ## REMOVED Requirements
 
-### Requirement: Issue an order and its tickets from a won entry
-**Reason**: Replaced by OrderUseCase.Issue, which charges the Won entry itself before it issues, because the draw no longer captures.
+### Requirement: Pay a won entry's order and issue its tickets
+**Reason**: Replaced by OrderUseCase.Issue, which charges the Won entry's Order itself before it issues, because the draw no longer captures.
 **Migration**: None; OrderUseCase.Issue runs for each Won entry.
 
 ### Requirement: Identity verification binding

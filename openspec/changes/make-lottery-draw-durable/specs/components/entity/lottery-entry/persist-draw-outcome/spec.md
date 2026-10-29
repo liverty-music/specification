@@ -2,20 +2,24 @@
 
 ### Requirement: Draw outcome is recorded together
 
-PersistDrawOutcome SHALL set every given winner to Won and every given loser to Lost with their draw positions, across all TicketTypes of the sale, and set the sale's draw time, all together or not at all. With no winners and no losers it SHALL only set the sale's draw time. When the sale already has a draw time, it SHALL succeed and change nothing, so recording the same draw again leaves the first record, including any entry made Lost since.
+PersistDrawOutcome SHALL take a sale and, for each TicketStock of the sale's events, the stock's Entered entries of the sale in their draw order. It SHALL walk each stock's entries in that order once and admit each entry whose ticket count fits the stock's remaining count at the time it records, deducting its whole count; an entry that does not fit SHALL be Lost and the walk SHALL continue. It SHALL set every admitted entry Won and every other given entry Lost, each with its draw position, and make every Lost entry's Order Void, all together or not at all. A given entry that is no longer Entered SHALL be left unchanged, so recording the same draw again leaves the first record, including any entry made Lost since. Once no entry of the closed sale is Entered, the sale is drawn (components/entity/ticket-sale "Drawn lottery").
 
 #### Scenario: Outcome recorded
-- **WHEN** PersistDrawOutcome is called with winners and losers for two TicketTypes of a sale
-- **THEN** the winners are Won, the losers are Lost, each carries its draw position, and the sale is drawn
+- **WHEN** PersistDrawOutcome is called with the ordered entries of two TicketStocks of a sale
+- **THEN** the admitted entries are Won, the others are Lost with their Orders Void, each carries its draw position, and the sale is drawn
 
 #### Scenario: Failure leaves nothing recorded
 - **WHEN** recording any part of the outcome fails
-- **THEN** no entry state, draw position or draw time is changed
+- **THEN** no entry state, Order status or draw position is changed
 
 #### Scenario: Empty draw
-- **WHEN** PersistDrawOutcome is called with no winners and no losers
-- **THEN** the sale is drawn and no entry changes
+- **WHEN** PersistDrawOutcome is called with no entries
+- **THEN** no entry changes
 
 #### Scenario: Recorded again
-- **WHEN** PersistDrawOutcome is called for a sale that already has a draw time, after one of its winners was made Lost
-- **THEN** it succeeds, the sale keeps its first draw time and no entry changes
+- **WHEN** PersistDrawOutcome is called again for a sale whose outcome is recorded, after one of its winners was made Lost
+- **THEN** it succeeds and no entry changes
+
+#### Scenario: Tickets taken since the order was fixed
+- **WHEN** a stock had 4 remaining tickets when its entries for 2, 2 and 3 tickets were ordered, and 2 of its tickets were taken before the outcome is recorded
+- **THEN** only the first 2-ticket entry in draw order is Won, and the stock's sold count never exceeds its quantity
