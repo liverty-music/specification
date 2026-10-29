@@ -5,16 +5,16 @@ SeatTypeUseCase.Delete lets an Organizer remove a seat type it created by mistak
 
 ## Requirements
 
-### Requirement: Only the owner deletes an unused seat type
+### Requirement: Only a member of the owning Organizer deletes an unused seat type
 
 Delete SHALL take the caller's Organizer and a SeatType. It SHALL read the SeatType with SeatType.Get and its Series with Series.GetAuthored, and fail with PermissionDenied, without revealing whether it exists, when the SeatType does not exist or its Series is owned by another Organizer. It SHALL then delete it with SeatType.Delete, which fails with FailedPrecondition when a TicketStock uses the SeatType; its failures are returned unchanged.
 
 #### Scenario: Mistaken seat type
-- **WHEN** the owner deletes a SeatType that no TicketStock uses
+- **WHEN** a member deletes a SeatType that no TicketStock uses
 - **THEN** it is deleted
 
 #### Scenario: Seat type in stock
-- **WHEN** the owner deletes a SeatType that an event's TicketStock uses
+- **WHEN** a member deletes a SeatType that an event's TicketStock uses
 - **THEN** Delete fails with FailedPrecondition and nothing changes
 
 #### Scenario: Another Organizer's seat type

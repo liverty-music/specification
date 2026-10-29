@@ -1,7 +1,7 @@
 # components/entity/resale-listing/withdraw Specification
 
 ## Purpose
-Withdraws a fan's ResaleListing that no Checkout holds, so its Ticket is no longer for sale.
+Withdraws a fan's open ResaleListing, so its Ticket is no longer for sale.
 
 ## Requirements
 
