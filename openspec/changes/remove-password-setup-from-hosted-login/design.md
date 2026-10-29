@@ -74,7 +74,7 @@ Only production runs the patched image. `k8s/namespaces/zitadel/overlays/prod/va
 
 ### D6. Consistency check and upgrade procedure
 
-A check run by `make lint-k8s` fails unless `zitadel-login/UPSTREAM_TAG` equals `image.tag` in `base/values.yaml` and the prod overlay's `login.image.tag` equals `<UPSTREAM_TAG>-lm.<tree>` computed from the checked-out `zitadel-login/`. A Zitadel upgrade is then one pull request: bump `UPSTREAM_TAG`, `image.tag` and the prod `login.image.tag` together, refresh the patch if `git am` fails, wait for the pull request's image build, merge. A patch change without a tag change fails the check, so production can never run an image older than its patch. The runbook `docs/runbooks/zitadel-helm-chart.md` gains this procedure.
+A check run by `make lint-k8s` fails unless `zitadel-login/UPSTREAM_TAG` equals `image.tag` in `base/values.yaml` and, when the prod overlay sets `login.image.repository` to the `zitadel-login` Artifact Registry repository, its `login.image.tag` equals `<UPSTREAM_TAG>-lm.<tree>` computed from the checked-out `zitadel-login/`. A prod overlay without a `login.image` override runs the upstream Login V2 image of `image.tag` and passes the check: that is the rollback state (see Risks). A Zitadel upgrade is then one pull request: bump `UPSTREAM_TAG`, `image.tag` and the prod `login.image.tag` together, refresh the patch if `git am` fails, wait for the pull request's image build, merge. A patch change without a tag change fails the check, so production can never run an image older than its patch. The runbook `docs/runbooks/zitadel-helm-chart.md` gains this procedure.
 
 ### D7. Verification lives in the frontend production E2E
 
@@ -100,10 +100,10 @@ The patch sits in `cloud-provisioning`, but the scenario coverage check reads `@
 - [The production E2E that deletes an account breaks on the day the patched image rolls out] → The frontend change to passkey sign-up merges and passes against the upstream image first (the passkey path exists there too), before the image switch.
 - [A security release needs a fast upgrade] → The rebuild runs in CI from the tag; no local toolchain is needed.
 - [The patched image differs from upstream beyond the patch] → The build uses the upstream lockfile, the upstream `build` target and the upstream Dockerfile unchanged.
-- [Rollback re-opens password setup] → Reverting to the upstream image of the same tag restores every password page; do it only to recover from a broken login, and re-apply the patched image as soon as it is fixed. The API image is unaffected by a Login V2 rollback.
+- [Rollback re-opens password setup] → Rolling back means deleting the prod overlay's `login.image` override, which runs the upstream image of the same tag and passes the D6 check. It restores every password page; do it only to recover from a broken login, and re-apply the patched image as soon as it is fixed. Rolling back an upgrade to the previous patched image is a plain revert of that upgrade's pull request, which reverts the tag pin, the patch and the prod tag together. The API image is unaffected by a Login V2 rollback.
 
 ## Migration Plan
 
 1. Pulumi: Artifact Registry repository and node reader binding; prod `pulumi up` (by the user).
 2. One pull request adds `zitadel-login/`, the workflow, the consistency check and the prod `login.image` values; its pull-request build pushes `v4.20.0-lm.<tree>`, then it merges and ArgoCD rolls the Login V2 pod.
-3. Verify in production (tasks). Rollback: revert the prod `login.image` values, which returns to the upstream image of the same tag (see Risks).
+3. Verify in production (tasks). Rollback: delete the prod overlay's `login.image` override, which returns to the upstream image of the same tag and passes the D6 check (see Risks).
