@@ -50,7 +50,7 @@ When the fan has given a full name and phone number before, the screen SHALL ope
 When the screen authorizes the card with LotteryEntryService.AuthorizeCard, it SHALL send the referral code kept on the device by the Event page when the code has not expired and was kept for the Series of the entry's event, and SHALL send no code otherwise. Sending a code SHALL NOT change anything the fan sees. Confirming, failing or leaving the entry SHALL leave the kept code on the device.
 
 #### Scenario: Entry from a referral link
-- **WHEN** a fan who opened a link with `ref=member-a` for an event of XX Tour 2026 yesterday authorizes their card for a TicketType of an event of XX Tour 2026
+- **WHEN** a fan who opened a link with `ref=member-a` for an event of XX Tour 2026 yesterday authorizes their card for a TicketStock of an event of XX Tour 2026
 - **THEN** AuthorizeCard is called with the code `member-a`
 
 #### Scenario: Another Series

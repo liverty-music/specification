@@ -1,7 +1,7 @@
 # components/usecase/lottery-entry/run-draw Specification
 
 ## Purpose
-LotteryEntryUseCase.RunDraw draws one closed Lottery TicketSale: for each of its TicketTypes it orders the Entered entries at random, admits whole entries that fit the TicketType's quantity, captures each winner's card authorization, releases every other card authorization, and records the outcome of the whole sale with the losers' draw order.
+LotteryEntryUseCase.RunDraw draws one closed Lottery TicketSale: for each TicketStock of the events it names it orders the sale's Entered entries at random, admits whole entries that fit the stock's remaining count, captures each winner's card authorization, releases every other card authorization, and records the outcome of the whole sale with the losers' draw order.
 
 ## Requirements
 

@@ -1,7 +1,7 @@
 # components/usecase/lottery-entry/list-by-ticket-type Specification
 
 ## Purpose
-LotteryEntryUseCase.ListByTicketType returns the calling fan's LotteryEntries for a TicketType, so the fan sees whether they have entered and, after the draw, whether they won.
+LotteryEntryUseCase.ListByTicketType returns the calling fan's LotteryEntries in a Lottery TicketSale, so the fan sees whether they have entered and, after the draw, whether they won.
 
 ## Requirements
 

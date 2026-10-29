@@ -1,7 +1,7 @@
 # components/entity/lottery-entry/list-by-user Specification
 
 ## Purpose
-Lists every LotteryEntry one User has made, across all TicketTypes, so a caller can tell whether any of them is still awaiting its draw.
+Lists every LotteryEntry one User has made, across all TicketSales, so a caller can tell whether any of them is still awaiting its draw.
 
 ## Requirements
 

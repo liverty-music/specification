@@ -1,7 +1,7 @@
 # components/entity/ticket-sale/get Specification
 
 ## Purpose
-Reads one TicketSale by its id with its TicketTypes, each first-come type with its held count at a given time.
+Reads one TicketSale by its id with the events it names.
 
 ## Requirements
 

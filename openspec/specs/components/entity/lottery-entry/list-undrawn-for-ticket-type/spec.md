@@ -1,7 +1,7 @@
 # components/entity/lottery-entry/list-undrawn-for-ticket-type Specification
 
 ## Purpose
-Lists the entries of one TicketType that the draw has to settle: the Entered entries it draws.
+Lists the entries of one TicketSale for one TicketStock that the draw has to settle: the Entered entries it draws.
 
 ## Requirements
 

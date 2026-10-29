@@ -115,22 +115,22 @@ An Event SHALL be publicly visible when its Series is not first-party, or when i
 
 ### Requirement: What can change after publish
 
-A DRAFT Event's Venue, local date, start time and open time SHALL be changeable. Once an Event is PUBLISHED, its Venue and local date SHALL NOT change; its open time SHALL be changeable; its start time SHALL be changeable, including from unknown to known, only while no TicketType offers the Event. A CANCELLED Event SHALL NOT change.
+A DRAFT Event's Venue, local date, start time and open time SHALL be changeable. Once an Event is PUBLISHED, its Venue and local date SHALL NOT change; its open time SHALL be changeable; its start time SHALL be changeable, including from unknown to known, only while no TicketSale names the Event. A CANCELLED Event SHALL NOT change.
 
 #### Scenario: Published venue is fixed
 - **WHEN** an Event is PUBLISHED
 - **THEN** its Venue and local date cannot change
 
 #### Scenario: Doors-open time after publish
-- **WHEN** an Event is PUBLISHED and a TicketType offers it
+- **WHEN** an Event is PUBLISHED and a TicketSale names it
 - **THEN** its open time can change
 
 #### Scenario: Start time announced after publish
-- **WHEN** an Event is PUBLISHED with no start time and no TicketType offers it
+- **WHEN** an Event is PUBLISHED with no start time and no TicketSale names it
 - **THEN** its start time can be set
 
 #### Scenario: Start time on sale is fixed
-- **WHEN** an Event is PUBLISHED and a TicketType offers it
+- **WHEN** an Event is PUBLISHED and a TicketSale names it
 - **THEN** its start time cannot change
 
 #### Scenario: Cancelled event is fixed

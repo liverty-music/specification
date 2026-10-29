@@ -1,7 +1,7 @@
 # components/entity/checkout/get-or-create-held Specification
 
 ## Purpose
-Returns a fan's current Checkout on a TicketType, or starts one when the stock and the fan's per-account limit allow, so a repeated or concurrent start never holds twice.
+Returns a fan's current Checkout of a FirstCome TicketSale for a TicketStock, or starts one when the stock and the fan's per-account limit allow, so a repeated or concurrent start never holds twice.
 
 ## Requirements
 

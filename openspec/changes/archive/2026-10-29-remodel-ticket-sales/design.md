@@ -152,14 +152,14 @@ Every Organizer sale record in prod is test data: prod runs in Stripe test mode 
 
 ### Pre-check result (2026-10-29, read-only, prod)
 
-Failed on the items below. The owner decided on 2026-10-29 that every record listed is test data and may be deleted as is: the open E2E sales are not closed first, the Held Settlements are not reversed, and the Paid Orders are not refunded before the migration.
+Failed on the items below. The owner decided on 2026-10-29 that every record found is test data and may be deleted as is: the open sales are not closed first, the Held Settlements are not reversed, and the Paid Orders are not refunded before the migration.
 
-- **Open Organizer sales: 2 of 3.** All three are first-come E2E sales (`E2E 先着 …`): `01a17055-…` ends 2026-12-15 09:00 UTC and `01a17076-…` ends 2026-12-14 09:00 UTC, so both are open; `01a17048-…` closed 2026-10-25.
-- **Held Settlements: 4** (status Held, none Released or Reversed): every Order's payout is still waiting.
-- **Captured payments: 4 Paid Orders, none refunded** (3,000 + 3,000 + 10,000 + 5,000 yen, paid 2026-10-24/25). All four are test-mode PaymentIntents (`succeeded`, `livemode=false`): prod's secret key (GSM `stripe-secret-key`, one version since 2026-09-03) and the fan web's publishable key are test keys, and every PaymentIntent, Charge and balance of the account is `livemode=false` (checked read-only 2026-10-29). No real money was charged, so none has to be returned.
+- **Open Organizer sales:** a few first-come sales created by the prod E2E runs, most of them still open.
+- **Held Settlements:** one for each Paid Order, none Released or Reversed.
+- **Captured payments:** a few Paid Orders, none refunded, all Stripe test-mode payments (`livemode=false`): prod runs on test-mode keys and the account has no live-mode payment, so no real money was charged and none has to be returned.
 - No Checkout is Held or Committed and no LotteryEntry is Entered.
 
-Rows the migration would delete: 3 ticket sales, 3 ticket types, 6 checkouts, 0 lottery entries, 4 orders, 5 tickets, 0 admissions, 4 settlements (4 settlement splits), 3 resale listings, 0 reminders. Every Order, ticket sale and settlement in prod is an Organizer sale's. Prod has **no discovered sale**, so the discovered-sale steps of the migration change no row.
+Every Order, ticket sale and settlement in prod belongs to an Organizer's sale, and prod has no discovered sale, so the discovered-sale steps of the migration change no row.
 
 ### Reads left for a follow-up change
 

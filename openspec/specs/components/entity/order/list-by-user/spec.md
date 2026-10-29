@@ -1,7 +1,7 @@
 # components/entity/order/list-by-user Specification
 
 ## Purpose
-Order.ListByUser returns every Order a User bought, in any status.
+Order.ListByUser returns the Paid and Refunded Orders of one User: the Orders they bought.
 
 ## Requirements
 

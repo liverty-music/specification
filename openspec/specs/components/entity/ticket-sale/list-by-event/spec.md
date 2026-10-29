@@ -1,7 +1,7 @@
 # components/entity/ticket-sale/list-by-event Specification
 
 ## Purpose
-Lists the TicketSales that offer a TicketType for one event, with the stock of each first-come TicketType at a given time.
+Lists the TicketSales that name one event, each with that event's TicketStocks and their sold and held counts at a given time.
 
 ## Requirements
 

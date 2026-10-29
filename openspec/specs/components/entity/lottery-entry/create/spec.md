@@ -1,7 +1,7 @@
 # components/entity/lottery-entry/create Specification
 
 ## Purpose
-LotteryEntry.Create stores a fan's new Entered entry with its card authorization and referral code: at most one per account and TicketType, and only before the sale's end time.
+LotteryEntry.Create stores a fan's new Entered entry with its card authorization and referral code: at most one per account, sale and event, and only before the sale's end time.
 
 ## Requirements
 

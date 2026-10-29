@@ -1,7 +1,7 @@
 # components/entity/order/get-by-checkout-id Specification
 
 ## Purpose
-Reads the Order paid for a Checkout, if there is one.
+Reads the Order a Checkout names, by the Checkout's id, in any status.
 
 ## Requirements
 

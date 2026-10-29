@@ -1,7 +1,7 @@
 # components/entity/checkout/commit Specification
 
 ## Purpose
-Commits a holding Checkout's tickets against its TicketType's stock before the card is charged.
+Commits a holding Checkout's tickets against its TicketStock before the card is charged.
 
 ## Requirements
 

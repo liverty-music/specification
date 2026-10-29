@@ -1,7 +1,7 @@
 # components/entity/order/list-by-event Specification
 
 ## Purpose
-Order.ListByEvent returns every Order whose Tickets admit to one Event, in any status, so an admin can see and refund the purchases of that Event.
+Order.ListByEvent returns the Paid and Refunded Orders of one Event, so an admin can see and refund the purchases of that Event.
 
 ## Requirements
 

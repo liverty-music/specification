@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Stores a new Order together with the Tickets it issues.
+Makes a Pending Order Paid together with the Tickets it issues and its Settlement.
 
 ## Requirements
 

@@ -1,11 +1,11 @@
 # components/entity/order/list-lottery-entry-ids-awaiting-issuance Specification
 
 ## Purpose
-Lists the Won LotteryEntries that have no Order yet.
+Lists the Won LotteryEntries whose Order is still Pending.
 
 ## Requirements
 
-### Requirement: Won entries without an order
+### Requirement: Won entries whose order is pending
 
 ListLotteryEntryIDsAwaitingIssuance SHALL return the id of every Won entry whose Order is Pending, and no other id. It SHALL return an empty list when there is none.
 

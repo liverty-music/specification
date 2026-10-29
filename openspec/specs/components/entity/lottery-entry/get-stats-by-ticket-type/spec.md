@@ -1,11 +1,11 @@
 # components/entity/lottery-entry/get-stats-by-ticket-type Specification
 
 ## Purpose
-LotteryEntry.GetStatsByTicketType counts the entries of one TicketType for the Organizer's view of its sale.
+LotteryEntry.GetStatsByTicketType counts the entries of one TicketSale for one TicketStock, for the Organizer's view of the sale.
 
 ## Requirements
 
-### Requirement: Entry stats of a ticket type's entries
+### Requirement: Entry stats of a ticket stock's entries in a sale
 
 GetStatsByTicketType SHALL take a TicketSale and a TicketStock and return, over all of the sale's entries whose Order is of that TicketStock: the number of entries, the sum of their Orders' ticket counts, the number of Won entries, the sum of the Won entries' ticket counts and the number of Lost entries. A TicketStock with no entries in the sale SHALL yield all counts zero.
 

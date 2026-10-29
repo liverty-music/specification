@@ -1,7 +1,7 @@
 # components/entity/ticket-sale/set-window Specification
 
 ## Purpose
-Replaces the start and end times of one TicketSale and returns the updated sale with its TicketTypes.
+Replaces the start and end times of one TicketSale and returns the updated sale with the events it names.
 
 ## Requirements
 

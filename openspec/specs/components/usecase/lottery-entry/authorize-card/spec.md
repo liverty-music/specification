@@ -1,7 +1,7 @@
 # components/usecase/lottery-entry/authorize-card Specification
 
 ## Purpose
-LotteryEntryUseCase.AuthorizeCard records the fan's 本人確認 (identity check) details and opens a card authorization for a ticket count of one TicketType, returning it with the card authorization secret the fan's browser uses to complete card authentication; it stores no entry.
+LotteryEntryUseCase.AuthorizeCard records the fan's 本人確認 (identity check) details and opens a card authorization for a ticket count of one TicketStock of an event a Lottery TicketSale names, returning it with the card authorization secret the fan's browser uses to complete card authentication; it stores no entry.
 
 ## Requirements
 

@@ -1,7 +1,7 @@
 # components/entity/checkout/revert-commit Specification
 
 ## Purpose
-Gives a Committed Checkout's tickets back to its TicketType when its card can no longer be charged.
+Gives a Committed Checkout's tickets back to its TicketStock when its card can no longer be charged.
 
 ## Requirements
 

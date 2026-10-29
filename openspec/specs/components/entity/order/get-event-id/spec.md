@@ -1,7 +1,7 @@
 # components/entity/order/get-event-id Specification
 
 ## Purpose
-Order.GetEventID returns the id of the Event an Order is for, the Event of the TicketType its source was for, so a refund can check that Event's state.
+Order.GetEventID returns the id of the Event an Order is for, the Event of its TicketStock, so a refund can check that Event's state.
 
 ## Requirements
 
