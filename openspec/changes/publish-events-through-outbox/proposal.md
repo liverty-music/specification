@@ -15,7 +15,7 @@ The backend commits a fact and then publishes its event in a second call: a fail
   - An Artist names the Organizer that represents it, so the association announces the Artist.
   - A Passkey keeps the name the identity provider gave it, which the passkey email shows.
   - Every entity is compared with its proto, and a field left out for no personal-data reason is added.
-- **Personal data and credentials**: an announcement may carry an email address and never the full name or phone number given for the ticket face, nor a push address or its keys.
+- **Personal data and credentials**: an announcement may carry an email address and never the full name or phone number given for the ticket face, nor the display name from the identity provider, nor a push address or its keys.
 - Code moves the entity-to-proto conversion to one package shared by the RPC handlers and the announcements, and removes the event publisher from the usecases.
 
 ## Capabilities

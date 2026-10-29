@@ -135,8 +135,8 @@ A request for one receiver with no stored change behind it starts that receiver'
 | NOTIFICATION.subscribed, NOTIFICATION.unsubscribed | PushSubscription.Create, PushSubscription.Delete | PushSubscription without push address and keys, with its device family | product analytics |
 | NOTIFICATION.delivered | Notification.UpdateDelivery (Queued to Delivered) | Notification | product analytics |
 | TICKET_JOURNEY.status_changed | TicketJourney.Upsert | TicketJourney | product analytics |
-| USER.created | User.Create | User without full name and phone number | UserUseCase verification email; product analytics |
-| USER.logged_in | User.RecordLogin | User without full name and phone number | product analytics |
+| USER.created | User.Create | User without full name, phone number and display name | UserUseCase verification email; product analytics |
+| USER.logged_in | User.RecordLogin | User without full name, phone number and display name | product analytics |
 | USER.passkey_added, USER.passkey_removed | Passkey.Create, Passkey.Delete | Passkey (as removed for a removal) | UserUseCase.NotifyPasskeyChange |
 
 ### How each receiver drops a repeat

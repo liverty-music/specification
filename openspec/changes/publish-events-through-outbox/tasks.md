@@ -39,7 +39,7 @@
 - [ ] 6.8 Order.Issue announces ORDER.paid; verify every scenario of `entity/order/issue`
 - [ ] 6.9 LotteryEntry.PersistDrawOutcome (lost reason per loser, no announcement for an entry left unchanged, one announcement per changed entry, inserted in chunks); verify every scenario of `entity/lottery-entry/persist-draw-outcome`, and a test drawing 100,000 local entries in one call with the process heap below 200 MB
 - [ ] 6.10 ResaleListing.RecordRefund (announces only when it sets the refund) and ResaleListing.ListSoldUnrefunded (refund time only); verify every scenario of `entity/resale-listing/record-refund` and `resale-listing/list-sold-unrefunded`
-- [ ] 6.11 User.Create (User without full name and phone number), User.RecordLogin (new, guarded update), Passkey.Create (stores name; rows affected) and Passkey.Delete (`DELETE ... RETURNING`), announcing USER.created, USER.logged_in, USER.passkey_added and USER.passkey_removed; verify every scenario of `entity/user/create`, `user/record-login`, `passkey/create` and `passkey/delete`
+- [ ] 6.11 User.Create (User without full name, phone number and display name), User.RecordLogin (new, guarded update), Passkey.Create (stores name; rows affected) and Passkey.Delete (`DELETE ... RETURNING`), announcing USER.created, USER.logged_in, USER.passkey_added and USER.passkey_removed; verify every scenario of `entity/user/create`, `user/record-login`, `passkey/create` and `passkey/delete`
 - [ ] 6.12 Add the `# Announces` Go doc section to every announcing method in `internal/entity`; verify `make check` passes and a grep finds one section per announcing method
 
 ## 7. Usecases stop announcing (one unit test per scenario, operations mocked)
