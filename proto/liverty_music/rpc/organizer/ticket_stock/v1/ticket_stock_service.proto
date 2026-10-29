@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.ticket_stock.v1 provides the
+// organizer-facing TicketStockService, the surface a member uses from the
+// organizer console to stock one of its Organizer's events with tickets of a
+// seat type of its Series, and to see how many are sold and held. It is served
+// by the dedicated organizer Connect server behind org-scoped role-claim
+// authorization. Seat types are defined through
+// liverty_music.rpc.organizer.seat_type.v1, and every TicketSale of an event
+// sells from its stocks (liverty_music.rpc.organizer.ticket_sale.v1).
+package liverty_music.rpc.organizer.ticket_stock.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/seat_type.proto";
+import "liverty_music/entity/v1/ticket_stock.proto";
+
+// TicketStockService creates, deletes and lists the TicketStocks of the
+// caller's own events. A TicketStock's event, seat type and quantity never
+// change; a mistake is fixed by deleting it while no Order other than a Void
+// one names it and creating it again, and more tickets are a new seat type
+// and stock. Every call passes the same organizer-console sign-in checks as
+// the organizer OrganizerService and then resolves the caller's own Organizer
+// from the caller's Organization (never carried in the request): a caller with
+// no Organization, an Organization with no linked Organizer and a provisioning
+// Organizer fail with PERMISSION_DENIED, and a deactivated Organizer fails
+// with FAILED_PRECONDITION, before anything else runs. Failures that would
+// concern another Organizer's event or stock never reveal whether it exists.
+service TicketStockService {
+  // Create stocks one of the caller's events with a quantity of tickets of a
+  // SeatType of the event's Series and returns the TicketStock. An event has
+  // at most one TicketStock per SeatType.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The event_id, seat_type_id or quantity is missing or
+  //   malformed, the quantity is below 1, or the SeatType is not one of the
+  //   event's Series' SeatTypes.
+  // - PERMISSION_DENIED: The event does not exist or its Series is owned by
+  //   another Organizer, or any organizer-console authorization failure.
+  //   Non-revealing.
+  // - ALREADY_EXISTS: The event already has a TicketStock of that SeatType.
+  // - FAILED_PRECONDITION: The event is CANCELLED, or the caller's own
+  //   Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Create(CreateRequest) returns (CreateResponse);
+
+  // Delete removes one of the caller's TicketStocks while no Order other than
+  // a Void one names it, together with its Void Orders and their Checkouts
+  // and LotteryEntries.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The ticket_stock_id is missing or malformed.
+  // - PERMISSION_DENIED: The TicketStock does not exist or its event's Series
+  //   is owned by another Organizer, or any organizer-console authorization
+  //   failure. Non-revealing.
+  // - FAILED_PRECONDITION: An Order that is not Void names the stock, a Void
+  //   Order's card authorization is not yet released, or the caller's own
+  //   Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+
+  // ListByEvent returns the TicketStocks of one of the caller's events, each
+  // with its quantity, and its sold count, held count and state now, beside
+  // the SeatTypes they are of. An event without a TicketStock returns an
+  // empty list.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The event_id is missing or malformed.
+  // - PERMISSION_DENIED: The event does not exist or is not owned by the
+  //   caller's Organizer, or any organizer-console authorization failure.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc ListByEvent(ListByEventRequest) returns (ListByEventResponse);
+}
+
+// CreateRequest carries the event, the seat type and the quantity.
+message CreateRequest {
+  // Required. The event to stock. Its Series MUST be owned by the caller's
+  // Organizer.
+  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The SeatType of the tickets, one of the event's Series'
+  // SeatTypes.
+  entity.v1.SeatTypeId seat_type_id = 2 [(buf.validate.field).required = true];
+
+  // Required. The tickets in the stock, at least 1.
+  int32 quantity = 3 [(buf.validate.field).int32.gte = 1];
+}
+
+// CreateResponse returns the stored ticket stock.
+message CreateResponse {
+  // The created TicketStock, with its quantity and nothing sold or held.
+  entity.v1.TicketStock ticket_stock = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteRequest names the ticket stock to delete.
+message DeleteRequest {
+  // Required. The TicketStock to delete. Its event's Series MUST be owned by
+  // the caller's Organizer.
+  entity.v1.TicketStockId ticket_stock_id = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteResponse is empty on success.
+message DeleteResponse {}
+
+// ListByEventRequest names the event whose stocks to list.
+message ListByEventRequest {
+  // Required. The event whose stocks to list. Its Series MUST be owned by the
+  // caller's Organizer.
+  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+}
+
+// ListByEventResponse returns the event's stocks with their counts.
+message ListByEventResponse {
+  // The event's TicketStocks, each with its quantity, sold count, held count
+  // and state at the time of the call. Empty when the event has none.
+  repeated entity.v1.TicketStock ticket_stocks = 1;
+
+  // The SeatTypes the stocks above are of, each once.
+  repeated entity.v1.SeatType seat_types = 2;
+}

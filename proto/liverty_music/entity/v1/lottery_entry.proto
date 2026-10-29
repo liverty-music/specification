@@ -5,17 +5,10 @@ package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
-import "liverty_music/entity/v1/card_authorization.proto";
-import "liverty_music/entity/v1/ticket_type.proto";
-import "liverty_music/entity/v1/user.proto";
+import "liverty_music/entity/v1/order.proto";
+import "liverty_music/entity/v1/ticket_sale.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
-
-// LotteryEntryId is a globally unique identifier for a single LotteryEntry.
-message LotteryEntryId {
-  // A UUID string mapping to the entry's unique identity.
-  string value = 1 [(buf.validate.field).string.uuid = true];
-}
 
 // LotteryEntryState is the lifecycle of a LotteryEntry:
 //
@@ -32,12 +25,12 @@ enum LotteryEntryState {
   // reserves the amount but no money is captured. An entry cannot be given up.
   LOTTERY_ENTRY_STATE_ENTERED = 1;
 
-  // Selected in the draw: the card authorization was captured and the Order is
-  // issued from it.
+  // Selected in the draw: the Order's card authorization was captured and the
+  // Order is made Paid from it.
   LOTTERY_ENTRY_STATE_WON = 2;
 
-  // Not selected in the draw: the card authorization was released. Kept in draw
-  // order among the ticket type's losers.
+  // Not selected in the draw: the card authorization was released and the
+  // Order is VOID. Kept in draw order among the TicketStock's losers.
   LOTTERY_ENTRY_STATE_LOST = 3;
 
   // Value 4 was WITHDRAWN, an entry the fan gave up before the draw; a fan can
@@ -47,14 +40,15 @@ enum LotteryEntryState {
   reserved "LOTTERY_ENTRY_STATE_WITHDRAWN", "LOTTERY_ENTRY_STATE_DRAFT";
 }
 
-// LotteryEntry is one fan account's confirmed entry into the lottery for one
-// TicketType: a request for a companion group of tickets allocated
-// all-or-nothing, paid by the CardAuthorization placed on the fan's card for
-// the amount until the draw. It is made when the fan confirms after
-// authenticating their card, and takes part in the draw from then on. At most
-// one entry exists per account and ticket type (enforced server-side).
-// The fan's 本人確認 (identity check) details are the User's full name and
-// phone number.
+// LotteryEntry is how one fan's Order takes part in a LOTTERY TicketSale: a
+// request for a companion group of tickets of the Order's TicketStock,
+// allocated all-or-nothing, paid by the Order's CardAuthorization placed on
+// the fan's card for the amount until the draw. It is made when the fan
+// confirms after authenticating their card, and takes part in the draw from
+// then on. A fan enters a sale at most once for each event it names (enforced
+// server-side). The TicketStock, the ticket count, the card authorization and
+// the referral code are the Order's. The fan's 本人確認 (identity check)
+// details are the User's full name and phone number.
 message LotteryEntry {
   // The unique identifier for this entry. Server-generated surrogate id.
   LotteryEntryId id = 1 [
@@ -62,21 +56,18 @@ message LotteryEntry {
     (buf.validate.field).required = true
   ];
 
-  // The fan account that entered.
-  UserId user_id = 3 [
-    (google.api.field_behavior) = REQUIRED,
+  // The Order the entry applies for, PENDING until the draw. One LotteryEntry
+  // per Order.
+  OrderId order_id = 13 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
 
-  // How many tickets the entry requests: the companion group size, allocated
-  // all-or-nothing. 1 to 10; the server also rejects a count above the ticket
-  // type's per-account limit.
-  int32 ticket_count = 11 [
+  // The LOTTERY TicketSale entered, a sale that names the event of the
+  // Order's TicketStock.
+  TicketSaleId ticket_sale_id = 12 [
     (google.api.field_behavior) = REQUIRED,
-    (buf.validate.field).int32 = {
-      gte: 1
-      lte: 10
-    }
+    (buf.validate.field).required = true
   ];
 
   // The entry's current lifecycle state (its result once the draw has run).
@@ -86,30 +77,19 @@ message LotteryEntry {
     (buf.validate.field).enum.defined_only = true
   ];
 
-  // The entry's position in its ticket type's random draw order, unique within
-  // the ticket type. Absent before the draw; set only by the draw. For a LOST
-  // entry it is the waiting-list order. Server-owned.
+  // The entry's position in its sale's random draw order for its TicketStock,
+  // unique within the sale and stock. Absent before the draw; set only by the
+  // draw. For a LOST entry it is the waiting-list order. Server-owned.
   optional int64 draw_position = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
-
-  // The TicketType entered. Its sale's method is LOTTERY (checked server-side).
-  TicketTypeId ticket_type_id = 9 [
-    (google.api.field_behavior) = REQUIRED,
-    (buf.validate.field).required = true
-  ];
-
-  // The CardAuthorization on the fan's card for the entry's amount, set when
-  // the entry is made. Captured on a win, released otherwise. Server-owned.
-  CardAuthorizationId card_authorization_id = 10 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (buf.validate.field).required = true
-  ];
 
   // Field 2 was the sale the entry belonged to, replaced by ticket_type_id.
   // Field 5 was the 本人確認 details copied onto the entry, which now live on
   // the User. Fields 3 and 8 are user_id and draw_position under former
   // names. Field 4 was the ticket count under its former name, replaced by
   // ticket_count. Field 6 held the card authorization in a message of its
-  // own, replaced by card_authorization_id.
-  reserved 2, 4, 5, 6;
-  reserved "phase_id", "identity", "applicant_id", "draw_sequence", "requested_ticket_count", "authorization";
+  // own, replaced by card_authorization_id. Fields 3, 9, 10 and 11 were the
+  // user, the TicketType, the card authorization and the ticket count, which
+  // are now the Order's.
+  reserved 2, 3, 4, 5, 6, 9, 10, 11;
+  reserved "phase_id", "identity", "applicant_id", "draw_sequence", "requested_ticket_count", "authorization", "user_id", "ticket_type_id", "card_authorization_id", "ticket_count";
 }

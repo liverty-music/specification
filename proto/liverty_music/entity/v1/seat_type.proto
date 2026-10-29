@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "liverty_music/entity/v1/series.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// SeatTypeId is a globally unique identifier for a single SeatType.
+message SeatTypeId {
+  // A UUID string mapping to the seat type's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// SeatTypeName is the label of a SeatType that fans and the Organizer's
+// members see, for example S席 or オールスタンディング.
+message SeatTypeName {
+  // The name, 1 to 50 characters.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 50
+  }];
+}
+
+// SeatTypePrice is the price of one ticket in whole yen, tax-inclusive (税込).
+message SeatTypePrice {
+  // The amount in yen, 1 to 1,000,000.
+  int64 value = 1 [(buf.validate.field).int64 = {
+    gte: 1
+    lte: 1000000
+  }];
+}
+
+// SeatType is one kind of ticket (席種) a Series sells, such as S席, A席 or
+// オールスタンディング: its name and the price of one ticket. It does not
+// assign seats. Every event of the Series that sells it does so through a
+// TicketStock. Its name and price never change once it is created; a different
+// price is a different SeatType.
+message SeatType {
+  // The unique identifier for this seat type. Server-generated surrogate id.
+  SeatTypeId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The Series that sells it. Never changes.
+  SeriesId series_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The label fans and members see, for example S席. Unique within the Series
+  // (checked server-side). Never changes.
+  SeatTypeName name = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The price of one ticket in whole yen, tax-inclusive (税込): the face value
+  // (券面価格) of its tickets. The fan pays price × count, with no fee on top.
+  // Never changes.
+  SeatTypePrice price = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+}

@@ -38,8 +38,8 @@ enum TicketStatus {
   TICKET_STATUS_VOIDED = 2;
 }
 
-// Ticket is one account-bound admission right to an event, issued from an
-// Order (a won LotteryEntry or a Committed Checkout). Admission at the venue is
+// Ticket is one account-bound admission right to an event, issued when its
+// Order becomes Paid (a won LotteryEntry or a Committed Checkout). Admission at the venue is
 // recorded on it as `admit_time`.
 //
 // A ticket is admissible exactly when it is ISSUED and has no `admit_time`:
@@ -62,7 +62,7 @@ message Ticket {
   ];
 
   // The Order that issued this ticket. One Order issues all tickets of its
-  // source, each referencing that Order here.
+  // application, each referencing that Order here.
   OrderId order_id = 2 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true

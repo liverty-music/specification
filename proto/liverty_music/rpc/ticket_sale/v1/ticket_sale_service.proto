@@ -1,29 +1,32 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.ticket_sale.v1 provides the fan-facing
-// TicketSaleService: which sales offer an event's tickets, by lottery or first
-// come, first served. Anyone may read it, signed in or not.
+// TicketSaleService: which sales sell an event's tickets, by lottery or first
+// come, first served, and the event's ticket stocks. Anyone may read it,
+// signed in or not.
 package liverty_music.rpc.ticket_sale.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/seat_type.proto";
 import "liverty_music/entity/v1/ticket_sale.proto";
+import "liverty_music/entity/v1/ticket_stock.proto";
 
-// TicketSaleService is the public read of an event's TicketSales, for the
-// ticket section of the event page, the lottery entry and the checkout. It
-// never reveals a TicketType's quantity, sold count or held count: a
-// first-come TicketType with few tickets left is only flagged as low on stock.
+// TicketSaleService is the public read of an event's TicketSales and
+// TicketStocks, for the ticket section of the event page, the lottery entry
+// and the checkout. It never reveals a TicketStock's quantity, sold count or
+// held count: a stock with few tickets left is only flagged as low on stock.
 // The Organizer's business details come with the event's Concert, through its
 // Series' Organizer. Entering goes through liverty_music.rpc.lottery_entry.v1
 // and buying through liverty_music.rpc.checkout.v1.
 service TicketSaleService {
-  // ListByEvent returns the sales that offer one event's tickets, ordered by
-  // start time, each with only its TicketType for that event: its price,
-  // per-account limit and, for a FIRST_COME sale, its state and whether it is
-  // low on stock now. It needs no sign-in. An event that no sale offers, or
-  // whose concert is not published (for example a cancelled 中止 concert),
-  // returns an empty list. The sales' start and end are shown in Japan time by
-  // the client.
+  // ListByEvent returns the sales that name one event, ordered by start time,
+  // and once for the event, shared by every sale, its TicketStocks with their
+  // SeatTypes and the event's per-account limit. Each stock carries its state,
+  // whether it is low on stock and whether its official resale is open now.
+  // It needs no sign-in. An event that no sale names, or whose concert is not
+  // published (for example a cancelled 中止 concert), returns no sale and no
+  // stock. The sales' start and end are shown in Japan time by the client.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The event_id is missing or malformed.
@@ -36,14 +39,27 @@ message ListByEventRequest {
   entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
 }
 
-// ListByEventResponse returns the event's sales.
+// ListByEventResponse returns the event's sales and stocks.
 message ListByEventResponse {
   // The event's sales in start order. Each carries its id, Series, name,
-  // method, start and end time and verification requirement, and its one
-  // TicketType for the event with the TicketType's id, event, price,
-  // per-account limit and, for a FIRST_COME sale, its state and low-stock
-  // flag. The TicketType's quantity, sold count and held count and the
-  // TicketTypes of the sale's other events are left out. Empty when no sale
-  // offers the event or its concert is not published.
+  // method, start and end time, verification requirement and events. Empty
+  // when no sale names the event or its concert is not published.
   repeated entity.v1.TicketSale ticket_sales = 1;
+
+  // The event's TicketStocks, which every sale above sells. Each carries its
+  // id, event, SeatType, state, low-stock flag and whether its resale is open;
+  // its quantity, sold count and held count are left out, and so are the
+  // stocks of the sales' other events. Empty when ticket_sales is empty.
+  repeated entity.v1.TicketStock ticket_stocks = 2;
+
+  // The SeatTypes of the stocks above, with their names and prices, each once.
+  repeated entity.v1.SeatType seat_types = 3;
+
+  // The most tickets one account may hold for the event, across every sale,
+  // seat type and official resale of it: 1 to 10. Absent when ticket_sales is
+  // empty.
+  optional int32 per_account_limit = 4 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 10
+  }];
 }

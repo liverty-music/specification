@@ -1,10 +1,11 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.order.v1 provides the fan-facing OrderService: the
-// signed-in fan's read of their own Orders. Orders are issued by the checkout
-// (liverty_music.rpc.checkout.v1) and by the lottery draw's issuance job; their
-// tickets are read through liverty_music.rpc.ticket.v1, and refunds are admin
-// operations (liverty_music.rpc.admin.order.v1).
+// signed-in fan's read of their own Orders. Orders are made when the fan
+// applies through the checkout (liverty_music.rpc.checkout.v1) or a lottery
+// entry (liverty_music.rpc.lottery_entry.v1) and become PAID when the payment
+// is captured; their tickets are read through liverty_music.rpc.ticket.v1, and
+// refunds are admin operations (liverty_music.rpc.admin.order.v1).
 package liverty_music.rpc.order.v1;
 
 import "buf/validate/validate.proto";

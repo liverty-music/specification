@@ -6,17 +6,37 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
-import "liverty_music/entity/v1/checkout.proto";
-import "liverty_music/entity/v1/lottery_entry.proto";
+import "liverty_music/entity/v1/card_authorization.proto";
+import "liverty_music/entity/v1/referral.proto";
+import "liverty_music/entity/v1/ticket_stock.proto";
 import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
-// OrderId is a globally unique identifier for a single Order — the purchase
-// record of one won LotteryEntry or one Committed Checkout. Server-generated
-// surrogate id; it never encodes any payment data.
+// OrderId is a globally unique identifier for a single Order: one fan
+// account's application for tickets of one TicketStock and, once paid, its
+// purchase record. Server-generated surrogate id; it never encodes any payment
+// data.
 message OrderId {
   // A UUID string mapping to the order's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// CheckoutId is a globally unique identifier for a single Checkout.
+// Server-generated (UUIDv7). It is defined here rather than next to Checkout
+// because a Checkout names its Order and an Order names its source, and proto
+// files cannot import each other.
+message CheckoutId {
+  // A UUID string mapping to the checkout's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// LotteryEntryId is a globally unique identifier for a single LotteryEntry. It
+// is defined here rather than next to LotteryEntry because a LotteryEntry names
+// its Order and an Order names its source, and proto files cannot import each
+// other.
+message LotteryEntryId {
+  // A UUID string mapping to the entry's unique identity.
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
@@ -29,9 +49,8 @@ enum PaymentProvider {
   // concrete provider.
   PAYMENT_PROVIDER_UNSPECIFIED = 0;
 
-  // The MVP payment provider. The LotteryEntry or Checkout owns the
-  // CardAuthorization that is captured; the Order records only the provider's
-  // IDs for the captured payment.
+  // The MVP payment provider. The Order names the CardAuthorization that is
+  // captured and records only the provider's IDs for the captured payment.
   PAYMENT_PROVIDER_STRIPE = 1;
 
   // A challenger provider kept swappable behind the provider IDs (#778).
@@ -39,10 +58,11 @@ enum PaymentProvider {
   PAYMENT_PROVIDER_KOMOJU = 2;
 }
 
-// Payment is the payment provider's IDs for the captured payment of an Order's
-// source, plus the display-only facets safe to retain. It never holds raw card
-// data: NEVER a PAN, CVC, or expiry. It is recorded from the source's captured
-// CardAuthorization — the Order performs no separate charge of its own. It is
+// Payment is which payment provider holds an Order's payment and, once the
+// Order is Paid, the provider's IDs for the captured payment, plus the
+// display-only facets safe to retain. It never holds raw card data: NEVER a
+// PAN, CVC, or expiry. It is recorded from the Order's captured
+// CardAuthorization; the Order performs no separate charge of its own. It is
 // a value object embedded in an Order, not a standalone addressable entity.
 message Payment {
   // ProviderPaymentId is the payment provider's ID for a captured payment.
@@ -91,12 +111,9 @@ message Payment {
     (buf.validate.field).string = {pattern: "^([0-9]{4})?$"}
   ];
 
-  // The payment provider's ID for the captured payment. The Order references it
-  // and never charges it again.
-  ProviderPaymentId provider_payment_id = 6 [
-    (google.api.field_behavior) = REQUIRED,
-    (buf.validate.field).required = true
-  ];
+  // The payment provider's ID for the captured payment. Absent until the Order
+  // is Paid. The Order references it and never charges it again.
+  ProviderPaymentId provider_payment_id = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The payment provider's ID for the payment method used, when the provider
   // exposes one. Optional.
@@ -109,44 +126,52 @@ message Payment {
   reserved "payment_intent_ref", "payment_method_ref";
 }
 
-// OrderStatus is the lifecycle of an Order. There is deliberately NO `pending`
-// state: the Order is created from an already-captured payment, so it is `paid`
-// on creation (the state before capture lives on the CardAuthorization of the
-// LotteryEntry or the Checkout, not here). New values may be appended; existing
-// values must not be renumbered.
+// OrderStatus is the lifecycle of an Order. New values may be appended;
+// existing values must not be renumbered.
+//
+//   PENDING --> PAID --> REFUNDED
+//   PENDING --> VOID
 enum OrderStatus {
   // Default value, rejected at the boundary: a persisted Order always records a
   // concrete status.
   ORDER_STATUS_UNSPECIFIED = 0;
 
-  // Paid — the normal state on creation. The Order is built from its source's
-  // captured payment, so funds are already captured (held on the platform
-  // balance) when the Order exists.
+  // Paid: the payment was captured (held on the platform balance) and the
+  // Order's Tickets are issued.
   ORDER_STATUS_PAID = 1;
 
-  // Refunded — the captured payment was refunded (event cancellation 中止 or
+  // Refunded: the captured payment was refunded (event cancellation 中止 or
   // dispute) with a payment provider refund plus a claw-back of the
   // Organizer's payout.
   ORDER_STATUS_REFUNDED = 2;
 
-  // Failed — the capture-succeeded-but-issuance-refunded edge: the capture
-  // succeeded but the Tickets could not be issued, so it refunded the captured
-  // payment to avoid money-captured-with-no-ticket. Distinct from `refunded`,
-  // which follows a successfully issued Order.
-  ORDER_STATUS_FAILED = 3;
+  // Pending: the fan applied through a LotteryEntry or a Checkout and the
+  // payment is not captured yet. A Pending Order counts toward the tickets the
+  // account holds for the event.
+  ORDER_STATUS_PENDING = 4;
+
+  // Void: the Order will never be paid, because its lottery entry lost or its
+  // checkout expired or was released. A Void Order holds no tickets.
+  ORDER_STATUS_VOID = 5;
+
+  // Value 3 was FAILED, a capture whose Tickets could not be issued; no path
+  // ever set it, since issuance retries until it succeeds.
+  reserved 3;
+  reserved "ORDER_STATUS_FAILED";
 }
 
-// Order is a provider- and method-agnostic purchase record: the payment
-// provider's IDs for the captured payment, the Order's own status, its total
-// amount and currency, the capture time, and display-only facets. It has
-// exactly one source — a won LotteryEntry or a Committed Checkout — and ONE
-// Order covers all N tickets of that source. At most one Order exists per
-// source (issuance idempotency).
+// Order is one fan account's application for tickets of one TicketStock and,
+// once its payment is captured, the provider- and method-agnostic purchase
+// record: the ticket count, the referral code, the card authorization, the
+// payment provider's IDs for the captured payment, the amount and its own
+// status. It is created PENDING when the fan applies through a LotteryEntry
+// or a Checkout, its source, which names it; it becomes PAID when the payment is captured
+// and its Tickets are issued, or VOID when it will never be paid. One Order
+// covers all tickets of its application.
 //
-// It is created only from an already-captured payment (the won entry's or the
-// checkout's captured CardAuthorization); the Order performs no separate
-// off-session charge. The Order NEVER stores a PAN, CVC, or expiry — only the
-// payment provider's IDs and safe display facets (PCI SAQ A).
+// The Order performs no separate off-session charge. It NEVER stores a PAN,
+// CVC, or expiry — only the payment provider's IDs and safe display facets
+// (PCI SAQ A).
 message Order {
   // ProviderRefundId is the payment provider's ID for a refund of an Order.
   // Opaque; meaningful only to the provider.
@@ -164,42 +189,65 @@ message Order {
     (buf.validate.field).required = true
   ];
 
-  // The User account that bought the tickets: the user of the won LotteryEntry
-  // or of the Checkout. The tickets this Order issues are bound to this account.
+  // The User account that applied for the tickets. The tickets this Order
+  // issues are bound to this account.
   UserId user_id = 2 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
 
-  // What this Order was bought through. Exactly one is set, and at most one
-  // Order exists per source (issuance idempotency, enforced server-side).
+  // The TicketStock the tickets are of, which gives their event and seat type.
+  TicketStockId ticket_stock_id = 14 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The tickets applied for, a companion group: 1 to the per-account limit of
+  // the stock's event (at most 10).
+  int32 ticket_count = 15 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).int32 = {
+      gte: 1
+      lte: 10
+    }
+  ];
+
+  // The referral code of the link the fan came from. Absent for an
+  // application without a code. Set at creation and never changed.
+  optional ReferralCode referral_code = 16 [(google.api.field_behavior) = IMMUTABLE];
+
+  // What the Order was applied for through: the LotteryEntry or the Checkout
+  // that names it. Exactly one is set, and one Order exists per source.
   oneof source {
     option (buf.validate.oneof).required = true;
 
-    // The won LotteryEntry this Order is purchased by.
+    // The LotteryEntry this Order is entered as.
     LotteryEntryId lottery_entry_id = 10;
 
-    // The first-come Checkout this Order completes: one that was committed and
-    // charged.
+    // The first-come Checkout this Order is checked out as.
     CheckoutId checkout_id = 11;
   }
 
-  // The payment provider's IDs for the source's captured payment plus safe
-  // display facets. Never raw card data.
+  // The CardAuthorization on the fan's card for the amount. Absent until the
+  // fan authorizes their card; set once. Server-owned.
+  CardAuthorizationId card_authorization_id = 17 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The payment provider and, once Paid, its IDs for the captured payment plus
+  // safe display facets. Never raw card data.
   Payment payment = 4 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).required = true
   ];
 
-  // The order's own status — `paid` on creation (see OrderStatus: no `pending`).
+  // The order's own status: PENDING on creation.
   OrderStatus status = 5 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).enum.defined_only = true
   ];
 
-  // The total captured amount, a positive whole number in the currency's
-  // smallest unit. For the MVP (JPY) this is yen, which has no minor unit, so the
-  // value is the yen total (the per-ticket price × ticket count).
+  // The total to pay, a positive whole number in the currency's smallest unit.
+  // For the MVP (JPY) this is yen, which has no minor unit, so the value is the
+  // yen total: the seat type's price × the ticket count. Fixed at creation.
   int64 amount = 6 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).int64.gt = 0
@@ -215,14 +263,9 @@ message Order {
     }
   ];
 
-  // When the Order was recorded as paid (after the lottery draw's capture or the
-  // checkout's charge). Because the Order is created already paid, this is
-  // effectively its creation time.
-  // Server-owned.
-  google.protobuf.Timestamp pay_time = 8 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (buf.validate.field).required = true
-  ];
+  // When the payment was captured and the Order became Paid. Absent until
+  // Paid. Server-owned.
+  google.protobuf.Timestamp pay_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // The payment provider's ID for the refund issued to the user. Absent unless
   // the Order was refunded for a cancellation. Server-owned.

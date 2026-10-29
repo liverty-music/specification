@@ -101,17 +101,19 @@ service OrganizerService {
   rpc Deactivate(DeactivateRequest) returns (DeactivateResponse);
 
   // Delete permanently removes a deactivated Organizer together with everything
-  // kept for it: its first-party Series with their ticket sales and ticket
-  // types, and their Events (with their lottery entries, checkouts, ticket
-  // journeys, performers and scanner records), the Orders, Tickets and
-  // reversed settlements for those Events, its series images and their files,
+  // kept for it: its first-party Series with their seat types and ticket
+  // sales, and their Events (with their ticket stocks, ticket journeys,
+  // performers and scanner records), the VOID and REFUNDED Orders for those
+  // Events with their lottery entries, checkouts and Tickets, the Tickets'
+  // resale listings and the reversed settlements, its series images and their files,
   // its Organization at the identity provider with its identities, its artist
   // associations and its PayoutAccount record. Records in the payment provider
   // are kept.
   //
   // Nothing is removed when the Organizer is not deactivated, when any of its
-  // Events has an Order that is not refunded or a settlement that is not
-  // reversed, or when the Organizer has a payout account. Files and the
+  // Events has a PAID Order, a settlement that is not reversed or a purchase
+  // in progress (a PENDING Order, or a VOID Order whose card authorization is
+  // not yet released), or when the Organizer has a payout account. Files and the
   // Organization are removed before the database records and an already
   // removed file or Organization counts as removed, so a call that failed
   // partway is completed by calling Delete again.
@@ -121,8 +123,9 @@ service OrganizerService {
   // - PERMISSION_DENIED: The caller is not a member of the admin organization.
   // - INVALID_ARGUMENT: The Organizer id is missing or malformed.
   // - NOT_FOUND: The Organizer does not exist.
-  // - FAILED_PRECONDITION: The Organizer is not deactivated, or an unrefunded
-  //   order, an unreversed settlement or a payout account blocks deletion.
+  // - FAILED_PRECONDITION: The Organizer is not deactivated, or a PAID order,
+  //   a purchase in progress, an unreversed settlement or a payout account
+  //   blocks deletion.
   rpc Delete(DeleteRequest) returns (DeleteResponse);
 
   // SetBusinessDetails records an Organizer's 特商法 (Specified Commercial
