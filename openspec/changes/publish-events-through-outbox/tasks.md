@@ -5,20 +5,20 @@
 
 ## 2. Proto (specification; components/entity/lottery-entry, user, artist, passkey Purposes)
 
-- [ ] 2.1 Add `LotteryEntry.lost_reason` (enum `LotteryEntryLostReason`; the sale and the Order come from `remodel-ticket-sales`), `User.last_login_time`, `Artist.organizer_id`, `Passkey.name`, `PushSubscription.device_family`, and the list message `ConcertList`; verify `buf lint`, `buf format` and `buf breaking` pass
+- [ ] 2.1 Add `LotteryEntry.lost_reason` (enum `LotteryEntryLostReason`; the sale and the Order come from `remodel-ticket-sales`), `User.last_login_time`, `Artist.organizer_id`, `Passkey.name` and `user_id`, `SeriesImage.series_id`, `PushSubscription.device_family`, the `Follow` message (`user_id`, `artist_id`, `hype`) and the list message `ConcertList`; verify `buf lint`, `buf format` and `buf breaking` pass
 - [ ] 2.2 Compare every struct in backend `internal/entity` with its `entity/v1` message and add each field left out for no personal-data reason; record the list in the PR description; verify `buf lint` passes
 - [ ] 2.3 Merge, cut the specification release, and confirm `buf-release.yml` succeeds and the BSR packages carry the new fields
 
 ## 3. Conversion package (backend refactor, no behaviour change)
 
 - [ ] 3.1 Move `internal/adapter/rpc/mapper` to `internal/adapter/pb`, renaming functions to `pb.From<Entity>` (entity to proto) and `pb.To<Entity>` (proto to entity), and update every caller; verify `make check` passes with no reference to the old package
-- [ ] 3.2 Map the fields added in 2.1 and 2.2 in `pb`, and add `pb.FromUserForAnnouncement` (clears full name and phone number) and `pb.FromPushSubscriptionForAnnouncement` (clears push address and keys); verify unit tests for each mapping and each clearing pass
+- [ ] 3.2 Map the fields added in 2.1 and 2.2 in `pb`, and add `pb.FromUserForAnnouncement` (clears full name, phone number and display name) and `pb.FromPushSubscriptionForAnnouncement` (clears push address and keys); verify unit tests for each mapping and each clearing pass
 
 ## 4. Event delivery (components/infrastructure/backend/process/event-delivery, durable-workflows)
 
 - [ ] 4.1 Add the Atlas migration for the watermill-sql `events_outbox` table (`PostgreSQLQueueSchema`, JSON payload column), with column comments; verify `make lint-schema` passes and the migration applies to a local database
 - [ ] 4.2 Add `messaging.Outbox.Record(ctx, tx, subject, proto.Message, ...opts)`: UUIDv7 id, CloudEvents metadata (`ce_id`, `ce_time`, `ce_type`, `ce_datacontenttype: application/protobuf`, optional `ce_subject`), trace context, written through the forwarder publisher on `TxFromPgx(tx)`; verify unit tests: one row per call, the id equals `ce_id`, a list call writes one multi-row insert
-- [ ] 4.3 Run the watermill `Forwarder` from `events_outbox` (queue subscriber, `DeleteOnAck: true`, `AckWhenCannotUnwrap: true`) to the NATS publisher in `workflow-worker`; verify that a delivered row is deleted, and an integration test against local Postgres and NATS: "Change and announcement together", "Process stops before delivery" (stop the forwarder after the insert, start it, the message arrives) and "Delivered twice" (the redelivery has the same `Nats-Msg-Id` and JetStream stores one message)
+- [ ] 4.3 Run the watermill `Forwarder` from `events_outbox` (queue subscriber, `DeleteOnAck: true`, `AckWhenCannotUnwrap: true`) to the NATS publisher in `workflow-worker`; verify that a delivered row is deleted, and an integration test against local Postgres and NATS: "Change and announcement together", "Process stops before delivery" (stop the forwarder after the insert, start it, the message arrives) and "Delivered twice" (the redelivery has the same `Nats-Msg-Id` and JetStream stores one message); and a test that every subject in `entity.AllSubjects` matches a stream subject declared in cloud-provisioning `k8s/namespaces/nats/base/jetstream/stream-*.yaml` (read from a checked-in list), so no announcement is recorded for a subject no stream captures
 - [ ] 4.4 Remove `eventID`, `WithPublishOrigin`, the UUIDv5 namespace and the step origin set by `Flow.Step`; verify `make check` passes and no reference is left
 - [ ] 4.5 Report the age of the oldest `events_outbox` row as the gauge `event_delivery.oldest_undelivered_age_seconds` from the `report-workflows-needing-admin` schedule; verify a unit test for "Broker unreachable" (a row 11 minutes old sets the gauge above 600)
 
@@ -39,7 +39,7 @@
 - [ ] 6.8 Order.Issue announces ORDER.paid; verify every scenario of `entity/order/issue`
 - [ ] 6.9 LotteryEntry.PersistDrawOutcome (lost reason per loser, no announcement for an entry left unchanged, one announcement per changed entry, inserted in chunks); verify every scenario of `entity/lottery-entry/persist-draw-outcome`, and a test drawing 100,000 local entries in one call with the process heap below 200 MB
 - [ ] 6.10 ResaleListing.RecordRefund (announces only when it sets the refund) and ResaleListing.ListSoldUnrefunded (refund time only); verify every scenario of `entity/resale-listing/record-refund` and `resale-listing/list-sold-unrefunded`
-- [ ] 6.11 User.Create (User without full name and phone number), User.RecordLogin (new, guarded update), Passkey.Create (stores name; rows affected) and Passkey.Delete (`DELETE ... RETURNING`), announcing USER.created, USER.logged_in, USER.passkey_added and USER.passkey_removed; verify every scenario of `entity/user/create`, `user/record-login`, `passkey/create` and `passkey/delete`
+- [ ] 6.11 User.Create (User without full name, phone number and display name), User.RecordLogin (new, guarded update), Passkey.Create (stores name; rows affected) and Passkey.Delete (`DELETE ... RETURNING`), announcing USER.created, USER.logged_in, USER.passkey_added and USER.passkey_removed; verify every scenario of `entity/user/create`, `user/record-login`, `passkey/create` and `passkey/delete`
 - [ ] 6.12 Add the `# Announces` Go doc section to every announcing method in `internal/entity`; verify `make check` passes and a grep finds one section per announcing method
 
 ## 7. Usecases stop announcing (one unit test per scenario, operations mocked)

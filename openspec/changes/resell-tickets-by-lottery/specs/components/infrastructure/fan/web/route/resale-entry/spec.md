@@ -24,22 +24,31 @@ Opened for a TicketStock from the event page, the screen SHALL show the concert'
 
 ### Requirement: 特商法 final confirmation of a resale application
 
-Before the entry is made, the screen SHALL show on one screen:
+The final confirmation SHALL be shown before the card is authorized, on the step where the fan enters their card: an entry is made as soon as the card authorization is authorized, by the screen or by the payment provider's authorization notice (ResaleEntryUseCase.Confirm), so the apply action is the one that authorizes the card. The step SHALL show:
+- that the tickets are official resale tickets, sold at face value, that fans who cannot attend have listed;
 - the event, its date, venue, and open and start times;
 - the seat type's name, the number of tickets, with the price per ticket and the total that will be charged on a win, 税込;
-- the payment method, credit card, with the card brand and last four digits, that the total is held on the card when the fan applies and charged only when the fan wins, and that a hold that is not charged is given back;
-- when the draws run (every day at 12:00, and on the event's day by 12:00 or 3 hours before the start time, whichever is earlier), that the last of them is the resale deadline, and that a group's tickets are allocated all together or not at all;
+- the payment method, credit card, that the total is held on the card when the fan applies and charged only when the fan wins, and that a hold that is not charged is given back;
+- when the draws run (every day at 12:00, and on the event's day by 12:00 or 3 hours before the start time, whichever is earlier), and this event's resale deadline as a date and time, which is the last draw;
+- that a group's tickets are allocated all together or not at all;
 - that the tickets are available in the app's Tickets screen after a win;
-- that the application can be withdrawn while it waits for a draw, and that after a win the purchase cannot be cancelled or refunded except when the event is 中止 (cancelled) and no cooling-off applies;
+- that the application can be withdrawn while it waits for a draw;
+- that after a win the purchase cannot be cancelled or refunded except when the event is 中止 (cancelled);
+- that no cooling-off applies;
 - that resale of the tickets without the Organizer's consent is prohibited, and that the tickets are issued to the fan's own account and name;
 - the Organizer's business details, carried by the Series of the event's Concert: legal name, representative name, business address, business phone number and contact email.
 
-It SHALL offer to go back and change the number of tickets or the personal details from this screen. The apply action SHALL state that it applies, with the amount charged on a win, and SHALL be disabled while the application is being made.
+It SHALL offer to go back and change the number of tickets or the personal details from this step; nothing has been authorized yet, so the count chosen when the fan applies is the count authorized. The apply action SHALL state that it applies, with the amount charged on a win, and SHALL be disabled while the card is being authorized.
 
 #### Scenario: Final confirmation shown
 
-- **WHEN** a fan reaches the last step for 2 S席 resale tickets of 3000 yen
-- **THEN** every listed item is shown, including that 6,000円 is charged only on a win, and the action reads 6,000円で申し込む
+- **WHEN** a fan reaches the card step for 2 S席 resale tickets of 3000 yen for an event starting 14:00 on 11月10日
+- **THEN** every listed item is shown, including that 6,000円 is charged only on a win and that resale closes at 11:00 on 11月10日, and the action reads 6,000円で申し込む
+
+#### Scenario: Nothing is applied before the action
+
+- **WHEN** the fan sees the final confirmation and leaves without tapping the action
+- **THEN** no card is authorized and no entry exists
 
 #### Scenario: Double tap on the action
 

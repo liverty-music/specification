@@ -48,7 +48,7 @@ An announcement still not delivered 10 minutes after it was recorded SHALL be re
 
 ### Requirement: An announcement never carries the ticket-face identity details or push credentials
 
-An announcement SHALL NOT carry a User's full name or phone number, nor a PushSubscription's push address or keys. It MAY carry an email address.
+An announcement SHALL NOT carry a User's full name, phone number or the display name given by the identity provider, nor a PushSubscription's push address or keys. It MAY carry an email address.
 
 #### Scenario: New push subscription announced
 
@@ -57,8 +57,8 @@ An announcement SHALL NOT carry a User's full name or phone number, nor a PushSu
 
 #### Scenario: New user announced
 
-- **WHEN** a User with a full name and a phone number is announced
-- **THEN** the announcement carries the User's id and email address, and neither the full name nor the phone number
+- **WHEN** a User with a full name, a phone number and a display name from the identity provider is announced
+- **THEN** the announcement carries the User's id and email address, and none of the full name, the phone number and the display name
 
 ### Requirement: Work for one receiver is started as a workflow
 

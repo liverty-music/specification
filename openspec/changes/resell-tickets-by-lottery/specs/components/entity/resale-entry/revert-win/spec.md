@@ -8,7 +8,7 @@ Makes a Won ResaleEntry Lost, and its Pending Order Void, when its Order cannot 
 
 ### Requirement: Revert only an uncharged resale win
 
-RevertWin SHALL take a ResaleEntry and, in one indivisible step, make a Won entry whose Order is Pending Lost with the lost reason "card could not be charged", make its Order Void and make the listings allocated to it free for a draw again. It SHALL change nothing and succeed when the entry is already Lost. It SHALL fail with FailedPrecondition and change nothing when the entry's Order is Paid or Refunded, or when the entry is Entered, Lapsed or Withdrawn, and with NotFound when no entry has the id.
+RevertWin SHALL take a ResaleEntry and a lost reason, "card could not be charged" or "payment not completed before the show", and, in one indivisible step, make a Won entry whose Order is Pending Lost with that lost reason, make its Order Void and make the listings allocated to it free for a draw again. It SHALL change nothing and succeed when the entry is already Lost. It SHALL fail with FailedPrecondition and change nothing when the entry's Order is Paid or Refunded, or when the entry is Entered, Lapsed or Withdrawn, and with NotFound when no entry has the id.
 
 #### Scenario: Win reverted
 - **WHEN** RevertWin is called for a Won entry allocated two listings whose Order is Pending

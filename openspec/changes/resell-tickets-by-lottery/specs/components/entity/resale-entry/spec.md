@@ -12,7 +12,7 @@ A ResaleEntry is one fan account's application, through its Order, for official 
 | create time | when the fan applied | required |
 | draw time | the draw that ended it: the draw it won, lost or lapsed at | absent while Entered and on a Withdrawn entry |
 | withdraw time | when the fan withdrew it | absent unless Withdrawn |
-| lost reason | why it lost: no ticket left at the last draw, the concert cancelled, or the card could not be charged after it won | present only when Lost |
+| lost reason | why it lost: no ticket left at the last draw, the concert cancelled, the card could not be charged after it won, or the payment could not be completed before the show | present only when Lost |
 | ended email send time | when the email telling the fan that the entry lapsed or lost was sent | absent until sent; set once |
 
 ```mermaid
