@@ -100,7 +100,7 @@ One entry per user, sale and event: `LotteryEntry.Create` refuses a second entry
 
 ### D9 — Changes made alongside
 
-Three changes are written on this model at the same time and ship after it:
+Three changes are written on this model at the same time and ship after it, after `publish-events-through-outbox` (which is rebased on this model and announces from entity operations, so the three never write usecase announcements):
 
 - `make-lottery-draw-durable`: record Won and Lost for the whole sale before any card is charged, resume a stopped draw with the same outcome, charge and release each entry as a durable workflow, release lost entries' card authorizations, and tell losing fans. Until it ships, a draw stopped between the first capture and the record can charge a fan who then loses.
 - `unify-order-issuance`: one `Issue` that charges a Pending Order of either source and makes it Paid, replacing the 1-minute sweeper and the notice-driven issuance.
