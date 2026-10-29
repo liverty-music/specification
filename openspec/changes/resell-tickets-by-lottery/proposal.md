@@ -17,7 +17,7 @@ Official resale (公式リセール) sells listings first come, first served thr
 ### New Capabilities
 
 - `components/entity/resale-entry`: a fan's resale application, its states and the draw times of an event.
-- `components/entity/resale-entry/create`, `get`, `list-by-user`, `list-entered-by-ticket-stock`, `persist-draw-outcome`, `send-ended-email`, `withdraw`: store an entry with its Pending Order; read one; list a fan's entries; list a stock's Entered entries for a draw; record a draw; send the lapse or loss email once; withdraw a waiting entry.
+- `components/entity/resale-entry/create`, `get`, `list-by-user`, `list-entered-by-ticket-stock`, `persist-draw-outcome`, `revert-win`, `send-ended-email`, `withdraw`: store an entry with its Pending Order; read one; list a fan's entries; list a stock's Entered entries for a draw; record a draw and announce each recorded entry; make a won entry that cannot be charged Lost and announce it; send the lapse or loss email once; withdraw a waiting entry and announce it.
 - `components/usecase/resale-entry/authorize-card`, `confirm`, `draw`, `list`, `withdraw`: authorize the fan's card for an application; make the entry from the authorized card authorization; run the scheduled draws; list the fan's entries; withdraw the fan's waiting entry and release its card authorization.
 - `components/usecase/notification/send-resale-entry-ended`: tell a fan whose entry lapsed or lost, by email and push.
 - `components/adapter/fan/api/rpc/resale-entry`: the fan gate of `ResaleEntryService`.
@@ -26,6 +26,12 @@ Official resale (公式リセール) sells listings first come, first served thr
 ### Modified Capabilities
 
 - `components/entity/order`: an Order's source can be a ResaleEntry.
+- `components/entity/order/issue`: issuing a won resale entry's Order makes its listings Sold and their Tickets Voided.
+- `components/usecase/order/issue`: also runs for each Won resale entry; never makes an entry Lost while a charge's outcome is unknown.
+- `components/usecase/notification/deliver`: started by `SendResaleEntryEnded` too.
+- `components/usecase/order/release-card-authorization`: also runs for the Order of a Lapsed, Lost or Withdrawn resale entry.
+- `components/usecase/resale-listing/refund-sold`: refunds each sold listing in its own workflow, started from the sale's announcement, instead of a 1-minute run; `components/entity/resale-listing/list-sold-unrefunded` is removed.
+- `components/entity/notification` (Purpose): types `resale_entry_lapsed` and `resale_entry_lost`.
 - `components/entity/resale-listing`: a listing is free for a draw instead of free to hold; the resale deadline is the event's last draw.
 - `components/entity/resale-listing/withdraw`: a listing a draw has not allocated can be withdrawn.
 - `components/entity/card-authorization`: a card authorization's expiry time.
@@ -34,11 +40,11 @@ Official resale (公式リセール) sells listings first come, first served thr
 
 Entity and story Purpose edits (made directly in the main specs with this change; listed in design.md "Purpose edits"): `components/entity/resale-listing` (the `checkout` attribute becomes `resale entry`), `components/entity/card-authorization` (expiry time), `components/entity/order` (ResaleEntry in the ER diagram), `stories/resell-a-ticket` (usecase diagram).
 
-Unchanged and relied on: `components/entity/resale-listing/create` (a fan lists a Ticket while resale is open), `components/usecase/resale-listing/refund-sold` and `components/usecase/notification/send-resale-sold` (the listing fan's refund and email), `components/entity/ticket-stock` (resale open while sold out and before the deadline).
+Unchanged and relied on: `components/entity/resale-listing/create` (a fan lists a Ticket while resale is open), the refund itself of `components/usecase/resale-listing/refund-sold` and `components/usecase/notification/send-resale-sold` (the listing fan's refund and email), `components/entity/ticket-stock` (resale open while sold out and before the deadline).
 
 ## Impact
 
-- **Order of changes**: written against the main specs as they will be after `remodel-ticket-sales`, then `make-lottery-draw-durable` and `unify-order-issuance` (recreated on the remodel). It is applied after all three. `remodel-ticket-sales` removes the resale Checkout; this change supplies its replacement, so the two ship in the same release or resale is off between them.
+- **Order of changes**: written against the main specs as they will be after `remodel-ticket-sales`, then `publish-events-through-outbox`, then `make-lottery-draw-durable` and `unify-order-issuance` (recreated on the remodel). It is applied after all four. The work after a draw, a withdrawal or a reverted win runs from the entry's announcement (`ORDER.resale_entry_changed`), as `publish-events-through-outbox` requires. `remodel-ticket-sales` removes the resale Checkout; this change supplies its replacement, so the two ship in the same release or resale is off between them.
 - **proto**: new `ResaleEntry` message and fan `ResaleEntryService` (AuthorizeCard, Confirm, List, Withdraw); `ResaleListing` names its entry instead of a checkout.
 - **backend**: `resale_entries` table, `resale_listings.resale_entry_id`, card authorization expiry time; the `ResaleEntry` entity, repository, usecase, a per-minute draw schedule on the workflow runtime, issuance of a Won resale entry through `OrderUseCase.Issue`, card authorization release through the release workflow of `make-lottery-draw-durable`, and the lapse and loss notifications.
 - **frontend**: the fan event page's resale section, the new resale entry screen, push notification texts.
