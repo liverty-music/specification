@@ -1,7 +1,7 @@
 ## REMOVED Requirements
 
 ### Requirement: Each completed charge ends in an announced Order
-**Reason**: OrderUseCase.Issue charges, issues and announces the Order of both sources, so the completed-charge notice adds nothing.
+**Reason**: OrderUseCase.Issue charges, makes Paid and announces the Order of both sources, so the completed-charge notice adds nothing.
 **Migration**: The payment events endpoint acknowledges the notice without effect.
 
 ### Requirement: A paid order is reported for product analytics
