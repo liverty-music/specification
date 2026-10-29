@@ -68,7 +68,7 @@ Applied directly to the main specs with this change, as `remodel-ticket-sales` d
 - `components/entity/resale-listing`: a new attribute `resale entry` ("the ResaleEntry a draw allocated it to; absent until allocated") and the ER line `ResaleEntry |o--o{ ResaleListing : "is allocated"` (`remodel-ticket-sales` already removed the `checkout` attribute); the Purpose sentence says another fan buys it through a daily resale draw.
 - `components/entity/card-authorization`: an `expire time` row ("when the authorized amount can no longer be charged; absent until authorized").
 - `components/entity/order`: `Order ||--o| ResaleEntry : "is applied for as"` in the ER diagram; the source attribute lists ResaleEntry.
-- `components/entity/notification`: the types `resale_entry_lapsed` and `resale_entry_lost`.
+- `components/entity/notification`: the types `resale_entry_lapsed` and `resale_entry_lost`, added by archive task 12.3 rather than before archiving, because no earlier change sends them.
 - `stories/resell-a-ticket`: the usecase diagram includes ResaleEntryUseCase.AuthorizeCard, Confirm and Draw and OrderUseCase.Issue instead of CheckoutUseCase.Start and AuthorizeCard.
 
 ### D10 — The listing fan's refund starts from the sale

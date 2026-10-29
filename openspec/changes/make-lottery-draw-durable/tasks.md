@@ -41,3 +41,4 @@
 ## 7. Archive
 
 - [ ] 7.1 Delete the emptied `list-lottery-entry-ids-awaiting-issuance`, `run-draw`, `issue-from-captured-win` and `issue-due-wins` specs; verify `openspec validate --specs` passes
+- [ ] 7.2 In the usecase diagram of `stories/win-tickets-in-a-lottery`, name `OrderUseCase.ReleaseCardAuthorization` instead of `LotteryEntryUseCase.ReleaseCardAuthorization` (kept until this change ships, so the main spec names no method of a later change); verify `openspec validate --specs` passes

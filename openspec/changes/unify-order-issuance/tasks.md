@@ -31,3 +31,4 @@
 
 - [ ] 6.1 Delete the emptied `issue-from-checkout`, `issue-due-checkouts`, `fulfill-payment`, `checkout/release-expired`, `checkout/list-due` and `checkout/record-card-authorization-release` specs; verify `openspec validate --specs` passes
 - [ ] 6.2 Remove `OrderUseCase.IssueFromCheckout` from the usecase diagrams of `stories/buy-tickets-first-come` and `attribute-a-purchase-to-a-referral-link` (kept until the story text stops naming it); verify `python3 scripts/check-story-diagrams.py` passes
+- [ ] 6.3 Remove the `card authorization release time` attribute from the Purpose of `components/entity/checkout`; verify `openspec validate --specs` passes

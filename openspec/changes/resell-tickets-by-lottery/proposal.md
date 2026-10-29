@@ -31,7 +31,7 @@ Official resale (公式リセール) sells listings first come, first served thr
 - `components/usecase/notification/deliver`: started by `SendResaleEntryEnded` too.
 - `components/usecase/order/release-card-authorization`: also runs for the Order of a Lapsed, Lost or Withdrawn resale entry.
 - `components/usecase/resale-listing/refund-sold`: refunds each sold listing in its own workflow, started from the sale's announcement, instead of a 1-minute run; `components/entity/resale-listing/list-sold-unrefunded` is removed.
-- `components/entity/notification` (Purpose): types `resale_entry_lapsed` and `resale_entry_lost`.
+- `components/entity/notification` (Purpose, edited by archive task 12.3): types `resale_entry_lapsed` and `resale_entry_lost`.
 - `components/entity/resale-listing`: a listing is free for a draw instead of free to hold; the resale deadline is the event's last draw.
 - `components/entity/resale-listing/withdraw`: a listing a draw has not allocated can be withdrawn.
 - `components/entity/card-authorization`: a card authorization's expiry time.

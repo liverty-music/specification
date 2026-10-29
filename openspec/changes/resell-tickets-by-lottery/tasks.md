@@ -59,3 +59,4 @@
 
 - [ ] 12.1 Remove `CheckoutUseCase.Start`, `CheckoutUseCase.AuthorizeCard` and `OrderUseCase.IssueFromCheckout` from the usecase diagram of `stories/resell-a-ticket` (kept until the story text stops naming them); verify `python3 scripts/check-story-diagrams.py` passes
 - [ ] 12.2 Delete the emptied `entity/resale-listing/list-sold-unrefunded` spec; verify `openspec validate --specs` passes
+- [ ] 12.3 Add the types `resale_entry_lapsed` and `resale_entry_lost` to the Purpose of `components/entity/notification`; verify `openspec validate --specs` passes

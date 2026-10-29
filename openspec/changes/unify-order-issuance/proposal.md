@@ -27,7 +27,7 @@ A first-come purchase is issued by three paths that each own a part of the same 
 - `components/usecase/checkout/release-expired`, `components/entity/checkout/list-due`, `components/entity/checkout/record-card-authorization-release`: removed, replaced by `expire` and `release-card-authorization`.
 - `components/entity/checkout/get-or-create-held`, `revert-commit`: announce the hold they create and the Checkouts they end.
 - `components/usecase/order/release-card-authorization`: also runs for the Order of each Checkout made Expired or Released.
-- `components/entity/checkout` (Purpose, edited in the main spec): the card authorization release time goes.
+- `components/entity/checkout` (Purpose, edited by archive task 6.3): the card authorization release time goes. Not edited before archiving, because `remodel-ticket-sales` still writes it until this change ships.
 - `components/usecase/order/refund`, `components/usecase/order/get-with-settlement`, `components/adapter/admin/api/rpc/order`: a Paid Order's missing Settlement is a failure.
 - `components/adapter/fan/api/webhook/payment-events`: a completed-charge notice is acknowledged without effect.
 - `components/adapter/fan/api/rpc/checkout`, `components/infrastructure/fan/web/route/checkout`: placing the order runs `OrderUseCase.Place`.
