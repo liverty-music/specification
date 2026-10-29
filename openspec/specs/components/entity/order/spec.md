@@ -2,39 +2,48 @@
 
 ## Purpose
 
-An Order is the purchase record of one source, a won LotteryEntry or a Committed Checkout: the payment provider's ID for its captured payment, the amount paid and its own status. One Order covers all tickets of its source, and an Order exists only after the payment has been captured.
+An Order is one fan account's application for tickets of one TicketStock and, once its payment is captured, the purchase record: the ticket count, the referral code, the card authorization, the payment provider's ID for the captured payment, the amount and its own status. It is created Pending when the fan applies through a LotteryEntry, a Checkout or a ResaleEntry, becomes Paid when the payment is captured and its Tickets are issued, or Void when it will never be paid. Void Orders hold no tickets. One Order covers all tickets of its application.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | id | the order's identity | required, assigned on creation |
-| user | the account that bought the tickets | required |
-| source | what it was created from: a won LotteryEntry or a Committed Checkout | required, exactly one; one Order per source |
+| user | the account that applied for the tickets | required |
+| ticket stock | the TicketStock the tickets are of | required |
+| ticket count | tickets applied for, a companion group | required; 1 to the per-account limit of the stock's event |
+| referral code | the ReferralCode of the link the fan came from | optional; set at creation, never changed |
+| card authorization | the CardAuthorization on the fan's card for the amount | absent until the fan authorizes their card; set once |
 | payment provider | which of the platform's payment providers holds the payment | required |
-| provider payment ID | the payment provider's ID for the captured payment | required, 1-255 characters, opaque |
+| provider payment ID | the payment provider's ID for the captured payment | absent until Paid; 1-255 characters, opaque |
 | provider payment method ID | the payment provider's ID for the payment method used | optional, at most 255 characters, opaque |
 | card brand | card brand shown to the user | optional, at most 40 characters |
 | card last four | last four card digits shown to the user | optional, exactly 4 digits or empty |
-| status | lifecycle | Paid or Refunded |
-| amount | total paid, in the currency's smallest unit (whole yen) | required, greater than 0 |
+| status | lifecycle | Pending, Paid, Refunded or Void |
+| amount | total to pay: the seat type's price times the ticket count, in the currency's smallest unit (whole yen) | required, greater than 0; fixed at creation |
 | currency | ISO 4217 currency of the amount | required, 3 uppercase letters |
-| pay time | when the Order was created from the captured payment | required |
+| pay time | when the payment was captured and the Order became Paid | absent until Paid |
 | provider refund ID | the payment provider's ID for the refund issued to the user | empty unless refunded for a cancellation |
 | confirmation send time | when the purchase confirmation email was sent to the user | empty until sent; set once |
 
 ```mermaid
 erDiagram
-  User ||--o{ Order : "buys"
-  LotteryEntry ||--o| Order : "is purchased by"
-  Checkout ||--o| Order : "is purchased by"
-  Order ||--|{ Ticket : "issues"
+  User ||--o{ Order : "applies"
+  TicketStock ||--o{ Order : "is ordered through"
+  Order ||--o| LotteryEntry : "is entered as"
+  Order ||--o| ResaleEntry : "is applied for as"
+  Order ||--o| Checkout : "is checked out as"
+  Order |o--o| CardAuthorization : "is paid by"
+  Order ||--o{ Ticket : "issues"
   Order ||--o| Settlement : "is paid out by"
   Order ||--o{ ResaleListing : "is refunded through"
 ```
 
 ```mermaid
 stateDiagram-v2
-  [*] --> Paid
+  [*] --> Pending
+  Pending --> Paid
+  Pending --> Void
   Paid --> Refunded
+  Void --> [*]
   Refunded --> [*]
 ```
 

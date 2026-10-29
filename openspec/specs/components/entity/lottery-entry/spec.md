@@ -1,25 +1,22 @@
 # components/entity/lottery-entry Specification
 
 ## Purpose
-A LotteryEntry is one fan account's confirmed entry into the lottery for one TicketType: a request for a companion group of tickets allocated all-or-nothing, paid by the CardAuthorization placed on the fan's card for the amount until the draw. It is made when the fan confirms after authorizing their card, and takes part in the draw from then on. The fan's 本人確認 (identity check) details are the User's full name and phone number.
+
+A LotteryEntry is how one fan's Order takes part in a Lottery TicketSale: a request for a companion group of tickets of the Order's TicketStock, allocated all-or-nothing, paid by the card authorization placed on the fan's card for the Order's amount until the draw. It is made when the fan confirms after authorizing their card, and takes part in the draw from then on. A fan enters a sale at most once for each event it names. The fan's 本人確認 (identity check) details are the User's full name and phone number.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | id | the entry's identity | required, assigned on creation |
-| ticket type | the TicketType entered | required; its sale's method is Lottery |
-| user | the fan account that entered | required |
-| ticket count | size of the companion group, allocated all-or-nothing | required, 1 to the ticket type's per-account limit |
-| card authorization | the CardAuthorization on the fan's card for the entry's amount | required; set at creation |
-| referral code | the ReferralCode of the link the fan came from | optional; set at creation, never changed |
+| order | the Order it enters | required; one LotteryEntry per Order |
+| sale | the Lottery TicketSale entered | required; one entry per sale, event and user |
 | state | lifecycle | Entered, Won or Lost |
-| draw position | the entry's position in its ticket type's random draw order | absent before the draw; set only by the draw |
+| draw position | the entry's position in its sale's random draw order for its TicketStock | absent before the draw; set only by the draw |
+| loss email send time | when the email telling the fan the entry lost was sent | absent until sent; set once |
 
 ```mermaid
 erDiagram
-  TicketType ||--o{ LotteryEntry : "receives"
-  User ||--o{ LotteryEntry : "enters"
-  CardAuthorization ||--o| LotteryEntry : "pays for"
-  LotteryEntry ||--o| Order : "is purchased by"
+  Order ||--o| LotteryEntry : "is entered as"
+  TicketSale ||--o{ LotteryEntry : "receives"
 ```
 
 ```mermaid
@@ -27,6 +24,7 @@ stateDiagram-v2
   [*] --> Entered
   Entered --> Won
   Entered --> Lost
+  Won --> Lost
   Won --> [*]
   Lost --> [*]
 ```

@@ -1,7 +1,7 @@
 # components/entity/resale-listing Specification
 
 ## Purpose
-A ResaleListing is a fan's offer of one of their Tickets for official resale (公式リセール) at face value, after the Ticket's first-come TicketType sold out. Another fan buys it through a Checkout of the same TicketType; the listing's Ticket is then Voided, the other fan receives a new Ticket, and the listing's user is refunded the price minus the resale fee.
+A ResaleListing is a fan's offer of one of their Tickets for official resale (公式リセール) at face value, after the Ticket's TicketStock sold out, whether the Ticket was bought first come or won in a lottery. When another fan buys it, the listing's Ticket is Voided, the other fan receives a new Ticket, and the listing's user is refunded the price minus the resale fee; another fan gets it through a daily resale draw that allocates it to their ResaleEntry, which is then charged.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
@@ -9,10 +9,10 @@ A ResaleListing is a fan's offer of one of their Tickets for official resale (�
 | ticket | the Ticket offered | required; Issued and not admitted when listed |
 | order | the Order that issued the Ticket, whose charge the user is refunded from | required |
 | user | the fan offering it, the Ticket's user | required |
-| ticket type | the FirstCome TicketType the Ticket was bought from | required |
-| price | face value of the Ticket (券面価格), in whole yen 税込 (tax-inclusive) | required; the ticket type's price when listed |
+| ticket stock | the TicketStock the Ticket is of | required |
+| price | face value of the Ticket (券面価格), in whole yen 税込 (tax-inclusive) | required; the price of the stock's SeatType |
+| resale entry | the ResaleEntry a draw allocated it to | absent until allocated |
 | status | lifecycle | Listed, Sold, Withdrawn or Cancelled |
-| checkout | the Checkout that last held the listing | absent until a Checkout holds it |
 | create time | when the fan listed the Ticket | required |
 | sold time | when another fan's Order bought it | absent unless Sold |
 | withdraw time | when the fan withdrew it | absent unless Withdrawn |
@@ -25,8 +25,8 @@ erDiagram
   User ||--o{ ResaleListing : "lists"
   Ticket ||--o{ ResaleListing : "is offered by"
   Order ||--o{ ResaleListing : "is refunded through"
-  TicketType ||--o{ ResaleListing : "is resold through"
-  Checkout |o--o{ ResaleListing : "holds"
+  TicketStock ||--o{ ResaleListing : "is resold through"
+  ResaleEntry |o--o{ ResaleListing : "is allocated"
 ```
 
 ```mermaid

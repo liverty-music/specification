@@ -1,7 +1,7 @@
 # components/infrastructure/organizer/web/route/concert Specification
 
 ## Purpose
-The organizer console page of one concert (one Series): its summary, performers and visibility, the publishing and cancelling of its dates together, and the list of its event dates, each leading to that event's page.
+The organizer console page of one concert (one Series): its summary, performers and visibility, its seat types (席種) with their prices, the publishing and cancelling of its dates together, and the list of its event dates, each leading to that event's page.
 
 ## Requirements
 

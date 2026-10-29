@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A fan authorizes their card for a number of tickets and confirms the entry, the draw runs after the window closes, and a winning fan is charged and receives account-bound covered tickets while a losing fan is never charged.
+A fan authorizes their card for a number of tickets and confirms the entry, the draw runs after the window closes, and a winning fan is charged and receives account-bound covered tickets while a losing fan is never charged; every fan is told the result.
 
 ```mermaid
 usecase-beta
@@ -11,20 +11,36 @@ actor Fan("fan")
 actor Member("member")
 systemBoundary "Liverty Music"
   Goal("Win tickets in a lottery")
+  SeatTypeUseCaseCreate("SeatTypeUseCase.Create")
+  TicketStockUseCaseCreate("TicketStockUseCase.Create")
   TicketSaleUseCaseCreate("TicketSaleUseCase.Create")
   LotteryEntryUseCaseAuthorizeCard("LotteryEntryUseCase.AuthorizeCard")
   LotteryEntryUseCaseConfirm("LotteryEntryUseCase.Confirm")
   LotteryEntryUseCaseListByTicketType("LotteryEntryUseCase.ListByTicketType")
+  LotteryEntryUseCaseDrawDueSales("LotteryEntryUseCase.DrawDueSales")
+  LotteryEntryUseCaseDraw("LotteryEntryUseCase.Draw")
+  OrderUseCaseIssue("OrderUseCase.Issue")
+  LotteryEntryUseCaseReleaseCardAuthorization("LotteryEntryUseCase.ReleaseCardAuthorization")
+  NotificationUseCaseSendLotteryLoss("NotificationUseCase.SendLotteryLoss")
   TicketUseCaseList("TicketUseCase.List")
   SettlementUseCaseReleaseDueSettlements("SettlementUseCase.ReleaseDueSettlements")
 end
 Fan --> Goal
+Goal ..> : include SeatTypeUseCaseCreate
+Goal ..> : include TicketStockUseCaseCreate
 Goal ..> : include TicketSaleUseCaseCreate
 Goal ..> : include LotteryEntryUseCaseAuthorizeCard
 Goal ..> : include LotteryEntryUseCaseConfirm
 Goal ..> : include LotteryEntryUseCaseListByTicketType
+Goal ..> : include LotteryEntryUseCaseDrawDueSales
+Goal ..> : include LotteryEntryUseCaseDraw
+Goal ..> : include OrderUseCaseIssue
+Goal ..> : include LotteryEntryUseCaseReleaseCardAuthorization
+Goal ..> : include NotificationUseCaseSendLotteryLoss
 Goal ..> : include TicketUseCaseList
 Goal ..> : include SettlementUseCaseReleaseDueSettlements
+Member --> SeatTypeUseCaseCreate
+Member --> TicketStockUseCaseCreate
 Member --> TicketSaleUseCaseCreate
 ```
 

@@ -1,7 +1,7 @@
 # components/infrastructure/fan/web/route/lottery-entry Specification
 
 ## Purpose
-The fan's lottery entry screen, where a fan picks a ticket count for one TicketType, enters their 本人確認 (identity check) details and authorizes their card before confirming the LotteryEntry.
+The fan's lottery entry screen, where a fan picks a ticket count of one seat type (a TicketStock) in one Lottery sale, enters their 本人確認 (identity check) details and authorizes their card before confirming the LotteryEntry.
 
 ## Requirements
 

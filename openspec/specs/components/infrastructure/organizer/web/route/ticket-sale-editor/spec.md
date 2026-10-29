@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The organizer console screen where a member puts one published event on sale, by lottery or first come, first served, or changes that sale: the sale's name and window, and its TicketType's price, quantity and per-account limit. For a first-come sale it also shows how many tickets have sold.
+The organizer console screen where a member puts one published event on sale, by lottery or first come, first served, or changes that sale: the sale's name and window. The sale sells the event's TicketStocks, each a seat type with its price and quantity, under the event's per-account limit; the screen shows them but does not change them.
 
 ## Requirements
 

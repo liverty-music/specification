@@ -1,7 +1,7 @@
 # components/entity/referral Specification
 
 ## Purpose
-A ReferralCode is the code a link to an event carries, so that the Organizer can count the purchases each link brought. A Checkout or a LotteryEntry keeps the code the fan came with as its referral code. The code is free-form: it is not registered in advance, grants no access and pays no reward.
+A ReferralCode is the code a link to an event carries, so that the Organizer can count the purchases each link brought. An Order keeps the code the fan came with as its referral code, set when the fan applies and never changed. The code is free-form: it is not registered in advance, grants no access and pays no reward.
 
 The value ReferralCode is 1 to 32 characters, each a lowercase ASCII letter (a–z), a digit (0–9) or a hyphen.
 

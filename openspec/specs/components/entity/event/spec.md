@@ -14,12 +14,14 @@ An Event is one performance at one Venue on one local date, at an optional start
 | start time | performance start | optional; absent means unknown |
 | open time | doors open | optional; absent means unknown |
 | publish state | DRAFT, PUBLISHED or CANCELLED | first-party only; absent on a discovered Event |
+| per-account limit | most tickets one account may hold for the event, across every TicketSale, SeatType and official resale | first-party only; 1 to 10; 4 when not given |
 
 ```mermaid
 erDiagram
   Series ||--o{ Event : "groups"
   Venue ||--o{ Event : "hosts"
   Event ||--o| Concert : "is extended by"
+  Event ||--o{ TicketStock : "is stocked with"
   Event ||--o{ Ticket : "admits with"
   Event ||--o{ TicketJourney : "is tracked by"
 ```

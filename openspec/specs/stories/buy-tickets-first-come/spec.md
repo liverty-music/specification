@@ -10,18 +10,26 @@ actor Fan("fan")
 actor Member("member")
 systemBoundary "Liverty Music"
   Goal("Buy tickets first come")
+  SeatTypeUseCaseCreate("SeatTypeUseCase.Create")
+  TicketStockUseCaseCreate("TicketStockUseCase.Create")
   TicketSaleUseCaseCreate("TicketSaleUseCase.Create")
   CheckoutUseCaseStart("CheckoutUseCase.Start")
   CheckoutUseCaseAuthorizeCard("CheckoutUseCase.AuthorizeCard")
-  OrderUseCaseIssueFromCheckout("OrderUseCase.IssueFromCheckout")
+  OrderUseCasePlace("OrderUseCase.Place")
   TicketUseCaseList("TicketUseCase.List")
+  OrderUseCaseIssueFromCheckout("OrderUseCase.IssueFromCheckout")
 end
 Fan --> Goal
+Goal ..> : include SeatTypeUseCaseCreate
+Goal ..> : include TicketStockUseCaseCreate
 Goal ..> : include TicketSaleUseCaseCreate
 Goal ..> : include CheckoutUseCaseStart
 Goal ..> : include CheckoutUseCaseAuthorizeCard
-Goal ..> : include OrderUseCaseIssueFromCheckout
+Goal ..> : include OrderUseCasePlace
 Goal ..> : include TicketUseCaseList
+Goal ..> : include OrderUseCaseIssueFromCheckout
+Member --> SeatTypeUseCaseCreate
+Member --> TicketStockUseCaseCreate
 Member --> TicketSaleUseCaseCreate
 ```
 
