@@ -52,8 +52,8 @@ enum Visibility {
   // The series is reachable only through a signed tokenized share URL and is
   // excluded from discovery, lists, and notifications.
   VISIBILITY_UNLISTED = 2;
-  // Field 3 is reserved for a future password-protected visibility introduced
-  // by organizer-event-authoring-extensions.
+  // Field 3 is reserved for a password-protected visibility, should one be
+  // planned.
   reserved 3;
   reserved "VISIBILITY_PASSWORD";
 }
@@ -80,8 +80,7 @@ enum PublishState {
   // dropped from fan lists, keeps its event page with a cancellation banner,
   // keeps its slot, and never changes again.
   PUBLISH_STATE_CANCELLED = 3;
-  // Field 4 is reserved for a future scheduled-publish state introduced by
-  // organizer-event-authoring-extensions.
+  // Field 4 is reserved for a scheduled-publish state, should one be planned.
   reserved 4;
   reserved "PUBLISH_STATE_SCHEDULED";
 }
