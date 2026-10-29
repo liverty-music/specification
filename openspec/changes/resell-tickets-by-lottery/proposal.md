@@ -21,7 +21,7 @@ Official resale (公式リセール) sells listings first come, first served thr
 - `components/usecase/resale-entry/authorize-card`, `confirm`, `draw`, `list`, `withdraw`: authorize the fan's card for an application; make the entry from the authorized card authorization; run the scheduled draws; list the fan's entries; withdraw the fan's waiting entry and release its card authorization.
 - `components/usecase/notification/send-resale-entry-ended`: tell a fan whose entry lapsed or lost, by email and push.
 - `components/adapter/fan/api/rpc/resale-entry`: the fan gate of `ResaleEntryService`.
-- `components/infrastructure/fan/web/route/resale-entry`: the screen where a fan applies for official resale and follows their entries.
+- `components/infrastructure/fan/web/route/resale-entry`: the screen where a fan applies for official resale and follows their entries, with the 特商法 final confirmation of a resale application, which `remodel-ticket-sales` removed from the first-come checkout.
 
 ### Modified Capabilities
 
@@ -37,7 +37,6 @@ Official resale (公式リセール) sells listings first come, first served thr
 - `components/entity/card-authorization`: a card authorization's expiry time.
 - `components/infrastructure/fan/web/route/event`: the resale part of the ticket section applies instead of buying.
 - `components/infrastructure/fan/web/global/legal-document`: the Terms of Service resale article describes the daily draw, the charge on a win and the resale deadline.
-- `components/infrastructure/fan/web/route/resale-entry` also carries the 特商法 final confirmation of a resale application, which `remodel-ticket-sales` removed from the first-come checkout.
 - `stories/resell-a-ticket`: a listed ticket goes to a fan drawn in the daily resale draw.
 
 Entity and story Purpose edits (made directly in the main specs with this change; listed in design.md "Purpose edits"): `components/entity/resale-listing` (the `checkout` attribute becomes `resale entry`), `components/entity/card-authorization` (expiry time), `components/entity/order` (ResaleEntry in the ER diagram), `stories/resell-a-ticket` (usecase diagram).
@@ -50,4 +49,4 @@ Unchanged and relied on: `components/entity/resale-listing/create` (a fan lists 
 - **proto**: new `ResaleEntry` message and fan `ResaleEntryService` (AuthorizeCard, Confirm, List, Withdraw); `ResaleListing` names its entry instead of a checkout.
 - **backend**: `resale_entries` table, `resale_listings.resale_entry_id`, card authorization expiry time; the `ResaleEntry` entity, repository, usecase, a per-minute draw schedule on the workflow runtime, issuance of a Won resale entry through `OrderUseCase.Issue`, card authorization release through the release workflow of `make-lottery-draw-durable`, and the lapse and loss notifications.
 - **frontend**: the fan event page's resale section, the new resale entry screen, push notification texts.
-- **Terms of Service and the checkout's 特商法 (Specified Commercial Transactions Act) final confirmation** for resale must say that resale tickets are allocated by a daily draw.
+- **Terms of Service and the resale application's 特商法 (Specified Commercial Transactions Act) final confirmation** say that resale tickets are allocated by a daily draw, held on the card at application and charged only on a win.
