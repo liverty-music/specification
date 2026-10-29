@@ -60,6 +60,14 @@ Two lines were added beyond the first list in tasks.md, because `mart_pipeline_h
 
 Checked on 2026-10-23 after backend v1.99.0 (#686) reached prod: the `sales-reminders: scan complete` entry at 18:00:05Z carries the LogEntry labels `sink: analytics` and `topic: job_result`, and its `jsonPayload` no longer holds the `logging.googleapis.com/labels` key, so the agent promotes the field on GKE Autopilot. The sink filter stays `labels.sink="analytics"`. The concert discovery job itself was checked on a manual run of the CronJob (`concert-discovery-manual-202610240645`, backend v1.100.0, 2026-10-24 06:51 UTC). Its summary line `concert discovery job complete` (134 artists, 0 failures) carries `sink: analytics` and `topic: job_result`, and it reached `logs_analytics._AllLogs` and `mart_pipeline_health_daily`.
 
+### Job summary lines report how far the run got
+
+Concert and sales-phase discovery logged every followed artist as attempted, so artists a run never reached after its circuit breaker tripped counted as succeeded, and only official-site-refresh wrote `circuit_broken`. While the spend cap refused every Gemini call (2026-10-24 to 10-28), `mart_pipeline_health_daily` showed 4 to 7 failures a day, about 130 artists succeeded and `circuit_broken` 0, though every concert discovery run had stopped early.
+
+The summary lines of concert discovery, sales-phase discovery and artist image sync now carry `artists_attempted` as the artists reached (what official-site-refresh and artist image sync already meant), `artists_succeeded` as reached minus failed, and `circuit_broken`; the two discovery jobs add `followed_artists`. The mart reads `failures` and `circuit_broken`, so no view changed (task 2.3, backend#720, v1.107.2).
+
+Checked on 2026-10-29 with manual runs of the three CronJobs on v1.107.2 (05:31 UTC): concert discovery reached 5 of 144 followed artists, 4 failed on the spend cap, and `circuit_broken` is true; sales-phase discovery reached all 144 with 6 failures and no early stop; artist image sync reached 500 with none failed. `mart_pipeline_health_daily` for 2026-10-29 shows `circuit_broken` 1 for concert discovery and 0 for the other two.
+
 ### Views in Pulumi instead of Dataform
 
 Staging and mart views are `bigquery.Table` resources with `view.query` read from `.sql` files under `cloud-provisioning/src/gcp/analytics/sql/`, so they are reviewed in pull requests with the rest of the infrastructure. Dataform would need its own repository (its config must sit at a repository root) and a Git connection for about 6 views. Views cost nothing to keep; at 1,000 monthly fans a mart query scans well under 1 GiB. When a mart needs materialization or tests, Dataform in its own repository is the next step.
@@ -94,6 +102,8 @@ The billing export covers the whole billing account, so it holds `liverty-music-
 The dev charges since the dev environment stopped come from local sessions calling Gemini with the dev key from Pulumi ESC `liverty-music/dev` (a searcher integration test on 2026-10-24, and document reviews on 2026-10-28 and 10-29), not from a workload or a leaked key: each call in the dev project's `serviceruntime` request counts matches a command in those sessions.
 
 So `stg_billing_daily` and `stg_billing_resource_daily` carry `project_id`. The Gemini, per-concert and per-fan marts read `liverty-music-prod` only, because they divide cost by prod's generations, concerts and fans. `mart_infra_cost_daily` keeps `project_id` as a dimension, so dev cost stays visible (task 3.4).
+
+Applied on 2026-10-29 (cloud-provisioning#709, prod update 287, `update: 6`: the five views and the North Star insight, whose diff appears in every prod preview of `main`). `mart_gemini_cost_daily` now equals the Gemini API cost of `liverty-music-prod` alone: 6,449.38 JPY for August, 6,424.88 for September and 4,343.35 for October 2026. `mart_infra_cost_daily` shows 1,895 JPY of dev and 26,763 JPY of prod list cost for October so far.
 
 ### Splitting the Gemini bill by process
 
