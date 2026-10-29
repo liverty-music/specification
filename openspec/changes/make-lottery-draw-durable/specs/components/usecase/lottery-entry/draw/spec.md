@@ -6,7 +6,7 @@ LotteryEntryUseCase.Draw draws one closed Lottery TicketSale and records who won
 
 ### Requirement: Draw a sale without charging
 
-Draw SHALL take a TicketSale. It SHALL read the sale and the events it names with TicketSale.Get, failing with NotFound when it does not exist. For each TicketStock of those events, from TicketStock.ListByEvent, it SHALL take the sale's Entered entries for that stock from LotteryEntry.ListUndrawnForTicketType and put them in an unpredictable random order, numbering each with its draw position. It SHALL then record the outcome of every stock with LotteryEntry.PersistDrawOutcome, which admits the entries in that order against each stock's remaining tickets: the admitted entries Won and every other Entered entry Lost with its Order Void, each with its draw position. When the sale has no Entered entry, it SHALL record nothing: the closed sale is already drawn. Draw SHALL NOT capture or release any card authorization and SHALL NOT make an Order Paid or create a Ticket; no loser is promoted (no 繰上げ, promotion of a loser).
+Draw SHALL take a TicketSale. It SHALL read the sale and the events it names with TicketSale.Get, failing with NotFound when it does not exist. For each TicketStock of those events, from TicketStock.ListByEvent, it SHALL take the sale's Entered entries for that stock from LotteryEntry.ListUndrawnForTicketType and put them in an unpredictable random order, numbering each with its draw position. It SHALL then record the outcome of every stock with LotteryEntry.PersistDrawOutcome, which admits the entries in that order against each stock's remaining tickets: the admitted entries Won and every other Entered entry Lost with its Order Void, each with its draw position. When the sale has no Entered entry, it SHALL record nothing: the closed sale is already drawn. Draw SHALL NOT capture or release any card authorization and SHALL NOT make an Order Paid or create a Ticket; no loser is promoted (no 繰上げ, promotion of a loser). Draw announces nothing itself: LotteryEntry.PersistDrawOutcome announces each entry it records, together with the outcome.
 
 #### Scenario: Winners and losers recorded
 - **WHEN** a closed sale's stock with 4 remaining tickets has Entered entries for 2, 2 and 3 tickets and the random order puts the two 2-ticket entries first
@@ -31,11 +31,3 @@ The random order of a draw SHALL be computed once. When Draw stops and runs agai
 #### Scenario: Stopped before the outcome was recorded
 - **WHEN** Draw stops after ordering the entries of a sale's two stocks and before recording the outcome, and runs again
 - **THEN** the outcome is recorded with the draw positions computed before the stop
-
-### Requirement: Each entry's result is announced
-
-After the outcome is recorded, Draw SHALL announce each entry's lottery result for the fan of the entry's Order, carrying the entry, the TicketSale, the TicketStock, the result and the time of the draw as the time it happened. When announcing fails, Draw SHALL try again; a failure to announce never changes the recorded outcome.
-
-#### Scenario: Two entries, one place
-- **WHEN** Draw admits one of two entries for a stock with 1 remaining ticket
-- **THEN** one Won result and one Lost result are announced, each for its entry's fan

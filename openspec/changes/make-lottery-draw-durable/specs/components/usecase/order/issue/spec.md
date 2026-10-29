@@ -25,14 +25,14 @@ Issue SHALL take a LotteryEntry. It SHALL read the entry with LotteryEntry.Get, 
 
 Any of these failures SHALL be returned unchanged, with nothing charged or changed. It SHALL then charge the Order's card authorization with CardAuthorization.Capture:
 - When the capture fails with Unavailable, it SHALL try again.
-- When the capture fails with FailedPrecondition, meaning the card authorization can no longer be charged, it SHALL make the entry Lost and its Order Void with LotteryEntry.RevertWin, announce the entry's lottery result Lost from a failed capture, and end without a Paid Order. No loser is promoted (no 繰上げ, promotion of a loser).
+- When the capture fails with FailedPrecondition, meaning the card authorization can no longer be charged, it SHALL make the entry Lost and its Order Void with LotteryEntry.RevertWin, which announces the entry Lost with the lost reason "card could not be charged", and end without a Paid Order. No loser is promoted (no 繰上げ, promotion of a loser).
 
 After the capture it SHALL read the captured payment with CardAuthorization.Get and, with Order.Issue:
 - make the Pending Order Paid, with the payment provider, provider payment ID and card facets of the captured payment, and a pay time of the time of issuance;
 - issue exactly as many Tickets as the Order's ticket count, each bound to the Order's user, for the stock's event, and Issued at the same time; the Tickets carry no copy of the user's full name or phone number;
 - create a Held Settlement for the event and its Organizer, with one split paying that Organizer the Order's amount minus the platform fee at the Organizer's rate.
 
-When Order.Issue fails with AlreadyExists it SHALL return the Order, Paid by the other run. A failure of a read or of Order.Issue after the charge with Unavailable SHALL be tried again.
+When Order.Issue fails with AlreadyExists it SHALL return the Order, Paid by the other run. A failure of a read or of Order.Issue after the charge with Unavailable SHALL be tried again. Order.Issue announces the Order as paid together with making it Paid (components/entity/order/issue), so Issue announces nothing itself and an Issue run again after a stop announces nothing twice.
 
 #### Scenario: Won entry issued
 - **WHEN** Issue runs for a Won entry whose Order for 2 tickets has a 16000 yen card authorization, for an Organizer at 5%
@@ -60,7 +60,7 @@ When Order.Issue fails with AlreadyExists it SHALL return the Order, Paid by the
 
 #### Scenario: Card authorization no longer chargeable
 - **WHEN** CardAuthorization.Capture fails with FailedPrecondition
-- **THEN** the entry is Lost, its Order is Void, nothing is charged, and a Lost result from a failed capture is announced
+- **THEN** the entry is Lost with the lost reason "card could not be charged", its Order is Void, nothing is charged, and the entry is announced Lost
 
 #### Scenario: Organizer unresolved
 - **WHEN** Event.GetOrganizerID fails with NotFound
@@ -81,23 +81,3 @@ When the entry's sale requires verification, Issue SHALL bind every Ticket to th
 #### Scenario: No requirement
 - **WHEN** the sale's requirement is None
 - **THEN** the Tickets have no IdentityVerification
-
-### Requirement: The paid Order is announced
-
-After Order.Issue makes the Order Paid, Issue SHALL announce that the Order is paid, carrying the Order, its user, its event, its number of Tickets, its amount and its source. When announcing fails, Issue SHALL try again. An announcement made again after a stop is the same announcement, so the Order is announced once.
-
-#### Scenario: Order announced
-- **WHEN** Issue makes the Order of a Won entry Paid
-- **THEN** the Order is announced as paid once
-
-#### Scenario: Messaging unavailable
-- **WHEN** announcing the Order fails
-- **THEN** Issue tries again and the Order is announced when messaging is back, with no second issuance
-
-### Requirement: A paid order is reported for product analytics
-
-When Issue announces an Order as paid, an "order paid" signal for product analytics SHALL be sent for the fan, carrying the Order, its Event, the ticket count, the amount and currency, that the Order came from a won LotteryEntry, and the Order's pay time as the time it happened. The signal SHALL be recorded once per Order. A failure to send it SHALL NOT fail or undo the payment.
-
-#### Scenario: Paid lottery win
-- **WHEN** the Order of a Won entry for 2 tickets is announced
-- **THEN** one order-paid signal is sent with ticket count 2, the amount, the currency and the source LotteryEntry
