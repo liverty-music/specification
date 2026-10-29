@@ -79,19 +79,21 @@ workflow-worker: forwarder.Forwarder
 ### Payload: the entity's proto, converted in `internal/adapter/pb`
 
 - `internal/adapter/rpc/mapper` moves to `internal/adapter/pb`. Functions are renamed `pb.From<Entity>` (entity to proto) and `pb.To<Entity>` (proto to entity), and every caller is updated. `proto` was rejected as a package name: the same files import `google.golang.org/protobuf/proto`. The infrastructure layer imports `pb`; nothing forbids it, and the dependency points inward.
-- Payloads are `proto.Marshal` of the entity message after the change. A User payload clears `full_name` and `phone_number` (`pb.FromUserForAnnouncement`, one function, covered by a test).
+- Payloads are `proto.Marshal` of the entity message after the change. A User payload clears `full_name`, `phone_number` and `name`, the identity provider's display name, which often holds the same real name (`pb.FromUserForAnnouncement`, one function, covered by a test). Announcement payloads are read by our own receivers and are not checked with protovalidate: a payload may leave out a field the message marks required when the personal data rule clears it (the PushSubscription's `endpoint` and `keys`).
 - The structs of `entity/event_data.go` go; the subject constants and `AllSubjects` stay. Receivers unmarshal the entity message and convert it with `pb.To<Entity>`, or read the fields they need.
 - **The entity proto does not depend on screens.** A field absent from the proto is added unless it is personal data that must be protected:
   - `LotteryEntry` gains `lost_reason` (`LOTTERY_ENTRY_LOST_REASON_NOT_DRAWN`, `..._CARD_NOT_CHARGED`).
   - `User` gains `last_login_time`.
   - `Artist` gains `organizer_id`, the Organizer that represents it (at most one: `organizer_artists.artist_id` is unique); the entity Purpose draws Organizer ||--o{ Artist (decided 2026-10-28).
-  - `Passkey` gains `name`.
+  - `Passkey` gains `name` and `user_id`, the User it belongs to, which NotifyPasskeyChange reads.
+  - `SeriesImage` gains `series_id`, which SeriesImageUseCase.Process reads.
+  - A `Follow` message (`user_id`, `artist_id`, `hype`) is added next to `FollowedArtist`, the fan's own view, which names no fan; it is the payload of the ARTIST subjects.
   - `PushSubscription` gains `device_family`, derived from the push address. The announcement clears `endpoint` and `keys` (`pb.FromPushSubscriptionForAnnouncement`).
   - The audit compares every entity struct with its proto message and adds what is missing in the same proto release.
 
 ### Requests start workflows
 
-A request for one receiver with no stored change behind it starts that receiver's workflow through `usecase.Workflows.Start` (or `Flow.Start` inside a workflow), named after the business key of the request. Work that follows a change stored outside a workflow runs from that change's announcement (the cover image: SeriesImage.Create announces SERIES_IMAGE.uploaded). This holds inside a workflow too: a workflow that stores a change for many entities does not start the follow-up work per entity, because each `Flow.Start` is one checkpoint write in the parent workflow, one after another (1,000,000 entries, 1,000,000 writes). The operation's announcements are written in one transaction, and the consumer starts one workflow per entity under its business key (the lottery draw: the consumer of each Won entry starts `issue:<entry>`, of each Lost entry `release:<entry>`). The NATS subjects of the requests and their durable consumers go. DBOS `WithEnqueueTransaction` is not needed.
+A request for one receiver with no stored change behind it starts that receiver's workflow through `usecase.Workflows.Start` (or `Flow.Start` inside a workflow), named after the business key of the request. Work that follows a change stored outside a workflow runs from that change's announcement (the cover image: SeriesImage.Create announces SERIES_IMAGE.uploaded). This holds inside a workflow too: a workflow that stores a change for many entities does not start the follow-up work per entity, because each `Flow.Start` is one checkpoint write in the parent workflow, one after another (1,000,000 entries, 1,000,000 writes). The operation's announcements are written in one transaction, and the consumer starts one workflow per entity under its business key (the lottery draw: the consumer starts `issue:<order>` for each Won entry's Order and `release:<order>` for each Lost entry's Order). The NATS subjects of the requests and their durable consumers go. DBOS `WithEnqueueTransaction` is not needed.
 
 | Request | Started by | Workflow | Workflow id (business key) | Follows a stored change |
 |---|---|---|---|---|
@@ -177,17 +179,18 @@ Receivers decode by `ce_datacontenttype`: `application/protobuf` with the new de
 - [The forwarder is a single consumer in one replica] → A stopped worker delays delivery and does not lose it. The 10-minute alert reports a delay.
 - [Behaviour seen in product analytics changes (no signal for repeated hype levels, unfollows of artists not followed, repeated subscriptions, repeated charge notices)] → Intended (proposal **BREAKING**). Dashboards counting those repeats are checked in the release task.
 - [A receiver's side effect is not idempotent] → Unchanged from today: every receiver already treats a repeated announcement as one (send times, unique keys). The spec "delivered twice" scenario is tested per receiver that has one.
+- [A row the forwarder can never publish blocks every later row] → The queue is read in insertion order, so a row that keeps failing (a subject no stream captures, a message over the stream's size limit) stays at the head and every later announcement of every subject waits behind it. The 10-minute alert reports it with the subject of the oldest row; the fix is forward (declare the stream, or delete the row after recording it). Every subject is under a prefix whose stream captures it with a wildcard (`USER.*`, `ORDER.*`, ...), and task 4.3 tests that each subject in `AllSubjects` matches a stream of cloud-provisioning.
 - [One forwarder publishes one message at a time] → 1,000,000 announcements of one draw may take more than 10 minutes to deliver and trip the alert. The charges of the same draw (queue concurrency 2, one Stripe call each) take far longer, so the forwarder is not what fans wait for. The outbox is one table read in insertion order, so announcements recorded after the draw (a sign-up's verification email, a first-come Order's confirmation) wait behind it for that time too. With no users this is accepted; if task 11.2 shows it, the forwarder publishes asynchronously or the draw's announcements get a table of their own. Task 11.2 measures the delivery rate; the alert threshold or the forwarder's concurrency is revisited only if a real sale gets near that size.
 - [A row lives in the outbox until delivered] → Rows are deleted on delivery. 1,000,000 rows is about 620 MB while a large draw is being delivered.
 
 ## Migration Plan
 
 0. `remodel-ticket-sales` is released first; this change is planned on its model, and `make-lottery-draw-durable`, `unify-order-issuance` and `resell-tickets-by-lottery` follow this change.
-1. specification: proto release with `LotteryEntry.lost_reason`, `User.last_login_time`, and the fields from the audit.
+1. specification: proto release with `LotteryEntry.lost_reason`, `User.last_login_time`, `Artist.organizer_id`, `Passkey.name` and `user_id`, `SeriesImage.series_id`, `PushSubscription.device_family`, the `Follow` and `ConcertList` messages, and the fields from the audit.
 2. backend refactor PR: move `adapter/rpc/mapper` to `adapter/pb` with the new names (no behaviour change).
 3. Read-only in prod: count Lost lottery entries and outbox prerequisites. Record the result here.
 4. backend PR:
-   - the migrations (the outbox table, `series_images.series_id`, `lottery_entries.lost_reason`, `users.last_login_time`);
+   - the migrations (the outbox table, `series_images.series_id`, `passkeys.name`, `lottery_entries.lost_reason`, `users.last_login_time`);
    - the outbox and the forwarder;
    - the entity operations;
    - the usecases without the publisher;
@@ -195,7 +198,7 @@ Receivers decode by `ce_datacontenttype`: `application/protobuf` with the new de
    - the webhooks;
    - receivers decoding both formats;
    - the alert gauge.
-5. cloud-provisioning PR: the alert policy. The durable consumers and stream subjects of the removed subjects (`NOTIFICATION.requested`, `SALES_PHASE.reminder_due`, `USER.email_verification_resend_requested`, `USER.passkey_recovery_requested`, `CONCERT.discovered`, `CONCERT.cancelled`, `ORGANIZER.concert_published`) are deleted after step 4 is live.
+5. cloud-provisioning PR: the alert policy. The durable consumers and stream subjects of the removed subjects (`NOTIFICATION.requested`, `SALES_PHASE.reminder_due`, `USER.email_verification_resend_requested`, `USER.passkey_recovery_requested`, `CONCERT.discovered`, `CONCERT.cancelled`, `ORGANIZER.concert_published`, `USER.passkey_changed`) are deleted after step 4 is live.
 6. backend PR: delete the JSON decoding and `event_data.go` payload structs.
 
 Rollback: revert the backend release. Announcements still in the outbox are not delivered by the old code; with no users this loses at most the analytics of the rollback window. The new columns stay unused.

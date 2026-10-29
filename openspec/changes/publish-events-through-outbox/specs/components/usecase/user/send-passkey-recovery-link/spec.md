@@ -21,5 +21,10 @@ SendPasskeyRecoveryLink SHALL run when UserUseCase.RequestPasskeyRecovery starts
 
 #### Scenario: Mail service down
 
+- **WHEN** User.SendPasskeyRegistrationLink fails with Unavailable
+- **THEN** the step is tried again and the link is sent once the service answers
+
+#### Scenario: Mail service refuses
+
 - **WHEN** User.SendPasskeyRegistrationLink fails with Internal
-- **THEN** SendPasskeyRecoveryLink fails and runs again
+- **THEN** SendPasskeyRecoveryLink ends with that failure and is reported for an admin

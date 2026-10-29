@@ -79,6 +79,14 @@ Usecases that stop announcing, or whose trigger changes from an event to a start
 - `components/usecase/ticket-journey/set-status`, `ticket-journey/mark-paid`
 - `components/usecase/artist/search`, `artist/list-similar`, `artist/list-top`
 
+Stories (requirements whose text still has the usecase announce):
+- `stories/follow-an-artist`: a follow that cannot be announced is not stored and fails, instead of being left to the daily search.
+- `stories/discover-new-concerts`: SearchNewConcerts starts CreateFromDiscovered instead of announcing the discovery.
+- `stories/discover-artists`: an artist registered through ArtistUseCase.Create is announced by Artist.Create, so its first image check no longer waits for the daily run.
+
+Also:
+- `components/usecase/artist/create`: Create announces nothing itself, and Artist.Create announces the registered artist.
+
 Adapters:
 - `components/adapter/fan/api/webhook/passkey-events`: starts PasskeyUseCase.RecordChange for the notice instead of announcing it.
 - `components/adapter/fan/api/rpc/user`: ResendEmailVerification starts the resend instead of announcing it.
@@ -87,8 +95,8 @@ Unchanged and why: consumers whose trigger is a fact that stays an announcement 
 
 ## Impact
 
-- **backend**: an outbox table per subject and its relay in the workflow worker; entity operations write announcements on the repository transaction; the usecases lose the event publisher; new workflows for the six requests; the passkey and login webhooks call usecases; consumers read binary protobuf payloads; the entity-to-proto conversion moves out of the RPC mapper package; the step-derived event id code goes; migrations for the lottery entry's lost reason and `users.last_login_time`.
-- **specification**: `entity/v1` gains the `LotteryEntry` lost reason, `User` the last login time, and any field the entity-to-proto audit finds missing (a proto release).
+- **backend**: one outbox table for every subject and its relay (the Watermill forwarder) in the workflow worker; entity operations write announcements on the repository transaction; the usecases lose the event publisher; new workflows for the six requests; the passkey and login webhooks call usecases; consumers read binary protobuf payloads; the entity-to-proto conversion moves out of the RPC mapper package; the step-derived event id code goes; migrations for the lottery entry's lost reason, `users.last_login_time`, `passkeys.name` and `series_images.series_id`.
+- **specification**: `entity/v1` gains the `LotteryEntry` lost reason, `User` the last login time, `Artist` its organizer, `Passkey` its name and User, `SeriesImage` its Series, `PushSubscription` its device family, and the `Follow` and `ConcertList` messages, and any field the entity-to-proto audit finds missing (a proto release).
 - **cloud-provisioning**: JetStream streams lose the removed subjects.
 - **frontend**: none.
 - **Order of changes**: `remodel-ticket-sales` → this change → `make-lottery-draw-durable` → `unify-order-issuance` → `resell-tickets-by-lottery`. This change's deltas of `persist-draw-outcome`, `run-draw`, `order/issue`, `checkout/release` and `release-expired` are written against the main specs as `remodel-ticket-sales` leaves them, and the three later changes are written on this one: entity operations announce, usecases do not, and work after a stored change starts from its announcement.

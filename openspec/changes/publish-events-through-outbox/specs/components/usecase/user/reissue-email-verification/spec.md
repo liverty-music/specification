@@ -26,5 +26,10 @@ ReissueEmailVerification SHALL run when UserUseCase.ResendEmailVerification star
 
 #### Scenario: Identity provider down
 
+- **WHEN** User.ResendVerification fails with Unavailable
+- **THEN** the step is tried again and the code is sent once the identity provider answers
+
+#### Scenario: Identity provider refuses
+
 - **WHEN** User.ResendVerification fails with Internal
-- **THEN** ReissueEmailVerification fails and runs again
+- **THEN** ReissueEmailVerification ends with that failure and is reported for an admin
