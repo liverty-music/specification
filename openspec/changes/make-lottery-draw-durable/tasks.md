@@ -20,6 +20,7 @@
 - [ ] 3.4 Implement `OrderUseCase.Issue` for a LotteryEntry as a workflow with a 24-hour deadline, on the `payment` queue (global concurrency 2), making the Pending Order Paid with `Order.Issue`, and remove `IssueFromCapturedWin` and `IssueDueWins`; verify one unit test per scenario of "Every Won entry is issued", "Charge, then issue" and "Identity verification binding" passes
 - [ ] 3.5 Change `OrderUseCase.FulfillPayment` to succeed without effect for a LotteryEntry; verify the unit tests of "Each completed charge ends in an issued Order" pass, including "Lottery win charged"
 - [ ] 3.6 Remove the lottery draw and issuance goroutines from `internal/di/provider.go` and register the workflows, the queue and the `draw-due-sales` schedule in `cmd/worker`; verify `make check` passes and `/worker workflow list` shows the schedule runs locally
+- [ ] 3.7 Run the `draw-due-sales` schedule run with an unsampled span context and start each `Draw` from a context without it (design "Traces: a schedule run that finds no sale records nothing"); verify with a unit test on an in-memory span recorder that a run with no due sale records no span and a run with one due sale records one `Draw` trace that is a new root, annotated `// @spec components/infrastructure/backend/process/trace-propagation "Scheduled run that finds no due sale"` and `"Scheduled run that finds a due sale"`
 
 ## 4. Notifications (components/usecase/notification/send-lottery-loss, send-order-confirmation, deliver)
 

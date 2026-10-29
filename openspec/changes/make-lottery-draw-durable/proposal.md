@@ -33,6 +33,7 @@ The lottery draw charges before it records. `LotteryEntryUseCase.RunDraw` draws 
 - `components/entity/order/list-lottery-entry-ids-awaiting-issuance`: removed; its only caller goes.
 - `components/usecase/lottery-entry/run-draw`: removed, replaced by `draw`.
 - `components/usecase/lottery-entry/draw-due-sales`: starts `Draw` once per sale.
+- `components/infrastructure/backend/process/trace-propagation`: a scheduled workflow records no trace for a run that finds nothing, and each workflow it starts is its own trace (design "Traces: a schedule run that finds no sale records nothing"). The capability is created by `fix-trace-propagation`.
 - `components/usecase/order/issue-from-captured-win`, `issue-due-wins`: removed, replaced by `issue`.
 - `components/usecase/order/fulfill-payment`: a lottery capture is acknowledged without effect.
 - `components/usecase/notification/send-order-confirmation`: says the entry won for a lottery Order.
