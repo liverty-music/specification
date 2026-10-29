@@ -31,7 +31,7 @@ None.
 
 ## Impact
 
-- `cloud-provisioning`: new build input (upstream tag pin + patch + GitHub Actions workflow), a new Artifact Registry repository and pull access for the cluster, and `k8s/namespaces/zitadel/base/values.yaml` `login.image`. Every Zitadel upgrade now also rebuilds the patched Login V2 image; a patch that no longer applies fails that build.
+- `cloud-provisioning`: new build input (upstream tag pin + patch + GitHub Actions workflow), a new Artifact Registry repository and pull access for the cluster, and `k8s/namespaces/zitadel/overlays/prod/values.yaml` `login.image` (base and dev stay on the upstream image). Every Zitadel upgrade now also rebuilds the patched Login V2 image; a patch that no longer applies fails that build.
 - Users: the register page and the invitation flow show only the passkey path. Identities without a password are unaffected otherwise; the end-to-end test fans still sign in with their passwords.
 - `frontend` production E2E: `delete-my-account` signs a fresh fan up with a password on every run; it moves to signing up with a passkey from Playwright's virtual authenticator, and a new production E2E checks the hosted login pages this change closes.
 - No proto or backend change.

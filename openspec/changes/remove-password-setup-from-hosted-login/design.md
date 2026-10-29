@@ -40,6 +40,7 @@ The patch changes only `apps/login`. The Zitadel API image stays `ghcr.io/zitade
 - Credential choice: drop the Password option from `ChooseAuthenticatorToSetup`.
 - `/register/password`, `/password/set`, `/password/change`: the page calls Next.js `notFound()` before rendering, so a typed address shows the hosted login's not-found page.
 - Password page: remove the reset-request handler from `PasswordForm`, not only the hidden link.
+- Server actions: a page that calls `notFound()` stops rendering, but the Next.js Server Actions it used (`"use server"` in `lib/server/register.ts`, `lib/server/password.ts`, `lib/self.ts`) stay callable endpoints. The patch makes them refuse a password: `registerUser` returns an error when `password` is set, and `resetPassword`, `changePassword` and `setMyPassword` return an error without calling the Zitadel API. Login V2 is Zitadel's own Next.js app; Liverty Music's apps do not use Next.js.
 - `/password` sign-in is untouched.
 
 The patch is unconditional (no feature flag): every organization the deployment serves is passkey-only or IdP-only (the admin org signs in with Google), so there is no organization that needs the password paths. A flag would add a setting nobody turns on.
@@ -66,7 +67,7 @@ Only production runs the patched image. `k8s/namespaces/zitadel/overlays/prod/va
 
 ### D6. Upgrade procedure
 
-A Zitadel upgrade PR changes `UPSTREAM_TAG`; the workflow rebuilds and must succeed before the PR that bumps `image.tag` and `login.image.tag` together merges. If `git am` fails, the patch is refreshed against the new tag in the same PR. The runbook `docs/runbooks/zitadel-helm-chart.md` gains this step.
+A Zitadel upgrade PR changes `UPSTREAM_TAG`; a lint check keeps `UPSTREAM_TAG` equal to the base `image.tag` and the prod overlay's `login.image.tag` starting with `UPSTREAM_TAG`; the workflow rebuilds and must succeed before the PR that bumps `image.tag` and `login.image.tag` together merges. If `git am` fails, the patch is refreshed against the new tag in the same PR. The runbook `docs/runbooks/zitadel-helm-chart.md` gains this step.
 
 ### D7. Verification lives in the frontend production E2E
 

@@ -6,7 +6,7 @@
 
 The system SHALL establish a login policy on the **`liverty-music` product
 org** (the org that hosts the OIDC application and end-user accounts) that
-makes passkeys the fans' only sign-in credential. This policy SHALL apply ONLY to the
+makes passkeys the only sign-in credential for every fan other than the automated end-to-end test fans. This policy SHALL apply ONLY to the
 `liverty-music` product org and MUST NOT be inherited by the `admin` role
 org, which has its own admin-oriented login policy governed by separate
 requirements.
