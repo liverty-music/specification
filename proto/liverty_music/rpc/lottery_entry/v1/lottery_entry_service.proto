@@ -32,11 +32,11 @@ import "liverty_music/entity/v1/user.proto";
 // completes authentication, the platform also makes the entry by itself, so
 // an entry is made even when the browser closes before Confirm. A confirmed
 // entry cannot be given up. A fan enters a sale at most once for each event it
-// names. ListByTicketType reads the fan's entries in a sale, whose states
-// after the draw are the results. No money is captured here. Every call
-// requires a signed-in fan, who is always the caller; the fan is resolved from
-// the token to their stored account and is never named in a request. A
-// signed-in caller with no stored account fails with NOT_FOUND.
+// names. ListBySale reads the fan's entries in a sale, whose states after the
+// draw are the results. No money is captured here. Every call requires a
+// signed-in fan, who is always the caller; the fan is resolved from the token
+// to their stored account and is never named in a request. A signed-in caller
+// with no stored account fails with NOT_FOUND.
 service LotteryEntryService {
   // AuthorizeCard records the 本人確認 full name and phone number on the
   // caller's account, then opens a CardAuthorization for the stock's seat type
@@ -97,17 +97,17 @@ service LotteryEntryService {
   // - UNAVAILABLE: Card payments are temporarily unavailable.
   rpc Confirm(ConfirmRequest) returns (ConfirmResponse);
 
-  // ListByTicketType returns the caller's entries in a LOTTERY sale, at most
-  // one for each event the sale names, with their Orders, so the fan sees
-  // which stock and count they entered and, after the draw, whether they won.
-  // A caller who never entered gets an empty list.
+  // ListBySale returns the caller's entries in a LOTTERY sale, at most one for
+  // each event the sale names, with their Orders, so the fan sees which stock
+  // and count they entered and, after the draw, whether they won. A caller who
+  // never entered gets an empty list.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   // - NOT_FOUND: The sale does not exist, or the caller has no stored
   //   account.
   // - INVALID_ARGUMENT: The ticket_sale_id is missing or malformed.
-  rpc ListByTicketType(ListByTicketTypeRequest) returns (ListByTicketTypeResponse);
+  rpc ListBySale(ListBySaleRequest) returns (ListBySaleResponse);
 }
 
 // AuthorizeCardRequest carries the sale, the stock, the count and the 本人確認
@@ -183,9 +183,8 @@ message ConfirmResponse {
   entity.v1.Order order = 2 [(buf.validate.field).required = true];
 }
 
-// ListByTicketTypeRequest names the sale whose entries to list. The method
-// keeps its former name until the rename that follows this change.
-message ListByTicketTypeRequest {
+// ListBySaleRequest names the sale whose entries to list.
+message ListBySaleRequest {
   // Required. The LOTTERY sale whose entries of the caller to list.
   entity.v1.TicketSaleId ticket_sale_id = 2 [(buf.validate.field).required = true];
 
@@ -195,8 +194,8 @@ message ListByTicketTypeRequest {
   reserved "ticket_type_id";
 }
 
-// ListByTicketTypeResponse returns the caller's entries in the sale.
-message ListByTicketTypeResponse {
+// ListBySaleResponse returns the caller's entries in the sale.
+message ListBySaleResponse {
   // The caller's entries in the sale, at most one for each event the sale
   // names. Empty when the caller never entered.
   repeated entity.v1.LotteryEntry lottery_entries = 1;
