@@ -203,7 +203,7 @@ When the event has at least one sale, the Sales tab SHALL show, below the sales,
 
 ### Requirement: The Sales tab sets the event's seat types and quantities
 
-The Sales tab SHALL show a section 席種と枚数 (seat types and quantities) listing the event's TicketStocks, read with TicketStockService.ListByEvent, each with its seat type's name and price 税込 (tax-inclusive), its quantity, its sold count and its held count, and its state: 販売可 (Available), 残りは購入手続き中 (AllHeld) or 完売 (SoldOut). It SHALL offer 席種を追加 (add a seat type), which asks for one of the concert's seat types not yet stocked for the event and a quantity of at least 1, and creates the TicketStock with TicketStockService.Create after a confirmation saying that the quantity cannot be changed afterwards and that every sale of the event sells it. A TicketStock with no Order SHALL offer 削除 (delete), which deletes it with TicketStockService.Delete after confirmation; one with an Order SHALL offer no delete. When the concert has no seat type, the section SHALL say to add seat types on the concert page and link to it. The section SHALL be shown whatever the event's prerequisites for selling.
+The Sales tab SHALL show a section 席種と枚数 (seat types and quantities) listing the event's TicketStocks, read with TicketStockService.ListByEvent, each with its seat type's name and price 税込 (tax-inclusive), its quantity, its sold count and its held count, and its state: 販売可 (Available), 残りは購入手続き中 (AllHeld) or 完売 (SoldOut). It SHALL offer 席種を追加 (add a seat type), which asks for one of the concert's seat types not yet stocked for the event and a quantity of at least 1, and creates the TicketStock with TicketStockService.Create after a confirmation saying that the quantity cannot be changed afterwards and that every sale of the event sells it. A TicketStock whose sold and held counts are 0 SHALL offer 削除 (delete), which deletes it with TicketStockService.Delete after confirmation, and SHALL show the refusal when a live Order still names it; one with tickets sold or held SHALL offer no delete. When the concert has no seat type, the section SHALL say to add seat types on the concert page and link to it. The section SHALL be shown whatever the event's prerequisites for selling.
 
 #### Scenario: Two seat types stocked
 
@@ -217,7 +217,7 @@ The Sales tab SHALL show a section 席種と枚数 (seat types and quantities) l
 
 #### Scenario: Stock already ordered
 
-- **WHEN** a fan has an Order for S席 of the event
+- **WHEN** a fan has bought or holds tickets of S席 of the event
 - **THEN** S席 offers no delete
 
 #### Scenario: Concert without seat types

@@ -43,7 +43,7 @@ After an Organizer creates a FirstCome TicketSale for a published event of a PUB
 - **THEN** the purchase is counted under member-b only
 
 #### Scenario: Hold already in progress keeps its link
-- **WHEN** a fan from a link with  holds 2 tickets, opens a link with  for the same Series, and continues the same 2 tickets of the same TicketStock before the hold expires
+- **WHEN** a fan from a link with `ref=member-a` holds 2 tickets, opens a link with `ref=member-b` for the same Series, and continues the same 2 tickets of the same TicketStock before the hold expires
 - **THEN** the purchase is counted under member-a only
 
 #### Scenario: Another tour is not attributed

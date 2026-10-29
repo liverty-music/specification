@@ -1,7 +1,7 @@
 # components/usecase/ticket-sale/create Specification
 
 ## Purpose
-TicketSaleUseCase.Create lets an Organizer open a sale (受付), by lottery or first come, first served - its name, window and verification requirement, and a TicketType with price, quantity and per-account limit for each event it covers - on published events of one of its Series.
+TicketSaleUseCase.Create lets an Organizer open a sale (受付), by lottery or first come, first served - its name, window and verification requirement, and one or more events it covers - on published events of one of its Series.
 
 ## Requirements
 
