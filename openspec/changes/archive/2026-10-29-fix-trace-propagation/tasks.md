@@ -14,4 +14,4 @@
 
 - [x] 3.1 After the next `concert-discovery` run (daily 18:00 JST), read prod logs with `gcloud --configuration=liverty-music logging read` and confirm that `successfully received Gemini response` lines carry a `trace_id`, and that for one artist with new concerts the `auto-published new concerts for series` line from the `ingest-concert` consumer carries the same `trace_id`
 - [x] 3.2 Open that trace in Cloud Trace and confirm one trace holds the artist span, the producer span and the consumer span, with a link to the run span
-- [ ] 3.3 One week after the rollout, compare the Cloud Trace usage SKUs in the billing export with the week before and record the difference in this change's design.md
+- [x] 3.3 One week after the rollout, compare the Cloud Trace usage SKUs in the billing export with the week before and record the difference in this change's design.md
