@@ -21,17 +21,17 @@ See proposal.md - Why. `remodel-ticket-sales` (design D11) left four operation n
 
 | Before | After | Why |
 |---|---|---|
-| `LotteryEntry.GetStatsByTicketType(sale, stock)` | `GetStatsBySaleAndStock` | Names both inputs. |
-| `LotteryEntry.ListByTicketTypeAndUser(sale, user)` | `ListBySaleAndUser` | Names both inputs. |
-| `LotteryEntry.ListUndrawnForTicketType(sale, stock)` | `ListEnteredBySaleAndStock` | Returns the Entered entries; "undrawn" restated the state indirectly. |
-| `LotteryEntryUseCase.ListByTicketType(sale, caller)` | `ListBySale` | The caller is never named (`rpc-design` skill). |
-| RPC `LotteryEntryService.ListByTicketType` | `ListBySale` (`ListBySaleRequest`, `ListBySaleResponse`) | `ListBy<Key>` where the Key is the request's `ticket_sale_id`. |
+| `LotteryEntry.GetStatsByTicketType(sale, stock)` | `GetStatsByTicketSaleAndTicketStock` | Names both inputs. |
+| `LotteryEntry.ListByTicketTypeAndUser(sale, user)` | `ListByTicketSaleAndUser` | Names both inputs. |
+| `LotteryEntry.ListUndrawnForTicketType(sale, stock)` | `ListEnteredByTicketSaleAndTicketStock` | Returns the Entered entries; "undrawn" restated the state indirectly. |
+| `LotteryEntryUseCase.ListByTicketType(sale, caller)` | `ListByTicketSale` | The caller is never named (`rpc-design` skill). |
+| RPC `LotteryEntryService.ListByTicketType` | `ListByTicketSale` (`ListByTicketSaleRequest`, `ListByTicketSaleResponse`) | `ListBy<Key>` where the Key is the request's `ticket_sale_id`. |
 
 Field numbers and names inside the request and response stay (`ticket_sale_id = 2`; `lottery_entries`, `orders`), so only the method and message names change on the wire path.
 
 ### D2 — A breaking rename, released backend then frontend
 
-The proto renames the RPC in one release (`buf skip breaking`), the backend serves only `ListBySale`, and the frontend calls only `ListBySale`. Between the backend rollout and the frontend rollout the fan's lottery entry status screen and the held-seat-type read fail with Unimplemented.
+The proto renames the RPC in one release (`buf skip breaking`), the backend serves only `ListByTicketSale`, and the frontend calls only `ListByTicketSale`. Between the backend rollout and the frontend rollout the fan's lottery entry status screen and the held-seat-type read fail with Unimplemented.
 
 - Rejected — serve both names for one release, then drop the old: two proto releases and two backend deploys for a window of minutes. The product has no users besides the owner and one tester, and the workspace allows trading availability for cost.
 
@@ -48,5 +48,5 @@ Each renamed operation's spec moves to the path of its new name: the change ADDs
 
 1. Merge and release the proto (specification), wait for BSR generation.
 2. Backend: rename, upgrade the generated package, release, confirm the rollout.
-3. Frontend: upgrade the generated package, call `ListBySale`, release right after step 2, confirm the rollout.
+3. Frontend: upgrade the generated package, call `ListByTicketSale`, release right after step 2, confirm the rollout.
 Rollback: revert the frontend and backend releases together; no data changes.
