@@ -5,12 +5,24 @@ ListWithPendingMilestones returns the TicketSales, discovered or an Organizer's,
 
 ## Requirements
 
-### Requirement: Sales are selected by start time and latest milestone
+### Requirement: The window arguments are validated
 
-ListWithPendingMilestones SHALL return every TicketSale whose start time is no later than now plus the lookahead, and whose latest known milestone among start time, end time and result time is no earlier than now minus the lookback, ordered by start time, earliest first, each with its TicketTypes. An Organizer's sale SHALL be returned only while its Series is Published.
+ListWithPendingMilestones SHALL fail with InvalidArgument when the lookahead is not positive or the lookback is negative.
 
-#### Scenario: Opened weeks ago, result tomorrow
-- **WHEN** a discovered lottery opened 3 weeks ago and its result time is tomorrow
+#### Scenario: Zero lookahead
+- **WHEN** ListWithPendingMilestones is called with a lookahead of 0
+- **THEN** it fails with InvalidArgument
+
+#### Scenario: Negative lookback
+- **WHEN** ListWithPendingMilestones is called with a lookback of -1 hour
+- **THEN** it fails with InvalidArgument
+
+### Requirement: Sales are selected by start time and end time
+
+ListWithPendingMilestones SHALL return every TicketSale whose start time is no later than now plus the lookahead, and whose end time is no earlier than now minus the lookback, ordered by start time, earliest first, each with the events it names. An Organizer's sale SHALL be returned only while its Series is Published.
+
+#### Scenario: Opened days ago, closes tomorrow
+- **WHEN** a lottery opened 10 days ago and its end time is tomorrow
 - **THEN** the sale is returned
 
 #### Scenario: Opens beyond the lookahead
@@ -18,11 +30,11 @@ ListWithPendingMilestones SHALL return every TicketSale whose start time is no l
 - **THEN** the sale is not returned
 
 #### Scenario: All milestones long past
-- **WHEN** the lookback is 2 hours and the latest milestone of a sale was 3 hours ago
+- **WHEN** the lookback is 2 hours and a sale's end time was 3 hours ago
 - **THEN** the sale is not returned
 
 #### Scenario: Latest milestone just past
-- **WHEN** the lookback is 2 hours and the latest milestone of a sale was 1 hour ago
+- **WHEN** the lookback is 2 hours and a sale's end time was 1 hour ago
 - **THEN** the sale is returned
 
 #### Scenario: Organizer's sale opening tomorrow
@@ -36,15 +48,3 @@ ListWithPendingMilestones SHALL return every TicketSale whose start time is no l
 #### Scenario: Nothing pending
 - **WHEN** no sale meets the conditions
 - **THEN** ListWithPendingMilestones returns an empty list without an error
-
-### Requirement: The window arguments are validated
-
-ListWithPendingMilestones SHALL fail with InvalidArgument when the lookahead is not positive or the lookback is negative.
-
-#### Scenario: Zero lookahead
-- **WHEN** ListWithPendingMilestones is called with a lookahead of 0
-- **THEN** it fails with InvalidArgument
-
-#### Scenario: Negative lookback
-- **WHEN** ListWithPendingMilestones is called with a lookback of -1 hour
-- **THEN** it fails with InvalidArgument

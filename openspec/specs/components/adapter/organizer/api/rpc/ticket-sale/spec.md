@@ -12,12 +12,12 @@ Create, ListByEvent, SetWindow and SetVerificationRequirement SHALL pass the sam
 #### Scenario: Member configures a sale
 
 - **WHEN** a member of an active Organizer calls Create for a FirstCome or Lottery sale on its published events
-- **THEN** the sale is created and returned with its TicketTypes
+- **THEN** the sale is created and returned naming its events
 
 #### Scenario: Member sees how many sold
 
 - **WHEN** a member calls ListByEvent for their event
-- **THEN** TicketSaleUseCase.ListOwnByEvent runs for their Organizer and the event's sales are returned with their counts
+- **THEN** TicketSaleUseCase.ListOwnByEvent runs for their Organizer and the event's sales are returned with the entry stats of each TicketStock
 
 #### Scenario: Member moves a window
 
@@ -34,22 +34,22 @@ Create, ListByEvent, SetWindow and SetVerificationRequirement SHALL pass the sam
 - **WHEN** the caller's Organizer is deactivated
 - **THEN** every call fails with FailedPrecondition
 
-### Requirement: Calls name their event and values
+### Requirement: Calls name their events and values
 
 Each call SHALL fail with InvalidArgument, before any usecase runs, when a value it needs is missing or malformed:
-- Create, when no Series, name, method, start time or TicketType is given, or when a TicketType has no event, price or quantity; the end time and the per-account limit may be left out;
+- Create, when no Series, name, method, start time, end time or event is given;
 - ListByEvent, when no event is given;
 - SetWindow, when no sale, start time or end time is given;
 - SetVerificationRequirement, when no sale is given. A request that gives no requirement sets None.
 
-#### Scenario: Missing price
+#### Scenario: Sale without events
 
-- **WHEN** a member calls Create with a TicketType without a price
-- **THEN** it fails with InvalidArgument and nothing is stored
+- **WHEN** Create is called with no event
+- **THEN** it fails with InvalidArgument and nothing is created
 
-#### Scenario: Sale without ticket types
+#### Scenario: Create without an end time
 
-- **WHEN** Create is called with no TicketType
+- **WHEN** Create is called without an end time
 - **THEN** it fails with InvalidArgument and nothing is created
 
 #### Scenario: ListByEvent without an event

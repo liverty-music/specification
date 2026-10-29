@@ -28,7 +28,7 @@ erDiagram
 
 ### Requirement: A lottery window lasts 1 to 14 days
 
-A TicketSale's end time, when it has one, SHALL be after its start time. When an Organizer's sale has the method Lottery, its window SHALL last at least 1 day and at most 14 days. A discovered sale's window SHALL have no limit on its length.
+A TicketSale's end time SHALL be after its start time. When an Organizer's sale has the method Lottery, its window SHALL last at least 1 day and at most 14 days. A discovered sale's window SHALL have no limit on its length.
 
 #### Scenario: Lottery window within bounds
 - **WHEN** an Organizer's Lottery sale runs for 10 days
@@ -53,22 +53,6 @@ A TicketSale's end time, when it has one, SHALL be after its start time. When an
 #### Scenario: First-come window longer than 14 days
 - **WHEN** a FirstCome sale runs from 2026-11-01 10:00 to 2026-11-20 18:00
 - **THEN** the window is valid
-
-### Requirement: A sale has a name
-
-An Organizer's sale SHALL have a name of 1 to 100 characters. A discovered sale SHALL have no name.
-
-#### Scenario: Named sale
-- **WHEN** an Organizer's sale is named ファンクラブ先行
-- **THEN** the name is valid
-
-#### Scenario: Empty name
-- **WHEN** an Organizer's sale has an empty name
-- **THEN** the sale is invalid
-
-#### Scenario: Discovered sale without a name
-- **WHEN** a discovered sale has no name
-- **THEN** the sale is valid
 
 ### Requirement: Verification requirement
 
@@ -110,82 +94,6 @@ Two sales' windows SHALL overlap when each one starts before the other ends.
 - **WHEN** one sale runs from 1 to 10 November and the other from 8 to 20 November
 - **THEN** the windows overlap
 
-### Requirement: Drawn sale
-
-A Lottery sale SHALL count as drawn once its draw time is set.
-
-#### Scenario: Draw time set
-- **WHEN** the draw time is set
-- **THEN** the sale is drawn
-
-#### Scenario: Draw time absent
-- **WHEN** the draw time is absent
-- **THEN** the sale is not drawn
-
-### Requirement: An Organizer's sale or a discovered sale
-
-A TicketSale of a Series that has an Organizer SHALL be that Organizer's sale. It SHALL offer at least one TicketType and SHALL have no discovered time. A TicketSale of a Series without an Organizer SHALL be a discovered sale. It SHALL offer no TicketType, SHALL have a discovered time, SHALL have the verification requirement None, and SHALL never be drawn.
-
-#### Scenario: Organizer's presale
-- **WHEN** a sale belongs to a Series owned by an Organizer and offers TicketTypes for two of its events
-- **THEN** it is the Organizer's sale
-
-#### Scenario: Sale found by discovery
-- **WHEN** a sale belongs to a Series that has no Organizer
-- **THEN** it is a discovered sale and offers no TicketType
-
-#### Scenario: Discovered sale with a TicketType
-- **WHEN** a sale of a Series without an Organizer offers a TicketType
-- **THEN** the sale is invalid
-
-#### Scenario: Organizer's sale without a TicketType
-- **WHEN** a sale of a Series with an Organizer offers no TicketType
-- **THEN** the sale is invalid
-
-### Requirement: Required times depend on the method and the kind of sale
-
-Every TicketSale SHALL have a start time. A Lottery sale SHALL have an end time. An Organizer's sale SHALL have an end time. A discovered FirstCome sale's end time SHALL be optional, and an absent end time SHALL mean the sale ends when tickets run out. A lottery result time (当落発表, the announced result time) SHALL be optional. It SHALL appear only on a discovered Lottery sale and SHALL NOT be before the end time.
-
-#### Scenario: First-come sale until sold out
-- **WHEN** a discovered FirstCome sale has a start time and no end time
-- **THEN** the sale is valid
-
-#### Scenario: Lottery without a close
-- **WHEN** a Lottery sale has no end time
-- **THEN** the sale is invalid
-
-#### Scenario: Organizer's first-come sale without a close
-- **WHEN** an Organizer's FirstCome sale has no end time
-- **THEN** the sale is invalid
-
-#### Scenario: Result before close
-- **WHEN** a discovered Lottery sale's lottery result time is before its end time
-- **THEN** the sale is invalid
-
-#### Scenario: Result on a first-come sale
-- **WHEN** a discovered FirstCome sale has a lottery result time
-- **THEN** the sale is invalid
-
-#### Scenario: Result time on an Organizer's lottery
-- **WHEN** an Organizer's Lottery sale has a lottery result time
-- **THEN** the sale is invalid
-
-### Requirement: Result time of a lottery
-
-A Lottery sale's result time SHALL be its lottery result time when it has one. An Organizer's Lottery sale's result time SHALL be its end time, because its draw runs within 1 minute after the end time. A discovered Lottery sale without a lottery result time SHALL have no result time. A FirstCome sale SHALL have no result time.
-
-#### Scenario: Discovered lottery with an announced result
-- **WHEN** a discovered Lottery sale closes on 22 October 23:59 and has the lottery result time 3 November 15:00
-- **THEN** its result time is 3 November 15:00
-
-#### Scenario: Organizer's lottery
-- **WHEN** an Organizer's Lottery sale ends on 22 October 23:59
-- **THEN** its result time is 22 October 23:59
-
-#### Scenario: Discovered lottery without an announced result
-- **WHEN** a discovered Lottery sale has no lottery result time
-- **THEN** it has no result time
-
 ### Requirement: The discovered time is set once
 
 A discovered sale's discovered time SHALL be set when the sale is first stored and SHALL never change afterwards, however often the sale is discovered again.
@@ -194,14 +102,90 @@ A discovered sale's discovered time SHALL be set when the sale is first stored a
 - **WHEN** a sale first stored on 1 June is discovered again on 5 June with new details
 - **THEN** its discovered time stays 1 June
 
-### Requirement: A sale not yet over
+### Requirement: An Organizer's sale names events, a discovered sale none
 
-A TicketSale SHALL be not yet over at an instant that is before its end time. A sale without an end time SHALL be not yet over only before its start time, because nothing tells when its tickets run out.
+A TicketSale of a Series that has an Organizer SHALL be that Organizer's sale. It SHALL name at least one event, each an event of its Series, SHALL sell every TicketStock of the events it names, and SHALL have no discovered time. A TicketSale of a Series without an Organizer SHALL be a discovered sale. It SHALL name no event, SHALL have a discovered time and SHALL have the verification requirement None.
+
+#### Scenario: Organizer's presale
+- **WHEN** a sale belongs to a Series owned by an Organizer and names two of its events
+- **THEN** it is the Organizer's sale and sells every TicketStock of those two events
+
+#### Scenario: Sale found by discovery
+- **WHEN** a sale belongs to a Series that has no Organizer
+- **THEN** it is a discovered sale and names no event
+
+#### Scenario: Discovered sale naming an event
+- **WHEN** a sale of a Series without an Organizer names an event
+- **THEN** the sale is invalid
+
+#### Scenario: Organizer's sale without an event
+- **WHEN** a sale of a Series with an Organizer names no event
+- **THEN** the sale is invalid
+
+#### Scenario: Event of another Series
+- **WHEN** an Organizer's sale names an event of another Series
+- **THEN** the sale is invalid
+
+### Requirement: Every sale has a name
+
+Every TicketSale, an Organizer's or a discovered one, SHALL have a name of 1 to 100 characters, the label fans see, such as ファンクラブ先行.
+
+#### Scenario: Named sale
+- **WHEN** a sale is named ファンクラブ先行
+- **THEN** the name is valid
+
+#### Scenario: Empty name
+- **WHEN** a sale has an empty name
+- **THEN** the sale is invalid
+
+#### Scenario: Discovered sale with a name
+- **WHEN** a discovered sale is named オフィシャル先行
+- **THEN** the sale is valid
+
+### Requirement: Every sale has a start and an end time
+
+Every TicketSale SHALL have a start time and an end time.
+
+#### Scenario: Both times
+- **WHEN** a sale has a start time and an end time
+- **THEN** the sale is valid
+
+#### Scenario: Lottery without a close
+- **WHEN** a Lottery sale has no end time
+- **THEN** the sale is invalid
+
+#### Scenario: First-come sale without a close
+- **WHEN** a FirstCome sale, an Organizer's or a discovered one, has no end time
+- **THEN** the sale is invalid
+
+### Requirement: Drawn lottery
+
+An Organizer's Lottery sale SHALL count as drawn at an instant, given its LotteryEntries, when the instant is at or after its end time and none of its entries is Entered. A closed sale with no entries SHALL count as drawn.
+
+#### Scenario: Closed with entries still Entered
+- **WHEN** a Lottery sale has closed and one of its entries is Entered
+- **THEN** the sale is not drawn
+
+#### Scenario: Every entry decided
+- **WHEN** a Lottery sale has closed and every one of its entries is Won or Lost
+- **THEN** the sale is drawn
+
+#### Scenario: Closed without entries
+- **WHEN** a Lottery sale has closed and has no entries
+- **THEN** the sale is drawn
+
+#### Scenario: Still open
+- **WHEN** a Lottery sale's end time is after the instant
+- **THEN** the sale is not drawn
+
+### Requirement: A sale is not yet over before its end time
+
+A TicketSale SHALL be not yet over at an instant that is before its end time.
 
 #### Scenario: Lottery before its close
 - **WHEN** a Lottery sale closes on 22 October 23:59 and the instant is 20 October
 - **THEN** the sale is not yet over
 
-#### Scenario: First-come sale until sold out has opened
-- **WHEN** a FirstCome sale without an end time opened at 18:30 today and the instant is 18:31
+#### Scenario: First-come sale after its close
+- **WHEN** a FirstCome sale closes at 20:00 and the instant is 20:00
 - **THEN** the sale is over

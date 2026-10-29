@@ -31,26 +31,22 @@ stateDiagram-v2
 
 ## Requirements
 
-### Requirement: Ticket count fits the ticket type
-
-The ticket count SHALL be at least 1 and at most the ticket type's per-account limit.
-
-#### Scenario: Count within the limit
-- **WHEN** the ticket type allows 4 tickets per account and the ticket count is 2
-- **THEN** the count is valid
-
-#### Scenario: Zero tickets
-- **WHEN** the ticket count is 0
-- **THEN** the count is invalid
-
-#### Scenario: Count over the limit
-- **WHEN** the ticket type allows 4 tickets per account and the ticket count is 5
-- **THEN** the count is invalid
-
 ### Requirement: A new entry is Entered
 
-A LotteryEntry SHALL be created in state Entered, with its card authorization and without a draw position.
+A LotteryEntry SHALL be created in state Entered, without a draw position, for an Order that has its card authorization.
 
 #### Scenario: New entry
 - **WHEN** a LotteryEntry is created
-- **THEN** its state is Entered, it has its card authorization and it has no draw position
+- **THEN** its state is Entered, its Order has its card authorization and it has no draw position
+
+### Requirement: Sale of an entry
+
+A LotteryEntry SHALL belong to a Lottery sale that names its Order's event.
+
+#### Scenario: Lottery sale of the event
+- **WHEN** a LotteryEntry belongs to a Lottery sale that names the event of its Order's TicketStock
+- **THEN** it is valid
+
+#### Scenario: First-come sale
+- **WHEN** a LotteryEntry belongs to a FirstCome sale
+- **THEN** it is invalid

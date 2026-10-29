@@ -12,23 +12,23 @@ ListByEvent SHALL accept a call with or without a sign-in, fail with InvalidArgu
 #### Scenario: Guest opens the event page
 
 - **WHEN** a caller who is not signed in calls ListByEvent for an event on sale
-- **THEN** the event's sales are returned, each with its TicketType for the event and, for a first-come one, its state
+- **THEN** the event's sales are returned with the event's TicketStocks, each with its seat type and state
 
 #### Scenario: Missing event
 
 - **WHEN** ListByEvent is called without an event
 - **THEN** it fails with InvalidArgument
 
-### Requirement: A returned sale never shows its counts
+### Requirement: A returned sale shows states, never counts
 
-A TicketSale returned by the fan boundary SHALL carry its id, Series, name, method, start time, end time and verification requirement, and its one TicketType for the event with the TicketType's id, event, price, per-account limit and, for a FirstCome sale, its state, whether it is LowStock, whether its resale is open and whether resale is available. It SHALL NOT carry a TicketType's quantity, sold count, held count or free resale count, nor the TicketTypes of the sale's other events, so no fan learns how many tickets remain or how many are listed.
+A TicketSale returned by the fan boundary SHALL carry its id, Series, name, method, start time, end time and verification requirement. Each TicketStock returned with the event's sales SHALL carry its id, event, SeatType name and price, its state, whether it is LowStock, and whether its resale is open, and the event's per-account limit SHALL be returned beside them. It SHALL NOT carry a TicketStock's quantity, sold count, or held count, nor the stocks of a sale's other events, so no fan learns how many tickets remain.
 
 #### Scenario: Few left without a count
 
-- **WHEN** ListByEvent returns a sale whose first-come TicketType of 150 is OnSale and LowStock with 15 remaining
-- **THEN** the response carries its state, LowStock and price, and no quantity, sold count or held count
+- **WHEN** ListByEvent returns a TicketStock of 150 that is Available and LowStock with 15 remaining
+- **THEN** the response carries its state, LowStock, seat type and price, and no quantity, sold count or held count
 
-#### Scenario: Resale without a count
+#### Scenario: Sold out
 
-- **WHEN** ListByEvent returns a sold-out first-come TicketType with 3 free listings
-- **THEN** the response says resale is open and available and carries no count of listings
+- **WHEN** ListByEvent returns a TicketStock that sold out before its resale deadline
+- **THEN** the response says it is SoldOut and its resale is open, and carries no count

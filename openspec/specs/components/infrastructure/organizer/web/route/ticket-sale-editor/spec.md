@@ -8,12 +8,12 @@ The organizer console screen where a member puts one published event on sale, by
 
 ### Requirement: A first-come sale's settings and defaults
 
-For an event without a first-come sale, the screen SHALL offer the sale's name, the start time and end time, entered in Japan time, the price per ticket 税込 (tax-inclusive), the quantity and the per-account limit, with the name defaulting to 一般発売, the end time defaulting to the event's start time and the limit defaulting to 4. Saving SHALL create a FirstCome sale of the event's Series with one TicketType for the event, with TicketSaleService.Create. It SHALL show an error next to a field, without saving, when the end time is after the event's start time, the end is not after the start, the name is empty or longer than 100 characters, the price is outside 1 to 1,000,000 yen, the quantity is below 1, or the limit is outside 1 to 10 or above the quantity. When saving fails because the window overlaps another sale of the event, the screen SHALL say so.
+For an event without a first-come sale, the screen SHALL offer the sale's name and the start time and end time, entered in Japan time, with the name defaulting to 一般発売 and the end time defaulting to the event's start time. It SHALL list the event's TicketStocks the sale will sell, each with its seat type's name and price 税込 (tax-inclusive) and its quantity, and SHALL say that the sale sells every seat type of the event and that the per-account limit is the event's, with that limit. Saving SHALL create a FirstCome sale of the event's Series naming the event, with TicketSaleService.Create. It SHALL show an error next to a field, without saving, when the end time is after the event's start time, the end is not after the start, or the name is empty or longer than 100 characters. When saving fails because the window overlaps another sale of the event, the screen SHALL say so.
 
 #### Scenario: Blank form
 
-- **WHEN** a member opens the editor for an event starting 2026-11-20 19:00
-- **THEN** the end time is 2026-11-20 19:00, the name is 一般発売 and the limit is 4
+- **WHEN** a member opens the editor for an event starting 2026-11-20 19:00 with the TicketStocks S席 8,000円 × 300 and A席 6,000円 × 700 and a per-account limit of 4
+- **THEN** the end time is 2026-11-20 19:00, the name is 一般発売, and the screen lists S席 and A席 and says up to 4 tickets per account
 
 #### Scenario: End after the show starts
 
@@ -25,33 +25,19 @@ For an event without a first-come sale, the screen SHALL offer the sale's name, 
 - **WHEN** the event's lottery presale runs to 10 November and the member saves a sale starting 8 November
 - **THEN** the screen says the window overlaps another sale and nothing is saved
 
-### Requirement: What can change once a first-come sale has started
-
-For an event with a first-come sale, read with TicketSaleService.ListByEvent, the screen SHALL show the quantity, the sold count and the held count of its TicketType. A change to the start or end time SHALL be saved with TicketSaleService.SetWindow, and a change to the price, quantity or per-account limit with TicketTypeService.Update. While any ticket is sold or held, it SHALL show the price as fixed, and it SHALL refuse a quantity below what is sold and held, saying why.
-
-#### Scenario: Price locked
-
-- **WHEN** the member opens the editor while a fan's checkout holds 2 tickets
-- **THEN** the price cannot be edited and the screen says it is fixed while tickets are held or sold
-
-#### Scenario: More tickets
-
-- **WHEN** the member raises the quantity from 150 to 180 and saves
-- **THEN** the TicketType is updated and the screen shows a quantity of 180
-
-#### Scenario: Sale extended
-
-- **WHEN** the member moves the end time later, still no later than the event's start time, and saves
-- **THEN** the sale's window is updated and the price, quantity and limit are unchanged
-
 ### Requirement: Prerequisites explained
 
-When the event is not published, has no start time, or the Organizer does not have complete business details, the screen SHALL say which is missing and not offer to save. For missing business details, it SHALL say they are entered by Liverty Music during vetting. Each of these notices SHALL also link to the members' guide, opened in a new tab, at the chapter that explains it: 公演をつくって公開する for an unpublished event or a missing start time, and 事業者情報と受取口座 for incomplete business details.
+When the event is not published, has no start time, has no TicketStock, or the Organizer does not have complete business details, the screen SHALL say which is missing and not offer to save. For a missing TicketStock, it SHALL link to the event's Sales tab, where stocks are added. For missing business details, it SHALL say they are entered by Liverty Music during vetting. Each of these notices SHALL also link to the members' guide, opened in a new tab, at the chapter that explains it: 公演をつくって公開する for an unpublished event or a missing start time, チケットを販売する for a missing TicketStock, and 事業者情報と受取口座 for incomplete business details.
 
 #### Scenario: No start time
 
 - **WHEN** the member opens the editor for an event without a start time
 - **THEN** the screen says to set the start time in the concert editor first and links to it and to the guide's chapter 公演をつくって公開する
+
+#### Scenario: No seat type stocked
+
+- **WHEN** the member opens the editor for a published, timed event without a TicketStock
+- **THEN** the screen says to add seat types and quantities to the event first, links to the event's Sales tab and to the guide's chapter チケットを販売する, and saving is not offered
 
 #### Scenario: Business details incomplete
 
@@ -83,11 +69,11 @@ When the event has no start time, the editor SHALL, for a lottery sale, say that
 
 ### Requirement: The editor creates a named lottery sale for one event
 
-The editor SHALL create a Lottery TicketSale for the event it was opened from, with a name, the window, and one TicketType for that event with a quantity, a per-account limit and a price. The name SHALL be required, and the per-account limit SHALL default to 4 and accept 1 to 10. When a sale of the event already overlaps the entered window, the screen SHALL say so next to the window and SHALL not save.
+The editor SHALL create a Lottery TicketSale naming the event it was opened from, with a name and the window. It SHALL list the event's TicketStocks the sale will draw from, each with its seat type's name and price 税込 and its quantity, and say that the per-account limit is the event's, with that limit. The name SHALL be required. When a sale of the event already overlaps the entered window, the screen SHALL say so next to the window and SHALL not save.
 
 #### Scenario: Presale for one event
-- **WHEN** a member names the sale ファンクラブ先行, keeps the 10-day window and enters 100 tickets at 8000 yen
-- **THEN** a Lottery sale named ファンクラブ先行 is created with one TicketType of 100 tickets at 8000 yen and a per-account limit of 4
+- **WHEN** a member names the sale ファンクラブ先行 and keeps the 10-day window for an event with the TicketStock S席 8,000円 × 100
+- **THEN** a Lottery sale named ファンクラブ先行 naming the event is created, and it draws from S席
 
 #### Scenario: Missing name
 - **WHEN** the member saves without a name
@@ -113,26 +99,35 @@ The editor for a lottery sale SHALL be opened from 抽選で販売する on an e
 
 ### Requirement: A lottery window is entered in Japan time
 
-The editor SHALL take the sale's start and end as Japan time, marked JST, whatever the device's time zone, and SHALL show the price with yen separators.
+The editor SHALL take the sale's start and end as Japan time, marked JST, whatever the device's time zone, and SHALL show the seat types' prices with yen separators.
 
 #### Scenario: Device in another time zone
 
 - **WHEN** a member whose device is set to London time enters a start of 2026-10-10 12:00 JST and saves
 - **THEN** the sale opens at 12:00 Japan time on 10 October
 
-### Requirement: A lottery sale changes only before it opens
+### Requirement: Only the window of a first-come sale changes
 
-Opened with 編集 for a lottery sale, the editor SHALL show the sale's name without letting it change, and SHALL let the member change the window, the price, the quantity and the per-account limit under the same rules as a new sale. It SHALL save the window with TicketSaleService.SetWindow and the price, quantity and per-account limit with TicketTypeService.Update. When the sale has opened by the time the member saves, the editor SHALL say that a lottery cannot change once its window has opened and SHALL save nothing.
+For an event with a first-come sale, read with TicketSaleService.ListByEvent, the screen SHALL show the sale's name and window. A change to the start or end time SHALL be saved with TicketSaleService.SetWindow. Nothing else SHALL be changeable: the seat types and quantities are the event's TicketStocks, which never change.
+
+#### Scenario: Sale extended
+
+- **WHEN** the member moves the end time later, still no later than the event's start time, and saves
+- **THEN** the sale's window is updated
+
+#### Scenario: Nothing else to edit
+
+- **WHEN** the member opens the editor for an event with a first-come sale
+- **THEN** the screen offers the window only, and no price, quantity or per-account limit
+
+### Requirement: Only the window of a lottery sale changes, before it opens
+
+Opened with 編集 for a lottery sale, the editor SHALL show the sale's name without letting it change, and SHALL let the member change the window under the same rules as a new sale, saving it with TicketSaleService.SetWindow. When the sale has opened by the time the member saves, the editor SHALL say that a lottery cannot change once its window has opened and SHALL save nothing.
 
 #### Scenario: Move the window before it opens
 
 - **WHEN** a member moves an unopened lottery's window from 10 to 17 October to 12 to 19 October and saves
 - **THEN** the sale opens on 12 October and the Sales tab shows the new window
-
-#### Scenario: Change the price before it opens
-
-- **WHEN** a member changes an unopened lottery's price from 8000 to 7500 yen and saves
-- **THEN** the sale's TicketType costs 7500 yen
 
 #### Scenario: Sale opened while editing
 

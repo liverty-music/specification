@@ -7,12 +7,12 @@ The fan's checkout screens for a first-come ticket sale: choosing how many ticke
 
 ### Requirement: Choose the count and hold the tickets
 
-The checkout SHALL open from an event's ticket section for a signed-in fan, on the TicketType of the event's FirstCome sale. It SHALL offer a count from 1 to the TicketType's per-account limit, showing the price per ticket and the total, both 税込 (tax-inclusive). Continuing SHALL hold the tickets with CheckoutUseCase.Start and show how long the hold lasts, counting down from its expiry. When continuing fails with FailedPrecondition, the checkout SHALL re-read the event's sales with TicketSaleUseCase.ListByEvent and say the sale has ended, sold out or was cancelled when the TicketType is no longer OnSale or AllHeld, and that the per-account limit was reached otherwise. While a request is in flight, the continue action SHALL be disabled. Reopening the checkout during the hold SHALL resume it with the same countdown.
+The checkout SHALL open from an event's ticket section for a signed-in fan, on one TicketStock of the event, with the event's open FirstCome sale. It SHALL show the seat type's name and offer a count from 1 to the event's per-account limit, showing the price per ticket and the total, both 税込 (tax-inclusive). Continuing SHALL hold the tickets with CheckoutUseCase.Start and show how long the hold lasts, counting down from its expiry. When continuing fails with FailedPrecondition, the checkout SHALL re-read the event's sales with TicketSaleUseCase.ListByEvent and say the sale has ended, sold out or was cancelled when the sale's window is closed or the TicketStock is SoldOut, that the fan's tickets for the event are of another seat type when they are, and that the per-account limit was reached otherwise. While a request is in flight, the continue action SHALL be disabled. Reopening the checkout during the hold SHALL resume it with the same countdown.
 
 #### Scenario: Fan picks two tickets
 
-- **WHEN** a fan picks 2 tickets of 3000 yen
-- **THEN** the total shows 6,000円（税込） and continuing holds them with a 15-minute countdown
+- **WHEN** a fan picks 2 S席 tickets of 3000 yen
+- **THEN** the screen shows S席, the total shows 6,000円（税込） and continuing holds them with a 15-minute countdown
 
 #### Scenario: Fan reloads mid-checkout
 
@@ -27,7 +27,12 @@ The checkout SHALL open from an event's ticket section for a signed-in fan, on t
 #### Scenario: Over the limit
 
 - **WHEN** continuing fails because the fan would exceed the per-account limit
-- **THEN** the screen says how many tickets one account may hold for the event, counting the tickets it already holds
+- **THEN** the screen says how many tickets one account may hold for the event, counting the tickets it already holds and has applied for
+
+#### Scenario: Another seat type held
+
+- **WHEN** continuing fails because the fan holds A席 tickets for the event and chose S席
+- **THEN** the screen says the fan's tickets for this date are A席 and one account holds one seat type per date
 
 #### Scenario: Sale ended before continuing
 
@@ -47,42 +52,6 @@ The checkout SHALL take the card through a card form that also offers Apple Pay 
 
 - **WHEN** authorizing fails because the hold has ended
 - **THEN** the screen says the 15 minutes have passed and offers to start again
-
-### Requirement: 特商法 final confirmation
-
-Before placing the order, the checkout SHALL show on one screen:
-- the event, its date, venue, and open and start times;
-- the number of tickets, with the price per ticket and the total to pay, 税込;
-- the payment method, credit card, with the card brand and last four digits, and that the card is charged when the order is placed;
-- that the tickets are available in the app's Tickets screen immediately after purchase;
-- the sale period;
-- that resale of the tickets without the Organizer's consent is prohibited, and that the tickets are issued to the fan's own account and name;
-- that the purchase cannot be cancelled or refunded except when the event is 中止 (cancelled), that no cooling-off applies, and that official resale opens only if the event sells out;
-- the Organizer's business details, carried by the Series of the event's Concert: legal name, representative name, business address, business phone number and contact email.
-
-For a resale Checkout, the screen SHALL also say that the tickets are 公式リセール (official resale) tickets sold at face value, listed by fans who cannot attend, and newly issued to the fan's own account and name, and SHALL show as the sale period that resale closes when admission opens, with that date and time.
-
-It SHALL offer to go back and change the number of tickets or the personal details from this screen. The place-order action SHALL state that it pays, with the amount, and SHALL be disabled while the order is being placed.
-
-#### Scenario: Final confirmation shown
-
-- **WHEN** a fan reaches the last step for 2 tickets of 3000 yen
-- **THEN** every listed item is shown and the action reads 6,000円を支払って購入する
-
-#### Scenario: Resale final confirmation
-
-- **WHEN** a fan reaches the last step of a resale Checkout for 1 ticket of 5000 yen whose resale closes at 15:00 on the event day
-- **THEN** every listed item is shown, the screen says the ticket is an official resale ticket at face value issued in the fan's name, the sale period ends at 15:00 on the event day, and the action reads 5,000円を支払って購入する
-
-#### Scenario: Fan corrects the name
-
-- **WHEN** the fan goes back from the final confirmation to change their name and returns
-- **THEN** the final confirmation shows the corrected name and the same hold
-
-#### Scenario: Double tap on the action
-
-- **WHEN** the fan taps the action twice
-- **THEN** the order is placed once
 
 ### Requirement: Outcome of placing the order
 
@@ -151,7 +120,7 @@ When continuing holds the tickets with CheckoutService.Start, the checkout SHALL
 
 ### Requirement: Checkout steps and the purchase start are reported
 
-Each time the checkout shows one of its steps (count, personal details, payment, final confirmation, done, outcome, or the verification notice), it SHALL send one usage analytics event naming the step, with the Event and the TicketType. When continuing from the count step holds the tickets, it SHALL send one purchase-initiated event with the Event, the TicketType, the ticket count and the price band of the TicketType.
+Each time the checkout shows one of its steps (count, personal details, payment, final confirmation, done, outcome, or the verification notice), it SHALL send one usage analytics event naming the step, with the Event and the TicketStock. When continuing from the count step holds the tickets, it SHALL send one purchase-initiated event with the Event, the TicketStock, the ticket count and the price band of its seat type.
 
 #### Scenario: Fan reaches the final confirmation
 - **WHEN** a fan holds 2 tickets, enters personal details and authorizes the card
@@ -160,3 +129,32 @@ Each time the checkout shows one of its steps (count, personal details, payment,
 #### Scenario: Verification notice instead of a hold
 - **WHEN** the checkout shows the verification notice, on opening or because holding the tickets was refused for the fan's verification
 - **THEN** one step event naming the verification notice is sent and no purchase-initiated event is sent
+
+### Requirement: 特商法 final confirmation of a first-come purchase
+
+Before placing the order, the checkout SHALL show on one screen:
+- the event, its date, venue, and open and start times;
+- the seat type's name, the number of tickets, with the price per ticket and the total to pay, 税込;
+- the payment method, credit card, with the card brand and last four digits, and that the card is charged when the order is placed;
+- that the tickets are available in the app's Tickets screen immediately after purchase;
+- the sale period;
+- that resale of the tickets without the Organizer's consent is prohibited, and that the tickets are issued to the fan's own account and name;
+- that the purchase cannot be cancelled or refunded except when the event is 中止 (cancelled), that no cooling-off applies, and that official resale opens only if the seat type sells out for the event;
+- the Organizer's business details, carried by the Series of the event's Concert: legal name, representative name, business address, business phone number and contact email.
+
+It SHALL offer to go back and change the number of tickets or the personal details from this screen. The place-order action SHALL state that it pays, with the amount, and SHALL be disabled while the order is being placed.
+
+#### Scenario: Final confirmation shown
+
+- **WHEN** a fan reaches the last step for 2 S席 tickets of 3000 yen
+- **THEN** every listed item is shown, including S席, and the action reads 6,000円を支払って購入する
+
+#### Scenario: Fan corrects the name
+
+- **WHEN** the fan goes back from the final confirmation to change their name and returns
+- **THEN** the final confirmation shows the corrected name and the same hold
+
+#### Scenario: Double tap on the action
+
+- **WHEN** the fan taps the action twice
+- **THEN** the order is placed once

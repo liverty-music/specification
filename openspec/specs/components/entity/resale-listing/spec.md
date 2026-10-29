@@ -86,22 +86,14 @@ A listing SHALL be open at a time when it is Listed and the time is before its d
 - **WHEN** a Sold listing is checked before its deadline
 - **THEN** it is not open
 
-### Requirement: Free to hold
+### Requirement: Withdrawable while open
 
-A listing SHALL be free at a time when it is open at that time and it has no Checkout, or its Checkout is neither holding at that time nor Committed. Only a free listing can be held by a new Checkout or withdrawn.
+A ResaleListing SHALL be withdrawable at a time when it is open at that time.
 
-#### Scenario: Never held
-- **WHEN** an open listing has no Checkout
-- **THEN** it is free
+#### Scenario: Open listing
+- **WHEN** a Listed listing is checked before its deadline
+- **THEN** it is withdrawable
 
-#### Scenario: Held by another fan
-- **WHEN** an open listing's Checkout is holding
-- **THEN** it is not free
-
-#### Scenario: Hold lapsed
-- **WHEN** an open listing's Checkout is Expired
-- **THEN** it is free
-
-#### Scenario: Being charged
-- **WHEN** an open listing's Checkout is Committed
-- **THEN** it is not free
+#### Scenario: Expired listing
+- **WHEN** a Listed listing is checked at its deadline
+- **THEN** it is not withdrawable

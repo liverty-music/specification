@@ -8,20 +8,20 @@ OrderUseCase.IssueFromCheckout finishes a fan's Checkout: it commits the held ti
 ### Requirement: Only the fan's own checkout, committed while holding
 
 IssueFromCheckout SHALL take a Checkout, the calling fan when a fan places the order, and the current time. Calls for the same Checkout SHALL be handled one after the other, so a second call waits for the first and then returns its outcome. The call proceeds as follows:
-1. It SHALL read the Checkout with Checkout.Get and fail with PermissionDenied, without revealing whether it exists, when it does not exist or a calling fan is not its User.
-2. When Order.GetByCheckoutID then finds an Order, it SHALL return that Order and do nothing else.
+1. It SHALL read the Checkout with Checkout.Get and its Order with Order.Get, and fail with PermissionDenied, without revealing whether it exists, when the Checkout does not exist or a calling fan is not its Order's user.
+2. When the Order is Paid, it SHALL return that Order and do nothing else.
 3. While the Checkout is Held, it SHALL fail with FailedPrecondition, changing nothing, when:
    - the Checkout is not holding at that time;
-   - Event.IsEventPublished reports false for the TicketType's event, read with TicketType.Get, as for a 中止 (cancelled) concert;
-   - the Checkout has no card authorization.
-4. It SHALL then read the Checkout's card authorization with CardAuthorization.Get and check that it confirms the Checkout for its amount, leaving the Checkout Held so the fan can try again: it SHALL fail with FailedPrecondition when the card authorization is not Authorized, with InvalidArgument when its amount differs, and return a failure of CardAuthorization.Get unchanged.
+   - Event.IsEventPublished reports false for the event of the Order's TicketStock, read with TicketStock.Get, as for a 中止 (cancelled) concert;
+   - the Order has no card authorization.
+4. It SHALL then read the Order's card authorization with CardAuthorization.Get and check that it confirms the Order for its amount, leaving the Checkout Held so the fan can try again: it SHALL fail with FailedPrecondition when the card authorization is not Authorized, with InvalidArgument when its amount differs, and return a failure of CardAuthorization.Get unchanged.
 5. It SHALL then call Checkout.Commit; when Commit reports NotHeld, or the Checkout is Expired or Released, it SHALL fail with FailedPrecondition.
 
 The card authorization of a Checkout that is not committed is given back by CheckoutUseCase.ReleaseExpired. The fan learns which case applied from CheckoutUseCase.Get.
 
 #### Scenario: Fan places the order within the hold
-- **WHEN** a fan places the order for their holding Checkout for 2 tickets whose card authorization is Authorized
-- **THEN** the tickets are committed, the card is charged and the Order is returned
+- **WHEN** a fan places the order for their holding Checkout for 2 tickets whose Order's card authorization is Authorized
+- **THEN** the tickets are committed, the card is charged and the Order is returned Paid
 
 #### Scenario: Hold lapsed before placing
 - **WHEN** a fan places the order after their hold expired
@@ -37,38 +37,38 @@ The card authorization of a Checkout that is not committed is given back by Chec
 
 #### Scenario: Double tap on the action
 - **WHEN** the fan places the order twice at the same time
-- **THEN** one Order is issued, the card is charged once, and both calls return that Order
+- **THEN** the Order is issued once, the card is charged once, and both calls return that Order
 
 #### Scenario: Fan and the stalled-checkout job at once
 - **WHEN** a fan's slow placement and OrderUseCase.IssueDueCheckouts handle the same Checkout at the same time
-- **THEN** the card is charged once and both end with the same Order
+- **THEN** the card is charged once and both end with the same Paid Order
 
 #### Scenario: Someone else's checkout
-- **WHEN** a fan places the order for a Checkout of another User, whether or not it was paid
+- **WHEN** a fan places the order for a Checkout whose Order is another User's, whether or not it was paid
 - **THEN** IssueFromCheckout fails with PermissionDenied and returns no Order
 
 ### Requirement: Charge once, then issue
 
 For a Committed Checkout without a capture time, IssueFromCheckout SHALL charge the card with CardAuthorization.Capture and record the charge with Checkout.RecordCapture:
-- When the capture fails with FailedPrecondition, meaning the card authorization can no longer be charged, it SHALL give the tickets back with Checkout.RevertCommit and fail with FailedPrecondition.
+- When the capture fails with FailedPrecondition, meaning the card authorization can no longer be charged, it SHALL give the tickets back with Checkout.RevertCommit, which makes the Order Void, and fail with FailedPrecondition.
 - When it fails with any other error, it SHALL leave the Checkout Committed and fail with that error; OrderUseCase.IssueDueCheckouts finishes the checkout later.
 
 A Checkout that already has a capture time SHALL never be charged again.
 
-It SHALL then read the captured payment with CardAuthorization.Get for the Checkout's card authorization, read the TicketType and its sale with TicketType.Get, resolve the TicketType's event's Organizer with Event.GetOrganizerID, and read the Organizer with Organizer.Get for its platform fee rate. It SHALL build:
-- a Paid Order for the Checkout's user, whose source is the Checkout, with the Checkout's amount in yen, the captured payment's ID as its provider payment ID and the captured payment's card brand and last four digits, and a pay time of the time of issuance;
-- exactly as many Tickets as the Checkout's count, each bound to that user, for the TicketType's event, and Issued at the same time; the Tickets carry no copy of the user's name or phone number;
-- a Held Settlement for the event and its Organizer, with one split paying that Organizer the Order's amount minus the platform fee at the Organizer's rate.
+It SHALL then read the captured payment with CardAuthorization.Get for the Order's card authorization, read the Order's TicketStock with TicketStock.Get, resolve the stock's event's Organizer with Event.GetOrganizerID, and read the Organizer with Organizer.Get for its platform fee rate. It SHALL then, with Order.Issue:
+- make the Pending Order Paid, with the captured payment's ID as its provider payment ID, the captured payment's card brand and last four digits, and a pay time of the time of issuance;
+- issue exactly as many Tickets as the Order's ticket count, each bound to the Order's user, for the stock's event, and Issued at the same time; the Tickets carry no copy of the user's name or phone number;
+- create a Held Settlement for the event and its Organizer, with one split paying that Organizer the Order's amount minus the platform fee at the Organizer's rate.
 
-It SHALL store them with Order.Issue. When Order.Issue fails with AlreadyExists, it SHALL return the Order found by Order.GetByCheckoutID. Any other failure leaves the charged Checkout Committed for OrderUseCase.IssueDueCheckouts.
+When Order.Issue fails with AlreadyExists, it SHALL return the Order, Paid by the other run. Any other failure leaves the charged Checkout Committed for OrderUseCase.IssueDueCheckouts.
 
 #### Scenario: Checkout issued
-- **WHEN** a Committed Checkout for 2 tickets of 3000 yen is charged for an Organizer at 8%
-- **THEN** a Paid 6000 yen Order, 2 Issued Tickets bound to the fan, and a Held Settlement with one 5520 yen split are created, and the Checkout is Completed
+- **WHEN** a Committed Checkout whose Order is for 2 tickets of 3000 yen is charged for an Organizer at 8%
+- **THEN** the 6000 yen Order becomes Paid, 2 Issued Tickets bound to the fan and a Held Settlement with one 5520 yen split are created, and the Checkout is Completed
 
 #### Scenario: Card no longer chargeable
 - **WHEN** the capture fails with FailedPrecondition
-- **THEN** the Checkout is Released, its tickets go back on sale and IssueFromCheckout fails with FailedPrecondition
+- **THEN** the Checkout is Released, its Order is Void, its tickets go back on sale and IssueFromCheckout fails with FailedPrecondition
 
 #### Scenario: Payment provider unavailable during capture
 - **WHEN** the capture fails with Unavailable
@@ -76,7 +76,7 @@ It SHALL store them with Order.Issue. When Order.Issue fails with AlreadyExists,
 
 #### Scenario: Issuance fails after the charge
 - **WHEN** the card was charged and Order.Issue fails with Unavailable
-- **THEN** the Checkout stays Committed with its capture time, and a later run issues the Order without charging again
+- **THEN** the Checkout stays Committed with its capture time, the Order stays Pending, and a later run issues the Order without charging again
 
 ### Requirement: IdentityVerification binding
 

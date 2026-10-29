@@ -7,14 +7,14 @@ Order.GetEventID returns the id of the Event an Order is for, the Event of the T
 
 ### Requirement: The Event of an Order
 
-GetEventID SHALL return the id of the Event of the TicketType that the Order's source, a LotteryEntry or a Checkout, was for. It SHALL fail with NotFound when no Order has the id.
+GetEventID SHALL return the id of the Event of the Order's TicketStock. It SHALL fail with NotFound when no Order has the id.
 
 #### Scenario: Order from a checkout
-- **WHEN** the Order was created from a Checkout for a TicketType of Event E
+- **WHEN** the Order was bought through a Checkout for a TicketStock of Event E
 - **THEN** GetEventID returns E
 
 #### Scenario: Order from a won lottery entry
-- **WHEN** the Order was created from a won LotteryEntry for a TicketType of Event E
+- **WHEN** the Order was entered through a LotteryEntry for a TicketStock of Event E
 - **THEN** GetEventID returns E
 
 #### Scenario: Unknown order

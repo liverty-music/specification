@@ -7,14 +7,14 @@ Lists the Won LotteryEntries that have no Order yet.
 
 ### Requirement: Won entries without an order
 
-ListLotteryEntryIDsAwaitingIssuance SHALL return the id of every Won entry that has no Order, and no other id. It SHALL return an empty list when there is none.
+ListLotteryEntryIDsAwaitingIssuance SHALL return the id of every Won entry whose Order is Pending, and no other id. It SHALL return an empty list when there is none.
 
 #### Scenario: Won without order
-- **WHEN** an entry is Won and has no Order
+- **WHEN** an entry is Won and its Order is Pending
 - **THEN** its id is returned
 
 #### Scenario: Already issued
-- **WHEN** a Won entry already has an Order
+- **WHEN** a Won entry's Order is Paid
 - **THEN** its id is not returned
 
 #### Scenario: Not won

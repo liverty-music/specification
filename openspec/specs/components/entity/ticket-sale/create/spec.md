@@ -5,26 +5,22 @@ Stores a new TicketSale together with its TicketTypes.
 
 ## Requirements
 
-### Requirement: Store a sale with its ticket types
+### Requirement: Store a sale with its events
 
-Create SHALL store the sale without a draw time and every one of its TicketTypes together, or nothing, and return the sale with its TicketTypes; each TicketType of a FirstCome sale SHALL start with a sold count of 0. It SHALL fail with InvalidArgument when the sale or a TicketType breaks the TicketSale or TicketType rules, or when two of its TicketTypes are for the same event, and with FailedPrecondition when the Series or an event of a TicketType does not exist.
+Create SHALL store the sale together with the events it names, or nothing, and return the sale with its events. It SHALL fail with InvalidArgument when the sale breaks the TicketSale rules or names the same event twice, and with FailedPrecondition when the Series or a named event does not exist.
 
 #### Scenario: Sale stored
-- **WHEN** Create is called for an existing Series with TicketTypes for two of its events
-- **THEN** the sale and both TicketTypes are stored and returned, and the sale is not drawn
-
-#### Scenario: First-come sale stored
-- **WHEN** a valid FirstCome sale with one TicketType of 150 tickets is created
-- **THEN** it is stored with its TicketType at a sold count of 0
+- **WHEN** Create is called for an existing Series with two of its events
+- **THEN** the sale is stored and returned with both events, and the sale is not drawn
 
 #### Scenario: Unknown event
-- **WHEN** one TicketType names an event that does not exist
-- **THEN** Create fails with FailedPrecondition and stores neither the sale nor any TicketType
+- **WHEN** the sale names an event that does not exist
+- **THEN** Create fails with FailedPrecondition and stores nothing
 
 #### Scenario: Same event twice
-- **WHEN** two TicketTypes of the sale are for the same event
+- **WHEN** the sale names the same event twice
 - **THEN** Create fails with InvalidArgument and stores nothing
 
-#### Scenario: Invalid ticket type
-- **WHEN** a TicketType has a per-account limit of 11
+#### Scenario: Event of another Series
+- **WHEN** an Organizer's sale names an event of another Series
 - **THEN** Create fails with InvalidArgument and stores nothing

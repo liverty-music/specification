@@ -7,11 +7,11 @@ Stores a new Listed ResaleListing for a fan's Ticket, so that the Ticket can be 
 
 ### Requirement: One open listing per ticket
 
-Create SHALL store a Listed ResaleListing with the given Ticket, its Order, user, ticket type, price and create time, and return it. Checking and storing SHALL be one indivisible step: it SHALL fail with AlreadyExists when the Ticket already has a Listed listing, and with FailedPrecondition when the Ticket is not Issued or has an admit time at that moment, storing nothing in both cases. A Ticket whose earlier listing was Withdrawn or Cancelled, or expired, SHALL be listable again. It SHALL fail with NotFound when no Ticket has the id.
+Create SHALL store a Listed ResaleListing with the given Ticket, its Order, user, TicketStock, price and create time, and return it. Checking and storing SHALL be one indivisible step: it SHALL fail with AlreadyExists when the Ticket already has a Listed listing, and with FailedPrecondition when the Ticket is not Issued or has an admit time at that moment, storing nothing in both cases. A Ticket whose earlier listing was Withdrawn or Cancelled, or expired, SHALL be listable again. It SHALL fail with NotFound when no Ticket has the id.
 
 #### Scenario: First listing
 - **WHEN** Create is called for an Issued, not admitted Ticket without a listing
-- **THEN** a Listed ResaleListing is stored and returned
+- **THEN** a Listed ResaleListing with the Ticket's TicketStock and its SeatType's price is stored and returned
 
 #### Scenario: Listed twice
 - **WHEN** two Create calls for the same Ticket run at the same time

@@ -49,34 +49,6 @@ Every milestone time SHALL be read in the time zone the source page uses and ret
 - **WHEN** the series' events run from February to March 2027 and the page states a sale opening on 10 November without a year
 - **THEN** the discovered sale opens on 10 November 2026
 
-### Requirement: Required values come from the source pages
-
-Every value in a discovered sale SHALL come from the searched pages; a value SHALL never be guessed. A sale SHALL be returned only when the pages state its method and its start time, and for a lottery also its end time. Otherwise the sale SHALL be discarded. A first-come sale whose pages state no end SHALL be returned without an end time. A lottery result time SHALL be returned when the pages state it and left unknown otherwise.
-
-#### Scenario: Lottery with a published result date
-- **WHEN** a lottery's page states its application period and its result-announcement date
-- **THEN** the discovered sale has a start time, an end time and a lottery result time
-
-#### Scenario: Lottery without a published result date
-- **WHEN** a lottery's page states its application period and no result-announcement date
-- **THEN** the discovered sale has no lottery result time
-
-#### Scenario: First-come sale until sold out
-- **WHEN** a page announces a fan-club first-come sale that opens tomorrow at 18:30 and ends when tickets run out
-- **THEN** the discovered sale has method FirstCome, a start time and no end time
-
-#### Scenario: Lottery without a stated close
-- **WHEN** a page announces a lottery with a start date and no end date
-- **THEN** that sale is not returned
-
-#### Scenario: Method not stated
-- **WHEN** a page announces a sale without saying whether it is a lottery or first come
-- **THEN** that sale is not returned
-
-#### Scenario: Nothing usable found
-- **WHEN** the pages contain no sale that has not opened
-- **THEN** SearchPublishedSales returns no sales without an error
-
 ### Requirement: Inconsistent sales are discarded
 
 A sale SHALL be discarded when its times break the TicketSale rules for a discovered sale, or when its start time is after the last day of its series' event period.
@@ -126,3 +98,23 @@ Every request SearchPublishedSales sends to the search service, including the se
 #### Scenario: Discarded sale
 - **WHEN** the service returns 3 sales and 1 is discarded because it already opened
 - **THEN** the generation reports 3 returned, 2 kept and 1 discarded for that reason
+
+### Requirement: A sale is returned only with its name, method, start and end from the pages
+
+Every value in a discovered sale SHALL come from the searched pages; a value SHALL never be guessed. A sale SHALL be returned only when the pages state its name, its method, its start time and its end time. Otherwise the sale SHALL be discarded.
+
+#### Scenario: Lottery with its application period
+- **WHEN** a lottery's page names it オフィシャル先行 and states its application period
+- **THEN** the discovered sale has the name オフィシャル先行, method Lottery, a start time and an end time
+
+#### Scenario: First-come sale until sold out
+- **WHEN** a page announces a fan-club first-come sale that opens tomorrow at 18:30 and ends when tickets run out
+- **THEN** that sale is not returned
+
+#### Scenario: Lottery without a stated close
+- **WHEN** a page announces a lottery with a start date and no end date
+- **THEN** that sale is not returned
+
+#### Scenario: Sale without a name
+- **WHEN** a page announces a sale's period without naming the sale
+- **THEN** that sale is not returned

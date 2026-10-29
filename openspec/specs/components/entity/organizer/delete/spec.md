@@ -10,8 +10,8 @@ Organizer.Delete permanently removes an Organizer's records: the Organizer with 
 Delete SHALL remove, together or not at all:
 
 - the Organizer;
-- its first-party Series with their TicketSales, and their Events, with each Event's TicketTypes, lottery entries, Checkouts, ticket journeys and performers;
-- the Refunded and Failed Orders and their Tickets for those Events, with their Reversed Settlements and the Tickets' ResaleListings;
+- its first-party Series with their SeatTypes and TicketSales, and their Events, with each Event's TicketStocks, ticket journeys and performers;
+- the Void and Refunded Orders for those Events with their lottery entries, Checkouts and Tickets, the Orders' Reversed Settlements and the Tickets' ResaleListings;
 - the Scanners of those Events, with their Admissions and RejectedScans;
 - its SeriesImage records and the Series' cover links;
 - its Artist associations and its payout-account record.
@@ -33,6 +33,11 @@ Fans' follows of the Artists, and every record unrelated to the Organizer, SHALL
 - **WHEN** a Ticket of an Event of the Organizer was resold, so the Event has a Sold ResaleListing, and every Order of the Event is Refunded
 - **THEN** the ResaleListing is removed with the Event and the Organizer is deleted
 
+#### Scenario: Abandoned application
+
+- **WHEN** an Event of the Organizer has only a Void Order of a Lost lottery entry whose card authorization was released
+- **THEN** the Order and the entry are removed with the Event
+
 ### Requirement: Unknown Organizer
 
 Delete SHALL fail with NotFound when no Organizer has the id.
@@ -49,7 +54,7 @@ Delete SHALL fail with FailedPrecondition and remove nothing when, at the moment
 - the Organizer is not deactivated;
 - any of its Events has an Order that is Paid;
 - any of its Events has a Settlement that is not Reversed;
-- any of its Events has a purchase in progress: a Checkout that is Held or Committed, an Expired or Released Checkout whose card authorization is not yet released, an Entered lottery entry, or a Won lottery entry whose Order is not yet issued;
+- any of its Events has a purchase in progress: a Pending Order, or a Void Order whose card authorization is not yet released;
 - the Organizer has a payout-account record.
 
 A purchase started while Delete runs SHALL either be seen by these checks or be refused; it SHALL NOT be removed.
@@ -71,12 +76,12 @@ A purchase started while Delete runs SHALL either be seen by these checks or be 
 
 #### Scenario: Purchase in progress
 
-- **WHEN** an Event of the Organizer has an Entered lottery entry
+- **WHEN** an Event of the Organizer has a Pending Order of an Entered lottery entry
 - **THEN** it fails with FailedPrecondition and nothing is removed
 
 #### Scenario: Won entry awaiting its order
 
-- **WHEN** an Event of the Organizer has a Won lottery entry whose Order is not yet issued
+- **WHEN** an Event of the Organizer has a Won lottery entry whose Order is still Pending
 - **THEN** it fails with FailedPrecondition and nothing is removed
 
 #### Scenario: Payout account

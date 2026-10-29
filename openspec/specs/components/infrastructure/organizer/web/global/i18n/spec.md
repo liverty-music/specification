@@ -54,7 +54,7 @@ Every price the console shows SHALL be in yen with digit separators and no decim
 
 #### Scenario: Ticket price
 
-- **WHEN** a TicketType's price is 6500 yen and the console is in Japanese
+- **WHEN** a SeatType's price is 6500 yen and the console is in Japanese
 - **THEN** the price is shown as 6,500円
 
 #### Scenario: Large count

@@ -5,13 +5,17 @@ Order.ListByEvent returns every Order whose Tickets admit to one Event, in any s
 
 ## Requirements
 
-### Requirement: ListByEvent returns the Event's Orders
+### Requirement: ListByEvent returns the Event's paid and refunded orders
 
-ListByEvent SHALL return every Order whose source, a LotteryEntry or a Checkout, is for a TicketType of the given Event, whatever the Order's status, oldest pay time first. An Order created by an official resale purchase is one of these Orders. It SHALL return an empty list when the Event has no Order or no Event has the id, and SHALL fail with InvalidArgument when no Event is given.
+ListByEvent SHALL return every Paid or Refunded Order whose TicketStock is of the given Event, oldest pay time first. Pending and Void Orders SHALL NOT be returned. It SHALL return an empty list when the Event has no such Order or no Event has the id, and SHALL fail with InvalidArgument when no Event is given.
 
-#### Scenario: Paid, refunded and resale orders
-- **WHEN** the Event has one Paid Order from a Checkout, one Refunded Order from a won LotteryEntry and one Paid Order from an official resale purchase
-- **THEN** all three are returned, oldest pay time first
+#### Scenario: Paid and refunded orders
+- **WHEN** the Event has one Paid Order from a Checkout and one Refunded Order from a won LotteryEntry
+- **THEN** both are returned, oldest pay time first
+
+#### Scenario: Pending and void orders
+- **WHEN** the Event has one Pending Order of an Entered LotteryEntry and one Void Order of an expired Checkout
+- **THEN** neither is returned
 
 #### Scenario: Orders of another event
 - **WHEN** another Event of the same Series has an Order and this Event has none

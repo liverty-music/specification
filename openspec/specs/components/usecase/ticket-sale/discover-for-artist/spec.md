@@ -41,7 +41,31 @@ For each sale that UpsertDiscovered reports as Inserted, DiscoverForArtist SHALL
 - **WHEN** a sale is created and its announcement request cannot be queued
 - **THEN** the sale stays stored, it is counted as new, and it is not announced later
 
-### Requirement: Only series that need a search are searched
+### Requirement: A successful search is recorded
+
+When SearchPublishedSales succeeds, DiscoverForArtist SHALL call TicketSaleSearch.Record for every series it searched, with the time of the search, whether or not any sale was found. When the search fails, nothing SHALL be recorded, so the next daily run searches those series again. When recording fails, DiscoverForArtist SHALL fail with that error after storing the discovered sales.
+
+#### Scenario: Search finds nothing
+- **WHEN** SearchPublishedSales returns no sales for a searched series
+- **THEN** the series' search is recorded and it is not searched again for 10 days
+
+#### Scenario: Search fails with a spend cap
+- **WHEN** SearchPublishedSales fails with ResourceExhausted
+- **THEN** no search is recorded and the series is searched again on the next daily run
+
+### Requirement: Each search reports its outcome
+
+Every run of DiscoverForArtist that calls SearchPublishedSales SHALL send one "ticket sale search completed" signal for product analytics, under the trace of that run, carrying the artist, the number of series searched, the number of sales returned, and the number newly stored. A failed search SHALL send the signal with the outcome failed and the kind of error that failed it (such as deadline exceeded, unavailable or permission denied), or unknown when the error states no kind, and SHALL NOT carry the error's message. A failure to send it SHALL NOT change the run.
+
+#### Scenario: One new sale
+- **WHEN** the search returns 2 sales for 3 series and 1 of them is newly stored
+- **THEN** one signal is sent with 3 series, 2 returned and 1 new
+
+#### Scenario: Search failed for a spent quota
+- **WHEN** the search fails because the external service refused it for a spent quota
+- **THEN** one signal is sent with the outcome failed and the error kind permission denied
+
+### Requirement: A series is searched only when it needs a search
 
 DiscoverForArtist SHALL search a series of the artist only when all of these hold:
 
@@ -74,10 +98,6 @@ When the artist's concerts, its official site, a series' trackers, sales or tick
 - **WHEN** a tracked series has a stored lottery that closes next week
 - **THEN** the series is not searched
 
-#### Scenario: First-come sale until sold out has opened
-- **WHEN** a tracked series' only stored sale is a first-come sale with no end time that opened yesterday, and the series was last searched 11 days ago
-- **THEN** the series is searched
-
 #### Scenario: Searched recently
 - **WHEN** a tracked series with nothing pending was last searched 5 days ago
 - **THEN** the series is not searched
@@ -101,27 +121,3 @@ When the artist's concerts, its official site, a series' trackers, sales or tick
 #### Scenario: No official site
 - **WHEN** a series qualifies and the artist has no official site
 - **THEN** no search runs and DiscoverForArtist returns 0 without an error
-
-### Requirement: A successful search is recorded
-
-When SearchPublishedSales succeeds, DiscoverForArtist SHALL call TicketSaleSearch.Record for every series it searched, with the time of the search, whether or not any sale was found. When the search fails, nothing SHALL be recorded, so the next daily run searches those series again. When recording fails, DiscoverForArtist SHALL fail with that error after storing the discovered sales.
-
-#### Scenario: Search finds nothing
-- **WHEN** SearchPublishedSales returns no sales for a searched series
-- **THEN** the series' search is recorded and it is not searched again for 10 days
-
-#### Scenario: Search fails with a spend cap
-- **WHEN** SearchPublishedSales fails with ResourceExhausted
-- **THEN** no search is recorded and the series is searched again on the next daily run
-
-### Requirement: Each search reports its outcome
-
-Every run of DiscoverForArtist that calls SearchPublishedSales SHALL send one "ticket sale search completed" signal for product analytics, under the trace of that run, carrying the artist, the number of series searched, the number of sales returned, and the number newly stored. A failed search SHALL send the signal with the outcome failed and the kind of error that failed it (such as deadline exceeded, unavailable or permission denied), or unknown when the error states no kind, and SHALL NOT carry the error's message. A failure to send it SHALL NOT change the run.
-
-#### Scenario: One new sale
-- **WHEN** the search returns 2 sales for 3 series and 1 of them is newly stored
-- **THEN** one signal is sent with 3 series, 2 returned and 1 new
-
-#### Scenario: Search failed for a spent quota
-- **WHEN** the search fails because the external service refused it for a spent quota
-- **THEN** one signal is sent with the outcome failed and the error kind permission denied
