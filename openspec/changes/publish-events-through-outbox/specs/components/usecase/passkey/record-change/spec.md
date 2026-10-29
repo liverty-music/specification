@@ -22,7 +22,7 @@ RecordChange SHALL run when the passkey-events webhook starts it for an accepted
 #### Scenario: Store unavailable
 
 - **WHEN** Passkey.Create fails with Unavailable
-- **THEN** RecordChange fails and the Passkey is stored when it runs again
+- **THEN** the step is tried again and the Passkey is stored once the store answers
 
 ### Requirement: A passkey added during sign-up is recorded once the account exists
 

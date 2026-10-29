@@ -2,7 +2,7 @@
 
 ### Requirement: Each resend request sends one fresh code to an unverified address
 
-ReissueEmailVerification SHALL run when UserUseCase.ResendEmailVerification starts it, with the caller's User. It SHALL read the User with User.Get and send a fresh code with User.ResendVerification. When User.Get fails with NotFound, or User.ResendVerification fails with FailedPrecondition because the address is already verified, it SHALL finish without sending. When email verification is not configured, it SHALL log that and finish without sending. Any other failure SHALL fail ReissueEmailVerification so it is run again; a run again after a code was sent sends a newer code.
+ReissueEmailVerification SHALL run when UserUseCase.ResendEmailVerification starts it, with the caller's User. It SHALL read the User with User.Get and send a fresh code with User.ResendVerification. When User.Get fails with NotFound, or User.ResendVerification fails with FailedPrecondition because the address is already verified, it SHALL finish without sending. When email verification is not configured, it SHALL log that and finish without sending. A step that fails with Unavailable SHALL be tried again; a step tried again after a code was sent sends a newer code. Any other failure SHALL end ReissueEmailVerification with that failure, and it is reported for an admin.
 
 #### Scenario: Unverified address
 
