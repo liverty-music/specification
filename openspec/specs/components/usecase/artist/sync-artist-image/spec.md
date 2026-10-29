@@ -2,7 +2,7 @@
 
 ## Purpose
 
-ArtistImageSyncUseCase.SyncArtistImage fetches an artist's community images and records the result, profiling the best logo's colors along the way. It runs when an artist is newly registered and daily for artists whose images were never checked or were last checked more than 7 days ago.
+ArtistImageSyncUseCase.SyncArtistImage fetches an artist's community images and records the result, profiling the best logo's colors along the way. It runs when an artist is newly registered and daily for artists whose images were never checked and for followed artists last checked more than 7 days ago.
 
 ## Requirements
 
