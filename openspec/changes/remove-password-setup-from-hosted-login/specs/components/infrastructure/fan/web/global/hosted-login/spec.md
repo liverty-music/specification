@@ -45,8 +45,10 @@ No page of the hosted login SHALL let a person set a password on an identity:
 not on sign-up, not when choosing which credential to set up, not through a
 reset code, and not by changing a password after signing in. A page that
 would set a password SHALL instead show the hosted login's not-found page,
-whether it is reached by a link or by typing its address. An identity that
-already has a password SHALL still sign in with it.
+whether it is reached by a link or by typing its address. A request that
+reaches the hosted login's server without going through those pages SHALL be
+refused in the same way, so no request to the hosted login sets a password.
+An identity that already has a password SHALL still sign in with it.
 
 #### Scenario: Sign-up offers only a passkey
 
@@ -62,6 +64,11 @@ already has a password SHALL still sign in with it.
 
 - **WHEN** a person opens the sign-up password step, the set-password page or the change-password page by typing its address, with or without a reset code
 - **THEN** the hosted login shows its not-found page and no password is set
+
+#### Scenario: Password sent to the hosted login without its pages
+
+- **WHEN** a request carrying a new password is sent to the hosted login's server directly, for sign-up, a reset code or a signed-in session, without opening any of its pages
+- **THEN** the hosted login refuses it and no password is set
 
 #### Scenario: No password reset on the password page
 
