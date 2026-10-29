@@ -89,4 +89,18 @@ message Event {
   // first-party series only; an Event of a discovered series leaves it
   // PUBLISH_STATE_UNSPECIFIED. A Concert carries it through its event.
   PublishState publish_state = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // per_account_limit is the most tickets one account may hold for this event,
+  // across every TicketSale, SeatType and official resale of it: 1 to 10,
+  // because one AdmissionCode presents at most 10 tickets. 4 when not given.
+  // Set while the event is DRAFT and fixed once it is PUBLISHED. Set by the
+  // server for an Event of a first-party series only; absent on an Event of a
+  // discovered series.
+  optional int32 per_account_limit = 12 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).int32 = {
+      gte: 1
+      lte: 10
+    }
+  ];
 }

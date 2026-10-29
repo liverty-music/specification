@@ -99,7 +99,8 @@ service SeriesService {
   //   - a PUBLISHED or CANCELLED Event of the series is left out (a published
   //     date is cancelled, not removed);
   //   - a given event_id is not an Event of the series;
-  //   - a PUBLISHED Event's venue or date differs from the stored one;
+  //   - a PUBLISHED Event's venue, date or per-account limit differs from the
+  //     stored one;
   //   - a CANCELLED Event differs from the stored one in any value;
   //   - the series has a PUBLISHED or CANCELLED Event and the type, source page
   //     or visibility differs from the stored one;
@@ -233,6 +234,15 @@ message EventDraft {
   // Optional. The Event of the series this entry edits, as returned in a
   // Concert's event. Omitted for a new date, which is added as a DRAFT Event.
   entity.v1.EventId event_id = 6;
+
+  // Optional. The most tickets one account may hold for this event, across
+  // every sale, seat type and official resale of it: 1 to 10. 4 when omitted.
+  // Fixed once the Event is PUBLISHED: a PUBLISHED Event given another limit
+  // fails Update with FAILED_PRECONDITION.
+  optional int32 per_account_limit = 7 [(buf.validate.field).int32 = {
+    gte: 1
+    lte: 10
+  }];
 }
 
 // SeriesDraft is the authoring payload for a first-party series, shared by

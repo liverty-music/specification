@@ -54,20 +54,19 @@ service ConcertService {
   rpc ListByArtist(ListByArtistRequest) returns (ListByArtistResponse);
 
   // Delete permanently removes a concert by its event id, whatever its origin.
-  // It is refused while a purchase of the event is still live: a paid Order,
-  // a Settlement that is not reversed, or a purchase in progress (a Checkout
-  // that is held or committed, an expired or released Checkout whose card
-  // authorization is not yet released, an entered lottery entry, or a draft
-  // lottery entry whose card authorization is open). A purchase started while
-  // the delete runs either makes it fail or is refused; it is never removed.
+  // It is refused while a purchase of the event is still live: a PAID Order,
+  // a Settlement that is not reversed, or a purchase in progress (a PENDING
+  // Order, or a VOID Order whose card authorization is not yet released). A
+  // purchase started while the delete runs either makes it fail or is
+  // refused; it is never removed.
   //
   // Otherwise it removes the event together with its performers, its ticket
-  // journeys, its ticket types, their finished checkouts and lottery entries,
-  // the refunded and failed Orders with their Tickets and resale listings,
-  // the reversed Settlements, and the event's scanners with their admissions
-  // and rejected scans. An Organizer's ticket sale left with no ticket type,
-  // and a first-party Series left with no event, are removed too; a
-  // discovered Series stays. Everything is removed together or not at all.
+  // journeys, its ticket stocks, their VOID and REFUNDED Orders with those
+  // Orders' checkouts, lottery entries and Tickets and the Tickets' resale
+  // listings, the reversed Settlements, and the event's scanners with their
+  // admissions and rejected scans. An Organizer's ticket sale left naming no
+  // event, and a first-party Series left with no event, with its seat types,
+  // are removed too; a discovered Series and its discovered sales stay. Everything is removed together or not at all.
   //
   // The event's venue, date and start time are suppressed so that discovery
   // does not add the concert again; an Organizer can still publish at that

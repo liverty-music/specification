@@ -1,9 +1,9 @@
 syntax = "proto3";
 
 // Package liverty_music.rpc.lottery_entry.v1 provides the fan-facing
-// LotteryEntryService: the signed-in fan's entry into the lottery for one
-// TicketType of a LOTTERY TicketSale, from the card authorization to the
-// entry and its result. The draw itself (which captures the winners' card
+// LotteryEntryService: the signed-in fan's entry into a LOTTERY TicketSale for
+// one TicketStock of an event the sale names, from the card authorization to
+// the entry and its result. The draw itself (which captures the winners' card
 // authorizations and releases the others) runs as an internal backend job, not
 // an RPC. Sales are configured through
 // liverty_music.rpc.organizer.ticket_sale.v1.
@@ -12,8 +12,10 @@ package liverty_music.rpc.lottery_entry.v1;
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/card_authorization.proto";
 import "liverty_music/entity/v1/lottery_entry.proto";
+import "liverty_music/entity/v1/order.proto";
 import "liverty_music/entity/v1/referral.proto";
-import "liverty_music/entity/v1/ticket_type.proto";
+import "liverty_music/entity/v1/ticket_sale.proto";
+import "liverty_music/entity/v1/ticket_stock.proto";
 import "liverty_music/entity/v1/user.proto";
 
 // LotteryEntryService runs one fan's lottery entry in two steps:
@@ -22,53 +24,58 @@ import "liverty_music/entity/v1/user.proto";
 //      account and opens a card authorization for a count of tickets, which
 //      the browser authenticates (3D Secure) with the returned card
 //      authorization secret. No entry exists yet.
-//   2. Confirm makes the Entered entry from the authenticated card
-//      authorization, so it takes part in the draw.
+//   2. Confirm makes the fan's PENDING Order and the Entered entry from the
+//      authenticated card authorization, so it takes part in the draw.
 //
 // To change the count, the fan authorizes again; a card authorization whose
 // authentication was never completed holds nothing on the card. Once the fan
 // completes authentication, the platform also makes the entry by itself, so
 // an entry is made even when the browser closes before Confirm. A confirmed
-// entry cannot be given up. ListByTicketType reads the fan's entry, whose
-// state after the draw is the result. No money is captured here. Every call
+// entry cannot be given up. A fan enters a sale at most once for each event it
+// names. ListByTicketType reads the fan's entries in a sale, whose states
+// after the draw are the results. No money is captured here. Every call
 // requires a signed-in fan, who is always the caller; the fan is resolved from
 // the token to their stored account and is never named in a request. A
 // signed-in caller with no stored account fails with NOT_FOUND.
 service LotteryEntryService {
   // AuthorizeCard records the 本人確認 full name and phone number on the
-  // caller's account, then opens a CardAuthorization for the TicketType's
+  // caller's account, then opens a CardAuthorization for the stock's seat type
   // price times the ticket count and returns it with the card authorization
   // secret, which the browser confirms with the payment provider (3D Secure);
-  // the secret is never stored. The TicketType's sale must be a LOTTERY sale
-  // whose window is open; the count must be at most the TicketType's
-  // per-account limit and, together with the caller's Issued tickets for the
-  // TicketType's event, must still fit it; when the sale requires
+  // the secret is never stored. The sale must be a LOTTERY sale whose window
+  // is open and that names the stock's event; the count must be at most the
+  // event's per-account limit and, together with the tickets the caller holds
+  // for the event (the issued Tickets of their PAID Orders and the counts of
+  // their PENDING Orders), must still fit it; every ticket the caller holds for
+  // the event must be of the stock's SeatType; when the sale requires
   // verification, the caller must hold an Active IdentityVerification; and the
-  // caller must have no entry for the TicketType. A referral_code goes with
-  // the card authorization onto the entry Confirm makes. No entry is stored
-  // and no money is captured.
+  // caller must have no entry in the sale for the stock's event. A
+  // referral_code goes with the card authorization onto the Order Confirm
+  // makes. No Order or entry is stored and no money is captured.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  // - NOT_FOUND: The TicketType does not exist, or the caller has no stored
-  //   account.
-  // - INVALID_ARGUMENT: The ticket_type_id is missing or malformed, the
-  //   ticket_count is not greater than 0 or is above the TicketType's
-  //   per-account limit, the referral_code is given and malformed, or the
-  //   full name or phone number is missing or breaks the User's personal
+  // - NOT_FOUND: The sale or the TicketStock does not exist, or the caller has
+  //   no stored account.
+  // - INVALID_ARGUMENT: The ticket_sale_id or ticket_stock_id is missing or
+  //   malformed, the ticket_count is not greater than 0 or is above the
+  //   event's per-account limit, the referral_code is given and malformed, or
+  //   the full name or phone number is missing or breaks the User's personal
   //   details rule (the phone number must be in E.164 form).
-  // - FAILED_PRECONDITION: The TicketType's sale is not a LOTTERY sale or its
-  //   window is not open, the sale requires verification and the caller holds
-  //   no Active IdentityVerification, the caller's Issued tickets for the
-  //   event plus the count exceed the per-account limit, or the caller already
-  //   has an entry for the TicketType.
+  // - FAILED_PRECONDITION: The sale is not a LOTTERY sale, does not name the
+  //   stock's event or its window is not open, the sale requires verification
+  //   and the caller holds no Active IdentityVerification, the caller's
+  //   tickets for the event plus the count exceed the per-account limit, the
+  //   caller holds tickets of another SeatType for the event, or the caller
+  //   already has an entry in the sale for the stock's event.
   // - UNAVAILABLE: Card payments are temporarily unavailable.
   rpc AuthorizeCard(AuthorizeCardRequest) returns (AuthorizeCardResponse);
 
-  // Confirm makes the caller's Entered entry from their card authorization,
-  // after checking that it is Authorized, in yen, for the TicketType's price
-  // times its ticket count, on an accepted card (every brand except American
-  // Express), and that the sale's end time has not passed. Confirming a card
+  // Confirm makes the caller's PENDING Order and Entered entry from their card
+  // authorization, after checking that it is Authorized, in yen, for the
+  // stock's seat type price times its ticket count, on an accepted card (every
+  // brand except American Express), that the sale's end time has not passed
+  // and that the application still fits the event. Confirming a card
   // authorization that already made an entry returns that entry. A card
   // authorization Confirm rejects is released at once, so the fan is not
   // charged. No money is captured at entry.
@@ -84,31 +91,37 @@ service LotteryEntryService {
   // - FAILED_PRECONDITION: The card authorization is not Authorized (card
   //   authentication not completed, or already captured or released); or it
   //   is rejected and released: the card is American Express, the caller
-  //   already has another entry for the TicketType, the sale's end time has
-  //   passed, or the TicketType no longer exists.
+  //   already has another entry in the sale for the stock's event, the
+  //   application no longer fits the event, the sale's end time has passed,
+  //   or the TicketStock no longer exists.
   // - UNAVAILABLE: Card payments are temporarily unavailable.
   rpc Confirm(ConfirmRequest) returns (ConfirmResponse);
 
-  // ListByTicketType returns the caller's entries for a TicketType, at most
-  // one, so the fan sees whether they have entered and, after the draw,
-  // whether they won. A caller who never entered gets an empty list.
+  // ListByTicketType returns the caller's entries in a LOTTERY sale, at most
+  // one for each event the sale names, with their Orders, so the fan sees
+  // which stock and count they entered and, after the draw, whether they won.
+  // A caller who never entered gets an empty list.
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  // - NOT_FOUND: The TicketType does not exist, or the caller has no stored
+  // - NOT_FOUND: The sale does not exist, or the caller has no stored
   //   account.
-  // - INVALID_ARGUMENT: The ticket_type_id is missing or malformed.
+  // - INVALID_ARGUMENT: The ticket_sale_id is missing or malformed.
   rpc ListByTicketType(ListByTicketTypeRequest) returns (ListByTicketTypeResponse);
 }
 
-// AuthorizeCardRequest carries the TicketType, the count and the 本人確認
+// AuthorizeCardRequest carries the sale, the stock, the count and the 本人確認
 // details.
 message AuthorizeCardRequest {
-  // Required. The TicketType of a LOTTERY sale to enter.
-  entity.v1.TicketTypeId ticket_type_id = 4 [(buf.validate.field).required = true];
+  // Required. The LOTTERY sale to enter.
+  entity.v1.TicketSaleId ticket_sale_id = 7 [(buf.validate.field).required = true];
+
+  // Required. The TicketStock to enter for, a stock of an event the sale
+  // names.
+  entity.v1.TicketStockId ticket_stock_id = 8 [(buf.validate.field).required = true];
 
   // Required. The tickets requested for the companion group, allocated
-  // all-or-nothing: at least 1 and at most the TicketType's per-account limit
+  // all-or-nothing: at least 1 and at most the event's per-account limit
   // (never above 10).
   int32 ticket_count = 5 [(buf.validate.field).int32 = {
     gte: 1
@@ -123,14 +136,15 @@ message AuthorizeCardRequest {
   entity.v1.PhoneNumber phone_number = 3 [(buf.validate.field).required = true];
 
   // Optional. The referral code of the link the fan came from. It is kept on
-  // the entry Confirm makes; a malformed code fails with INVALID_ARGUMENT.
+  // the Order Confirm makes; a malformed code fails with INVALID_ARGUMENT.
   // Absent for an entry without a code.
   optional entity.v1.ReferralCode referral_code = 6;
 
   // Field 1 was the Draft entry the card authorization was opened for; there
-  // is no Draft any more.
-  reserved 1;
-  reserved "lottery_entry_id";
+  // is no Draft any more. Field 4 was the TicketType to enter, replaced by
+  // ticket_sale_id and ticket_stock_id.
+  reserved 1, 4;
+  reserved "lottery_entry_id", "ticket_type_id";
 }
 
 // AuthorizeCardResponse returns the card authorization for the browser to
@@ -160,21 +174,34 @@ message ConfirmRequest {
   reserved "lottery_entry_id";
 }
 
-// ConfirmResponse returns the entry.
+// ConfirmResponse returns the entry and its Order.
 message ConfirmResponse {
   // The entry, Entered.
   entity.v1.LotteryEntry lottery_entry = 1 [(buf.validate.field).required = true];
+
+  // The entry's PENDING Order: its stock, ticket count and amount.
+  entity.v1.Order order = 2 [(buf.validate.field).required = true];
 }
 
-// ListByTicketTypeRequest names the TicketType whose entries to list.
+// ListByTicketTypeRequest names the sale whose entries to list. The method
+// keeps its former name until the rename that follows this change.
 message ListByTicketTypeRequest {
-  // Required. The TicketType whose entries of the caller to list.
-  entity.v1.TicketTypeId ticket_type_id = 1 [(buf.validate.field).required = true];
+  // Required. The LOTTERY sale whose entries of the caller to list.
+  entity.v1.TicketSaleId ticket_sale_id = 2 [(buf.validate.field).required = true];
+
+  // Field 1 was the TicketType whose entries to list, replaced by
+  // ticket_sale_id.
+  reserved 1;
+  reserved "ticket_type_id";
 }
 
-// ListByTicketTypeResponse returns the caller's entries for the TicketType.
+// ListByTicketTypeResponse returns the caller's entries in the sale.
 message ListByTicketTypeResponse {
-  // The caller's entries for the TicketType, at most one. Empty when the
-  // caller never entered.
+  // The caller's entries in the sale, at most one for each event the sale
+  // names. Empty when the caller never entered.
   repeated entity.v1.LotteryEntry lottery_entries = 1;
+
+  // The entries' Orders, one for each entry above, with the stock and ticket
+  // count each entry is for.
+  repeated entity.v1.Order orders = 2;
 }

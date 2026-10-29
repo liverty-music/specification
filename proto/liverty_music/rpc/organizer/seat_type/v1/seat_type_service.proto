@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+// Package liverty_music.rpc.organizer.seat_type.v1 provides the
+// organizer-facing SeatTypeService, the surface a member uses from the
+// organizer console to define the seat types (席種) of one of its Organizer's
+// Series, each with a name and a price. It is served by the dedicated
+// organizer Connect server behind org-scoped role-claim authorization. An
+// event's tickets of a seat type are stocked through
+// liverty_music.rpc.organizer.ticket_stock.v1.
+package liverty_music.rpc.organizer.seat_type.v1;
+
+import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/seat_type.proto";
+import "liverty_music/entity/v1/series.proto";
+
+// SeatTypeService creates, deletes and lists the SeatTypes of the caller's own
+// Series. A SeatType's name and price never change; a mistake is fixed by
+// deleting it while no TicketStock uses it and creating it again. Every call
+// passes the same organizer-console sign-in checks as the organizer
+// OrganizerService and then resolves the caller's own Organizer from the
+// caller's Organization (never carried in the request): a caller with no
+// Organization, an Organization with no linked Organizer and a provisioning
+// Organizer fail with PERMISSION_DENIED, and a deactivated Organizer fails with
+// FAILED_PRECONDITION, before anything else runs. Failures that would concern
+// another Organizer's Series or seat type never reveal whether it exists.
+service SeatTypeService {
+  // Create adds a SeatType with a name and a price to one of the caller's
+  // Series and returns it.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The series_id, name or price is missing or malformed,
+  //   or the values break the SeatType rules (a name of 1 to 50 characters, a
+  //   price of 1 to 1,000,000 yen).
+  // - PERMISSION_DENIED: The Series does not exist or is owned by another
+  //   Organizer, or any organizer-console authorization failure.
+  //   Non-revealing.
+  // - ALREADY_EXISTS: The Series already has a SeatType of that name.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Create(CreateRequest) returns (CreateResponse);
+
+  // Delete removes one of the caller's SeatTypes while no TicketStock uses it.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The seat_type_id is missing or malformed.
+  // - PERMISSION_DENIED: The SeatType does not exist or its Series is owned by
+  //   another Organizer, or any organizer-console authorization failure.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: A TicketStock uses the SeatType, or the caller's
+  //   own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+
+  // ListBySeries returns the SeatTypes of one of the caller's Series. A Series
+  // without a SeatType returns an empty list.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The series_id is missing or malformed.
+  // - PERMISSION_DENIED: The Series does not exist or is owned by another
+  //   Organizer, or any organizer-console authorization failure.
+  //   Non-revealing.
+  // - FAILED_PRECONDITION: The caller's own Organizer has been deactivated.
+  // - UNAUTHENTICATED: The request lacks valid authentication credentials.
+  rpc ListBySeries(ListBySeriesRequest) returns (ListBySeriesResponse);
+}
+
+// CreateRequest carries the Series and the new seat type's name and price.
+message CreateRequest {
+  // Required. The Series that sells the seat type. It MUST be owned by the
+  // caller's Organizer.
+  entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
+
+  // Required. The seat type's name, for example S席, unique within the Series.
+  entity.v1.SeatTypeName name = 2 [(buf.validate.field).required = true];
+
+  // Required. The price of one ticket in yen, tax-inclusive (税込). 1 to
+  // 1,000,000.
+  entity.v1.SeatTypePrice price = 3 [(buf.validate.field).required = true];
+}
+
+// CreateResponse returns the stored seat type.
+message CreateResponse {
+  // The created SeatType.
+  entity.v1.SeatType seat_type = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteRequest names the seat type to delete.
+message DeleteRequest {
+  // Required. The SeatType to delete. Its Series MUST be owned by the caller's
+  // Organizer.
+  entity.v1.SeatTypeId seat_type_id = 1 [(buf.validate.field).required = true];
+}
+
+// DeleteResponse is empty on success.
+message DeleteResponse {}
+
+// ListBySeriesRequest names the Series whose seat types to list.
+message ListBySeriesRequest {
+  // Required. The Series whose seat types to list. It MUST be owned by the
+  // caller's Organizer.
+  entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
+}
+
+// ListBySeriesResponse returns the Series' seat types.
+message ListBySeriesResponse {
+  // The Series' SeatTypes. Empty when it has none.
+  repeated entity.v1.SeatType seat_types = 1;
+}

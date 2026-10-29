@@ -5,9 +5,9 @@ syntax = "proto3";
 // organizer console to open a sale (受付) on the published events of one of its
 // Organizer's Series, by lottery or first come, first served, and to see how it
 // stands. It is served by the dedicated organizer Connect server behind
-// org-scoped role-claim authorization. A sale's per-event price, quantity and
-// per-account limit are changed through
-// liverty_music.rpc.organizer.ticket_type.v1; fans read sales through
+// org-scoped role-claim authorization. A sale sells the TicketStocks of the
+// events it names, which are made through
+// liverty_music.rpc.organizer.ticket_stock.v1; fans read sales through
 // liverty_music.rpc.ticket_sale.v1 and take part through
 // liverty_music.rpc.lottery_entry.v1 and liverty_music.rpc.checkout.v1.
 package liverty_music.rpc.organizer.ticket_sale.v1;
@@ -16,13 +16,14 @@ import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/referral.proto";
+import "liverty_music/entity/v1/seat_type.proto";
 import "liverty_music/entity/v1/series.proto";
 import "liverty_music/entity/v1/ticket_sale.proto";
-import "liverty_music/entity/v1/ticket_type.proto";
+import "liverty_music/entity/v1/ticket_stock.proto";
 
 // TicketSaleService is the organizer-facing sale surface: an authenticated
 // member creates the TicketSales of its Organizer's Series, lists the sales of
-// one of its events with their counts, and moves a sale's window or changes its
+// one of its events with their lottery entry stats, and moves a sale's window or changes its
 // verification requirement. Every call passes the same organizer-console
 // sign-in checks as the organizer OrganizerService and then resolves the
 // caller's own Organizer from the caller's Organization (never carried in the
@@ -34,43 +35,41 @@ import "liverty_music/entity/v1/ticket_type.proto";
 service TicketSaleService {
   // Create opens a sale on published events of one of the caller's Series: a
   // name, the method LOTTERY or FIRST_COME, a window, an optional verification
-  // requirement and one TicketType for each event it covers, with a price, a
-  // quantity and an optional per-account limit. A FIRST_COME sale given no end
-  // time ends at the earliest start time among its events; a TicketType given
-  // no per-account limit has a limit of 4; a sale given no verification
+  // requirement and the events it sells. A sale given no verification
   // requirement requires none. Every event must be one of the Series' events,
-  // published and with a start time. A LOTTERY sale's window lasts 1 to 14 days
-  // and ends before the start of every event it covers; a FIRST_COME sale ends
-  // no later than the start of any event it covers. The new window must not
-  // overlap the window of another sale of any event it covers, and the caller's
-  // Organizer must have complete business details (legal name, representative
-  // name, business address, business phone number and contact email) for the
-  // 特商法 disclosure. The stored sale is returned with its TicketTypes, not
-  // drawn.
+  // published, with a start time and with at least one TicketStock; the sale
+  // sells every TicketStock of its events. A LOTTERY sale's window lasts 1 to
+  // 14 days and ends before the start of every event it covers; a FIRST_COME
+  // sale ends no later than the start of any event it covers. The new window
+  // must not overlap the window of another sale of any event it covers, and
+  // the caller's Organizer must have complete business details (legal name,
+  // representative name, business address, business phone number and contact
+  // email) for the 特商法 disclosure. The stored sale is returned naming its
+  // events, not drawn.
   //
   // Possible errors:
-  // - INVALID_ARGUMENT: The series_id, name, method, sale start or ticket types
-  //   are missing or malformed, a TicketType has no event, price or quantity,
-  //   a LOTTERY sale has no end time, a TicketType's event is not one of the
-  //   Series' events, or the values break the TicketSale or TicketType rules
-  //   (the end not after the start, a LOTTERY window shorter than 1 day or
-  //   longer than 14 days, a price outside 1 to 1,000,000, a per-account limit
-  //   outside 1 to 10 or above the quantity).
+  // - INVALID_ARGUMENT: The series_id, name, method, sale start, sale end or
+  //   events are missing or malformed, an event is not one of the Series'
+  //   events, or the values break the TicketSale rules (the end not after the
+  //   start, a LOTTERY window shorter than 1 day or longer than 14 days, an
+  //   event named twice).
   // - PERMISSION_DENIED: The Series does not exist or is owned by another
   //   Organizer, or any organizer-console authorization failure. Non-revealing.
-  // - FAILED_PRECONDITION: An event is not published or has no start time, the
-  //   sale ends too late for an event it covers, its window overlaps another
-  //   sale of one of its events, the caller's Organizer has no complete
-  //   business details, or the Organizer has been deactivated.
+  // - FAILED_PRECONDITION: An event is not published, has no start time or has
+  //   no TicketStock, the sale ends too late for an event it covers, its window
+  //   overlaps another sale of one of its events, the caller's Organizer has
+  //   no complete business details, or the Organizer has been deactivated.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Create(CreateRequest) returns (CreateResponse);
 
   // ListByEvent returns every sale of one of the caller's events in start
-  // order, each with its TicketTypes and their counts: for a LOTTERY sale
-  // whether it is drawn and, per TicketType, its LotteryEntryStats (entry,
-  // ticket, winner and loser counts, returned beside the sales); for a FIRST_COME
-  // sale, per TicketType, its quantity, sold count, held count and state now.
-  // Beside the sales it returns the event's Paid Orders per referral code
+  // order and, for each LOTTERY sale, the LotteryEntryStats of each
+  // TicketStock of the event (entry, ticket, winner and loser counts),
+  // returned beside the sales. A closed LOTTERY sale is drawn when none of its
+  // entries is ENTERED: every one of its stats has an entry count equal to its
+  // won plus lost entry counts. The stocks' quantities and their sold and held
+  // counts come from liverty_music.rpc.organizer.ticket_stock.v1. Beside the
+  // sales it returns the event's Paid Orders per referral code
   // (ReferralCodeStats), with the purchases without a code as one direct
   // group. An event that no sale offers returns an empty list.
   //
@@ -89,8 +88,8 @@ service TicketSaleService {
   // and ends before the start of every event the sale covers, a FIRST_COME
   // window ends no later than the start of any event it covers, and it must not
   // overlap the window of another sale of any of its events (the sale's own
-  // current window is not compared). The updated sale is returned with its
-  // TicketTypes.
+  // current window is not compared). The updated sale is returned naming its
+  // events.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The ticket_sale_id, sale start or sale end is missing or
@@ -111,7 +110,7 @@ service TicketSaleService {
   // (admits the driver's-licence fallback) or JPKI_ONLY. It may be changed at
   // any time, whether or not the window is open and whether or not the sale is
   // drawn; entries and checkouts already made are not re-checked. The updated
-  // sale is returned with its TicketTypes.
+  // sale is returned naming its events.
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The ticket_sale_id is missing or malformed, or the
@@ -124,32 +123,14 @@ service TicketSaleService {
   rpc SetVerificationRequirement(SetVerificationRequirementRequest) returns (SetVerificationRequirementResponse);
 }
 
-// TicketTypeInput is what a new sale offers for one event, given at Create.
-// The ticket type's id, sale and counts are assigned by the server.
-message TicketTypeInput {
-  // Required. The event the ticket type admits to. It MUST be one of the
-  // Series' events, published and with a start time, and at most one ticket
-  // type of the sale may name it.
-  entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
-
-  // Required. The price of one ticket in yen, tax-inclusive (税込). 1 to
-  // 1,000,000.
-  entity.v1.TicketTypePrice price = 2 [(buf.validate.field).required = true];
-
-  // Required. The tickets offered, at least 1.
-  int32 quantity = 3 [(buf.validate.field).int32.gte = 1];
-
-  // Optional. The most tickets one account may hold for the event once this
-  // sale is done, counting tickets it already holds: 1 to 10 and at most the
-  // quantity. 4 when omitted.
-  optional int32 per_account_limit = 4 [(buf.validate.field).int32 = {
-    gte: 1
-    lte: 10
-  }];
-}
-
-// CreateRequest carries the Series, the sale's settings and its ticket types.
+// CreateRequest carries the Series, the sale's settings and its events.
 message CreateRequest {
+  option (buf.validate.message).cel = {
+    id: "create_request.distinct_events"
+    message: "event_ids must not repeat an event"
+    expression: "this.event_ids.map(e, e.value).unique()"
+  };
+
   // Required. The Series whose events the sale offers. It MUST be owned by the
   // caller's Organizer.
   entity.v1.SeriesId series_id = 1 [(buf.validate.field).required = true];
@@ -166,22 +147,28 @@ message CreateRequest {
   // Required. When the sale opens.
   google.protobuf.Timestamp sale_start_time = 4 [(buf.validate.field).required = true];
 
-  // When the sale closes, after the sale start. Required for a LOTTERY sale;
-  // optional for a FIRST_COME sale, which ends at the earliest start time among
-  // its events when omitted.
-  google.protobuf.Timestamp sale_end_time = 5;
+  // Required. When the sale closes, after the sale start.
+  google.protobuf.Timestamp sale_end_time = 5 [(buf.validate.field).required = true];
 
   // Optional. Whether fans taking part must hold an Active
   // IdentityVerification. UNSPECIFIED (the default) requires none.
   entity.v1.VerificationRequirement verification_requirement = 6 [(buf.validate.field).enum.defined_only = true];
 
-  // Required. One ticket type for each event the sale covers, at least one.
-  repeated TicketTypeInput ticket_types = 7 [(buf.validate.field).repeated.min_items = 1];
+  // Required. The events the sale sells, at least one, each named once. Each
+  // MUST be one of the Series' events, published, with a start time and with
+  // at least one TicketStock.
+  repeated entity.v1.EventId event_ids = 8 [(buf.validate.field).repeated.min_items = 1];
+
+  // Field 7 was one ticket type for each event, with its price, quantity and
+  // per-account limit; prices are now on SeatTypes, quantities on
+  // TicketStocks and the limit on the Event.
+  reserved 7;
+  reserved "ticket_types";
 }
 
 // CreateResponse returns the stored sale.
 message CreateResponse {
-  // The created sale, not drawn, with its TicketTypes.
+  // The created sale, not drawn, naming its events.
   entity.v1.TicketSale ticket_sale = 1 [(buf.validate.field).required = true];
 }
 
@@ -192,63 +179,68 @@ message ListByEventRequest {
   entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
 }
 
-// LotteryEntryStats counts the entries (Entered, Won and Lost) of one
-// TicketType of a LOTTERY sale. Every count is 0 for a TicketType with no entry, and the Won and Lost counts
-// stay 0 until the sale is drawn.
+// LotteryEntryStats counts the entries (Entered, Won and Lost) of one LOTTERY
+// sale for one TicketStock of the event. Every count is 0 for a stock with no
+// entry, and the Won and Lost counts stay 0 until the sale is drawn.
 message LotteryEntryStats {
-  // The TicketType the stats are for.
-  entity.v1.TicketTypeId ticket_type_id = 1 [(buf.validate.field).required = true];
+  // The LOTTERY sale the stats are for.
+  entity.v1.TicketSaleId ticket_sale_id = 8 [(buf.validate.field).required = true];
+
+  // The TicketStock the stats are for.
+  entity.v1.TicketStockId ticket_stock_id = 9 [(buf.validate.field).required = true];
+
+  // The SeatType of the TicketStock.
+  entity.v1.SeatTypeId seat_type_id = 10 [(buf.validate.field).required = true];
 
   // The number of entries.
   int32 entry_count = 2 [(buf.validate.field).int32.gte = 0];
 
   // The sum of the entries' ticket counts: the demand to compare with the
-  // TicketType's quantity.
+  // TicketStock's remaining tickets.
   int32 ticket_count = 7 [(buf.validate.field).int32.gte = 0];
 
   // The number of Won entries.
   int32 won_entry_count = 4 [(buf.validate.field).int32.gte = 0];
 
-  // The sum of the Won entries' ticket counts, never above the quantity.
+  // The sum of the Won entries' ticket counts, never above the stock's
+  // quantity.
   int32 won_ticket_count = 5 [(buf.validate.field).int32.gte = 0];
 
-  // The number of Lost entries: the TicketType's losers.
+  // The number of Lost entries: the sale's losers for the stock.
   int32 lost_entry_count = 6 [(buf.validate.field).int32.gte = 0];
 
   // Field 3 was the sum of ticket counts under its former name, replaced by
-  // ticket_count.
-  reserved 3;
-  reserved "requested_ticket_count";
+  // ticket_count. Field 1 was the TicketType, replaced by ticket_sale_id and
+  // ticket_stock_id.
+  reserved 1, 3;
+  reserved "requested_ticket_count", "ticket_type_id";
 }
 
-// ReferralCodeStats counts the Paid Orders of one event whose Checkout or
-// LotteryEntry has one referral code. Refunded Orders are not
-// counted, and a LotteryEntry counts only once it won and its Order exists.
+// ReferralCodeStats counts the Paid Orders of one event that have one referral
+// code. Pending, Void and Refunded Orders are not counted.
 message ReferralCodeStats {
-  // The referral code. Absent for the direct group: the purchases whose
-  // Checkout or LotteryEntry has no code.
+  // The referral code. Absent for the direct group: the Paid Orders without a
+  // code.
   optional entity.v1.ReferralCode code = 1;
 
   // The number of Paid Orders, at least 1.
   int32 order_count = 2 [(buf.validate.field).int32.gte = 0];
 
-  // The sum of the ticket counts of the Orders' Checkouts and LotteryEntries.
+  // The sum of the Orders' ticket counts.
   int32 ticket_count = 3 [(buf.validate.field).int32.gte = 0];
 
   // The sum of the Orders' amounts, in whole yen, 税込 (tax-inclusive).
   int64 amount = 4 [(buf.validate.field).int64.gte = 0];
 }
 
-// ListByEventResponse returns the event's sales with their counts.
+// ListByEventResponse returns the event's sales with their entry stats.
 message ListByEventResponse {
-  // The event's sales in start order, each with its TicketTypes. A FIRST_COME
-  // sale's TicketTypes carry their quantity, sold count, held count and state;
-  // a LOTTERY sale carries whether it is drawn. Empty when no sale offers the
-  // event.
+  // The event's sales in start order, each naming its events. Empty when no
+  // sale names the event.
   repeated entity.v1.TicketSale ticket_sales = 1;
 
-  // The entry stats of every TicketType of the LOTTERY sales above, one per
-  // TicketType. Empty when none of the sales is a LOTTERY sale.
+  // The entry stats of the LOTTERY sales above, one per sale and TicketStock
+  // of the event. Empty when none of the sales is a LOTTERY sale.
   repeated LotteryEntryStats lottery_entry_stats = 2;
 
   // The event's Paid Orders per referral code, most Orders first, then by
@@ -272,7 +264,7 @@ message SetWindowRequest {
 
 // SetWindowResponse returns the sale with its new window.
 message SetWindowResponse {
-  // The updated sale with its TicketTypes.
+  // The updated sale, naming its events.
   entity.v1.TicketSale ticket_sale = 1 [(buf.validate.field).required = true];
 }
 
@@ -289,6 +281,6 @@ message SetVerificationRequirementRequest {
 
 // SetVerificationRequirementResponse returns the sale with its new requirement.
 message SetVerificationRequirementResponse {
-  // The updated sale with its TicketTypes.
+  // The updated sale, naming its events.
   entity.v1.TicketSale ticket_sale = 1 [(buf.validate.field).required = true];
 }

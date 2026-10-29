@@ -6,10 +6,16 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/event.proto";
 import "liverty_music/entity/v1/series.proto";
-import "liverty_music/entity/v1/ticket_type.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// TicketSaleId is a globally unique identifier for a single TicketSale.
+message TicketSaleId {
+  // A UUID string mapping to the ticket sale's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
 
 // TicketSaleName is the label of a TicketSale that fans and the Organizer's
 // members see, for example ファンクラブ先行 (fan-club presale) or 一般発売
@@ -34,9 +40,9 @@ enum TicketSaleMethod {
   TICKET_SALE_METHOD_FIRST_COME = 1;
 
   // Lottery (抽選): fans enter a LotteryEntry with a card authorization during
-  // the window, and after the window closes one draw per TicketType allocates
-  // its quantity. Winners are charged; the other card authorizations are
-  // released.
+  // the window, at most once for each event the sale names, and after the
+  // window closes one draw per TicketStock allocates its remaining tickets.
+  // Winners are charged; the other card authorizations are released.
   TICKET_SALE_METHOD_LOTTERY = 2;
 }
 
@@ -62,17 +68,20 @@ enum VerificationRequirement {
 
 // TicketSale is the platform's own sale opportunity for some or all events of
 // an Organizer's Series, such as a fan-club presale or a general sale (受付):
-// its name, how tickets are allocated, the window in which fans take part and
-// whether they must hold an Active IdentityVerification. What it offers for
-// each event is a TicketType. Two sales of one event never overlap (checked
-// server-side).
+// its name, how tickets are allocated, the window in which fans take part,
+// whether they must hold an Active IdentityVerification and the events it
+// sells. It sells every TicketStock of those events, and every sale of an
+// event sells from the same stocks. Two sales of one event never overlap
+// (checked server-side).
 //
 // This message carries an Organizer's sale only. A discovered sale (a sale
 // announced on an artist's official pages for a Series without an Organizer)
-// is also stored as a TicketSale on the server, but it is never returned over
-// RPC: it reaches fans only as push notifications. That is why `name` and
-// `sale_end_time` stay required here even though a discovered sale has no name
-// and a discovered first-come sale may have no end time.
+// is also stored as a TicketSale on the server, with a name and an end time
+// and no event, but it is never returned over RPC: it reaches fans only as
+// push notifications.
+//
+// A closed LOTTERY sale is drawn once none of its entries is ENTERED; there is
+// no stored draw time.
 message TicketSale {
   // The sale window must end after it starts.
   option (buf.validate.message).cel = {
@@ -93,18 +102,11 @@ message TicketSale {
       "&& this.sale_end_time - this.sale_start_time <= duration('336h'))"
   };
 
-  // Only a lottery sale is drawn.
+  // A sale names each event at most once.
   option (buf.validate.message).cel = {
-    id: "ticket_sale.draw_time_lottery_only"
-    message: "only a lottery sale may have draw_time"
-    expression: "!has(this.draw_time) || this.method == 2"
-  };
-
-  // A sale has at most one ticket type per event.
-  option (buf.validate.message).cel = {
-    id: "ticket_sale.one_ticket_type_per_event"
-    message: "ticket_types must name each event at most once"
-    expression: "this.ticket_types.map(t, t.event_id.value).unique()"
+    id: "ticket_sale.distinct_events"
+    message: "event_ids must name each event at most once"
+    expression: "this.event_ids.map(e, e.value).unique()"
   };
 
   // The unique identifier for this sale. Server-generated surrogate id.
@@ -129,7 +131,8 @@ message TicketSale {
   ];
 
   // When the sale closes. After the sale start; for a lottery, 1 to 14 days
-  // after it. Before the start of every event the sale offers (checked
+  // after it. For a lottery, before the start of every event the sale names;
+  // for a first-come sale, no later than the start of any of them (checked
   // server-side). Entered and shown in Japan time.
   google.protobuf.Timestamp sale_end_time = 5 [
     (google.api.field_behavior) = REQUIRED,
@@ -155,22 +158,22 @@ message TicketSale {
     (buf.validate.field).enum.defined_only = true
   ];
 
-  // When the lottery draw ran. Absent until the draw runs; a lottery sale is
-  // drawn once it is set. Lottery only. Server-owned.
-  google.protobuf.Timestamp draw_time = 19 [(google.api.field_behavior) = OUTPUT_ONLY];
-
-  // What the sale offers, one TicketType per event, at least one. A fan-facing
-  // read of an event's sales carries only the ticket type for that event.
-  repeated TicketType ticket_types = 18 [
+  // The events the sale sells, at least one, each an event of the sale's
+  // Series (checked server-side). The sale sells every TicketStock of these
+  // events, including a stock created while the sale runs.
+  repeated EventId event_ids = 20 [
     (google.api.field_behavior) = REQUIRED,
     (buf.validate.field).repeated.min_items = 1
   ];
 
   // Fields 2, 6 to 9 and 11 to 13 were the per-event sale's event, price,
   // per-account limit, quantity, sold count, held count, state and low stock,
-  // which moved to TicketType. Field 10 was a creation time that was never
+  // which moved to TicketType and then to TicketStock and Event. Field 10 was a creation time that was never
   // exposed.
   // Field 17 was the draw time under its former name, replaced by draw_time.
-  reserved 2, 6 to 13, 17;
-  reserved "event_id", "price", "per_account_limit", "quantity", "sold_count", "create_time", "held_count", "state", "low_stock", "drawn_time";
+  // Field 18 was the sale's TicketTypes, replaced by event_ids and the events'
+  // TicketStocks. Field 19 was the draw time, removed because a lottery is
+  // drawn once none of its entries is ENTERED.
+  reserved 2, 6 to 13, 17, 18, 19;
+  reserved "event_id", "price", "per_account_limit", "quantity", "sold_count", "create_time", "held_count", "state", "low_stock", "drawn_time", "ticket_types", "draw_time";
 }

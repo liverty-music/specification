@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/seat_type.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// TicketStockId is a globally unique identifier for a single TicketStock.
+message TicketStockId {
+  // A UUID string mapping to the ticket stock's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// TicketStockState is where a TicketStock stands at a given time. It is
+// derived when the stock is read, never stored. New values may be appended;
+// existing values must not be renumbered.
+enum TicketStockState {
+  // Default value, never returned: a read stock always has a state.
+  TICKET_STOCK_STATE_UNSPECIFIED = 0;
+
+  // Tickets remain: the quantity minus the sold and held tickets is above 0.
+  TICKET_STOCK_STATE_AVAILABLE = 1;
+
+  // No ticket remains, but some are held by Checkouts of other fans and not
+  // sold. Tickets may come back when those holds lapse.
+  TICKET_STOCK_STATE_ALL_HELD = 2;
+
+  // The sold count equals the quantity.
+  TICKET_STOCK_STATE_SOLD_OUT = 3;
+}
+
+// TicketStock is the tickets of one SeatType for one event: how many there
+// are, and how many are sold or held at a time. Every TicketSale of the event
+// sells from it, and its official resale (公式リセール) opens, for listing
+// tickets, when it sells out. Its event, seat type and quantity never change
+// once it is created; one TicketStock exists per event and seat type.
+//
+// Its state, low-stock flag and resale flag are evaluated by the server when
+// the stock is read. The quantity, the sold count and the held count are shown
+// only to the owning Organizer; a fan-facing read leaves them unset, so no fan
+// learns how many tickets remain.
+message TicketStock {
+  // The unique identifier for this stock. Server-generated surrogate id.
+  TicketStockId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The event its tickets admit to: an event of the seat type's Series
+  // (checked server-side). Never changes.
+  EventId event_id = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The SeatType of its tickets, which gives their name and price. Never
+  // changes.
+  SeatTypeId seat_type_id = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+
+  // The tickets in the stock, at least 1. Never changes. Set only in the
+  // owning Organizer's view.
+  optional int32 quantity = 4 [(buf.validate.field).int32.gte = 1];
+
+  // The tickets sold at the time it was read: those of Orders that are Paid or
+  // Refunded, or Pending with a Committed Checkout or a Won LotteryEntry.
+  // Tickets bought from other fans through official resale do not count. Set
+  // only in the owning Organizer's view. Server-owned.
+  optional int32 sold_count = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).int32.gte = 0
+  ];
+
+  // The tickets held by Checkouts whose hold has not lapsed at the time it was
+  // read. Set only in the owning Organizer's view. Server-owned.
+  optional int32 held_count = 6 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).int32.gte = 0
+  ];
+
+  // Where the stock stands at the time it was read. Server-owned.
+  TicketStockState state = 7 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // True when the stock is AVAILABLE and at most a tenth of its quantity,
+  // rounded up, remains at the time it was read, so the event page shows
+  // 残りわずか (few left) without a count. Server-owned.
+  bool low_stock = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // True when official resale of the stock is open at the time it was read:
+  // the stock is SOLD_OUT and its event's resale deadline, 3 hours before the
+  // start time, has not passed. A fan may then list a ticket of the stock.
+  // Server-owned.
+  bool resale_open = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
