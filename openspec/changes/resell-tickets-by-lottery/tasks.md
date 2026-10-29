@@ -48,7 +48,7 @@
 
 ## 10. Legal text
 
-- [ ] 10.1 Update the Terms of Service resale clause and the resale final confirmation text (特商法) to say resale tickets are allocated by a daily draw and charged only on a win; verify the legal document component test and the text on the deployed page
+- [ ] 10.1 Update the Terms of Service resale article and add the resale application's 特商法 final confirmation (resale tickets allocated by a daily draw, charged only on a win, the resale deadline); verify one component test per scenario of `global/legal-document` "Terms of Service state the official resale rules" and `route/resale-entry` "特商法 final confirmation of a resale application", and the text on the deployed page
 
 ## 11. Release and production check
 

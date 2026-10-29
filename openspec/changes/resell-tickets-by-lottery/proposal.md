@@ -36,6 +36,8 @@ Official resale (公式リセール) sells listings first come, first served thr
 - `components/entity/resale-listing/withdraw`: a listing a draw has not allocated can be withdrawn.
 - `components/entity/card-authorization`: a card authorization's expiry time.
 - `components/infrastructure/fan/web/route/event`: the resale part of the ticket section applies instead of buying.
+- `components/infrastructure/fan/web/global/legal-document`: the Terms of Service resale article describes the daily draw, the charge on a win and the resale deadline.
+- `components/infrastructure/fan/web/route/resale-entry` also carries the 特商法 final confirmation of a resale application, which `remodel-ticket-sales` removed from the first-come checkout.
 - `stories/resell-a-ticket`: a listed ticket goes to a fan drawn in the daily resale draw.
 
 Entity and story Purpose edits (made directly in the main specs with this change; listed in design.md "Purpose edits"): `components/entity/resale-listing` (the `checkout` attribute becomes `resale entry`), `components/entity/card-authorization` (expiry time), `components/entity/order` (ResaleEntry in the ER diagram), `stories/resell-a-ticket` (usecase diagram).

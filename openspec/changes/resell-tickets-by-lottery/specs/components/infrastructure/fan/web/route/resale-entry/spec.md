@@ -22,6 +22,30 @@ Opened for a TicketStock from the event page, the screen SHALL show the concert'
 - **WHEN** a fan with an Entered entry for the event opens the screen
 - **THEN** the screen shows that entry and its next draw and offers no second application
 
+### Requirement: 特商法 final confirmation of a resale application
+
+Before the entry is made, the screen SHALL show on one screen:
+- the event, its date, venue, and open and start times;
+- the seat type's name, the number of tickets, with the price per ticket and the total that will be charged on a win, 税込;
+- the payment method, credit card, with the card brand and last four digits, that the total is held on the card when the fan applies and charged only when the fan wins, and that a hold that is not charged is given back;
+- when the draws run (every day at 12:00, and on the event's day by 12:00 or 3 hours before the start time, whichever is earlier), that the last of them is the resale deadline, and that a group's tickets are allocated all together or not at all;
+- that the tickets are available in the app's Tickets screen after a win;
+- that the application can be withdrawn while it waits for a draw, and that after a win the purchase cannot be cancelled or refunded except when the event is 中止 (cancelled) and no cooling-off applies;
+- that resale of the tickets without the Organizer's consent is prohibited, and that the tickets are issued to the fan's own account and name;
+- the Organizer's business details, carried by the Series of the event's Concert: legal name, representative name, business address, business phone number and contact email.
+
+It SHALL offer to go back and change the number of tickets or the personal details from this screen. The apply action SHALL state that it applies, with the amount charged on a win, and SHALL be disabled while the application is being made.
+
+#### Scenario: Final confirmation shown
+
+- **WHEN** a fan reaches the last step for 2 S席 resale tickets of 3000 yen
+- **THEN** every listed item is shown, including that 6,000円 is charged only on a win, and the action reads 6,000円で申し込む
+
+#### Scenario: Double tap on the action
+
+- **WHEN** the fan taps the apply action twice
+- **THEN** one entry is made
+
 ### Requirement: Following the fan's entries
 
 The screen SHALL list the fan's resale entries from ResaleEntryService.List, newest first, each with the concert, the seat type, the ticket count and its state: 抽選待ち (waiting for the draw) with the next draw time, 当選 (won) with a link to the tickets screen, 落選 (lost), 期限切れ (lapsed) with the note that the card authorization expired before a ticket was found, that nothing was charged, and an action to apply again while resale is open, or 取り消し済み (withdrawn) with the note that nothing was charged and an action to apply again while resale is open. An entry waiting for the draw SHALL offer 申し込みを取り消す (withdraw the application); choosing it SHALL ask the fan to confirm that the application ends and nothing is charged, and confirming SHALL call ResaleEntryService.Withdraw. When the withdrawal is refused because a draw has already decided the entry, the screen SHALL say that the draw has already decided it and show the entry's new state.
