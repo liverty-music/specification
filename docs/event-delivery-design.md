@@ -11,7 +11,7 @@ Status: decided 2026-10-28, not implemented yet; planned as the OpenSpec change 
 3. **No change, no event.** An operation that finds its change already made writes nothing, so a retried request, a redelivered message or a step that runs again announces nothing a second time.
 4. **The entity operation announces, not the usecase.** Its name and its Go doc tell the usecase what it announces (see "The entity operation contract").
 5. **The payload is the changed entity, as its `entity/v1` proto message in binary**, or the entities of one type one operation changed together (a list message declared next to the entity). There are no event-only fields: a list of one entity type is a plain `repeated` message of that entity. The subject names the fact; what the announcement is about, when the payload does not say it, is the CloudEvents `subject` attribute.
-6. **Work that must follow a fact is started by the event's consumer, as a workflow whose id is the business key** (`issue:<entry>`). DBOS runs one workflow per id, so a repeated event starts nothing new. **A request for one receiver with no fact behind it is not an event**: the requester starts the receiver's workflow, or the repository starts it in the transaction of the change it follows. **An observation from outside** (a webhook notice) is recorded as entity state, and that record is announced.
+6. **Work that must follow a fact is started by the event's consumer, as a workflow whose id is the business key** (`issue:<order>`). DBOS runs one workflow per id, so a repeated event starts nothing new. **A request for one receiver with no fact behind it is not an event**: the requester starts the receiver's workflow, or the repository starts it in the transaction of the change it follows. **An observation from outside** (a webhook notice) is recorded as entity state, and that record is announced.
 7. **A consumer treats an event it has seen as done.** JetStream drops a repeated id for only 2 minutes; past that, the consumer's own state (a send time, a unique key, PostHog's `uuid`) drops it.
 
 ## Why
@@ -61,7 +61,7 @@ The transactional outbox is the only pattern that removes both the lost event an
    |
    +--> analytics consumer      drops a repeat by event id (PostHog uuid)
    +--> notification consumer   drops a repeat by its send time column
-   +--> workflow starter        Start Issue(entry), id issue:<entry>
+   +--> workflow starter        Start Issue(order), id issue:<order>
                                  DBOS runs one workflow per id
 ```
 
@@ -81,7 +81,7 @@ What goes away: the UUIDv5 namespace, the step origin in the context, the per-st
 ### Commands and events
 
 - **Event**: a fact other parts react to, any number of receivers (analytics, notifications, a workflow starter). Goes through the outbox.
-- **Command**: one receiver must do one piece of work with no stored change behind it. Inside a workflow, `Flow.Start` (DBOS checkpoints it); outside, `Workflows.Start`, named after the business key. Work that follows a stored change is not a command: the consumer of that change's announcement starts it, so no DBOS transaction is shared with the fact (`WithEnqueueTransaction` is not used).
+- **Command**: one receiver must do one piece of work with no stored change behind it. Inside a workflow, `Flow.Start` (DBOS checkpoints it); outside, `Workflows.Start`, named after the business key. Work that follows a stored change is not a command: the consumer of that change's announcement starts it, so no DBOS transaction is shared with the fact (`WithEnqueueTransaction` is not used). This holds when a workflow stored the change too: starting the work per entity from the workflow costs one checkpoint write per entity in the parent workflow.
 - Rejected: one DBOS workflow per event as the outbox. DBOS v1.7.0 has only a per-workflow `Enqueue` (no bulk enqueue; `SendBulk` sends messages to workflows, not to NATS), and each event would cost a workflow row, a dequeue, a step checkpoint and a status update.
 
 ## The entity operation contract
@@ -89,7 +89,8 @@ What goes away: the UUIDv5 namespace, the step origin in the context, the per-st
 The usecase must know what an operation announces without knowing that an outbox exists. The name and the Go doc carry it, as they already carry the rest of the contract; the return value does not change.
 
 ```go
-// RevertWin makes a Won entry with no Order Lost, recording that its card
+// RevertWin makes a Won entry whose Order is Pending Lost, and its Order Void,
+// recording that its card
 // authorization could not be charged.
 //
 // # Announces
@@ -117,10 +118,10 @@ Rejected:
 ## The payload
 
 - **The entity's own proto message.** `entity/v1` is the service-wide definition of each entity in the ubiquitous language, independent of any screen or transport, so it is also the event's schema. `buf breaking` checks its wire compatibility in CI.
-- **A field is left out of an entity's proto only for personal data** (below), never because no screen reads it. `LotteryEntry` gains `referral_code`, which its mapper left out "because no screen reads it".
+- **A field is left out of an entity's proto only for personal data** (below), never because no screen reads it (the `LotteryEntry` mapper left out the referral code "because no screen reads it"; after `remodel-ticket-sales` it is on the Order).
 - **A fact that is not entity state is either made entity state or read by id.**
   - Why an entry lost (its card could not be charged) is shown to the fan in the loss email: it becomes an attribute of LotteryEntry.
-  - The draw time is the TicketSale's: the consumer reads the TicketSale by id. LotteryEntry gains `ticket_sale_id` next to `ticket_type_id` (a composite foreign key keeps the two consistent), so this is one read.
+  - The sale, the stock and the count are read by id: after `remodel-ticket-sales` the entry names its sale and its Order, and the Order its TicketStock and ticket count.
   - The time the fact happened is the CloudEvents `time` attribute.
 - **Encoding: binary protobuf**, `datacontenttype` `application/protobuf`. In the outbox row it sits base64-encoded inside the forwarder's JSON envelope; the row lives only until delivery, and the message on the stream is binary. Measured for one LotteryEntry (Go 1.25, protobuf-go):
 
@@ -163,7 +164,7 @@ The parent workflow (`Draw`) writes no checkpoint per entry.
 - Moving the consumers (analytics, notifications) from the JSON structs to the proto payloads, and the order of the switch.
 - Compare every entity struct with its proto message and add the fields left out for no personal-data reason.
 - Whether the frontend reads `users.name` before dropping it.
-- The order of the work: the `internal/adapter/pb` move first as its own refactor, then this change, then `make-lottery-draw-durable` re-planned on top of it (`Draw` stops starting and announcing per entry).
+- The order of the work: `remodel-ticket-sales` first, then the `internal/adapter/pb` move as its own refactor, then this change (`publish-events-through-outbox`), then `make-lottery-draw-durable`, `unify-order-issuance` and `resell-tickets-by-lottery`, written on it (`Draw` neither starts nor announces per entry; the consumer of each entry's announcement starts its follow-up work).
 
 ## Sources
 
