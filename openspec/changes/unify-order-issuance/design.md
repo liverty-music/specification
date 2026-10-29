@@ -85,13 +85,15 @@ A Settlement stays in the same transaction as making the Order Paid: created lat
 
 ## Risks / Trade-offs
 
+- [A hold ends, and its card authorization is released, only once the outbox delivers its announcement] → `Expire` and the release start from `ORDER.checkout_held`, `ORDER.checkout_expired` and `ORDER.checkout_released`. While a large lottery draw's announcements drain (`publish-events-through-outbox` Risks), a hold created then gets its `Expire` late, so it can stay Held past its 15 minutes and keep its tickets and card authorization until the draw's rows are delivered. A late `Expire` still ends the hold, because `Checkout.Release` compares the expiry with its own time. With no users and lottery sales far below the size that delays delivery, this is accepted; the 10-minute undelivered alert reports it.
+
 - [A Committed Checkout exists at the moment of the rollout, left by an interrupted old call] → Before the deploy, list Committed Checkouts read-only in prod; none is expected (no users, and `remodel-ticket-sales` deletes the existing ticket data). If one exists, finish it with the old code before deploying.
 - [`Expire` can expire a Checkout whose order was placed in its last seconds, before `Issue` commits] → The `checkout` queue starts `Issue` within about a second. The fan then sees "the 15 minutes passed", the Order is Void and the card is not charged.
 - [The 30-second wait holds a request goroutine] → It holds no database connection: `Await` polls the workflow status.
 
 ## Migration Plan
 
-1. backend: `Place`; `Issue` for a Checkout and the `checkout` queue; the handler change; the Settlement branches; removal of `IssueFromCheckout`, `IssueDueCheckouts`, `FulfillPayment`, `Serialize` (its only caller goes), `ReleaseExpired`, `ListDue`, `RecordCardAuthorizationRelease` and the sweeper's release and issuance calls; `Expire`, the Checkout announcements and their workflow starter; the migration dropping `checkouts.card_authorization_release_time`. Before the deploy, read-only in prod: list Held Checkouts and Expired or Released Checkouts without a release time; Held ones are ended by the old sweeper before the rollout or by an admin call of `Expire`, and leftover card authorizations are released by starting `release:<order>` once.
+1. backend: `Place`; `Issue` for a Checkout and the `checkout` queue; the handler change; the Settlement branches; removal of `IssueFromCheckout`, `IssueDueCheckouts`, `FulfillPayment`, `Serialize` (its only caller goes), `ReleaseExpired`, `ListDue`, `RecordCardAuthorizationRelease` and the sweeper's release and issuance calls; `Expire`, the Checkout announcements and their workflow starter; the migration dropping `checkouts.card_authorization_release_time`. Before the deploy, read-only in prod: list Held Checkouts and Expired or Released Checkouts whose Order has a card authorization and no release time. A Held Checkout created before the rollout got no held announcement, so `expire:<checkout>` is started once for it after the deploy; each leftover card authorization is released by starting `release:<order>` once.
 2. Read-only prod check for Committed Checkouts and Paid Orders without a Settlement, deploy, confirm the rollout, and buy one ticket with the Stripe Sandbox E2E.
 
 Rollback: revert the backend release; Checkouts and Orders keep their shape.
