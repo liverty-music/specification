@@ -1,0 +1,57 @@
+## 1. Proto and plan (specification)
+
+- [ ] 1.1 Add the `ResaleEntry` entity message (order, state Entered/Won/Lost/Lapsed/Withdrawn, create time, draw time, withdraw time) and the fan `ResaleEntryService` (AuthorizeCard, Confirm, List, Withdraw) per the rpc-design skill; `ResaleListing` names its resale entry instead of a checkout; `CardAuthorization` gains its expire time; verify `make check` (buf lint, format, forbidden words) passes
+- [ ] 1.2 Open the plan PR with the `buf skip breaking` label, merge once `CI Success` passes, cut the Release and confirm `buf-release.yml` succeeds (`gh run list --repo liverty-music/specification --workflow buf-release.yml --limit 3`)
+
+## 2. Schema (backend)
+
+- [ ] 2.1 Add the Atlas migration of design "Migration Plan" (`resale_entries`, `resale_listings.resale_entry_id` (`checkout_id` is already gone with `remodel-ticket-sales`), `card_authorizations.expire_time`) and update `schema.sql`; verify `atlas migrate validate`, `make lint-schema` and a `migrationtest` that applies and rolls back the migration on an empty resale table
+
+## 3. Card authorization expiry (backend)
+
+- [ ] 3.1 Store the charge's `capture_before` as the card authorization's expire time when it becomes authorized (design D5); check against the Stripe test API with a JPY JCB test card whether the 30-day window applies by default or needs `request_extended_authorization`, and record the answer in design.md D5; verify the scenarios "Before expiry" and "After expiry" of `entity/card-authorization` and a `make test-stripe-e2e` case that reads the expire time
+
+## 4. Entity (components/entity/resale-entry, resale-listing, order)
+
+- [ ] 4.1 Add the ResaleEntry entity with its states, draw times of an event, taking part in a draw, all-or-nothing and the won-but-not-charged rule; verify one unit test per scenario of `entity/resale-entry`
+- [ ] 4.2 ResaleListing is free for a draw instead of free to hold, and Order accepts a ResaleEntry source; verify the scenarios of `entity/resale-listing` "Free for a draw" and `entity/order` "An Order has exactly one source"
+
+## 5. Entity operations (backend)
+
+- [ ] 5.1 `ResaleEntry.Create` under the users-row lock of design D2; verify one contract test per scenario of `entity/resale-entry/create`, including "Two applications at once" run concurrently against PostgreSQL
+- [ ] 5.2 `ResaleEntry.Get`, `ListByUser`, `ListEnteredByTicketStock` and `SendEndedEmail`; verify one contract test per scenario of each spec
+- [ ] 5.3 `ResaleEntry.PersistDrawOutcome` and `ResaleListing.Withdraw` serialized on the stock row (design D4); verify one contract test per scenario of `entity/resale-entry/persist-draw-outcome` and `entity/resale-listing/withdraw`, including "Withdraw and draw at the same moment" run concurrently
+
+## 6. Usecases (backend)
+
+- [ ] 6.1 `ResaleEntryUseCase.AuthorizeCard`, `Confirm` and `List`; verify one unit test per scenario of `usecase/resale-entry/authorize-card`, `confirm` and `list`, and route the card authorization notice of a resale card authorization to `Confirm` (handler test "Fan and notice both confirm")
+- [ ] 6.2 `ResaleEntry.Withdraw` locking the stock row of design D8 and `ResaleEntryUseCase.Withdraw` enqueuing the card authorization release workflow; verify one contract test per scenario of `entity/resale-entry/withdraw` (including an rdb test running Withdraw and `PersistDrawOutcome` for one entry at the same time and finding exactly one of them applied) and one unit test per scenario of `usecase/resale-entry/withdraw`
+- [ ] 6.3 `ResaleEntryUseCase.Draw` as the `draw-resale` schedule of design D3 and D4; verify one unit test per scenario of `usecase/resale-entry/draw` with the operations mocked, and a worker test that a scheduled time is drawn once
+- [ ] 6.4 `OrderUseCase.Issue` issues a Won ResaleEntry and makes it Lost when the card can no longer be charged; verify the scenarios of `usecase/order/issue` "Issue a won resale entry" against the Stripe test API
+- [ ] 6.5 `NotificationUseCase.SendResaleEntryEnded` with the `resale_entry_lapsed` and `resale_entry_lost` pushes; verify one unit test per scenario of `usecase/notification/send-resale-entry-ended`
+
+## 7. Adapters (backend)
+
+- [ ] 7.1 Upgrade the generated package and add `ResaleEntryHandler`; verify one handler test per scenario of `adapter/fan/api/rpc/resale-entry`
+
+## 8. Stories (backend integration)
+
+- [ ] 8.1 Rewrite the resale story integration test; verify against the Stripe test API every scenario of `stories/resell-a-ticket`: "One of two tickets resold", "Payout after a resale", "Two fans, one listing", "Withdrawn before the draw", "Nobody wins at the last draw", "Authorization about to expire", "Plans changed", "Cancelled before the draw"
+
+## 9. Frontend (fan)
+
+- [ ] 9.1 Upgrade the generated package; add the resale entry screen and the event page's 公式リセール section, and the push texts for `resale_entry_lapsed` and `resale_entry_lost`; verify the component tests of `infrastructure/fan/web/route/resale-entry` and `route/event` "Official resale by lottery in the ticket section", and `make check`
+- [ ] 9.2 Run with Playwright on a local build against stubbed RPCs: open a sold-out event, apply for 2 S席, see 申し込みました with the next draw time, reopen the event and see 申し込み済み, then load an entry list with a Lapsed entry and see 期限切れ with the action to apply again; withdraw a waiting entry, confirm, and see 取り消し済み; withdraw against a stub that refuses with FailedPrecondition and see that the draw has already decided the entry
+
+## 10. Legal text
+
+- [ ] 10.1 Update the Terms of Service resale clause and the resale final confirmation text (特商法) to say resale tickets are allocated by a daily draw and charged only on a win; verify the legal document component test and the text on the deployed page
+
+## 11. Release and production check
+
+- [ ] 11.1 Merge the backend PR after `remodel-ticket-sales`, `make-lottery-draw-durable` and `unify-order-issuance` are released (design Risks), cut the release and confirm in prod (read-only) that the AtlasMigration is applied, the worker logs a `draw-resale` run each minute without errors, and `gh workflow run stripe-sandbox-e2e.yml` succeeds
+- [ ] 11.2 Merge the frontend PR, cut the release and confirm the rollout
+
+## 12. Archive
+
+- [ ] 12.1 Remove `CheckoutUseCase.Start`, `CheckoutUseCase.AuthorizeCard` and `OrderUseCase.IssueFromCheckout` from the usecase diagram of `stories/resell-a-ticket` (kept until the story text stops naming them); verify `python3 scripts/check-story-diagrams.py` passes
