@@ -2,29 +2,29 @@
 
 ### Requirement: Runs for each requested notification
 
-Deliver SHALL run once for each notification requested for one fan, by NotificationUseCase.NotifyNewConcerts, TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale, NotificationUseCase.SendOrderConfirmation or NotificationUseCase.SendLotteryLoss, with that fan, the notification type and the finished message. When Deliver fails, that request SHALL be processed again; a failure for one fan's request SHALL NOT affect the requests of any other fan.
+Deliver SHALL run once for each notification that NotificationUseCase.NotifyNewConcerts, TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale, NotificationUseCase.SendOrderConfirmation or NotificationUseCase.SendLotteryLoss starts for one fan, with that fan, the notification type and the finished message; a start repeated under the same name runs nothing new. When a started Deliver fails, that notification SHALL be processed again; a failure for one fan's notification SHALL NOT affect the notifications of any other fan.
 
 #### Scenario: Notification requested
 
-- **WHEN** a new_concerts notification is requested for a fan
+- **WHEN** NotifyNewConcerts starts a new_concerts notification for a fan
 - **THEN** Deliver runs for that fan with the type new_concerts and the requested message
 
 #### Scenario: Purchase notification requested
 
-- **WHEN** an order_confirmation notification is requested for an Order's user
-- **THEN** Deliver runs for that user with the type order_confirmation
+- **WHEN** SendOrderConfirmation starts the push of an Order's confirmation
+- **THEN** Deliver runs for the Order's user with the type order_confirmation
 
 #### Scenario: Recording fails for one request
 
-- **WHEN** Deliver fails because the Notification for one of three requested fans cannot be recorded
-- **THEN** that fan's request is processed again and the other two fans' requests are unaffected
+- **WHEN** Deliver fails because the Notification for one of three started fans cannot be recorded
+- **THEN** that fan's notification is processed again and the other two fans' notifications are unaffected
 
 #### Scenario: Discovered sale announced
 
-- **WHEN** a ticket_sale_announcement notification is requested for a fan
+- **WHEN** AnnounceDiscoveredSale starts a ticket_sale_announcement notification for a fan
 - **THEN** Deliver runs for that fan with the type ticket_sale_announcement
 
-#### Scenario: Lottery loss requested
+#### Scenario: Lottery loss sent
 
-- **WHEN** a lottery_loss notification is requested for a fan
-- **THEN** Deliver runs for that fan with the type lottery_loss
+- **WHEN** SendLotteryLoss starts the push telling a fan their entry lost
+- **THEN** Deliver runs for the fan of the entry's Order with the type lottery_loss

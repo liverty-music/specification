@@ -16,18 +16,6 @@ Issue SHALL run once for each entry that LotteryEntry.PersistDrawOutcome records
 - **WHEN** a fan places the order for their Checkout twice
 - **THEN** Issue runs once for the Checkout
 
-### Requirement: A paid order is reported for product analytics
-
-When Issue announces an Order as paid, an "order paid" signal for product analytics SHALL be sent for the fan, carrying the Order, its Event, the ticket count, the amount and currency, whether the Order came from a won LotteryEntry or a Checkout, and the Order's pay time as the time it happened. The signal SHALL be recorded once per Order. A failure to send it SHALL NOT fail or undo the payment.
-
-#### Scenario: Paid lottery win
-- **WHEN** the Order of a Won entry for 2 tickets is announced
-- **THEN** one order-paid signal is sent with ticket count 2, the amount, the currency and the source LotteryEntry
-
-#### Scenario: Paid checkout
-- **WHEN** the Order of a fan's Checkout for 2 tickets is announced
-- **THEN** one order-paid signal is sent with ticket count 2, the amount, the currency and the source Checkout
-
 ## ADDED Requirements
 
 ### Requirement: Commit a Checkout, charge it once, then issue
@@ -39,8 +27,9 @@ Issue SHALL also take a Checkout. It SHALL read the Checkout with Checkout.Get a
    - make the Pending Order Paid, with the captured payment's ID as its provider payment ID, the captured payment's card brand and last four digits, and a pay time of the time of issuance;
    - issue exactly as many Tickets as the Order's ticket count, each bound to the Order's user, for the stock's event, and Issued at the same time; the Tickets carry no copy of the user's name or phone number;
    - create a Held Settlement for the event and its Organizer, with one split paying that Organizer the Order's amount minus the platform fee at the Organizer's rate;
-   When Order.Issue fails with AlreadyExists, it SHALL return the Order, Paid by an earlier step. A failure of a read or of Order.Issue after the charge with Unavailable SHALL be tried again;
-4. announce the Order as paid, as for a Won entry.
+   When Order.Issue fails with AlreadyExists, it SHALL return the Order, Paid by an earlier step. A failure of a read or of Order.Issue after the charge with Unavailable SHALL be tried again.
+
+Order.Issue announces the Order as paid together with making it Paid, as for a Won entry, so Issue announces nothing itself.
 
 #### Scenario: Checkout issued
 - **WHEN** Issue runs for a holding Checkout whose Order is for 2 tickets of a SeatType priced 3000 yen, of an Organizer at 8%

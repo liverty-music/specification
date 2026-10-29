@@ -8,7 +8,8 @@ See proposal.md - Why. This change is applied after `remodel-ticket-sales`: an O
 - **Stripe keys**: capture and cancel send a fixed key per operation and card authorization (`infrastructure/payment/stripe_card_authorization.go:188`, `:225`), and decide the outcome by reading the PaymentIntent after an error (`:184-217`). stripe-go v87 sends a new random key on a write call without one and keeps it for its own retries (`stripe.go:873-881`, 2 retries by default, `:51`).
 - **Stripe's rules** ([Idempotent requests](https://docs.stripe.com/api/idempotent_requests), [Advanced error handling](https://docs.stripe.com/error-low-level)): a key identifies one operation; API v1 returns the saved first response to every retry with the same key, "including `500` errors", for at least 24 hours; after a 500, resolve the outcome by retrieving the object before using a new key.
 - **Notices to fans**: a won entry's Order is announced as `ORDER.paid`, and `SendOrderConfirmation` sends an email and an `order_confirmation` push. A losing fan receives nothing today. Notification types are strings (`entity/notification.go:21`; `notifications.type` comment, `schema.sql:380`). `orders.confirmation_send_at` keeps the confirmation email to one per Order (`schema.sql:880`).
-- **Workflow runtime** (`introduce-durable-workflows`): `Flow` and `Workflows` in the usecase layer, the `workflow-worker` Deployment, step retries on Unavailable and DeadlineExceeded, stored deadlines, the "Workflow Needs Admin" alert, and an event id derived from the workflow id and the step.
+- **Workflow runtime** (`introduce-durable-workflows`): `Flow` and `Workflows` in the usecase layer, the `workflow-worker` Deployment, step retries on Unavailable and DeadlineExceeded, stored deadlines, and the "Workflow Needs Admin" alert.
+- **Announcements** (`publish-events-through-outbox`, applied before this change): an entity operation records its announcement in its own transaction through the outbox, with one id made when it is recorded; the payload is the changed entity's proto. `PersistDrawOutcome` announces each entry it changes as `ORDER.lottery_entry_drawn`, with its lost reason, and `Order.Issue` announces `ORDER.paid`. Usecases announce nothing, and work that follows a stored change is started by the consumer of its announcement (`docs/event-delivery-design.md` "Commands and events").
 
 ## Goals / Non-Goals
 
@@ -35,42 +36,45 @@ Draw(sale)                           step TicketSale.Get
                                           ListUndrawnForTicketType + random order (recorded once)
                                      step PersistDrawOutcome(sale, ordered entries)      one transaction:
                                           lock each ticket_stocks row, admit in order against
-                                          remaining, Won/Lost, Lost Orders Void      
-                                     Start Issue(entry)                   id issue:<entry>    per Won entry
-                                     Start ReleaseCardAuthorization(entry) id release:<entry> per Lost entry
-                                     step announce lottery result        per entry
-Issue(entry)                deadline 24 h
+                                          remaining, Won/Lost (lost reason "not drawn"),
+                                          Lost Orders Void, one LotteryEntry announcement per
+                                          entry changed (ORDER.lottery_entry_drawn, outbox)
+workflow starter (consumer of ORDER.lottery_entry_drawn)
+                                        Won  -> Start Issue(order)                    id issue:<order>
+                                        Lost -> Start ReleaseCardAuthorization(order) id release:<order>
+loss notifier (its own consumer)        Lost -> SendLotteryLoss(entry)
+Issue(order)                deadline 24 h
                                      step reads: LotteryEntry.Get (Won), Order.Get (Pending),
                                           TicketStock.Get, TicketSale.Get, Event.GetOrganizerID,
                                           Organizer.Get, IdentityVerification
                                      step Capture                     <- the point of no return
-                                       FailedPrecondition -> step RevertWin (entry Lost, Order Void)
-                                                             Start ReleaseCardAuthorization(entry)
-                                                             step announce lottery result Lost (failed capture)
+                                       FailedPrecondition -> step RevertWin (entry Lost with lost
+                                                             reason "card could not be charged",
+                                                             Order Void, the entry announced)
                                                              end: Order Void (a result, not an error)
                                      step CardAuthorization.Get (captured payment)
-                                     step Order.Issue (Order Paid, Tickets, Held Settlement)
-                                     step announce ORDER.paid
-ReleaseCardAuthorization(entry) deadline 24 h
-                                     step LotteryEntry.Get (Lost), Order.Get
+                                     step Order.Issue (Order Paid, Tickets, Held Settlement,
+                                          ORDER.paid announced in the same transaction)
+ReleaseCardAuthorization(order) deadline 24 h
+                                     step Order.Get (Void)
                                      step CardAuthorization.Release (the Order's)
 ```
 
 - **The outcome of a sale is one transaction, as today.** The random order is fixed by its step, so a resumed draw records with the same order; splitting the record per TicketStock would add a half-drawn state for nothing.
 - **Admission happens where the outcome is recorded.** A stock is shared by every sale of its event, and a first-come sale may open at the very instant the lottery ends (back-to-back windows do not overlap). Its Checkouts can take tickets between the step that orders the entries and the record. `PersistDrawOutcome` therefore locks each `ticket_stocks` row it records, as `Checkout.GetOrCreateHeld` does, and admits the entries in draw order against the remaining count it reads under that lock (the same greedy whole-entry walk as `RunLotteryDraw`). The draw step keeps only the random order; `RunLotteryDraw`'s walk is reused by the record. Nothing is charged before the record, so admitting against the count at the record changes no money. `PersistDrawOutcome` leaves an entry that is no longer Entered unchanged, so recording again changes nothing (there is no draw time: `remodel-ticket-sales` D12). `remodel-ticket-sales` also refuses a first-come checkout while a closed lottery of the event is not drawn (its D6); this admission stays as the guard that holds whatever the order of steps. A step that ran its transaction but stopped before its result was recorded runs again, and must not undo a `RevertWin` made after it.
-- **Every read that can fail for a data reason runs before the capture.** After the capture only `CardAuthorization.Get`, `Order.Issue` and the announcement remain, and each of them only fails transiently. A fan is never charged and then stopped by a missing Organizer or IdentityVerification. After the capture only transient failures remain, and an `Issue` that passes its deadline after charging is reported to an admin, who refunds; there is no Order status for it.
+- **Every read that can fail for a data reason runs before the capture.** After the capture only `CardAuthorization.Get` and `Order.Issue` (with its announcement) remain, and each of them only fails transiently. A fan is never charged and then stopped by a missing Organizer or IdentityVerification. After the capture only transient failures remain, and an `Issue` that passes its deadline after charging is reported to an admin, who refunds; there is no Order status for it.
 - **A card that can no longer be charged is a result.** Per the failure classification of `introduce-durable-workflows`, `Issue` returns "no Order" instead of an error, so it is not reported. `ReleaseCardAuthorization` ending with FailedPrecondition (a Lost entry whose card was charged) is an error and is reported.
-- **Starting another usecase's workflow is a command, not a call.** `Draw` starts `OrderUseCase.Issue` by name and id through `Flow.Start`, which is recorded as a step and runs once per id. The specs write it as the trigger of the started method ("Issue SHALL run once for each entry that PersistDrawOutcome records Won"), the rule for internal events in the spec schema. A NATS event was rejected for this hand-off: it would need its own consumer and its own deduplication for a command that has exactly one receiver.
-- **`ReleaseCardAuthorization` is on `LotteryEntryUseCase`.** It acts for a Lost entry and reads its state. A `CardAuthorizationUseCase` would hold one method.
-- **Ids**: `draw:<sale>`, `issue:<entry>`, `release:<entry>`. A schedule run that lists a sale whose draw is still running, or ended in ERROR, starts nothing new (`DrawDueSales` "Drawn once", "One sale fails").
+- **The work after the draw starts from the entries' announcements.** `PersistDrawOutcome` records the outcome and one announcement per changed entry in one transaction. The workflow starter, one durable consumer of `ORDER.lottery_entry_drawn`, starts `OrderUseCase.Issue` (`issue:<order>`) for a Won entry's Order and `OrderUseCase.ReleaseCardAuthorization` (`release:<order>`) for a Lost one's, through `Workflows.Start`; a repeated delivery starts nothing new, because DBOS runs one workflow per id. The specs write it as the trigger of the started method ("Issue SHALL run once for each entry that PersistDrawOutcome records Won"). Starting them from `Draw` with `Flow.Start` was rejected: each start is one checkpoint write in `Draw`, one after another, so a sale of 1,000,000 entries would cost 1,000,000 sequential writes in one workflow (`docs/event-delivery-design.md`, "Why change").
+- **`ReleaseCardAuthorization` is on `OrderUseCase` and takes an Order.** The card authorization belongs to the Order after `remodel-ticket-sales`, and a Void Order is the one fact every source shares: a Lost lottery entry here, and a Lapsed, Lost or Withdrawn resale entry in `resell-tickets-by-lottery`, so one workflow serves both. A `CardAuthorizationUseCase` would hold one method.
+- **Ids**: `draw:<sale>`, `issue:<order>`, `release:<order>`. Every application has exactly one Order (`remodel-ticket-sales` D3), so the Order id names the work for every source without a source prefix. A schedule run that lists a sale whose draw is still running, or ended in ERROR, starts nothing new (`DrawDueSales` "Drawn once", "One sale fails").
 - **Deadlines**: 24 hours for `Issue` and `ReleaseCardAuthorization` (`WithDeadline`). A JPY card authorization of an account based in Japan can be held for up to 30 days ([Place a hold on a payment method](https://docs.stripe.com/payments/place-a-hold-on-a-payment-method), "30-day authorisation windows in Japan"; American Express keeps the standard 7 days), and an Organizer's lottery window lasts at most 14 days, so a resumed capture still finds it.
-- **Release tracking.** Every Lost entry gets its own `release:<entry>` workflow, from the draw or from `RevertWin`, so a release is never only logged. The workflow's stored state is the record of whether the release finished; a release that fails or passes its 24 hours raises "Workflow Needs Admin". No release time column is added: the CardAuthorization's own status (Released) is the fact, read from the payment provider. `Draw` has no deadline: it only reads and writes the database.
+- **Release tracking.** Every Lost entry's Order gets its own `release:<order>` workflow, started by the consumer of its announcement from `PersistDrawOutcome` or from `RevertWin`, so a release is never only logged. The workflow's stored state is the record of whether the release finished; a release that fails or passes its 24 hours raises "Workflow Needs Admin". No release time column is added: the CardAuthorization's own status (Released) is the fact, read from the payment provider. `Draw` has no deadline: it only reads and writes the database.
 
 ### Telling the fan
 
-- **Winner**: `Issue` announces `ORDER.paid`, and `SendOrderConfirmation` sends the email and the push it sends today. For an Order whose source is a LotteryEntry, the email first says the entry won, and the push says "当選しました". A separate "won" message at the draw was rejected: it would be sent before the charge, and a card that cannot be charged would then need a correction.
-- **Loser**: the `ORDER.lottery_entry_drawn` event that product analytics reads today is the lottery result announcement. `SendLotteryLoss` runs in the event consumer for each Lost result and, reading the entry's Order for the user, the SeatType and the count, sends an email (`LotteryEntry.SendLossEmail`, one per entry through the new `lottery_entries.loss_email_send_at`) and a `lottery_loss` push that opens the event page. The message says whether the entry was not drawn or the win was cancelled because the card could not be charged (`CaptureFailed`).
-- The announcement is published from a step, so it keeps one id across a resumed run, and product analytics and the email see it once.
+- **Winner**: `Order.Issue` announces `ORDER.paid`, and `SendOrderConfirmation` sends the email and the push it sends today. For an Order whose source is a LotteryEntry, the email first says the entry won, and the push says "当選しました". A separate "won" message at the draw was rejected: it would be sent before the charge, and a card that cannot be charged would then need a correction.
+- **Loser**: the `ORDER.lottery_entry_drawn` announcement, which product analytics reads, carries the LotteryEntry. `SendLotteryLoss` runs in its consumer for each entry announced Lost and, reading the entry's Order for the user, the SeatType and the count, sends an email (`LotteryEntry.SendLossEmail`, one per entry through the new `lottery_entries.loss_email_send_at`) and a `lottery_loss` push that opens the event page, started as the Deliver workflow `deliver:lottery_loss:<entry>` so a repeated announcement pushes once. It runs in a durable consumer of its own, so a mail outage never delays the start of a release. The message says whether the entry was not drawn or the win was cancelled because the card could not be charged, from the entry's lost reason. `RevertWin` sets the lost reason "card could not be charged" and announces the entry, so a reverted win reaches the same consumer.
+- Each announcement has one id, made when it is recorded, so product analytics sees it once and the loss email is kept to one by `loss_email_send_at`.
 
 ### Stripe keys: the operation, not the run
 
@@ -91,7 +95,7 @@ One queue `payment` with a global concurrency of 2 for `Issue` and `ReleaseCardA
 
 ### FulfillPayment for lottery charges
 
-The `payment_intent.succeeded` notice of a lottery capture arrives after `Issue` captured. `FulfillPayment` finds the LotteryEntry and returns without effect, so the Order is announced once, by `Issue`. The capture is the response to the platform's own call, so issuance does not wait for the notice (Stripe retries it for up to 3 days).
+The `payment_intent.succeeded` notice of a lottery capture arrives after `Issue` captured. `FulfillPayment` finds the LotteryEntry and returns without effect, so the Order is announced once, by `Order.Issue`. The capture is the response to the platform's own call, so issuance does not wait for the notice (Stripe retries it for up to 3 days).
 
 ## Risks / Trade-offs
 
@@ -107,4 +111,4 @@ The `payment_intent.succeeded` notice of a lottery capture arrives after `Issue`
 
 Rollback: revert the backend release only before any draw has run under the new code. After one has, do not roll back: the old code expects a Won entry to be captured already, so it would never charge a Won entry whose Order is still Pending, and it does not release a Lost entry's card authorization that the new workflow had not released yet; fix forward instead. The new column stays unused; no business table changes shape.
 
-Order: `remodel-ticket-sales` is released first; this change's backend PR is built on it.
+Order: `remodel-ticket-sales`, then `publish-events-through-outbox`, are released first; this change's backend PR is built on them.

@@ -42,7 +42,7 @@ When reading or sending fails, SendOrderConfirmation SHALL fail with that error 
 
 ### Requirement: Push notification after the email
 
-After the email is sent, SendOrderConfirmation SHALL request a notification of type order_confirmation for the Order's user with NotificationUseCase.Deliver, saying in the user's language that the purchase is complete, or for an Order whose source is a LotteryEntry that the entry won and the tickets are ready, and opening the Tickets screen when tapped. A user with no registered browser receives the email only. If SendOrderConfirmation stops between requesting the notification and finishing, a run again can push a second notification; the email is still sent once.
+After the email is sent, SendOrderConfirmation SHALL start NotificationUseCase.Deliver for the Order's user with a notification of type order_confirmation, named after the type and the Order, saying in the user's language that the purchase is complete, or for an Order whose source is a LotteryEntry that the entry won and the tickets are ready, and opening the Tickets screen when tapped. A user with no registered browser receives the email only. A run again for the same Order, after a stop or a repeated announcement, starts no second Deliver, so the fan is pushed once; the email is still sent once.
 
 #### Scenario: Fan allowed notifications
 
@@ -53,3 +53,8 @@ After the email is sent, SendOrderConfirmation SHALL request a notification of t
 
 - **WHEN** the Order of a won lottery entry is announced as paid and its user has a registered browser
 - **THEN** an order_confirmation notification saying the entry won is pushed and opens the Tickets screen
+
+#### Scenario: Paid announcement delivered twice
+
+- **WHEN** the paid announcement of an Order is delivered twice and SendOrderConfirmation runs twice
+- **THEN** the fan receives one email and one order_confirmation push

@@ -28,7 +28,7 @@ See proposal.md - Why, and `docs/event-delivery-design.md` for the model and the
   | Artist.Create | `artist_repo` | `DO NOTHING`, returns existing artists too |
 
 - `entity/v1.User` carries `full_name` (10) and `phone_number` (11).
-- `LotteryEntry` has no `ticket_sale_id` or `referral_code` field in its proto, and its mapper says the referral code is left out because "no screen reads it" (`adapter/rpc/mapper/lottery_entry.go:9-10`).
+- `LotteryEntry` has no lost reason: a capture failure is only in the `CaptureFailed` field of the hand-written payload (`entity/event_data.go`). Its sale and its referral code are handled by `remodel-ticket-sales`, which this change follows: the entry names its sale and its Order, and the referral code moves to the Order.
 
 ## Goals / Non-Goals
 
@@ -82,7 +82,7 @@ workflow-worker: forwarder.Forwarder
 - Payloads are `proto.Marshal` of the entity message after the change. A User payload clears `full_name` and `phone_number` (`pb.FromUserForAnnouncement`, one function, covered by a test).
 - The structs of `entity/event_data.go` go; the subject constants and `AllSubjects` stay. Receivers unmarshal the entity message and convert it with `pb.To<Entity>`, or read the fields they need.
 - **The entity proto does not depend on screens.** A field absent from the proto is added unless it is personal data that must be protected:
-  - `LotteryEntry` gains `ticket_sale_id`, `referral_code` and `lost_reason` (`LOTTERY_ENTRY_LOST_REASON_NOT_DRAWN`, `..._CARD_NOT_CHARGED`).
+  - `LotteryEntry` gains `lost_reason` (`LOTTERY_ENTRY_LOST_REASON_NOT_DRAWN`, `..._CARD_NOT_CHARGED`).
   - `User` gains `last_login_time`.
   - `Artist` gains `organizer_id`, the Organizer that represents it (at most one: `organizer_artists.artist_id` is unique); the entity Purpose draws Organizer ||--o{ Artist (decided 2026-10-28).
   - `Passkey` gains `name`.
@@ -91,12 +91,13 @@ workflow-worker: forwarder.Forwarder
 
 ### Requests start workflows
 
-A request for one receiver with no stored change behind it starts that receiver's workflow through `usecase.Workflows.Start` (or `Flow.Start` inside a workflow), named after the business key of the request. Work that follows a stored change runs from that change's announcement (the cover image: SeriesImage.Create announces SERIES_IMAGE.uploaded). The NATS subjects of the requests and their durable consumers go. DBOS `WithEnqueueTransaction` is not needed.
+A request for one receiver with no stored change behind it starts that receiver's workflow through `usecase.Workflows.Start` (or `Flow.Start` inside a workflow), named after the business key of the request. Work that follows a change stored outside a workflow runs from that change's announcement (the cover image: SeriesImage.Create announces SERIES_IMAGE.uploaded). This holds inside a workflow too: a workflow that stores a change for many entities does not start the follow-up work per entity, because each `Flow.Start` is one checkpoint write in the parent workflow, one after another (1,000,000 entries, 1,000,000 writes). The operation's announcements are written in one transaction, and the consumer starts one workflow per entity under its business key (the lottery draw: the consumer of each Won entry starts `issue:<entry>`, of each Lost entry `release:<entry>`). The NATS subjects of the requests and their durable consumers go. DBOS `WithEnqueueTransaction` is not needed.
 
 | Request | Started by | Workflow | Workflow id (business key) | Follows a stored change |
 |---|---|---|---|---|
 | New concerts for a follower | NotificationUseCase.NotifyNewConcerts (receiver of CONCERT.created) | NotificationUseCase.Deliver | `deliver:new_concerts:<user>:<announcement id>`; an admin's direct call uses its own call id | no |
 | A discovered sale for a recipient | TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale | NotificationUseCase.Deliver | `deliver:ticket_sale:<user>:<ticket sale>` | no |
+| The push of an Order's confirmation | NotificationUseCase.SendOrderConfirmation (receiver of ORDER.paid), after its email | NotificationUseCase.Deliver | `deliver:order_confirmation:<order>`, so a repeated announcement pushes once while the email is kept to one by `orders.confirmation_send_at` | yes (the push follows the paid Order, but runs in the receiver of its announcement) |
 | A due reminder stage | TicketSaleReminderUseCase.ScanDueReminders | TicketSaleReminderDeliveryUseCase.DeliverReminder | `reminder:<user>:<ticket sale>:<stage>:<15-minute scan period>`, so a later scan can retry a failed push | no |
 | A verification email resend | UserUseCase.ResendEmailVerification | UserUseCase.ReissueEmailVerification | a UUIDv7 per allowed call (the call is the request) | no |
 | A passkey recovery link | UserUseCase.RequestPasskeyRecovery | UserUseCase.SendPasskeyRecoveryLink | a UUIDv7 per allowed request | no |
@@ -144,7 +145,7 @@ JetStream drops a repeated id for 2 minutes only; a delivery repeated later (a f
 |---|---|
 | product analytics | PostHog's event `uuid` = the announcement id |
 | NotifyNewConcerts, AnnounceDiscoveredSale | the started Deliver workflow's id |
-| SendOrderConfirmation | `orders.confirmation_send_at` |
+| SendOrderConfirmation | `orders.confirmation_send_at` for the email, the started Deliver workflow's id for the push |
 | SendResaleSold | the sold email send time |
 | SendLotteryLoss (later change) | `lottery_entries.loss_email_send_at` |
 | MarkPaid, ResolveCanonicalName, SyncArtistImage, SeriesImageUseCase.Process | the result is the same when repeated |
@@ -155,13 +156,12 @@ A receiver added later picks one of these guards; task 10.1 tests "Delivered twi
 
 - Removed subjects: NOTIFICATION.requested, SALES_PHASE.reminder_due, USER.email_verification_resend_requested, USER.passkey_recovery_requested and CONCERT.discovered (now workflows); CONCERT.cancelled and ORGANIZER.concert_published (no receiver); USER.passkey_changed (split into added and removed, because the Passkey payload cannot say which).
 - **A payload is the entities one operation changed together, of one type** (`entity/v1` messages; one entity unless the receiver needs them together, as for CONCERT.created). A list payload is a message with one `repeated` field of the entity, declared next to the entity in `entity/v1` (`ConcertList`). What the announcement is about, when the payload does not say it, goes in the CloudEvents `subject` attribute.
-- Receivers needing a value that is not on the entity read it by id (the confirmation email reads the Order's Event and Tickets; the lottery result reads the TicketSale's draw time). The previous level or status of a hype or journey signal is the fan's previous signal, as the hype signal already defines.
+- Receivers needing a value that is not on the entity read it by id (the confirmation email reads the Order's Event and Tickets; the lottery result reads the entry's Order for its TicketStock). The previous level or status of a hype or journey signal is the fan's previous signal, as the hype signal already defines.
 
-### LotteryEntry: ticket sale and lost reason
+### LotteryEntry: lost reason
 
-- `lottery_entries.ticket_sale_id UUID NOT NULL` is backfilled from `ticket_types`. The composite foreign key `(ticket_type_id, ticket_sale_id)` references `ticket_types (id, ticket_sale_id)`, which gains `UNIQUE (id, ticket_sale_id)`, so an entry cannot name a sale its ticket type does not belong to. `LotteryEntry.Create` takes the sale id from the TicketType the usecase already reads.
 - `lottery_entries.lost_reason SMALLINT` is NULL unless Lost: 1 = not drawn, 2 = card could not be charged. The proto enum `LotteryEntryLostReason` uses the same numbers; `0` (`..._UNSPECIFIED`) is never stored and maps to NULL. A check constraint ties it to the state. Existing Lost rows are backfilled as not drawn, because the capture failure was never stored. The count is checked read-only in prod before the migration (expected 0).
-- `PersistDrawOutcome` takes the lost reason per loser and gains `WHERE state = 1` with a check that the sale has no `draw_at`, so a second call changes and announces nothing.
+- `PersistDrawOutcome` takes the lost reason per loser. It already leaves an entry that is no longer Entered unchanged (`remodel-ticket-sales`, which drops the draw time), and announces only the entries it changes, so a second call changes and announces nothing.
 
 ### Undelivered announcements
 
@@ -177,16 +177,17 @@ Receivers decode by `ce_datacontenttype`: `application/protobuf` with the new de
 - [The forwarder is a single consumer in one replica] → A stopped worker delays delivery and does not lose it. The 10-minute alert reports a delay.
 - [Behaviour seen in product analytics changes (no signal for repeated hype levels, unfollows of artists not followed, repeated subscriptions, repeated charge notices)] → Intended (proposal **BREAKING**). Dashboards counting those repeats are checked in the release task.
 - [A receiver's side effect is not idempotent] → Unchanged from today: every receiver already treats a repeated announcement as one (send times, unique keys). The spec "delivered twice" scenario is tested per receiver that has one.
-- [One forwarder publishes one message at a time] → 1,000,000 announcements of one draw may take more than 10 minutes to deliver and trip the alert. The charges of the same draw (queue concurrency 2, one Stripe call each) take far longer, so the forwarder is not what fans wait for. Task 11.2 measures the delivery rate; the alert threshold or the forwarder's concurrency is revisited only if a real sale gets near that size.
+- [One forwarder publishes one message at a time] → 1,000,000 announcements of one draw may take more than 10 minutes to deliver and trip the alert. The charges of the same draw (queue concurrency 2, one Stripe call each) take far longer, so the forwarder is not what fans wait for. The outbox is one table read in insertion order, so announcements recorded after the draw (a sign-up's verification email, a first-come Order's confirmation) wait behind it for that time too. With no users this is accepted; if task 11.2 shows it, the forwarder publishes asynchronously or the draw's announcements get a table of their own. Task 11.2 measures the delivery rate; the alert threshold or the forwarder's concurrency is revisited only if a real sale gets near that size.
 - [A row lives in the outbox until delivered] → Rows are deleted on delivery. 1,000,000 rows is about 620 MB while a large draw is being delivered.
 
 ## Migration Plan
 
-1. specification: proto release with `LotteryEntry.ticket_sale_id`, `referral_code`, `lost_reason`, `User.last_login_time`, and the fields from the audit.
+0. `remodel-ticket-sales` is released first; this change is planned on its model, and `make-lottery-draw-durable`, `unify-order-issuance` and `resell-tickets-by-lottery` follow this change.
+1. specification: proto release with `LotteryEntry.lost_reason`, `User.last_login_time`, and the fields from the audit.
 2. backend refactor PR: move `adapter/rpc/mapper` to `adapter/pb` with the new names (no behaviour change).
 3. Read-only in prod: count Lost lottery entries and outbox prerequisites. Record the result here.
 4. backend PR:
-   - the migrations (the outbox table, `series_images.series_id`, `lottery_entries.ticket_sale_id` and `lost_reason`, `ticket_types` unique, `users.last_login_time`);
+   - the migrations (the outbox table, `series_images.series_id`, `lottery_entries.lost_reason`, `users.last_login_time`);
    - the outbox and the forwarder;
    - the entity operations;
    - the usecases without the publisher;
@@ -194,7 +195,7 @@ Receivers decode by `ce_datacontenttype`: `application/protobuf` with the new de
    - the webhooks;
    - receivers decoding both formats;
    - the alert gauge.
-5. cloud-provisioning PR: the alert policy. The durable consumers and stream subjects of the removed subjects (`NOTIFICATION.requested`, `SALES_PHASE.reminder_due`, `USER.email_verification_resend_requested`, `USER.passkey_recovery_requested`, `SERIES_IMAGE.uploaded`, `CONCERT.discovered`, `CONCERT.cancelled`, `ORGANIZER.concert_published`) are deleted after step 4 is live.
+5. cloud-provisioning PR: the alert policy. The durable consumers and stream subjects of the removed subjects (`NOTIFICATION.requested`, `SALES_PHASE.reminder_due`, `USER.email_verification_resend_requested`, `USER.passkey_recovery_requested`, `CONCERT.discovered`, `CONCERT.cancelled`, `ORGANIZER.concert_published`) are deleted after step 4 is live.
 6. backend PR: delete the JSON decoding and `event_data.go` payload structs.
 
 Rollback: revert the backend release. Announcements still in the outbox are not delivered by the old code; with no users this loses at most the analytics of the rollback window. The new columns stay unused.

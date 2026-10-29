@@ -8,7 +8,7 @@ ResaleEntryUseCase.Withdraw lets a fan cancel their own resale entry while it wa
 
 ### Requirement: A fan withdraws their own waiting entry
 
-Withdraw SHALL take a User and a ResaleEntry. It SHALL read the entry with ResaleEntry.Get, failing with NotFound when it does not exist or its Order's user is not the given User. It SHALL withdraw it with ResaleEntry.Withdraw at the current time, returning FailedPrecondition unchanged when the entry is no longer Entered, and then release the Order's card authorization as for a Lost entry, retrying while the payment provider cannot be reached. A failed release SHALL NOT undo the withdrawal. No email or push SHALL be sent, because the fan withdrew it themselves.
+Withdraw SHALL take a User and a ResaleEntry. It SHALL read the entry with ResaleEntry.Get, failing with NotFound when it does not exist or its Order's user is not the given User. It SHALL withdraw it with ResaleEntry.Withdraw at the current time, returning FailedPrecondition unchanged when the entry is no longer Entered. The release of the Order's card authorization, as for a Lost entry, SHALL run from ResaleEntry.Withdraw's announcement, retrying while the payment provider cannot be reached, so Withdraw returns once the entry is Withdrawn. A failed release SHALL NOT undo the withdrawal. No email or push SHALL be sent, because the fan withdrew it themselves.
 
 #### Scenario: Fan withdraws
 - **WHEN** a fan withdraws their Entered entry for 2 tickets
