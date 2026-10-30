@@ -111,10 +111,14 @@ This step needs VS Code's `code` command on the local machine. Find its director
 or else, under WSL, the Windows install (Bash started from VS Code often lacks it on PATH):
 
 ```bash
-CODE_DIR=$(dirname "$(command -v code)" 2>/dev/null)
-[ -n "$CODE_DIR" ] && [ "$CODE_DIR" != . ] || \
-  CODE_DIR=$(ls -d /mnt/c/Users/*/AppData/Local/Programs/"Microsoft VS Code"/bin 2>/dev/null | head -1)
+CODE_DIR=
+if command -v code >/dev/null; then CODE_DIR=$(dirname "$(command -v code)")
+else for d in /mnt/c/Users/*/AppData/Local/Programs/"Microsoft VS Code"/bin; do
+  [ -x "$d/code" ] && CODE_DIR=$d && break; done
+fi
 ```
+
+(A shell glob, not `ls`: `ls` is often aliased to a tool that quotes paths with spaces.)
 
 When `CODE_DIR` is empty (a cloud thread, or no VS Code), stop here and report the merged PR and the
 worktrees the user would create.
