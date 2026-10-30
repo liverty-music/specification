@@ -94,7 +94,7 @@ Unchanged and why: consumers whose trigger is a fact that stays an announcement 
 
 ## Impact
 
-- **backend**: one outbox table for every subject and its relay (the Watermill forwarder) in the workflow worker; entity operations write announcements on the repository transaction; the usecases lose the event publisher; new workflows for the six requests; the passkey and login webhooks call usecases; consumers read binary protobuf payloads; the entity-to-proto conversion moves out of the RPC mapper package; the step-derived event id code goes; migrations for the lottery entry's lost reason, `users.last_login_time`, `passkeys.name` and `series_images.series_id`.
+- **backend**: one outbox table for every subject and its relay (the Watermill forwarder) in the workflow worker; entity operations write announcements on the repository transaction; the usecases lose the event publisher; new workflows for the six requests; the passkey and login webhooks call usecases; consumers read binary protobuf payloads; the entity-to-proto conversion moves out of the RPC mapper package; the step-derived event id code goes; migrations for the lottery entry's lost reason, `users.last_login_time` and `passkeys.name`.
 - **specification**: `entity/v1` gains the `LotteryEntry` lost reason, `User` the last login time, `Artist` its organizer, `Passkey` its name and User, `SeriesImage` its Organizer, `PushSubscription` its device family, and the `Follow` and `ConcertList` messages, and any field the entity-to-proto audit finds missing (a proto release).
 - **cloud-provisioning**: JetStream streams lose the removed subjects.
 - **frontend**: none.
