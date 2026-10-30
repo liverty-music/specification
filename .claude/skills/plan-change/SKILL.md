@@ -107,9 +107,17 @@ After approval:
 
 ## 6. Worktrees and workset
 
-This step needs VS Code on the local machine. In a cloud thread, or when
-`/mnt/c/Users/peppe/AppData/Local/Programs/Microsoft VS Code/bin/code` does not exist, stop here and report
-the merged PR and the worktrees the user would create.
+This step needs VS Code's `code` command on the local machine. Find its directory: the one of `code` on PATH,
+or else, under WSL, the Windows install (Bash started from VS Code often lacks it on PATH):
+
+```bash
+CODE_DIR=$(dirname "$(command -v code)" 2>/dev/null)
+[ -n "$CODE_DIR" ] && [ "$CODE_DIR" != . ] || \
+  CODE_DIR=$(ls -d /mnt/c/Users/*/AppData/Local/Programs/"Microsoft VS Code"/bin 2>/dev/null | head -1)
+```
+
+When `CODE_DIR` is empty (a cloud thread, or no VS Code), stop here and report the merged PR and the
+worktrees the user would create.
 
 1. **Repositories.** Read the section headings and task lines of the merged `tasks.md`. A repository is in when
    a task changes it: `specification` for proto files (`proto/`), `backend`, `frontend`, `cloud-provisioning`.
@@ -126,18 +134,20 @@ the merged PR and the worktrees the user would create.
 
    ```bash
    git -C "$R" fetch origin
+   created=0
    if [ -d "$W" ]; then :                                                    # reuse the existing worktree
-   elif git -C "$R" show-ref --verify --quiet "refs/heads/$B"; then git -C "$R" worktree add "$W" "$B"
-   else git -C "$R" worktree add "$W" -b "$B" origin/main
+   elif git -C "$R" show-ref --verify --quiet "refs/heads/$B"; then git -C "$R" worktree add "$W" "$B" && created=1
+   else git -C "$R" worktree add "$W" -b "$B" origin/main && created=1
    fi
    ```
 
    Say when a worktree or branch was reused, and show how far it is behind `origin/main`; never delete or
    reset one, since it may hold someone's work. When the repository has a `.worktreeinclude`, copy the
-   gitignored files it lists into a newly created worktree (that is what `claude --worktree` would have done):
+   gitignored files it lists into a newly created worktree only (that is what `claude --worktree` would have
+   done); a reused worktree keeps its own copies:
 
    ```bash
-   if [ -f "$R/.worktreeinclude" ]; then
+   if [ "$created" = 1 ] && [ -f "$R/.worktreeinclude" ]; then
      (cd "$R" && git ls-files --others --ignored --exclude-from=.worktreeinclude \
        | while read -r f; do mkdir -p "$(dirname "$W/$f")"; cp -p "$f" "$W/$f"; done)
    fi
@@ -155,10 +165,10 @@ the merged PR and the worktrees the user would create.
 
    If a workset of that name exists, show its members and ask before replacing it.
 4. **Open it.** Bash inherits the extension host's Electron variables, which crash the new window's extension
-   host, so strip them and put the Windows `code` on PATH:
+   host, so strip them and put `CODE_DIR` on PATH:
 
    ```bash
-   PATH="/mnt/c/Users/peppe/AppData/Local/Programs/Microsoft VS Code/bin:$PATH" \
+   PATH="$CODE_DIR:$PATH" \
      env -u ELECTRON_RUN_AS_NODE -u VSCODE_ESM_ENTRYPOINT -u VSCODE_HANDLES_SIGPIPE \
        -u VSCODE_HANDLES_UNCAUGHT_ERRORS -u VSCODE_NLS_CONFIG -u VSCODE_L10N_BUNDLE_LOCATION \
        -u VSCODE_RECONNECTION_GRACE_TIME openspec workset open <change>
