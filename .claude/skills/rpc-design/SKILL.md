@@ -5,7 +5,7 @@ description: Naming rules for RPC services, methods and request messages in this
 
 # RPC design rules (liverty-music)
 
-The goal: a developer predicts a method's input and behavior from its name alone, and every service follows the same rules. These rules override the AIP guidance in the user-scope `protobuf` skill where they differ; everything else in that skill (wrapper messages, protovalidate, comments, field numbering) still applies.
+The goal: a developer predicts a method's input and behavior from its name alone, and every service follows the same rules. These rules override the AIP guidance in the `proto-api-design` skill (protobuf plugin) where they differ; everything else there and in `proto-schema-toolchain` (protovalidate, comments, field numbering) still applies, and wrapper messages follow AGENTS.md.
 
 ## Services
 
