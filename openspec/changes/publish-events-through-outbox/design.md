@@ -86,14 +86,14 @@ workflow-worker: forwarder.Forwarder
   - `User` gains `last_login_time`.
   - `Artist` gains `organizer_id`, the Organizer that represents it (at most one: `organizer_artists.artist_id` is unique); the entity Purpose draws Organizer ||--o{ Artist (decided 2026-10-28).
   - `Passkey` gains `name` and `user_id`, the User it belongs to, which NotifyPasskeyChange reads.
-  - `SeriesImage` gains `series_id`, which SeriesImageUseCase.Process reads.
+  - `SeriesImage` gains `organizer_id`, the Organizer that uploaded it (an attribute of the main spec the proto left out).
   - A `Follow` message (`user_id`, `artist_id`, `hype`) is added next to `FollowedArtist`, the fan's own view, which names no fan; it is the payload of the ARTIST subjects.
   - `PushSubscription` gains `device_family`, derived from the push address. The announcement clears `endpoint` and `keys` (`pb.FromPushSubscriptionForAnnouncement`).
   - The audit compares every entity struct with its proto message and adds what is missing in the same proto release.
 
 ### Requests start workflows
 
-A request for one receiver with no stored change behind it starts that receiver's workflow through `usecase.Workflows.Start` (or `Flow.Start` inside a workflow), named after the business key of the request. Work that follows a change stored outside a workflow runs from that change's announcement (the cover image: SeriesImage.Create announces SERIES_IMAGE.uploaded). This holds inside a workflow too: a workflow that stores a change for many entities does not start the follow-up work per entity, because each `Flow.Start` is one checkpoint write in the parent workflow, one after another (1,000,000 entries, 1,000,000 writes). The operation's announcements are written in one transaction, and the consumer starts one workflow per entity under its business key (the lottery draw: the consumer starts `issue:<order>` for each Won entry's Order and `release:<order>` for each Lost entry's Order). The NATS subjects of the requests and their durable consumers go. DBOS `WithEnqueueTransaction` is not needed.
+A request for one receiver with no stored change behind it starts that receiver's workflow through `usecase.Workflows.Start` (or `Flow.Start` inside a workflow), named after the business key of the request. Work that follows a change stored outside a workflow runs from that change's announcement. This holds inside a workflow too: a workflow that stores a change for many entities does not start the follow-up work per entity, because each `Flow.Start` is one checkpoint write in the parent workflow, one after another (1,000,000 entries, 1,000,000 writes). The operation's announcements are written in one transaction, and the consumer starts one workflow per entity under its business key (the lottery draw: the consumer starts `issue:<order>` for each Won entry's Order and `release:<order>` for each Lost entry's Order). The NATS subjects of the requests and their durable consumers go. DBOS `WithEnqueueTransaction` is not needed.
 
 | Request | Started by | Workflow | Workflow id (business key) | Follows a stored change |
 |---|---|---|---|---|
@@ -106,7 +106,7 @@ A request for one receiver with no stored change behind it starts that receiver'
 | Ingesting found concerts | ConcertUseCase.SearchNewConcerts and SearchNewConcertsOnFirstFollow | ConcertCreationUseCase.CreateFromDiscovered, the found series as input | `ingest:<artist>:<search time>` | no |
 | Recording a passkey notice | the passkey webhook | PasskeyUseCase.RecordChange | `passkey:<provider passkey id>:<added or removed>` | no |
 
-- SeriesImage gains the Series it was uploaded for (`series_images.series_id`), which its processing reads from the announcement.
+- **Exception: cover image processing is recorded in the outbox, not started as a workflow.** SeriesImageUseCase.Process links libvips and runs in its own deployment, `series-image-consumer` (512Mi request, scaled to zero by KEDA on the SERIES_IMAGE stream), while DBOS workflows run in `workflow-worker`. SeriesImage.Create therefore records the processing request in the outbox in the same transaction as the SeriesImage: subject `SERIES_IMAGE.uploaded`, payload the SeriesImage (with its Organizer), `ce_subject` the Series it is attached to. The Series is the request's argument, not SeriesImage state, so `series_images` gains no column and the proto no `series_id` (which would also make `series.proto` and `series_image.proto` import each other). Rejected: running Process in `event-consumer` next to the fan art logo analysis (every scale-up of the ~30 consumers would request 512Mi and carry libvips, decided 2026-10-30); making `series-image-consumer` a DBOS executor on its own queue (a second trigger mechanism and a KEDA Postgres scaler for one receiver). Folding `series_images` and `series_cover_images` into one `series.cover_image_id` column is left to a separate change.
 - `CreateFromDiscovered` stores the events it publishes for one series in one `Concert.Create` call, so one series yields one announcement per newly listed Artist, as the per-series announcement did before.
 
 ### Observations from outside become facts
@@ -124,7 +124,7 @@ A request for one receiver with no stored change behind it starts that receiver'
 | ARTIST.created | Artist.Create | Artist | ArtistUseCase.ResolveCanonicalName, SyncArtistImage |
 | CONCERT.created | Series.PublishEvents, Concert.Create | the Concerts listed for one Artist; `ce_subject` = the Artist id | NotificationUseCase.NotifyNewConcerts |
 | SALES_PHASE.discovered | TicketSale.UpsertDiscovered | TicketSale | TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale |
-| SERIES_IMAGE.uploaded | SeriesImage.Create | SeriesImage, with its Series | SeriesImageUseCase.Process |
+| SERIES_IMAGE.uploaded | SeriesImage.Create (a processing request, see "Requests start workflows") | SeriesImage; `ce_subject` = the Series id | SeriesImageUseCase.Process |
 | ORDER.checkout_expired | Checkout.Release | Checkout | product analytics |
 | ORDER.paid | Order.Issue | Order | product analytics, NotificationUseCase.SendOrderConfirmation, TicketJourneyUseCase.MarkPaid |
 | ORDER.lottery_entry_drawn | LotteryEntry.PersistDrawOutcome | LotteryEntry, one announcement per entry | product analytics |
@@ -185,12 +185,14 @@ Receivers decode by `ce_datacontenttype`: `application/protobuf` with the new de
 
 ## Migration Plan
 
+Prod row counts before the migrations (read-only, 2026-10-30): Lost `lottery_entries` 0 (nothing to backfill as not drawn), `passkeys` 4 (no stored name; they get one only when re-recorded), `organizer_artists` 1.
+
 0. `remodel-ticket-sales` is released first; this change is planned on its model, and `make-lottery-draw-durable`, `unify-order-issuance` and `resell-tickets-by-lottery` follow this change.
-1. specification: proto release with `LotteryEntry.lost_reason`, `User.last_login_time`, `Artist.organizer_id`, `Passkey.name` and `user_id`, `SeriesImage.series_id`, `PushSubscription.device_family`, the `Follow` and `ConcertList` messages, and the fields from the audit.
+1. specification: proto release with `LotteryEntry.lost_reason`, `User.last_login_time`, `Artist.organizer_id`, `Passkey.name` and `user_id`, `SeriesImage.organizer_id`, `PushSubscription.device_family`, the `Follow` and `ConcertList` messages, and the fields from the audit.
 2. backend refactor PR: move `adapter/rpc/mapper` to `adapter/pb` with the new names (no behaviour change).
 3. Read-only in prod: count Lost lottery entries and outbox prerequisites. Record the result here.
 4. backend PR:
-   - the migrations (the outbox table, `series_images.series_id`, `passkeys.name`, `lottery_entries.lost_reason`, `users.last_login_time`);
+   - the migrations (the outbox table, `passkeys.name`, `lottery_entries.lost_reason`, `users.last_login_time`);
    - the outbox and the forwarder;
    - the entity operations;
    - the usecases without the publisher;

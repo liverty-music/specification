@@ -4,6 +4,7 @@ package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/organizer.proto";
 
 // Artist represents a musical performer or band.
 // This is a central entity that fans follow to stay informed about upcoming
@@ -21,6 +22,10 @@ message Artist {
   // Community-curated artist images from fanart.tv.
   // Absent when no image data has been fetched or the artist has no fanart.tv entry.
   optional Fanart fanart = 4;
+
+  // The Organizer that represents the artist. Absent when no Organizer does;
+  // an artist has at most one.
+  optional OrganizerId organizer_id = 5;
 }
 
 // ArtistId is a globally unique identifier for an artist.

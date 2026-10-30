@@ -2,18 +2,18 @@
 
 ### Requirement: Idempotent insert
 
-Create SHALL store a SeriesImage with the Series it was uploaded for, and announce it as uploaded together with it: both are stored or neither is. When a SeriesImage with the same id is already stored, Create SHALL succeed, change nothing and announce nothing. When the announcement cannot be recorded, Create SHALL fail with Unavailable and store nothing.
+Create SHALL store a SeriesImage for the Series it is attached to, and record the request to process it for that Series together with it: both are stored or neither is. The Series SHALL NOT be stored on the SeriesImage. When a SeriesImage with the same id is already stored, Create SHALL succeed, change nothing and record nothing. When the request cannot be recorded, Create SHALL fail with Unavailable and store nothing.
 
 #### Scenario: First attach
 
 - **WHEN** Create is called with a SeriesImage that is not stored, for Series S
-- **THEN** the SeriesImage is stored with Series S and announced as uploaded once
+- **THEN** the SeriesImage is stored and one request to process it for Series S is recorded
 
 #### Scenario: Repeated attach
 - **WHEN** the same SeriesImage id is inserted twice
-- **THEN** one SeriesImage is stored, both calls succeed and it is announced once
+- **THEN** one SeriesImage is stored, both calls succeed and one processing request is recorded
 
-#### Scenario: Announcement cannot be recorded
+#### Scenario: Request cannot be recorded
 
-- **WHEN** Create is called with a SeriesImage that is not stored and the announcement cannot be recorded
+- **WHEN** Create is called with a SeriesImage that is not stored and the processing request cannot be recorded
 - **THEN** Create fails with Unavailable and no SeriesImage is stored

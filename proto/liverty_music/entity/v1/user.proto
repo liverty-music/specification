@@ -4,6 +4,7 @@ package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
 import "liverty_music/entity/v1/coordinates.proto";
 import "liverty_music/entity/v1/entity.proto";
 
@@ -43,6 +44,15 @@ message EmailVerificationCode {
   string value = 1 [(buf.validate.field).string = {
     min_len: 1
     max_len: 32
+  }];
+}
+
+// TimeZone is an IANA time zone name (e.g., "Asia/Tokyo").
+message TimeZone {
+  // The IANA name.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
   }];
 }
 
@@ -100,6 +110,14 @@ message User {
 
   // The identity provider's ID for the User.
   ProviderUserId provider_user_id = 12 [(buf.validate.field).required = true];
+
+  // When the user last signed in, as reported by the identity provider.
+  // Absent until the first sign-in is recorded. Server-owned.
+  google.protobuf.Timestamp last_login_time = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The user's preferred time zone as an IANA name (e.g., "Asia/Tokyo").
+  // Absent when not set.
+  TimeZone time_zone = 14 [(google.api.field_behavior) = OPTIONAL];
 
   // Field 9 was the 本人確認 details as one value, replaced by full_name and
   // phone_number. Field 4 was the identity provider's id under its former name,

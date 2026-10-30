@@ -4,6 +4,7 @@ package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
 import "liverty_music/entity/v1/artist.proto";
+import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
@@ -34,6 +35,20 @@ message FollowedArtist {
   // The fan's hype level for this artist, which determines the scope of
   // concert push notifications they receive.
   HypeType hype = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum.defined_only = true
+  ];
+}
+
+// Follow is one fan's follow of one Artist with its hype level. FollowedArtist
+// is the fan's own view of the same follow, which names no fan.
+message Follow {
+  // The fan who follows the artist.
+  UserId user_id = 1 [(buf.validate.field).required = true];
+  // The followed artist.
+  ArtistId artist_id = 2 [(buf.validate.field).required = true];
+  // The fan's hype level for the artist.
+  HypeType hype = 3 [
     (buf.validate.field).required = true,
     (buf.validate.field).enum.defined_only = true
   ];

@@ -55,6 +55,25 @@ message PushKeys {
   }];
 }
 
+// PushDeviceFamily is the browser or OS family of a PushSubscription, derived
+// from the push service that issued its PushEndpoint. It is the only part of
+// the endpoint that may leave the backend. New values may be appended;
+// existing values must not be renumbered.
+enum PushDeviceFamily {
+  // Default value; not derived.
+  PUSH_DEVICE_FAMILY_UNSPECIFIED = 0;
+  // Firebase Cloud Messaging (Android and Chromium browsers).
+  PUSH_DEVICE_FAMILY_ANDROID = 1;
+  // Apple Web Push (Safari).
+  PUSH_DEVICE_FAMILY_APPLE = 2;
+  // Mozilla autopush (Firefox).
+  PUSH_DEVICE_FAMILY_FIREFOX = 3;
+  // Windows Push Notification Services.
+  PUSH_DEVICE_FAMILY_WINDOWS = 4;
+  // Any other push service.
+  PUSH_DEVICE_FAMILY_OTHER = 5;
+}
+
 // PushSubscription represents a single browser's Web Push subscription registered
 // against a user account.
 //
@@ -85,4 +104,7 @@ message PushSubscription {
   // The cryptographic key material required to encrypt notification payloads
   // deliverable to this browser session.
   PushKeys keys = 4 [(buf.validate.field).required = true];
+
+  // The browser or OS family, derived from the endpoint's push service.
+  PushDeviceFamily device_family = 5 [(buf.validate.field).enum.defined_only = true];
 }

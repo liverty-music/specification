@@ -62,9 +62,14 @@ An announcement SHALL NOT carry a User's full name, phone number or the display 
 
 ### Requirement: Work for one receiver is started as a workflow
 
-A request for one receiver to do work, with no stored change behind it, SHALL start that receiver's workflow instead of being announced. The workflow SHALL be named after the business key of the request, so a repeated request with the same key starts nothing new. Work that follows a stored change runs from that change's announcement.
+A request for one receiver to do work, with no stored change behind it, SHALL start that receiver's workflow instead of being announced. The workflow SHALL be named after the business key of the request, so a repeated request with the same key starts nothing new. Work that follows a stored change runs from that change's announcement. A request whose receiver runs only in a dedicated process (series image processing) SHALL instead be recorded together with the stored change it follows and delivered like an announcement.
 
 #### Scenario: Same request twice
 
 - **WHEN** the same request, with the same business key, is made twice
 - **THEN** the receiver's workflow runs once
+
+#### Scenario: Request for a dedicated process
+
+- **WHEN** a SeriesImage is attached to a Series
+- **THEN** the request to process it, naming the Series, is recorded with the SeriesImage and delivered at least once to series image processing

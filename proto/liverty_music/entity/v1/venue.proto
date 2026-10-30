@@ -3,6 +3,7 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
+import "liverty_music/entity/v1/coordinates.proto";
 
 // Venue represents a physical location where concert events are hosted.
 // It contains geographical and descriptive information to help fans find the event.
@@ -23,6 +24,9 @@ message Venue {
   // The map place the venue was matched to. Present when the venue was matched
   // to a map place; absent for a venue known only by the name a source listed.
   PlaceId place_id = 4;
+
+  // The WGS 84 position of the venue. Absent until resolved.
+  optional Coordinates coordinates = 5;
 }
 
 // VenueId is a globally unique identifier for a concert venue.
