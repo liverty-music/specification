@@ -18,12 +18,14 @@ The procedures behind each step are in `README.md` ("Lifecycle of a change", "Br
 "Local: parallel work with worktrees") and `openspec/AGENTS.md`. Read them when a step below is unclear; this
 skill only fixes the order, the names and the one stop.
 
-Names used below: `S` is this specification checkout (the store, always on `main`), `L` its parent directory
-(the four repositories side by side), `<change>` the kebab-case change name.
+Names used below: `<store>` is this specification checkout's absolute path (the store, always on `main`),
+`<repos>` its parent directory (the four repositories side by side), `<change>` the kebab-case change name.
+Write them as literal values in every command: each fenced block runs as its own Bash call, and neither shell
+variables nor `cd` carry over from one call to the next.
 
 ## 1. Pre-flight
 
-- `git -C "$S" fetch origin && git -C "$S" merge --ff-only origin/main`. Use `merge --ff-only`, never
+- `git -C "<store>" fetch origin && git -C "<store>" merge --ff-only origin/main`. Use `merge --ff-only`, never
   `git pull`: the store's working tree holds other changes' uncommitted progress, and a rebase with autostash
   can mix it up. If the fast-forward stops, report why and stop; another change's owner has to sync first.
 - `openspec list --json` must show a `root`. If it does not, stop and report (see the openspec-propose skill).
@@ -42,9 +44,9 @@ Run `openspec validate <change> --strict` in the store checkout and fix every er
 ## 3. Plan worktree and commit
 
 ```bash
-git -C "$S" worktree add "$S/.claude/worktrees/<change>-plan" -b <change>-plan origin/main
-cd "$S/.claude/worktrees/<change>-plan"
-cp -r "$S/openspec/changes/<change>" openspec/changes/
+git -C "<store>" worktree add "<store>/.claude/worktrees/<change>-plan" -b <change>-plan origin/main
+cd "<store>/.claude/worktrees/<change>-plan"
+cp -r "<store>/openspec/changes/<change>" openspec/changes/
 openspec validate <change> --strict
 git add openspec/changes/<change>
 ```
@@ -79,11 +81,11 @@ If pre-push-review cannot run, say so in the same stop and let the user decide w
 
 After approval:
 
-1. Push from the plan worktree (`git -C "$S/.claude/worktrees/<change>-plan" push -u origin HEAD`; a new
+1. Push from the plan worktree (`git -C "<store>/.claude/worktrees/<change>-plan" push -u origin HEAD`; a new
    shell starts in the store checkout on `main`, so never rely on an earlier `cd`) and open the PR in the same
-   command line, `cd "$S/.claude/worktrees/<change>-plan" && gh pr create ...`, as the `pull-request` skill
+   command line, `cd "<store>/.claude/worktrees/<change>-plan" && gh pr create ...`, as the `pull-request` skill
    describes (its feature-branch check must see `<change>-plan`, not `main`): the repository's PR template, `--assignee pannpers`, the body from a file. Fill *OpenSpec Traceability* with
-   `OpenSpec-Change: <change>` and the store commit (`git -C "$S" rev-parse --short origin/main`). When the change
+   `OpenSpec-Change: <change>` and the store commit (`git -C "<store>" rev-parse --short origin/main`). When the change
    has MODIFIED, REMOVED or RENAMED requirements, append `openspec show <change> --diff` from
    "Specifications Changed (diffs)" onward in a collapsed `<details>` block (`openspec/AGENTS.md`).
    Proto files in a plan PR are unusual; if the change carries them, they go in a separate proto PR (README
@@ -95,36 +97,32 @@ After approval:
    reviewed one, so retire the store copy instead of restoring it on top:
 
    ```bash
-   cd "$S" && git fetch origin && mkdir -p ~/.cache
-   test ! -e ~/.cache/<change>-plan-store-copy || {
-     echo "leftover ~/.cache/<change>-plan-store-copy from an aborted run: inspect it, then remove it" >&2; exit 1; }
-   mv openspec/changes/<change> ~/.cache/<change>-plan-store-copy
-   git merge --ff-only origin/main
-   diff -r ~/.cache/<change>-plan-store-copy openspec/changes/<change>   # differences = the review fixes
-   git worktree remove .claude/worktrees/<change>-plan && git branch -d <change>-plan
+   S=<store>; C=<change>; K=~/.cache/$C-plan-store-copy
+   cd "$S" && git fetch origin && mkdir -p ~/.cache || exit 1
+   [ ! -e "$K" ] || { echo "leftover $K from an aborted run: inspect it, then remove it" >&2; exit 1; }
+   mv "openspec/changes/$C" "$K" || exit 1
+   git merge --ff-only origin/main || { mv "$K" "openspec/changes/$C"; echo "fast-forward stopped; store copy restored" >&2; exit 1; }
+   diff -r "$K" "openspec/changes/$C"   # differences = the review fixes
+   git worktree remove ".claude/worktrees/$C-plan" && git branch -d "$C-plan"
    ```
 
-   Read the `diff` output: every difference should be a fix made in steps 4 and 5. Anything else (for example
-   a `tasks.md` check-off someone made in the store meanwhile) is real progress; copy it back and say so.
-   Then delete the `~/.cache` copy.
+   When the fast-forward stops, the block puts the store copy back and leaves the plan worktree in place;
+   report why (README "Branch work in this repository": usually another change's plan waiting to be synced)
+   and stop. Otherwise read the `diff` output: every difference should be a fix made in steps 4 and 5.
+   Anything else (for example a `tasks.md` check-off someone made in the store meanwhile) is real progress;
+   copy it back and say so. Then delete the `~/.cache` copy.
 
 ## 6. Worktrees and workset
 
-This step needs VS Code's `code` command on the local machine. Find its directory: the one of `code` on PATH,
-or else, under WSL, the Windows install (Bash started from VS Code often lacks it on PATH):
+This step needs VS Code's `code` command on the local machine. Check with the bundled script, which looks on
+PATH and then, under WSL, for the Windows install:
 
 ```bash
-CODE_DIR=
-if command -v code >/dev/null; then CODE_DIR=$(dirname "$(command -v code)")
-else for d in /mnt/c/Users/*/AppData/Local/Programs/"Microsoft VS Code"/bin; do
-  [ -x "$d/code" ] && CODE_DIR=$d && break; done
-fi
+bash "<store>/.claude/skills/plan-change/scripts/open-workset.sh" --check
 ```
 
-(A shell glob, not `ls`: `ls` is often aliased to a tool that quotes paths with spaces.)
-
-When `CODE_DIR` is empty (a cloud thread, or no VS Code), stop here and report the merged PR and the
-worktrees the user would create.
+When it exits 1 (a cloud thread, or no VS Code), stop here and report the merged PR and the worktrees the
+user would create.
 
 1. **Repositories.** Read the section headings and task lines of the merged `tasks.md`. A repository is in when
    a task changes it: `specification` for proto files (`proto/`), `backend`, `frontend`, `cloud-provisioning`.
@@ -134,31 +132,19 @@ worktrees the user would create.
 
    | repository | `R` (checkout) | `W` (worktree path) | `B` (branch) | workset member |
    |---|---|---|---|---|
-   | specification (proto) | `$S` | `$S/.claude/worktrees/<change>-proto` | `worktree-<change>-proto` | `specification-proto` |
-   | backend / frontend / cloud-provisioning | `$L/<repo>` | `$L/<repo>/.claude/worktrees/<change>` | `worktree-<change>` | `<repo>` |
+   | specification (proto) | `<store>` | `<store>/.claude/worktrees/<change>-proto` | `worktree-<change>-proto` | `specification-proto` |
+   | backend / frontend / cloud-provisioning | `<repos>/<repo>` | `<repos>/<repo>/.claude/worktrees/<change>` | `worktree-<change>` | `<repo>` |
 
-   For each row, set `R` (repository checkout), `W` (worktree path) and `B` (branch) from the table, then:
-
-   ```bash
-   git -C "$R" fetch origin
-   created=0
-   if [ -d "$W" ]; then :                                                    # reuse the existing worktree
-   elif git -C "$R" show-ref --verify --quiet "refs/heads/$B"; then git -C "$R" worktree add "$W" "$B" && created=1
-   else git -C "$R" worktree add "$W" -b "$B" origin/main && created=1
-   fi
-   ```
-
-   Say when a worktree or branch was reused, and show how far it is behind `origin/main`; never delete or
-   reset one, since it may hold someone's work. When the repository has a `.worktreeinclude`, copy the
-   gitignored files it lists into a newly created worktree only (that is what `claude --worktree` would have
-   done); a reused worktree keeps its own copies:
+   For each row, run the bundled script with the row's literal values:
 
    ```bash
-   if [ "$created" = 1 ] && [ -f "$R/.worktreeinclude" ]; then
-     (cd "$R" && git ls-files --others --ignored --exclude-from=.worktreeinclude \
-       | while read -r f; do mkdir -p "$(dirname "$W/$f")"; cp -p "$f" "$W/$f"; done)
-   fi
+   bash "<store>/.claude/skills/plan-change/scripts/add-worktree.sh" <R> <W> <B>
    ```
+
+   It creates the worktree from `origin/main`, attaches an existing branch, or reuses an existing directory,
+   and never deletes or resets one, since it may hold someone's work. Only a new worktree directory gets the
+   gitignored files the repository's `.worktreeinclude` lists (what `claude --worktree` would have copied).
+   Report each line it prints, including how far a reused worktree is behind `origin/main`.
 
 3. **Workset.** The first member is where VS Code's terminal and the Claude panel start, so it is where work
    starts: the proto worktree when the change has proto tasks (proto first, README step 3), otherwise the
@@ -167,18 +153,15 @@ worktrees the user would create.
 
    ```bash
    openspec workset create <change> --tool code \
-     --member <first>=<path> [--member <repo>=<path> ...] --member store="$S"
+     --member <first>=<path> [--member <repo>=<path> ...] --member store="<store>"
    ```
 
    If a workset of that name exists, show its members and ask before replacing it.
-4. **Open it.** Bash inherits the extension host's Electron variables, which crash the new window's extension
-   host, so strip them and put `CODE_DIR` on PATH:
+4. **Open it** with the bundled script, which puts `code` on PATH and strips the extension host's Electron
+   variables that Bash inherits (they crash the new window's extension host):
 
    ```bash
-   PATH="$CODE_DIR:$PATH" \
-     env -u ELECTRON_RUN_AS_NODE -u VSCODE_ESM_ENTRYPOINT -u VSCODE_HANDLES_SIGPIPE \
-       -u VSCODE_HANDLES_UNCAUGHT_ERRORS -u VSCODE_NLS_CONFIG -u VSCODE_L10N_BUNDLE_LOCATION \
-       -u VSCODE_RECONNECTION_GRACE_TIME openspec workset open <change>
+   bash "<store>/.claude/skills/plan-change/scripts/open-workset.sh" <change>
    ```
 
    The window is open only when `Opening '<change>' in VS Code` is printed.
