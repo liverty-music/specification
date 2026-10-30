@@ -51,8 +51,9 @@ openspec validate <change> --strict
 git add openspec/changes/<change>
 ```
 
-Commit with the git-commit-formatter rules; this repository's plan commits read
-`docs(openspec): plan <change>`. The commit hooks run here, so a rejected commit means a real problem to fix.
+Commit in the plan worktree with the git-commit-formatter rules, naming the directory on the command itself
+(`git -C "<store>/.claude/worktrees/<change>-plan" commit ...`): the next Bash call starts in the store
+checkout on `main`. This repository's plan commits read `docs(openspec): plan <change>`. The commit hooks run here, so a rejected commit means a real problem to fix.
 
 From now on, **edit only in the plan worktree**. The store copy is retired at step 5, so a fix made there
 would be lost, and a fix made only in the worktree is exactly what lands on `main`.
@@ -97,7 +98,7 @@ After approval:
    reviewed one, so retire the store copy instead of restoring it on top:
 
    ```bash
-   S=<store>; C=<change>; K=~/.cache/$C-plan-store-copy
+   S="<store>"; C="<change>"; K="$HOME/.cache/$C-plan-store-copy"
    cd "$S" && git fetch origin && mkdir -p ~/.cache || exit 1
    [ ! -e "$K" ] || { echo "leftover $K from an aborted run: inspect it, then remove it" >&2; exit 1; }
    mv "openspec/changes/$C" "$K" || exit 1
