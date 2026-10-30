@@ -29,7 +29,7 @@ AuthorizeCard SHALL take a Lottery TicketSale, a TicketStock, the calling fan, a
 - fail with FailedPrecondition when the sale's window is not open at the current time;
 - apply the verification gate;
 - read what the fan holds for the event with Order.GetHeldForEvent and fail with FailedPrecondition when the application does not fit the event;
-- fail with FailedPrecondition when the fan already has an entry in the sale for the stock's event (LotteryEntry.ListByTicketTypeAndUser);
+- fail with FailedPrecondition when the fan already has an entry in the sale for the stock's event (LotteryEntry.ListByTicketSaleAndUser);
 - store the full name and phone number on the fan's User with User.UpdatePersonalDetails;
 - open a card authorization with CardAuthorization.Create for a lottery entry of the fan in the sale, for the stock, the count and the code, for the stock's SeatType amount for the count;
 - return the card authorization's id and its card authorization secret, which SHALL NOT be stored.
