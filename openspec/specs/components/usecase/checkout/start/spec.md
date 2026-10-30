@@ -23,7 +23,7 @@ Start SHALL take the calling fan, a TicketStock, a ticket count, an optional Ref
 - It SHALL read the TicketStock with TicketStock.Get, failing with NotFound when it does not exist.
 - It SHALL fail with FailedPrecondition when Event.IsEventPublished reports false for the stock's event, as for a 中止 (cancelled) concert.
 - It SHALL read the event's sales with TicketSale.ListByEvent. The Checkout belongs to the FirstCome sale of the event whose window is open at the current time; when there is none, Start SHALL fail with FailedPrecondition.
-- It SHALL fail with FailedPrecondition while a Lottery sale of the event has closed and still has Entered entries for the stock, read with LotteryEntry.ListUndrawnForTicketType, because that draw has not yet taken its winners' tickets from the stock.
+- It SHALL fail with FailedPrecondition while a Lottery sale of the event has closed and still has Entered entries for the stock, read with LotteryEntry.ListEnteredByTicketSaleAndTicketStock, because that draw has not yet taken its winners' tickets from the stock.
 - It SHALL fail with InvalidArgument when the count is below 1 or above the event's per-account limit.
 - It SHALL apply the verification gate.
 - It SHALL read what the fan holds for the event with Order.GetHeldForEvent, not counting the Order of the fan's own holding Checkout, which is resumed or replaced, and fail with FailedPrecondition when the application does not fit the event.
