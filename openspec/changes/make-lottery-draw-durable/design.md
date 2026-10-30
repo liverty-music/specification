@@ -33,7 +33,7 @@ schedule draw-due-sales (* * * * *)
                                      Start Draw(sale)                  id draw:<sale>
 Draw(sale)                           step TicketSale.Get
                                      step "order <stock>" per TicketStock of the sale's events:
-                                          ListUndrawnForTicketType + random order (recorded once)
+                                          ListEnteredByTicketSaleAndTicketStock + random order (recorded once)
                                      step PersistDrawOutcome(sale, ordered entries)      one transaction:
                                           lock each ticket_stocks row, admit in order against
                                           remaining, Won/Lost (lost reason "not drawn"),

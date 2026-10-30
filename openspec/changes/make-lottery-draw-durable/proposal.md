@@ -40,7 +40,7 @@ The lottery draw charges before it records. `LotteryEntryUseCase.RunDraw` draws 
 - `components/usecase/notification/deliver`: runs for `SendLotteryLoss` too.
 - `stories/win-tickets-in-a-lottery` (Purpose edited in the main spec, and requirements): no time bound; the fan is told the result; new requirements for a draw that stops midway and for a winner whose card can no longer be charged.
 
-Unchanged and why: `components/entity/order/issue` already makes the Pending Order Paid with its Tickets and Settlement together and fails with AlreadyExists for an Order already Paid (`remodel-ticket-sales`); `components/entity/lottery-entry/list-undrawn-for-ticket-type` and `run-lottery-draw` keep their contracts; `components/entity/ticket-sale/list-due-for-draw` already returns a sale 1 minute after its end.
+Unchanged and why: `components/entity/order/issue` already makes the Pending Order Paid with its Tickets and Settlement together and fails with AlreadyExists for an Order already Paid (`remodel-ticket-sales`); `components/entity/lottery-entry/list-entered-by-ticket-sale-and-ticket-stock` and `run-lottery-draw` keep their contracts; `components/entity/ticket-sale/list-due-for-draw` already returns a sale 1 minute after its end.
 
 ## Impact
 
