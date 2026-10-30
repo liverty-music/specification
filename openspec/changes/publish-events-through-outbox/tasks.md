@@ -1,12 +1,12 @@
 ## 1. Prerequisites
 
-- [ ] 1.0 Confirm `remodel-ticket-sales` is released in backend and archived (this change's deltas of `persist-draw-outcome`, `run-draw`, `order/issue`, `checkout/release` and `release-expired` are written against the main specs as it leaves them); verify `openspec validate publish-events-through-outbox --strict` passes with no archive refusal
-- [ ] 1.1 Read-only in prod (cloud-provisioning runbook, ephemeral `db-proxy`): count Lost `lottery_entries`, `passkeys` rows and `organizer_artists` rows, and record the counts in design.md "Migration Plan"; verify the counts are recorded
+- [x] 1.0 Confirm `remodel-ticket-sales` is released in backend and archived (this change's deltas of `persist-draw-outcome`, `run-draw`, `order/issue`, `checkout/release` and `release-expired` are written against the main specs as it leaves them); verify `openspec validate publish-events-through-outbox --strict` passes with no archive refusal
+- [x] 1.1 Read-only in prod (cloud-provisioning runbook, ephemeral `db-proxy`): count Lost `lottery_entries`, `passkeys` rows and `organizer_artists` rows, and record the counts in design.md "Migration Plan"; verify the counts are recorded
 
 ## 2. Proto (specification; components/entity/lottery-entry, user, artist, passkey Purposes)
 
-- [ ] 2.1 Add `LotteryEntry.lost_reason` (enum `LotteryEntryLostReason`; the sale and the Order come from `remodel-ticket-sales`), `User.last_login_time`, `Artist.organizer_id`, `Passkey.name` and `user_id`, `SeriesImage.series_id`, `PushSubscription.device_family`, the `Follow` message (`user_id`, `artist_id`, `hype`) and the list message `ConcertList`; verify `buf lint`, `buf format` and `buf breaking` pass
-- [ ] 2.2 Compare every struct in backend `internal/entity` with its `entity/v1` message and add each field left out for no personal-data reason; record the list in the PR description; verify `buf lint` passes
+- [x] 2.1 Add `LotteryEntry.lost_reason` (enum `LotteryEntryLostReason`; the sale and the Order come from `remodel-ticket-sales`), `User.last_login_time`, `Artist.organizer_id`, `Passkey.name` and `user_id`, `SeriesImage.organizer_id`, `PushSubscription.device_family`, the `Follow` message (`user_id`, `artist_id`, `hype`) and the list message `ConcertList`; verify `buf lint`, `buf format` and `buf breaking` pass
+- [x] 2.2 Compare every struct in backend `internal/entity` with its `entity/v1` message and add each field left out for no personal-data reason; record the list in the PR description; verify `buf lint` passes
 - [ ] 2.3 Merge, cut the specification release, and confirm `buf-release.yml` succeeds and the BSR packages carry the new fields
 
 ## 3. Conversion package (backend refactor, no behaviour change)
@@ -24,8 +24,8 @@
 
 ## 5. Schema for new entity state
 
-- [ ] 5.1 Migrations: `lottery_entries.lost_reason` (SMALLINT, check tied to state, backfill not drawn), `users.last_login_time`, `passkeys.name`, `series_images.series_id`, each commented; verify `make lint-schema` passes and the migrations apply to a local database with sample rows
-- [ ] 5.2 Add the attributes to the entity structs (`LotteryEntry.LostReason`, `User.LastLoginTime`, `Artist.OrganizerID`, `Passkey.Name`, `SeriesImage.SeriesID`); verify the existing entity and repository tests pass with the new fields
+- [ ] 5.1 Migrations: `lottery_entries.lost_reason` (SMALLINT, check tied to state, backfill not drawn), `users.last_login_time`, `passkeys.name`, each commented; verify `make lint-schema` passes and the migrations apply to a local database with sample rows
+- [ ] 5.2 Add the attributes to the entity structs (`LotteryEntry.LostReason`, `User.LastLoginTime`, `Artist.OrganizerID`, `Passkey.Name`); verify the existing entity and repository tests pass with the new fields
 
 ## 6. Entity operations announce (one contract test per scenario of each listed spec, against local Postgres, asserting the outbox rows)
 
@@ -35,7 +35,7 @@
 - [ ] 6.4 Organizer.CompareAndSetStatus (provisioning to active only) and Organizer.AssociateArtist (announces the Artist with its organizer); verify every scenario of `entity/organizer/compare-and-set-status` and `organizer/associate-artist`
 - [ ] 6.5 Series.PublishEvents and Concert.Create announce `ConcertList` per Artist with `ce_subject`; verify every scenario of `entity/series/publish-events` and `concert/create`
 - [ ] 6.6 Artist.Create (only inserted artists, also under a race on one MBID) and TicketSale.UpsertDiscovered (Inserted only); verify every scenario of `entity/artist/create` and `ticket-sale/upsert-discovered`
-- [ ] 6.7 SeriesImage.Create stores the Series and announces SERIES_IMAGE.uploaded (rows affected); verify every scenario of `entity/series-image/create`
+- [ ] 6.7 SeriesImage.Create records the processing request SERIES_IMAGE.uploaded (the SeriesImage, `ce_subject` the Series id) only when it inserts (rows affected); verify every scenario of `entity/series-image/create`
 - [ ] 6.8 Order.Issue announces ORDER.paid; verify every scenario of `entity/order/issue`
 - [ ] 6.9 LotteryEntry.PersistDrawOutcome (lost reason per loser, no announcement for an entry left unchanged, one announcement per changed entry, inserted in chunks); verify every scenario of `entity/lottery-entry/persist-draw-outcome`, and a test drawing 100,000 local entries in one call with the process heap below 200 MB
 - [ ] 6.10 ResaleListing.RecordRefund (announces only when it sets the refund) and ResaleListing.ListSoldUnrefunded (refund time only); verify every scenario of `entity/resale-listing/record-refund` and `resale-listing/list-sold-unrefunded`
@@ -56,7 +56,7 @@
 - [ ] 8.2 NotifyNewConcerts, AnnounceDiscoveredSale and SendOrderConfirmation start Deliver; Deliver runs as a workflow; verify every scenario of `usecase/notification/notify-new-concerts`, `ticket-sale/announce-discovered-sale`, `notification/send-order-confirmation` and `notification/deliver`
 - [ ] 8.3 ScanDueReminders starts DeliverReminder; verify every scenario of `usecase/ticket-sale/scan-due-reminders` and `ticket-sale-reminder/deliver-reminder`
 - [ ] 8.4 ResendEmailVerification and RequestPasskeyRecovery start their workflows; verify every scenario of `usecase/user/resend-email-verification`, `user/reissue-email-verification`, `user/request-passkey-recovery`, `user/send-passkey-recovery-link` and `adapter/fan/api/rpc/user` "ResendEmailVerification is decided by the usecase"
-- [ ] 8.5 SearchNewConcerts and SearchNewConcertsOnFirstFollow start CreateFromDiscovered, which stores one series' events in one Concert.Create call; SeriesImageUseCase.Process runs from SERIES_IMAGE.uploaded; verify every scenario of `usecase/concert/search-new-concerts`, `concert/search-new-concerts-on-first-follow`, `concert/create-from-discovered` and `series-image/process`
+- [ ] 8.5 SearchNewConcerts and SearchNewConcertsOnFirstFollow start CreateFromDiscovered, which stores one series' events in one Concert.Create call; SeriesImageUseCase.Process runs from SERIES_IMAGE.uploaded, reading the Series from `ce_subject`; verify every scenario of `usecase/concert/search-new-concerts`, `concert/search-new-concerts-on-first-follow`, `concert/create-from-discovered` and `series-image/process`
 
 ## 9. Observations from outside (passkey and login webhooks)
 
@@ -82,7 +82,7 @@
 ## 13. Archive
 
 - [ ] 13.1 Edit the main spec Purposes this change lists:
-  - entity Purposes: `components/entity/lottery-entry` gains lost reason (not drawn, or card could not be charged); `user` gains last login time; `series-image` gains series; `artist` gains organizer, with Organizer ||--o{ Artist; `passkey` gains name.
+  - entity Purposes: `components/entity/lottery-entry` gains lost reason (not drawn, or card could not be charged); `user` gains last login time; `artist` gains organizer, with Organizer ||--o{ Artist; `passkey` gains name.
   - usecase and adapter Purposes that still say "announce": `usecase/order/fulfill-payment`, `follow/follow`, `follow/unfollow`, `push-subscription/delete`, `ticket-journey/set-status`, `user/reissue-email-verification`, `user/send-passkey-recovery-link`, `series-image/process`, `concert/create-from-discovered`, `concert/search-new-concerts`, `ticket-sale/discover-for-artist`, `resale-listing/refund-sold`, `entity/resale-listing/list-sold-unrefunded`, and `adapter/fan/api/webhook/passkey-events`.
 
   Verify `openspec validate --specs` passes.
