@@ -1,11 +1,11 @@
 ---
 name: rpc-design
-description: Naming rules for RPC services, methods and request messages in this repository's proto (rpc/**/v1) and adapter specs. Use when adding, renaming or reviewing a service or an rpc, choosing between Get/List/ListBy/Set/Update or a custom verb, deciding which service a method belongs to, or writing an adapter spec that names RPCs. Where it differs from the user-scope protobuf skill (Google AIP-132/136), this skill wins.
+description: Naming rules for RPC services, methods and request messages in this repository's proto (rpc/**/v1) and adapter specs. Use when adding, renaming or reviewing a service or an rpc, choosing between Get/List/ListBy/Set/Update or a custom verb, deciding which service a method belongs to, or writing an adapter spec that names RPCs. Where it differs from the proto-api-design skill of the protobuf plugin (Google AIP-132/136), this skill wins.
 ---
 
 # RPC design rules (liverty-music)
 
-The goal: a developer predicts a method's input and behavior from its name alone, and every service follows the same rules. These rules override the AIP guidance in the user-scope `protobuf` skill where they differ; everything else in that skill (wrapper messages, protovalidate, comments, field numbering) still applies.
+The goal: a developer predicts a method's input and behavior from its name alone, and every service follows the same rules. These rules override the AIP guidance in the `proto-api-design` skill (protobuf plugin) where they differ; everything else there and in `proto-schema-toolchain` (protovalidate, comments, field numbering) still applies, and wrapper messages follow AGENTS.md.
 
 ## Services
 
