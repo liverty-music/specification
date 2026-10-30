@@ -79,8 +79,9 @@ If pre-push-review cannot run, say so in the same stop and let the user decide w
 
 After approval:
 
-1. Push (`git push -u origin HEAD`) and open the PR as the `pull-request` skill describes: the repository's
-   PR template, `--assignee pannpers`, the body from a file. Fill *OpenSpec Traceability* with
+1. Push from the plan worktree (`git -C "$S/.claude/worktrees/<change>-plan" push -u origin HEAD`; a new
+   shell starts in the store checkout on `main`, so never rely on an earlier `cd`) and open the PR from the
+   same directory as the `pull-request` skill describes: the repository's PR template, `--assignee pannpers`, the body from a file. Fill *OpenSpec Traceability* with
    `OpenSpec-Change: <change>` and the store commit (`git -C "$S" rev-parse --short origin/main`). When the change
    has MODIFIED, REMOVED or RENAMED requirements, append `openspec show <change> --diff` from
    "Specifications Changed (diffs)" onward in a collapsed `<details>` block (`openspec/AGENTS.md`).
@@ -94,11 +95,12 @@ After approval:
 
    ```bash
    cd "$S" && git fetch origin
-   test ! -e ~/.cache/<change>-plan-store-copy   # a leftover from an aborted run: inspect it, then remove it
+   test ! -e ~/.cache/<change>-plan-store-copy || {
+     echo "leftover ~/.cache/<change>-plan-store-copy from an aborted run: inspect it, then remove it" >&2; exit 1; }
    mv openspec/changes/<change> ~/.cache/<change>-plan-store-copy
    git merge --ff-only origin/main
    diff -r ~/.cache/<change>-plan-store-copy openspec/changes/<change>   # differences = the review fixes
-   git worktree remove .claude/worktrees/<change>-plan && git branch -D <change>-plan
+   git worktree remove .claude/worktrees/<change>-plan && git branch -d <change>-plan
    ```
 
    Read the `diff` output: every difference should be a fix made in steps 4 and 5. Anything else (for example
