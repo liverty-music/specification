@@ -47,3 +47,9 @@ message Concert {
     (buf.validate.field).repeated.min_items = 1
   ];
 }
+
+// ConcertList is the Concerts one operation stored together.
+message ConcertList {
+  // The Concerts, at least one.
+  repeated Concert concerts = 1 [(buf.validate.field).repeated.min_items = 1];
+}

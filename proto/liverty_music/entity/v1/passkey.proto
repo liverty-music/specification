@@ -6,6 +6,7 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
@@ -31,6 +32,16 @@ message PasskeyProviderName {
   }];
 }
 
+// PasskeyName is the label the identity provider gave a passkey, shown to the
+// User in the email about the passkey.
+message PasskeyName {
+  // The label.
+  string value = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
 // Passkey is the platform's record of one passkey registered for a User at the
 // identity provider: which passkey it is, which passkey provider made it and
 // when it was registered. The identity provider remains the authority on which
@@ -49,6 +60,16 @@ message Passkey {
 
   // When the passkey finished registration. Server-owned.
   google.protobuf.Timestamp create_time = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The label the identity provider gave the passkey. Unset when the identity
+  // provider gave none.
+  optional PasskeyName name = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The User the passkey belongs to.
+  UserId user_id = 5 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];

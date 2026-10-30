@@ -5,6 +5,7 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "liverty_music/entity/v1/entity.proto";
+import "liverty_music/entity/v1/organizer.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
@@ -43,6 +44,13 @@ message SeriesImage {
   // The address of the large variant (at most 1920 px wide). A shown image
   // always exposes it.
   Url large = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The Organizer that uploaded the image. Its served addresses are derived
+  // from it and the id.
+  OrganizerId organizer_id = 6 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];

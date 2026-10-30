@@ -6,9 +6,12 @@ package liverty_music.entity.v1;
 import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/event.proto";
+import "liverty_music/entity/v1/order.proto";
 import "liverty_music/entity/v1/seat_type.proto";
 import "liverty_music/entity/v1/ticket.proto";
 import "liverty_music/entity/v1/ticket_stock.proto";
+import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
@@ -137,4 +140,29 @@ message ResaleListing {
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
+
+  // The Order that issued the Ticket, whose charge the fan is refunded from.
+  OrderId order_id = 12 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The fan offering the Ticket: the Ticket's user.
+  UserId user_id = 13 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The event the Ticket admits to, whose start time sets the deadline.
+  EventId event_id = 14 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // When the fan withdrew the listing. Absent unless withdrawn.
+  google.protobuf.Timestamp withdraw_time = 15 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The payment provider's ID for the refund to the fan. Absent until
+  // refunded, then set once.
+  Order.ProviderRefundId provider_refund_id = 16 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

@@ -40,6 +40,21 @@ enum LotteryEntryState {
   reserved "LOTTERY_ENTRY_STATE_WITHDRAWN", "LOTTERY_ENTRY_STATE_DRAFT";
 }
 
+// LotteryEntryLostReason is why a LotteryEntry is LOST. The numbers are the
+// stored values. New values may be appended; existing values must not be
+// renumbered.
+enum LotteryEntryLostReason {
+  // Default value, never stored: an entry that is not LOST has no reason.
+  LOTTERY_ENTRY_LOST_REASON_UNSPECIFIED = 0;
+
+  // The entry was not selected in the draw.
+  LOTTERY_ENTRY_LOST_REASON_NOT_DRAWN = 1;
+
+  // The entry was selected, but the Order's card authorization could not be
+  // captured.
+  LOTTERY_ENTRY_LOST_REASON_CARD_NOT_CHARGED = 2;
+}
+
 // LotteryEntry is how one fan's Order takes part in a LOTTERY TicketSale: a
 // request for a companion group of tickets of the Order's TicketStock,
 // allocated all-or-nothing, paid by the Order's CardAuthorization placed on
@@ -81,6 +96,12 @@ message LotteryEntry {
   // unique within the sale and stock. Absent before the draw; set only by the
   // draw. For a LOST entry it is the waiting-list order. Server-owned.
   optional int64 draw_position = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Why the entry is LOST. Set only when state is LOST. Server-owned.
+  LotteryEntryLostReason lost_reason = 14 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
 
   // Field 2 was the sale the entry belonged to, replaced by ticket_type_id.
   // Field 5 was the 本人確認 details copied onto the entry, which now live on
