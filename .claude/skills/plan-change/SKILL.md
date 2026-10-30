@@ -27,8 +27,8 @@ Names used below: `S` is this specification checkout (the store, always on `main
   `git pull`: the store's working tree holds other changes' uncommitted progress, and a rebase with autostash
   can mix it up. If the fast-forward stops, report why and stop; another change's owner has to sync first.
 - `openspec list --json` must show a `root`. If it does not, stop and report (see the openspec-propose skill).
-- Pick `<change>`: a verb phrase in kebab-case naming the outcome (`narrow-artist-image-refresh`), not unused
-  in `openspec/changes/` or `openspec/changes/archive/`.
+- Pick `<change>`: a verb phrase in kebab-case naming the outcome (`narrow-artist-image-refresh`), that no
+  folder in `openspec/changes/` or `openspec/changes/archive/` uses yet.
 
 ## 2. Write the change
 
@@ -94,6 +94,7 @@ After approval:
 
    ```bash
    cd "$S" && git fetch origin
+   test ! -e ~/.cache/<change>-plan-store-copy   # a leftover from an aborted run: inspect it, then remove it
    mv openspec/changes/<change> ~/.cache/<change>-plan-store-copy
    git merge --ff-only origin/main
    diff -r ~/.cache/<change>-plan-store-copy openspec/changes/<change>   # differences = the review fixes
@@ -116,23 +117,30 @@ the merged PR and the worktrees the user would create.
    repository is unclear, ask rather than guess.
 2. **Worktrees**, each cut from the repository's latest `origin/main`:
 
-   | repository | path | branch | workset member |
-   |---|---|---|---|
-   | specification (proto) | `$S/.claude/worktrees/<change>-proto` | `worktree-<change>-proto` | `specification-proto` |
-   | backend / frontend / cloud-provisioning | `$L/<repo>/.claude/worktrees/<change>` | `worktree-<change>` | `<repo>` |
+   | repository | `R` (checkout) | `W` (worktree path) | `B` (branch) | workset member |
+   |---|---|---|---|---|
+   | specification (proto) | `$S` | `$S/.claude/worktrees/<change>-proto` | `worktree-<change>-proto` | `specification-proto` |
+   | backend / frontend / cloud-provisioning | `$L/<repo>` | `$L/<repo>/.claude/worktrees/<change>` | `worktree-<change>` | `<repo>` |
+
+   For each row, set `R` (repository checkout), `W` (worktree path) and `B` (branch) from the table, then:
 
    ```bash
-   git -C "$L/<repo>" fetch origin
-   git -C "$L/<repo>" worktree add "$L/<repo>/.claude/worktrees/<change>" -b worktree-<change> origin/main
+   git -C "$R" fetch origin
+   if [ -d "$W" ]; then :                                                    # reuse the existing worktree
+   elif git -C "$R" show-ref --verify --quiet "refs/heads/$B"; then git -C "$R" worktree add "$W" "$B"
+   else git -C "$R" worktree add "$W" -b "$B" origin/main
+   fi
    ```
 
-   If the worktree or branch already exists, reuse it and say so; never delete or reset one, since it may
-   hold someone's work. When the repository has a `.worktreeinclude`, copy the gitignored files it lists
-   into the new worktree (that is what `claude --worktree` would have done):
+   Say when a worktree or branch was reused, and show how far it is behind `origin/main`; never delete or
+   reset one, since it may hold someone's work. When the repository has a `.worktreeinclude`, copy the
+   gitignored files it lists into a newly created worktree (that is what `claude --worktree` would have done):
 
    ```bash
-   cd "$L/<repo>" && git ls-files --others --ignored --exclude-from=.worktreeinclude \
-     | while read -r f; do mkdir -p "$(dirname ".claude/worktrees/<change>/$f")"; cp -p "$f" ".claude/worktrees/<change>/$f"; done
+   if [ -f "$R/.worktreeinclude" ]; then
+     (cd "$R" && git ls-files --others --ignored --exclude-from=.worktreeinclude \
+       | while read -r f; do mkdir -p "$(dirname "$W/$f")"; cp -p "$f" "$W/$f"; done)
+   fi
    ```
 
 3. **Workset.** The first member is where VS Code's terminal and the Claude panel start, so it is where work
