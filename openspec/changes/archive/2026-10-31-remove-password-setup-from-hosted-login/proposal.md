@@ -16,8 +16,7 @@ Zitadel cannot express "passkeys allowed, passwords not": `allowLocalAuthenticat
 - Keep password **sign-in** for identities that already have a password (the automated end-to-end test fans).
 - Build the patched image in `cloud-provisioning` from the upstream tag plus a patch file, push it to a new Artifact Registry repository in the production project, and point the Zitadel Helm chart's `login.image` at it. The Zitadel API image stays upstream.
 - Correct the fan hosted-login spec: the end-to-end test fans with passwords also exist in production.
-
-Out of scope, recorded as accepted risk: a person who sets a password on their own identity through the Zitadel Console's self-service pages or by calling the Zitadel API directly. Rejecting those calls with a Zitadel Actions v2 request execution is the follow-up if that risk needs closing.
+- Refuse the Zitadel API methods a fan can call to set their own password (`zitadel.user.v2.UserService/SetPassword`, `PasswordReset`, `zitadel.auth.v1.AuthService/UpdateMyPassword`) with a Zitadel Actions v2 request execution whose target, a backend webhook handler, always refuses and logs. The Zitadel Console's self-service page calls these methods.
 
 ## Capabilities
 
@@ -27,7 +26,7 @@ None.
 
 ### Modified Capabilities
 
-- `components/infrastructure/fan/web/global/hosted-login`: new requirement "The hosted login offers no way to set a password" (no password choice on sign-up or credential setup, password-setting pages not found, a password sent to the hosted login's server directly refused, existing passwords still sign in); "Configure Login Policy" is modified to correct the sentence that limits password identities to the development environment.
+- `components/infrastructure/fan/web/global/hosted-login`: new requirement "The hosted login offers no way to set a password" (no password choice on sign-up or credential setup, password-setting pages not found, a password sent to the hosted login's server directly refused, existing passwords still sign in); "Configure Login Policy" is modified to correct the sentence that limits password identities to the development environment, and gains a scenario refusing a password set through the Zitadel API.
 - `components/infrastructure/organizer/web/global/hosted-login`: new requirement "The invitation flow sets up no password".
 
 ## Impact
@@ -35,4 +34,4 @@ None.
 - `cloud-provisioning`: new build input (upstream tag pin + patch + GitHub Actions workflow), a new Artifact Registry repository and pull access for the cluster, and `k8s/namespaces/zitadel/overlays/prod/values.yaml` `login.image` (base and dev stay on the upstream image). Every Zitadel upgrade now also rebuilds the patched Login V2 image on its pull request; a patch that no longer applies fails that build before anything deploys.
 - Users: the register page and the invitation flow show only the passkey path. Identities without a password are unaffected otherwise; the end-to-end test fans still sign in with their passwords.
 - `frontend` production E2E: `delete-my-account` signs a fresh fan up with a password on every run; it moves to signing up with a passkey from Playwright's virtual authenticator, and a new production E2E checks the hosted login pages this change closes.
-- No proto or backend change.
+- No proto change. `backend`: a webhook handler that refuses every request it receives and logs the caller and method. `cloud-provisioning` also gains a Zitadel Actions v2 Target and three request executions.
