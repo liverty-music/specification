@@ -40,8 +40,8 @@ PublishEvents SHALL fail with FailedPrecondition, changing nothing, when any giv
 - **THEN** PublishEvents fails with FailedPrecondition and every given Event stays DRAFT
 
 #### Scenario: Slot of another Series of the same Organizer
-- **WHEN** one given DRAFT Event's slot holds a PUBLISHED Event of another Series of the same Organizer, with its own visibility, seat types and sales
-- **THEN** PublishEvents fails with FailedPrecondition, every given Event stays DRAFT, and the held Event stays in its Series with its visibility, seat types and sales unchanged
+- **WHEN** one given DRAFT Event's slot holds a PUBLISHED Event of another Series of the same Organizer, with its own visibility, SeatTypes and TicketSales
+- **THEN** PublishEvents fails with FailedPrecondition, every given Event stays DRAFT, and the held Event stays in its Series with its visibility, SeatTypes and TicketSales unchanged
 
 #### Scenario: Cancelled slot
 - **WHEN** one given DRAFT Event's slot holds a CANCELLED Event
