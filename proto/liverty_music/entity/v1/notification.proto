@@ -88,20 +88,25 @@ message Notification {
   // What produced it.
   NotificationType type = 3 [
     (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true,
     (buf.validate.field).enum.defined_only = true
   ];
 
   // The pushed content.
-  NotificationMessage message = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  NotificationMessage message = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
 
   // Whether the push channel accepted the message.
   NotificationDeliveryStatus delivery_status = 5 [
     (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true,
     (buf.validate.field).enum.defined_only = true
   ];
 
   // Why delivery failed. Set only when FAILED.
-  string failure_reason = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  optional string failure_reason = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // When the Notification was recorded.
   google.protobuf.Timestamp queue_time = 7 [
