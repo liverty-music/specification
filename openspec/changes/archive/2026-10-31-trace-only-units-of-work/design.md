@@ -44,3 +44,14 @@ See proposal.md - Why. The facts that shape the approach:
 Ship in one backend release. Rollback is a revert; nothing stored depends on the sampler.
 
 After the rollout, read-only in prod: list one hour of traces with the Trace API and confirm that no trace's root is of kind client, and that RPC and job traces still arrive. The next day, read the billing export's "Spans ingested" for the day and record it in this design.
+
+### Result
+
+Billing export, "Spans ingested", per billing day (America/Los_Angeles). The 14,984 above was counted before the export for 2026-10-28 was complete; the complete figure for that day is 15,577.
+
+| Day | Spans ingested | Note |
+|---|---|---|
+| 2026-10-28 | 15,577 | before the rollout |
+| 2026-10-29 | 7,023 | first full day after the rollout (v1.108.0, rolled out 2026-10-29 05:42 UTC) |
+
+Hourly, the backend went from about 510 spans an hour before the rollout to about 107 an hour in the 16 hours after it. 3,743 of the day's spans fall in the single hour starting 2026-10-30 05:00 UTC, which no scheduled job explains. After the rollout, the Trace API showed no trace whose root span is of kind client (2026-10-29 05:43-06:43 and 09:00-09:40 UTC). RPC, job and consumer traces still arrived.
