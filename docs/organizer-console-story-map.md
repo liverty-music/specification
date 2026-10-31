@@ -166,6 +166,9 @@ journey
   notification. 公開する on an event page publishes that date alone.
 - A published date cannot return to 下書き.
 - A sale and a reception link need a published date with a start time (開演).
+- A date whose venue, date and start time another concert's date or a cancelled
+  date already uses cannot be published; the member changes its date or start
+  time in the concert editor.
 
 ### Change a published concert (guide chapter `change-published`)
 
