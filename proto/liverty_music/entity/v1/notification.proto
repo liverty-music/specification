@@ -58,9 +58,9 @@ enum NotificationDeliveryStatus {
 // NotificationMessage is the content pushed for a Notification.
 message NotificationMessage {
   // The title shown on the device.
-  string title = 1;
+  string title = 1 [(buf.validate.field).string.min_len = 1];
   // The body shown on the device.
-  string body = 2;
+  string body = 2 [(buf.validate.field).string.min_len = 1];
   // A later message with the same tag replaces an earlier one on the device.
   string tag = 3;
   // The in-app link and the notification id, read by the app when the fan
