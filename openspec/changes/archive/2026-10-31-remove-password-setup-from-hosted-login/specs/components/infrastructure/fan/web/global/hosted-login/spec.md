@@ -18,7 +18,9 @@ hosted login renders no usable form. The product SHALL offer fans no password
 sign-up and no password reset (see "The hosted login offers no way to set a
 password"). The only identities in the product org with a password are the
 automated end-to-end test fans, in every environment that runs them,
-production included; they sign in with that password.
+production included; they sign in with that password. No request a fan
+makes to the Zitadel API SHALL set a password on their identity; only
+provisioning sets the end-to-end test fans' passwords.
 
 #### Scenario: Apply Strict Passkeys Policy on product org
 
@@ -36,6 +38,12 @@ production included; they sign in with that password.
 - **THEN** the policy SHALL NOT be applied to the `admin` role org
 - **AND** the `admin` role org SHALL retain a separate login policy that
   allows external IdP sign-in (see "Configure Admin Org Login Policy")
+
+#### Scenario: Fan sets a password through the Zitadel API
+
+- **WHEN** a signed-in fan asks the Zitadel API to set, change or reset the password of their own identity, as the Zitadel Console's self-service page does
+- **THEN** the request is refused and no password is set
+- **AND** provisioning still sets the end-to-end test fans' passwords
 
 ## ADDED Requirements
 
