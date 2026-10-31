@@ -118,10 +118,11 @@ service SeriesService {
   // UNLISTED series announce nothing. An UNLISTED series gets a signed share
   // token on its first publish and keeps it afterwards.
   //
-  // At each Event's venue, date and start time, a discovered Event (or an
-  // Event of another series of the same Organizer) is claimed: it joins this
-  // series as PUBLISHED, kept by id with the fans tracking it, the DRAFT Event
-  // is removed, and the claimed Event is not announced. A pending
+  // At each Event's venue, date and start time, a discovered Event is
+  // claimed: it joins this series as PUBLISHED, kept by id with the fans
+  // tracking it, the DRAFT Event is removed, and the claimed Event is not
+  // announced. An Event of any other first-party series is never claimed. A
+  // slot an admin suppressed does not block the publish. A pending
   // ConcertCandidate of the series is dropped.
   //
   // Possible errors:
@@ -132,9 +133,8 @@ service SeriesService {
   //     no venue or no date;
   //   - a named Event is not a DRAFT Event of the series;
   //   - no Event is named and the series has no DRAFT Event;
-  //   - an Event's slot is suppressed, is held by another Organizer's Event
-  //     (routed to admin reconciliation rather than taken over), or is held by
-  //     a CANCELLED Event.
+  //   - an Event's slot is held by another Organizer's or another of this
+  //     Organizer's series' Event, or by a CANCELLED Event.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Publish(PublishRequest) returns (PublishResponse);
 
