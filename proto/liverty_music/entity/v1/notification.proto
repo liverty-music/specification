@@ -3,6 +3,9 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
@@ -15,4 +18,108 @@ option go_package = "github.com/liverty-music/specification/gen/go/liverty_music
 message NotificationId {
   // A UUID string identifying the notification record.
   string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
+// NotificationType is what produced a Notification. New values may be
+// appended; existing values must not be renumbered.
+enum NotificationType {
+  // Default value; never stored.
+  NOTIFICATION_TYPE_UNSPECIFIED = 0;
+  // New concerts of an artist the fan follows.
+  NOTIFICATION_TYPE_NEW_CONCERTS = 1;
+  // A reminder of a ticket sale.
+  NOTIFICATION_TYPE_SALES_REMINDER = 2;
+  // The announcement of a discovered ticket sale.
+  NOTIFICATION_TYPE_TICKET_SALE_ANNOUNCEMENT = 3;
+  // The confirmation of a paid Order.
+  NOTIFICATION_TYPE_ORDER_CONFIRMATION = 4;
+  // The result of a lottery the fan lost.
+  NOTIFICATION_TYPE_LOTTERY_LOSS = 5;
+}
+
+// NotificationDeliveryStatus is whether the push channel accepted a
+// Notification's message:
+//
+//   QUEUED --> DELIVERED | FAILED
+//
+// New values may be appended; existing values must not be renumbered.
+enum NotificationDeliveryStatus {
+  // Default value; never stored.
+  NOTIFICATION_DELIVERY_STATUS_UNSPECIFIED = 0;
+  // Recorded and not yet sent.
+  NOTIFICATION_DELIVERY_STATUS_QUEUED = 1;
+  // The push service accepted the message for at least one of the fan's
+  // browsers; not that a device displayed it.
+  NOTIFICATION_DELIVERY_STATUS_DELIVERED = 2;
+  // The message could not be delivered.
+  NOTIFICATION_DELIVERY_STATUS_FAILED = 3;
+}
+
+// NotificationMessage is the content pushed for a Notification.
+message NotificationMessage {
+  // The title shown on the device.
+  string title = 1 [(buf.validate.field).string.min_len = 1];
+  // The body shown on the device.
+  string body = 2 [(buf.validate.field).string.min_len = 1];
+  // A later message with the same tag replaces an earlier one on the device.
+  string tag = 3;
+  // The in-app link and the notification id, read by the app when the fan
+  // opens the message.
+  map<string, string> data = 4;
+}
+
+// Notification is the durable record of one message sent to one fan: what
+// was sent, whether the push channel accepted it, and whether the fan has read
+// or dismissed it. Read and dismissed are times, independent of the delivery
+// status.
+message Notification {
+  // The notification's identity, also carried inside the pushed message.
+  NotificationId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The fan the Notification is for.
+  UserId user_id = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // What produced it.
+  NotificationType type = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // The pushed content.
+  NotificationMessage message = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // Whether the push channel accepted the message.
+  NotificationDeliveryStatus delivery_status = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // Why delivery failed. Set only when FAILED.
+  optional string failure_reason = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When the Notification was recorded.
+  google.protobuf.Timestamp queue_time = 7 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // When the push channel accepted the message. Set only when DELIVERED.
+  google.protobuf.Timestamp deliver_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When the fan read it. Absent until read.
+  google.protobuf.Timestamp read_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When the fan dismissed it. Absent until dismissed.
+  google.protobuf.Timestamp dismiss_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
