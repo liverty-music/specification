@@ -21,7 +21,7 @@ The page SHALL show the concert's title, type, visibility, cover image and perfo
 
 ### Requirement: Publish or cancel the concert's dates together
 
-While the concert has a draft date, the page SHALL offer 公開する (publish), which publishes the draft dates the member chooses in one action (SeriesUseCase.Publish with those dates); the confirmation SHALL list the draft dates with each one chosen at first, and SHALL say that the performers' followers are notified once for the dates published together (a PUBLIC concert) or that no follower is notified (an UNLISTED concert), and that a published date cannot return to draft. While the concert has a published or draft date, the page SHALL offer 公演を中止 (cancel the concert) in its menu of further actions, which cancels every published and draft date in one action (SeriesUseCase.Cancel with no date named) after a confirmation saying that fans are told once, that draft dates are removed and that it cannot be undone. On success the page SHALL show the new states and confirm them in the snackbar. A concert whose dates are all cancelled SHALL offer neither.
+While the concert has a draft date, the page SHALL offer 公開する (publish), which publishes the draft dates the member chooses in one action (SeriesUseCase.Publish with those dates); the confirmation SHALL list the draft dates with each one chosen at first, and SHALL say that the performers' followers are notified once for the dates published together (a PUBLIC concert) or that no follower is notified (an UNLISTED concert), and that a published date cannot return to draft. While the concert has a published or draft date, the page SHALL offer 公演を中止 (cancel the concert) in its menu of further actions, which cancels every published and draft date in one action (SeriesUseCase.Cancel with no date named) after a confirmation saying that fans are told once, that draft dates are removed and that it cannot be undone. On success the page SHALL show the new states and confirm them in the snackbar. When the publish is refused with FailedPrecondition, the snackbar SHALL say that a chosen date's venue, date and start time are already used by another concert or by a cancelled date and that the member changes that date's date or start time in the concert editor, SHALL offer no retry, and the page SHALL show the dates' current states. A concert whose dates are all cancelled SHALL offer neither.
 
 #### Scenario: New tour published at once
 
@@ -37,6 +37,11 @@ While the concert has a draft date, the page SHALL offer 公開する (publish),
 
 - **WHEN** the member unchecks 24 November in the dialog and confirms
 - **THEN** the other draft dates are published and 24 November stays draft
+
+#### Scenario: Date already used by another concert
+
+- **WHEN** the member publishes XX Tour 2026's draft date of 11 December 18:00 at Zepp Haneda, and the Organizer's concert YY Live already has a date there
+- **THEN** the snackbar says the venue, date and start time are already used and to change the date or start time in the concert editor, no retry is offered, and the draft date stays 下書き
 
 #### Scenario: Whole concert cancelled
 

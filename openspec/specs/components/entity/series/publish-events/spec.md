@@ -10,7 +10,7 @@ Publishes chosen DRAFT Events of a first-party Series into the catalog, claiming
 PublishEvents SHALL take a Series and one or more of its DRAFT Events. For each given Event, at its Venue, date and start time (an unknown start matching only an unknown start), it SHALL:
 - make the Event PUBLISHED when no Event that is not DRAFT is at that slot;
 - remove the DRAFT Event when a PUBLISHED Event of this Series is already at that slot;
-- claim the Event at that slot when it belongs to a discovered Series or to another Series of the same Organizer and is not CANCELLED: move it to this Series, keep its id, make it PUBLISHED, add the performers of the DRAFT Event's Concert to its Concert, and remove the DRAFT Event.
+- claim the Event at that slot when it belongs to a discovered Series: move it to this Series, keep its id, make it PUBLISHED, add the performers of the DRAFT Event's Concert to its Concert, and remove the DRAFT Event.
 
 It SHALL return the ids of the Events it made PUBLISHED in place; claimed Events SHALL NOT be returned. Together with the Events, it SHALL remove the ConcertCandidates that belong to the Series.
 
@@ -32,7 +32,7 @@ It SHALL return the ids of the Events it made PUBLISHED in place; claimed Events
 
 ### Requirement: Blocked slots fail the whole publish
 
-PublishEvents SHALL fail with FailedPrecondition, changing nothing, when any given Event's slot is held by an Event of another Organizer's Series or by a CANCELLED Event. A SuppressedConcert at the slot SHALL NOT block the publish.
+PublishEvents SHALL fail with FailedPrecondition, changing nothing, when any given Event's slot is held by an Event of another first-party Series, whether that Series belongs to another Organizer or to the same one, or by a CANCELLED Event. A SuppressedConcert at the slot SHALL NOT block the publish.
 
 #### Scenario: Suppressed slot
 - **WHEN** one given DRAFT Event's slot matches a SuppressedConcert and no Event is at that slot
@@ -41,6 +41,10 @@ PublishEvents SHALL fail with FailedPrecondition, changing nothing, when any giv
 #### Scenario: Another Organizer's slot
 - **WHEN** one given DRAFT Event's slot holds an Event of another Organizer's Series
 - **THEN** PublishEvents fails with FailedPrecondition and every given Event stays DRAFT
+
+#### Scenario: Slot of another Series of the same Organizer
+- **WHEN** one given DRAFT Event's slot holds a PUBLISHED Event of another Series of the same Organizer, with its own visibility, SeatTypes and TicketSales
+- **THEN** PublishEvents fails with FailedPrecondition, every given Event stays DRAFT, and the held Event stays in its Series with its visibility, SeatTypes and TicketSales unchanged
 
 #### Scenario: Cancelled slot
 - **WHEN** one given DRAFT Event's slot holds a CANCELLED Event
