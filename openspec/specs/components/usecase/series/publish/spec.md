@@ -28,11 +28,15 @@ Publish SHALL fail with FailedPrecondition naming what is missing, publishing no
 
 ### Requirement: Draft becomes live
 
-Publish SHALL take a Series and, optionally, some of its Events; when no Event is named it SHALL publish every DRAFT Event of the Series. It SHALL publish them with Series.PublishEvents. A slot held by another Organizer or a slot held by a CANCELLED Event SHALL fail the publish with FailedPrecondition and nothing is published; there is no override. A slot where an admin deleted a Concert SHALL NOT fail the publish. A named Event that is not DRAFT, or a Series with no DRAFT Event when none is named, SHALL fail with FailedPrecondition.
+Publish SHALL take a Series and, optionally, some of its Events; when no Event is named it SHALL publish every DRAFT Event of the Series. It SHALL publish them with Series.PublishEvents. A slot held by an Event of another first-party Series, of another Organizer or of the same one, or a slot held by a CANCELLED Event SHALL fail the publish with FailedPrecondition and nothing is published; there is no override. A slot where an admin deleted a Concert SHALL NOT fail the publish. A named Event that is not DRAFT, or a Series with no DRAFT Event when none is named, SHALL fail with FailedPrecondition.
 
 #### Scenario: Claims a discovered event
 - **WHEN** a DRAFT Event's slot holds a discovered Event with fan TicketJourneys
 - **THEN** that Event joins the Series as PUBLISHED with its id and TicketJourneys kept
+
+#### Scenario: Own other concert holds the slot
+- **WHEN** the owner publishes a DRAFT Event whose slot holds a PUBLISHED Event of another of the Organizer's Series
+- **THEN** Publish fails with FailedPrecondition, nothing is published and nothing is announced
 
 #### Scenario: Suppressed slot
 - **WHEN** a DRAFT Event's slot was suppressed by an admin's delete and no Event is at that slot
