@@ -93,18 +93,18 @@ workflow-worker: forwarder.Forwarder
 
 ### Requests start workflows
 
-A request for one receiver with no stored change behind it starts that receiver's workflow through `usecase.Workflows.Start` (or `Flow.Start` inside a workflow), named after the business key of the request. Work that follows a change stored outside a workflow runs from that change's announcement. This holds inside a workflow too: a workflow that stores a change for many entities does not start the follow-up work per entity, because each `Flow.Start` is one checkpoint write in the parent workflow, one after another (1,000,000 entries, 1,000,000 writes). The operation's announcements are written in one transaction, and the consumer starts one workflow per entity under its business key (the lottery draw: the consumer starts `issue:<order>` for each Won entry's Order and `release:<order>` for each Lost entry's Order). The NATS subjects of the requests and their durable consumers go. DBOS `WithEnqueueTransaction` is not needed.
+A request for one receiver with no stored change behind it starts that receiver's workflow through `usecase.Workflows.Start` (or `Flow.Start` inside a workflow), named after the business key of the request: `<workflow name>:<business key>`. Among the request workflows below, the two notification workflows keep shorter prefixes, `deliver:` for deliver-notification and `reminder:` for deliver-reminder; the others use their full names. Work that follows a change stored outside a workflow runs from that change's announcement. This holds inside a workflow too: a workflow that stores a change for many entities does not start the follow-up work per entity, because each `Flow.Start` is one checkpoint write in the parent workflow, one after another (1,000,000 entries, 1,000,000 writes). The operation's announcements are written in one transaction, and the consumer starts one workflow per entity under its business key (the lottery draw: the consumer starts `issue:<order>` for each Won entry's Order and `release:<order>` for each Lost entry's Order). The NATS subjects of the requests and their durable consumers go. DBOS `WithEnqueueTransaction` is not needed.
 
 | Request | Started by | Workflow | Workflow id (business key) | Follows a stored change |
 |---|---|---|---|---|
 | New concerts for a follower | NotificationUseCase.NotifyNewConcerts (receiver of CONCERT.created) | NotificationUseCase.Deliver | `deliver:new_concerts:<user>:<announcement id>`; an admin's direct call uses its own call id | no |
-| A discovered sale for a recipient | TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale | NotificationUseCase.Deliver | `deliver:ticket_sale:<user>:<ticket sale>` | no |
+| A discovered sale for a recipient | TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale | NotificationUseCase.Deliver | `deliver:ticket_sale_announcement:<user>:<ticket sale>` | no |
 | The push of an Order's confirmation | NotificationUseCase.SendOrderConfirmation (receiver of ORDER.paid), after its email | NotificationUseCase.Deliver | `deliver:order_confirmation:<order>`, so a repeated announcement pushes once while the email is kept to one by `orders.confirmation_send_at` | yes (the push follows the paid Order, but runs in the receiver of its announcement) |
-| A due reminder stage | TicketSaleReminderUseCase.ScanDueReminders | TicketSaleReminderDeliveryUseCase.DeliverReminder | `reminder:<user>:<ticket sale>:<stage>:<15-minute scan period>`, so a later scan can retry a failed push | no |
-| A verification email resend | UserUseCase.ResendEmailVerification | UserUseCase.ReissueEmailVerification | a UUIDv7 per allowed call (the call is the request) | no |
-| A passkey recovery link | UserUseCase.RequestPasskeyRecovery | UserUseCase.SendPasskeyRecoveryLink | a UUIDv7 per allowed request | no |
-| Ingesting found concerts | ConcertUseCase.SearchNewConcerts and SearchNewConcertsOnFirstFollow | ConcertCreationUseCase.CreateFromDiscovered, the found series as input | `ingest:<artist>:<search time>` | no |
-| Recording a passkey notice | the passkey webhook | PasskeyUseCase.RecordChange | `passkey:<provider passkey id>:<added or removed>` | no |
+| A due reminder stage | TicketSaleReminderUseCase.ScanDueReminders | TicketSaleReminderDeliveryUseCase.DeliverReminder | `reminder:<user>:<ticket sale>:<stage>:<start of the 15-minute scan period, Unix seconds>`, so a later scan can retry a failed push | no |
+| A verification email resend | UserUseCase.ResendEmailVerification | UserUseCase.ReissueEmailVerification | `reissue-email-verification:<UUIDv7 per allowed call>` (the call is the request) | no |
+| A passkey recovery link | UserUseCase.RequestPasskeyRecovery | UserUseCase.SendPasskeyRecoveryLink | `send-passkey-recovery-link:<UUIDv7 per allowed request>` | no |
+| Ingesting found concerts | ConcertUseCase.SearchNewConcerts and SearchNewConcertsOnFirstFollow | ConcertCreationUseCase.CreateFromDiscovered, the found series as input | `create-from-discovered:<artist>:<search time of the ConcertSearch, Unix microseconds>` | no |
+| Recording a passkey notice | the passkey webhook | PasskeyUseCase.RecordChange | `record-passkey-change:<provider passkey id>:<added or removed>` | no |
 
 - **Exception: cover image processing is recorded in the outbox, not started as a workflow.** SeriesImageUseCase.Process links libvips and runs in its own deployment, `series-image-consumer` (512Mi request, scaled to zero by KEDA on the SERIES_IMAGE stream), while DBOS workflows run in `workflow-worker`. SeriesImage.Create therefore records the processing request in the outbox in the same transaction as the SeriesImage: subject `SERIES_IMAGE.uploaded`, payload the SeriesImage (with its Organizer), `ce_subject` the Series it is attached to. The Series is the request's argument, not SeriesImage state, so `series_images` gains no column and the proto no `series_id` (which would also make `series.proto` and `series_image.proto` import each other). Rejected: running Process in `event-consumer` next to the fan art logo analysis (every scale-up of the ~30 consumers would request 512Mi and carry libvips, decided 2026-10-30); making `series-image-consumer` a DBOS executor on its own queue (a second trigger mechanism and a KEDA Postgres scaler for one receiver). Folding `series_images` and `series_cover_images` into one `series.cover_image_id` column is left to a separate change.
 - `CreateFromDiscovered` stores the events it publishes for one series in one `Concert.Create` call, so one series yields one announcement per newly listed Artist, as the per-series announcement did before.
@@ -112,7 +112,7 @@ A request for one receiver with no stored change behind it starts that receiver'
 ### Observations from outside become facts
 
 - **Passkey webhook**: it starts `PasskeyUseCase.RecordChange` as a workflow (id in the requests table) and answers 500 when it cannot. A workflow, not a synchronous call, because the identity provider does not redeliver its notices and a sign-up passkey must wait up to 10 minutes for its User. `Passkey.Create` and `Passkey.Delete` gain the guard (`ON CONFLICT DO NOTHING` rows affected, `DELETE ... RETURNING`) and announce `USER.passkey_added` or `USER.passkey_removed` with the Passkey when they change something. `UserUseCase.NotifyPasskeyChange` consumes both, so the sign-up passkey is now emailed as added once recorded (decided 2026-10-28). The Passkey gains `name`, the label the identity provider gave it, which the email shows as before (`passkeys.name`, proto `Passkey.name`).
-- **Login webhook**: it calls `UserUseCase.RecordLogin`, which calls `User.RecordLogin`. That operation is a guarded `UPDATE users SET last_login_time = $t WHERE id = $u AND (last_login_time IS NULL OR last_login_time < $t)`, and it announces `USER.logged_in` with the User when a row changed. A redelivered or older notice changes nothing. The `users.last_login_time TIMESTAMPTZ` column is added by migration.
+- **Login webhook**: it calls `UserUseCase.RecordLogin`, which calls `User.RecordLogin`. That operation is a guarded `UPDATE users SET last_login_at = $t WHERE id = $u AND (last_login_at IS NULL OR last_login_at < $t)`, and it announces `USER.logged_in` with the User when a row changed. A redelivered or older notice changes nothing. The `users.last_login_at TIMESTAMPTZ` column is added by migration.
 
 ### Subjects after this change
 
@@ -139,6 +139,8 @@ A request for one receiver with no stored change behind it starts that receiver'
 | USER.logged_in | User.RecordLogin | User without full name, phone number and display name | product analytics |
 | USER.passkey_added, USER.passkey_removed | Passkey.Create, Passkey.Delete | Passkey (as removed for a removal) | UserUseCase.NotifyPasskeyChange |
 
+A browser the push service reports gone (a send failing with NotFound) is removed by PushSubscription.DeleteGone, which announces nothing: before this change only the fan's own removal reached product analytics as an unsubscription, and that stays so (decided 2026-11-01).
+
 ### How each receiver drops a repeat
 
 JetStream drops a repeated id for 2 minutes only; a delivery repeated later (a forwarder that stopped between publish and ack) reaches the receiver. Every receiver with a side effect names its own guard:
@@ -152,7 +154,7 @@ JetStream drops a repeated id for 2 minutes only; a delivery repeated later (a f
 | SendLotteryLoss (later change) | `lottery_entries.loss_email_send_at` |
 | MarkPaid, ResolveCanonicalName, SyncArtistImage, SeriesImageUseCase.Process | the result is the same when repeated |
 | SearchNewConcertsOnFirstFollow | the Artist's ConcertSearch record |
-| UserUseCase.NotifyPasskeyChange, the verification email on USER.created | no record of their own (a removed Passkey has no row): the receiver starts a workflow named after the announcement id, `notify:<announcement id>`, and the email is sent in it |
+| UserUseCase.NotifyPasskeyChange, the verification email on USER.created | no record of their own (a removed Passkey has no row): the receiver starts a workflow named after the announcement id, `notify-passkey-change:<announcement id>` or `send-verification:<announcement id>`, and the email is sent in it |
 
 A receiver added later picks one of these guards; task 10.1 tests "Delivered twice" for each.
 
@@ -187,12 +189,14 @@ Receivers decode by `ce_datacontenttype`: `application/protobuf` with the new de
 
 Prod row counts before the migrations (read-only, 2026-10-30): Lost `lottery_entries` 0 (nothing to backfill as not drawn), `passkeys` 4 (no stored name; they get one only when re-recorded), `organizer_artists` 1.
 
+`workflow-worker` memory, measured in a local run (2026-10-31) with every workflow registered (deliver-notification, deliver-reminder, reissue-email-verification, send-passkey-recovery-link, create-from-discovered, record-passkey-change, notify-passkey-change, send-verification), one run of each and then a burst of 600 runs: RSS 60 MB idle, 73 MB at the peak of the burst. The external calls (Web Push, Postmark, the identity service, Google Places) were not made in the local run, and create-from-discovered ran an empty batch. The request goes from 64Mi to 96Mi and the limit stays 256Mi (cloud-provisioning #728, the part of task 11.3 that lands before the backend release).
+
 0. `remodel-ticket-sales` is released first; this change is planned on its model, and `make-lottery-draw-durable`, `unify-order-issuance` and `resell-tickets-by-lottery` follow this change.
 1. specification: proto release with `LotteryEntry.lost_reason`, `User.last_login_time`, `Artist.organizer_id`, `Passkey.name` and `user_id`, `SeriesImage.organizer_id`, `PushSubscription.device_family`, the `Follow` and `ConcertList` messages, and the fields from the audit.
 2. backend refactor PR: move `adapter/rpc/mapper` to `adapter/pb` with the new names (no behaviour change).
 3. Read-only in prod: count Lost lottery entries and outbox prerequisites. Record the result here.
 4. backend PR:
-   - the migrations (the outbox table, `passkeys.name`, `lottery_entries.lost_reason`, `users.last_login_time`);
+   - the migrations (the outbox table, `passkeys.name`, `lottery_entries.lost_reason`, `users.last_login_at`);
    - the outbox and the forwarder;
    - the entity operations;
    - the usecases without the publisher;

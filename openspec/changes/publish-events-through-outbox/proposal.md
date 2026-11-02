@@ -24,6 +24,7 @@ The backend commits a fact and then publishes its event in a second call: a fail
 
 - `components/infrastructure/backend/process/event-delivery`: how every backend process records, delivers and receives announcements (recorded with the fact, one id, at least once, an undelivered announcement reported, no change no announcement, personal data and push credentials, requests as workflows).
 - `components/entity/user/record-login`: records that the User signed in and announces it.
+- `components/entity/push-subscription/delete-gone`: removes a browser the push service reported gone without announcing it, so only the fan's own removal counts as an unsubscription.
 - `components/usecase/user/record-login`: records a sign-in reported by the identity provider.
 - `components/adapter/fan/api/webhook/login-events`: the identity provider's sign-in notices become UserUseCase.RecordLogin.
 
@@ -94,7 +95,7 @@ Unchanged and why: consumers whose trigger is a fact that stays an announcement 
 
 ## Impact
 
-- **backend**: one outbox table for every subject and its relay (the Watermill forwarder) in the workflow worker; entity operations write announcements on the repository transaction; the usecases lose the event publisher; new workflows for the six requests; the passkey and login webhooks call usecases; consumers read binary protobuf payloads; the entity-to-proto conversion moves out of the RPC mapper package; the step-derived event id code goes; migrations for the lottery entry's lost reason, `users.last_login_time` and `passkeys.name`.
+- **backend**: one outbox table for every subject and its relay (the Watermill forwarder) in the workflow worker; entity operations write announcements on the repository transaction; the usecases lose the event publisher; new workflows for the six requests; the passkey and login webhooks call usecases; consumers read binary protobuf payloads; the entity-to-proto conversion moves out of the RPC mapper package; the step-derived event id code goes; migrations for the lottery entry's lost reason, `users.last_login_at` and `passkeys.name`.
 - **specification**: `entity/v1` gains the `LotteryEntry` lost reason, `User` the last login time, `Artist` its organizer, `Passkey` its name and User, `SeriesImage` its Organizer, `PushSubscription` its device family, and the `Follow` and `ConcertList` messages, and any field the entity-to-proto audit finds missing (a proto release).
 - **cloud-provisioning**: JetStream streams lose the removed subjects.
 - **frontend**: none.

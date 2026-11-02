@@ -2,7 +2,7 @@
 
 ## Purpose
 
-FollowUseCase.Unfollow ends a fan's Follow of an artist, so the fan no longer receives pushes about that artist's new concerts, and announces the unfollow.
+FollowUseCase.Unfollow ends a fan's Follow of an artist through Follow.Unfollow, which announces the ended follow, so the fan no longer receives pushes about that artist's new concerts.
 
 ## Requirements
 

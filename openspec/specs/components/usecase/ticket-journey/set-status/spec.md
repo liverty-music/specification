@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Records a fan's ticket journey status for one event at the fan's request, creating the journey or replacing its status, and reports every actual status change for product analytics.
+Records a fan's ticket journey status for one event at the fan's request, creating the journey or replacing its status through TicketJourney.Upsert, which announces every actual status change for product analytics.
 
 ## Requirements
 

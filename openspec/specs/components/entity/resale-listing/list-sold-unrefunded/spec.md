@@ -1,7 +1,7 @@
 # components/entity/resale-listing/list-sold-unrefunded Specification
 
 ## Purpose
-Lists the Sold ResaleListings whose user has not been refunded yet, or whose sold email has not been sent, so the refund job can finish them.
+Lists the Sold ResaleListings whose user has not been refunded yet, so the refund job can finish them.
 
 ## Requirements
 

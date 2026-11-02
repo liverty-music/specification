@@ -1,7 +1,7 @@
 # components/usecase/resale-listing/refund-sold Specification
 
 ## Purpose
-ResaleListingUseCase.RefundSold refunds the user of every resold listing the face value minus the resale fee, within 1 minute after the other fan was charged, and announces the refund so the user is told by email.
+ResaleListingUseCase.RefundSold refunds the user of every resold listing the face value minus the resale fee, within 1 minute after the other fan was charged, and records the refund through ResaleListing.RecordRefund, which announces it so the user is told by email.
 
 ## Requirements
 

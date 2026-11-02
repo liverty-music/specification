@@ -2,7 +2,7 @@
 
 ## Purpose
 
-PushSubscriptionUseCase.Delete stops push messages to one of the fan's browsers by removing that browser's subscription, and announces it; the fan's other browsers keep theirs.
+PushSubscriptionUseCase.Delete stops push messages to one of the fan's browsers by removing that browser's subscription through PushSubscription.Delete, which announces the removal; the fan's other browsers keep theirs.
 
 ## Requirements
 

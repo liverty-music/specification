@@ -9,6 +9,7 @@ A Passkey is the platform's record of one passkey registered for a User at the i
 | user_id | the User the passkey signs in to | required |
 | aaguid | the identifier of the passkey provider model that made the passkey | required; a UUID, all zeros when the provider does not reveal itself |
 | create_time | when the passkey finished registration | required |
+| name | the label the identity provider gave the passkey, shown in the passkey email | optional; absent when the identity provider gave none |
 
 ```mermaid
 erDiagram

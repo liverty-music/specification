@@ -1,7 +1,7 @@
 # components/adapter/fan/api/webhook/passkey-events Specification
 
 ## Purpose
-Receives the identity provider's notices that a passkey was added to or removed from an identity of the product organization, and announces each one as a passkey change for UserUseCase.NotifyPasskeyChange and PasskeyUseCase.RecordChange.
+Receives the identity provider's notices that a passkey was added to or removed from an identity of the product organization, and starts PasskeyUseCase.RecordChange for each one, so the recorded Passkey is announced as added or removed.
 
 ## Requirements
 

@@ -46,7 +46,7 @@ Events that were removed (never fired, duplicated another event, or double-count
 | `artist.follow.completed` | BE | artist | active | `artist_id`, `source?`, `trace_id?` | Follow funnel, retention cohort |
 | `artist.unfollow.completed` | BE | artist | active | `artist_id`, `trace_id?` | Engagement loss |
 | `concert.detail.viewed` | FE | concert | active | `event_id`, `artist_id`, `source`, `trace_id?` | Concert detail funnel |
-| `ticket.journey.status.changed` | BE | ticket | active | `event_id`, `from_status`, `to_status`, `trace_id?` | Interest-tier progression (PENDING→TRACKING→ATTENDING), engagement depth |
+| `ticket.journey.status.changed` | BE | ticket | active | `event_id`, `to_status`, `trace_id?` | Interest-tier progression (PENDING→TRACKING→ATTENDING), engagement depth. The status before the change is the `to_status` of the fan's previous `ticket.journey.status.changed` for the same `event_id`, derived in PostHog; the backend does not send `from_status` |
 | `ticket.lottery.entry.submitted` | FE | ticket | dormant | `event_id`, `lottery_round`, `trace_id?` | Lottery funnel — activates when ticket sales ship |
 | `ticket.purchase.initiated` | FE | ticket | dormant | `ticket_id`, `event_id`, `price_bucket`, `trace_id?` | Purchase funnel — activates when ticket sales ship |
 | `entry.checkin.attempted` | FE | entry | dormant | `event_id`, `trace_id?` | Entry funnel — activates when venue entry ships |

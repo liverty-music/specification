@@ -24,12 +24,12 @@ The passkey-events webhook SHALL accept a notice only when it carries a valid si
 
 ### Requirement: Passkey notices of the product organization are recorded
 
-For an accepted notice that a passkey of an identity in the product organization finished registration, the webhook SHALL start PasskeyUseCase.RecordChange with a change of kind added, the identity's provider user ID, the provider passkey id, the AAGUID of its passkey provider and the notice's time; for a notice that such a passkey was removed, with a change of kind removed, the provider user ID, the provider passkey id and the notice's time, without an AAGUID. A notice without a time SHALL take the time it was received. It SHALL answer HTTP 200 once RecordChange is started, and the same for a repeated notice, which starts nothing new. Notices of other kinds, and notices about identities of other organizations, SHALL be answered with HTTP 200 and record nothing. When RecordChange cannot be started, the webhook SHALL log the failure and answer HTTP 500; the identity provider does not deliver a notice again, so that change is not recorded or emailed.
+For an accepted notice that a passkey of an identity in the product organization finished registration, the webhook SHALL start PasskeyUseCase.RecordChange with a change of kind added, the identity's provider user ID, the provider passkey id, the name the identity provider gave the passkey (empty when it gave none), the AAGUID of its passkey provider and the notice's time; for a notice that such a passkey was removed, with a change of kind removed, the provider user ID, the provider passkey id and the notice's time, without a name or an AAGUID. A notice without a time SHALL take the time it was received. It SHALL answer HTTP 200 once RecordChange is started, and the same for a repeated notice, which starts nothing new. Notices of other kinds, and notices about identities of other organizations, SHALL be answered with HTTP 200 and record nothing. When RecordChange cannot be started, the webhook SHALL log the failure and answer HTTP 500; the identity provider does not deliver a notice again, so that change is not recorded or emailed.
 
 #### Scenario: Passkey registered
 
 - **WHEN** an accepted notice says a fan identity's passkey finished registration
-- **THEN** RecordChange is started with a change of kind added, the passkey's provider passkey id and its AAGUID, and the webhook answers HTTP 200
+- **THEN** RecordChange is started with a change of kind added, the passkey's provider passkey id, its name and its AAGUID, and the webhook answers HTTP 200
 
 #### Scenario: Passkey removed
 

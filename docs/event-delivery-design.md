@@ -2,7 +2,7 @@
 
 How the backend announces a fact to other parts of the system (NATS JetStream events) and how it starts work that must happen after a fact (DBOS workflows), without losing or duplicating either. This is a design reference for people and for coding agents. It records the decision; the implementation is planned as an OpenSpec change and replaces the event id rule of `introduce-durable-workflows` (design "One id per announcement").
 
-Status: decided 2026-10-28, not implemented yet; planned as the OpenSpec change `publish-events-through-outbox`, whose design.md lists every subject and request. Facts below were checked against DBOS Transact Go v1.7.0, watermill v1.5.3, watermill-sql v4.1.5 and watermill-nats v2.2.0 on that date.
+Status: decided 2026-10-28, implemented by the OpenSpec change `publish-events-through-outbox`, whose design.md lists every subject and request. Facts below were checked against DBOS Transact Go v1.7.0, watermill v1.5.3, watermill-sql v4.1.5 and watermill-nats v2.2.0 on that date.
 
 ## The rules
 

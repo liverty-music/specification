@@ -1,7 +1,7 @@
 # components/usecase/user/reissue-email-verification Specification
 
 ## Purpose
-UserUseCase.ReissueEmailVerification sends the fresh verification code for each announced email verification resend request, so a fan who asked from Settings receives it.
+UserUseCase.ReissueEmailVerification sends a fresh verification code for each resend request UserUseCase.ResendEmailVerification starts, so a fan who asked from Settings receives it.
 
 ## Requirements
 

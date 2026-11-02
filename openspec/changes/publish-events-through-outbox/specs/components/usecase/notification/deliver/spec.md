@@ -2,7 +2,7 @@
 
 ### Requirement: Push to every browser of the fan
 
-Deliver SHALL send the message (PushSubscription.Send) to every PushSubscription of the fan (PushSubscription.ListByUserIDs). The outcome SHALL be Delivered, with the time of delivery, when at least one send is accepted, and Failed otherwise: with the reason "no active push subscription" when the fan has none, with the listing error when the subscriptions cannot be read, and with the reason of the last failed send when every send fails. A PushSubscription whose send fails with NotFound SHALL be removed through PushSubscription.Delete, only that fan's browser. When the request is cancelled, no further send SHALL be made; sends already accepted still make the outcome Delivered.
+Deliver SHALL send the message (PushSubscription.Send) to every PushSubscription of the fan (PushSubscription.ListByUserIDs). The outcome SHALL be Delivered, with the time of delivery, when at least one send is accepted, and Failed otherwise: with the reason "no active push subscription" when the fan has none, with the listing error when the subscriptions cannot be read, and with the reason of the last failed send when every send fails. A PushSubscription whose send fails with NotFound SHALL be removed through PushSubscription.DeleteGone, only that fan's browser, so the removal is not counted as the fan unsubscribing. When the request is cancelled, no further send SHALL be made; sends already accepted still make the outcome Delivered.
 
 #### Scenario: One of two browsers accepts
 
@@ -22,7 +22,7 @@ Deliver SHALL send the message (PushSubscription.Send) to every PushSubscription
 #### Scenario: Browser gone
 
 - **WHEN** a send fails with NotFound
-- **THEN** that PushSubscription is removed and the fan's other browsers keep theirs
+- **THEN** that PushSubscription is removed without an unsubscription being announced, and the fan's other browsers keep theirs
 
 #### Scenario: Cancelled after one accepted send
 
