@@ -74,8 +74,47 @@ The match truth table:
 - **THEN** no part of the card's matched or unmatched treatment SHALL animate
 - **AND** the treatment SHALL look the same with reduced motion as without it
 
+### Requirement: Artist name shown on every card
+
+Every dashboard event card SHALL show the artist's name as text, horizontally centered on the card, in white at full opacity on matched and unmatched cards alike. A card SHALL NOT show the artist's logo image.
+
+#### Scenario: Artist name centered on the card
+
+- **WHEN** an event card is rendered
+- **THEN** the artist's name SHALL be shown as text, horizontally centered on the card
+
+#### Scenario: Unmatched card name at full visibility
+
+- **WHEN** an unmatched event card is rendered
+- **THEN** the artist's name SHALL render in white with no opacity reduction or dimming filter
+
+## MODIFIED Requirements
+
+### Requirement: Text fallback font size prominence
+The artist name on an event card SHALL be visually prominent and clearly distinguishable from the location label below it: its font size SHALL be larger than the location label's.
+
+#### Scenario: Text fallback versus location label
+- **WHEN** an event card displays an artist name with a location label below
+- **THEN** the artist name font size SHALL be noticeably larger than the location label font size
+
 ## REMOVED Requirements
 
 ### Requirement: Hype Visual Indicators on Dashboard Cards
 **Reason**: Replaced by "Dashboard cards show whether the hype level matches the concert", which uses the entity term "matches" and describes the cards as the app renders them: the card shows no artist logo, the matched card's color no longer drifts, and the unmatched card shows a lighter gradient with grain instead of a desaturated, dimmed poster.
+**Migration**: None.
+
+### Requirement: Event Card Logo Display
+**Reason**: Event cards show the artist's name as text on every card and never a logo image (replaced by "Artist name shown on every card").
+**Migration**: None.
+
+### Requirement: Logo and text visibility on unmatched cards
+**Reason**: Cards show no logo; the full visibility of the artist name on an unmatched card moves to "Artist name shown on every card".
+**Migration**: None.
+
+### Requirement: Center-aligned card content
+**Reason**: Cards show no logo; centering the artist name moves to "Artist name shown on every card".
+**Migration**: None.
+
+### Requirement: Logo scales to fill card space
+**Reason**: Event cards show no logo image.
 **Migration**: None.
