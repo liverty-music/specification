@@ -14,6 +14,7 @@ SendOrderConfirmation SHALL run for each Order announced as paid, with its user 
 - the event's Organizer with Event.GetOrganizerID and Organizer.Get.
 
 It SHALL send, with Order.SendConfirmationEmail to the user's email address and in the user's preferred language (Japanese when none), a message stating:
+- for an Order whose source is a LotteryEntry, that the entry won the lottery;
 - the concert's title, date, venue, and open and start times;
 - the number of tickets and the total paid, 税込 (tax-inclusive);
 - the pay time, the payment method (card) and the card brand and last four digits;
@@ -32,7 +33,7 @@ When reading or sending fails, SendOrderConfirmation SHALL fail with that error 
 #### Scenario: Lottery win
 
 - **WHEN** the Order of a won lottery entry is announced as paid
-- **THEN** the winner receives the same confirmation email for their tickets
+- **THEN** the winner receives the same confirmation email for their tickets, first saying that the entry won
 
 #### Scenario: Order announced twice
 
@@ -46,12 +47,17 @@ When reading or sending fails, SendOrderConfirmation SHALL fail with that error 
 
 ### Requirement: Push notification after the email
 
-After the email is sent, SendOrderConfirmation SHALL start NotificationUseCase.Deliver for the Order's user with a notification of type order_confirmation, named after the type and the Order, saying the purchase is complete in the user's language and opening the Tickets screen when tapped. A user with no registered browser receives the email only. A run again for the same Order, after a stop or a repeated announcement, starts no second Deliver, so the fan is pushed once; the email is still sent once.
+After the email is sent, SendOrderConfirmation SHALL start NotificationUseCase.Deliver for the Order's user with a notification of type order_confirmation, named after the type and the Order, saying in the user's language that the purchase is complete, or for an Order whose source is a LotteryEntry that the entry won and the tickets are ready, and opening the Tickets screen when tapped. A user with no registered browser receives the email only. A run again for the same Order, after a stop or a repeated announcement, starts no second Deliver, so the fan is pushed once; the email is still sent once.
 
 #### Scenario: Fan allowed notifications
 
 - **WHEN** the Order's user has a registered browser
 - **THEN** an order_confirmation notification is pushed and opens the Tickets screen
+
+#### Scenario: Lottery winner allowed notifications
+
+- **WHEN** the Order of a won lottery entry is announced as paid and its user has a registered browser
+- **THEN** an order_confirmation notification saying the entry won is pushed and opens the Tickets screen
 
 #### Scenario: Paid announcement delivered twice
 
