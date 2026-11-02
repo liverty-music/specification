@@ -29,13 +29,6 @@ ArtistUseCase.ListTop SHALL take a country, a tag of at most 50 characters and a
 - **WHEN** the chart has no artists
 - **THEN** ListTop returns an empty list
 
-### Requirement: ListTop announces newly registered artists
-For each artist that Artist.Create returns, ArtistUseCase.ListTop SHALL announce that the artist was created, with its id, name and MBID. A failed announcement SHALL NOT fail the call.
-
-#### Scenario: New artist registered
-- **WHEN** ListTop registers an artist
-- **THEN** an artist-created announcement for it is made
-
 ### Requirement: ListTop reuses a recent result
 ArtistUseCase.ListTop SHALL return the earlier result, without consulting the catalog, when the same country, tag and limit were answered within the last 6 hours.
 

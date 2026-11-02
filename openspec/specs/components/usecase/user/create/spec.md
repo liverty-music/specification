@@ -55,7 +55,7 @@ When User.Create fails with AlreadyExists, Create SHALL look the identity up wit
 
 ### Requirement: A verification email follows every new user
 
-When Create stores a new User, it SHALL announce the new User, and each announcement SHALL cause User.SendVerification to run for that User's provider user ID; when Create returns an existing User, nothing is announced or sent. A failed send SHALL be retried up to 3 more times and then given up, and the User stays created. If announcing the new User fails, Create still succeeds and no verification email is sent for it. When email verification is not configured, the announcement is accepted and no email is sent.
+User.Create announces each new User it stores (components/entity/user/create); Create itself SHALL announce nothing. Each announced new User SHALL cause User.SendVerification to run for that User's provider user ID; when Create returns an existing User, nothing is announced or sent. A failed send SHALL be retried up to 3 more times and then given up, and the User stays created. When User.Create fails with Unavailable because the new User cannot be announced, Create SHALL fail with Unavailable and no User is stored. When email verification is not configured, the announcement is accepted and no email is sent.
 
 #### Scenario: New user
 
@@ -74,8 +74,8 @@ When Create stores a new User, it SHALL announce the new User, and each announce
 
 #### Scenario: Announcing fails
 
-- **WHEN** the new User is stored but announcing it fails
-- **THEN** Create returns the new User and no verification email is sent
+- **WHEN** User.Create fails with Unavailable because the new User cannot be announced
+- **THEN** Create fails with Unavailable, no User is stored and no verification email is sent
 
 #### Scenario: Verification not configured
 

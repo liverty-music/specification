@@ -53,14 +53,6 @@ A step that fails with Unavailable or DeadlineExceeded SHALL be tried again, fir
 - **WHEN** a workflow with a 24-hour deadline still retries a step after 24 hours
 - **THEN** it stops and is reported for an admin
 
-### Requirement: An announcement from a workflow has one id
-
-An event that a workflow step publishes SHALL carry an id derived from the workflow's id and the step, so the event has the same id every time the step runs. Consumers SHALL treat events with the same id as one.
-
-#### Scenario: Step runs again after a stop
-- **WHEN** the worker stops after publishing an event and before recording the step, and the step runs again
-- **THEN** the event is published again with the same id, and product analytics records it once
-
 ### Requirement: Workflow records are kept for 30 days
 
 Once a day, the records of every workflow that ended successfully and was started more than 30 days before SHALL be deleted. A workflow that has not ended, or that is reported for an admin, SHALL NOT be deleted by this, whatever its age; it is deleted only when an admin resolves it.

@@ -8,40 +8,31 @@ FollowUseCase.Follow records that a fan follows an artist through Follow.Follow,
 
 ### Requirement: Follow creates the fan's Follow of the artist
 
-Follow SHALL create the fan's Follow of the artist through Follow.Follow and succeed once it is stored. When the Follow cannot be stored, including when the artist does not exist, Follow SHALL fail with Internal and do nothing else.
+Follow SHALL create the fan's Follow of the artist through Follow.Follow and succeed once it is stored. When the Follow cannot be stored, Follow SHALL do nothing else and fail: with Unavailable when Follow.Follow fails with Unavailable (its announcement cannot be recorded, so the call can be retried), and with Internal otherwise, including when the artist does not exist.
 
 #### Scenario: Fan follows a new artist
 
 - **WHEN** a fan follows an artist they do not follow
 - **THEN** the Follow is stored and Follow succeeds
 
+#### Scenario: Announcement cannot be recorded
+
+- **WHEN** Follow.Follow fails with Unavailable
+- **THEN** Follow fails with Unavailable and no background work is started
+
 #### Scenario: Unknown artist
 
 - **WHEN** the artist does not exist
-- **THEN** Follow fails with Internal and nothing is announced or started
+- **THEN** Follow fails with Internal and no background work is started
 
 ### Requirement: A repeat follow changes nothing
 
-When the fan already follows the artist, Follow SHALL succeed without changing the Follow or its hype level, without announcing the follow again and without starting any background work.
+When the fan already follows the artist, Follow SHALL succeed without changing the Follow or its hype level and without starting any background work.
 
 #### Scenario: Fan follows the same artist twice
 
 - **WHEN** a fan who follows an artist at Away follows it again
-- **THEN** Follow succeeds, the hype level stays Away, and the follow is not announced a second time
-
-### Requirement: Follow announces the new follow
-
-After a new Follow is stored, Follow SHALL announce that the fan followed the artist. The announcement is also what starts a first concert search for an artist that has never been searched (ConcertUseCase.SearchNewConcertsOnFirstFollow). A failure to announce SHALL NOT fail the follow; the artist is then not searched on this follow and is left to the daily concert search.
-
-#### Scenario: New follow announced
-
-- **WHEN** a fan follows an artist they do not follow
-- **THEN** the follow is announced once, carrying the fan and the artist
-
-#### Scenario: Announcement fails
-
-- **WHEN** the follow is stored but announcing it fails
-- **THEN** Follow still succeeds
+- **THEN** Follow succeeds, the hype level stays Away, and no background work is started
 
 ### Requirement: Official site resolved in the background
 

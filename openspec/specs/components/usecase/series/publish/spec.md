@@ -66,26 +66,11 @@ When the Series is UNLISTED and has no share token yet, Publish SHALL give it a 
 - **WHEN** a new date of an UNLISTED Series that already has a share token is published
 - **THEN** the share token is unchanged
 
-### Requirement: Public series announces new events per performer
+### Requirement: Publish returns the published series
 
-When the Series is PUBLIC and Series.PublishEvents added at least one Event, Publish SHALL announce the new concerts once per performing Artist of the Series, each announcement carrying all the Event ids added by this publish. Claimed Events, and Events published before, SHALL NOT be announced. An UNLISTED Series SHALL announce nothing to followers. A failed announcement SHALL NOT fail Publish.
+After a successful publish, Publish SHALL return the Series with its Events and performers.
 
-#### Scenario: Two performers
-- **WHEN** a PUBLIC Series with two performers adds one Event
-- **THEN** two announcements are made, one per performer, each carrying that Event id
+#### Scenario: Published series returned
 
-#### Scenario: Only claimed events
-- **WHEN** every published DRAFT Event claimed an existing discovered Event
-- **THEN** no announcement is made to followers
-
-#### Scenario: Additional date announced alone
-- **WHEN** a PUBLIC Series with three PUBLISHED Events publishes one new date
-- **THEN** the announcement carries only the new Event's id
-
-### Requirement: Publish is always reported
-
-After a successful publish, Publish SHALL report the publish for the Organizer with the Series and the number of added Events, whatever the visibility and even when no Event was added; a failed report SHALL NOT fail Publish. Publish SHALL return the Series with its Events and performers.
-
-#### Scenario: Unlisted publish reported
-- **WHEN** an UNLISTED Series is published
-- **THEN** the publish is reported with the number of added Events
+- **WHEN** the owner publishes the one DRAFT Event of a Series
+- **THEN** Publish returns the Series with that Event PUBLISHED and its performers

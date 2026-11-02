@@ -7,27 +7,37 @@ UserUseCase.NotifyPasskeyChange emails a fan each time a passkey is added to or 
 
 ### Requirement: Each passkey change of a fan is emailed
 
-NotifyPasskeyChange SHALL run for each announced passkey change, carrying the identity's provider user ID, the kind of change (added or removed), the passkey's name when known and the time of the change. It SHALL read the User with User.GetByProviderUserID and send the email with User.SendPasskeyChangeEmail. When no User has the provider user ID, it SHALL finish without sending, so a passkey created during sign-up is reported only when the account already exists when the change is handled. When sending fails with Unavailable, NotifyPasskeyChange SHALL fail and run again; a change announced twice can be emailed twice.
+NotifyPasskeyChange SHALL run for each Passkey announced as added by Passkey.Create or as removed by Passkey.Delete, carrying the Passkey. It SHALL read the Passkey's User with User.Get and send the email with User.SendPasskeyChangeEmail, with the kind of change, the Passkey's name (empty when it has none), and as the time of the change the Passkey's create time for an added Passkey and the time the removal was announced for a removed one. When User.Get fails with NotFound, it SHALL finish without sending. Because a Passkey is recorded only once its User exists, the passkey registered at sign-up is emailed as added once it is recorded. When sending fails with Unavailable, NotifyPasskeyChange SHALL fail and run again; an announcement delivered twice is emailed once.
 
 #### Scenario: Passkey added on a new device
 
-- **WHEN** a passkey named `Google Pixel 9, Android, Chrome` is added for a fan's identity
+- **WHEN** a Passkey named `Google Pixel 9, Android, Chrome` is announced as added for a fan
 - **THEN** the fan receives an email saying that passkey was added
 
 #### Scenario: Passkey added through a recovery link
 
-- **WHEN** a passkey is registered with a recovery link
+- **WHEN** a passkey registered with a recovery link is recorded and announced as added
 - **THEN** the fan receives the same added email
+
+#### Scenario: Passkey registered at sign-up
+
+- **WHEN** the passkey a fan registered at sign-up is recorded after the fan's User was created, and announced as added
+- **THEN** the fan receives the added email
 
 #### Scenario: Passkey removed
 
-- **WHEN** a passkey is removed from a fan's identity
+- **WHEN** a fan's Passkey is announced as removed
 - **THEN** the fan receives an email saying a passkey was removed
 
 #### Scenario: Identity with no account
 
-- **WHEN** the provider user ID names no User
+- **WHEN** the Passkey's User no longer exists, so User.Get fails with NotFound
 - **THEN** no email is sent and the change is finished
+
+#### Scenario: Delivered twice
+
+- **WHEN** the same added Passkey announcement is delivered twice
+- **THEN** the fan receives one email
 
 #### Scenario: Mail unavailable
 

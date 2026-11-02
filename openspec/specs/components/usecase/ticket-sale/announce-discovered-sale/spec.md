@@ -7,14 +7,14 @@ TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale tells every fan who is trac
 
 ### Requirement: Runs once for each newly created discovered sale
 
-AnnounceDiscoveredSale SHALL run when TicketSaleDiscoveryUseCase.DiscoverForArtist requests the announcement of a discovered sale it has just created, with that sale and its series as input. A request without a series SHALL be ignored without an error. An Organizer's sale SHALL NOT be announced.
+AnnounceDiscoveredSale SHALL run for each discovered sale that TicketSale.UpsertDiscovered announces as created, with that sale and its series as input. An announced sale without a series SHALL be ignored without an error. An Organizer's sale SHALL NOT be announced.
 
 #### Scenario: New discovered sale created
-- **WHEN** DiscoverForArtist creates a discovered sale for a series
+- **WHEN** TicketSale.UpsertDiscovered creates and announces a discovered sale for a series
 - **THEN** AnnounceDiscoveredSale runs once for that sale
 
 #### Scenario: Request without a series
-- **WHEN** AnnounceDiscoveredSale receives a request that names no series
+- **WHEN** AnnounceDiscoveredSale receives an announced sale that names no series
 - **THEN** nothing is announced and it succeeds
 
 #### Scenario: Organizer's sale created
@@ -47,19 +47,19 @@ AnnounceDiscoveredSale SHALL send the announcement as soon as it runs, whatever 
 
 ### Requirement: One ticket sale announcement notification requested per recipient
 
-For each recipient AnnounceDiscoveredSale SHALL request one notification of type ticket_sale_announcement carrying that recipient's message; NotificationUseCase.Deliver records and delivers each requested notification afterwards, for each recipient on its own, and whether it reaches the recipient's devices does not change the result. When a recipient's request cannot be made, AnnounceDiscoveredSale SHALL fail so the whole announcement runs again; a repeated request for the same sale and recipient is a new request, so the recipient can receive the announcement again; the later one replaces the earlier one on their device. Requesting once per sale and recipient waits for a follow-up change (design, "One kind of CloudEvent id"). The story stories/hear-about-a-new-ticket-sale covers the whole flow from discovery to the fan's device.
+For each recipient AnnounceDiscoveredSale SHALL start NotificationUseCase.Deliver with one notification of type ticket_sale_announcement carrying that recipient's message, named after the recipient and the TicketSale, so a recipient is notified of a sale once: a repeated run for the same sale starts nothing new for a recipient already started. Deliver records and delivers each notification on its own, and whether it reaches the recipient's devices does not change the result. When a recipient's notification cannot be started, AnnounceDiscoveredSale SHALL fail so it runs again; the recipients already started are not started again. The story stories/hear-about-a-new-ticket-sale covers the whole flow from discovery to the fan's device.
 
 #### Scenario: Two recipients
 - **WHEN** two fans track the series
-- **THEN** one ticket_sale_announcement notification is requested for each of them
+- **THEN** one ticket_sale_announcement notification is started for each of them
 
 #### Scenario: Request fails
-- **WHEN** the notification for the second of three recipients cannot be requested
-- **THEN** the third recipient's notification is not requested, AnnounceDiscoveredSale fails, and the announcement runs again for all three recipients
+- **WHEN** the notification for the second of three recipients cannot be started
+- **THEN** the third recipient's notification is not started, AnnounceDiscoveredSale fails, and when it runs again the second and third recipients are notified and the first is not notified again
 
 #### Scenario: Same sale announced twice
-- **WHEN** AnnounceDiscoveredSale runs twice within 2 minutes for the same sale and the same recipient
-- **THEN** two requests are made for the recipient, and the second replaces the first on the recipient's device
+- **WHEN** AnnounceDiscoveredSale runs twice for the same sale and the same recipient
+- **THEN** the recipient is notified once
 
 ### Requirement: The announcement names the sale and the tour
 

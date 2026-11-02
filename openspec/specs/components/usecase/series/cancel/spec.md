@@ -33,15 +33,3 @@ Cancel SHALL take a Series and, optionally, some of its Events; when no Event is
 #### Scenario: Cancel one date
 - **WHEN** the owner names one of three PUBLISHED Events of a Series
 - **THEN** that Event is CANCELLED and the other two stay PUBLISHED and visible
-
-### Requirement: Cancellation is announced
-
-After cancelling, Cancel SHALL announce the cancellation of the Series with the ids of the Events that became CANCELLED, and SHALL announce nothing when none did. A failure to announce SHALL NOT fail Cancel.
-
-#### Scenario: Cancelled tour
-- **WHEN** a Series with three PUBLISHED Events is cancelled
-- **THEN** one cancellation carrying the three Event ids is announced
-
-#### Scenario: Draft discarded silently
-- **WHEN** a Series whose Events are all DRAFT is cancelled
-- **THEN** no cancellation is announced

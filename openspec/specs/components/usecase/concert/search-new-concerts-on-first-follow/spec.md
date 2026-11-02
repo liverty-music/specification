@@ -7,7 +7,7 @@ ConcertUseCase.SearchNewConcertsOnFirstFollow starts the first concert search fo
 
 ### Requirement: Runs for each announced follow
 
-SearchNewConcertsOnFirstFollow SHALL run once for each new Follow that FollowUseCase.Follow announces, with the followed Artist. A follow that is not announced starts nothing here; FollowUseCase.Follow states when a follow is announced.
+SearchNewConcertsOnFirstFollow SHALL run once for each new Follow that Follow.Follow announces, with the followed Artist. A follow that is not announced starts nothing here; Follow.Follow states when a follow is announced.
 
 #### Scenario: Follow announced
 

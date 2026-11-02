@@ -36,7 +36,7 @@ Before sending, Deliver SHALL add the recorded Notification's id and its type to
 
 ### Requirement: Push to every browser of the fan
 
-Deliver SHALL send the message (PushSubscription.Send) to every PushSubscription of the fan (PushSubscription.ListByUserIDs). The outcome SHALL be Delivered, with the time of delivery, when at least one send is accepted, and Failed otherwise: with the reason "no active push subscription" when the fan has none, with the listing error when the subscriptions cannot be read, and with the reason of the last failed send when every send fails. A PushSubscription whose send fails with NotFound SHALL be removed through PushSubscription.Delete, only that fan's browser; this removal is not announced as an unsubscription. When the request is cancelled, no further send SHALL be made; sends already accepted still make the outcome Delivered.
+Deliver SHALL send the message (PushSubscription.Send) to every PushSubscription of the fan (PushSubscription.ListByUserIDs). The outcome SHALL be Delivered, with the time of delivery, when at least one send is accepted, and Failed otherwise: with the reason "no active push subscription" when the fan has none, with the listing error when the subscriptions cannot be read, and with the reason of the last failed send when every send fails. A PushSubscription whose send fails with NotFound SHALL be removed through PushSubscription.DeleteGone, only that fan's browser, so the removal is not counted as the fan unsubscribing. When the request is cancelled, no further send SHALL be made; sends already accepted still make the outcome Delivered.
 
 #### Scenario: One of two browsers accepts
 
@@ -56,7 +56,7 @@ Deliver SHALL send the message (PushSubscription.Send) to every PushSubscription
 #### Scenario: Browser gone
 
 - **WHEN** a send fails with NotFound
-- **THEN** that PushSubscription is removed and the fan's other browsers keep theirs
+- **THEN** that PushSubscription is removed without an unsubscription being announced, and the fan's other browsers keep theirs
 
 #### Scenario: Cancelled after one accepted send
 
@@ -77,40 +77,26 @@ Deliver SHALL record the outcome through Notification.UpdateDelivery and return 
 - **WHEN** the send is accepted but the outcome cannot be recorded
 - **THEN** Deliver succeeds, returns the Notification as Delivered, and the stored Notification stays Queued
 
-### Requirement: A delivered notification is announced once
-
-When the outcome is Delivered, Deliver SHALL announce once that the fan's Notification of that type was delivered. A failure to announce SHALL NOT change the outcome or fail Deliver. A Failed Notification is not announced.
-
-#### Scenario: Delivered
-
-- **WHEN** the outcome is Delivered
-- **THEN** the delivery is announced once
-
-#### Scenario: Failed
-
-- **WHEN** the outcome is Failed
-- **THEN** nothing is announced
-
 ### Requirement: Runs for each requested notification
 
-Deliver SHALL run once for each notification requested for one fan, by NotificationUseCase.NotifyNewConcerts, TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale or NotificationUseCase.SendOrderConfirmation, with that fan, the notification type and the finished message. When Deliver fails, that request SHALL be processed again; a failure for one fan's request SHALL NOT affect the requests of any other fan.
+Deliver SHALL run once for each notification that NotificationUseCase.NotifyNewConcerts, TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale or NotificationUseCase.SendOrderConfirmation starts for one fan, with that fan, the notification type and the finished message; a start repeated under the same name runs nothing new. When a started Deliver fails, that notification SHALL be processed again; a failure for one fan's notification SHALL NOT affect the notifications of any other fan.
 
 #### Scenario: Notification requested
 
-- **WHEN** a new_concerts notification is requested for a fan
+- **WHEN** NotifyNewConcerts starts a new_concerts notification for a fan
 - **THEN** Deliver runs for that fan with the type new_concerts and the requested message
 
 #### Scenario: Purchase notification requested
 
-- **WHEN** an order_confirmation notification is requested for an Order's user
-- **THEN** Deliver runs for that user with the type order_confirmation
+- **WHEN** SendOrderConfirmation starts the push of an Order's confirmation
+- **THEN** Deliver runs for the Order's user with the type order_confirmation
 
 #### Scenario: Recording fails for one request
 
-- **WHEN** Deliver fails because the Notification for one of three requested fans cannot be recorded
-- **THEN** that fan's request is processed again and the other two fans' requests are unaffected
+- **WHEN** Deliver fails because the Notification for one of three started fans cannot be recorded
+- **THEN** that fan's notification is processed again and the other two fans' notifications are unaffected
 
 #### Scenario: Discovered sale announced
 
-- **WHEN** a ticket_sale_announcement notification is requested for a fan
+- **WHEN** AnnounceDiscoveredSale starts a ticket_sale_announcement notification for a fan
 - **THEN** Deliver runs for that fan with the type ticket_sale_announcement

@@ -25,22 +25,6 @@ DiscoverForArtist SHALL pass each discovered sale to TicketSale.UpsertDiscovered
 - **WHEN** TicketSale.SearchPublishedSales fails
 - **THEN** DiscoverForArtist fails with that error
 
-### Requirement: Only a newly created sale is announced
-
-For each sale that UpsertDiscovered reports as Inserted, DiscoverForArtist SHALL request its announcement to the fans tracking the series (see TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale) and count it as new. A sale reported as Updated or Skipped SHALL NOT be announced. A request that cannot be queued SHALL NOT undo the stored sale and SHALL NOT be retried, so that sale is never announced. DiscoverForArtist SHALL return the number of sales reported as Inserted.
-
-#### Scenario: New sale
-- **WHEN** a discovered sale is created
-- **THEN** its announcement is requested and it counts towards the returned number
-
-#### Scenario: Known sale discovered again
-- **WHEN** a discovered sale updates a sale already known
-- **THEN** no announcement is requested and it is not counted
-
-#### Scenario: Announcement request fails
-- **WHEN** a sale is created and its announcement request cannot be queued
-- **THEN** the sale stays stored, it is counted as new, and it is not announced later
-
 ### Requirement: A successful search is recorded
 
 When SearchPublishedSales succeeds, DiscoverForArtist SHALL call TicketSaleSearch.Record for every series it searched, with the time of the search, whether or not any sale was found. When the search fails, nothing SHALL be recorded, so the next daily run searches those series again. When recording fails, DiscoverForArtist SHALL fail with that error after storing the discovered sales.
@@ -121,3 +105,19 @@ When the artist's concerts, its official site, a series' trackers, sales or tick
 #### Scenario: No official site
 - **WHEN** a series qualifies and the artist has no official site
 - **THEN** no search runs and DiscoverForArtist returns 0 without an error
+
+### Requirement: Only a newly created sale is counted
+
+DiscoverForArtist SHALL return the number of sales that TicketSale.UpsertDiscovered reports as Inserted. A sale reported as Updated or Skipped SHALL NOT be counted. TicketSale.UpsertDiscovered announces each created sale together with it, so DiscoverForArtist requests no announcement.
+
+#### Scenario: New sale
+- **WHEN** a discovered sale is created
+- **THEN** it counts towards the returned number
+
+#### Scenario: Known sale discovered again
+- **WHEN** a discovered sale updates a sale already known
+- **THEN** it is not counted
+
+#### Scenario: Sale cannot be stored with its announcement
+- **WHEN** TicketSale.UpsertDiscovered fails with Unavailable for one of three sales
+- **THEN** that sale is not stored and not counted, and the other two are stored

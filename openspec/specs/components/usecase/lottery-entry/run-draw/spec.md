@@ -7,11 +7,11 @@ LotteryEntryUseCase.RunDraw draws one closed Lottery TicketSale: for each Ticket
 
 ### Requirement: Capture failure
 
-When a winner's capture fails, RunDraw SHALL release that entry's card authorization, record it Lost with its draw position so it joins the losers, make its Order Void, and leave its tickets unallocated; no loser is promoted (no 繰上げ, promotion of a loser).
+When a winner's capture fails, RunDraw SHALL release that entry's card authorization, record it Lost with its draw position and the lost reason "card could not be charged" so it joins the losers, make its Order Void, and leave its tickets unallocated; no loser is promoted (no 繰上げ, promotion of a loser). Every other loser's lost reason is "not drawn".
 
 #### Scenario: Winner's card was closed
 - **WHEN** CardAuthorization.Capture fails for a winner
-- **THEN** its card authorization is released, it is Lost with its draw position, its Order is Void, and its tickets stay unallocated
+- **THEN** its card authorization is released, it is Lost with its draw position and the lost reason "card could not be charged", its Order is Void, and its tickets stay unallocated
 
 ### Requirement: Release failure does not stop the draw
 
@@ -28,14 +28,6 @@ RunDraw SHALL NOT make an Order Paid or create a Ticket; a Won entry's Pending O
 #### Scenario: After the draw
 - **WHEN** RunDraw records an entry Won
 - **THEN** its Order is still Pending and no Ticket exists for it yet
-
-### Requirement: Each entry's result is reported
-
-After RunDraw records an entry Won or Lost, it SHALL send a "lottery result" signal for product analytics for the entry's fan, carrying the TicketSale, the TicketStock, the result, for a loss whether it came from a failed capture, and the time of the draw as the time it happened. A failure to send it SHALL NOT change the draw.
-
-#### Scenario: Two entries, one place
-- **WHEN** RunDraw admits one of two entries for a TicketStock with 1 remaining ticket
-- **THEN** one Won signal and one Lost signal are sent, each for its entry's fan
 
 ### Requirement: Draw a sale's entered entries per ticket stock
 
