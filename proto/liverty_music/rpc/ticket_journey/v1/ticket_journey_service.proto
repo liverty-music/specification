@@ -29,6 +29,19 @@ service TicketJourneyService {
   // - NOT_FOUND: The signed-in caller has no account.
   rpc SetStatus(SetStatusRequest) returns (SetStatusResponse);
 
+  // InferTracking starts tracking an event whose concert the fan added to
+  // their calendar. When the fan has no journey for the event, it records the
+  // journey as Tracking, set by inference, and reports that tracking started.
+  // When the fan already has a journey for the event, it changes nothing and
+  // reports that tracking did not start. It never changes a hype level.
+  //
+  // Possible errors:
+  // - INVALID_ARGUMENT: The event_id is missing or invalid.
+  // - FAILED_PRECONDITION: The event does not exist.
+  // - UNAUTHENTICATED: The caller is not signed in.
+  // - NOT_FOUND: The signed-in caller has no account.
+  rpc InferTracking(InferTrackingRequest) returns (InferTrackingResponse);
+
   // Delete removes the fan's ticket journey for a specific event.
   // This is an idempotent operation — deleting a non-existent journey succeeds silently.
   //
@@ -63,6 +76,20 @@ message SetStatusRequest {
 
 // SetStatusResponse is returned upon a successful status set operation.
 message SetStatusResponse {}
+
+// InferTrackingRequest names the event whose concert the fan added to their
+// calendar.
+message InferTrackingRequest {
+  // Required. The event to start tracking.
+  liverty_music.entity.v1.EventId event_id = 1 [(buf.validate.field).required = true];
+}
+
+// InferTrackingResponse says whether tracking started.
+message InferTrackingResponse {
+  // True when the fan had no journey for the event and it is now Tracking;
+  // false when the fan already had a journey, which is left unchanged.
+  bool started = 1;
+}
 
 // DeleteRequest specifies the event whose ticket journey should be removed.
 message DeleteRequest {

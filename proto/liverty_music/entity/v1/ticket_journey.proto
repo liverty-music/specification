@@ -45,12 +45,30 @@ enum TicketJourneyStatus {
   TICKET_JOURNEY_STATUS_PAID = 5;
 }
 
+// TicketJourneyStatusSetBy says who set a ticket journey's status.
+enum TicketJourneyStatusSetBy {
+  // Default value; must not be used.
+  TICKET_JOURNEY_STATUS_SET_BY_UNSPECIFIED = 0;
+  // The fan chose the status.
+  TICKET_JOURNEY_STATUS_SET_BY_FAN = 1;
+  // The platform recorded a fact about the fan's tickets on Liverty Music:
+  // an entered lottery (Applied) or a paid Order (Paid).
+  TICKET_JOURNEY_STATUS_SET_BY_PLATFORM = 2;
+  // The app inferred the status from the fan's own action, such as adding the
+  // event's concert to their calendar (Tracking).
+  TICKET_JOURNEY_STATUS_SET_BY_INFERENCE = 3;
+}
+
 // TicketJourney represents a fan's personal ticket acquisition status for a specific event.
 // It captures where the fan stands in the process of obtaining a ticket — from initial
 // interest through entering a lottery to payment completion.
 //
-// Each fan may have at most one journey per event. The journey is entirely user-managed:
-// the system does not automate transitions or verify the fan's actual ticket status.
+// Each fan may have at most one journey per event. The fan may set any status at any
+// time. The platform records Paid for a paid Order on Liverty Music, over any status,
+// and Applied for a lottery entry, over a journey at Tracking, Applied or Lost but not
+// at Unpaid or Paid, whoever set it. The app starts Tracking when the fan adds the
+// event's concert to their calendar, only when the fan has no journey for the event.
+// The system does not verify the fan's ticket status outside Liverty Music.
 message TicketJourney {
   // user_id identifies the fan who owns this journey.
   UserId user_id = 1 [(buf.validate.field).required = true];
@@ -61,6 +79,12 @@ message TicketJourney {
 
   // status is the fan's current position in the ticket acquisition process.
   TicketJourneyStatus status = 3 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // status_set_by says who set the status.
+  TicketJourneyStatusSetBy status_set_by = 4 [
     (buf.validate.field).required = true,
     (buf.validate.field).enum.defined_only = true
   ];

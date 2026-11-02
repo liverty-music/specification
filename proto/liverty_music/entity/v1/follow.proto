@@ -26,6 +26,20 @@ enum HypeType {
   HYPE_TYPE_AWAY = 4;
 }
 
+// HypeSetBy says who set a Follow's hype level. The app never changes a level
+// the fan set, and never lowers a level.
+enum HypeSetBy {
+  // Default value; must not be used.
+  HYPE_SET_BY_UNSPECIFIED = 0;
+  // The level a new Follow starts at, which nobody has chosen.
+  HYPE_SET_BY_DEFAULT = 1;
+  // The fan chose the level.
+  HYPE_SET_BY_FAN = 2;
+  // The app raised the level to match a concert the fan's own actions showed
+  // interest in.
+  HYPE_SET_BY_INFERENCE = 3;
+}
+
 // FollowedArtist represents an artist together with the fan's personal follow
 // settings for that artist. It captures both who the artist is and how
 // enthusiastically the fan wants to be kept informed about their concerts.
@@ -49,6 +63,11 @@ message Follow {
   ArtistId artist_id = 2 [(buf.validate.field).required = true];
   // The fan's hype level for the artist.
   HypeType hype = 3 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).enum.defined_only = true
+  ];
+  // Who set the hype level.
+  HypeSetBy hype_set_by = 4 [
     (buf.validate.field).required = true,
     (buf.validate.field).enum.defined_only = true
   ];
