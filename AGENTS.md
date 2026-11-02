@@ -26,6 +26,9 @@
     Full human-readable version: README.md "Development workflow". Needs only
     Claude Code, the OpenSpec CLI (1.13.2) and gh; no machine-specific tooling.
     1. Plan here: /opsx:propose <change>, tasks split by repository, PR, merge.
+       However the plan PR was opened (plan-change, pull-request skill, by
+       hand), after it merges continue with the plan-change skill from step
+       5.3 (sync the store) through step 6 (worktrees and workset).
     2. Implement one Claude session per affected repository (only that repo's
        AGENTS.md is loaded): /opsx:apply <change>. Locally, isolate with
        `claude --worktree <change>` (<repo>/.claude/worktrees/<change>, branch
