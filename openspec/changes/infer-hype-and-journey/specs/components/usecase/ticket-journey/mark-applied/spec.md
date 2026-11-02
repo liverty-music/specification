@@ -6,7 +6,7 @@ TicketJourneyUseCase.MarkApplied sets a fan's ticket journey for an event to App
 
 ### Requirement: Applied after every new lottery entry
 
-MarkApplied SHALL run for each lottery entry announced as new, with its Order's user and the event of its TicketStock. It SHALL record Applied, set by the platform, for the user's journey for the event through TicketJourney.UpsertIfReplaceable, so a journey at Unpaid or Paid stays as it is. Running it again for the same entry SHALL leave the journey as the first run left it. When UpsertIfReplaceable fails, MarkApplied SHALL fail with that error and is run again.
+MarkApplied SHALL run for each lottery entry announced as new, with its Order's user and the event of its TicketStock. It SHALL read the entry with LotteryEntry.Get and record nothing when the entry is no longer Entered, because a drawn entry's announcement arrived late. Otherwise it SHALL record Applied, set by the platform, for the user's journey for the event through TicketJourney.UpsertIfReplaceable, so a journey at Unpaid or Paid stays as it is. Running it again for the same entry SHALL leave the journey as the first run left it. When UpsertIfReplaceable fails, MarkApplied SHALL fail with that error and is run again.
 
 #### Scenario: Fan enters a lottery
 
@@ -23,6 +23,11 @@ MarkApplied SHALL run for each lottery entry announced as new, with its Order's 
 - **WHEN** a new entry is announced after the fan's journey for the event became Paid set by the platform
 - **THEN** the journey stays Paid set by the platform
 
+#### Scenario: Announcement arrives after the draw
+
+- **WHEN** a new entry is announced after the draw made it Lost and the fan set their journey to Lost
+- **THEN** the journey stays Lost set by the fan
+
 #### Scenario: Recording fails
 
 - **WHEN** TicketJourney.UpsertIfReplaceable fails with Unavailable
@@ -30,7 +35,7 @@ MarkApplied SHALL run for each lottery entry announced as new, with its Order's 
 
 ### Requirement: MarkApplied raises the hype level to match the concert
 
-After it records Applied, MarkApplied SHALL raise the fan's hype level for the concert's artist to the lowest hype level that matches the concert, through Follow.RaiseHype, when all of these hold: the event is a concert (Concert.ListByIDs); exactly one of the concert's artists is followed by the fan (Follow.ListByUser); and that Follow is raisable to that level. The fan's home comes from User.Get. When the journey was not replaced, MarkApplied SHALL raise nothing. A failure in any of these steps SHALL NOT fail MarkApplied, and MarkApplied SHALL NOT be run again for it.
+After it records Applied, MarkApplied SHALL raise the fan's hype level for the concert's artist to the lowest hype level that matches the concert, through Follow.RaiseHype, when all of these hold: the event is a concert (Concert.ListByIDs); exactly one of the concert's artists is followed by the fan (Follow.ListByUser); and that Follow is raisable to that level. The fan's home comes from User.Get. When MarkApplied recorded nothing, it SHALL raise nothing. A failure in any of these steps SHALL NOT fail MarkApplied, and MarkApplied SHALL NOT be run again for it.
 
 #### Scenario: Entry for a distant concert
 

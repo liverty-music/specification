@@ -33,7 +33,6 @@
 - [ ] 6.5 `TicketJourney.Upsert` takes and stores the status set by, and announces when only it changes; verify the contract tests for every scenario of `entity/ticket-journey/upsert`
 - [ ] 6.6 Add `TicketJourney.UpsertIfReplaceable` (`INSERT ... ON CONFLICT DO NOTHING`, else `SELECT ... FOR UPDATE`, `ReplaceableBy`, `UPDATE`; announcement only when stored; returns whether it stored) as in design "`TicketJourney.UpsertIfReplaceable`"; verify the contract tests for every scenario of `entity/ticket-journey/upsert-if-replaceable`, with "Fan writes at the same moment" run as two concurrent transactions
 - [ ] 6.7 `LotteryEntry.Create` records `ORDER.lottery_entry_entered` with the Pending Order in its transaction, only for a new entry; add the subject to `AllSubjects`; verify the contract tests for every scenario of "A new entry is announced with it" in `entity/lottery-entry/create`, and that the stream-match test of the outbox change finds the `ORDER` stream for the subject
-- [ ] 6.8 `User.Create` fails with InvalidArgument without a Home; verify the contract tests for every scenario of "Create stores the user and its home together" in `entity/user/create`
 
 ## 7. backend: usecases
 
@@ -42,8 +41,7 @@
 - [ ] 7.3 `TicketJourneyUseCase.SetStatus` records set by fan and calls the helper for Applied, Unpaid and Paid; verify one unit test per scenario of `usecase/ticket-journey/set-status`
 - [ ] 7.4 `TicketJourneyUseCase.MarkPaid` records set by platform and calls the helper; verify one unit test per scenario of `usecase/ticket-journey/mark-paid`
 - [ ] 7.5 Add `TicketJourneyUseCase.InferTracking` over `TicketJourney.UpsertIfReplaceable`; verify one unit test per scenario of `usecase/ticket-journey/infer-tracking`
-- [ ] 7.6 Add `TicketJourneyUseCase.MarkApplied` (UpsertIfReplaceable with Applied set by platform; the helper only when stored) and its consumer of `ORDER.lottery_entry_entered` in `event-consumer`, reading the event of the Order's TicketStock as the MarkPaid consumer does; verify one unit test per scenario of `usecase/ticket-journey/mark-applied` and a consumer test that a failed UpsertIfReplaceable nacks the message
-- [ ] 7.7 `UserUseCase.Create` without a Home returns the identity's existing User or fails with FailedPrecondition; verify one unit test per scenario of "A new identity is registered" in `usecase/user/create`
+- [ ] 7.6 Add `TicketJourneyUseCase.MarkApplied` (`LotteryEntry.Get`, nothing unless the entry is Entered; UpsertIfReplaceable with Applied set by platform; the helper only when stored) and its consumer of `ORDER.lottery_entry_entered` in `event-consumer`, reading the event of the Order's TicketStock as the MarkPaid consumer does; verify one unit test per scenario of `usecase/ticket-journey/mark-applied` and a consumer test that a failed UpsertIfReplaceable nacks the message
 
 ## 8. backend: RPC, analytics and release
 
@@ -55,7 +53,7 @@
 ## 9. frontend: home at sign-up (stories/sign-up-or-sign-in, global/user-home-selector)
 
 - [ ] 9.1 The auth callback, on FailedPrecondition from `UserService.Create`, opens the `user-home-selector` with `required`, calls Create again with the chosen home and continues to the return URL; the Dashboard no longer opens the home sheet for a signed-in fan; verify component tests for every scenario of "Every sign-in resolves the account with Create" and "The home sheet at sign-up cannot be closed"
-- [ ] 9.2 The Playwright sign-up helpers choose a home when the sheet opens; add an E2E test for "Sign-up from the event page without a home"; verify both pass against a local build
+- [ ] 9.2 The Playwright sign-up helpers choose a home when the sheet opens; add an E2E test for "Sign-up from the event page without a home" (the backend returns FailedPrecondition only after group 14, so the test stubs that `UserService.Create` response); verify both pass against a local build
 
 ## 10. frontend: guest hype (stories/merge-guest-data-on-signup)
 
@@ -77,12 +75,14 @@
 - [ ] 13.1 Add the E2E tests for `stories/track-ticket-journey` ("Adding a concert to the calendar starts tracking it", "A journey for a distant concert raises the artist's hype level") and `stories/set-hype-for-an-artist` ("The app never changes a hype level the fan set"); verify they pass against a local build
 - [ ] 13.2 Run `make check`, open the frontend PR (OpenSpec Traceability filled), merge, release; confirm in prod (the owner's account) that a calendar add shows Tracking with the snack, and that `ticket_journeys.status_set_by` holds `inference` for it (read-only)
 
-## 14. backend: home NOT NULL (design "Every User has a home")
+## 14. backend: home required (design "Every User has a home"; after the frontend release of group 13)
 
 - [ ] 14.1 Count read-only in prod the `users` rows with no home; sign in to each such account and set a home in Settings, or delete it; verify the count is 0
-- [ ] 14.2 Make `users.home_id` NOT NULL and change `fk_users_home_id` to `ON DELETE RESTRICT` in `schema.sql`, update its `COMMENT ON COLUMN`, and generate the Atlas migration; verify `make lint-schema` passes and `atlas migrate apply --env local` fails on a copy with a row without a home and succeeds without one
-- [ ] 14.3 Open the backend PR, merge, release; confirm read-only in prod that the AtlasMigration applied and `users.home_id` is NOT NULL
+- [ ] 14.2 `User.Create` fails with InvalidArgument without a Home; verify the contract tests for every scenario of "Create stores the user and its home together" in `entity/user/create`
+- [ ] 14.3 `UserUseCase.Create` without a Home returns the identity's existing User or fails with FailedPrecondition; verify one unit test per scenario of "A new identity is registered" in `usecase/user/create`
+- [ ] 14.4 Make `users.home_id` NOT NULL and change `fk_users_home_id` to `ON DELETE RESTRICT` in `schema.sql`, update its `COMMENT ON COLUMN`, and generate the Atlas migration; verify `make lint-schema` passes and `atlas migrate apply --env local` fails on a copy with a row without a home and succeeds without one
+- [ ] 14.5 Run `make check`, open the second backend PR (OpenSpec Traceability filled), merge, release; confirm read-only in prod that the AtlasMigration applied and `users.home_id` is NOT NULL, and that the owner's sign-up of a new test identity from an event page asks for the home and creates the account with it
 
 ## 15. Follow-ups
 
-- [ ] 15.1 File issues for: a lost lottery entry recording the journey Lost (after `make-lottery-draw-durable`; Applied from a late entry announcement must not replace it); showing the effect of hype outside the help sheet; asking about the journey when the fan returns from the official site; the journey of a fan who resells their tickets; verify each issue exists and is linked from this change's proposal
+- [ ] 15.1 File issues for: a lost lottery entry recording the journey Lost (after `make-lottery-draw-durable`); showing the effect of hype outside the help sheet; asking about the journey when the fan returns from the official site; the journey of a fan who resells their tickets; verify each issue exists and is linked from this change's proposal

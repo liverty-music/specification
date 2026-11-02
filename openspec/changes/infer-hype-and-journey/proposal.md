@@ -38,7 +38,7 @@ Hype and the ticket journey are the fan's only explicit signals of interest in a
 - `components/usecase/follow/set-hype`: the fan's level is recorded as set by the fan.
 - `components/usecase/ticket-journey/set-status`: records the status as set by the fan and raises the hype level.
 - `components/usecase/ticket-journey/mark-paid`: records Paid as set by the platform and raises the hype level.
-  SetStatus, MarkPaid and MarkApplied (new) raise the level through Follow.RaiseHype after reading User.Get, Concert.ListByIDs and Follow.ListByUser; the three reads are unchanged apart from ListByUser above. InferTracking and MarkApplied rely on TicketJourney.UpsertIfReplaceable (new). `LotteryEntryUseCase.Confirm` is not changed: the announcement is LotteryEntry.Create's.
+  SetStatus, MarkPaid and MarkApplied (new) raise the level through Follow.RaiseHype after reading User.Get, Concert.ListByIDs and Follow.ListByUser; the three reads are unchanged apart from ListByUser above. InferTracking and MarkApplied rely on TicketJourney.UpsertIfReplaceable (new); MarkApplied also reads LotteryEntry.Get, which is unchanged. `LotteryEntryUseCase.Confirm` is not changed: the announcement is LotteryEntry.Create's.
 - `components/adapter/fan/api/rpc/ticket-journey`: InferTracking acts for the signed-in fan and validates its request.
 - `components/infrastructure/fan/web/global/event-detail-sheet`: the calendar add starts tracking with an undo snack on return; a hype raise after a journey change shows an undo snack.
 - `components/infrastructure/fan/web/route/dashboard`: highlight wording uses "matches".
