@@ -42,7 +42,8 @@ Hype and the ticket journey are the fan's only explicit signals of interest in a
 - `components/adapter/fan/api/rpc/ticket-journey`: InferTracking acts for the signed-in fan and validates its request.
 - `components/infrastructure/fan/web/global/event-detail-sheet`: the calendar add starts tracking with an undo snack on return; a hype raise after a journey change shows an undo snack.
 - `components/infrastructure/fan/web/route/dashboard`: highlight wording uses "matches".
-- `components/infrastructure/fan/web/global/live-highway`: highlight wording uses "matches".
+- `components/infrastructure/fan/web/global/live-highway`: "Hype Visual Indicators on Dashboard Cards" is replaced by "Dashboard cards show whether the hype level matches the concert", which uses "matches" and describes the matched and unmatched cards as the app renders them today (no logo, no color drift, a lighter gradient with grain for unmatched cards).
+- `components/infrastructure/fan/web/global/post-signup-dialog`: "Celebration Precedes Post-Signup Dialog" is replaced by "Post-signup dialog opens after the celebration", without the scenario where a new account still has to choose a home on the Dashboard; every account now has one when it is created.
 - `stories/set-hype-for-an-artist`: wording uses "matches"; a level the fan set is never changed by the app.
 - `stories/track-ticket-journey` (Purpose): the usecase diagram adds TicketJourneyUseCase.InferTracking. Requirements: calendar inference, hype raise after a journey.
 - `stories/win-tickets-in-a-lottery` (Purpose): the usecase diagram adds TicketJourneyUseCase.MarkApplied. Requirements: an entry marks the journey Applied.
