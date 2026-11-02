@@ -81,7 +81,8 @@ message User {
   // live events without considering it a trip (遠征).
   // Used as the baseline for proximity classification: events in the home area
   // are classified as HOME, nearby areas as NEARBY, and everything else as AWAY.
-  // Absent until the user explicitly selects their area during onboarding or in settings.
+  // Chosen when the user is created, changed in settings, never removed.
+  // Absent only for users created before a home was required.
   Home home = 6;
 
   // The user's preferred display language as an ISO 639-1 two-letter code
