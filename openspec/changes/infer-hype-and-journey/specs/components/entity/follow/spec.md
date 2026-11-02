@@ -13,7 +13,7 @@ A new Follow SHALL start with hype level Nearby, set by default.
 
 ### Requirement: The lowest hype level that matches a concert
 
-Given a concert and the fan's home, the lowest hype level that matches the concert SHALL be the lowest of Watch, Home, Nearby and Away whose matched concerts include it: Home for a concert whose proximity is Home, Nearby for one whose proximity is Nearby, and Away for any other concert.
+Given a concert and the fan's home, the lowest hype level that matches the concert SHALL be the lowest of Watch, Home, Nearby and Away whose matched concerts include it: Home for a concert in the home area, Nearby for one whose proximity is Nearby, and Away for one known to be farther than the nearby range. When the concert is outside the home area and its distance from the home cannot be measured, because the venue's location or the home's center is unknown, there SHALL be no lowest matching level: nothing shows how far the fan travels for it.
 
 #### Scenario: Concert in the home area
 
@@ -27,8 +27,13 @@ Given a concert and the fan's home, the lowest hype level that matches the conce
 
 #### Scenario: Distant concert
 
-- **WHEN** the concert's proximity to the fan's home is Away
+- **WHEN** the concert's venue is more than 200 km from the center of the fan's home area
 - **THEN** the lowest matching hype level is Away
+
+#### Scenario: Venue location unknown
+
+- **WHEN** the fan's home area is JP-13 and the concert's venue has neither a known area nor a known location
+- **THEN** there is no lowest matching hype level
 
 ### Requirement: The app may raise only a hype level the fan did not set
 
