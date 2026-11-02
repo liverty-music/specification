@@ -26,7 +26,7 @@ When a signed-in fan with no journey for an event adds its concert to their cale
 
 ### Requirement: A journey for a distant concert raises the artist's hype level
 
-When a signed-in fan saves Applied, Unpaid or Paid for a concert in the event detail sheet, and the fan follows exactly one of its artists at a hype level the fan did not set that does not match the concert, TicketJourneyUseCase.SetStatus SHALL raise that hype level to the lowest level that matches the concert. My Artists and the Dashboard SHALL show the new level, and the sheet SHALL offer to undo it.
+When a signed-in fan saves Applied, Unpaid or Paid for a concert in the event detail sheet, and the fan follows exactly one of its artists at a hype level the fan did not set that does not match the concert, TicketJourneyUseCase.SetStatus SHALL raise that hype level to the lowest level that matches the concert. A concert whose distance from the fan's home cannot be measured has no lowest matching level (components/entity/follow), so it raises nothing. My Artists and the Dashboard SHALL show the new level, and the sheet SHALL offer to undo it.
 
 #### Scenario: Applied for a distant concert
 
