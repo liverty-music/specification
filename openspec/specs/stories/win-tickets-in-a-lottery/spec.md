@@ -16,6 +16,7 @@ systemBoundary "Liverty Music"
   TicketSaleUseCaseCreate("TicketSaleUseCase.Create")
   LotteryEntryUseCaseAuthorizeCard("LotteryEntryUseCase.AuthorizeCard")
   LotteryEntryUseCaseConfirm("LotteryEntryUseCase.Confirm")
+  TicketJourneyUseCaseMarkApplied("TicketJourneyUseCase.MarkApplied")
   LotteryEntryUseCaseListByTicketSale("LotteryEntryUseCase.ListByTicketSale")
   LotteryEntryUseCaseDrawDueSales("LotteryEntryUseCase.DrawDueSales")
   LotteryEntryUseCaseDraw("LotteryEntryUseCase.Draw")
@@ -31,6 +32,7 @@ Goal ..> : include TicketStockUseCaseCreate
 Goal ..> : include TicketSaleUseCaseCreate
 Goal ..> : include LotteryEntryUseCaseAuthorizeCard
 Goal ..> : include LotteryEntryUseCaseConfirm
+Goal ..> : include TicketJourneyUseCaseMarkApplied
 Goal ..> : include LotteryEntryUseCaseListByTicketSale
 Goal ..> : include LotteryEntryUseCaseDrawDueSales
 Goal ..> : include LotteryEntryUseCaseDraw

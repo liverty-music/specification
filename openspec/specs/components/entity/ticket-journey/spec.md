@@ -2,13 +2,14 @@
 
 ## Purpose
 
-A Ticket Journey is a fan's own record of where they stand in getting a ticket for one event, from watching for the sale through a lottery to a secured ticket. A fan has at most one journey per event; the fan sets it by hand, the system does not check it against real ticket sales, and a ticket the platform itself issues marks it Paid.
+A Ticket Journey is a fan's own record of where they stand in getting a ticket for one event, from watching for the sale through a lottery to a secured ticket. A fan has at most one journey per event; the fan sets it by hand and the system does not check it against real ticket sales. The platform records what it knows itself: a lottery entry on the platform marks it Applied and a ticket the platform issues marks it Paid. The app starts Tracking when the fan adds the event to their calendar.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | user id | the fan who owns the journey | required; always the fan the journey was recorded for, never chosen by another user |
 | event id | the event the journey is about (an event, not a concert, so that non-music events can be tracked later) | required; an event that exists; together with user id it identifies the journey |
 | status | the fan's current stage | required; one of Tracking, Applied, Lost, Unpaid, Paid; a journey never exists without one of these five |
+| status set by | who set the status: the fan (fan), the platform from a record of its own such as an entered lottery or a paid Order (platform), or the app from the fan's own actions (inference) | required; one of fan, platform, inference |
 
 States:
 
