@@ -2,7 +2,7 @@
 
 ## Purpose
 
-CreateFromDiscovered takes one Artist's batch of newly discovered series, triggered when a discovery is announced. For each event it does one of four things: publishes it under its Series and announces it to followers; stages it for admin review when its venue is unresolved or its slot collides with an Event already in the catalog; skips it when its slot is suppressed; or fills an announced start time onto the Artist's existing Event.
+CreateFromDiscovered takes one Artist's batch of newly discovered series, started by ConcertUseCase.SearchNewConcerts once per search. For each event it does one of four things: publishes it under its Series through Concert.Create, which tells the Artist's followers; stages it for admin review when its venue is unresolved or its slot collides with an Event already in the catalog; skips it when its slot is suppressed; or fills an announced start time onto the Artist's existing Event.
 
 ## Requirements
 

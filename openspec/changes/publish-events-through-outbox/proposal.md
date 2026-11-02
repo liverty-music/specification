@@ -24,6 +24,7 @@ The backend commits a fact and then publishes its event in a second call: a fail
 
 - `components/infrastructure/backend/process/event-delivery`: how every backend process records, delivers and receives announcements (recorded with the fact, one id, at least once, an undelivered announcement reported, no change no announcement, personal data and push credentials, requests as workflows).
 - `components/entity/user/record-login`: records that the User signed in and announces it.
+- `components/entity/push-subscription/delete-gone`: removes a browser the push service reported gone without announcing it, so only the fan's own removal counts as an unsubscription.
 - `components/usecase/user/record-login`: records a sign-in reported by the identity provider.
 - `components/adapter/fan/api/webhook/login-events`: the identity provider's sign-in notices become UserUseCase.RecordLogin.
 

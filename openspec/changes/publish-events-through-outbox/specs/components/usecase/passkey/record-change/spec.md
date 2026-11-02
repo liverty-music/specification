@@ -2,12 +2,12 @@
 
 ### Requirement: Each passkey change is recorded
 
-RecordChange SHALL run when the passkey-events webhook starts it for an accepted passkey notice, carrying the identity's provider user ID, the provider passkey id, the kind of change (added or removed), the AAGUID for an added passkey and the time of the change. The business key of the run SHALL be the provider passkey id and the kind of change, so a notice the identity provider repeats starts nothing new. For an added passkey it SHALL read the User with User.GetByProviderUserID and store the Passkey with Passkey.Create, using the time of the change as its create time and the all-zero AAGUID when none was given. For a removed passkey it SHALL first wait until the run for the same provider passkey id's added change, when one exists, has ended, and then remove the record with Passkey.Delete, so a passkey removed while its addition still waits for the User is not stored afterwards. Passkey.Create and Passkey.Delete announce the change they make; RecordChange itself SHALL announce nothing. When Passkey.Create fails with NotFound because the User was deleted after it was read, RecordChange SHALL finish without recording. When storing or removing fails with Unavailable, the step SHALL be tried again.
+RecordChange SHALL run when the passkey-events webhook starts it for an accepted passkey notice, carrying the identity's provider user ID, the provider passkey id, the kind of change (added or removed), the name and the AAGUID for an added passkey and the time of the change. The business key of the run SHALL be the provider passkey id and the kind of change, so a notice the identity provider repeats starts nothing new. For an added passkey it SHALL read the User with User.GetByProviderUserID and store the Passkey with Passkey.Create with that name, using the time of the change as its create time and the all-zero AAGUID when none was given. For a removed passkey it SHALL first wait until the run for the same provider passkey id's added change, when one exists, has ended, and then remove the record with Passkey.Delete, so a passkey removed while its addition still waits for the User is not stored afterwards. Passkey.Create and Passkey.Delete announce the change they make; RecordChange itself SHALL announce nothing. When Passkey.Create fails with NotFound because the User was deleted after it was read, RecordChange SHALL finish without recording. When storing or removing fails with Unavailable, the step SHALL be tried again.
 
 #### Scenario: Passkey added
 
-- **WHEN** a passkey is added for a fan's identity with an AAGUID of `Google Password Manager`
-- **THEN** a Passkey with that provider passkey id, AAGUID and the change's time is stored for the fan
+- **WHEN** a passkey named `Google Pixel 9, Android, Chrome` is added for a fan's identity with an AAGUID of `Google Password Manager`
+- **THEN** a Passkey with that provider passkey id, name, AAGUID and the change's time is stored for the fan
 
 #### Scenario: Passkey removed
 

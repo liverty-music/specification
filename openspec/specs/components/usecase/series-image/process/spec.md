@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Process turns an attached image into the safe, servable cover of its Series, triggered when an upload is announced: it checks the image, produces the thumbnail and large variants, switches the Series' cover to them, and reclaims the replaced cover and the original upload.
+Process turns an attached image into the safe, servable cover of its Series, run for each processing request SeriesImage.Create records: it checks the image, produces the thumbnail and large variants, switches the Series' cover to them, and reclaims the replaced cover and the original upload.
 
 ## Requirements
 

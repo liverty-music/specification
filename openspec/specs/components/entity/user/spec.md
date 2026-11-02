@@ -16,6 +16,7 @@ User
 | home | the user's home area | optional; absent until the user selects an area |
 | full name | the 本人確認 (identity check) name shown on the user's tickets and prefilled at lottery entry and checkout | optional; absent until the user first gives it; 1 to 200 characters |
 | phone number | the 本人確認 contact phone shown on the user's tickets | optional; absent until the user first gives it; E.164: `+` then 2-15 digits, first digit not 0 |
+| last login time | when the user last signed in, as the identity provider reported it | optional; absent until the first reported sign-in; never moves back |
 
 Home
 

@@ -1,7 +1,7 @@
 # components/usecase/user/send-passkey-recovery-link Specification
 
 ## Purpose
-UserUseCase.SendPasskeyRecoveryLink sends the passkey registration link for each announced passkey recovery request, so the person who asked can register a new passkey on the device in hand.
+UserUseCase.SendPasskeyRecoveryLink sends the passkey registration link for each recovery request UserUseCase.RequestPasskeyRecovery starts, so the person who asked can register a new passkey on the device in hand.
 
 ## Requirements
 

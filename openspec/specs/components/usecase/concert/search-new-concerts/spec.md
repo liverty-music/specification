@@ -2,7 +2,7 @@
 
 ## Purpose
 
-SearchNewConcerts searches external sources for one Artist's newly announced concerts, keeps only those not already in the catalog or pending review, announces them as a discovery for that Artist, and returns them as previews. It serves any caller, a daily schedule runs it for every followed Artist, and SearchNewConcertsOnFirstFollow runs it for an Artist followed for the first time.
+SearchNewConcerts searches external sources for one Artist's newly announced concerts, keeps only those not already in the catalog or pending review, hands them on to ConcertCreationUseCase.CreateFromDiscovered once per search, and returns them as previews. It serves any caller, a daily schedule runs it for every followed Artist, and SearchNewConcertsOnFirstFollow runs it for an Artist followed for the first time.
 
 ## Requirements
 

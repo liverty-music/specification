@@ -1,7 +1,7 @@
 # components/usecase/ticket-sale/discover-for-artist Specification
 
 ## Purpose
-TicketSaleDiscoveryUseCase.DiscoverForArtist finds the ticket sales that have not opened yet for the series of one artist that fans track and that need a search, and stores them as discovered TicketSales. It updates sales already known, creates new ones and records each searched series. Each newly created sale is handed on to be announced to the fans tracking its series, and the method returns the number of new sales.
+TicketSaleDiscoveryUseCase.DiscoverForArtist finds the ticket sales that have not opened yet for the series of one artist that fans track and that need a search, and stores them as discovered TicketSales. It updates sales already known, creates new ones and records each searched series. TicketSale.UpsertDiscovered announces each newly created sale to the fans tracking its series, and the method returns the number of new sales.
 
 ## Requirements
 
