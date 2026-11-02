@@ -30,13 +30,6 @@ ArtistUseCase.ListSimilar SHALL take an artist id and a limit from 0 to 50, get 
 - **WHEN** the catalog lists no similar artist
 - **THEN** ListSimilar returns an empty list
 
-### Requirement: ListSimilar announces newly registered artists
-For each artist that Artist.Create returns, ArtistUseCase.ListSimilar SHALL announce that the artist was created, with its id, name and MBID. A failed announcement SHALL NOT fail the call.
-
-#### Scenario: New artist registered
-- **WHEN** ListSimilar registers an artist
-- **THEN** an artist-created announcement for it is made
-
 ### Requirement: ListSimilar reuses a recent result
 ArtistUseCase.ListSimilar SHALL return the earlier result, cut to the requested limit, without looking up the seed or consulting the catalog, when the same artist id was answered within the last 6 hours, whatever limit either call used.
 

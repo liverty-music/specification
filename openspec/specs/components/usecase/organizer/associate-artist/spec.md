@@ -34,12 +34,3 @@ AssociateArtist SHALL load the Organizer through Organizer.Get, failing with Not
 
 - **WHEN** no Organizer has the id
 - **THEN** AssociateArtist fails with NotFound
-
-### Requirement: A new association is announced
-
-When the Artist is linked, AssociateArtist SHALL announce that the Organizer now represents the Artist. A failure to announce SHALL NOT fail AssociateArtist.
-
-#### Scenario: Announcement fails
-
-- **WHEN** the link is stored but the announcement cannot be made
-- **THEN** AssociateArtist still succeeds and the link is kept

@@ -22,7 +22,7 @@ ArtistUseCase.Create SHALL take an artist with a name and an MBID, look the MBID
 - **THEN** the already registered artist is returned and no second artist is registered
 
 ### Requirement: Create reports registration failures
-ArtistUseCase.Create SHALL return the error of Artist.Create unchanged, and SHALL fail with Internal when Artist.Create returns no artist. Create does not announce the new artist, so its images and canonical-name check wait for the daily image run.
+ArtistUseCase.Create SHALL return the error of Artist.Create unchanged, and SHALL fail with Internal when Artist.Create returns no artist. Create itself announces nothing: Artist.Create announces an artist it registers, together with storing it (components/entity/artist/create), so its images and canonical name are resolved from that announcement.
 
 #### Scenario: Registration rejected
 - **WHEN** Artist.Create fails with InvalidArgument
@@ -34,4 +34,4 @@ ArtistUseCase.Create SHALL return the error of Artist.Create unchanged, and SHAL
 
 #### Scenario: No announcement
 - **WHEN** Create registers a new artist
-- **THEN** no artist-created announcement is made
+- **THEN** the artist is announced once, by Artist.Create, and Create makes no announcement of its own

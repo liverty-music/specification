@@ -40,7 +40,7 @@ When ArtistUseCase.Search, ArtistUseCase.ListTop or ArtistUseCase.ListSimilar re
 - **THEN** the registered artist is returned and no announcement is made for it
 
 ### Requirement: Artist images are kept current
-An artist's images SHALL be checked again by the daily image run once its last check is more than 7 days old, while at least one fan follows the artist. An artist that nobody follows SHALL keep the images of its last check. An artist registered through ArtistUseCase.Create, which makes no announcement, SHALL get its first image check from the daily image run.
+An artist's images SHALL be checked again by the daily image run once its last check is more than 7 days old, while at least one fan follows the artist. An artist that nobody follows SHALL keep the images of its last check. An artist registered through ArtistUseCase.Create is announced by Artist.Create like any other registered artist, so its first image check follows that announcement.
 
 #### Scenario: Stale images
 - **WHEN** a followed artist's images were last checked 8 days ago
@@ -56,4 +56,4 @@ An artist's images SHALL be checked again by the daily image run once its last c
 
 #### Scenario: Artist registered directly
 - **WHEN** an artist is registered through ArtistUseCase.Create
-- **THEN** its images are first checked by the next daily image run
+- **THEN** its images are first checked once its announcement is handled

@@ -38,7 +38,7 @@ When a signed-in fan follows an artist, FollowUseCase.Follow SHALL answer as soo
 
 ### Requirement: A first follow of a never-searched artist starts a concert search
 
-When a fan newly follows an artist, FollowUseCase.Follow SHALL announce the follow, and on that announcement ConcertUseCase.SearchNewConcertsOnFirstFollow SHALL start ConcertUseCase.SearchNewConcerts for the artist when it has never been searched; the concerts the search finds SHALL reach the catalog as the story stories/discover-new-concerts describes. When the artist has been searched before, following it SHALL start no search. When the follow cannot be announced, no search SHALL start on that follow, and the artist's concerts reach the catalog through the daily concert search at 18:00 JST. The fan's app SHALL never start a concert search itself after a follow.
+When a fan newly follows an artist, the follow SHALL be announced together with storing it, and on that announcement ConcertUseCase.SearchNewConcertsOnFirstFollow SHALL start ConcertUseCase.SearchNewConcerts for the artist when it has never been searched; the concerts the search finds SHALL reach the catalog as the story stories/discover-new-concerts describes. When the artist has been searched before, following it SHALL start no search. When the follow cannot be announced, it is not stored either and the fan's follow fails, so the fan can follow again. The fan's app SHALL never start a concert search itself after a follow.
 
 #### Scenario: Never-searched artist with announced concerts
 
@@ -58,7 +58,7 @@ When a fan newly follows an artist, FollowUseCase.Follow SHALL announce the foll
 #### Scenario: Follow not announced
 
 - **WHEN** a fan follows a never-searched artist and the follow cannot be announced
-- **THEN** the fan still follows the artist, no concert search starts on that follow, and the artist is searched in the next daily concert search
+- **THEN** the follow is not stored, the fan is told it failed, and a follow made again starts the search
 
 ### Requirement: Discovery tells the fan the artist has upcoming concerts
 

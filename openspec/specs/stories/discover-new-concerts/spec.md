@@ -20,7 +20,7 @@ Goal ..> : include ConcertCreationUseCaseCreateFromDiscovered
 
 ### Requirement: A found concert is published or held for review
 
-When ConcertUseCase.SearchNewConcerts announces new concerts for an Artist, ConcertCreationUseCase.CreateFromDiscovered SHALL process that discovery, so that each new concert at a resolvable venue with a free slot becomes a Concert in the catalog, and each concert at an unresolvable venue or colliding slot becomes a ConcertCandidate.
+When ConcertUseCase.SearchNewConcerts finds new concerts for an Artist, it SHALL start ConcertCreationUseCase.CreateFromDiscovered for that discovery, so that each new concert at a resolvable venue with a free slot becomes a Concert in the catalog, and each concert at an unresolvable venue or colliding slot becomes a ConcertCandidate.
 
 #### Scenario: New tour announced
 - **WHEN** a followed Artist announces a three-stop tour at known venues and the daily search runs

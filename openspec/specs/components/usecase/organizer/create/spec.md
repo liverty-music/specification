@@ -8,35 +8,26 @@ OrganizerUseCase.Create registers a new Organizer from a name, a short name and 
 
 ### Requirement: A failed provisioning leaves the Organizer provisioning
 
-When creating, resolving, recording or completing the Organization fails with Internal, Create SHALL fail with that error and leave the stored Organizer in status provisioning, keeping any recorded Organization; ReconcileProvisioning completes it later.
+When creating, resolving, recording or completing the Organization fails with Internal, or moving the Organizer to active fails, Create SHALL fail with that error and leave the stored Organizer in status provisioning, keeping any recorded Organization; ReconcileProvisioning completes it later.
 
 #### Scenario: Provisioning fails
 
 - **WHEN** Organization.Provision fails with Internal
 - **THEN** Create fails and the Organizer stays provisioning, linked to its Organization
 
+#### Scenario: Activation fails
+
+- **WHEN** Organizer.CompareAndSetStatus fails with Unavailable
+- **THEN** Create fails with Unavailable and the Organizer stays provisioning, linked to its completed Organization
+
 ### Requirement: Deactivation during provisioning wins
 
-When the Organizer was deactivated while its Organization was being provisioned, Create SHALL leave it deactivated, SHALL NOT announce it, and SHALL still succeed.
+When the Organizer was deactivated while its Organization was being provisioned, Create SHALL leave it deactivated and SHALL still succeed.
 
 #### Scenario: Deactivated meanwhile
 
 - **WHEN** the Organizer is deactivated before Create moves it to active
-- **THEN** Create succeeds, the Organizer stays deactivated and no creation is announced
-
-### Requirement: Activation is announced
-
-When Create moves the Organizer to active, it SHALL announce that the Organizer was created. A failure to announce SHALL NOT fail Create.
-
-#### Scenario: Organizer becomes active
-
-- **WHEN** the Organizer is moved to active
-- **THEN** its creation is announced
-
-#### Scenario: Announcement fails
-
-- **WHEN** the announcement cannot be made
-- **THEN** Create still succeeds and the Organizer stays active
+- **THEN** Create succeeds and the Organizer stays deactivated
 
 ### Requirement: Create stores, provisions and activates the Organizer
 

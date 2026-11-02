@@ -7,11 +7,11 @@ UserUseCase.ReissueEmailVerification sends a fresh verification code for each re
 
 ### Requirement: Each resend request sends one fresh code to an unverified address
 
-ReissueEmailVerification SHALL run for each announced email verification resend request, with its User. It SHALL read the User with User.Get and send a fresh code with User.ResendVerification. When User.Get fails with NotFound, or User.ResendVerification fails with FailedPrecondition because the address is already verified, it SHALL finish without sending. When email verification is not configured, it SHALL log that and finish without sending. Any other failure SHALL fail ReissueEmailVerification so it is run again; a run again after a code was sent sends a newer code.
+ReissueEmailVerification SHALL run when UserUseCase.ResendEmailVerification starts it, with the caller's User. It SHALL read the User with User.Get and send a fresh code with User.ResendVerification. When User.Get fails with NotFound, or User.ResendVerification fails with FailedPrecondition because the address is already verified, it SHALL finish without sending. When email verification is not configured, it SHALL log that and finish without sending. A step that fails with Unavailable SHALL be tried again; a step tried again after a code was sent sends a newer code. Any other failure SHALL end ReissueEmailVerification with that failure, and it is reported for an admin.
 
 #### Scenario: Unverified address
 
-- **WHEN** a resend request is announced for a User whose address is not verified
+- **WHEN** ResendEmailVerification starts ReissueEmailVerification for a User whose address is not verified
 - **THEN** a fresh verification email is sent to that address
 
 #### Scenario: Already verified
@@ -26,10 +26,15 @@ ReissueEmailVerification SHALL run for each announced email verification resend 
 
 #### Scenario: Verification not configured
 
-- **WHEN** email verification is not configured in the process that handles the request
+- **WHEN** email verification is not configured in the process that runs ReissueEmailVerification
 - **THEN** nothing is sent, the outcome is logged and the request is finished
 
 #### Scenario: Identity provider down
 
+- **WHEN** User.ResendVerification fails with Unavailable
+- **THEN** the step is tried again and the code is sent once the identity provider answers
+
+#### Scenario: Identity provider refuses
+
 - **WHEN** User.ResendVerification fails with Internal
-- **THEN** ReissueEmailVerification fails and runs again
+- **THEN** ReissueEmailVerification ends with that failure and is reported for an admin

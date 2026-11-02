@@ -7,7 +7,7 @@ Lists the Sold ResaleListings whose user has not been refunded yet, so the refun
 
 ### Requirement: Sold listings left to finish
 
-ListSoldUnrefunded SHALL return every Sold ResaleListing that has no refund time or no sold email send time, oldest sold time first, and an empty list when there are none.
+ListSoldUnrefunded SHALL return every Sold ResaleListing that has no refund time, oldest sold time first, and an empty list when there are none.
 
 #### Scenario: Just sold
 - **WHEN** a listing became Sold a moment ago
@@ -15,7 +15,7 @@ ListSoldUnrefunded SHALL return every Sold ResaleListing that has no refund time
 
 #### Scenario: Refunded, email not sent
 - **WHEN** a Sold listing has a refund time and no sold email send time
-- **THEN** it is returned
+- **THEN** it is not returned
 
 #### Scenario: Finished
 - **WHEN** a Sold listing has a refund time and a sold email send time

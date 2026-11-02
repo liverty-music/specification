@@ -21,15 +21,12 @@ ReconcileProvisioning SHALL find the Organizers in status provisioning through O
 
 1. only when none is recorded, create the Organization through Organization.Create; when that fails with AlreadyExists, resolve it through Organization.GetByName, where NotFound fails with Internal and leaves the Organizer provisioning for the next run; then record it through Organizer.SetProviderOrganizerID;
 2. complete it through Organization.Provision;
-3. move the Organizer from provisioning to active through Organizer.CompareAndSetStatus;
-4. announce that the Organizer was created.
-
-A failure to announce SHALL NOT count as a failure.
+3. move the Organizer from provisioning to active through Organizer.CompareAndSetStatus.
 
 #### Scenario: Organizer left provisioning
 
 - **WHEN** an Organizer is provisioning after a failed Create
-- **THEN** it becomes active, linked to one Organization with an owner identity, and its creation is announced
+- **THEN** it becomes active, linked to one Organization with an owner identity
 
 #### Scenario: Organization already recorded
 
@@ -52,7 +49,7 @@ When completing one Organizer fails, ReconcileProvisioning SHALL leave it provis
 
 ### Requirement: A deactivated Organizer is not reactivated
 
-When an Organizer was deactivated while its provisioning was being completed, ReconcileProvisioning SHALL leave it deactivated and not announce it.
+When an Organizer was deactivated while its provisioning was being completed, ReconcileProvisioning SHALL leave it deactivated.
 
 #### Scenario: Deactivated meanwhile
 

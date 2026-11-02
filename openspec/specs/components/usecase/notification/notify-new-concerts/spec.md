@@ -8,7 +8,7 @@ NotificationUseCase.NotifyNewConcerts tells each follower of an artist about con
 
 ### Requirement: Triggered by concerts added for an artist
 
-NotifyNewConcerts SHALL run when concerts are added for an artist, once per artist, with the artist and the ids of the concerts just added for it; the same input can also be given to it directly. It SHALL read the artist (Artist.Get) and use its current name, and read the concerts (Concert.ListByIDs). When the artist cannot be read, NotifyNewConcerts SHALL fail with that error and send nothing. Only the given concerts SHALL be considered; the artist's other upcoming concerts never count.
+NotifyNewConcerts SHALL run for each announcement of new concerts for an artist (Concert.Create, Series.PublishEvents), with the artist and the concerts the announcement carries; an admin can also give it the same input directly. It SHALL read the artist (Artist.Get) and use its current name, and read the concerts (Concert.ListByIDs). When the artist cannot be read, NotifyNewConcerts SHALL fail with that error and send nothing. Only the given concerts SHALL be considered; the artist's other upcoming concerts never count.
 
 #### Scenario: Two concerts added for an artist with ten upcoming
 
@@ -119,19 +119,24 @@ For each matched follower, NotifyNewConcerts SHALL build one message: the title 
 
 ### Requirement: One new_concerts notification requested per matched follower
 
-For each matched follower, NotifyNewConcerts SHALL request one notification of type new_concerts carrying that follower's message; NotificationUseCase.Deliver records and delivers each requested notification after NotifyNewConcerts has made the request, for each follower on its own. A follower whose Notification cannot be recorded, or whose delivery fails, SHALL NOT affect the other followers or fail NotifyNewConcerts. The story stories/get-notified-of-new-concerts covers the whole flow from the added concerts to the fan's browsers. When a follower's request cannot be made, NotifyNewConcerts SHALL stop and fail so the trigger is retried; a repeated request for the same follower, artist and concerts is a new request, so the follower can be notified again; the later one replaces the earlier one on the follower's devices by the per-artist tag. Requesting once per follower and concerts waits for a follow-up change (design, "One kind of CloudEvent id"). When the followers cannot be read, NotifyNewConcerts SHALL fail and request nothing. When the call is cancelled, no further follower's notification SHALL be requested.
+For each matched follower, NotifyNewConcerts SHALL start NotificationUseCase.Deliver with one notification of type new_concerts carrying that follower's message, named after the follower and what NotifyNewConcerts runs for: the announcement of the new concerts, or one direct call by an admin. A repeated delivery of the same announcement SHALL start nothing new for a follower already started; each direct call notifies again. Deliver records and delivers each notification on its own; a follower whose Notification cannot be recorded, or whose delivery fails, SHALL NOT affect the other followers or fail NotifyNewConcerts. The story stories/get-notified-of-new-concerts covers the whole flow from the added concerts to the fan's browsers. When a follower's notification cannot be started, NotifyNewConcerts SHALL stop and fail so the announcement is processed again; the followers already started are not started again. When the followers cannot be read, NotifyNewConcerts SHALL fail and start nothing. When the call is cancelled, no further follower's notification SHALL be started.
 
 #### Scenario: Every matched follower is requested
 
 - **WHEN** three followers are matched
-- **THEN** one new_concerts notification is requested for each of the three, carrying that follower's message
+- **THEN** one new_concerts notification is started for each of the three, carrying that follower's message
 
 #### Scenario: Request fails for one follower
 
-- **WHEN** the notification for the second of three matched followers cannot be requested
-- **THEN** the third follower's notification is not requested and NotifyNewConcerts fails so the trigger is retried
+- **WHEN** the notification for the second of three matched followers cannot be started
+- **THEN** the third follower's notification is not started and NotifyNewConcerts fails so the announcement is processed again, without notifying the first follower again
 
 #### Scenario: Same concerts notified twice
 
-- **WHEN** NotifyNewConcerts runs twice within 2 minutes for the same artist and concerts and matches the same follower
-- **THEN** two requests are made for the follower, and the second replaces the first on the follower's devices
+- **WHEN** NotifyNewConcerts runs twice for the same announcement of the same concerts and matches the same follower
+- **THEN** the follower is notified once
+
+#### Scenario: Admin sends again
+
+- **WHEN** an admin gives NotifyNewConcerts an artist and concerts that were already announced
+- **THEN** each matched follower is notified again, and the new message replaces the earlier one on the follower's devices

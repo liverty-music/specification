@@ -21,17 +21,6 @@ ArtistUseCase.Search SHALL look the query up with Artist.Search, reduce the matc
 - **WHEN** no catalog match has an MBID
 - **THEN** Search fails with NotFound and registers nothing
 
-### Requirement: Search announces newly registered artists
-For each artist that Artist.Create returns, ArtistUseCase.Search SHALL announce that the artist was created, with its id, name and MBID. A failed announcement SHALL NOT fail the search.
-
-#### Scenario: New artist registered
-- **WHEN** Search registers an artist
-- **THEN** an artist-created announcement for it is made
-
-#### Scenario: Announcement fails
-- **WHEN** the announcement for a registered artist cannot be made
-- **THEN** Search still returns its results
-
 ### Requirement: Search reuses a recent result
 ArtistUseCase.Search SHALL return the earlier result, without consulting the catalog or registering anything, when the same query was answered within the last 6 hours.
 
