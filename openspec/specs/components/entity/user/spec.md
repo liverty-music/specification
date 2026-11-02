@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A User is a person registered on Liverty Music, linked to exactly one identity at the identity provider; it carries the contact address, display name, preferred display language and optional home area used to personalize concert notifications and proximity. A Home is a value owned by one User: the geographic area where the user regularly attends live events without considering it a trip (遠征).
+A User is a person registered on Liverty Music, linked to exactly one identity at the identity provider; it carries the contact address, display name, preferred display language and home area used to personalize concert notifications and proximity. A Home is a value owned by one User: the geographic area where the user regularly attends live events without considering it a trip (遠征).
 
 User
 
@@ -13,7 +13,7 @@ User
 | email | primary contact and account address | required; an email address of at most 165 characters; no two Users share it |
 | name | display name taken from the identity provider | required; may be empty text |
 | preferred language | display language for the UI and notifications | optional; when present exactly two lowercase letters (ISO 639-1, e.g. `ja`, `en`); absent means no client has asserted a language yet |
-| home | the user's home area | optional; absent until the user selects an area |
+| home | the user's home area | required; chosen by the person when their User is created, and changed but never removed later |
 | full name | the 本人確認 (identity check) name shown on the user's tickets and prefilled at lottery entry and checkout | optional; absent until the user first gives it; 1 to 200 characters |
 | phone number | the 本人確認 contact phone shown on the user's tickets | optional; absent until the user first gives it; E.164: `+` then 2-15 digits, first digit not 0 |
 | last login time | when the user last signed in, as the identity provider reported it | optional; absent until the first reported sign-in; never moves back |
@@ -30,7 +30,7 @@ Home
 
 ```mermaid
 erDiagram
-  User ||--o| Home : "lives in"
+  User ||--|| Home : "lives in"
   User ||--o{ Follow : "follows artists through"
   User ||--o{ TicketJourney : "tracks events through"
   User ||--o{ PushSubscription : "receives push on"

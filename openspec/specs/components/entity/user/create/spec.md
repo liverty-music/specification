@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Stores a new User, together with its Home when one is supplied, and returns the stored User.
+Stores a new User together with its Home and returns the stored User.
 
 ## Requirements
 
