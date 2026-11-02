@@ -45,8 +45,7 @@ enum TicketJourneyStatus {
   TICKET_JOURNEY_STATUS_PAID = 5;
 }
 
-// TicketJourneyStatusSetBy says who set a ticket journey's status. A status set
-// by the fan is never replaced by the platform or by inference.
+// TicketJourneyStatusSetBy says who set a ticket journey's status.
 enum TicketJourneyStatusSetBy {
   // Default value; must not be used.
   TICKET_JOURNEY_STATUS_SET_BY_UNSPECIFIED = 0;
@@ -65,10 +64,11 @@ enum TicketJourneyStatusSetBy {
 // interest through entering a lottery to payment completion.
 //
 // Each fan may have at most one journey per event. The fan may set any status at any
-// time. The platform records Applied for a lottery entry and Paid for a paid Order on
-// Liverty Music, and the app starts Tracking when the fan adds the event's concert to
-// their calendar; neither replaces a status the fan set. The system does not verify
-// the fan's ticket status outside Liverty Music.
+// time. The platform records Paid for a paid Order on Liverty Music, over any status,
+// and Applied for a lottery entry, over a journey at Tracking, Applied or Lost but not
+// at Unpaid or Paid, whoever set it. The app starts Tracking when the fan adds the
+// event's concert to their calendar, only when the fan has no journey for the event.
+// The system does not verify the fan's ticket status outside Liverty Music.
 message TicketJourney {
   // user_id identifies the fan who owns this journey.
   UserId user_id = 1 [(buf.validate.field).required = true];
