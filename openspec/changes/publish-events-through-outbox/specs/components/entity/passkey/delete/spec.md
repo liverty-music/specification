@@ -23,7 +23,7 @@ When Delete removes a Passkey, it SHALL announce the Passkey as removed, carryin
 #### Scenario: Passkey removed
 
 - **WHEN** Delete removes the Passkey of a User
-- **THEN** one removed Passkey is announced, carrying its provider passkey id, User, provider name (looked up from its AAGUID) and create time
+- **THEN** one removed Passkey is announced, carrying its provider passkey id, User, provider name (looked up from its AAGUID), name and create time
 
 #### Scenario: Announcement cannot be recorded
 
