@@ -27,7 +27,7 @@ Given a concert and the fan's home, the lowest hype level that matches the conce
 
 #### Scenario: Distant concert
 
-- **WHEN** the concert's venue is more than 200 km from the center of the fan's home area
+- **WHEN** the concert is outside the fan's home area and its venue is more than 200 km from the center of the fan's home area
 - **THEN** the lowest matching hype level is Away
 
 #### Scenario: Venue location unknown

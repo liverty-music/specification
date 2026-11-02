@@ -68,7 +68,7 @@
 
 ## 12. frontend: wording (route/dashboard, global/live-highway, stories/set-hype-for-an-artist)
 
-- [ ] 12.1 Update the `@spec` annotations of the existing tests to the renamed requirement "Concerts the fan's hype level matches are highlighted" and the modified live-highway and set-hype requirements; verify `scripts/check-scenario-coverage.py` finds a test for each modified scenario
+- [ ] 12.1 Update the `@spec` annotations of the existing tests to the renamed requirement "Concerts the fan's hype level matches are highlighted", the replaced live-highway requirements ("Dashboard cards show whether the hype level matches the concert", "Artist name shown on every card", "Artist name larger than the location label"), the set-hype requirements, and "Post-signup dialog opens after the celebration" of `global/post-signup-dialog`; verify `scripts/check-scenario-coverage.py` finds a test for each modified scenario
 
 ## 13. Stories and frontend release
 

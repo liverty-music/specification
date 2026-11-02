@@ -88,9 +88,14 @@ Every dashboard event card SHALL show the artist's name as text, horizontally ce
 - **WHEN** an unmatched event card is rendered
 - **THEN** the artist's name SHALL render in white with no opacity reduction or dimming filter
 
+## RENAMED Requirements
+
+- FROM: `### Requirement: Text fallback font size prominence`
+- TO: `### Requirement: Artist name larger than the location label`
+
 ## MODIFIED Requirements
 
-### Requirement: Text fallback font size prominence
+### Requirement: Artist name larger than the location label
 The artist name on an event card SHALL be visually prominent and clearly distinguishable from the location label below it: its font size SHALL be larger than the location label's.
 
 #### Scenario: Text fallback versus location label
@@ -117,4 +122,8 @@ The artist name on an event card SHALL be visually prominent and clearly disting
 
 ### Requirement: Logo scales to fill card space
 **Reason**: Event cards show no logo image.
+**Migration**: None.
+
+### Requirement: Frontend Background Color Derivation
+**Reason**: The card color comes from the artist name for every card ("Artist color source"); no card shows a logo, so the logo's color profile no longer sets the card color or its lightness.
 **Migration**: None.
