@@ -23,7 +23,7 @@ When a fan sets a status for an event, SetStatus SHALL record the given status, 
 
 ### Requirement: SetStatus raises the hype level to match the concert
 
-After recording Applied, Unpaid or Paid, SetStatus SHALL raise the fan's hype level for the concert's artist to the lowest hype level that matches the concert, through Follow.RaiseHype, when all of these hold: the event is a concert (Concert.ListByIDs); exactly one of the concert's artists is followed by the fan (Follow.ListByUser); and that Follow is raisable to that level. The fan's home comes from User.Get. Tracking and Lost SHALL raise nothing. A failure in any of these steps SHALL NOT fail SetStatus and SHALL NOT undo the recorded status.
+After recording Applied, Unpaid or Paid, SetStatus SHALL raise the fan's hype level for the concert's artist to the lowest hype level that matches the concert, through Follow.RaiseHype, when all of these hold: the event is a concert (Concert.ListByIDs); the concert has a lowest matching hype level (components/entity/follow); exactly one of the concert's artists is followed by the fan (Follow.ListByUser); and that Follow is raisable to that level. The fan's home comes from User.Get. Tracking and Lost SHALL raise nothing. A failure in any of these steps SHALL NOT fail SetStatus and SHALL NOT undo the recorded status.
 
 #### Scenario: Applied for a distant concert
 
@@ -43,6 +43,11 @@ After recording Applied, Unpaid or Paid, SetStatus SHALL raise the fan's hype le
 #### Scenario: Tracking raises nothing
 
 - **WHEN** the fan sets Tracking for a distant concert of an artist at Nearby set by default
+- **THEN** the Follow is unchanged
+
+#### Scenario: Venue location unknown
+
+- **WHEN** the fan's Follow is at Nearby set by default and the fan sets Applied for a concert whose venue has neither a known area nor a known location
 - **THEN** the Follow is unchanged
 
 #### Scenario: Several followed artists perform

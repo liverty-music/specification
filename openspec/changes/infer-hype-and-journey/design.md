@@ -59,7 +59,7 @@ Two enums, not one shared `SetBy`: each field has its own closed set (a hype lev
 On `entity.Hype` and `entity.Follow` (backend `internal/entity/follow.go`), beside `MatchingConcerts`:
 
 - `Hype.IsAbove(other Hype) bool`: the order Watch < Home < Nearby < Away.
-- `LowestHypeMatching(home *Home, c *Concert) Hype`: the lowest level whose `MatchingConcerts(home, []*Concert{c})` includes `c` (entity spec "The lowest hype level that matches a concert").
+- `LowestHypeMatching(home *Home, c *Concert) (Hype, bool)`: the lowest level whose `MatchingConcerts(home, []*Concert{c})` includes `c`, and false when the concert is outside the home area and its distance cannot be measured (no venue coordinates or no home centroid). `ProximityTo` returns Away for such a concert too, but an unknown location says nothing about how far the fan travels, so it must not raise a level to Away (entity spec "The lowest hype level that matches a concert").
 - `(*Follow).RaisableTo(h Hype) bool`: `HypeSetBy != SetByFan && h.IsAbove(f.Hype)` (entity spec "The app may raise only a hype level the fan did not set").
 - `HypeSetBy` and `TicketJourneySetBy` are string types with constants, validated like `Hype`.
 
@@ -92,7 +92,7 @@ The usecases only load, ask these functions, and save.
 2. `User.Get` → the fan's home.
 3. `Concert.ListByIDs([eventID])` → skip when the event is not a concert.
 4. `Follow.ListByUser` → the Follows of the concert's artists; skip unless exactly one.
-5. `LowestHypeMatching` → `RaisableTo` → `Follow.RaiseHype`.
+5. `LowestHypeMatching` (skip when there is none) → `RaisableTo` → `Follow.RaiseHype`.
 
 Every failure is logged at Warn and swallowed: the journey write already succeeded and is what the caller asked for. MarkPaid and MarkApplied therefore are not retried for a failed raise. MarkApplied runs the helper only when UpsertIfReplaceable stored Applied.
 

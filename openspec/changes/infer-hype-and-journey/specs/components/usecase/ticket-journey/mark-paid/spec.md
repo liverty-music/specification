@@ -23,7 +23,7 @@ MarkPaid SHALL run for each Order announced as paid, with its user and event. It
 
 ### Requirement: MarkPaid raises the hype level to match the concert
 
-After recording Paid, MarkPaid SHALL raise the fan's hype level for the concert's artist to the lowest hype level that matches the concert, through Follow.RaiseHype, when all of these hold: the event is a concert (Concert.ListByIDs); exactly one of the concert's artists is followed by the fan (Follow.ListByUser); and that Follow is raisable to that level. The fan's home comes from User.Get. A failure in any of these steps SHALL NOT fail MarkPaid, and MarkPaid SHALL NOT be run again for it.
+After recording Paid, MarkPaid SHALL raise the fan's hype level for the concert's artist to the lowest hype level that matches the concert, through Follow.RaiseHype, when all of these hold: the event is a concert (Concert.ListByIDs); the concert has a lowest matching hype level (components/entity/follow); exactly one of the concert's artists is followed by the fan (Follow.ListByUser); and that Follow is raisable to that level. The fan's home comes from User.Get. A failure in any of these steps SHALL NOT fail MarkPaid, and MarkPaid SHALL NOT be run again for it.
 
 #### Scenario: Paid for a distant concert
 
