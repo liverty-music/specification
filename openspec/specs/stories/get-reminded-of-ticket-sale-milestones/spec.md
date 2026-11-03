@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A fan tracking a tour is reminded of each ticket sale: 30 minutes before a first-come sale opens, and when a lottery opens, 24 hours before it closes and on its result day. Each milestone is reminded once, and never between 22:00 and 08:00 in the fan's time zone.
+A fan tracking a tour is reminded of each ticket sale: 30 minutes before a first-come sale opens, and when a lottery opens and 24 hours before it closes. A fan who applied for a discovered lottery is reminded on its result day when its pages state that day. Each milestone is reminded once, and never between 22:00 and 08:00 in the fan's time zone.
 
 ```mermaid
 usecase-beta

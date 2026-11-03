@@ -1,7 +1,7 @@
 # components/usecase/ticket-sale/scan-due-reminders Specification
 
 ## Purpose
-TicketSaleReminderUseCase.ScanDueReminders runs every 15 minutes. For each TicketSale with a pending milestone, discovered or an Organizer's, it works out which reminder stages have become due for each fan tracking the sale: any event of a discovered sale's series, or an event an Organizer's sale offers. It requests one reminder for each fan, sale and stage not yet sent, with due times adjusted to the fan's time zone and quiet hours, and returns the number of reminders requested.
+TicketSaleReminderUseCase.ScanDueReminders runs every 15 minutes. For each TicketSale with a pending milestone, discovered or an Organizer's, it works out which reminder stages have become due for each fan tracking the sale (any event of a discovered sale's series, or an event an Organizer's sale offers) and, on a discovered lottery's result day, for each fan who applied for an event of its series. It requests one reminder for each fan, sale and stage not yet sent, with due times adjusted to the fan's time zone and quiet hours, and returns the number of reminders requested.
 
 ## Requirements
 
