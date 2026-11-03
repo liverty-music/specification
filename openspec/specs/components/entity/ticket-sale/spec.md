@@ -14,6 +14,7 @@ A TicketSale is one sale opportunity (受付) for some or all events of a Series
 | verification requirement | whether fans must hold an Active IdentityVerification to take part | None (the default), Verified-any or JPKI-only; None on a discovered sale |
 | events | the events of its Series it sells | an Organizer's sale: at least one; a discovered sale: none |
 | discovered time | when discovery first stored the sale | a discovered sale only, required; set once and never changed |
+| result date | the calendar day in Japan time on which a lottery's results are announced | a discovered Lottery sale only, optional; no earlier than the day of the end time |
 
 ```mermaid
 erDiagram
