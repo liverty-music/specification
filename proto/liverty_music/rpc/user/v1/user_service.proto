@@ -41,13 +41,12 @@ service UserService {
   // — the duplicate call is a read, not an upsert. This gives the frontend a
   // uniform "resolve-or-provision" bootstrap RPC (e.g., on a fresh device).
   //
-  // Every user has a home area, so registering a new identity requires the
-  // home field; it is persisted atomically with the initial user record. A
-  // returning user's sign-in may omit it: Create then returns the existing
-  // user, or fails with FAILED_PRECONDITION when the identity has no user yet,
-  // and the client asks the user for their home area and calls Create again
-  // with it. On the idempotent-return path, home is ignored — use SetHome to
-  // change an already-provisioned user's home area.
+  // The home field may be provided when the user has already selected their
+  // home area during the onboarding flow (before account creation). Supplying
+  // it here persists the home area atomically with the initial user record,
+  // avoiding a separate SetHome call immediately after sign-up. On the
+  // idempotent-return path, home is ignored — use SetHome to change an
+  // already-provisioned user's home area.
   //
   // The preferred_language field is optional on the wire so this RPC
   // remains backward-compatible during a rolling deploy where the new
@@ -64,7 +63,6 @@ service UserService {
   //
   // Possible errors:
   // - INVALID_ARGUMENT: The provided user data is missing required fields or is malformed.
-  // - FAILED_PRECONDITION: The identity has no user yet and no home was given.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Create(CreateRequest) returns (CreateResponse);
 
@@ -212,11 +210,11 @@ message CreateRequest {
   // Required. The user's email address for account identity.
   entity.v1.Email email = 1 [(buf.validate.field).required = true];
 
-  // The user's home area. Required to register a new identity, and persisted
-  // atomically with the initial user record. Optional on the wire because a
-  // returning user's sign-in sends none: when absent, Create returns the
-  // existing user, or fails with FAILED_PRECONDITION when the identity has no
-  // user yet. Ignored on the idempotent-return path (duplicate provider user
+  // Optional. The user's home area, when it has already been selected during
+  // the onboarding flow before account creation. Providing this field here
+  // persists the home area atomically with the initial user record. When
+  // absent, the home area remains unset and can be configured later via
+  // SetHome. Ignored on the idempotent-return path (duplicate provider user
   // ID) — the existing row's home is not overwritten.
   entity.v1.Home home = 2;
 

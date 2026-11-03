@@ -2,7 +2,7 @@
 
 ### Requirement: Every sign-in resolves the account with Create
 
-After a sign-in, whether at the end of the tutorial, through the Login link or from any other screen, when the app remembers no account for the signed-in identity, it SHALL call UserUseCase.Create with the app's current display language as preferred language and, when the guest chose a home, that home, and SHALL remember the returned account for that identity. Create is the one call that both registers a new identity and returns an existing one, so a returning fan is treated the same as a new one. When Create reports that the identity has no account and no home was given, the app SHALL ask for the home area in a sheet the person cannot close, call Create again with the chosen home, and then continue to where the sign-up started. Signing out SHALL forget the remembered account, so the next sign-in resolves it with Create again. After the account is resolved, the guest's follows and hype levels are merged as the story stories/merge-guest-data-on-signup describes.
+After a sign-in, whether at the end of the tutorial, through the Login link or from any other screen, when the app remembers no account for the signed-in identity, it SHALL call UserUseCase.Create with the app's current display language as preferred language and, when the guest chose a home, that home, and SHALL remember the returned account for that identity. Create is the one call that both registers a new identity and returns an existing one, so a returning fan is treated the same as a new one. When the guest chose no home, the account is created without one and the app continues to where the sign-up started; the home is asked for later, on the Dashboard or My Artists (components/infrastructure/fan/web/global/user-home-selector), never in the sign-up itself. Signing out SHALL forget the remembered account, so the next sign-in resolves it with Create again. After the account is resolved, the guest's follows and hype levels are merged as the story stories/merge-guest-data-on-signup describes.
 
 #### Scenario: New fan finishes the tutorial
 
@@ -12,7 +12,8 @@ After a sign-in, whether at the end of the tutorial, through the Login link or f
 #### Scenario: Sign-up from the event page without a home
 
 - **WHEN** a guest who never chose a home signs up from an event page
-- **THEN** the app asks for the home area in a sheet that cannot be closed, creates the account with the chosen home, and returns to the event page
+- **THEN** the account is created without a home and the event page opens again, with no home sheet
+- **AND** the next time the fan opens the Dashboard or My Artists, the app asks for the home area in a sheet that cannot be closed
 
 #### Scenario: Returning fan signs in on a new device
 

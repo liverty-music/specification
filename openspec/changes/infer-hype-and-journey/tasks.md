@@ -6,7 +6,7 @@
 
 - [ ] 2.1 Add `HypeSetBy` and `Follow.hype_set_by = 4` to `entity/v1/follow.proto`, and `TicketJourneyStatusSetBy` and `TicketJourney.status_set_by = 4` to `entity/v1/ticket_journey.proto`, as in design "Proto: the entity messages carry who set the value"; verify `buf lint`, `buf format -d` and `buf breaking` pass
 - [ ] 2.2 Add `rpc InferTracking(InferTrackingRequest) returns (InferTrackingResponse)` to `rpc/ticket_journey/v1/ticket_journey_service.proto` (required `event_id`, `bool started`) with doc comments; verify `buf lint` and `buf breaking` pass and `make words` passes
-- [ ] 2.3 Update the doc comments of `UserService.Create` and `CreateRequest.home`: a new identity needs a home, and Create without one returns an existing User or fails with FailedPrecondition; verify `buf lint` passes and the field stays optional (`buf breaking` passes)
+- [ ] 2.3 The doc comments of `UserService.Create` and `CreateRequest.home` say the home is optional: Create with a home stores it, Create without one gives a new identity a User without a home (the app asks for it later); revert the v0.105.0 wording that a new identity needs a home and gets FailedPrecondition; verify `buf lint` and `buf breaking` pass
 - [ ] 2.4 Document the `set_by` property on `artist.hype.changed` and `ticket.journey.status.changed` in `docs/analytics/event-catalog.md`; verify the catalogue lists its values (default, fan, inference / fan, platform, inference)
 - [ ] 2.5 Open the specification PR, merge it, cut the release and confirm `buf-release.yml` succeeds (`gh run list --repo liverty-music/specification --workflow buf-release.yml --limit 3`)
 
@@ -18,7 +18,7 @@
 
 - [ ] 4.1 Add `hype_set_by` and `status_set_by` with their CHECK constraints and `COMMENT ON COLUMN` to `schema.sql`, generate the Atlas migration with the backfill (`'fan'` where `hype <> 'nearby'`, else `'default'`; every journey `'fan'`); verify `make lint-schema` passes and `atlas migrate apply --env local` on a copy with sample rows leaves the backfilled values
 
-## 5. backend: entity (components/entity/follow, components/entity/ticket-journey, components/entity/user)
+## 5. backend: entity (components/entity/follow, components/entity/ticket-journey)
 
 - [ ] 5.1 Add `HypeSetBy` and `TicketJourneySetBy` with their validation, `Follow.HypeSetBy`, `TicketJourney.StatusSetBy`, and the `internal/adapter/pb` conversions for the new proto fields; verify unit tests for each value and the round trip through the proto message
 - [ ] 5.2 Implement `Hype.IsAbove`, `LowestHypeMatching` and `(*Follow).RaisableTo` beside `MatchingConcerts`; verify one table-test case per scenario of "A new Follow starts at Nearby", "The lowest hype level that matches a concert" and "The app may raise only a hype level the fan did not set"
@@ -48,12 +48,12 @@
 - [ ] 8.1 Upgrade the generated package from BSR, add the `InferTracking` handler (signed-in fan, request validation, `started` in the response) and register it; verify handler tests for every scenario of `adapter/fan/api/rpc/ticket-journey`
 - [ ] 8.2 The analytics consumer adds `set_by` to `artist.hype.changed` and `ticket.journey.status.changed` from the payload; verify unit tests for each value
 - [ ] 8.3 Run `make check`, open the backend PR (OpenSpec Traceability filled), merge, release; confirm read-only in prod that the AtlasMigration applied, `followed_artists.hype_set_by` and `ticket_journeys.status_set_by` hold the backfilled values, and a hype change made in prod reaches product analytics with `set_by = fan`
-- [ ] 8.4 Run `gh workflow run stripe-sandbox-e2e.yml` in backend and confirm the lottery leg shows the entering fan's journey Applied set by the platform after the entry is announced, then Paid set by the platform after the win (covers `stories/win-tickets-in-a-lottery` "An entry marks the fan's journey Applied")
+- [ ] 8.4 Confirm with the lottery story test `TestLotteryStory_EntryMarksJourneyApplied` (backend CI; it runs on the in-memory payment provider since `make-lottery-draw-durable`, so the Stripe Sandbox E2E no longer covers the lottery leg) that the entering fan's journey is Applied set by the platform after the entry is announced, then Paid set by the platform after the win (covers `stories/win-tickets-in-a-lottery` "An entry marks the fan's journey Applied")
 
-## 9. frontend: home at sign-up (stories/sign-up-or-sign-in, global/user-home-selector)
+## 9. frontend: asking for the home (stories/sign-up-or-sign-in, global/user-home-selector, design "A fan without a home is asked for one")
 
-- [ ] 9.1 The auth callback, on FailedPrecondition from `UserService.Create`, opens the `user-home-selector` with `required`, calls Create again with the chosen home and continues to the return URL; the Dashboard no longer opens the home sheet for a signed-in fan; verify component tests for every scenario of "Every sign-in resolves the account with Create" and "The home sheet at sign-up cannot be closed"
-- [ ] 9.2 The Playwright sign-up helpers choose a home when the sheet opens; add an E2E test for "Sign-up from the event page without a home" (the backend returns FailedPrecondition only after group 14, so the test stubs that `UserService.Create` response); verify both pass against a local build
+- [ ] 9.1 The auth callback creates the account with Create (with the guest's home when there is one) and continues to the return URL with no home sheet; remove the callback's home sheet, its FailedPrecondition branch and its retry; verify component tests for every scenario of "Every sign-in resolves the account with Create"
+- [ ] 9.2 The Dashboard and My Artists open the `user-home-selector` when the person has no home (cannot be closed for a signed-in fan or a guest in onboarding; closable for a guest after onboarding) and save the choice (guest storage, `UserService.SetHome`); the post-signup celebration waits for the home; restore the test of post-signup-dialog "Region selection still precedes both"; the Playwright sign-up helpers choose a home when the sheet opens; verify component tests for every scenario of "A person without a home is asked on the Dashboard and My Artists" and an E2E test for "Sign-up from the event page without a home" against a local build
 
 ## 10. frontend: guest hype (stories/merge-guest-data-on-signup)
 
@@ -68,21 +68,13 @@
 
 ## 12. frontend: wording (route/dashboard, global/live-highway, stories/set-hype-for-an-artist)
 
-- [ ] 12.1 Update the `@spec` annotations of the existing tests to the renamed requirement "Concerts the fan's hype level matches are highlighted", the replaced live-highway requirements ("Dashboard cards show whether the hype level matches the concert", "Artist name shown on every card", "Artist name larger than the location label"), the set-hype requirements, and "Post-signup dialog opens after the celebration" of `global/post-signup-dialog`; verify `scripts/check-scenario-coverage.py` finds a test for each modified scenario
+- [ ] 12.1 Update the `@spec` annotations of the existing tests to the renamed requirement "Concerts the fan's hype level matches are highlighted", the replaced live-highway requirements ("Dashboard cards show whether the hype level matches the concert", "Artist name shown on every card", "Artist name larger than the location label"), and the set-hype requirements; verify `scripts/check-scenario-coverage.py` finds a test for each modified scenario
 
 ## 13. Stories and frontend release
 
 - [ ] 13.1 Add the E2E tests for `stories/track-ticket-journey` ("Adding a concert to the calendar starts tracking it", "A journey for a distant concert raises the artist's hype level") and `stories/set-hype-for-an-artist` ("The app never changes a hype level the fan set"); verify they pass against a local build
 - [ ] 13.2 Run `make check`, open the frontend PR (OpenSpec Traceability filled), merge, release; confirm in prod (the owner's account) that a calendar add shows Tracking with the snack, and that `ticket_journeys.status_set_by` holds `inference` for it (read-only)
 
-## 14. backend: home required (design "Every User has a home"; after the frontend release of group 13)
+## 14. Follow-ups
 
-- [ ] 14.1 Count read-only in prod the `users` rows with no home; sign in to each such account and set a home in Settings, or delete it; verify the count is 0
-- [ ] 14.2 `User.Create` fails with InvalidArgument without a Home; verify the contract tests for every scenario of "Create stores the user and its home together" in `entity/user/create`
-- [ ] 14.3 `UserUseCase.Create` without a Home returns the identity's existing User or fails with FailedPrecondition; verify one unit test per scenario of "A new identity is registered" in `usecase/user/create`
-- [ ] 14.4 Make `users.home_id` NOT NULL and change `fk_users_home_id` to `ON DELETE RESTRICT` in `schema.sql`, update its `COMMENT ON COLUMN`, and generate the Atlas migration; verify `make lint-schema` passes and `atlas migrate apply --env local` fails on a copy with a row without a home and succeeds without one
-- [ ] 14.5 Run `make check`, open the second backend PR (OpenSpec Traceability filled), merge, release; confirm read-only in prod that the AtlasMigration applied and `users.home_id` is NOT NULL, and that the owner's sign-up of a new test identity from an event page asks for the home and creates the account with it
-
-## 15. Follow-ups
-
-- [ ] 15.1 File issues for: a lost lottery entry recording the journey Lost (after `make-lottery-draw-durable`); showing the effect of hype outside the help sheet; asking about the journey when the fan returns from the official site; the journey of a fan who resells their tickets; verify each issue exists and is linked from this change's proposal
+- [ ] 14.1 File issues for: a lost lottery entry recording the journey Lost (after `make-lottery-draw-durable`); showing the effect of hype outside the help sheet; asking about the journey when the fan returns from the official site; the journey of a fan who resells their tickets; verify each issue exists and is linked from this change's proposal
