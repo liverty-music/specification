@@ -74,45 +74,9 @@ message Fanart {
   // A high-resolution backdrop image (1920x1080).
   optional Url artist_background = 2;
 
-  // A high-definition transparent logo of the artist name (800x310).
-  optional Url hd_music_logo = 3;
-
-  // A standard-definition transparent logo of the artist name (400x155).
-  // Used as a fallback when hd_music_logo is unavailable.
-  optional Url music_logo = 4;
-
   // A wide banner image for the artist (1000x185).
   optional Url music_banner = 5;
 
-  // Dominant color properties extracted from the best logo image.
-  // Used by the frontend to derive a card background color that
-  // maximizes contrast with the logo.
-  // Absent when no logo image is available or analysis has not been performed.
-  optional LogoColorProfile logo_color_profile = 6;
-}
-
-// LogoColorProfile summarizes the dominant color characteristics of an artist's
-// logo image. The frontend uses these values to compute an optimal card
-// background color that ensures the logo remains visually distinguishable.
-message LogoColorProfile {
-  // The dominant hue angle in the OKLCH color space (0–360 degrees).
-  // Present only for chromatic logos (`is_chromatic` is true).
-  // Omitted for achromatic logos where hue is meaningless.
-  optional float dominant_hue = 1 [(buf.validate.field).float = {
-    gte: 0
-    lte: 360
-  }];
-
-  // The mean perceptual lightness of non-transparent pixels (0–1, OKLCH L).
-  // Determines whether the logo is light or dark, which informs background
-  // lightness adjustment.
-  float dominant_lightness = 2 [(buf.validate.field).float = {
-    gte: 0
-    lte: 1
-  }];
-
-  // Whether the logo contains significant color (> 30% of non-transparent
-  // pixels have OKLCH chroma > 0.04). When false, the logo is essentially
-  // grayscale and the frontend falls back to the artist-name hash for hue.
-  bool is_chromatic = 3;
+  reserved 3, 4, 6;
+  reserved "hd_music_logo", "music_logo", "logo_color_profile";
 }
