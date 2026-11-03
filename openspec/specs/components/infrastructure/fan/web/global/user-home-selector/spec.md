@@ -18,7 +18,7 @@ The system SHALL allow users to change their home area preference (prefecture) w
 - **AND** WHEN a user taps a region, Step 2 SHALL show prefectures within the selected region
 
 #### Scenario: Dialog backdrop and dismiss
-- **WHEN** the home area selector dialog is open
+- **WHEN** the home area selector dialog is open from Settings, as the All Nearby area selector, or as the home sheet of a guest who has finished onboarding
 - **THEN** the `::backdrop` pseudo-element SHALL display a dark translucent overlay with blur effect
 - **AND** tapping the backdrop area SHALL close the dialog
 - **AND** pressing the ESC key SHALL close the dialog
