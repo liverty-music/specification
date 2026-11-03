@@ -22,7 +22,7 @@ None.
 - `components/entity/artist/fetch-image`: every requirement removed; the capability is retired.
 - `components/entity/artist/analyze-logo`: every requirement removed; the capability is retired.
 - `components/entity/artist/resolve-images`: the example of a partial result names image kinds that remain.
-- `components/usecase/artist/sync-artist-image`: records the images without a logo profile; "A logo failure does not stop the sync" is removed. Artist.ResolveImages and Artist.UpdateFanart are unchanged; Artist.ListStaleOrMissingFanart is unchanged. (Purpose) "profiling the best logo's colors along the way" goes.
+- `components/usecase/artist/sync-artist-image`: records the images without a logo profile; "A logo failure does not stop the sync" is removed. It still relies on Artist.ResolveImages (modified above: it no longer returns logo kinds), Artist.UpdateFanart and Artist.ListStaleOrMissingFanart, whose requirements are unchanged. (Purpose) "profiling the best logo's colors along the way" goes.
 - `components/infrastructure/fan/web/global/live-highway`: the app maps only the background and portrait URLs from an artist's images.
 - `stories/discover-artists`: a newly discovered artist ends up with its images and canonical name, no logo color profile.
 
