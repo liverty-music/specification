@@ -83,22 +83,23 @@ reconcile migrates, so reverted state is never resurrected.
 
 ### Requirement: Guest Data Storage
 
-The system SHALL store guest session data in LocalStorage under namespaced keys during the onboarding tutorial. Guest follows SHALL be stored as `FollowedArtist[]` including hype level, under a single key.
+The system SHALL store guest session data in LocalStorage under namespaced keys during the onboarding tutorial. Guest follows SHALL be stored as `FollowedArtist[]` including hype level and who set it (default or fan), under a single key.
 
 #### Scenario: Followed artists stored locally with hype
 
 - **WHEN** a guest user taps an artist bubble during Artist Discovery
-- **THEN** the system SHALL append `{ artist, hype: DEFAULT_HYPE }` to a JSON array in LocalStorage under `guest.followedArtists`
+- **THEN** the system SHALL append `{ artist, hype: DEFAULT_HYPE, hypeSetBy: 'default' }` to a JSON array in LocalStorage under `guest.followedArtists`
 
 #### Scenario: Hype update stored inline in follow entry
 
 - **WHEN** a guest user changes a hype level for a followed artist
-- **THEN** the system SHALL update the `hype` field of the matching entry in `guest.followedArtists`
+- **THEN** the system SHALL update the `hype` field of the matching entry in `guest.followedArtists` and set its `hypeSetBy` to `'fan'`, including when the chosen level is `DEFAULT_HYPE`
 
 #### Scenario: Legacy data read with hype fallback
 
 - **WHEN** `guest.followedArtists` contains entries in the old `GuestFollow` format (missing `hype` field)
 - **THEN** the system SHALL accept those entries and assign `DEFAULT_HYPE` as the hype value
+- **AND** an entry without `hypeSetBy` SHALL count as set by the fan when its hype differs from `DEFAULT_HYPE`, and as set by default otherwise
 - **AND** the system SHALL NOT throw or discard those entries
 
 #### Scenario: Home area selection stored locally
@@ -112,7 +113,7 @@ The system SHALL sync locally stored guest data to the backend after
 successful authentication, using a per-store, event-driven transition with no
 central orchestrator. Home and language SHALL be migrated as Create-time
 inputs; follows and hype SHALL be migrated by the follow store after the user
-exists, reading hype from the unified `guest.followedArtists` entries. Each
+exists, reading hype and who set it from the unified `guest.followedArtists` entries. Each
 store SHALL clear its own guest data when its own migration completes; the
 follow store SHALL clear `guest.followedArtists` as part of this cleanup. Partial failures SHALL be healed by boot reconciliation (see the
 `entity-store-layer` capability), not by an in-flight retry barrier.
@@ -120,8 +121,8 @@ follow store SHALL clear `guest.followedArtists` as part of this cleanup. Partia
 #### Scenario: Guest hype merged from follow entries
 
 - **WHEN** Passkey authentication completes successfully
-- **AND** `guest.followedArtists` contains entries with `hype !== DEFAULT_HYPE`
-- **THEN** the system SHALL call `FollowService.SetHype` for each such artist as part of the merge sequence
+- **AND** `guest.followedArtists` contains entries whose hype the guest set (`hypeSetBy === 'fan'`)
+- **THEN** the system SHALL call `FollowService.SetHype` for each such artist as part of the merge sequence, including an entry the guest set to `DEFAULT_HYPE`
 - **AND** hype merge SHALL occur after artist follow calls complete
 
 #### Scenario: Hype merge failure is non-blocking
@@ -153,7 +154,7 @@ follow store SHALL clear `guest.followedArtists` as part of this cleanup. Partia
 - **AND** on **every** successful authentication (sign-up AND returning sign-in)
   the system SHALL publish a `GuestMigrationRequested` event
 - **AND** the follow store SHALL call `FollowService.Follow` (and `FollowService.SetHype` for
-  non-default hype) for each artist in `guest.followedArtists`, then clear its
+  a hype the guest set) for each artist in `guest.followedArtists`, then clear its
   own guest follow localStorage on success
 
 #### Scenario: Identity already has an account
@@ -168,12 +169,15 @@ follow store SHALL clear `guest.followedArtists` as part of this cleanup. Partia
 #### Scenario: Guest follow at the default level does not overwrite the account's level
 
 - **WHEN** the account already follows an artist at Away and the guest followed
-  the same artist at the default Nearby
+  the same artist at the default Nearby without choosing a level
 - **THEN** after the merge the account still follows the artist at Away
-- **AND** a guest's explicit choice of Nearby cannot be told apart from the
-  default and is treated the same (known limitation)
 - **AND** follows the account stored before the default became Nearby keep
   their stored level
+
+#### Scenario: Guest's chosen Nearby is kept as the fan's choice
+
+- **WHEN** a guest set an artist to Nearby on My Artists and signs up
+- **THEN** after the merge the account follows the artist at Nearby, set by the fan
 
 #### Scenario: Follow call fails during merge
 

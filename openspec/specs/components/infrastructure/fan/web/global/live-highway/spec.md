@@ -6,25 +6,6 @@ Renders the shared three-lane concert card grid showing each artist's followed e
 
 ## Requirements
 
-### Requirement: Event Card Logo Display
-The dashboard event card SHALL display the artist's transparent logo image instead of the text artist name when a logo URL is available. The system SHALL use `hd_music_logo` as the primary source and fall back to `music_logo` when `hd_music_logo` is unavailable. When neither logo is available, the card SHALL display the existing text artist name.
-
-#### Scenario: Artist has hd_music_logo
-- **WHEN** an event card renders for an artist with `hd_music_logo` in their fanart data
-- **THEN** the card SHALL display the `hd_music_logo` image with `object-fit: contain` instead of the text name
-
-#### Scenario: Artist has only music_logo
-- **WHEN** an event card renders for an artist with `music_logo` but no `hd_music_logo`
-- **THEN** the card SHALL display the `music_logo` image as fallback
-
-#### Scenario: Artist has no logo
-- **WHEN** an event card renders for an artist without any logo in their fanart data
-- **THEN** the card SHALL display the existing text artist name with the current styling
-
-#### Scenario: Logo image fails to load
-- **WHEN** the logo image URL returns an error or times out
-- **THEN** the card SHALL fall back to displaying the text artist name
-
 ### Requirement: Fanart Data Propagation
 The frontend service layer SHALL extract fanart image URLs from the `Artist.fanart` proto field in `FollowService.List` responses and propagate them to the `LiveEvent` and `FollowedArtist` view models for consumption by UI components.
 
@@ -40,41 +21,12 @@ The frontend service layer SHALL extract fanart image URLs from the `Artist.fana
 - **WHEN** the dashboard constructs `LiveEvent` objects from concert data
 - **THEN** the system SHALL look up fanart URLs by artist ID from the `FollowService.List` response and attach them to the `LiveEvent`
 
-### Requirement: Logo and text visibility on unmatched cards
-Event cards that are not matched SHALL display artist logos and text at full visibility. No dimming filters (brightness, grayscale) SHALL be applied to logos, and no opacity reduction SHALL be applied to text fallback names on unmatched cards.
-
-#### Scenario: Unmatched card with logo
-- **WHEN** an unmatched event card displays an artist ClearLOGO image
-- **THEN** the logo SHALL render without brightness or grayscale filters
-
-#### Scenario: Unmatched card with text fallback
-- **WHEN** an unmatched event card displays an artist name as text (no logo available)
-- **THEN** the text SHALL render at full opacity (no opacity reduction)
-
-### Requirement: Center-aligned card content
-Artist logos and text fallback names SHALL be horizontally centered within event cards.
-
-#### Scenario: Logo centered in card
-- **WHEN** an event card displays a ClearLOGO image
-- **THEN** the logo SHALL be horizontally centered within the card
-
-#### Scenario: Text fallback centered in card
-- **WHEN** an event card displays an artist name as text
-- **THEN** the text SHALL be horizontally centered within the card
-
-### Requirement: Text fallback font size prominence
-Artist names displayed as text fallback SHALL be visually prominent and clearly distinguishable from the location label below. The text fallback font size SHALL be larger than the current sizing to provide visual weight comparable to ClearLOGO images.
+### Requirement: Artist name larger than the location label
+The artist name on an event card SHALL be visually prominent and clearly distinguishable from the location label below it: its font size SHALL be larger than the location label's.
 
 #### Scenario: Text fallback versus location label
-- **WHEN** an event card displays an artist name as text with a location label below
+- **WHEN** an event card displays an artist name with a location label below
 - **THEN** the artist name font size SHALL be noticeably larger than the location label font size
-
-### Requirement: Logo scales to fill card space
-Artist ClearLOGO images SHALL scale proportionally to the lane container width using cqi units. The logo SHALL NOT be constrained to a fixed small height.
-
-#### Scenario: Logo fills card height
-- **WHEN** an event card displays a ClearLOGO image
-- **THEN** the logo SHALL expand proportionally to the lane width, maintaining aspect ratio via `object-fit: contain`
 
 ### Requirement: Concert Highway Custom Element
 
@@ -138,134 +90,6 @@ The `LiveHighway` component SHALL render date groups and delegate event selectio
 #### Scenario: Event selection delegation
 - **WHEN** `onEventSelected` is called with a custom event containing a `LiveEvent`
 - **THEN** it SHALL open the event detail sheet with that event
-
-### Requirement: Frontend Background Color Derivation
-The frontend SHALL use `LogoColorProfile` data to determine the card background `--artist-hue` custom property. When `dominantHue` is present (chromatic logos), the hue SHALL be set to that value (logo's own hue family). When `dominantHue` is absent (achromatic logos), the hue SHALL fall back to the existing name-hash algorithm. When no `LogoColorProfile` is available, the existing name-hash algorithm SHALL be used unchanged.
-
-#### Scenario: Chromatic logo card background
-- **WHEN** an event card renders for an artist with `dominantHue` present and set to `0` (red)
-- **THEN** `--artist-hue` SHALL be set to `0` (same hue family as the logo, with low-chroma background per CSS)
-
-#### Scenario: Achromatic light logo card background
-- **WHEN** an event card renders for an artist with `dominantHue` absent and `dominantLightness = 0.85`
-- **THEN** `--artist-hue` SHALL be set to the name-hash value and background lightness SHALL remain dark (logo is light, background is dark for contrast)
-
-#### Scenario: Achromatic dark logo card background
-- **WHEN** an event card renders for an artist with `dominantHue` absent and `dominantLightness = 0.15`
-- **THEN** `--artist-hue` SHALL be set to the name-hash value and background lightness SHALL be raised to ensure the dark logo is visible
-
-#### Scenario: No logo analysis available
-- **WHEN** an event card renders for an artist without `LogoColorProfile`
-- **THEN** `--artist-hue` SHALL be computed from the artist name hash (existing behavior)
-
-### Requirement: Hype Visual Indicators on Dashboard Cards
-
-The system SHALL visually distinguish dashboard event cards based on whether the artist's hype level covers the concert's lane proximity (hype-lane match), rather than on hype level alone. A card is "matched" when the artist's hype radius includes the concert's lane, and "unmatched" otherwise. Matched cards SHALL evoke a live festival stage; unmatched cards SHALL evoke a faded concert poster.
-
-The match truth table:
-- **watch**: never matched (any lane)
-- **home**: matched on HOME STAGE only
-- **nearby**: matched on HOME STAGE and NEAR STAGE
-- **away**: matched on HOME STAGE, NEAR STAGE, and AWAY STAGE
-
-#### Scenario: Match computation is application-code responsibility
-
-- **WHEN** the system builds the data used to render a dashboard event card
-- **THEN** the match result SHALL be computed as a pure function comparing hype level and lane
-- **AND** the result SHALL be exposed as a matched/unmatched state on the card's data
-- **AND** the card's template SHALL bind a `data-matched` attribute from this state
-- **AND** CSS SHALL NOT contain hype-lane comparison logic
-
-#### Scenario: Matched card background
-
-- **WHEN** an event card is rendered with `matched = true`
-- **THEN** the card background SHALL use a radial-gradient spotlight effect using the artist-color at elevated saturation (oklch chroma 0.20), brighter at an off-center focal point and darker at the edges
-- **AND** the card SHALL have a `2px solid` border using the artist's color at 40% opacity
-- **AND** the card SHALL have a dual-layer glow: outer `box-shadow: 0 0 16px` at 50% opacity and inner `inset 0 0 12px` at 15% opacity
-- **AND** the card background SHALL be clean (no overlay texture)
-
-#### Scenario: Matched card clearLOGO neon glow
-
-- **WHEN** a matched event card has a clearLOGO image (transparent PNG)
-- **THEN** the logo SHALL be rendered as an `<img>` element
-- **AND** the logo SHALL have a multi-layer `filter: drop-shadow()` neon glow using the artist-color, producing a contour-following glow around the exact logo shape
-
-#### Scenario: Matched card text fallback neon glow
-
-- **WHEN** a matched event card does not have a clearLOGO image
-- **THEN** the artist name SHALL be rendered as a text `<span>` element
-- **AND** the artist name SHALL have a multi-layer `text-shadow` neon glow using the artist-color
-
-#### Scenario: Matched card spotlight beam cone
-
-- **WHEN** a matched event card is rendered
-- **THEN** a vertical light beam cone SHALL illuminate the card from above via a `::before` pseudo-element
-- **AND** the beam SHALL use a `linear-gradient` (bright at top, transparent at bottom) shaped by a `mask-image: radial-gradient(ellipse)` to form a narrow cone
-- **AND** a bright contact flash (`::after`) SHALL pulse at the card's top edge where the beam hits, using `box-shadow` layers
-- **AND** the pseudo-elements SHALL be clipped by `overflow: hidden` on the card
-
-#### Scenario: Matched card color drift animation
-
-- **WHEN** a matched event card is rendered
-- **THEN** the artist-color hue SHALL oscillate ±30 degrees over an 8-second ease-in-out infinite cycle via `@property --hue-drift`
-- **AND** the hue drift SHALL affect all artist-color references simultaneously (background, border, glow, logo drop-shadow / text-shadow)
-
-#### Scenario: Unmatched card styling
-
-- **WHEN** an event card is rendered with `matched = false`
-- **THEN** the card SHALL use a desaturated artist-color (oklch chroma 0.03) as a flat background-color
-- **AND** the card SHALL have a `1px solid` border at `white/5%` opacity
-- **AND** the card SHALL NOT have a glow effect
-- **AND** the card SHALL display an SVG noise texture overlay at 8% opacity via a `::after` pseudo-element
-- **AND** the card SHALL NOT have any animations
-
-#### Scenario: Unmatched card clearLOGO dimming
-
-- **WHEN** an unmatched event card has a clearLOGO image
-- **THEN** the logo SHALL be rendered with `filter: brightness(0.35) grayscale(0.8)`, appearing dim and desaturated
-
-#### Scenario: Unmatched card text fallback dimming
-
-- **WHEN** an unmatched event card does not have a clearLOGO image
-- **THEN** the artist name text SHALL have no text-shadow and reduced opacity
-
-#### Scenario: Away artist matched on all stages
-
-- **GIVEN** a user has set an artist's hype to Away (どこでも！)
-- **WHEN** that artist's concerts appear on HOME STAGE, NEAR STAGE, and AWAY STAGE
-- **THEN** all three cards SHALL render as matched (spotlight, neon glow, color drift)
-
-#### Scenario: Home artist matched only on home stage
-
-- **GIVEN** a user has set an artist's hype to Home (地元)
-- **WHEN** that artist's concerts appear on HOME STAGE and AWAY STAGE
-- **THEN** the HOME STAGE card SHALL render as matched
-- **AND** the AWAY STAGE card SHALL render as unmatched (desaturated, no glow, noise texture)
-
-#### Scenario: Watch artist always unmatched
-
-- **GIVEN** a user has set an artist's hype to Watch (チェック)
-- **WHEN** that artist's concerts appear on any stage
-- **THEN** all cards SHALL render as unmatched
-
-#### Scenario: Artist color source
-
-- **WHEN** computing visual effects for a matched or unmatched event card
-- **THEN** the artist color SHALL be derived from the existing deterministic color generation logic
-
-#### Scenario: Reduced motion preference
-
-- **WHEN** the user has `prefers-reduced-motion: reduce` enabled
-- **THEN** the spotlight beam cone animation SHALL be disabled
-- **AND** the color drift animation SHALL be disabled
-- **AND** static matched effects SHALL remain fully visible (radial-gradient background at center position, border, dual glow, neon logo/text glow)
-- **AND** unmatched styling SHALL be unaffected (already static)
-
-#### Scenario: Color drift graceful degradation
-
-- **WHEN** the browser does not support `@property` syntax
-- **THEN** the `--hue-drift` value SHALL remain at its initial value of 0
-- **AND** all other matched effects (spotlight, glow, border, saturation) SHALL render normally with the static artist-color
 
 ### Requirement: Three-Lane Live Highway Layout
 The system SHALL display live events in a three-column equal-width timeline layout organized by geographical proximity and date, with festival-style sticky STAGE headers using per-stage identity colors and a vibrant dark-themed aesthetic. The dashboard SHALL handle data loading errors gracefully and distinguish between empty data and error states.
@@ -399,3 +223,91 @@ preference SHALL behave identically.
 - **THEN** the matched concerts already on screen SHALL be lit without leaving
   the page
 - **AND** no date group or concert card SHALL be rebuilt
+
+### Requirement: Dashboard cards show whether the hype level matches the concert
+
+The system SHALL visually distinguish dashboard event cards based on whether the artist's hype level matches the concert by its lane, rather than on hype level alone. A card is "matched" when the artist's hype level matches the concert's lane, and "unmatched" otherwise. A matched card SHALL look lit like a festival stage; an unmatched card SHALL show the artist's color without light effects.
+
+The match truth table:
+- **watch**: never matched (any lane)
+- **home**: matched on HOME STAGE only
+- **nearby**: matched on HOME STAGE and NEAR STAGE
+- **away**: matched on HOME STAGE, NEAR STAGE, and AWAY STAGE
+
+#### Scenario: Match computation is application-code responsibility
+
+- **WHEN** the system builds the data used to render a dashboard event card
+- **THEN** the match result SHALL be computed as a pure function comparing hype level and lane
+- **AND** the result SHALL be exposed as a matched/unmatched state on the card's data
+- **AND** the card's template SHALL bind a `data-matched` attribute from this state
+- **AND** CSS SHALL NOT contain hype-lane comparison logic
+
+#### Scenario: Matched card is lit like a stage
+
+- **WHEN** a matched event card is rendered
+- **THEN** the card SHALL fill with a diagonal gradient of the artist's color, from the artist's hue to that hue turned by 40 degrees
+- **AND** the card SHALL have a 2px border in a bright tint of the artist's color
+- **AND** the card SHALL glow in the artist's color around its edges and inward from its top edge
+
+#### Scenario: Matched card has a light beam from above
+
+- **WHEN** a matched event card is rendered
+- **THEN** a narrow beam of light in the artist's color SHALL fall from the center of the card's top edge, brightest at the top and faded out before 70% of the card's height
+- **AND** the beam SHALL stay inside the card
+
+#### Scenario: Matched card artist name glows
+
+- **WHEN** a matched event card is rendered
+- **THEN** the artist name SHALL glow in the artist's color
+
+#### Scenario: Unmatched card shows the artist's color without light
+
+- **WHEN** an unmatched event card is rendered
+- **THEN** the card SHALL fill with the same diagonal gradient of the artist's color as a matched card, at a lighter shade
+- **AND** the card SHALL have a 1px border in white at 12% opacity
+- **AND** the card SHALL show a fine grain texture at 8% opacity over its background
+- **AND** the card SHALL have no glow, no light beam, and no glow on the artist name
+
+#### Scenario: Away artist matched on all stages
+
+- **GIVEN** a user has set an artist's hype to Away (どこでも！)
+- **WHEN** that artist's concerts appear on HOME STAGE, NEAR STAGE, and AWAY STAGE
+- **THEN** all three cards SHALL render as matched (lit like a stage, with a light beam and a glowing artist name)
+
+#### Scenario: Home artist matched only on home stage
+
+- **GIVEN** a user has set an artist's hype to Home (地元)
+- **WHEN** that artist's concerts appear on HOME STAGE and AWAY STAGE
+- **THEN** the HOME STAGE card SHALL render as matched
+- **AND** the AWAY STAGE card SHALL render as unmatched (no glow, no light beam, grain texture)
+
+#### Scenario: Watch artist always unmatched
+
+- **GIVEN** a user has set an artist's hype to Watch (チェック)
+- **WHEN** that artist's concerts appear on any stage
+- **THEN** all cards SHALL render as unmatched
+
+#### Scenario: Artist color source
+
+- **WHEN** computing visual effects for a matched or unmatched event card
+- **THEN** the artist color SHALL be derived from the existing deterministic color generation logic
+
+#### Scenario: Card treatments hold still
+
+- **WHEN** a matched or unmatched event card is on screen, whether or not the fan prefers reduced motion
+- **THEN** no part of the card's matched or unmatched treatment SHALL animate
+- **AND** the treatment SHALL look the same with reduced motion as without it
+
+### Requirement: Artist name shown on every card
+
+Every dashboard event card SHALL show the artist's name as text, horizontally centered on the card, in white at full opacity on matched and unmatched cards alike. A card SHALL NOT show the artist's logo image.
+
+#### Scenario: Artist name centered on the card
+
+- **WHEN** an event card is rendered
+- **THEN** the artist's name SHALL be shown as text, horizontally centered on the card
+
+#### Scenario: Unmatched card name at full visibility
+
+- **WHEN** an unmatched event card is rendered
+- **THEN** the artist's name SHALL render in white with no opacity reduction or dimming filter

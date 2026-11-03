@@ -8,11 +8,11 @@ The fan-facing ticket journey service boundary: it resolves the signed-in fan fo
 
 ### Requirement: Every call acts for the signed-in fan
 
-SetStatus, Delete and List SHALL act only on the journeys of the signed-in fan who makes the call; a request cannot name another fan. Each call SHALL fail with Unauthenticated when the caller is not signed in, and with NotFound when the signed-in caller has no account, before any journey is read or changed.
+SetStatus, InferTracking, Delete and List SHALL act only on the journeys of the signed-in fan who makes the call; a request cannot name another fan. Each call SHALL fail with Unauthenticated when the caller is not signed in, and with NotFound when the signed-in caller has no account, before any journey is read or changed.
 
 #### Scenario: Not signed in
 
-- **WHEN** a caller who is not signed in calls SetStatus, Delete or List
+- **WHEN** a caller who is not signed in calls SetStatus, InferTracking, Delete or List
 - **THEN** the call fails with Unauthenticated and no journey is read or changed
 
 #### Scenario: Caller has no account
@@ -61,3 +61,17 @@ List SHALL return each of the caller's journeys with its event, its status and t
 
 - **WHEN** a signed-in fan with no journeys calls List
 - **THEN** the call succeeds with an empty list
+
+### Requirement: InferTracking request validation and response
+
+InferTracking SHALL fail with InvalidArgument, before TicketJourneyUseCase.InferTracking runs, when the event id is missing or not a well-formed event id. A well-formed event id for an event that does not exist fails with FailedPrecondition. The response SHALL say whether tracking started.
+
+#### Scenario: Missing event id
+
+- **WHEN** InferTracking is called without an event id
+- **THEN** it fails with InvalidArgument and nothing is recorded
+
+#### Scenario: Tracking started
+
+- **WHEN** a signed-in fan with no journey for the event calls InferTracking
+- **THEN** the response says tracking started
