@@ -99,7 +99,7 @@ Every failure is logged at Warn and swallowed: the journey write already succeed
 The fan's own SetStatus raises in the same request, not from the `TICKET_JOURNEY.status_changed` announcement, so the sheet can show the raise snack with its undo right after the save. A failed raise does not fail the save, so the fan's main action is never affected.
 
 - **One followed performer only.** A fan who enters a festival lottery shows they will travel for the festival, not for each performer. With two or more followed performers the app cannot tell which artist moved the fan, so it raises none.
-- **Every fan has a home** ("Every User has a home" below). Without one, every concert's lowest matching level would be Away and the app would raise every artist the fan tracks. If `User.Get` returns a User without a home (only before the NOT NULL migration), the helper skips.
+- **A fan without a home** ("A fan without a home is asked for one" below). Without a home every concert's lowest matching level would be Away, and the app would raise every artist the fan tracks. If `User.Get` returns a User without a home, the helper skips.
 - **Target in practice.** A level not set by the fan is Nearby (default) or Away (inference), so a raise always goes from Nearby to Away. The snack copy 「遠方の新着ライブも通知します。」 depends on this; if the starting level ever changes, that copy must change with it.
 
 ### Platform writes come from announcements
@@ -118,16 +118,18 @@ Both platform writes run in consumers, outside the transaction of the fact they 
 - **Late announcements.** MarkApplied reads the entry with `LotteryEntry.Get` and records nothing once the entry is no longer Entered. An announcement held back by the forwarder until after the draw therefore cannot move a Lost, whether the fan set it or a later draw records it, back to Applied. Rejected: putting the entry id on the journey to recognize a repeat; the entry's own state already says whether the entry is still open.
 - Lost for a lost entry is a follow-up after `make-lottery-draw-durable` replaces `RunDraw`.
 
-### Every User has a home
+### A fan without a home is asked for one
 
-The entity attribute `home` becomes required: chosen when the User is created, changed with SetHome, never removed.
+A home stays optional on the User, as today. The app asks for it on the two screens whose content depends on it, so that hype levels and the Dashboard lanes mean something; it never blocks sign-up for it.
 
-- **Backend.** `User.Create` fails with InvalidArgument without a Home. This rule ships in the second backend release, with the NOT NULL migration, after the frontend that asks for the home is live (Migration Plan). `UserUseCase.Create` keeps its role as the one call for both a new and a returning identity: with no Home it looks the identity up and returns the existing User, or fails with FailedPrecondition when there is none. The RPC request keeps `home` optional, because a returning fan's sign-in sends none; the doc comments say a new identity needs it.
-- **Frontend.** The auth callback calls Create as today. On FailedPrecondition it opens the `user-home-selector` in the mode that cannot be closed (the existing `required` bindable), calls Create again with the chosen home and continues to the return URL (the event page, for a sign-up there). The guest's home from onboarding is sent as today, so a guest who chose a home never sees the sheet. The Dashboard's branch that opens a closable sheet for a signed-in fan without a home goes.
-- **Database.** `ALTER TABLE users ALTER COLUMN home_id SET NOT NULL` fails while any row has no home, so it is a second migration, applied after a read-only check finds no such row. The foreign key changes from `ON DELETE SET NULL` to `ON DELETE RESTRICT`: a home is never deleted on its own, and SET NULL would contradict NOT NULL.
-- **Rows without a home.** Accounts created before this change may have none. Each is signed in once and given a home in Settings, or deleted, before the second migration. Until then the raise helper skips a fan without a home.
-- **End-to-end test fans.** Their Users are created through the same callback, so the Playwright sign-up helpers choose a home in the sheet.
-- Rejected: a sheet in the app shell that blocks every screen for a signed-in fan without a home. After the second migration no such fan exists, so it would be code for rows that a one-time check removes.
+- **Where.** The Dashboard and My Artists open the `user-home-selector` when the person has no home: a guest without `guest.home`, or a signed-in fan whose User has none. One check, for guests and signed-in fans alike. The Event page, Discovery and the landing page do not ask: none of them depends on the home, and a sheet there would only stand between a new visitor and what they came for.
+- **Closing.** The sheet cannot be closed (backdrop, ESC, swipe) for a signed-in fan or for a guest in onboarding, using the existing `required` bindable; it can be closed by a guest after onboarding, as today, and opens again the next time either screen opens.
+- **Saving.** A guest's area is stored on the device; a signed-in fan's goes to the server with `UserService.SetHome`, as Settings does (stories/set-home-area).
+- **Sign-up.** The auth callback creates the account with Create, with the guest's home when there is one, and returns to where the sign-up started; it never asks for the home. A guest who signs up from an Event page without a home gets an account without one, returns to the Event page, and is asked the next time they open the Dashboard or My Artists.
+- **Celebration.** The post-signup celebration already waits for the home (celebration-overlay: the timetable is real once a home area is set and the data has loaded), and the post-signup dialog follows it (post-signup-dialog "Region selection still precedes both"). So a new fan without a home picks it first, then sees the confetti, then the dialog. Having tapped the sheet, they also get the celebration's sound and vibration.
+- **A person who leaves the sheet.** Closing the tab while the sheet is open leaves an account without a home; the next time the Dashboard or My Artists opens, the same check asks again. No separate recovery path is needed.
+- **Rows without a home** need no one-time cleanup: their owners are asked the next time they open either screen. Until then the raise helper skips them, and the My Artists hype snack (show-hype-and-journey-benefits) says 「居住エリア」 in place of a prefecture.
+- Rejected: making the home required on the User (Create fails without one, a NOT NULL column, a sheet in the auth callback). It needed a second backend release, a manual cleanup of existing rows, a FailedPrecondition path through the callback and its retry, and it still left a signed-in identity without an account when the person closed the tab on the sheet. The check on the two screens covers new, existing and interrupted accounts with one rule.
 
 ### RPC: `TicketJourneyService.InferTracking`
 
@@ -149,7 +151,7 @@ A domain verb (`rpc-design` skill): the method states what the server does with 
 | Highlight on the Dashboard after a raise | the same re-read; the follow store's new level feeds the existing matched computation |
 | The level after undoing a raise | `FollowService.SetHype(previous)` succeeded |
 
-The previous level for the undo is the level the follow store held before the re-read, which came from `FollowService.List` too. The re-read bypasses the session cache of `ListFollowed` results.
+The previous level for the undo is read from `FollowService.List` just before the save, not taken from the session's follow list: a level the fan set on another device would otherwise look like the app's raise, and its undo would write an outdated level back as the fan's choice. Both reads bypass the session cache of `ListFollowed` results. An undo of an inferred Tracking deletes the journey only while it is still that Tracking; a status the fan saved after the calendar add is theirs.
 
 ### The calendar snack waits for the fan to come back
 
@@ -169,19 +171,24 @@ A guest follow entry gains `hypeSetBy: 'default' | 'fan'`. A hype change by the 
 - [A fan who records Applied outside the sheet (none today) gets no snack] → the raise still happens and My Artists shows it; acceptable while the sheet is the only place.
 - [The calendar add is a weak signal: some fans add concerts they will not try to get] → Tracking only adds sale notices, the snack offers undo on return, and `status_set_by = 'inference'` lets analytics measure how often inferred Tracking is undone.
 - [The return detection misses some browsers that do not fire `visibilitychange` when a new tab opens] → the 1-second fallback shows the snack at once; the journey is saved either way.
-- [A PWA that still runs a frontend from before step 4 after step 6] → its sign-up without a home fails with FailedPrecondition until it updates to the new frontend. No account is created without a home, so no row needs fixing.
-- [A sign-up now has one more step for a guest without a home] → only guests who skipped onboarding (an event page, a shared link) see it, and the step is the same sheet onboarding uses. The account cannot be created without it, which is the intent.
+- [A fan without a home sees a sheet they cannot close on the Dashboard and My Artists] → only a signed-in fan with no home, which is a new account from an Event page or an older account, and only on the two screens that need the home. It is the same sheet onboarding and Settings use.
 - [The two journey writes from announcements lag behind the fact] → the fan sees Applied after the forwarder and the consumer run (seconds). The lottery entry screen shows the entry itself, not the journey.
 - [Overlap with in-flight changes] → written against the main specs as the archived `publish-events-through-outbox` left them. `make-lottery-draw-durable` adds a requirement to `stories/win-tickets-in-a-lottery` under a different name, so the two deltas do not collide.
-- [Verification without a dev environment] → unit and repository tests, the Stripe Sandbox E2E for the lottery entry (Applied after the entry is announced), and read-only prod checks of the new columns, the NOT NULL home and the announcements.
+- [Verification without a dev environment] → unit and repository tests, the lottery story test `TestLotteryStory_EntryMarksJourneyApplied` for the lottery entry (Applied after the entry is announced), and read-only prod checks of the new columns and the announcements.
 
 ## Migration Plan
 
 1. specification: proto `InferTracking`, `Follow.hype_set_by`, `TicketJourney.status_set_by`, the `UserService.Create` comments and the event catalog; release; BSR generation.
 2. cloud-provisioning: the durable consumer of `ORDER.lottery_entry_entered` for MarkApplied, before the backend that announces it.
 3. backend: Atlas migration (columns, backfill, CHECK); entity, repositories, the new subject and its receiver, usecases, handler. Old frontends keep working: they never call `InferTracking`, and `SetHype`, `SetStatus` and `UserService.Create` keep their requests and rules.
-4. frontend: the home sheet at sign-up, guest storage and merge, calendar inference, raise snack.
-5. Read-only check that no `users` row has no home (after signing in and setting a home for, or deleting, any such account).
-6. The second backend release: the home rule of `User.Create` and `UserUseCase.Create`, and the migration making `home_id` NOT NULL with the foreign key `ON DELETE RESTRICT`. The frontend of step 4 already handles FailedPrecondition, so no sign-up fails in between.
+4. frontend: the home sheet on the Dashboard and My Artists, guest storage and merge, calendar inference, raise snack.
 
-Rollback: revert the backend release; the new columns stay and are ignored (their defaults keep inserts valid). Dropping them is a separate migration, needed only if the change is abandoned. After step 6, a reverted backend that creates a User without a home fails on the NOT NULL; revert the second migration first.
+Rollback: revert the backend release; the new columns stay and are ignored (their defaults keep inserts valid). Dropping them is a separate migration, needed only if the change is abandoned.
+
+## Scenarios verified across repositories
+
+These story scenarios span the fan web (highlights, the tracking snack) and the backend (pushes, sale notices), so no single test runs them end to end. Each part is covered by an automated test:
+
+@spec-manual stories/set-hype-for-an-artist "Raising the level to Away" -- the Dashboard highlight by frontend test/services/concert-store.spec.ts "highlights an Away artist in every lane"; the push for a concert added later by backend TestHype_MatchingConcerts and TestHype_ShouldNotify (Away matches every concert)
+@spec-manual stories/set-hype-for-an-artist "Watch" -- the concerts shown with none highlighted by frontend test/services/concert-store.spec.ts "shows a Watch artist concerts in every lane, none highlighted"; no push by backend TestHype_ShouldNotify (Watch matches none)
+@spec-manual stories/track-ticket-journey "Calendar add starts tracking and the fan hears about the sale" -- Tracking set by inference after the calendar add by frontend e2e/functional/infer-hype-and-journey.spec.ts and backend TestTicketJourneyUseCase_InferTracking; the sale notice to a Tracking fan by backend TestTicketJourneyRepository_ListUserIDsTrackingSeries ("Fans tracking events of the series") and TestTicketSaleAnnouncementConsumer_Handle
