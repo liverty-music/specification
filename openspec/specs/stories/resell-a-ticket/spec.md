@@ -20,7 +20,6 @@ systemBoundary "Liverty Music"
   TicketUseCaseList("TicketUseCase.List")
   CheckoutUseCaseStart("CheckoutUseCase.Start")
   CheckoutUseCaseAuthorizeCard("CheckoutUseCase.AuthorizeCard")
-  OrderUseCaseIssueFromCheckout("OrderUseCase.IssueFromCheckout")
 end
 Fan --> Goal
 Goal ..> : include ResaleListingUseCaseCreate
@@ -33,7 +32,6 @@ Goal ..> : include OrderUseCaseIssue
 Goal ..> : include TicketUseCaseList
 Goal ..> : include CheckoutUseCaseStart
 Goal ..> : include CheckoutUseCaseAuthorizeCard
-Goal ..> : include OrderUseCaseIssueFromCheckout
 EnteringFan --> ResaleEntryUseCaseAuthorizeCard
 EnteringFan --> ResaleEntryUseCaseConfirm
 EnteringFan --> ResaleEntryUseCaseWithdraw

@@ -54,7 +54,7 @@ Delete SHALL fail with FailedPrecondition and remove nothing when, at the moment
 - the Organizer is not deactivated;
 - any of its Events has an Order that is Paid;
 - any of its Events has a Settlement that is not Reversed;
-- any of its Events has a purchase in progress: a Pending Order, or a Void Order whose card authorization is not yet released;
+- any of its Events has a purchase in progress: a Pending Order;
 - the Organizer has a payout-account record.
 
 A purchase started while Delete runs SHALL either be seen by these checks or be refused; it SHALL NOT be removed.

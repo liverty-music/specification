@@ -1,8 +1,9 @@
-## Purpose
+# components/usecase/order/place Specification
 
+## Purpose
 OrderUseCase.Place places a fan's order for their Checkout: it checks what the fan can still fix, then has OrderUseCase.Issue commit, charge and issue the Checkout's Order, and returns the Order.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Only the fan's own Checkout, placed while holding
 
@@ -18,7 +19,7 @@ Place SHALL take a Checkout, the calling fan and the current time, and proceed a
    A failure of a read SHALL be returned unchanged. In each of these cases the Checkout stays Held and its Order Pending, so the fan can fix it and place the order again.
 4. It SHALL then run OrderUseCase.Issue for the Checkout and return its Order. Every Place for the same Checkout SHALL share one run of Issue and get its outcome. When Issue ends without a Paid Order, Place SHALL fail with FailedPrecondition. When Issue has not ended 30 seconds after Place started it, Place SHALL fail with Unavailable while Issue goes on.
 
-The card authorization of a Checkout that is never committed is given back by CheckoutUseCase.ReleaseExpired. The fan learns which case applied from CheckoutUseCase.Get.
+The card authorization of a Checkout that is never committed is given back by OrderUseCase.ReleaseCardAuthorization once the Checkout ends. The fan learns which case applied from CheckoutUseCase.Get.
 
 #### Scenario: Fan places the order within the hold
 - **WHEN** a fan places the order for their holding Checkout whose Order for 2 tickets has an Authorized card authorization
@@ -29,7 +30,7 @@ The card authorization of a Checkout that is never committed is given back by Ch
 - **THEN** Place fails with FailedPrecondition, nothing is charged and the card is not checked
 
 #### Scenario: Checkout already expired
-- **WHEN** a fan places the order for a Checkout that ReleaseExpired already made Expired
+- **WHEN** a fan places the order for a Checkout that CheckoutUseCase.Expire already made Expired
 - **THEN** Place fails with FailedPrecondition, Issue does not run and nothing is charged
 
 #### Scenario: Concert cancelled during the checkout
