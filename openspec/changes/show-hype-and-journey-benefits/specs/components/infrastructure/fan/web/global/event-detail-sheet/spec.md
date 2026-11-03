@@ -74,7 +74,7 @@ When a signed-in fan's Applied, Unpaid or Paid in the event detail sheet is save
 
 ### Requirement: Status controls are shown to signed-in fans only
 
-The ticket section's status controls (the ticket sale notification button and the row of the other four statuses) SHALL be rendered only when the user is authenticated. An unauthenticated (guest) user SHALL see only the ticket sale notification button and the official site button, as "A guest's notification button starts sign-up" states, and no status row.
+The row of the other four statuses SHALL be rendered only when the user is authenticated, and only an authenticated user's press of the ticket sale notification button SHALL change a status. An unauthenticated (guest) user SHALL see the ticket sale notification button, which starts sign-up as "A guest's notification button starts sign-up" states, and the official site button, and no status row.
 
 #### Scenario: Authenticated user sees the status controls
 

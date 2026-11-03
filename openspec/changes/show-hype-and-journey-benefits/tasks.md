@@ -33,7 +33,7 @@
 
 ## 8. frontend: push offer (components/infrastructure/fan/web/global/notification-prompt)
 
-- [ ] 8.1 Replace the session flag and the unanswered counter of `PushOfferService` with `pushState()` (`on`, `offerable`, `settings`) and remove the counter's device key on startup; verify unit tests for every scenario of "Where the push offer appears", "Push offer eligibility", "Only the post-signup offer is limited" and "Outcome of the browser permission prompt"
+- [ ] 8.1 Replace the session flag and the unanswered counter of `PushOfferService` with `pushState()` (`on`, `offerable`, `settings`) remove the counter's device key on startup, and add the `event_detail_sheet` value to `PermissionRequestSource` for offers from the event detail sheet; verify unit tests for every scenario of "Where the push offer appears", "Push offer eligibility", "Only the post-signup offer is limited", "Outcome of the browser permission prompt" and "The permission answer is reported"
 
 ## 9. frontend: hype snack (components/infrastructure/fan/web/route/my-artists, global/page-help)
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Prompts a signed-in user, once onboarding is complete, to grant push-notification permission, limiting itself to one prompt per session, taking priority over other disruptive prompts, and never reappearing once dismissed.
+Offers push notifications to a signed-in fan where the fan has just asked for something only push delivers (a hype change on My Artists, the ticket section of the event detail sheet) and once after sign-up, and opens the browser's permission prompt only when the fan presses the offer.
 
 ## Requirements
 

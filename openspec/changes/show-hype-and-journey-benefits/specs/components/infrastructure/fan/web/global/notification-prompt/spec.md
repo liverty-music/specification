@@ -1,5 +1,17 @@
 ## MODIFIED Requirements
 
+### Requirement: The permission answer is reported
+
+After the fan answers the browser's push-permission request, the fan app SHALL send one usage analytics event with the answer (granted, denied, or dismissed without an answer) and where the request started: the hype snack on My Artists (the notification prompt), the event detail sheet, the post-signup sheet, Settings, or checkout.
+
+#### Scenario: Fan denies
+- **WHEN** the fan presses 「オンにする」 on the push offer and then blocks notifications in the browser's request
+- **THEN** one event is sent with the answer denied and the notification prompt as its start
+
+#### Scenario: Fan allows from the event detail sheet
+- **WHEN** the fan presses the push offer next to the push line of the ticket section and allows notifications in the browser's request
+- **THEN** one event is sent with the answer granted and the event detail sheet as its start
+
 ### Requirement: Where the push offer appears
 
 The push offer SHALL appear only in these places: the first step of the post-signup sheet (stated by the post-signup dialog surface), the hype snack on My Artists (stated by the My Artists screen), and next to the push line of the ticket section and of the out-of-range notice in the event detail sheet (stated by the event detail sheet surface). No other screen or surface SHALL show a push offer; the push toggle in Settings stays available at all times.
