@@ -101,6 +101,84 @@ renders the icon alone).
 - **AND** the filter chip and the detail-control node SHALL show the same text label and hue sourced from the canonical map
 - **AND** the card badge MAY show the icon alone, without the text label or hue background
 
+### Requirement: Concert detail sheet
+
+The system SHALL provide a detail view for a selected discovered concert using a popover-based sheet (not a modal dialog), ensuring compatibility with coach mark overlays in the top layer. A first-party concert (one whose Series belongs to an Organizer) SHALL NOT open the sheet; tapping its card opens its Event page instead (see "Dashboard routes event selection and shows its loading states").
+
+#### Scenario: Open detail from dashboard
+
+- **WHEN** a user taps a discovered concert's card on the dashboard
+- **THEN** the system SHALL open a bottom sheet displaying the concert detail
+- **AND** the sheet SHALL be shown with `showPopover()` as a non-modal `popover="manual"` sheet, so it never blocks the page behind it and coach marks can still appear above it
+- **AND** the sheet element SHALL be a `<dialog>` providing native dialog semantics (implicit `role="dialog"`)
+- **AND** the URL SHALL update to `/concerts/:id` via `history.pushState` without triggering full page navigation
+- **AND** the sheet SHALL be anchored flush to the bottom edge of the viewport
+
+#### Scenario: Display venue information
+
+- **WHEN** the concert detail view is open
+- **THEN** it SHALL display the venue name (`listed_venue_name`)
+- **AND** when `venue.admin_area` is available it SHALL display the administrative area as the human-readable localized prefecture name (the mapped `locationLabel`), NOT the raw ISO 3166-2 subdivision code (e.g. it SHALL render `東京都`, never `JP-13`)
+- **AND** when `venue.admin_area` is absent it SHALL omit the administrative-area line
+
+#### Scenario: Google Maps link
+
+- **WHEN** the concert detail view is open
+- **THEN** it SHALL render a tappable link that opens Google Maps with a query composed of venue name and admin area
+- **AND** the link's visible label SHALL be sourced from the `eventDetail.openInGoogleMaps` i18n key
+
+#### Scenario: Ticket / official info link
+
+- **WHEN** the concert detail view is open and `source_url` is present
+- **THEN** it SHALL render a button linking to `source_url` in a new tab
+- **AND** the button's visible label SHALL be sourced from the `eventDetail.viewOfficialInfo` i18n key
+
+#### Scenario: Display ticket journey status
+
+- **WHEN** the concert detail view is open
+- **AND** the user has a ticket journey for this event
+- **THEN** the sheet SHALL display the current ticket journey status
+- **AND** the displayed status text SHALL be sourced from `eventDetail.journeyStatus.<value>` (not the raw enum string)
+- **AND** the sheet SHALL provide controls to change the status to any valid `TicketJourneyStatus` value
+- **AND** each control's label SHALL also be sourced from `eventDetail.journeyStatus.<value>`
+
+#### Scenario: Set ticket journey status from detail view
+
+- **WHEN** the user selects a new status from the journey status controls and the change is saved
+- **THEN** the displayed status SHALL update to reflect the change, on the sheet and on the Dashboard as the story stories/track-ticket-journey describes
+
+#### Scenario: Start tracking from detail view
+
+- **WHEN** the concert detail view is open
+- **AND** the user has no ticket journey for this event
+- **THEN** the sheet SHALL provide a control to begin tracking (set initial status)
+
+#### Scenario: Remove ticket journey from detail view
+
+- **WHEN** the user presses the selected status button (or the notification button while it reads 「…受け取り中 ✓」) and the removal is saved
+- **THEN** the status display SHALL revert to the untracked state
+- **AND** the sheet SHALL show no separate control for removing the status
+
+#### Scenario: Dismiss sheet by tapping outside it or pressing Escape
+
+- **WHEN** the detail sheet is open
+- **AND** the user taps the dimmed area above the sheet or presses Escape
+- **THEN** the sheet SHALL close
+- **AND** the URL SHALL revert to the dashboard URL via `history.replaceState`
+
+#### Scenario: Dismiss sheet via swipe down
+
+- **WHEN** the detail sheet is open
+- **AND** the user swipes the sheet down until its body leaves the viewport
+- **THEN** the sheet SHALL call `hidePopover()` and the URL SHALL revert to the dashboard URL
+
+#### Scenario: Dismiss sheet via browser back button
+
+- **WHEN** the detail sheet is open
+- **AND** the user presses the browser back button (triggering a `popstate` event)
+- **THEN** the sheet SHALL close via `hidePopover()`
+- **AND** the sheet SHALL NOT call `history.replaceState` (the browser has already navigated back)
+
 ## REMOVED Requirements
 
 ### Requirement: Compact journey-status control layout

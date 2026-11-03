@@ -2,7 +2,7 @@
 
 ### Requirement: Sales are selected by start time and end time
 
-ListWithPendingMilestones SHALL return every TicketSale whose start time is no later than now plus the lookahead, and whose end time is no earlier than now minus the lookback or whose result date is no earlier than the calendar day, in Japan time (Asia/Tokyo), of now minus the lookback, ordered by start time, earliest first, each with the events it names. An Organizer's sale SHALL be returned only while its Series is Published.
+ListWithPendingMilestones SHALL return every TicketSale whose start time is no later than now plus the lookahead, and whose end time is no earlier than now minus the lookback or whose result date is no earlier than the day before the calendar day, in Japan time (Asia/Tokyo), of now minus the lookback (a fan behind Japan time reaches the result day's 22:00 up to one calendar day later), ordered by start time, earliest first, each with the events it names. An Organizer's sale SHALL be returned only while its Series is Published.
 
 #### Scenario: Opened days ago, closes tomorrow
 - **WHEN** a lottery opened 10 days ago and its end time is tomorrow
@@ -19,6 +19,10 @@ ListWithPendingMilestones SHALL return every TicketSale whose start time is no l
 #### Scenario: Latest milestone just past
 - **WHEN** the lookback is 2 hours and a sale's end time was 1 hour ago
 - **THEN** the sale is returned
+
+#### Scenario: Result date was yesterday in Japan
+- **WHEN** it is 02:30 on 13 October in Japan, the lookback is 2 hours, and a discovered lottery closed on 1 October with result date 12 October
+- **THEN** the sale is returned, because a fan in Hawaii is still on 12 October
 
 #### Scenario: Closed lottery with its result date ahead
 - **WHEN** a discovered lottery closed 5 days ago and its result date is tomorrow

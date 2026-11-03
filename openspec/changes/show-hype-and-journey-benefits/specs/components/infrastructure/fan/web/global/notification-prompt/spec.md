@@ -38,7 +38,7 @@ The push offer SHALL appear only in these places: the first step of the post-sig
 
 ### Requirement: Push offer eligibility
 
-The push offer SHALL be shown only to a signed-in fan whose browser notification permission is undecided and whose browser can receive push notifications. On iOS and iPadOS, the browser can receive push notifications only when the app was added to the home screen and opened from there. A guest SHALL never see a push offer. Where a signed-in fan whose push is off is not eligible, because the browser blocked notifications or cannot receive them, the place of the offer SHALL show the action 「設定」 instead, which opens Settings, where the fan is told how to turn notifications on.
+The push offer SHALL be shown only to a signed-in fan whose browser can receive push notifications and whose browser notification permission is undecided, or allowed while this browser is not registered for push; for the latter, pressing the offer SHALL register this browser without opening the browser's permission prompt. On iOS and iPadOS, the browser can receive push notifications only when the app was added to the home screen and opened from there. A guest SHALL never see a push offer. Where a signed-in fan whose push is off is not eligible, because the browser blocked notifications or cannot receive them, the place of the offer SHALL show the action 「設定」 instead, which opens Settings, where the fan is told how to turn notifications on.
 
 #### Scenario: Guest
 
@@ -49,6 +49,11 @@ The push offer SHALL be shown only to a signed-in fan whose browser notification
 
 - **WHEN** a signed-in fan whose browser already allows notifications and is registered for push saves a hype change
 - **THEN** no push offer appears
+
+#### Scenario: Permission granted but this browser not registered
+
+- **WHEN** a signed-in fan whose browser allows notifications but is not registered for push saves a hype change and presses the offer in the hype snack
+- **THEN** this browser is registered for push without a browser prompt, and new concerts that match the fan's hype levels reach it
 
 #### Scenario: Permission blocked
 

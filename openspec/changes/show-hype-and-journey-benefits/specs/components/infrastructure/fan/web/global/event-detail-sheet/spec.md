@@ -80,7 +80,7 @@ The row of the other four statuses SHALL be rendered only when the user is authe
 
 - **WHEN** an authenticated user opens the concert detail sheet
 - **THEN** the ticket sale notification button and the row of 申込済み, 当選・未入金, 入金済み and 落選 SHALL be visible
-- **AND** the user SHALL be able to select any of the five statuses with one tap
+- **AND** the user SHALL be able to select any of the five statuses with one tap, except Tracking while the status is Paid
 
 #### Scenario: Unauthenticated user sees no status row
 
@@ -101,7 +101,7 @@ The ticket sale notification button and each status in the row SHALL be a button
 #### Scenario: Keyboard
 
 - **WHEN** a keyboard user moves focus through the ticket section
-- **THEN** each of the five buttons is reached with Tab and activated with Enter or Space
+- **THEN** each button the section shows (five, or four with Paid) is reached with Tab and activated with Enter or Space
 
 ### Requirement: The ticket section follows the venue and holds the official site button
 
@@ -121,7 +121,7 @@ The event detail sheet SHALL show, in this order: the hero image when there is o
 
 The ticket section SHALL start with one full-width button for the Tracking status. With no status, or any status other than Tracking, it SHALL read 「🔔 チケット販売の通知を受け取る」 (EN "🔔 Get ticket sale notifications"), shown as the section's primary button when the fan has no status or the status is 落選 (Lost), and as a secondary button otherwise; with Lost it SHALL read 「🔔 次のチケット販売の通知を受け取る」 (EN "🔔 Get notified of the next ticket sale"). With Tracking it SHALL read 「🔔 チケット販売の通知を受け取り中 ✓」 (EN "🔔 Getting ticket sale notifications ✓") in the selected style. With Paid the button SHALL NOT be shown.
 
-Under the button, a signed-in fan SHALL see one row with the other four statuses as buttons, each with its canonical icon and label: 📝 申込済み › 💰 当選・未入金 › 🎟️ 入金済み, and 💔 落選 set apart from them; the row wraps on a narrow screen. Pressing an unselected button SHALL set that status; pressing the selected button, including the notification button while it reads 「…受け取り中 ✓」, SHALL remove the fan's status for the event. Every status, and no status, SHALL be reachable with one tap from any status.
+Under the button, a signed-in fan SHALL see one row with the other four statuses as buttons, each with its canonical icon and label: 📝 申込済み › 💰 当選・未入金 › 🎟️ 入金済み, and 💔 落選 set apart from them; the row wraps on a narrow screen. Pressing an unselected button SHALL set that status; pressing the selected button, including the notification button while it reads 「…受け取り中 ✓」, SHALL remove the fan's status for the event. Every status, and no status, SHALL be reachable with one tap from any status, except Tracking from Paid: with Paid the notification button is hidden, so the fan first clears Paid by pressing 入金済み.
 
 #### Scenario: Start tracking
 

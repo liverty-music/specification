@@ -15,7 +15,7 @@
 
 - [ ] 4.1 `TicketSale.SearchPublishedSales`: add the optional `result_date` to the Gemini response schema and prompt, parse it, and drop only the field when it is unparsable or before the end date (reported as a discard reason); verify unit tests for every scenario of "A lottery's result date is returned when the pages state it" and add result-date cases to the real-page integration test
 - [ ] 4.2 `TicketSale.UpsertDiscovered` stores the result date on insert and `COALESCE`s it on update; verify the contract tests for every scenario of `entity/ticket-sale/upsert-discovered` "Same series, method and start date is one discovered sale"
-- [ ] 4.3 `TicketSale.ListWithPendingMilestones` also keeps a sale whose result date is no earlier than the JST day of now minus the lookback; verify the contract tests for every scenario of "Sales are selected by start time and end time"
+- [ ] 4.3 `TicketSale.ListWithPendingMilestones` also keeps a sale whose result date is no earlier than the day before the JST day of now minus the lookback; verify the contract tests for every scenario of "Sales are selected by start time and end time"
 - [ ] 4.4 Add `TicketJourney.ListUserIDsAppliedSeries` to the ticket journey repository interface and implementation, beside `ListUserIDsTrackingSeries`; verify the contract tests for every scenario of `entity/ticket-journey/list-user-ids-applied-series`
 
 ## 5. backend: usecase (components/usecase/ticket-sale/scan-due-reminders)
@@ -24,7 +24,7 @@
 
 ## 6. backend: story and release (stories/get-reminded-of-ticket-sale-milestones)
 
-- [ ] 6.1 Add a story test (in-memory push, fake clock) for every scenario of "Milestone reminders reach tracking and applied fans", including "Fan who has applied" receiving one 今日は抽選結果の発表日 push and "Fan still tracking on the result day" receiving none; verify it passes in backend CI
+- [ ] 6.1 Add a story test (in-memory push, fake clock) for every scenario of "Milestone reminders reach tracking and applied fans" and "The Organizer's own sales are reminded too" (no result-day push for an Organizer's lottery), including "Fan who has applied" receiving one 今日は抽選結果の発表日 push and "Fan still tracking on the result day" receiving none; verify it passes in backend CI
 - [ ] 6.2 Run `make check`, open the backend PR (OpenSpec Traceability filled), merge and release; confirm read-only in prod that the AtlasMigration applied, `ticket_sales.result_date` exists, and after the next 21:00 discovery run the search generations in product analytics report result dates returned or discarded
 
 ## 7. frontend: snack bar (components/infrastructure/fan/web/global/snack-bar)
@@ -45,7 +45,7 @@
 ## 10. frontend: ticket section (components/infrastructure/fan/web/global/event-detail-sheet, route/dashboard)
 
 - [ ] 10.1 Set `JOURNEY_STATUS_CONFIG.tracking.icon` to 🔔; verify the scenarios of "Journey-Status Presentation" in the map's unit test and the card badge and filter chip stories
-- [ ] 10.2 Rebuild the sheet order and the ticket section: calendar link in the date row, the notification button, the `aria-pressed` status row (pressing the selected one deletes the journey), the push line from `pushState()`, the official site button, no footer; replace the `eventDetail.*` keys as "Localized Concert Detail Sheet Copy" lists; verify component tests for every scenario of "The ticket section follows the venue and holds the official site button", "The ticket section leads with the ticket sale notification button", "The push line says what the current status brings", "Status controls are shown to signed-in fans only", "Ticket Status buttons accessibility" and "The ticket section shows the four statuses in one row", and update the sheet's stories and visual baselines
+- [ ] 10.2 Rebuild the sheet order and the ticket section: calendar link in the date row, the notification button, the `aria-pressed` status row (pressing the selected one deletes the journey), the push line from `pushState()`, the official site button, no footer; replace the `eventDetail.*` keys as "Localized Concert Detail Sheet Copy" lists; verify component tests for every scenario of "The ticket section follows the venue and holds the official site button", "The ticket section leads with the ticket sale notification button", "The push line says what the current status brings", "Status controls are shown to signed-in fans only", "Ticket Status buttons accessibility", "The ticket section shows the four statuses in one row" and "Concert detail sheet", and update the sheet's stories and visual baselines
 - [ ] 10.3 Reword the calendar-tracking snack and the hype-raise snack from `infer-hype-and-journey` (the raise snack through `hypeReachWords`); verify component tests for every scenario of "Adding to the calendar starts tracking" and "A hype level raised by a journey change is shown with undo"
 - [ ] 10.4 Add the out-of-range notice (lane → lowest matching level, `followStore.setHype`, saved form with the push action); verify component tests for every scenario of "The out-of-range notice widens what is pushed"
 - [ ] 10.5 If the route template markers change, update `ROUTE_MARKERS` and verify `npm run build && npm run verify:build-templates`
