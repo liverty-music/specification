@@ -1,7 +1,7 @@
 # components/usecase/order/issue Specification
 
 ## Purpose
-OrderUseCase.Issue charges a Won LotteryEntry's card authorization and makes its Pending Order Paid, with its account-bound covered tickets and its Settlement, exactly once.
+OrderUseCase.Issue charges the card authorization of a Won LotteryEntry's or a placed Checkout's Pending Order, committing the Checkout's tickets first, and makes the Order Paid, with its account-bound covered tickets and its Settlement, exactly once.
 
 ## Requirements
 
