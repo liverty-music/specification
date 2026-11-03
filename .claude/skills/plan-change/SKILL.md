@@ -1,22 +1,22 @@
 ---
 name: plan-change
-description: Takes a liverty-music change from idea to a ready-to-implement workspace in one run - writes the OpenSpec change with openspec-propose, opens and merges its plan PR from a worktree, syncs the store checkout, then creates one worktree per affected repository and opens them together as an OpenSpec workset in VS Code. Use this whenever the user wants to plan a new change and start working on it ("propose して PR して workset まで", "change を作って実装を始められる状態にして", "plan PR を出して workset を開いて", "/plan-change <idea>"), or asks for any two of propose / plan PR / workset in sequence. It stops once, just before the push, to show the change for approval. For only writing artifacts use openspec-propose; for only opening a workset of a merged change, start at step 6 of this skill.
+description: Takes a liverty-music change from idea to a ready-to-implement workspace in one run - writes the OpenSpec change with openspec-propose, opens and merges its plan PR from a worktree, syncs the store checkout, then creates one worktree per affected repository and opens them together as an OpenSpec workset in VS Code. Use this whenever the user wants to plan a new change and start working on it ("propose して PR して workset まで", "change を作って実装を始められる状態にして", "plan PR を出して workset を開いて", "/plan-change <idea>"), or asks for any two of propose / plan PR / workset in sequence. It stops before the push to show the change for approval only when the user has not already agreed to its content in the conversation. For only writing artifacts use openspec-propose; for only opening a workset of a merged change, start at step 6 of this skill.
 ---
 
 # Plan a change and launch its workset
 
 The routine after an idea is agreed is always the same: write the change, get it reviewed and merged on
-`main`, then open the implementation worktrees. This skill runs it end to end so the user only steps in once,
-to approve the change before it leaves the machine.
+`main`, then open the implementation worktrees. This skill runs it end to end. The user steps in at most once,
+to approve the change before it leaves the machine, and not at all when they already agreed to its content.
 
 ```
-propose (store checkout) -> plan worktree -> commit -> pre-push-review -> [user approves] -> push
+propose (store checkout) -> plan worktree -> commit -> pre-push-review -> [approval unless agreed] -> push
   -> PR -> CI / review loop -> merge -> sync store -> worktrees -> workset -> VS Code
 ```
 
 The procedures behind each step are in `README.md` ("Lifecycle of a change", "Branch work in this repository",
 "Local: parallel work with worktrees") and `openspec/AGENTS.md`. Read them when a step below is unclear; this
-skill only fixes the order, the names and the one stop.
+skill only fixes the order, the names and the one possible stop.
 
 Names used below: `<store>` is this specification checkout's absolute path (the store, always on `main`),
 `<repos>` its parent directory (the four repositories side by side), `<change>` the kebab-case change name.
@@ -58,25 +58,34 @@ checkout on `main`. This repository's plan commits read `docs(openspec): plan <c
 From now on, **edit only in the plan worktree**. The store copy is retired at step 5, so a fix made there
 would be lost, and a fix made only in the worktree is exactly what lands on `main`.
 
-## 4. Review, then stop for the user
+## 4. Review, then stop only for content not yet agreed
 
 1. Run the `pre-push-review` skill on the plan worktree's range. Fix each accepted finding in the worktree and
    commit it; review the fix range again as that skill says.
-2. **Stop and show the user the change** before pushing. This is the only planned stop: everything after it
-   is outward-facing (a PR, a merge to `main`, an auto-run of downstream jobs), and plans have often needed a
-   second look. Show:
-   - the change name and one paragraph of what it does and why (from proposal.md);
-   - the capabilities it adds, modifies and removes;
-   - `tasks.md` section by section, with the repositories each section touches;
-   - the pre-push-review table (findings, decisions, fixes);
-   - for MODIFIED / REMOVED / RENAMED requirements, the relevant part of `openspec show <change> --diff`;
-   - the worktrees step 6 will create, and which one opens first.
+2. **Decide whether to stop.** Everything after this step is outward-facing (a PR on a public repository, a
+   merge to `main`, an auto-run of downstream jobs), so the change must leave the machine with content the
+   user agreed to. Agreement given earlier in the conversation counts; asking again for the same content only
+   adds a round trip.
+   - **Go on to step 5 without stopping** when the user agreed to the change's content earlier in the
+     conversation (an html-plan response, an explicit OK on the proposal or on its decisions) and every
+     commit since then only makes the artifacts consistent with what was agreed: review fixes that resolve a
+     contradiction, a stale Purpose, a missing case of an agreed rule. Points you raised that the user left
+     unanswered do not block; list them in the step 7 report so they can be changed during implementation.
+   - **Stop** when the user agreed to nothing yet (the skill started from an idea alone), or when a fix
+     changes behaviour the user agreed to (a different screen, rule, wording or scope). Show:
+     - the change name and one paragraph of what it does and why (from proposal.md);
+     - the capabilities it adds, modifies and removes;
+     - `tasks.md` section by section, with the repositories each section touches;
+     - the pre-push-review table (findings, decisions, fixes);
+     - for MODIFIED / REMOVED / RENAMED requirements, the relevant part of `openspec show <change> --diff`;
+     - the worktrees step 6 will create, and which one opens first.
 
-   Ask a direct yes/no question and wait. If the user asks for edits, make them in the worktree, commit,
-   rerun pre-push-review on the new commits, and show the change again. Silence or an answer to some other
-   question is not approval.
+     Ask a direct yes/no question and wait. If the user asks for edits, make them in the worktree, commit,
+     rerun pre-push-review on the new commits, and show the change again. Silence or an answer to some other
+     question is not approval.
 
-If pre-push-review cannot run, say so in the same stop and let the user decide whether to push without it.
+If pre-push-review cannot run, stop even when the content is agreed: say why and let the user decide whether
+to push without it.
 
 ## 5. Push, PR, merge, sync
 
@@ -172,7 +181,8 @@ user would create.
 Tell the user, in their language:
 
 - the merged plan PR as a Markdown link, with the quoted merged state;
-- any review fixes and the sync `diff` result;
+- the pre-push-review table (findings, decisions, fixes) and the sync `diff` result;
+- when step 4 did not stop: the points raised earlier that the user left unanswered;
 - the workset table (member, path, branch, which tasks it serves) and the line that confirmed the window;
 - the first command to run in the new window: `/opsx:apply <change>` in the first member, and, when the
   change has proto tasks, that backend and frontend build against the new types only after the proto release
