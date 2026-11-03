@@ -68,13 +68,13 @@ The component SHALL be a pure selection UI: it SHALL NOT call `UserService.setHo
 
 #### Scenario: Caller owns persistence — authenticated home save
 
-- **WHEN** the `user-home-selector` is used on the Settings page or as the home sheet of the Dashboard or My Artists
-- **THEN** the caller (Settings page / onboarding handler) SHALL call `UserService.setHome()` in its `onHomeSelected` handler
+- **WHEN** the `user-home-selector` is used for a signed-in fan on the Settings page or as the home sheet of the Dashboard or My Artists
+- **THEN** the caller (the Settings page, the Dashboard or My Artists) SHALL call `UserService.setHome()` in its `onHomeSelected` handler
 - **AND** the component itself SHALL NOT call any backend RPC
 
 #### Scenario: Caller owns persistence — guest home save
 
-- **WHEN** the `user-home-selector` is used on the Settings page or onboarding flow for a guest user
+- **WHEN** the `user-home-selector` is used for a guest user on the Settings page or as the home sheet of the Dashboard or My Artists
 - **THEN** the caller SHALL write the ISO 3166-2 code to localStorage under `guest.home`
 - **AND** the component itself SHALL NOT write to localStorage
 
