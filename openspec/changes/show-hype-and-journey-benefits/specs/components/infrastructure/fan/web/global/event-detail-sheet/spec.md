@@ -34,7 +34,7 @@ When a signed-in fan with no journey for the event chooses add to calendar in th
 #### Scenario: Calendar add from the sheet
 
 - **WHEN** a signed-in fan with no journey for an event chooses add to calendar, the calendar opens, and the fan comes back to the app
-- **THEN** the sheet shows 「🔔 チケット販売の通知を受け取り中」, the Dashboard shows the 🔔 badge for the event, and the snack 「🔔 チケット販売の通知を受け取ります」 offers 「取り消す」
+- **THEN** the sheet shows 「🔔 チケット販売の通知を受け取り中 ✓」, the Dashboard shows the 🔔 badge for the event, and the snack 「🔔 チケット販売の通知を受け取ります」 offers 「取り消す」
 
 #### Scenario: Undo
 
@@ -90,7 +90,7 @@ The row of the other four statuses SHALL be rendered only when the user is authe
 
 ### Requirement: Ticket Status buttons accessibility
 
-The ticket sale notification button and each status in the row SHALL be a button exposing whether it is selected (`aria-pressed`), with at most one of the five selected. Each SHALL have an accessible name made of its canonical label, and a tap target of at least 44px.
+The ticket sale notification button and each status in the row SHALL be a button exposing whether it is selected (`aria-pressed`), with at most one of the five selected. Each status in the row SHALL have an accessible name made of its canonical label, and the notification button an accessible name made of its visible text; each SHALL have a tap target of at least 44px.
 
 #### Scenario: Pressed state
 

@@ -62,10 +62,13 @@ exposed via `aria-label` on a bare element with an implicit `generic` role,
 since user agents do not reliably announce a name on such elements. A given
 journey status SHALL render with a consistent identity wherever it appears —
 the dashboard filter chips, the concert-card journey badge, and the
-concert-detail status control: the icon SHALL be the same across all
+status row of the concert detail sheet: the icon SHALL be the same across all
 surfaces, and the hue and visible text label SHALL appear on the filter chips
-and the detail control (both MAY be omitted on the concert-card badge, which
-renders the icon alone).
+and the status row (both MAY be omitted on the concert-card badge, which
+renders the icon alone). Tracking has no button in that row: its control on
+the sheet is the ticket sale notification button, which shows the canonical
+icon 🔔 with its own labels (`eventDetail.notify.*`) and the section's button
+style instead of the canonical label and hue.
 
 #### Scenario: Single source of truth
 - **WHEN** a journey status needs a label, icon, or hue in any component
@@ -96,10 +99,11 @@ renders the icon alone).
 - **AND** the canonical label SHALL NOT be exposed via `aria-label` on a bare element with an implicit `generic` role (a naming-prohibited role), since user agents do not reliably announce a name on such elements
 
 #### Scenario: Same status looks the same everywhere
-- **WHEN** the same journey status appears as a filter chip, a card badge, and a detail-control node
+- **WHEN** the same journey status other than Tracking appears as a filter chip, a card badge, and a button of the detail sheet's status row
 - **THEN** all three SHALL show the same icon sourced from the canonical map
-- **AND** the filter chip and the detail-control node SHALL show the same text label and hue sourced from the canonical map
+- **AND** the filter chip and the status-row button SHALL show the same text label and hue sourced from the canonical map
 - **AND** the card badge MAY show the icon alone, without the text label or hue background
+- **AND** for Tracking, the filter chip and the card badge SHALL show 🔔 from the canonical map, and the detail sheet's notification button SHALL show 🔔 with its `eventDetail.notify.*` label
 
 ### Requirement: Concert detail sheet
 
@@ -139,8 +143,8 @@ The system SHALL provide a detail view for a selected discovered concert using a
 - **AND** the user has a ticket journey for this event
 - **THEN** the sheet SHALL display the current ticket journey status
 - **AND** the displayed status text SHALL be sourced from `eventDetail.journeyStatus.<value>` (not the raw enum string)
-- **AND** the sheet SHALL provide controls to change the status to any valid `TicketJourneyStatus` value
-- **AND** each control's label SHALL also be sourced from `eventDetail.journeyStatus.<value>`
+- **AND** the sheet SHALL provide the ticket sale notification button for Tracking (hidden while the status is Paid, as the event detail sheet surface states) and the row of the other four statuses
+- **AND** each control in that row SHALL have its label sourced from `eventDetail.journeyStatus.<value>`, and the notification button SHALL take its labels from `eventDetail.notify.*`
 
 #### Scenario: Set ticket journey status from detail view
 

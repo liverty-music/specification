@@ -14,7 +14,7 @@
 ## 4. backend: entity operations
 
 - [ ] 4.1 `TicketSale.SearchPublishedSales`: add the optional `result_date` to the Gemini response schema and prompt, parse it, and drop only the field when it is unparsable or before the end date (reported as a discard reason); verify unit tests for every scenario of "A lottery's result date is returned when the pages state it" and add result-date cases to the real-page integration test
-- [ ] 4.2 `TicketSale.UpsertDiscovered` stores the result date on insert and `COALESCE`s it on update; verify the contract tests for every scenario of `entity/ticket-sale/upsert-discovered` "Same series, method and start date is one discovered sale"
+- [ ] 4.2 `TicketSale.UpsertDiscovered` stores the result date on insert, and on update takes the new one or keeps the stored one while it is no earlier than the JST day of the new end time; verify the contract tests for every scenario of `entity/ticket-sale/upsert-discovered` "Same series, method and start date is one discovered sale"
 - [ ] 4.3 `TicketSale.ListWithPendingMilestones` also keeps a sale whose result date is no earlier than the day before the JST day of now minus the lookback; verify the contract tests for every scenario of "Sales are selected by start time and end time"
 - [ ] 4.4 Add `TicketJourney.ListUserIDsAppliedSeries` to the ticket journey repository interface and implementation, beside `ListUserIDsTrackingSeries`; verify the contract tests for every scenario of `entity/ticket-journey/list-user-ids-applied-series`
 

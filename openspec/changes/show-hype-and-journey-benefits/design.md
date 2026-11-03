@@ -66,7 +66,7 @@ The result date is never shown in the UI; the Applied push line names no date fo
 
 - **Storage.** `ticket_sales.result_date DATE NULL`, with `CHECK (result_date IS NULL OR (discovered_at IS NOT NULL AND method = 2 AND result_date >= (sale_end_at AT TIME ZONE 'Asia/Tokyo')::date))`. A calendar date, not a `TIMESTAMPTZ`: pages often give a day or a range of days, and the reminder needs only the day; storing an instant would invent a time. Go entity `TicketSale.ResultDate` (a date value type with a valid flag) and `DiscoveredTicketSale.ResultDate`.
 - **Extraction.** The response schema gains an optional `result_date` (`YYYY-MM-DD`): the first day the page says lottery results are announced (当落発表, 抽選結果発表, 当選発表), read in the page's time zone. The searcher drops the field, not the sale, when it is unparsable or before the end date, and reports that as a discard reason in the generation's sale-parse result.
-- **Upsert.** On a match, `result_date = COALESCE($new, result_date)`, so a re-discovery without the field keeps the stored date.
+- **Upsert.** On a match, `result_date = CASE WHEN $new IS NOT NULL THEN $new WHEN result_date >= ($end AT TIME ZONE 'Asia/Tokyo')::date THEN result_date END`: a re-discovery without the field keeps the stored date, unless the new end time falls after it, which would break the CHECK; the statement stays a single upsert.
 - **Pending sales.** `ListWithPendingMilestones` adds `OR result_date >= ((now() - lookback) AT TIME ZONE 'Asia/Tokyo')::date - 1` (one day earlier, because a fan behind Japan time reaches 22:00 on the result date up to a calendar day later in Japan time) to the end-time condition.
 
 ### Result-day stage
