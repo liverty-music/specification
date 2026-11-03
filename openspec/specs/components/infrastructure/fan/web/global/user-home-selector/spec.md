@@ -55,7 +55,7 @@ The home-area selector SHALL indicate the currently selected prefecture/city rea
 
 ### Requirement: Unified home area selector
 
-The frontend SHALL provide a single reusable `user-home-selector` component for selecting the user's home area. This component SHALL be used in the onboarding flow (the Dashboard bottom sheet), the Settings page, and the Dashboard All Nearby area selector. The component SHALL implement a consistent 2-step selection flow with an optional quick-select shortcut.
+The frontend SHALL provide a single reusable `user-home-selector` component for selecting the user's home area. This component SHALL be used as the home sheet of the Dashboard and My Artists ("A person without a home is asked on the Dashboard and My Artists"), on the Settings page, and as the All Nearby area selector. The component SHALL implement a consistent 2-step selection flow with an optional quick-select shortcut.
 
 The component SHALL be a pure selection UI: it SHALL NOT call `UserService.setHome()`, write to localStorage, or resolve the user store / the auth service internally. All persistence decisions are delegated to the caller via the `onHomeSelected` callback.
 
@@ -89,13 +89,13 @@ The component SHALL be a pure selection UI: it SHALL NOT call `UserService.setHo
 
 #### Scenario: Caller owns persistence — authenticated home save
 
-- **WHEN** the `user-home-selector` is used on the Settings page or onboarding flow
-- **THEN** the caller (Settings page / onboarding handler) SHALL call `UserService.setHome()` in its `onHomeSelected` handler
+- **WHEN** the `user-home-selector` is used for a signed-in fan on the Settings page or as the home sheet of the Dashboard or My Artists
+- **THEN** the caller (the Settings page, the Dashboard or My Artists) SHALL call `UserService.setHome()` in its `onHomeSelected` handler
 - **AND** the component itself SHALL NOT call any backend RPC
 
 #### Scenario: Caller owns persistence — guest home save
 
-- **WHEN** the `user-home-selector` is used on the Settings page or onboarding flow for a guest user
+- **WHEN** the `user-home-selector` is used for a guest user on the Settings page or as the home sheet of the Dashboard or My Artists
 - **THEN** the caller SHALL write the ISO 3166-2 code to localStorage under `guest.home`
 - **AND** the component itself SHALL NOT write to localStorage
 
@@ -138,3 +138,33 @@ The frontend SHALL use a unified `userHome.*` i18n namespace for all home area s
 - **THEN** the `userHome.description` JA value SHALL explain what the selected area controls (the HOME STAGE lane contents) AND ask which area the user resides in, presented as a single string composed of two clearly-separated clauses
 - **AND** the copy SHALL NOT use `あなたの地元` (which inaccurately implies a known home rather than a chosen area)
 - **AND** the canonical JA form SHALL be: `HOME STAGEには選択したエリアのライブが並びます。あなたの居住エリアはどこですか？`
+
+### Requirement: A person without a home is asked on the Dashboard and My Artists
+
+When the Dashboard or My Artists opens and the person has no home area (a guest who has not chosen one, or a signed-in fan whose account has none), the screen SHALL open the `user-home-selector` as a sheet. For a signed-in fan, and for a guest in onboarding, the sheet SHALL NOT close by tapping the backdrop, pressing ESC or swiping down; it SHALL close only when an area is selected. A guest who has finished onboarding MAY close it, and it SHALL open again the next time either screen opens. The selected area SHALL become the person's home: on the device for a guest, through `UserService.SetHome` for a signed-in fan. No other screen SHALL open the sheet because the home is missing.
+
+#### Scenario: New account without a home opens the Dashboard
+
+- **WHEN** a fan whose account was created without a home opens the Dashboard
+- **THEN** the home sheet opens, and tapping the backdrop or pressing ESC leaves it open
+- **AND** selecting 東京都 closes it and saves home JP-13 to the account
+
+#### Scenario: Signed-in fan without a home opens My Artists
+
+- **WHEN** a signed-in fan whose account has no home opens My Artists
+- **THEN** the home sheet opens and cannot be closed until an area is selected
+
+#### Scenario: Sheet left without a choice
+
+- **WHEN** a signed-in fan closes the app while the home sheet is open, and later opens the Dashboard
+- **THEN** the home sheet opens again
+
+#### Scenario: Guest after onboarding closes the sheet
+
+- **WHEN** a guest who finished onboarding without a home opens My Artists and closes the sheet
+- **THEN** My Artists stays open without a home, and the sheet opens again the next time the guest opens the Dashboard or My Artists
+
+#### Scenario: Event page does not ask
+
+- **WHEN** a signed-in fan without a home opens an Event page
+- **THEN** no home sheet opens

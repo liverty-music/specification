@@ -43,7 +43,7 @@ When a guest picks a hype level, it SHALL be kept on the device only, nothing SH
 
 ### Requirement: The hype level decides highlights and pushes
 
-A concert of the artist SHALL be highlighted on the Dashboard exactly when the fan's hype level covers the concert's lane (Home covers home-area concerts, Nearby covers home-area and nearby ones, Away covers all, Watch covers none), and a newly added concert SHALL reach the fan by push under the same matching, as the story stories/get-notified-of-new-concerts describes.
+A concert of the artist SHALL be highlighted on the Dashboard exactly when the fan's hype level matches the concert (Home matches home-area concerts, Nearby matches home-area and nearby ones, Away matches all, Watch matches none), and a newly added concert SHALL reach the fan by push under the same matching, as the story stories/get-notified-of-new-concerts describes.
 
 #### Scenario: Raising the level to Away
 
@@ -54,3 +54,17 @@ A concert of the artist SHALL be highlighted on the Dashboard exactly when the f
 
 - **WHEN** a fan sets an artist to Watch
 - **THEN** the artist's concerts still appear on the Dashboard, none is highlighted, and no push is sent for new ones
+
+### Requirement: The app never changes a hype level the fan set
+
+The app SHALL raise a hype level only when the fan did not set it, and SHALL never lower one; once the fan picks a level on My Artists, or undoes a raise, that level SHALL stay until the fan changes it. A guest's picked level SHALL count as the fan's own choice after sign-up.
+
+#### Scenario: Picked level survives a distant journey
+
+- **WHEN** a signed-in fan sets an artist to Home on My Artists and later saves Paid for the artist's concert in the away lane
+- **THEN** My Artists still shows the artist at Home
+
+#### Scenario: Undone raise stays
+
+- **WHEN** the app raised an artist to Away after the fan's Applied and the fan pressed 「取り消す」
+- **THEN** a later Applied for another distant concert of the artist leaves it at Nearby

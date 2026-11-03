@@ -572,9 +572,9 @@ Each discovered concert's card on the Dashboard SHALL show a badge with the fan'
 - **WHEN** a signed-in fan has set a journey status for a first-party concert but holds no Issued Ticket for it
 - **THEN** that concert's card shows no badge
 
-### Requirement: Concerts the fan's hype level covers are highlighted
+### Requirement: Concerts the fan's hype level matches are highlighted
 
-A concert card SHALL be highlighted when the fan's hype level for its artist covers the lane the concert is in: Home covers the home lane, Nearby the home and nearby lanes, Away every lane, Watch none. Other cards SHALL be shown without the highlight. The hype level does not change which concerts are shown or their order.
+A concert card SHALL be highlighted when the fan's hype level for its artist matches the concert, by the lane the concert is in: Home matches the home lane, Nearby the home and nearby lanes, Away every lane, Watch none. Other cards SHALL be shown without the highlight. The hype level does not change which concerts are shown or their order.
 
 #### Scenario: Nearby artist with a distant concert
 

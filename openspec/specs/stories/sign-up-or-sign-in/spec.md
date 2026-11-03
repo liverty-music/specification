@@ -68,17 +68,23 @@ The system SHALL provide Passkey authentication via Zitadel. For new users, auth
 
 ### Requirement: Every sign-in resolves the account with Create
 
-After a sign-in, whether at the end of the tutorial or through the Login link, when the app remembers no account for the signed-in identity, it SHALL call UserUseCase.Create with the app's current display language as preferred language and, when the guest chose a home during onboarding, that home, and SHALL remember the returned account for that identity. Create is the one call that both registers a new identity and returns an existing one, so a returning fan is treated the same as a new one. Signing out SHALL forget the remembered account, so the next sign-in resolves it with Create again. After the account is resolved, the guest's follows and hype levels are merged as the story stories/merge-guest-data-on-signup describes.
+After a sign-in, whether at the end of the tutorial, through the Login link or from any other screen, when the app remembers no account for the signed-in identity, it SHALL call UserUseCase.Create with the app's current display language as preferred language and, when the guest chose a home, that home, and SHALL remember the returned account for that identity. Create is the one call that both registers a new identity and returns an existing one, so a returning fan is treated the same as a new one. When the guest chose no home, the account is created without one and the app continues to where the sign-up started; the home is asked for later, on the Dashboard or My Artists (components/infrastructure/fan/web/global/user-home-selector), never in the sign-up itself. Signing out SHALL forget the remembered account, so the next sign-in resolves it with Create again. After the account is resolved, the guest's follows and hype levels are merged as the story stories/merge-guest-data-on-signup describes.
 
 #### Scenario: New fan finishes the tutorial
 
 - **WHEN** a guest who chose home JP-13 during onboarding and uses the app in Japanese signs up at the end of the tutorial
 - **THEN** a new account is created with home JP-13 and preferred language `ja`, and the app uses it from then on
 
+#### Scenario: Sign-up from the event page without a home
+
+- **WHEN** a guest who never chose a home signs up from an event page
+- **THEN** the account is created without a home and the event page opens again, with no home sheet
+- **AND** the next time the fan opens the Dashboard or My Artists, the app asks for the home area in a sheet that cannot be closed
+
 #### Scenario: Returning fan signs in on a new device
 
 - **WHEN** a fan with an account whose language is `en` signs in through the Login link on a device set to Japanese
-- **THEN** the app uses the existing account and its preferred language stays `en`
+- **THEN** the app uses the existing account, does not ask for a home area, and its preferred language stays `en`
 
 #### Scenario: Sign out and back in
 
