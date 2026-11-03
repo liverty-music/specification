@@ -24,7 +24,7 @@ Tapping a reminder SHALL open the detail sheet of the fan's earliest upcoming ev
 - **THEN** the fan receives one push around 5 October 18:00 and one around 08:00 on 22 October
 
 #### Scenario: Fan who has applied
-- **WHEN** a fan sets their journey on the tour's event to Applied before the lottery closes, and the lottery's page states that results are announced on 3 November 15:00
+- **WHEN** a fan sets their journey on the tour's event to Applied more than 24 hours before the lottery closes, and the lottery's page states that results are announced on 3 November 15:00
 - **THEN** the fan receives no closing reminder for it, and receives one 今日は抽選結果の発表日 push around 09:00 on 3 November
 
 #### Scenario: Result day not stated
