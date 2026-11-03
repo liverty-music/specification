@@ -174,7 +174,7 @@ A guest follow entry gains `hypeSetBy: 'default' | 'fan'`. A hype change by the 
 - [A fan without a home sees a sheet they cannot close on the Dashboard and My Artists] → only a signed-in fan with no home, which is a new account from an Event page or an older account, and only on the two screens that need the home. It is the same sheet onboarding and Settings use.
 - [The two journey writes from announcements lag behind the fact] → the fan sees Applied after the forwarder and the consumer run (seconds). The lottery entry screen shows the entry itself, not the journey.
 - [Overlap with in-flight changes] → written against the main specs as the archived `publish-events-through-outbox` left them. `make-lottery-draw-durable` adds a requirement to `stories/win-tickets-in-a-lottery` under a different name, so the two deltas do not collide.
-- [Verification without a dev environment] → unit and repository tests, the Stripe Sandbox E2E for the lottery entry (Applied after the entry is announced), and read-only prod checks of the new columns and the announcements.
+- [Verification without a dev environment] → unit and repository tests, the lottery story test `TestLotteryStory_EntryMarksJourneyApplied` for the lottery entry (Applied after the entry is announced), and read-only prod checks of the new columns and the announcements.
 
 ## Migration Plan
 

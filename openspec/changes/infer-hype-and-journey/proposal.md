@@ -53,7 +53,7 @@ Not changed: `components/usecase/lottery-entry/run-draw`. Recording Lost for a l
 
 ## Impact
 
-- **specification**: `proto/liverty_music/rpc/ticket_journey/v1/ticket_journey_service.proto` gains `InferTracking`; the entity messages `Follow` and `TicketJourney` gain `hype_set_by` and `status_set_by` (the announcement payloads); `docs/analytics/event-catalog.md` gains the `set_by` property on `artist.hype.changed` and `ticket.journey.status.changed`.
+- **specification**: `proto/liverty_music/rpc/ticket_journey/v1/ticket_journey_service.proto` gains `InferTracking`; the doc comments of `User.home`, `UserService.Create` and `CreateRequest.home` revert to say the home is optional; the entity messages `Follow` and `TicketJourney` gain `hype_set_by` and `status_set_by` (the announcement payloads); `docs/analytics/event-catalog.md` gains the `set_by` property on `artist.hype.changed` and `ticket.journey.status.changed`.
 - **backend**: migration adding `followed_artists.hype_set_by` and `ticket_journeys.status_set_by` with backfill; entity, repositories, `FollowUseCase.SetHype`, `TicketJourneyUseCase` (SetStatus, MarkPaid, new InferTracking and MarkApplied), the new subject `ORDER.lottery_entry_entered` and its consumer, the ticket journey RPC handler.
 - **frontend**: event detail sheet (calendar inference, return snack, hype raise snack), follow store re-read after a journey change, guest storage and guest merge, and the home sheet on the Dashboard and My Artists for a person without a home.
 - **cloud-provisioning**: the `ORDER.*` stream already captures the new subject; a durable consumer for MarkApplied.
