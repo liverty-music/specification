@@ -55,26 +55,17 @@ On a notice that the card issuer of an Order's user opened a dispute, the endpoi
 
 ### Requirement: Other notices are acknowledged
 
-Notices that a refund was applied, that a payout was reversed, or that the platform's own bank payout succeeded or failed, and notices of any other kind than a dispute, a completed charge or a completed card authentication, SHALL be acknowledged without effect.
+Notices that a charge completed, that a refund was applied, that a payout was reversed, or that the platform's own bank payout succeeded or failed, and notices of any other kind than a dispute or a completed card authentication, SHALL be acknowledged without effect.
 
 #### Scenario: Refund confirmation
 
 - **WHEN** a notice confirms a refund the platform issued
 - **THEN** it is acknowledged and nothing changes
 
-### Requirement: A completed charge is fulfilled
+#### Scenario: Completed charge
 
-On a notice that a charge completed, the endpoint SHALL call OrderUseCase.FulfillPayment with the notice's provider payment ID. When FulfillPayment fails, the endpoint SHALL answer with Internal, so the provider delivers the notice again.
-
-#### Scenario: Checkout charge completes
-
-- **WHEN** a notice reports that the charge of a fan's checkout completed
-- **THEN** OrderUseCase.FulfillPayment runs for its provider payment ID
-
-#### Scenario: Fulfillment fails
-
-- **WHEN** FulfillPayment fails
-- **THEN** the endpoint answers with Internal, the notice is not counted as applied, and a redelivery fulfills it
+- **WHEN** a notice reports that the charge of a fan's checkout or of a won lottery entry completed
+- **THEN** it is acknowledged and nothing changes, because OrderUseCase.Issue already made the Order Paid with Order.Issue, which announced it
 
 ### Requirement: A completed card authentication confirms the lottery entry
 

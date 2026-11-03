@@ -23,7 +23,7 @@ DeleteAndSuppress on an id that does not exist SHALL succeed and SHALL record no
 DeleteAndSuppress SHALL fail with FailedPrecondition, removing nothing and suppressing nothing, when the Event has:
 - an Order that is Paid;
 - a Settlement that is not Reversed;
-- a purchase in progress: a Pending Order, or a Void Order whose card authorization is not yet released.
+- a purchase in progress: a Pending Order.
 
 A purchase started while DeleteAndSuppress runs SHALL either be seen by this check or be refused; it SHALL NOT be removed.
 
