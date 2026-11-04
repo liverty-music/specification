@@ -11,7 +11,7 @@ The frontend service layer SHALL extract fanart image URLs from the `Artist.fana
 
 #### Scenario: ListFollowed returns artist with fanart
 - **WHEN** the `FollowService.List` RPC returns an artist with populated fanart data
-- **THEN** the service layer SHALL map `hd_music_logo`, `music_logo`, `artist_background`, and `artist_thumb` URLs to the corresponding view model fields
+- **THEN** the service layer SHALL map the `artist_background` and `artist_thumb` URLs to the corresponding view model fields
 
 #### Scenario: ListFollowed returns artist without fanart
 - **WHEN** the `FollowService.List` RPC returns an artist without fanart data

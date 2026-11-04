@@ -2,39 +2,9 @@
 
 ## Purpose
 
-ArtistImageSyncUseCase.SyncArtistImage fetches an artist's community images and records the result, profiling the best logo's colors along the way. It runs when an artist is newly registered and daily for artists whose images were never checked and for followed artists last checked more than 7 days ago.
+ArtistImageSyncUseCase.SyncArtistImage fetches an artist's community images and records the result. It runs when an artist is newly registered and daily for artists whose images were never checked and for followed artists last checked more than 7 days ago.
 
 ## Requirements
-
-### Requirement: SyncArtistImage records the artist's images and logo profile
-ArtistImageSyncUseCase.SyncArtistImage SHALL take an artist id and MBID, look the images up with Artist.ResolveImages and record the result with Artist.UpdateFanart at the current time. When images are found and the artist has a best logo, it SHALL obtain the logo with Artist.FetchImage and record its Artist.AnalyzeLogo profile with the images. When the MBID is empty, SyncArtistImage SHALL do nothing and SHALL NOT fail.
-
-#### Scenario: Images and logo found
-- **WHEN** Artist.ResolveImages returns fanart with an hd_music_logo image and the logo is obtained
-- **THEN** the fanart is recorded with the logo's color profile and the current check time
-
-#### Scenario: Images without a logo
-- **WHEN** Artist.ResolveImages returns fanart with no logo image
-- **THEN** the fanart is recorded without a color profile
-
-#### Scenario: No images
-- **WHEN** Artist.ResolveImages returns no fanart
-- **THEN** the artist is recorded with no fanart and the current check time, and SyncArtistImage does not fail
-
-#### Scenario: Empty MBID
-- **WHEN** SyncArtistImage is called with an empty MBID
-- **THEN** no lookup is made, nothing is recorded, and SyncArtistImage does not fail
-
-### Requirement: A logo failure does not stop the sync
-When Artist.FetchImage fails or returns no image, ArtistImageSyncUseCase.SyncArtistImage SHALL record the images without a color profile and SHALL NOT fail.
-
-#### Scenario: Logo cannot be obtained
-- **WHEN** Artist.FetchImage fails with Unavailable
-- **THEN** the fanart is recorded without a color profile and SyncArtistImage succeeds
-
-#### Scenario: Logo missing
-- **WHEN** Artist.FetchImage returns no image
-- **THEN** the fanart is recorded without a color profile and SyncArtistImage succeeds
 
 ### Requirement: SyncArtistImage reports lookup and recording failures
 ArtistImageSyncUseCase.SyncArtistImage SHALL fail with the error of Artist.ResolveImages without recording anything, and SHALL fail with the error of Artist.UpdateFanart.
@@ -72,3 +42,18 @@ Once a day, SyncArtistImage SHALL run for up to 500 artists returned by Artist.L
 #### Scenario: Isolated failure
 - **WHEN** SyncArtistImage fails for one artist and succeeds for the next
 - **THEN** the daily run continues
+
+### Requirement: SyncArtistImage records the artist's images
+ArtistImageSyncUseCase.SyncArtistImage SHALL take an artist id and MBID, look the images up with Artist.ResolveImages and record the result with Artist.UpdateFanart at the current time. When the MBID is empty, SyncArtistImage SHALL do nothing and SHALL NOT fail.
+
+#### Scenario: Images found
+- **WHEN** Artist.ResolveImages returns fanart with an artist_background image
+- **THEN** the fanart is recorded with the current check time
+
+#### Scenario: No images
+- **WHEN** Artist.ResolveImages returns no fanart
+- **THEN** the artist is recorded with no fanart and the current check time, and SyncArtistImage does not fail
+
+#### Scenario: Empty MBID
+- **WHEN** SyncArtistImage is called with an empty MBID
+- **THEN** no lookup is made, nothing is recorded, and SyncArtistImage does not fail

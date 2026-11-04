@@ -14,7 +14,7 @@ ResolveImages SHALL return the image catalog's images for the MBID, grouped by k
 - **THEN** ResolveImages returns fanart with images in every kind
 
 #### Scenario: Some kinds available
-- **WHEN** the catalog has only artist_thumb and hd_music_logo images for the MBID
+- **WHEN** the catalog has only artist_thumb and artist_background images for the MBID
 - **THEN** ResolveImages returns fanart with those two kinds filled and the other kinds empty
 
 #### Scenario: No entry
