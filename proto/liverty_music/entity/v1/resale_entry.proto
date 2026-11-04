@@ -28,8 +28,9 @@ enum ResaleEntryState {
   // it.
   RESALE_ENTRY_STATE_ENTERED = 1;
 
-  // Allocated as many listings as its ticket count at a draw: the Order's card
-  // authorization is captured and the Order is made Paid from it.
+  // Allocated as many listings as its ticket count at a draw. The Order stays
+  // PENDING until its card authorization is captured, then becomes PAID; a
+  // win that cannot be charged becomes LOST.
   RESALE_ENTRY_STATE_WON = 2;
 
   // Ended without tickets, for the lost reason: no listing left for it at the

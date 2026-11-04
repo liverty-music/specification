@@ -82,15 +82,17 @@ service ResaleEntryService {
   //
   // Possible errors:
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
-  // - NOT_FOUND: The caller has no stored account.
+  // - NOT_FOUND: The caller has no stored account, or the TicketStock no
+  //   longer exists; the card authorization is released.
   // - INVALID_ARGUMENT: The card_authorization_id is missing or malformed.
   // - PERMISSION_DENIED: The card authorization does not exist, is not for a
   //   resale entry or is another fan's. Non-revealing.
   // - FAILED_PRECONDITION: The card authorization is not Authorized (card
   //   authentication not completed, or already captured or released); or it
-  //   is rejected and released: the stock's resale is no longer open, the
-  //   application no longer fits the event, or the caller already has another
-  //   ENTERED resale entry for the event.
+  //   is rejected and released: the stock's resale is no longer open, or the
+  //   application no longer fits the event.
+  // - ALREADY_EXISTS: The caller already has another ENTERED resale entry for
+  //   the event; the card authorization is released.
   // - UNAVAILABLE: Card payments are temporarily unavailable.
   rpc Confirm(ConfirmRequest) returns (ConfirmResponse);
 

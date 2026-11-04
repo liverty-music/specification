@@ -65,9 +65,8 @@ enum ResaleListingStatus {
 // price minus the resale fee. A Ticket has at most one LISTED listing at a
 // time.
 //
-// A returned listing shows only the fan's own side: beyond the id of the
-// ResaleEntry it was allocated to, it carries nothing about the fan who bought
-// it.
+// A returned listing shows only the fan's own side: it never carries anything
+// about the fan who bought it.
 message ResaleListing {
   // The fee and the refund amount add up to the price.
   option (buf.validate.message).cel = {
@@ -176,5 +175,6 @@ message ResaleListing {
 
   // The ResaleEntry a draw allocated the listing to. Absent until allocated;
   // when that entry becomes LOST, the listing is free for the next draw again.
+  // The entry is the purchasing fan's, so a fan-facing read leaves it unset.
   ResaleEntryId resale_entry_id = 17 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
