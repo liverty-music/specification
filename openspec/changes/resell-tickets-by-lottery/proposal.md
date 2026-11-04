@@ -19,6 +19,7 @@ Official resale (公式リセール) sells listings first come, first served thr
 - `components/entity/resale-entry`: a fan's resale application, its states and the draw times of an event.
 - `components/entity/resale-entry/create`, `get`, `list-by-user`, `list-entered-by-ticket-stock`, `persist-draw-outcome`, `revert-win`, `send-ended-email`, `withdraw`: store an entry with its Pending Order; read one; list a fan's entries; list a stock's Entered entries for a draw; record a draw and announce each recorded entry; make a won entry that cannot be charged Lost and announce it; send the lapse or loss email once; withdraw a waiting entry and announce it.
 - `components/usecase/resale-entry/authorize-card`, `confirm`, `draw`, `list`, `withdraw`: authorize the fan's card for an application; make the entry from the authorized card authorization; run the scheduled draws; list the fan's entries; withdraw the fan's waiting entry and release its card authorization.
+- `components/entity/card-authorization/get-by-provider-id`: find a card authorization by the payment provider's ID, for the provider's notices (design D11).
 - `components/usecase/notification/send-resale-entry-ended`: tell a fan whose entry lapsed or lost, by email and push.
 - `components/adapter/fan/api/rpc/resale-entry`: the fan gate of `ResaleEntryService`.
 - `components/infrastructure/fan/web/route/resale-entry`: the screen where a fan applies for official resale and follows their entries, with the 特商法 final confirmation of a resale application, which `remodel-ticket-sales` removed from the first-come checkout.
@@ -33,7 +34,8 @@ Official resale (公式リセール) sells listings first come, first served thr
 - `components/usecase/resale-listing/refund-sold`: refunds each sold listing in its own workflow, started from the sale's announcement, instead of a 1-minute run; `components/entity/resale-listing/list-sold-unrefunded` is removed.
 - `components/entity/notification` (Purpose, edited by archive task 12.3): types `resale_entry_lapsed` and `resale_entry_lost`.
 - `components/entity/resale-listing`: a listing is free for a draw instead of free to hold; the resale deadline is the event's last draw.
-- `components/entity/ticket-stock/delete`, `components/entity/concert/delete-and-suppress`, `components/entity/organizer/delete`: the resale entries and card authorizations of the Void and Refunded Orders are removed with them.
+- `components/entity/ticket-stock/delete`: the resale entries and card authorizations of the Void Orders it removes go with them.
+- `components/entity/concert/delete-and-suppress`, `components/entity/organizer/delete`: the resale entries and card authorizations of the Void and Refunded Orders they remove go with them.
 - `components/entity/resale-listing/withdraw`: a listing a draw has not allocated can be withdrawn.
 - `components/entity/card-authorization`: a card authorization's expiry time; `create` opens one for a resale entry and `get` returns the expiry. A CardAuthorization gets an id of its own and keeps the payment provider's ID as an attribute (design D11).
 - `components/infrastructure/fan/web/route/event`: the resale part of the ticket section applies instead of buying.

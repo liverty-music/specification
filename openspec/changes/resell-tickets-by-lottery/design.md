@@ -20,7 +20,7 @@ Today's resale (`2026-10-21-official-resale`): a Checkout with `resale = true` h
 
 ### D1 — ResaleEntry is its own entity, sourced by an Order
 
-`resale_entries (id, order_id unique, state, create_time, draw_time, ended_email_send_time)`. A LotteryEntry belongs to a Lottery TicketSale and draws a stock's quantity once; a ResaleEntry belongs to no sale and draws listings at every daily draw, so not every rule of one holds for the other. The Order carries the user, stock, count, referral code and card authorization (remodel D3).
+`resale_entries (id, order_id unique, state, lost_reason, created_at, draw_at, withdraw_at, ended_email_send_at)`. A LotteryEntry belongs to a Lottery TicketSale and draws a stock's quantity once; a ResaleEntry belongs to no sale and draws listings at every daily draw, so not every rule of one holds for the other. The Order carries the user, stock, count, referral code and card authorization (remodel D3).
 
 - Rejected — reuse LotteryEntry with a resale flag: every lottery rule would gain a resale branch, the mix the remodel removed from Checkout.
 - Rejected — a "resale sale" (TicketSale with listings as supply): a sale has a window and verification that resale does not have.
