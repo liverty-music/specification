@@ -28,7 +28,7 @@ The frontend SHALL render all user-facing text in the concert detail sheet via i
 
 #### Scenario: Static labels are i18n-keyed
 
-- **WHEN** the concert detail sheet renders any static label (date/time row prefix, action button text, ticket-status section heading, removal button)
+- **WHEN** the concert detail sheet renders any static label (date/time row prefix, action button text, ticket section heading, notification button)
 - **THEN** the label SHALL be sourced from an `eventDetail.*` i18n key
 - **AND** the JA and EN translation files SHALL both contain a value for that key
 - **AND** the displayed string SHALL match the locale resolved by `@aurelia/i18n`
@@ -40,9 +40,11 @@ The frontend SHALL render all user-facing text in the concert detail sheet via i
   - `eventDetail.ariaLabel` — the sheet's `aria-label`
   - `eventDetail.openStart` — the open/start time line with `{{open}}` and `{{start}}` interpolation placeholders. When the open time is unknown, the `{{open}}` slot SHALL be filled with the em-dash character `—` (U+2014) supplied directly by the component (locale-invariant; not routed through an i18n key).
   - `eventDetail.openInGoogleMaps` — the Google Maps link label
-  - `eventDetail.ticketStatus` — the ticket-status section heading
-  - `eventDetail.stopTracking` — the "remove ticket journey" button label
-  - `eventDetail.viewOfficialInfo` — the official info link label
+  - `eventDetail.ticketSection` — the ticket section heading (「チケット」)
+  - `eventDetail.notify.start`, `eventDetail.notify.next`, `eventDetail.notify.active` — the three labels of the ticket sale notification button
+  - `eventDetail.pushLine.*` — the push line of each status, in its push-on and push-off forms, and the guest's line
+  - `eventDetail.outOfRange.*` — the out-of-range notice, its buttons and its line after widening
+  - `eventDetail.viewOfficialInfo` — the official site button label (「公式サイトでチケットを見る」)
   - `eventDetail.addToCalendar` — the add-to-calendar link label
 
 #### Scenario: Journey status enum values are i18n-keyed
@@ -57,37 +59,6 @@ The frontend SHALL render all user-facing text in the concert detail sheet via i
 - **WHEN** a new value is added to the `TicketJourneyStatus` type
 - **THEN** the change SHALL add a corresponding `eventDetail.journeyStatus.<newValue>` entry to both the JA and EN translation files
 - **AND** the absence of either locale value SHALL be a defect
-
-### Requirement: Compact journey-status control layout
-
-The concert detail sheet's ticket-journey status control SHALL render in a compact layout whose outcome phase is arranged horizontally in a single row, so the control's vertical footprint is roughly half of a vertically stacked outcome layout. The control SHALL preserve every journey status node, the radiogroup semantics, keyboard navigation, and the canonical per-status label, icon, and hue.
-
-#### Scenario: Outcome routes arranged horizontally
-
-- **WHEN** the ticket-journey status control is displayed
-- **THEN** the win route nodes (`unpaid`, `paid`) and the lose route node (`lost`) SHALL be arranged horizontally in a single row rather than as vertically stacked bordered cards
-- **AND** the win-route nodes SHALL be connected by the horizontal `›` flow connector (not a vertical `↓` connector)
-- **AND** the win route and lose route SHALL remain visually distinguishable via a separator and their per-status hues
-
-#### Scenario: All status nodes and behavior preserved
-
-- **WHEN** the compact layout is rendered
-- **THEN** all five status nodes (`tracking`, `applied`, `unpaid`, `paid`, `lost`) SHALL still be present and selectable
-- **AND** each node SHALL retain a tap target of at least 44px
-- **AND** the radiogroup role, keyboard navigation, and `data-testid` hooks SHALL be unchanged
-- **AND** each node's label, icon, and hue SHALL still be sourced from the canonical journey-status presentation map
-
-#### Scenario: Flow connector is not cramped
-
-- **WHEN** a flow connector (`›`) is rendered between two status nodes in either the process phase or the outcome phase
-- **THEN** the connector SHALL have dedicated inline spacing on both sides independent of the container gap
-- **AND** the connector glyph SHALL be rendered at a size that is legible rather than hairline
-
-#### Scenario: Narrow viewport does not overflow
-
-- **WHEN** the control is displayed on a narrow mobile viewport where the outcome row cannot fit on one line
-- **THEN** the outcome row SHALL wrap rather than overflow horizontally
-- **AND** the control's vertical footprint SHALL remain smaller than the prior vertically stacked outcome layout
 
 ### Requirement: Deep-link auto-open of a concert detail sheet
 
@@ -432,8 +403,9 @@ that renders a journey status SHALL derive its label, icon, and hue from this
 map rather than defining them inline. The map SHALL include an entry for each
 of `tracking`, `applied`, `unpaid`, `paid`, and `lost`, each providing a label
 (via the existing `eventDetail.journeyStatus.*` i18n key), an icon, and a hue
-token: icons SHALL be `tracking` 👀, `applied` 📝, `unpaid` 💰, `paid` 🎟️,
-`lost` 💔; hues SHALL be the shared journey-hue token for that status —
+token: icons SHALL be `tracking` 🔔, `applied` 📝, `unpaid` 💰, `paid` 🎟️,
+`lost` 💔 (🔔 because Tracking is the fan's request for ticket sale
+notifications, and 👀 already marks the Watch hype level, which pushes nothing); hues SHALL be the shared journey-hue token for that status —
 process (`tracking`, `applied`) neutral, `unpaid` amber, `paid` green, `lost`
 red. The icon is the primary, always-present cue and SHALL be sufficient to
 distinguish the status on its own; the text label and the hue MAY both be
@@ -447,10 +419,13 @@ exposed via `aria-label` on a bare element with an implicit `generic` role,
 since user agents do not reliably announce a name on such elements. A given
 journey status SHALL render with a consistent identity wherever it appears —
 the dashboard filter chips, the concert-card journey badge, and the
-concert-detail status control: the icon SHALL be the same across all
+status row of the concert detail sheet: the icon SHALL be the same across all
 surfaces, and the hue and visible text label SHALL appear on the filter chips
-and the detail control (both MAY be omitted on the concert-card badge, which
-renders the icon alone).
+and the status row (both MAY be omitted on the concert-card badge, which
+renders the icon alone). Tracking has no button in that row: its control on
+the sheet is the ticket sale notification button, which shows the canonical
+icon 🔔 with its own labels (`eventDetail.notify.*`) and the section's button
+style instead of the canonical label and hue.
 
 #### Scenario: Single source of truth
 - **WHEN** a journey status needs a label, icon, or hue in any component
@@ -464,7 +439,7 @@ renders the icon alone).
 
 #### Scenario: Icon per status
 - **WHEN** a journey status is rendered
-- **THEN** its icon SHALL be: `tracking` 👀, `applied` 📝, `unpaid` 💰, `paid` 🎟️, `lost` 💔
+- **THEN** its icon SHALL be: `tracking` 🔔, `applied` 📝, `unpaid` 💰, `paid` 🎟️, `lost` 💔
 
 #### Scenario: Hue per status
 - **WHEN** a journey status is rendered with a colour treatment (filter chip or detail-control node)
@@ -481,10 +456,11 @@ renders the icon alone).
 - **AND** the canonical label SHALL NOT be exposed via `aria-label` on a bare element with an implicit `generic` role (a naming-prohibited role), since user agents do not reliably announce a name on such elements
 
 #### Scenario: Same status looks the same everywhere
-- **WHEN** the same journey status appears as a filter chip, a card badge, and a detail-control node
+- **WHEN** the same journey status other than Tracking appears as a filter chip, a card badge, and a button of the detail sheet's status row
 - **THEN** all three SHALL show the same icon sourced from the canonical map
-- **AND** the filter chip and the detail-control node SHALL show the same text label and hue sourced from the canonical map
+- **AND** the filter chip and the status-row button SHALL show the same text label and hue sourced from the canonical map
 - **AND** the card badge MAY show the icon alone, without the text label or hue background
+- **AND** for Tracking, the filter chip and the card badge SHALL show 🔔 from the canonical map, and the detail sheet's notification button SHALL show 🔔 with its `eventDetail.notify.*` label
 
 ### Requirement: Data-ready side effects gate on observed data arrival
 Side effects that must only run once a route's data is genuinely present (e.g. the Dashboard post-signup/guest celebration and the onboarding-completion latch) SHALL be triggered by observing the arrival of that data, NOT by relying on the router having awaited the fetch before the view attaches. Every arrival of the timetable SHALL count as an arrival, including one served from concert data already fetched earlier in the same session.
@@ -826,8 +802,8 @@ The system SHALL provide a detail view for a selected discovered concert using a
 - **AND** the user has a ticket journey for this event
 - **THEN** the sheet SHALL display the current ticket journey status
 - **AND** the displayed status text SHALL be sourced from `eventDetail.journeyStatus.<value>` (not the raw enum string)
-- **AND** the sheet SHALL provide controls to change the status to any valid `TicketJourneyStatus` value
-- **AND** each control's label SHALL also be sourced from `eventDetail.journeyStatus.<value>`
+- **AND** the sheet SHALL provide the ticket sale notification button for Tracking (hidden while the status is Paid, as the event detail sheet surface states) and the row of the other four statuses
+- **AND** each control in that row SHALL have its label sourced from `eventDetail.journeyStatus.<value>`, and the notification button SHALL take its labels from `eventDetail.notify.*`
 
 #### Scenario: Set ticket journey status from detail view
 
@@ -842,9 +818,9 @@ The system SHALL provide a detail view for a selected discovered concert using a
 
 #### Scenario: Remove ticket journey from detail view
 
-- **WHEN** the user removes the journey status from the detail view controls and the removal is saved
+- **WHEN** the user presses the selected status button (or the notification button while it reads 「…受け取り中 ✓」) and the removal is saved
 - **THEN** the status display SHALL revert to the untracked state
-- **AND** the remove control's label SHALL be sourced from the `eventDetail.stopTracking` i18n key
+- **AND** the sheet SHALL show no separate control for removing the status
 
 #### Scenario: Dismiss sheet by tapping outside it or pressing Escape
 
@@ -904,3 +880,23 @@ Whenever the dashboard shows an empty timetable, the empty state SHALL offer, ne
 #### Scenario: Timetable with concerts
 - **WHEN** the timetable shows at least one concert
 - **THEN** no link to the All Nearby view is shown on the dashboard
+
+### Requirement: The ticket section shows the four statuses in one row
+
+The concert detail sheet's ticket section SHALL show the ticket sale notification button on its own full-width row and the other four statuses as one row of compact buttons in journey order, 📝 申込済み › 💰 当選・未入金 › 🎟️ 入金済み, followed by 💔 落選 set apart by a separator. The row SHALL keep every status's canonical label, icon and hue, wrap rather than overflow on a narrow screen, and give each button a tap target of at least 44px.
+
+#### Scenario: One row for four statuses
+
+- **WHEN** the ticket section is displayed for a signed-in fan on a 390px-wide screen
+- **THEN** the four status buttons are laid out in one row in journey order, with 落選 after a separator
+- **AND** the `›` connectors sit between 申込済み, 当選・未入金 and 入金済み
+
+#### Scenario: Narrow viewport does not overflow
+
+- **WHEN** the row cannot fit on one line
+- **THEN** the row wraps rather than overflowing horizontally
+
+#### Scenario: Canonical presentation kept
+
+- **WHEN** any status button is rendered
+- **THEN** its label, icon and hue come from the canonical journey-status presentation map, and its tap target is at least 44px

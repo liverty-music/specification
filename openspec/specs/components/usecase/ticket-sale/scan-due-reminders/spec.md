@@ -25,13 +25,21 @@ ScanDueReminders SHALL run every 15 minutes, which is shorter than the tightest 
 - **WHEN** the audience of one sale cannot be read
 - **THEN** that sale is skipped and the other sales are evaluated
 
-### Requirement: The audience is the fans tracking the series
+### Requirement: The audience is the fans tracking or applied for the series
 
-For a discovered sale ScanDueReminders SHALL consider exactly the fans returned by TicketJourney.ListUserIDsTrackingSeries for the sale's series. For an Organizer's sale it SHALL consider exactly the fans returned by TicketJourney.ListUserIDsTrackingEvents for the events the sale names. Each fan comes with their linked event, and nobody else is considered. A fan whose profile cannot be read SHALL be skipped.
+For the `APPLY_OPEN` and `APPLY_CLOSE_24H` stages of a discovered sale ScanDueReminders SHALL consider exactly the fans returned by TicketJourney.ListUserIDsTrackingSeries for the sale's series. For the `RESULT_DAY` stage of a discovered sale it SHALL consider exactly the fans returned by TicketJourney.ListUserIDsAppliedSeries for the sale's series. For an Organizer's sale it SHALL consider exactly the fans returned by TicketJourney.ListUserIDsTrackingEvents for the events the sale names. Each fan comes with their linked event, and nobody else is considered. A fan whose profile cannot be read SHALL be skipped.
 
 #### Scenario: Tracking fan
-- **WHEN** ListUserIDsTrackingSeries returns a fan for the sale's series and a stage is due
+- **WHEN** ListUserIDsTrackingSeries returns a fan for the sale's series and the `APPLY_OPEN` stage is due
 - **THEN** a reminder is requested for that fan
+
+#### Scenario: Applied fan on the result day
+- **WHEN** ListUserIDsAppliedSeries returns a fan for a discovered lottery's series and its `RESULT_DAY` stage is due
+- **THEN** a `RESULT_DAY` reminder is requested for that fan
+
+#### Scenario: Tracking fan on the result day
+- **WHEN** a fan's only journey on the series is Tracking and the lottery's `RESULT_DAY` stage is due
+- **THEN** no `RESULT_DAY` reminder is requested for that fan
 
 #### Scenario: Organizer's sale for some events of the tour
 - **WHEN** an Organizer's lottery names the tour's Tokyo event only, fan A tracks the Tokyo event and fan B tracks only the Osaka event
@@ -92,14 +100,20 @@ Each requested reminder SHALL carry a title, a text, a link and a grouping tag, 
 | `APPLY_OPEN` | Lottery | en | Ticket Lottery Open | Ticket lottery entry is open! Closes {end}. |
 | `APPLY_CLOSE_24H` | Lottery | ja | 抽選の申し込み締切が近づいています | チケットの抽選申し込み締切は{end}!! |
 | `APPLY_CLOSE_24H` | Lottery | en | Ticket Lottery Closing Soon | Ticket lottery entry closes {end}! |
+| `RESULT_DAY` | Lottery | ja | 今日は抽選結果の発表日 | 申し込んだチケット抽選の結果が今日発表されます!! |
+| `RESULT_DAY` | Lottery | en | Lottery Results Today | The results of the ticket lottery you entered come out today! |
 
 Times SHALL be shown in the fan's time zone. In Japanese they are month/day(weekday) hour:minute, for example `10/22(木) 23:59`. In English they are month day (weekday) hour:minute, for example `Oct 22 (Thu) 23:59`.
 
-The link SHALL be the concert page of the fan's linked event as returned by TicketJourney.ListUserIDsTrackingSeries or TicketJourney.ListUserIDsTrackingEvents. Repeated deliveries of the same sale and stage SHALL replace each other on the device, and different stages SHALL NOT.
+The link SHALL be the concert page of the fan's linked event as returned by TicketJourney.ListUserIDsTrackingSeries, TicketJourney.ListUserIDsAppliedSeries or TicketJourney.ListUserIDsTrackingEvents. Repeated deliveries of the same sale and stage SHALL replace each other on the device, and different stages SHALL NOT.
 
 #### Scenario: Lottery closing in Japanese
 - **WHEN** an `APPLY_CLOSE_24H` reminder is built in Japanese for the series King Gnu 10th Anniversary Opening Live “KICKOFF”, whose lottery closes on 22 October 23:59 Asia/Tokyo
 - **THEN** the title is 抽選の申し込み締切が近づいています and the text is チケットの抽選申し込み締切は10/22(木) 23:59!! followed by a line break and the series title
+
+#### Scenario: Result day in Japanese
+- **WHEN** a `RESULT_DAY` reminder is built in Japanese for the series King Gnu 10th Anniversary Opening Live “KICKOFF”
+- **THEN** the title is 今日は抽選結果の発表日 and the text is 申し込んだチケット抽選の結果が今日発表されます!! followed by a line break and the series title
 
 #### Scenario: Deferred close reminder keeps the absolute deadline
 - **WHEN** an `APPLY_CLOSE_24H` reminder is deferred to 08:00 on the closing day
@@ -126,8 +140,9 @@ A stage expires as follows:
 | `APPLY_OPEN` | FirstCome | the start time |
 | `APPLY_OPEN` | Lottery | the end time |
 | `APPLY_CLOSE_24H` | Lottery | the end time |
+| `RESULT_DAY` | Lottery | 22:00 on the result date in the fan's time zone |
 
-A fan who starts tracking after a stage's due time but before it expires SHALL still be reminded of it on the next run while the sale is listed. A fan who starts tracking after a stage has expired SHALL NOT be reminded of it.
+A fan who joins the stage's audience after a stage's due time but before it expires SHALL still be reminded of it on the next run while the sale is listed. A fan who joins it after a stage has expired SHALL NOT be reminded of it.
 
 When the sent stages cannot be read, ScanDueReminders SHALL request the due reminders anyway and rely on DeliverReminder not to repeat a sent one. A request that cannot be queued SHALL be skipped and retried by a later run.
 
@@ -142,6 +157,14 @@ When the sent stages cannot be read, ScanDueReminders SHALL request the due remi
 #### Scenario: Lottery opens
 - **WHEN** a Lottery sale's start time has just passed and `APPLY_OPEN` was not sent to a tracking fan
 - **THEN** an `APPLY_OPEN` reminder is requested for the fan
+
+#### Scenario: Result day morning
+- **WHEN** a discovered lottery's result date is today, the time is 09:10 in an applied fan's time zone and `RESULT_DAY` was not sent to the fan
+- **THEN** a `RESULT_DAY` reminder is requested for the fan
+
+#### Scenario: Applied in the evening of the result day
+- **WHEN** a fan records Applied at 23:00 on the lottery's result date in the fan's time zone
+- **THEN** no `RESULT_DAY` reminder is requested for that fan
 
 #### Scenario: Already sent
 - **WHEN** `APPLY_OPEN` was already recorded as sent to the fan

@@ -342,36 +342,6 @@ Each artist in the My Artists list SHALL be shown in a color derived from the ar
 - **WHEN** an artist's name is empty
 - **THEN** the artist is still shown in a valid color
 
-### Requirement: Push offer after a hype change
-
-When a signed-in fan changes an artist's hype level on My Artists and the change is saved, My Artists SHALL show the in-app push offer as a snack, provided the fan is eligible for it and the offer limits allow it (both stated by the notification prompt surface). The snack SHALL read 「{{name}}を {{hype}} にしました。新着ライブを通知で受け取りますか？」 (EN "{{name}} is now {{hype}}. Get notified of new concerts?"), where `{{hype}}` is the invariant English tier label, with the action 「オンにする」 (EN "Turn on"). The snack SHALL stay 10 seconds unless the fan presses the action. Pressing the action SHALL show the browser's notification permission prompt at once. A guest's hype change, and a hype change whose save fails, SHALL NOT show the offer.
-
-#### Scenario: Signed-in fan changes hype and is offered push
-
-- **WHEN** a signed-in fan whose browser notification permission is undecided sets ヨルシカ from Nearby to Away and the change is saved
-- **AND** the offer has not been shown in this session and has been left or declined fewer than 3 times
-- **THEN** a snack reads 「ヨルシカを Away にしました。新着ライブを通知で受け取りますか？」 with the action 「オンにする」
-
-#### Scenario: Pressing the action asks the browser
-
-- **WHEN** the fan presses 「オンにする」 on the offer snack
-- **THEN** the browser's notification permission prompt appears at once
-
-#### Scenario: Guest changes hype
-
-- **WHEN** a guest changes an artist's hype level
-- **THEN** no push offer is shown
-
-#### Scenario: Save fails
-
-- **WHEN** a signed-in fan changes a hype level and saving fails twice
-- **THEN** the failure message is shown and no push offer is shown
-
-#### Scenario: Second hype change in the same session
-
-- **WHEN** the fan already saw the offer in this session and changes another artist's hype level
-- **THEN** the hype change applies and no push offer is shown
-
 ### Requirement: Edit in the action launcher reveals per-row remove controls
 
 The My Artists page SHALL offer an "編集" / "Edit" action in its FAB action launcher whenever at least one followed artist is listed. Choosing it SHALL put the list into edit mode and close the launcher; in edit mode each artist row SHALL display a remove (−) control as a single-tap, single-pointer affordance available on all pointer types (touch and mouse), in place of the row's hype controls, and a "完了" / "Done" bar SHALL be shown in the list. Pressing Done SHALL leave edit mode and hide the remove controls. While in edit mode the FAB action launcher SHALL contribute no actions. Edit mode SHALL NOT depend on any path-based or timed gesture (no swipe, no long-press), satisfying single-pointer operability (WCAG 2.5.1).
@@ -423,3 +393,53 @@ The My Artists page SHALL offer an "編集" / "Edit" action in its FAB action la
 
 - **WHEN** the user leaves the My Artists page while in edit mode and later returns
 - **THEN** the page opens in the default (non-editing) state
+
+### Requirement: A hype change says where new concerts are pushed
+
+When a hype level change on My Artists applies, My Artists SHALL show one snack that says, in place words, which new concerts of the artist will reach the fan by push. The place words SHALL be 「全て」 for Away, the fan's home prefecture's short name (for example 「東京」) for Home, and that name followed by 「周辺」 (for example 「東京周辺」) for Nearby; with no home area, 「居住エリア」 takes the place of the prefecture name. The snack SHALL read, on one line when it fits:
+
+| when | snack | action |
+|---|---|---|
+| push is on for this browser, Home, Nearby or Away | 「{{name}}の{{places}}の新着ライブをプッシュ通知します🔔」 | none |
+| push is on for this browser, Watch | 「{{name}}の新着ライブはプッシュ通知しません」 | none |
+| push is off for this browser, Home, Nearby or Away | 「{{name}}の{{places}}の新着ライブをプッシュ通知で受け取ろう🔔」 | the push offer (stated by the notification prompt surface) |
+| guest, Home, Nearby or Away | 「{{name}}の{{places}}の新着ライブをプッシュ通知で受け取ろう🔔」 | 「登録する」, which starts sign-up |
+
+The English locale SHALL show equivalent texts. Push is on for this browser when the fan allowed notifications and this browser is registered for push.
+
+When push is on, and for a guest, the snack for a level SHALL appear only the first time the fan picks that level on this device; later picks of the same level show no snack. When push is off for a signed-in fan, the snack SHALL appear on every change, except that Watch shows no snack then. A guest picking Watch sees no snack. A change whose save fails SHALL show the failure message and no hype snack. Several changes to the same artist in a row SHALL leave only the latest snack for that artist on screen.
+
+#### Scenario: First pick of Away with push on
+
+- **WHEN** a signed-in fan with home JP-13 whose browser receives push sets ヨルシカ to Away for the first time on this device
+- **THEN** a snack reads 「ヨルシカの全ての新着ライブをプッシュ通知します🔔」
+
+#### Scenario: Second pick of the same level
+
+- **WHEN** that fan later sets YOASOBI to Away
+- **THEN** the change applies and no snack appears
+
+#### Scenario: Nearby with push off
+
+- **WHEN** a signed-in fan with home JP-13 whose notification permission is undecided sets Vaundy to Nearby, for the second time that day
+- **THEN** a snack reads 「Vaundyの東京周辺の新着ライブをプッシュ通知で受け取ろう🔔」 with the push offer as its action
+
+#### Scenario: Watch for the first time
+
+- **WHEN** a signed-in fan whose browser receives push sets King Gnu to Watch for the first time on this device
+- **THEN** a snack reads 「King Gnuの新着ライブはプッシュ通知しません」
+
+#### Scenario: Guest picks Home
+
+- **WHEN** a guest with home JP-27 sets ヨルシカ to Home for the first time on this device
+- **THEN** a snack reads 「ヨルシカの大阪の新着ライブをプッシュ通知で受け取ろう🔔」 with the action 「登録する」
+
+#### Scenario: Quick changes to one artist
+
+- **WHEN** a fan sets ヨルシカ to Home and then to Away within a second, and both levels are picked for the first time
+- **THEN** only the snack for Away remains on screen
+
+#### Scenario: Save fails
+
+- **WHEN** a signed-in fan changes a hype level and saving fails twice
+- **THEN** the failure message is shown and no hype snack is shown
