@@ -40,6 +40,15 @@ message LotteryEntryId {
   string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
+// ResaleEntryId is a globally unique identifier for a single ResaleEntry. It is
+// defined here rather than next to ResaleEntry because a ResaleEntry names its
+// Order and an Order names its source, and proto files cannot import each
+// other.
+message ResaleEntryId {
+  // A UUID string mapping to the entry's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
+}
+
 // PaymentProvider names which payment provider holds an Order's captured
 // payment. The Order stores only the payment provider's IDs, so switching
 // provider is a config/adapter change, not a proto break. New values may be
@@ -145,13 +154,14 @@ enum OrderStatus {
   // Organizer's payout.
   ORDER_STATUS_REFUNDED = 2;
 
-  // Pending: the fan applied through a LotteryEntry or a Checkout and the
-  // payment is not captured yet. A Pending Order counts toward the tickets the
-  // account holds for the event.
+  // Pending: the fan applied through a LotteryEntry, a Checkout or a
+  // ResaleEntry and the payment is not captured yet. A Pending Order counts
+  // toward the tickets the account holds for the event.
   ORDER_STATUS_PENDING = 4;
 
-  // Void: the Order will never be paid, because its lottery entry lost or its
-  // checkout expired or was released. A Void Order holds no tickets.
+  // Void: the Order will never be paid, because its lottery entry lost, its
+  // checkout expired or was released, or its resale entry lost, lapsed or was
+  // withdrawn. A Void Order holds no tickets.
   ORDER_STATUS_VOID = 5;
 
   // Value 3 was FAILED, a capture whose Tickets could not be issued; no path
@@ -164,10 +174,10 @@ enum OrderStatus {
 // once its payment is captured, the provider- and method-agnostic purchase
 // record: the ticket count, the referral code, the card authorization, the
 // payment provider's IDs for the captured payment, the amount and its own
-// status. It is created PENDING when the fan applies through a LotteryEntry
-// or a Checkout, its source, which names it; it becomes PAID when the payment is captured
-// and its Tickets are issued, or VOID when it will never be paid. One Order
-// covers all tickets of its application.
+// status. It is created PENDING when the fan applies through a LotteryEntry,
+// a Checkout or a ResaleEntry, its source, which names it; it becomes PAID
+// when the payment is captured and its Tickets are issued, or VOID when it
+// will never be paid. One Order covers all tickets of its application.
 //
 // The Order performs no separate off-session charge. It NEVER stores a PAN,
 // CVC, or expiry — only the payment provider's IDs and safe display facets
@@ -216,8 +226,8 @@ message Order {
   // application without a code. Set at creation and never changed.
   optional ReferralCode referral_code = 16 [(google.api.field_behavior) = IMMUTABLE];
 
-  // What the Order was applied for through: the LotteryEntry or the Checkout
-  // that names it. Exactly one is set, and one Order exists per source.
+  // What the Order was applied for through: the LotteryEntry, the Checkout or
+  // the ResaleEntry that names it. Exactly one is set, and one Order exists per source.
   oneof source {
     option (buf.validate.oneof).required = true;
 
@@ -226,6 +236,9 @@ message Order {
 
     // The first-come Checkout this Order is checked out as.
     CheckoutId checkout_id = 11;
+
+    // The official resale ResaleEntry this Order is applied for as.
+    ResaleEntryId resale_entry_id = 18;
   }
 
   // The CardAuthorization on the fan's card for the amount. Absent until the

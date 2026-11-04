@@ -37,7 +37,7 @@ enum TicketStockState {
 // TicketStock is the tickets of one SeatType for one event: how many there
 // are, and how many are sold or held at a time. Every TicketSale of the event
 // sells from it, and its official resale (公式リセール) opens, for listing
-// tickets, when it sells out. Its event, seat type and quantity never change
+// tickets and applying for them, when it sells out. Its event, seat type and quantity never change
 // once it is created; one TicketStock exists per event and seat type.
 //
 // Its state, low-stock flag and resale flag are evaluated by the server when
@@ -97,8 +97,9 @@ message TicketStock {
   bool low_stock = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // True when official resale of the stock is open at the time it was read:
-  // the stock is SOLD_OUT and its event's resale deadline, 3 hours before the
-  // start time, has not passed. A fan may then list a ticket of the stock.
-  // Server-owned.
+  // the stock is SOLD_OUT and its event's resale deadline, the last resale
+  // draw (12:00 Japan time on the event's day, or 3 hours before the start
+  // time if that is earlier), has not passed. A fan may then list a ticket of
+  // the stock or apply for one. Server-owned.
   bool resale_open = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
