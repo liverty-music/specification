@@ -17,3 +17,7 @@ CardAuthorization.GetByProviderID SHALL return the same CardAuthorization as Car
 #### Scenario: Unknown provider ID
 - **WHEN** no card authorization has the payment provider's ID
 - **THEN** CardAuthorization.GetByProviderID fails with NotFound
+
+#### Scenario: Payment provider unavailable
+- **WHEN** the payment provider cannot be reached
+- **THEN** CardAuthorization.GetByProviderID fails with Unavailable

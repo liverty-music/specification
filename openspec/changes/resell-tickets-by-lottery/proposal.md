@@ -34,6 +34,7 @@ Official resale (公式リセール) sells listings first come, first served thr
 - `components/usecase/resale-listing/refund-sold`: refunds each sold listing in its own workflow, started from the sale's announcement, instead of a 1-minute run; `components/entity/resale-listing/list-sold-unrefunded` is removed.
 - `components/entity/notification` (Purpose, edited by archive task 12.3): types `resale_entry_lapsed` and `resale_entry_lost`.
 - `components/entity/resale-listing`: a listing is free for a draw instead of free to hold; the resale deadline is the event's last draw.
+- `components/adapter/fan/api/webhook/payment-events`: a completed card authentication is found by the payment provider's ID and confirms a resale entry as well as a lottery entry.
 - `components/entity/ticket-stock/delete`: the resale entries and card authorizations of the Void Orders it removes go with them.
 - `components/entity/concert/delete-and-suppress`, `components/entity/organizer/delete`: the resale entries and card authorizations of the Void and Refunded Orders they remove go with them.
 - `components/entity/resale-listing/withdraw`: a listing a draw has not allocated can be withdrawn.
