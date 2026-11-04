@@ -19,7 +19,7 @@ Official resale (公式リセール) sells listings first come, first served thr
 - `components/entity/resale-entry`: a fan's resale application, its states and the draw times of an event.
 - `components/entity/resale-entry/create`, `get`, `list-by-user`, `list-entered-by-ticket-stock`, `persist-draw-outcome`, `revert-win`, `send-ended-email`, `withdraw`: store an entry with its Pending Order; read one; list a fan's entries; list a stock's Entered entries for a draw; record a draw and announce each recorded entry; make a won entry that cannot be charged Lost and announce it; send the lapse or loss email once; withdraw a waiting entry and announce it.
 - `components/usecase/resale-entry/authorize-card`, `confirm`, `draw`, `list`, `withdraw`: authorize the fan's card for an application; make the entry from the authorized card authorization; run the scheduled draws; list the fan's entries; withdraw the fan's waiting entry and release its card authorization.
-- `components/entity/card-authorization/get-by-provider-id`: find a card authorization by the payment provider's ID, for the provider's notices (design D11).
+- `components/entity/card-authorization/get-by-provider-card-authorization-id`: find a card authorization by the payment provider's ID, for the provider's notices (design D11).
 - `components/usecase/notification/send-resale-entry-ended`: tell a fan whose entry lapsed or lost, by email and push.
 - `components/adapter/fan/api/rpc/resale-entry`: the fan gate of `ResaleEntryService`.
 - `components/infrastructure/fan/web/route/resale-entry`: the screen where a fan applies for official resale and follows their entries, with the 特商法 final confirmation of a resale application, which `remodel-ticket-sales` removed from the first-come checkout.
