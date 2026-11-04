@@ -4,12 +4,18 @@ syntax = "proto3";
 package liverty_music.entity.v1;
 
 import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/referral.proto";
+import "liverty_music/entity/v1/ticket_sale.proto";
+import "liverty_music/entity/v1/ticket_stock.proto";
+import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
 // CardAuthorizationId identifies a CardAuthorization: the authorization placed
-// on a fan's card for the amount of one purchase, a LotteryEntry or a Checkout,
-// which reserves the amount without charging it until it is captured or
+// on a fan's card for the amount of one purchase, a Checkout, a LotteryEntry or
+// a ResaleEntry, which reserves the amount without charging it until it is captured or
 // released. The payment provider assigns it and is the card authorization's
 // only record, so the id is the payment provider's ID for the card
 // authorization, not a platform UUID. Opaque; meaningful only to the provider.
@@ -28,4 +34,124 @@ message CardAuthorizationId {
 message CardAuthorizationSecret {
   // The opaque secret, at least 1 character.
   string value = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+// CardAuthorizationPurchase is what a CardAuthorization pays for. New values
+// may be appended; existing values must not be renumbered.
+enum CardAuthorizationPurchase {
+  // Default value, rejected at the boundary: a card authorization always pays
+  // for a concrete purchase.
+  CARD_AUTHORIZATION_PURCHASE_UNSPECIFIED = 0;
+
+  // A first-come Checkout. Every card brand is accepted.
+  CARD_AUTHORIZATION_PURCHASE_CHECKOUT = 1;
+
+  // A LotteryEntry, made from the card authorization once it is Authorized.
+  // American Express is not accepted.
+  CARD_AUTHORIZATION_PURCHASE_LOTTERY_ENTRY = 2;
+
+  // A ResaleEntry, made from the card authorization once it is Authorized.
+  CARD_AUTHORIZATION_PURCHASE_RESALE_ENTRY = 3;
+}
+
+// CardAuthorizationStatus is the lifecycle of a CardAuthorization. New values
+// may be appended; existing values must not be renumbered.
+//
+//   PENDING --> AUTHORIZED --> CAPTURED | RELEASED
+//   PENDING --> RELEASED
+enum CardAuthorizationStatus {
+  // Default value, rejected at the boundary: a card authorization always has a
+  // concrete status.
+  CARD_AUTHORIZATION_STATUS_UNSPECIFIED = 0;
+
+  // Opened, waiting for the fan to complete card authentication (3D Secure).
+  CARD_AUTHORIZATION_STATUS_PENDING = 1;
+
+  // The fan completed card authentication: the amount is reserved on the card
+  // and can be captured until the expire time.
+  CARD_AUTHORIZATION_STATUS_AUTHORIZED = 2;
+
+  // The card was charged the amount.
+  CARD_AUTHORIZATION_STATUS_CAPTURED = 3;
+
+  // Given back without charging, by a release or because it lapsed on the
+  // card.
+  CARD_AUTHORIZATION_STATUS_RELEASED = 4;
+}
+
+// CardAuthorization is the authorization placed on a fan's card for the amount
+// of one purchase: it reserves the amount on the card without charging it,
+// until it is captured (the card is charged) or released (given back without
+// charging). It carries what it pays for, so a LotteryEntry or a ResaleEntry
+// and its Order can be made from it once the fan completes card
+// authentication. The payment provider holds it and is its only record; an
+// Order refers to it by its id. It never holds raw card data.
+message CardAuthorization {
+  // The payment provider's ID for the card authorization.
+  CardAuthorizationId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // What the card authorization pays for. Fixed at creation.
+  CardAuthorizationPurchase purchase = 2 [
+    (google.api.field_behavior) = IMMUTABLE,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: [0]
+    }
+  ];
+
+  // The LOTTERY TicketSale a LotteryEntry is made for. Set only when the
+  // purchase is a LotteryEntry; fixed at creation.
+  TicketSaleId ticket_sale_id = 3 [(google.api.field_behavior) = IMMUTABLE];
+
+  // The fan whose card it is. Fixed at creation.
+  UserId user_id = 4 [
+    (google.api.field_behavior) = IMMUTABLE,
+    (buf.validate.field).required = true
+  ];
+
+  // The TicketStock the purchase is for. Fixed at creation.
+  TicketStockId ticket_stock_id = 5 [
+    (google.api.field_behavior) = IMMUTABLE,
+    (buf.validate.field).required = true
+  ];
+
+  // The tickets the purchase is for: 1 to 10. Fixed at creation.
+  int32 ticket_count = 6 [
+    (google.api.field_behavior) = IMMUTABLE,
+    (buf.validate.field).int32 = {
+      gte: 1
+      lte: 10
+    }
+  ];
+
+  // The referral code a LotteryEntry or a ResaleEntry is made with. Absent for
+  // a Checkout and for an entry without a code; fixed at creation.
+  optional ReferralCode referral_code = 7 [(google.api.field_behavior) = IMMUTABLE];
+
+  // The amount authorized on the card, in whole yen. Fixed at creation.
+  int64 amount = 8 [
+    (google.api.field_behavior) = IMMUTABLE,
+    (buf.validate.field).int64.gt = 0
+  ];
+
+  // Display-only brand of the card the fan authorized (e.g. "visa", "amex").
+  // Absent until the fan completes card authentication, and when the payment
+  // provider does not report it.
+  string card_brand = 9 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).string.max_len = 40
+  ];
+
+  // When the authorized amount can no longer be charged and the hold on the
+  // card is given back by the card issuer. Absent until AUTHORIZED.
+  google.protobuf.Timestamp expire_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Where the card authorization stands.
+  CardAuthorizationStatus status = 11 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
 }

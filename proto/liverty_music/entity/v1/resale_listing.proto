@@ -32,12 +32,14 @@ enum ResaleListingStatus {
   // a concrete status.
   RESALE_LISTING_STATUS_UNSPECIFIED = 0;
 
-  // Offered for resale and open: before its deadline and not yet sold. The fan
-  // may withdraw it.
+  // Offered for resale and open: before its deadline and not yet sold. A daily
+  // resale draw may allocate it to a ResaleEntry. The fan may withdraw it while
+  // no draw has allocated it, or the entry it was allocated to is LOST.
   RESALE_LISTING_STATUS_LISTED = 1;
 
-  // Another fan's Order bought it. The listing's Ticket is Voided, and the fan
-  // is refunded the refund amount to the card they paid with.
+  // The Order of the ResaleEntry a draw allocated it to was paid. The
+  // listing's Ticket is Voided, and the fan is refunded the refund amount to
+  // the card they paid with.
   RESALE_LISTING_STATUS_SOLD = 2;
 
   // The fan withdrew it before anyone bought it. The Ticket stays theirs.
@@ -47,7 +49,8 @@ enum ResaleListingStatus {
   // concert. The fan is refunded through that Order.
   RESALE_LISTING_STATUS_CANCELLED = 4;
 
-  // Still listed at its deadline, so it can no longer be bought or withdrawn.
+  // Still listed at its deadline, the event's last draw, so it can no longer be
+  // bought or withdrawn.
   // The Ticket stays the fan's and works at the door. Returned by the server
   // for a LISTED listing read at or after its deadline; never stored.
   RESALE_LISTING_STATUS_EXPIRED = 5;
@@ -55,10 +58,12 @@ enum ResaleListingStatus {
 
 // ResaleListing is a fan's offer of one of their Tickets for official resale
 // (公式リセール) at face value, after the Ticket's TicketStock sold out,
-// whether the Ticket was bought first come or won in a lottery. When another
-// fan buys it, the listing's Ticket is Voided, the other fan receives a new
-// Ticket, and the listing's fan is refunded the price minus the resale fee. A
-// Ticket has at most one LISTED listing at a time.
+// whether the Ticket was bought first come or won in a lottery. Another fan
+// buys it through a daily resale draw, which allocates it to that fan's
+// ResaleEntry: when the entry's Order is paid, the listing's Ticket is Voided,
+// the other fan receives a new Ticket, and the listing's fan is refunded the
+// price minus the resale fee. A Ticket has at most one LISTED listing at a
+// time.
 //
 // A returned listing shows only the fan's own side: it never carries anything
 // about the fan who bought it.
@@ -117,21 +122,23 @@ message ResaleListing {
     (buf.validate.field).required = true
   ];
 
-  // When the listing can no longer be bought or withdrawn: 3 hours before its
-  // event's start time, which is when the event's admission window opens. The
-  // start time is required for a sale and fixed once a TicketSale names the
-  // event. Server-owned.
+  // When the listing can no longer be bought or withdrawn: its event's last
+  // resale draw, 12:00 Japan time on the event's day, or 3 hours before the
+  // event's start time, when admission opens, if that is earlier. The start
+  // time is required for a sale and fixed once a TicketSale names the event.
+  // Server-owned.
   google.protobuf.Timestamp deadline_time = 8 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
 
-  // When another fan's Order bought the listing. Absent unless SOLD.
+  // When the Order of the ResaleEntry it was allocated to bought the listing.
+  // Absent unless SOLD.
   // Server-owned.
   google.protobuf.Timestamp sold_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // When the fan was refunded the refund amount. Absent until refunded, which
-  // happens within about a minute after the listing is SOLD; set once.
+  // happens shortly after the listing is SOLD; set once.
   // Server-owned.
   google.protobuf.Timestamp refund_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
 
@@ -165,4 +172,9 @@ message ResaleListing {
   // The payment provider's ID for the refund to the fan. Absent until
   // refunded, then set once.
   Order.ProviderRefundId provider_refund_id = 16 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The ResaleEntry a draw allocated the listing to. Absent until allocated;
+  // when that entry becomes LOST, the listing is free for the next draw again.
+  // The entry is the purchasing fan's, so a fan-facing read leaves it unset.
+  ResaleEntryId resale_entry_id = 17 [(google.api.field_behavior) = OUTPUT_ONLY];
 }

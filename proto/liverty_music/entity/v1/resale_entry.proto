@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+// Package liverty_music.entity.v1 defines core business entities for the Liverty Music platform.
+package liverty_music.entity.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "liverty_music/entity/v1/order.proto";
+
+option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
+
+// ResaleEntryState is the lifecycle of a ResaleEntry:
+//
+//   ENTERED --> WON --> LOST
+//   ENTERED --> LOST | LAPSED | WITHDRAWN
+//
+// An entry is created ENTERED. New values may be appended; existing values
+// must not be renumbered.
+enum ResaleEntryState {
+  // Default value, rejected at the boundary: a persisted entry always has a
+  // concrete state.
+  RESALE_ENTRY_STATE_UNSPECIFIED = 0;
+
+  // Made when the fan confirmed, and waiting for a draw. The card
+  // authorization reserves the amount but no money is captured. An entry not
+  // allocated at a draw stays ENTERED for the next one. The fan may withdraw
+  // it.
+  RESALE_ENTRY_STATE_ENTERED = 1;
+
+  // Allocated as many listings as its ticket count at a draw. The Order stays
+  // PENDING until its card authorization is captured, then becomes PAID; a
+  // win that cannot be charged becomes LOST.
+  RESALE_ENTRY_STATE_WON = 2;
+
+  // Ended without tickets, for the lost reason: no listing left for it at the
+  // last draw, the concert cancelled (中止), or a win that could not be
+  // charged. The card authorization is released and the Order is VOID.
+  RESALE_ENTRY_STATE_LOST = 3;
+
+  // Ended at a draw because the card authorization would expire less than 24
+  // hours after it, too soon to charge a win. The card authorization is
+  // released and the Order is VOID; nothing is charged and the fan may apply
+  // again while resale is open.
+  RESALE_ENTRY_STATE_LAPSED = 4;
+
+  // Withdrawn by the fan while ENTERED. The card authorization is released and
+  // the Order is VOID; nothing is charged.
+  RESALE_ENTRY_STATE_WITHDRAWN = 5;
+}
+
+// ResaleEntryLostReason is why a ResaleEntry is LOST. The numbers are the
+// stored values. New values may be appended; existing values must not be
+// renumbered.
+enum ResaleEntryLostReason {
+  // Default value, never stored: an entry that is not LOST has no reason.
+  RESALE_ENTRY_LOST_REASON_UNSPECIFIED = 0;
+
+  // No listing was left for the entry at the event's last draw.
+  RESALE_ENTRY_LOST_REASON_NO_TICKET_LEFT = 1;
+
+  // The concert was cancelled (中止) while the entry was ENTERED, so the next
+  // draw allocated it nothing and ended it.
+  RESALE_ENTRY_LOST_REASON_CONCERT_CANCELLED = 2;
+
+  // The entry won, but the Order's card authorization could not be captured.
+  // The fan may apply again with another card while resale is open.
+  RESALE_ENTRY_LOST_REASON_CARD_NOT_CHARGED = 3;
+
+  // The entry won, but its payment could not be completed before the event's
+  // start time, so the card authorization was released without a charge.
+  RESALE_ENTRY_LOST_REASON_PAYMENT_NOT_COMPLETED_BEFORE_SHOW = 4;
+}
+
+// ResaleEntry is one fan account's application, through its Order, for
+// official resale (公式リセール) tickets of one sold-out TicketStock: a
+// companion group of tickets allocated all-or-nothing by a daily draw, paid by
+// the Order's CardAuthorization placed on the fan's card for the amount when
+// the fan applies and captured only on a win. It belongs to no TicketSale: its
+// supply is the stock's ResaleListings. Draws run at 12:00 Japan time on every
+// day before the event's day, and on the event's day at its resale deadline,
+// 12:00 or 3 hours before the start time if that is earlier, which is the last
+// draw. A fan has at most one ENTERED resale entry per event (enforced
+// server-side). The TicketStock, the ticket count, the card authorization and
+// the referral code are the Order's.
+message ResaleEntry {
+  // The unique identifier for this entry. Server-generated surrogate id.
+  ResaleEntryId id = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The Order the entry applies for, PENDING until a draw decides the entry.
+  // One ResaleEntry per Order.
+  OrderId order_id = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The entry's current lifecycle state. Server-owned.
+  ResaleEntryState state = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // When the fan applied. Server-owned.
+  google.protobuf.Timestamp create_time = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
+  ];
+
+  // The draw that ended the entry: the draw it won, lost or lapsed at. Absent
+  // while ENTERED and on a WITHDRAWN entry. Server-owned.
+  google.protobuf.Timestamp draw_time = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // When the fan withdrew the entry. Absent unless WITHDRAWN. Server-owned.
+  google.protobuf.Timestamp withdraw_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Why the entry is LOST. Set only when state is LOST. Server-owned.
+  ResaleEntryLostReason lost_reason = 7 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).enum.defined_only = true
+  ];
+
+  // The next draw of the entry's event after the time it was read, which the
+  // fan waits for. Set only when state is ENTERED; evaluated by the server
+  // when the entry is read, never stored.
+  google.protobuf.Timestamp next_draw_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
