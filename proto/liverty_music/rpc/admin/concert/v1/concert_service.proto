@@ -56,7 +56,7 @@ service ConcertService {
   // Delete permanently removes a concert by its event id, whatever its origin.
   // It is refused while a purchase of the event is still live: a PAID Order,
   // a Settlement that is not reversed, or a purchase in progress (a PENDING
-  // Order, or a VOID Order whose card authorization is not yet released). A
+  // Order). A
   // purchase started while the delete runs either makes it fail or is
   // refused; it is never removed.
   //

@@ -1,11 +1,12 @@
 # components/entity/card-authorization Specification
 
 ## Purpose
-A CardAuthorization is the authorization placed on a fan's card for the amount of one purchase, a Checkout, a lottery entry or a resale entry: it reserves the amount on the card without charging it, until it is captured (the card is charged) or released (given back without charging). It carries what it pays for, so a lottery entry and its Order can be made from it once the fan completes card authentication. The payment provider holds it and is its only record; an Order refers to it by its id.
+A CardAuthorization is the authorization placed on a fan's card for the amount of one purchase, a Checkout, a lottery entry or a resale entry: it reserves the amount on the card without charging it, until it is captured (the card is charged) or released (given back without charging). It carries what it pays for, so a lottery entry or a resale entry and its Order can be made from it once the fan completes card authentication. An Order refers to it by its id.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
-| id | the payment provider's ID for the card authorization | required, assigned by the payment provider on creation; 1-255 characters, opaque |
+| id | the card authorization's identity | required, assigned on creation |
+| provider card authorization ID | the payment provider's ID for the card authorization | required, assigned by the payment provider on creation; 1-255 characters, opaque |
 | purchase | what it pays for: a Checkout, a lottery entry or a resale entry | required; fixed at creation |
 | sale | the Lottery TicketSale a lottery entry is made for | lottery entry only; fixed at creation |
 | user | the fan whose card it is | required; fixed at creation |

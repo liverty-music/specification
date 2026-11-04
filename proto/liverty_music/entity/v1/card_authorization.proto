@@ -13,18 +13,15 @@ import "liverty_music/entity/v1/user.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/entity/v1;entityv1";
 
-// CardAuthorizationId identifies a CardAuthorization: the authorization placed
-// on a fan's card for the amount of one purchase, a Checkout, a LotteryEntry or
-// a ResaleEntry, which reserves the amount without charging it until it is captured or
-// released. The payment provider assigns it and is the card authorization's
-// only record, so the id is the payment provider's ID for the card
-// authorization, not a platform UUID. Opaque; meaningful only to the provider.
+// CardAuthorizationId is a globally unique identifier for a single
+// CardAuthorization: the authorization placed on a fan's card for the amount of
+// one purchase, a Checkout, a LotteryEntry or a ResaleEntry, which reserves the
+// amount without charging it until it is captured or released.
+// Server-generated (UUIDv7); the payment provider's own ID is
+// CardAuthorization.provider_card_authorization_id.
 message CardAuthorizationId {
-  // The payment provider's ID for the card authorization, 1 to 255 characters.
-  string value = 1 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 255
-  }];
+  // A UUID string mapping to the card authorization's unique identity.
+  string value = 1 [(buf.validate.field).string.uuid = true];
 }
 
 // CardAuthorizationSecret is the short-lived secret of a CardAuthorization that
@@ -84,10 +81,21 @@ enum CardAuthorizationStatus {
 // until it is captured (the card is charged) or released (given back without
 // charging). It carries what it pays for, so a LotteryEntry or a ResaleEntry
 // and its Order can be made from it once the fan completes card
-// authentication. The payment provider holds it and is its only record; an
-// Order refers to it by its id. It never holds raw card data.
+// authentication. An Order refers to it by its id. It never holds raw card
+// data.
 message CardAuthorization {
-  // The payment provider's ID for the card authorization.
+  // ProviderCardAuthorizationId is the payment provider's ID for a
+  // CardAuthorization. Opaque; meaningful only to the provider.
+  message ProviderCardAuthorizationId {
+    // The provider's card authorization id, 1 to 255 characters.
+    string value = 1 [(buf.validate.field).string = {
+      min_len: 1
+      max_len: 255
+    }];
+  }
+
+  // The unique identifier for this card authorization. Server-generated
+  // surrogate id.
   CardAuthorizationId id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
@@ -153,5 +161,12 @@ message CardAuthorization {
   CardAuthorizationStatus status = 11 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).enum.defined_only = true
+  ];
+
+  // The payment provider's ID for the card authorization, assigned when it is
+  // opened.
+  ProviderCardAuthorizationId provider_card_authorization_id = 12 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (buf.validate.field).required = true
   ];
 }
