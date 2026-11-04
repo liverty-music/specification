@@ -44,7 +44,7 @@ A Won entry whose capture fails permanently is made Lost by `Issue` through `Res
 
 ### D5 — Card authorization expiry and lapse
 
-The card authorization's expiry is the charge's `payment_method_details.card.capture_before`, stored as `card_authorizations.expire_time` when the PaymentIntent reaches `requires_capture` (the `payment_intent.amount_capturable_updated` notice and `Confirm` both read it). Stripe's validity windows (docs.stripe.com/payments/place-a-hold-on-a-payment-method, read 2026-10-28): for a Japan-based account, JPY transactions of Visa, Mastercard, JCB, Diners Club and Discover can be held up to 30 days; American Express follows the standard 7 days; when an authorization expires the PaymentIntent becomes `canceled`. The platform account is Japan-based and charges JPY, so most entries last up to 30 days and Amex entries about a week. `request_extended_authorization` is not used: Stripe's extended-authorization page says it does not apply to transactions with businesses in Japan, and the 30-day window above applies to them by default. Task 3.1 still reads `capture_before` from the Stripe test API to confirm the stored expiry.
+The card authorization's expiry is the charge's `payment_method_details.card.capture_before`, stored as `card_authorizations.expire_at` (D11) when the PaymentIntent reaches `requires_capture` (the `payment_intent.amount_capturable_updated` notice and `Confirm` both read it). Stripe's validity windows (docs.stripe.com/payments/place-a-hold-on-a-payment-method, read 2026-10-28): for a Japan-based account, JPY transactions of Visa, Mastercard, JCB, Diners Club and Discover can be held up to 30 days; American Express follows the standard 7 days; when an authorization expires the PaymentIntent becomes `canceled`. The platform account is Japan-based and charges JPY, so most entries last up to 30 days and Amex entries about a week. `request_extended_authorization` is not used: Stripe's extended-authorization page says it does not apply to transactions with businesses in Japan, and the 30-day window above applies to them by default. Task 3.1 still reads `capture_before` from the Stripe test API to confirm the stored expiry.
 
 An entry lapses at the first draw at which its expiry is less than 24 hours after the draw time. Lapsing at a draw, not at the expiry instant, needs no extra timer: the draw already reads every candidate.
 
@@ -66,7 +66,7 @@ The event page reads stocks, state and resale openness from `TicketSaleService.L
 
 Applied directly to the main specs with this change, as `remodel-ticket-sales` does:
 - `components/entity/resale-listing`: a new attribute `resale entry` ("the ResaleEntry a draw allocated it to; absent until allocated") and the ER line `ResaleEntry |o--o{ ResaleListing : "is allocated"` (`remodel-ticket-sales` already removed the `checkout` attribute); the Purpose sentence says another fan buys it through a daily resale draw.
-- `components/entity/card-authorization`: an `expire time` row ("when the authorized amount can no longer be charged; absent until authorized").
+- `components/entity/card-authorization`: an `expire time` row ("when the authorized amount can no longer be charged; absent until authorized"); the `id` row is the card authorization's own identity and a `provider card authorization ID` row holds the payment provider's ID (D11); the Purpose no longer says where the card authorization is stored.
 - `components/entity/order`: `Order ||--o| ResaleEntry : "is applied for as"` in the ER diagram; the source attribute lists ResaleEntry.
 - `components/entity/notification`: the types `resale_entry_lapsed` and `resale_entry_lost`, added by archive task 12.3 rather than before archiving, because no earlier change sends them.
 - `stories/resell-a-ticket`: the usecase diagram includes ResaleEntryUseCase.AuthorizeCard, Confirm and Draw and OrderUseCase.Issue instead of CheckoutUseCase.Start and AuthorizeCard.
@@ -74,6 +74,19 @@ Applied directly to the main specs with this change, as `remodel-ticket-sales` d
 ### D10 — The listing fan's refund starts from the sale
 
 Today `RefundSold` runs every minute in the checkout sweeper over `ListSoldUnrefunded`. `Order.Issue` for a won entry makes its listings Sold and announces each in the same transaction (`ORDER.resale_listing_sold`, payload the ResaleListing). The workflow starter starts `ResaleListingUseCase.RefundSold` (`refund:<listing>`) for each, which refunds once (the refund keeps its business key `refund:<listing>`), retries Unavailable for 24 hours and is reported when it cannot finish. `ResaleListing.RecordRefund` keeps announcing `ORDER.resale_listing_refunded`, which sends the sold email. `ListSoldUnrefunded` and the last call of the checkout sweeper go, so the sweeper goroutine is removed (`unify-order-issuance` removed its other calls).
+
+### D11 — Card authorizations get a table and a platform id
+
+The draw reads every candidate's expiry inside the stock-row transaction (D4), so the expiry is stored, not read from the payment provider per entry. It is stored in a `card_authorizations` table rather than as an `orders` column: the other attributes the platform is likely to need about a card authorization (its release, the card brand and last four digits while it is held) belong to the same row, and a card authorization exists before its Order (AuthorizeCard opens it; Confirm makes the Order).
+
+With a table of its own, the reason `unify-ticket-sales` D17 gave for using the payment provider's ID as the card authorization's id ("no table of its own, the provider is the source of truth") no longer holds, so a CardAuthorization follows the rule of every other entity with a record here (User, PayoutAccount, IdentityVerification, Order, Settlement): a UUIDv7 id and the provider's ID as `provider_card_authorization_id`.
+
+- `card_authorizations (id UUIDv7, provider_card_authorization_id TEXT unique, expire_at TIMESTAMPTZ)`; a row is inserted for every purchase (Checkout, LotteryEntry, ResaleEntry) when `CardAuthorization.Create` opens it, and `expire_at` is set when it becomes Authorized. The purchase, user, stock, count, referral code, amount, card brand and status stay in the payment provider's record as today and are read by `CardAuthorization.Get`.
+- `orders.card_authorization_id` becomes a UUID referencing `card_authorizations(id)`. The payment provider's authorization notice names the provider's ID; the notice handler resolves it with `CardAuthorization.GetByProviderID` (spec `entity/card-authorization/get-by-provider-id`).
+- proto: `CardAuthorizationId` is a UUID; `CardAuthorization.provider_card_authorization_id` carries the provider's ID. The browser keeps passing the id it got from AuthorizeCard, so no screen changes.
+- Rejected — a column `orders.card_authorization_expire_at`: one attribute fits, but each further attribute widens `orders`, and the card authorization exists before the Order.
+- Rejected — the provider's ID as the table's key: two id rules for entities with a record here.
+- The ticket stock, concert and Organizer delete guards and their docs no longer speak of a Void Order's card authorization not yet released: `20261103100000_drop_checkout_card_authorization_release.sql` removed that wait, because the release workflow of `make-lottery-draw-durable` guarantees the release.
 
 ### D9 — Verification required when any sale of the event requires it
 
@@ -89,4 +102,4 @@ A ResaleEntry belongs to no TicketSale, so no sale's verification requirement ap
 
 ## Migration Plan
 
-`remodel-ticket-sales` deletes the existing ticket data before its migration, so no resale row exists to migrate. The backend migration adds `resale_entries`, `resale_listings.resale_entry_id` (`remodel-ticket-sales` already dropped `checkout_id`) and `card_authorizations.expire_time`. Deploy backend then frontend; rollback is the previous images with the migration's down step (the new table is empty when nothing was drawn).
+`remodel-ticket-sales` deletes the existing ticket data before its migration, so no resale row exists to migrate. The backend migration adds `resale_entries`, `resale_listings.resale_entry_id` (`remodel-ticket-sales` already dropped `checkout_id`) and `card_authorizations` (D11), and turns `orders.card_authorization_id` into a UUID referencing it. Existing Orders name provider IDs; prod has no users, so the migration deletes the ticket data as `remodel-ticket-sales` did rather than converting it. Deploy backend then frontend; rollback is the previous images with the migration's down step (the new table is empty when nothing was drawn).
