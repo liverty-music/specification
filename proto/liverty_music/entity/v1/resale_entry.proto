@@ -59,7 +59,8 @@ enum ResaleEntryLostReason {
   // No listing was left for the entry at the event's last draw.
   RESALE_ENTRY_LOST_REASON_NO_TICKET_LEFT = 1;
 
-  // The concert was cancelled (中止) before a draw allocated the entry.
+  // The concert was cancelled (中止) while the entry was ENTERED, so the next
+  // draw allocated it nothing and ended it.
   RESALE_ENTRY_LOST_REASON_CONCERT_CANCELLED = 2;
 
   // The entry won, but the Order's card authorization could not be captured.

@@ -84,7 +84,9 @@ service ResaleEntryService {
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   // - NOT_FOUND: The caller has no stored account, or the TicketStock no
   //   longer exists; the card authorization is released.
-  // - INVALID_ARGUMENT: The card_authorization_id is missing or malformed.
+  // - INVALID_ARGUMENT: The card_authorization_id is missing or malformed, or
+  //   the card authorization's amount does not match its ticket count; it is
+  //   released.
   // - PERMISSION_DENIED: The card authorization does not exist, is not for a
   //   resale entry or is another fan's. Non-revealing.
   // - FAILED_PRECONDITION: The card authorization is not Authorized (card
