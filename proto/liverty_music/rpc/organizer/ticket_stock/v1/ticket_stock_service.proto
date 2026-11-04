@@ -53,9 +53,8 @@ service TicketStockService {
   // - PERMISSION_DENIED: The TicketStock does not exist or its event's Series
   //   is owned by another Organizer, or any organizer-console authorization
   //   failure. Non-revealing.
-  // - FAILED_PRECONDITION: An Order that is not Void names the stock, a Void
-  //   Order's card authorization is not yet released, or the caller's own
-  //   Organizer has been deactivated.
+  // - FAILED_PRECONDITION: An Order that is not Void names the stock, or the
+  //   caller's own Organizer has been deactivated.
   // - UNAUTHENTICATED: The request lacks valid authentication credentials.
   rpc Delete(DeleteRequest) returns (DeleteResponse);
 

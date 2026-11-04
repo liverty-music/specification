@@ -112,8 +112,7 @@ service OrganizerService {
   //
   // Nothing is removed when the Organizer is not deactivated, when any of its
   // Events has a PAID Order, a settlement that is not reversed or a purchase
-  // in progress (a PENDING Order, or a VOID Order whose card authorization is
-  // not yet released), or when the Organizer has a payout account. Files and the
+  // in progress (a PENDING Order), or when the Organizer has a payout account. Files and the
   // Organization are removed before the database records and an already
   // removed file or Organization counts as removed, so a call that failed
   // partway is completed by calling Delete again.
