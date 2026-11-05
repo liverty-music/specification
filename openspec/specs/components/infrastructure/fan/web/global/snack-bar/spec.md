@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Shows short messages at the bottom of the screen, at most three at once in the fan app, and a persistent snack bar that notifies the user when an app update is ready to install, with a prominent action to apply it.
+Shows short messages at the bottom of the screen, one at a time in the fan app, and a persistent snack bar that notifies the user when an app update is ready to install, with a prominent action to apply it.
 
 ## Requirements
 

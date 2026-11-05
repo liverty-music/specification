@@ -27,7 +27,7 @@ The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-no
 
 #### Scenario: Multiple simultaneous snacks
 - **WHEN** multiple `Snack` events are published in rapid succession
-- **THEN** each snack SHALL be an independent popover element in the Top Layer
+- **THEN** each snack, when it appears, SHALL be an independent popover element in the Top Layer
 - **AND** dismissing one snack SHALL NOT interfere with another snack's transitions or lifecycle
 - **AND** the snacks SHALL appear one after another, as "Snacks appear one at a time" states, never two in the same place
 

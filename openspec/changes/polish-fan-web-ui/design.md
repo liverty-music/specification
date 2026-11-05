@@ -97,7 +97,7 @@ Values the cards show and where they come from: artist name and lane from `Conce
 ### D8. Storybook: every story renders, and route stories are allowed
 
 - `.storybook/screenshot.ts` imports `vitest` at module load, and loading `vitest` outside its runner throws (`chai.use(JestChaiExpect)` reads the missing worker state). The fix moves the import inside the `MODE === 'test'` branch as `await import('vitest')`. Commit 7e9cd168 guarded only the call, so it never took effect.
-- `FourStacked` additionally asserts that the boxes of the open snacks are pairwise disjoint and that the oldest is lowest.
+- `FourStacked` becomes a queue story: it publishes four snacks and asserts that exactly one is open at any moment and that they appear in order.
 - The frontend `AGENTS.md` story rule changes from "Do NOT story route/page components" to: a route may have stories when every store and RPC client it resolves is registered as a fake through `defineAureliaStory({ items })` and nothing reaches the network; canvas surfaces (`dna-orb`) stay excluded. Storybook's guidance supports this: a full page is a connected component, and rendering one "you need to mock the data or modules that the component depends on" ([Build pages with Storybook](https://storybook.js.org/docs/writing-stories/build-pages-with-storybook)). Extracting the table into a presentational component would also make it storyable, but the defect is the route's own layout (its scroll container), which a component story would not render.
 - `my-artists-route.stories.ts` renders the route with 40 fake follows, scrolls `tbody` by 300 px, asserts the hit test of each header label, and compares a screenshot baseline made in the pinned container (`visual-baselines` skill).
 
