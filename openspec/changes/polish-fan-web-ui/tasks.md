@@ -1,6 +1,6 @@
 # Tasks
 
-Every task is in the `frontend` repository.
+Sections 1 to 5 are in the `frontend` repository. Section 6 is an OpenSpec edit made in `specification` at archive time and needs no implementation worktree.
 
 ## 1. frontend: Storybook renders every story, and routes may have stories
 
@@ -37,3 +37,7 @@ Every task is in the `frontend` repository.
 - [ ] 5.1 Pass `hypeByArtist` and the journey map to `toDateGroupsForLocation`, giving any performer the fan does not follow `watch` (design D7); verify `concert-store.spec.ts` cases for "Followed artist matched by hype and lane", "Artist the fan does not follow is never matched" and "Guest with no follows"
 - [ ] 5.2 Keep the proximity groups in `NearbyVisit.cache`, re-derive cards on changes of `journeyStore.journeyMap` and `followStore.hypeByArtist`, and load the journey store on a direct visit; verify unit tests for "Journey badge shown" and "Journey or hype changed in the detail sheet"
 - [ ] 5.3 After release, on the deployed app, set a journey on an All Nearby concert from the detail sheet and verify the badge appears on its card without a reload, and that only followed artists' cards are lit; then remove the journey the check set
+
+## 6. specification: Purpose at archive
+
+- [ ] 6.1 When archiving, change the Purpose of `components/infrastructure/fan/web/global/snack-bar` from "at most three at once in the fan app" to "one at a time in the fan app" in the archive commit, and verify `openspec validate --specs` passes

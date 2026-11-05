@@ -79,9 +79,9 @@ The All Nearby view SHALL display concerts returned by `ConcertService.ListByLoc
 #### Scenario: Followed artist matched by hype and lane
 
 - **GIVEN** the fan follows an artist at hype level Home
-- **WHEN** that artist's concerts appear in the HOME lane and the NEAR lane of the All Nearby view
+- **WHEN** that artist's concerts appear in the HOME lane and the NEARBY lane of the All Nearby view
 - **THEN** the HOME lane card SHALL render as matched
-- **AND** the NEAR lane card SHALL render as unmatched
+- **AND** the NEARBY lane card SHALL render as unmatched
 
 #### Scenario: Artist the fan does not follow is never matched
 

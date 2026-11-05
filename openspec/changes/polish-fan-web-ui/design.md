@@ -67,7 +67,7 @@ A swipe dismisses through the same path as every other dismiss, so `onDismiss` (
 
 ### D5. All Nearby filter sheet and its launcher item
 
-The `.nearby-filters` chip row is removed. A new `<nearby-filter-sheet>` (a `bottom-sheet`) holds two rows, area and period, each showing its value. A tap on a row closes the filter sheet and then opens the existing `user-home-selector` or `date-range-sheet`, so two sheets are never open at once. `DiscoveryRoute` registers `[filter, help]` while the view is `nearby` and `[help]` otherwise, re-registering on every view switch (the launcher replaces an owner's set). The filter item's `isOn` is "area override set, or period is not the `week` preset", the same contract as the dashboard's filter item.
+The `.nearby-filters` chip row is removed. A new `<nearby-filter-sheet>` (a `bottom-sheet`) holds two rows, area and period, each showing its value. A tap on a row closes the filter sheet and then opens the existing `user-home-selector` or `date-range-sheet`, so two sheets are never open at once. `DiscoveryRoute` registers `[filter, help]` while the view is `nearby` and `[help]` otherwise, re-registering on every view switch (the launcher replaces an owner's set). The filter item's `isOn` is "the effective area differs from the fan's home area, or the period is not the `week` preset", the spec's rule; an override equal to the home area reads as inactive.
 
 The date label (`date-range-sheet`'s emitted `label`, localized as today) moves from the chip to the period row.
 
@@ -107,7 +107,7 @@ Values the cards show and where they come from: artist name and lane from `Conce
 - [A burst of snacks (several hype changes in a row) is shown one after another, up to 10 seconds each] → A sender's `replaceKey` already folds repeated snacks about one artist into one; a swipe clears the visible snack at once.
 - [Swipe scrollers inside every snack add work to each snack] → One snack is open at a time.
 - [Snack changes reach the organizer console] → Its snack stories (`console-consolesnackbar--*`) run in the same Storybook job.
-- [A kept area override hides a later change of the home area] → Choosing the home area clears the override, and the filter item shows its active state while an override is set.
+- [A kept area override hides a later change of the home area] → Choosing the home area clears the override, and the filter item shows its active state while the area differs from the home area.
 
 ## Migration Plan
 
