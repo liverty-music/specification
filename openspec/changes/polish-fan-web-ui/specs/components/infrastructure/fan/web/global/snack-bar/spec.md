@@ -15,13 +15,13 @@ The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-no
 - **AND** the CSS exit transition SHALL play before the element is removed from the Top Layer
 
 #### Scenario: Programmatic dismiss via handle
-- **WHEN** a caller invokes `snack.handle.dismiss()`
+- **WHEN** a caller invokes `snack.handle.dismiss()` on a visible snack
 - **THEN** `hidePopover()` SHALL be called immediately
 - **AND** the auto-dismiss timer SHALL be cleared
 - **AND** the `onDismiss` callback SHALL fire exactly once
 
 #### Scenario: DOM cleanup after exit transition
-- **WHEN** a snack is dismissed by its timer, its handle, its action, its close button or a swipe
+- **WHEN** a visible snack is dismissed by its timer, its handle, its action, its close button or a swipe
 - **THEN** the snack SHALL stay in the document, sinking and fading out, until its exit transition has ended
 - **AND** only then SHALL it be removed
 
