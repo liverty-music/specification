@@ -30,6 +30,7 @@ Out of scope: whether an identity-verified fan may still change the ticket name 
 - `components/infrastructure/fan/web/global/page-header`: the Settings gear requirement is removed.
 - `components/infrastructure/fan/web/global/bottom-nav-bar`: Tickets now shows the FAB and its notch; the "no notch" example moves to a route outside the tabs.
 - `components/infrastructure/fan/web/route/my-artists`: edit mode hides the launcher instead of only contributing no actions.
+- `stories/roam-app-as-guest`: a guest past the dashboard opens Settings from the FAB launcher; the scenario still named the Settings nav tab, which an earlier change removed.
 
 `components/infrastructure/fan/web/route/delete-account` keeps its behaviour (a modal confirmation whose Cancel takes initial focus); only its implementation moves to the shared component.
 
