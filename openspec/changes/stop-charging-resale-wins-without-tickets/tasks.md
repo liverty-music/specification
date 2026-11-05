@@ -9,12 +9,12 @@
 
 ## 3. Entity operation (components/entity/resale-entry/revert-win)
 
-- [ ] 3.1 `RevertWin` accepts the lost reasons "concert cancelled" and "listing cancelled", and frees only the allocated listings that are still Listed (design D4); verify one contract test per scenario of `entity/resale-entry/revert-win`, including "Listing cancelled"
+- [ ] 3.1 `RevertWin` accepts the lost reasons "concert cancelled" and "listing cancelled"; the listings need no change, since a Cancelled listing is never free for a draw (design D4); verify one contract test per scenario of `entity/resale-entry/revert-win`, including "Listing cancelled", which checks that the Listed listing is free for the next draw and the Cancelled one is not
 
 ## 4. Issue a won resale entry (components/usecase/order/issue)
 
 - [ ] 4.1 In the `capture` step, check that the event is still PUBLISHED and, when it is not, revert the win with "concert cancelled" without charging (design D1); verify the scenario "Concert cancelled before the charge" with the operations mocked, and that a replayed workflow after a capture does not check again
-- [ ] 4.2 Make `sellResaleListings` return `entity.ErrResaleListingCancelled` when an allocated listing is Cancelled, after confirming it locks the listed ticket rows that `CommitRefund` locks (design D2); verify a contract test where the reselling fan's Order is refunded before the sell, and one where the refund and the sell run concurrently and exactly one of them wins
+- [ ] 4.2 Make `sellResaleListings` return `entity.ErrResaleListingCancelled` when an allocated listing is Cancelled, (design D2); verify a contract test where the reselling fan's Order is refunded before the sell, and one where the refund and the sell run concurrently and exactly one of them wins
 - [ ] 4.3 On that error, refund the whole charge with `Order.CreateRefund` for the Order's own refund (retrying Unavailable for up to 24 hours and telling an admin), then revert the win with "listing cancelled" (design D2); verify the scenario "Listing cancelled after the charge" with the operations mocked, and that a replay refunds once
 - [ ] 4.4 Run a resale story on the Stripe test API (`STRIPE_INTEGRATION_TEST=1`): a Won entry whose reselling fan's Order is refunded by an admin cancellation between the capture and the issue ends Lost with "listing cancelled", and the winner's charge is refunded at Stripe; verify it passes
 

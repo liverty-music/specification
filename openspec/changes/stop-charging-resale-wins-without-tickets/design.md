@@ -42,7 +42,7 @@ The check and the capture are not atomic: a concert cancelled in the seconds bet
 
 On that error, `issueResaleEntry` runs two more steps:
 
-1. **`refund cancelled win`:** refunds the whole charge with `Order.CreateRefund` for the Order's own refund. The idempotency key `order-refund:<orderID>` makes a replay refund once. The charge is resolved from the captured payment's provider payment ID, which `issueCaptured` already read. Unavailable is retried for up to 24 hours, after which an admin is told. The entry stays Won meanwhile.
+1. **`refund cancelled win`:** refunds the whole charge with `Order.CreateRefund` for the Order's own refund. The idempotency key `order-refund:<orderID>` makes a replay refund once. `issueCaptured` returns only `IssueResult`, so the step reads the captured payment again from the Order's card authorization (`capturedPayment`, as `issueCaptured` does) and resolves its charge. Unavailable is retried for up to 24 hours, after which an admin is told. The entry stays Won meanwhile.
 2. **`revert win`:** runs `RevertWin(entry, "listing cancelled")`.
 
 **The race is serialized by ticket row locks.** `CommitRefund` locks the reselling fan's Order's ticket rows. `sellResaleListings` updates the same rows when it voids the listed Tickets. Whichever transaction commits second sees the result of the first:
@@ -50,7 +50,7 @@ On that error, `issueResaleEntry` runs two more steps:
 - **The refund commits first:** the listing is Cancelled, so the sell gets `ErrResaleListingCancelled`.
 - **The sell commits first:** the listing is Sold and its Ticket Voided. The refund then reaches only unresold tickets (`unresoldAmount`), and the listing fan's resale refund stands.
 
-The implementation verifies that `sellResaleListings` takes these row locks; where it does not, it locks the listed ticket rows with `FOR UPDATE` before checking the listings.
+`sellResaleListings` already takes them (`issuanceLockResoldTicketsQuery`, `FOR UPDATE OF t`) before it updates the listings with `status = 1`, so a listing cancelled first is not updated and is reported.
 
 - **Rejected: refusing the refund** (the first idea in backend#778). It cannot cover a dispute, and an admin's cancellation refund would have to be retried by hand.
 
@@ -71,9 +71,9 @@ What the new reason needs:
 - **DB:** the `chk_resale_entries_lost_reason` check widens from 1..4 to 1..5, and the column comment changes.
 - **Entity:** the `ResaleEntryLostReason` constant, and its pb mapping.
 
-### D4: RevertWin keeps listings that are not Listed
+### D4: RevertWin needs no listing change
 
-`RevertWin` frees the listings allocated to the entry today by clearing `resale_entry_id`. With "listing cancelled", one of them is Cancelled. Clearing its `resale_entry_id` changes nothing a fan sees, because only a Listed listing is free for a draw. The spec still says "still Listed", so the record shows that a cancelled listing is not offered again.
+`RevertWin` updates only `resale_entries` and `orders`. A listing is free for a draw when it is Listed and its entry is absent or Lost (`resaleEntryFreeListingsQuery` and `resaleEntryAllocateQuery` both require `rl.status = 1`). So once the entry is Lost, its Listed listings are free again, and a Cancelled one never is, without `RevertWin` touching `resale_listings`. The spec says "still Listed" to record that a cancelled listing is not offered again. The work on `RevertWin` is only the two new lost reasons it accepts.
 
 - **Order state:** the Order is made Void. It never became Paid, so it has no Settlement to reverse, and the refund is recorded at the payment provider under the Order's own refund key. The Organizer is paid for that seat by neither Order, which is right: the reselling fan's Order was refunded too.
 

@@ -1,7 +1,7 @@
 # components/entity/resale-entry/revert-win Specification
 
 ## Purpose
-Makes a Won ResaleEntry Lost, and its Pending Order Void, when its Order cannot be charged, so the listings allocated to it are free for the next draw.
+Makes a Won ResaleEntry Lost, and its Pending Order Void, when its Order issued no tickets: it could not be charged, its concert was cancelled before the charge, or a listing allocated to it was cancelled after the charge, which was refunded. The listings allocated to it that are still Listed are then free for the next draw.
 
 ## Requirements
 

@@ -1,7 +1,7 @@
 # components/usecase/notification/send-resale-entry-ended Specification
 
 ## Purpose
-NotificationUseCase.SendResaleEntryEnded tells a fan, by email and push notification, that their official resale (公式リセール) entry lapsed because its card authorization would expire, or ended without a ticket: it lost at the event's last draw, its concert was cancelled, it won but its card could not be charged, or it won but the payment could not be completed before the show.
+NotificationUseCase.SendResaleEntryEnded tells a fan, by email and push notification, that their official resale (公式リセール) entry lapsed because its card authorization would expire, or ended without a ticket: it lost at the event's last draw, its concert was cancelled, it won but its card could not be charged, it won but the payment could not be completed before the show, or it won but a listing allocated to it was cancelled after the charge, so the charge is refunded.
 
 ## Requirements
 
