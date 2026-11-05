@@ -51,7 +51,7 @@ A purchase started while DeleteAndSuppress runs SHALL either be seen by this che
 
 DeleteAndSuppress SHALL remove the Event and, with it:
 - its performers, its Concert and its TicketJourneys;
-- its TicketStocks, with their Orders that are Void or Refunded and the lottery entries and Checkouts of those Orders;
+- its TicketStocks, with their Orders that are Void or Refunded and the lottery entries, Checkouts, resale entries and CardAuthorizations of those Orders;
 - the Tickets of those Orders and the Tickets' ResaleListings;
 - the Reversed Settlements of those Orders;
 - the Scanners of the Event, with their Admissions and RejectedScans;

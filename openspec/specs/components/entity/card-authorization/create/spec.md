@@ -7,7 +7,7 @@ Opens a CardAuthorization in yen for the amount of one purchase, a LotteryEntry 
 
 ### Requirement: One card authorization per purchase
 
-CardAuthorization.Create SHALL take the purchase it is for and an amount in whole yen. The purchase is a Checkout, with its Order's user, TicketStock and ticket count, or a lottery entry, given by its user, Lottery TicketSale, TicketStock, ticket count and optional ReferralCode. It SHALL open a Pending CardAuthorization for that amount that carries the purchase and charges nothing until CardAuthorization.Capture runs. It SHALL return the CardAuthorization and its card authorization secret, which SHALL NOT be stored. Repeating it for the same Checkout SHALL return the same CardAuthorization and open no second one; each call for a lottery entry SHALL open a new one. It SHALL fail with InvalidArgument when the amount is zero or negative, and with Unavailable when the payment provider cannot be reached.
+CardAuthorization.Create SHALL take the purchase it is for and an amount in whole yen. The purchase is a Checkout, with its Order's user, TicketStock and ticket count; a lottery entry, given by its user, Lottery TicketSale, TicketStock, ticket count and optional ReferralCode; or a resale entry, given by its user, TicketStock, ticket count and optional ReferralCode. It SHALL open a Pending CardAuthorization for that amount that carries the purchase and charges nothing until CardAuthorization.Capture runs. It SHALL return the CardAuthorization and its card authorization secret, which SHALL NOT be stored. Repeating it for the same Checkout SHALL return the same CardAuthorization and open no second one; each call for a lottery entry or a resale entry SHALL open a new one. It SHALL fail with InvalidArgument when the amount is zero or negative, and with Unavailable when the payment provider cannot be reached.
 
 #### Scenario: Card authorization opened
 - **WHEN** CardAuthorization.Create is called for a 6000 yen Checkout
@@ -20,6 +20,10 @@ CardAuthorization.Create SHALL take the purchase it is for and an amount in whol
 #### Scenario: Lottery entry authorized again
 - **WHEN** CardAuthorization.Create is called for a lottery entry of 2 tickets and then of 3 tickets of the same fan, sale and TicketStock
 - **THEN** two card authorizations are opened, each carrying its own ticket count
+
+#### Scenario: Resale entry authorized
+- **WHEN** CardAuthorization.Create is called for a resale entry of 2 tickets of a TicketStock priced 5000 yen
+- **THEN** a Pending 10000 yen card authorization carrying the resale entry, the fan, the TicketStock and the count 2 is opened, and nothing is charged
 
 #### Scenario: Non-positive amount
 - **WHEN** CardAuthorization.Create is called with an amount of zero or less

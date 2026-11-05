@@ -79,7 +79,7 @@ Deliver SHALL record the outcome through Notification.UpdateDelivery and return 
 
 ### Requirement: Runs for each requested notification
 
-Deliver SHALL run once for each notification that NotificationUseCase.NotifyNewConcerts, TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale, NotificationUseCase.SendOrderConfirmation or NotificationUseCase.SendLotteryLoss starts for one fan, with that fan, the notification type and the finished message; a start repeated under the same name runs nothing new. When a started Deliver fails, that notification SHALL be processed again; a failure for one fan's notification SHALL NOT affect the notifications of any other fan.
+Deliver SHALL run once for each notification that NotificationUseCase.NotifyNewConcerts, TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale, NotificationUseCase.SendOrderConfirmation, NotificationUseCase.SendLotteryLoss or NotificationUseCase.SendResaleEntryEnded starts for one fan, with that fan, the notification type and the finished message; a start repeated under the same name runs nothing new. When a started Deliver fails, that notification SHALL be processed again; a failure for one fan's notification SHALL NOT affect the notifications of any other fan.
 
 #### Scenario: Notification requested
 
@@ -105,3 +105,8 @@ Deliver SHALL run once for each notification that NotificationUseCase.NotifyNewC
 
 - **WHEN** SendLotteryLoss starts the push telling a fan their entry lost
 - **THEN** Deliver runs for the fan of the entry's Order with the type lottery_loss
+
+#### Scenario: Resale entry ended
+
+- **WHEN** SendResaleEntryEnded starts the push telling a fan their resale entry lapsed
+- **THEN** Deliver runs for that fan with the type resale_entry_lapsed
