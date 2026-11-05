@@ -4,7 +4,7 @@
 
 ### Requirement: Free for a draw
 
-A listing SHALL be free for a draw at a time when it is open at that time and no ResaleEntry is allocated to it, or the entry allocated to it is Lost. Only a free listing can be allocated by a draw or withdrawn, so a listing is withdrawable only while it is free.
+A listing SHALL be free for a draw at a time when it is open at that time, or, for the event's last draw, which runs at the deadline, still Listed then, and no ResaleEntry is allocated to it, or the entry allocated to it is Lost. Only a free listing can be allocated by a draw or withdrawn, so a listing is withdrawable only while it is free.
 
 #### Scenario: Never allocated
 - **WHEN** an open listing has no entry
