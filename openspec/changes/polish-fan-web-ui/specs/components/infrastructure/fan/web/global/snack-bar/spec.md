@@ -24,18 +24,18 @@ The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-no
 - **WHEN** a snack is dismissed by its timer, its handle, its action, its close button or a swipe
 - **THEN** the snack SHALL stay in the document, sinking and fading out, until its exit transition has ended
 - **AND** only then SHALL it be removed
-- **AND** the popover's `toggle` event SHALL NOT be taken as the end of the exit motion, because it fires when `hidePopover()` is called
 
 #### Scenario: Multiple simultaneous snacks
 - **WHEN** multiple `Snack` events are published in rapid succession
 - **THEN** each snack SHALL be an independent popover element in the Top Layer
 - **AND** dismissing one snack SHALL NOT interfere with other snacks' transitions or lifecycle
 - **AND** the oldest open snack SHALL sit lowest, and each newer snack SHALL sit directly above the one opened before it, separated by one `space-3xs` step, so a new snack never moves the snacks already on screen
-- **AND** when a lower snack leaves, the snacks above it SHALL move down into its place
+- **AND** when a lower snack leaves, the snacks above it SHALL stay in place until its exit motion has ended, and then move down into its place
 
 #### Scenario: Open snacks never overlap
 - **WHEN** three snacks are open at once, one of them with a two-line message
 - **THEN** no two snacks' boxes SHALL overlap
+- **AND** no two boxes SHALL overlap while one of the snacks is leaving
 - **AND** the lowest snack SHALL keep the placement stated in "Snack bars sit above the bottom navigation and any banner"
 
 #### Scenario: Snack action button
