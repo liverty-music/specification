@@ -35,6 +35,13 @@ enum NotificationType {
   NOTIFICATION_TYPE_ORDER_CONFIRMATION = 4;
   // The result of a lottery the fan lost.
   NOTIFICATION_TYPE_LOTTERY_LOSS = 5;
+  // An official resale application whose card authorization expired before a
+  // ticket was found; nothing was charged.
+  NOTIFICATION_TYPE_RESALE_ENTRY_LAPSED = 6;
+  // An official resale application that ended without a ticket: none left at
+  // the last draw, the concert cancelled, or a win that could not be charged;
+  // nothing was charged.
+  NOTIFICATION_TYPE_RESALE_ENTRY_LOST = 7;
 }
 
 // NotificationDeliveryStatus is whether the push channel accepted a
