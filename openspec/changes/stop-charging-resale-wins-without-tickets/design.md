@@ -50,7 +50,7 @@ On that error, `issueResaleEntry` runs two more steps:
 - **The refund commits first:** the listing is Cancelled, so the sell gets `ErrResaleListingCancelled`.
 - **The sell commits first:** the listing is Sold and its Ticket Voided. The refund then reaches only unresold tickets (`unresoldAmount`), and the listing fan's resale refund stands.
 
-`sellResaleListings` already takes them (`issuanceLockResoldTicketsQuery`, `FOR UPDATE OF t`) before it updates the listings with `status = 1`, so a listing cancelled first is not updated and is reported.
+`sellResaleListings` already takes them (`issuanceLockResoldTicketsQuery`, `FOR UPDATE OF t`) before it makes the Listed listings (`status = 1`) Sold (`status = 2`), so a listing cancelled first is not made Sold and is reported.
 
 - **Rejected: refusing the refund** (the first idea in backend#778). It cannot cover a dispute, and an admin's cancellation refund would have to be retried by hand.
 
