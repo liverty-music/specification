@@ -13,7 +13,7 @@ When `issue` finds a listing that is not Listed, it fails with FailedPreconditio
 ## Goals / Non-Goals
 
 **Goals:**
-- A Won entry is never charged for a concert that is no longer PUBLISHED at the time of the charge.
+- A Won entry is not charged for a concert that is no longer PUBLISHED when the charge step checks it. A cancellation that lands between that check and the capture is accepted (D1, Risks).
 - A Won entry whose allocated listing was cancelled after the charge ends with the whole charge refunded.
 
 **Non-Goals:**
