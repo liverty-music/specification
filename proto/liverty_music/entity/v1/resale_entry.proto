@@ -29,13 +29,14 @@ enum ResaleEntryState {
   RESALE_ENTRY_STATE_ENTERED = 1;
 
   // Allocated as many listings as its ticket count at a draw. The Order stays
-  // PENDING until its card authorization is captured, then becomes PAID; a
-  // win that cannot be charged becomes LOST.
+  // PENDING until its card authorization is captured and its tickets are
+  // issued, then becomes PAID; a win that cannot be charged or completed
+  // becomes LOST (see ResaleEntryLostReason).
   RESALE_ENTRY_STATE_WON = 2;
 
-  // Ended without tickets, for the lost reason: no listing left for it at the
-  // last draw, the concert cancelled (中止), or a win that could not be
-  // charged. The card authorization is released and the Order is VOID.
+  // Ended without tickets, for the lost reason (ResaleEntryLostReason). The
+  // Order is VOID. Nothing was charged and the card authorization is
+  // released, except for LISTING_CANCELLED, where the charge was refunded.
   RESALE_ENTRY_STATE_LOST = 3;
 
   // Ended at a draw because the card authorization would expire less than 24
@@ -59,8 +60,9 @@ enum ResaleEntryLostReason {
   // No listing was left for the entry at the event's last draw.
   RESALE_ENTRY_LOST_REASON_NO_TICKET_LEFT = 1;
 
-  // The concert was cancelled (中止) while the entry was ENTERED, so the next
-  // draw allocated it nothing and ended it.
+  // The concert was cancelled (中止): while the entry was ENTERED, so the next
+  // draw allocated it nothing and ended it, or after it won but before its
+  // card authorization was captured, so nothing was charged.
   RESALE_ENTRY_LOST_REASON_CONCERT_CANCELLED = 2;
 
   // The entry won, but the Order's card authorization could not be captured.
@@ -70,6 +72,12 @@ enum ResaleEntryLostReason {
   // The entry won, but its payment could not be completed before the event's
   // start time, so the card authorization was released without a charge.
   RESALE_ENTRY_LOST_REASON_PAYMENT_NOT_COMPLETED_BEFORE_SHOW = 4;
+
+  // The entry won and its card authorization was captured, but a listing
+  // allocated to it was cancelled before its tickets were issued, because the
+  // Order of the fan who listed it was refunded. The charge was refunded in
+  // full.
+  RESALE_ENTRY_LOST_REASON_LISTING_CANCELLED = 5;
 }
 
 // ResaleEntry is one fan account's application, through its Order, for
