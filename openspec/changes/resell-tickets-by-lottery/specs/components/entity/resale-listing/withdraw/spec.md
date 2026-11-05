@@ -4,7 +4,7 @@
 
 ### Requirement: Withdraw only a free listing
 
-Withdraw SHALL take a ResaleListing and a time. When the listing is free for a draw at that time, Withdraw SHALL make it Withdrawn with that withdraw time. When it is already Withdrawn, it SHALL change nothing. Otherwise, when it is allocated to a Won ResaleEntry, Sold, Cancelled or expired, it SHALL fail with FailedPrecondition and change nothing. Checking and withdrawing SHALL be one indivisible step with recording a draw, so a listing is never both withdrawn and allocated. It SHALL fail with NotFound when no listing has the id.
+Withdraw SHALL take a ResaleListing and a time. When the listing is open and free for a draw at that time, Withdraw SHALL make it Withdrawn with that withdraw time. When it is already Withdrawn, it SHALL change nothing. Otherwise, when it is allocated to a Won ResaleEntry, Sold, Cancelled or expired, it SHALL fail with FailedPrecondition and change nothing. Checking and withdrawing SHALL be one indivisible step with recording a draw, so a listing is never both withdrawn and allocated. It SHALL fail with NotFound when no listing has the id.
 
 #### Scenario: Nobody is buying it
 - **WHEN** a listing free for a draw is withdrawn
