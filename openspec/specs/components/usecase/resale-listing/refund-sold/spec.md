@@ -1,11 +1,11 @@
 # components/usecase/resale-listing/refund-sold Specification
 
 ## Purpose
-ResaleListingUseCase.RefundSold refunds the user of every resold listing the face value minus the resale fee, within 1 minute after the other fan was charged, and records the refund through ResaleListing.RecordRefund, which announces it so the user is told by email.
+ResaleListingUseCase.RefundSold refunds the user of every resold listing the face value minus the resale fee, once the other fan was charged, started from the announcement of the sale, and records the refund through ResaleListing.RecordRefund, which announces it so the user is told by email.
 
 ## Requirements
 
-### Requirement: Refund within one minute after the sale
+### Requirement: Refund each sold listing after the sale
 
 RefundSold SHALL take a ResaleListing and run once for each listing that Order.Issue makes Sold, started from the announcement of that sale. It SHALL resolve the charge of the listing's Order with Order.GetProviderChargeID, refund the listing's refund amount of that charge with Order.CreateRefund for the purpose of this listing, and record it with ResaleListing.RecordRefund. A listing that already has a refund time SHALL be left as it is; a run again refunds at most once. When a step fails with Unavailable it SHALL try again until 24 hours after the run started; a run that ends with a failure, or stops at its 24 hours, SHALL be reported to an admin with the listing's id and its Order's id.
 
