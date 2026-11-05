@@ -5,7 +5,7 @@ The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-no
 
 #### Scenario: Snack display on event publish
 - **WHEN** a `Snack` event is published via `IEventAggregator`
-- **THEN** the component SHALL create a new element with `popover="manual"` attribute
+- **THEN** the component SHALL create a new element with `popover="manual"` attribute once it is the snack's turn (see "Snacks appear one at a time")
 - **AND** the element SHALL be made visible via `showPopover()`
 - **AND** the snack SHALL display the event's `message` text and an icon matching the `severity`
 
@@ -142,6 +142,11 @@ In the fan app, at most one snack SHALL be visible at a time. A snack published 
 - **WHEN** a screen shows a snack for an artist and then publishes a new snack that replaces its earlier snack for the same artist
 - **THEN** the earlier snack SHALL be dismissed and the new snack SHALL appear next, before any other waiting snack
 - **AND** only one snack SHALL be shown for that artist
+
+#### Scenario: Dismissing a waiting snack
+- **WHEN** a caller invokes `snack.handle.dismiss()` on a snack that is still waiting
+- **THEN** the snack SHALL be removed from the wait and SHALL never appear
+- **AND** its `onDismiss` callback SHALL fire exactly once
 
 #### Scenario: The update snack gives way
 - **WHEN** the app update snack is visible and a follow publishes a snack
