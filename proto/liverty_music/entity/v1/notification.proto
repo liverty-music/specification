@@ -39,8 +39,9 @@ enum NotificationType {
   // ticket was found; nothing was charged.
   NOTIFICATION_TYPE_RESALE_ENTRY_LAPSED = 6;
   // An official resale application that ended without a ticket: none left at
-  // the last draw, the concert cancelled, or a win that could not be charged;
-  // nothing was charged.
+  // the last draw, the concert cancelled, a win that could not be charged, or
+  // a win whose payment could not be completed before the show; nothing was
+  // charged.
   NOTIFICATION_TYPE_RESALE_ENTRY_LOST = 7;
 }
 
