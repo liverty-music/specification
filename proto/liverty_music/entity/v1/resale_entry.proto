@@ -29,13 +29,14 @@ enum ResaleEntryState {
   RESALE_ENTRY_STATE_ENTERED = 1;
 
   // Allocated as many listings as its ticket count at a draw. The Order stays
-  // PENDING until its card authorization is captured, then becomes PAID; a
-  // win that cannot be charged becomes LOST.
+  // PENDING until its card authorization is captured and its tickets are
+  // issued, then becomes PAID; a win that cannot be charged or completed
+  // becomes LOST (see ResaleEntryLostReason).
   RESALE_ENTRY_STATE_WON = 2;
 
-  // Ended without tickets, for the lost reason: no listing left for it at the
-  // last draw, the concert cancelled (中止), or a win that could not be
-  // charged. The card authorization is released and the Order is VOID.
+  // Ended without tickets, for the lost reason (ResaleEntryLostReason). The
+  // Order is VOID. Nothing was charged and the card authorization is
+  // released, except for LISTING_CANCELLED, where the charge was refunded.
   RESALE_ENTRY_STATE_LOST = 3;
 
   // Ended at a draw because the card authorization would expire less than 24
