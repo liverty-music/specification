@@ -130,8 +130,8 @@ The system SHALL allow authenticated users to sign out of their account. The Sig
 - **THEN** the dialog closes and the user stays signed in on the Settings page
 
 #### Scenario: Sign out apart from account rows
-- **WHEN** an authenticated user views the About section with the Version row as its last row
-- **THEN** the Sign Out control SHALL be in a separate group below it, at least 24px away, not adjoining the Version row
+- **WHEN** an authenticated user views the end of the About section
+- **THEN** the Sign Out control SHALL be in a separate group below it, at least 24px away from the section's last row, not adjoining any row
 
 #### Scenario: Sign out hidden for guests
 - **WHEN** an unauthenticated (guest) user views the Settings page
