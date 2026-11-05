@@ -56,7 +56,7 @@ It is a native `<dialog>` opened with `showModal()`, so it is modal, traps focus
 
 Callers `await dialog.ask()` before acting:
 - `signOut()`: heading 「サインアウトしますか？」, body 「次に使うときは、パスキーでもう一度ログインします。」, confirm 「サインアウト」.
-- `savePersonalDetails()`: validation runs first and an unchanged form still returns early, so the dialog opens only for a real change. Heading 「名義を変更しますか？」, body 「保有中のチケットの券面も「{name} / {phone}」に変わります。」 with the phone in domestic form; confirm 「変更する」. Cancel leaves the sheet open with the fan's input.
+- `savePersonalDetails()`: validation runs first and an unchanged form still returns early, so the dialog opens only for a real change. Heading 「名義を変更しますか？」; the body shows the new name and phone number (phone in domestic form) on one line, then 「保有中のチケットの券面もこの名義に変わります。」; confirm 「変更する」. Cancel leaves the sheet open with the fan's input.
 
 *Alternatives:* `window.confirm()` — rejected: unstyled, not translatable per locale in the same way, and blocks the thread. A second bottom sheet as the confirmation — rejected: the withdrawal screen and its spec already establish a modal dialog for this pattern.
 

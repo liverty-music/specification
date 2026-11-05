@@ -53,3 +53,4 @@ The My Artists page SHALL offer an "編集" / "Edit" action in its FAB action la
 #### Scenario: Edit mode is not persisted across navigation
 
 - **WHEN** the user leaves the My Artists page while in edit mode and later returns
+- **THEN** the page opens in the default (non-editing) state
