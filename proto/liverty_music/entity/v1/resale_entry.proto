@@ -59,8 +59,9 @@ enum ResaleEntryLostReason {
   // No listing was left for the entry at the event's last draw.
   RESALE_ENTRY_LOST_REASON_NO_TICKET_LEFT = 1;
 
-  // The concert was cancelled (中止) while the entry was ENTERED, so the next
-  // draw allocated it nothing and ended it.
+  // The concert was cancelled (中止): while the entry was ENTERED, so the next
+  // draw allocated it nothing and ended it, or after it won but before its
+  // card authorization was captured, so nothing was charged.
   RESALE_ENTRY_LOST_REASON_CONCERT_CANCELLED = 2;
 
   // The entry won, but the Order's card authorization could not be captured.
@@ -70,6 +71,12 @@ enum ResaleEntryLostReason {
   // The entry won, but its payment could not be completed before the event's
   // start time, so the card authorization was released without a charge.
   RESALE_ENTRY_LOST_REASON_PAYMENT_NOT_COMPLETED_BEFORE_SHOW = 4;
+
+  // The entry won and its card authorization was captured, but a listing
+  // allocated to it was cancelled before its tickets were issued, because the
+  // Order of the fan who listed it was refunded. The charge was refunded in
+  // full.
+  RESALE_ENTRY_LOST_REASON_LISTING_CANCELLED = 5;
 }
 
 // ResaleEntry is one fan account's application, through its Order, for
