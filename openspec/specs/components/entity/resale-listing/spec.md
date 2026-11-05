@@ -60,15 +60,15 @@ A listing's resale fee SHALL be 10% of its price, rounded down to the yen, and i
 
 ### Requirement: Resale deadline
 
-A listing's deadline SHALL be 3 hours before its Ticket's event's current start time, which is when the event's admission window opens.
+A listing's deadline SHALL be its Ticket's event's last resale draw: 12:00 Japan time on the event's day, or 3 hours before the event's current start time, when admission opens, if that is earlier. Resale closes at the last draw, so nothing is listed, applied for or left open after it.
 
 #### Scenario: Event with an open time
 - **WHEN** the event opens its doors at 18:00 and starts at 19:00
-- **THEN** the deadline is 16:00 that day
+- **THEN** the deadline is 12:00 that day
 
 #### Scenario: Event without an open time
-- **WHEN** the event has no open time and starts at 19:00
-- **THEN** the deadline is 16:00 that day
+- **WHEN** the event has no open time and starts at 14:00
+- **THEN** the deadline is 11:00 that day
 
 ### Requirement: Open and expired
 
@@ -86,14 +86,18 @@ A listing SHALL be open at a time when it is Listed and the time is before its d
 - **WHEN** a Sold listing is checked before its deadline
 - **THEN** it is not open
 
-### Requirement: Withdrawable while open
+### Requirement: Free for a draw
 
-A ResaleListing SHALL be withdrawable at a time when it is open at that time.
+A listing SHALL be free for a draw at a draw time when it is Listed and the draw time is not after its deadline, so the event's last draw, which runs at the deadline, still allocates it, and no ResaleEntry is allocated to it, or the entry allocated to it is Lost. Only a free listing can be allocated by a draw. A listing SHALL be withdrawable only while it is open and free for a draw.
 
-#### Scenario: Open listing
-- **WHEN** a Listed listing is checked before its deadline
-- **THEN** it is withdrawable
+#### Scenario: Never allocated
+- **WHEN** an open listing has no entry
+- **THEN** it is free for a draw
 
-#### Scenario: Expired listing
-- **WHEN** a Listed listing is checked at its deadline
-- **THEN** it is not withdrawable
+#### Scenario: Won by an entry being charged
+- **WHEN** an open listing is allocated to a Won entry
+- **THEN** it is not free
+
+#### Scenario: Winner could not be charged
+- **WHEN** an open listing's entry became Lost after it won
+- **THEN** it is free for the next draw

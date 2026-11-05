@@ -57,3 +57,25 @@ A fan waiting for a resale draw of an event that is cancelled (中止) SHALL NOT
 #### Scenario: Cancelled before the draw
 - **WHEN** a fan's entry waits for a draw and the concert is cancelled
 - **THEN** at the next draw time the entry is Lost, nothing is charged, the hold on the card is released and the fan is told
+
+## MODIFIED Requirements
+
+### Requirement: Resale closes when admission opens
+
+No ticket SHALL be listed, applied for or allocated through official resale after the event's resale deadline, which is its last draw: 12:00 Japan time on the event's day or 3 hours before the start time, when the admission window opens, whichever is earlier. A listing that has not been allocated by then SHALL leave its Ticket valid for entry.
+
+#### Scenario: Unsold at the deadline
+- **WHEN** a fan's listing has not sold when the admission window opens
+- **THEN** the event page offers no resale and the fan's Ticket is admitted at the venue
+
+### Requirement: A ticket of a sold-out seat type is listed
+
+After a TicketStock sold out, a signed-in fan holding Issued Tickets of it, bought first come or won in a lottery, SHALL be able to list one with ResaleListingUseCase.Create and see it Listed with ResaleListingUseCase.List; the Ticket stays valid for entry while it is listed and not sold.
+
+#### Scenario: One of two tickets listed
+- **WHEN** a fan holding 2 S席 tickets of 5000 yen for an event whose S席 sold out lists one
+- **THEN** ResaleListingUseCase.List shows the listing Listed at 5000 yen and both of the fan's Tickets stay 未入場 and valid for entry
+
+#### Scenario: Lottery-won ticket listed
+- **WHEN** a fan who won 2 S席 tickets in the event's lottery presale lists one after S席 sold out
+- **THEN** the listing is Listed

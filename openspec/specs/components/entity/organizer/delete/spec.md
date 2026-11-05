@@ -11,7 +11,7 @@ Delete SHALL remove, together or not at all:
 
 - the Organizer;
 - its first-party Series with their SeatTypes and TicketSales, and their Events, with each Event's TicketStocks, ticket journeys and performers;
-- the Void and Refunded Orders for those Events with their lottery entries, Checkouts and Tickets, the Orders' Reversed Settlements and the Tickets' ResaleListings;
+- the Void and Refunded Orders for those Events with their lottery entries, Checkouts, resale entries, CardAuthorizations and Tickets, the Orders' Reversed Settlements and the Tickets' ResaleListings;
 - the Scanners of those Events, with their Admissions and RejectedScans;
 - its SeriesImage records and the Series' cover links;
 - its Artist associations and its payout-account record.
