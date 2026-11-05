@@ -83,7 +83,7 @@ The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-no
 
 ### Requirement: Snack bars sit above the bottom navigation and any banner
 
-Every snack bar, whatever its severity or sender, SHALL be placed at the bottom of the screen with its bottom edge one `space-s` step above the top of the bottom navigation bar and the bottom safe-area inset. While a persistent bottom banner (the signup prompt or the install banner) is visible above the navigation bar, the snack bar SHALL sit that same step above the banner instead, using the banner's rendered height; a banner that is not visible SHALL add no height. While a screen shows a control floating over its bottom edge (the Discovery swap tile), the snack bar SHALL sit one `space-3xs` step above that control instead, and the control SHALL NOT move. The FAB stays sunk in the navigation bar in all cases (see FAB Menu).
+Every snack bar, whatever its severity or sender, SHALL be placed at the bottom of the screen with its bottom edge one `space-s` step above the top of the bottom navigation bar and the bottom safe-area inset. While a persistent bottom banner (the signup prompt or the install banner) is visible above the navigation bar, the snack bar SHALL sit that same step above the banner instead, using the banner's rendered height; a banner that is not visible SHALL add no height. While a screen shows a control floating over its bottom edge (the Discovery swap tile), the snack bar SHALL sit one `space-3xs` step above that control instead, and the control SHALL NOT move; such a control always sits above any visible banner, so this placement takes precedence over the banner placement. The FAB stays sunk in the navigation bar in all cases (see FAB Menu).
 
 #### Scenario: No banner is visible
 - **WHEN** a snack bar opens and no persistent bottom banner is visible
@@ -107,6 +107,11 @@ Every snack bar, whatever its severity or sender, SHALL be placed at the bottom 
 #### Scenario: Same placement for every severity
 - **WHEN** an info, warning and error snack bar are each shown in turn under the same conditions
 - **THEN** all three SHALL occupy the same vertical position
+
+#### Scenario: A banner and a floating control are both visible
+- **WHEN** a snack bar opens on Discovery while the install banner and the swap tile are both visible
+- **THEN** the snack bar's bottom edge SHALL sit one `space-3xs` step above the swap tile's top edge
+- **AND** the snack bar SHALL cover neither the swap tile nor the banner
 
 #### Scenario: A floating control stays in place
 - **WHEN** a snack bar opens on Discovery while the swap tile is shown

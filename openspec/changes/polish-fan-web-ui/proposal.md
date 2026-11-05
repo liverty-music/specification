@@ -27,11 +27,11 @@ Two tooling faults hide this class of defect: route components may not have stor
 
 - `components/infrastructure/fan/web/route/my-artists`: the hype header stays outside the scrolling list (replaces "Sticky Header Legend", which prescribes `position: sticky`); dot alignment is stated as an outcome instead of a column template.
 - `components/infrastructure/fan/web/global/snack-bar`: removal waits for the exit motion; one snack at a time (replaces "At most three snacks are shown at once"); the snack sits above a floating control; swipe to dismiss and touch to pause.
-- `components/infrastructure/fan/web/route/discovery`: All Nearby filters open from the launcher instead of chips (removes "Compact All Nearby Filter Bar"; replaces "Date Preset Selector in the All Nearby View" and "Area Selector in the All Nearby View" with requirements that keep the preset and the area on the device); cards show matched state and journey by the dashboard's rules; the date label moves from the chip to the filter sheet.
+- `components/infrastructure/fan/web/route/discovery`: All Nearby filters open from the launcher instead of chips (removes "Compact All Nearby Filter Bar"; replaces "Date Preset Selector in the All Nearby View" and "Area Selector in the All Nearby View" with requirements that keep the preset and the area on the device); cards show matched state and journey by the dashboard's rules; the date label moves from the chip to the filter sheet (replaces "Localized All Nearby Date Display on Discovery").
 - `components/infrastructure/fan/web/global/fab-menu`: Discovery contributes a filter action while the All Nearby view is shown.
 
 ## Impact
 
 - Frontend only: `src/routes/my-artists/`, `shared/ui/snack-bar/` (shared with the organizer console, which gets the same motion and swipe and keeps its replace mode), `src/components/all-nearby/`, `src/routes/discovery/discovery-route.ts`, `src/services/concert-store.ts`, `src/adapter/storage/`, `.storybook/screenshot.ts`, `shared/ui/snack-bar/snack-bar.stories.ts`, a new My Artists route story, and the frontend `AGENTS.md` story-authoring rule.
-- No proto, backend or infrastructure change. No dev environment is needed: Storybook (both motion projects), unit tests and read-only production checks verify it.
+- No proto, backend or infrastructure change. No dev environment is needed: Storybook (both motion projects), unit tests and manual checks against production after release (with the developer's own fan account, restoring any follow, hype or journey they change) verify it.
 - The artist detail sheet that the same request asked for is a separate change (`show-artist-detail-sheet`), because it needs a new RPC and backend data.

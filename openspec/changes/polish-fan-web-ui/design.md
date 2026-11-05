@@ -5,7 +5,7 @@ See proposal.md (Why) for the four defects and their measured causes. The constr
 - The stylesheet lint bans `z-index` (`frontend/stylelint.config.js`, `property-disallowed-list`). The decision in this change's planning was to keep the ban, so no fix may depend on a stacking order.
 - Overlays (sheets, snacks, the FAB) already live in the top layer, whose order is the order they were opened in and cannot be set by the page.
 - `shared/ui/snack-bar/` is shared with the organizer console.
-- The dev environment is stopped; every check runs in Storybook (both motion projects), unit tests or read-only production checks.
+- The dev environment is stopped; every check runs in Storybook (both motion projects), unit tests, or manual checks against production after release with the developer's own fan account, which restore any follow, hype or journey they change.
 
 ## Goals / Non-Goals
 
@@ -51,7 +51,7 @@ Snacks with an action keep the 10-second display time instead of M3's "remain on
 
 Because only one snack is visible, the stacking problem (each top-layer popover placed at the same offset) disappears, and no stacking mechanism is added. The organizer console keeps `replace` mode (a new snack dismisses the shown one), which is also one at a time.
 
-M3 also says snackbars "can be nudged upwards to avoid overlapping with other UI elements near the bottom, such as FABs" and "Don't animate other components along with snackbar animations". On Discovery the swap tile currently moves up when a snack opens (`--snack-stack-height`, `global.css`). It is reversed: while the tile is shown, Discovery publishes the tile's top edge as a bottom clearance (the same CSS-only pattern as `--bottom-banner-height`), the snack bar adds it to its offset, and the tile's margin no longer depends on the snack. `--snack-stack-height` goes.
+M3 also says snackbars "can be nudged upwards to avoid overlapping with other UI elements near the bottom, such as FABs" and "Don't animate other components along with snackbar animations". On Discovery the swap tile currently moves up when a snack opens (`--snack-stack-height`, `global.css`). It is reversed: while the tile is shown, Discovery publishes the distance from the viewport bottom to the tile's top edge as a bottom clearance (the same CSS-only pattern as `--bottom-banner-height`), and the snack bar uses it, plus one `space-3xs` step, in place of its navigation-and-banner offset. The tile sits in the route area, which already ends above any banner, so the clearance always exceeds the banner offset. The tile's margin no longer depends on the snack. `--snack-stack-height` goes.
 
 Alternatives:
 - Stack three snacks with CSS anchor positioning. It works only oldest-lowest (an anchor must be "in a lower top layer", [css-anchor-position-1](https://drafts.csswg.org/css-anchor-position-1/#acceptable-anchor-element)) and contradicts M3's "Don't stack snackbars".
@@ -84,7 +84,7 @@ interface StoredNearbyFilter {
 }
 ```
 
-`NearbyVisit` starts from it; applying a preset or an area writes it; applying a custom range writes `datePreset: null`, so the next visit starts from `week`. Choosing the fan's own home area writes `areaCode: null`. Every read and write is wrapped in `try`/`catch`, and an unreadable value starts from the defaults. The value holds only the fan's own input, which the frontend's review rule allows in storage.
+`NearbyVisit` starts from it; applying a preset or an area writes it; applying a custom range writes `datePreset: null`, so the next visit starts from `week`. Choosing the fan's own home area writes `areaCode: null`. Every read and write is wrapped in `try`/`catch`, and an unreadable value starts from the defaults. The key is cleared with the other guest state when guest state is reset before sign-in or sign-up (as the guest home and help-seen flags are, i18n spec "Resetting guest state does not change the rendered locale"), and on sign-out (`SignedOut`), so a fan never inherits another person's area. The value holds only the fan's own input, which the frontend's review rule allows in storage.
 
 ### D7. Card state: hype from follows, journey from the journey store
 

@@ -106,11 +106,13 @@ The All Nearby view SHALL display concerts returned by `ConcertService.ListByLoc
 - **WHEN** the fan changes a followed artist's hype level elsewhere and returns to the All Nearby view
 - **THEN** that artist's cards SHALL show the matched state for the new level
 
-### Requirement: Localized All Nearby Date Display on Discovery
+## ADDED Requirements
+
+### Requirement: All Nearby dates are shown in the Japanese locale
 
 Every user-facing date and date-range in the All Nearby filter SHALL be formatted for the Japanese locale via `Intl.DateTimeFormat('ja-JP')`; the browser's native `MM/DD/YYYY` input rendering SHALL NOT be the primary display of the selected range.
 
-#### Scenario: Date chip shows a localized range
+#### Scenario: Period row shows a localized range
 
 - **WHEN** a custom range from 2026-08-12 to 2026-08-20 is applied
 - **THEN** the period row of the filter sheet SHALL display the localized range `8/12〜8/20`
@@ -125,11 +127,9 @@ Every user-facing date and date-range in the All Nearby filter SHALL be formatte
 - **WHEN** a quick preset (今週末 / 7日以内 / 30日以内) is applied
 - **THEN** the period row of the filter sheet SHALL display that preset's name rather than a raw date range
 
-## ADDED Requirements
-
 ### Requirement: The All Nearby period is chosen in a date-range sheet and its preset is kept
 
-The All Nearby view SHALL expose its date filter as the period row of the All Nearby filter sheet (see "All Nearby filters open from the action launcher"); a tap on the row SHALL open one date-range bottom sheet. The sheet SHALL offer three quick presets (今週末, 7日以内, 30日以内) and a directly-editable custom range (start/end date fields), so a custom range is adjusted without any intermediate menu or drill-down. There is no standalone "カスタム" preset chip; custom selection is simply editing the date fields. The last quick preset the fan applied SHALL be kept on the device and applied on the fan's next visit to the All Nearby view; a custom range SHALL NOT be kept, and a visit after one starts from 7日以内. Without a kept preset the view SHALL start from 7日以内.
+The All Nearby view SHALL expose its date filter as the period row of the All Nearby filter sheet (see "All Nearby filters open from the action launcher"); a tap on the row SHALL open one date-range bottom sheet. The sheet SHALL offer three quick presets (今週末, 7日以内, 30日以内) and a directly-editable custom range (start/end date fields), so a custom range is adjusted without any intermediate menu or drill-down. There is no standalone "カスタム" preset chip; custom selection is simply editing the date fields. The last quick preset the fan applied SHALL be kept on the device and applied on the fan's next visit to the All Nearby view; a custom range SHALL NOT be kept, and a visit after one starts from 7日以内. The kept preset SHALL be cleared at sign-in, sign-up and sign-out, with the area override. Without a kept preset the view SHALL start from 7日以内.
 
 #### Scenario: Period row opens the range sheet in one tap
 
@@ -202,7 +202,7 @@ The All Nearby view SHALL expose its date filter as the period row of the All Ne
 
 ### Requirement: The All Nearby area is chosen in the filter sheet and kept on the device
 
-The All Nearby view SHALL present the current reference area as the area row of the All Nearby filter sheet, and allow the user to override it by opening the shared `user-home-selector` from that row. The override SHALL be kept on the device, never on the user's account, and SHALL be used on the fan's next visit to the All Nearby view. Choosing the fan's own home area SHALL clear the override, so the view follows the home area again when it changes.
+The All Nearby view SHALL present the current reference area as the area row of the All Nearby filter sheet, and allow the user to override it by opening the shared `user-home-selector` from that row. The override SHALL be kept on the device, never on the user's account, and SHALL be used on the fan's next visit to the All Nearby view. Choosing the fan's own home area SHALL clear the override, so the view follows the home area again when it changes. Signing in, signing up and signing out SHALL clear the override and the kept date preset, so no one inherits another person's filter on a shared device.
 
 #### Scenario: Default area is user home
 
@@ -228,6 +228,13 @@ The All Nearby view SHALL present the current reference area as the area row of 
 
 - **WHEN** the user has an override of 大阪府, chooses 東京都 (their home area) and later changes their home area to 神奈川県
 - **THEN** the All Nearby view SHALL use 神奈川県
+
+#### Scenario: Signing in, signing up or signing out clears the kept filter
+
+- **WHEN** a guest who chose 大阪府 and 今週末 signs in or signs up as a fan whose home area is 東京都
+- **THEN** the All Nearby view SHALL use 東京都 and 7日以内, and the filter item SHALL be in its default state
+- **WHEN** a fan who chose 大阪府 signs out and another fan signs in on the same device
+- **THEN** the All Nearby view SHALL use the second fan's home area
 
 #### Scenario: Area override for unauthenticated user
 
@@ -282,3 +289,7 @@ The All Nearby view SHALL show no filter control above the timetable: the stage 
 ### Requirement: Area Selector in the All Nearby View
 **Reason**: The area chip it describes is gone, and the override is no longer session-scoped: it is kept on the device.
 **Migration**: "The All Nearby area is chosen in the filter sheet and kept on the device" replaces it.
+
+### Requirement: Localized All Nearby Date Display on Discovery
+**Reason**: Its first scenario names the date chip, which this change removes.
+**Migration**: "All Nearby dates are shown in the Japanese locale" states the same formatting for the filter sheet's period row.
