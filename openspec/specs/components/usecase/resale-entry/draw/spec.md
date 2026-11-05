@@ -32,7 +32,7 @@ Draw SHALL start no other work itself: ResaleEntry.PersistDrawOutcome announces 
 - **THEN** every candidate whose card authorization stays valid stays Entered
 
 #### Scenario: Last draw missed
-- **WHEN** the schedule was stopped at an event's 12:00 last draw and runs again at 12:05 with entries for 1 and 2 tickets still Entered and 3 listings free
+- **WHEN** the schedule was stopped at an event's 12:00 last draw and runs again at 12:05 with entries for 1 and 2 tickets still Entered and 3 listings still Listed
 - **THEN** both entries are Lost with "no ticket left", their Orders Void, their card authorizations released and the fans told, and no listing is allocated
 
 #### Scenario: Concert cancelled

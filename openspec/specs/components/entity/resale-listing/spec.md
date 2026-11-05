@@ -72,7 +72,7 @@ A listing's deadline SHALL be its Ticket's event's last resale draw: 12:00 Japan
 
 ### Requirement: Open and expired
 
-A listing SHALL be open at a time when it is Listed and the time is before its deadline. A Listed listing at or after its deadline SHALL be expired: it can no longer be held, bought or withdrawn, and its Ticket stays the user's.
+A listing SHALL be open at a time when it is Listed and the time is before its deadline. A Listed listing at or after its deadline SHALL be expired: it can no longer be held, bought or withdrawn, and its Ticket stays the user's, except that the event's last draw, which runs at the deadline, still allocates it ("Free for a draw").
 
 #### Scenario: Before the deadline
 - **WHEN** a Listed listing with the deadline 16:00 is checked at 15:59

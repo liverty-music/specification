@@ -1,6 +1,11 @@
+## RENAMED Requirements
+
+- FROM: `### Requirement: Refund within one minute after the sale`
+- TO: `### Requirement: Refund each sold listing after the sale`
+
 ## MODIFIED Requirements
 
-### Requirement: Refund within one minute after the sale
+### Requirement: Refund each sold listing after the sale
 
 RefundSold SHALL take a ResaleListing and run once for each listing that Order.Issue makes Sold, started from the announcement of that sale. It SHALL resolve the charge of the listing's Order with Order.GetProviderChargeID, refund the listing's refund amount of that charge with Order.CreateRefund for the purpose of this listing, and record it with ResaleListing.RecordRefund. A listing that already has a refund time SHALL be left as it is; a run again refunds at most once. When a step fails with Unavailable it SHALL try again until 24 hours after the run started; a run that ends with a failure, or stops at its 24 hours, SHALL be reported to an admin with the listing's id and its Order's id.
 
