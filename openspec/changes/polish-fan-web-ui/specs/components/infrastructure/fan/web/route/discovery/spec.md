@@ -33,8 +33,8 @@ A tap SHALL switch the view. The arrows SHALL make a half turn, always in the sa
 
 #### Scenario: A snack bar is open
 - **WHEN** a snack bar opens on Discovery, for example after a follow that finds concerts
-- **THEN** the swap tile moves up so that it sits above the snack bar, overlapping neither the snack bar nor the bubble field
-- **AND** the tile stays tappable, and returns to its place when the snack bar closes
+- **THEN** the snack bar sits above the swap tile, as "Snack bars sit above the bottom navigation and any banner" states, and the tile does not move
+- **AND** the tile stays tappable
 
 #### Scenario: Search mode
 - **WHEN** the fan types in the search bar

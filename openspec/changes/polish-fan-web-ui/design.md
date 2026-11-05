@@ -11,7 +11,7 @@ See proposal.md (Why) for the four defects and their measured causes. The constr
 
 **Goals:**
 - Fix each defect by removing its cause, not by layering a workaround over it.
-- Make the class of defect visible in Storybook: route layouts and the snack stack get stories that fail when it returns.
+- Make the class of defect visible in Storybook: route layouts and the snack queue get stories that fail when it returns.
 
 **Non-Goals:**
 - The timetable's sticky date separators (`concert-highway.css`) can be covered by later cards by the same mechanism. This change does not touch them; the My Artists route story pattern is what a follow-up uses to check them.
@@ -37,23 +37,25 @@ The edit-mode bottom padding (so the last row clears the Done bar) moves from th
 
 `snack-bar.ts` copies eight fields of each `Snack` into a `SnackItem` record and removes the record on the popover's `toggle` event. Measured: `toggle` fires at the same millisecond as `hidePopover()`; the 500 ms exit transition ends 490 ms later. Removing the record lets Aurelia drop the element before its exit plays.
 
-A `<snack-item>` custom element replaces both the record and the `repeat` over plain `<output>` elements. It binds the published `Snack` directly and owns only what exists while it is shown (the timer and its remaining time). Its `attached()` calls `showPopover()`. A dismiss marks the `Snack` as leaving; the item then calls `hidePopover()`, waits for `Promise.all(host.getAnimations().map(a => a.finished))`, and dispatches `snack-exited`, on which `<snack-bar>` removes the `Snack` from its list. A leaving snack therefore keeps its place in the list, and in the stack (D3), until its exit motion has ended. The motion itself stays in CSS (`@starting-style` and `allow-discrete` transitions) with the motion tokens it uses today. `<snack-bar>` keeps the list, the limit of three (counting only snacks that are not leaving), `replaceKey` and the subscription.
+A `<snack-item>` custom element replaces both the record and the `repeat` over plain `<output>` elements. It binds the published `Snack` directly and owns only what exists while it is shown (the timer and its remaining time). Its `attached()` calls `showPopover()`. A dismiss marks the `Snack` as leaving; the item then calls `hidePopover()`, waits for `Promise.all(host.getAnimations().map(a => a.finished))`, and dispatches `snack-exited`, on which `<snack-bar>` removes the `Snack` from its list. The next queued snack (D3) therefore appears only after the exit motion has ended. The motion itself stays in CSS (`@starting-style` and `allow-discrete` transitions) with the motion tokens it uses today. `<snack-bar>` keeps the queue (D3), `replaceKey` and the subscription.
 
 Alternatives:
-- Remove the `Snack` from the list at once and return the `finished` promise from `detaching()`. Aurelia keeps the DOM until that promise settles (docs.aurelia.io, "Component Lifecycle Animations"), but the list no longer holds the leaving snack, so the snack above it is re-anchored at once and drops onto the snack that is still fading out.
+- Remove the `Snack` from the list at once and return the `finished` promise from `detaching()`. Aurelia keeps the DOM until that promise settles (docs.aurelia.io, "Component Lifecycle Animations"), but `<snack-bar>` would not know when the exit has ended, and would show the next snack on top of the one still fading out.
 - Keep the record and wait for `transitionend`. The snack-bar spec rules out `transitionend` (it does not fire when the transition is skipped), and the record would still duplicate `Snack`.
 
-### D3. Snacks stack with CSS anchor positioning, oldest lowest
+### D3. One snack at a time, as Material 3 says
 
-Each open snack carries `anchor-name: var(--_self)`, and every snack but the lowest sets `position-anchor: var(--_below)` and `inset-block-end: calc(anchor(top) + var(--space-3xs))`. The names come from data as inline custom properties (`--_self: --snack-<id>`), which the frontend's inline-style rule allows. The lowest snack keeps today's `--_inset-end` placement above the navigation bar and any banner.
+The Material 3 snackbar guidelines (m3.material.io/components/snackbar/guidelines, read 2026-11-05) say "Only one snackbar may be displayed at a time", "Consecutive snackbars must appear one at a time" and "Don't stack snackbars on top of one another", and allow that "a snackbar with updated information can immediately replace an outdated snackbar". So the fan app's `<snack-bar>` holds one visible `Snack` and a FIFO queue instead of a stack of three. When the visible snack's item dispatches `snack-exited` (D2), the next queued `Snack` is shown. A `replaceKey` match dismisses the visible snack and puts the new one at the head of the queue, or replaces a queued one in place. The update snack (duration `Infinity`) is hidden, not dismissed, when another snack is published, and is shown again when the queue is empty; hiding it does not call `onDismiss`, so the update is neither applied nor lost.
 
-The direction is fixed by the platform. CSS Anchor Positioning accepts an anchor only when it is "laid out strictly before" the positioned element, which for two top-layer elements means the anchor "is in a lower top layer" ([css-anchor-position-1, acceptable anchor element](https://drafts.csswg.org/css-anchor-position-1/#acceptable-anchor-element)). Measured in Chromium, a popover opened earlier that names a later one as its anchor falls back to the top of the viewport. So the oldest snack is the lowest, and a new snack appears above the others instead of pushing them up. A leaving snack stays in the list until its exit has ended (D2); only then does the next snack's `--_below` point to the snack before it, and it moves down.
+Snacks with an action keep the 10-second display time instead of M3's "remain on the screen until the user takes an action": this was chosen in planning so an undo snack never holds the queue, and the screen already shows the result (the row is gone, the dot moved). This is the one deliberate departure from the guidelines.
+
+Because only one snack is visible, the stacking problem (each top-layer popover placed at the same offset) disappears, and no stacking mechanism is added. The organizer console keeps `replace` mode (a new snack dismisses the shown one), which is also one at a time.
+
+M3 also says snackbars "can be nudged upwards to avoid overlapping with other UI elements near the bottom, such as FABs" and "Don't animate other components along with snackbar animations". On Discovery the swap tile currently moves up when a snack opens (`--snack-stack-height`, `global.css`). It is reversed: while the tile is shown, Discovery publishes the tile's top edge as a bottom clearance (the same CSS-only pattern as `--bottom-banner-height`), the snack bar adds it to its offset, and the tile's margin no longer depends on the snack. `--snack-stack-height` goes.
 
 Alternatives:
-- One popover for the whole stack, with the snacks as flex items. The stack must then be re-shown (hidden and shown) whenever a dialog opens after it, which replays every snack's entry motion; the spec also forbids manual re-insertion.
-- Offsets computed in script from measured heights. It is the hand-rolled layout this codebase is removing elsewhere.
-
-The coach mark already relies on CSS anchor positioning (`coach-mark.css`), so this adds no new browser requirement. A browser without it shows the snacks overlapped, as today.
+- Stack three snacks with CSS anchor positioning. It works only oldest-lowest (an anchor must be "in a lower top layer", [css-anchor-position-1](https://drafts.csswg.org/css-anchor-position-1/#acceptable-anchor-element)) and contradicts M3's "Don't stack snackbars".
+- Keep snacks with an action until the fan acts, as M3 recommends. With one snack at a time, three hype changes would each wait for a tap or a swipe.
 
 ### D4. Swipe to dismiss with scroll snapping
 
@@ -102,8 +104,8 @@ Values the cards show and where they come from: artist name and lane from `Conce
 ## Risks / Trade-offs
 
 - [Safari and Firefox may drop table semantics when table elements change `display`] → Check with VoiceOver on iOS Safari against production after release. If the table is announced as plain text, add explicit `role="table"`, `rowgroup`, `row`, `columnheader`, `rowheader` and `cell`.
-- [The new stacking order differs from today's intent (newest lowest)] → The platform allows only this order without a stacking hack; a new snack no longer moves the snack the fan is about to tap.
-- [Swipe scrollers inside every snack add work to each snack] → At most three snacks plus the update snack are open at once.
+- [A burst of snacks (several hype changes in a row) is shown one after another, up to 10 seconds each] → A sender's `replaceKey` already folds repeated snacks about one artist into one; a swipe clears the visible snack at once.
+- [Swipe scrollers inside every snack add work to each snack] → One snack is open at a time.
 - [Snack changes reach the organizer console] → Its snack stories (`console-consolesnackbar--*`) run in the same Storybook job.
 - [A kept area override hides a later change of the home area] → Choosing the home area clears the override, and the filter item shows its active state while an override is set.
 

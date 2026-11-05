@@ -14,13 +14,14 @@ Every task is in the `frontend` repository.
 - [ ] 2.3 Cover "Slider spans header dot columns" in the same story file at 320, 375 and 768 px widths and verify it passes
 - [ ] 2.4 Run `npm run build && npm run verify:build-templates` and update `ROUTE_MARKERS` if the template change removed a marker
 
-## 3. frontend: Snack bar motion, stacking and swipe (global/snack-bar)
+## 3. frontend: Snack bar motion, one at a time, and swipe (global/snack-bar, route/discovery)
 
 - [ ] 3.1 Add the `<snack-item>` custom element that binds a `Snack`, shows its popover in `attached()`, and on dismiss hides it, waits for the exit animations' `finished` promise and dispatches `snack-exited`, on which `<snack-bar>` removes it; replace the `SnackItem` record and the `toggle`-based removal in `snack-bar.ts` (design D2); verify the existing `snack-bar.spec.ts` passes after updating "DOM cleanup after exit transition" to assert the element is still present 100 ms after `dismiss()` and gone after the transition
-- [ ] 3.2 Stack open snacks with CSS anchor positioning, oldest lowest (design D3); extend the `FourStacked` story to assert pairwise-disjoint boxes and the order, covering "Multiple simultaneous snacks" and "Open snacks never overlap" with a two-line message, sampling the boxes during the lowest snack's exit; verify `npm run test-storybook` passes
-- [ ] 3.3 Add the swipe scroller and the hold-to-pause timer (design D4); add stories with `play` functions for "Swipe past the dismiss point", "Short swipe", "Holding pauses the timer", "Swipe on a snack that stays until the fan acts" and "Swipe under reduced motion" (tagged `reduced-motion`); verify both motion projects pass
-- [ ] 3.4 Run the organizer console snack stories (`console-consolesnackbar--*`) and verify they pass unchanged
-- [ ] 3.5 After release, open the deployed fan app on a phone, follow and unfollow artists to raise three snacks, and verify they stack without overlap, animate out, and leave on a sideways swipe
+- [ ] 3.2 Replace the three-snack stack with one visible snack and a FIFO queue, `replaceKey` replacement and the update snack giving way (design D3); rewrite the `FourStacked` story as a queue story and add unit tests for "Multiple simultaneous snacks", "A second snack waits", "Waiting snacks keep their order", "An undo window is kept", "Replacing an earlier snack" and "The update snack gives way"; verify `npm run test-storybook` and `make test`
+- [ ] 3.3 Publish the Discovery swap tile's top edge as a bottom clearance for the snack bar and drop `--snack-stack-height`, so the snack sits above the tile and the tile no longer moves (design D3); verify a story or unit test for "A floating control stays in place" and the swap tile's "A snack bar is open" scenario
+- [ ] 3.4 Add the swipe scroller and the hold-to-pause timer (design D4); add stories with `play` functions for "Swipe past the dismiss point", "Short swipe", "Holding pauses the timer", "Swipe on a snack that stays until the fan acts" and "Swipe under reduced motion" (tagged `reduced-motion`); verify both motion projects pass
+- [ ] 3.5 Run the organizer console snack stories (`console-consolesnackbar--*`) and verify they pass unchanged
+- [ ] 3.6 After release, open the deployed fan app on a phone, follow and unfollow artists to raise three snacks, and verify they appear one at a time, animate out, leave on a sideways swipe, and sit above the swap tile on Discovery
 
 ## 4. frontend: All Nearby filters from the launcher (route/discovery, global/fab-menu)
 
