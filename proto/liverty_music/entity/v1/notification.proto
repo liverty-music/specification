@@ -43,6 +43,11 @@ enum NotificationType {
   // a win whose payment could not be completed before the show; nothing was
   // charged.
   NOTIFICATION_TYPE_RESALE_ENTRY_LOST = 7;
+  // The concert of a Paid Order was cancelled (中止) and the tickets the fan
+  // still holds are refunded.
+  NOTIFICATION_TYPE_EVENT_CANCELLED = 8;
+  // An Order was refunded for a cancelled concert, with the amount.
+  NOTIFICATION_TYPE_ORDER_REFUNDED = 9;
 }
 
 // NotificationDeliveryStatus is whether the push channel accepted a
