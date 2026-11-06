@@ -53,7 +53,62 @@ The home-area selector SHALL indicate the currently selected prefecture/city rea
 - **THEN** the option matching the user's current home area SHALL carry a selected-state indicator (`aria-checked`/`data-selected`)
 - **AND** the indicator SHALL update reactively if the current home area changes
 
-### Requirement: Unified home area selector
+### Requirement: Home area i18n namespace
+
+The frontend SHALL use a unified `userHome.*` i18n namespace for all home area selection UI text, replacing the previous `region.*` and `areaSelector.*` namespaces.
+
+#### Scenario: i18n key structure
+
+- **WHEN** the `user-home-selector` component renders translated text
+- **THEN** it SHALL use keys under the `userHome` namespace:
+  - `userHome.title` for the dialog title
+  - `userHome.description` for the subtitle
+  - `userHome.quickSelect` for the quick-select section heading
+  - `userHome.selectByRegion` for the region section heading
+  - `userHome.selectPrefecture` for the Step 2 instruction line
+  - `userHome.backToRegions` for the Step 2 back control's visible text label (this label is the sole source of the control's accessible name; no separate `userHome.back` aria-label key SHALL be introduced)
+  - `userHome.regions.*` for region names
+  - `userHome.prefectures.*` for prefecture names
+  - `userHome.cities.*` for quick-select city names
+
+#### Scenario: Description copy explains what HOME STAGE displays and asks for residence
+
+- **WHEN** the `user-home-selector` is opened
+- **THEN** the `userHome.description` JA value SHALL explain what the selected area controls (the HOME STAGE lane contents) AND ask which area the user resides in, presented as a single string composed of two clearly-separated clauses
+- **AND** the copy SHALL NOT use `あなたの地元` (which inaccurately implies a known home rather than a chosen area)
+- **AND** the canonical JA form SHALL be: `HOME STAGEには選択したエリアのライブが並びます。あなたの居住エリアはどこですか？`
+
+### Requirement: A person without a home is asked on the Dashboard and My Artists
+
+When the Dashboard or My Artists opens and the person has no home area (a guest who has not chosen one, or a signed-in fan whose account has none), the screen SHALL open the `user-home-selector` as a sheet. For a signed-in fan, and for a guest in onboarding, the sheet SHALL NOT close by tapping the backdrop, pressing ESC or swiping down; it SHALL close only when an area is selected. A guest who has finished onboarding MAY close it, and it SHALL open again the next time either screen opens. The selected area SHALL become the person's home: on the device for a guest, through `UserService.SetHome` for a signed-in fan. No other screen SHALL open the sheet because the home is missing. Discovery's All Nearby view opens the selector as its area selector when it knows no area at all (Discovery's "Area override for unauthenticated user"); there the choice is kept as the view's area override, not as a home.
+
+#### Scenario: New account without a home opens the Dashboard
+
+- **WHEN** a fan whose account was created without a home opens the Dashboard
+- **THEN** the home sheet opens, and tapping the backdrop or pressing ESC leaves it open
+- **AND** selecting 東京都 closes it and saves home JP-13 to the account
+
+#### Scenario: Signed-in fan without a home opens My Artists
+
+- **WHEN** a signed-in fan whose account has no home opens My Artists
+- **THEN** the home sheet opens and cannot be closed until an area is selected
+
+#### Scenario: Sheet left without a choice
+
+- **WHEN** a signed-in fan closes the app while the home sheet is open, and later opens the Dashboard
+- **THEN** the home sheet opens again
+
+#### Scenario: Guest after onboarding closes the sheet
+
+- **WHEN** a guest who finished onboarding without a home opens My Artists and closes the sheet
+- **THEN** My Artists stays open without a home, and the sheet opens again the next time the guest opens the Dashboard or My Artists
+
+#### Scenario: Event page does not ask
+
+- **WHEN** a signed-in fan without a home opens an Event page
+- **THEN** no home sheet opens
+
+### Requirement: One home area selector serves every caller
 
 The frontend SHALL provide a single reusable `user-home-selector` component for selecting the user's home area. This component SHALL be used as the home sheet of the Dashboard and My Artists ("A person without a home is asked on the Dashboard and My Artists"), on the Settings page, and as the All Nearby area selector. The component SHALL implement a consistent 2-step selection flow with an optional quick-select shortcut.
 
@@ -99,11 +154,11 @@ The component SHALL be a pure selection UI: it SHALL NOT call `UserService.setHo
 - **THEN** the caller SHALL write the ISO 3166-2 code to localStorage under `guest.home`
 - **AND** the component itself SHALL NOT write to localStorage
 
-#### Scenario: Caller owns persistence — session-only override
+#### Scenario: Caller owns persistence — All Nearby area override
 
 - **WHEN** the `user-home-selector` is used as the All Nearby area selector
-- **THEN** the caller SHALL update only the route's local state with the selected code
-- **AND** neither `UserService.setHome()` nor localStorage SHALL be written
+- **THEN** the caller SHALL keep the selected code on the device as the All Nearby area override, as Discovery's "The All Nearby area is chosen in the filter sheet and kept on the device" states
+- **AND** `UserService.setHome()` SHALL NOT be called and the guest home SHALL NOT be written
 
 #### Scenario: Current selection highlight via bindable prop
 
@@ -113,58 +168,3 @@ The component SHALL be a pure selection UI: it SHALL NOT call `UserService.setHo
 - **AND** `currentCode` SHALL replace the former store-derived `currentHomeCode` getter; the component SHALL NOT derive the current code from internal state
 - **WHEN** the caller does not provide `currentCode`
 - **THEN** no prefecture SHALL be highlighted
-
-### Requirement: Home area i18n namespace
-
-The frontend SHALL use a unified `userHome.*` i18n namespace for all home area selection UI text, replacing the previous `region.*` and `areaSelector.*` namespaces.
-
-#### Scenario: i18n key structure
-
-- **WHEN** the `user-home-selector` component renders translated text
-- **THEN** it SHALL use keys under the `userHome` namespace:
-  - `userHome.title` for the dialog title
-  - `userHome.description` for the subtitle
-  - `userHome.quickSelect` for the quick-select section heading
-  - `userHome.selectByRegion` for the region section heading
-  - `userHome.selectPrefecture` for the Step 2 instruction line
-  - `userHome.backToRegions` for the Step 2 back control's visible text label (this label is the sole source of the control's accessible name; no separate `userHome.back` aria-label key SHALL be introduced)
-  - `userHome.regions.*` for region names
-  - `userHome.prefectures.*` for prefecture names
-  - `userHome.cities.*` for quick-select city names
-
-#### Scenario: Description copy explains what HOME STAGE displays and asks for residence
-
-- **WHEN** the `user-home-selector` is opened
-- **THEN** the `userHome.description` JA value SHALL explain what the selected area controls (the HOME STAGE lane contents) AND ask which area the user resides in, presented as a single string composed of two clearly-separated clauses
-- **AND** the copy SHALL NOT use `あなたの地元` (which inaccurately implies a known home rather than a chosen area)
-- **AND** the canonical JA form SHALL be: `HOME STAGEには選択したエリアのライブが並びます。あなたの居住エリアはどこですか？`
-
-### Requirement: A person without a home is asked on the Dashboard and My Artists
-
-When the Dashboard or My Artists opens and the person has no home area (a guest who has not chosen one, or a signed-in fan whose account has none), the screen SHALL open the `user-home-selector` as a sheet. For a signed-in fan, and for a guest in onboarding, the sheet SHALL NOT close by tapping the backdrop, pressing ESC or swiping down; it SHALL close only when an area is selected. A guest who has finished onboarding MAY close it, and it SHALL open again the next time either screen opens. The selected area SHALL become the person's home: on the device for a guest, through `UserService.SetHome` for a signed-in fan. No other screen SHALL open the sheet because the home is missing.
-
-#### Scenario: New account without a home opens the Dashboard
-
-- **WHEN** a fan whose account was created without a home opens the Dashboard
-- **THEN** the home sheet opens, and tapping the backdrop or pressing ESC leaves it open
-- **AND** selecting 東京都 closes it and saves home JP-13 to the account
-
-#### Scenario: Signed-in fan without a home opens My Artists
-
-- **WHEN** a signed-in fan whose account has no home opens My Artists
-- **THEN** the home sheet opens and cannot be closed until an area is selected
-
-#### Scenario: Sheet left without a choice
-
-- **WHEN** a signed-in fan closes the app while the home sheet is open, and later opens the Dashboard
-- **THEN** the home sheet opens again
-
-#### Scenario: Guest after onboarding closes the sheet
-
-- **WHEN** a guest who finished onboarding without a home opens My Artists and closes the sheet
-- **THEN** My Artists stays open without a home, and the sheet opens again the next time the guest opens the Dashboard or My Artists
-
-#### Scenario: Event page does not ask
-
-- **WHEN** a signed-in fan without a home opens an Event page
-- **THEN** no home sheet opens

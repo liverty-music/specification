@@ -31,7 +31,11 @@ Alternatives:
 - Removing every positioned element and the permanent `view-transition-name` from the rows. It works today, but the next positioned element in a row brings the defect back and no lint catches it.
 - A separate decorative header band outside the table. It duplicates the column headers for assistive technology.
 
-The edit-mode bottom padding (so the last row clears the Done bar) moves from the fieldset to `tbody`. The `[data-hype-header]` coach-mark target stays on `thead`.
+The edit-mode bottom padding (so the last row clears the Done bar) moves from the fieldset to `tbody`. The `[data-hype-header]` coach-mark target stays on `thead` (it was missing from the template, so it is added).
+
+Found while implementing: the scroll container alone does not cover "Header stays clear while a row animates out". A row's view-transition snapshot is drawn above the page and is not clipped by `tbody`'s scroll box, so during an unfollow the rows scrolled under the header were drawn over it (measured: the header's pixels differ while the transition is held at its first frame). `tbody` therefore gets its own `view-transition-name`, every row `view-transition-group: nearest`, and `::view-transition-group-children(artist-rows) { overflow: clip }` (CSS View Transitions 2 nested groups, Chrome 140+); with it the header's pixels are unchanged during the transition. Browsers without nested groups fall back to today's flat groups.
+
+Also found: axe in the new route story fails on two existing defects, the hype radios without an accessible name and the empty edit-mode column header. Each radio gets its tier label (Watch, Home, Nearby, Away) as a visually hidden name, and the column header a visually hidden `myArtists.table.removeCol` text.
 
 ### D2. One snack component, with the `Snack` event as its model
 
@@ -67,11 +71,20 @@ Alternative: pointer events with a drag threshold and a velocity check. Rejected
 
 A swipe dismisses through the same path as every other dismiss, so `onDismiss` (an unfollow's undo commit) fires once.
 
+Found while implementing:
+- The observer dismisses when at most 10% of the surface is left in the scroller, not at 50%. Mandatory snapping already carries a release past half into a gutter and a shorter one back, so this keeps "past half" while not dismissing a fan who drags past half and back before letting go. Like the bottom sheet, a scroll counts only after the fan touched or scrolled the snack, so the initial centring never dismisses it.
+- On a touch device the browser takes a drag over with `pointercancel`, which would resume the timer mid-swipe. The item therefore also pauses while the fan scrolls it and resumes on `scrollend` (where the browser reports it).
+- The scroller reaches one `space-m` past the snack on every side (negative margin, `pointer-events: none` there) so the surface's shadow is not clipped; only the surface takes taps.
+- The organizer console's `replace` mode now shows the new snack after the old one's exit motion, like the fan app; its two stories that ended when the snack closed now wait until it has left the document before axe runs (mid fade, its colours blend).
+- A real swipe in the stories needs raw touch events through the DevTools protocol (`swipeSideways` browser command): `Input.synthesizeScrollGesture` does not scroll in headless Chromium.
+
 ### D5. All Nearby filter sheet and its launcher item
 
 The `.nearby-filters` chip row is removed. A new `<nearby-filter-sheet>` (a `bottom-sheet`) holds two rows, area and period, each showing its value. A tap on a row closes the filter sheet and then opens the existing `user-home-selector` or `date-range-sheet`, so two sheets are never open at once. `DiscoveryRoute` registers `[filter, help]` while the view is `nearby` and `[help]` otherwise, re-registering on every view switch (the launcher replaces an owner's set). The filter item's `isOn` is "the effective area differs from the fan's home area, or the period is not the `week` preset", the spec's rule; an override equal to the home area reads as inactive.
 
 The date label (`date-range-sheet`'s emitted `label`, localized as today) moves from the chip to the period row.
+
+Found while implementing: `<nearby-filter-sheet>` reports the chosen row (`filter-row-chosen`) only on the bottom sheet's `sheet-hidden`, so the selector opens after the filter sheet has finished closing. `date-range-sheet`'s `range-changed` now carries `applied` (the tapped preset, or null for a custom range; absent on the initial emission), so only what the fan applied is kept; a custom range equal to a preset's dates is still not kept. The FAB filter item reuses `fabMenu.filter`.
 
 ### D6. The area and the date preset are kept in device storage
 
@@ -94,6 +107,10 @@ interface StoredNearbyFilter {
 
 `NearbyVisit.cache` keeps the `ListByLocation` proximity groups (the RPC response) instead of converted date groups, so a change of hype or journey re-derives the cards without a request. `NearbyConcerts` watches `journeyStore.journeyMap` and `followStore.hypeByArtist` and re-derives, as `DashboardRoute.onJourneyMapChanged` and its hype watch do. A visit straight to `/discovery?view=nearby` calls `journeyStore.load()`, which returns an empty map for a guest without a request.
 
+Found on production after v1.143.0: opened straight on `/discovery?view=nearby`, the view could run its first load before the signed-in fan's account arrived, read no home area and open the area selector over the view (a race that predates this change, in the branch for a person without a home). The app deliberately opens Discovery without waiting for the account (the bubbles read nothing of it), so the view's load now waits for `IUserHydration.ready`, which settles once the boot-time hydration has finished or failed; a guest or fan without a home is still asked.
+
+`NearbyConcerts` calls `journeyStore.load()` on every attach, not only on a direct visit: the store has no "loaded" flag, and a failure is logged and leaves the cards without badges rather than blocking the list.
+
 Values the cards show and where they come from: artist name and lane from `ConcertService.ListByLocation`; hype from `FollowService.List`; journey status from `TicketJourneyService.List`; purchased count from the purchased-ticket store, unchanged.
 
 ### D8. Storybook: every story renders, and route stories are allowed
@@ -114,3 +131,12 @@ Values the cards show and where they come from: artist name and lane from `Conce
 ## Migration Plan
 
 Frontend-only release with no data migration. The new storage key starts empty, so the first visit after release uses today's defaults. Rollback is a revert; the leftover storage key is ignored by the previous version.
+
+## Production verification (2026-11-06, v1.143.0)
+
+Run with Playwright against https://liverty-music.app as the prod E2E fan (`e2e-test-password@liverty-music.app`, home 東京都), Pixel 7 emulation, touch through the DevTools protocol; the account's follows, hype levels and journeys were restored afterwards (Liverty Music Band at Nearby, no journey).
+
+- 3.6 (emulated phone, not a physical device): three hype changes on My Artists showed at most one snack at any frame, in publishing order; a sideways swipe dismissed the first and the next appeared 1.4 s later (exit motion included); with a snack open on Discovery the swap tile moved 0 px and the snack sat 4.1 px (`space-3xs`) above it.
+- 5.3: a tracking journey set from the detail sheet showed its badge on the All Nearby card without a reload, and removing it removed the badge; none of the 22 cards (all artists the fan does not follow) was lit. The followed artist had no concert in the period, so a lit card was not seen on production (unit-tested).
+- Stage header: 0 px from the page header.
+- 4.6 (v1.143.1, opened straight on `/discovery?view=nearby`): no area selector opened; the stage header touched the page header; the filter item was off on Tokyo and 7日以内, on after 今週末 and 大阪府, both kept across a reload, and off again once restored (kept value `areaCode: null`).

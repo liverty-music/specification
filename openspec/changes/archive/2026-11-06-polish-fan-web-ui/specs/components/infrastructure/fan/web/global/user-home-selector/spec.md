@@ -61,6 +61,38 @@ The component SHALL be a pure selection UI: it SHALL NOT call `UserService.setHo
 - **WHEN** the caller does not provide `currentCode`
 - **THEN** no prefecture SHALL be highlighted
 
+## MODIFIED Requirements
+
+### Requirement: A person without a home is asked on the Dashboard and My Artists
+
+When the Dashboard or My Artists opens and the person has no home area (a guest who has not chosen one, or a signed-in fan whose account has none), the screen SHALL open the `user-home-selector` as a sheet. For a signed-in fan, and for a guest in onboarding, the sheet SHALL NOT close by tapping the backdrop, pressing ESC or swiping down; it SHALL close only when an area is selected. A guest who has finished onboarding MAY close it, and it SHALL open again the next time either screen opens. The selected area SHALL become the person's home: on the device for a guest, through `UserService.SetHome` for a signed-in fan. No other screen SHALL open the sheet because the home is missing. Discovery's All Nearby view opens the selector as its area selector when it knows no area at all (Discovery's "Area override for unauthenticated user"); there the choice is kept as the view's area override, not as a home.
+
+#### Scenario: New account without a home opens the Dashboard
+
+- **WHEN** a fan whose account was created without a home opens the Dashboard
+- **THEN** the home sheet opens, and tapping the backdrop or pressing ESC leaves it open
+- **AND** selecting 東京都 closes it and saves home JP-13 to the account
+
+#### Scenario: Signed-in fan without a home opens My Artists
+
+- **WHEN** a signed-in fan whose account has no home opens My Artists
+- **THEN** the home sheet opens and cannot be closed until an area is selected
+
+#### Scenario: Sheet left without a choice
+
+- **WHEN** a signed-in fan closes the app while the home sheet is open, and later opens the Dashboard
+- **THEN** the home sheet opens again
+
+#### Scenario: Guest after onboarding closes the sheet
+
+- **WHEN** a guest who finished onboarding without a home opens My Artists and closes the sheet
+- **THEN** My Artists stays open without a home, and the sheet opens again the next time the guest opens the Dashboard or My Artists
+
+#### Scenario: Event page does not ask
+
+- **WHEN** a signed-in fan without a home opens an Event page
+- **THEN** no home sheet opens
+
 ## REMOVED Requirements
 
 ### Requirement: Unified home area selector

@@ -75,30 +75,40 @@ My Artists SHALL list the fan's followed artists, each with its hype level activ
 - **WHEN** a signed-in fan picks Away for an artist at Home and saving fails twice
 - **THEN** the artist shows Home again and a message says the change failed
 
-### Requirement: Sticky Header Legend
+### Requirement: Hype header legend stays above the scrolling list
 
-The My Artists list view SHALL display a sticky header row showing hype tier icons and emotion-based labels, aligned with slider stop positions using a shared grid column definition.
+The My Artists list view SHALL display a header row showing hype tier icons and labels above the artist rows. Only the artist rows SHALL scroll; the header SHALL stay outside the scrolling area, so no row can be drawn over it. The header SHALL remain the column header of the artist table for assistive technology.
 
 #### Scenario: Header renders with 4 columns
 
 - **WHEN** the My Artists page renders in list view
-- **THEN** the system SHALL display a sticky header row below the page title
+- **THEN** the system SHALL display a header row below the page title
 - **AND** the header SHALL contain 4 equally-spaced columns: 👀 Watch, 🔥 Home, 🔥🔥 Nearby, 🔥🔥🔥 Away, the same in every language
-- **AND** the header SHALL use `position: sticky; inset-block-start: 0` with `backdrop-filter: blur(8px)` on the surface-raised background
-- **AND** each column SHALL vertically align with the corresponding dot stop on artist row sliders
-- **AND** the header and artist row content SHALL share the same `grid-template-columns: 2fr repeat(4, 1fr)` definition with `grid-template-areas` to ensure column alignment
+- **AND** each column SHALL vertically align with the corresponding dot stop on the artist rows
 
 #### Scenario: Header column alignment matches artist row dot positions
 
 - **WHEN** the header and any artist row are visible simultaneously
-- **THEN** the center of each header label SHALL be horizontally aligned with the center of the corresponding dot in the artist row slider
-- **AND** this alignment SHALL be achieved by both elements using `grid-template-columns: 2fr repeat(4, 1fr)` at the same parent width
+- **THEN** the center of each header label SHALL be horizontally aligned, within 1 px, with the center of the corresponding dot in the artist row
 
 #### Scenario: Header remains visible during scroll
 
-- **WHEN** the user scrolls the artist list
-- **THEN** the sticky header SHALL remain visible at the top of the scroll container
+- **WHEN** the user scrolls the artist list by 300 px on a 375 × 600 px screen with 40 followed artists
+- **THEN** the header SHALL stay at the same position it had before the scroll
+- **AND** every header label SHALL be fully visible, with no part of a row, a dot or a track line drawn over it
 - **AND** the header SHALL have a `[data-hype-header]` attribute for coach mark targeting
+
+#### Scenario: Header stays clear while a row animates out
+
+- **WHEN** the fan removes an artist in edit mode while the list is scrolled, in a browser that supports nested view-transition groups (`view-transition-group`, CSS View Transitions 2)
+- **THEN** the row's exit animation SHALL NOT draw over the header
+- **WHEN** the browser does NOT support nested view-transition groups
+- **THEN** rows scrolled under the header MAY be drawn over it until the exit animation ends (the flat groups of the prior behavior); once it has ended, nothing SHALL be drawn over the header
+
+#### Scenario: Table semantics are kept
+
+- **WHEN** a screen reader reads the artist list
+- **THEN** it SHALL announce a table whose column headers are the four hype labels and whose row headers are the artist names
 
 ### Requirement: Inline Dot Slider
 
@@ -173,14 +183,12 @@ The slider track line SHALL be vertically centered within the slider grid cell u
 
 ### Requirement: Slider dot positions align with header columns
 
-The 4 slider dot stops SHALL be positioned to vertically align with the 4 header legend columns using a shared CSS Grid column template.
+The 4 dot stops of every artist row SHALL align with the 4 header legend columns at every viewport width.
 
 #### Scenario: Slider spans header dot columns
 
-- **WHEN** the page renders
-- **THEN** the hype-inline-slider component SHALL span grid columns 2 through 5 of the artist row content grid
-- **AND** the slider's internal `repeat(4, 1fr)` grid SHALL subdivide the same width as the header's 4 dot columns
-- **AND** alignment SHALL be maintained across viewport widths
+- **WHEN** the page renders on a 320 px, a 375 px and a 768 px wide screen
+- **THEN** on each width the center of every dot stop SHALL be horizontally aligned, within 1 px, with the center of its header column
 
 ### Requirement: Animated list enter and exit
 
