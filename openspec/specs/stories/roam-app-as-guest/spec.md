@@ -76,7 +76,7 @@ The system SHALL allow an unauthenticated (guest) user who has reached the dashb
 #### Scenario: Guest navigates to Settings after dashboard
 
 - **WHEN** a guest user has reached at least the `'dashboard'` step
-- **AND** the user taps the Settings nav tab
+- **AND** the user chooses Settings in the FAB launcher
 - **THEN** the system SHALL allow the Settings route to load
 
 ### Requirement: Account-Only Features Hidden, Not Blocked
