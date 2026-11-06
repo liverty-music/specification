@@ -100,6 +100,8 @@ get actions(): FabAction[]                    // [...routeActions, trailing?]; [
 
 The visibility gate in `app-shell.html` and the nav bar notch keep reading `fabMenu.actions.length`, which now includes the trailing item, so Tickets gets the FAB and the notch with no further binding change.
 
+The launcher now stays mounted from one tab page to the next, because `actions` never becomes empty there. Before, a route's set was disposed and the next one registered on every navigation, so the shell unmounted `<fab-menu>` in between and an open arc closed with it ("The FAB shows its collapsed state after navigation"). `<fab-menu>` therefore closes an open arc itself when the router starts a navigation (`au:router:navigation-start`), without moving focus back to the FAB, and stops listening when it detaches. Found during implementation by the existing arc e2e test "Moving between two routes that both contribute actions".
+
 *Alternative:* each tab route registers `settingsAction()` like `helpAction()`. Rejected: four copies, Tickets would need FAB wiring only for this, and a new tab could forget it. The shell already knows `isTabRoute`.
 
 Arc capacity: the dashboard has the most items, four (beam, filter, help, Settings). The 2026-10-19 change verified four items at 320px and 390px (`fab-menu` arc e2e). Discovery reaches three with `polish-fan-web-ui`'s filter item.

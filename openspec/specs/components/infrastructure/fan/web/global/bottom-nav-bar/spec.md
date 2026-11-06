@@ -180,8 +180,13 @@ The navigation bar SHALL keep a centre slot between its second and third tabs on
 - **WHEN** the dashboard is displayed and the FAB is shown
 - **THEN** the bar's top edge SHALL have a notch around the FAB at the centre slot
 
+#### Scenario: Tickets shows the FAB
+- **WHEN** the Tickets route is displayed
+- **THEN** the FAB is shown with the Settings item (see FAB Menu)
+- **AND** the bar's top edge SHALL have a notch around it
+
 #### Scenario: Route without FAB actions
-- **WHEN** the Tickets route is displayed and no action is contributed
+- **WHEN** the Settings route is displayed and the launcher has no item
 - **THEN** the bar's top edge SHALL be straight, with no notch
 - **AND** the centre slot SHALL be empty
 
@@ -191,5 +196,5 @@ The navigation bar SHALL keep a centre slot between its second and third tabs on
 - **AND** the bar's top edge SHALL keep the notch around it
 
 #### Scenario: Tabs do not move between routes
-- **WHEN** the user moves from the dashboard (FAB shown) to Tickets (FAB hidden)
+- **WHEN** the user moves from the dashboard (FAB shown) to Settings (FAB hidden)
 - **THEN** each of the four tabs SHALL stay at the same horizontal position

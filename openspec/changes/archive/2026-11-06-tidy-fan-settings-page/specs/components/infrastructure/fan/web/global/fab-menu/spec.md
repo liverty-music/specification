@@ -87,3 +87,18 @@ the navigation bar (see "The FAB yields to a snack bar or a bottom banner"). Whi
 - **WHEN** a bottom sheet (for example the event detail sheet) is open on a route where the launcher has at least one item
 - **THEN** the FAB SHALL NOT be shown
 - **AND** the FAB SHALL be shown again when the sheet closes
+
+### Requirement: The FAB shows its collapsed state after navigation
+
+Whenever the FAB is shown after a navigation, it SHALL be collapsed: the action arc SHALL be closed, the glyph SHALL be the collapsed glyph, and the FAB SHALL expose the collapsed state to assistive technology. This SHALL hold even if the arc was open when the user left the previous route, including when the FAB stays shown from one route to the next (each tab page ends with the Settings item).
+
+#### Scenario: Leaving with the arc open and coming back
+- **WHEN** the user opens the action arc on the dashboard
+- **AND** taps the Tickets tab, where the launcher offers only the Settings item
+- **THEN** the FAB on Tickets SHALL show the collapsed (equalizer) glyph
+- **AND** when the user taps the Home tab again, the FAB SHALL show the collapsed glyph
+- **AND** the FAB SHALL expose the collapsed state (not expanded)
+
+#### Scenario: Moving between two routes that both contribute actions
+- **WHEN** the action arc is open on the dashboard and the user navigates to My Artists
+- **THEN** the FAB on My Artists SHALL be collapsed
