@@ -29,6 +29,8 @@ The `capture` step first reads whether the event is still PUBLISHED, with the sa
 
 Keeping the check inside the capture step means a recovered workflow does not check again after a capture that already happened.
 
+The step is retried while the payment provider cannot be reached, so a retry can find the concert cancelled after an earlier try's capture ended with Unavailable and may have charged the card. Before recording "cancelled", the step therefore reads the card authorization from the payment provider (`CardAuthorization.Get`). When it is Captured, the step records "charged" and the Order is issued, which the next paragraph covers. Otherwise, a retry could make the entry Lost while it was charged, which the requirement forbids.
+
 - **Rejected: a separate step before the capture.** A crash between the check and the capture would replay only the capture, which is the same behaviour with one more recorded step.
 
 The check and the capture are not atomic: a concert cancelled in the seconds between them is still charged. The outcome depends on what happens next:
