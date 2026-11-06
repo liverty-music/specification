@@ -50,7 +50,7 @@ The first step reads the Order. When an admin deletes the Event before that step
 ### D5. Messages and links
 
 - Emails go through the Postmark mailer the Order already uses for `SendConfirmationEmail`; `SendCancellationEmail` and `SendRefundEmail` are new methods on the same mailer interface and record nothing on the Order. Language follows `emailLanguage`, as in `SendResaleSold`.
-- The ticket count and price in the cancellation email use the same rule as `Refund` (`unresoldAmount`): the Order's amount divided by its ticket count, times its Issued Tickets. The refund email uses the stored amount.
+- The ticket count and price in the cancellation email use the same rule as `Refund` (`unresoldAmount`): the Order's amount divided by its ticket count, times its Issued Tickets. The refund email uses the stored amount, and derives the number of tickets refunded from it (amount ÷ price per ticket), because the refund has Voided every Ticket and a Voided Ticket does not say whether a resale or the refund voided it.
 - The `event_cancelled` push opens the event page (`concertDeepLink`, `/events/<id>` for a first-party Event, which shows the 中止 banner). The `order_refunded` push opens `/orders/<order id>`, which shows the refunded banner.
 - Notification types `event_cancelled` and `order_refunded` are added to `entity/notification.go` and the `notifications.type` column comment.
 

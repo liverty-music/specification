@@ -8,14 +8,15 @@ NotificationUseCase.SendOrderRefunded tells the fan of an Order refunded for 中
 
 SendOrderRefunded SHALL run for each Order announced as refunded by Order.CommitRefund, once per Order: a run again for the same Order, after a stop or a repeated announcement, sends no second email and no second push. It SHALL read the Order with Order.Get and SHALL send nothing when its refund reason is Dispute. For the reason Cancellation it SHALL read:
 - the Order's user with User.Get and its event with Order.GetEventID;
-- the event's concert with Concert.ListByIDs;
-- the user's Tickets of that event with Ticket.ListByUserAndEvent, counting the Order's Tickets that were resold through official resale (公式リセール).
+- the event's concert with Concert.ListByIDs.
+
+The number of tickets refunded SHALL be derived from the Order alone: its refund amount divided by its price per ticket (its amount divided by its ticket count). The rest of its ticket count were resold through official resale (公式リセール) before the refund. The Tickets are not read, because the refund Voided them all.
 
 It SHALL send, with Order.SendRefundEmail to the user's email address and in the user's preferred language (Japanese when none), a message stating:
 - the concert's title, date and venue, and that it was 中止 (cancelled);
-- the refund amount, 税込 (tax-inclusive), and the number of tickets refunded: the Order's ticket count less its resold Tickets;
+- the refund amount, 税込 (tax-inclusive), and the number of tickets refunded;
 - that the refund went to the card with the Order's card brand and last four digits, and that when it appears on the statement depends on the card issuer;
-- when the Order has a resold Ticket, that the resold Ticket was already refunded at its sale;
+- when fewer tickets were refunded than the Order's ticket count, that the resold tickets were already refunded at their sale;
 - that the refunded tickets are no longer valid for entry.
 
 When every Ticket of the Order was resold, so the refund amount is 0, it SHALL send nothing.
