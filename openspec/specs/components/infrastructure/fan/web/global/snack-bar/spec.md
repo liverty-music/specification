@@ -2,16 +2,16 @@
 
 ## Purpose
 
-Shows short messages at the bottom of the screen, at most three at once in the fan app, and a persistent snack bar that notifies the user when an app update is ready to install, with a prominent action to apply it.
+Shows short messages at the bottom of the screen, one at a time in the fan app, and a persistent snack bar that notifies the user when an app update is ready to install, with a prominent action to apply it.
 
 ## Requirements
 
 ### Requirement: Snack Bar Component
-The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-notification>`) that displays transient status messages using the Popover API, with each snack as an independent `popover="manual"` element managed by browser-native entry/exit transitions. A snack's display time follows the Material 3 snackbar durations: a snack without an action SHALL stay 4 seconds when its message is at most 30 characters and 10 seconds when it is longer, a snack with an action SHALL stay 10 seconds, and a snack that sets its own duration SHALL keep it.
+The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-notification>`) that displays transient status messages using the Popover API, with each snack as an independent `popover="manual"` element managed by browser-native entry/exit transitions. A snack's display time follows the Material 3 snackbar durations: a snack without an action SHALL stay 4 seconds when its message is at most 30 characters and 10 seconds when it is longer, a snack with an action SHALL stay 10 seconds, and a snack that sets its own duration SHALL keep it. A dismissed snack SHALL stay on screen until its exit motion has ended. The fan app shows one snack at a time (see "Snacks appear one at a time").
 
 #### Scenario: Snack display on event publish
 - **WHEN** a `Snack` event is published via `IEventAggregator`
-- **THEN** the component SHALL create a new element with `popover="manual"` attribute
+- **THEN** the component SHALL create a new element with `popover="manual"` attribute once it is the snack's turn (see "Snacks appear one at a time")
 - **AND** the element SHALL be made visible via `showPopover()`
 - **AND** the snack SHALL display the event's `message` text and an icon matching the `severity`
 
@@ -21,22 +21,21 @@ The system SHALL provide a `<snack-bar>` custom element (renamed from `<toast-no
 - **AND** the CSS exit transition SHALL play before the element is removed from the Top Layer
 
 #### Scenario: Programmatic dismiss via handle
-- **WHEN** a caller invokes `snack.handle.dismiss()`
+- **WHEN** a caller invokes `snack.handle.dismiss()` on a visible snack
 - **THEN** `hidePopover()` SHALL be called immediately
 - **AND** the auto-dismiss timer SHALL be cleared
 - **AND** the `onDismiss` callback SHALL fire exactly once
 
 #### Scenario: DOM cleanup after exit transition
-- **WHEN** a snack's `hidePopover()` triggers and the CSS exit transition completes
-- **THEN** the popover's `toggle` event SHALL fire with `newState === 'closed'`
-- **AND** the component SHALL remove the snack from its internal array
-- **AND** the component SHALL NOT rely on `transitionend` events for cleanup
+- **WHEN** a visible snack is dismissed by its timer, its handle, its action, its close button or a swipe
+- **THEN** the snack SHALL stay in the document, sinking and fading out, until its exit transition has ended
+- **AND** only then SHALL it be removed
 
 #### Scenario: Multiple simultaneous snacks
 - **WHEN** multiple `Snack` events are published in rapid succession
-- **THEN** each snack SHALL be an independent popover element in the Top Layer
-- **AND** dismissing one snack SHALL NOT interfere with other snacks' transitions or lifecycle
-- **AND** snacks SHALL stack vertically in a flex-column layout container
+- **THEN** each snack, when it appears, SHALL be an independent popover element in the Top Layer
+- **AND** dismissing one snack SHALL NOT interfere with another snack's transitions or lifecycle
+- **AND** the snacks SHALL appear one after another, as "Snacks appear one at a time" states, never two in the same place
 
 #### Scenario: Snack action button
 - **WHEN** a `Snack` event includes an `action` option with `label` and `callback`
@@ -166,7 +165,7 @@ Every snack bar's message and its action label SHALL keep a contrast ratio of at
 
 ### Requirement: Snack bars sit above the bottom navigation and any banner
 
-Every snack bar, whatever its severity or sender, SHALL be placed at the bottom of the screen with its bottom edge one `space-s` step above the top of the bottom navigation bar and the bottom safe-area inset. While a persistent bottom banner (the signup prompt or the install banner) is visible above the navigation bar, the snack bar SHALL sit that same step above the banner instead, using the banner's rendered height; a banner that is not visible SHALL add no height. The FAB stays sunk in the navigation bar in both cases (see FAB Menu).
+Every snack bar, whatever its severity or sender, SHALL be placed at the bottom of the screen with its bottom edge one `space-s` step above the top of the bottom navigation bar and the bottom safe-area inset. While a persistent bottom banner (the signup prompt or the install banner) is visible above the navigation bar, the snack bar SHALL sit that same step above the banner instead, using the banner's rendered height; a banner that is not visible SHALL add no height. While a screen shows a control floating over its bottom edge (the Discovery swap tile), the snack bar SHALL sit one `space-3xs` step above that control instead, and the control SHALL NOT move; such a control always sits above any visible banner, so this placement takes precedence over the banner placement. The FAB stays sunk in the navigation bar in all cases (see FAB Menu).
 
 #### Scenario: No banner is visible
 - **WHEN** a snack bar opens and no persistent bottom banner is visible
@@ -191,26 +190,70 @@ Every snack bar, whatever its severity or sender, SHALL be placed at the bottom 
 - **WHEN** an info, warning and error snack bar are each shown in turn under the same conditions
 - **THEN** all three SHALL occupy the same vertical position
 
-### Requirement: At most three snacks are shown at once
+#### Scenario: A banner and a floating control are both visible
+- **WHEN** a snack bar opens on Discovery while the install banner and the swap tile are both visible
+- **THEN** the snack bar's bottom edge SHALL sit one `space-3xs` step above the swap tile's top edge
+- **AND** the snack bar SHALL cover neither the swap tile nor the banner
 
-In the fan app, when a new snack would make more than three snacks visible, the snack bar SHALL first dismiss the oldest visible snack that dismisses on its own, so the newest three remain, passing over a snack whose dismissal commits something the fan can still undo (such as an unfollow's undo) while another snack can be dismissed instead. A snack that stays until the fan acts, such as the app update snack, SHALL neither count toward the three nor be dismissed by a newer snack. A snack that a sender marks as replacing its own earlier snack SHALL take that snack's place instead of being added.
+#### Scenario: A floating control stays in place
+- **WHEN** a snack bar opens on Discovery while the swap tile is shown
+- **THEN** the snack bar's bottom edge SHALL sit one `space-3xs` step above the swap tile's top edge
+- **AND** the swap tile SHALL stay where it was and stay tappable
 
-#### Scenario: Fourth snack
+### Requirement: Snacks appear one at a time
 
-- **WHEN** three snacks that dismiss on their own are visible and a fourth snack is shown
-- **THEN** the oldest of the three is dismissed and the newest three are visible
+In the fan app, at most one snack SHALL be visible at a time. A snack published while another is visible SHALL wait, and the waiting snacks SHALL appear in the order they were published, each after the one before it has finished its exit motion. A snack that a sender marks as replacing its own earlier snack SHALL take that snack's place: a visible one is dismissed at once and the new snack appears next, and a waiting one is replaced where it waits. The app update snack, which stays until the fan acts, SHALL give way to every other snack: when another snack is published while it is visible, it SHALL leave without being dismissed and SHALL appear again when no other snack is visible or waiting. A snack with an action, such as an undo, SHALL keep its 10-second display time; the snacks behind it wait for it.
 
-#### Scenario: Update snack stays
+#### Scenario: A second snack waits
+- **WHEN** a snack is visible and a second snack is published
+- **THEN** the second snack SHALL appear only after the first has been dismissed and its exit motion has ended
+- **AND** at no moment SHALL two snacks be visible
 
-- **WHEN** the app update snack and three other snacks are visible and a new snack is shown
-- **THEN** the update snack stays, the oldest of the other three is dismissed, and the update snack plus three others are visible
+#### Scenario: Waiting snacks keep their order
+- **WHEN** three snacks are published within one second
+- **THEN** they SHALL appear one after another in the order they were published
 
 #### Scenario: An undo window is kept
-
-- **WHEN** a fan unfollows an artist and, while its undo snack is visible, changes the hype levels of three other artists
-- **THEN** the undo snack stays and the oldest hype snack is dismissed
+- **WHEN** a fan unfollows an artist and, while its undo snack is visible, changes the hype level of another artist
+- **THEN** the undo snack SHALL stay for its full display time, with its undo action available
+- **AND** the hype snack SHALL appear after it
 
 #### Scenario: Replacing an earlier snack
+- **WHEN** a screen shows a snack for an artist and then publishes a new snack that replaces its earlier snack for the same artist
+- **THEN** the earlier snack SHALL be dismissed and the new snack SHALL appear next, before any other waiting snack
+- **AND** only one snack SHALL be shown for that artist
 
-- **WHEN** a screen shows a snack for an artist and then a new snack that replaces its earlier snack for the same artist
-- **THEN** only the new snack is visible for that artist
+#### Scenario: Dismissing a waiting snack
+- **WHEN** a caller invokes `snack.handle.dismiss()` on a snack that is still waiting
+- **THEN** the snack SHALL be removed from the wait and SHALL never appear
+- **AND** its `onDismiss` callback SHALL fire exactly once
+
+#### Scenario: The update snack gives way
+- **WHEN** the app update snack is visible and a follow publishes a snack
+- **THEN** the update snack SHALL leave, the follow snack SHALL appear, and the update snack SHALL appear again after the follow snack has left
+- **AND** the update SHALL NOT be applied or lost
+
+### Requirement: A horizontal swipe dismisses a snack
+A fan SHALL be able to dismiss any snack by swiping it left or right. While a finger or pointer holds a snack, its display timer SHALL pause, and it SHALL resume with the time that was left when the snack is released without being dismissed. A snack whose swipe does not reach the dismiss point SHALL return to its place. A dismiss by swipe SHALL be the same as any other dismiss: its `onDismiss` callback fires once, so an undo window closes and commits, and the exit motion plays.
+
+#### Scenario: Swipe past the dismiss point
+- **WHEN** the fan drags a snack sideways until less than half of it remains in its place and releases it
+- **THEN** the snack SHALL leave in the direction of the swipe and be dismissed
+- **AND** its `onDismiss` callback SHALL fire exactly once
+
+#### Scenario: Short swipe
+- **WHEN** the fan drags a snack sideways by less than half its width and releases it
+- **THEN** the snack SHALL return to its place and stay open
+
+#### Scenario: Holding pauses the timer
+- **WHEN** a 4-second snack has been shown for 3 seconds and the fan then holds it for 5 seconds without dismissing it
+- **THEN** the snack SHALL still be open when released
+- **AND** it SHALL be dismissed 1 second after it is released
+
+#### Scenario: Swipe on a snack that stays until the fan acts
+- **WHEN** the fan swipes away the app update snack
+- **THEN** the snack SHALL be dismissed and the update SHALL NOT be applied
+
+#### Scenario: Swipe under reduced motion
+- **WHEN** `prefers-reduced-motion: reduce` is active and the fan swipes a snack past the dismiss point
+- **THEN** the snack SHALL be dismissed and removed without an exit motion
