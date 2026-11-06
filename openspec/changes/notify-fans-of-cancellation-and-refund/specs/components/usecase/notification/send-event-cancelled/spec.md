@@ -18,7 +18,7 @@ SendEventCancelled SHALL run for each Event announced as cancelled by Series.Can
 
 #### Scenario: Refunded by a dispute before the cancellation
 - **WHEN** an Event is announced as cancelled and one of its Orders was Refunded for a dispute earlier
-- **THEN** that Order's fan receives no cancellation notice and no refund notice
+- **THEN** that Order's fan receives no cancellation notice
 
 #### Scenario: Cancellation announced twice
 - **WHEN** the same announcement is delivered twice
