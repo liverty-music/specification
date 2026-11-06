@@ -1194,7 +1194,8 @@ The All Nearby view SHALL present the current reference area as the area row of 
 
 - **WHEN** an unauthenticated user opens the All Nearby view
 - **AND** no guest home and no override are stored on the device
-- **THEN** the area row SHALL prompt the user to choose an area
+- **THEN** the view SHALL open the `user-home-selector` as its area selector before listing any concert
+- **AND** until an area is chosen, the area row of the filter sheet SHALL prompt the user to choose one
 - **AND** the chosen area SHALL be kept on the device as the override, not as the guest home
 
 ### Requirement: All Nearby filters open from the action launcher
