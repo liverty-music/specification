@@ -100,8 +100,10 @@ The My Artists list view SHALL display a header row showing hype tier icons and 
 
 #### Scenario: Header stays clear while a row animates out
 
-- **WHEN** the fan removes an artist in edit mode while the list is scrolled
+- **WHEN** the fan removes an artist in edit mode while the list is scrolled, in a browser that supports nested view-transition groups (`view-transition-group`, CSS View Transitions 2)
 - **THEN** the row's exit animation SHALL NOT draw over the header
+- **WHEN** the browser does NOT support nested view-transition groups
+- **THEN** rows scrolled under the header MAY be drawn over it until the exit animation ends (the flat groups of the prior behavior); once it has ended, nothing SHALL be drawn over the header
 
 #### Scenario: Table semantics are kept
 
