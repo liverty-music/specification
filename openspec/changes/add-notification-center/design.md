@@ -45,7 +45,7 @@ Alternative rejected: one nullable foreign-key column per record kind. Eight col
 ### Proto
 
 - `entity.v1.Notification`: keep `id`, `user_id`, `type`, `message` (now rendered at read time); rename field 7 `queue_time` to `create_time`; keep `read_time` (9); remove and reserve `delivery_status` (5), `failure_reason` (6), `deliver_time` (8), `dismiss_time` (10). Remove `NotificationDeliveryStatus`.
-- `NotificationType`: rename `EVENT_CANCELLED = 8` to `CONCERT_CANCELLED`, keeping the number; add `LOTTERY_WIN = 10`; reserve `4` and the name `NOTIFICATION_TYPE_ORDER_CONFIRMATION`.
+- `NotificationType`: rename `EVENT_CANCELLED = 8` to `CONCERT_CANCELLED`, keeping the number; add `LOTTERY_WIN = 10` and `RESALE_WIN = 11`; reserve `4` and the name `NOTIFICATION_TYPE_ORDER_CONFIRMATION`.
 - `rpc.notification.v1.NotificationService`: add `List(ListRequest) returns (ListResponse)` (`ListRequest {}`; `ListResponse { repeated entity.v1.Notification notifications = 1; }`); remove `Dismiss` and its messages. Names follow `rpc-design`: `List` returns every resource the caller can see.
 - `rpc.user.v1.CreateRequest.preferred_language`: drop `optional`, mark `required`, keep the pattern.
 
@@ -69,7 +69,7 @@ For new_concerts the subject's artist. Otherwise `Concert.Artists` (display orde
 
 ### First-come purchase push and the type rename
 
-`SendOrderConfirmation` starts `Deliver` only when `order.LotteryEntryID != ""`, with type `lottery_win` and the workflow id `deliver:lottery_win:<order>`. `event_cancelled` is renamed `concert_cancelled` everywhere (proto enum value, entity constant, workflow id prefix, analytics `type` values). Production holds no row of either old value that must survive (rows are deleted, below).
+`SendOrderConfirmation` starts `Deliver` only when the Order's source is not a Checkout: type `lottery_win` for `LotteryEntryID`, `resale_win` for `ResaleEntryID`, with the workflow id `deliver:<type>:<order>`. A resale winner got the purchase-complete push until now, and the reason for stopping that push (the fan has just paid on screen) does not hold for a draw. `event_cancelled` is renamed `concert_cancelled` everywhere (proto enum value, entity constant, workflow id prefix, analytics `type` values). Production holds no row of either old value that must survive (rows are deleted, below).
 
 ### Marking a push read when opened
 

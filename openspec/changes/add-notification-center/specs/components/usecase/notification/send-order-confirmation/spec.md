@@ -2,7 +2,7 @@
 
 ### Requirement: Push notification after the email
 
-After the email is sent, for an Order whose source is a LotteryEntry, SendOrderConfirmation SHALL start NotificationUseCase.Deliver for the Order's user with a notification of type lottery_win whose subject is the Order, named after the type and the Order; tapped, it opens the Tickets screen. An Order paid at checkout SHALL NOT be pushed: the fan has just completed the purchase on screen, and the email confirms it. A user with no registered browser receives the email only. A run again for the same Order, after a stop or a repeated announcement, starts no second Deliver, so the fan is pushed once; the email is still sent once.
+After the email is sent, for an Order whose source is a LotteryEntry or a ResaleEntry, SendOrderConfirmation SHALL start NotificationUseCase.Deliver for the Order's user with a notification of type lottery_win or resale_win respectively, whose subject is the Order, named after the type and the Order; tapped, it opens the Tickets screen: these Orders are paid at a draw, when the fan is not looking at the app. An Order whose source is a Checkout SHALL NOT be pushed: the fan has just completed the purchase on screen, and the email confirms it. A user with no registered browser receives the email only. A run again for the same Order, after a stop or a repeated announcement, starts no second Deliver, so the fan is pushed once; the email is still sent once.
 
 #### Scenario: Fan allowed notifications
 
@@ -13,6 +13,11 @@ After the email is sent, for an Order whose source is a LotteryEntry, SendOrderC
 
 - **WHEN** the Order of a won lottery entry is announced as paid and its user has a registered browser
 - **THEN** a lottery_win notification is pushed and opens the Tickets screen
+
+#### Scenario: Official resale winner allowed notifications
+
+- **WHEN** the Order of a won resale entry is announced as paid and its user has a registered browser
+- **THEN** a resale_win notification is pushed and opens the Tickets screen
 
 #### Scenario: Paid announcement delivered twice
 

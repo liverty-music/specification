@@ -10,6 +10,7 @@ A Notification's subject SHALL name the records its type is about, and nothing e
 | ticket_sale_announcement | the TicketSale and the fan's linked event |
 | sales_reminder | the TicketSale, the reminder stage and the fan's linked event |
 | lottery_win | the Order |
+| resale_win | the Order |
 | lottery_loss | the LotteryEntry |
 | resale_entry_lapsed, resale_entry_lost | the ResaleEntry |
 | concert_cancelled | the Order |
@@ -38,6 +39,7 @@ A Notification's message SHALL be rendered from the current state of the records
 | reminder `APPLY_OPEN`, Lottery | 抽選受付スタート | 抽選申し込みがスタートしました!! 締切は{end} | Ticket Lottery Open | Ticket lottery entry is open! Closes {end}. |
 | reminder `APPLY_CLOSE_24H` | 抽選締切が近づいています | 抽選申し込みの締切は{end}!! | Ticket Lottery Closing Soon | Ticket lottery entry closes {end}! |
 | lottery_win | 抽選に当選しました | {date}の{venue}公演のチケット抽選に当選しました!!タップしてチケットを表示 | You Won the Ticket Lottery | You won the ticket lottery for {venue} on {date}! Tap to see your tickets. |
+| resale_win | 公式リセールに当選しました | {date}の{venue}公演の公式リセールに当選しました!!タップしてチケットを表示 | You Won the Official Resale | You won the official resale for {venue} on {date}! Tap to see your tickets. |
 | lottery_loss, not drawn | 抽選結果のお知らせ | {date}の{venue}公演のチケット抽選が落選となりました。 | Ticket Lottery Result | Your lottery entry for {venue} on {date} was not drawn. |
 | lottery_loss, card could not be charged | 当選を取り消しました | カードで決済できなかったため、{date}の{venue}公演の当選を取り消しました。 | Lottery Win Cancelled | Your win for {venue} on {date} was cancelled because your card could not be charged. |
 | resale_entry_lapsed | 公式リセールの期限切れ | カードの与信の有効期限が来たため申し込みが終了しました。 | Official Resale Entry Expired | Your entry ended because the card authorization expired. |
@@ -72,7 +74,7 @@ A Notification's message SHALL be rendered from the current state of the records
 
 ### Requirement: The link and the grouping tag follow the type
 
-A Notification's link SHALL be: for new_concerts, `/events/<id>` of the earliest matched concert when its Series is first-party and `/concerts/<id>` otherwise; for ticket_sale_announcement and sales_reminder, the concert page of the fan's linked event; for lottery_win, the Tickets screen; for lottery_loss and concert_cancelled, the event's page; for resale_entry_lapsed and resale_entry_lost, the resale entry screen; for order_refunded, the Order. Its grouping tag SHALL be one per artist for new_concerts, one per TicketSale for ticket_sale_announcement, one per TicketSale and stage for sales_reminder, and one per type and subject otherwise, so a later message with the same tag replaces the earlier one on a device. The link and the tag do not depend on the language.
+A Notification's link SHALL be: for new_concerts, `/events/<id>` of the earliest matched concert when its Series is first-party and `/concerts/<id>` otherwise; for ticket_sale_announcement and sales_reminder, the concert page of the fan's linked event; for lottery_win and resale_win, the Tickets screen; for lottery_loss and concert_cancelled, the event's page; for resale_entry_lapsed and resale_entry_lost, the resale entry screen; for order_refunded, the Order. Its grouping tag SHALL be one per artist for new_concerts, one per TicketSale for ticket_sale_announcement, one per TicketSale and stage for sales_reminder, and one per type and subject otherwise, so a later message with the same tag replaces the earlier one on a device. The link and the tag do not depend on the language.
 
 #### Scenario: Two reminder stages
 - **WHEN** a TicketSale's `APPLY_OPEN` and `APPLY_CLOSE_24H` reminders are rendered for one fan

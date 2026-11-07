@@ -8,7 +8,7 @@ A Notification is the durable record of one message sent to one fan, such as new
 |-----------|---------|------------|
 | id | the notification's identity, also carried inside the pushed message so the fan's response can be traced back to it | required; assigned when recorded |
 | user_id | the fan it is for | required |
-| type | what produced it | required; one of new_concerts, sales_reminder, ticket_sale_announcement, lottery_win, lottery_loss, resale_entry_lapsed, resale_entry_lost, concert_cancelled, order_refunded |
+| type | what produced it | required; one of new_concerts, sales_reminder, ticket_sale_announcement, lottery_win, resale_win, lottery_loss, resale_entry_lapsed, resale_entry_lost, concert_cancelled, order_refunded |
 | subject | the records the message is about: an artist and concerts, a TicketSale with a reminder stage and the fan's linked event, an Order, a LotteryEntry or a ResaleEntry, by type | required |
 | create_time | when the notification was recorded | required |
 | read_time | when the fan read it | optional; absent until read; an unread notification has none |
