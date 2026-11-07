@@ -50,6 +50,7 @@ A fan cannot see a notification again once the operating system drops it, and ma
 - `stories/get-notified-of-new-concerts`: messages titled `[<artist>] …`; outcomes are no longer stored on the Notification.
 - `stories/get-reminded-of-ticket-sale-milestones`: no result-day reminder.
 - `stories/restore-session-on-cold-start`: no language backfill.
+- `components/infrastructure/fan/web/global/i18n`: "Backfill Preferred Language When Missing" is removed, and "Unified Language Preference Resolution" no longer handles a missing language.
 
 ## Impact
 
