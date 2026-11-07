@@ -1,6 +1,6 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
-### Requirement: Create records a Queued notification and assigns its identity
+### Requirement: Create records an unread notification and assigns its identity
 
 Create SHALL store the Notification with its fan, type and subject, unread, assign it a new unique id and its create time, and return both to the caller. When the fan does not exist, Create SHALL fail with FailedPrecondition and store nothing. When the subject is invalid for the type, Create SHALL fail with InvalidArgument and store nothing.
 
@@ -23,3 +23,9 @@ Create SHALL store the Notification with its fan, type and subject, unread, assi
 
 - **WHEN** Create runs with type lottery_loss and a subject that names no LotteryEntry
 - **THEN** Create fails with InvalidArgument and nothing is stored
+
+## REMOVED Requirements
+
+### Requirement: Create records a Queued notification and assigns its identity
+**Reason**: A Notification has no delivery status; replaced by "Create records an unread notification and assigns its identity".
+**Migration**: None.

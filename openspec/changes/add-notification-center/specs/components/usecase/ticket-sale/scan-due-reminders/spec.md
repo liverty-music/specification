@@ -1,20 +1,12 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
-### Requirement: The audience is the fans tracking or applied for the series
+### Requirement: The audience is the fans tracking the sale
 
 For each stage of a discovered sale ScanDueReminders SHALL consider exactly the fans returned by TicketJourney.ListUserIDsTrackingSeries for the sale's series. For an Organizer's sale it SHALL consider exactly the fans returned by TicketJourney.ListUserIDsTrackingEvents for the events the sale names. Each fan comes with their linked event, and nobody else is considered. A fan whose profile cannot be read SHALL be skipped.
 
 #### Scenario: Tracking fan
 - **WHEN** ListUserIDsTrackingSeries returns a fan for the sale's series and the `APPLY_OPEN` stage is due
 - **THEN** a reminder is requested for that fan
-
-#### Scenario: Applied fan on the result day
-- **WHEN** a fan's journey on a discovered lottery's series is Applied and the lottery's result date is today
-- **THEN** no reminder is requested for that fan for the result date
-
-#### Scenario: Tracking fan on the result day
-- **WHEN** a fan's only journey on the series is Tracking and the lottery's result date is today
-- **THEN** no reminder is requested for that fan for the result date
 
 #### Scenario: Organizer's sale for some events of the tour
 - **WHEN** an Organizer's lottery names the tour's Tokyo event only, fan A tracks the Tokyo event and fan B tracks only the Osaka event
@@ -23,6 +15,8 @@ For each stage of a discovered sale ScanDueReminders SHALL consider exactly the 
 #### Scenario: Fan no longer listed
 - **WHEN** a fan was listed on an earlier run but ListUserIDsTrackingSeries no longer returns them when a lottery's closing reminder becomes due
 - **THEN** no `APPLY_CLOSE_24H` reminder is requested for that fan
+
+## MODIFIED Requirements
 
 ### Requirement: Delivery is delegated to DeliverReminder
 
@@ -46,7 +40,7 @@ Each reminder's message SHALL be the one the Notification entity renders for a s
 
 #### Scenario: Lottery closing in Japanese
 - **WHEN** an `APPLY_CLOSE_24H` reminder is built in Japanese for the series King Gnu 10th Anniversary Opening Live “KICKOFF” by King Gnu, whose lottery closes on 22 October 23:59 Asia/Tokyo
-- **THEN** the title is [King Gnu] 抽選締切まであと1日 and the body is 抽選申し込みの締切は10/22(木) 23:59!! followed by a line break and the series title
+- **THEN** the title is [King Gnu] 抽選締切が近づいています and the body is 抽選申し込みの締切は10/22(木) 23:59!! followed by a line break and the series title
 
 #### Scenario: Result day in Japanese
 - **WHEN** a discovered lottery of the series King Gnu 10th Anniversary Opening Live “KICKOFF” has its result date today
@@ -117,3 +111,9 @@ When the sent stages cannot be read, ScanDueReminders SHALL request the due remi
 #### Scenario: Application window closed before the open reminder was sent
 - **WHEN** a fan starts tracking after a Lottery sale's end time and `APPLY_OPEN` was never sent to that fan
 - **THEN** no `APPLY_OPEN` reminder is requested for that fan
+
+## REMOVED Requirements
+
+### Requirement: The audience is the fans tracking or applied for the series
+**Reason**: The result-day reminder and its audience of applied fans are removed; replaced by "The audience is the fans tracking the sale".
+**Migration**: None.

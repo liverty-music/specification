@@ -42,4 +42,4 @@
 
 ## 7. Archive
 
-- [ ] 7.1 After archiving, delete the emptied `components/entity/notification/update-delivery`, `components/entity/notification/mark-dismissed`, `components/usecase/notification/dismiss` and `components/entity/ticket-journey/list-user-ids-applied-series` specs; verify `openspec validate --specs` and `python3 scripts/check-spec-layout.py` pass
+- [ ] 7.1 After archiving, delete the emptied `components/entity/notification/update-delivery`, `components/entity/notification/mark-dismissed`, `components/usecase/notification/dismiss` and `components/entity/ticket-journey/list-user-ids-applied-series` specs, and remove `UserUseCase.SetPreferredLanguage` from the usecase diagram in the Purpose of `stories/restore-session-on-cold-start`, whose text no longer names it (the diagram check requires both to change together); verify `openspec validate --specs`, `python3 scripts/check-spec-layout.py` and `python3 scripts/check-story-diagrams.py` pass

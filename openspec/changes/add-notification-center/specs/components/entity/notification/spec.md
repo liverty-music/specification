@@ -36,7 +36,7 @@ A Notification's message SHALL be rendered from the current state of the records
 | announcement, Lottery | 抽選受付のお知らせ | {start}から抽選申し込みスタート!! | Ticket Lottery | Ticket lottery entry starts {start}! |
 | reminder `APPLY_OPEN`, FirstCome | まもなく先着販売開始 | {start}から先着販売スタート!! | First-Come Sale Starting Soon | Ticket sale (first come) starts {start}! |
 | reminder `APPLY_OPEN`, Lottery | 抽選受付スタート | 抽選申し込みがスタートしました!! 締切は{end} | Ticket Lottery Open | Ticket lottery entry is open! Closes {end}. |
-| reminder `APPLY_CLOSE_24H` | 抽選締切まであと1日 | 抽選申し込みの締切は{end}!! | Ticket Lottery Closing Soon | Ticket lottery entry closes {end}! |
+| reminder `APPLY_CLOSE_24H` | 抽選締切が近づいています | 抽選申し込みの締切は{end}!! | Ticket Lottery Closing Soon | Ticket lottery entry closes {end}! |
 | lottery_win | 抽選に当選しました | {date}の{venue}公演のチケット抽選に当選しました!!タップしてチケットを表示 | You Won the Ticket Lottery | You won the ticket lottery for {venue} on {date}! Tap to see your tickets. |
 | lottery_loss, not drawn | 抽選結果のお知らせ | {date}の{venue}公演のチケット抽選が落選となりました。 | Ticket Lottery Result | Your lottery entry for {venue} on {date} was not drawn. |
 | lottery_loss, card could not be charged | 当選を取り消しました | カードで決済できなかったため、{date}の{venue}公演の当選を取り消しました。 | Lottery Win Cancelled | Your win for {venue} on {date} was cancelled because your card could not be charged. |

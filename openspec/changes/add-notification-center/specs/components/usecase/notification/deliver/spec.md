@@ -91,7 +91,7 @@ Deliver SHALL run once for each notification that NotificationUseCase.NotifyNewC
 
 ### Requirement: Render and record before sending
 
-Deliver SHALL take a fan, a notification type and a subject. It SHALL fail with InvalidArgument when the subject is invalid for the type. It SHALL read the records the subject names and the fan's follows, and render the Notification's message, before recording or sending anything. When a record the subject names no longer exists, Deliver SHALL record and send nothing and finish without an error. When another read fails, Deliver SHALL fail with that error and send nothing, so the request is processed again. It SHALL then record the Notification through Notification.Create before sending anything; when recording fails, Deliver SHALL fail with that error and send nothing, so the request is processed again.
+Deliver SHALL take a fan, a notification type and a subject. It SHALL fail with InvalidArgument when the subject is invalid for the type. It SHALL read the records the subject names and the fan's follows, and render the Notification's message, before recording or sending anything. When a record the subject names no longer exists, Deliver SHALL record and send nothing, and succeed with the outcome Failed and the reason "subject no longer exists". When another read fails, Deliver SHALL fail with that error and send nothing, so the request is processed again. It SHALL then record the Notification through Notification.Create before sending anything; when recording fails, Deliver SHALL fail with that error and send nothing, so the request is processed again.
 
 #### Scenario: Subject missing a record
 
@@ -101,7 +101,7 @@ Deliver SHALL take a fan, a notification type and a subject. It SHALL fail with 
 #### Scenario: Subject deleted before delivery
 
 - **WHEN** the Order a concert_cancelled request names no longer exists
-- **THEN** nothing is recorded or sent and Deliver succeeds
+- **THEN** nothing is recorded or sent and Deliver succeeds with Failed and the reason "subject no longer exists"
 
 #### Scenario: Recording fails
 

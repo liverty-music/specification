@@ -11,9 +11,11 @@ actor Fan("fan")
 systemBoundary "Liverty Music"
   Goal("Restore session on cold start")
   UserUseCaseGet("UserUseCase.Get")
+  UserUseCaseSetPreferredLanguage("UserUseCase.SetPreferredLanguage")
 end
 Fan --> Goal
 Goal ..> : include UserUseCaseGet
+Goal ..> : include UserUseCaseSetPreferredLanguage
 ```
 
 ## Requirements

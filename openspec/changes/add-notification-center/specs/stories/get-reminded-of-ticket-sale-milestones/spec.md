@@ -1,6 +1,6 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
-### Requirement: Milestone reminders reach tracking and applied fans
+### Requirement: Milestone reminders reach tracking fans
 
 For each known TicketSale of a series, discovered or the Organizer's own, TicketSaleReminderUseCase.ScanDueReminders SHALL find the milestones that have become due for each fan in the milestone's audience, and TicketSaleReminderDeliveryUseCase.DeliverReminder SHALL deliver each of them. The fan SHALL receive one push per milestone on each registered browser within 15 minutes of the milestone, outside the fan's quiet hours, and SHALL have one sales reminder Notification recorded for it. The milestones and their audiences are:
 
@@ -21,10 +21,8 @@ Tapping a reminder SHALL open the detail sheet of the fan's earliest upcoming ev
 - **WHEN** a fan sets their journey on the tour's event to Applied more than 24 hours before the lottery closes, and the lottery's page states that results are announced on 3 November 15:00
 - **THEN** the fan receives no closing reminder for it and no push on 3 November
 
-#### Scenario: Result day not stated
-- **WHEN** a fan's journey on the tour's event is Applied and the lottery's page does not state a result day
-- **THEN** the fan receives no result-day push
+## REMOVED Requirements
 
-#### Scenario: Fan still tracking on the result day
-- **WHEN** a fan's journey on the tour's event is still Tracking on the lottery's result day
-- **THEN** the fan receives no result-day push
+### Requirement: Milestone reminders reach tracking and applied fans
+**Reason**: The result-day reminder and its audience of applied fans are removed; replaced by "Milestone reminders reach tracking fans".
+**Migration**: None.
