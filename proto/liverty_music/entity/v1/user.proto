@@ -88,12 +88,8 @@ message User {
   // (e.g., "ja", "en"). Used to render the UI in the user's chosen language
   // and to localize user-facing notifications.
   //
-  // Absent (NULL in storage) until the client first asserts a preference —
-  // either via Create at signup or via SetPreferredLanguage for legacy
-  // rows that predate this field. Clients observing an absent value SHALL
-  // backfill it by calling SetPreferredLanguage with their currently
-  // effective locale, so that subsequent sessions can rely on the backend
-  // as the single source of truth for the user's language preference.
+  // Set when the user is created (Create requires it) and changed through
+  // SetPreferredLanguage. A stored user always has one.
   optional string preferred_language = 7 [(buf.validate.field).string = {
     min_len: 2
     pattern: "^[a-z]{2}$"

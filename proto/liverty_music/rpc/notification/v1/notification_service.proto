@@ -7,16 +7,21 @@ import "liverty_music/entity/v1/notification.proto";
 
 option go_package = "github.com/liverty-music/specification/gen/go/liverty_music/rpc/notification/v1;notificationv1";
 
-// NotificationService lets a fan manage the read/dismiss state of their own
-// notifications. Every call acts for the signed-in caller, resolved to their
-// stored User; the request names no fan, and the backend refuses a
-// notification of another fan, so one user cannot change another user's
-// notification state.
-//
-// This is the minimal control surface required so that read/dismiss state is
-// user-controllable. A full inbox listing RPC is intentionally deferred to the
-// in-app inbox follow-up.
+// NotificationService lets a fan review their own notifications and mark them
+// read. Every call acts for the signed-in caller, resolved to their stored User;
+// the request names no fan, and the backend refuses a notification of another
+// fan, so one user cannot change another user's notification state.
 service NotificationService {
+  // List returns the caller's 50 newest notifications, newest first, including
+  // those whose push never reached them. Each carries its title, body and link
+  // rendered in the caller's current language, its create time, and its read
+  // time when read. A caller with no notification gets an empty list.
+  //
+  // Possible errors:
+  // - UNAUTHENTICATED: The caller is not signed in.
+  // - NOT_FOUND: The signed-in caller has no account.
+  rpc List(ListRequest) returns (ListResponse);
+
   // MarkRead marks one of the caller's notifications as read. It is idempotent:
   // marking an already-read notification succeeds without changing the recorded
   // read time.
@@ -26,16 +31,15 @@ service NotificationService {
   // - NOT_FOUND: The signed-in caller has no account.
   // - INVALID_ARGUMENT: No notification is given.
   rpc MarkRead(MarkReadRequest) returns (MarkReadResponse);
+}
 
-  // Dismiss marks one of the caller's notifications as dismissed. It is
-  // idempotent: dismissing an already-dismissed notification succeeds without
-  // changing the recorded dismiss time.
-  //
-  // Possible errors:
-  // - UNAUTHENTICATED: The caller is not signed in.
-  // - NOT_FOUND: The signed-in caller has no account.
-  // - INVALID_ARGUMENT: No notification is given.
-  rpc Dismiss(DismissRequest) returns (DismissResponse);
+// ListRequest names nothing; the caller is taken from the sign-in.
+message ListRequest {}
+
+// ListResponse holds the caller's newest notifications, newest first.
+message ListResponse {
+  // The notifications, at most 50.
+  repeated entity.v1.Notification notifications = 1;
 }
 
 // MarkReadRequest identifies the caller's notification to mark as read.
@@ -49,15 +53,3 @@ message MarkReadRequest {
 
 // MarkReadResponse is returned when the notification has been marked read.
 message MarkReadResponse {}
-
-// DismissRequest identifies the caller's notification to mark as dismissed.
-message DismissRequest {
-  reserved 1;
-  reserved "user_id";
-
-  // The notification to mark as dismissed. Must belong to the authenticated caller.
-  entity.v1.NotificationId notification_id = 2 [(buf.validate.field).required = true];
-}
-
-// DismissResponse is returned when the notification has been marked dismissed.
-message DismissResponse {}
