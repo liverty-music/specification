@@ -45,7 +45,8 @@ A fan cannot see a notification again once the operating system drops it, and ma
 - `components/usecase/ticket-sale-reminder/deliver-reminder`: takes the fan's linked event instead of prepared content; it reads the outcome NotificationUseCase.Deliver returns, which keeps the same values.
 - `components/adapter/fan/api/rpc/notification`: adds List; Dismiss is removed.
 - `components/entity/user`: (Purpose) preferred language becomes required. "Absent preferred language is stored absent" in `components/entity/user/create` is removed.
-- `components/usecase/user/create`, `components/adapter/fan/api/rpc/user`: Create requires a preferred language.
+- `components/usecase/user/create`, `components/adapter/fan/api/rpc/user`: Create requires a preferred language, and every returned User carries one.
+- `components/infrastructure/fan/web/route/settings`: the language row shows the active locale only until the account has loaded, not for an account without a language.
 - `components/infrastructure/fan/web/global/page-header`: the bell with the unread count.
 - `components/infrastructure/fan/web/global/service-worker`: opening a push notification marks it read.
 - `stories/get-notified-of-new-concerts`: (Purpose) messages titled `[<artist>] …`; outcomes are no longer stored on the Notification.

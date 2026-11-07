@@ -28,3 +28,22 @@ Create SHALL name no User id. It SHALL take the provider user ID, email and name
 
 - **WHEN** the request carries no preferred language
 - **THEN** Create fails with InvalidArgument
+
+### Requirement: A returned User carries its profile fields
+
+Every user service call that returns a User SHALL return its id, email, provider user ID, name, preferred language, home as country code, level 1 and, when set, level 2, and the User's full name and phone number when set, which the lottery entry and checkout screens prefill. It SHALL NOT return the home's centroid or a verification level.
+
+#### Scenario: User with home and language
+
+- **WHEN** a call returns a User with preferred language `ja` and home `JP-13`
+- **THEN** the response carries preferred language `ja` and home country code `JP`, level 1 `JP-13`, without a centroid
+
+#### Scenario: User without optional values
+
+- **WHEN** a call returns a User with preferred language `en` and no home, no full name and no phone number
+- **THEN** the response carries preferred language `en` and none of the others
+
+#### Scenario: Returning fan
+
+- **WHEN** Get returns a User who gave the full name `山田 花子` and the phone number `+819012345678` in an earlier lottery entry or checkout
+- **THEN** the response carries that full name and phone number
