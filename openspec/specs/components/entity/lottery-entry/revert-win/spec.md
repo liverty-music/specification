@@ -1,17 +1,21 @@
 # components/entity/lottery-entry/revert-win Specification
 
 ## Purpose
-Makes a Won LotteryEntry Lost, and its Pending Order Void, when its card authorization can no longer be charged, so its tickets stay unallocated.
+Makes a Won LotteryEntry Lost, and its Pending Order Void, when its card authorization can no longer be charged or its concert was cancelled before the charge, so its tickets stay unallocated.
 
 ## Requirements
 
 ### Requirement: Revert only an uncharged win
 
-RevertWin SHALL make a Won entry whose Order is Pending Lost with the lost reason "card could not be charged", keeping its draw position, and make its Order Void, in one indivisible step. It SHALL change nothing and succeed when the entry is already Lost. It SHALL fail with FailedPrecondition and change nothing when the entry's Order is Paid or Refunded, or when the entry is Entered, and with NotFound when no entry has the id.
+RevertWin SHALL take a LotteryEntry and a lost reason, "card could not be charged" or "concert cancelled", and make a Won entry whose Order is Pending Lost with that lost reason, keeping its draw position, and make its Order Void, in one indivisible step. It SHALL change nothing and succeed when the entry is already Lost. It SHALL fail with FailedPrecondition and change nothing when the entry's Order is Paid or Refunded, or when the entry is Entered, and with NotFound when no entry has the id.
 
 #### Scenario: Win reverted
 - **WHEN** RevertWin is called for a Won entry with draw position 3 whose Order is Pending
 - **THEN** the entry is Lost with draw position 3 and the lost reason "card could not be charged", and its Order is Void
+
+#### Scenario: Win reverted for a cancelled concert
+- **WHEN** RevertWin is called with the lost reason "concert cancelled" for a Won entry whose Order is Pending
+- **THEN** the entry is Lost with the lost reason "concert cancelled" and its Order is Void
 
 #### Scenario: Already reverted
 - **WHEN** RevertWin is called again for the same entry
@@ -35,7 +39,7 @@ When RevertWin makes an entry Lost, it SHALL announce the entry, as it is after 
 
 #### Scenario: Win reverted and announced
 - **WHEN** RevertWin makes a Won entry Lost
-- **THEN** one lottery result is announced, carrying the entry Lost with the lost reason "card could not be charged"
+- **THEN** one lottery result is announced, carrying the entry Lost with the lost reason RevertWin was given
 
 #### Scenario: Already reverted announces nothing
 - **WHEN** RevertWin is called again for an entry it already made Lost

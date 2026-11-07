@@ -32,9 +32,10 @@ Issue SHALL take a LotteryEntry. It SHALL read the entry with LotteryEntry.Get, 
 - read the Order's TicketStock with TicketStock.Get and the entry's sale with TicketSale.Get;
 - resolve the stock's event's Organizer with Event.GetOrganizerID and read it with Organizer.Get for its platform fee rate.
 
-Any of these failures SHALL be returned unchanged, with nothing charged or changed. It SHALL then charge the Order's card authorization with CardAuthorization.Capture:
+Any of these failures SHALL be returned unchanged, with nothing charged or changed. It SHALL then charge the Order's card authorization with CardAuthorization.Capture, first checking with Event.IsEventPublished, before every attempt, that the stock's event is PUBLISHED:
+- When it is not, as for a 中止 (cancelled) concert, it SHALL read the card authorization with CardAuthorization.Get, since an earlier attempt that failed with Unavailable may have charged it; a failure of that read with Unavailable SHALL be tried again. When it is Captured, Issue SHALL go on as after a successful charge, so the Order is Paid and a cancellation refund reaches it. Otherwise it SHALL charge nothing, make the entry Lost and its Order Void with LotteryEntry.RevertWin and the lost reason "concert cancelled", and end without a Paid Order; the card authorization is then released and the fan told from that announcement. Issue SHALL never make the entry Lost while a charge of its Order stands, so no fan is charged without tickets.
 - When the capture fails with Unavailable, it SHALL try again.
-- When the capture fails with FailedPrecondition, meaning the card authorization can no longer be charged, it SHALL make the entry Lost and its Order Void with LotteryEntry.RevertWin, which announces the entry Lost with the lost reason "card could not be charged", and end without a Paid Order. No loser is promoted (no 繰上げ, promotion of a loser).
+- When the capture fails with FailedPrecondition, meaning the card authorization can no longer be charged, it SHALL make the entry Lost and its Order Void with LotteryEntry.RevertWin and the lost reason "card could not be charged", which announces the entry Lost with that reason, and end without a Paid Order. No loser is promoted (no 繰上げ, promotion of a loser).
 
 After the capture it SHALL read the captured payment with CardAuthorization.Get and, with Order.Issue:
 - make the Pending Order Paid, with the payment provider, provider payment ID and card facets of the captured payment, and a pay time of the time of issuance;
@@ -70,6 +71,18 @@ When Order.Issue fails with AlreadyExists it SHALL return the Order, Paid by the
 #### Scenario: Card authorization no longer chargeable
 - **WHEN** CardAuthorization.Capture fails with FailedPrecondition
 - **THEN** the entry is Lost with the lost reason "card could not be charged", its Order is Void, nothing is charged, and the entry is announced Lost
+
+#### Scenario: Lottery concert cancelled before the charge
+- **WHEN** a Won lottery entry is issued after its concert was cancelled
+- **THEN** nothing is charged, the entry is Lost with the lost reason "concert cancelled", its Order is Void and its card authorization is released
+
+#### Scenario: Concert cancelled while the payment provider is unavailable
+- **WHEN** CardAuthorization.Capture fails with Unavailable, charging nothing, and the concert is cancelled before the next attempt
+- **THEN** nothing is charged and the entry is Lost with the lost reason "concert cancelled"
+
+#### Scenario: Earlier attempt charged, then concert cancelled
+- **WHEN** CardAuthorization.Capture fails with Unavailable although the card was charged, and the concert is cancelled before the next attempt
+- **THEN** the card is not charged again, the Order becomes Paid with its Tickets, and the entry stays Won
 
 #### Scenario: Organizer unresolved
 - **WHEN** Event.GetOrganizerID fails with NotFound
