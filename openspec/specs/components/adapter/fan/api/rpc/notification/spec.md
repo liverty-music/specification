@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The fan-facing notification service boundary: who may mark a notification read or dismissed, and what the boundary itself decides before NotificationUseCase runs.
+The fan-facing notification service boundary: who may list their notifications and mark one read, and what the boundary itself decides before NotificationUseCase runs.
 
 ## Requirements
 

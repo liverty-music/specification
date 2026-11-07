@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Records a new Notification for a fan before anything is sent, assigning its id and queue time.
+Records a new Notification for a fan before anything is sent, assigning its id and create time.
 
 ## Requirements
 

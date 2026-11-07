@@ -2,33 +2,20 @@
 
 ## Purpose
 
-A Notification is the durable record of one message sent to one fan, such as new concerts of a followed artist, a ticket-sale reminder or a ticket sale announcement. It records what was sent, whether the push channel accepted it, and whether the fan has read or dismissed it.
+A Notification is the durable record of one message sent to one fan, such as new concerts of a followed artist, a ticket-sale reminder or a ticket sale announcement. It records what the message is about, so its title, body and link can be rendered whenever the fan sees it, and whether the fan has read it. The message is rendered from the current state of the records it is about; it is not stored.
 
 | attribute | meaning | constraint |
 |-----------|---------|------------|
 | id | the notification's identity, also carried inside the pushed message so the fan's response can be traced back to it | required; assigned when recorded |
 | user_id | the fan it is for | required |
-| type | what produced it | required; one of new_concerts, sales_reminder, ticket_sale_announcement, order_confirmation, lottery_loss, resale_entry_lapsed, resale_entry_lost, event_cancelled, order_refunded |
-| message | the pushed content: title, body, a tag (a later message with the same tag replaces an earlier one on the device) and data holding the in-app link and the notification id | required |
-| delivery_status | whether the push channel accepted the message | required; Queued, Delivered or Failed |
-| failure_reason | why delivery failed | present only when Failed |
-| queue_time | when the notification was recorded | required |
-| deliver_time | when the push channel accepted the message | present only when Delivered |
-| read_time | when the fan read it | optional; absent until read |
-| dismiss_time | when the fan dismissed it | optional; absent until dismissed |
-
-Delivered means that the push service accepted the message for at least one of the fan's browsers, not that a device displayed it. Read and dismissed are times, independent of the delivery status.
+| type | what produced it | required; one of new_concerts, sales_reminder, ticket_sale_announcement, lottery_win, resale_win, lottery_loss, resale_entry_lapsed, resale_entry_lost, concert_cancelled, order_refunded |
+| subject | the records the message is about: an artist and concerts, a TicketSale with a reminder stage and the fan's linked event, an Order, a LotteryEntry or a ResaleEntry, by type | required |
+| create_time | when the notification was recorded | required |
+| read_time | when the fan read it | optional; absent until read; an unread notification has none |
 
 ```mermaid
 erDiagram
   User ||--o{ Notification : "receives"
-```
-
-```mermaid
-stateDiagram-v2
-  [*] --> Queued
-  Queued --> Delivered
-  Queued --> Failed
 ```
 
 ## Requirements

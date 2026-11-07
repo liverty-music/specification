@@ -2,7 +2,7 @@
 
 ## Purpose
 
-NotificationUseCase.Deliver records a Notification for one fan, pushes its message to every browser the fan has registered, and records whether at least one browser's push service accepted it. It runs for each notification requested for one fan. The record is kept whatever the outcome, so every notification's delivery can be audited and sent again.
+NotificationUseCase.Deliver records a Notification for one fan, renders its message, pushes it to every browser the fan has registered, and returns whether at least one browser's push service accepted it. It runs for each notification requested for one fan. The record is kept whatever the outcome, so the fan finds every notification in the notification center.
 
 ## Requirements
 
