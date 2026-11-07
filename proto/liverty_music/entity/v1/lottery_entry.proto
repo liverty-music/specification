@@ -12,7 +12,8 @@ option go_package = "github.com/liverty-music/specification/gen/go/liverty_music
 
 // LotteryEntryState is the lifecycle of a LotteryEntry:
 //
-//   ENTERED --> WON | LOST
+//   ENTERED --> WON --> LOST
+//   ENTERED --> LOST
 //
 // An entry is created ENTERED. New values may be appended; existing values
 // must not be renumbered.
@@ -25,12 +26,16 @@ enum LotteryEntryState {
   // reserves the amount but no money is captured. An entry cannot be given up.
   LOTTERY_ENTRY_STATE_ENTERED = 1;
 
-  // Selected in the draw: the Order's card authorization was captured and the
-  // Order is made Paid from it.
+  // Selected in the draw. The Order stays PENDING until its card authorization
+  // is captured, then becomes PAID; a win that cannot be charged, or whose
+  // concert was cancelled before the charge, becomes LOST (see
+  // LotteryEntryLostReason).
   LOTTERY_ENTRY_STATE_WON = 2;
 
-  // Not selected in the draw: the card authorization was released and the
-  // Order is VOID. Kept in draw order among the TicketStock's losers.
+  // Ended without tickets, for the lost reason (LotteryEntryLostReason). The
+  // card authorization is released, nothing was charged and the Order is VOID.
+  // An entry that took part in the draw is kept in draw order among the
+  // TicketStock's losers.
   LOTTERY_ENTRY_STATE_LOST = 3;
 
   // Value 4 was WITHDRAWN, an entry the fan gave up before the draw; a fan can
@@ -53,6 +58,11 @@ enum LotteryEntryLostReason {
   // The entry was selected, but the Order's card authorization could not be
   // captured.
   LOTTERY_ENTRY_LOST_REASON_CARD_NOT_CHARGED = 2;
+
+  // The concert was cancelled (中止): while the entry was ENTERED, so it ended
+  // without being drawn, or after it was selected but before its card
+  // authorization was captured. Nothing was charged.
+  LOTTERY_ENTRY_LOST_REASON_CONCERT_CANCELLED = 3;
 }
 
 // LotteryEntry is how one fan's Order takes part in a LOTTERY TicketSale: a
@@ -93,8 +103,9 @@ message LotteryEntry {
   ];
 
   // The entry's position in its sale's random draw order for its TicketStock,
-  // unique within the sale and stock. Absent before the draw; set only by the
-  // draw. For a LOST entry it is the waiting-list order. Server-owned.
+  // unique within the sale and stock. Absent before the draw and on an entry
+  // that ended without being drawn; set only by the draw. For a LOST entry that
+  // has one, it is the waiting-list order. Server-owned.
   optional int64 draw_position = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // Why the entry is LOST. Set only when state is LOST. Server-owned.
