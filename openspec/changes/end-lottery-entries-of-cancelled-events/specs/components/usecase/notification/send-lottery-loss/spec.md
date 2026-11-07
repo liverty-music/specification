@@ -23,7 +23,7 @@ When reading or sending fails, SendLotteryLoss SHALL fail with that error and is
 - **WHEN** a fan's entry is announced Lost with the lost reason "card could not be charged"
 - **THEN** the fan receives one email saying the entry won but the card could not be charged, so the win was cancelled
 
-#### Scenario: Concert cancelled
+#### Scenario: Concert cancelled email
 - **WHEN** a fan's entry is announced Lost with the lost reason "concert cancelled", whether it was Entered or Won
 - **THEN** the fan receives one email saying the concert is cancelled, so the entry ended, and that nothing is charged; it does not say the entry was not drawn
 
@@ -43,6 +43,6 @@ After the email is sent, SendLotteryLoss SHALL start NotificationUseCase.Deliver
 - **WHEN** the user of the entry's Order has a registered browser
 - **THEN** a lottery_loss notification is pushed and opens the event's page
 
-#### Scenario: Concert cancelled
+#### Scenario: Concert cancelled push
 - **WHEN** the user of an entry announced Lost with the lost reason "concert cancelled" has a registered browser
 - **THEN** a lottery_loss notification saying the concert is cancelled and that nothing is charged is pushed

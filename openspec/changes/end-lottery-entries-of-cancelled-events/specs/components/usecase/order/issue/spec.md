@@ -47,8 +47,8 @@ When Order.Issue fails with AlreadyExists it SHALL return the Order, Paid by the
 - **WHEN** CardAuthorization.Capture fails with FailedPrecondition
 - **THEN** the entry is Lost with the lost reason "card could not be charged", its Order is Void, nothing is charged, and the entry is announced Lost
 
-#### Scenario: Concert cancelled before the charge
-- **WHEN** a Won entry is issued after its concert was cancelled
+#### Scenario: Lottery concert cancelled before the charge
+- **WHEN** a Won lottery entry is issued after its concert was cancelled
 - **THEN** nothing is charged, the entry is Lost with the lost reason "concert cancelled", its Order is Void and its card authorization is released
 
 #### Scenario: Concert cancelled while the payment provider is unavailable
