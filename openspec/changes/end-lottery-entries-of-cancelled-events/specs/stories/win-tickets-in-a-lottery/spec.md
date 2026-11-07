@@ -2,7 +2,7 @@
 
 ### Requirement: A cancelled concert charges no lottery fan
 
-When a member cancels (中止) an Event, the fans of its lottery SHALL NOT be charged for it and SHALL NOT receive Tickets for it. Each Entered entry of the Event SHALL become Lost, its card authorization SHALL be released and its fan SHALL be told by email and push that the concert is cancelled and that nothing is charged, without waiting for the sale's window to close. A Won entry not yet charged SHALL end the same way. No new entry for the Event SHALL be accepted. The other dates of the same sale SHALL carry on.
+When a member cancels (中止) an Event, the fans of its lottery SHALL NOT be charged for it and SHALL NOT receive Tickets for it. Each Entered entry of the Event SHALL become Lost, its card authorization SHALL be released and its fan SHALL be told by email and push that the concert is cancelled and that nothing is charged, without waiting for the sale's window to close. A Won entry whose charge is still to be attempted SHALL end the same way at that attempt. No new entry for the Event SHALL be accepted. The other dates of the same sale SHALL carry on.
 
 #### Scenario: Cancelled during the window
 - **WHEN** a member cancels an Event whose lottery window is open, with two fans Entered

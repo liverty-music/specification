@@ -17,7 +17,7 @@ Deliberately not changed, because they add little once the above is in place:
 
 - A Held Checkout is not released early. `Checkout.Start` and `OrderUseCase.Place` already refuse a cancelled concert, and the hold ends within 15 minutes.
 - `LotteryEntryUseCase.Draw` gets no check of its own. An entry the end above missed is stopped by the check in `Issue`.
-- `OrderUseCase.Issue` gets no check for a placed Checkout. `Place` checks immediately before it.
+- `OrderUseCase.Issue` gets no check for a placed Checkout. `Place` checks first, and the gap only opens when the payment provider is down at that moment and the concert is cancelled before the retried capture succeeds. The Order then becomes Paid, so `Refund all` gives the money back (design.md, Risks).
 - TicketSales of a cancelled Event are not ended. The sale may name other dates, and the refusals above work per Event.
 
 ## Capabilities
