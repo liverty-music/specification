@@ -1,7 +1,7 @@
 # components/usecase/notification/send-order-confirmation Specification
 
 ## Purpose
-NotificationUseCase.SendOrderConfirmation tells a user their purchase went through, whether from a checkout or a won lottery entry: an email with the purchase details and the Organizer's 特商法 disclosure, and, for a won lottery entry, a push notification that opens their tickets.
+NotificationUseCase.SendOrderConfirmation tells a user their purchase went through, whether from a checkout, a won lottery entry or a won resale entry: an email with the purchase details and the Organizer's 特商法 disclosure, and, for a won entry, a push notification that opens their tickets.
 
 ## Requirements
 
