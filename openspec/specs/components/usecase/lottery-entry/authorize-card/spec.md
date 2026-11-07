@@ -26,7 +26,7 @@ When the sale requires verification, AuthorizeCard SHALL require the fan to hold
 AuthorizeCard SHALL take a Lottery TicketSale, a TicketStock, the calling fan, a ticket count, a full name, a phone number and an optional ReferralCode. In this order it SHALL:
 - read the sale with TicketSale.Get and the stock with TicketStock.Get, failing with NotFound when either does not exist, and fail with FailedPrecondition when the sale's method is not Lottery or the sale does not name the stock's event;
 - fail with InvalidArgument when the count is below 1 or above the event's per-account limit, or the full name or phone number is missing or breaks the User's personal details rule;
-- fail with FailedPrecondition when the sale's window is not open at the current time;
+- fail with FailedPrecondition when the sale's window is not open at the current time, or when Event.IsEventPublished reports false for the stock's event, as for a 中止 (cancelled) concert;
 - apply the verification gate;
 - read what the fan holds for the event with Order.GetHeldForEvent and fail with FailedPrecondition when the application does not fit the event;
 - fail with FailedPrecondition when the fan already has an entry in the sale for the stock's event (LotteryEntry.ListByTicketSaleAndUser);
@@ -50,6 +50,10 @@ It SHALL store no Order and no LotteryEntry, and failures of the operations it c
 
 #### Scenario: Window closed
 - **WHEN** the fan authorizes their card at or after the sale's end time
+- **THEN** AuthorizeCard fails with FailedPrecondition and no card authorization is opened
+
+#### Scenario: Concert cancelled
+- **WHEN** the stock's event was cancelled while the sale's window is open
 - **THEN** AuthorizeCard fails with FailedPrecondition and no card authorization is opened
 
 #### Scenario: Stock of another event

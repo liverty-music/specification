@@ -11,7 +11,7 @@ A LotteryEntry is how one fan's Order takes part in a Lottery TicketSale: a requ
 | sale | the Lottery TicketSale entered | required; one entry per sale, event and user |
 | state | lifecycle | Entered, Won or Lost |
 | draw position | the entry's position in its sale's random draw order for its TicketStock | absent before the draw; set only by the draw |
-| lost reason | why the entry lost: not drawn, or the card could not be charged | present exactly when the state is Lost |
+| lost reason | why the entry lost: not drawn, the card could not be charged, or the concert was cancelled | present exactly when the state is Lost |
 | loss email send time | when the email telling the fan the entry lost was sent | absent until sent; set once |
 
 ```mermaid

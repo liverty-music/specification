@@ -23,11 +23,11 @@ Confirm SHALL take a card authorization and, when the fan calls it, the calling 
 - read the card authorization with CardAuthorization.Get and fail with PermissionDenied, without revealing whether it exists, when it does not exist, is not for a lottery entry, or is not the calling fan's; other failures are returned unchanged;
 - return the entry whose Order holds the card authorization, when one exists (LotteryEntry.GetByCardAuthorizationID), so a repeated Confirm changes nothing;
 - fail with FailedPrecondition when the card authorization is Pending, Captured or Released, releasing nothing;
-- read its TicketStock with TicketStock.Get and check that the card authorization confirms the purchase for the stock's SeatType amount for its ticket count;
+- read its TicketStock with TicketStock.Get, check with Event.IsEventPublished that the stock's event is PUBLISHED, and check that the card authorization confirms the purchase for the stock's SeatType amount for its ticket count;
 - read what the fan holds for the event with Order.GetHeldForEvent and check that the application still fits the event;
 - make the Entered entry and its Pending Order with LotteryEntry.Create from the card authorization's sale, TicketStock, user, ticket count and referral code, and return the entry; when an Order already holds the card authorization, Create returns its entry.
 
-A card authorization that an Order holds SHALL never be released by Confirm. Confirm SHALL release an Authorized card authorization with CardAuthorization.Release, and then fail, only when it rejects it: when its TicketStock no longer exists, when it does not confirm the purchase, when the application no longer fits the event, or when LotteryEntry.Create fails with AlreadyExists (another entry of the fan in the sale for the event) or FailedPrecondition (the application no longer fits the event, or the sale's end time passed). It fails with InvalidArgument when the amount differs, and with FailedPrecondition otherwise. When the release fails, Confirm SHALL return that failure instead, so the rejection is tried again. No money is captured at entry.
+A card authorization that an Order holds SHALL never be released by Confirm. Confirm SHALL release an Authorized card authorization with CardAuthorization.Release, and then fail, only when it rejects it: when its TicketStock no longer exists, when the stock's event is not PUBLISHED, as for a 中止 (cancelled) concert, when it does not confirm the purchase, when the application no longer fits the event, or when LotteryEntry.Create fails with AlreadyExists (another entry of the fan in the sale for the event) or FailedPrecondition (the application no longer fits the event, or the sale's end time passed). It fails with InvalidArgument when the amount differs, and with FailedPrecondition otherwise. When the release fails, Confirm SHALL return that failure instead, so the rejection is tried again. No money is captured at entry.
 
 #### Scenario: Fan confirms
 - **WHEN** a fan confirms their Authorized 16000 yen card authorization for 2 S席 tickets at 8000 yen
@@ -63,6 +63,10 @@ A card authorization that an Order holds SHALL never be released by Confirm. Con
 
 #### Scenario: After the end time
 - **WHEN** Confirm runs for an Authorized card authorization that no Order holds, after the sale's end time
+- **THEN** the card authorization is released, Confirm fails with FailedPrecondition and no entry is made
+
+#### Scenario: Concert cancelled during card authentication
+- **WHEN** the event was cancelled after the fan authorized their card, and Confirm runs for the Authorized card authorization that no Order holds
 - **THEN** the card authorization is released, Confirm fails with FailedPrecondition and no entry is made
 
 #### Scenario: TicketStock gone

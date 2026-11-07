@@ -45,6 +45,8 @@ The check runs at the start of the step that captures, as `order_resale_workflow
 
 `RevertWin` takes the lost reason as `ResaleEntry.RevertWin` does. `lotteryEntryRevertWinQuery` takes it as a parameter, and the existing caller passes "card could not be charged".
 
+Implemented as its own step body (`captureEntry`), so `issueCheckout`'s recorded `capture` step is unchanged. The lottery path's `capture` step now records an object instead of a bool, without `Flow.Patched`: the prod check of task 3.1 (2026-11-07) found no lottery entry at all, so no recorded run of that step exists to replay.
+
 ### D4. The new lost reason
 
 - proto: append `LOTTERY_ENTRY_LOST_REASON_CONCERT_CANCELLED = 3`. Additive, so `buf breaking` passes.
@@ -63,6 +65,8 @@ One branch of `lotteryLossContent` per reason replaces the `cardNotCharged` bool
 | Email lead | 公演が中止になったため、チケット抽選のお申し込みは終了しました。 | The concert was cancelled, so your ticket lottery entry ended. |
 | Push title | 公演が中止になりました | Concert cancelled |
 | Push body | `<title>`: 抽選のお申し込みは終了しました。請求はありません。 | `<title>`: your lottery entry ended. You were not charged. |
+
+The push follows the message table of add-notification-center, which renders every push as "[<artist>] <headline>" with a detail naming the date and venue, so the push row is: headline 公演が中止になりました / Concert Cancelled, detail 「{date}の{venue}公演が中止になったため、抽選のお申し込みは終了しました。請求はありません。」 / "The concert at {venue} on {date} was cancelled, so your lottery entry ended. You were not charged."
 
 The rest of the email (concert, entry, payment) is unchanged. The English subject follows `resale_entry_ended.go`. The push link stays `concertDeepLink`, the link the `event_cancelled` push already uses for a cancelled Event.
 
