@@ -1,24 +1,5 @@
 ## MODIFIED Requirements
 
-### Requirement: No record, no send
-
-Deliver SHALL take a fan, a notification type and a subject. It SHALL fail with InvalidArgument when the subject is invalid for the type. It SHALL read the records the subject names and the fan's follows, and render the Notification's message, before recording or sending anything. When a record the subject names no longer exists, Deliver SHALL record and send nothing and finish without an error. When another read fails, Deliver SHALL fail with that error and send nothing, so the request is processed again. It SHALL then record the Notification through Notification.Create before sending anything; when recording fails, Deliver SHALL fail with that error and send nothing, so the request is processed again.
-
-#### Scenario: Missing message
-
-- **WHEN** Deliver is called for type lottery_loss without a LotteryEntry
-- **THEN** it fails with InvalidArgument and nothing is recorded or sent
-
-#### Scenario: Subject deleted before delivery
-
-- **WHEN** the Order a concert_cancelled request names no longer exists
-- **THEN** nothing is recorded or sent and Deliver succeeds
-
-#### Scenario: Recording fails
-
-- **WHEN** the Notification cannot be recorded
-- **THEN** Deliver fails and no browser is sent the message
-
 ### Requirement: The pushed message carries the notification id
 
 Before sending, Deliver SHALL add the recorded Notification's id and its type to the rendered message's data, keeping the rest of the message unchanged, and send that same message to each of the fan's browsers. A sales_reminder message's data SHALL also name its TicketSale and reminder stage.
@@ -108,6 +89,26 @@ Deliver SHALL run once for each notification that NotificationUseCase.NotifyNewC
 
 ## ADDED Requirements
 
+### Requirement: Render and record before sending
+
+Deliver SHALL take a fan, a notification type and a subject. It SHALL fail with InvalidArgument when the subject is invalid for the type. It SHALL read the records the subject names and the fan's follows, and render the Notification's message, before recording or sending anything. When a record the subject names no longer exists, Deliver SHALL record and send nothing and finish without an error. When another read fails, Deliver SHALL fail with that error and send nothing, so the request is processed again. It SHALL then record the Notification through Notification.Create before sending anything; when recording fails, Deliver SHALL fail with that error and send nothing, so the request is processed again.
+
+#### Scenario: Subject missing a record
+
+- **WHEN** Deliver is called for type lottery_loss without a LotteryEntry
+- **THEN** it fails with InvalidArgument and nothing is recorded or sent
+
+#### Scenario: Subject deleted before delivery
+
+- **WHEN** the Order a concert_cancelled request names no longer exists
+- **THEN** nothing is recorded or sent and Deliver succeeds
+
+#### Scenario: Recording fails
+
+- **WHEN** the Notification cannot be recorded
+- **THEN** Deliver fails and no browser is sent the message
+
+
 ### Requirement: The outcome is returned and logged, not stored
 
 Deliver SHALL return the outcome, with its failure reason when Failed, to its caller, and SHALL log it for usage analytics with the Notification's id, fan and type. The outcome SHALL NOT be stored on the Notification, and a Failed outcome SHALL NOT fail Deliver.
@@ -123,6 +124,11 @@ Deliver SHALL return the outcome, with its failure reason when Failed, to its ca
 - **THEN** Deliver returns Delivered and logs the delivery for analytics
 
 ## REMOVED Requirements
+
+### Requirement: No record, no send
+**Reason**: Replaced by "Render and record before sending", which states the behavior without the scenarios of the removed behavior.
+**Migration**: None.
+
 
 ### Requirement: The outcome is recorded without failing the call
 **Reason**: A Notification no longer records its delivery outcome.

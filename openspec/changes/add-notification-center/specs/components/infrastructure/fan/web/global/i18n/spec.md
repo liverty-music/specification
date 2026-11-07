@@ -1,6 +1,6 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
-### Requirement: Unified Language Preference Resolution
+### Requirement: One observable language source for each sign-in state
 
 The guest (anonymous-period) language preference SHALL be exposed as
 observable application state, unified with the authenticated user's
@@ -25,12 +25,17 @@ without reading or writing any other source.
   language for a guest
 - **AND** callers SHALL NOT branch on authentication state to choose the source
 
-#### Scenario: NULL preferred_language surfaced and backfilled
+#### Scenario: Account language used as is
 - **WHEN** an authenticated user's account is restored
 - **THEN** the system SHALL surface the account's `User.preferredLanguage` as the effective language
 - **AND** the system SHALL NOT call `UserService.SetPreferredLanguage`
 
 ## REMOVED Requirements
+
+### Requirement: Unified Language Preference Resolution
+**Reason**: Replaced by "One observable language source for each sign-in state", which states the behavior without the scenarios of the removed behavior.
+**Migration**: None.
+
 
 ### Requirement: Backfill Preferred Language When Missing
 **Reason**: A User always has a preferred language; UserUseCase.Create requires one, and no stored User lacks it.
