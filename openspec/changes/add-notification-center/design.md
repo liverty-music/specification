@@ -77,7 +77,7 @@ The Service Worker's `notificationclick` appends `notification=<notification_id>
 
 ### Bell and center in the fan web app
 
-A small store service owns the last `List` response and the unread count; the bell (in the shell header's `au-slot` of `page-header`) and the `/notifications` route read it. It refreshes on start, on `visibilitychange` to visible, and after `MarkRead`. `/notifications` is a protected route, not a bottom-nav tab; its title comes from its route configuration like every other route.
+A small store service owns the last `List` response and the unread count; the bell (in the shell header's `au-slot` of `page-header`) and the `/notifications` route read it. It refreshes on start, on `visibilitychange` to visible, and after `MarkRead`. `/notifications` is a protected route, not a bottom-nav tab; its title comes from its route configuration like every other route. Its own `canLoad` sends a guest to `/welcome` with a notice: the app's auth hook lets guests through every route and hides account-only features at the point of use, so a guest who opened the URL would otherwise wait on a list that never loads.
 
 ### Preferred language required
 

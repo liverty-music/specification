@@ -54,7 +54,6 @@ Events that were removed (never fired, duplicated another event, or double-count
 | `notification.requested` | FE | notification | active | `source`, `trace_id?` | Notification opt-in funnel (paired) |
 | `notification.subscribed` | BE | notification | active | `device_type`, `trace_id?` | Notification opt-in funnel (paired) |
 | `notification.unsubscribed` | BE | notification | active | `device_type`, `trace_id?` | Push churn vs. browser cache-clear |
-| `notification.delivered` | BE | notification | active | `notification_id`, `type`, `event_id?`, `artist_id?`, `trace_id?` | Notification reach (incl. `type = "sales_reminder"` for sales-reminder pushes) |
 | `notification.opened` | FE | notification | active | `notification_id`, `event_id?`, `artist_id?`, `trace_id?` | Notification CTR |
 | `notification.dismissed` | FE | notification | active | `notification_id`, `trace_id?` | Notification fatigue |
 | `organizer.created` | BE | organizer | active | `organizer_id`, `trace_id?` | Organizer onboarding — a vetted Organizer was created and its Organization provisioned. Group/admin-actor event keyed on `organizer_id` (no fan `distinct_id`) |
@@ -72,7 +71,8 @@ The following events were removed from the collected set. Each is recorded here 
 | `user.deleted` | BE | **Phantom** — no emission call site ever existed. |
 | `artist.discovery.viewed` | FE | **Redundant** — fired 1:1 with `artist.follow.requested` (same `artist_id`, `source`, instant) and measured no impressions. |
 | `artist.follow.requested` | FE | **Redundant** — duplicated the backend `artist.follow.completed` for a single-tap action; the `source` attribution it carried is a one-off analysis, not a standing metric. |
-| `sales_reminder.delivered` | BE | **Double-count** — a successful sales-reminder push already emits `notification.delivered` with `type = "sales_reminder"`, so reach is recoverable from `notification.delivered`. Delivery-failure visibility (`no_subscription` / `failed`) moves to an operational log-based metric, not product analytics. |
+| `sales_reminder.delivered` | BE | **Double-count** — a sales-reminder push was already counted with the other notification deliveries (now the `notification_delivery` analytics log lines, by `notification_type`). Delivery-failure visibility (`no_subscription` / `failed`) moves to an operational log-based metric, not product analytics. |
+| `notification.delivered` | BE | **Wrong altitude** — a delivery outcome is an operational fact, not a fan action. Delivery rates come from the backend's `notification_delivery` analytics log lines, which the BigQuery view `mart_pipeline_health_daily` reads; the Notification no longer stores its outcome and `NOTIFICATION.delivered` is no longer announced (`add-notification-center`). |
 | `ticket.lottery.entry.accepted` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
 | `ticket.lottery.entry.rejected` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
 | `ticket.lottery.result.assigned` | BE | **Phantom** — never-wired name constant; ticket sales are deferred indefinitely. |
@@ -92,7 +92,7 @@ The following events were removed from the collected set. Each is recorded here 
 
 Initial PostHog dashboards built on top of this catalogue:
 
-1. **Live-music engagement funnel (primary)** — `artist.follow.completed` → `notification.delivered` → `notification.opened` → `concert.detail.viewed`. This is the one loop the current product can actually observe: register artists → deliver notifications → engagement. The funnel terminates at `concert.detail.viewed`, the last observable step; the former downstream steps (`ticket.lottery.entry.accepted`, `ticket.purchase.completed`, `entry.zk_proof.verified`) were removed or are dormant until ticket sales and venue entry ship.
+1. **Live-music engagement funnel (primary)** — `artist.follow.completed` → `notification.opened` → `concert.detail.viewed`. This is the one loop the current product can actually observe: register artists → open notifications → engagement. How many notifications reached a browser is read from the BigQuery view `mart_pipeline_health_daily`, not from PostHog. The funnel terminates at `concert.detail.viewed`, the last observable step; the former downstream steps (`ticket.lottery.entry.accepted`, `ticket.purchase.completed`, `entry.zk_proof.verified`) were removed or are dormant until ticket sales and venue entry ship.
 2. **D7 / D30 retention by signup month** — cohorted on `user.created.signup_month`. Language segmentation uses the `preferred_language` **person property** (added in the follow-up person-property change), not an event.
 3. **Per-domain event volume** — count of events by domain prefix, watched against the PostHog free-tier 1M events/month ceiling.
 
