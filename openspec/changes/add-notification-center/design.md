@@ -48,6 +48,7 @@ Alternative rejected: one nullable foreign-key column per record kind. Eight col
 - `NotificationType`: rename `EVENT_CANCELLED = 8` to `CONCERT_CANCELLED`, keeping the number; add `LOTTERY_WIN = 10` and `RESALE_WIN = 11`; reserve `4` and the name `NOTIFICATION_TYPE_ORDER_CONFIRMATION`.
 - `rpc.notification.v1.NotificationService`: add `List(ListRequest) returns (ListResponse)` (`ListRequest {}`; `ListResponse { repeated entity.v1.Notification notifications = 1; }`); remove `Dismiss` and its messages. Names follow `rpc-design`: `List` returns every resource the caller can see.
 - `rpc.user.v1.CreateRequest.preferred_language`: drop `optional`, mark `required`, keep the pattern.
+- `entity.v1.User.preferred_language`: drop `optional`, mark `required`, keep the pattern. It is a second release (task 1.4), found while implementing; it lands before the backend migration makes the column `NOT NULL`.
 
 The PR takes the `buf skip breaking` label.
 
@@ -95,4 +96,5 @@ A small store service owns the last `List` response and the unread count; the be
 1. Release the proto (specification PR, GitHub Release, BSR generation).
 2. Backend: one Atlas migration that deletes every `notifications` row, drops `payload`, `delivery_status`, `failure_reason`, `delivered_at`, `dismissed_at` and their constraints, adds `subject JSONB NOT NULL`, renames `queued_at` to `created_at` (and its index), sets `users.preferred_language NOT NULL`, deletes `ticket_sale_reminders` rows of stage `RESULT_DAY` and narrows that table's stage check. Before deploying, list pending `deliver-notification` and `deliver-reminder` workflows read-only (cloud-provisioning runbook `workflow-needs-admin.md`); deploy when none is pending.
 3. Frontend after the backend is live (it calls `List`).
+4. cloud-provisioning after the backend is live: remove the JetStream durable `track-notification-delivered` and its KEDA trigger, which read the `NOTIFICATION.delivered` announcement the backend no longer makes. The trigger goes with or before the durable, because a trigger naming a missing durable leaves the HPA metric `<unknown>`.
 Rollback: revert the deploys; the deleted notification rows are test data and are not restored.
