@@ -158,7 +158,7 @@ The token layer SHALL expose Material 3 shape **roles** at their Material 3 valu
 
 ### Requirement: State and motion tokens are shared with the organizer console
 
-The state-layer opacities, easing curves, durations, type styles, elevation levels, focus ring size, minimum touch target and breakpoints SHALL be defined once and used by both the fan app and the organizer console, so a change to one of them applies to both. Colors, shapes and typefaces are not shared: each app keeps its own values under the same role names.
+The state-layer opacities, easing curves, durations, type styles, elevation levels, focus ring size, minimum touch target and breakpoints SHALL be defined once and used by both the fan app and the organizer console, so a change to one of them applies to both. The plain typeface, Noto Sans JP, is also shared. Colors, shapes and the brand typeface are not shared: each app keeps its own values under the same role names.
 
 #### Scenario: One edit applies to both apps
 

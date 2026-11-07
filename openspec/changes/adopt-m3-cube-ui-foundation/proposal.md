@@ -33,11 +33,12 @@ Stylelint 18, released on 2026-11-03, has core rules that can enforce most of th
 - Add the 15 baseline and 15 emphasized type styles at fixed `rem` sizes; the fluid type scale goes away. Text gets its style from a utility class (`md-typescale-title-large`).
 - Fix `--space-*` at 4, 8, 12, 16, 24, 32 and 48 px in both apps, plus the fan app's 64 and 96 px.
 - Add elevation levels, one global focus ring (3 px, offset 2 px), a 48 px minimum touch target, the Material 3 breakpoints and a higher-contrast colour set under `prefers-contrast: more`.
-- Share the type scale, elevation, focus ring size, touch target and breakpoints through `shared/styles/`, as state and motion already are. Colour, shape and typefaces stay per app.
+- Share the type scale, elevation, focus ring size, touch target and breakpoints through `shared/styles/`, as state and motion already are. Colour, shape and the brand typeface stay per app.
 
-**Fan app typefaces**
+**Typefaces**
 
-- Righteous for display and headline styles, and the variable Noto Sans JP for everything else, so Japanese text looks the same on every device. Poppins and Outfit are removed. The organizer console keeps the Japanese system fonts its spec requires.
+- The variable Noto Sans JP becomes the text typeface in both apps, so Japanese text looks the same on every device. Poppins and Outfit are removed from the fan app, and the organizer console stops relying on system fonts.
+- The fan app uses Righteous for display and headline styles. The organizer console is a calm work tool and has no brand typeface: every style there uses Noto Sans JP.
 
 **Fan app shared components and sizes**
 
@@ -54,7 +55,7 @@ None. CSS architecture rules stay in `stylelint.config.js` and its tests, which 
 ### Modified Capabilities
 
 - `components/infrastructure/fan/web/global/design-tokens`: type scale, typefaces, fixed spacing, elevation, focus ring, touch target, breakpoints, higher-contrast colours; what is shared with the organizer console.
-- `components/infrastructure/organizer/web/global/design-tokens`: the same shared tokens; its type scale gains the remaining styles in `rem`.
+- `components/infrastructure/organizer/web/global/design-tokens`: the same shared tokens; its type scale gains the remaining styles in `rem`, and its typeface becomes Noto Sans JP.
 - `components/infrastructure/fan/web/global/ui-primitives`: named icon sizes and the shared list item.
 - `components/infrastructure/fan/web/global/bottom-sheet`: the sheet heading and Material 3 container values; token names replaced by roles.
 - `components/infrastructure/fan/web/global/bottom-nav-bar`: 64 px height.
@@ -63,7 +64,7 @@ None. CSS architecture rules stay in `stylelint.config.js` and its tests, which 
 
 ## Impact
 
-- **frontend only:** `stylelint.config.js`, `stylelint-plugin-cube-css/`, `src/styles/`, `shared/styles/`, `organizer/styles/`, `index.html` (fonts), and nearly every component stylesheet and many templates in the fan app and the organizer console. Admin and reception are out of scope, but they run under the upgraded stylelint.
+- **frontend only:** `stylelint.config.js`, `stylelint-plugin-cube-css/`, `src/styles/`, `shared/styles/`, `organizer/styles/`, `index.html` and `organizer.html` (fonts), `organizer/guide/guide.html`, and nearly every component stylesheet and many templates in the fan app and the organizer console. Admin and reception are out of scope, but they run under the upgraded stylelint.
 - **Dependencies:** `stylelint` 17 → 18 and `stylelint-config-standard` 40 → 41; `stylelint-use-logical` removed.
 - **Visible change on every fan screen:** text sizes, spacing, touch targets, navigation bar height. Visual baselines are regenerated as screens move. The organizer console changes little: its type and spacing values already match.
 - **Loading:** Noto Sans JP is large, though Google Fonts serves it in subsets by Unicode range. The cost is measured against production before release.

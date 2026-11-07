@@ -74,7 +74,7 @@ A block that needs a margin between its children sets `--flow-space` or `gap` in
 | Family | Name | Lives in |
 |---|---|---|
 | Type style | `--md-sys-typescale-<role>-<size>` (a `font` value), `-tracking`, and `-emphasized` variants | shared |
-| Typeface | `--md-ref-typeface-brand`, `--md-ref-typeface-plain` | per app |
+| Typeface | `--md-ref-typeface-plain`, `--md-ref-typeface-brand` | plain shared; brand per app |
 | Colour role | `--md-sys-color-<role>` | per app |
 | Shape | `--md-sys-shape-corner-<step>` | per app |
 | Elevation | `--md-sys-elevation-level<n>` | shared; shadow colour per app |
@@ -109,11 +109,13 @@ Default mapping for migration, adjusted by what the text is, not only its curren
 
 ### Typefaces
 
-The fan app loads `Righteous` and `Noto Sans JP:wght@100..900` from Google Fonts (`display=swap`). `--md-ref-typeface-plain` is `"Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif`; `--md-ref-typeface-brand` prepends `Righteous`. `font-synthesis-weight: none` stops the browser faking bold on Righteous, so an emphasized headline stays 400 in Latin letters and becomes heavier in Japanese.
+Both apps load `Noto Sans JP:wght@100..900` from Google Fonts (`display=swap`), and the fan app also loads `Righteous`. `--md-ref-typeface-plain` is `"Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif`. In the fan app `--md-ref-typeface-brand` prepends `Righteous`; in the organizer console it equals `plain`. `font-synthesis-weight: none` stops the browser faking bold on Righteous, so an emphasized headline stays 400 in Latin letters and becomes heavier in Japanese.
 
 `button.css`'s Outfit becomes the plain typeface, since Righteous's missing bold was the reason for it.
 
-The organizer console keeps its spec's system font stack in `--md-ref-typeface-plain`, and `brand` points to the same stack. It is a work tool with no brand font today, and the agreed typeface decision concerned the fan app's three families.
+The organizer console moves to Noto Sans JP because its earlier system-font choice records no reason (`redesign-organizer-console` only names the stack), and today it looks different on Windows and on a Mac, the problem the fan app is fixing. It takes no brand typeface: its spec describes a calm work tool and limits brand colour to the primary action, focus and the logo, and Righteous would set Latin letters in concert and artist names in a decorative face. `organizer.html` already allows Google Fonts in its CSP. Noto Sans JP keeps the tabular figures the console requires: measured at 14 px, `1111` and `0000` are both 32 px wide, with and without `tabular-nums`. `organizer/guide/guide.html` copies the console's font stack and changes with it.
+
+This also records why type is fixed rather than fluid: `refactor-shared-ui-design-system` chose fluid scales as "more capable", and `redesign-organizer-console` amended that for the console because members compare numbers across windows and Material 3 adapts layout, not text size, across window classes. That reasoning holds for the fan app too, where body sizes differ by under 0.5 px across phone widths.
 
 *Alternatives:* keeping Poppins for Latin text with Noto Sans JP behind it would mean two text faces in one line, for no agreed benefit.
 
@@ -149,7 +151,7 @@ A control whose visible shape must stay small (the 36 px compact button, the hyp
 
 - **Every fan screen changes at once in small ways** → groups land separately, each with regenerated baselines and Playwright runs of the screens it touches. There are no real users yet (root `CLAUDE.md`), so visible churn costs little.
 - **Rebasing concurrent changes across renames** → mechanical commits are scripted, so a conflicting branch can re-run the script instead of resolving by hand. The scripts are kept in the PR description.
-- **Noto Sans JP adds transfer and a visible font swap** → measure LCP and transferred font bytes on `/dashboard` in production before and after. If LCP worsens by more than 200 ms, fall back to loading only the weights in use (400, 500, 600).
+- **Noto Sans JP adds transfer and a visible font swap** → measure LCP and transferred font bytes on `/dashboard` and the organizer concerts screen in production before and after. If LCP worsens by more than 200 ms, fall back to loading only the weights in use (400, 500, 600).
 - **Text set in a new typeface wraps differently** → a line of Noto Sans JP is not the same width as the system font, so fixed-height rows may overflow. The Storybook runs at 320 px catch this for storied components.
 - **Fixed 14 px body text replaces fluid sizes** → a few places get slightly smaller or larger. The contrast and layout checks run on every story.
 - **Splitting 40 stylesheets may stall on large routes** (`discovery-route.css` at 461 lines) → the suppression list makes the remainder visible. If a block cannot reach 100 lines without a component that means nothing on its own, it gets a described disable, and the reason is reviewed in the PR.

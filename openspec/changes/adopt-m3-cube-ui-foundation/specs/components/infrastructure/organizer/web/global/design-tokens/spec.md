@@ -92,11 +92,16 @@ When the operating system asks for more contrast, body text SHALL have a contras
 - **WHEN** the same screen is opened on a device with the default contrast setting
 - **THEN** the colours are the regular ones
 
+## RENAMED Requirements
+
+- FROM: `### Requirement: A fixed type scale with Japanese system fonts`
+- TO: `### Requirement: A fixed type scale in Noto Sans JP`
+
 ## MODIFIED Requirements
 
-### Requirement: A fixed type scale with Japanese system fonts
+### Requirement: A fixed type scale in Noto Sans JP
 
-Text SHALL use the fixed Material 3 type styles shared with the fan app, which do not grow or shrink with the window: body-medium (14 px on a 20 px line) by default, label-large for buttons and tabs, and headline-small (24 px on a 32 px line) for page titles. Sizes are stated at the browser's default text size of 16 px and SHALL scale with the text size the user sets in the browser. Every type style SHALL use the same typeface. Text SHALL use the device's Japanese system font (Hiragino Sans, Noto Sans JP or Yu Gothic UI, falling back to the system UI font). Numbers in counts, prices, dates and times SHALL use tabular (equal-width) figures so columns of numbers line up.
+Text SHALL use the fixed Material 3 type styles shared with the fan app, which do not grow or shrink with the window: body-medium (14 px on a 20 px line) by default, label-large for buttons and tabs, and headline-small (24 px on a 32 px line) for page titles. Sizes are stated at the browser's default text size of 16 px and SHALL scale with the text size the user sets in the browser. Every type style SHALL use Noto Sans JP, the fan app's text typeface, so that the console looks the same on every device. If the font cannot be loaded, text SHALL show in the device's Japanese system font (Hiragino Sans or Yu Gothic UI, falling back to the system UI font). Numbers in counts, prices, dates and times SHALL use tabular (equal-width) figures so columns of numbers line up.
 
 #### Scenario: Same size on PC and phone
 
@@ -107,3 +112,13 @@ Text SHALL use the fixed Material 3 type styles shared with the fan app, which d
 
 - **WHEN** a sales table shows 412 entries in one row and 1,380 requested tickets in another
 - **THEN** the digits of both numbers have equal widths and line up at the right edge
+
+#### Scenario: Same typeface on Windows and on a Mac
+
+- **WHEN** the same console screen is opened on a Windows PC and on a Mac with network access
+- **THEN** its Japanese and Latin text is drawn in Noto Sans JP on both, including page titles
+
+#### Scenario: Font cannot be loaded
+
+- **WHEN** a console screen opens and the font cannot be loaded
+- **THEN** text shows in the device's Japanese system font and the layout is usable
