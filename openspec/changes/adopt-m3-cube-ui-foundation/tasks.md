@@ -13,8 +13,8 @@ Each numbered group is one frontend PR citing this change, released and checked 
 
 ## 2. Shared tokens beside the old ones (no visible change)
 
-- [ ] 2.1 Add to `shared/styles/`: type styles and tracking, elevation levels, focus ring size, target size, and the `.md-typescale-*` utilities with the one `cube/utility-single-property` allowance; import them in `src/styles/main.css`, `organizer/styles/main.css` and `organizer/styles/shared.css`. Verify with a `Foundations/*` story covering "Title at any window width", "Emphasized style is one step heavier" and "Larger browser text size" in both apps, and "A floating surface at a named level". Annotate `@spec` under both design-tokens capabilities.
-- [ ] 2.2 Add `--md-sys-color-*`, `--md-sys-shape-corner-*` (at the Material 3 values), `--md-ref-typeface-*` and spring tokens per app, aliasing today's tokens where colours are unchanged; verify `npm run lint:css` and that every existing story's pixels are unchanged.
+- [ ] 2.1 Add to `shared/styles/`: type styles and tracking, the plain typeface, elevation levels, focus ring size, target size, and the `.md-typescale-*` utilities with the one `cube/utility-single-property` allowance; import them in `src/styles/main.css`, `organizer/styles/main.css` and `organizer/styles/shared.css`. Verify with a `Foundations/*` story covering "Title at any window width", "Emphasized style is one step heavier" and "Larger browser text size" in both apps, and "A floating surface at a named level". Annotate `@spec` under both design-tokens capabilities.
+- [ ] 2.2 Add `--md-sys-color-*`, `--md-sys-shape-corner-*` (at the Material 3 values), `--md-ref-typeface-brand` and spring tokens per app, aliasing today's tokens where colours are unchanged; verify `npm run lint:css` and that every existing story's pixels are unchanged.
 
 ## 3. Mechanical renames (no visible change)
 
