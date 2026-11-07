@@ -41,7 +41,7 @@ The check runs at the start of the step that captures, as `order_resale_workflow
 - A step retried while the payment provider is unreachable checks again before each attempt, so a cancellation during an outage is honoured.
 - A resumed run does not check again after a capture that already happened, so a charged win is never reverted.
 
-`capture` is shared with `issueCheckout`, which keeps no such check. `issueEntry` gets its own step body, or `capture` takes a check function; the implementer chooses whichever keeps `issueCheckout`'s behaviour unchanged. On "not published" the step returns that result without calling the provider, and a following step calls `RevertWin` with the lost reason "concert cancelled".
+`capture` is shared with `issueCheckout`, which keeps no such check. `issueEntry` gets its own step body, or `capture` takes a check function; the implementer chooses whichever keeps `issueCheckout`'s behaviour unchanged. An earlier attempt that failed with Unavailable may have charged the card (`components/entity/card-authorization/capture`), so on "not published" the step reads the card authorization first, as `resaleCaptureOfCancelledConcert` does. A Captured one continues as charged, and the Order becomes Paid, so `Refund all` refunds it. Otherwise the step returns "not published", and a following step calls `RevertWin` with the lost reason "concert cancelled".
 
 `RevertWin` takes the lost reason as `ResaleEntry.RevertWin` does. `lotteryEntryRevertWinQuery` takes it as a parameter, and the existing caller passes "card could not be charged".
 

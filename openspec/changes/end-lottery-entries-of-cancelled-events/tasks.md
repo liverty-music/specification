@@ -21,7 +21,7 @@
 
 - [ ] 5.1 Implement `LotteryEntryUseCase.EndForCancelledEvent`; verify unit tests Concert cancelled during the window, Announcement delivered twice and Store unavailable pass with the operation mocked
 - [ ] 5.2 Make `AuthorizeCard` and `Confirm` read `Event.IsEventPublished`, `Confirm` refusing through its existing release path; verify unit tests "Concert cancelled" of authorize-card and "Concert cancelled during card authentication" of confirm pass, and that the existing scenarios of both specs still pass
-- [ ] 5.3 Add the check to `issueEntry`'s capture step (design D3), leaving `issueCheckout` unchanged; verify unit tests Lottery concert cancelled before the charge, Concert cancelled while the payment provider is unavailable and Card authorization no longer chargeable pass, and that the Issue workflow tests of a placed Checkout are unchanged
+- [ ] 5.3 Add the check to `issueEntry`'s capture step (design D3), leaving `issueCheckout` unchanged; verify unit tests Lottery concert cancelled before the charge, Concert cancelled while the payment provider is unavailable, Earlier attempt charged, then concert cancelled and Card authorization no longer chargeable pass, and that the Issue workflow tests of a placed Checkout are unchanged
 - [ ] 5.4 Confirm `ReleaseCardAuthorization` and `StartDrawnEntryWorkflow` handle a Lost entry of the new reason with no change; verify the unit test "Entry of a cancelled concert released" passes
 - [ ] 5.5 Add the wording of design D5 to `lottery_loss.go`; verify unit tests Concert cancelled email and Concert cancelled push of send-lottery-loss pass in ja and en, and that "Entry not drawn" and "Card could not be charged" are unchanged
 
