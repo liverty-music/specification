@@ -30,7 +30,7 @@ Tapping an item SHALL mark its Notification read (NotificationUseCase.MarkRead) 
 
 ### Requirement: Only a signed-in fan can open the center
 
-The center SHALL be a protected route: a guest who opens `/notifications` SHALL be sent to the welcome page with a notice, as the app shell's auth guard does for every protected route.
+Only a signed-in fan SHALL see the center: a guest who opens `/notifications` SHALL be sent to the welcome page with a notice, and the center SHALL NOT be shown.
 
 #### Scenario: Guest
 - **WHEN** a guest opens `/notifications`

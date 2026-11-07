@@ -36,7 +36,8 @@ A fan cannot see a notification again once the operating system drops it, and ma
 - `components/usecase/notification/notify-new-concerts`: the message wording and the subject it records.
 - `components/usecase/notification/send-order-confirmation`: pushes only for a won lottery or resale entry, as `lottery_win` or `resale_win`.
 - `components/usecase/notification/send-event-cancelled`: the push type becomes `concert_cancelled`, with the Order as its subject.
-- `components/usecase/notification/send-lottery-loss`, `send-resale-entry-ended`, `send-order-refunded`: unchanged; they start Deliver with their type, named after the entry or Order, and the wording they describe is now rendered by the Notification entity.
+- `components/usecase/notification/send-resale-entry-ended`: the push is the message the Notification entity renders, so it no longer says that nothing was charged for a lapse, a loss at the last draw or a cancelled concert; the email still does.
+- `components/usecase/notification/send-lottery-loss`, `send-order-refunded`: unchanged; they start Deliver with their type, named after the entry or Order, and the wording they describe is now rendered by the Notification entity.
 - `components/usecase/ticket-sale/announce-discovered-sale`, `components/usecase/ticket-sale/scan-due-reminders`: the wording, and no `RESULT_DAY` reminder.
 - `components/entity/ticket-sale-reminder`: (Purpose) the stage set loses `RESULT_DAY`; its requirements follow.
 - `components/entity/ticket-sale/list-with-pending-milestones`: a sale is no longer kept listed for its result date.
@@ -55,7 +56,8 @@ A fan cannot see a notification again once the operating system drops it, and ma
 
 ## Impact
 
-- **specification**: `proto/liverty_music/entity/v1/notification.proto` (`NotificationType`: `EVENT_CANCELLED` is renamed `CONCERT_CANCELLED`, `LOTTERY_WIN` and `RESALE_WIN` are added, `ORDER_CONFIRMATION` is reserved; `Notification` loses `delivery_status`, `failure_reason`, `deliver_time` and `dismiss_time`, `queue_time` becomes `create_time`, and `message` carries the message rendered when it is listed), `rpc/notification/v1/notification_service.proto` (`List` added, `Dismiss` removed), `rpc/user/v1/user_service.proto` (`CreateRequest.preferred_language` required). Released before the downstream work, with the `buf skip breaking` label.
+- **specification**: `proto/liverty_music/entity/v1/notification.proto` (`NotificationType`: `EVENT_CANCELLED` is renamed `CONCERT_CANCELLED`, `LOTTERY_WIN` and `RESALE_WIN` are added, `ORDER_CONFIRMATION` is reserved; `Notification` loses `delivery_status`, `failure_reason`, `deliver_time` and `dismiss_time`, `queue_time` becomes `create_time`, and `message` carries the message rendered when it is listed), `rpc/notification/v1/notification_service.proto` (`List` added, `Dismiss` removed), `rpc/user/v1/user_service.proto` (`CreateRequest.preferred_language` required), and `entity.v1.User.preferred_language` required. Released before the downstream work, with the `buf skip breaking` label.
 - **backend**: the `notifications` and `users` tables (migration), `ticket_sale_reminders` rows of `RESULT_DAY` (deleted), the Notification entity and repository, NotificationUseCase, the deliver workflow input, every push sender, the ticket-sale reminder scan, the analytics consumer, the notification and user handlers.
+- **cloud-provisioning**: the JetStream durable `track-notification-delivered` and its KEDA trigger, which read the removed `NOTIFICATION.delivered`.
 - **frontend**: a new `/notifications` route, the bell in the shell header, the Service Worker's notificationclick, the removal of the language backfill.
 - **Data**: production has 101 notifications and 9 users (none without a language); existing notification rows are deleted by the migration.
