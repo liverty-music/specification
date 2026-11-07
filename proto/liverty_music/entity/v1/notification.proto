@@ -14,7 +14,7 @@ option go_package = "github.com/liverty-music/specification/gen/go/liverty_music
 // The identifier is minted by the backend when the notification is first
 // persisted and is also propagated into the dispatched push payload
 // (data.notification_id), so clients can reference the same notification when
-// marking it read or dismissed.
+// marking it read.
 message NotificationId {
   // A UUID string identifying the notification record.
   string value = 1 [(buf.validate.field).string.uuid = true];
@@ -23,6 +23,9 @@ message NotificationId {
 // NotificationType is what produced a Notification. New values may be
 // appended; existing values must not be renumbered.
 enum NotificationType {
+  reserved 4;
+  reserved "NOTIFICATION_TYPE_ORDER_CONFIRMATION";
+
   // Default value; never stored.
   NOTIFICATION_TYPE_UNSPECIFIED = 0;
   // New concerts of an artist the fan follows.
@@ -31,8 +34,6 @@ enum NotificationType {
   NOTIFICATION_TYPE_SALES_REMINDER = 2;
   // The announcement of a discovered ticket sale.
   NOTIFICATION_TYPE_TICKET_SALE_ANNOUNCEMENT = 3;
-  // The confirmation of a paid Order.
-  NOTIFICATION_TYPE_ORDER_CONFIRMATION = 4;
   // The result of a lottery the fan lost.
   NOTIFICATION_TYPE_LOTTERY_LOSS = 5;
   // An official resale application whose card authorization expired before a
@@ -45,30 +46,17 @@ enum NotificationType {
   NOTIFICATION_TYPE_RESALE_ENTRY_LOST = 7;
   // The concert of a Paid Order was cancelled (中止) and the tickets the fan
   // still holds are refunded.
-  NOTIFICATION_TYPE_EVENT_CANCELLED = 8;
+  NOTIFICATION_TYPE_CONCERT_CANCELLED = 8;
   // An Order was refunded for a cancelled concert, with the amount.
   NOTIFICATION_TYPE_ORDER_REFUNDED = 9;
+  // A lottery the fan won, with its paid Order.
+  NOTIFICATION_TYPE_LOTTERY_WIN = 10;
+  // An official resale application the fan won, with its paid Order.
+  NOTIFICATION_TYPE_RESALE_WIN = 11;
 }
 
-// NotificationDeliveryStatus is whether the push channel accepted a
-// Notification's message:
-//
-//   QUEUED --> DELIVERED | FAILED
-//
-// New values may be appended; existing values must not be renumbered.
-enum NotificationDeliveryStatus {
-  // Default value; never stored.
-  NOTIFICATION_DELIVERY_STATUS_UNSPECIFIED = 0;
-  // Recorded and not yet sent.
-  NOTIFICATION_DELIVERY_STATUS_QUEUED = 1;
-  // The push service accepted the message for at least one of the fan's
-  // browsers; not that a device displayed it.
-  NOTIFICATION_DELIVERY_STATUS_DELIVERED = 2;
-  // The message could not be delivered.
-  NOTIFICATION_DELIVERY_STATUS_FAILED = 3;
-}
-
-// NotificationMessage is the content pushed for a Notification.
+// NotificationMessage is the content of a Notification, rendered by the server
+// in the fan's language each time it is pushed or listed.
 message NotificationMessage {
   // The title shown on the device.
   string title = 1 [(buf.validate.field).string.min_len = 1];
@@ -81,11 +69,13 @@ message NotificationMessage {
   map<string, string> data = 4;
 }
 
-// Notification is the durable record of one message sent to one fan: what
-// was sent, whether the push channel accepted it, and whether the fan has read
-// or dismissed it. Read and dismissed are times, independent of the delivery
-// status.
+// Notification is the durable record of one message sent to one fan: what it
+// is about and whether the fan has read it. It exists whether or not the push
+// reached the fan.
 message Notification {
+  reserved 5, 6, 8, 10;
+  reserved "delivery_status", "failure_reason", "deliver_time", "dismiss_time";
+
   // The notification's identity, also carried inside the pushed message.
   NotificationId id = 1 [
     (google.api.field_behavior) = OUTPUT_ONLY,
@@ -105,34 +95,18 @@ message Notification {
     (buf.validate.field).enum.defined_only = true
   ];
 
-  // The pushed content.
+  // The content, rendered when the Notification is read from the server.
   NotificationMessage message = 4 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
 
-  // Whether the push channel accepted the message.
-  NotificationDeliveryStatus delivery_status = 5 [
-    (google.api.field_behavior) = OUTPUT_ONLY,
-    (buf.validate.field).required = true,
-    (buf.validate.field).enum.defined_only = true
-  ];
-
-  // Why delivery failed. Set only when FAILED.
-  optional string failure_reason = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
-
   // When the Notification was recorded.
-  google.protobuf.Timestamp queue_time = 7 [
+  google.protobuf.Timestamp create_time = 7 [
     (google.api.field_behavior) = OUTPUT_ONLY,
     (buf.validate.field).required = true
   ];
 
-  // When the push channel accepted the message. Set only when DELIVERED.
-  google.protobuf.Timestamp deliver_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
-
   // When the fan read it. Absent until read.
   google.protobuf.Timestamp read_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
-
-  // When the fan dismissed it. Absent until dismissed.
-  google.protobuf.Timestamp dismiss_time = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
