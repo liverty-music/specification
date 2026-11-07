@@ -1,6 +1,6 @@
 ## 1. Proto (specification)
 
-- [ ] 1.1 In `proto/liverty_music/entity/v1/notification.proto`, add `NOTIFICATION_TYPE_CONCERT_CANCELLED = 8`, `NOTIFICATION_TYPE_ORDER_REFUNDED = 9`, `NOTIFICATION_TYPE_LOTTERY_WIN = 10`, reserve 4 and `NOTIFICATION_TYPE_ORDER_CONFIRMATION`; rename `Notification.queue_time` to `create_time`; remove and reserve `delivery_status` (5), `failure_reason` (6), `deliver_time` (8), `dismiss_time` (10); remove `NotificationDeliveryStatus` (design "Proto"); verify `buf lint`, `buf format -d` and `scripts/check-forbidden-words.py` pass
+- [ ] 1.1 In `proto/liverty_music/entity/v1/notification.proto`, rename `NOTIFICATION_TYPE_EVENT_CANCELLED` to `NOTIFICATION_TYPE_CONCERT_CANCELLED` keeping the number 8, add `NOTIFICATION_TYPE_LOTTERY_WIN = 10`, reserve 4 and `NOTIFICATION_TYPE_ORDER_CONFIRMATION`; rename `Notification.queue_time` to `create_time`; remove and reserve `delivery_status` (5), `failure_reason` (6), `deliver_time` (8), `dismiss_time` (10); remove `NotificationDeliveryStatus` (design "Proto"); verify `buf lint`, `buf format -d` and `scripts/check-forbidden-words.py` pass
 - [ ] 1.2 In `proto/liverty_music/rpc/notification/v1/notification_service.proto`, add `List(ListRequest) returns (ListResponse)` with the doc comment and its possible errors, remove `Dismiss` and its messages, and update the service comment; in `rpc/user/v1/user_service.proto` make `CreateRequest.preferred_language` required (drop `optional`, keep the pattern, update its comment); verify `buf lint` and `buf format -d` pass
 - [ ] 1.3 Open the proto PR with the `buf skip breaking` label, merge it, publish the GitHub Release and confirm the `buf-release.yml` run succeeds
 
@@ -38,7 +38,7 @@
 
 - [ ] 6.1 Before the backend deploy, list pending `deliver-notification` and `deliver-reminder` workflows read-only (cloud-provisioning `docs/runbooks/workflow-needs-admin.md`) and deploy only when none is pending; after the deploy, confirm the AtlasMigration status is Ready and the rollout succeeded
 - [ ] 6.2 In production, read-only: confirm `notifications` has the columns `id, user_id, type, subject, created_at, read_at` and `users.preferred_language` is NOT NULL; trigger nothing, and confirm the next real notification (or the Stripe Sandbox E2E, `gh workflow run stripe-sandbox-e2e.yml`, for a lottery) records a row with a valid subject and that `List` returns it rendered
-- [ ] 6.3 Add the E2E tests annotated `@spec stories/review-received-notifications` ("Fan without push", "Fan with push", "Three arrive at once", "Read in the center") and update those of `stories/get-notified-of-new-concerts` and `stories/get-reminded-of-ticket-sale-milestones` to the change's scenarios; verify they pass
+- [ ] 6.3 Add the E2E tests annotated `@spec stories/review-received-notifications` ("Fan without push", "Fan with push", "Three arrive at once", "Read in the center") and update those of `stories/get-notified-of-new-concerts`, `stories/get-reminded-of-ticket-sale-milestones` and `stories/hear-about-a-new-ticket-sale` to the change's scenarios; verify they pass
 
 ## 7. Archive
 

@@ -6,7 +6,6 @@ See proposal.md (Why). Current state the design builds on:
 - Each push sender renders its own copy in its own file (`ticket_sale_copy.go`, `notification_new_concerts.go`, `order_confirmation.go`, `lottery_loss.go`, `resale_entry_ended.go`, `event_cancelled.go`, `order_refunded.go`) and passes a finished `NotificationPayload` as the `deliver-notification` workflow input (`DeliverRequest.Payload`).
 - `UpdateDelivery` announces `NOTIFICATION.delivered`; the analytics consumer turns it into the PostHog event `notification.delivered`. No saved PostHog insight uses that event. Delivery rates are computed by the BigQuery view `mart_pipeline_health_daily.sql` (cloud-provisioning) from the analytics log lines of topic `notification_delivery`, which `notification_delivery.go` writes for every outcome.
 - `queued_at` and `delivered_at` differ by at most 5.6 seconds in production: the record is created right before the send.
-- `NotificationType` in proto lacks `event_cancelled` and `order_refunded`; the Go map in `adapter/pb/notification.go` lacks them too.
 
 ## Goals / Non-Goals
 
@@ -46,7 +45,7 @@ Alternative rejected: one nullable foreign-key column per record kind. Eight col
 ### Proto
 
 - `entity.v1.Notification`: keep `id`, `user_id`, `type`, `message` (now rendered at read time); rename field 7 `queue_time` to `create_time`; keep `read_time` (9); remove and reserve `delivery_status` (5), `failure_reason` (6), `deliver_time` (8), `dismiss_time` (10). Remove `NotificationDeliveryStatus`.
-- `NotificationType`: add `CONCERT_CANCELLED = 8`, `ORDER_REFUNDED = 9`, `LOTTERY_WIN = 10`; reserve `4` and the name `NOTIFICATION_TYPE_ORDER_CONFIRMATION`.
+- `NotificationType`: rename `EVENT_CANCELLED = 8` to `CONCERT_CANCELLED`, keeping the number; add `LOTTERY_WIN = 10`; reserve `4` and the name `NOTIFICATION_TYPE_ORDER_CONFIRMATION`.
 - `rpc.notification.v1.NotificationService`: add `List(ListRequest) returns (ListResponse)` (`ListRequest {}`; `ListResponse { repeated entity.v1.Notification notifications = 1; }`); remove `Dismiss` and its messages. Names follow `rpc-design`: `List` returns every resource the caller can see.
 - `rpc.user.v1.CreateRequest.preferred_language`: drop `optional`, mark `required`, keep the pattern.
 
@@ -70,7 +69,7 @@ For new_concerts the subject's artist. Otherwise `Concert.Artists` (display orde
 
 ### First-come purchase push and the type rename
 
-`SendOrderConfirmation` starts `Deliver` only when `order.LotteryEntryID != ""`, with type `lottery_win` and the workflow id `deliver:lottery_win:<order>`. `event_cancelled` is renamed `concert_cancelled` everywhere (entity constant, workflow id prefix, analytics `type` values). Production holds no row of either old value that must survive (rows are deleted, below).
+`SendOrderConfirmation` starts `Deliver` only when `order.LotteryEntryID != ""`, with type `lottery_win` and the workflow id `deliver:lottery_win:<order>`. `event_cancelled` is renamed `concert_cancelled` everywhere (proto enum value, entity constant, workflow id prefix, analytics `type` values). Production holds no row of either old value that must survive (rows are deleted, below).
 
 ### Marking a push read when opened
 
