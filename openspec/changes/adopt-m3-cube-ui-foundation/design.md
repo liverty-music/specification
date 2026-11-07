@@ -74,7 +74,7 @@ A block that needs a margin between its children sets `--flow-space` or `gap` in
 | Family | Name | Lives in |
 |---|---|---|
 | Type style | `--md-sys-typescale-<role>-<size>` (a `font` value), `-tracking`, and `-emphasized` variants | shared |
-| Typeface | `--md-ref-typeface-plain`, `--md-ref-typeface-brand` | plain shared; brand per app |
+| Typeface | `--md-ref-typeface-plain`, `--md-ref-typeface-brand`, `--md-ref-typeface-mono` | plain shared; brand and mono per app |
 | Colour role | `--md-sys-color-<role>` | per app |
 | Shape | `--md-sys-shape-corner-<step>` | per app |
 | Elevation | `--md-sys-elevation-level<n>` | shared; shadow colour per app |
@@ -113,7 +113,7 @@ Both apps load `Noto Sans JP:wght@100..900` from Google Fonts (`display=swap`), 
 
 `button.css`'s Outfit becomes the plain typeface, since Righteous's missing bold was the reason for it.
 
-The organizer console moves to Noto Sans JP because its earlier system-font choice records no reason (`redesign-organizer-console` only names the stack), and today it looks different on Windows and on a Mac, the problem the fan app is fixing. It takes no brand typeface: its spec describes a calm work tool and limits brand colour to the primary action, focus and the logo, and Righteous would set Latin letters in concert and artist names in a decorative face. `organizer.html` already allows Google Fonts in its CSP. Noto Sans JP keeps the tabular figures the console requires: measured at 14 px, `1111` and `0000` are both 32 px wide, with and without `tabular-nums`. `organizer/guide/guide.html` copies the console's font stack and changes with it.
+The organizer console moves to Noto Sans JP because its earlier system-font choice records no reason (`redesign-organizer-console` only names the stack), and today it looks different on Windows and on a Mac, the problem the fan app is fixing. It takes no brand typeface: its spec describes a calm work tool and limits brand colour to the primary action, focus and the logo, and Righteous would set Latin letters in concert and artist names in a decorative face. `organizer.html` already allows Google Fonts in its CSP. Noto Sans JP keeps the tabular figures the console requires: measured at 14 px, `1111` and `0000` are both 32 px wide, with and without `tabular-nums`. `organizer/guide/guide.html` copies the console's font stack and changes with it. The console's two monospaced values (`copy-field`, `reception-tab`) keep their face through a `.typeface-mono` utility over `--md-ref-typeface-mono`, because blocks no longer set fonts.
 
 This also records why type is fixed rather than fluid: `refactor-shared-ui-design-system` chose fluid scales as "more capable", and `redesign-organizer-console` amended that for the console because members compare numbers across windows and Material 3 adapts layout, not text size, across window classes. That reasoning holds for the fan app too, where body sizes differ by under 0.5 px across phone widths.
 
