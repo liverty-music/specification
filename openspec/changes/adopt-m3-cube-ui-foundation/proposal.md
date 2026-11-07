@@ -33,7 +33,7 @@ Stylelint 18, released on 2026-11-03, has core rules that can enforce most of th
 - Add the 15 baseline and 15 emphasized type styles at fixed `rem` sizes; the fluid type scale goes away. Text gets its style from a utility class (`md-typescale-title-large`).
 - Fix `--space-*` at 4, 8, 12, 16, 24, 32 and 48 px in both apps, plus the fan app's 64 and 96 px.
 - Add elevation levels, one global focus ring (3 px, offset 2 px), a 48 px minimum touch target, the Material 3 breakpoints and a higher-contrast colour set under `prefers-contrast: more`.
-- Share the type scale, elevation, focus ring size, touch target and breakpoints through `shared/styles/`, as state and motion already are. Colour, shape and the brand typeface stay per app.
+- Share the type scale, elevation, focus ring size and touch target through `shared/styles/`, as state and motion already are. Colour, shape and the brand typeface stay per app.
 
 **Typefaces**
 
@@ -60,7 +60,7 @@ None. CSS architecture rules stay in `stylelint.config.js` and its tests, which 
 - `components/infrastructure/fan/web/global/bottom-sheet`: the sheet heading and Material 3 container values; token names replaced by roles.
 - `components/infrastructure/fan/web/global/bottom-nav-bar`: 64 px height.
 - `components/infrastructure/fan/web/global/page-header`, `page-help`, `toast`, `live-highway`: scenarios that name removed tokens now name roles and type styles.
-- `components/infrastructure/fan/web/route/my-artists`, `route/welcome`, `route/dashboard`, `global/app-shell`: tap targets rise from 44 px to 48 px.
+- `components/infrastructure/fan/web/route/my-artists`, `route/welcome`, `route/dashboard`, `global/app-shell`, `global/event-detail-sheet`: tap targets rise from 44 px to 48 px.
 
 ## Impact
 
