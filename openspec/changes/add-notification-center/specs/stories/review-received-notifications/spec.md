@@ -22,7 +22,7 @@ Goal ..> : include MarkRead
 
 ### Requirement: Every notification sent to a fan is in the notification center
 
-Every notification NotificationUseCase.Deliver records for a fan SHALL appear in the fan's notification center (NotificationUseCase.List), whether or not a browser accepted its push, rendered in the fan's current language, until 50 newer notifications push it out of the list.
+Every notification NotificationUseCase.Deliver records for a fan SHALL appear in the fan's notification center (NotificationUseCase.List), whether or not a browser accepted its push, rendered in the fan's current language, until 50 newer notifications push it out of the list or a record its subject names is deleted.
 
 #### Scenario: Fan without push
 - **WHEN** a fan who never allowed push notifications applied for a lottery and lost

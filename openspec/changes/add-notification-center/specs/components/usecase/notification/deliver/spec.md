@@ -111,7 +111,7 @@ Deliver SHALL take a fan, a notification type and a subject. It SHALL fail with 
 
 ### Requirement: The outcome is returned and logged, not stored
 
-Deliver SHALL return the outcome, with its failure reason when Failed, to its caller, and SHALL log it for usage analytics with the Notification's id, fan and type. The outcome SHALL NOT be stored on the Notification, and a Failed outcome SHALL NOT fail Deliver.
+Deliver SHALL return the outcome, with its failure reason when Failed, to its caller, and SHALL log it for usage analytics with the fan, the type and, when one was recorded, the Notification's id. The outcome SHALL NOT be stored on the Notification, and a Failed outcome SHALL NOT fail Deliver.
 
 #### Scenario: Delivery failed
 
