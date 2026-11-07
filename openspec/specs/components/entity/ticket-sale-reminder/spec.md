@@ -7,7 +7,7 @@ A Ticket Sale Reminder records that one reminder stage of one TicketSale has bee
 |---|---|---|
 | user | The fan the reminder was sent to | required |
 | ticket sale | The TicketSale the reminder is about | required |
-| stage | Which point of the sale's timeline the reminder marks: `APPLY_OPEN`, `APPLY_CLOSE_24H`, `RESULT_DAY` | required; only defined values |
+| stage | Which point of the sale's timeline the reminder marks: `APPLY_OPEN`, `APPLY_CLOSE_24H` | required; only defined values |
 | sent time | When the reminder was recorded as sent | required, set when the record is created |
 
 ```mermaid

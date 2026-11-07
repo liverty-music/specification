@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A fan who follows an artist gets one push message on each of their registered browsers when concerts matching their hype level are added for that artist, and every such message is kept as a Notification with its delivery outcome.
+A fan who follows an artist gets one push message on each of their registered browsers when concerts matching their hype level are added for that artist, and every such message is kept as a Notification the fan finds in the notification center.
 
 ```mermaid
 usecase-beta
