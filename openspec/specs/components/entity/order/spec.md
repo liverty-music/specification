@@ -21,7 +21,10 @@ An Order is one fan account's application for tickets of one TicketStock and, on
 | amount | total to pay: the seat type's price times the ticket count, in the currency's smallest unit (whole yen) | required, greater than 0; fixed at creation |
 | currency | ISO 4217 currency of the amount | required, 3 uppercase letters |
 | pay time | when the payment was captured and the Order became Paid | absent until Paid |
-| provider refund ID | the payment provider's ID for the refund issued to the user | empty unless refunded for a cancellation |
+| refund reason | why the Order was refunded: Cancellation (the event was cancelled, 中止) or Dispute (the card issuer returned the money) | present exactly when Refunded |
+| refund amount | what the platform refunded to the user's card, in the currency's smallest unit: the price of the Tickets still Issued for a Cancellation; 0 for a Dispute or when every Ticket was resold | present exactly when Refunded; at least 0 |
+| provider refund ID | the payment provider's ID for the refund issued to the user | present only for a Cancellation refund that moved money (refund amount above 0) |
+| refund time | when the Order was refunded | present exactly when Refunded |
 | confirmation send time | when the purchase confirmation email was sent to the user | empty until sent; set once |
 
 ```mermaid

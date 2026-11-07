@@ -38,6 +38,6 @@ Unchanged and why: `components/usecase/series/cancel` already cancels through `S
 
 - **backend**: `CancelEvents` announces `CONCERT.cancelled`; `Order.CommitRefund` stores the refund record and announces `ORDER.refunded`; a migration adds the `order_refunds` table and moves `orders.provider_refund_id` into it; `SendEventCancelled`, `SendOrderRefunded`, `Order.SendCancellationEmail`, `Order.SendRefundEmail`, their workflows and two durable consumers; notification types `event_cancelled`, `order_refunded`.
 - **cloud-provisioning**: two NACK Consumer manifests, `send-event-cancelled` (`CONCERT.cancelled`) and `send-order-refunded` (`ORDER.refunded`), applied before the backend release.
-- **specification (proto)**: none. `Order.provider_refund_id` keeps its field and meaning.
+- **specification (proto)**: `NotificationType` gains `NOTIFICATION_TYPE_EVENT_CANCELLED` and `NOTIFICATION_TYPE_ORDER_REFUNDED`, so the `NOTIFICATION.delivered` announcement of these notices names their type. `Order.provider_refund_id` keeps its field and meaning.
 - **frontend**: none. The event page already says the concert is cancelled, and the order screen already says the Order is refunded.
 - Analytics: no new event.

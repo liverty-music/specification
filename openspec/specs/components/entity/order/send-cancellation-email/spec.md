@@ -1,8 +1,9 @@
-## Purpose
+# components/entity/order/send-cancellation-email Specification
 
+## Purpose
 Emails the user of an Order that the Order's concert is 中止 (cancelled) and that the price of the tickets they still hold is refunded to the card they paid with.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: SendCancellationEmail tells the user the concert is cancelled
 
@@ -14,6 +15,10 @@ SendCancellationEmail SHALL take an Order, an email address and a finished messa
 
 #### Scenario: Address missing
 - **WHEN** SendCancellationEmail runs with an empty address
+- **THEN** it fails with InvalidArgument and nothing is sent
+
+#### Scenario: Message missing
+- **WHEN** SendCancellationEmail runs with an empty message
 - **THEN** it fails with InvalidArgument and nothing is sent
 
 #### Scenario: Mail unavailable

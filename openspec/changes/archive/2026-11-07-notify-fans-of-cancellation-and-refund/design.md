@@ -52,7 +52,7 @@ The first step reads the Order. When an admin deletes the Event before that step
 - Emails go through the Postmark mailer the Order already uses for `SendConfirmationEmail`; `SendCancellationEmail` and `SendRefundEmail` are new methods on the same mailer interface and record nothing on the Order. Language follows `emailLanguage`, as in `SendResaleSold`.
 - The ticket count and price in the cancellation email use the same rule as `Refund` (`unresoldAmount`): the Order's amount divided by its ticket count, times its Issued Tickets. The refund email uses the stored amount, and derives the number of tickets refunded from it (amount ÷ price per ticket), because the refund has Voided every Ticket and a Voided Ticket does not say whether a resale or the refund voided it.
 - The `event_cancelled` push opens the event page (`concertDeepLink`, `/events/<id>` for a first-party Event, which shows the 中止 banner). The `order_refunded` push opens `/orders/<order id>`, which shows the refunded banner.
-- Notification types `event_cancelled` and `order_refunded` are added to `entity/notification.go` and the `notifications.type` column comment.
+- Notification types `event_cancelled` and `order_refunded` are added to `entity/notification.go`, the `notifications.type` column comment and the proto `NotificationType` (`NOTIFICATION_TYPE_EVENT_CANCELLED = 8`, `NOTIFICATION_TYPE_ORDER_REFUNDED = 9`). Without the proto values the `NOTIFICATION.delivered` announcement of these notices maps them to UNSPECIFIED, and product analytics records `notification_delivered` with no type (found after v1.123.0 shipped).
 
 ### D6. Durable consumers
 
@@ -67,7 +67,14 @@ Two NACK Consumer manifests in cloud-provisioning `k8s/namespaces/nats/base/jets
 
 ## Migration Plan
 
-1. Read-only in prod before the release: count Refunded Orders (`SELECT count(*) FROM orders WHERE status = 2`). When it is 0, the migration needs no backfill. When it is above 0, stop, record the count here, and decide the backfill with the user (reason and time are not stored anywhere today).
+1. Read-only in prod before the release: count Refunded Orders (`SELECT count(*) FROM orders WHERE status = 2`). When it is 0, the migration needs no backfill. When it is above 0, stop, record the count here, and decide the backfill with the user (reason and time are not stored anywhere today). Counted 2026-11-06: 0 Refunded Orders (5 Paid, 2 Void), so the migration copies nothing and needs no backfill.
 2. cloud-provisioning: merge the two Consumer manifests and confirm they are Ready.
 3. backend: the Atlas migration creates `order_refunds`, copies `provider_refund_id` of any Refunded Order per step 1, and drops `orders.provider_refund_id`; release; confirm the AtlasMigration and the rollout.
 4. Rollback: revert the backend release and add a migration that restores `orders.provider_refund_id` from `order_refunds`.
+
+## Shipped
+
+- cloud-provisioning: liverty-music/cloud-provisioning#737 (durables `send-event-cancelled`, `send-order-refunded`; merged 2026-11-06, both Ready in prod).
+- backend: liverty-music/backend#780, released as v1.123.0 (2026-11-06). AtlasMigration applied `20261106120001`; `orders.provider_refund_id` is gone and `order_refunds` exists in prod; `workflow-worker` and `event-consumer` rolled out on v1.123.0. Stripe Sandbox E2E passed on `4e744500` (backend Actions run 42171881193).
+- Story test (task 6.1): the `remove-a-cancelled-concert` story records the emails with the in-memory mailer the other story tests share (`storyMailer`) instead of a stub mail server. The Postmark HTTP path of both emails is covered by the mailer contract tests against a stub Postmark server (`TestPostmarkOrderMailer_SendCancellationEmail`, `TestPostmarkOrderMailer_SendRefundEmail`).
+- proto: liverty-music/specification#1348, released as schema v0.112.0 (BSR gen succeeded), adds `NOTIFICATION_TYPE_EVENT_CANCELLED` and `NOTIFICATION_TYPE_ORDER_REFUNDED`; liverty-music/backend#781, released as v1.124.0 and rolled out in prod (2026-11-06), maps both, so `NOTIFICATION.delivered` names their type.
