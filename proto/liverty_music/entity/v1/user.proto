@@ -90,10 +90,13 @@ message User {
   //
   // Set when the user is created (Create requires it) and changed through
   // SetPreferredLanguage. A stored user always has one.
-  optional string preferred_language = 7 [(buf.validate.field).string = {
-    min_len: 2
-    pattern: "^[a-z]{2}$"
-  }];
+  string preferred_language = 7 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string = {
+      min_len: 2
+      pattern: "^[a-z]{2}$"
+    }
+  ];
 
   // The 本人確認 (identity check) name shown on the user's tickets and
   // prefilled at lottery entry and checkout. Absent until the user first gives
