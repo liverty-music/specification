@@ -16,6 +16,10 @@ SendRefundEmail SHALL take an Order, an email address and a finished message, an
 - **WHEN** SendRefundEmail runs with an empty message
 - **THEN** it fails with InvalidArgument and nothing is sent
 
+#### Scenario: Address missing
+- **WHEN** SendRefundEmail runs with an empty address
+- **THEN** it fails with InvalidArgument and nothing is sent
+
 #### Scenario: Mail unavailable
 - **WHEN** email cannot be sent
 - **THEN** SendRefundEmail fails with Unavailable

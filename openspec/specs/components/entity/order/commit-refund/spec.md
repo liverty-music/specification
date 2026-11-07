@@ -34,6 +34,10 @@ CommitRefund SHALL take an Order, the refund's reason (Cancellation or Dispute),
 - **WHEN** CommitRefund is called without a reason
 - **THEN** it fails with InvalidArgument and the Order stays Paid
 
+#### Scenario: Amount below zero
+- **WHEN** CommitRefund is called with an amount below 0
+- **THEN** it fails with InvalidArgument and the Order stays Paid
+
 #### Scenario: Order already refunded
 - **WHEN** CommitRefund is called without a Settlement for an Order that is already Refunded, with another amount
 - **THEN** nothing changes and the first refund's reason, amount and time are kept

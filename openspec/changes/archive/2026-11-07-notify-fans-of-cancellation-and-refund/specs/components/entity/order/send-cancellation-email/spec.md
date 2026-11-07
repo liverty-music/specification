@@ -16,6 +16,10 @@ SendCancellationEmail SHALL take an Order, an email address and a finished messa
 - **WHEN** SendCancellationEmail runs with an empty address
 - **THEN** it fails with InvalidArgument and nothing is sent
 
+#### Scenario: Message missing
+- **WHEN** SendCancellationEmail runs with an empty message
+- **THEN** it fails with InvalidArgument and nothing is sent
+
 #### Scenario: Mail unavailable
 - **WHEN** email cannot be sent
 - **THEN** SendCancellationEmail fails with Unavailable
