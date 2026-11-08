@@ -53,15 +53,6 @@ Create SHALL fail with AlreadyExists and store nothing when another User already
 - **WHEN** a User with a different provider user ID already has the same email
 - **THEN** Create fails with AlreadyExists and stores nothing
 
-### Requirement: Absent preferred language is stored absent
-
-When Create runs without a preferred language, the stored User SHALL have no preferred language.
-
-#### Scenario: No preferred language
-
-- **WHEN** Create runs without a preferred language
-- **THEN** the stored User has no preferred language
-
 ### Requirement: A created User is announced with it
 
 When Create stores a new User, it SHALL announce the created User together with it: both are stored or neither is. The announcement SHALL carry the User with its id, provider user ID and email address, and SHALL NOT carry its full name, phone number or the display name given by the identity provider. When Create fails with AlreadyExists, it SHALL announce nothing. When the announcement cannot be recorded, Create SHALL fail with Unavailable and no User SHALL be stored.

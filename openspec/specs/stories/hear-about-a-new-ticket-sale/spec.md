@@ -24,14 +24,14 @@ Goal ..> : include TicketSaleAnnouncementUseCaseAnnounceDiscoveredSale
 
 When TicketSaleDiscoveryUseCase.DiscoverForArtist finds, for a series that a fan tracks, a ticket sale that has not opened and was not known before, TicketSaleAnnouncementUseCase.AnnounceDiscoveredSale SHALL announce it. Every fan whose ticket journey on an event of that series is Tracking SHALL then:
 
-- receive one push notification about it on each registered browser, naming the opening date, the method and the tour, in their language
+- receive one push notification about it on each registered browser, naming the artist, the opening date, the method and the tour, in their language
 - have one ticket sale announcement Notification recorded for them
 
 Tapping the push SHALL open the detail sheet of the fan's earliest upcoming tracked event of the series.
 
 #### Scenario: Tracking fan hears about the new phase
-- **WHEN** a fan tracks the 20 December event of 星降る晩餐会, and the daily discovery finds a first-come presale opening on 6 October 19:00
-- **THEN** the fan's browser receives one push titled チケット先着販売のお知らせ whose text is 10/6(火) 19:00からチケットの先着販売スタート!! followed by a line break and 星降る晩餐会
+- **WHEN** a fan tracks the 20 December event of 星降る晩餐会 by Vaundy, and the daily discovery finds a first-come presale opening on 6 October 19:00
+- **THEN** the fan's browser receives one push titled [Vaundy] 先着販売のお知らせ whose text is 10/6(火) 19:00から先着販売スタート!! followed by a line break and 星降る晩餐会
 - **AND** the fan has one ticket sale announcement Notification
 
 #### Scenario: Tapping the push
@@ -54,10 +54,10 @@ A discovered sale found again on a later day SHALL NOT be announced again. A rep
 - **WHEN** the daily discovery finds the same presale again the next day
 - **THEN** no fan receives another push about it
 
-### Requirement: Fans without a browser still get the record
+### Requirement: Fans without a browser find the announcement in the notification center
 
-A tracking fan with no registered browser SHALL receive no push, and their ticket sale announcement Notification SHALL be recorded as Failed because they have no registered browser.
+A tracking fan with no registered browser SHALL receive no push, and their ticket sale announcement Notification SHALL still be recorded, so the notification center lists it.
 
-#### Scenario: No registered browser
+#### Scenario: Never allowed push notifications
 - **WHEN** a tracking fan has never allowed push notifications and a new discovered sale is found
-- **THEN** nothing is pushed to the fan and their Notification is Failed with the reason no active push subscription
+- **THEN** nothing is pushed to the fan and the notification center lists the announcement

@@ -65,7 +65,7 @@ Get SHALL return the caller's User as resolved by the per-user check, so the sam
 
 ### Requirement: Create registers the signed-in identity
 
-Create SHALL name no User id. It SHALL take the provider user ID, email and name from the caller's sign-in identity and never from the request; the request SHALL still carry a well-formed email, which is ignored. It SHALL take the optional Home and optional preferred language from the request, fail with InvalidArgument when a Home in the request is malformed or a given preferred language is not exactly two lowercase letters, and otherwise call UserUseCase.Create and return the User it returns.
+Create SHALL name no User id. It SHALL take the provider user ID, email and name from the caller's sign-in identity and never from the request; the request SHALL still carry a well-formed email, which is ignored. It SHALL take the preferred language and the optional Home from the request, fail with InvalidArgument when the preferred language is missing or not exactly two lowercase letters or a Home in the request is malformed, and otherwise call UserUseCase.Create and return the User it returns.
 
 #### Scenario: First sign-in
 
@@ -85,6 +85,11 @@ Create SHALL name no User id. It SHALL take the provider user ID, email and name
 #### Scenario: Missing email in the request
 
 - **WHEN** the request carries no email
+- **THEN** Create fails with InvalidArgument
+
+#### Scenario: Missing preferred language
+
+- **WHEN** the request carries no preferred language
 - **THEN** Create fails with InvalidArgument
 
 ### Requirement: SetPreferredLanguage checks the language first
@@ -152,7 +157,7 @@ Update SHALL take a new full name, a new phone number or both, and fail with Inv
 
 ### Requirement: A returned User carries its profile fields
 
-Every user service call that returns a User SHALL return its id, email, provider user ID, name, preferred language when set, home as country code, level 1 and, when set, level 2, and the User's full name and phone number when set, which the lottery entry and checkout screens prefill. It SHALL NOT return the home's centroid or a verification level.
+Every user service call that returns a User SHALL return its id, email, provider user ID, name, preferred language, home as country code, level 1 and, when set, level 2, and the User's full name and phone number when set, which the lottery entry and checkout screens prefill. It SHALL NOT return the home's centroid or a verification level.
 
 #### Scenario: User with home and language
 
@@ -161,8 +166,8 @@ Every user service call that returns a User SHALL return its id, email, provider
 
 #### Scenario: User without optional values
 
-- **WHEN** a call returns a User with no preferred language, no home, no full name and no phone number
-- **THEN** the response carries none of them
+- **WHEN** a call returns a User with preferred language `en` and no home, no full name and no phone number
+- **THEN** the response carries preferred language `en` and none of the others
 
 #### Scenario: Returning fan
 

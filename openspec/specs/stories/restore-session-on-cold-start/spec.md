@@ -11,11 +11,9 @@ actor Fan("fan")
 systemBoundary "Liverty Music"
   Goal("Restore session on cold start")
   UserUseCaseGet("UserUseCase.Get")
-  UserUseCaseSetPreferredLanguage("UserUseCase.SetPreferredLanguage")
 end
 Fan --> Goal
 Goal ..> : include UserUseCaseGet
-Goal ..> : include UserUseCaseSetPreferredLanguage
 ```
 
 ## Requirements
@@ -49,19 +47,19 @@ This requirement exists because `oidc-client-ts` `automaticSilentRenew` only sch
 - **THEN** the system SHALL NOT trigger a boot-time silent renewal
 - **AND** the system SHALL resolve to the authenticated state using the existing tokens
 
-### Requirement: The remembered account is restored on launch
+### Requirement: The remembered account and its language are restored on launch
 
-On every launch with a signed-in session, the app SHALL restore the fan's account from the account remembered for the signed-in identity (UserUseCase.Get) before it makes any other per-fan request. When the account has no preferred language, the app SHALL set it to the app's current display language (UserUseCase.SetPreferredLanguage) without asking the fan. Once the account's preferred language is in use, the language the app kept on the device before sign-in is dropped, and the account's language wins from then on.
+On every launch with a signed-in session, the app SHALL restore the fan's account from the account remembered for the signed-in identity (UserUseCase.Get) before it makes any other per-fan request. The account's preferred language SHALL be in use from then on: the language the app kept on the device before sign-in is dropped, and the account's language wins.
 
 #### Scenario: Reopen with a remembered account
 
 - **WHEN** a signed-in fan reopens the app
 - **THEN** the fan's follows, home and language are those of their account
 
-#### Scenario: Account without a language
+#### Scenario: Account language kept on a device in another language
 
-- **WHEN** a signed-in fan whose account has no preferred language opens the app in Japanese
-- **THEN** the account's preferred language becomes `ja`
+- **WHEN** a signed-in fan opens the app in Japanese and the account's preferred language is `en`
+- **THEN** the account's preferred language stays `en` and the app does not change it
 
 #### Scenario: Language chosen on another device
 

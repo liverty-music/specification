@@ -75,27 +75,27 @@ NotifyNewConcerts SHALL read the artist's followers (Follow.ListFollowers) and, 
 
 ### Requirement: The message names the artist, counts the concerts in the fan's language and links to the earliest
 
-For each matched follower, NotifyNewConcerts SHALL build one message: the title is the artist's name; the body counts the matched concerts in the follower's preferred language, "1 new concert found" or "N new concerts found" in English and "新しいライブがN件見つかりました" in Japanese, with English for any other or no language; the link is `/events/<id>` of the earliest matched concert when that concert's Series is first-party, and `/concerts/<id>` of the earliest matched concert otherwise; the tag is one per artist, so a later message about the same artist replaces the earlier one on the device. The earliest concert is the earliest of the set as Concert defines it. The title, link and tag do not depend on the language.
-
-#### Scenario: One concert in English
-
-- **WHEN** a follower whose language is English is matched with 1 concert
-- **THEN** the body reads "1 new concert found"
-
-#### Scenario: Several concerts in English
-
-- **WHEN** a follower whose language is English is matched with 3 concerts
-- **THEN** the body reads "3 new concerts found"
+For each matched follower, the requested notification's subject SHALL be the artist and the follower's matched concerts, so the message the Notification entity renders from it is titled with that artist, counts the matched concerts and links to the earliest of them. The earliest concert is the earliest of the set as Concert defines it.
 
 #### Scenario: Japanese
 
-- **WHEN** a follower whose language is Japanese is matched with 2 concerts
-- **THEN** the body reads "新しいライブが2件見つかりました"
+- **WHEN** a follower whose language is `ja` is matched with 3 concerts of Vaundy
+- **THEN** the title reads [Vaundy] 新着ライブ発表!! and the body starts with 新しいライブが3件見つかりました
+
+#### Scenario: One concert in English
+
+- **WHEN** a follower whose language is `en` is matched with 1 concert
+- **THEN** the body starts with "1 new concert found"
+
+#### Scenario: Several concerts in English
+
+- **WHEN** a follower whose language is `en` is matched with 3 concerts
+- **THEN** the body starts with "3 new concerts found"
 
 #### Scenario: Unsupported or missing language
 
-- **WHEN** a follower has no preferred language, or one with no copy
-- **THEN** the body is in English
+- **WHEN** a follower's preferred language has no copy, such as `fr`
+- **THEN** the message is in English
 
 #### Scenario: Link to the earliest matched concert
 
@@ -119,12 +119,12 @@ For each matched follower, NotifyNewConcerts SHALL build one message: the title 
 
 ### Requirement: One new_concerts notification requested per matched follower
 
-For each matched follower, NotifyNewConcerts SHALL start NotificationUseCase.Deliver with one notification of type new_concerts carrying that follower's message, named after the follower and what NotifyNewConcerts runs for: the announcement of the new concerts, or one direct call by an admin. A repeated delivery of the same announcement SHALL start nothing new for a follower already started; each direct call notifies again. Deliver records and delivers each notification on its own; a follower whose Notification cannot be recorded, or whose delivery fails, SHALL NOT affect the other followers or fail NotifyNewConcerts. The story stories/get-notified-of-new-concerts covers the whole flow from the added concerts to the fan's browsers. When a follower's notification cannot be started, NotifyNewConcerts SHALL stop and fail so the announcement is processed again; the followers already started are not started again. When the followers cannot be read, NotifyNewConcerts SHALL fail and start nothing. When the call is cancelled, no further follower's notification SHALL be started.
+For each matched follower, NotifyNewConcerts SHALL start NotificationUseCase.Deliver with one notification of type new_concerts whose subject is the artist and that follower's matched concerts, named after the follower and what NotifyNewConcerts runs for: the announcement of the new concerts, or one direct call by an admin. A repeated delivery of the same announcement SHALL start nothing new for a follower already started; each direct call notifies again. Deliver records and delivers each notification on its own; a follower whose Notification cannot be recorded, or whose delivery fails, SHALL NOT affect the other followers or fail NotifyNewConcerts. The story stories/get-notified-of-new-concerts covers the whole flow from the added concerts to the fan's browsers. When a follower's notification cannot be started, NotifyNewConcerts SHALL stop and fail so the announcement is processed again; the followers already started are not started again. When the followers cannot be read, NotifyNewConcerts SHALL fail and start nothing. When the call is cancelled, no further follower's notification SHALL be started.
 
 #### Scenario: Every matched follower is requested
 
 - **WHEN** three followers are matched
-- **THEN** one new_concerts notification is started for each of the three, carrying that follower's message
+- **THEN** one new_concerts notification is started for each of the three, naming the artist and that follower's matched concerts
 
 #### Scenario: Request fails for one follower
 

@@ -9,16 +9,16 @@ NotificationUseCase.SendResaleEntryEnded tells a fan, by email and push notifica
 
 SendResaleEntryEnded SHALL run for each ResaleEntry that became Lapsed or Lost. It SHALL read the entry with ResaleEntry.Get, its user with User.Get and the event's concert with Concert.ListByIDs, then:
 - send, with ResaleEntry.SendEndedEmail, in the user's preferred language (Japanese when none), a message naming the concert's title, date, venue and seat type and, for a Lapsed entry, that the card authorization for the application expired before a resale ticket was found, that nothing was charged and that the fan can apply again while resale is open, with a link to the resale entry screen; for a Lost entry, by its lost reason, that no resale ticket was left at the last draw, that the concert was cancelled, that the entry won but the card could not be charged so the win was cancelled, or that the entry won but the payment could not be completed before the show because of a problem at the payment provider, and that nothing was charged; or, for the lost reason "listing cancelled", that the entry won but the ticket allocated to it could no longer be sold, so the win was cancelled and the amount charged is refunded to the card. For a win cancelled because the card could not be charged, while resale of the event is still open (before its resale deadline) the message SHALL also invite the fan to apply again with another card, with a link to the resale entry screen; after the deadline it SHALL say resale for the event has closed;
-- start NotificationUseCase.Deliver for the user with a notification of type `resale_entry_lapsed` or `resale_entry_lost`, named after the type and the entry, with the same message in short, opening the resale entry screen; a run again for the same entry starts no second push.
+- start NotificationUseCase.Deliver for the user with a notification of type `resale_entry_lapsed` or `resale_entry_lost` whose subject is the ResaleEntry, named after the type and the entry; its message is the one the Notification entity renders for that type and lost reason, shorter than the email, and opens the resale entry screen; a run again for the same entry starts no second push.
 When reading or sending fails, it SHALL fail with that error and is run again; ResaleEntry.SendEndedEmail keeps it to one email per entry.
 
 #### Scenario: Lapsed entry
-- **WHEN** a fan's entry for 2 S席 lapses
-- **THEN** the fan receives one email and one `resale_entry_lapsed` push saying nothing was charged and inviting them to apply again
+- **WHEN** a fan's entry for 2 S席 lapses while resale of the event is open
+- **THEN** the fan receives one email saying nothing was charged and inviting them to apply again, and one `resale_entry_lapsed` push saying the entry ended because the card authorization expired and asking them to apply again
 
 #### Scenario: Lost at the last draw
 - **WHEN** a fan's entry is Lost at the last draw
-- **THEN** the fan receives one email and one `resale_entry_lost` push saying no ticket was allocated and nothing was charged
+- **THEN** the fan receives one email saying no ticket was allocated and nothing was charged, and one `resale_entry_lost` push saying no ticket was allocated
 
 #### Scenario: Run again after the email was sent
 - **WHEN** SendResaleEntryEnded runs again for the same entry after its email was sent
@@ -26,19 +26,19 @@ When reading or sending fails, it SHALL fail with that error and is run again; R
 
 #### Scenario: Won but not charged while resale is open
 - **WHEN** a fan's entry won at 12:00 two days before the event and became Lost with the lost reason "card could not be charged"
-- **THEN** the fan receives one email and one `resale_entry_lost` push saying the win was cancelled because the card could not be charged, that nothing was charged, and inviting them to apply again with another card, with a link to the resale entry screen
+- **THEN** the fan receives one email saying the win was cancelled because the card could not be charged and that nothing was charged, inviting them to apply again with another card with a link to the resale entry screen, and one `resale_entry_lost` push saying the win was cancelled because the payment could not be completed, that they were not charged, and that they can apply again with another card
 
 #### Scenario: Won but not charged after resale closed
 - **WHEN** a fan's entry became Lost with the lost reason "card could not be charged" after the event's resale deadline
-- **THEN** the message says the win was cancelled, nothing was charged and resale for the event has closed, with no invitation to apply again
+- **THEN** the email says the win was cancelled, nothing was charged and resale for the event has closed, and neither the email nor the push invites the fan to apply again
 
 #### Scenario: Concert cancelled
 - **WHEN** a fan's entry is Lost with the lost reason "concert cancelled"
-- **THEN** the fan receives one email and one `resale_entry_lost` push saying the concert was cancelled and nothing was charged
+- **THEN** the fan receives one email saying the concert was cancelled and nothing was charged, and one `resale_entry_lost` push saying the entry ended because the concert was cancelled
 
 #### Scenario: Payment not completed before the show
 - **WHEN** a fan's entry is Lost with the lost reason "payment not completed before the show"
-- **THEN** the fan receives one email and one `resale_entry_lost` push saying the entry won but the payment could not be completed before the show because of a problem at the payment provider, that nothing was charged, and that resale for the event has closed
+- **THEN** the fan receives one email saying the entry won but the payment could not be completed before the show because of a problem at the payment provider, that nothing was charged, and that resale for the event has closed, and one `resale_entry_lost` push saying the win was cancelled because the payment could not be completed and that they were not charged
 
 #### Scenario: Listing cancelled
 - **WHEN** a fan's entry is Lost with the lost reason "listing cancelled"

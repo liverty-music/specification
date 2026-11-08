@@ -13,7 +13,7 @@ Get SHALL return the Notification with the given id, with all its attributes. Wh
 #### Scenario: Existing notification
 
 - **WHEN** Get runs for a stored Notification's id
-- **THEN** that Notification is returned, including its owner, delivery status and read and dismiss times
+- **THEN** that Notification is returned, including its owner, type, subject, create time and read time
 
 #### Scenario: Unknown id
 

@@ -47,7 +47,7 @@ AnnounceDiscoveredSale SHALL send the announcement as soon as it runs, whatever 
 
 ### Requirement: One ticket sale announcement notification requested per recipient
 
-For each recipient AnnounceDiscoveredSale SHALL start NotificationUseCase.Deliver with one notification of type ticket_sale_announcement carrying that recipient's message, named after the recipient and the TicketSale, so a recipient is notified of a sale once: a repeated run for the same sale starts nothing new for a recipient already started. Deliver records and delivers each notification on its own, and whether it reaches the recipient's devices does not change the result. When a recipient's notification cannot be started, AnnounceDiscoveredSale SHALL fail so it runs again; the recipients already started are not started again. The story stories/hear-about-a-new-ticket-sale covers the whole flow from discovery to the fan's device.
+For each recipient AnnounceDiscoveredSale SHALL start NotificationUseCase.Deliver with one notification of type ticket_sale_announcement whose subject is the TicketSale and that recipient's linked event, named after the recipient and the TicketSale, so a recipient is notified of a sale once: a repeated run for the same sale starts nothing new for a recipient already started. Deliver records and delivers each notification on its own, and whether it reaches the recipient's devices does not change the result. When a recipient's notification cannot be started, AnnounceDiscoveredSale SHALL fail so it runs again; the recipients already started are not started again. The story stories/hear-about-a-new-ticket-sale covers the whole flow from discovery to the fan's device.
 
 #### Scenario: Two recipients
 - **WHEN** two fans track the series
@@ -63,24 +63,15 @@ For each recipient AnnounceDiscoveredSale SHALL start NotificationUseCase.Delive
 
 ### Requirement: The announcement names the sale and the tour
 
-Each recipient's announcement SHALL be in the recipient's preferred language: Japanese for `ja`, and English for any other language or none. Its title and text SHALL follow the sale's method as below, where `{start}` is the start time and `{tour}` is the series title. The text SHALL end with a line break followed by `{tour}`.
-
-| method | language | title | text |
-|---|---|---|---|
-| FirstCome | ja | チケット先着販売のお知らせ | {start}からチケットの先着販売スタート!! |
-| FirstCome | en | First-Come Ticket Sale | Ticket sale (first come) starts {start}! |
-| Lottery | ja | チケット抽選受付のお知らせ | {start}からチケットの抽選申し込みスタート!! |
-| Lottery | en | Ticket Lottery | Ticket lottery entry starts {start}! |
-
-`{start}` SHALL be shown in the recipient's time zone, falling back to Asia/Tokyo when it is unset or not recognised. In Japanese it is month/day(weekday) hour:minute, for example `10/6(火) 19:00`. In English it is month day (weekday) hour:minute, for example `Oct 6 (Tue) 19:00`.
+Each recipient's announcement SHALL be the message the Notification entity renders for a ticket_sale_announcement of the sale, in the recipient's preferred language: it names the sale's method and start time, the artist in its title, and the series title on its last line.
 
 #### Scenario: First-come sale in Japanese
-- **WHEN** a FirstCome sale of the series 星降る晩餐会 opens on 6 October 19:00 Asia/Tokyo and the recipient's language is `ja`
-- **THEN** the title is チケット先着販売のお知らせ and the text is 10/6(火) 19:00からチケットの先着販売スタート!! followed by a line break and 星降る晩餐会
+- **WHEN** a FirstCome sale of the series 星降る晩餐会 by Vaundy opens on 6 October 19:00 Asia/Tokyo and the recipient's language is `ja`
+- **THEN** the title is [Vaundy] 先着販売のお知らせ and the body is 10/6(火) 19:00から先着販売スタート!! followed by a line break and 星降る晩餐会
 
 #### Scenario: Lottery in English
 - **WHEN** a Lottery sale opens on 5 October 18:00 Asia/Tokyo and the recipient's language is `fr`
-- **THEN** the title is Ticket Lottery and the text is Ticket lottery entry starts Oct 5 (Mon) 18:00! followed by a line break and the series title
+- **THEN** the title ends with Ticket Lottery and the body is Ticket lottery entry starts Oct 5 (Mon) 18:00! followed by a line break and the series title
 
 ### Requirement: The announcement opens the recipient's tracked event
 
