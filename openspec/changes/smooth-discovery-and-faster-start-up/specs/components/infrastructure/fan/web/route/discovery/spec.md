@@ -10,14 +10,14 @@ The system SHALL implement smooth, natural bubble movement using physics simulat
 - **AND** performance SHALL be optimized for mobile devices using component optimization or Canvas/WebGL rendering
 
 #### Scenario: Idle field of 50 bubbles
-- **WHEN** a guest's field of 50 bubbles is shown on the frame reference setup and the fan does not touch it
-- **THEN** the median frame interval is at most 17 ms
-- **AND** the 95th-percentile frame interval is at most 34 ms
+- **WHEN** a guest's field of 50 bubbles is shown about 5 times on the frame reference setup and the fan does not touch it
+- **THEN** the median over those runs of the median frame interval is at most 17 ms
+- **AND** the median over those runs of the 95th-percentile frame interval is at most 34 ms
 
 #### Scenario: Tap on a bubble in a field of 50
-- **WHEN** the fan taps an artist bubble in a field of 50 on the frame reference setup, and similar artists arrive and enter the field
-- **THEN** in the 2.5 s after the tap no frame takes longer than 200 ms
-- **AND** at most 5 frames take longer than 50 ms
+- **WHEN** the fan taps an artist bubble in a field of 50, about 5 times on the frame reference setup, and each time similar artists arrive and enter the field
+- **THEN** the median over those runs of the longest frame in the 2.5 s after the tap is at most 200 ms
+- **AND** the median over those runs of the number of frames longer than 50 ms in that window is at most 5
 
 #### Scenario: Bubbles at rest stay where they are
 - **WHEN** the bubbles have come to rest and the fan does not touch the field
@@ -28,7 +28,7 @@ The system SHALL implement smooth, natural bubble movement using physics simulat
 - **THEN** the remaining bubbles move again under gravity, and none stays floating where the removed bubble held it up
 
 ### Requirement: Revealed bubble names fade in on real time
-When a bubble appears (a ghost switching to a real artist, or a new artist added to the field), its artist name SHALL become readable within 300 ms of real time, at any frame rate down to 10 frames per second. The fade-in SHALL follow elapsed real time and SHALL NOT slow down when frames take longer. The 300 ms count until the name is on screen: work that prepares the name for drawing outside the frame SHALL NOT make the name appear later. The time the cold-load reveal timings report for a name is the frame in which that name is on screen.
+When a bubble appears (a ghost switching to a real artist, or a new artist added to the field), its artist name SHALL become readable within 300 ms of real time, at any frame rate down to 10 frames per second. The fade-in SHALL follow elapsed real time and SHALL NOT slow down when frames take longer. The 300 ms count until the name is on screen: work that prepares the name for drawing outside the frame SHALL NOT make the name appear later.
 
 #### Scenario: Normal frame rate
 - **WHEN** a ghost bubble switches to a real artist and frames arrive every 16 ms
@@ -47,9 +47,32 @@ When a bubble appears (a ghost switching to a real artist, or a new artist added
 - **THEN** the artist name is still drawn within 300 ms of the switch
 - **AND** the name looks the same before and after that work finishes
 
-#### Scenario: Reported name time follows the screen
-- **WHEN** the cold-load reveal timings are sent
-- **THEN** the first-name and all-names times are those of the frames in which the names were on screen, not of the moment the bubbles became opaque enough to show them
+### Requirement: Cold-load reveal timings are reported
+On a cold visit to Discovery (the first time Discovery is shown in the page, including when the start-up load already built the field), the fan app SHALL send exactly one usage analytics event once all bubbles show artist names, carrying the time from the moment Discovery was opened to: the first bubble drawn (a ghost placeholder, or an artist when the artists arrive before any ghost is drawn), the first artist name drawn, and every bubble showing an artist name, in milliseconds. A name counts as drawn in the frame in which it is on screen. The moment Discovery was opened is the start of the page load when Discovery is the first page of the visit, and the start of the in-app navigation otherwise; the event SHALL state which of the two applies. It SHALL also state which initial-load path ran (top artists or similar seeds) and the number of seeds. Re-entries that paint a cached field SHALL NOT send this event. The event SHALL obey the analytics consent setting and the query-string rule of the analytics surface.
+
+#### Scenario: Cold visit with followed artists
+- **WHEN** a fan who follows artists opens Discovery with no cached field and analytics on
+- **THEN** one event is sent with the similar-seed path, the seed count, whether Discovery was the first page, and the three timings in milliseconds
+
+#### Scenario: Artists arrive before a ghost is drawn
+- **WHEN** a cold visit's artists arrive before the first ghost bubble is drawn
+- **THEN** one event is sent, with the time to the first bubble drawn taken from the first artist bubble
+
+#### Scenario: A name appears after its bubble
+- **WHEN** an artist bubble is fully shown and its name appears on screen in a later frame
+- **THEN** the first-name and all-names times are taken from the frames in which the names appeared
+
+#### Scenario: Re-entry
+- **WHEN** the fan returns to Discovery within the session and the cached field is painted
+- **THEN** no reveal-timing event is sent
+
+#### Scenario: Analytics off
+- **WHEN** the fan has turned analytics off in Settings
+- **THEN** no reveal-timing event is sent
+
+#### Scenario: Leaving before the reveal completes
+- **WHEN** the fan leaves Discovery before every bubble shows an artist name
+- **THEN** no reveal-timing event is sent for that visit
 
 ## ADDED Requirements
 

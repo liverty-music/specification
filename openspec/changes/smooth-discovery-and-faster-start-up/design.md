@@ -58,14 +58,14 @@ A guest cold load in the emulated-GPU setup drew the first name at 4.95–5.17 s
 - **HTML-in-Canvas** (Chrome 157). With the feature flag on Chromium 156 in the emulated-GPU setup, 50 drawable elements took about 250 ms per frame against about 158 ms for the current canvas. No source states support in Safari, and iPhone Safari sent 88% of Discovery reveal events.
 - **WebGL.** It was the fastest in the isolated benchmark (33 ms per frame emulated). But it needs a second renderer for the ground glow and light rays under the bubbles, plus context-loss handling and a 2D fallback. Sprites met the bound without it.
 
-**Not measured.** DOM text for names. Moving 50 elements every frame recalculates style every frame, the cost the HTML-in-Canvas post itself warns about.
+**Not measured.** DOM text for names. Moving 50 elements every frame recalculates style every frame, the cost the HTML-in-Canvas post itself warns about (developer.chrome.com/blog/html-in-canvas: per-frame `style.transform` updates make the browser recalculate style before each frame).
 
 ### D2. Sprites are painted in a Web Worker; the frame never waits for one
 
 **Decision.**
 
 - A module worker (`sprite-worker.ts`) paints sprites into an `OffscreenCanvas` and returns `ImageBitmap`s, 4 at a time.
-- The canvas starts the worker in `attached()`, so the module loads before the artists arrive. It requests the sprites of every bubble on, or queued for, the field whenever the field changes.
+- The canvas starts the worker in `attached()`, so the module loads before the artists arrive, and terminates it in `detaching()`. It requests the sprites of every bubble on, or queued for, the field whenever the field changes.
 - The pure paint and layout code (`computeLabelLayout`, `wrapText`, the body painter) moves to a module with no Aurelia import (`sprite-paint.ts`), shared by the worker and the main thread.
 - Until a sprite arrives, a full-size bubble (a ghost turning into an artist, `scale >= 1`) is drawn directly, as today, with the same paint code. A bubble popping from a tap starts tiny and waits for its sprite.
 - Where `OffscreenCanvas` 2D or module workers are missing, the canvas paints sprites on the main thread, at most 4 new ones per frame.
@@ -88,7 +88,7 @@ The worker cut the 95th-percentile script per frame after a tap to 41–73 ms (e
 - `Engine.create({ enableSleeping: true })`.
 - `BubblePhysics` wakes every body (`Sleeping.set(body, false)`) whenever bodies are added, removed or start fading out, a queued spawn enters, or the walls are rebuilt on resize.
 
-**Why wake all.** Matter wakes a sleeper only when an awake body hits it. A body that loses its support from below would otherwise float in place.
+**Why wake all.** Matter wakes a sleeper only when it collides with a moving body (`Sleeping.afterCollisions` in matter-js 0.20 `src/core/Sleeping.js`, read in `frontend/node_modules/matter-js`). A body that loses its support from below would otherwise float in place.
 
 **Effect.** Idle script per frame fell from 4.6–5.9 ms to 1.8–2.0 ms. With sleeping removed from the otherwise final build, the longest frame after a tap was 117–183 ms, against 67–150 ms with it.
 
@@ -117,9 +117,9 @@ The per-frame font change cost 196 ms over 3 s at 4x. The name now shrinks as an
 
 ### D7. The audio graph is built within 1 s of attach
 
-**Decision.** `IAudioEngine` gains `prepare()`, which creates the `AudioContext` (suspended until the tap's `unlock()` resumes it) and the noise buffer. The canvas calls it with `requestIdleCallback(…, { timeout: 1000 })`, or `setTimeout(…, 1000)` where idle callbacks are missing.
+**Decision.** `IAudioEngine` gains `prepare()`, which creates the `AudioContext` (suspended until the tap's `unlock()` resumes it) and the noise buffer. The canvas calls it with `requestIdleCallback(…, { timeout: 1000 })`, or `setTimeout(…, 1000)` where idle callbacks are missing, and cancels it in `detaching()`.
 
-**Why.** It moved about 100 ms (at 4x) out of the first tap's handler. Creating a context outside a gesture is allowed in Chrome and Safari; only `resume()` needs the gesture. `unlock()` stays in the tap.
+**Why.** It moved about 100 ms (at 4x) out of the first tap's handler. A context created before a user gesture starts in the `suspended` state and `resume()` inside a gesture starts it (MDN, "Autoplay guide for media and Web Audio APIs"; Chrome's autoplay policy, developer.chrome.com/blog/autoplay). Neither source states this for every Safari version; the frame reference setup checks Chrome, and task 7.2 does not cover iOS, so a Safari failure would show as no tap sound until the tap's `unlock()`, which still creates the context when `prepare()` did not. `unlock()` stays in the tap.
 
 ### D8. Decorative CSS animations on the compositor only
 
@@ -146,7 +146,7 @@ The per-frame font change cost 196 ms over 3 s at 4x. The name now shrinks as an
 
 **Measurement.** The canvas records rAF intervals only while the loop runs (paused time is excluded by construction) and keeps the samples in a bounded array (at most 3,600, about one minute at 60 frames per second; later samples are dropped).
 
-**When it is sent.** Once per visit, on `detaching` or on the first `visibilitychange` to hidden, when the visit has at least 30 samples. A switch to the All Nearby view ends the visit's measurement.
+**When it is sent.** Once per visit, on `detaching` or on the first `visibilitychange` to hidden (listener added in `attached()`, removed in `detaching()`), when the visit has at least 30 samples. A switch to the All Nearby view ends the visit's measurement.
 
 **Why not the existing event.** `perf.long_animation_frame` stops at 20 per page load and drops frames under 100 ms, so it cannot compare a typical frame before and after.
 

@@ -6,8 +6,8 @@
 
 - [ ] 2.1 Move `computeLabelLayout`, `wrapText`, the label font and the body painter out of `dna-orb-canvas.ts` into `sprite-paint.ts` (no Aurelia import), re-exported from the canvas module; verify the existing label-layout unit tests pass unchanged
 - [ ] 2.2 Add `sprite-worker.ts` (OffscreenCanvas, results streamed 4 at a time as ImageBitmaps) and a unit test of its message contract with a stubbed `OffscreenCanvas`; verify the test passes and `npm run build` emits the worker chunk under the CSP's `worker-src 'self'`
-- [ ] 2.3 Draw bubbles from sprites in `DnaOrbCanvas`: start the worker in `attached()`, request sprites for the field and the queued spawns on every field change, draw full-size bubbles directly until their sprites arrive, close bitmaps when the cache is cleared or the canvas detaches, and fall back to main-thread sprites (at most 4 new per frame) where `OffscreenCanvas` or module workers are missing or the worker errors; verify with unit tests for the direct-draw, fallback and cache-clear paths
-- [ ] 2.4 Move the reveal marks to the frame that draws each name (sprite or direct), and verify unit tests covering "Revealed bubble names fade in on real time" › "Name preparation has not finished" and › "Reported name time follows the screen"; the existing "Normal frame rate", "Slow frames" and "Reduced motion" tests still pass
+- [ ] 2.3 Draw bubbles from sprites in `DnaOrbCanvas`: start the worker in `attached()`, request sprites for the field and the queued spawns on every field change, draw full-size bubbles directly until their sprites arrive, close bitmaps when the cache is cleared or the canvas detaches, terminate the worker in `detaching()`, and fall back to main-thread sprites (at most 4 new per frame) where `OffscreenCanvas` or module workers are missing or the worker errors; verify with unit tests for the direct-draw, fallback and cache-clear paths
+- [ ] 2.4 Move the reveal marks to the frame that draws each name (sprite or direct), and verify unit tests covering "Revealed bubble names fade in on real time" › "Name preparation has not finished" and "Cold-load reveal timings are reported" › "A name appears after its bubble"; the existing "Normal frame rate", "Slow frames" and "Reduced motion" tests still pass
 - [ ] 2.5 Pass a `drawLabel` callback to `AbsorptionAnimator` that pastes the tapped bubble's name sprite, with today's `fillText` as the fallback; verify a unit test that the callback is used when a sprite exists and the fallback otherwise
 - [ ] 2.6 Compare screenshots of the bubble field, the reveal and an absorption between `main` and the branch with the harness from 1.1; verify the bubble pixels match (the absorbing name differs only as design D6 states)
 
@@ -16,7 +16,7 @@
 - [ ] 3.1 Enable Matter.js sleeping and wake every body on add, remove, fade-out start, queued spawn and wall rebuild; verify unit tests covering "Physics-Based Bubble Animation" › "Bubbles at rest stay where they are" and › "Field change wakes the bubbles at rest"
 - [ ] 3.2 Queue tap-origin spawns (3 per frame) and set `collisionFilter.mask = 0` on fading bodies (restored on revive); verify unit tests that a 30-artist top-up enters over 10 updates and that a fading body no longer collides, and that the existing bubble-physics tests pass
 - [ ] 3.3 Cache the canvas size in `sizeCanvas()` and drop the per-frame `getBoundingClientRect()` from `render()`; verify the existing canvas tests pass, and the harness shows no `getBoundingClientRect` in the loop's profile
-- [ ] 3.4 Add `IAudioEngine.prepare()` (context and noise buffer, still resumed only by `unlock()` in a gesture) and call it within 1 s of attach; verify unit tests that `prepare()` creates a suspended context without resuming it, and that "Sound Respects Mute and Volume Settings" tests still pass
+- [ ] 3.4 Add `IAudioEngine.prepare()` (context and noise buffer, still resumed only by `unlock()` in a gesture) and call it within 1 s of attach, cancelling the pending idle callback or timer in `detaching()`; verify unit tests that `prepare()` creates a suspended context without resuming it, and that "Sound Respects Mute and Volume Settings" tests still pass
 
 ## 4. Frontend: decorative animations (design D8)
 
@@ -25,7 +25,7 @@
 
 ## 5. Frontend: frame-timing event (design D9)
 
-- [ ] 5.1 Add `perf.discovery_frames` to `analytics-events.ts` and record frame samples in the canvas loop, sending once per visit on detach or first hide when at least 30 samples exist; verify unit tests covering "Discovery frame timings are reported" › "Fan leaves Discovery after browsing bubbles", › "Paused time is left out", › "Visit too short to measure", › "One event per visit" and › "Analytics off"
+- [ ] 5.1 Add `perf.discovery_frames` to `analytics-events.ts` and record frame samples in the canvas loop, sending once per visit on detach or first hide when at least 30 samples exist, with the `visibilitychange` listener added in `attached()` and removed in `detaching()`; verify unit tests covering "Discovery frame timings are reported" › "Fan leaves Discovery after browsing bubbles", › "Paused time is left out", › "Visit too short to measure", › "One event per visit" and › "Analytics off"
 
 ## 6. Frontend: start-up (design D10, frontend #782)
 

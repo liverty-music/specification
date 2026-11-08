@@ -29,7 +29,7 @@ Not changing: what the field contains, the physics feel, the sounds, the look of
 
 ### Modified Capabilities
 
-- `components/infrastructure/fan/web/route/discovery`: "Physics-Based Bubble Animation" gains a frame-rate bound with 50 bubbles, idle and after a tap. "Revealed bubble names fade in on real time" states that a name prepared off the main thread is still drawn on time. One requirement is added: Discovery reports its frame timings once per visit.
+- `components/infrastructure/fan/web/route/discovery`: "Physics-Based Bubble Animation" gains a frame-rate bound with 50 bubbles, idle and after a tap. "Revealed bubble names fade in on real time" states that a name prepared off the main thread is still drawn on time. "Cold-load reveal timings are reported" states that a name counts as drawn in the frame it is on screen. One requirement is added: Discovery reports its frame timings once per visit.
 
 Unchanged:
 - `components/infrastructure/fan/web/global/analytics`: the new event follows its existing consent, query-string and display-mode rules; no rule there changes.
