@@ -4,7 +4,7 @@
 - MusicBrainz, already used for canonical names and official sites, returns `life-span: {begin, end, ended}` on every artist lookup (`/ws/2/artist/<mbid>?fmt=json`). Checked on 2026-11-09: SMAP, チャットモンチー, BiSH, 嵐, The Beatles and Michael Jackson have `ended: true`; ELLEGARDEN and 東京事変, which re-formed, have `ended: null`; Queen has `ended: true` with no end date. MusicBrainz has no field for a hiatus.
 - MusicBrainz allows about 1 request per second; the client throttles to that (`musicbrainz/client.go`, `rateLimitInterval`). Looking 50 chart artists up during a ListTop call would take about 50 seconds, so the status must be stored ahead of time.
 - The bubble field never shows an artist the fan follows (`frontend/src/services/artist-bubble-store.ts`), and it tops itself up with more chart artists when a fetch leaves it short.
-- The number of registered artists in prod is not known: the read-only prod login (`cloud-sql-access.md` runbook) failed on 2026-11-09 with `role "pannpers@pannpers.dev" does not exist`, so the count could not be read.
+- The number of registered artists in prod is not known: on 2026-11-09 the read-only prod login of the `cloud-sql-access.md` runbook was refused because the developer's Cloud SQL IAM user is missing, so the count could not be read.
 
 ## Goals / Non-Goals
 

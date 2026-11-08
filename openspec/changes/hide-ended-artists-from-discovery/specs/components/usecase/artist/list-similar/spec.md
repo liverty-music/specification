@@ -26,6 +26,21 @@ ArtistUseCase.ListSimilar SHALL take an artist id and a limit from 0 to 50, get 
 - **WHEN** the catalog lists no similar artist
 - **THEN** ListSimilar returns an empty list
 
+### Requirement: ListSimilar reuses a recent result
+ArtistUseCase.ListSimilar SHALL return the earlier result, without the artists whose activity has ended by the time of this call and then cut to the requested limit, without looking up the seed or consulting the catalog, when the same artist id was answered within the last 6 hours, whatever limit either call used.
+
+#### Scenario: Repeated call
+- **WHEN** ListSimilar is called twice with the same artist id and limit 10 minutes apart
+- **THEN** the second call returns the first call's result without a catalog lookup
+
+#### Scenario: Repeated call with a different limit
+- **WHEN** ListSimilar is called for an artist with a limit of 30 and, 1 hour later, for the same artist with a limit of 10
+- **THEN** the second call returns the first 10 artists of the first call's result without a catalog lookup
+
+#### Scenario: Result older than 6 hours
+- **WHEN** ListSimilar is called for an artist more than 6 hours after the last call for that artist
+- **THEN** the catalog is consulted again
+
 ## ADDED Requirements
 
 ### Requirement: ListSimilar leaves out artists whose activity has ended
