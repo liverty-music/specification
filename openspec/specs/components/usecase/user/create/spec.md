@@ -8,7 +8,7 @@ Registers the signed-in person as a User, or returns their existing User when th
 
 ### Requirement: Input is checked before anything is stored
 
-Create SHALL take a new User's provider user ID, email, name and, optionally, a Home and a preferred language. It SHALL fail with InvalidArgument and store nothing when the Home is invalid or when a preferred language is given that is not valid, in the terms of the User entity.
+Create SHALL take a new User's provider user ID, email, name and preferred language and, optionally, a Home. It SHALL fail with InvalidArgument and store nothing when the Home is invalid or when the preferred language is missing or not valid, in the terms of the User entity.
 
 #### Scenario: Invalid home
 
@@ -20,19 +20,10 @@ Create SHALL take a new User's provider user ID, email, name and, optionally, a 
 - **WHEN** Create is called with preferred language `JA`
 - **THEN** it fails with InvalidArgument and no User is stored
 
-### Requirement: A new identity is registered
+#### Scenario: Missing preferred language
 
-When no User exists for the provider user ID or the email, Create SHALL call User.Create with the given values and return the stored User, with its Home when one was given and with the preferred language when one was given.
-
-#### Scenario: New user with home and language
-
-- **WHEN** Create is called for an unregistered identity with a Home `JP-13` and preferred language `ja`
-- **THEN** it returns a new User carrying that Home and preferred language `ja`
-
-#### Scenario: New user without optional values
-
-- **WHEN** Create is called for an unregistered identity with no Home and no preferred language
-- **THEN** it returns a new User with no home and no preferred language
+- **WHEN** Create is called without a preferred language
+- **THEN** it fails with InvalidArgument and no User is stored
 
 ### Requirement: A registered identity gets its existing user back
 
@@ -81,3 +72,17 @@ User.Create announces each new User it stores (components/entity/user/create); C
 
 - **WHEN** a new User is announced while email verification is not configured
 - **THEN** no email is sent and the User stays created
+
+### Requirement: A new identity is registered with its language
+
+When no User exists for the provider user ID or the email, Create SHALL call User.Create with the given values and return the stored User, with its preferred language and with its Home when one was given.
+
+#### Scenario: New user with home and language
+
+- **WHEN** Create is called for an unregistered identity with a Home `JP-13` and preferred language `ja`
+- **THEN** it returns a new User carrying that Home and preferred language `ja`
+
+#### Scenario: New user without a home
+
+- **WHEN** Create is called for an unregistered identity with no Home and preferred language `en`
+- **THEN** it returns a new User with no home and preferred language `en`

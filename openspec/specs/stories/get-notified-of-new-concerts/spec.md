@@ -22,18 +22,18 @@ Goal ..> : include NotificationUseCaseDeliver
 
 ### Requirement: New concerts reach matched followers' browsers and are recorded
 
-When concerts are added for an artist, NotificationUseCase.NotifyNewConcerts SHALL choose the followers whose hype level matches the new concerts, build each one's message and request one new_concerts notification per chosen follower, and NotificationUseCase.Deliver SHALL record each requested notification as a Notification and push its message to every browser that follower has registered. Each follower's Notification SHALL end Delivered when at least one of their browsers' push services accepts the message, and Failed otherwise.
+When concerts are added for an artist, NotificationUseCase.NotifyNewConcerts SHALL choose the followers whose hype level matches the new concerts and request one new_concerts notification per chosen follower, naming the artist and that follower's matched concerts, and NotificationUseCase.Deliver SHALL record each requested notification as a Notification and push its message to every browser that follower has registered. The Notification SHALL be recorded whether or not a browser accepts the message, so it is listed in the fan's notification center.
 
 #### Scenario: Away follower with one browser
 
-- **WHEN** a concert is added for an artist that a fan follows at Away, and the fan has one registered browser whose push service accepts the message
-- **THEN** that browser receives one message titled with the artist's name that counts 1 new concert and links to the concert
-- **AND** the fan has one new_concerts Notification that is Delivered
+- **WHEN** a concert of Vaundy is added, a fan follows Vaundy at Away, and the fan has one registered browser whose push service accepts the message
+- **THEN** that browser receives one message titled [Vaundy] 新着ライブ発表!! (in Japanese) that counts 1 new concert and links to the concert
+- **AND** the fan has one new_concerts Notification
 
 #### Scenario: Matched follower without a browser
 
 - **WHEN** a concert is added for an artist that a fan follows at Away, and the fan has no registered browser
-- **THEN** the fan has one new_concerts Notification that is Failed with the reason "no active push subscription"
+- **THEN** the fan has one new_concerts Notification, listed in the notification center
 
 #### Scenario: Watch follower
 
@@ -43,7 +43,7 @@ When concerts are added for an artist, NotificationUseCase.NotifyNewConcerts SHA
 #### Scenario: Browser gone
 
 - **WHEN** the push service of a matched fan's only browser reports it gone
-- **THEN** the fan's Notification is Failed and that browser's PushSubscription is removed
+- **THEN** the fan's Notification is still recorded and that browser's PushSubscription is removed
 
 ### Requirement: Every way a concert is added reaches followers the same way
 
@@ -52,7 +52,7 @@ Concerts added by the daily discovery, by an admin approving a held concert, and
 #### Scenario: Organizer publishes a co-headlined concert
 
 - **WHEN** an Organizer publishes a PUBLIC concert performed by two artists, and a fan follows both at Away
-- **THEN** the fan receives two messages, one titled with each artist's name
+- **THEN** the fan receives two messages, each titled with one of the two artists' names in brackets
 
 #### Scenario: Unlisted concert
 

@@ -6,42 +6,6 @@ How the fan app chooses its language and renders localized text: resolving and d
 
 ## Requirements
 
-### Requirement: Unified Language Preference Resolution
-
-The guest (anonymous-period) language preference SHALL be exposed as
-observable application state, unified with the authenticated user's
-`preferredLanguage` source. The frontend SHALL NOT read the active guest
-language through an unobservable locale lookup at render time for the purpose
-of driving UI state; bindings that depend on the current language SHALL
-depend on the observable language value. The system SHALL also handle an
-authenticated user whose backend preferred-language value is NULL (historical
-rows not yet backfilled) by surfacing the detected locale as the effective
-language and backfilling the server value via `UserService.SetPreferredLanguage`;
-this fallback path is independent of the guest-data reconciliation, which
-only fires when guest data is present in localStorage.
-
-#### Scenario: Guest language exposed as observable
-- **WHEN** a guest's preferred language is read for display or selection state
-- **THEN** it SHALL be sourced from the observable current-language value
-  (backed by the anonymous-period `language` localStorage key)
-- **AND** a change to the guest language SHALL notify dependent bindings so they
-  re-evaluate without a manual mirror or a render-time unobservable locale read
-
-#### Scenario: Unified resolution across auth states
-- **WHEN** the current preferred language is read
-- **THEN** the system SHALL surface the authenticated user's
-  `User.preferredLanguage` for an authenticated user and the anonymous-period
-  language for a guest
-- **AND** callers SHALL NOT branch on authentication state to choose the source
-
-#### Scenario: NULL preferred_language surfaced and backfilled
-- **WHEN** the authenticated user's `User.preferredLanguage` is NULL
-- **THEN** the system SHALL surface the detected locale as the effective language
-- **AND** the system SHALL backfill the server value via
-  `UserService.SetPreferredLanguage`, preserving the current
-  `user-hydration-task` behavior
-- **AND** this SHALL occur whether or not any guest data exists in localStorage
-
 ### Requirement: Anonymous Locale is a Single Source of Truth
 
 For an anonymous (unauthenticated) session, the active i18n locale SHALL be derived from exactly one persisted source — `localStorage['language']` (the i18next detector cache). No secondary `localStorage` key SHALL shadow, mirror, or override the anonymous locale. Any reactive projection of the anonymous locale (e.g. the value a language selector binds to for its highlight) SHALL be derived from the active i18n locale, NOT from a separate persisted key, so the selector highlight can never disagree with the rendered UI.
@@ -132,25 +96,6 @@ After loading the authenticated user's profile, the system SHALL apply the user'
 - **THEN** the system MAY render with the tentative locale until the hydration completes
 - **AND** the system SHALL switch to the DB-sourced locale as soon as hydration resolves
 - **AND** the system SHALL NOT block initial render waiting for hydration
-
-### Requirement: Backfill Preferred Language When Missing
-
-When the hydrated user profile has no preferred language set (NULL legacy row), the system SHALL backfill the DB by persisting the currently effective locale before continuing.
-
-#### Scenario: Hydrated profile has no preferred language
-
-- **WHEN** `UserService.ensureLoaded()` resolves
-- **AND** `UserService.current.preferredLanguage` is absent (proto `optional` field not present)
-- **THEN** the system SHALL call `UserService.setPreferredLanguage(I18N.getLocale())`
-- **AND** on success, `UserService.current.preferredLanguage` SHALL match the value sent
-- **AND** the active i18n locale SHALL remain unchanged (no flicker because the value matched what was already effective)
-
-#### Scenario: Backfill RPC failure is non-fatal
-
-- **WHEN** the backfill `SetPreferredLanguage` RPC fails
-- **THEN** the system SHALL log a warning
-- **AND** the application SHALL continue to render with the current locale
-- **AND** the next hydration cycle SHALL retry the backfill (because the DB still holds NULL)
 
 ### Requirement: Timezone-based country detection
 The system SHALL detect the user's country from the browser's IANA timezone identifier using `Intl.DateTimeFormat().resolvedOptions().timeZone`.
@@ -508,3 +453,19 @@ While the user is authenticated and the account's preferred language is set, the
 - **AND** a signed-in user whose account language is `ja` opens the app
 - **THEN** the app SHALL show Japanese as soon as the account is loaded
 - **AND** the language saved on this device SHALL then be `ja`
+
+### Requirement: One observable language source for each sign-in state
+
+The fan app's current language SHALL come from one source for each sign-in state: the account's preferred language for a signed-in fan, and the language chosen on the device for a guest. Everything on screen that depends on the language, including a language selector's highlight, SHALL update as soon as that language changes, without a reload.
+
+#### Scenario: Guest language exposed as observable
+- **WHEN** a guest changes the language
+- **THEN** the screen and the language selector's highlight show the new language without a reload
+
+#### Scenario: Unified resolution across auth states
+- **WHEN** a screen shows the current language
+- **THEN** it shows the account's preferred language for a signed-in fan and the device's language for a guest
+
+#### Scenario: Account language used as is
+- **WHEN** a signed-in fan's account is restored
+- **THEN** the account's preferred language is the current language, and the account is not changed

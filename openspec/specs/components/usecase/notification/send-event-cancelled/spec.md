@@ -11,7 +11,7 @@ SendEventCancelled SHALL run for each Event announced as cancelled by Series.Can
 
 #### Scenario: Two fans
 - **WHEN** an Event with two Paid Orders of two fans is announced as cancelled
-- **THEN** each of the two fans receives one email and one event_cancelled push
+- **THEN** each of the two fans receives one email and one concert_cancelled push
 
 #### Scenario: Already refunded
 - **WHEN** an Event is announced as cancelled and one of its Orders is already Refunded
@@ -42,7 +42,7 @@ It SHALL send, with Order.SendCancellationEmail to the user's email address and 
 - that this price is refunded to the card with the Order's card brand and last four digits, and that a second notice follows once the refund is made;
 - when the Order has a Ticket resold through official resale (公式リセール), that the resold Ticket was already refunded at its sale.
 
-After the email is sent, it SHALL start NotificationUseCase.Deliver for the user with a notification of type event_cancelled, named after the type and the Order, saying in the user's language that the concert is cancelled and its tickets are refunded, and opening the event's page when tapped. A user with no registered browser receives the email only. When the Order is no longer Paid or no longer exists when it is read, SendEventCancelled SHALL send nothing for it. When the Order has no Issued Ticket because every Ticket was resold, it SHALL send nothing for it either: nothing of it is refunded, so no refund notice follows. When reading or sending fails otherwise, that Order's notice SHALL fail and run again.
+After the email is sent, it SHALL start NotificationUseCase.Deliver for the user with a notification of type concert_cancelled whose subject is the Order, named after the type and the Order; tapped, it opens the event's page. A user with no registered browser receives the email only. When the Order is no longer Paid or no longer exists when it is read, SendEventCancelled SHALL send nothing for it. When the Order has no Issued Ticket because every Ticket was resold, it SHALL send nothing for it either: nothing of it is refunded, so no refund notice follows. When reading or sending fails otherwise, that Order's notice SHALL fail and run again.
 
 #### Scenario: Cancellation email
 - **WHEN** the notice runs for a Paid 6000 yen Order of 2 Issued Tickets paid with a VISA card ending in 1234
@@ -54,7 +54,7 @@ After the email is sent, it SHALL start NotificationUseCase.Deliver for the user
 
 #### Scenario: Fan allowed notifications
 - **WHEN** the Order's user has a registered browser
-- **THEN** an event_cancelled notification is pushed and opens the event's page
+- **THEN** a concert_cancelled notification is pushed and opens the event's page
 
 #### Scenario: Every ticket resold
 - **WHEN** the notice runs for a Paid Order whose every Ticket was resold through official resale
