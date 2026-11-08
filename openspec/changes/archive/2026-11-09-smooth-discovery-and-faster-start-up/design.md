@@ -265,11 +265,11 @@ Both medians are within their bounds; the guest's by 152 ms. The same build meas
 
 ### D11. The requests of a bubble tap skip client-side validation
 
-**Decision.** The request validator (`frontend/src/services/validate-interceptor.ts`) sends `ListSimilarRequest`, `FollowRequest` and `ListByArtistRequest` unvalidated (`UNVALIDATED_REQUEST_TYPES`), and never compiles their rules.
+**Decision.** The request validator (`frontend/src/services/validate-interceptor.ts`) sends `ListSimilarRequest`, `FollowRequest` and `ListByArtistRequest` unvalidated (`UNVALIDATED_REQUEST_TYPES`), and never compiles their rules. Chosen by the owner on 2026-11-08.
 
 **Why.** The validator compiles a request type's rules in an idle callback the first time that type is sent. The tap sends the visit's first `ListSimilar`, so the compilation (176–246 ms in one callback at 4x) landed inside the 2.5 s after a tap and broke the 200 ms bound. These three requests are built only from ids the app holds, never from what the fan typed, so a rule they break is an app bug that the backend, validating every request with the same rules, reports anyway.
 
-**Alternative.** Compiling Discovery's request types at idle after the reveal keeps the validation but only moves the same long frame into the idle field. Chosen by the owner on 2026-11-08.
+**Alternative.** Compiling Discovery's request types at idle after the reveal keeps the validation but only moves the same long frame into the idle field; not chosen.
 
 ## Risks / Trade-offs
 
