@@ -42,7 +42,7 @@ When reading or sending fails, SendLotteryLoss SHALL fail with that error and is
 
 ### Requirement: Push notification after the email
 
-After the email is sent, SendLotteryLoss SHALL start NotificationUseCase.Deliver for the user of the entry's Order with a notification of type lottery_loss, named after the type and the entry, saying, by the entry's lost reason, that the entry lost or that the concert is cancelled, in the user's language, and opening the event's page when tapped. A user with no registered browser receives the email only. A run again for the same entry, after a stop or a repeated announcement, starts no second Deliver, so the fan is pushed once; the email is still sent once.
+After the email is sent, SendLotteryLoss SHALL start NotificationUseCase.Deliver for the user of the entry's Order with a notification of type lottery_loss, named after the type and the entry, whose message the Notification entity renders from the entry's lost reason in the user's language, and opening the event's page when tapped. A user with no registered browser receives the email only. A run again for the same entry, after a stop or a repeated announcement, starts no second Deliver, so the fan is pushed once; the email is still sent once.
 
 #### Scenario: Fan allowed notifications
 - **WHEN** the user of the entry's Order has a registered browser
