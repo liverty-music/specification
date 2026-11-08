@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Registers the signed-in person as a User, or returns their existing User when their identity is already registered, capturing their home area, and optionally their preferred language, at sign-up.
+Registers the signed-in person as a User, or returns their existing User when their identity is already registered, capturing their preferred language, and optionally their home area, at sign-up.
 
 ## Requirements
 
