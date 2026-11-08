@@ -22,7 +22,7 @@ It SHALL send, with Order.SendRefundEmail to the user's email address and in the
 
 When every Ticket of the Order was resold, so the refund amount is 0, it SHALL send nothing.
 
-After the email is sent, it SHALL start NotificationUseCase.Deliver for the user with a notification of type order_refunded, named after the type and the Order, saying in the user's language that the price was refunded, with the amount, and opening the Order when tapped. A user with no registered browser receives the email only. When Order.Get fails with NotFound, SendOrderRefunded SHALL send nothing and finish. When reading or sending fails otherwise, it SHALL fail and run again.
+After the email is sent, it SHALL start NotificationUseCase.Deliver for the user with a notification of type order_refunded, named after the type and the Order, whose message the Notification entity renders in the user's language with the refund amount, and opening the Order when tapped. A user with no registered browser receives the email only. When Order.Get fails with NotFound, SendOrderRefunded SHALL send nothing and finish. When reading or sending fails otherwise, it SHALL fail and run again.
 
 #### Scenario: Refund email
 - **WHEN** a 6000 yen Order of 2 tickets paid with a VISA card ending in 1234 is announced refunded with the reason Cancellation and the amount 6000 yen

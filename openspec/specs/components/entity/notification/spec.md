@@ -62,6 +62,7 @@ A Notification's message SHALL be rendered from the current state of the records
 | resale_win | 公式リセールに当選しました | {date}の{venue}公演の公式リセールに当選しました!!タップしてチケットを表示 | You Won the Official Resale | You won the official resale for {venue} on {date}! Tap to see your tickets. |
 | lottery_loss, not drawn | 抽選結果のお知らせ | {date}の{venue}公演のチケット抽選が落選となりました。 | Ticket Lottery Result | Your lottery entry for {venue} on {date} was not drawn. |
 | lottery_loss, card could not be charged | 当選を取り消しました | カードで決済できなかったため、{date}の{venue}公演の当選を取り消しました。 | Lottery Win Cancelled | Your win for {venue} on {date} was cancelled because your card could not be charged. |
+| lottery_loss, concert cancelled | 公演が中止になりました | {date}の{venue}公演が中止になったため、抽選のお申し込みは終了しました。請求はありません。 | Concert Cancelled | The concert at {venue} on {date} was cancelled, so your lottery entry ended. You were not charged. |
 | resale_entry_lapsed | 公式リセールの期限切れ | カードの与信の有効期限が来たため申し込みが終了しました。 | Official Resale Entry Expired | Your entry ended because the card authorization expired. |
 | resale_entry_lost, no ticket left | 公式リセールの抽選結果 | チケットの割り当てはありませんでした。 | Official Resale Result | No ticket was allocated to your entry. |
 | resale_entry_lost, concert cancelled | 公式リセールの終了 | 公演中止のため申し込みが終了しました。 | Official Resale Ended | Your entry ended because the concert was cancelled. |
