@@ -1,0 +1,6 @@
+# Tasks
+
+## 1. Frontend: Discovery route (components/infrastructure/fan/web/route/discovery)
+
+- [x] 1.1 In `src/routes/discovery/discovery-route.ts`, start the reveal timing of a cold visit at `loading()` only when the bubble field is shown (the artists view, not in search mode, the page visible), and route the four places that pause the field (search mode, `attached()`, `onVisibilityChange`, `viewChanged`) through one method that pauses the canvas and drops the reveal timing; verify with tests in `test/routes/discovery-route.spec.ts` annotated `@spec components/infrastructure/fan/web/route/discovery "Field paused before the reveal completes"`, one per pause site (page hidden when Discovery opens, page hidden during the reveal, Discovery opened on the All Nearby view, a switch to the All Nearby view during the reveal, search mode entered during the reveal), each asserting no `perf.discovery_reveal` is captured after the fan returns to the bubbles and every name is drawn, and verify the existing reveal-timing tests still pass
+- [x] 1.2 Run a cold load of Discovery as a guest in a local production build with Playwright, with analytics on and the page visible throughout, and verify one `perf.discovery_reveal` is still captured (the visible path is unchanged)
