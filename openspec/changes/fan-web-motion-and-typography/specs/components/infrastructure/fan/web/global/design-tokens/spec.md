@@ -2,17 +2,22 @@
 
 ### Requirement: Installed Noto is used before a download
 
-The fan app SHALL draw its plain text with an installed Noto Sans JP or Noto Sans CJK JP, without downloading Noto Sans JP, on a device where the browser can address the installed font by a name that only a font with every weight from 100 to 900 answers to. Every other device SHALL download Noto Sans JP as before. On no device SHALL bold text be drawn at the regular weight or in a synthesized bold.
+On Windows 10 or 11 with Noto Sans JP installed, and on Android 15 or later, the fan app SHALL draw its plain text with the installed Noto Sans JP or Noto Sans CJK JP, which have every weight from 100 to 900, and SHALL NOT download Noto Sans JP. Every other device, including Android 14 or earlier, whose Noto Sans CJK JP has only the Regular weight, SHALL download Noto Sans JP as before. On no device SHALL bold text be drawn at the regular weight or in a synthesized bold.
 
 #### Scenario: Windows with Noto Sans JP installed
 
 - **WHEN** the fan opens the app in Chrome on Windows 11 with Noto Sans JP installed
 - **THEN** Japanese text is drawn in Noto Sans JP and no Noto Sans JP font file is downloaded
 
-#### Scenario: Bold text on Android
+#### Scenario: Android 15 or later
 
-- **WHEN** the fan opens the app in Chrome on any Android version and a screen shows bold Japanese text
-- **THEN** the bold text is drawn at its bold weight, from the installed Noto Sans CJK JP when it has every weight and can be told apart from a Regular-only one, otherwise from the downloaded Noto Sans JP
+- **WHEN** the fan opens the app in Chrome on Android 15 and a screen shows regular and bold Japanese text
+- **THEN** both are drawn in the installed Noto Sans CJK JP at their own weights, and no Noto Sans JP font file is downloaded
+
+#### Scenario: Android 14 or earlier
+
+- **WHEN** the fan opens the app in Chrome on Android 14 and a screen shows regular and bold Japanese text
+- **THEN** Noto Sans JP is downloaded and draws both at their own weights
 
 #### Scenario: iPhone
 

@@ -87,7 +87,10 @@ Fallback: `@supports not (timeline-trigger: --t view())` uses the same keyframes
 @supports not (timeline-trigger: --t view()) {
   .lane {
     --_lag: calc((sibling-index() - 1) * 12%);
-    animation: deal-in linear both, deal-in linear both reverse;
+    /* The exit animation fills forwards only: with `both`, its backwards fill
+       (keyframe 100%, no transform) would override the entry animation, which
+       comes earlier in the list, for the whole time the row is in view. */
+    animation: deal-in linear both, deal-in linear forwards reverse;
     animation-timeline: view(), view();
     animation-range:
       entry var(--_lag) entry calc(60% + var(--_lag)),
@@ -130,7 +133,7 @@ Tab switches: Aurelia's router has no View Transition support (its documentation
   "Local Noto Sans JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif;
 ```
 
-Windows 10/11 ship `NotoSansJP-VF.ttf` (variable) since the April 2025 update; Android ships Noto Sans CJK JP (variable from Android 15, Regular only on 6-14). `local()` matches a font's full or PostScript name. Whether Android 15's variable Noto Sans CJK JP and Android 6-14's Regular-only file answer to different names is not documented anywhere we found, so task 7.1 checks it on an Android 15 device and an Android 14 emulator. If some name answers only on Android 15, the Android source uses that name. If not, the Android source is removed and every Android version downloads as before: drawing bold at 400 on older Android to save a download on newer Android is not an acceptable trade, and the requirement is written so that either outcome meets it. Windows needs no such check: its only Noto Sans JP is the variable `NotoSansJP-VF.ttf`. This keeps `adopt-m3-cube-ui-foundation`'s rule that a missing weight is not synthesized. Safari does not use `local()` for fingerprinting reasons; Apple devices have no Noto, so they download as before. The Google Fonts link stays as the fallback, and the browser fetches a Google subset only when the alias cannot draw a character. Source: ICS MEDIA, "ウェブ制作者のための Noto Sans JP 最新実装ガイド".
+Windows 10/11 ship `NotoSansJP-VF.ttf` (variable) since the April 2025 update; Android ships Noto Sans CJK JP (variable from Android 15, Regular only on 6-14). `local()` matches a font's full or PostScript name. Whether Android 15's variable Noto Sans CJK JP and Android 6-14's Regular-only file answer to different names is not documented anywhere we found, so task 1.3 checks it on an Android 15 device and an Android 14 emulator before anything is built. If some name answers only on Android 15, the Android source uses that name and the design-tokens requirement holds as written. If not, the Android source is removed, every Android version downloads as before, and the requirement's Android 15 clause and scenario are revised in this change before task 7.1: drawing bold at 400 on older Android to save a download on newer Android is not an acceptable trade. Windows needs no such check: its only Noto Sans JP is the variable `NotoSansJP-VF.ttf`. This keeps `adopt-m3-cube-ui-foundation`'s rule that a missing weight is not synthesized. Safari does not use `local()` for fingerprinting reasons; Apple devices have no Noto, so they download as before. The Google Fonts link stays as the fallback, and the browser fetches a Google subset only when the alias cannot draw a character. Source: ICS MEDIA, "ウェブ制作者のための Noto Sans JP 最新実装ガイド".
 
 This edits the stack that `adopt-m3-cube-ui-foundation` introduces; the task waits for its token renames.
 
