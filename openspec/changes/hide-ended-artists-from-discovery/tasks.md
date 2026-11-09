@@ -44,4 +44,7 @@
 ## 9. Production verification (read-only)
 
 - [ ] 9.1 Confirm the AtlasMigration status reports the new version, the event consumer logs show `refresh-artist` handling `ARTIST.created`, and the first scheduled `artist-refresh` run logs its slot, the listed and attempted counts and no circuit break
-- [ ] 9.2 When archiving the change, remove `ArtistNameResolutionUseCase.ResolveCanonicalName` from the usecase-beta fence in the Purpose of `openspec/specs/stories/discover-artists/spec.md` in the archive commit; verify `python3 scripts/check-story-diagrams.py` passes
+
+## 10. Archive
+
+- [ ] 10.1 When archiving the change, remove `ArtistNameResolutionUseCase.ResolveCanonicalName` from the usecase-beta fence in the Purpose of `openspec/specs/stories/discover-artists/spec.md` in the archive commit; verify `python3 scripts/check-story-diagrams.py` passes
