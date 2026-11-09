@@ -14,6 +14,7 @@ systemBoundary "Liverty Music"
   ArtistUseCaseListTop("ArtistUseCase.ListTop")
   ArtistUseCaseListSimilar("ArtistUseCase.ListSimilar")
   ArtistUseCaseCreate("ArtistUseCase.Create")
+  ArtistNameResolutionUseCaseResolveCanonicalName("ArtistNameResolutionUseCase.ResolveCanonicalName")
   ArtistUseCaseRefresh("ArtistUseCase.Refresh")
   ArtistImageSyncUseCaseSyncArtistImage("ArtistImageSyncUseCase.SyncArtistImage")
 end
@@ -22,6 +23,7 @@ Goal ..> : include ArtistUseCaseSearch
 Goal ..> : include ArtistUseCaseListTop
 Goal ..> : include ArtistUseCaseListSimilar
 Goal ..> : include ArtistUseCaseCreate
+Goal ..> : include ArtistNameResolutionUseCaseResolveCanonicalName
 Goal ..> : include ArtistUseCaseRefresh
 Goal ..> : include ArtistImageSyncUseCaseSyncArtistImage
 ```

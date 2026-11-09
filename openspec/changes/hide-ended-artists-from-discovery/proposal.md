@@ -27,7 +27,7 @@ The Discovery bubbles suggest artists from the music catalog's popular and simil
 - `components/usecase/concert/search-new-concerts`: does not search artists whose activity has ended.
 - `components/usecase/ticket-sale/discover-for-artist`: does not search artists whose activity has ended.
 - `components/entity/follow/list-all`: also returns each followed artist's `activity_ended`, which DiscoverForArtist reads.
-- `stories/discover-artists` (Purpose and requirements): the usecase diagram replaces `ArtistNameResolutionUseCase.ResolveCanonicalName` with `ArtistUseCase.Refresh`; the enrichment requirement names Refresh; a new requirement states that charts and similar artists do not suggest artists whose activity has ended, while a name search still finds them.
+- `stories/discover-artists` (Purpose and requirements): the usecase diagram adds `ArtistUseCase.Refresh` now and drops `ArtistNameResolutionUseCase.ResolveCanonicalName` at archive, once the modified requirement no longer names it (`scripts/check-story-diagrams.py` checks main specs only); the enrichment requirement names Refresh; a new requirement states that charts and similar artists do not suggest artists whose activity has ended, while a name search still finds them.
 
 Entity operations the modified usecases rely on and that stay unchanged: `Artist.ListTop`, `Artist.ListSimilar` (catalog lookups; the catalog does not filter), `Artist.FilterArtistsByMBID`, `Artist.Create`, `Artist.Get` (SearchNewConcerts now reads the artist with it), `Artist.UpdateName` and `Artist.ListByMBIDs` (their promises do not change; the artists they return now carry `activity_ended` as an attribute of the entity).
 

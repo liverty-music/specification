@@ -44,6 +44,10 @@ ArtistUseCase.Refresh SHALL fail with the error of Artist.GetArtist, other than 
 - **WHEN** Artist.UpdateActivityEnded fails with NotFound
 - **THEN** Refresh fails with NotFound
 
+#### Scenario: Name update fails
+- **WHEN** the catalog's name differs and Artist.UpdateName fails with NotFound
+- **THEN** Refresh fails with NotFound
+
 ### Requirement: Refresh runs when an artist is newly registered
 When an artist-created announcement is made, Refresh SHALL run with the announced artist id, MBID and name. When the run fails, it SHALL be retried up to 3 more times.
 
