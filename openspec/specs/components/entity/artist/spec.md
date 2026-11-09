@@ -13,6 +13,7 @@ An Artist is a musical performer or group that fans follow for concert news. It 
 | fanart image | one image of a kind: its catalog id, URL, like count and language | URL required; like count 0 or more |
 | fanart_sync_time | when the artist's images were last checked | optional; absent means never checked |
 | official_site_check_time | when the artist's official site was last checked in the music catalog, whatever the check found | optional; absent means never checked |
+| activity_ended | whether the music catalog marks the artist's activity as ended: the group dissolved or the solo artist died | required; false when the catalog records no end and when it was never checked; a hiatus is not an end |
 | organizer | the Organizer that represents the artist | optional; at most one |
 
 ```mermaid

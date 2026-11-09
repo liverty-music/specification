@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Looks up an MBID in the music catalog and returns the catalog's canonical name and MBID for it.
+Looks up an MBID in the music catalog and returns the catalog's canonical name and MBID for it, and whether the catalog marks the artist's activity as ended.
 
 ## Requirements
 

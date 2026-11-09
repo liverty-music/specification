@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A fan finds artists to follow by searching by name, browsing popular charts or exploring artists similar to one they know; every artist found is a registered artist that soon shows the catalog's canonical name and its community images.
+A fan finds artists to follow by searching by name, browsing popular charts or exploring artists similar to one they know; every artist found is a registered artist that soon shows the catalog's canonical name and its community images, and charts and similar artists suggest only artists whose activity has not ended.
 
 ```mermaid
 usecase-beta
@@ -15,6 +15,7 @@ systemBoundary "Liverty Music"
   ArtistUseCaseListSimilar("ArtistUseCase.ListSimilar")
   ArtistUseCaseCreate("ArtistUseCase.Create")
   ArtistNameResolutionUseCaseResolveCanonicalName("ArtistNameResolutionUseCase.ResolveCanonicalName")
+  ArtistUseCaseRefresh("ArtistUseCase.Refresh")
   ArtistImageSyncUseCaseSyncArtistImage("ArtistImageSyncUseCase.SyncArtistImage")
 end
 Fan --> Goal
@@ -23,6 +24,7 @@ Goal ..> : include ArtistUseCaseListTop
 Goal ..> : include ArtistUseCaseListSimilar
 Goal ..> : include ArtistUseCaseCreate
 Goal ..> : include ArtistNameResolutionUseCaseResolveCanonicalName
+Goal ..> : include ArtistUseCaseRefresh
 Goal ..> : include ArtistImageSyncUseCaseSyncArtistImage
 ```
 
