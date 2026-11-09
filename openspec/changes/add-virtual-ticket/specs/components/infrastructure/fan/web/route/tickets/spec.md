@@ -77,6 +77,11 @@ From a virtual ticket, the fan SHALL be able to share an image of its face. The 
 - **WHEN** the fan shares the image of a virtual ticket that is 入場済み
 - **THEN** the image shows no stamp
 
+#### Scenario: Sharing without the cover image
+
+- **WHEN** the fan taps 画像を共有 without a connection on a virtual ticket whose cover image was never loaded on the device
+- **THEN** the share sheet opens with the masked image without the cover image
+
 #### Scenario: Browser without file sharing
 
 - **WHEN** the fan taps 画像を共有 in a desktop browser that cannot share files

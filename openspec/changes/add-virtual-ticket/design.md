@@ -90,10 +90,10 @@ Both are about 1.5 s. With reduced motion, the stamp is shown at rest.
 The share image sets `data-share` on the face (or on a clone of it). That CSS masks the full name and phone number and hides the stamp. The image has no QR code and no ticket id, because the face never contains them.
 
 - **WebGL path:** the face drawn on screen is the live DOM face, so masking it would also mask what the fan sees. The on-screen canvas is frozen while the masked texture exists:
-  1. Stop the ticker, so the visible canvas keeps its last frame, and set `aria-busy="true"` on the face, so assistive technology does not announce the masked text in the two paints it lasts.
+  1. Stop the ticker, so the visible canvas keeps its last frame. The face is not a live region, so a screen reader does not announce the masked text during the two paints the mask lasts (WAI-ARIA 1.2, https://www.w3.org/TR/wai-aria-1.2/#aria-live).
   2. Set `data-share` on the live face, and wait for the next `paint` of the `HTMLSource`.
   3. Extract the face sprite's frame. The design assumes that `extract` renders into an offscreen render texture and not into the visible canvas; task 4.4 verifies this by capturing the visible canvas during an export.
-  4. In a `finally` block, so a failure never leaves the face masked or frozen: remove `data-share` and `aria-busy`, wait for the next `paint`, then restart the ticker.
+  4. In a `finally` block, so a failure never leaves the face masked or frozen: remove `data-share`, wait for the next `paint`, then restart the ticker.
 
   The first wait is what keeps the export masked: the spike exported the unmasked face without it. The frozen ticker is what keeps the view unchanged. A unit test fakes the paint events and asserts the order (ticker stopped, mask, paint, extract, unmask, paint, ticker restarted), including when the extract throws.
 - **DOM path:**
