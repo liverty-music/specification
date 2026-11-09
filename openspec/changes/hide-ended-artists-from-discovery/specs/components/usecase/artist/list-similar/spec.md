@@ -44,7 +44,7 @@ ArtistUseCase.ListSimilar SHALL return the earlier result, without the artists w
 ## ADDED Requirements
 
 ### Requirement: ListSimilar leaves out artists whose activity has ended
-On every call, ArtistUseCase.ListSimilar SHALL read the current activity_ended of the similar artists with Artist.ListByMBIDs and SHALL leave out every artist whose activity_ended is true before it cuts the result to the requested limit. This SHALL apply also when the result is reused from an earlier call for the same artist id.
+ArtistUseCase.ListSimilar SHALL leave out every similar artist whose activity_ended is true at the time of the call, before it cuts the result to the requested limit. When it consults the catalog, it SHALL take activity_ended from the artists Artist.ListByMBIDs returns for the registration step, and an artist it registers has activity_ended false. When it reuses an earlier result for the same artist id, it SHALL read the current activity_ended of that result's artists with one Artist.ListByMBIDs call.
 
 #### Scenario: Ended artist within the limit
 - **WHEN** ListSimilar is called with a limit of 10 and the third of the catalog's similar artists has activity_ended true

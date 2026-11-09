@@ -39,7 +39,7 @@ ArtistUseCase.ListTop SHALL return the earlier result, without consulting the ca
 ## ADDED Requirements
 
 ### Requirement: ListTop leaves out artists whose activity has ended
-On every call, ArtistUseCase.ListTop SHALL read the current activity_ended of the artists it is about to return with Artist.ListByMBIDs and SHALL leave out every artist whose activity_ended is true, keeping the chart order of the rest. This SHALL apply also when the result is reused from an earlier call, so an artist whose activity_ended became true after that call is left out.
+ArtistUseCase.ListTop SHALL leave out every artist whose activity_ended is true at the time of the call, keeping the chart order of the rest. When it consults the catalog, it SHALL take activity_ended from the artists Artist.ListByMBIDs returns for the registration step, and an artist it registers has activity_ended false. When it reuses an earlier result, it SHALL read the current activity_ended of that result's artists with one Artist.ListByMBIDs call, so an artist whose activity_ended became true after the earlier call is left out.
 
 #### Scenario: Chart lists an ended artist
 - **WHEN** the chart for a country lists three registered artists and the second one has activity_ended true
