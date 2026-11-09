@@ -65,7 +65,7 @@ A ticket that is 入場済み SHALL show an admission stamp on its virtual ticke
 
 ### Requirement: The fan can share an image of a virtual ticket without personal details
 
-From a virtual ticket, the fan SHALL be able to share an image of its face. The image SHALL show the face with the full name and phone number masked, and SHALL contain no admission stamp, no QR code and no ticket id. The masking SHALL never change the virtual ticket the fan is looking at. The image SHALL be handed to the device's share sheet as a file; where the browser cannot share files, it SHALL be downloaded instead.
+From a virtual ticket, the fan SHALL be able to share an image of its face. The image SHALL show the face with the full name and phone number masked, and SHALL contain no admission stamp, no QR code and no ticket id. The masking SHALL never change the virtual ticket the fan is looking at. When the cover image cannot be loaded, the image SHALL be made without it. The image SHALL be handed to the device's share sheet as a file; where the browser cannot share files, it SHALL be downloaded instead.
 
 #### Scenario: Sharing from a phone
 
