@@ -97,3 +97,8 @@ The screen, including making the QR code without a connection, opening a virtual
 
 - **WHEN** a fan opens a virtual ticket that is 入場済み in Safari on an iPhone with the current iOS and shares its image
 - **THEN** the virtual ticket shows the stamp and the share sheet receives the masked image with the cover image
+
+#### Scenario: Virtual ticket on an Android phone
+
+- **WHEN** a fan opens a virtual ticket that is 入場済み in Chrome on an Android phone with the current Android and shares its image
+- **THEN** the virtual ticket shows the stamp and the share sheet receives the masked image with the cover image

@@ -89,18 +89,18 @@ Both are about 1.5 s. With reduced motion, the stamp is shown at rest.
 
 The share image sets `data-share` on the face (or on a clone of it). That CSS masks the full name and phone number and hides the stamp. The image has no QR code and no ticket id, because the face never contains them.
 
-- **WebGL path:**
-  1. Set `data-share` on the live face.
-  2. Wait for the next `paint` of the `HTMLSource`.
-  3. Extract the face sprite's frame.
-  4. Remove `data-share`.
+- **WebGL path:** the face drawn on screen is the live DOM face, so masking it would also mask what the fan sees. The on-screen canvas is frozen while the masked texture exists:
+  1. Stop the ticker, so the visible canvas keeps its last frame.
+  2. Set `data-share` on the live face, and wait for the next `paint` of the `HTMLSource`.
+  3. Extract the face sprite's frame. `extract` renders into an offscreen render texture, not into the visible canvas.
+  4. Remove `data-share`, wait for the next `paint`, then restart the ticker.
 
-  The wait is what keeps the export masked: the spike exported the unmasked face without it. A unit test fakes the paint event and asserts that the extract runs after it.
+  The first wait is what keeps the export masked: the spike exported the unmasked face without it. The frozen ticker is what keeps the view unchanged. The spike did not test the freeze, so task 4.4 verifies it by capturing the visible canvas during an export. A unit test fakes the paint events and asserts the order: ticker stopped, mask, paint, extract, unmask, paint, ticker restarted.
 - **DOM path:**
   1. Clone the face and set `data-share` on the clone only, so the view never changes.
   2. Inline the cover as a data URL with `fetch`, which needs CORS.
   3. Serialise the clone and the face's CSS into an SVG `foreignObject` image.
-  4. Draw it to a canvas, draw it again after 50 ms (WebKit misses nested images on the first draw), and call `toBlob`.
+  4. Draw it to a canvas. WebKit misses nested images on the first draw (the spike needed a second draw about 50 ms later), so draw again every 50 ms until the cover's area of the canvas holds non-transparent pixels, up to 1 s, and then call `toBlob`. Without a cover, one draw is enough.
 
   iOS uses the system font. The owner accepted this, so web fonts are not inlined.
 - **Hand-off:** wrap the blob in `File([blob], 'liverty-ticket.png', { type: 'image/png' })`. Use `navigator.share({ files })` when `navigator.canShare({ files })` is true; otherwise download through an object URL.
@@ -132,7 +132,7 @@ The renderer imports `pixi.js`, `pixi.js/html-source` and `pixi-filters/shockwav
 ## Risks / Trade-offs
 
 - [The masked export races the repaint and leaks the full name] → Await the `paint` event before extracting, and test it with a unit test. The DOM path masks a clone, so it never depends on a repaint.
-- [The 50 ms second draw is not enough on a slower iPhone] → Measure it on a real iPhone during the frontend work. If needed, make the delay longer or draw until the image's pixels change.
+- [WebKit on a slower iPhone needs longer than the spike's 50 ms before the cover appears] → The export redraws until the cover's pixels are present (up to 1 s) instead of waiting a fixed time. No real iPhone is available to the owner, so this is verified in Playwright WebKit only. If the cover is still missing after 1 s, the image is shared without it rather than failing.
 - [The CORS rollout order is reversed and cover images break for everyone] → The frontend task that adds `crossorigin` depends on the header check passing in production, and the task says so.
 - [PixiJS 8.23 is late] → The DOM path is complete and ships first. The WebGL path is an addition.
 - [A larger precache, about 340 KB gzip before optimisation, for every fan] → Owner accepted it. Importing only the shockwave filter is expected to shrink it; the bundle size is reported in the frontend PR.
