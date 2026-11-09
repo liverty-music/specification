@@ -7,7 +7,7 @@ ArtistUseCase.ListSimilar returns artists musically similar to a given artist, e
 ## Requirements
 
 ### Requirement: ListSimilar returns the catalog's similar artists as registered artists
-ArtistUseCase.ListSimilar SHALL take an artist id and a limit from 0 to 50, get the seed artist with Artist.Get, look up similar artists with Artist.ListSimilar and a limit of 50 regardless of the requested limit, reduce them with Artist.FilterArtistsByMBID, find the ones already registered with Artist.ListByMBIDs, register the rest with Artist.Create, and return the first `limit` registered artists in the catalog's order. A limit of 0 returns every remaining result of the 50-artist lookup.
+ArtistUseCase.ListSimilar SHALL take an artist id and a limit from 0 to 50, get the seed artist with Artist.Get, look up similar artists with Artist.ListSimilar and a limit of 50 regardless of the requested limit, reduce them with Artist.FilterArtistsByMBID, find the ones already registered with Artist.ListByMBIDs, register the rest with Artist.Create, and return the first `limit` registered artists in the catalog's order among those whose activity has not ended. A limit of 0 returns every remaining result of the 50-artist lookup whose activity has not ended.
 
 #### Scenario: Known and new similar artists
 - **WHEN** the catalog lists a registered artist and an unregistered artist as similar
@@ -31,7 +31,7 @@ ArtistUseCase.ListSimilar SHALL take an artist id and a limit from 0 to 50, get 
 - **THEN** ListSimilar returns an empty list
 
 ### Requirement: ListSimilar reuses a recent result
-ArtistUseCase.ListSimilar SHALL return the earlier result, cut to the requested limit, without looking up the seed or consulting the catalog, when the same artist id was answered within the last 6 hours, whatever limit either call used.
+ArtistUseCase.ListSimilar SHALL return the earlier result, without the artists whose activity has ended by the time of this call and then cut to the requested limit, without looking up the seed or consulting the catalog, when the same artist id was answered within the last 6 hours, whatever limit either call used.
 
 #### Scenario: Repeated call
 - **WHEN** ListSimilar is called twice with the same artist id and limit 10 minutes apart
@@ -59,3 +59,18 @@ ArtistUseCase.ListSimilar SHALL return the errors of Artist.Get, Artist.ListSimi
 #### Scenario: Catalog unavailable
 - **WHEN** Artist.ListSimilar fails with Unavailable
 - **THEN** ListSimilar fails with Unavailable
+
+### Requirement: ListSimilar leaves out artists whose activity has ended
+ArtistUseCase.ListSimilar SHALL leave out every similar artist whose activity_ended is true at the time of the call, before it cuts the result to the requested limit. The seed artist's own activity_ended SHALL NOT matter: an ended seed still gets its similar artists. When it consults the catalog, it SHALL take activity_ended from the artists Artist.ListByMBIDs returns for the registration step, and an artist it registers has activity_ended false. When it reuses an earlier result for the same artist id, it SHALL read the current activity_ended of that result's artists with one Artist.ListByMBIDs call.
+
+#### Scenario: Ended artist within the limit
+- **WHEN** ListSimilar is called with a limit of 10 and the third of the catalog's similar artists has activity_ended true
+- **THEN** 10 artists are returned: the first, the second, and the fourth to the eleventh
+
+#### Scenario: Artist marked ended after the result was reused
+- **WHEN** ListSimilar answered an artist 1 hour ago, and a similar artist in that answer has had activity_ended true since then
+- **THEN** a second call for the same artist returns the earlier result without that artist and without a catalog lookup
+
+#### Scenario: Seed artist whose activity has ended
+- **WHEN** ListSimilar is called for an artist whose own activity_ended is true
+- **THEN** it returns that artist's similar artists as for any other artist

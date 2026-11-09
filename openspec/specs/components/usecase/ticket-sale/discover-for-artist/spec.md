@@ -121,3 +121,11 @@ DiscoverForArtist SHALL return the number of sales that TicketSale.UpsertDiscove
 #### Scenario: Sale cannot be stored with its announcement
 - **WHEN** TicketSale.UpsertDiscovered fails with Unavailable for one of three sales
 - **THEN** that sale is not stored and not counted, and the other two are stored
+
+### Requirement: Artists whose activity has ended are not searched
+
+DiscoverForArtist SHALL return 0 without searching, storing or recording anything when the artist's activity_ended is true.
+
+#### Scenario: Ended artist
+- **WHEN** DiscoverForArtist is called for an artist whose activity_ended is true and who has a tracked series with an upcoming event
+- **THEN** TicketSale.SearchPublishedSales is not called, nothing is stored or recorded, and DiscoverForArtist returns 0
