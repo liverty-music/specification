@@ -14,7 +14,8 @@
 - [ ] 3.1 `components/entity/artist/get-artist`: decode `life-span.ended` in the MusicBrainz `GetArtist` (design Decision 5) and verify one contract test per scenario passes ("Known MBID", "Ended activity", "Ended activity without an end date", "Activity not ended", "Unknown MBID", "Catalog unreachable")
 - [ ] 3.2 `components/entity/artist/update-activity-ended`: declare `UpdateActivityEnded` on `ArtistRepository`, implement it in the rdb repository, and verify one contract test per scenario passes ("Activity ended", "Activity resumed in the catalog", "Same value", "Unknown artist")
 - [ ] 3.3 `components/entity/artist/list-refresh-due`: declare `ListRefreshDue` on `ArtistRepository`, implement it with the UUID-byte slot (design Decision 3), and verify one contract test per scenario passes ("Same slot on every call", "Every artist in one slot", "Spread over the slots", "Empty slot")
-- [ ] 3.4 Regenerate the repository and identity-manager mocks; verify `make check` passes
+- [ ] 3.4 `components/entity/follow/list-all`: add `a.activity_ended` to `followListAllQuery` and its scan; verify one contract test per scenario passes ("Artist followed by two fans", "Unfollowed artist", "No follows", "Followed artist whose activity has ended")
+- [ ] 3.5 Regenerate the repository and identity-manager mocks; verify `make check` passes
 
 ## 4. backend: Artist usecases
 

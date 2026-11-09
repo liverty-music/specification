@@ -24,7 +24,7 @@
 
 `false` covers both "not ended" and "not read yet"; both mean "suggest it", so no third state is needed. A positive name (`active`, `is_activated`) was rejected: it would claim that unread artists and artists on hiatus are active, and "active" already means "currently valid" elsewhere in the backend (an active Organizer, an active IdentityVerification). A begin/end date was rejected: nothing reads it, and some ended records (Queen) have no end date. Adding a `NOT NULL` column with a constant default is a metadata-only change in PostgreSQL 18 (prod runs `POSTGRES_18`, `cloud-provisioning/src/gcp/components/postgres.ts`), so the migration does not rewrite the table.
 
-`entity.Artist` gets `ActivityEnded bool`. `ArtistRepository` gets `UpdateActivityEnded(ctx, id, ended)` and `ListRefreshDue(ctx, slots, slot)`; the existing scan of an artist row reads the new column, so `ListByMBIDs`, `Get` and `FollowRepository.ListAll` return it without a signature change.
+`entity.Artist` gets `ActivityEnded bool`. `ArtistRepository` gets `UpdateActivityEnded(ctx, id, ended)` and `ListRefreshDue(ctx, slots, slot)`; the shared artist-row scan (`scanArtist`) reads the new column, so `ListByMBIDs` and `Get` return it without a signature change. `FollowRepository.ListAll` has its own query (`followListAllQuery`, id, name and MBID only) and its own scan; both get `a.activity_ended`.
 
 ### 2. `ArtistUseCase.Refresh` replaces `ArtistNameResolutionUseCase`
 
@@ -58,7 +58,7 @@ On a cache miss, `persistArtists` already calls `ListByMBIDs`; the registered ar
 
 ### 6. Searches skip ended artists inside the usecases
 
-`ConcertUseCase.SearchNewConcerts` takes an artist id; it reads the artist with `artistRepo.Get` before the organizer-representation check and returns `nil, nil` when `ActivityEnded`, like the existing skips (no failure counted by the job's circuit breaker). `TicketSaleDiscoveryUseCase.DiscoverForArtist` receives the artist from `FollowRepository.ListAll`, which now carries the flag, and returns `0, nil` first. The check sits in the usecases, not in the jobs' artist lists, so the first-follow search (`SearchNewConcertsOnFirstFollow`) is covered too.
+`ConcertUseCase.SearchNewConcerts` takes an artist id; it reads the artist with `artistRepo.Get` before the organizer-representation check and returns `nil, nil` when `ActivityEnded`, like the existing skips (no failure counted by the job's circuit breaker). `TicketSaleDiscoveryUseCase.DiscoverForArtist` receives the artist from `FollowRepository.ListAll`, which carries the flag after its query change (Decision 1), and returns `0, nil` first. The check sits in the usecases, not in the jobs' artist lists, so the first-follow search (`SearchNewConcertsOnFirstFollow`) is covered too.
 
 ### 7. A new job binary `artist-refresh`
 
