@@ -41,8 +41,8 @@ Alternatives considered:
 
 The two buttons sit in one capsule centred above the FAB, rendered inside `<concert-highway>` and positioned sticky at the bottom of the scroll container. Their surface follows the FAB menu items (`--md-sys-color-menu-surface`, `--shadow-soft`, 48 px targets). The icons are new `svg-icon` cases `skip-up` / `skip-down` in the existing 24 px, 2 px-stroke style (`svg-icon.html`).
 
-- **Direction available:** on `scrollend`, the highway sets `data-has-prev` / `data-has-next` on the capsule from the loaded `dateGroups` and the date at the top of the screen; CSS hides a button whose attribute is false.
-- **Only after the fan scrolls:** the scroll container is a `container-type: scroll-state` container; `@container not scroll-state(scrollable: top)` hides the capsule. A browser without scroll-state queries never matches the rule, so it shows the capsule from the start.
+- **Direction available:** the highway sets `data-has-prev` / `data-has-next` on the capsule from the loaded `dateGroups` and the date at the top of the screen when a window opens (first display, re-entry, jump, a replaced list) and on each `scrollend`; CSS hides a button whose attribute is false. This rule applies in every browser and wins over the visibility rule below.
+- **Only after the fan scrolls:** the scroll container is a `container-type: scroll-state` container; `@container not scroll-state(scrollable: top)` hides the capsule. A browser without scroll-state queries never matches the rule, so it shows the capsule from the start, with each button still following its direction attribute.
 - **Hidden while the FAB is open:** `:root:has(.fab-panel:popover-open)` hides the capsule. No message between the components.
 - **Names:** `aria-label` from new i18n keys with the target month, e.g. `dashboard.monthJump.next` = "{{month}}へ移動" / "Go to {{month}}".
 
@@ -81,7 +81,7 @@ Durations come from the motion tokens (design-tokens, "Scattered raw timings are
 
 Measured in Chromium 156 on an earlier version of the sample (520 ms duration, 90 ms step, before the 3D keyframes): after a 1500 px jump, the lanes of a row in mid-screen started at 0, 90 and 180 ms and finished at 520, 610 and 700 ms, so the trigger fired once per row and the `sibling-index()` delay applied; a row entering from the top on an upward fling played forwards.
 
-Fallback: `@supports not (timeline-trigger: --t view())` uses the same keyframes on `animation-timeline: view()`, with ranges `entry` and `exit` (reversed) so both edges animate. Under reduced motion, `animation: none` on the lanes; a scroll-driven or triggered animation has no duration token to collapse.
+Fallback: `@supports not (timeline-trigger: --t view())` uses the same keyframes on `animation-timeline: view()`, with ranges `entry` and `exit` (reversed) so both edges animate. A scroll-linked animation ignores `animation-delay`, and the three lanes of a row share one view progress, so the lane order comes from offsetting each lane's range instead: `animation-range: entry calc((sibling-index() - 1) * 12%) entry calc(60% + (sibling-index() - 1) * 12%)` (and the mirrored `exit` range). Under reduced motion, `animation: none` on the lanes; a scroll-driven or triggered animation has no duration token to collapse.
 
 Alternatives considered:
 - Scroll-driven only (`animation-timeline: view()`): Baseline, but its progress follows the scroll, so a fast fling finishes it at the screen edge in a few frames; the owner saw no animation in the sample.
@@ -101,24 +101,21 @@ Tab switches: Aurelia's router has no View Transition support (its documentation
 ### D7. Installed Noto through an alias family
 
 ```css
-/* Each face declares only the weights its local source has. A weight with no
-   local face falls through to the downloaded "Noto Sans JP" in the stack,
-   so nothing is synthesized (global.css sets font-synthesis-weight: none). */
+/* Only variable local fonts. Within one family the browser picks the nearest
+   weight face and never falls through to the next family, so a Regular-only
+   local face would draw bold text at 400 (font-synthesis-weight: none in
+   global.css). A device without a variable Noto therefore gets no local face
+   and downloads "Noto Sans JP" from the next family in the stack. */
 @font-face {
   font-family: "Local Noto Sans JP";
   font-weight: 100 900;
-  src: local("Noto Sans JP"), local("Noto Sans CJK JP");   /* variable: Windows, Android 15+ */
-}
-@font-face {
-  font-family: "Local Noto Sans JP";
-  font-weight: 400;
-  src: local("Noto Sans CJK JP Regular");                  /* Android 6-14 */
+  src: local("Noto Sans JP"), local("Noto Sans CJK JP");   /* Windows, Android 15+ */
 }
 --md-ref-typeface-plain:
   "Local Noto Sans JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif;
 ```
 
-Windows 10/11 ship `NotoSansJP-VF.ttf` (variable) since the April 2025 update; Android ships Noto Sans CJK JP (variable from Android 15, Regular only on 6-14). The local names a variable face answers to differ by platform; task 7.1 confirms on Android which `local()` names resolve and adjusts the faces so that a Regular-only device gets bold from the download. This keeps `adopt-m3-cube-ui-foundation`'s rule that a missing weight is not synthesized. Safari does not use `local()` for fingerprinting reasons; Apple devices have no Noto, so they download as before. The Google Fonts link stays as the fallback, and the browser fetches a Google subset only when the alias cannot draw a character. Source: ICS MEDIA, "ウェブ制作者のための Noto Sans JP 最新実装ガイド".
+Windows 10/11 ship `NotoSansJP-VF.ttf` (variable) since the April 2025 update; Android ships Noto Sans CJK JP (variable from Android 15, Regular only on 6-14). `local()` matches a font's full or PostScript name, and the names differ by platform and version; task 7.1 confirms on Android 15 that `local("Noto Sans CJK JP")` resolves to the variable font, and on an Android 14 emulator that it does not resolve to the Regular-only file. If it does, the Android source is removed and Android downloads as before. This keeps `adopt-m3-cube-ui-foundation`'s rule that a missing weight is not synthesized. Safari does not use `local()` for fingerprinting reasons; Apple devices have no Noto, so they download as before. The Google Fonts link stays as the fallback, and the browser fetches a Google subset only when the alias cannot draw a character. Source: ICS MEDIA, "ウェブ制作者のための Noto Sans JP 最新実装ガイド".
 
 This edits the stack that `adopt-m3-cube-ui-foundation` introduces; the task waits for its token renames.
 
