@@ -2,7 +2,7 @@
 
 ### Requirement: Installed Noto is used before a download
 
-On Windows 10 or 11 with Noto Sans JP installed, and on Android 15 or later, the fan app SHALL draw its plain text with the installed Noto Sans JP or Noto Sans CJK JP, which have every weight from 100 to 900, and SHALL NOT download Noto Sans JP. Every other device, including Android 14 or earlier, whose Noto Sans CJK JP has only the Regular weight, SHALL download Noto Sans JP as before. On no device whose Noto came with the operating system SHALL bold text be drawn at the regular weight or in a synthesized bold. A Noto Sans JP or Noto Sans CJK JP that the fan installed themselves, in separate files per weight, is outside this guarantee and may draw bold at the regular weight.
+On Windows 10 or 11 with Noto Sans JP installed, and on Android 15 or later, the fan app SHALL draw its plain text with the installed Noto Sans JP or Noto Sans CJK JP, which have every weight from 100 to 900, and SHALL NOT download Noto Sans JP. Every other device, including Android 14 or earlier, whose Noto Sans CJK JP has only the Regular weight, SHALL download Noto Sans JP as before. On Windows and Android, with the Noto that comes with the operating system, bold text SHALL NOT be drawn at the regular weight or in a synthesized bold. A Noto Sans JP or Noto Sans CJK JP in separate files per weight, whether the fan installed it or a Linux distribution ships it, is outside this guarantee and may draw bold at the regular weight.
 
 #### Scenario: Windows with Noto Sans JP installed
 

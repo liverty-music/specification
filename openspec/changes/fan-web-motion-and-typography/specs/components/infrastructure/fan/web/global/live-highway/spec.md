@@ -25,6 +25,11 @@ When a date row comes into view from either the bottom or the top edge of the ti
 - **WHEN** a row has been dealt in, the fan scrolls it fully out of view, then back
 - **THEN** it is dealt in again
 
+#### Scenario: Leaving through the top without entry-triggered animations
+
+- **WHEN** in a browser that cannot start an animation when an element comes into view, the fan scrolls down until 40% of a row has left through the top edge, then scrolls back up
+- **THEN** the row's lanes deal out while it continues to leave, and deal in again as it comes back from the top
+
 #### Scenario: Reduced motion
 
 - **WHEN** the fan has asked the system for reduced motion

@@ -3,7 +3,7 @@
 - [ ] 1.1 Reproduce the removed date-group stagger (`event-card.css:29-36`) in a `concert-highway` story and check whether the `sibling-index()` count across already-built groups explains "every row moved together" (design D6); record the cause in design.md, and verify the deal-in (D4) does not share it by running the story with a grown window
 - [ ] 1.2 Wrap one bottom-nav tab switch in `document.startViewTransition(async () => { await router.load(path); runTasks() })` and confirm in Chromium that the transition finishes (no `TimeoutError` on `transition.finished`) for Home ↔ Discovery ↔ My Artists; record the result in design.md D5, and if it times out, drop group 5's tab task and revise the app-shell delta ("Tab switches cross-fade") before continuing
 
-- [ ] 1.3 On an Android 15 device and an Android 14 emulator, list which `local()` names resolve to the installed Noto Sans CJK JP, and on a Windows machine with Google's static Noto Sans JP files which names those answer to, (a test page with one `@font-face` per candidate name and `document.fonts.check()`); record the result in design.md D7, and if no name answers on Android 15 only, revise the design-tokens requirement's Android clause and scenarios before group 7
+- [ ] 1.3 On an Android 15 device and an Android 14 emulator, list which `local()` names resolve to the installed Noto Sans CJK JP, and which names static per-weight Noto files answer to on Windows (Google's static Noto Sans JP) and Linux (`fonts-noto-cjk`), (a test page with one `@font-face` per candidate name and `document.fonts.check()`); record the result in design.md D7, and if no name answers on Android 15 only, revise the design-tokens requirement's Android clause and scenarios before group 7
 
 ## 2. Scroll motion owned by CSS (components/infrastructure/fan/web/route/dashboard)
 
@@ -19,7 +19,7 @@
 ## 4. Deal-in of date rows (components/infrastructure/fan/web/global/live-highway)
 
 - [ ] 4.1 Add the row trigger, the lane animation with the `sibling-index()` delay, the scroll-driven fallback under `@supports not (timeline-trigger: …)` with per-lane range offsets and `animation: none` under reduced motion (design D4); replace the "No entrance animation" note in `event-card.css`; verify a `reduced-motion`-tagged `concert-highway` story asserts the lane animations' delays (0, 100, 200 ms) and duration (800 ms) through `getAnimations()`, and none under reduced motion
-- [ ] 4.2 Verify "Scrolling down", "Scrolling up after a month jump", "Fast scroll" and "A row comes back" in a Playwright test on a local build of `/dashboard`: after a 1500 px programmatic scroll and after an upward scroll, a row in view has running lane animations with currentTime below 800 ms; record a performance trace of a fling on the reference profile (4× CPU) and drop the `filter` from the keyframes if a frame exceeds 16 ms
+- [ ] 4.2 Verify "Scrolling down", "Scrolling up after a month jump", "Fast scroll" and "A row comes back" in a Playwright test, and "Leaving through the top without entry-triggered animations" in WebKit (no scroll-triggered animations), on a local build of `/dashboard`: after a 1500 px programmatic scroll and after an upward scroll, a row in view has running lane animations with currentTime below 800 ms; record a performance trace of a fling on the reference profile (4× CPU) and drop the `filter` from the keyframes if a frame exceeds 16 ms
 
 ## 5. View Transitions (components/infrastructure/fan/web/global/app-shell)
 
