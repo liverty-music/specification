@@ -3,7 +3,7 @@
 - [ ] 1.1 Reproduce the removed date-group stagger (`event-card.css:29-36`) in a `concert-highway` story and check whether the `sibling-index()` count across already-built groups explains "every row moved together" (design D6); record the cause in design.md, and verify the deal-in (D4) does not share it by running the story with a grown window
 - [ ] 1.2 Wrap one bottom-nav tab switch in `document.startViewTransition(async () => { await router.load(path); runTasks() })` and confirm in Chromium that the transition finishes (no `TimeoutError` on `transition.finished`) for Home ↔ Discovery ↔ My Artists; record the result in design.md D5, and if it times out, drop group 5's tab task and revise the app-shell delta ("Tab switches cross-fade") before continuing
 
-- [ ] 1.3 On an Android 15 device and an Android 14 emulator, list which `local()` names resolve to the installed Noto Sans CJK JP (a test page with one `@font-face` per candidate name and `document.fonts.check()`); record the result in design.md D7, and if no name answers on Android 15 only, revise the design-tokens requirement's Android clause and scenarios before group 7
+- [ ] 1.3 On an Android 15 device and an Android 14 emulator, list which `local()` names resolve to the installed Noto Sans CJK JP, and on a Windows machine with Google's static Noto Sans JP files which names those answer to, (a test page with one `@font-face` per candidate name and `document.fonts.check()`); record the result in design.md D7, and if no name answers on Android 15 only, revise the design-tokens requirement's Android clause and scenarios before group 7
 
 ## 2. Scroll motion owned by CSS (components/infrastructure/fan/web/route/dashboard)
 

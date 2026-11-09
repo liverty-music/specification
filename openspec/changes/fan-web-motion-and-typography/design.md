@@ -94,12 +94,12 @@ Fallback: `@supports not (timeline-trigger: --t view())` uses the same keyframes
     animation-timeline: view(), view();
     animation-range:
       entry var(--_lag) entry calc(60% + var(--_lag)),
-      exit calc(40% - var(--_lag)) exit calc(100% - var(--_lag));
+      exit 40% exit 100%;
   }
 }
 ```
 
-A scroll-linked animation ignores `animation-delay`, and the three lanes of a row share one view progress, so the lane order comes from the `--_lag` offset on each range. The sample page ran this form in Chromium with scroll-triggered animations switched off by mode. Under reduced motion, `animation: none` on the lanes; a scroll-driven or triggered animation has no duration token to collapse.
+A scroll-linked animation ignores `animation-delay`, and the three lanes of a row share one view progress, so the lane order on entry comes from the `--_lag` offset on each entry range. The exit range has no offset: every lane starts to leave once 40% of the row has gone, so no card flies out while most of its row is still on screen. Unlike the triggered path, whose reverse play happens off screen, the fallback's exit is visible; the live-highway requirement states it, and the owner accepted it in the samples ("上端でも動かす"). The sample page ran this form in Chromium with scroll-triggered animations switched off by mode. Under reduced motion, `animation: none` on the lanes; a scroll-driven or triggered animation has no duration token to collapse.
 
 Alternatives considered:
 - Scroll-driven only (`animation-timeline: view()`): Baseline, but its progress follows the scroll, so a fast fling finishes it at the screen edge in a few frames; the owner saw no animation in the sample.
@@ -167,6 +167,7 @@ The confirm dialog transitions `opacity`, `display` and `overlay` with `allow-di
 - [The tab View Transition freezes the screen while the route renders] → menu-tab routes already must not block the swap on data (`bottom-nav-bar` spec); the spike measures the transition's duration on Discovery and Home.
 - [Jump into a month whose first date is near the end of the data] → `openWindow` already clamps to the last window; the button state comes from the loaded dates, so it never offers a month with no dates.
 - [Without the feature checks, `document.startViewTransition` throws in a browser older than View Transitions (Safari before 18, Firefox before 144), so the unfollow, the Discovery swap and tab switches fail there] → accepted by the owner: View Transitions are Baseline since 2025-10-14, and the fan app targets current browsers. If support for older browsers becomes a goal, the checks return in one helper, not at each call site.
+- [A Noto Sans JP the fan installed as static per-weight files (Windows by hand, Linux `fonts-noto-cjk`) answers to the same `local()` name, so bold may draw at 400 there] → outside the requirement's guarantee, which covers fonts that came with the operating system; task 1.3 also lists the names a static Noto Sans JP answers to, and if `local("Noto Sans JP")` matches only the variable Windows font, the limitation disappears.
 - [The chip classes are listed by name in D8] → a new chip block must be added to that selector; the `Foundations/Typography` story lists the chips it checks.
 - [Typeface conflict with adopt-m3] → land D7/D8 after its token renames; the plain stack is edited in one place.
 
