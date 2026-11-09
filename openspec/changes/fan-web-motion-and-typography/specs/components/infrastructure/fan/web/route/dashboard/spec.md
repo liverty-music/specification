@@ -2,7 +2,7 @@
 
 ### Requirement: Month-jump buttons move the timetable between months
 
-The timetable SHALL offer two month-jump buttons, previous month and next month, side by side in one capsule above the FAB. The previous-month button SHALL move the timetable so that the first date of the month before the month at the top of the screen is at the top; the next-month button SHALL do the same for the month after it. A button SHALL be hidden when no loaded date lies in a month in its direction. Both buttons SHALL stay hidden until the fan has scrolled the timetable away from its top, and SHALL be hidden while the FAB's action list is open. Each button SHALL show an icon only, and SHALL be named for assistive technology with the target month (for example "12月へ移動" / "Go to December"). The move SHALL scroll smoothly, and SHALL be instant when the fan has asked the system for reduced motion. A move SHALL NOT add a browser history entry.
+The timetable SHALL offer two month-jump buttons, previous month and next month, side by side in one capsule above the FAB. The previous-month button SHALL move the timetable so that the first date of the month before the month at the top of the screen is at the top; the next-month button SHALL do the same for the month after it. A button SHALL be hidden when no loaded date lies in a month in its direction. In a browser that can tell whether a list has been scrolled from its top, both buttons SHALL stay hidden until the fan has scrolled the timetable away from its top; in other browsers they SHALL be shown from the start. Both SHALL be hidden while the FAB's action list is open. Each button SHALL show an icon only, and SHALL be named for assistive technology with the target month (for example "12月へ移動" / "Go to December"). The move SHALL scroll smoothly, and SHALL be instant when the fan has asked the system for reduced motion. A move SHALL NOT add a browser history entry.
 
 #### Scenario: Next month from the middle of November
 
@@ -22,7 +22,7 @@ The timetable SHALL offer two month-jump buttons, previous month and next month,
 
 #### Scenario: Not shown before the fan scrolls
 
-- **WHEN** the timetable is first displayed and the fan has not scrolled it
+- **WHEN** the timetable is first displayed and the fan has not scrolled it, in a browser that can tell whether a list has been scrolled from its top
 - **THEN** neither month-jump button is shown
 
 #### Scenario: Hidden while the FAB is open

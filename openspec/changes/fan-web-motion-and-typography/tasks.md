@@ -16,8 +16,8 @@
 
 ## 4. Deal-in of date rows (components/infrastructure/fan/web/global/live-highway)
 
-- [ ] 4.1 Add the row trigger, the lane animation with the `sibling-index()` delay, the scroll-driven fallback under `@supports not (timeline-trigger: …)` and `animation: none` under reduced motion (design D4); replace the "No entrance animation" note in `event-card.css`; verify a `reduced-motion`-tagged `concert-highway` story asserts the lane animations' delays (0, 110, 220 ms) and duration (760 ms) through `getAnimations()`, and none under reduced motion
-- [ ] 4.2 Verify "Scrolling down", "Scrolling up after a month jump", "Fast scroll" and "A row comes back" in a Playwright test on a local build of `/dashboard`: after a 1500 px programmatic scroll and after an upward scroll, a row in view has running lane animations with currentTime below 760 ms; record a performance trace of a fling on the reference profile (4× CPU) and drop the `filter` from the keyframes if a frame exceeds 16 ms
+- [ ] 4.1 Add the row trigger, the lane animation with the `sibling-index()` delay, the scroll-driven fallback under `@supports not (timeline-trigger: …)` and `animation: none` under reduced motion (design D4); replace the "No entrance animation" note in `event-card.css`; verify a `reduced-motion`-tagged `concert-highway` story asserts the lane animations' delays (0, 100, 200 ms) and duration (800 ms) through `getAnimations()`, and none under reduced motion
+- [ ] 4.2 Verify "Scrolling down", "Scrolling up after a month jump", "Fast scroll" and "A row comes back" in a Playwright test on a local build of `/dashboard`: after a 1500 px programmatic scroll and after an upward scroll, a row in view has running lane animations with currentTime below 800 ms; record a performance trace of a fling on the reference profile (4× CPU) and drop the `filter` from the keyframes if a frame exceeds 16 ms
 
 ## 5. View Transitions (components/infrastructure/fan/web/global/app-shell)
 
@@ -30,7 +30,7 @@
 
 ## 7. Japanese text and fonts (components/infrastructure/fan/web/global/design-tokens)
 
-- [ ] 7.1 After `adopt-m3-cube-ui-foundation` has renamed the tokens, add the `Local Noto Sans JP` alias and put it first in `--md-ref-typeface-plain` (design D7); verify "Windows with Noto Sans JP installed" and "iPhone" by a Playwright check that no `fonts.gstatic.com` request is made when the alias resolves (Chromium with a local Noto installed in the test container) and one is made in WebKit, and "Android" on the owner's Android device in production after release
+- [ ] 7.1 After `adopt-m3-cube-ui-foundation` has renamed the tokens, add the `Local Noto Sans JP` alias and put it first in `--md-ref-typeface-plain` (design D7); verify "Windows with Noto Sans JP installed" and "iPhone" by a Playwright check that no `fonts.gstatic.com` request is made when the alias resolves (Chromium with a local Noto installed in the test container) and one is made in WebKit, and "Android" / "Android with Regular only" on the owner's Android device in production after release (DevTools remote debugging shows which `local()` face each weight uses and whether any font file is fetched)
 - [ ] 7.2 Add `palt`, `text-autospace`, `line-break: strict`, `word-break: auto-phrase`, heading `text-wrap: balance` and the `text-box` trim on buttons and chips to `global.css` (design D8); verify "Mixed Japanese and Latin text", "A phrase is not split", "Small kana at the start of a line" and "Button label" in a `Foundations/Typography` story, and review the 320 px stories and the visual baselines for wide line-end gaps and raised Japanese labels, regenerating baselines that changed on purpose
 
 ## 8. Release check

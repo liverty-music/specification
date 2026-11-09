@@ -62,8 +62,8 @@ Each `.date-group` row declares its own trigger, and its three lanes run one key
   perspective-origin: 70% 40%;
 }
 .lane {
-  animation: deal-in 760ms cubic-bezier(.2, .8, .2, 1) both;
-  animation-delay: calc((sibling-index() - 1) * 110ms);
+  animation: deal-in var(--md-sys-motion-duration-extra-long2) var(--md-sys-motion-easing-emphasized-decelerate) both;
+  animation-delay: calc((sibling-index() - 1) * var(--md-sys-motion-duration-short2));
   animation-trigger: --row play-forwards play-backwards;
 }
 @keyframes deal-in {
@@ -77,7 +77,9 @@ The activation range `entry 60% exit 40%` covers a row coming in from either edg
 
 `sibling-index()` is used only among a row's three lanes, which are always built together, so it counts 1, 2, 3. It is not used across date groups: there it counts groups already built, so every group added after the first eight would get the same delay. That miscount may also explain the removed stagger in `event-card.css:29-36` (D6).
 
-Measured in Chromium 156 on the sample page: after a 1500 px jump, the lanes of a row in mid-screen started at 0, 90 and 180 ms (sample step) and finished at 520, 610 and 700 ms; a row entering from the top on an upward fling played forwards.
+Durations come from the motion tokens (design-tokens, "Scattered raw timings are consolidated"): extra-long2 (800 ms) for the deal-in, short2 (100 ms) for the step between lanes, and the emphasized-decelerate curve; the overshoot is in the keyframes. The owner chose the motion on a sample run at 760 ms with a 110 ms step; the token values are the nearest on the scale.
+
+Measured in Chromium 156 on an earlier version of the sample (520 ms duration, 90 ms step, before the 3D keyframes): after a 1500 px jump, the lanes of a row in mid-screen started at 0, 90 and 180 ms and finished at 520, 610 and 700 ms, so the trigger fired once per row and the `sibling-index()` delay applied; a row entering from the top on an upward fling played forwards.
 
 Fallback: `@supports not (timeline-trigger: --t view())` uses the same keyframes on `animation-timeline: view()`, with ranges `entry` and `exit` (reversed) so both edges animate. Under reduced motion, `animation: none` on the lanes; a scroll-driven or triggered animation has no duration token to collapse.
 
@@ -99,16 +101,24 @@ Tab switches: Aurelia's router has no View Transition support (its documentation
 ### D7. Installed Noto through an alias family
 
 ```css
+/* Each face declares only the weights its local source has. A weight with no
+   local face falls through to the downloaded "Noto Sans JP" in the stack,
+   so nothing is synthesized (global.css sets font-synthesis-weight: none). */
 @font-face {
   font-family: "Local Noto Sans JP";
   font-weight: 100 900;
-  src: local("Noto Sans JP"), local("Noto Sans CJK JP Regular");
+  src: local("Noto Sans JP"), local("Noto Sans CJK JP");   /* variable: Windows, Android 15+ */
+}
+@font-face {
+  font-family: "Local Noto Sans JP";
+  font-weight: 400;
+  src: local("Noto Sans CJK JP Regular");                  /* Android 6-14 */
 }
 --md-ref-typeface-plain:
   "Local Noto Sans JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif;
 ```
 
-Windows 10/11 ship `NotoSansJP-VF.ttf` (variable) since the April 2025 update; Android ships Noto Sans CJK JP (variable from Android 15, Regular only on 6-14, where bold is synthesized). Safari does not use `local()` for fingerprinting reasons; Apple devices have no Noto, so they download as before. The Google Fonts link stays as the fallback, and the browser fetches a Google subset only when the alias cannot draw a character. Source: ICS MEDIA, "ウェブ制作者のための Noto Sans JP 最新実装ガイド".
+Windows 10/11 ship `NotoSansJP-VF.ttf` (variable) since the April 2025 update; Android ships Noto Sans CJK JP (variable from Android 15, Regular only on 6-14). The local names a variable face answers to differ by platform; task 7.1 confirms on Android which `local()` names resolve and adjusts the faces so that a Regular-only device gets bold from the download. This keeps `adopt-m3-cube-ui-foundation`'s rule that a missing weight is not synthesized. Safari does not use `local()` for fingerprinting reasons; Apple devices have no Noto, so they download as before. The Google Fonts link stays as the fallback, and the browser fetches a Google subset only when the alias cannot draw a character. Source: ICS MEDIA, "ウェブ制作者のための Noto Sans JP 最新実装ガイド".
 
 This edits the stack that `adopt-m3-cube-ui-foundation` introduces; the task waits for its token renames.
 
