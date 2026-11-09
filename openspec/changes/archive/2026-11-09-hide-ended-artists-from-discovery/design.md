@@ -32,6 +32,8 @@ One MusicBrainz lookup serves both the name and the activity status, so one usec
 
 The durable is renamed from `resolve-artist-name` to `refresh-artist` so the event name says what runs. The ARTIST stream uses `retention: limits` (`k8s/namespaces/nats/base/jetstream/stream-artist.yaml`), so a durable left behind does not hold messages back; it is removed by hand because the Consumer resource has `preventDelete: true`. An announcement made while neither durable is bound is not refreshed on registration; the 30-day rotation (Decision 3) refreshes it later.
 
+The event consumer and the `artist-refresh` job call only `Refresh` and `RefreshDue`, which need the artist repository, the catalog lookup and the clock. They build `ArtistUseCase` with nil for the chart searcher, its cache and the organizer repository, since neither workload has Last.fm configuration; only the API server serves `ListTop`, `ListSimilar` and `Search`.
+
 Alternatives:
 - Keep `ResolveCanonicalName` and add the activity write to it. Rejected: the name would no longer say what the method does.
 - A second `ARTIST.created` durable for the activity alone. Rejected: one more MusicBrainz request per new artist on the consumer's shared 1-per-second throttle, plus a Consumer resource and a KEDA trigger, for no behaviour the merged method lacks.
