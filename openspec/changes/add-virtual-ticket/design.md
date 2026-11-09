@@ -4,17 +4,17 @@ The tickets screen (`frontend/src/routes/tickets/tickets-route.*`) lists tickets
 
 A spike on 2026-11-09 (`~/.cache/rich-ticket-spike/` on the owner's machine; Edge 157 on Windows over CDP, and Playwright WebKit 27.2 in the `mcr.microsoft.com/playwright:v1.64.1-noble` container) measured the approach below:
 
-- Chrome 157 turns HTML-in-Canvas on by default (`<canvas content="drawable">`, `drawable` children, the `paint` event, `requestPaint`, `updateElementGeometry`, `texElementSubImage2D`). Safari and Firefox have no support; WebKit standards position #630 and Mozilla #1076 are open.
-- `pixi.js` 8.22.0 (npm `latest` on 2026-11-10) fails on Chrome 157 (pixijs#12340). The fix (#12341) is only in the `dev` tag. With the dev build, the spike rendered the face with WebGL; hit testing and text selection followed the drawn position after `updateElementGeometry`; a ShockwaveFilter distorted the text; a multiply-blended stamp worked; and an export worked. The texture is blank until the first paint.
+- HTML-in-Canvas (WICG explainer: https://github.com/WICG/html-in-canvas) was on by default in Edge 157 in the spike, with no flag: `<canvas content="drawable">`, `drawable` children, the `paint` event, `requestPaint`, `updateElementGeometry`, `texElementSubImage2D`. WebKit 27.2 in the spike had none of them. The browser vendors' positions are open: https://github.com/WebKit/standards-positions/issues/630 and https://github.com/mozilla/standards-positions/issues/1076.
+- `pixi.js` 8.22.0 (npm `latest` on 2026-11-10) fails on Chrome 157: https://github.com/pixijs/pixijs/issues/12340. The fix, https://github.com/pixijs/pixijs/pull/12341, is only in the `dev` tag. With the dev build, the spike rendered the face with WebGL; hit testing and text selection followed the drawn position after `updateElementGeometry`; a ShockwaveFilter distorted the text; a multiply-blended stamp worked; and an export worked. The texture is blank until the first paint.
 - An export taken right after masking the DOM returned the unmasked face, because the repaint had not happened yet.
 - WebKit 27.2: the face as plain DOM with a CSS stamp works. An SVG `foreignObject` image of a cloned face exports without tainting the canvas, but images nested in it miss the first draw, and a second draw about 50 ms later includes them.
-- Cover images are served from `https://cdn.liverty-music.app`, which is not the fan web's origin. The served bucket has no CORS rule (checked with gcloud on 2026-11-09).
+- Cover images are served from `https://cdn.liverty-music.app`, which is not the fan web's origin. The served bucket has no CORS rule (checked with gcloud on 2026-11-09), and its CDN responses carry no CORS header.
   - Chromium's HTML-in-Canvas silently leaves out a cross-origin image without a CORS response.
   - `crossorigin="anonymous"` without a CORS response stops the image from loading at all.
   - The image is drawn only when the server sends a CORS response and the image has `crossorigin`.
 - The unoptimised lazy bundle of `pixi.js` plus `pixi-filters` was about 340 KB gzip.
 
-Every value the face shows is already on the screen. These are the RPCs it is read from:
+Every value the face shows is already loaded by the screen; only the prefecture is not displayed in the list today. These are the RPCs each value is read from:
 
 | face item | screen value | RPC response field |
 |---|---|---|
@@ -22,7 +22,7 @@ Every value the face shows is already on the screen. These are the RPCs it is re
 | performers | `event.performers[].name` | `ConcertService.Get` → `artists[].name` |
 | title | `event.title` | `ConcertService.Get` → `series.title` |
 | date, open, start | `event.date`, `openTime`, `startTime` | `ConcertService.Get` → `event.local_date`, `open_time`, `start_time` |
-| venue, prefecture | `event.venueName`, `adminArea` | `ConcertService.Get` → `event.listed_venue_name` or `venue.name`, `venue.admin_area` |
+| venue, prefecture | `event.venueName`, `adminArea` (shown as a localized name with the Event page's prefecture helper, never the raw ISO 3166-2 code) | `ConcertService.Get` → `event.listed_venue_name` or `venue.name`, `venue.admin_area` |
 | seat type | `WalletTicket.seatTypeName` | `TicketSaleService.ListByEvent` → stock's seat type name |
 | state, admit time | `WalletTicket.state`, `admitTime` | `TicketService.List` → `status`, `admit_time` |
 | full name, phone | `WalletPersonalDetails` | the fan's User, as the list already reads it |
@@ -105,19 +105,25 @@ The share image sets `data-share` on the face (or on a clone of it). That CSS ma
   iOS uses the system font. The owner accepted this, so web fonts are not inlined.
 - **Hand-off:** wrap the blob in `File([blob], 'liverty-ticket.png', { type: 'image/png' })`. Use `navigator.share({ files })` when `navigator.canShare({ files })` is true; otherwise download through an object URL.
 
-### CORS on the served bucket
+### CORS header from the CDN backend bucket
 
-Add to the served bucket in `cloud-provisioning/src/gcp/components/object-storage.ts`:
+The served bucket sits behind Cloud CDN as a private origin. The backend bucket uses `cacheMode: FORCE_CACHE_ALL` with a one-year TTL, and its cache key does not include `Origin` (`cloud-provisioning/src/gcp/components/object-storage.ts`, `object-storage-backend-bucket`). A CORS rule on the GCS bucket would therefore not be enough. GCS adds `Access-Control-Allow-Origin` only to a request that carries `Origin`. The edge caches whichever response it fetched first and serves it for a year. Any plain `<img>` request (the list, the organizer console, the dashboard) could fill the cache with a response without the header, and then every `crossorigin` request for that object would fail.
+
+The header is therefore set on the backend bucket's responses, which the load balancer adds whether the object came from the cache or not:
 
 ```ts
-cors: [{ origins: [`https://${publicDomain}`], methods: ['GET', 'HEAD'], responseHeaders: ['Content-Type'], maxAgeSeconds: 3600 }]
+customResponseHeaders: ['Access-Control-Allow-Origin: *']
 ```
 
-Then update the class docstring, which says the served bucket has no CORS. GCS answers an `Origin` request with `Access-Control-Allow-Origin` and `Vary: Origin`.
+`*` rather than the fan web origin:
 
-Cloud CDN may still hold responses cached without the header. Objects are immutable with fresh keys per upload, so old cache entries are possible only for covers uploaded before the change. The check after the production `pulumi up` is `curl -sI -H 'Origin: https://liverty-music.app' <an existing cover URL>`, looking for `access-control-allow-origin`. If the header is missing, set a custom response header on the CDN backend bucket. That change also lives in the same Pulumi component.
+- The objects are public images served without cookies, so a wildcard exposes nothing that `<img>` does not already expose.
+- A single fixed value would have to choose between prod, dev (`dev.liverty-music.app`) and a local dev server. `*` works for all three.
+- `crossorigin="anonymous"` sends no credentials, so a wildcard is accepted.
 
-The cover `<img>` in the face gets `crossorigin="anonymous"` only after that check passes. In the reverse order, every fan's cover images would fail to load (measured in the spike).
+The class docstring's CORS section, which says the served bucket has no CORS, is updated in the same change. Source: Cloud CDN custom response headers (https://cloud.google.com/cdn/docs/using-custom-headers) and the Fetch standard's CORS check (https://fetch.spec.whatwg.org/#cors-check).
+
+After the production `pulumi up`, the check is `curl -sI <an existing cover URL>`, looking for `access-control-allow-origin: *`. An existing cover is used because it is the case that a cached response could break. The cover `<img>` in the face gets `crossorigin="anonymous"` only after that check passes. In the reverse order, every fan's cover images would fail to load (measured in the spike).
 
 ### Loading and precache (owner's decision: precache)
 
@@ -127,16 +133,16 @@ The renderer imports `pixi.js`, `pixi.js/html-source` and `pixi-filters/shockwav
 
 - [The masked export races the repaint and leaks the full name] → Await the `paint` event before extracting, and test it with a unit test. The DOM path masks a clone, so it never depends on a repaint.
 - [The 50 ms second draw is not enough on a slower iPhone] → Measure it on a real iPhone during the frontend work. If needed, make the delay longer or draw until the image's pixels change.
-- [The CORS rollout order is reversed and cover images break for everyone] → The frontend task that adds `crossorigin` depends on the CORS check passing in production, and the task says so.
+- [The CORS rollout order is reversed and cover images break for everyone] → The frontend task that adds `crossorigin` depends on the header check passing in production, and the task says so.
 - [PixiJS 8.23 is late] → The DOM path is complete and ships first. The WebGL path is an addition.
 - [A larger precache, about 340 KB gzip before optimisation, for every fan] → Owner accepted it. Importing only the shockwave filter is expected to shrink it; the bundle size is reported in the frontend PR.
 - [HTML-in-Canvas changes shape again in Chrome] → Feature detection falls back to the DOM path, which is the Safari path and is tested on every PR.
 
 ## Migration Plan
 
-1. cloud-provisioning: the CORS rule. Merge, then the owner runs the production `pulumi up`. Merging also auto-runs the dev `pulumi up`; dev is stopped, so that run is not verified.
-2. Check the CORS header on a production cover URL with `curl`.
+1. cloud-provisioning: the CORS response header on the CDN backend bucket. Merge, then the owner runs the production `pulumi up`. Merging also auto-runs the dev `pulumi up`; dev is stopped, so that run is not verified.
+2. Check the header on an existing production cover URL with `curl`.
 3. frontend, DOM path: the virtual ticket, the stamp and the share image, with `crossorigin` on the cover. Release.
 4. frontend, WebGL path: after `pixi.js` 8.23 is on npm `latest`. Release.
 
-Rollback: remove `crossorigin` (frontend) before removing the CORS rule. A build with `DB_VERSION` 1 cannot open a database already upgraded to version 2 (`VersionError`), and the fan would lose the offline ticket list. So the frontend is never rolled back to an older build. Instead, a fix-forward build turns the virtual ticket off and keeps `DB_VERSION` 2 and the new store.
+Rollback: remove `crossorigin` (frontend) before removing the header. A build with `DB_VERSION` 1 cannot open a database already upgraded to version 2 (`VersionError`), and the fan would lose the offline ticket list. So the frontend is never rolled back to an older build. Instead, a fix-forward build turns the virtual ticket off and keeps `DB_VERSION` 2 and the new store.

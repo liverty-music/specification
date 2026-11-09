@@ -7,7 +7,7 @@ Tapping a ticket on the screen SHALL open its virtual ticket in a dialog over th
 #### Scenario: Fan taps a ticket
 
 - **WHEN** a fan with an S席 ticket that is not yet entered taps it in the list
-- **THEN** a dialog shows its virtual ticket with the cover image, the performers, the title, the date, the venue, the open and start times, S席, 指定なし, the fan's full name and phone number and the resale notice, and the QR code button below the face
+- **THEN** a dialog shows its virtual ticket with the cover image, the performers, the title, the date, the venue and its prefecture, the open and start times, S席, 指定なし, the fan's full name and phone number and the resale notice, and the QR code button below the face
 
 #### Scenario: Tapping a button in the list
 
@@ -52,6 +52,11 @@ A ticket that is 入場済み SHALL show an admission stamp on its virtual ticke
 
 - **WHEN** the fan has asked the device to reduce motion and is admitted while the code is shown
 - **THEN** the virtual ticket opens with the stamp at rest
+
+#### Scenario: Signed out and in again
+
+- **WHEN** the fan signs out after the stamp of an entered ticket was played, signs in again on the same device and opens that virtual ticket
+- **THEN** the stamp is pressed onto it with the pressing animation
 
 #### Scenario: Not yet entered
 
