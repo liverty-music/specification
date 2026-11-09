@@ -81,7 +81,22 @@ Durations come from the motion tokens (design-tokens, "Scattered raw timings are
 
 Measured in Chromium 156 on an earlier version of the sample (520 ms duration, 90 ms step, before the 3D keyframes): after a 1500 px jump, the lanes of a row in mid-screen started at 0, 90 and 180 ms and finished at 520, 610 and 700 ms, so the trigger fired once per row and the `sibling-index()` delay applied; a row entering from the top on an upward fling played forwards.
 
-Fallback: `@supports not (timeline-trigger: --t view())` uses the same keyframes on `animation-timeline: view()`, with ranges `entry` and `exit` (reversed) so both edges animate. A scroll-linked animation ignores `animation-delay`, and the three lanes of a row share one view progress, so the lane order comes from offsetting each lane's range instead: `animation-range: entry calc((sibling-index() - 1) * 12%) entry calc(60% + (sibling-index() - 1) * 12%)` (and the mirrored `exit` range). Under reduced motion, `animation: none` on the lanes; a scroll-driven or triggered animation has no duration token to collapse.
+Fallback: `@supports not (timeline-trigger: --t view())` uses the same keyframes on `animation-timeline: view()`, with ranges `entry` and `exit` (reversed) so both edges animate. Both edges need two animations of the same keyframes on one lane, because one animation has one range:
+
+```css
+@supports not (timeline-trigger: --t view()) {
+  .lane {
+    --_lag: calc((sibling-index() - 1) * 12%);
+    animation: deal-in linear both, deal-in linear both reverse;
+    animation-timeline: view(), view();
+    animation-range:
+      entry var(--_lag) entry calc(60% + var(--_lag)),
+      exit calc(40% - var(--_lag)) exit calc(100% - var(--_lag));
+  }
+}
+```
+
+A scroll-linked animation ignores `animation-delay`, and the three lanes of a row share one view progress, so the lane order comes from the `--_lag` offset on each range. The sample page ran this form in Chromium with scroll-triggered animations switched off by mode. Under reduced motion, `animation: none` on the lanes; a scroll-driven or triggered animation has no duration token to collapse.
 
 Alternatives considered:
 - Scroll-driven only (`animation-timeline: view()`): Baseline, but its progress follows the scroll, so a fast fling finishes it at the screen edge in a few frames; the owner saw no animation in the sample.
@@ -115,7 +130,7 @@ Tab switches: Aurelia's router has no View Transition support (its documentation
   "Local Noto Sans JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif;
 ```
 
-Windows 10/11 ship `NotoSansJP-VF.ttf` (variable) since the April 2025 update; Android ships Noto Sans CJK JP (variable from Android 15, Regular only on 6-14). `local()` matches a font's full or PostScript name, and the names differ by platform and version; task 7.1 confirms on Android 15 that `local("Noto Sans CJK JP")` resolves to the variable font, and on an Android 14 emulator that it does not resolve to the Regular-only file. If it does, the Android source is removed and Android downloads as before. This keeps `adopt-m3-cube-ui-foundation`'s rule that a missing weight is not synthesized. Safari does not use `local()` for fingerprinting reasons; Apple devices have no Noto, so they download as before. The Google Fonts link stays as the fallback, and the browser fetches a Google subset only when the alias cannot draw a character. Source: ICS MEDIA, "ウェブ制作者のための Noto Sans JP 最新実装ガイド".
+Windows 10/11 ship `NotoSansJP-VF.ttf` (variable) since the April 2025 update; Android ships Noto Sans CJK JP (variable from Android 15, Regular only on 6-14). `local()` matches a font's full or PostScript name. Whether Android 15's variable Noto Sans CJK JP and Android 6-14's Regular-only file answer to different names is not documented anywhere we found, so task 7.1 checks it on an Android 15 device and an Android 14 emulator. If some name answers only on Android 15, the Android source uses that name. If not, the Android source is removed and every Android version downloads as before: drawing bold at 400 on older Android to save a download on newer Android is not an acceptable trade, and the requirement is written so that either outcome meets it. Windows needs no such check: its only Noto Sans JP is the variable `NotoSansJP-VF.ttf`. This keeps `adopt-m3-cube-ui-foundation`'s rule that a missing weight is not synthesized. Safari does not use `local()` for fingerprinting reasons; Apple devices have no Noto, so they download as before. The Google Fonts link stays as the fallback, and the browser fetches a Google subset only when the alias cannot draw a character. Source: ICS MEDIA, "ウェブ制作者のための Noto Sans JP 最新実装ガイド".
 
 This edits the stack that `adopt-m3-cube-ui-foundation` introduces; the task waits for its token renames.
 

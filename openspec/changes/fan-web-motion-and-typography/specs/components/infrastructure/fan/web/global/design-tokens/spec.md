@@ -2,22 +2,17 @@
 
 ### Requirement: Installed Noto is used before a download
 
-On a device whose installed Noto Sans JP or Noto Sans CJK JP has every weight from 100 to 900, the fan app SHALL draw its plain text with the installed font and SHALL NOT download Noto Sans JP. Any other device, including one whose installed Noto has fewer weights, SHALL download Noto Sans JP as before, so every weight is drawn as designed and none is synthesized.
+The fan app SHALL draw its plain text with an installed Noto Sans JP or Noto Sans CJK JP, without downloading Noto Sans JP, on a device where the browser can address the installed font by a name that only a font with every weight from 100 to 900 answers to. Every other device SHALL download Noto Sans JP as before. On no device SHALL bold text be drawn at the regular weight or in a synthesized bold.
 
 #### Scenario: Windows with Noto Sans JP installed
 
 - **WHEN** the fan opens the app in Chrome on Windows 11 with Noto Sans JP installed
 - **THEN** Japanese text is drawn in Noto Sans JP and no Noto Sans JP font file is downloaded
 
-#### Scenario: Android
+#### Scenario: Bold text on Android
 
-- **WHEN** the fan opens the app in Chrome on Android 15 or later, which ships Noto Sans CJK JP in every weight
-- **THEN** Japanese text is drawn in Noto Sans CJK JP and no Noto Sans JP font file is downloaded
-
-#### Scenario: Android with Regular only
-
-- **WHEN** the fan opens the app on an Android version whose Noto Sans CJK JP has only the Regular weight, and a screen shows bold Japanese text
-- **THEN** Noto Sans JP is downloaded and draws both the regular and the bold text
+- **WHEN** the fan opens the app in Chrome on any Android version and a screen shows bold Japanese text
+- **THEN** the bold text is drawn at its bold weight, from the installed Noto Sans CJK JP when it has every weight and can be told apart from a Regular-only one, otherwise from the downloaded Noto Sans JP
 
 #### Scenario: iPhone
 
