@@ -58,6 +58,7 @@ Events that were removed (never fired, duplicated another event, or double-count
 | `notification.dismissed` | FE | notification | active | `notification_id`, `trace_id?` | Notification fatigue |
 | `organizer.created` | BE | organizer | active | `organizer_id`, `trace_id?` | Organizer onboarding — a vetted Organizer was created and its Organization provisioned. Group/admin-actor event keyed on `organizer_id` (no fan `distinct_id`) |
 | `organizer.artist.associated` | BE | organizer | active | `organizer_id`, `artist_id`, `trace_id?` | Organizer↔artist roster growth. Keyed on `organizer_id` |
+| `order.paid` | BE | order | active | `order_id`, `event_id`, `ticket_count`, `amount`, `currency`, `source`, `lottery_entry_id?`, `checkout_id?`, `resale_entry_id?` | Paid orders by how they were bought. `source` is `lottery_entry`, `checkout` or `resale_entry` (an Order won through official resale), and exactly the matching id is sent. Recorded once per ORDER.paid announcement, at the Order's pay time |
 
 ### Removed events
 

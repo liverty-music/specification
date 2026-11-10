@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Lists the Concerts at which one Artist performs, optionally only those from today onward, each with its Venue, Series and performers.
+Lists the Concerts at which one Artist performs, of every date, each with its Venue, Series and performers.
 
 ## Requirements
 
