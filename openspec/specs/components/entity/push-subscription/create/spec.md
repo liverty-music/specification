@@ -32,7 +32,7 @@ Create SHALL store a PushSubscription for the fan with the given endpoint and ke
 
 ### Requirement: A new or changed subscription is announced with the change
 
-When Create stores a new PushSubscription, or changes the keys or the owner of an existing one, it SHALL announce the PushSubscription as subscribed, carrying it after the change, together with the change: both are stored or neither is. When Create changes nothing, it SHALL announce nothing. When the announcement cannot be recorded, Create SHALL fail with Unavailable and store nothing.
+When Create stores a new PushSubscription, or changes the keys or the owner of an existing one, it SHALL announce the PushSubscription as subscribed (PushSubscription.Subscribed), carrying it after the change, together with the change: both are stored or neither is. When Create changes nothing, it SHALL announce nothing. When the announcement cannot be recorded, Create SHALL fail with Unavailable and store nothing.
 
 #### Scenario: New browser announced
 

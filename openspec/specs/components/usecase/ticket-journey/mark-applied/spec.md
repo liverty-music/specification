@@ -12,7 +12,7 @@ participant TicketJourney
 participant Concert
 participant User
 participant Follow
-Note over UC: runs for each lottery entry announced as new
+Note over UC: runs for each lottery entry announced as entered (LotteryEntry.Entered)
 UC->>LotteryEntry: Get
 break entry is no longer Entered
   Note over UC: record nothing and raise nothing
@@ -34,7 +34,7 @@ end
 
 ### Requirement: Applied after every new lottery entry
 
-MarkApplied SHALL run for each lottery entry announced as new, with its Order's user and the event of its TicketStock. It SHALL read the entry with LotteryEntry.Get and record nothing when the entry is no longer Entered, because a drawn entry's announcement arrived late. Otherwise it SHALL record Applied, set by the platform, for the user's journey for the event through TicketJourney.UpsertIfReplaceable, so a journey at Unpaid or Paid stays as it is. Running it again for the same entry SHALL leave the journey as the first run left it. When UpsertIfReplaceable fails, MarkApplied SHALL fail with that error and is run again.
+MarkApplied SHALL run for each lottery entry announced as entered (LotteryEntry.Entered), with its Order's user and the event of its TicketStock. It SHALL read the entry with LotteryEntry.Get and record nothing when the entry is no longer Entered, because a drawn entry's announcement arrived late. Otherwise it SHALL record Applied, set by the platform, for the user's journey for the event through TicketJourney.UpsertIfReplaceable, so a journey at Unpaid or Paid stays as it is. Running it again for the same entry SHALL leave the journey as the first run left it. When UpsertIfReplaceable fails, MarkApplied SHALL fail with that error and is run again.
 
 #### Scenario: Fan enters a lottery
 

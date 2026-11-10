@@ -21,7 +21,7 @@ Delete SHALL remove the Passkey with the given provider passkey id and SHALL suc
 
 ### Requirement: A removed Passkey is announced as removed
 
-When Delete removes a Passkey, it SHALL announce the Passkey as removed, carrying the Passkey as it was stored, together with the removal: both are stored or neither is. When the announcement cannot be recorded, Delete SHALL fail with Unavailable and the Passkey SHALL stay stored.
+When Delete removes a Passkey, it SHALL announce the Passkey as removed (Passkey.Removed), carrying the Passkey as it was stored, together with the removal: both are stored or neither is. When the announcement cannot be recorded, Delete SHALL fail with Unavailable and the Passkey SHALL stay stored.
 
 #### Scenario: Passkey removed
 

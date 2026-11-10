@@ -11,6 +11,12 @@ A SeriesImage is an image an Organizer uploaded for one of its Series, served to
 | thumb | address of the thumbnail variant | required when shown as a cover |
 | large | address of the large variant | required when shown as a cover |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| SeriesImage.Uploaded | SeriesImage.Create | the SeriesImage, with its Series as what the announcement is about; the request to process it |
+
 ```mermaid
 erDiagram
   Organizer ||--o{ SeriesImage : "uploads"

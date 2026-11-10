@@ -52,7 +52,7 @@ CommitRefund SHALL take an Order, the refund's reason (Cancellation or Dispute),
 
 ### Requirement: A recorded refund is announced with it
 
-When CommitRefund makes the Order Refunded, it SHALL announce the Order as refunded together with the refund: both are stored or neither is. When the Order is already Refunded, CommitRefund SHALL announce nothing. When the announcement cannot be recorded, CommitRefund SHALL fail with Unavailable and change nothing.
+When CommitRefund makes the Order Refunded, it SHALL announce the Order as refunded (Order.Refunded) together with the refund: both are stored or neither is. When the Order is already Refunded, CommitRefund SHALL announce nothing. When the announcement cannot be recorded, CommitRefund SHALL fail with Unavailable and change nothing.
 
 #### Scenario: Refund announced
 - **WHEN** CommitRefund makes a Paid Order Refunded

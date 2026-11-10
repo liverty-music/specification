@@ -31,11 +31,11 @@ PersistDrawOutcome SHALL take a sale and, for each TicketStock of the sale's eve
 
 ### Requirement: Each drawn entry is announced with the outcome
 
-PersistDrawOutcome SHALL announce each entry it sets Won or Lost, as it is after the draw, together with the outcome: the outcome and its announcements are stored together or not at all. An entry it leaves unchanged SHALL NOT be announced. When an announcement cannot be recorded, PersistDrawOutcome SHALL fail with Unavailable and record nothing. Each announcement is what product analytics records as one "lottery result" signal for the fan of the entry's Order.
+PersistDrawOutcome SHALL announce each entry it sets Won as won (LotteryEntry.Won) and each it sets Lost as lost (LotteryEntry.Lost), as it is after the draw, together with the outcome: the outcome and its announcements are stored together or not at all. An entry it leaves unchanged SHALL NOT be announced. When an announcement cannot be recorded, PersistDrawOutcome SHALL fail with Unavailable and record nothing. Each announcement is what product analytics records as one "lottery result" signal for the fan of the entry's Order.
 
 #### Scenario: Two entries, one place
 - **WHEN** PersistDrawOutcome records one entry Won and one entry Lost
-- **THEN** two lottery results are announced, one per entry
+- **THEN** the Won entry is announced as won and the Lost entry as lost
 
 #### Scenario: Recorded again announces nothing
 - **WHEN** PersistDrawOutcome is called again with an outcome already recorded

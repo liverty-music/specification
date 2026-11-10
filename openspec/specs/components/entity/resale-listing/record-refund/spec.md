@@ -23,7 +23,7 @@ RecordRefund SHALL take a ResaleListing, a provider refund ID and a time, and se
 
 ### Requirement: A recorded refund is announced with it
 
-When RecordRefund sets the refund, it SHALL announce the ResaleListing as refunded together with the refund: both are stored or neither is. When the listing already has a refund time, RecordRefund SHALL announce nothing. When the announcement cannot be recorded, RecordRefund SHALL fail with Unavailable and set nothing.
+When RecordRefund sets the refund, it SHALL announce the ResaleListing as refunded (ResaleListing.Refunded) together with the refund: both are stored or neither is. When the listing already has a refund time, RecordRefund SHALL announce nothing. When the announcement cannot be recorded, RecordRefund SHALL fail with Unavailable and set nothing.
 
 #### Scenario: Refund announced
 - **WHEN** RecordRefund sets the refund of a Sold listing

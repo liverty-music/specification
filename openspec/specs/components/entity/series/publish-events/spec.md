@@ -64,7 +64,7 @@ PublishEvents SHALL fail with FailedPrecondition, changing nothing, when a given
 
 ### Requirement: New concerts of a public series are announced with the publish
 
-When PublishEvents makes at least one Event PUBLISHED in place and the Series' visibility is PUBLIC, it SHALL announce the new concerts once for each performing Artist of those Events: one announcement per Artist, carrying the Concerts made PUBLISHED in place by this call at which that Artist performs, together with the publish: both are stored or neither is. Claimed Events, Events published before, and every Event of an UNLISTED Series SHALL NOT be announced. When PublishEvents fails it SHALL announce nothing. When an announcement cannot be recorded, PublishEvents SHALL fail with Unavailable and every given Event SHALL stay DRAFT.
+When PublishEvents makes at least one Event PUBLISHED in place and the Series' visibility is PUBLIC, it SHALL announce the new concerts as created (Concert.Created) once for each performing Artist of those Events: one announcement per Artist, carrying the Concerts made PUBLISHED in place by this call at which that Artist performs, together with the publish: both are stored or neither is. Claimed Events, Events published before, and every Event of an UNLISTED Series SHALL NOT be announced. When PublishEvents fails it SHALL announce nothing. When an announcement cannot be recorded, PublishEvents SHALL fail with Unavailable and every given Event SHALL stay DRAFT.
 
 #### Scenario: Two performers
 

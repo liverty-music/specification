@@ -35,7 +35,7 @@ CancelEvents SHALL fail with FailedPrecondition, changing nothing, when a given 
 
 ### Requirement: Each cancelled event is announced with it
 
-When CancelEvents makes an Event CANCELLED, it SHALL announce that Event as cancelled together with the change: the cancellation and its announcement are stored or neither is. It SHALL announce nothing for a DRAFT Event it removes. When an announcement cannot be recorded, CancelEvents SHALL fail with Unavailable and change nothing.
+When CancelEvents makes an Event CANCELLED, it SHALL announce that Event as cancelled (Event.Cancelled) together with the change: the cancellation and its announcement are stored or neither is. It SHALL announce nothing for a DRAFT Event it removes. When an announcement cannot be recorded, CancelEvents SHALL fail with Unavailable and change nothing.
 
 #### Scenario: Two dates cancelled
 - **WHEN** CancelEvents makes two PUBLISHED Events of a Series CANCELLED

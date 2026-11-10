@@ -36,7 +36,7 @@ Admit SHALL take a Ticket, a Scanner and a time. When the Ticket is admissible, 
 
 ### Requirement: An admission is announced with the change
 
-When Admit reports Admitted, it SHALL announce the Ticket as admitted, carrying it with its admit time, together with the admit time and the Admission: all are stored or none is. When Admit reports AlreadyAdmitted or Voided, it SHALL announce nothing. When the announcement cannot be recorded, Admit SHALL fail with Unavailable, the Ticket SHALL keep no admit time and no Admission SHALL be stored.
+When Admit reports Admitted, it SHALL announce the Ticket as admitted (Ticket.Admitted), carrying it with its admit time, together with the admit time and the Admission: all are stored or none is. When Admit reports AlreadyAdmitted or Voided, it SHALL announce nothing. When the announcement cannot be recorded, Admit SHALL fail with Unavailable, the Ticket SHALL keep no admit time and no Admission SHALL be stored.
 
 #### Scenario: First admission announced
 

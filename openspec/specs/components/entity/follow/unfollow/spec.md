@@ -22,7 +22,7 @@ Unfollow SHALL remove the Follow for the given fan and artist and nothing else. 
 
 ### Requirement: A removed Follow is announced with the change
 
-When Unfollow removes a Follow, it SHALL announce the Follow as removed, carrying the Follow as it was, together with the removal: both are stored or neither is. When the fan does not follow the artist, Unfollow SHALL announce nothing. When the announcement cannot be recorded, Unfollow SHALL fail with Unavailable and the Follow SHALL remain.
+When Unfollow removes a Follow, it SHALL announce the Follow as removed (Follow.Removed), carrying the Follow as it was, together with the removal: both are stored or neither is. When the fan does not follow the artist, Unfollow SHALL announce nothing. When the announcement cannot be recorded, Unfollow SHALL fail with Unavailable and the Follow SHALL remain.
 
 #### Scenario: Followed artist unfollowed
 

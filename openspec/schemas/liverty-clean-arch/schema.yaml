@@ -308,8 +308,8 @@ artifacts:
                  (LotteryEntryUseCase_Confirm)
             rmo  a usecase method that only reads, whose result a screen
                  shows: <Interface>_<Method> (TicketUseCase_List)
-            evt  a domain event an entity lists: <Entity>_<PastTense>
-                 (LotteryEntry_Drawn)
+            evt  a domain event an entity lists: <Entity>_<What>
+                 (LotteryEntry_Won)
             pcr  a trigger with no actor, a schedule or a call from an
                  external system: Schedule_<What> or External_<System>,
                  the system named by its role, never by its vendor
@@ -320,9 +320,10 @@ artifacts:
           drawn. A usecase run by a schedule follows its pcr. A frame that
           does not follow the frame before it starts with `rf`, which breaks
           the inferred link, and names its source with `->> <NN>`; one event
-          starting several usecases is drawn this way. Branch conditions
-          (won or lost, captured or not) are not drawn; they stay in the
-          scenarios. The fence names every usecase method the story's
+          starting several usecases is drawn this way. An event split by
+          state is drawn once per state a usecase of the story follows
+          (LotteryEntry_Won, LotteryEntry_Lost); other branch conditions
+          (captured or not) are not drawn and stay in the scenarios. The fence names every usecase method the story's
           requirements name, as a cmd or rmo; it may also name one they
           describe in words. No front-matter config. Like an entity's
           Purpose, it is edited directly in the main spec; a new story puts
@@ -334,9 +335,10 @@ artifacts:
             tf 04 cmd TicketJourneyUseCase_MarkApplied
             rf 05 pcr Schedule_DrawWindowClosed
             tf 06 cmd LotteryEntryUseCase_Draw
-            tf 07 evt LotteryEntry_Drawn
+            tf 07 evt LotteryEntry_Won
             tf 08 cmd OrderUseCase_Issue
-            rf 09 cmd NotificationUseCase_SendLotteryLoss ->> 07
+            rf 09 evt LotteryEntry_Lost ->> 06
+            tf 10 cmd NotificationUseCase_SendLotteryLoss
 
       One rule, split across four places:
 

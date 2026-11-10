@@ -8,7 +8,7 @@ Records an uploaded SeriesImage for its Organizer.
 
 ### Requirement: Idempotent insert
 
-Create SHALL store a SeriesImage for the Series it is attached to, and record the request to process it for that Series together with it: both are stored or neither is. The Series SHALL NOT be stored on the SeriesImage. When a SeriesImage with the same id is already stored, Create SHALL succeed, change nothing and record nothing. When the request cannot be recorded, Create SHALL fail with Unavailable and store nothing.
+Create SHALL store a SeriesImage for the Series it is attached to, and announce the SeriesImage as uploaded (SeriesImage.Uploaded), which is the request to process it for that Series, together with it: both are stored or neither is. The Series SHALL NOT be stored on the SeriesImage. When a SeriesImage with the same id is already stored, Create SHALL succeed, change nothing and record nothing. When the request cannot be recorded, Create SHALL fail with Unavailable and store nothing.
 
 #### Scenario: First attach
 

@@ -9,9 +9,9 @@ summarize prose, and this script keeps each in step with the prose it draws:
   the fence is a `cmd` or `rmo` frame in it, written with `_` for the first
   `.` (OrderUseCase_Checkout). A story that names a usecase method has the
   fence.
-- Events: every `evt` frame of a story fence (LotteryEntry_Drawn) is a domain
+- Events: every `evt` frame of a story fence (LotteryEntry_Won) is a domain
   event listed in the events table of an entity's Purpose
-  (LotteryEntry.Drawn). An event is listed once, by the entity its name
+  (LotteryEntry.Won). An event is listed once, by the entity its name
   starts with.
 - Usecases: a usecase spec whose text outside the fence names 5 or more
   distinct entity operations (Order.Issue: an entity with a spec under

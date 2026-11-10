@@ -21,7 +21,7 @@ tf 13 evt LotteryEntry_Entered
 rf 14 pcr Schedule_DrawWindowClosed
 tf 15 cmd LotteryEntryUseCase_DrawDueSales
 tf 16 cmd LotteryEntryUseCase_Draw
-tf 17 evt LotteryEntry_Drawn
+tf 17 evt LotteryEntry_Won
 tf 18 cmd OrderUseCase_Issue
 tf 19 evt Order_Paid
 rf 20 rmo TicketSaleUseCase_ListOwnByEvent ->> 09 ->> 19

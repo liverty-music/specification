@@ -41,7 +41,7 @@ UpsertIfReplaceable SHALL take a fan, an event, a status and who sets it (platfo
 
 ### Requirement: A stored status is announced with the change
 
-When UpsertIfReplaceable stores a status, it SHALL announce the journey's status change, carrying the journey with its status and status set by, together with the change: both are stored or neither is. When it stores nothing or fails, it SHALL announce nothing. When the announcement cannot be recorded, it SHALL fail with Unavailable and leave the journey as it was.
+When UpsertIfReplaceable stores a status, it SHALL announce the journey's status as changed (TicketJourney.StatusChanged), carrying the journey with its status and status set by, together with the change: both are stored or neither is. When it stores nothing or fails, it SHALL announce nothing. When the announcement cannot be recorded, it SHALL fail with Unavailable and leave the journey as it was.
 
 #### Scenario: Status stored
 

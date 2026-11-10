@@ -32,7 +32,7 @@ SetHype SHALL set the hype level of the fan's Follow of the artist to the given 
 
 ### Requirement: A changed hype level is announced with the change
 
-When SetHype changes the level or who set it, it SHALL announce the Follow as changed, with its new level and who set it, together with the change: both are stored or neither is. When the announcement cannot be recorded, SetHype SHALL fail with Unavailable and the level and who set it SHALL stay as they were.
+When SetHype changes the level or who set it, it SHALL announce the Follow's hype as changed (Follow.HypeChanged), with its new level and who set it, together with the change: both are stored or neither is. When the announcement cannot be recorded, SetHype SHALL fail with Unavailable and the level and who set it SHALL stay as they were.
 
 #### Scenario: Level changed
 

@@ -31,7 +31,7 @@ RecordLogin SHALL take a User's id and a sign-in time, and SHALL set the User's 
 
 ### Requirement: A recorded sign-in is announced with the change
 
-When RecordLogin changes the last login time, it SHALL announce the User as signed in, with its new last login time, together with the change: both are stored or neither is. Product analytics SHALL record each such announcement as one sign-in of the User at that time. When the announcement cannot be recorded, RecordLogin SHALL fail with Unavailable and the last login time SHALL stay as it was.
+When RecordLogin changes the last login time, it SHALL announce the User as signed in (User.SignedIn), with its new last login time, together with the change: both are stored or neither is. Product analytics SHALL record each such announcement as one sign-in of the User at that time. When the announcement cannot be recorded, RecordLogin SHALL fail with Unavailable and the last login time SHALL stay as it was.
 
 #### Scenario: Sign-in announced
 

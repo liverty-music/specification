@@ -19,7 +19,8 @@ Events announced about it:
 | event | announced by | carries |
 |-------|--------------|---------|
 | LotteryEntry.Entered | LotteryEntry.Create | the entry's Pending Order, with its user and TicketStock |
-| LotteryEntry.Drawn | LotteryEntry.PersistDrawOutcome, LotteryEntry.EndEnteredByEvent, LotteryEntry.RevertWin | the entry in state Won or Lost, with its lost reason |
+| LotteryEntry.Won | LotteryEntry.PersistDrawOutcome | the entry in state Won, with its draw position |
+| LotteryEntry.Lost | LotteryEntry.PersistDrawOutcome, LotteryEntry.RevertWin, LotteryEntry.EndEnteredByEvent | the entry in state Lost, with its lost reason |
 
 ```mermaid
 erDiagram
