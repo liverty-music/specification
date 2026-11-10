@@ -1,6 +1,6 @@
 ## Why
 
-An audit of the backend found interface doc comments that no longer describe what their implementations do, and three places where the code breaks a rule the specs already state. A caller who trusts a stale comment writes the wrong code: the Go doc of `ConcertRepository.Create` names a natural key the database does not use, and `ArtistRepository.UpdateFanart` claims that passing no fanart keeps the old images, while it removes them as the spec requires. The spec violations reach users: two accounts can hold the same email address in different letter case, after which the account recovery lookup fails with Internal, and a failed share-token write during Publish leaves an UNLISTED concert published without a share link and with no way to recover by publishing again.
+An audit of the backend found interface doc comments that no longer describe what their implementations do, and two places where the code breaks a rule the specs already state. A caller who trusts a stale comment writes the wrong code: the Go doc of `ConcertRepository.Create` names a natural key the database does not use, and `ArtistRepository.UpdateFanart` claims that passing no fanart keeps the old images, while it removes them as the spec requires. The spec violations reach users: two accounts can hold the same email address in different letter case, after which the account recovery lookup fails with Internal, and a failed share-token write during Publish leaves an UNLISTED concert published without a share link and with no way to recover by publishing again.
 
 ## What Changes
 
