@@ -143,8 +143,8 @@ service SeriesService {
   // becomes CANCELLED: it is dropped from fan lists, keeps its event page with
   // a cancellation banner, and never changes again. A DRAFT Event is removed,
   // never cancelled. A series left with no Event is removed. A
-  // CONCERT.cancelled event carrying the ids of the Events that became
-  // CANCELLED is emitted; none is emitted when only drafts were removed.
+  // Event.Cancelled (EVENT.cancelled) is announced for each Event that became
+  // CANCELLED; none is announced when only drafts were removed.
   //
   // Possible errors:
   // - PERMISSION_DENIED: The series does not exist or is not owned by the
