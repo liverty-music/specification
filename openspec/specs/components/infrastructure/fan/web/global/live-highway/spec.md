@@ -314,7 +314,7 @@ Every dashboard event card SHALL show the artist's name as text, horizontally ce
 
 ### Requirement: Date rows deal their concerts in as they come into view
 
-When a date row comes into view from either the bottom or the top edge of the timetable, its concert cards SHALL be dealt in: each card flies in from the right and from behind, turning towards the fan in depth, and settles with a slight overshoot. Only the cards SHALL move; the lanes' frames and the mark of an empty lane SHALL stay in place. The cards SHALL be dealt in lane by lane in the order HOME, NEAR, AWAY, and within a lane from the top card down, whichever edge the row comes in from. In a browser that can start an animation when an element comes into view, the animation SHALL start once 60% of the row is in view, SHALL run for 800 ms on each card whatever the scroll speed, and each card SHALL start 100 ms after the card above it in its lane, with each lane starting 100 ms after the lane before it. In a browser that cannot, the same motion SHALL follow the scroll position while the row enters, so its pace follows the scroll; in such a browser each card SHALL follow its own scroll position, so a lane's cards come in from the top down, and SHALL also deal out as it leaves through the top edge, once 40% of the card has left, so that scrolling back up deals it in from the top. A row that has fully left the view SHALL be dealt in again the next time it comes into view. Under reduced motion the rows SHALL appear in place with no movement.
+When a date row comes into view from either the bottom or the top edge of the timetable, its concert cards SHALL be dealt in: each card flies in from the right and from behind, turning towards the fan in depth, and settles with a slight overshoot. Only the cards SHALL move; the lanes' frames and the mark of an empty lane SHALL stay in place. In a browser that can start an animation when an element comes into view, the cards SHALL be dealt in lane by lane in the order HOME, NEAR, AWAY, and within a lane from the top card down, whichever edge the row comes in from; the animation SHALL start once 60% of the row is in view, SHALL run for 800 ms on each card whatever the scroll speed, and each card SHALL start 100 ms after the card above it in its lane, with each lane starting 100 ms after the lane before it. In a browser that cannot, the same motion SHALL follow the scroll position while the row enters, so its pace follows the scroll; in such a browser each card SHALL follow its own scroll position, so each card moves as it crosses the edge: in a row entering from the bottom, lane by lane in the order HOME, NEAR, AWAY and within a lane from the top down; in a row coming back from the top, each card as it reappears. Each card SHALL also deal out as it leaves through the top edge, once 40% of the card has left, so that scrolling back up deals it in again at the top edge. A row that has fully left the view SHALL be dealt in again the next time it comes into view. Under reduced motion the rows SHALL appear in place with no movement.
 
 #### Scenario: Scrolling down
 
@@ -331,7 +331,8 @@ When a date row comes into view from either the bottom or the top edge of the ti
 #### Scenario: Scrolling up after a month jump
 
 - **WHEN** the fan has jumped to a month and scrolls up, and a row comes in at the top edge
-- **THEN** its cards are dealt in the same way, each lane from the top card down
+- **THEN** its cards are dealt in
+- **AND** in a browser that can start an animation when an element comes into view, HOME first, then NEAR, then AWAY, and each lane from the top card down
 
 #### Scenario: Fast scroll
 

@@ -81,12 +81,13 @@ Durations come from the motion tokens (design-tokens, "Scattered raw timings are
 
 Measured in Chromium 156 on an earlier version of the sample (520 ms duration, 90 ms step, before the 3D keyframes): after a 1500 px jump, the lanes of a row in mid-screen started at 0, 90 and 180 ms and finished at 520, 610 and 700 ms, so the trigger fired once per row and the `sibling-index()` delay applied; a row entering from the top on an upward fling played forwards.
 
-Fallback: `@supports not (timeline-trigger: --t view())` uses the same keyframes on `animation-timeline: view()`, with ranges `entry` and `exit` (reversed) so both edges animate. Both edges need two animations of the same keyframes on one element, because one animation has one range. The sketch is the first version, on the lanes; since task 4.3 the same rule selects `.lane > event-card` and takes `--_lag` from the lane step (`var(--_lane-step) * 12%`):
+Fallback: `@supports not (timeline-trigger: --t view())` uses the same keyframes on `animation-timeline: view()`, with ranges `entry` and `exit` (reversed) so both edges animate. Both edges need two animations of the same keyframes on one card, because one animation has one range. As built (task 4.3; the first version ran the same rule on `.lane` with `--_lag` from `sibling-index()` over the lanes):
 
 ```css
 @supports not (timeline-trigger: --t view()) {
-  .lane {
-    --_lag: calc((sibling-index() - 1) * 12%);
+  .lane > event-card {
+    /* The lane step is 0, 1, 2 for HOME, NEAR, AWAY, set from data-lane. */
+    --_lag: calc(var(--_lane-step) * 12%);
     /* The exit animation fills forwards only: with `both`, its backwards fill
        (keyframe 100%, no transform) would override the entry animation, which
        comes earlier in the list, for the whole time the row is in view. */
@@ -99,7 +100,7 @@ Fallback: `@supports not (timeline-trigger: --t view())` uses the same keyframes
 }
 ```
 
-A scroll-linked animation ignores `animation-delay`. Each card follows its own view progress, so the cards of a lane come in from the top down as they reach the view, and the lane order (HOME, NEAR, AWAY) comes from the `--_lag` offset on each entry range. The exit range has no offset: each card starts to leave once 40% of it has gone through the top edge, so no card flies out while most of it is still on screen. (In the first version the lanes shared the row's view progress, and every lane left once 40% of the row had gone.) Unlike the triggered path, whose reverse play happens off screen, the fallback's exit is visible; the live-highway requirement states it, and the owner accepted it in the samples ("上端でも動かす"). The sample page ran this form in Chromium with scroll-triggered animations switched off by mode. Under reduced motion no deal-in is declared at all: both paths sit inside `@media (prefers-reduced-motion: no-preference)`, because a scroll-driven or triggered animation has no duration token to collapse.
+A scroll-linked animation ignores `animation-delay`. Each card follows its own view progress, so a card moves as it crosses the edge: a row entering from the bottom deals its cards in from the top of each lane down, with the lane order (HOME, NEAR, AWAY) from the `--_lag` offset on each entry range, and a row coming back from the top deals each card back in as it reappears, with no lane offset (the exit range has none). The exit range has no offset: each card starts to leave once 40% of it has gone through the top edge, so no card flies out while most of it is still on screen. (In the first version the lanes shared the row's view progress, and every lane left once 40% of the row had gone.) Unlike the triggered path, whose reverse play happens off screen, the fallback's exit is visible; the live-highway requirement states it, and the owner accepted it in the samples ("上端でも動かす"). The sample page ran this form in Chromium with scroll-triggered animations switched off by mode. Under reduced motion no deal-in is declared at all: both paths sit inside `@media (prefers-reduced-motion: no-preference)`, because a scroll-driven or triggered animation has no duration token to collapse.
 
 Alternatives considered:
 - Scroll-driven only (`animation-timeline: view()`): Baseline, but its progress follows the scroll, so a fast fling finishes it at the screen edge in a few frames; the owner saw no animation in the sample.
