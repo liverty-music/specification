@@ -2,7 +2,7 @@
 
 ### Requirement: Listed venue name normalization
 
-A listed venue name SHALL be normalized by folding full-width and half-width forms to one form, collapsing runs of whitespace to a single space and trimming the ends, removing a leading "〈city〉公演 ＠" prefix, and then removing a leading "〈prefecture〉・" prefix where the prefecture is one of Japan's 47 prefectures, with or without its 都/道/府/県 suffix. A name that is blank after normalization SHALL be treated as missing. A name that only says the venue is not yet announced SHALL also be treated as missing: compared ignoring whitespace, punctuation and Latin letter case, it is one of "TBA", "TBD", "to be announced", "coming soon", "stay tuned", "未定" or "後日発表", or it contains "某所" (an undisclosed place, as in "横浜某所"). Normalizing an already-normalized name SHALL leave it unchanged. This is the only normalization of a venue name: every comparison of venue names (an Event's listed venue name, a ConcertCandidate's, and the events Concert.Search returns) starts from it.
+A listed venue name SHALL be normalized by folding full-width and half-width forms to one form, collapsing runs of whitespace to a single space and trimming the ends, removing a leading "〈city〉公演 ＠" prefix, and then removing a leading "〈prefecture〉・" prefix where the prefecture is one of Japan's 47 prefectures, with or without its 都/道/府/県 suffix. A name that is blank after normalization SHALL be treated as missing. A name that only says the venue is not yet announced SHALL normalize to an empty name, and so is also treated as missing: compared ignoring whitespace, punctuation and Latin letter case, it is one of "TBA", "TBD", "to be announced", "coming soon", "stay tuned", "未定" or "後日発表", or it contains "某所" (an undisclosed place, as in "横浜某所"). Normalizing an already-normalized name SHALL leave it unchanged. This is the only normalization of a venue name: every comparison of venue names (an Event's listed venue name, a ConcertCandidate's, and the events Concert.Search returns) starts from it.
 
 #### Scenario: Prefecture prefix removed
 - **WHEN** the listed venue name is "大阪・フェスティバルホール"
@@ -22,7 +22,7 @@ A listed venue name SHALL be normalized by folding full-width and half-width for
 
 #### Scenario: Venue not yet announced is missing
 - **WHEN** the listed venue name is "TBA", "-STAY TUNED-", "未定" or "横浜某所"
-- **THEN** the name is treated as missing
+- **THEN** the normalized name is empty and the name is treated as missing
 
 #### Scenario: A real name containing a marker word is kept
 - **WHEN** the listed venue name is "TBA Hall Osaka"
