@@ -52,7 +52,7 @@ The two buttons sit in one capsule centred above the FAB, rendered inside `<conc
 
 ### D4. The deal-in is a scroll-triggered, time-based animation
 
-Each `.date-group` row declares its own trigger, and its three lanes run one keyframe set when the trigger activates:
+Each `.date-group` row declares its own trigger, and its concert cards run one keyframe set when the trigger activates. The animation is on the cards (`.lane > event-card`), not on the lanes: the owner's check in production found the lanes' frames and the empty-lane mark moving with them, and asked for the cards alone, with the cards of one lane in order from the top. Each card's delay is `(lane step + sibling-index() - 1) × short2`, where the lane step (0, 1, 2 for HOME, NEAR, AWAY) is a custom property set from the lane's `data-lane`, and `sibling-index()` counts the cards of one lane. The sketch below is the first version, on the lanes:
 
 ```css
 .date-group {
@@ -112,49 +112,79 @@ Alternatives considered:
 
 Tab switches: Aurelia's router has no View Transition support (its documentation and `@aurelia/router` 2.0.0-rc.2 contain none) and the update callback must not wait for a frame (`discovery-route.ts:389`). The bottom navigation tab handler calls `document.startViewTransition(async () => { await router.load(path); runTasks() })`. The page header and the navigation bar get their own `view-transition-name`, so only the route content cross-fades. The first task is a spike that confirms `router.load()` settles without waiting for a frame; if it does not, the tab transition is dropped from this change and the app-shell requirement is revised before archive.
 
+Spike result (task 1.2, Chromium of Playwright 1.64.1, local dev server): `router.load()` settles inside the update callback. Home → My Artists → Discovery → Home each ran one transition whose `ready` and `finished` resolved, with no `TimeoutError`. Implementation notes from the spike:
+
+- The handler is bound with `click.capture` on the tab link and stops the event, so the router's own `href` click handler on the same link does not navigate a second time. The link keeps the router's URL (`href.bind`) for a modified or middle click, which the handler leaves alone. `data-external` was tried first and rejected: it makes the router write the raw relative path into `href`.
+- A named snapshot is painted above `root`, so the FAB, which overlaps the navigation bar, is named on every transition (`fab-toggle`), not only under `vt-suppress-root`.
+- The old snapshots of the bar, the header and the FAB are hidden (`opacity: 0`, no animation): the header's background is partly transparent and would show the old title through the new one.
+- A `*` argument adds no specificity, so the reduced-motion rule is written `:root::view-transition-old(*)` (and `-new`, `-group`) to win over the named rules (`root`, `discovery-view`).
+- The `root` fade uses `--md-sys-motion-duration-medium2` (300 ms) to meet the requirement's 250-350 ms; it used `short4` (200 ms) when it served no transition.
+
 ### D6. Find the cause of the removed stagger before building the deal-in
 
 `event-card.css:29-36` records a staggered reveal whose rows all moved together. Before the deal-in lands, reproduce that branch in a story and check the `sibling-index()` miscount (D4) against it. If the cause is something else that also applies to triggered animations, the deal-in design is revisited.
 
+Spike result (task 1.1, Chromium of Playwright 1.64.1): the removed CSS (commit `470dda3e`: an `opacity`/`translate` transition from `@starting-style` on `.date-group`, `transition-delay: min(calc(sibling-index() * 60ms), 400ms)`) was injected into a `concert-highway` story of the current component and sampled every frame. On the first window it staggers as written: every row's transition has the same start time, the delays compute to 120, 180, 240 … ms (the top edge marker is sibling 1), and the rows' opacities at one instant read 0.72, 0.55, 0.35, 0.13. So the report "every row moved together" does not reproduce on today's component, and the `sibling-index()` count does not explain it for the rows on screen. The count does go wrong for rows added while scrolling: they are siblings 14 and above, and every one of them got the 400 ms cap, so a grown window's rows would move together. The original failure was measured on the component before the date window (every row built, `content-visibility: auto`, a scroll-driven reveal on the same element), which is gone; the cause on that component is not recoverable from here and no longer matters.
+
+The deal-in does not share either cause: it starts from a scroll trigger, not from insertion (`@starting-style`), and `sibling-index()` counts only a row's three lanes. The `DealIn` story checks it on a grown window: a row added by scrolling runs its lanes at 0, 100 and 200 ms for 800 ms, like a row of the first window, and settles at full opacity with no transform.
+
+Implementation notes (task 4.1):
+
+- The perspective is on `.lane-grid`, the lanes' parent, not on `.date-group`: `perspective` applies to an element's children, and the lanes are the row's grandchildren.
+- The exit action is `reset`, not `play-backwards` (`animation-trigger: --row play-forwards reset`). With `play-backwards`, a row scrolled fully out and back within the 800 ms resumed from where the backward play had reached (the E2E test "A row comes back" measured a lane at 866 ms of 1000 right after re-entry), so it was not dealt in again. `reset` returns the animation to its start once the row has left, which is what the requirement asks.
+- The `filter: brightness()` in the keyframes is dropped (task 4.2). Measured with Playwright's Chromium, headless on the development machine (WSL, no GPU), with 4× CPU throttling and a 1.5 s wheel fling on `/dashboard`, three runs each: with the filter the median frame was 33 ms and 72-84 frames exceeded 33 ms; without it the median was 16.8 ms and 68-77 exceeded 33 ms; with no deal-in at all, 10-26 frames exceeded 33 ms. Frames over 16 ms occur in this environment even without the deal-in, so the task's 16 ms rule was applied as "the filter adds frame time, drop it". The deal-in itself still adds long frames here; a software-rendered headless browser exaggerates 3D transforms, so the owner's device check (task 8.1) is the measure that counts, and if it stutters there the next step is to reduce the 3D part of the keyframes.
+- Rows out of view hold the opening keyframe (`both`), so a test that measures where a lane or a card is reads layout boxes (`offsetLeft` up the offset-parent chain) or waits for the rows in view to settle; the `concert-highway` stories do.
+
 ### D7. Installed Noto through an alias family
 
 ```css
-/* Only variable local fonts. Within one family the browser picks the nearest
-   weight face and never falls through to the next family, so a Regular-only
-   local face would draw bold text at 400 (font-synthesis-weight: none in
-   global.css). A device without a variable Noto therefore gets no local face
-   and downloads "Noto Sans JP" from the next family in the stack. */
 @font-face {
   font-family: "Local Noto Sans JP";
   font-weight: 100 900;
-  src: local("Noto Sans JP"), local("Noto Sans CJK JP");   /* Windows, Android 15+ */
+  src: local("Noto Sans JP"), local("Noto Sans CJK JP Regular");
 }
 --md-ref-typeface-plain:
   "Local Noto Sans JP", "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif;
 ```
 
-Windows 10/11 ship `NotoSansJP-VF.ttf` (variable) since the April 2025 update; Android ships Noto Sans CJK JP (variable from Android 15, Regular only on 6-14). `local()` matches a font's full or PostScript name. Whether Android 15's variable Noto Sans CJK JP and Android 6-14's Regular-only file answer to different names is not documented anywhere we found, so task 1.3 checks it on an Android 15 device and an Android 14 emulator before anything is built. If some name answers only on Android 15, the Android source uses that name and the design-tokens requirement holds as written. If not, the Android source is removed, every Android version downloads as before, and the requirement's Android 15 clause and scenario are revised in this change before task 7.1: drawing bold at 400 on older Android to save a download on newer Android is not an acceptable trade. On Windows the font that comes with the OS is the variable `NotoSansJP-VF.ttf`; task 1.3 also checks whether static per-weight Noto files (installed by hand on Windows, or by a Linux distribution's `fonts-noto-cjk`) answer to the same names. This keeps `adopt-m3-cube-ui-foundation`'s rule that a missing weight is not synthesized. Safari does not use `local()` for fingerprinting reasons; Apple devices have no Noto, so they download as before. The Google Fonts link stays as the fallback, and the browser fetches a Google subset only when the alias cannot draw a character. Source: ICS MEDIA, "ウェブ制作者のための Noto Sans JP 最新実装ガイド".
+Only variable local fonts may match. Within one family the browser picks the nearest weight face and never falls through to the next family, so a Regular-only local face would draw bold text at 400 (`font-synthesis-weight: none` in `global.css`). A device without a variable Noto gets no local face and downloads "Noto Sans JP", the next family. The `@font-face` sits in `shared/styles/m3-sys.css` beside the plain stack, so the organizer console uses it too. Safari does not use `local()` for fonts it does not ship; Apple devices have no Noto, so they download as before. The Google Fonts link stays as the fallback. Source: ICS MEDIA, "ウェブ制作者のための Noto Sans JP 最新実装ガイド".
 
-This edits the stack that `adopt-m3-cube-ui-foundation` introduces; the task waits for its token renames.
+**Names (task 1.3).** `local()` matches a font's full name (name ID 4) or PostScript name (name ID 6). Read from the font files' name tables rather than on devices: the Android files from AOSP `platform/external/noto-fonts` (`notosanscjk/`), the Windows file from a Windows 11 `C:\Windows\Fonts`, the static files from Google's noto-cjk releases.
 
-### D8. Japanese text and label trimming in the base layer
+| Font | Full name | PostScript name | Weights |
+|---|---|---|---|
+| Windows 10/11 `NotoSansJP-VF.ttf` | `Noto Sans JP` | `NotoSansJP-Thin` | variable 100-900 |
+| Android 15+ `NotoSansCJK-wght-400-900.otf.ttc` | `Noto Sans CJK JP Regular` | `NotoSansCJKJP-Regular` | variable 400-900 |
+| Android 6-14 `NotoSansCJK-Regular.ttc` | `Noto Sans CJK JP` | `NotoSansCJKjp-Regular` | Regular only |
+| Static Noto Sans JP Regular, installed by hand | `Noto Sans JP` | `NotoSansJP-Regular` | 400 only |
+| Linux `fonts-noto-cjk` (static) | `Noto Sans CJK JP` (Regular) | `NotoSansCJKjp-Regular` | one weight per file |
 
-In `global.css` (base layer, not a block, so the block-level font ban in `stylelint.config.js` does not apply):
+So `local("Noto Sans JP")` matches Windows' own font and `local("Noto Sans CJK JP Regular")` only Android 15's variable file; the name the earlier draft used, `Noto Sans CJK JP`, is the full name of Android 14's Regular-only file and of the Linux static Regular, and would have drawn bold at 400 there. PostScript names are avoided: `local()` compares them case-insensitively, and the variable file's `NotoSansJP-Thin` is also the static Thin's name. A static Noto Sans JP Regular installed by hand still answers to "Noto Sans JP"; that case stays outside the requirement's guarantee. Android 15's variable file starts at 400, so the requirement states 400-900 for it; the app uses no weight below 400. Whether Chrome on Android resolves the full name as read from the file is confirmed on the owner's device in task 8.1.
+
+@spec-manual components/infrastructure/fan/web/global/design-tokens "Android 15 or later" -- no Android device in CI; verified by the owner in production on 2026-11-10 (v1.153.0, task 8.1) on an Android 15-or-later device: Chrome's network panel showed no Noto Sans JP file.
+
+@spec-manual components/infrastructure/fan/web/global/design-tokens "Android 14 or earlier" -- no Android device in CI; the names above show that no `local()` source matches Android 14's Regular-only file, and the Chromium download path is the same one `e2e/functional/local-noto.spec.ts` "iPhone" checks on a machine without a variable Noto; not run on an Android 14 device or emulator.
+
+### D8. Japanese text in the base layer
+
+In `global.css` (global layer, not a block, so the block-level font ban in `stylelint.config.js` does not apply):
 
 ```css
-:root {
+:where(html) {
   font-feature-settings: "palt";
   text-autospace: normal;     /* Firefox 145, Safari 27 */
   line-break: strict;
   word-break: auto-phrase;    /* Chromium; needs lang="ja", set by i18n */
 }
-:where(h1, h2, h3) { text-wrap: balance; }
-:where(.button, .reset-chip, .genre-chip, .page-help-chip, .artist-chip, .journey-chip, .preset-chip) {
-  text-box: trim-both cap alphabetic;  /* Chrome 133, Safari 18.2 */
-}
 ```
 
-`palt` and `word-break: auto-phrase` apply to body text too, by the owner's decision after viewing them; Chrome's own write-up shows `auto-phrase` on headings, and long paragraphs at 320 px may end lines with wider gaps. The Storybook stories at 320 px are checked for that and for labels that `cap alphabetic` trimming pushes too high (Japanese glyphs rise above the cap height).
+Headings already balance their lines in `shared/styles/reset.css`.
+
+`palt` and `word-break: auto-phrase` apply to body text too, by the owner's decision after viewing them; Chrome's own write-up shows `auto-phrase` on headings, and long paragraphs at 320 px may end lines with wider gaps. The Storybook stories at 320 px are checked for that.
+
+**Type styles as longhands.** The `font` shorthand resets every font property it does not name, `font-feature-settings` among them, so each of the 30 `.md-typescale-*` classes, the button and the body rule set `palt` back to `normal` on everything that had a type style. Rather than repeat `palt` beside each shorthand, the type style tokens in `shared/styles/m3-sys.css` become separate tokens per property, as Material Web names them (`--md-sys-typescale-<style>-font`, `-weight`, `-emphasized-weight`, `-size`, `-line-height`, `-tracking`), and every consumer sets the longhands. The classes then set five declarations, which `stylelint.config.js` allows for `m3-typescale.css` alone. The button's `--button-font` hook becomes `--button-font-size` and `--button-line-height` (the typeface and weight stay shared). The banners and the event card's artist name, the documented exceptions to type styles, keep their own sizes as longhands. The organizer console uses the same tokens, so it changes in the same way; it sets no `palt`, so it renders as before. This replaces the token shape `adopt-m3-cube-ui-foundation`'s design gives (one `font` value per type style, two declarations per class); that change's design is not edited here because it is in progress in the same working tree.
+
+**Label trimming is not in this change.** `text-box: trim-both cap alphabetic` on `.button` and `.chip` did not reach the label: the label is bare text in an `inline-flex` box, an anonymous flex item no selector reaches (w3c/csswg-drafts#14514), and the space above the capitals stayed 18 px against 16 px below the baseline. The fix is a label element in about 85 templates, so it moves with the "Labels sit in the vertical centre of their controls" requirement to its own change: liverty-music/specification#1371.
 
 ### D9. Confirm dialog exit and disclosure height
 
@@ -167,8 +197,7 @@ The confirm dialog transitions `opacity`, `display` and `overlay` with `allow-di
 - [The tab View Transition freezes the screen while the route renders] → menu-tab routes already must not block the swap on data (`bottom-nav-bar` spec); the spike measures the transition's duration on Discovery and Home.
 - [Jump into a month whose first date is near the end of the data] → `openWindow` already clamps to the last window; the button state comes from the loaded dates, so it never offers a month with no dates.
 - [Without the feature checks, `document.startViewTransition` throws in a browser older than View Transitions (Safari before 18, Firefox before 144), so the unfollow, the Discovery swap and tab switches fail there] → accepted by the owner: View Transitions are Baseline since 2025-10-14, and the fan app targets current browsers. If support for older browsers becomes a goal, the checks return in one helper, not at each call site.
-- [A Noto that comes as static per-weight files (installed by hand on Windows, or a Linux distribution's `fonts-noto-cjk`) may answer to the same `local()` name, so bold may draw at 400 there] → outside the requirement's guarantee, which covers Windows' and Android's own variable fonts; task 1.3 lists the names static files answer to on Windows and Linux, and if the chosen names match only the variable fonts, the limitation disappears.
-- [The chip classes are listed by name in D8] → a new chip block must be added to that selector; the `Foundations/Typography` story lists the chips it checks.
+- [A static Noto Sans JP Regular installed by hand answers to `local("Noto Sans JP")`, so bold may draw at 400 there] → outside the requirement's guarantee, which covers Windows' and Android's own variable fonts; Linux's `fonts-noto-cjk` and Android 14's Regular-only file do not match (D7).
 - [Typeface conflict with adopt-m3] → land D7/D8 after its token renames; the plain stack is edited in one place.
 
 ## Migration Plan
