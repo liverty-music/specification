@@ -2,22 +2,22 @@
 
 ### Requirement: A changed status is announced with the change
 
-When Upsert creates a journey or changes its status or status set by, it SHALL announce the journey under its new status (TicketJourney.Tracking, TicketJourney.Applied, TicketJourney.Lost, TicketJourney.Unpaid or TicketJourney.Paid), carrying the journey with its new status and status set by, together with the change: both are stored or neither is. When the journey already has the given status and status set by, Upsert SHALL announce nothing. When the announcement cannot be recorded, Upsert SHALL fail with Unavailable and the journey SHALL stay as it was, or stay absent.
+When Upsert creates a journey or changes its status or status set by, it SHALL announce the journey's status as changed (TicketJourney.StatusChanged), carrying the journey with its new status and status set by, together with the change: both are stored or neither is. When the journey already has the given status and status set by, Upsert SHALL announce nothing. When the announcement cannot be recorded, Upsert SHALL fail with Unavailable and the journey SHALL stay as it was, or stay absent.
 
 #### Scenario: First status announced
 
 - **WHEN** the fan has no journey for the event and Upsert is called with Tracking set by the fan
-- **THEN** the journey is announced once as Tracking (TicketJourney.Tracking), carrying it at Tracking set by the fan
+- **THEN** one status change is announced, carrying the journey at Tracking set by the fan
 
 #### Scenario: Status changed
 
 - **WHEN** the fan's journey for the event is Applied and Upsert is called with Lost set by the fan
-- **THEN** the journey is announced once as Lost (TicketJourney.Lost), carrying it at Lost set by the fan
+- **THEN** one status change is announced, carrying the journey at Lost set by the fan
 
 #### Scenario: The fan confirms an inferred status
 
 - **WHEN** the fan's journey for the event is Tracking set by inference and Upsert is called with Tracking set by the fan
-- **THEN** the journey is announced once as Tracking (TicketJourney.Tracking), carrying it at Tracking set by the fan
+- **THEN** one status change is announced, carrying the journey at Tracking set by the fan
 
 #### Scenario: Same status again
 

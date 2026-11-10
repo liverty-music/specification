@@ -21,11 +21,11 @@ Facts the migration relies on:
 
 **Goals:**
 - One name per event across the spec, the Go constant, the subject, the stream, the durable and the docs.
-- One event per state the entity enters, so a consumer subscribes to exactly what it acts on.
-- No stream, durable, CR, KEDA trigger or doc left that names a retired subject.
+- One event per state where consumers react to the states differently, so each consumer subscribes to exactly what it acts on (decision 2).
+- No stream, durable, CR, KEDA trigger, PostHog event name or doc left that names a retired subject.
 
 **Non-Goals:**
-- Renaming PostHog event names. They are the analytics catalogue's own vocabulary, and renaming them would split each event's history in two.
+- Renaming analytics events that do not come from a domain event (`notification.opened`, `concert.search.completed` and the other UI or processing events).
 - Renaming behaviors whose names describe what they do rather than an event (`send-lottery-loss`, `start-resale-entry-workflow`).
 - Changing payloads. Each event keeps the payload it carries today.
 
@@ -33,7 +33,8 @@ Facts the migration relies on:
 
 ### 1. Names
 
-- **Event**: `<Entity>.<What>`. When the event tells that the entity entered a state, What is that state (Order.Paid, LotteryEntry.Won, TicketJourney.Applied). Otherwise it is what happened to the entity, in the past tense (Follow.Created, Follow.HypeChanged).
+- **Event**: `<Entity>.<What>`. When the event tells that the entity entered a state, What is that state (Order.Paid, LotteryEntry.Won). Otherwise it is what happened to the entity, in the past tense (Follow.Created, Follow.HypeChanged, TicketJourney.StatusChanged).
+- **PostHog event**: an analytics event forwarded from a domain event is named by the subject in lower case (`lottery_entry.won`, `follow.created`, `user.signed_in`). `user.created`, `order.paid`, `checkout.expired` and `ticket.admitted` keep their names. The BigQuery models that count `user.created` and `order.paid` (`mart_campaign_value.sql`) are unaffected.
 - **Subject**: `<ENTITY>.<what>`, upper snake case then lower snake case (`LOTTERY_ENTRY.won`, `FOLLOW.hype_changed`). This keeps two tokens, so a stream's `<ENTITY>.*` filter matches.
 - **Stream**: one per entity that has events, named `<ENTITY>`.
 - **Go constant**: `Subject<Entity><What>` (`SubjectLotteryEntryWon`).
@@ -52,7 +53,7 @@ Facts the migration relies on:
 | Passkey.Added / Passkey.Removed | `PASSKEY.added` / `PASSKEY.removed` | Passkey.Create / Passkey.Delete | notify-passkey-added / notify-passkey-removed |
 | PushSubscription.Subscribed / .Unsubscribed | `PUSH_SUBSCRIPTION.subscribed` / `.unsubscribed` | PushSubscription.Create / .Delete | track-push-subscription-subscribed / track-push-subscription-unsubscribed |
 | TicketSale.Discovered | `TICKET_SALE.discovered` | TicketSale.UpsertDiscovered | notify-ticket-sale-discovered |
-| TicketJourney.Tracking, .Applied, .Lost, .Unpaid, .Paid | `TICKET_JOURNEY.tracking`, `.applied`, `.lost`, `.unpaid`, `.paid` | TicketJourney.Upsert, .UpsertIfReplaceable | track-ticket-journey (all five) |
+| TicketJourney.StatusChanged | `TICKET_JOURNEY.status_changed` | TicketJourney.Upsert, .UpsertIfReplaceable | track-ticket-journey |
 | Organizer.Activated | `ORGANIZER.activated` | Organizer.CompareAndSetStatus | track-organizer-activated |
 | Artist.Represented | `ARTIST.represented` | Organizer.AssociateArtist | track-artist-represented |
 | SeriesImage.Uploaded | `SERIES_IMAGE.uploaded` | SeriesImage.Create | process-series-image |
@@ -61,8 +62,8 @@ Facts the migration relies on:
 | ResaleListing.Sold | `RESALE_LISTING.sold` | Order.Issue | start-resale-refund |
 | ResaleListing.Refunded | `RESALE_LISTING.refunded` | ResaleListing.RecordRefund | send-resale-sold |
 | LotteryEntry.Entered | `LOTTERY_ENTRY.entered` | LotteryEntry.Create | mark-ticket-journey-applied |
-| LotteryEntry.Won | `LOTTERY_ENTRY.won` | LotteryEntry.PersistDrawOutcome | start-lottery-entry-workflow, track-lottery-result |
-| LotteryEntry.Lost | `LOTTERY_ENTRY.lost` | LotteryEntry.PersistDrawOutcome, .RevertWin, .EndEnteredByEvent | start-lottery-entry-workflow, send-lottery-loss, track-lottery-result |
+| LotteryEntry.Won | `LOTTERY_ENTRY.won` | LotteryEntry.PersistDrawOutcome | start-lottery-entry-workflow, track-lottery-entry-result |
+| LotteryEntry.Lost | `LOTTERY_ENTRY.lost` | LotteryEntry.PersistDrawOutcome, .RevertWin, .EndEnteredByEvent | start-lottery-entry-workflow, send-lottery-loss, track-lottery-entry-result |
 | ResaleEntry.Won, .Lapsed, .Lost, .Withdrawn | `RESALE_ENTRY.won`, `.lapsed`, `.lost`, `.withdrawn` | ResaleEntry.PersistDrawOutcome (won, lapsed, lost), .RevertWin (lost), .Withdraw (withdrawn) | start-resale-entry-workflow (all four), send-resale-entry-ended (lapsed, lost) |
 | Checkout.Held | `CHECKOUT.held` | Checkout.GetOrCreateHeld | start-checkout-expiry |
 | Checkout.Expired | `CHECKOUT.expired` | Checkout.Release, .GetOrCreateHeld | release-expired-checkout, track-checkout-expired |
@@ -80,13 +81,20 @@ Facts the migration relies on:
 | track-notification-subscribed | track-push-subscription-subscribed |
 | track-notification-unsubscribed | track-push-subscription-unsubscribed |
 | track-user-logged-in | track-user-signed-in |
-| track-lottery-entry-drawn | track-lottery-result (the analytics event it feeds) |
+| track-lottery-entry-drawn | track-lottery-entry-result (Won and Lost) |
 | analytics-organizer-created | track-organizer-activated |
 | analytics-organizer-artist-associated | track-artist-represented |
 
 Alternative considered: keep the current streams and change only the Go identifiers. It was rejected because the user asked for every layer to match. A stream named ORDER holding lottery and checkout events, or one named SALES_PHASE holding TicketSale events, is the inconsistency this change removes.
 
-### 2. A durable that needs several states lists them
+### 2. Split an event by state only where consumers react differently
+
+An event is split into one event per state when some consumer reacts to the states differently. When every consumer treats every state the same, it stays one `StatusChanged`-style event that carries the state. Applied to the three generic events:
+- **LotteryEntry (Won, Lost): split.** The workflow starter charges a Won entry and releases a Lost one, and `send-lottery-loss` acts only on Lost. Today it receives Won entries and drops them by reading the payload (`lottery_entry_drawn_consumer.go:85`).
+- **ResaleEntry (Won, Lapsed, Lost, Withdrawn): split.** The workflow starter issues a Won entry and releases the others, and `send-resale-entry-ended` acts only on Lapsed and Lost, dropping the rest by payload (`resale_entry_consumer.go:28`).
+- **TicketJourney: not split.** Its one consumer forwards every status the same way, as one analytics event with the status as a property. Upsert also announces when only who set the status changes, which a per-status event would misname.
+
+The split costs no extra durable or KEDA trigger: a consumer of several states lists them (below), and a stream's `<ENTITY>.*` filter covers every subject. Checkout (Held, Expired, Released) and Order (Paid, Refunded) already follow this rule.
 
 A durable that acts on several states of one entity subscribes with `filterSubjects`, for example `start-resale-entry-workflow` on all four ResaleEntry subjects. Its behavior table entry names that list. The subscriber finds the stream from any one of them, since they share the entity's stream. The handler tells the state from the subject, not the payload.
 
@@ -103,16 +111,15 @@ Because NACK creates a durable when the pair (stream, durable) is new, and leave
 
    After the sync, both the old durables (on the old streams) and the new ones exist. The running backend still binds the old ones.
 
-   One durable keeps its stream and its name: `track-ticket-journey`. Only its filter changes, so NACK updates it in place. In PR 1 its `filterSubjects` holds the five new subjects and the old `TICKET_JOURNEY.status_changed`, so it keeps receiving what the running backend publishes. PR 2 drops the old subject.
+   The durables that keep their stream, name and subject (on ORDER.paid, CONCERT.created, ARTIST.created, USER.created, TICKET_JOURNEY.status_changed and SERIES_IMAGE.uploaded) are not touched.
 2. **Before the backend rollout**: confirm in prod that `watermill_events_outbox` is empty and that every old durable has 0 pending messages (read-only checks).
 3. **backend PR**: publishes the new subjects and binds the new durables. The health check lists the new durables.
 4. **After the rollout**: confirm in prod that every old durable still has 0 pending messages, and that the new ones are bound. If an old durable has a pending message, it was published by an old pod during the rollout. Republish it to its new subject with the nats CLI from the nats-box, which needs the decision 1 table to map it.
 5. **cloud-provisioning PR 2**:
    - Set `preventDelete: false` on the CRs of the streams that go away: SALES_PHASE, NOTIFICATION, VENUE, TICKET_EMAIL, and the CR of `track-ticket-email`.
    - Remove the old KEDA triggers.
-   - Drop `TICKET_JOURNEY.status_changed` from `track-ticket-journey`.
 6. **cloud-provisioning PR 3**: remove those CRs. NACK then deletes the streams with their durables.
-7. **By hand, once**: on each stream that stays (ORDER, CONCERT, ARTIST, USER, ORGANIZER), delete with `nats consumer rm` from the nats-box each durable that `nats consumer ls` lists but decision 1 does not place on that stream. These are the durables left behind by a move or a rename, such as `send-event-cancelled` on CONCERT and `track-user-logged-in` on USER. No CR refers to them, so NACK cannot remove them. This is the one-time action the tasks rule allows. Step 4 has confirmed each has 0 pending messages. A durable that decision 1 places on the stream is never deleted, whether it was moved there, kept there, or updated in place like `track-ticket-journey`.
+7. **By hand, once**: on each stream that stays (ORDER, CONCERT, ARTIST, USER, ORGANIZER), delete with `nats consumer rm` from the nats-box each durable that `nats consumer ls` lists but decision 1 does not place on that stream. These are the durables left behind by a move or a rename, such as `send-event-cancelled` on CONCERT and `track-user-logged-in` on USER. No CR refers to them, so NACK cannot remove them. This is the one-time action the tasks rule allows. Step 4 has confirmed each has 0 pending messages. A durable that decision 1 places on the stream is never deleted, whether it was moved there or kept there.
 
 Why not new streams side by side with new CR names: a durable keeps its name, and the CR names would collide. Suffixing the new CRs would leave a permanent naming exception.
 
@@ -120,7 +127,9 @@ Why not new streams side by side with new CR names: a durable keeps its name, an
 
 The following are rewritten with the new names:
 - The doc comment of every subject constant, which today also carries stale facts (SubjectOrderPaid names OrderUseCase.FulfillPayment, but Order.Issue announces it).
-- `docs/event-delivery-design.md`, `docs/analytics/event-catalog.md` (its subject column) and the proto comment.
+- `docs/event-delivery-design.md`, `docs/analytics/event-catalog.md` (its subject and event name columns), `docs/analytics/feature-flag-policy.md`, `docs/organizer-platform-design.md` and the proto comment.
+- The comments in frontend `src/services/analytics-events.ts` that name backend analytics events.
+- The analytics event constants in backend `internal/usecase/analytics_events.go` and the analytics consumer, which take the PostHog names of decision 1.
 - The configmap comments that name `SALES_PHASE.discovered` and `SALES_PHASE.reminder.due` (a subject that does not exist).
 - `cloud-provisioning/src/zitadel/constants.ts`, which names `USER.passkey_changed` (also nonexistent).
 
@@ -133,7 +142,7 @@ That change adds the events tables to the entity Purposes and draws the story di
 - Organizer.Activated: CompareAndSetStatus records activation, and Organizer.Create is a separate operation.
 
 This change then differs from its tables in two ways:
-- It splits LotteryEntry.Drawn, ResaleEntry.Changed and TicketJourney.StatusChanged.
+- It splits LotteryEntry.Drawn and ResaleEntry.Changed (decision 2). TicketJourney.StatusChanged keeps its name.
 - It makes SeriesImage.Create announce SeriesImage.Uploaded, which that change left unlisted because no requirement announced it.
 
 When this change archives, the entity events tables and the story diagrams that name the old events are edited directly in the main specs (Purpose), and `scripts/check-diagrams.py` must pass. If add-flow-diagrams-to-specs has not merged its Purpose edits by then, this change waits for it, so that the tables are edited once.
@@ -142,7 +151,7 @@ When this change archives, the entity events tables and the story diagrams that 
 
 - [A message published to an old subject during the rollout is not consumed] → Steps 2 and 4 check the outbox and every old durable's pending count, and step 4 republishes any message left. With no users the expected count is 0.
 - [NACK's behavior is read from the v0.25.0 source while 0.24.0 runs] → After PR 1 syncs, confirm with `nats consumer ls` on each new stream that the durables exist before the backend rollout. If a durable is missing, stop before step 3.
-- [Splitting TicketJourney into five events adds subjects for one analytics consumer] → Accepted as the user's decision. The consumer subscribes with one `filterSubjects` list and forwards each as `ticket.journey.status.changed`, as today.
+- [Renamed PostHog events start a new history; insights or actions created in PostHog by hand that name an old event stop matching] → The product has no users yet, so there is little history to lose. Task 2.6 lists the insights, actions and cohorts that name an old event and updates them.
 - [The dev overlays cannot be verified while dev is stopped] → They are changed with the base manifests and kept coherent. Prod read-only checks are the verification.
 
 ## Migration Plan

@@ -11,10 +11,11 @@ Other cases:
 - Follow events are named after the Artist (`ARTIST.followed`).
 - PushSubscription events are named after notifications (`NOTIFICATION.subscribed`).
 
-Three events say only that something changed, and the consumer has to read the payload to know what happened:
+Two events cover several outcomes that their consumers react to differently, so each consumer reads the payload and drops what it does not act on:
 - `ORDER.resale_entry_changed` covers Won, Lapsed, Lost and Withdrawn.
-- `TICKET_JOURNEY.status_changed` covers every status.
-- `ORDER.lottery_entry_drawn` is also announced when a win is reverted or an entry is ended.
+- `ORDER.lottery_entry_drawn` covers Won and Lost, and is also announced when a win is reverted or an entry is ended.
+
+The PostHog events forwarded from domain events have names of their own again (`ticket.lottery.result`, `artist.follow.completed`, `account.signin`).
 
 The change add-flow-diagrams-to-specs makes events part of the spec vocabulary (`<Entity>.<PastTense>`). This change makes code, infrastructure and docs use the same names, so a reader can follow one name from a spec to a subject, a stream and a consumer.
 
@@ -26,16 +27,17 @@ The change add-flow-diagrams-to-specs makes events part of the spec vocabulary (
   - User.Created, User.SignedIn, Passkey.Added, Passkey.Removed
   - PushSubscription.Subscribed, PushSubscription.Unsubscribed
   - TicketSale.Discovered
-  - TicketJourney.Tracking, TicketJourney.Applied, TicketJourney.Lost, TicketJourney.Unpaid, TicketJourney.Paid
+  - TicketJourney.StatusChanged
   - Organizer.Activated, Artist.Represented, SeriesImage.Uploaded
   - Order.Paid, Order.Refunded, ResaleListing.Sold, ResaleListing.Refunded
   - LotteryEntry.Entered, LotteryEntry.Won, LotteryEntry.Lost
   - ResaleEntry.Won, ResaleEntry.Lapsed, ResaleEntry.Lost, ResaleEntry.Withdrawn
   - Checkout.Held, Checkout.Expired, Checkout.Released, Ticket.Admitted
-- **Split events**: the three generic events become one event per state the entity enters. Each consumer subscribes only to the states it acts on:
+- **Split events**: an event is split by state only where consumers react to the states differently. Each consumer then subscribes only to the states it acts on:
   - `ORDER.resale_entry_changed` becomes four events.
-  - `TICKET_JOURNEY.status_changed` becomes five events.
   - `ORDER.lottery_entry_drawn` becomes LotteryEntry.Won and LotteryEntry.Lost.
+  - TicketJourney.StatusChanged stays one event, since its only consumer treats every status the same.
+- **PostHog**: an analytics event forwarded from a domain event is named by its subject in lower case (`lottery_entry.won`, `follow.created`, `user.signed_in`). `user.created`, `order.paid`, `checkout.expired` and `ticket.admitted` keep their names.
 - **Subjects and streams (BREAKING for the event pipeline)**:
   - Every subject becomes `<ENTITY>.<event>` (`LOTTERY_ENTRY.won`), and each entity's events live in a stream named after the entity.
   - New streams: EVENT, FOLLOW, PASSKEY, PUSH_SUBSCRIPTION, TICKET_SALE, LOTTERY_ENTRY, RESALE_ENTRY, RESALE_LISTING, CHECKOUT and TICKET.
@@ -68,12 +70,12 @@ None.
 - `components/entity/push-subscription/create`, `components/entity/push-subscription/delete`: the announcements name PushSubscription.Subscribed and PushSubscription.Unsubscribed.
 - `components/entity/series-image/create`: the processing request is announced as SeriesImage.Uploaded.
 - `components/entity/ticket/admit`: names Ticket.Admitted.
-- `components/entity/ticket-journey/upsert`, `components/entity/ticket-journey/upsert-if-replaceable`: the announcement names the journey's new status, one event per status.
+- `components/entity/ticket-journey/upsert`, `components/entity/ticket-journey/upsert-if-replaceable`: the announcement names TicketJourney.StatusChanged.
 - `components/entity/ticket-sale/upsert-discovered`: names TicketSale.Discovered.
 - `components/entity/user/create`, `components/entity/user/record-login`: the announcements name User.Created and User.SignedIn.
 - `components/usecase/ticket-journey/mark-applied`: runs for LotteryEntry.Entered.
 
-Purpose edits, made directly in the main specs when this change archives: the events tables of LotteryEntry, ResaleEntry, TicketJourney and SeriesImage (Purpose), and every story diagram that draws a split event (Purpose). No usecase other than MarkApplied changes: the usecases that run from an event already describe it by the state it announces ("each LotteryEntry announced Lost").
+Purpose edits, made directly in the main specs when this change archives: the events tables of LotteryEntry, ResaleEntry and SeriesImage (Purpose), and every story diagram that draws a split event (Purpose). No usecase other than MarkApplied changes: the usecases that run from an event already describe it by the state it announces ("each LotteryEntry announced Lost").
 
 ## Impact
 
@@ -92,4 +94,5 @@ Purpose edits, made directly in the main specs when this change archives: the ev
   - `docs/event-delivery-design.md`
   - `docs/analytics/event-catalog.md`
   - the comment in `proto/liverty_music/rpc/organizer/series/v1/series_service.proto`
-- **Not changed**: the PostHog event names (`ticket.lottery.result`, `artist.follow.completed` and the others), so analytics history and dashboards keep working.
+- **frontend**: comments in `src/services/analytics-events.ts` that name backend analytics events.
+- **PostHog**: the renamed events start a new history; insights, actions or cohorts that name an old event are updated.
