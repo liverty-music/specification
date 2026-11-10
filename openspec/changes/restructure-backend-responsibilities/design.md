@@ -71,9 +71,21 @@ type Encoder interface {
 
 `adapter/pb` implements it with a type switch over the announced entity types, choosing the `ForAnnouncement` variant for User and PushSubscription. It satisfies the interface structurally, so it imports nothing from `messaging`. `internal/di` passes it to `messaging.NewOutbox`. Repositories call `announce` with the entity as today, minus the `pb.From…` call.
 
-An entity type the encoder does not know fails the operation with Internal, and an `adapter/pb` table test runs every announced type through `Encode`.
+The call sites are type-checked by a generic helper in `rdb`, which is the one list of what may be announced:
+
+```go
+type announced interface {
+    *entity.Order | *entity.User | *entity.Checkout | []*entity.Concert // ... every announced type
+}
+
+func announce[T announced](ctx context.Context, out Announcer, tx pgx.Tx, subject string, p T) error
+```
+
+Passing a type that is not in the list does not compile. Inside `Outbox` and `Encoder` the payload is `any`, because Go allows neither type parameters on methods (so `Outbox.Record` and the `Announcer` interface cannot be generic) nor a union of types outside a constraint. An entity type that is in the list but missing from the encoder's type switch fails the operation with Internal, and an `adapter/pb` table test runs every type of the list through `Encode`.
 
 **Alternatives considered:**
+- `Payload []byte`, encoded in the repository. Rejected: the repository would need the entity-to-proto mapping again, which is the dependency this section removes; an injected encoder would still take the entity as its input.
+- A marker interface on the entity (`entity.Announced` with an unexported method on each announced type). Rejected: it types the payload all the way into the Outbox, but adds a method to about 17 entity types and spreads the announcement concern across the entity package, while the generic helper keeps the list in one place.
 - A new `internal/entitypb` package that both sides import. Rejected: it sits outside the four layers and splits the entity-to-proto mapping across two packages.
 - An encoder injected into each repository. Rejected: every announcing repository would take a new dependency, while the Outbox is the one place every announcement passes.
 
