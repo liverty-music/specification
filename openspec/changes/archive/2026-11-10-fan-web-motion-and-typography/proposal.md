@@ -21,7 +21,7 @@ A fan who follows many artists has a Timetable that runs for months, and reachin
 
 - Windows and Android use their installed Noto (an alias `@font-face` over `local()`); other devices keep downloading Noto Sans JP from Google Fonts.
 - All text uses proportional metrics (`palt`), automatic spacing between Japanese and Latin text (`text-autospace`), strict line breaking and phrase-based line breaking (`word-break: auto-phrase`). Headings use `text-wrap: balance`.
-- Buttons and chips trim the line box to the cap height and baseline (`text-box`), so their labels sit in the vertical centre.
+- The Material 3 type styles become separate font tokens set as longhands, because the `font` shorthand they used resets `palt`.
 
 **Not changed:** the window size and growth step (owned by `meet-timetable-render-budget`), the bottom sheet's open and close, `dialog closedby` (Safari does not support it, so the JavaScript backdrop check would stay; adopt it when Safari ships it), `commandfor` (dialogs and sheets are opened from view-model state), and canvas motion (`dna-orb`, `celebration-overlay`), which CSS cannot stop.
 
@@ -36,7 +36,7 @@ None.
 - `components/infrastructure/fan/web/route/dashboard`: adds the month-jump buttons; the window requirement gains the jump as a third place the window can start.
 - `components/infrastructure/fan/web/global/live-highway`: adds the dealt-in entrance of date rows.
 - `components/infrastructure/fan/web/global/app-shell`: "Page Transition Animations" is removed and replaced by "Tab switches cross-fade". The removed requirement asks every route change to fade and slide, but no route transition is implemented today (`app-shell.html` has a plain `<au-viewport>`; the only View Transitions are the in-place edits in Discovery and My Artists). The new one covers what this change delivers, tab switches.
-- `components/infrastructure/fan/web/global/design-tokens`: adds the Japanese text settings, the label trimming, and the use of installed Noto.
+- `components/infrastructure/fan/web/global/design-tokens`: adds the Japanese text settings and the use of installed Noto.
 - `components/infrastructure/fan/web/global/ui-primitives`: adds the confirm dialog's exit and the disclosure height animation.
 
 ## Impact

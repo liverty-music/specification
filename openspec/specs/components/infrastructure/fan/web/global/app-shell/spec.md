@@ -32,28 +32,6 @@ The system SHALL display proper brand identity elements across the application.
 - **WHEN** the application is loaded
 - **THEN** the `theme-color` declared in the HTML `<head>` meta tag SHALL equal the `theme_color` declared in the web app manifest
 
-### Requirement: Page Transition Animations
-The system SHALL animate transitions between routes to provide visual continuity.
-
-#### Scenario: Forward navigation transition
-- **WHEN** the user navigates from one route to another
-- **THEN** the outgoing page SHALL fade out (opacity 1->0)
-- **AND** the incoming page SHALL fade in with a subtle upward slide (opacity 0->1, translateY 20px->0)
-- **AND** the total transition duration SHALL be 250-350ms with ease-out timing
-
-#### Scenario: Backward navigation transition
-- **WHEN** the user navigates back (browser back or in-app back action)
-- **THEN** the outgoing page SHALL fade out with a subtle downward slide (opacity 1->0, translateY 0->20px)
-- **AND** the incoming page SHALL fade in (opacity 0->1)
-- **AND** the total transition duration SHALL match the forward transition (250-350ms with ease-out timing)
-
-#### Scenario: Reduced motion preference
-- **WHEN** the user has `prefers-reduced-motion: reduce` enabled in their OS/browser settings
-- **THEN** the system SHALL skip all page transition animations
-- **AND** route changes SHALL occur instantly
-
----
-
 ### Requirement: Page Shell Component
 The system SHALL provide a `<page-shell>` custom element that standardizes the page layout structure across route pages, eliminating duplicated page-layout and page-header CSS.
 
@@ -346,3 +324,23 @@ While a persistent bottom banner (the signup prompt or the install banner) is vi
 #### Scenario: No banner, no reserved space
 - **WHEN** no bottom banner is visible
 - **THEN** the route area SHALL end at the navigation bar's top edge
+
+### Requirement: Tab switches cross-fade
+
+Switching between the routes of the bottom navigation bar's tabs SHALL animate, so the fan sees one screen give way to the next instead of a cut. The outgoing route SHALL fade out while the incoming route fades in, and the navigation bar and page header SHALL stay in place without fading. Under reduced motion every such switch, and every other animated screen change, SHALL be instant. Route changes that do not start from a tab SHALL change without an animation.
+
+#### Scenario: Tab switch
+
+- **WHEN** the fan taps the My Artists tab while Home is shown
+- **THEN** Home fades out and My Artists fades in within 250-350 ms
+- **AND** the navigation bar and the page header do not fade
+
+#### Scenario: Reduced motion preference
+
+- **WHEN** the fan has asked the system for reduced motion and taps another tab
+- **THEN** the new route is shown at once, with no fade
+
+#### Scenario: Route change from inside a page
+
+- **WHEN** the fan opens a concert's event page from the timetable
+- **THEN** the event page is shown without a page transition

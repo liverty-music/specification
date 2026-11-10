@@ -2,7 +2,7 @@
 
 ### Requirement: Installed Noto is used before a download
 
-On Windows 10 or 11 with Noto Sans JP installed, and on Android 15 or later, the fan app SHALL draw its plain text with the installed Noto Sans JP or Noto Sans CJK JP, which have every weight from 100 to 900, and SHALL NOT download Noto Sans JP. Every other device, including Android 14 or earlier, whose Noto Sans CJK JP has only the Regular weight, SHALL download Noto Sans JP as before. On Windows and Android, with the Noto that comes with the operating system, bold text SHALL NOT be drawn at the regular weight or in a synthesized bold. A Noto Sans JP or Noto Sans CJK JP in separate files per weight, whether the fan installed it or a Linux distribution ships it, is outside this guarantee and may draw bold at the regular weight.
+On Windows 10 or 11 with Noto Sans JP installed, and on Android 15 or later, the fan app SHALL draw its plain text with the installed Noto Sans JP (every weight from 100 to 900) or Noto Sans CJK JP (every weight from 400 to 900, the lightest the app uses), and SHALL NOT download Noto Sans JP. Every other device, including Android 14 or earlier, whose Noto Sans CJK JP has only the Regular weight, SHALL download Noto Sans JP as before. On Windows and Android, with the Noto that comes with the operating system, bold text SHALL NOT be drawn at the regular weight or in a synthesized bold. A Noto Sans JP or Noto Sans CJK JP in separate files per weight, whether the fan installed it or a Linux distribution ships it, is outside this guarantee and may draw bold at the regular weight.
 
 #### Scenario: Windows with Noto Sans JP installed
 
@@ -26,7 +26,7 @@ On Windows 10 or 11 with Noto Sans JP installed, and on Android 15 or later, the
 
 ### Requirement: Japanese text is set for reading
 
-All text in the fan app SHALL be set with proportional widths for Japanese characters and punctuation, SHALL put a small space between Japanese and Latin letters or digits where the browser can, SHALL apply strict Japanese line-break rules, and SHALL break Japanese lines between phrases rather than inside a word where the browser can. Headings SHALL balance their lines.
+All text in the fan app SHALL be set with proportional widths for Japanese characters and punctuation, SHALL put a small space between Japanese and Latin letters or digits where the browser can, SHALL apply strict Japanese line-break rules, and SHALL break Japanese lines between phrases rather than inside a word where the browser can. Headings SHALL balance their lines. Text set in a type style SHALL keep these settings.
 
 #### Scenario: Mixed Japanese and Latin text
 
@@ -43,11 +43,7 @@ All text in the fan app SHALL be set with proportional widths for Japanese chara
 - **WHEN** a line would start with a small kana such as 「ッ」 or a prolonged sound mark
 - **THEN** the break moves so the line does not start with it
 
-### Requirement: Labels sit in the vertical centre of their controls
+#### Scenario: Text in a type style
 
-The text of buttons and chips SHALL be centred vertically on the height of its letters, not on the font's line height, where the browser can trim the line box.
-
-#### Scenario: Button label
-
-- **WHEN** a button with a Latin label is shown in a browser that can trim the line box
-- **THEN** the space above the capital letters equals the space below the baseline within 1 px
+- **WHEN** a line is set in one of the Material 3 type styles
+- **THEN** its Japanese characters and punctuation keep their proportional widths
