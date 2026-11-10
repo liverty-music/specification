@@ -24,7 +24,7 @@ See proposal.md for why. This section records what was measured on 2026-11-10 in
 **Non-Goals:**
 
 - Faster tests in other packages, and the `GOLANG_PROTOBUF_REGISTRATION_CONFLICT` setup.
-- Tests for code that `restructure-backend-responsibilities` moves or rewrites (entity rules, the purchaser-details check in `pb.PersonalDetailsFromUpdateRequest`, the layer moves). That change brings its own tests. When it lands first, the tests here follow the code to its new place.
+- Tests for code that `restructure-backend-responsibilities` (layers, errors, the clock) or `move-decisions-into-entities` (rules moved into entities, including the decisions now made in the repositories and consumers) moves or rewrites. Those changes bring their own tests, and `move-decisions-into-entities` shrinks the rdb tests to compare-and-set and parity cases. When it lands first, the tests here follow the code to its new place.
 - Changing product behavior. A test that finds behavior different from its spec stops the task, and the gap is reported instead of being fixed here.
 
 ## Decisions
@@ -90,7 +90,7 @@ Not tested here: one-line pass-throughs (`ArtistUseCase.GetOfficialSite`, `Follo
 
 - [Some `rdb` tests may depend on rows left by an earlier test, or on running alone] → The conversion goes file by file. A test that needs shared state keeps a database for its subtests and drops `t.Parallel()`, with a comment that says why.
 - [Clones pile up on the test server] → pgtestdb drops the clone of a passed test and keeps a failed one to inspect. Failed clones are removed with `docker compose down -v`, the reset compose.yml already documents.
-- [`restructure-backend-responsibilities` moves `pb` or the consumers while this change adds tests to them] → The tests here are small and per file. Whichever change lands second moves or rebases them.
+- [`restructure-backend-responsibilities` or `move-decisions-into-entities` moves `pb`, the consumers or repository decisions while this change adds tests to them] → The tests here are small and per file. Whichever change lands second moves or rebases them.
 - [Parallel tests expose real races in repository code] → Such a failure is a finding, not noise. It is reported, and the test keeps running serially until the race is fixed.
 
 ## Sources

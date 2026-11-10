@@ -10,7 +10,7 @@ The backend's database tests are slow and fail now and then. One run of the `rdb
 - The time of the slow story tests (one workflow runtime each, 3 to 11 seconds per test) is measured, and they are changed only if they keep the package above its time target.
 - Tests are added for the code that carries business decisions and has none: the resale entry and resold listing consumers, the admin Organizer handler, `SeriesUseCase.List`, `ConcertCandidateUseCase.List`, and the protobuf mapping of entity states and request inputs. Each test that verifies a spec scenario names it; the consumer tests verify no usecase scenario and name none.
 - One-line methods that only pass a call through to an operation (`ArtistUseCase.GetOfficialSite`, `FollowUseCase.List`, `StripeWebhookUseCase.GetCardAuthorization`) get no usecase test of their own; the operation's contract test already covers what they return.
-- Code that the change `restructure-backend-responsibilities` moves or rewrites is out of scope here; that change brings its own tests.
+- Code that the changes `restructure-backend-responsibilities` and `move-decisions-into-entities` move or rewrite is out of scope here; those changes bring their own tests. The per-test databases do not depend on them and can land first.
 
 ## Capabilities
 
