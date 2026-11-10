@@ -12,19 +12,21 @@ Prerequisites: the layering and error sections of `restructure-backend-responsib
 - [ ] 2.3 Move settlement status checks, split invariants and the release plan to Settlement. Verify with entity table tests for `entity/settlement` scenarios; `settlement_uc_test.go` keeps orchestration only
 - [ ] 2.4 Add `Order.Source()` and use it in `order_confirmation.go`, `adapter/event/analytics_consumer.go` and `adapter/pb/order.go`. Verify with an entity table test for the three sources and a pb test that each source maps to its proto field
 - [ ] 2.5 Write the payment purpose explicitly into Stripe metadata at create and read it back without inference (`purchaseFromMetadata`), and move the webhook dispatch by purpose into one usecase method. Verify with a usecase test per purpose and the existing webhook handler test reduced to mapping
+- [ ] 2.6 Move the resale charge cut-off at the event start and the LostReason for each outcome (`order_resale_workflow.go:70`, `:86-159`) into `ResaleEntry.ChargeOutcome(now, start, result)`. Verify with an entity table test for each outcome
 
 ## 3. backend: Checkout and ticket stock
 
 - [ ] 3.1 Replace the free count at `checkout_repo.go:203` with `TicketStock.Remaining`, and move the reuse and replacement plan of `GetOrCreateHeld` and the Commit, RevertCommit and RecordCapture outcomes to Checkout (`Checkout.ReplacePlan`, `CanBecome`, outcome methods). Verify with entity table tests and rdb tests for the lost race only
-- [ ] 3.2 Move `checkLotteriesDrawn`, `holdingOrderID`, `StartCheckoutWorkflow`'s step choice and `Place`'s status switch to TicketSale and Checkout methods. Verify with entity table tests and `checkout_uc_test.go` / `order_issue_checkout_test.go` reduced to one test per usecase scenario
+- [ ] 3.2 Move `checkLotteriesDrawn` (as the per-stock predicate of design.md, keeping the stock scope of `usecase/checkout/start`), `holdingOrderID`, `StartCheckoutWorkflow`'s step choice and `Place`'s status switch to TicketSale and Checkout methods. Verify with entity table tests and `checkout_uc_test.go` / `order_issue_checkout_test.go` reduced to one test per usecase scenario, including a closed lottery with entries only for another stock of the event, which must not block
 - [ ] 3.3 Define `Order.CountsTowardLimitAt(now)` and the sold and held predicates, and add parity tests asserting that `orderHeldForEventQuery` (`order_repo.go:80`) and the stock counts (`ticket_stock_repo.go:31-43`) count exactly the rows these predicates accept. Verify the parity tests pass
 - [ ] 3.4 Move the seat-type-of-series and no-stock-for-a-cancelled-event checks of `ticket_stock_uc.go:114`, `:121` to `Series.HasSeatType` and `Event.CanBeStocked`. Verify with entity table tests
 
 ## 4. backend: Lottery entry
 
-- [ ] 4.1 Remove the restated lottery-sale check from `lottery_entry_repo.go:63-67`, `:206-215` in favour of `ValidateLotteryEntrySale`, and decide "sale open" with `TicketSale.IsOpenAt(entry.CreateTime)` instead of `clock_timestamp()` (`:83`); replace the `time.Now()` reads at `:216`, `:231`, `:410`, `:535` with the entry or caller time. Verify with entity table tests and an rdb test that an entry created at a given time is judged at that time
+- [ ] 4.1 Remove the restated lottery-sale check from `lottery_entry_repo.go:63-67`, `:206-215` in favour of `ValidateLotteryEntrySale`, and keep the end-time guard `clock_timestamp() < sale_end_at` inside the insert (`:83`, design.md: a concurrency guard the spec requires at the moment of storing); replace the `time.Now()` reads at `:216`, `:231`, `:410`, `:535` with the entry or caller time. Verify with entity table tests and the existing rdb test that no entry is stored after the end time
 - [ ] 4.2 Move the lost reasons and the voiding of losers' Orders of `PersistDrawOutcome` and `EndEnteredByEvent` into a LotteryDraw outcome plan applied by compare-and-set, and `StartDrawnEntryWorkflow`'s choice into `LotteryEntry.NextStep`. Verify with entity table tests and rdb lost-race tests
 - [ ] 4.3 Define the won and lost predicates behind the entry stats and add a parity test for the stats query (`lottery_entry_repo.go:97-107`). Verify the parity test passes
+- [ ] 4.4 Replace `hasEntryForEvent` (`lottery_entry_uc.go:291`) with a `LotteryEntry` predicate for one entry per TicketSale per Event per fan; the unique key stays. Verify with a usecase test for the duplicate-entry case
 
 ## 5. backend: Resale entry and listing
 
@@ -47,12 +49,14 @@ Prerequisites: the layering and error sections of `restructure-backend-responsib
 - [ ] 7.3 Add parity tests for `fanVisibleCondition`, `catalogEventCondition` and `seriesPublishStateColumn` (`event_conditions.go`) against `Event.IsPubliclyVisible`, the catalog rule and `DerivePublishState`, seeding every combination of discovered or first-party, DRAFT / PUBLISHED / CANCELLED and PUBLIC / UNLISTED. Verify the parity tests pass
 - [ ] 7.4 Move dedup, venue normalization, series type and the past-event check out of `gcp/gemini/searcher.go` (`mergeDrafts` `:789`, `seriesTypeOf` `:880`, `:911`) and `gcp/gemini/venue.go:71` into one Event key and matcher, `NormalizeVenueName`, `DiscoveredSeries.ClassifyType` and `DiscoveredEvent.IsBefore`; `concert_creation_uc.go` and `concert_candidate_uc.go` use the same matcher. The searcher returns parsed drafts. Verify with entity table tests; `searcher_test.go` keeps the response mapping
 - [ ] 7.5 Move the discovered-concert merge and "new concert to notify" decisions of `ConcertRepository.Create`, the series-type allowlist and the content-addressed first-writer rule into entity methods; the unique indexes stay. Verify with entity table tests and rdb tests for the conflict paths
+- [ ] 7.6 Move the candidate venue and place-id policy of `concert_candidate_uc.go` into `ConcertCandidate` methods. Verify with entity table tests
 
 ## 8. backend: Ticket sale and reminders
 
 - [ ] 8.1 Move the create checks of `ticket_sale_uc.go:262-313` into `TicketSale.CheckCreate`, and the discovered-sale identity and result-date merge of `ticket_sale_repo.go:101-109` into `TicketSale.MergeDiscovered`. Verify with entity table tests for `entity/ticket-sale` scenarios
 - [ ] 8.2 Move the validity of a found sale out of `gcp/gemini/ticket_sale_searcher.go` (`eventPeriod` `:397`, `:511`) into `DiscoveredTicketSale.Validate(now, ref)`. Verify with entity table tests; the searcher test keeps the response mapping
 - [ ] 8.3 Move the reminder audience (`ticket_sale_reminder_uc.go:124`) and delivery outcomes (`ticket_sale_reminder_delivery_uc.go:121`, `:150`) to TicketSale and a reminder outcome type, and decide "a first-party series is never searched" (`ticket_sale_discovery_uc.go:204`) with `Series.IsSearchable`. Verify with entity table tests
+- [ ] 8.4 Move the window-against-event-starts checks of `checkEndBeforeEvents` (`ticket_sale_uc.go:231`) and `openFirstComeSale` (`checkout_uc.go:203`) to TicketSale methods. Verify with entity table tests
 
 ## 9. backend: User, identity and organizer
 
@@ -68,6 +72,8 @@ Prerequisites: the layering and error sections of `restructure-backend-responsib
 - [ ] 10.2 Pass the fanart staleness threshold from the entity into `artist_repo.go:58`, `:439` instead of `time.Now()` in the repository, and add its parity test. Verify the parity test passes
 - [ ] 10.3 Make the MusicBrainz client return the URL relations and the place clients return candidates; choose with `entity.SelectOfficialSite` and an entity venue matcher in the usecase (`music/musicbrainz/client.go:267`, `maps/google/client.go:152`). Verify with entity table tests; the client tests keep the mapping
 - [ ] 10.4 Move the hype rules of `ticket_journey_uc.go:209`, `:226`, `:247` to Follow and TicketJourney, and the search preconditions of `concert_uc.go:583`, `:341` to Artist and a location query type. Verify with entity table tests
+- [ ] 10.5 Move the same-MBID-is-the-same-artist merge rule of `artist_repo.go` Create to an `Artist` merge method; the unique index stays. Verify with entity table tests and an rdb test for the conflict path
+- [ ] 10.6 Add parity tests for the "searches due" filter of TicketSale discovery and the bounding-box prefilter of `ListByLocation` (`concert_repo.go:209-226`), taking the bounding-box margins from the entity as parameters. Verify that both parity tests pass
 
 ## 11. backend: Notifications
 

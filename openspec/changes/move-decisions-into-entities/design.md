@@ -102,7 +102,7 @@ The tables group the rules by domain area. "Today" lists the verified locations 
 | Free count of a stock | `checkout_repo.go:203` | `TicketStock.Remaining` (exists) |
 | Reuse of a holding checkout; status of a replaced checkout | `checkout_repo.go:163` `GetOrCreateHeld` | `Checkout.ReplacePlan(now)` |
 | Commit, RevertCommit and RecordCapture idempotency outcomes | `checkout_repo.go:304`, `:400`, `:456` | `Checkout.CanBecome` (exists) and outcome methods |
-| A first-come sale is refused while a closed lottery of the event is undrawn | `checkout_uc.go:218` `checkLotteriesDrawn` | `TicketSale` guard over the event's sales |
+| A first-come checkout is refused while a closed Lottery sale of the event still has Entered entries for the stock | `checkout_uc.go:218` `checkLotteriesDrawn` | A per-stock predicate over a closed Lottery TicketSale and its Entered entries for that TicketStock (`usecase/checkout/start`, read with `LotteryEntry.ListEnteredByTicketSaleAndTicketStock`), not the sale-wide "drawn" of `entity/ticket-sale`, which would block the other stocks of the event |
 | Which checkout of the fan still holds the stock | `checkout_uc.go:237` `holdingOrderID` | `Checkout.IsHoldingAt` (exists) |
 | Workflow to start for each checkout status | `checkout_uc.go:349` `StartCheckoutWorkflow` | `Checkout.NextStep` |
 | Place: Held, Committed or ended | `order_issue_uc.go:106` `Place` | `Checkout.CanPlace` |
@@ -115,7 +115,7 @@ The tables group the rules by domain area. "Today" lists the verified locations 
 | Rule | Today | Home |
 |---|---|---|
 | The TicketSale is a lottery naming the stock's Event | `lottery_entry_repo.go:63-67`, `:206-215`; `entity.ValidateLotteryEntrySale` | `ValidateLotteryEntrySale` (exists), repository stops restating it |
-| Sale open at the entry time (database clock today) | `lottery_entry_repo.go:83` | `TicketSale.IsOpenAt(entry.CreateTime)` |
+| The TicketSale's end time has not passed when the entry is stored | `lottery_entry_repo.go:83` (`clock_timestamp() < sale_end_at` in the insert) | Stays in SQL as a concurrency guard: `entity/lottery-entry/create` requires the check "at the moment the entry is stored" and that no entry is stored after the end time, which only a check inside the insert guarantees. No start-time check is added, because the spec states none for Create |
 | One entry per TicketSale per Event per fan | `lottery_entry_uc.go:291` `hasEntryForEvent`, unique key | Unique key stays; the usecase check uses a `LotteryEntry` predicate |
 | Verification gate | `lottery_entry_uc.go:256` `checkVerification` | Guard from `restructure-backend-responsibilities` |
 | RevertWin transition | `lottery_entry_repo.go:521` | `LotteryEntry.RevertWin` returning transitions |
