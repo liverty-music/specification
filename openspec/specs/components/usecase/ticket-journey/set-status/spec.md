@@ -4,6 +4,29 @@
 
 Records a fan's ticket journey status for one event at the fan's request, creating the journey or replacing its status through TicketJourney.Upsert, which announces every actual status change for product analytics.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as TicketJourneyUseCase.SetStatus
+participant TicketJourney
+participant Concert
+participant User
+participant Follow
+UC->>TicketJourney: Upsert "set by the fan"
+break Upsert fails
+  Note over UC: fail with that error
+end
+opt status is Applied, Unpaid or Paid
+  Note over UC: a failure from here on does not fail SetStatus
+  UC->>Concert: ListByIDs
+  UC->>User: Get "home"
+  UC->>Follow: ListByUser
+  opt lowest matching level, one followed artist, Follow raisable
+    UC->>Follow: RaiseHype
+  end
+end
+```
+
 ## Requirements
 
 ### Requirement: SetStatus records the fan's status

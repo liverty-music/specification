@@ -5,15 +5,9 @@
 Defines user authentication behavior: sign up / sign in, session restoration on cold start, and the server-side session monitoring policy.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Restore session on cold start")
-  UserUseCaseGet("UserUseCase.Get")
-end
-Fan --> Goal
-Goal ..> : include UserUseCaseGet
+eventmodeling
+tf 01 rmo UserUseCase_Get
+tf 02 ui Fan_AppShell
 ```
 
 ## Requirements

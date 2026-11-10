@@ -4,27 +4,22 @@
 An Organizer's Concert is called off: a member cancels its Event, then an admin refunds every fan who bought a ticket and, when the Event should no longer exist at all, deletes it from the admin console. Test Events of a test Organizer are retired the same way.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Admin("admin")
-actor Member("member")
-systemBoundary "Liverty Music"
-  Goal("Remove a cancelled concert")
-  SeriesUseCaseCancel("SeriesUseCase.Cancel")
-  ArtistUseCaseGet("ArtistUseCase.Get")
-  ConcertUseCaseListCatalogByArtist("ConcertUseCase.ListCatalogByArtist")
-  OrderUseCaseListByEvent("OrderUseCase.ListByEvent")
-  OrderUseCaseRefund("OrderUseCase.Refund")
-  ConcertUseCaseDelete("ConcertUseCase.Delete")
-end
-Admin --> Goal
-Goal ..> : include SeriesUseCaseCancel
-Goal ..> : include ArtistUseCaseGet
-Goal ..> : include ConcertUseCaseListCatalogByArtist
-Goal ..> : include OrderUseCaseListByEvent
-Goal ..> : include OrderUseCaseRefund
-Goal ..> : include ConcertUseCaseDelete
-Member --> SeriesUseCaseCancel
+eventmodeling
+tf 01 ui Member_Event
+tf 02 cmd SeriesUseCase_Cancel
+tf 03 evt Event_Cancelled
+tf 04 cmd NotificationUseCase_SendEventCancelled
+rf 05 cmd LotteryEntryUseCase_EndForCancelledEvent ->> 03
+tf 06 evt LotteryEntry_Drawn
+tf 07 cmd OrderUseCase_ReleaseCardAuthorization
+rf 08 rmo ArtistUseCase_Get
+tf 09 rmo ConcertUseCase_ListCatalogByArtist
+tf 10 rmo OrderUseCase_ListByEvent
+tf 11 ui Admin_ArtistConcerts
+tf 12 cmd OrderUseCase_Refund
+tf 13 evt Order_Refunded
+tf 14 cmd NotificationUseCase_SendOrderRefunded
+rf 15 cmd ConcertUseCase_Delete ->> 11
 ```
 
 ## Requirements

@@ -4,6 +4,53 @@
 
 OrderUseCase.Refund refunds one Paid Order for a stated reason — 中止 (cancellation) or a dispute — voiding its tickets, clawing back any payout already made, and marking the Order Refunded.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as OrderUseCase.Refund
+participant Order
+participant Event
+participant Settlement
+Note over UC: InvalidArgument when no reason is given
+UC->>Order: Get
+break already Refunded
+  Note over UC: return it unchanged
+end
+break not refundable
+  Note over UC: FailedPrecondition
+end
+opt reason Cancellation
+  UC->>Order: GetEventID
+  UC->>Event: Get
+  break Event is not CANCELLED
+    Note over UC: FailedPrecondition, no money moved
+  end
+end
+UC->>Settlement: GetByOrderID
+break no Settlement
+  Note over UC: Internal
+end
+opt reason Cancellation and a Ticket still Issued
+  opt no charge recorded on the Settlement
+    UC->>Order: GetProviderChargeID
+  end
+  UC->>Order: CreateRefund "price of the Tickets still Issued"
+end
+alt Settlement is Released
+  loop each paid split not yet reversed
+    UC->>Settlement: ReversePayout
+  end
+else Held
+  Note over UC: no payout reversed, Settlement becomes Reversed
+else already Reversed
+  Note over UC: nothing clawed back
+end
+UC->>Order: CommitRefund
+opt FailedPrecondition, another refund got there first
+  UC->>Order: Get
+end
+```
+
 ## Requirements
 
 ### Requirement: Reason and refundable order

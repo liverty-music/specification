@@ -4,17 +4,13 @@
 A fan who wants to go to a live show soon finds the concerts near their area within a chosen period, including concerts of artists they do not follow yet, and follows an artist from one of those concerts so that its concerts reach their timetable.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Find concerts nearby")
-  ConcertUseCaseListByLocation("ConcertUseCase.ListByLocation")
-  FollowUseCaseFollow("FollowUseCase.Follow")
-end
-Fan --> Goal
-Goal ..> : include ConcertUseCaseListByLocation
-Goal ..> : include FollowUseCaseFollow
+eventmodeling
+tf 01 rmo ConcertUseCase_ListByLocation
+tf 02 ui Fan_Discovery
+tf 03 cmd FollowUseCase_Follow
+tf 04 evt Follow_Created
+tf 05 rmo ConcertUseCase_ListFollowed
+tf 06 ui Fan_Dashboard
 ```
 
 ## Requirements

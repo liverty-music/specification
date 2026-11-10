@@ -8,17 +8,12 @@ Organizer, without ever typing a code; an admin re-invites them when they lose
 access.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Member("member")
-actor Admin("admin")
-systemBoundary "Liverty Music"
-  Goal("Bootstrap owner credentials on first sign in")
-  OrganizerUseCaseCreate("OrganizerUseCase.Create")
-end
-Member --> Goal
-Goal ..> : include OrganizerUseCaseCreate
-Admin --> OrganizerUseCaseCreate
+eventmodeling
+tf 01 ui Admin_Organizers
+tf 02 cmd OrganizerUseCase_Create
+tf 03 evt Organizer_Activated
+tf 04 ui Member_HostedLogin
+tf 05 ui Member_Home
 ```
 
 ## Requirements

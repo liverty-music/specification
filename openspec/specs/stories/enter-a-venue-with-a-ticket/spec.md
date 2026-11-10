@@ -4,29 +4,18 @@
 A fan holding tickets enters the venue with their companions by showing one QR code their phone makes even without a connection, and venue staff without an account admit them through a Scanner the Organizer created; each ticket admits once, and a copied or stale code admits no one.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-actor Member("member")
-actor Staff("venue staff")
-actor Staff("venue staff")
-systemBoundary "Liverty Music"
-  Goal("Enter a venue with a ticket")
-  ScannerUseCaseCreate("ScannerUseCase.Create")
-  ScannerUseCaseOpen("ScannerUseCase.Open")
-  WalletPublicKeyUseCaseRegister("WalletPublicKeyUseCase.Register")
-  TicketUseCaseAdmit("TicketUseCase.Admit")
-  TicketUseCaseList("TicketUseCase.List")
-end
-Fan --> Goal
-Goal ..> : include ScannerUseCaseCreate
-Goal ..> : include ScannerUseCaseOpen
-Goal ..> : include WalletPublicKeyUseCaseRegister
-Goal ..> : include TicketUseCaseAdmit
-Goal ..> : include TicketUseCaseList
-Member --> ScannerUseCaseCreate
-Staff --> ScannerUseCaseOpen
-Staff --> TicketUseCaseAdmit
+eventmodeling
+tf 01 ui Member_Event
+tf 02 cmd ScannerUseCase_Create
+rf 03 ui VenueStaff_Scanner
+tf 04 cmd ScannerUseCase_Open
+rf 05 ui Fan_Tickets
+tf 06 cmd WalletPublicKeyUseCase_Register
+rf 07 ui VenueStaff_Scanner
+tf 08 cmd TicketUseCase_Admit
+tf 09 evt Ticket_Admitted
+tf 10 rmo TicketUseCase_List
+tf 11 ui Fan_Tickets
 ```
 
 ## Requirements

@@ -4,31 +4,27 @@
 A fan buys tickets for an Organizer's event first come, first served: they hold tickets for 15 minutes, pay by card, and receive account-bound covered tickets with a confirmation email, while no fan is ever charged for tickets they do not receive.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-actor Member("member")
-systemBoundary "Liverty Music"
-  Goal("Buy tickets first come")
-  SeatTypeUseCaseCreate("SeatTypeUseCase.Create")
-  TicketStockUseCaseCreate("TicketStockUseCase.Create")
-  TicketSaleUseCaseCreate("TicketSaleUseCase.Create")
-  CheckoutUseCaseStart("CheckoutUseCase.Start")
-  CheckoutUseCaseAuthorizeCard("CheckoutUseCase.AuthorizeCard")
-  OrderUseCasePlace("OrderUseCase.Place")
-  TicketUseCaseList("TicketUseCase.List")
-end
-Fan --> Goal
-Goal ..> : include SeatTypeUseCaseCreate
-Goal ..> : include TicketStockUseCaseCreate
-Goal ..> : include TicketSaleUseCaseCreate
-Goal ..> : include CheckoutUseCaseStart
-Goal ..> : include CheckoutUseCaseAuthorizeCard
-Goal ..> : include OrderUseCasePlace
-Goal ..> : include TicketUseCaseList
-Member --> SeatTypeUseCaseCreate
-Member --> TicketStockUseCaseCreate
-Member --> TicketSaleUseCaseCreate
+eventmodeling
+tf 01 ui Member_Concert
+tf 02 cmd SeatTypeUseCase_Create
+rf 03 ui Member_Event
+tf 04 cmd TicketStockUseCase_Create
+rf 05 ui Member_TicketSaleEditor
+tf 06 cmd TicketSaleUseCase_Create
+rf 07 ui Fan_Checkout
+tf 08 cmd CheckoutUseCase_Start
+tf 09 evt Checkout_Held
+rf 10 cmd CheckoutUseCase_AuthorizeCard ->> 07
+tf 11 cmd OrderUseCase_Place
+tf 20 cmd OrderUseCase_Issue
+tf 12 evt Order_Paid
+tf 13 cmd TicketJourneyUseCase_MarkPaid
+rf 14 cmd NotificationUseCase_SendOrderConfirmation ->> 12
+rf 15 rmo TicketUseCase_List ->> 12
+tf 16 ui Fan_Tickets
+rf 17 cmd CheckoutUseCase_Expire ->> 09
+tf 18 evt Checkout_Expired
+tf 19 cmd OrderUseCase_ReleaseCardAuthorization
 ```
 
 ## Requirements

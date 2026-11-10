@@ -4,6 +4,55 @@
 
 Approve lets an admin publish a ConcertCandidate under the Series it was proposed with, or, when it collides with an Event already in the catalog, resolve the collision by keeping the existing Event or adopting the candidate's details onto it.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as ConcertCandidateUseCase.Approve
+participant ConcertCandidate
+participant Venue
+participant Concert
+participant RejectedConcert
+participant Series
+Note over UC: called by an admin, with an optional resolution
+UC->>ConcertCandidate: GetByID
+break NotFound
+  Note over UC: succeed with no conflict, change nothing
+end
+UC->>Venue: GetByPlaceID
+opt not found by place id
+  UC->>Venue: GetByListedName
+  alt found without a place id
+    UC->>Venue: BackfillPlaceID
+  else not found
+    UC->>Venue: Create
+  end
+end
+UC->>Concert: FindEventsByVenueAndDate
+alt collides and no resolution chosen
+  Note over UC: change nothing, return the conflict
+else collides, keep existing
+  UC->>RejectedConcert: Append "duplicate of existing event"
+  UC->>ConcertCandidate: Delete
+else collides, adopt the candidate
+  UC->>Concert: UpdateEventListedVenueName
+  UC->>Concert: FillEventStartTimes
+  UC->>ConcertCandidate: Delete
+else does not collide
+  alt brings a start time and an Event there has none
+    UC->>Concert: FillEventStartTimes
+  else otherwise
+    UC->>Concert: Create
+    break Create fails
+      Note over UC: fail, keep the ConcertCandidate
+    end
+  end
+  UC->>ConcertCandidate: Delete
+  opt nothing was added
+    UC->>Series: DeleteOrphaned
+  end
+end
+```
+
 ## Requirements
 
 ### Requirement: Approve of a missing concert candidate succeeds

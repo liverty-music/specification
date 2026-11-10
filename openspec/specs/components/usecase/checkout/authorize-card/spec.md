@@ -3,6 +3,33 @@
 ## Purpose
 CheckoutUseCase.AuthorizeCard stores the fan's 本人確認 (identity check) details on their User and opens the card authorization for their own Checkout, returning the card authorization secret the fan's browser uses to complete card authentication.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as CheckoutUseCase.AuthorizeCard
+participant Checkout
+participant User
+participant CardAuthorization
+UC->>Checkout: Get
+break missing or another User's Checkout
+  Note over UC: fail with PermissionDenied
+end
+break Checkout not holding
+  Note over UC: fail with FailedPrecondition
+end
+break name or phone number missing or invalid
+  Note over UC: fail with InvalidArgument
+end
+UC->>User: UpdatePersonalDetails
+alt Checkout has no card authorization
+  UC->>CardAuthorization: Create "the Checkout's amount"
+  UC->>Checkout: SetCardAuthorization
+else Checkout has one
+  UC->>CardAuthorization: Get
+end
+Note over UC: return the card authorization secret, never stored
+```
+
 ## Requirements
 
 ### Requirement: Details stored and card authorization opened for one's own checkout

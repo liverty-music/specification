@@ -3,6 +3,59 @@
 ## Purpose
 TicketUseCase.Admit decides one scan at the venue: through a Scanner, from the device it is bound to, during its event's admission window, it admits each Ticket a genuine and fresh AdmissionCode presents exactly once, records every outcome, and tells staff the result without any personal data.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as TicketUseCase.Admit
+participant Scanner
+participant Event
+participant AdmissionCode
+participant WalletPublicKey
+participant Ticket
+participant Admission
+participant RejectedScan
+UC->>Scanner: GetByLinkToken
+break no Scanner, Revoked, or not its bound device
+  Note over UC: PermissionDenied
+end
+UC->>Event: Get
+break outside the admission window
+  Note over UC: FailedPrecondition, nothing recorded
+end
+UC->>AdmissionCode: Decode
+alt Malformed
+  UC->>RejectedScan: Append "Forged, without a Ticket"
+else decoded
+  UC->>WalletPublicKey: GetByUser
+  UC->>AdmissionCode: Verify
+  alt no key, or Forged
+    UC->>RejectedScan: Append "Forged, without a Ticket"
+  else Expired
+    UC->>RejectedScan: Append "Expired, one per Ticket"
+  else code for another event
+    UC->>RejectedScan: Append "OtherEvent, one per Ticket"
+  else genuine and fresh
+    UC->>Ticket: ListByUserAndEvent
+    alt a presented Ticket is not among them
+      UC->>RejectedScan: Append "Forged, without a Ticket"
+    else all the user's own
+      loop each presented Ticket
+        UC->>Ticket: Admit
+        alt Admitted
+          Note over UC: admitted, Admission stored by Ticket.Admit
+        else AlreadyAdmitted
+          UC->>Admission: GetByTicket
+          UC->>RejectedScan: Append "AlreadyAdmitted"
+        else Voided
+          UC->>RejectedScan: Append "Voided"
+        end
+      end
+    end
+  end
+end
+Note over UC: a failed Append still returns the result, a failed Ticket.Admit fails with Unavailable
+```
+
 ## Requirements
 
 ### Requirement: Only the bound device of a usable scanner, during the admission window

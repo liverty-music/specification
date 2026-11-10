@@ -19,6 +19,12 @@ States:
 - Unpaid: the fan won or bought a ticket and still has to pay (入金待ち awaiting payment).
 - Paid: the fan has paid and secured the ticket (チケット確保 ticket secured).
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| TicketJourney.StatusChanged | TicketJourney.Upsert, TicketJourney.UpsertIfReplaceable | the journey with its status and status set by |
+
 ```mermaid
 erDiagram
   User ||--o{ TicketJourney : "records"

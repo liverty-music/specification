@@ -3,6 +3,35 @@
 ## Purpose
 OrganizerUseCase.Delete permanently removes a deactivated Organizer at an admin's request, together with its series image files, its Organization and every record kept for it, so test Organizers can be cleaned up without leaving dependents behind.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as OrganizerUseCase.Delete
+participant Organizer
+participant SeriesImage
+participant Organization
+UC->>Organizer: Get
+break Organizer does not exist
+  Note over UC: fail with NotFound
+end
+break status is not deactivated
+  Note over UC: fail with FailedPrecondition, removing nothing
+end
+break an unrefunded Order, an unreversed Settlement or a payout-account record
+  Note over UC: fail with FailedPrecondition, removing nothing
+end
+UC->>SeriesImage: ListByOrganizer
+loop each SeriesImage
+  UC->>SeriesImage: DeleteOriginal
+  UC->>SeriesImage: DeleteVariants
+end
+opt the Organizer has a provider organizer ID
+  UC->>Organization: Delete
+end
+UC->>Organizer: Delete
+Note over UC: a failed step fails Delete, and calling it again completes the deletion
+```
+
 ## Requirements
 
 ### Requirement: Delete removes a deactivated Organizer with its files, Organization and records

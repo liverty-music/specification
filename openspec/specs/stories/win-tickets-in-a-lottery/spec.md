@@ -5,47 +5,39 @@
 A fan authorizes their card for a number of tickets and confirms the entry, the draw runs after the window closes, and a winning fan is charged and receives account-bound covered tickets while a losing fan is never charged; every fan is told the result.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-actor Member("member")
-systemBoundary "Liverty Music"
-  Goal("Win tickets in a lottery")
-  SeatTypeUseCaseCreate("SeatTypeUseCase.Create")
-  TicketStockUseCaseCreate("TicketStockUseCase.Create")
-  TicketSaleUseCaseCreate("TicketSaleUseCase.Create")
-  LotteryEntryUseCaseAuthorizeCard("LotteryEntryUseCase.AuthorizeCard")
-  LotteryEntryUseCaseConfirm("LotteryEntryUseCase.Confirm")
-  TicketJourneyUseCaseMarkApplied("TicketJourneyUseCase.MarkApplied")
-  LotteryEntryUseCaseListByTicketSale("LotteryEntryUseCase.ListByTicketSale")
-  LotteryEntryUseCaseDrawDueSales("LotteryEntryUseCase.DrawDueSales")
-  LotteryEntryUseCaseDraw("LotteryEntryUseCase.Draw")
-  OrderUseCaseIssue("OrderUseCase.Issue")
-  OrderUseCaseReleaseCardAuthorization("OrderUseCase.ReleaseCardAuthorization")
-  LotteryEntryUseCaseEndForCancelledEvent("LotteryEntryUseCase.EndForCancelledEvent")
-  NotificationUseCaseSendLotteryLoss("NotificationUseCase.SendLotteryLoss")
-  TicketUseCaseList("TicketUseCase.List")
-  SettlementUseCaseReleaseDueSettlements("SettlementUseCase.ReleaseDueSettlements")
-end
-Fan --> Goal
-Goal ..> : include SeatTypeUseCaseCreate
-Goal ..> : include TicketStockUseCaseCreate
-Goal ..> : include TicketSaleUseCaseCreate
-Goal ..> : include LotteryEntryUseCaseAuthorizeCard
-Goal ..> : include LotteryEntryUseCaseConfirm
-Goal ..> : include TicketJourneyUseCaseMarkApplied
-Goal ..> : include LotteryEntryUseCaseListByTicketSale
-Goal ..> : include LotteryEntryUseCaseDrawDueSales
-Goal ..> : include LotteryEntryUseCaseDraw
-Goal ..> : include OrderUseCaseIssue
-Goal ..> : include OrderUseCaseReleaseCardAuthorization
-Goal ..> : include LotteryEntryUseCaseEndForCancelledEvent
-Goal ..> : include NotificationUseCaseSendLotteryLoss
-Goal ..> : include TicketUseCaseList
-Goal ..> : include SettlementUseCaseReleaseDueSettlements
-Member --> SeatTypeUseCaseCreate
-Member --> TicketStockUseCaseCreate
-Member --> TicketSaleUseCaseCreate
+eventmodeling
+tf 01 ui Member_Event
+tf 02 cmd SeatTypeUseCase_Create
+rf 03 cmd TicketStockUseCase_Create ->> 01
+rf 04 ui Member_TicketSaleEditor
+tf 05 cmd TicketSaleUseCase_Create
+rf 06 ui Fan_LotteryEntry
+tf 07 cmd LotteryEntryUseCase_AuthorizeCard
+rf 08 pcr External_PaymentProvider
+rf 09 cmd LotteryEntryUseCase_Confirm ->> 06 ->> 08
+tf 10 evt LotteryEntry_Entered
+tf 11 cmd TicketJourneyUseCase_MarkApplied
+rf 12 pcr Schedule_DrawWindowClosed
+tf 13 cmd LotteryEntryUseCase_DrawDueSales
+tf 14 cmd LotteryEntryUseCase_Draw
+tf 15 evt LotteryEntry_Drawn
+tf 16 cmd OrderUseCase_Issue
+tf 17 evt Order_Paid
+tf 18 cmd TicketJourneyUseCase_MarkPaid
+rf 19 cmd NotificationUseCase_SendOrderConfirmation ->> 17
+rf 20 ui Member_Concert
+tf 21 cmd SeriesUseCase_Cancel
+tf 22 evt Event_Cancelled
+tf 23 cmd LotteryEntryUseCase_EndForCancelledEvent
+tf 24 evt LotteryEntry_Drawn
+rf 25 cmd OrderUseCase_ReleaseCardAuthorization ->> 15 ->> 24
+rf 26 cmd NotificationUseCase_SendLotteryLoss ->> 15 ->> 24
+rf 27 rmo LotteryEntryUseCase_ListByTicketSale ->> 15 ->> 24
+tf 28 ui Fan_LotteryEntry
+rf 29 rmo TicketUseCase_List ->> 17
+tf 30 ui Fan_Tickets
+rf 31 pcr Schedule_SettlementDue
+tf 32 cmd SettlementUseCase_ReleaseDueSettlements
 ```
 
 ## Requirements

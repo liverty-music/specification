@@ -16,6 +16,12 @@ A Ticket is one account-bound admission right to an event, issued from an Order.
 | issue time | when the ticket was issued | required |
 | admit time | when the ticket was let in at the venue | optional; absent until admitted, set once and kept when the ticket is later Voided |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| Ticket.Admitted | Ticket.Admit | the Ticket with its admit time |
+
 ```mermaid
 erDiagram
   Order ||--|{ Ticket : "issues"

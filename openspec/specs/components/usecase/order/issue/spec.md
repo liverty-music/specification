@@ -3,6 +3,103 @@
 ## Purpose
 OrderUseCase.Issue charges the card authorization of a Won LotteryEntry's or a placed Checkout's Pending Order, committing the Checkout's tickets first, and makes the Order Paid, with its account-bound covered tickets and its Settlement, exactly once.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as OrderUseCase.Issue
+participant LotteryEntry
+participant ResaleEntry
+participant Checkout
+participant Order
+participant TicketStock
+participant TicketSale
+participant Event
+participant Organizer
+participant IdentityVerification
+participant CardAuthorization
+LotteryEntry-->>UC: PersistDrawOutcome (Won)
+ResaleEntry-->>UC: PersistDrawOutcome (Won)
+Note over UC: also started once for each Checkout whose order OrderUseCase.Place places
+Note over UC: resumes from the step it reached, and stops after 24 hours with an admin told
+alt a Won LotteryEntry
+  UC->>LotteryEntry: Get
+  UC->>Order: Get
+  break Order is Paid
+    Note over UC: return the Order
+  end
+  UC->>TicketStock: Get
+  UC->>TicketSale: Get
+  UC->>Event: GetOrganizerID
+  UC->>Organizer: Get
+  opt sale requires verification
+    UC->>IdentityVerification: GetByUserID
+  end
+  loop until charged, Unavailable tried again
+    UC->>Event: IsEventPublished
+    alt event is not PUBLISHED
+      UC->>CardAuthorization: Get
+      break card authorization is not Captured
+        UC->>LotteryEntry: RevertWin "concert cancelled"
+      end
+    else event is PUBLISHED
+      UC->>CardAuthorization: Capture
+      break capture fails with FailedPrecondition
+        UC->>LotteryEntry: RevertWin "card could not be charged"
+      end
+    end
+  end
+  UC->>CardAuthorization: Get
+  UC->>Order: Issue
+else a placed Checkout
+  UC->>Checkout: Get
+  UC->>Order: Get
+  break Order is Paid
+    Note over UC: return the Order
+  end
+  UC->>TicketStock: Get
+  UC->>TicketSale: Get
+  UC->>Event: GetOrganizerID
+  UC->>Organizer: Get
+  opt sale requires verification
+    UC->>IdentityVerification: GetByUserID
+  end
+  UC->>Checkout: Commit
+  break Commit reports NotHeld
+    Note over UC: end, the Order stays Pending
+  end
+  opt Checkout has no capture time
+    UC->>CardAuthorization: Capture
+    break capture fails with FailedPrecondition
+      UC->>Checkout: RevertCommit
+    end
+    UC->>Checkout: RecordCapture
+  end
+  UC->>CardAuthorization: Get
+  UC->>Order: Issue
+else a Won ResaleEntry
+  UC->>Event: IsEventPublished
+  break event is not PUBLISHED
+    UC->>ResaleEntry: RevertWin "concert cancelled"
+  end
+  UC->>CardAuthorization: Capture
+  alt capture fails with FailedPrecondition
+    UC->>ResaleEntry: RevertWin "card could not be charged"
+  else not charged by the event's start time
+    UC->>CardAuthorization: Release
+    alt release succeeds
+      UC->>ResaleEntry: RevertWin "payment not completed before the show"
+    else release fails with FailedPrecondition
+      Note over UC: the card was charged, go on to issue
+    end
+  end
+  UC->>Order: Issue
+  opt a listing allocated to the entry is Cancelled
+    UC->>Order: CreateRefund
+    UC->>ResaleEntry: RevertWin "listing cancelled"
+  end
+end
+```
+
 ## Requirements
 
 ### Requirement: Every Won entry is issued

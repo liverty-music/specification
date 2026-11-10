@@ -3,6 +3,37 @@
 ## Purpose
 OrderUseCase.ReleaseCardAuthorization gives back, without charging, the card authorization of a Void Order: the Order of a lottery entry that lost, and of any other application that ended without a charge.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as OrderUseCase.ReleaseCardAuthorization
+participant LotteryEntry
+participant Checkout
+participant ResaleEntry
+participant Order
+participant CardAuthorization
+LotteryEntry-->>UC: PersistDrawOutcome (Lost)
+LotteryEntry-->>UC: RevertWin (Lost)
+LotteryEntry-->>UC: EndEnteredByEvent (Lost)
+Checkout-->>UC: Release (Expired)
+Checkout-->>UC: GetOrCreateHeld (Expired or Released)
+Checkout-->>UC: RevertCommit (Released)
+ResaleEntry-->>UC: PersistDrawOutcome (Lapsed or Lost)
+ResaleEntry-->>UC: Withdraw (Withdrawn)
+ResaleEntry-->>UC: RevertWin (Lost, not charged)
+UC->>Order: Get
+break Order is not Void
+  Note over UC: FailedPrecondition
+end
+break Order has no card authorization
+  Note over UC: succeed without effect
+end
+loop until released, Unavailable tried again
+  UC->>CardAuthorization: Release
+end
+Note over UC: tries again until 24 hours, an admin is told of a failure or the stop
+```
+
 ## Requirements
 
 ### Requirement: Every Void Order's card authorization is released

@@ -4,26 +4,28 @@
 A fan opens an event link that carries a referral code, signs up if needed and buys tickets or enters the lottery within 7 days, and the Organizer sees the paid purchase counted under that code on the event's Sales tab.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-actor Member("member")
-systemBoundary "Liverty Music"
-  Goal("Attribute a purchase to a referral link")
-  TicketSaleUseCaseCreate("TicketSaleUseCase.Create")
-  CheckoutUseCaseStart("CheckoutUseCase.Start")
-  CheckoutUseCaseAuthorizeCard("CheckoutUseCase.AuthorizeCard")
-  OrderUseCasePlace("OrderUseCase.Place")
-  TicketSaleUseCaseListOwnByEvent("TicketSaleUseCase.ListOwnByEvent")
-end
-Fan --> Goal
-Goal ..> : include TicketSaleUseCaseCreate
-Goal ..> : include CheckoutUseCaseStart
-Goal ..> : include CheckoutUseCaseAuthorizeCard
-Goal ..> : include OrderUseCasePlace
-Goal ..> : include TicketSaleUseCaseListOwnByEvent
-Member --> TicketSaleUseCaseCreate
-Member --> TicketSaleUseCaseListOwnByEvent
+eventmodeling
+tf 01 ui Member_TicketSaleEditor
+tf 02 cmd TicketSaleUseCase_Create
+rf 03 ui Fan_Event
+tf 04 ui Fan_Checkout
+tf 05 cmd CheckoutUseCase_Start
+tf 06 cmd CheckoutUseCase_AuthorizeCard
+tf 07 cmd OrderUseCase_Place
+tf 21 cmd OrderUseCase_Issue
+tf 08 evt Order_Paid
+rf 09 ui Fan_LotteryEntry ->> 03
+tf 10 cmd LotteryEntryUseCase_AuthorizeCard
+tf 11 cmd LotteryEntryUseCase_Confirm
+tf 12 evt LotteryEntry_Entered
+rf 13 pcr Schedule_DrawWindowClosed
+tf 14 cmd LotteryEntryUseCase_DrawDueSales
+tf 15 cmd LotteryEntryUseCase_Draw
+tf 16 evt LotteryEntry_Drawn
+tf 17 cmd OrderUseCase_Issue
+tf 18 evt Order_Paid
+rf 19 rmo TicketSaleUseCase_ListOwnByEvent ->> 08 ->> 18
+tf 20 ui Member_Event
 ```
 
 ## Requirements

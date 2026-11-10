@@ -4,6 +4,68 @@
 
 CreateFromDiscovered takes one Artist's batch of newly discovered series, started by ConcertUseCase.SearchNewConcerts once per search. For each event it does one of four things: publishes it under its Series through Concert.Create, which tells the Artist's followers; stages it for admin review when its venue is unresolved or its slot collides with an Event already in the catalog; skips it when its slot is suppressed; or fills an announced start time onto the Artist's existing Event.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as ConcertCreationUseCase.CreateFromDiscovered
+participant Concert
+participant Series
+participant Venue
+participant SuppressedConcert
+participant ConcertCandidate
+Note over UC: started by ConcertUseCase.SearchNewConcerts once per search, run again on failure
+loop each series with a title and events
+  UC->>Concert: FindEventsByArtistAndDate
+  opt no Event of the Artist at a series event's date and venue
+    UC->>Series: Create
+  end
+  loop each event with a listed venue name
+    alt the Artist has an Event on its date at the same venue
+      alt same start time
+        Note over UC: nothing stored
+      else the event brings a start time and that Event has none
+        UC->>Concert: FillEventStartTimes
+      else otherwise
+        Note over UC: resolved at that Event's Venue
+      end
+    else otherwise
+      UC->>Venue: SearchPlace "once per name and admin area"
+      alt no match
+        UC->>ConcertCandidate: Upsert "no resolved preview"
+      else place found
+        UC->>Venue: GetByPlaceID
+        opt not found by place id
+          UC->>Venue: GetByListedName
+          alt found without a place id
+            UC->>Venue: BackfillPlaceID
+          else not found
+            UC->>Venue: Create
+          end
+        end
+      end
+    end
+    opt resolved event
+      UC->>SuppressedConcert: Exists
+      alt suppressed
+        Note over UC: neither published nor staged
+      else not suppressed
+        UC->>Concert: FindEventsByVenueAndDate
+        alt collides
+          UC->>ConcertCandidate: Upsert
+        else otherwise
+          Note over UC: to be published
+        end
+      end
+    end
+  end
+  opt the series publishes any event
+    UC->>Concert: Create "all of the series' events at once"
+  end
+end
+UC->>Series: DeleteOrphaned "Series created in this batch"
+Note over UC: sends one concert ingest completed signal
+```
+
 ## Requirements
 
 ### Requirement: Unusable input is skipped

@@ -3,6 +3,42 @@
 ## Purpose
 TicketSaleDiscoveryUseCase.DiscoverForArtist finds the ticket sales that have not opened yet for the series of one artist that fans track and that need a search, and stores them as discovered TicketSales. It updates sales already known, creates new ones and records each searched series. TicketSale.UpsertDiscovered announces each newly created sale to the fans tracking its series, and the method returns the number of new sales.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as TicketSaleDiscoveryUseCase.DiscoverForArtist
+participant Follow
+participant Concert
+participant TicketJourney
+participant TicketSale
+participant TicketSaleSearch
+Note over UC: daily at 21:00 Japan time, one artist at a time
+Follow-->>UC: ListAll (each followed artist)
+break the artist's activity ended
+  Note over UC: return 0
+end
+UC->>Concert: ListByArtist "upcoming only"
+loop each series of the artist with no Organizer
+  UC->>TicketJourney: ListUserIDsTrackingSeries
+  UC->>TicketSale: ListBySeries
+  UC->>TicketSaleSearch: ListBySeries
+end
+break no series qualifies, or no official site
+  Note over UC: return 0 without searching
+end
+UC->>TicketSale: SearchPublishedSales "once, every qualifying series"
+break the search fails
+  Note over UC: fail, store and record nothing, signal the failure
+end
+loop each discovered sale
+  UC->>TicketSale: UpsertDiscovered "a failed one is skipped"
+end
+loop each searched series
+  UC->>TicketSaleSearch: Record
+end
+Note over UC: sends one ticket sale search completed signal, returns the number Inserted
+```
+
 ## Requirements
 
 ### Requirement: Daily discovery over every followed artist

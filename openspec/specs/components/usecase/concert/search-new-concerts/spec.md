@@ -4,6 +4,45 @@
 
 SearchNewConcerts searches external sources for one Artist's newly announced concerts, keeps only those not already in the catalog or pending review, hands them on to ConcertCreationUseCase.CreateFromDiscovered once per search, and returns them as previews. It serves any caller, a daily schedule runs it for every followed Artist, and SearchNewConcertsOnFirstFollow runs it for an Artist followed for the first time.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as ConcertUseCase.SearchNewConcerts
+participant Follow
+participant ConcertSearch
+participant Concert
+participant DiscoveredSeries
+Note over UC: also run by any caller and by SearchNewConcertsOnFirstFollow
+Note over UC: a schedule runs it every day at 18.00 JST
+Follow-->>UC: ListAll (each followed Artist, one at a time)
+Note over UC: the daily run stops after 3 Artists fail in a row
+break activity ended or represented by an active Organizer
+  Note over UC: return no concerts
+end
+break ConcertSearch fresh, recently discovered or in progress
+  Note over UC: return no concerts
+end
+break Artist has no name or no MBID
+  Note over UC: fail with Internal
+end
+UC->>ConcertSearch: Upsert "pending"
+break cannot be recorded
+  Note over UC: fail without searching
+end
+UC->>Concert: Search "from the current date"
+UC->>Concert: ListByArtist "upcoming only"
+UC->>DiscoveredSeries: FilterNewSeries
+Note over UC: drop events pending review as a ConcertCandidate
+alt at least one event remains
+  Note over UC: start ConcertCreationUseCase.CreateFromDiscovered once
+  UC->>ConcertSearch: MarkFound
+  Note over UC: return the previews
+else none remains
+  Note over UC: return no concerts
+end
+Note over UC: send one concert search completed signal
+```
+
 ## Requirements
 
 ### Requirement: Daily run over followed artists

@@ -36,7 +36,7 @@ jobs:
             openspec:
               - "openspec/**"
               - "scripts/check-spec-layout.py"
-              - "scripts/check-story-diagrams.py"
+              - "scripts/check-diagrams.py"
               - "scripts/check-scenario-coverage.py"
               - ".github/workflows/ci.yml"
 
@@ -111,10 +111,10 @@ jobs:
       - name: Check spec layout
         run: python3 scripts/check-spec-layout.py
 
-      # Every usecase method a story names is drawn in its Purpose's
-      # usecase-beta fence. Main specs only, like the rest of this job.
-      - name: Check story diagrams
-        run: python3 scripts/check-story-diagrams.py
+      # Story, entity-event and usecase Purpose diagrams match their spec
+      # text. Main specs only, like the rest of this job.
+      - name: Check diagrams
+        run: python3 scripts/check-diagrams.py
 
       # Changes are judged only when this PR touches them, so an in-progress
       # change on main never blocks unrelated PRs.

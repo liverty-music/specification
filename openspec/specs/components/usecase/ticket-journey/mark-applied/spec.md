@@ -3,6 +3,33 @@
 ## Purpose
 TicketJourneyUseCase.MarkApplied sets a fan's ticket journey for an event to Applied once their lottery entry on the platform is made, outside the entry's own transaction, so a failure here never fails or undoes the entry.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as TicketJourneyUseCase.MarkApplied
+participant LotteryEntry
+participant TicketJourney
+participant Concert
+participant User
+participant Follow
+Note over UC: runs for each lottery entry announced as new
+UC->>LotteryEntry: Get
+break entry is no longer Entered
+  Note over UC: record nothing and raise nothing
+end
+UC->>TicketJourney: UpsertIfReplaceable "Applied, set by the platform"
+break UpsertIfReplaceable fails
+  Note over UC: fail, and run again
+end
+Note over UC: a failure from here on does not fail MarkApplied
+UC->>Concert: ListByIDs
+UC->>User: Get "the fan's home"
+UC->>Follow: ListByUser
+opt lowest matching hype level, exactly one followed artist, Follow raisable
+  UC->>Follow: RaiseHype
+end
+```
+
 ## Requirements
 
 ### Requirement: Applied after every new lottery entry

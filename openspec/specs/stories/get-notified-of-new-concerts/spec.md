@@ -5,17 +5,19 @@
 A fan who follows an artist gets one push message on each of their registered browsers when concerts matching their hype level are added for that artist, and every such message is kept as a Notification the fan finds in the notification center.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Get notified of new concerts")
-  NotificationUseCaseNotifyNewConcerts("NotificationUseCase.NotifyNewConcerts")
-  NotificationUseCaseDeliver("NotificationUseCase.Deliver")
-end
-Fan --> Goal
-Goal ..> : include NotificationUseCaseNotifyNewConcerts
-Goal ..> : include NotificationUseCaseDeliver
+eventmodeling
+tf 01 pcr Schedule_DailyConcertSearch
+tf 02 cmd ConcertUseCase_SearchNewConcerts
+tf 03 cmd ConcertCreationUseCase_CreateFromDiscovered
+rf 04 ui Admin_ApprovalQueue
+tf 05 cmd ConcertCandidateUseCase_Approve
+rf 06 ui Member_Concert
+tf 07 cmd SeriesUseCase_Publish
+rf 08 evt Concert_Created ->> 03 ->> 05 ->> 07
+tf 09 cmd NotificationUseCase_NotifyNewConcerts
+tf 10 cmd NotificationUseCase_Deliver
+tf 11 rmo NotificationUseCase_List
+tf 12 ui Fan_Notifications
 ```
 
 ## Requirements

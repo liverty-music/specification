@@ -5,15 +5,11 @@
 An Artist's newly announced concerts reach the catalog without anyone entering them: a search finds them, and each is published, held for review, or skipped, depending on what the catalog already knows.
 
 ```mermaid
-usecase-beta
-direction LR
-systemBoundary "Liverty Music"
-  Goal("Discover new concerts")
-  ConcertUseCaseSearchNewConcerts("ConcertUseCase.SearchNewConcerts")
-  ConcertCreationUseCaseCreateFromDiscovered("ConcertCreationUseCase.CreateFromDiscovered")
-end
-Goal ..> : include ConcertUseCaseSearchNewConcerts
-Goal ..> : include ConcertCreationUseCaseCreateFromDiscovered
+eventmodeling
+tf 01 pcr Schedule_DailyConcertSearch
+tf 02 cmd ConcertUseCase_SearchNewConcerts
+tf 03 cmd ConcertCreationUseCase_CreateFromDiscovered
+tf 04 evt Concert_Created
 ```
 
 ## Requirements

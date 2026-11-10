@@ -12,6 +12,13 @@ A PushSubscription is one browser that a fan has allowed to receive push message
 | p256dh | the browser's public encryption key | required; Base64url, 1 to 256 characters |
 | auth | the browser's authentication secret | required; Base64url, 1 to 64 characters |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| PushSubscription.Subscribed | PushSubscription.Create | the PushSubscription after the change |
+| PushSubscription.Unsubscribed | PushSubscription.Delete | the PushSubscription as it was |
+
 ```mermaid
 erDiagram
   User ||--o{ PushSubscription : "registers"

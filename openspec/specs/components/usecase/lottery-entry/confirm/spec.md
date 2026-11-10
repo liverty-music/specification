@@ -3,6 +3,46 @@
 ## Purpose
 LotteryEntryUseCase.Confirm makes a fan's Entered LotteryEntry from their authenticated card authorization, or releases a card authorization it rejects. It runs for the fan's call and for the payment provider's notice that card authentication completed.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as LotteryEntryUseCase.Confirm
+participant CardAuthorization
+participant LotteryEntry
+participant TicketStock
+participant Event
+participant Order
+Note over UC: runs for the fan's call, and for the payment provider's notice that a card authorization became Authorized
+UC->>CardAuthorization: Get
+break missing, not for a lottery entry, or not the calling fan's
+  Note over UC: fail with PermissionDenied
+end
+break notice for a Checkout's card authorization
+  Note over UC: succeed without effect
+end
+UC->>LotteryEntry: GetByCardAuthorizationID
+break an Order holds the card authorization
+  Note over UC: return its entry
+end
+break card authorization is Pending, Captured or Released
+  Note over UC: fail with FailedPrecondition, releasing nothing
+end
+UC->>TicketStock: Get
+UC->>Event: IsEventPublished
+UC->>Order: GetHeldForEvent
+alt stock gone, event not PUBLISHED, purchase not confirmed or application no longer fits
+  UC->>CardAuthorization: Release
+  Note over UC: fail with InvalidArgument when the amount differs, FailedPrecondition otherwise
+else accepted
+  UC->>LotteryEntry: Create "Entered entry and its Pending Order"
+  opt Create fails with AlreadyExists or FailedPrecondition
+    UC->>CardAuthorization: Release
+    Note over UC: fail with FailedPrecondition
+  end
+end
+Note over UC: when a Release fails, return that failure so the rejection is tried again
+```
+
 ## Requirements
 
 ### Requirement: Card authentication completed without the fan

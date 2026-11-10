@@ -3,6 +3,27 @@
 ## Purpose
 NotificationUseCase.SendOrderConfirmation tells a user their purchase went through, whether from a checkout, a won lottery entry or a won resale entry: an email with the purchase details and the Organizer's 特商法 disclosure, and, for a won entry, a push notification that opens their tickets.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as NotificationUseCase.SendOrderConfirmation
+participant Order
+participant User
+participant Concert
+participant Event
+participant Organizer
+Note over UC: runs for each Order announced as paid, a failure runs it again
+UC->>Order: Get
+UC->>User: Get
+UC->>Concert: ListByIDs
+UC->>Event: GetOrganizerID
+UC->>Organizer: Get
+UC->>Order: SendConfirmationEmail "one email per Order"
+opt source is a LotteryEntry or a ResaleEntry
+  UC->>UC: Deliver "lottery_win or resale_win, opens the Tickets screen, once"
+end
+```
+
 ## Requirements
 
 ### Requirement: Confirmation email after every paid Order

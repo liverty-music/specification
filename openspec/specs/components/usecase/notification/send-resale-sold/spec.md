@@ -3,6 +3,23 @@
 ## Purpose
 NotificationUseCase.SendResaleSold tells a fan that a ticket they listed for official resale (公式リセール) was bought by another fan and how much they are refunded, once the refund is made.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as NotificationUseCase.SendResaleSold
+participant ResaleListing
+participant User
+participant Order
+participant Concert
+Note over UC: runs for each ResaleListing announced as refunded
+Note over UC: on a failure it fails and is run again
+UC->>ResaleListing: Get
+UC->>User: Get
+UC->>Order: Get
+UC->>Concert: ListByIDs
+UC->>ResaleListing: SendSoldEmail "one email per listing"
+```
+
 ## Requirements
 
 ### Requirement: Sold email after every refunded listing

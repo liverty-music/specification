@@ -3,6 +3,47 @@
 ## Purpose
 TicketSaleUseCase.Create lets an Organizer open a sale (受付), by lottery or first come, first served - its name, window and verification requirement, and one or more events it covers - on published events of one of its Series.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as TicketSaleUseCase.Create
+participant Series
+participant Event
+participant TicketStock
+participant Organizer
+participant TicketSale
+Note over UC: called by a member of the Organizer
+break no event, no end time, or breaks the TicketSale rules
+  Note over UC: InvalidArgument
+end
+UC->>Series: GetAuthored
+break missing or owned by another Organizer
+  Note over UC: PermissionDenied
+end
+break an event not of the Series
+  Note over UC: InvalidArgument
+end
+loop each event
+  UC->>Event: IsEventPublished
+  UC->>Event: GetEventStartTime
+  UC->>TicketStock: ListByEvent
+end
+break unpublished, no start time, no TicketStock, or end time against the method
+  Note over UC: FailedPrecondition
+end
+UC->>Organizer: Get
+break business details incomplete
+  Note over UC: FailedPrecondition
+end
+loop each event
+  UC->>TicketSale: ListByEvent
+end
+break window overlaps an existing sale
+  Note over UC: FailedPrecondition
+end
+UC->>TicketSale: Create
+```
+
 ## Requirements
 
 ### Requirement: Only the owner, on published and timed events of one Series

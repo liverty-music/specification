@@ -28,6 +28,13 @@ Home
 | level 2 | finer area within level 1, in a code system chosen by the country (US: FIPS county code, DE: AGS; JP: not defined, always absent) | optional; 1 to 20 bytes of text when present |
 | centroid | approximate geographic centre of the level 1 area, the reference point for Nearby classification | optional; set when the home is stored and level 1 is in the supported catalog (the 47 Japanese prefectures), absent otherwise |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| User.Created | User.Create | the User's id, provider user ID and email address |
+| User.SignedIn | User.RecordLogin | the User with its new last login time |
+
 ```mermaid
 erDiagram
   User ||--o| Home : "lives in"

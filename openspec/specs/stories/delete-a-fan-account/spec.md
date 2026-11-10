@@ -4,19 +4,12 @@
 An admin removes a fan's account at the fan's request: the admin finds it by the email address the request came from, checks nothing is in progress, and deletes it.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Admin("admin")
-systemBoundary "Liverty Music"
-  Goal("Delete a fan account")
-  GetByEmail("UserUseCase.GetByEmail")
-  Blockers("UserUseCase.ListDeletionBlockers")
-  Delete("UserUseCase.Delete")
-end
-Admin --> Goal
-Goal ..> : include GetByEmail
-Goal ..> : include Blockers
-Goal ..> : include Delete
+eventmodeling
+tf 01 ui Admin_Users
+tf 02 rmo UserUseCase_GetByEmail
+tf 03 rmo UserUseCase_ListDeletionBlockers
+tf 04 ui Admin_Users
+tf 05 cmd UserUseCase_Delete
 ```
 
 ## Requirements

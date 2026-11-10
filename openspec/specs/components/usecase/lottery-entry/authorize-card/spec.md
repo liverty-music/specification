@@ -3,6 +3,49 @@
 ## Purpose
 LotteryEntryUseCase.AuthorizeCard records the fan's 本人確認 (identity check) details and opens a card authorization for a ticket count of one TicketStock of an event a Lottery TicketSale names, returning it with the card authorization secret the fan's browser uses to complete card authentication; it stores no entry.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as LotteryEntryUseCase.AuthorizeCard
+participant TicketSale
+participant TicketStock
+participant Event
+participant IdentityVerification
+participant Order
+participant LotteryEntry
+participant User
+participant CardAuthorization
+UC->>TicketSale: Get
+UC->>TicketStock: Get
+break not Lottery, or the sale does not name the stock's event
+  Note over UC: FailedPrecondition
+end
+break count, full name or phone number invalid
+  Note over UC: InvalidArgument
+end
+UC->>Event: IsEventPublished
+break window not open, or event not published
+  Note over UC: FailedPrecondition
+end
+opt the sale requires verification
+  UC->>IdentityVerification: GetByUserID
+  break not Active
+    Note over UC: FailedPrecondition
+  end
+end
+UC->>Order: GetHeldForEvent
+break the application does not fit the event
+  Note over UC: FailedPrecondition
+end
+UC->>LotteryEntry: ListByTicketSaleAndUser
+break already entered for the event
+  Note over UC: FailedPrecondition
+end
+UC->>User: UpdatePersonalDetails
+UC->>CardAuthorization: Create "stock, count and code"
+Note over UC: returns the id and secret, stores no Order and no LotteryEntry
+```
+
 ## Requirements
 
 ### Requirement: Verification gate

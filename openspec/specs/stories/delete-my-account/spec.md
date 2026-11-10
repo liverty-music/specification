@@ -4,17 +4,11 @@
 A signed-in fan leaves Liverty Music: once nothing they bought or entered is still in progress, they delete their account from Settings after signing in again, and can no longer sign in with it.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Delete my account")
-  Blockers("UserUseCase.ListDeletionBlockers")
-  Delete("UserUseCase.Delete")
-end
-Fan --> Goal
-Goal ..> : include Blockers
-Goal ..> : include Delete
+eventmodeling
+tf 01 ui Fan_Settings
+tf 02 rmo UserUseCase_ListDeletionBlockers
+tf 03 ui Fan_DeleteAccount
+tf 04 cmd UserUseCase_Delete
 ```
 
 ## Requirements

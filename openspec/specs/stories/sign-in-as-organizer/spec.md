@@ -8,19 +8,15 @@ Organization, never another one, whether signing in for the first time from an
 invitation or returning with a passkey.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Member("member")
-actor Admin("admin")
-systemBoundary "Liverty Music"
-  Goal("Sign in as organizer")
-  OrganizerUseCaseCreate("OrganizerUseCase.Create")
-  OrganizerUseCaseSendSignInLinks("OrganizerUseCase.SendSignInLinks")
-end
-Member --> Goal
-Goal ..> : include OrganizerUseCaseCreate
-Goal ..> : include OrganizerUseCaseSendSignInLinks
-Admin --> OrganizerUseCaseCreate
+eventmodeling
+tf 01 ui Admin_Organizers
+tf 02 cmd OrganizerUseCase_Create
+tf 03 evt Organizer_Activated
+tf 04 ui Member_HostedLogin
+rf 05 ui Member_FindOrganizer
+tf 06 cmd OrganizerUseCase_SendSignInLinks
+tf 07 ui Member_HostedLogin
+rf 08 ui Member_Home ->> 04 ->> 07
 ```
 
 ## Requirements

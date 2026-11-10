@@ -5,21 +5,16 @@
 A fan records where they stand in getting a ticket for an event, or the app records it from the fan's own actions, and sees the same status for that event on every screen, right after the change is saved and never from someone else's session.
 
 ```mermaid
-usecase-beta
-direction LR
-actor Fan("fan")
-systemBoundary "Liverty Music"
-  Goal("Track ticket journey")
-  TicketJourneyUseCaseSetStatus("TicketJourneyUseCase.SetStatus")
-  TicketJourneyUseCaseInferTracking("TicketJourneyUseCase.InferTracking")
-  TicketJourneyUseCaseDelete("TicketJourneyUseCase.Delete")
-  TicketJourneyUseCaseList("TicketJourneyUseCase.List")
-end
-Fan --> Goal
-Goal ..> : include TicketJourneyUseCaseSetStatus
-Goal ..> : include TicketJourneyUseCaseInferTracking
-Goal ..> : include TicketJourneyUseCaseDelete
-Goal ..> : include TicketJourneyUseCaseList
+eventmodeling
+tf 01 ui Fan_EventDetailSheet
+tf 02 cmd TicketJourneyUseCase_SetStatus
+tf 03 evt TicketJourney_StatusChanged
+rf 04 evt Follow_HypeChanged ->> 02
+rf 05 cmd TicketJourneyUseCase_InferTracking ->> 01
+tf 06 evt TicketJourney_StatusChanged
+rf 07 cmd TicketJourneyUseCase_Delete ->> 01
+rf 08 rmo TicketJourneyUseCase_List ->> 03 ->> 06
+tf 09 ui Fan_Dashboard
 ```
 
 ## Requirements

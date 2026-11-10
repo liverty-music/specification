@@ -4,6 +4,35 @@
 
 OrganizerUseCase.Deactivate turns an Organizer off at an admin's request: its members can no longer sign in, its Artists are released for re-association, and the Organizer becomes deactivated.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as OrganizerUseCase.Deactivate
+participant Organizer
+participant Organization
+UC->>Organizer: Get
+break Organizer does not exist
+  Note over UC: fail with NotFound
+end
+break already deactivated
+  Note over UC: succeed and change nothing
+end
+opt no provider organizer ID recorded
+  UC->>Organization: GetByName
+end
+opt an Organization is found
+  UC->>Organization: DeactivateIdentities
+  break turning off the identities fails
+    Note over UC: fail, status unchanged
+  end
+end
+UC->>Organizer: FreeArtists
+break freeing the Artists fails
+  Note over UC: fail, status unchanged
+end
+UC->>Organizer: SetStatus "deactivated"
+```
+
 ## Requirements
 
 ### Requirement: Deactivate turns off identities, frees Artists, then marks the Organizer

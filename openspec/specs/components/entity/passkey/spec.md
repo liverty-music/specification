@@ -11,6 +11,13 @@ A Passkey is the platform's record of one passkey registered for a User at the i
 | create_time | when the passkey finished registration | required |
 | name | the label the identity provider gave the passkey, shown in the passkey email | optional; absent when the identity provider gave none |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| Passkey.Added | Passkey.Create | the stored Passkey |
+| Passkey.Removed | Passkey.Delete | the Passkey as it was stored |
+
 ```mermaid
 erDiagram
   User ||--o{ Passkey : "signs in with"

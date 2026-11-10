@@ -16,6 +16,12 @@ A TicketSale is one sale opportunity (受付) for some or all events of a Series
 | discovered time | when discovery first stored the sale | a discovered sale only, required; set once and never changed |
 | result date | the calendar day in Japan time on which a lottery's results are announced | a discovered Lottery sale only, optional; no earlier than the day of the end time |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| TicketSale.Discovered | TicketSale.UpsertDiscovered | the discovered TicketSale |
+
 ```mermaid
 erDiagram
   Series ||--o{ TicketSale : "is sold through"

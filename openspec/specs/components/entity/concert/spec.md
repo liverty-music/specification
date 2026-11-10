@@ -11,6 +11,12 @@ A Concert is the music kind of Event: one Event together with the Artists who pe
 | artists | the Artists performing | at least 1 |
 | publish state | the Event's publish state | absent on a discovered concert |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| Concert.Created | Concert.Create, Series.PublishEvents | one Artist and its new Concerts in one Series |
+
 ```mermaid
 erDiagram
   Event ||--o| Concert : "is extended by"

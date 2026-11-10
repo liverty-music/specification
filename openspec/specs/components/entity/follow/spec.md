@@ -13,6 +13,14 @@ A Follow records that a fan wants to be kept informed about one artist, together
 
 Hype levels: **Watch** (the artist's concerts appear on the fan's dashboard, no push), **Home** (push for concerts in the fan's home area), **Nearby** (push for concerts in the home area or near it), **Away** (push for every concert). Any hype level may be changed to any other by the fan. The app may only raise a hype level the fan did not set.
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| Follow.Created | Follow.Follow | the Follow at hype Nearby |
+| Follow.HypeChanged | Follow.RaiseHype, Follow.SetHype | the Follow with its new hype and hype set by |
+| Follow.Removed | Follow.Unfollow | the Follow as it was |
+
 ```mermaid
 erDiagram
   User ||--o{ Follow : "follows through"

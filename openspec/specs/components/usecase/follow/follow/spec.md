@@ -4,6 +4,30 @@
 
 FollowUseCase.Follow records that a fan follows an artist through Follow.Follow, which announces the new follow, and in the background stores the artist's official site when it is missing. The announcement is what starts a first concert search for a never-searched artist (ConcertUseCase.SearchNewConcertsOnFirstFollow). No failure in the background work changes the result of the follow.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as FollowUseCase.Follow
+participant Follow
+participant Artist
+UC->>Follow: Follow "announces the new follow"
+break Follow cannot be stored
+  Note over UC: fail with Unavailable or Internal
+end
+break fan already follows the artist
+  Note over UC: succeed, start no background work
+end
+Note over UC: in the background after answering, every failure ignored
+UC->>Artist: GetOfficialSite
+opt NotFound and the artist has an MBID
+  UC->>Artist: Get
+  UC->>Artist: ResolveOfficialSiteURL
+  opt a site is found
+    UC->>Artist: CreateOfficialSite
+  end
+end
+```
+
 ## Requirements
 
 ### Requirement: Follow creates the fan's Follow of the artist

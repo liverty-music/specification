@@ -3,6 +3,35 @@
 ## Purpose
 ResaleListingUseCase.Create lets a fan who cannot attend offer one of their tickets for official resale (公式リセール) at face value, once the ticket's first-come sale has sold out and until admission opens.
 
+```mermaid
+sequenceDiagram
+autonumber
+participant UC as ResaleListingUseCase.Create
+participant Ticket
+participant Order
+participant TicketStock
+participant Event
+participant ResaleListing
+UC->>Ticket: ListByUser
+break the Ticket is not the fan's
+  Note over UC: fail with PermissionDenied
+end
+break Ticket is Voided or has an admit time
+  Note over UC: fail with FailedPrecondition
+end
+UC->>Order: Get
+UC->>TicketStock: Get
+UC->>Event: IsEventPublished
+break event is not published
+  Note over UC: fail with FailedPrecondition
+end
+UC->>Event: Get
+break the stock's resale is not open
+  Note over UC: fail with FailedPrecondition
+end
+UC->>ResaleListing: Create "at the SeatType's price"
+```
+
 ## Requirements
 
 ### Requirement: List one of the fan's own tickets while its stock's resale is open

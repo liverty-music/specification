@@ -16,6 +16,13 @@ An Artist is a musical performer or group that fans follow for concert news. It 
 | activity_ended | whether the music catalog marks the artist's activity as ended: the group dissolved or the solo artist died | required; false when the catalog records no end and when it was never checked; a hiatus is not an end |
 | organizer | the Organizer that represents the artist | optional; at most one |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| Artist.Created | Artist.Create | the Artist as registered |
+| Artist.Represented | Organizer.AssociateArtist | the Artist with the Organizer as its organizer |
+
 ```mermaid
 erDiagram
   Artist ||--o| OfficialSite : "has"

@@ -20,6 +20,13 @@ A ResaleListing is a fan's offer of one of their Tickets for official resale (å…
 | refund time | when the listing's user was refunded | absent until refunded; set once |
 | sold email send time | when the email telling the user the Ticket sold was sent | absent until sent; set once |
 
+Events announced about it:
+
+| event | announced by | carries |
+|-------|--------------|---------|
+| ResaleListing.Sold | Order.Issue | the listing in status Sold |
+| ResaleListing.Refunded | ResaleListing.RecordRefund | the listing with its refund |
+
 ```mermaid
 erDiagram
   User ||--o{ ResaleListing : "lists"
