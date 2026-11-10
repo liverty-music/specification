@@ -14,7 +14,7 @@ All tasks are in the specification repository, on one branch in a worktree cut f
 
 ## 3. specification: entity events (components/entity/*)
 
-- [ ] 3.1 For every entity operation spec that announces something (search for "announced" in `openspec/specs/components/entity/`), add the event to its entity's Purpose events table, starting from the mapping in design.md decision 2. Confirm each owner by reading the announcing operation. Verify that `python3 scripts/check-diagrams.py` reports no duplicate event and that `openspec validate --specs` passes.
+- [ ] 3.1 For every entity operation spec that announces something (search for "announced" in `openspec/specs/components/entity/`), add the event to the Purpose events table of the entity the event is about, which may differ from the operation's own entity (design.md decision 2), starting from the mapping there. Verify that `python3 scripts/check-diagrams.py` reports no duplicate event and that `openspec validate --specs` passes.
 
 ## 4. specification: usecase diagrams (components/usecase/*)
 

@@ -5,8 +5,9 @@ See proposal.md for why. Today the schema's specs instruction ("Layer contents")
 Usecase, adapter and infrastructure specs have no diagrams. In the backend, the usecases of a story are connected by events: an entity operation announces an event (outbox), and a consumer behavior in `internal/di/consumer.go` runs the next usecase, or starts a workflow that runs it. The specs describe each announcement in prose ("the Order is announced as paid once"), but they never name the event.
 
 Mermaid facts this design relies on:
-- `eventmodeling` was added in Mermaid 11.15 and `usecase-beta` in 12.0. The latest release is 12.3.0 (2026-11-03).
-- The project targets the latest Mermaid. Older bundled renderers are not supported: VS Code 1.145 ships 11.17.2, which renders `eventmodeling` but not `usecase-beta`.
+- `eventmodeling` was added in Mermaid 11.15 (heading "Event Modeling Diagram (v11.15.0+)" at https://mermaid.ai/open-source/syntax/eventmodeling.html). `usecase-beta` was added in 12.0 (the use case diagram page of the same docs). The latest release is 12.3.0, published 2026-11-03 (`gh release list -R mermaid-js/mermaid`).
+- The project targets the latest Mermaid. Older bundled renderers are not supported. VS Code 1.145.2 bundles Mermaid 11.17.2 in its built-in `mermaid-markdown-features` extension (`version:"11.17.2"` in `extensions/mermaid-markdown-features/markdown-preview-out/index.js` of the install). That bundle contains the `eventmodeling` diagram but not `usecase-beta`.
+- The naming and link conventions in decision 1 come from a render spike on 2026-11-10: Mermaid 12.3.0 and 11.17.2 from jsdelivr, rendered in headless Chromium with Playwright.
 
 ## Goals / Non-Goals
 
@@ -51,9 +52,9 @@ Alternatives considered:
 
 ### 2. Domain events are listed in the entity's Purpose
 
-An entity whose operations announce events lists them in its Purpose, after the attribute table, as a table with the columns event | announced by | carries:
-- **event**: the name, `<Entity>.<PastTense>`, where Entity is the entity whose operation announces it.
-- **announced by**: the operations that announce it.
+An event is about one entity: the one the operation announces ("announce that Event as cancelled" is about the Event). That entity lists the event in its Purpose, after the attribute table, as a table with the columns event | announced by | carries:
+- **event**: the name, `<Entity>.<PastTense>`, where Entity is the entity the event is about. The prose "announce X as Y" becomes `X.Y`.
+- **announced by**: the operations that announce it. They may belong to another entity: Series.CancelEvents announces Event.Cancelled, and Order.Issue announces ResaleListing.Sold.
 - **carries**: what the event holds, in attribute terms.
 
 The name says what happened to the entity, in its own vocabulary (`Order.Paid`, not `Order.Issued`, because the operation is Issue but what the event tells is that the Order is Paid). An event that today means "something changed" is named for what the operation records. Splitting such an event into precise ones is part of the separate subject change.
@@ -62,12 +63,12 @@ Diagrams use the same names with `_`.
 
 The operations' own requirements already state when they announce ("announced with the change") and stay as they are. The table only gives each announcement a name.
 
-Current backend subjects and the event names they are expected to get (the apply step confirms each owner by reading the announcing operation's spec):
+Current backend subjects and the event names they are expected to get. The apply step confirms each name by reading what the announcing operation's spec says it announces:
 
 | backend subject | event |
 |---|---|
 | `CONCERT.created` | Concert.Created |
-| `CONCERT.cancelled` | Event.Cancelled, or Concert.Cancelled, whichever entity's operation announces it |
+| `CONCERT.cancelled` | Event.Cancelled (announced by Series.CancelEvents) |
 | `ARTIST.created` | Artist.Created |
 | `ARTIST.followed` / `ARTIST.unfollowed` | Follow.Created / Follow.Deleted |
 | `ARTIST.hype_changed` | Follow.HypeChanged |
@@ -82,7 +83,7 @@ Current backend subjects and the event names they are expected to get (the apply
 | `SERIES_IMAGE.uploaded` | SeriesImage.Uploaded |
 | `ORDER.paid` | Order.Paid |
 | `ORDER.refunded` | Order.Refunded |
-| `ORDER.resale_listing_sold` | ResaleListing.Sold |
+| `ORDER.resale_listing_sold` | ResaleListing.Sold (announced by Order.Issue) |
 | `ORDER.resale_listing_refunded` | ResaleListing.Refunded |
 | `ORDER.lottery_entry_entered` | LotteryEntry.Entered |
 | `ORDER.lottery_entry_drawn` | LotteryEntry.Drawn |
