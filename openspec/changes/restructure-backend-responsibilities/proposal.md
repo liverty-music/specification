@@ -4,7 +4,7 @@ The backend's layers do not hold the responsibilities the project's architecture
 
 - **Layer imports leak in both directions.**
   - 27 adapter files import infrastructure packages.
-  - 21 infrastructure files import `internal/adapter/pb` to encode announcements.
+  - 18 rdb files import `internal/adapter/pb` to encode announcements.
   - Eight RPC handlers read a repository or an identity-provider port directly instead of going through a usecase.
 - **Errors come in two styles.**
   - Most entity validators return plain `errors.New`, and each usecase attaches a code afterwards. Nine call sites do it with `apperr.New(code, err.Error())`, which drops the original error. That is a bug: the cause no longer appears in the logs.
@@ -28,7 +28,7 @@ The backend's layers do not hold the responsibilities the project's architecture
   - No custom sentinel error or custom error type remains outside `pkg/`. Where a caller must tell two errors of one code apart, the error carries a reason, as proposed in [pannpers/go-apperr#8](https://github.com/pannpers/go-apperr/issues/8). This part waits for that release.
 - **Clock**: entities and usecases never read the wall clock. They take the time from their caller or from an injected `Clock`.
 - **Tests**: usecase tests stub ports with the mockery mocks instead of hand-written fakes.
-- **Workflow docs**: the rule "one PR per repository" is removed from the specification README and AGENTS.md and from backend and frontend `AGENTS.md`. No rule replaces it.
+- **Workflow docs**: the rule "one PR per repository" is removed from the specification README and AGENTS.md and from backend, frontend and cloud-provisioning `AGENTS.md`. No rule replaces it.
 
 No API, proto, schema or client-visible behaviour changes.
 
@@ -51,7 +51,8 @@ None. The change moves code and error plumbing without changing any outcome or e
 - **Docs**:
   - backend `AGENTS.md`: "Announcements" and the PR rule.
   - frontend `AGENTS.md`: the PR rule.
+  - cloud-provisioning `AGENTS.md`: the PR rule.
   - specification `README.md` and `AGENTS.md`: the PR rule.
 - **Dependency**: a go-apperr release that resolves pannpers/go-apperr#8.
 - **Follow-up**: `move-decisions-into-entities` moves the business rules onto entities and adds the function-size lint after this change.
-- **Not affected**: proto, database schema, cloud-provisioning, deployed behaviour.
+- **Not affected**: proto, database schema, cloud-provisioning infrastructure, deployed behaviour.

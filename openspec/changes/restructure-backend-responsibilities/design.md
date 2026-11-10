@@ -10,7 +10,7 @@ See proposal.md (Why). The measurements below were taken on backend `main` at `0
     - `auth.OrganizerPublicProcedures`, mentioned in a doc comment of `organizer_handler.go`.
     - `geo.PrefectureName`: `linkpreview/tags.go`.
     - `gcsstorage.VariantObjectKey`: `pb/series.go:37`.
-  - 21 infrastructure files import `internal/adapter/pb` only to build `messaging.Announcement.Payload`, which is a `proto.Message` (`messaging/outbox.go:39`). For example, `issuance_repo.go:237` passes `pb.FromOrder(&paid)`.
+  - 18 rdb files import `internal/adapter/pb` only to build `messaging.Announcement.Payload`, which is a `proto.Message` (`messaging/outbox.go:39`). For example, `issuance_repo.go:237` passes `pb.FromOrder(&paid)`. Three `infrastructure/server` tests also import it, for `pb.NewSeriesImageURLBuilder`; task 1.4 moves that builder and updates them.
   - `entity` and `usecase` import nothing outward.
 - **Handlers that skip the usecase layer.**
   - `follow`, `concert`, `push_subscription`, `notification`, `wallet_public_key` and `ticket_journey` call `userRepo.GetByProviderUserID`. `callerUserID` (`lottery_entry_handler.go:44`) calls `UserUseCase.ResolveCaller`, which returns the same User and the same NotFound.
@@ -131,7 +131,7 @@ The 28 hand-written fake types are replaced with the mockery mocks (`make mocks`
 
 ### The PR rule is removed
 
-The specification `README.md` step 4, the specification `AGENTS.md` workflow step 4 (`CLAUDE.md` is a link to it), and backend and frontend `AGENTS.md` line 20 each say "One PR per repository". No reason is recorded, and no gate depends on it: the archive gate reads the implementing repositories' `main`. The sentence is removed without a replacement, so a change may land in a repository through as many PRs as its review needs. This change's backend work may itself land as several PRs, one per tasks.md section.
+The specification `README.md` step 4, the specification `AGENTS.md` workflow step 4 (`CLAUDE.md` is a link to it), backend and frontend `AGENTS.md` line 20, and cloud-provisioning `AGENTS.md` line 16 each say "One PR per repository". No reason is recorded, and no gate depends on it: the archive gate reads the implementing repositories' `main`. The sentence is removed without a replacement, so a change may land in a repository through as many PRs as its review needs. This change's backend work may itself land as several PRs, one per tasks.md section.
 
 ## Risks / Trade-offs
 
