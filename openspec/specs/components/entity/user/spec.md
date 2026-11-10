@@ -10,7 +10,7 @@ User
 |-----------|---------|------------|
 | id | the user's platform identifier | required; assigned when the User is created and never changes |
 | provider user ID | the identity provider's ID for the User | required; non-empty; no two Users share it |
-| email | primary contact and account address | required; an email address of at most 165 characters; no two Users share it |
+| email | primary contact and account address | required; an email address of at most 165 characters; no two Users share it, letter case ignored |
 | name | display name taken from the identity provider | required; may be empty text |
 | preferred language | display language for the UI and notifications | required; exactly two lowercase letters (ISO 639-1, e.g. `ja`, `en`); given when the User is created |
 | home | the user's home area | optional; absent until the user selects an area |
