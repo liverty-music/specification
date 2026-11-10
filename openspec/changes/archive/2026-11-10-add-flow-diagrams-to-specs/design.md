@@ -67,29 +67,31 @@ Current backend subjects and the event names they are expected to get. The apply
 
 | backend subject | event |
 |---|---|
-| `CONCERT.created` | Concert.Created |
+| `CONCERT.created` | Concert.Created (announced by Concert.Create and Series.PublishEvents) |
 | `CONCERT.cancelled` | Event.Cancelled (announced by Series.CancelEvents) |
 | `ARTIST.created` | Artist.Created |
-| `ARTIST.followed` / `ARTIST.unfollowed` | Follow.Created / Follow.Deleted |
+| `ARTIST.followed` / `ARTIST.unfollowed` | Follow.Created / Follow.Removed |
 | `ARTIST.hype_changed` | Follow.HypeChanged |
 | `USER.created` | User.Created |
-| `USER.logged_in` | User.LoggedIn |
+| `USER.logged_in` | User.SignedIn |
 | `USER.passkey_added` / `USER.passkey_removed` | Passkey.Added / Passkey.Removed |
-| `NOTIFICATION.subscribed` / `NOTIFICATION.unsubscribed` | PushSubscription.Created / PushSubscription.Deleted |
+| `NOTIFICATION.subscribed` / `NOTIFICATION.unsubscribed` | PushSubscription.Subscribed / PushSubscription.Unsubscribed |
 | `SALES_PHASE.discovered` | TicketSale.Discovered |
 | `TICKET_JOURNEY.status_changed` | TicketJourney.StatusChanged |
 | `ORGANIZER.created` | Organizer.Activated |
-| `ORGANIZER.artist_associated` | Organizer.ArtistAssociated |
-| `SERIES_IMAGE.uploaded` | SeriesImage.Uploaded |
+| `ORGANIZER.artist_associated` | Artist.Represented (announced by Organizer.AssociateArtist) |
+| `SERIES_IMAGE.uploaded` | none: no entity operation spec announces it |
 | `ORDER.paid` | Order.Paid |
 | `ORDER.refunded` | Order.Refunded |
 | `ORDER.resale_listing_sold` | ResaleListing.Sold (announced by Order.Issue) |
 | `ORDER.resale_listing_refunded` | ResaleListing.Refunded |
 | `ORDER.lottery_entry_entered` | LotteryEntry.Entered |
-| `ORDER.lottery_entry_drawn` | LotteryEntry.Drawn |
-| `ORDER.resale_entry_changed` | ResaleEntry.Changed |
+| `ORDER.lottery_entry_drawn` | LotteryEntry.Drawn (announced by PersistDrawOutcome, EndEnteredByEvent and RevertWin) |
+| `ORDER.resale_entry_changed` | ResaleEntry.Changed (announced by PersistDrawOutcome, RevertWin and Withdraw) |
 | `ORDER.checkout_held` / `ORDER.checkout_expired` / `ORDER.checkout_released` | Checkout.Held / Checkout.Expired / Checkout.Released |
 | `ORDER.ticket_admitted` | Ticket.Admitted |
+
+Applied (task 3.1): where the operation's prose says "announce X as Y", the event is X.Y, which renamed Follow.Removed, PushSubscription.Subscribed / Unsubscribed and User.SignedIn from the expected names above. Organizer.AssociateArtist announces the Artist ("the Artist becomes represented by the Organizer"), so its event is Artist.Represented. Organizer.CompareAndSetStatus says "announce the Organizer as created", but it records activation and Organizer.Create is a separate operation, so the event stays Organizer.Activated. No entity operation spec announces a series image upload, so SeriesImage.Uploaded is not listed.
 
 ### 3. Long usecases are drawn as a sequence diagram
 
