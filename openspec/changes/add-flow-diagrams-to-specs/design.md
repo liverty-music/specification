@@ -99,7 +99,8 @@ Conventions:
 - **Participants**: the first participant is `participant UC as <Interface>.<Method>`. Then comes one `participant <Entity>` per entity it calls, named exactly as the entity.
 - **Messages**: each call is `UC->><Entity>: <Operation>`, optionally followed by a short argument note (`UC->>LotteryEntry: RevertWin "concert cancelled"`). A call to another method of the same usecase interface is `UC->>UC: <Method>`.
 - **Branches**: `alt`/`else`, `opt`, `loop` and `break` carry the branches the requirements state, labelled in the requirements' own terms (`alt Order is Paid`). Retries and time limits are a `Note over`. `autonumber` is on.
-- **Coverage**: the set of `<Entity>.<Operation>` pairs in the messages equals the set named in the text. The diagram adds no operation that the requirements do not name, and leaves none out.
+- **Triggers**: an entity operation the text names as what starts the usecase, rather than as a call it makes, is drawn as an incoming dashed message before the first call: `LotteryEntry-->>UC: PersistDrawOutcome (Won)`. For example, OrderUseCase.Issue runs once for each entry LotteryEntry.PersistDrawOutcome records Won. A usecase method of another interface that starts it (OrderUseCase.Place) is written in a `Note over UC` and is not a message, since it is not an entity operation.
+- **Coverage**: the set of `<Entity>.<Operation>` pairs in the messages, calls and triggers together, equals the set named in the text. The diagram adds no operation that the requirements do not name, and leaves none out. Drawing a trigger as a call is wrong, even though the check cannot tell the two apart.
 
 The diagram summarizes the requirements and is not normative. When the two disagree, the requirements win and the diagram is fixed.
 
@@ -134,4 +135,4 @@ The check does not parse Mermaid, so a syntax error would show only as a broken 
 - [Wide story diagrams: a story with 15 usecases draws about 20 frames, roughly 2500px wide] → Accepted. GitHub scrolls the diagram horizontally, and the time order is the point of the diagram.
 - [`eventmodeling` and its `->>` links are new; layout or syntax may change in later Mermaid releases] → The diagram keeps to the documented frame syntax. A breaking release would show on every story at once, and so would be noticed quickly.
 - [Event names differ from backend subject strings until the separate change aligns them] → The mapping table in decision 2 records each difference.
-- [The 5-operation threshold counts names in prose, so rewording can move a spec across it] → Accepted. The check then requires the diagram, or it is no longer required, and either way the spec stays consistent.
+- [The 5-operation threshold counts every name in the prose, triggers included, so a usecase that makes few calls but names many triggers (OrderUseCase.ReleaseCardAuthorization) needs a diagram. Rewording can also move a spec across the threshold] → Accepted. A usecase started from many places is hard to follow too, and the trigger messages show where it starts. The check then requires the diagram, or it is no longer required, and either way the spec stays consistent.
