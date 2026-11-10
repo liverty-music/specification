@@ -84,6 +84,17 @@ What goes away: the UUIDv5 namespace, the step origin in the context, the per-st
 - **Command**: one receiver must do one piece of work with no stored change behind it. Inside a workflow, `Flow.Start` (DBOS checkpoints it); outside, `Workflows.Start`, named after the business key. Work that follows a stored change is not a command: the consumer of that change's announcement starts it, so no DBOS transaction is shared with the fact (`WithEnqueueTransaction` is not used). This holds when a workflow stored the change too: starting the work per entity from the workflow costs one checkpoint write per entity in the parent workflow.
 - Rejected: one DBOS workflow per event as the outbox. DBOS v1.7.0 has only a per-workflow `Enqueue` (no bulk enqueue; `SendBulk` sends messages to workflows, not to NATS), and each event would cost a workflow row, a dequeue, a step checkpoint and a status update.
 
+## Names
+
+One name follows an event from the spec to the consumer (OpenSpec change `align-event-names-with-entities`):
+
+- **Event** (spec): `<Entity>.<What>`. What is the state the entity entered (`Order.Paid`, `LotteryEntry.Won`) or, otherwise, what happened to it in the past tense (`Follow.Created`, `TicketJourney.StatusChanged`). A requirement says "announce the entry as won (LotteryEntry.Won)".
+- **Subject**: `<ENTITY>.<what>` (`LOTTERY_ENTRY.won`, `FOLLOW.hype_changed`), always two tokens.
+- **Stream**: one per entity with events, named `<ENTITY>`, capturing `<ENTITY>.*`.
+- **Go constant**: `Subject<Entity><What>` (`SubjectLotteryEntryWon`).
+- **PostHog event** forwarded from a domain event: the subject in lower case (`lottery_entry.won`).
+- **Split by state** only where consumers react to the states differently (LotteryEntry, ResaleEntry). A consumer of several states binds one durable whose `filterSubjects` lists them, and tells the state from the subject. When every consumer treats every state the same, one `StatusChanged` event carries the state (TicketJourney).
+
 ## The entity operation contract
 
 The usecase must know what an operation announces without knowing that an outbox exists. The name and the Go doc carry it, as they already carry the rest of the contract; the return value does not change.
@@ -95,7 +106,7 @@ The usecase must know what an operation announces without knowing that an outbox
 //
 // # Announces
 //
-//  - ORDER.lottery_entry_drawn with the entry, when it changes the entry.
+//  - LOTTERY_ENTRY.lost with the entry, when it changes the entry.
 //    Nothing when the entry is already Lost.
 //
 // # Possible errors

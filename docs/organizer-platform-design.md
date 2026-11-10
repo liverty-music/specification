@@ -170,8 +170,8 @@ Mirroring the admin precedent (`admin-rpc-server`, `admin-console-hosting`):
 
 ## Observability
 
-Emit backend analytics events `organizer.created` and
-`organizer.artist.associated` (JetStream → PostHog), modeled as
+Emit backend analytics events `organizer.activated` and
+`artist.represented` (JetStream → PostHog), modeled as
 admin-actor / group events keyed on `organizer_id` (no fan UserId); add
 them to the event catalog in the same change. Wrap the provisioning call in
 an OTel span + a `organizer_provisioning_failed` metric.

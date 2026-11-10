@@ -35,8 +35,8 @@ Example:
 
 ```
 [OWNER] @pannpers
-[HYPOTHESIS] Recommendation algorithm v2 increases artist.follow.completed by ≥ 10%
-[KPI] artist.follow.completed / concert.recommendation.served
+[HYPOTHESIS] Recommendation algorithm v2 increases follow.created by ≥ 10%
+[KPI] follow.created / concert.recommendation.served
 [KILL_DATE] 2026-08-27
 [ISSUE] https://github.com/liverty-music/frontend/issues/123
 ```
