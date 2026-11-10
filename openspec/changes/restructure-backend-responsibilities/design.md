@@ -50,7 +50,7 @@ Each contract an adapter and an infrastructure package both use moves to the inn
 | Signed-in caller on the request context (`Claims`, caller Organization id, their context accessors) | a new `pkg/` package (for example `pkg/authctx`) | The interceptors in `infrastructure/auth` write it and handlers read it. The interceptors themselves stay in infrastructure. |
 | Webhook token check | an interface declared in `internal/adapter/webhook`, satisfied structurally by `auth.WebhookValidator` | The adapter needs one method, and Go's structural typing needs no import from infrastructure. |
 | Prefecture code to name | `internal/entity`, next to `venue_normalize.go` | Domain vocabulary, not an external system. |
-| Series image variant object key | `internal/entity` (the Series image) | The storage writer and the CDN URL builder must agree on it. |
+| Series image variant URL | The object key stays in `infrastructure/gcp/storage`, where backend#485 put it (the key scheme belongs to the layer that owns object storage). The URL builder moves there too, and `adapter/pb` depends on an interface it declares (`SeriesImageURLs`), wired in `internal/di`. | The storage writer and the CDN URL builder must agree on the key, and only the storage package knows it. |
 | Entity to `entity/v1` mapping used by announcements (including the `ForAnnouncement` variants) | a new `internal/entitypb` that imports only `entity` and the generated types | `adapter/pb` and the rdb announcers both import it. |
 
 **Alternative considered:** an announcement-encoder interface injected into each repository. It was rejected because every announcing repository would need a new dependency, and the payload mapping is not a policy that varies per caller.
@@ -65,7 +65,7 @@ backend `AGENTS.md` ("Announcements") must then name `internal/entitypb` instead
 - `internal/usecase` imports no `adapter`, `infrastructure` or `di`.
 - `internal/adapter` imports no `infrastructure` or `di`.
 - `internal/infrastructure` imports no `adapter` or `di`.
-- `internal/entitypb` imports only `entity`.
+- `internal/entitypb` imports only `entity` and the generated `entity/v1` types.
 - `pkg` imports no `internal`.
 
 `internal/di` and `cmd/` may import everything.
@@ -88,13 +88,14 @@ For each rule, the entity gains a method or a pure function, and every usecase t
 | Publish readiness (`usecase/series/publish`) | `series_uc.go:730`, `eventVenueName` at `:755` duplicating `Concert.VenueName` (`concert.go:65`) | A guard on Series over its Events and performers. |
 | Deletion blockers (`usecase/user/list-deletion-blockers`) | `user_uc.go:593` | One predicate per record kind. The usecase reads, the entity classifies. |
 | Sale window against event start (`entity/ticket-sale`) | `ticket_sale_uc.go:231` `checkEndBeforeEvents`; `checkout_uc.go:206` `openFirstComeSale` | Methods on TicketSale taking the event start times or the instant. |
-| Reminder fire time and quiet hours (`usecase/ticket-sale/scan-due-reminders`) | `ticket_sale_reminder_uc.go:265` `scheduledFireTime`; same shape at `ticket_sale_discovery_uc.go:26` | Next to `ReminderStage.Anchor` on the entity, taking the time zone. |
+| Reminder fire time and quiet hours (`usecase/ticket-sale/scan-due-reminders`) | `ticket_sale_reminder_uc.go:265` `scheduledFireTime` | Next to `ReminderStage.Anchor` on the entity, taking the time zone. |
+| Ticket sale search interval (`entity/ticket-sale-search`) | `ticket_sale_discovery_uc.go:26` `ticketSaleSearchDue` | On the TicketSaleSearch entity, separate from the reminders: it decides when a Series is searched again, not when a fan is reminded. |
 | Same performance (`entity/event`) | `concert_creation_uc.go:561,616`, `concert_candidate_uc.go:283`, entity `FilterNewSeries` (`concert.go:275`) | One venue-date-start key and one matcher on Event, used by all three. |
 | Draft-edit equality | `series_uc.go:509` `sameVenue`, `:521` `sameInstant` duplicating `sameOptionalTime` (`event.go:219`) | Event methods. |
 
 The four transition methods with no caller are used where their meaning matches:
 
-- `Order.CanBecomeVoid` replaces `order.Status != OrderStatusPending` at `order_lottery_workflow.go:338` and `order_resale_workflow.go:217`.
+- A new `Order.CanBeCharged` (only a Pending Order is charged) replaces `order.Status != OrderStatusPending` at `order_lottery_workflow.go:338` and `order_resale_workflow.go:217`, which decide whether to charge and issue. `Order.CanBecomeVoid` governs the move to Void only and is not used for that check; `Order.CanBePaid` checks the payment details a Paid Order needs, not the status, so neither fits.
 - `Event.CanTransitionTo` guards publishing.
 - `Checkout.CanBecome` replaces the Held branch at `order_issue_uc.go:129`.
 - `ResaleEntry.IsWithdrawable` is used wherever a usecase decides withdrawal.
