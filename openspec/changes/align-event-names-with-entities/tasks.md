@@ -5,7 +5,7 @@ The order across repositories is design.md decision 3: cloud-provisioning PR 1, 
 ## 1. cloud-provisioning: new streams and moved durables (PR 1)
 
 - [ ] 1.1 Add Stream CRs for EVENT, FOLLOW, PASSKEY, PUSH_SUBSCRIPTION, TICKET_SALE, LOTTERY_ENTRY, RESALE_ENTRY, RESALE_LISTING, CHECKOUT and TICKET under `k8s/namespaces/nats/base/jetstream/`, with the settings of the existing streams and the per-environment replica overrides. Register them in the kustomization. Verify with `kubectl kustomize` for both overlays.
-- [ ] 1.2 Edit every Consumer CR to the stream and `filterSubject`/`filterSubjects` of design.md decision 1, and rename the CRs and durables of the renamed behaviors (decision 1, "Renamed durables"). Verify with `kubectl kustomize` that every behavior of the backend's new behavior table has exactly one CR with a matching durable, stream and filter.
+- [ ] 1.2 Edit every Consumer CR to the stream and `filterSubject`/`filterSubjects` of design.md decision 1, and rename the CRs and durables of the renamed behaviors (decision 1, "Renamed durables"). Keep `TICKET_JOURNEY.status_changed` in `track-ticket-journey`'s `filterSubjects` next to the five new subjects (decision 3, step 1). Verify with `kubectl kustomize` that every behavior of the backend's new behavior table has exactly one CR with a matching durable, stream and filter.
 - [ ] 1.3 Add KEDA triggers for every new (stream, durable) pair in `event-consumer/scaledobject.yaml` and its prod overlay, keeping the old triggers. Verify with `kubectl kustomize`.
 - [ ] 1.4 After the merge and the ArgoCD sync, run `nats stream ls` and `nats consumer ls <stream>` read-only from the nats-box in prod. Verify that every new stream and durable exists and that the old durables are still there.
 
@@ -21,9 +21,9 @@ The order across repositories is design.md decision 3: cloud-provisioning PR 1, 
 
 ## 3. cloud-provisioning: remove what is left behind (PRs 2 and 3)
 
-- [ ] 3.1 Set `preventDelete: false` on the Stream CRs of SALES_PHASE, NOTIFICATION, VENUE and TICKET_EMAIL and on the Consumer CR of track-ticket-email, and remove the old KEDA triggers (PR 2). Verify with `kubectl kustomize` and, after the sync, that NACK reports the CRs as reconciled.
+- [ ] 3.1 Set `preventDelete: false` on the Stream CRs of SALES_PHASE, NOTIFICATION, VENUE and TICKET_EMAIL and on the Consumer CR of track-ticket-email, remove the old KEDA triggers, and drop `TICKET_JOURNEY.status_changed` from `track-ticket-journey` (PR 2). Verify with `kubectl kustomize` and, after the sync, that NACK reports the CRs as reconciled.
 - [ ] 3.2 Remove those CRs (PR 3). After the sync, verify with `nats stream ls` that the four streams are gone.
-- [ ] 3.3 Delete by hand, once, the old durables left on ORDER, CONCERT, ARTIST, USER, TICKET_JOURNEY and ORGANIZER with `nats consumer rm` from the nats-box (design.md decision 3, step 7). Verify that `nats consumer ls` on each lists only the durables of decision 1.
+- [ ] 3.3 On ORDER, CONCERT, ARTIST, USER and ORGANIZER, list the durables with `nats consumer ls`, and delete by hand, once, with `nats consumer rm` from the nats-box, only those that design.md decision 1 does not place on that stream (decision 3, step 7). Verify that `nats consumer ls` on each lists exactly the durables of decision 1.
 - [ ] 3.4 Rewrite the comments in `k8s/namespaces/backend/base/cronjob/sales-phase-discovery/configmap.env`, `cronjob/sales-reminders/configmap.env`, `overlays/prod/kustomization.yaml` and `src/zitadel/constants.ts` that name old or nonexistent subjects. Verify that `git grep` for every old subject string and stream name finds nothing.
 
 ## 4. specification: docs and proto comment

@@ -102,14 +102,17 @@ Because NACK creates a durable when the pair (stream, durable) is new, and leave
    - Add KEDA triggers for the new (stream, durable) pairs, and keep the old triggers.
 
    After the sync, both the old durables (on the old streams) and the new ones exist. The running backend still binds the old ones.
+
+   One durable keeps its stream and its name: `track-ticket-journey`. Only its filter changes, so NACK updates it in place. In PR 1 its `filterSubjects` holds the five new subjects and the old `TICKET_JOURNEY.status_changed`, so it keeps receiving what the running backend publishes. PR 2 drops the old subject.
 2. **Before the backend rollout**: confirm in prod that `watermill_events_outbox` is empty and that every old durable has 0 pending messages (read-only checks).
 3. **backend PR**: publishes the new subjects and binds the new durables. The health check lists the new durables.
 4. **After the rollout**: confirm in prod that every old durable still has 0 pending messages, and that the new ones are bound. If an old durable has a pending message, it was published by an old pod during the rollout. Republish it to its new subject with the nats CLI from the nats-box, which needs the decision 1 table to map it.
 5. **cloud-provisioning PR 2**:
    - Set `preventDelete: false` on the CRs of the streams that go away: SALES_PHASE, NOTIFICATION, VENUE, TICKET_EMAIL, and the CR of `track-ticket-email`.
    - Remove the old KEDA triggers.
+   - Drop `TICKET_JOURNEY.status_changed` from `track-ticket-journey`.
 6. **cloud-provisioning PR 3**: remove those CRs. NACK then deletes the streams with their durables.
-7. **By hand, once**: delete the old durables left on the streams that stay (ORDER, CONCERT, ARTIST, USER, TICKET_JOURNEY, ORGANIZER), with `nats consumer rm` from the nats-box. No CR refers to them, so NACK cannot remove them. This is the one-time action the tasks rule allows, and step 4 has confirmed each has 0 pending.
+7. **By hand, once**: on each stream that stays (ORDER, CONCERT, ARTIST, USER, ORGANIZER), delete with `nats consumer rm` from the nats-box each durable that `nats consumer ls` lists but decision 1 does not place on that stream. These are the durables left behind by a move or a rename, such as `send-event-cancelled` on CONCERT and `track-user-logged-in` on USER. No CR refers to them, so NACK cannot remove them. This is the one-time action the tasks rule allows. Step 4 has confirmed each has 0 pending messages. A durable that decision 1 places on the stream is never deleted, whether it was moved there, kept there, or updated in place like `track-ticket-journey`.
 
 Why not new streams side by side with new CR names: a durable keeps its name, and the CR names would collide. Suffixing the new CRs would leave a permanent naming exception.
 
