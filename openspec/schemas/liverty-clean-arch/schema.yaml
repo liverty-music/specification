@@ -192,15 +192,23 @@ artifacts:
           requirement mentions.
           When an operation announces something about the entity, list each
           domain event after the attribute table, as a table: event |
-          announced by | carries. The event is named <Entity>.<PastTense>
-          for what happened to the entity, in its own vocabulary: "announce
-          the Order as paid" is Order.Paid. The entity is the one the event
-          is about, which may differ from the announcing operation's own
-          (Series.CancelEvents announces Event.Cancelled). "announced by"
+          announced by | carries. The event is named <Entity>.<What>, in
+          the entity's own vocabulary. When it tells that the entity entered
+          a state, What is that state (Order.Paid, LotteryEntry.Won);
+          otherwise it is what happened to the entity, in the past tense
+          (Follow.Created, TicketJourney.StatusChanged). The entity is the
+          one the event is about, which may differ from the announcing
+          operation's own (Series.CancelEvents announces Event.Cancelled).
+          Split an event by state only where some consumer reacts to the
+          states differently (LotteryEntry.Won and LotteryEntry.Lost);
+          when every consumer treats every state the same, keep one
+          StatusChanged-style event that carries the state. "announced by"
           lists every operation that announces it; "carries" says what the
           event holds, in attribute terms. Each event is listed once, by its
-          own entity. The operations' requirements still state when they
-          announce; the table only names the announcement.
+          own entity. The requirement of each announcing operation states
+          when it announces and names the event in parentheses, so a reader
+          and a grep find the same string: "announce the entry as won
+          (LotteryEntry.Won)".
             | event | announced by | carries |
             |---|---|---|
             | Order.Paid | Order.Issue | the Order in status Paid |
