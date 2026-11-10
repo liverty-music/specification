@@ -12,20 +12,20 @@ tf 04 ui Fan_Checkout
 tf 05 cmd CheckoutUseCase_Start
 tf 06 cmd CheckoutUseCase_AuthorizeCard
 tf 07 cmd OrderUseCase_Place
-tf 21 cmd OrderUseCase_Issue
-tf 08 evt Order_Paid
-rf 09 ui Fan_LotteryEntry ->> 03
-tf 10 cmd LotteryEntryUseCase_AuthorizeCard
-tf 11 cmd LotteryEntryUseCase_Confirm
-tf 12 evt LotteryEntry_Entered
-rf 13 pcr Schedule_DrawWindowClosed
-tf 14 cmd LotteryEntryUseCase_DrawDueSales
-tf 15 cmd LotteryEntryUseCase_Draw
-tf 16 evt LotteryEntry_Drawn
-tf 17 cmd OrderUseCase_Issue
-tf 18 evt Order_Paid
-rf 19 rmo TicketSaleUseCase_ListOwnByEvent ->> 08 ->> 18
-tf 20 ui Member_Event
+tf 08 cmd OrderUseCase_Issue
+tf 09 evt Order_Paid
+rf 10 ui Fan_LotteryEntry ->> 03
+tf 11 cmd LotteryEntryUseCase_AuthorizeCard
+tf 12 cmd LotteryEntryUseCase_Confirm
+tf 13 evt LotteryEntry_Entered
+rf 14 pcr Schedule_DrawWindowClosed
+tf 15 cmd LotteryEntryUseCase_DrawDueSales
+tf 16 cmd LotteryEntryUseCase_Draw
+tf 17 evt LotteryEntry_Drawn
+tf 18 cmd OrderUseCase_Issue
+tf 19 evt Order_Paid
+rf 20 rmo TicketSaleUseCase_ListOwnByEvent ->> 09 ->> 19
+tf 21 ui Member_Event
 ```
 
 ## Requirements

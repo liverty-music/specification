@@ -16,15 +16,15 @@ tf 08 cmd CheckoutUseCase_Start
 tf 09 evt Checkout_Held
 rf 10 cmd CheckoutUseCase_AuthorizeCard ->> 07
 tf 11 cmd OrderUseCase_Place
-tf 20 cmd OrderUseCase_Issue
-tf 12 evt Order_Paid
-tf 13 cmd TicketJourneyUseCase_MarkPaid
-rf 14 cmd NotificationUseCase_SendOrderConfirmation ->> 12
-rf 15 rmo TicketUseCase_List ->> 12
-tf 16 ui Fan_Tickets
-rf 17 cmd CheckoutUseCase_Expire ->> 09
-tf 18 evt Checkout_Expired
-tf 19 cmd OrderUseCase_ReleaseCardAuthorization
+tf 12 cmd OrderUseCase_Issue
+tf 13 evt Order_Paid
+tf 14 cmd TicketJourneyUseCase_MarkPaid
+rf 15 cmd NotificationUseCase_SendOrderConfirmation ->> 13
+rf 16 rmo TicketUseCase_List ->> 13
+tf 17 ui Fan_Tickets
+rf 18 cmd CheckoutUseCase_Expire ->> 09
+tf 19 evt Checkout_Expired
+tf 20 cmd OrderUseCase_ReleaseCardAuthorization
 ```
 
 ## Requirements

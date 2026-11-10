@@ -291,7 +291,7 @@ artifacts:
           The user goal in one or two sentences. When the story composes
           usecases, draw it in a `mermaid` eventmodeling fence: one frame per
           line in time order, `tf <NN> <element> <name>` with NN unique in
-          the fence. The elements:
+          the fence and counting up in line order. The elements:
             ui   a screen or surface an actor uses: <Actor>_<Screen>, where
                  Actor is Fan, Member, Admin or VenueStaff and Screen is the
                  route or global surface spec name in PascalCase
@@ -303,7 +303,8 @@ artifacts:
             evt  a domain event an entity lists: <Entity>_<PastTense>
                  (LotteryEntry_Drawn)
             pcr  a trigger with no actor, a schedule or a call from an
-                 external system: Schedule_<What> or External_<System>
+                 external system: Schedule_<What> or External_<System>,
+                 the system named by its role, never by its vendor
                  (Schedule_DrawWindowClosed, External_PaymentProvider)
           Names join their parts with `_`, never `.`: a dotted name opens a
           lane of its own for each frame. A usecase run by an event directly
