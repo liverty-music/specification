@@ -71,7 +71,7 @@ Prerequisites: the layering and error sections of `restructure-backend-responsib
 ## 11. backend: Notifications
 
 - [ ] 11.1 Move the send-once decisions out of `mail/lottery_loss.go`, `mail/resale_sold.go` and `mail/resale_entry_ended.go`: the usecase reads, asks the entity, sends through the mail port and marks. The mail package only sends. Verify with usecase tests using the mockery mocks (the fake stores of the mail tests are removed)
-- [ ] 11.2 Move the cancellation-notice, refund-notice, sales-reminder payload, new-concert performer and push device-family rules (`event_cancelled.go:64`, `order_refunded.go:74`, `notification_delivery.go:123`, `notification_new_concerts.go:30`, `adapter/pb/push_notification.go`) to entity methods, and drop the Lost filter of `adapter/event/lottery_entry_drawn_consumer.go:85` in favour of the usecase it calls. Verify with entity table tests
+- [ ] 11.2 Move the cancellation-notice, refund-notice, `NotificationTypeSalesReminder` payload, new-concert performer and push device-family rules (`event_cancelled.go:64`, `order_refunded.go:74`, `notification_delivery.go:123`, `notification_new_concerts.go:30`, `adapter/pb/push_notification.go`) to entity methods, and drop the Lost filter of `adapter/event/lottery_entry_drawn_consumer.go:85` in favour of the usecase it calls. Verify with entity table tests
 - [ ] 11.3 Replace the seven `x.UserID != caller` checks with `BelongsTo` methods. Verify with entity tests and a grep that no usecase compares a UserID to the caller directly
 
 ## 12. backend: function size

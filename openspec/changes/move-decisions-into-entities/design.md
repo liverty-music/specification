@@ -7,7 +7,7 @@ See proposal.md for why. The facts that shape the approach (backend at `0543dba5
   - `order_repo.go:80` `orderHeldForEventQuery` is the only definition of "tickets a fan holds for an event", the base of the per-account limit on all three purchase paths.
   - `checkout_repo.go:203` computes the free count again, beside `TicketStock.Remaining`.
   - `series_events_repo.go:272` `Update`, `:365` `takeNewSlot`, `:441` `PublishEvents` and `:553` `CancelEvents` decide the edit, slot-claim and cancel policies.
-  - `lottery_entry_repo.go:83` lets the database clock (`clock_timestamp()`) decide whether a sale is open, and `:216`, `:231`, `:410`, `:535` read `time.Now()`.
+  - `lottery_entry_repo.go:83` lets the database clock (`clock_timestamp()`) decide whether a TicketSale is open, and `:216`, `:231`, `:410`, `:535` read `time.Now()`.
   - `identity_verification_repo.go:39` decides which verification is current with `ORDER BY status ASC`.
 - One repository method already has the target shape: `resale_entry_repo.go:301` `DrawUnderLock` locks the stock, loads a snapshot and runs a decision function passed in from the usecase (`entity.DrawResale`).
 - Infrastructure adapters decide: `gcp/gemini/searcher.go:789` `mergeDrafts` dedups and `:880` `seriesTypeOf` classifies; `maps/google/client.go:152` takes the first place; `music/musicbrainz/client.go:267` `selectOfficialSiteURL` chooses the site; `mail/resale_entry_ended.go:61-71` decides whether to send and marks the entity; `pocketsign/verify_client.go:417-429` decides that an indeterminate certificate needs no re-verification.
@@ -69,7 +69,7 @@ Moving the decision into Go changes where the condition is evaluated, not which 
 
 ### What stays in SQL
 
-- **Concurrency guards**: the `WHERE state = ANY($from)` of each compare-and-set, the `hold_expire_at > $now` guard of a holding checkout, unique indexes (one entry per user per sale per event, `lottery_entry_repo.go` unique key) and partial indexes (`notDraftPredicate`, `event_conditions.go:19`, which is also the predicate of the partial unique index on the natural key). The entity supplies the states and the instant; the SQL only compares.
+- **Concurrency guards**: the `WHERE state = ANY($from)` of each compare-and-set, the `hold_expire_at > $now` guard of a holding checkout, unique indexes (one entry per User per TicketSale per Event, `lottery_entry_repo.go` unique key) and partial indexes (`notDraftPredicate`, `event_conditions.go:19`, which is also the predicate of the partial unique index on the natural key). The entity supplies the states and the instant; the SQL only compares.
 - **Read filters that paging or batching needs**: `fanVisibleCondition`, `catalogEventCondition`, `seriesPublishStateColumn`, the "due" filters (fanart staleness `artist_repo.go:58`, draws due, searches due), the bounding-box prefilter of `ListByLocation`. Each gets a parity test: the test seeds every combination of the inputs the predicate reads (for visibility: discovered or first-party; DRAFT, PUBLISHED or CANCELLED; PUBLIC or UNLISTED), runs the query, and asserts that it returns exactly the rows the entity predicate accepts. A filter whose threshold is policy (the fanart staleness age, the bounding-box margins) takes the value from the entity as a parameter instead of computing it in the repository.
 - **Aggregations a decision reads**: `orderHeldForEventQuery` and the sold and held counts of `ticket_stock_repo.go` stay queries, because they count rows under lock. Their meaning moves to Go: each counted row's contribution is defined by an entity predicate (`Order.CountsTowardLimitAt(now)`, `Checkout.IsHoldingAt`), and a parity test checks the query against it.
 
@@ -114,9 +114,9 @@ The tables group the rules by domain area. "Today" lists the verified locations 
 
 | Rule | Today | Home |
 |---|---|---|
-| Sale is a lottery naming the stock's event | `lottery_entry_repo.go:63-67`, `:206-215`; `entity.ValidateLotteryEntrySale` | `ValidateLotteryEntrySale` (exists), repository stops restating it |
+| The TicketSale is a lottery naming the stock's Event | `lottery_entry_repo.go:63-67`, `:206-215`; `entity.ValidateLotteryEntrySale` | `ValidateLotteryEntrySale` (exists), repository stops restating it |
 | Sale open at the entry time (database clock today) | `lottery_entry_repo.go:83` | `TicketSale.IsOpenAt(entry.CreateTime)` |
-| One entry per sale per event per fan | `lottery_entry_uc.go:291` `hasEntryForEvent`, unique key | Unique key stays; the usecase check uses a `LotteryEntry` predicate |
+| One entry per TicketSale per Event per fan | `lottery_entry_uc.go:291` `hasEntryForEvent`, unique key | Unique key stays; the usecase check uses a `LotteryEntry` predicate |
 | Verification gate | `lottery_entry_uc.go:256` `checkVerification` | Guard from `restructure-backend-responsibilities` |
 | RevertWin transition | `lottery_entry_repo.go:521` | `LotteryEntry.RevertWin` returning transitions |
 | Lost reason and voiding the losers' Orders after a draw or a cancellation | `lottery_entry_repo.go:377` `PersistDrawOutcome`, `EndEnteredByEvent` | `LotteryDraw` outcome plan |
@@ -153,7 +153,7 @@ The tables group the rules by domain area. "Today" lists the verified locations 
 | Rule | Today | Home |
 |---|---|---|
 | Edit policy per state, slot merge | `series_events_repo.go:272` `Update`, `:365` `takeNewSlot`; `series_uc.go:490-521` | `Event.CheckChange` (exists) extended, `Event.SlotMergePlan` |
-| Slot claim when publishing | `series_events_repo.go:441` `PublishEvents` | `Event.ClaimSlotPlan(holder)` |
+| Slot claim when publishing | `series_events_repo.go:441` `PublishEvents` | `Event.ClaimSlotPlan(existing *Event)` (the Event already at the slot, if any) |
 | Cancel: PUBLISHED → CANCELLED, DRAFT removed, empty Series removed | `series_events_repo.go:553` `CancelEvents`; `series_uc.go:616` | `Event.CanTransitionTo` (exists), `Series.CancelPlan` |
 | Which events to publish | `series_uc.go:587` `eventsToPublish` | `Series.EventsToPublish` |
 | Publish readiness | `series_uc.go:730`, `:755` | Guard from `restructure-backend-responsibilities` |
@@ -218,7 +218,7 @@ The tables group the rules by domain area. "Today" lists the verified locations 
 | Lost filter of the drawn-entry consumer | `adapter/event/lottery_entry_drawn_consumer.go:85` | The usecase it calls |
 | Cancellation notice only for Paid Orders | `event_cancelled.go:64`, `:122` | `Order.NeedsCancellationNotice` |
 | Refund notice only for a Cancellation refund above 0 | `order_refunded.go:74` | `Refund.NeedsNotice` |
-| Sales reminder payload | `notification_delivery.go:123` | `Notification.Message` |
+| TicketSaleReminder payload (`NotificationTypeSalesReminder`) | `notification_delivery.go:123` | `Notification.Message` |
 | New-concert notification performer filter | `notification_new_concerts.go:30` | `Concert.HasPerformer` |
 | Device family of a push endpoint | `adapter/pb/push_notification.go:13-19` | `PushSubscription.DeviceFamily` |
 
