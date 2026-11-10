@@ -46,7 +46,7 @@ Checked in the re-audit and found not to be defects:
 
 **Non-Goals:**
 
-- Moving rules between layers, splitting functions or changing test infrastructure: those belong to `restructure-backend-layers`, `move-decisions-into-entities` (the two halves of what was planned as `restructure-backend-responsibilities`) and `speed-up-and-fill-backend-tests`. This change edits comments, the behaviour fixes and the rule fixes above, so it can merge before them and they rebase on correct comments and signatures.
+- Moving rules between layers, splitting functions or changing test infrastructure: those belong to `restructure-backend-responsibilities` (layers, errors and the clock), `move-decisions-into-entities` (rules moved into entities, function size) and `speed-up-and-fill-backend-tests`. This change edits comments, the behaviour fixes and the rule fixes above, so it can merge before them and they rebase on correct comments and signatures.
 - Deciding behaviour the specs leave open (Open Questions).
 
 ## Decisions
