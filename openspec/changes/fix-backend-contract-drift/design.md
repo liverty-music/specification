@@ -117,7 +117,7 @@ Alternatives considered: setting the token before publishing (breaks the Series 
 
 ### The current date is the Venue's
 
-An Event's local date is the date at its Venue, so "today" for comparing it is the current date at that Venue. One entity function returns a Venue's time zone and the current date at a Venue; every comparison of an Event's date with "now" goes through it. The Venue has no time zone attribute, no spec requires one, and AGENTS.md forbids a column no spec uses, so the function returns Asia/Tokyo for every Venue. The specs say "the current date at its Venue" (`entity/venue` "Current date at a venue"), not "Japan time", so overseas support changes data, not the rule.
+An Event's local date is the date at its Venue, so "today" for comparing it is the current date at that Venue. One entity function returns a Venue's time zone and the current date at a Venue; every comparison of an Event's date with "now" goes through it. The Venue has no time zone attribute, no spec requires one, and AGENTS.md forbids a column no spec uses, so the function returns Asia/Tokyo for every Venue. That is exact for Venues in Japan and off by the time difference for the overseas Venues that discovery already takes in (`entity/concert/search` "Overseas venue"); liverty-music/specification#1379 tracks giving the Venue its own time zone. The specs say "the current date at its Venue" (`entity/venue` "Current date at a venue"), not "Japan time", so overseas support changes data, not the rule.
 
 Applied in this change: the Concert.Search past-date filter (`searcher.go:911`, which cut the day at UTC midnight), `Concert.ListUpcomingByArtist` and the other queries that used the database's `CURRENT_DATE` (`ListByFollower`'s default, the TicketJourney upcoming ordering), each now given a date computed in Go, and the entity helpers that compute an Event's day:
 
@@ -131,7 +131,7 @@ Applied in this change: the Concert.Search past-date filter (`searcher.go:911`, 
 | `JapanDate` in the artist refresh rotation (`artist_uc.go:548`) | No: the platform's daily job, "05:00 Japan time" | Unchanged |
 | Notification and passkey email times (`notification_message.go`, `mail/passkey_change.go`) | No: shown in the fan's time zone | Unchanged |
 
-Specs that stated an Event-day rule in Japan time (`entity/scanner` admission window, `entity/resale-listing` deadline, `usecase/user/list-deletion-blockers`) are reworded to the time zone of the Event's Venue in this change; with every Venue in Asia/Tokyo the result is the same. Overseas support would need: a time zone on the Venue (or derived from its admin area's country), the function reading it, the multi-venue queries comparing each row with the date at its own Venue (`(now AT TIME ZONE v.time_zone)::date` in SQL, since one date no longer fits all rows) and a decision whether the 12:00 resale draw follows the Venue.
+Specs that stated an Event-day rule in Japan time (`entity/scanner` admission window, `entity/resale-listing` deadline, `usecase/user/list-deletion-blockers`) are reworded to the time zone of the Event's Venue in this change; while the function returns Asia/Tokyo the result is the same as before. What overseas support needs (a Venue time zone, the function reading it, per-row comparison in the multi-venue queries, the resale draw hour) is recorded in liverty-music/specification#1379, not here, because this design is not read after the change is archived; the function's doc comment links the issue.
 
 ### An unannounced venue is a missing venue
 
