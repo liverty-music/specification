@@ -9,7 +9,7 @@ See proposal.md for why. This section records what was measured on 2026-11-10 in
   - The story tests, about 15 of them at 2.6 to 10.8 s each and about 60 s together. Each one empties the `dbos` tables, then starts and stops a workflow runtime (DBOS) on `test-db`. Some stop the worker on purpose to imitate a terminated Pod.
 - The compose service and CI already run PostgreSQL with `fsync=off`, `synchronous_commit=off` and `full_page_writes=off` (compose.yml, `.github/workflows/ci.yml`). The usual "make the server non-durable" advice is therefore already applied, and there is no more to gain from it.
 - Migrations are applied outside Go: `make test` and CI run `atlas migrate apply` against `test-db` before `go test` (139 migration files).
-- Other packages also connect to `test-db` while `rdb` runs: `messaging` (the outbox test writes rows to `watermill_events_outbox`) and, under the `integration` tag, `lastfm`. `workflow` and `rdb/migrationtest` create scratch databases of their own.
+- Other packages also connect to `test-db` while `rdb` runs: `messaging` (the outbox test writes rows to `watermill_events_outbox`; the forwarder test connects too, but in a schema of its own) and, under the `integration` tag, `lastfm`. `workflow` and `rdb/migrationtest` create scratch databases of their own.
 - The default `max_connections` of the test server is 100. A test database opened by `rdb.New` allows up to 10 connections, and each story test opens further pools for its workflow runtime and client.
 - `go test ./...` without the Makefile panics in `internal/di` unless `GOLANG_PROTOBUF_REGISTRATION_CONFLICT=ignore` is set; the Makefile exports it. This change does not touch that.
 
@@ -74,9 +74,9 @@ A piece of code gets a test when it makes a decision a spec states and nothing t
 
 | Code | Decision it makes | Spec scenarios it is checked against |
 |---|---|---|
-| `ResaleEntryChangedConsumer.HandleSendResaleEntryEnded` | Sends only for a Lapsed or Lost entry; redelivers later on Unavailable or DeadlineExceeded; refuses a payload without id or Order | `usecase/notification/send-resale-entry-ended` "Lapsed entry", "Lost at the last draw" |
+| `ResaleEntryChangedConsumer.HandleSendResaleEntryEnded` | Sends only for a Lapsed or Lost entry; redelivers later on Unavailable or DeadlineExceeded; refuses a payload without id or Order | none: the usecase scenarios are verified by `resale_entry_ended_test.go`; the consumer test checks only the dispatch, redelivery and payload checks |
 | `ResaleEntryChangedConsumer.HandleStartWorkflow` | Starts the entry's workflow from the announcement | none (the usecase spec of the workflow start is missing; reported, not written here) |
-| `ResaleListingSoldConsumer.HandleStartRefund` | Starts the refund of the sold listing; refuses a payload without id | `usecase/resale-listing/refund-sold` "Ticket resold" |
+| `ResaleListingSoldConsumer.HandleStartRefund` | Starts the refund of the sold listing; refuses a payload without id | none: `refund-sold` is verified by `resale_listing_uc_test.go`; the consumer test checks only the dispatch and payload check |
 | `SeriesUseCase.List` | Pairs each Series with its authored concerts; one failed read fails the call | `usecase/series/list`, all four scenarios |
 | `ConcertCandidateUseCase.List` | Pairs each pending candidate with its Artist; one failed read fails the call | `usecase/concert-candidate/list`, all three scenarios |
 | `AdminOrganizerHandler` | Runs one usecase method per call and returns usecase errors unchanged | `adapter/admin/api/rpc/organizer` scenarios of "Each call runs one OrganizerUseCase method and returns the short name" |
