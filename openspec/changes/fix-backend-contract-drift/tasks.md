@@ -16,3 +16,24 @@
 - [ ] 3.2 Rewrite `ArtistRepository.UpdateFanart` (no fanart removes the earlier images) and `ArtistRepository.Create` (`# Possible errors`: InvalidArgument, Unavailable, Internal). Verify: matches `entity/artist/update-fanart` and `entity/artist/create`
 - [ ] 3.3 Rewrite `ConcertUseCase.ListByArtist` and `ListFollowed` (no NotFound; an unknown Artist or User gives an empty result) and `OrderUseCase.Refund` (the cancellation amount is the price of the Tickets still Issued; only a Paid Order is refunded, for either reason). Verify: matches `usecase/concert/list-by-artist`, `usecase/concert/list-followed` and `usecase/order/refund`
 - [ ] 3.4 Add Unavailable to `# Possible errors` of the remaining announcing methods listed in design.md (and add the section to `OrganizerRepository.CompareAndSetStatus`), then compare every code each listed implementation returns with its `# Possible errors` and add the missing ones (InvalidArgument on `LotteryEntryRepository.Create`, `ResaleEntryRepository.Create`, `IssuanceRepository.Issue`, and any other the comparison finds). Verify: rerun the check that flags a `# Announces` section without Unavailable over `internal/entity/*.go` and it reports nothing; `make check` passes
+
+## 4. backend: a resale Order announced with its own source (components/entity/order/issue)
+
+- [ ] 4.1 Make `pb.FromOrder` set `resale_entry_id` when the Order's source is a ResaleEntry, and keep `checkout_id` and `lottery_entry_id` for the other two sources (design.md "The Order's source comes from the entity, all three cases"). Verify: a table test over the three sources, and an rdb test annotated `@spec components/entity/order/issue` "Order of a won resale entry paid" that decodes the paid announcement and finds the ResaleEntry as its source
+- [ ] 4.2 Decode `resale_entry_id` in the paid-announcement consumers (`entity.OrderPaidData` and `adapter/event/analytics_consumer.go`), leaving the analytics property names unchanged until the Open Question is answered. Verify: `go test ./internal/adapter/event/` passes with a resale Order case
+
+## 5. backend: no Artist for a deactivated Organizer (components/entity/organizer/associate-artist)
+
+- [ ] 5.1 In `OrganizerRepository.AssociateArtist`, read the Organizer's status `FOR SHARE` in the link's transaction and fail with FailedPrecondition when it is Deactivated; update the doc comment (`# Possible errors`: FailedPrecondition, AlreadyExists, Unavailable). Verify: rdb tests annotated `@spec components/entity/organizer/associate-artist` for "Unrepresented Artist", "Artist already represented" and "Organizer deactivated just before the link" pass; the last one deactivates the Organizer after the usecase's read and before the link
+
+## 6. backend: one Home per User under concurrent calls
+
+- [ ] 6.1 Read the User `FOR UPDATE` at the start of `UserRepository.UpdateHome`'s transaction. Verify: an rdb test runs two first `UpdateHome` calls for one User concurrently and finds one Home row for that User and no unreferenced one
+- [ ] 6.2 Run the read-only unreferenced-Home count in production (design.md Migration Plan step 4) through `docs/runbooks/cloud-sql-access.md`. Verify: the count is recorded in the PR; if it is not 0, report it to the user, who decides whether to remove the rows
+
+## 7. backend: code that breaks the AGENTS.md review rules
+
+- [ ] 7.1 Split `ConcertRepository.ListByArtist(ctx, artistID, upcomingOnly)` into `ListByArtist(ctx, artistID)` and `ListUpcomingByArtist(ctx, artistID)`, with doc comments from `entity/concert/list-by-artist` and `entity/concert/list-upcoming-by-artist`; switch `concertUseCase.ListByArtist`, `SearchNewConcerts` and `ticketSaleDiscoveryUseCase.DiscoverForArtist` to the one they mean; regenerate mocks. Verify: rdb tests annotated with the scenarios of both operations, and usecase tests annotated `@spec components/usecase/concert/search-new-concerts` "Already in the catalog" and `@spec components/usecase/ticket-sale/discover-for-artist` "Tracked series with nothing pending", pass
+- [ ] 7.2 Make `User.FullName` and `User.PhoneNumber` `*string`, and `UserRepository.UpdatePersonalDetails` take `*string` for each; map nil to NULL and back in rdb; update every reader (`adapter/pb`, usecases) to check nil. Verify: `grep -n nullStringFromEmpty internal/infrastructure/database/rdb/user_repo.go` no longer shows the two fields; `make check` passes
+- [ ] 7.3 Return apperr errors from `infrastructure/geo` `CentroidResolverImpl.ResolveCentroid` (InvalidArgument for no Home, NotFound for an unknown first-level code) and write the doc comment of `usecase.CentroidResolver` with `# Possible errors`. Verify: `grep -n 'fmt.Errorf' internal/infrastructure/geo/resolver.go` finds nothing; the geo tests check the codes
+- [ ] 7.4 In `AGENTS.md` "Review criteria", replace `checkoutLockTicketTypeQuery` with `checkoutUserLockQuery`. Verify: `git grep -n checkoutLockTicketTypeQuery` finds nothing
