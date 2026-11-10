@@ -12,7 +12,7 @@ participant TicketJourney
 participant Concert
 participant User
 participant Follow
-Note over UC: runs for each lottery entry announced as new
+Note over UC: runs for each lottery entry announced as entered (LotteryEntry.Entered)
 UC->>LotteryEntry: Get
 break entry is no longer Entered
   Note over UC: record nothing and raise nothing
