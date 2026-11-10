@@ -19,7 +19,7 @@ See proposal.md for why. This section records what was measured on 2026-11-10 in
 
 - The `rdb` package finishes in **60 s or less**: the median of three local runs of `go test -count=1 -json ./internal/infrastructure/database/rdb/` on the same 8-core machine, read from the package's `Elapsed`, after the migrations are applied. The baseline is 165.7 s. 60 s leaves room above the longest single test (16 s) and the longest story (11 s) once the tests run eight at a time. CI's "Run integration tests" step duration is recorded before and after, for information only, since the runner differs.
 - Ten consecutive full runs (`make test`) pass with no failure.
-- Every added test is annotated with the spec scenario it checks (`// @spec <capability> "<scenario>"`, the backend's existing convention).
+- Every added test that verifies a spec scenario is annotated with it (`// @spec <capability> "<scenario>"`, the backend's existing convention). The consumer tests of tasks 3.1 and 3.2 verify no scenario (the usecase tests already do) and carry none.
 
 **Non-Goals:**
 
